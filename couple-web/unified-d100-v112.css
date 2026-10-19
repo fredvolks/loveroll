@@ -1,0 +1,43 @@
+
+/* LoveRoll 112: one full-size centred D100, with no empty category column.
+   Applied after historical evening CSS to preserve mobile and desktop proportions. */
+main#app.loveroll-evening-page .evening-step.two .evening-play{
+ display:grid!important;
+ grid-template-columns:minmax(0,1fr)!important;
+ grid-template-rows:minmax(23px,.35fr) minmax(0,4.7fr) minmax(78px,1.2fr)!important;
+ gap:clamp(3px,.5dvh,9px)!important;
+}
+main#app.loveroll-evening-page .evening-step.two .evening-unified-label{
+ grid-row:1!important;display:flex;align-items:center;justify-content:center;
+ min-width:0;color:#f8a9cf;letter-spacing:.035em;
+ font:800 clamp(.68rem,2.3vw,.94rem)/1.2 system-ui,sans-serif;text-align:center;
+}
+main#app.loveroll-evening-page .evening-step.two .evening-die-row{
+ grid-row:2!important;grid-template-columns:minmax(0,1fr)!important;
+ width:100%!important;display:grid!important;place-items:center!important;min-height:0;
+ background:radial-gradient(ellipse at center 80%,#fa217e37,transparent 62%);
+}
+main#app.loveroll-evening-page .evening-step.two .evening-d35-col{
+ display:flex!important;align-items:center!important;justify-content:center!important;
+ width:100%!important;max-width:100%!important;
+}
+main#app.loveroll-evening-page .evening-step.two .evening-d35-col .love3d{
+ margin-inline:auto!important;flex:0 1 auto!important;
+ width:min(100%,33dvh,330px)!important;
+}
+main#app.loveroll-evening-page .evening-step.two .evening-roll-actions{
+ grid-row:3!important;
+}
+@media(max-width:767px) and (max-height:710px){
+ main#app.loveroll-evening-page .evening-step.two .evening-play{
+  grid-template-rows:minmax(20px,.34fr) minmax(0,4.6fr) minmax(69px,1.35fr)!important;
+ }
+ main#app.loveroll-evening-page .evening-step.two .evening-d35-col .love3d{
+  width:min(100%,28dvh,240px)!important;
+ }
+}
+@media(min-width:768px){
+ main#app.loveroll-evening-page .evening-step.two .evening-d35-col .love3d{
+  width:min(100%,36dvh,365px)!important;
+ }
+}

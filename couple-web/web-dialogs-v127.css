@@ -1,0 +1,62 @@
+/* Shared editorial dialogs. Scoped IDs keep the global primary-button rule
+   from coloring dismiss/cancel controls; content alone scrolls on short screens. */
+#app .install-overlay,
+#lr-dialog-overlay.lr-dialog-overlay{box-sizing:border-box;position:fixed;inset:0;z-index:6500;display:flex;align-items:center;justify-content:center;padding:max(20px,env(safe-area-inset-top,0px)) 18px max(20px,env(safe-area-inset-bottom,0px));background:#0a050bc9;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);overflow:hidden;}
+#app .install-overlay .install-modal,
+#lr-dialog-overlay .lr-dialog-card{position:relative;box-sizing:border-box;display:flex;flex-direction:column;width:min(100%,430px);min-width:0;max-height:calc(100dvh - max(20px,env(safe-area-inset-top,0px)) - max(20px,env(safe-area-inset-bottom,0px)));margin:0;padding:24px 22px 18px;border:1px solid #7d4a5b88;border-radius:22px;background:linear-gradient(135deg,#241019,#120910);box-shadow:0 16px 48px #0008,inset 0 1px #ffe4e812;color:var(--ritual-text);text-align:center;overflow:hidden;}
+#lr-dialog-overlay .lr-dialog-card::before{display:none;}
+#app .install-modal .install-content,
+#lr-dialog-overlay .lr-dialog-content{flex:1 1 auto;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#7d4a5b88 transparent;}
+#app .install-modal .install-symbol,
+#lr-dialog-overlay .lr-dialog-icon{display:flex;align-items:center;justify-content:center;gap:14px;width:116px;height:32px;margin:0 auto 16px;padding:0;border:0;border-radius:0;background:none;box-shadow:none;text-shadow:none;color:var(--ritual-rose);font-size:0;}
+#app .install-modal .install-symbol::before,
+#app .install-modal .install-symbol::after,
+#lr-dialog-overlay .lr-dialog-icon::before,
+#lr-dialog-overlay .lr-dialog-icon::after{content:"";display:block;flex:1;height:1px;background:#7d4a5b88;}
+#app .install-modal .install-symbol svg,
+#lr-dialog-overlay .lr-dialog-icon svg{display:block;flex:none;width:30px;height:30px;}
+#app .install-modal .install-recommend,
+#lr-dialog-overlay .lr-dialog-eyebrow{margin:0 0 10px;font:500 11px/1.4 system-ui,sans-serif;letter-spacing:.13em;color:var(--ritual-rose);}
+#app .install-overlay .install-modal h2,
+#lr-dialog-overlay .lr-dialog-card h2{max-width:24ch;margin:0 auto 16px;font:400 27px/1.12 Georgia,"Times New Roman",serif;letter-spacing:-.02em;color:var(--ritual-text);text-shadow:none;}
+#app .install-modal #lr-install-description,
+#lr-dialog-overlay .lr-dialog-card #lr-dialog-description{max-width:38ch;margin:0 auto;font:400 15px/1.55 system-ui,sans-serif;color:var(--ritual-muted);white-space:pre-line;overflow-wrap:anywhere;}
+#app .install-modal .install-actions,
+#lr-dialog-overlay .lr-dialog-actions{display:flex;flex-direction:column;flex:none;gap:6px;margin:20px 0 0;padding:0;}
+#app .install-modal .install-actions button,
+#lr-dialog-overlay .lr-dialog-actions button{box-sizing:border-box;display:flex;align-items:center;justify-content:center;width:100%;min-width:0;min-height:52px;margin:0;padding:13px 16px;border:1px solid #b97b90;border-radius:14px;background:linear-gradient(155deg,#9b4864,#64283f);box-shadow:inset 0 1px #f2c4d122;color:var(--ritual-text);font:500 15px/1.3 system-ui,sans-serif;text-align:center;touch-action:manipulation;}
+#app .install-modal .install-actions :is(.install-later,.install-secondary),
+#lr-dialog-overlay .lr-dialog-actions .lr-dialog-cancel{min-height:44px;padding:10px 16px;border-color:transparent;background:transparent;box-shadow:none;color:var(--ritual-muted);}
+#lr-dialog-overlay .lr-dialog-actions .lr-dialog-accept.lr-dialog-danger{background:linear-gradient(155deg,#89415a,#5b2539);border-color:#b97b90;}
+#app .install-overlay .install-modal .install-close,
+#lr-dialog-overlay .lr-dialog-card .lr-dialog-close{position:absolute;z-index:2;top:8px;right:8px;display:grid;place-items:center;width:44px;min-width:44px;height:44px;min-height:44px;margin:0;padding:0;border:0;border-radius:50%;background:none;box-shadow:none;color:var(--ritual-muted);font:400 28px/1 system-ui,sans-serif;touch-action:manipulation;}
+#lr-dialog-overlay .lr-dialog-copy{margin:14px 0 0;}
+#lr-dialog-overlay .lr-dialog-copy textarea{width:100%;min-height:88px;margin:0;padding:12px;border:1px solid var(--ritual-border);border-radius:12px;background:#160b12;color:var(--ritual-text);font:13px/1.4 system-ui,sans-serif;resize:none;}
+#app .install-modal :focus-visible,
+#lr-dialog-overlay .lr-dialog-card :focus-visible{outline:2px solid var(--ritual-text);outline-offset:2px;}
+@media(max-height:630px){
+ #app .install-overlay .install-modal,
+ #lr-dialog-overlay .lr-dialog-card{padding:18px 18px 14px;}
+ #app .install-modal .install-symbol,
+ #lr-dialog-overlay .lr-dialog-icon{height:28px;margin-bottom:10px;}
+ #app .install-modal .install-symbol svg,
+ #lr-dialog-overlay .lr-dialog-icon svg{width:26px;height:26px;}
+ #app .install-modal .install-recommend,
+ #lr-dialog-overlay .lr-dialog-eyebrow{margin-bottom:8px;font-size:10px;}
+ #app .install-overlay .install-modal h2,
+ #lr-dialog-overlay .lr-dialog-card h2{margin-bottom:12px;font-size:24px;}
+ #app .install-modal #lr-install-description,
+ #lr-dialog-overlay .lr-dialog-card #lr-dialog-description{font-size:14px;line-height:1.5;}
+ #app .install-modal .install-actions,
+ #lr-dialog-overlay .lr-dialog-actions{margin-top:16px;gap:4px;}
+ #app .install-modal .install-actions button,
+ #lr-dialog-overlay .lr-dialog-actions button{min-height:48px;padding:11px 14px;font-size:14px;}
+ #app .install-modal .install-actions :is(.install-later,.install-secondary),
+ #lr-dialog-overlay .lr-dialog-actions .lr-dialog-cancel{min-height:44px;padding:9px 14px;}
+}
+@media(prefers-reduced-motion:reduce){
+ #app .install-overlay,
+ #lr-dialog-overlay.lr-dialog-overlay{animation:none;}
+ #app .install-modal button,
+ #lr-dialog-overlay .lr-dialog-card button{transition:none;}
+}
