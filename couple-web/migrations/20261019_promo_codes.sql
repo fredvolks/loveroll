@@ -73,7 +73,7 @@ begin
  end if;
  v_code:=upper(trim(coalesce(p_code,'')));
  if v_code='' and p_id is null then
-  v_code:='LOVE-'||upper(encode(gen_random_bytes(6),'hex'));
+  v_code:='LOVE-'||upper(encode(extensions.gen_random_bytes(6),'hex'));
  end if;
  if v_code !~ '^[A-Z0-9][A-Z0-9_-]{3,31}$' then
   raise exception 'Code : 4 à 32 caractères, lettres, chiffres, _ ou -' using errcode='22023';
