@@ -1,6 +1,7 @@
 // LoveRoll — Rendez-vous Surprise, connected to real monthly and occasion draws.
 import {ritualHeadingHtml} from './brand.mjs?v=20261017-ritual130';
 import {occasionDate,dueOccasions} from './special-occasions.mjs';
+import {displayCadRange} from './currency-exchange.mjs';
 import {premiumPolyDie} from './premium-evening.mjs';
 import {surpriseSlot,surpriseCustom,surpriseTitle,displaySurpriseDate} from './surprise-event-config.mjs';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','"':'&quot;',"'":'&#39;'}[c]));
@@ -45,7 +46,8 @@ export function sixSpecialEvents(now,settings={},members=[]){
 }
 export function premiumSurpriseHtml({
  monthly={},members=[],settings={},now=new Date(),activity=null,
- rolling=false,rollingKind=null,rollFace=1,settlingHost=false,showActivity=false,timerHtml='',editSlot=null,season=null
+ rolling=false,rollingKind=null,rollFace=1,settlingHost=false,showActivity=false,timerHtml='',editSlot=null,season=null,
+ currency='CAD',locale='fr-CA',exchange=null
 }={}){
  const a=monthly.monthly_activity,h=monthly.monthly_host;
  const rollingActivity=rolling&&rollingKind==='monthly_activity';
@@ -66,7 +68,7 @@ export function premiumSurpriseHtml({
  const minCost=activity?.['prix_'+currentSeason+'_min'];
  const maxCost=activity?.['prix_'+currentSeason+'_max'];
  const costRange=Number.isInteger(minCost)&&Number.isInteger(maxCost)?
-  minCost.toLocaleString('fr-CA')+' à '+maxCost.toLocaleString('fr-CA')+' $ CA':null;
+  displayCadRange(minCost,maxCost,{currency,locale,exchange}):null;
  const outingPlace=[activity?.region,activity?.location].filter(Boolean).map(esc).join(' · ');
  return '<div class="surprise-premium-view surprise-ecrin">'+
   '<header class="surprise-header surprise-new-header">'+ritualHeadingHtml('NOTRE RITUEL DE LA SURPRISE')+
@@ -133,7 +135,8 @@ export function premiumSurpriseHtml({
        button('surprise-season:ete','☀ Été','surprise-season-tab'+(currentSeason==='ete'?' is-active':''))+'</div>':'')+
      '<p class="surprise-season-description">'+esc(seasonalText)+'</p>'+
      (costRange?'<div class="surprise-budget-block">'+
-       '<span>Budget approximatif · 2 personnes</span><strong>'+esc(costRange)+'</strong>'+
+       '<span>Budget approximatif · 2 personnes</span><strong>'+esc(costRange.text)+'</strong>'+ 
+        (costRange.note?'<small>'+esc(costRange.note)+'</small>':'')+
        '<small>'+esc(activity?.budget_note||'Estimation, transport compris.')+'</small>'+
        (activity?.distance_km_est!=null?'<small>Environ '+esc(activity.distance_km_est)+' km de Québec (aller simple).</small>':'')+
        '</div>':'')+
