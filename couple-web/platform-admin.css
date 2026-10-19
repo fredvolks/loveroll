@@ -82,3 +82,21 @@
 .geo-quota-control button{min-height:46px}
 #geo-usage-feedback{color:#f9cfde;font-size:12px;min-height:16px}
 @media(max-width:630px){.geo-charts-grid{grid-template-columns:1fr}.geo-monitor-head{align-items:start}.geo-monitor-head h3{font-size:20px}}
+
+/* LoveRoll Studio mobile navigation: visible selector, no hidden horizontal tabs */
+.studio-mobile-nav{display:none}
+@media(max-width:850px){
+ .studio-sidebar{display:none!important}
+ .studio-mobile-nav{display:grid;gap:10px;grid-column:1;min-width:0;padding:14px;
+  border:1px solid #955473;border-radius:16px;background:linear-gradient(140deg,#422037,#2a1223)}
+ .studio-mobile-nav label{color:#f7d1e1;font-size:13px;font-weight:650}
+ #studio-pane-select{appearance:auto;color:#fff4fa;background:#24101e;border:1px solid #b87797;
+  width:100%;min-height:52px;padding:12px;border-radius:13px;font:600 16px/1.3 system-ui,sans-serif}
+ #studio-pane-select:focus-visible{outline:2px solid #f9bed5;outline-offset:2px}
+ .studio-mobile-shortcuts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ .studio-mobile-shortcuts button{min-height:45px;padding:8px 6px;min-width:0;
+  border:1px solid #a76a84;border-radius:12px;color:#ffe2ed;
+  font:600 13px system-ui,sans-serif;background:#54263e}
+ .studio-mobile-shortcuts button.active{background:#8c405f;border-color:#f2b2ce;color:#fff}
+ .studio-layout{gap:14px}
+}
