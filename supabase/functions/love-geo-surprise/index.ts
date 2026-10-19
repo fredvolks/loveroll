@@ -75,6 +75,9 @@ Deno.serve(async req=>{
   .select('user_id').eq('couple_id',roll.couple_id);
  if(memberError||members?.length!==2||!members.some((m:any)=>m.user_id===userId))
   return json({error:'Accès au duo refusé'},403);
+ const {data:policy,error:policyErr}=await admin.from('love_platform_settings').select('geo_enabled,geo_max_candidates,geo_max_radius_km').eq('id',1).maybeSingle();
+ if(policyErr||!policy)return json({error:'Configuration Geoapify indisponible'},503);
+ if(!policy.geo_enabled)return json({status:'disabled'});
  const {data:settings}=await admin.from('couples')
   .select('activity_localization_enabled,travel_origin_label,travel_origin_lat,travel_origin_lon,travel_radius_km')
   .eq('id',roll.couple_id).maybeSingle();
@@ -87,7 +90,7 @@ Deno.serve(async req=>{
  // Never consume Geoapify credits without a configured server-side secret.
  if(apiKey.length<10)return json({error:'Clé Geoapify manquante dans les secrets Supabase'},503);
  const radius=Number(settings.travel_radius_km);
- if(!Number.isInteger(radius)||radius<10||radius>500)return json({error:'Rayon invalide'},400);
+ if(!Number.isInteger(radius)||radius<10||radius>Number(policy.geo_max_radius_km))return json({error:'Rayon supérieur au maximum autorisé'},400);
  // One winner claim per roll. In-progress duplicates are cheap and return pending.
  if(!existing){
   const inserted=await admin.from('love_monthly_places').insert({
@@ -134,7 +137,7 @@ Deno.serve(async req=>{
    .eq('couple_id',roll.couple_id).eq('state','ready').gte('roll_key',roll.key.slice(0,4)+'-01')
    .lte('roll_key',roll.key.slice(0,4)+'-12');
   for(const p of history||[])if(p.place_id)seen.add(p.place_id);
-  const candidates=locations.filter(p=>!seen.has(p.place_id)).filter((p,i,a)=>a.findIndex(v=>v.place_id===p.place_id)===i).slice(0,10);
+  const candidates=locations.filter(p=>!seen.has(p.place_id)).filter((p,i,a)=>a.findIndex(v=>v.place_id===p.place_id)===i).slice(0,Math.min(20,Math.max(1,Number(policy.geo_max_candidates)||10)));
   if(!candidates.length){await finalize({state:'unavailable'});return json({status:'unavailable'});}
   const routeBody={mode:'drive',sources:[{location:[origin.lon,origin.lat]}],
    targets:candidates.map(p=>({location:[p.lon,p.lat]}))};
