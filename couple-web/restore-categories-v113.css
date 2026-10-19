@@ -1,0 +1,25 @@
+/* v113: restore the original three-button/D100 composition.
+   When one or two choices are hidden in Settings, use their freed space. */
+main#app.loveroll-evening-page .evening-step.two .evening-choice:has(>.evening-choice-option:only-child){
+ grid-template-columns:minmax(0,1fr)!important;
+ width:min(100%,360px)!important;margin-inline:auto!important;
+}
+main#app.loveroll-evening-page .evening-step.two .evening-choice:has(>.evening-choice-option:nth-child(2):last-child){
+ grid-template-columns:repeat(2,minmax(0,1fr))!important;
+}
+main#app.loveroll-evening-page .evening-step.two .evening-choice:has(>.evening-choice-option:only-child) .evening-choice-btn{
+ min-height:43px!important;font-size:clamp(.82rem,2.7vw,1rem)!important;
+}
+/* v114: show the confirmed D100 number BELOW the 3D die, never on top
+   of its faces. A short capsule fits both S25 Ultra and desktop layouts. */
+main#app.loveroll-evening-page .evening-step.two .evening-d100-result{
+ flex:0 0 auto;min-height:0;max-height:44px;
+ display:grid;place-items:center;
+ margin:-2px auto 2px;padding:2px 15px;
+ border:1px solid #ff9bca99;border-radius:999px;
+ background:linear-gradient(110deg,#501130db,#8d1c52d9);
+ color:#fff1f9;font:900 clamp(1.25rem,3.5dvh,2.2rem)/1 Georgia,serif;
+ font-variant-numeric:tabular-nums;text-shadow:0 0 12px #ff6eb788;
+ box-shadow:0 0 16px #fa388544,inset 0 1px #ffd3ef44;
+}
+main#app.loveroll-evening-page .evening-step.two .evening-d100-result[hidden]{display:none!important}

@@ -1,0 +1,5 @@
+LoveRoll Web 2026-10-14.52
+- Fenêtres de confirmation premium pour offrir un défi, dissocier un couple, importer ou supprimer.
+- Notifications de résultats et messages de statut positionnés sous les barres Android/iOS.
+- Aucun changement aux autorisations serveur ni aux règles du jeu.
+- Tests de régression : 182 réussis.

@@ -1,0 +1,183 @@
+/* LoveRoll premium design system — all authenticated pages and tabs.
+   Visual-only: never changes data, navigation, roles, session logic or cards. */
+:root{
+ --ritual-bg:#10070c;
+ --ritual-page:radial-gradient(ellipse at 0% 25%,#58132950,transparent 55%),#10070c;
+ --ritual-text:#f5dcd8;--ritual-muted:#ccb3bf;--ritual-rose:#d58ba3;
+ --ritual-border:#ba7e9145;
+ --ritual-card:linear-gradient(120deg,#29111bce,#170d14df);
+ /* The account CTA is the shared control reference across the app. */
+ --control-primary:linear-gradient(110deg,#ad667f,#773451 65%,#492039);
+ --control-border:#bf879e88;--control-text:#f8e7ea;
+ --control-shadow:inset 0 1px 1px #f5c8d33b,0 5px 15px #0002;
+ --control-selected:linear-gradient(120deg,#603047,#391b2b);
+ --control-selected-border:#b87a8d77;
+ --control-selected-shadow:inset 0 1px 0 #d5a3ae22;
+ --control-secondary:#1b0e16;--control-secondary-border:#95617670;
+ --control-secondary-text:#e2cad2;
+ --ritual-button:var(--control-primary);
+ --ritual-shadow:inset 0 1px 2px #ffe4e833,0 5px 22px #c54e7020;
+ --ritual-space:8px;
+ --bg:#0c0610;--panel:#301328;--edge:#a94b78;--pink:#ff68ac;
+ --text:#fff3fa;--mute:#dfbfd1;--love-rose:#ff78b5;--love-wine:#42122e;
+ --love-border:var(--ritual-border);--love-glass:var(--ritual-card);
+ --love-glow:0 12px 32px #09020ec9,inset 0 1px #ffd5eb2c;
+}
+body:not(:has(.love-discover)){
+ background:var(--ritual-page);
+}
+body:not(:has(.love-discover)) main{position:relative;}
+body:not(:has(.love-discover)) main>.header h1,
+body:not(:has(.love-discover)) .waiting-hero h1,
+body:not(:has(.love-discover)) .auth-panel h2{
+ font-family:Georgia,"Times New Roman",serif;letter-spacing:-.025em;
+}
+body:not(:has(.love-discover)) .header{border-bottom:1px solid #d0619240;margin-bottom:12px;padding:9px 0 14px;}
+body:not(:has(.love-discover)) .header h1{color:#fff5fc;text-shadow:0 5px 22px #fe589f1c;}
+body:not(:has(.love-discover)) .header p{color:#e8b6d0;}
+body:not(:has(.love-discover)) .eyebrow{color:#ff99c7;letter-spacing:.15em;}
+body:not(:has(.love-discover)) .card,
+body:not(:has(.love-discover)) .auth-panel,
+body:not(:has(.love-discover)) .settings-group,
+body:not(:has(.love-discover)) .waiting-hero,
+body:not(:has(.love-discover)) .settings-item{
+ background:var(--love-glass);border-color:var(--love-border);
+ box-shadow:var(--love-glow);border-radius:21px;
+}
+body:not(:has(.love-discover)) .card::selection{background:#dc267f;}
+body:not(:has(.love-discover)) .card h2,
+body:not(:has(.love-discover)) .card h3,
+body:not(:has(.love-discover)) .settings-group-heading strong{
+ color:#fff4fa;
+}
+body:not(:has(.love-discover)) .card p,
+body:not(:has(.love-discover)) .tiny-note{color:#dfbdd1;}
+body:not(:has(.love-discover)) button:not(.subtle):not(.pill):not(.nav button):not(.text-link):not(.love-answer-option){
+ background:var(--ritual-button);
+ border:1px solid #e5b3c381;border-radius:16px;
+ box-shadow:var(--control-shadow);
+}
+body:not(:has(.love-discover)) button.subtle{
+ background:var(--ritual-card);
+ border:1px solid var(--ritual-border);color:var(--ritual-text);border-radius:15px;
+}
+body:not(:has(.love-discover)) input,
+body:not(:has(.love-discover)) select,
+body:not(:has(.love-discover)) textarea{
+ background:linear-gradient(145deg,#231021,#170e1c);border:1px solid #a24b7c;
+ border-radius:14px;color:#fff7fc;
+}
+body:not(:has(.love-discover)) input:focus-visible,
+body:not(:has(.love-discover)) select:focus-visible,
+body:not(:has(.love-discover)) textarea:focus-visible,
+body:not(:has(.love-discover)) button:focus-visible{
+ outline:2px solid #ffbfdf;outline-offset:2px;
+}
+body:not(:has(.love-discover)) .nav{
+ background:linear-gradient(180deg,#251025f2,#120918f5);
+ border-top:1px solid #de6b9f66;
+ box-shadow:0 -7px 30px #08040dc2,0 -1px 12px #f44b952b;
+ backdrop-filter:blur(22px);
+}
+body:not(:has(.love-discover)) .nav button{
+ color:#dcbbd0;border:1px solid transparent;border-radius:17px;
+}
+body:not(:has(.love-discover)) .nav button.active{
+ color:#fff0f8;border-color:#f79bc14d;
+ background:linear-gradient(140deg,#7c2456,#4a1d42);
+ box-shadow:inset 0 1px #ffd2e344,0 0 20px #f36aaa27;
+}
+body:not(:has(.love-discover)) .pill.selected{
+ background:linear-gradient(130deg,#d02a7d,#8f225b);border-color:#f38ebd;
+ box-shadow:0 2px 10px #ca207147;
+}
+body:not(:has(.love-discover)) .stat,
+body:not(:has(.love-discover)) .banner,
+body:not(:has(.love-discover)) .invite-status{
+ background:linear-gradient(135deg,#4a1937,#32162e);
+ border:1px solid #a74c7b66;border-radius:17px;
+}
+body:not(:has(.love-discover)) .die{
+ background:radial-gradient(ellipse at 36% 17%,#9e205b,#34132d 60%,#14091a);
+ border-color:#e879b2aa;border-radius:21px;
+ box-shadow:0 13px 28px #0a0415ae,inset 0 0 31px #fa3e914a;
+}
+body:not(:has(.love-discover)) .calendar button.marked,
+body:not(:has(.love-discover)) .day-grid button:not(.locked){
+ border:1px solid #eb8db866;box-shadow:inset 0 1px #ffabd02b;
+}
+body:not(:has(.love-discover)) .settings-group>summary{background:transparent;color:#ffe3f2;}
+body:not(:has(.love-discover)) .settings-group-content{border-top:1px solid #b8638b61;}
+body:not(:has(.love-discover)) .settings-group-icon{
+ background:linear-gradient(130deg,#672248,#341634);border:1px solid #d65e97a1;color:#ffa8d1;
+ box-shadow:0 0 16px #ef479034;
+}
+body:not(:has(.love-discover)) #toast{background:#461735;border:1px solid #ff92c4;box-shadow:0 11px 35px #06010a;}
+@media(prefers-reduced-motion:no-preference){
+ body:not(:has(.love-discover)) .card,body:not(:has(.love-discover)) button{
+  transition:background-color .16s ease,border-color .16s ease,box-shadow .16s ease;
+ }
+}
+
+/* Design 2 shared material system. Loaded after page layout sheets. */
+:root{
+ --bg:#10070c;--panel:#24121b;--edge:#8e5366;--pink:#d6789a;
+ --text:#f5e5e9;--mute:#c6a9b5;--love-rose:#e8b2c0;--love-wine:#401526;
+ --love-border:var(--ritual-border);--love-glass:var(--ritual-card);
+ --love-glow:inset 0 1px #f5d3dd12,0 10px 24px #09030945;
+ --ritual-action:var(--ritual-button);
+}
+body{background:radial-gradient(ellipse at 0 25%,#5b1c3744,transparent 55%),#10070c;color:var(--text);}
+#app:is(.loveroll-evening-page,.loveroll-surprise-page,.loveroll-advent-page,.loveroll-settings-page){background:var(--ritual-page);}
+#app :is(h1,h2,.surprise-header h1,.evening-intro h2,.advent-title){font-family:Georgia,"Times New Roman",serif;color:#f0cdd0;letter-spacing:-.025em;text-shadow:none;}
+#app :is(.evening-step,.evening-gift,.surprise-main,.surprise-special,.surprise-event-card,.settings-group,.settings-hero,.settings-section,.card,.auth-panel,.waiting-hero,.invite-panel,.love-dialog,.evening-review-modal,.evening-calendar-session){background:var(--love-glass);border-color:var(--love-border);box-shadow:var(--love-glow);border-radius:20px;}
+#app :is(.evening-user-die,.evening-partner-card,.evening-status,.surprise-invite-inside,.settings-item,.advent-door){background:linear-gradient(140deg,#321824a8,#180e17e6);border-color:#b67e9345;box-shadow:inset 0 1px #f5cfdb12;}
+#app :is(.evening-primary,.evening-small-roll,.surprise-primary,.surprise-invite-button,.auth-primary,.discover-accept,.love-dialog-confirm){background:var(--ritual-action);border:1px solid #e5b3c381;box-shadow:inset 0 1px #f8d8e566,0 6px 16px #ad325027;border-radius:999px;color:#fff0f3;}
+#app :is(.evening-primary,.evening-small-roll,.surprise-primary,.surprise-invite-button):disabled{background:linear-gradient(145deg,#44232f,#2a1622);color:#d4b7c5;opacity:.65;box-shadow:none;}
+#app :is(.evening-choice-btn,.pill){border-color:#ac71865c;box-shadow:none;background:#27121e;color:#dabbca;}
+#app :is(.evening-choice-btn[aria-pressed="true"],.pill.selected){background:linear-gradient(145deg,#873455,#47172e);border-color:#dd9db4;color:#ffe7ed;box-shadow:inset 0 1px #f1bfce30;}
+#app :is(.evening-step-label strong,.settings-group-heading strong,.surprise-special h2){color:#ebc9d2;}
+#app :is(.advent-door:not(.locked),.day-grid button:not(.locked)){border-color:#bd8b9a8c;background:linear-gradient(145deg,#502638,#24131e);box-shadow:inset 0 1px #f6dbe128;}
+#app :is(.advent-door.locked,.day-grid button.locked){background:#1e131b;color:#a88d9c;border-color:#7d546431;box-shadow:none;}
+#app :is(input,select,textarea){background:#1b1018;border-color:#ae7c8b6e;color:#f7e7ed;border-radius:14px;}
+#app :is(button,input,select,textarea,summary):focus-visible{outline:2px solid #f0b8c9;outline-offset:3px;}
+#app button{touch-action:manipulation;}
+#app .nav{background:#130b11ee;backdrop-filter:blur(18px);border-top:1px solid #bd82984a;box-shadow:0 -5px 24px #06020566;border-radius:24px 24px 0 0;}
+#app .nav-inner{max-width:960px;gap:4px;}
+#app .nav button{position:relative;background:transparent;color:#d6b4c4;border-color:transparent;box-shadow:none;border-radius:20px;font-weight:500;}
+#app .nav button.active{background:radial-gradient(ellipse at 50% 0,#98365166,transparent 85%);color:#ffe1eb;border-color:#ba778b30;box-shadow:none;}
+#app .nav button.active::after{content:"";position:absolute;bottom:4px;left:27%;right:27%;height:2px;border-radius:2px;background:#ecb2c6;box-shadow:0 0 7px #e184a15c;}
+#app .nav svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;}
+#app .settings-group summary{min-height:52px;}
+#app .settings-group-icon{background:#402031;color:#e9b7cb;border-color:#c28b9c50;box-shadow:none;}
+#app .love-discover{background:radial-gradient(ellipse at 0% 30%,#5e1b3633,transparent 65%),#10070c;}
+#app .discover-header h1{color:#f4d8d9;}
+#app :is(.discover-feature,.discover-finale){background:var(--love-glass);border-color:var(--love-border);box-shadow:var(--love-glow);}
+#app .discover-feature-symbol{color:#d99bb4;text-shadow:none;}
+#toast,.lr-dialog{background:#30151f;border-color:#bb8194;box-shadow:0 14px 45px #0008;color:#f4dce7;}
+/* Shared ritual materials also replace the older, brighter tab surfaces. */
+main#app:is(.loveroll-surprise-page,.loveroll-advent-page,.loveroll-settings-page) :is(.surprise-month,.surprise-special,.surprise-event-card,.surprise-invite-inside,.advent-shell,.advent-intro,.settings-group,.settings-item){background:var(--ritual-card);border-color:var(--ritual-border);box-shadow:var(--ritual-shadow);}
+main#app:is(.loveroll-surprise-page,.loveroll-advent-page,.loveroll-settings-page) :is(h1,h2,h3,.surprise-month-title strong,.surprise-event-title){color:var(--ritual-text);text-shadow:none;}
+main#app.loveroll-surprise-page :is(.surprise-d20-scene,.surprise-main-die-scene){background:url('./assets/ritual-satin-v115.webp') center 62%/cover no-repeat;box-shadow:none;}
+main#app.loveroll-surprise-page :is(.surprise-primary,.surprise-invite-button){background:var(--ritual-button);box-shadow:var(--ritual-shadow);color:var(--ritual-text);}
+main#app.loveroll-surprise-page :is(.surprise-event-days,.surprise-host-option){background:var(--ritual-card);color:var(--ritual-muted);box-shadow:none;}
+main#app.loveroll-advent-page .advent-box{background:var(--ritual-card);color:var(--ritual-text);box-shadow:var(--ritual-shadow);}
+main#app.loveroll-advent-page .advent-box.available{background:var(--ritual-button);}
+main#app.loveroll-advent-page :is(.advent-intro h2 em,.advent-overline,.advent-today-tag){color:var(--ritual-rose);text-shadow:none;}
+main#app.loveroll-advent-page .advent-box-shimmer{opacity:.2;}
+main#app.loveroll-advent-page .advent-top-heart,main#app.loveroll-advent-page .advent-intro::before,main#app.loveroll-advent-page .advent-intro::after{color:var(--ritual-rose);text-shadow:none;}
+@media(prefers-reduced-motion:reduce){#app *,#app *::before,#app *::after{animation-duration:0s;transition-duration:0s;scroll-behavior:auto;}}
+
+/* All ritual headers follow the Home vertical anchor and wordmark proportions. */
+:root{--ritual-page-top:8px;--ritual-brand-height:49px;--ritual-brand-gap:12px;--ritual-heart-size:26px;--ritual-heart-line:22px;--ritual-word-size:23px;--ritual-word-line:27px;--ritual-kicker-offset:6px;--ritual-inline-kicker-offset:0px;}
+@media(max-width:767px){:root{--ritual-page-top:6px;--ritual-brand-gap:6px;}}
+@media(max-width:767px) and (max-height:860px){:root{--ritual-brand-height:37px;--ritual-brand-gap:3px;--ritual-heart-size:18px;--ritual-heart-line:16px;--ritual-word-size:18px;--ritual-word-line:21px;--ritual-kicker-offset:7px;--ritual-inline-kicker-offset:1px;}}
+@media(min-width:768px){:root{--ritual-page-top:20px;}}
+
+/* The caption has an explicit line box, independent of page title and columns. */
+:root{--ritual-kicker-height:14px;--ritual-heading-height:calc(var(--ritual-brand-height) + var(--ritual-brand-gap) + var(--ritual-kicker-height));}
+main#app .ritual-heading{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:var(--ritual-brand-gap);flex:none;box-sizing:border-box;width:100%;height:var(--ritual-heading-height);min-width:0;text-align:center;}
+main#app .ritual-heading>.ritual-brand{flex:none;height:var(--ritual-brand-height);justify-content:center;margin:0;}
+main#app .ritual-heading>.ritual-brand i{font:var(--ritual-heart-size)/var(--ritual-heart-line) Georgia,serif;color:var(--ritual-rose);}
+main#app .ritual-heading>.ritual-brand b{font:italic var(--ritual-word-size)/var(--ritual-word-line) Georgia,serif;font-weight:400;}
+main#app .ritual-heading>.ritual-kicker{display:block;flex:none;box-sizing:border-box;width:100%;height:var(--ritual-kicker-height);margin:0;padding:0;text-align:center;font:600 10px/var(--ritual-kicker-height) system-ui,sans-serif;letter-spacing:.2em;text-indent:.2em;white-space:nowrap;color:var(--ritual-rose);}
