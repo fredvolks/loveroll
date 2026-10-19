@@ -32,6 +32,7 @@ import {guidedIdeas,guidanceFor} from './wellbeing.mjs';
 
 import { SPECIAL_SURPRISES,OCCASIONS,occasionDate,dueOccasions,specialSurprise,occasionRoles,TARGETED_OCCASIONS } from './special-occasions.mjs';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.0';
+import {worldwideSettingsHtml,localeOrDefault,currencyOrDefault,normalizeSharedTravel,t as worldT} from './world-preferences.mjs';
 import { CONFIG } from './config.js';
 import {normalizeInviteEmail,composeInviteEmail} from './invite-email.mjs';
 import {enablePush,disablePush,updatePushPreference,sendTestPush,notificationSettingsMarkup,safeNativePushToken,currentPushDevice} from './push-notifications.mjs?v=20261017-complete127';
@@ -52,6 +53,9 @@ const launchParams=new URLSearchParams(location.search);
 const requestedSettingsSection=launchParams.get('section')||'';
 let settingsOpenSection=requestedSettingsSection||'';
 let notificationFeedback=null;
+let worldGpsDraft=null;
+const worldLocale=()=>localeOrDefault(state.profile?.preferred_locale);
+const worldText=key=>worldT(worldLocale(),key);
 const state={user:null,profile:null,members:[],coupleId:null,couple:null,
  tab:launchParams.has('settings')?'settings':(['home','session','special','advent'].includes(launchParams.get('open'))?launchParams.get('open'):'home'),weekly:null,monthly:{},session:null,personal:[],challenges:[],gifts:[],rollStatus:null,customCards:[],customCategory:'SENSUEL',customSlot:1,customSearch:'',customFilter:'all',monthlyActivities:[],monthlySlot:1,libraryScreen:'list',libraryImportKind:null,specialEditorKey:null,specialEditorStage:'D6_activite',specialEditorFace:1,adventEditorDay:1,pushDevice:null,
  events:[],journal:[],advent:[],advent2026Config:null,advent2026Days:[],selectedDay:1,adventYear:null,adventSelected:null,adventHistory:false,adventOpening:null,adventRevealing:false,adventServerDate:null,unlockKey:null,channel:null,
@@ -344,10 +348,10 @@ function navIcon(key,fallback){
 }
 function nav(){
  const tabs=isSharedCoupleReady(state.coupleId,state.members)?
- [['home','⌂','Accueil'],['session','🎲','Soirée'],['special','✦','Surprise'],
-  ['advent','🎁','Avent'],['settings','⚙','Réglages']]:
- [['home','⌂','Accueil'],...(isLoveAdmin()?[['library','♡','Mes cartes']]:[]),
-  ['personal-journal','♥','Calendrier'],['settings','⚙','Réglages']];
+ [['home','⌂',worldText('home')],['session','🎲',worldText('evening')],['special','✦',worldText('surprise')],
+  ['advent','🎁',worldText('advent')],['settings','⚙',worldText('settings')]]:
+ [['home','⌂',worldText('home')],...(isLoveAdmin()?[['library','♡','Mes cartes']]:[]),
+  ['personal-journal','♥','Calendrier'],['settings','⚙',worldText('settings')]];
  return '<nav class="nav"><div class="nav-inner" style="grid-template-columns:repeat('+tabs.length+',minmax(0,1fr))">'+tabs.map(([key,icon,label])=>
  '<button data-action="tab:'+key+'" class="'+((state.tab===key||(['session','personal-journal'].includes(key)&&state.tab==='evening-calendar')||(key==='special'&&state.tab==='occasions')||(key==='settings'&&!tabs.some(([tab])=>tab===state.tab)&&['library','monthly-library','advent-editor','special-editor','journal'].includes(state.tab)))?'active':'')+'"'+(state.diceStatus?' disabled':'')+'><span>'+navIcon(key,icon)+
  '</span>'+safe(label)+'</button>').join('')+'</div></nav>';
@@ -1787,7 +1791,7 @@ function adminCategoryWeightEditor(){
   '</div></details>';
 }
 function openSettingsPage(section=''){
- const allowed=['','compte','couple','notifications','jeu','confidentialite','application','aide','aide-connexion','aide-des','aide-sync','admin'];
+ const allowed=['','compte','couple','notifications','jeu','confidentialite','application','monde','aide','aide-connexion','aide-des','aide-sync','admin'];
  if(!allowed.includes(section))return;
  if(section==='admin'&&!isLoveAdmin())throw Error('Options réservées au créateur du couple.');
  if(section!==settingsOpenSection||state.tab!=='settings')notificationFeedback=null;
@@ -1925,10 +1929,12 @@ function renderSettings(){
  const support='<div class="settings-help-list">'+helpEntries.map(([title,answer])=>
   '<details class="settings-help-item"><summary>'+safe(title)+'<span aria-hidden="true">⌄</span></summary>'+
   '<p>'+safe(answer)+'</p></details>').join('')+'</div>';
+ const world=worldwideSettingsHtml({locale:worldLocale(),currency:currencyOrDefault(state.profile?.preferred_currency),couple:state.couple||{}});
  const pages={compte:{title:'Mon compte',body:account},couple:{title:'Notre duo',body:partner},
   notifications:{title:'Notifications',body:notifications},jeu:{title:'Cartes et activités',body:game},
   confidentialite:{title:'Journal et confidentialité',body:privacy},
   application:{title:'Application et aide',body:appSettings},
+  monde:{title:worldText('title'),body:world},
   'aide-connexion':{title:'Connexion et invitation',body:'<p>Chaque personne utilise son propre compte. Confirmez votre courriel avant de rejoindre votre partenaire. L’invitation reste conservée pendant la connexion, Google et la récupération du mot de passe.</p><p>Dans Notre duo, le créateur prépare un lien privé. Le destinataire l’accepte avec le courriel auquel il a été invité.</p>'},
   'aide-des':{title:'Dés et activités',body:'<p>Le dé hebdomadaire est commun : un tirage par couple et par semaine. En Soirée, chacun brasse son D6 personnel ; les deux résultats déverrouillent les défis.</p><p>Sensuel et Sexuel : 88/12 par défaut, modifiable dans Options avancées. Aléatoire reste à 50/50. Un défi passé retourne dans le tirage et son passage reste dans le calendrier.</p><p>La Surprise du mois choisit une activité puis qui invite. L’Avent se débloque par date : une lettre oubliée reste ouvrable plus tard. Vous pouvez donner jusqu’à trois défis par personne et par mois. Les dons et les trois passages gratuits recommencent le 1er du mois, selon l’heure du Québec. Après 200 défis réalisés, les deux personnes choisissent de diminuer, conserver ou augmenter leur intensité pour le prochain cycle.</p>'},
   'aide-sync':{title:'Synchronisation',body:'<p>Les résultats officiels proviennent du serveur et se retrouvent sur les deux comptes associés. Une connexion est nécessaire pour confirmer un lancer ou une ouverture.</p><p>Les listes personnelles de défis restent privées. Les bilans de soirée restent associés à leur auteur dans le calendrier commun.</p>'},
@@ -1940,7 +1946,8 @@ function renderSettings(){
  const name=state.profile.display_name||'Mon profil',initial=Array.from(name)[0]||'♡';
  const items=[['couple','Notre duo',hasPartner?state.members.map(m=>m.name).join(' & '):linked?'Invitation en attente':'Inviter mon partenaire'],
   ['notifications','Notifications','Rappels et autorisations'],['jeu','Cartes et activités','Soirée, Surprise et Avent'],
-  ['confidentialite','Journal et confidentialité','Calendrier, bilans et données'],['application','Application et aide','Versions et fonctionnement']];
+  ['confidentialite','Journal et confidentialité','Calendrier, bilans et données'],
+  ['monde',worldText('menu'),worldText('menuDesc')],['application','Application et aide','Versions et fonctionnement']];
  const menu='<button class="settings-profile-row" data-action="settings-page:compte"><span class="settings-initial" aria-hidden="true">'+safe(initial)+'</span><span><strong>'+safe(name)+'</strong><small>Mon compte</small></span><b aria-hidden="true">›</b></button>'+
   '<nav class="settings-sections" aria-label="Rubriques des réglages">'+items.map(([key,label,detail])=>
    '<button data-action="settings-page:'+key+'" class="settings-section-row"><span class="settings-row-icon">'+settingsIcon(key)+'</span><span><strong>'+label+'</strong><small>'+safe(detail)+'</small></span><b aria-hidden="true">›</b></button>').join('')+'</nav>';
@@ -2067,6 +2074,50 @@ async function handle(action,element){
  if(['editor-back','editor-import','editor-import-back','custom-slot','custom-category','monthly-slot','special-editor-event','special-editor-back','special-editor-stage','special-editor-face','set-celebrant'].includes(verb)){
   if(hasUnsavedForm()&&!(await premiumConfirm('Vos modifications non enregistrées seront perdues. Voulez-vous quitter cette page ?', {kind:'library',title:'Quitter sans enregistrer ?',accept:'Quitter',cancel:'Rester'})))return;
   lastFormTab=null;
+ }
+ if(verb==='save-world-personal'){
+  if(!state.user||!state.profile)throw Error('Compte requis.');
+  const locale=localeOrDefault(id('world-locale')?.value),currency=currencyOrDefault(id('world-currency')?.value);
+  const {error}=await client.from('couple_profiles').update({preferred_locale:locale,preferred_currency:currency}).eq('id',state.user.id);
+  if(error)throw error;
+  state.profile={...state.profile,preferred_locale:locale,preferred_currency:currency};
+  document.documentElement.lang=locale;worldGpsDraft=null;
+  render();notify(worldText('saved'));return;
+ }
+ if(verb==='world-gps'){
+  if(!navigator.geolocation){const target=id('world-gps-status');if(target)target.textContent=worldText('geolocationUnavailable');return;}
+  const target=id('world-gps-status');if(target)target.textContent='GPS…';
+  navigator.geolocation.getCurrentPosition(
+   position=>{
+    // Never store precise GPS: round coordinates to ~1.1 km before any network write.
+    const lat=Math.round(position.coords.latitude*100)/100,lon=Math.round(position.coords.longitude*100)/100;
+    worldGpsDraft={lat,lon};
+    const field=id('world-origin');if(field)field.value='GPS ≈ '+lat.toFixed(2)+', '+lon.toFixed(2);
+    const notice=id('world-gps-status');if(notice)notice.textContent=worldText('gpsDetected');
+   },
+   error=>{const notice=id('world-gps-status');if(notice)notice.textContent=worldText(error.code===1?'geolocationRefused':'geolocationUnavailable');},
+   {enableHighAccuracy:false,timeout:10000,maximumAge:600000}
+  );return;
+ }
+ if(verb==='save-world-duo'){
+  if(!state.coupleId||!state.couple)throw Error('Un duo est nécessaire.');
+  const label=String(id('world-origin')?.value||'').trim();
+  const radius=Number(id('world-radius')?.value);
+  const enabled=!!id('world-local-enabled')?.checked;
+  const sameAsBefore=label===String(state.couple.travel_origin_label||'').trim();
+  const draftMatches=!!worldGpsDraft&&label==='GPS ≈ '+worldGpsDraft.lat.toFixed(2)+', '+worldGpsDraft.lon.toFixed(2);
+  const data=normalizeSharedTravel({
+   travel_origin_label:label,travel_radius_km:radius,activity_localization_enabled:enabled,
+   travel_origin_lat:draftMatches?worldGpsDraft.lat:(sameAsBefore?state.couple.travel_origin_lat:null),
+   travel_origin_lon:draftMatches?worldGpsDraft.lon:(sameAsBefore?state.couple.travel_origin_lon:null)
+  });
+  await rpc('save_love_travel_preferences',{
+   p_couple:state.coupleId,p_label:data.travel_origin_label,
+   p_lat:data.travel_origin_lat,p_lon:data.travel_origin_lon,
+   p_radius:data.travel_radius_km,p_enabled:data.activity_localization_enabled
+  });
+  state.couple={...state.couple,...data};worldGpsDraft=null;
+  render();notify(worldText('saved'));return;
  }
  if(verb==='editor-back'){state.libraryScreen='list';render();return;}
  if(verb==='editor-import'){
