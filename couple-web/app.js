@@ -56,12 +56,15 @@ let settingsOpenSection=requestedSettingsSection||'';
 let notificationFeedback=null;
 let worldGpsDraft=null;
 let worldFx=null,worldFxPending=null,worldFxFailed=null;
+let geoFetchActive=null,geoFetchSeen=new Set();
+const worldGeoEnabled=()=>state.couple?.activity_localization_enabled===true&&!!state.monthly?.monthly_activity&&state.monthly.monthly_activity.activity_region===null;
+const currentHost=()=>{const h=state.monthly?.monthly_host;return h?state.members[h.face%2===0?0:1]:null;};
 const worldLocale=()=>localeOrDefault(state.profile?.preferred_locale);
 const worldText=key=>worldT(worldLocale(),key);
 const state={user:null,profile:null,members:[],coupleId:null,couple:null,
  tab:launchParams.has('settings')?'settings':(['home','session','special','advent'].includes(launchParams.get('open'))?launchParams.get('open'):'home'),weekly:null,monthly:{},session:null,personal:[],challenges:[],gifts:[],rollStatus:null,customCards:[],customCategory:'SENSUEL',customSlot:1,customSearch:'',customFilter:'all',monthlyActivities:[],monthlySlot:1,libraryScreen:'list',libraryImportKind:null,specialEditorKey:null,specialEditorStage:'D6_activite',specialEditorFace:1,adventEditorDay:1,pushDevice:null,
  events:[],journal:[],advent:[],advent2026Config:null,advent2026Days:[],selectedDay:1,adventYear:null,adventSelected:null,adventHistory:false,adventOpening:null,adventRevealing:false,adventServerDate:null,unlockKey:null,channel:null,
- occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],calendarPassMonth:null,cycleStatus:null,cycleDeferred:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null};
+ occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],calendarPassMonth:null,cycleStatus:null,cycleDeferred:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoBookingEdit:false};
 const names={SENSUEL:'Sensuel',COQUIN:'Coquin',SEXUEL:'Sexuel'};
 function isSharedCoupleReady(coupleId,members){
  return !!coupleId&&Array.isArray(members)&&members.length===2;
@@ -833,6 +836,15 @@ async function refreshShared(){
  state.weekly=rolls.find(r=>r.kind==='weekly'&&r.key===week());
  state.monthly={};
  for(const r of rolls.filter(r=>r.key===month()))state.monthly[r.kind]=r;
+ const activeMonthlyRoll=state.monthly.monthly_activity;
+ if(activeMonthlyRoll){
+  const [places,bookings]=await Promise.all([
+   query('love_monthly_places',{eq:{roll_id:activeMonthlyRoll.id}}),
+   query('love_monthly_reservations',{eq:{roll_id:activeMonthlyRoll.id}})
+  ]);
+  state.geoVenue=places[0]||null;state.geoReservation=bookings[0]||null;
+  state.geoLookup=state.geoVenue?.state||'idle';
+ }else{state.geoVenue=null;state.geoReservation=null;state.geoLookup='idle';state.geoBookingEdit=false;}
  state.session=sessions.find(s=>s.finished_at===null)||null;
  state.sessions=sessions;state.events=events;state.journal=diary;state.advent=advents;state.adventServerDate=adventServerDate;
  // After manual/automatic closure, both partners see their own review bubble.
@@ -1364,6 +1376,29 @@ function optionalRolledTimer(roll){
  return state.specialTimerKey===key?timerWidget({id:key},roll.timer_minutes):
   button('special-timer:'+key,editorialIcon('clock')+' Minuteur · '+roll.timer_minutes+' min','class="subtle occasion-timer"');
 }
+async function resolveMonthlyGeo(){
+ const roll=state.monthly?.monthly_activity;
+ if(!worldGeoEnabled()||!roll||state.geoVenue?.state==='ready'||state.geoVenue?.state==='unavailable')return;
+ if(geoFetchActive===roll.id||geoFetchSeen.has(roll.id))return;
+ geoFetchSeen.add(roll.id);geoFetchActive=roll.id;state.geoLookup='loading';
+ if(state.tab==='special'&&state.showSurpriseActivity)render();
+ try{
+  const {data,error}=await client.functions.invoke('love-geo-surprise',{body:{roll_id:roll.id}});
+  if(error)throw error;
+  if(data?.error)throw Error(data.error);
+  if(state.monthly?.monthly_activity?.id!==roll.id)return;
+  if(data?.status==='ready'&&data.venue){state.geoVenue=data.venue;state.geoLookup='ready';}
+  else if(data?.status==='unavailable')state.geoLookup='unavailable';
+  else if(data?.status==='disabled')state.geoLookup='idle';
+  else if(data?.status==='pending')state.geoLookup='pending';
+  else state.geoLookup='error';
+ }catch(error){
+  state.geoLookup='error';console.warn('Localisation de la sortie indisponible',error?.message||'unknown');
+ }finally{
+  if(geoFetchActive===roll.id)geoFetchActive=null;
+  if(state.tab==='special'&&state.showSurpriseActivity)render();
+ }
+}
 function renderSpecial(){
  const quote=currencyOrDefault(state.profile?.preferred_currency);
  if(state.showSurpriseActivity&&quote!=='CAD'&&worldFx?.quote!==quote&&worldFxPending!==quote&&worldFxFailed!==quote){
@@ -1381,6 +1416,9 @@ function renderSpecial(){
  frame(premiumSurpriseHtml({
    monthly,members:state.members,settings:state.occasionSettings||{},
    activity,currency:quote,locale:worldLocale(),exchange:worldFx?.quote===quote?worldFx:null,
+   geoEnabled:worldGeoEnabled(),geoVenue:state.geoVenue,geoLookup:state.geoLookup,
+   reservation:state.geoReservation,canReserve:currentHost()?.user_id===state.user?.id,
+   bookingEditor:state.geoBookingEdit,
    timerHtml:state.showSurpriseActivity&&activity?.timer_minutes?
     timerWidget({id:'monthly-'+month()},activity.timer_minutes):'',
    rolling:!!state.diceStatus,rollingKind,rollFace:state.rollAnimationFace,
@@ -3307,6 +3345,7 @@ async function handle(action,element){
    // Only after Supabase confirms the official D100 and its 3D animation ends.
    state.showSurpriseActivity=!!state.monthly?.monthly_activity;
    render();
+   if(worldGeoEnabled())void resolveMonthlyGeo();
    return;
   }
   // Host and restaurant result labels already update in place.
