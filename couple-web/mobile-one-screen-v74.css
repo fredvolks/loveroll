@@ -1,0 +1,320 @@
+/* LoveRoll v74: compact mobile-first ONE-SCREEN navigation.
+   Browsers with a toolbar (Messenger, Chrome, Safari) supply a smaller dynamic
+   viewport; every primary view must respond WITHOUT page scrolling.
+   Long editing dialogs are separate workspaces and retain accessible content. */
+@media (max-width:767px){
+ 
+ main#app.loveroll-evening-page:not(.loveroll-editorial),
+ main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin),
+ main#app.loveroll-advent-page:not(.loveroll-advent-letters){
+  box-sizing:border-box!important;display:flex!important;flex-direction:column!important;
+  width:100%!important;max-width:none!important;
+  height:100dvh!important;min-height:0!important;max-height:100dvh!important;
+  padding:max(var(--ritual-page-top),env(safe-area-inset-top,0px)) 8px 0!important;
+  overflow:hidden!important;
+  --lr-nav-space:calc(62px + env(safe-area-inset-bottom,0px));
+ }
+ 
+ main#app.loveroll-evening-page:not(.loveroll-editorial)>.nav,
+ main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin)>.nav,
+ main#app.loveroll-real-home>.nav,
+ main#app.loveroll-settings-page>.nav,
+ main#app.loveroll-advent-page:not(.loveroll-advent-letters)>.nav{
+  position:fixed!important;left:0!important;right:0!important;bottom:0!important;
+  z-index:5000!important;box-sizing:border-box!important;
+  padding:2px 3px calc(3px + env(safe-area-inset-bottom,0px))!important;
+ }
+ 
+ main#app.loveroll-evening-page:not(.loveroll-editorial)>.nav button,
+ main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin)>.nav button,
+ main#app.loveroll-real-home>.nav button,
+ main#app.loveroll-settings-page>.nav button,
+ main#app.loveroll-advent-page:not(.loveroll-advent-letters)>.nav button{
+  min-height:52px!important;padding:3px 1px!important;
+  line-height:1.03!important;font-size:clamp(.58rem,2.3vw,.76rem)!important;
+  display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;
+ }
+ 
+ main#app.loveroll-evening-page:not(.loveroll-editorial)>.nav button span,
+ main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin)>.nav button span,
+ main#app.loveroll-real-home>.nav button span,
+ main#app.loveroll-settings-page>.nav button span,
+ main#app.loveroll-advent-page:not(.loveroll-advent-letters)>.nav button span{
+  font-size:1.25rem!important;line-height:1.08!important;margin:0!important;
+ }
+ main#app.loveroll-evening-page:not(.loveroll-editorial)>.header,
+ main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin)>.header{display:none!important;}
+ 
+ main#app.loveroll-evening-page:not(.loveroll-editorial)>.evening-premium-view,
+ main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin)>.surprise-premium-view,
+ main#app.loveroll-advent-page:not(.loveroll-advent-letters)>.advent-premium-view{
+  flex:1 1 0!important;min-width:0!important;min-height:0!important;
+  height:auto!important;max-height:none!important;
+  width:min(100%,820px)!important;margin:0 auto var(--lr-nav-space)!important;
+  padding:0 0 2px!important;overflow:hidden!important;
+  display:grid!important;align-content:stretch!important;
+  gap:clamp(2px,.45dvh,5px)!important;
+ }
+ /* SOIRÉE: retain all actions, rather than clipping the lower part of Step 2. */
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-premium-view{
+  grid-template-rows:minmax(36px,.48fr) minmax(39px,.47fr)
+    minmax(128px,1.64fr) minmax(211px,3.1fr) minmax(45px,.56fr)!important;
+  grid-auto-rows:minmax(0,auto)!important;
+ }
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-topline .heartline{font-size:1.8rem!important;}
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-topline h1{font-size:clamp(1.15rem,4.4vw,1.55rem)!important;}
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-topline p{font-size:.61rem!important;}
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-more-button{height:38px!important;min-height:38px!important;padding:3px 7px!important;min-width:75px!important;}
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-intro h2{font-size:clamp(1.18rem,4.6vw,1.72rem)!important;margin:1px!important;}
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-intro>span{font-size:.59rem!important;letter-spacing:.10em!important;}
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-intro p{font-size:.64rem!important;}
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-step{
+  box-sizing:border-box!important;min-height:0!important;overflow:hidden!important;
+  padding:4px 6px!important;gap:3px!important;
+ }
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-step-label{min-height:26px!important;gap:6px!important;}
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .step-number{width:27px!important;height:27px!important;font-size:1rem!important;}
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-step-label strong{font-size:clamp(.69rem,2.7vw,.84rem)!important;line-height:1.03!important;}
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-step-label small{font-size:.59rem!important;line-height:1.06!important;}
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-d6-grid{flex:1 1 0!important;min-height:0!important;gap:5px!important;}
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-user-die{
+  min-width:0!important;min-height:0!important;overflow:hidden!important;
+  grid-template-rows:15px minmax(0,1fr) auto!important;
+  padding:2px!important;gap:1px!important;
+ }
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-person{font-size:.70rem!important;}
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-face-result small{font-size:.55rem!important;}
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-small-roll{
+  min-height:35px!important;padding:3px!important;font-size:.68rem!important;
+ }
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-ready{flex:none!important;padding:1px!important;font-size:.61rem!important;}
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-progress{flex:none!important;gap:5px!important;}
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-progress>span{
+  padding:3px 5px!important;font-size:.63rem!important;min-height:22px!important;
+ }
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-progress b{font-size:.80rem!important;}
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-play{
+  min-width:0!important;min-height:0!important;height:auto!important;flex:1 1 0!important;
+  display:grid!important;grid-template-columns:43% minmax(0,1fr)!important;gap:5px!important;
+  overflow:hidden!important;
+ }
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-d35-col{
+  min-height:0!important;min-width:0!important;overflow:hidden!important;
+ }
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-play-controls{
+  min-width:0!important;min-height:0!important;overflow:visible!important;
+  display:flex!important;flex-direction:column!important;
+  justify-content:space-between!important;gap:2px!important;
+ }
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-play-controls p{
+  font-size:clamp(.60rem,2vw,.74rem)!important;line-height:1.08!important;margin:0!important;
+ }
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-play-controls>small{
+  font-size:clamp(.54rem,1.8vw,.65rem)!important;line-height:1.06!important;
+ }
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-choice{gap:3px!important;}
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-choice-btn{min-height:35px!important;padding:3px 1px!important;font-size:clamp(.60rem,2.05vw,.78rem)!important;}
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-play-controls .evening-primary{
+  flex:none!important;min-height:38px!important;padding:3px!important;
+  font-size:clamp(.69rem,2.3vw,.87rem)!important;
+ }
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-play-controls .evening-queue-open-btn{
+  flex:none!important;min-height:37px!important;padding:3px 5px!important;
+  font-size:clamp(.69rem,2.15vw,.84rem)!important;margin:0!important;
+ }
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-play-state{font-size:.60rem!important;}
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-gift{min-height:0!important;padding:3px 7px!important;gap:4px!important;}
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-gift strong{font-size:.66rem!important;}
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-gift p{font-size:.57rem!important;margin:1px 0!important;}
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-gift-btn{
+  min-height:35px!important;padding:3px 5px!important;font-size:.65rem!important;
+ }
+ /* SURPRISE: four fixed-height panels; D20/D6 stages resize inside them. */
+ main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin) .surprise-premium-view{
+  grid-template-rows:minmax(39px,.45fr) minmax(164px,2.05fr)
+   minmax(134px,1.65fr) minmax(155px,2fr)!important;
+ }
+ main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin) .surprise-header h1{font-size:clamp(1.15rem,4.7vw,1.65rem)!important;}
+ main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin) .surprise-header p{font-size:.63rem!important;}
+ main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin) .surprise-month,
+ main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin) .surprise-host,
+ main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin) .surprise-special{
+  box-sizing:border-box!important;min-height:0!important;max-height:none!important;
+  overflow:hidden!important;padding:4px 7px!important;gap:2px!important;
+ }
+ main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin) .surprise-headline strong{font-size:.73rem!important;}
+ main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin) .surprise-month-title strong{font-size:.75rem!important;}
+ main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin) .surprise-month-title small{font-size:.57rem!important;margin-top:1px!important;}
+ main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin) .surprise-d20-scene{
+  min-height:0!important;height:auto!important;flex:1 1 0!important;max-height:none!important;
+ }
+ main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin) .surprise-month>.surprise-primary,
+ main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin) .surprise-host>.surprise-primary{
+  flex:0 0 38px!important;min-height:38px!important;padding:3px 5px!important;
+ }
+ main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin) .surprise-host>p{font-size:.59rem!important;}
+ main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin) .surprise-host-grid{
+  min-height:0!important;height:auto!important;flex:1 1 0!important;
+  grid-template-columns:minmax(0,1fr) minmax(65px,.65fr) minmax(0,1fr)!important;
+ }
+ main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin) .surprise-host-die{
+  min-height:0!important;height:100%!important;max-height:none!important;
+ }
+ main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin) .surprise-host-partner{min-height:0!important;}
+ main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin) .surprise-special-grid{
+  min-height:0!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  grid-template-rows:repeat(3,minmax(0,1fr))!important;gap:3px!important;
+ }
+ main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin) .surprise-event-card{min-height:0!important;padding:1px 4px!important;}
+ main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin) .surprise-event-title{font-size:clamp(.56rem,2.05vw,.72rem)!important;}
+ main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin) .surprise-event-days{font-size:.52rem!important;padding:2px 4px!important;}
+ main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin) .surprise-event-svg{max-height:28px!important;}
+ main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin) .surprise-event-symbol{height:28px!important;}
+ main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin) .surprise-bottom-info{
+  flex:0 0 17px!important;min-height:17px!important;max-height:17px!important;
+ }
+ /* ACCUEIL: compact dashboard, no independent wheel / swipe scrolling. */
+ 
+ 
+ /* Position the visible 3D die, not just its square WebGL canvas:
+     the die geometry sits lower than the canvas center. */
+  
+ 
+ /* AVENT: full 5x5 grid within the viewport. */
+ main#app.loveroll-advent-page:not(.loveroll-advent-letters) .advent-premium-view{
+  grid-template-rows:minmax(43px,.6fr) minmax(64px,.85fr)
+   minmax(0,4.7fr)!important;
+ }
+ main#app.loveroll-advent-page:not(.loveroll-advent-letters) .advent-shell{min-height:0!important;padding:5px 7px!important;}
+ main#app.loveroll-advent-page:not(.loveroll-advent-letters) .advent-tiles{min-height:0!important;gap:4px!important;margin:10px 1px 3px!important;}
+ main#app.loveroll-advent-page:not(.loveroll-advent-letters) .advent-intro h2{font-size:clamp(1.3rem,5.2vw,2rem)!important;}
+ main#app.loveroll-advent-page:not(.loveroll-advent-letters) .advent-top-heart{font-size:2rem!important;}
+ main#app.loveroll-advent-page:not(.loveroll-advent-letters) .advent-top h1{font-size:clamp(1.25rem,4.8vw,1.7rem)!important;}
+}
+@media (max-width:767px) and (max-height:740px){
+ 
+}
+@media (max-width:767px) and (max-height:660px){
+ 
+ main#app.loveroll-evening-page:not(.loveroll-editorial),
+ main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin),
+ main#app.loveroll-advent-page:not(.loveroll-advent-letters){--lr-nav-space:calc(54px + env(safe-area-inset-bottom,0px));}
+ 
+ main#app.loveroll-evening-page:not(.loveroll-editorial)>.nav button,
+ main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin)>.nav button,
+ main#app.loveroll-real-home>.nav button,
+ main#app.loveroll-settings-page>.nav button,
+ main#app.loveroll-advent-page:not(.loveroll-advent-letters)>.nav button{min-height:45px!important;}
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-premium-view{
+  grid-template-rows:minmax(32px,.45fr) minmax(32px,.4fr)
+   minmax(112px,1.5fr) minmax(195px,3fr) minmax(41px,.55fr)!important;
+ }
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-d6-grid{min-height:0!important;}
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-play-controls p{font-size:.58rem!important;}
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-choice-btn{min-height:32px!important;}
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-play-controls .evening-primary{min-height:34px!important;}
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-play-controls .evening-queue-open-btn{min-height:34px!important;}
+ main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin) .surprise-premium-view{
+  grid-template-rows:minmax(34px,.45fr) minmax(142px,2.05fr)
+   minmax(119px,1.65fr) minmax(139px,2fr)!important;
+ }
+ main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin) .surprise-month>.surprise-primary,
+ main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin) .surprise-host>.surprise-primary{
+  flex-basis:34px!important;min-height:34px!important;
+ }
+ 
+ main#app.loveroll-advent-page:not(.loveroll-advent-letters) .advent-premium-view{
+  grid-template-rows:minmax(36px,.55fr) minmax(54px,.8fr) minmax(0,4.7fr)!important;
+ }
+}
+/* Do not block dialogs: longer descriptions & privacy forms must remain readable.
+   The NO-SCROLL contract applies to the five primary gameplay screens. */
+
+/* Keep the probability reminder, but remove the redundant explanation when
+   the browser toolbar leaves little vertical space: both essential buttons
+   remain in view (the D35 itself explains the draw). */
+@media(max-width:767px){
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-play-controls>p{
+  display:none!important;
+ }
+}
+
+/* v75: Once both D6 are confirmed, show the counts instead of wasting
+   the entire viewport on two already-used dice. All draw buttons stay visible. */
+@media(max-width:767px){
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-premium-view.is-ready{
+  grid-template-rows:minmax(32px,.47fr) minmax(25px,.37fr)
+    minmax(45px,.65fr) minmax(0,5.2fr) minmax(43px,.65fr)!important;
+ }
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-premium-view.is-waiting{
+  grid-template-rows:minmax(32px,.6fr) minmax(27px,.48fr)
+    minmax(138px,3fr) minmax(36px,.7fr) minmax(43px,.8fr)!important;
+ }
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-step.one.is-complete{
+  justify-content:center!important;overflow:hidden!important;
+ }
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-step.one.is-complete .evening-d6-grid,
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-step.one.is-complete .evening-ready,
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-step.one.is-complete .evening-step-label small{
+  display:none!important;
+ }
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-step1-summary{
+  display:flex!important;justify-content:space-around;gap:4px;
+  align-items:center;width:100%;min-height:17px;
+  font-size:clamp(.64rem,2.4vw,.8rem);color:#ffe2f1;
+ }
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-step1-summary span{
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;
+ }
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-step1-summary b{color:#ff8bbf;}
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-premium-view.is-waiting .evening-step.two{
+  justify-content:center!important;
+ }
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-premium-view.is-waiting .evening-step.two .evening-play,
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-premium-view.is-waiting .evening-step.two .evening-progress{
+  display:none!important;
+ }
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-premium-view.is-ready .evening-play-controls>p{
+  display:none!important;
+ }
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-premium-view.is-ready .evening-play-controls{
+  justify-content:space-around!important;gap:2px!important;
+  min-height:0!important;overflow:hidden!important;
+ }
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-premium-view.is-ready .evening-play-controls .evening-choice-btn{
+  min-height:35px!important;
+ }
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-premium-view.is-ready .evening-play-controls .evening-primary,
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-premium-view.is-ready .evening-play-controls .evening-queue-open-btn{
+  min-height:39px!important;padding:3px!important;
+  flex:none!important;
+ }
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-premium-view.is-ready .evening-step.two .evening-play{
+  min-height:0!important;height:auto!important;flex:1 1 0!important;
+ }
+}
+@media(max-width:767px) and (max-height:660px){
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-intro>span,
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-intro p{display:none!important;}
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-premium-view.is-ready{
+  grid-template-rows:minmax(30px,.4fr) minmax(21px,.27fr)
+    minmax(42px,.6fr) minmax(0,5.35fr) minmax(40px,.65fr)!important;
+ }
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-premium-view.is-waiting{
+  grid-template-rows:minmax(30px,.46fr) minmax(21px,.28fr)
+    minmax(120px,3fr) minmax(33px,.68fr) minmax(40px,.8fr)!important;
+ }
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-premium-view.is-ready .evening-play-controls>small{
+  font-size:.53rem!important;line-height:1.03!important;
+ }
+}
+@media(max-width:767px) and (max-height:525px){
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-intro{display:none!important;}
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-premium-view.is-ready{
+  grid-template-rows:minmax(28px,.45fr) 0 minmax(39px,.6fr)
+    minmax(0,5.5fr) minmax(39px,.7fr)!important;
+ }
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-premium-view.is-ready .evening-play-controls>small{
+  display:none!important;
+ }
+}

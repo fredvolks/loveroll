@@ -1,0 +1,298 @@
+/* LoveRoll v79: two independent full-height mobile layouts.
+   NEVER transform/zoom the full page. The v78 fitter collapsed the invitation
+   showcase and unnecessarily miniaturized the registration card.
+   Keep the marketing visual, buttons, inputs and privacy copy accessible. */
+@media (max-width:767px){
+ html:has(.discover-v59),body:has(.discover-v59),
+ html:has(.invite-account-screen:not(.invite-profile-screen)),
+ body:has(.invite-account-screen:not(.invite-profile-screen)),
+ main#app:has(.discover-v59),
+ main#app:has(.invite-account-screen:not(.invite-profile-screen)){
+  width:100%!important;max-width:none!important;
+  height:100dvh!important;min-height:0!important;max-height:100dvh!important;
+  margin:0!important;padding:0!important;
+  overflow:hidden!important;overscroll-behavior:none!important;
+  box-sizing:border-box!important;
+ }
+ /* PAGE 1: the invitation must keep its TWO COLUMN visual center.
+    Only the 3-part flex layout allocates unused height to the showcase. */
+ main#app .love-discover.discover-v59{
+  display:flex!important;flex-direction:column!important;
+  box-sizing:border-box!important;
+  width:100%!important;max-width:650px!important;
+  height:100dvh!important;min-height:0!important;max-height:100dvh!important;
+  transform:none!important;transform-origin:center!important;
+  margin:0 auto!important;
+  padding:clamp(5px,.9dvh,10px) clamp(10px,3.4vw,19px)
+   max(7px,env(safe-area-inset-bottom,0px))!important;
+  gap:0!important;overflow:hidden!important;
+ }
+ main#app .discover-v59 .discover-header{
+  flex:0 0 auto!important;min-height:0!important;
+  margin:0!important;padding:0!important;
+ }
+ main#app .discover-v59 .discover-brand{
+  font-size:clamp(1.95rem,8.5vw,2.9rem)!important;
+  line-height:.95!important;
+ }
+ main#app .discover-v59 .discover-kicker{
+  font-size:clamp(.56rem,1.85vw,.71rem)!important;
+  margin:5px 0 0!important;letter-spacing:.16em!important;
+ }
+ main#app .discover-v59 .discover-editorial-title{
+  font-size:clamp(2.2rem,10.2vw,3.45rem)!important;
+  line-height:.86!important;
+  margin:clamp(5px,1.1dvh,10px) 0 clamp(3px,.5dvh,5px)!important;
+  white-space:normal!important;
+ }
+ main#app .discover-v59 .discover-editorial-intro{
+  font-size:clamp(.74rem,2.65vw,.93rem)!important;
+  line-height:1.18!important;
+  margin:3px 0 0!important;max-width:100%!important;
+ }
+ main#app .discover-v59 .discover-editorial-stage{
+  box-sizing:border-box!important;
+  flex:1 1 0%!important;
+  min-height:0!important;height:auto!important;max-height:none!important;
+  display:grid!important;grid-template-columns:minmax(0,1.07fr) minmax(0,.93fr)!important;
+  gap:2px!important;overflow:hidden!important;
+  margin:clamp(5px,1dvh,10px) 0 clamp(3px,.5dvh,6px)!important;
+  visibility:visible!important;
+ }
+ main#app .discover-v59 .discover-editorial-die{
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  min-width:0!important;min-height:0!important;height:100%!important;
+  overflow:visible!important;visibility:visible!important;
+ }
+ main#app .discover-v59 .discover-editorial-die>img{
+  display:block!important;visibility:visible!important;opacity:1!important;
+  width:172%!important;height:90%!important;max-width:none!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  transform:translate(-4%,1%) rotate(-6deg)!important;
+ }
+ main#app .discover-v59 .discover-editorial-list{
+  display:flex!important;flex-direction:column!important;justify-content:space-evenly!important;
+  min-width:0!important;min-height:0!important;
+  overflow:hidden!important;
+  padding:clamp(4px,.75dvh,8px) clamp(5px,1.5vw,11px)!important;
+ }
+ main#app .discover-v59 .discover-editorial-item{
+  display:grid!important;grid-template-columns:clamp(31px,9.4vw,55px) minmax(0,1fr)!important;
+  gap:clamp(4px,1.2vw,8px)!important;
+  min-height:0!important;flex:1 1 25%!important;
+  padding:clamp(3px,.55dvh,7px) 0!important;
+ }
+ main#app .discover-v59 .discover-editorial-item h2{
+  font-size:clamp(.86rem,3.55vw,1.14rem)!important;
+  line-height:1.05!important;margin:0 0 3px!important;
+  white-space:normal!important;
+ }
+ main#app .discover-v59 .discover-editorial-item p{
+  font-size:clamp(.59rem,2.15vw,.73rem)!important;
+  line-height:1.13!important;margin:0!important;
+ }
+ main#app .discover-v59 .discover-editorial-bottom{
+  flex:0 0 auto!important;min-height:0!important;
+  margin:0!important;padding:0!important;
+ }
+ main#app .discover-v59 .discover-editorial-bottom>h2{
+  font-size:clamp(1.24rem,4.7vw,1.8rem)!important;
+  margin:0 0 clamp(5px,.9dvh,10px)!important;
+  line-height:1.12!important;
+ }
+ main#app .discover-v59 .discover-accept{
+  display:block!important;
+  min-height:clamp(46px,7dvh,62px)!important;max-height:65px!important;
+  padding:5px 9px!important;
+  font-size:clamp(.91rem,3.4vw,1.14rem)!important;
+ }
+ main#app .discover-v59 .discover-login{
+  min-height:28px!important;
+  padding:3px 5px!important;
+ }
+ main#app .discover-v59 .discover-privacy{
+  font-size:.65rem!important;line-height:1.15!important;
+  margin:5px 0 0!important;
+ }
+ main#app .discover-v59 .messenger-browser-handoff{
+  margin:2px 0 0!important;min-height:0!important;
+ }
+ /* PAGE 2: the account card fills remaining viewport height.
+    All interactive controls remain visible without scaling their text. */
+ main#app .invite-account-screen:not(.invite-profile-screen){
+  box-sizing:border-box!important;
+  display:flex!important;flex-direction:column!important;
+  justify-content:flex-start!important;
+  height:100dvh!important;min-height:0!important;max-height:100dvh!important;
+  width:100%!important;max-width:650px!important;
+  transform:none!important;transform-origin:center!important;
+  margin:0 auto!important;
+  padding:clamp(5px,.85dvh,9px) clamp(8px,2.4vw,12px)
+   max(8px,env(safe-area-inset-bottom,0px))!important;
+  overflow:hidden!important;
+ }
+ main#app .invite-account-screen:not(.invite-profile-screen) .invite-account-hero{
+  flex:0 0 60px!important;height:60px!important;min-height:0!important;
+  padding:0 6px!important;margin:0!important;
+ }
+ main#app .invite-account-screen:not(.invite-profile-screen):has(.invite-account-progress) .invite-account-hero{
+  flex:0 0 91px!important;height:91px!important;
+ }
+ main#app .invite-account-screen:not(.invite-profile-screen) .invite-auth-brand{
+  font-size:clamp(2rem,8.3vw,2.7rem)!important;line-height:1!important;
+ }
+ main#app .invite-account-screen:not(.invite-profile-screen) .invite-account-hero>p{
+  font-size:.58rem!important;line-height:1.1!important;margin:4px 0 0!important;
+ }
+ main#app .invite-account-screen:not(.invite-profile-screen) .invite-account-progress{
+  bottom:2px!important;left:19%!important;right:19%!important;
+  gap:8px!important;
+ }
+ main#app .invite-account-screen:not(.invite-profile-screen) .invite-progress-item{
+  gap:2px!important;font-size:.58rem!important;line-height:1.1!important;
+ }
+ main#app .invite-account-screen:not(.invite-profile-screen) .invite-progress-item b{
+  width:28px!important;height:28px!important;font-size:.82rem!important;
+ }
+ main#app .invite-account-screen:not(.invite-profile-screen) .invite-progress-line{
+  margin-top:14px!important;
+ }
+ main#app .invite-account-screen:not(.invite-profile-screen) .invite-auth-card{
+  box-sizing:border-box!important;
+  display:flex!important;flex-direction:column!important;
+  justify-content:space-around!important;
+  flex:1 1 0%!important;height:auto!important;min-height:0!important;max-height:none!important;
+  width:calc(100% - 6px)!important;
+  margin:3px 3px 0!important;
+  padding:clamp(9px,1.4dvh,15px) clamp(12px,3vw,19px)!important;
+  border-radius:24px;gap:clamp(2px,.45dvh,6px)!important;
+  overflow:hidden!important;
+ }
+ main#app .invite-account-screen:not(.invite-profile-screen) .invite-auth-title{
+  flex:0 0 auto!important;margin:0!important;padding:0!important;
+ }
+ main#app .invite-account-screen:not(.invite-profile-screen) .invite-auth-title h1{
+  font-size:clamp(1.55rem,5.4vw,2.2rem)!important;
+  line-height:1.07!important;
+ }
+ main#app .invite-account-screen:not(.invite-profile-screen) .invite-auth-title h2{
+  font-size:clamp(.91rem,3.35vw,1.2rem)!important;
+  margin:3px 0 0!important;line-height:1.1!important;
+ }
+ main#app .invite-account-screen:not(.invite-profile-screen) .invite-auth-lead{
+  flex:0 0 auto!important;
+  margin:2px auto!important;
+  font-size:clamp(.72rem,2.7vw,.89rem)!important;line-height:1.19!important;
+ }
+ main#app .invite-account-screen:not(.invite-profile-screen) .invite-auth-segments{
+  flex:0 0 auto!important;margin:0!important;
+ }
+ main#app .invite-account-screen:not(.invite-profile-screen) .invite-auth-segments button{
+  min-height:38px!important;padding:4px!important;
+  font-size:clamp(.78rem,2.6vw,.96rem)!important;
+ }
+ main#app .invite-account-screen:not(.invite-profile-screen) #invite-auth-form{
+  display:flex!important;flex:0 0 auto!important;
+  flex-direction:column!important;gap:4px!important;margin:0!important;
+  min-height:0!important;
+ }
+ main#app .invite-account-screen:not(.invite-profile-screen) .invite-auth-fields{
+  gap:6px!important;
+ }
+ main#app .invite-account-screen:not(.invite-profile-screen) .invite-auth-field{
+  min-height:48px!important;padding:5px 10px!important;
+  border-radius:13px;
+ }
+ main#app .invite-account-screen:not(.invite-profile-screen) .invite-field-body input{
+  font-size:16px!important;height:23px!important;min-height:23px!important;
+ }
+ main#app .invite-account-screen:not(.invite-profile-screen) .invite-password-meter{
+  flex:none!important;margin:2px 1px!important;
+ }
+ main#app .invite-account-screen:not(.invite-profile-screen) .invite-password-meter p{
+  margin:4px 0 0!important;font-size:.66rem!important;line-height:1.1!important;
+ }
+ main#app .invite-account-screen:not(.invite-profile-screen) .invite-auth-submit{
+  min-height:45px!important;max-height:none!important;
+  padding:5px 8px!important;font-size:clamp(.98rem,3.8vw,1.28rem)!important;
+  flex:0 0 auto!important;
+ }
+ main#app .invite-account-screen:not(.invite-profile-screen) .invite-or{
+  flex:0 0 auto!important;margin:2px 0!important;line-height:1.1!important;
+ }
+ main#app .invite-account-screen:not(.invite-profile-screen) .invite-google{
+  flex:0 0 auto!important;min-height:44px!important;
+  font-size:clamp(.83rem,2.9vw,1rem)!important;
+  margin:0!important;
+ }
+ main#app .invite-account-screen:not(.invite-profile-screen) .invite-auth-trust{
+  flex:0 0 auto!important;min-height:0!important;
+  margin:0!important;padding:6px 8px!important;
+ }
+ main#app .invite-account-screen:not(.invite-profile-screen) .invite-auth-trust p{
+  font-size:clamp(.64rem,2.15vw,.75rem)!important;line-height:1.12!important;
+ }
+ main#app .invite-account-screen:not(.invite-profile-screen) .invite-auth-link,
+ main#app .invite-account-screen:not(.invite-profile-screen) .invite-auth-back{
+  flex:0 0 auto!important;min-height:30px!important;
+  padding:4px 6px!important;margin:0!important;
+  font-size:clamp(.73rem,2.5vw,.89rem)!important;
+ }
+ main#app .invite-account-screen:not(.invite-profile-screen) .invite-auth-feedback:not(:empty){
+  flex:0 0 auto!important;max-height:46px!important;overflow:hidden!important;
+  margin:1px 0!important;padding:6px!important;font-size:.72rem!important;
+ }
+ main#app .invite-account-screen:not(.invite-profile-screen) .invite-confirm-resend{
+  flex:0 0 auto!important;padding:7px!important;margin:2px 0!important;
+ }
+ main#app .email-confirm-screen .invite-auth-card>p{
+  font-size:clamp(.7rem,2.5vw,.83rem)!important;line-height:1.2!important;
+  margin:3px 0!important;
+ }
+ main#app .email-confirm-screen .invite-auth-card>h1{
+  font-size:clamp(1.3rem,5.2vw,1.8rem)!important;
+ }
+ main#app .email-confirm-screen .invite-auth-card button{
+  flex:0 0 auto!important;min-height:39px!important;
+ }
+}
+/* Compact only as far as necessary on short Chrome toolbars / landscape. */
+@media(max-width:767px) and (max-height:630px){
+ main#app .discover-v59 .discover-editorial-title{font-size:clamp(2rem,9.5vw,2.8rem)!important}
+ main#app .discover-v59 .discover-editorial-intro{font-size:.72rem!important}
+ main#app .discover-v59 .discover-editorial-item p{font-size:.57rem!important}
+ main#app .discover-v59 .discover-accept{min-height:43px!important}
+ main#app .invite-account-screen:not(.invite-profile-screen) .invite-auth-card{
+  padding:6px 10px!important;gap:0!important;
+ }
+ main#app .invite-account-screen:not(.invite-profile-screen) .invite-account-hero{
+  flex-basis:46px!important;height:46px!important;
+ }
+ main#app .invite-account-screen:not(.invite-profile-screen):has(.invite-account-progress) .invite-account-hero{
+  flex-basis:75px!important;height:75px!important;
+ }
+ main#app .invite-account-screen:not(.invite-profile-screen) .invite-auth-trust{
+  padding:3px 5px!important;
+ }
+ main#app .invite-account-screen:not(.invite-profile-screen) .invite-auth-trust>span{
+  width:28px!important;height:28px!important;flex-basis:28px!important;
+ }
+ main#app .invite-account-screen:not(.invite-profile-screen) #invite-auth-form{gap:2px!important;}
+ main#app .invite-account-screen:not(.invite-profile-screen) .invite-auth-lead{
+  font-size:.68rem!important;
+ }
+}
+@media(max-width:767px) and (max-height:470px){
+ main#app .discover-v59 .discover-editorial-intro{display:none!important}
+ main#app .discover-v59 .discover-editorial-item p{font-size:.55rem!important}
+ main#app .invite-account-screen:not(.invite-profile-screen) .invite-account-hero,
+ main#app .invite-account-screen:not(.invite-profile-screen) .invite-auth-trust,
+ main#app .invite-account-screen:not(.invite-profile-screen) .invite-auth-lead{
+  display:none!important;
+ }
+ main#app .invite-account-screen:not(.invite-profile-screen) .invite-auth-field{min-height:41px!important}
+ main#app .invite-account-screen:not(.invite-profile-screen) .invite-auth-title h2{
+  display:none!important;
+ }
+}

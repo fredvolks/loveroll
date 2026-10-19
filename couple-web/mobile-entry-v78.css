@@ -1,0 +1,51 @@
+/* LoveRoll v78 — in-page responsive form fitter.
+   JS measures all real buttons. This class blocks Chrome's document scrolling
+   instead of merely clipping an oversized auth card. */
+@media(max-width:767px){
+ html.lr-entry-no-scroll,body.lr-entry-no-scroll,#app.lr-entry-no-scroll{
+  box-sizing:border-box!important;height:100dvh!important;min-height:0!important;
+  max-height:100dvh!important;overflow:hidden!important;
+  overscroll-behavior:none!important;
+  scroll-behavior:auto!important;
+ }
+ body.lr-entry-no-scroll{margin:0!important;padding:0!important}
+ #app.lr-entry-no-scroll{width:100%!important;max-width:none!important;padding:0!important}
+ #app.lr-entry-no-scroll .invite-account-screen:not(.invite-profile-screen),
+ #app.lr-entry-no-scroll .love-discover.discover-v59{
+  box-sizing:border-box!important;margin:0 auto!important;
+  padding:4px 8px max(5px,env(safe-area-inset-bottom,0px))!important;
+  max-width:none!important;position:relative!important;
+ }
+ #app.lr-entry-no-scroll .invite-account-hero{
+  flex:0 0 56px!important;height:56px!important;
+  min-height:0!important;padding:2px 4px!important;
+ }
+ #app.lr-entry-no-scroll .invite-account-screen:has(.invite-account-progress) .invite-account-hero{
+  flex:0 0 91px!important;height:91px!important;
+ }
+ #app.lr-entry-no-scroll .invite-account-progress{
+  bottom:1px!important;left:16%!important;right:16%!important;
+  z-index:3!important;
+ }
+ #app.lr-entry-no-scroll .invite-account-hero>p{
+  font-size:.58rem!important;margin:3px 0 0!important;
+ }
+ #app.lr-entry-no-scroll .invite-auth-card{
+  margin:3px 3px 0!important;
+  padding:clamp(7px,1.1dvh,11px) clamp(9px,2.8vw,16px)!important;
+  display:flex!important;flex-direction:column!important;gap:5px!important;
+  justify-content:space-between!important;
+ }
+ #app.lr-entry-no-scroll .invite-auth-title h1{
+  font-size:clamp(1.25rem,5.15vw,1.9rem)!important;line-height:1.05!important;
+ }
+ #app.lr-entry-no-scroll .invite-auth-title h2{font-size:clamp(.82rem,3vw,1.1rem)!important}
+ #app.lr-entry-no-scroll .invite-auth-lead{margin:1px 0!important;font-size:clamp(.68rem,2.3vw,.8rem)!important}
+ #app.lr-entry-no-scroll .invite-auth-segments{margin:0!important}
+ #app.lr-entry-no-scroll .invite-auth-fields{gap:5px!important}
+ #app.lr-entry-no-scroll .invite-auth-field{min-height:45px!important;padding:5px 8px!important}
+ #app.lr-entry-no-scroll .invite-auth-submit{min-height:42px!important}
+ #app.lr-entry-no-scroll .invite-google{min-height:39px!important}
+ #app.lr-entry-no-scroll .invite-auth-trust{margin:0!important;min-height:0!important;padding:6px!important}
+ #app.lr-entry-no-scroll .invite-auth-back{min-height:30px!important}
+}

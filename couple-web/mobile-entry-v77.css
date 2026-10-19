@@ -1,0 +1,104 @@
+/* v77: Chrome/Messenger one-screen authentication hardening.
+   Applied after previous page styles and backed by critical inline rules. */
+@media(max-width:767px){
+ html:has(.invite-account-screen:not(.invite-profile-screen)),
+ body:has(.invite-account-screen:not(.invite-profile-screen)),
+ html:has(.discover-v59),body:has(.discover-v59){
+  box-sizing:border-box!important;height:100dvh!important;max-height:100dvh!important;
+  width:100%!important;margin:0!important;padding:0!important;
+  overflow:hidden!important;overscroll-behavior:none!important;
+ }
+ #app:has(.invite-account-screen:not(.invite-profile-screen)),
+ #app:has(.discover-v59){
+  box-sizing:border-box!important;height:100dvh!important;max-height:100dvh!important;
+  min-height:0!important;overflow:hidden!important;padding:0!important;
+ }
+ .invite-account-screen:not(.invite-profile-screen){
+  box-sizing:border-box!important;height:100dvh!important;max-height:100dvh!important;
+  min-height:0!important;overflow:hidden!important;display:flex!important;
+  flex-direction:column!important;justify-content:flex-start!important;
+  padding:4px 8px max(6px,env(safe-area-inset-bottom,0px))!important;
+ }
+ .invite-account-screen:not(.invite-profile-screen) .invite-account-hero{
+  flex:0 0 54px!important;height:54px!important;min-height:0!important;
+ }
+ .invite-account-screen:not(.invite-profile-screen):has(.invite-account-progress) .invite-account-hero{
+  flex:0 0 75px!important;height:75px!important;
+ }
+ .invite-account-screen:not(.invite-profile-screen) .invite-auth-card{
+  box-sizing:border-box!important;flex:1 1 0!important;min-height:0!important;
+  max-height:100%!important;overflow:hidden!important;
+  margin:2px 2px 0!important;padding:clamp(6px,1dvh,10px) 12px!important;
+  display:flex!important;flex-direction:column!important;
+  justify-content:space-evenly!important;gap:2px!important;
+ }
+ .invite-account-screen:not(.invite-profile-screen) .invite-auth-title h1{
+  font-size:clamp(1.28rem,5.3vw,1.85rem)!important;
+ }
+ .invite-account-screen:not(.invite-profile-screen) .invite-auth-title h2{
+  font-size:clamp(.78rem,3vw,1.03rem)!important;
+ }
+ .invite-account-screen:not(.invite-profile-screen) .invite-auth-lead{
+  font-size:clamp(.67rem,2.35vw,.78rem)!important;margin:2px 0!important;
+ }
+ .invite-account-screen:not(.invite-profile-screen) .invite-auth-segments{
+  flex:none!important;margin:2px 0!important;
+ }
+ .invite-account-screen:not(.invite-profile-screen) .invite-auth-segments button{
+  min-height:34px!important;
+ }
+ .invite-account-screen:not(.invite-profile-screen) .invite-auth-field{
+  min-height:43px!important;padding:4px 8px!important;
+ }
+ .invite-account-screen:not(.invite-profile-screen) .invite-auth-fields{gap:5px!important}
+ .invite-account-screen:not(.invite-profile-screen) .invite-password-meter{
+  margin:2px 0!important;
+ }
+ .invite-account-screen:not(.invite-profile-screen) .invite-password-meter p{
+  margin:3px 0 0!important;font-size:.63rem!important;
+ }
+ .invite-account-screen:not(.invite-profile-screen) .invite-auth-submit{
+  flex:none!important;min-height:40px!important;max-height:45px!important;
+  font-size:clamp(.89rem,3.4vw,1.09rem)!important;
+ }
+ .invite-account-screen:not(.invite-profile-screen) .invite-or{
+  flex:none!important;margin:1px 0!important;
+ }
+ .invite-account-screen:not(.invite-profile-screen) .invite-google{
+  flex:none!important;min-height:38px!important;
+ }
+ .invite-account-screen:not(.invite-profile-screen) .invite-auth-trust{
+  flex:none!important;padding:4px 7px!important;min-height:0!important;
+ }
+ .invite-account-screen:not(.invite-profile-screen) .invite-auth-back{
+  flex:none!important;min-height:27px!important;margin:0!important;
+ }
+ .invite-account-screen:not(.invite-profile-screen) #invite-auth-form{
+  flex:0 1 auto!important;min-height:0!important;
+ }
+ .love-discover.discover-v59{
+  box-sizing:border-box!important;height:100dvh!important;min-height:0!important;
+  max-height:100dvh!important;overflow:hidden!important;
+ }
+ .discover-v59 .discover-editorial-stage{flex:1 1 0!important;min-height:0!important;overflow:hidden!important}
+ .discover-v59 .discover-editorial-bottom{flex:none!important}
+}
+@media(max-width:767px) and (max-height:670px){
+ .invite-account-screen:not(.invite-profile-screen) .invite-auth-trust{
+  display:none!important;
+ }
+ .invite-account-screen:not(.invite-profile-screen) .invite-account-hero{
+  flex-basis:45px!important;height:45px!important;
+ }
+ .invite-account-screen:not(.invite-profile-screen):has(.invite-account-progress) .invite-account-hero{
+  flex-basis:69px!important;height:69px!important;
+ }
+}
+@media(max-width:767px) and (max-height:455px){
+ .invite-account-screen:not(.invite-profile-screen) .invite-auth-lead{
+  display:none!important;
+ }
+ .invite-account-screen:not(.invite-profile-screen) .invite-auth-title h2{
+  display:none!important;
+ }
+}
