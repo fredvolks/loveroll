@@ -1941,25 +1941,25 @@ function renderSettings(){
   '<details class="settings-help-item"><summary>'+safe(title)+'<span aria-hidden="true">⌄</span></summary>'+
   '<p>'+safe(answer)+'</p></details>').join('')+'</div>';
  const world=worldwideSettingsHtml({locale:worldLocale(),currency:currencyOrDefault(state.profile?.preferred_currency),couple:state.couple||{}});
- const pages={compte:{title:'Mon compte',body:account},couple:{title:'Notre duo',body:partner},
-  notifications:{title:'Notifications',body:notifications},jeu:{title:'Cartes et activités',body:game},
-  confidentialite:{title:'Journal et confidentialité',body:privacy},
-  application:{title:'Application et aide',body:appSettings},
+ const pages={compte:{title:worldText('myAccount'),body:account},couple:{title:worldText('duoLabel'),body:partner},
+  notifications:{title:worldText('notificationsLabel'),body:notifications},jeu:{title:worldText('cardsLabel'),body:game},
+  confidentialite:{title:worldText('privacyLabel'),body:privacy},
+  application:{title:worldText('applicationLabel'),body:appSettings},
   monde:{title:worldText('title'),body:world},
   'aide-connexion':{title:'Connexion et invitation',body:'<p>Chaque personne utilise son propre compte. Confirmez votre courriel avant de rejoindre votre partenaire. L’invitation reste conservée pendant la connexion, Google et la récupération du mot de passe.</p><p>Dans Notre duo, le créateur prépare un lien privé. Le destinataire l’accepte avec le courriel auquel il a été invité.</p>'},
   'aide-des':{title:'Dés et activités',body:'<p>Le dé hebdomadaire est commun : un tirage par couple et par semaine. En Soirée, chacun brasse son D6 personnel ; les deux résultats déverrouillent les défis.</p><p>Sensuel et Sexuel : 88/12 par défaut, modifiable dans Options avancées. Aléatoire reste à 50/50. Un défi passé retourne dans le tirage et son passage reste dans le calendrier.</p><p>La Surprise du mois choisit une activité puis qui invite. L’Avent se débloque par date : une lettre oubliée reste ouvrable plus tard. Vous pouvez donner jusqu’à trois défis par personne et par mois. Les dons et les trois passages gratuits recommencent le 1er du mois, selon l’heure du Québec. Après 200 défis réalisés, les deux personnes choisissent de diminuer, conserver ou augmenter leur intensité pour le prochain cycle.</p>'},
   'aide-sync':{title:'Synchronisation',body:'<p>Les résultats officiels proviennent du serveur et se retrouvent sur les deux comptes associés. Une connexion est nécessaire pour confirmer un lancer ou une ouverture.</p><p>Les listes personnelles de défis restent privées. Les bilans de soirée restent associés à leur auteur dans le calendrier commun.</p>'},
-  aide:{title:'Aide',body:support},admin:{title:'Options avancées',body:adminWeekly+adminChallenges+
+  aide:{title:'Aide',body:support},admin:{title:worldText('advancedLabel'),body:adminWeekly+adminChallenges+
    adminSexualMode+adminDiceWeightEditor('weekly')+adminDiceWeightEditor('evening')+adminCategoryWeightEditor()+
    (celebrants?'<details class="settings-help-item"><summary>Destinataires des occasions</summary>'+celebrants+'</details>':'')}};
  if(settingsOpenSection==='admin'&&!canEdit)settingsOpenSection='jeu';
  if(!pages[settingsOpenSection])settingsOpenSection='';
  const name=state.profile.display_name||'Mon profil',initial=Array.from(name)[0]||'♡';
- const items=[['couple','Notre duo',hasPartner?state.members.map(m=>m.name).join(' & '):linked?'Invitation en attente':'Inviter mon partenaire'],
-  ['notifications','Notifications','Rappels et autorisations'],['jeu','Cartes et activités','Soirée, Surprise et Avent'],
-  ['confidentialite','Journal et confidentialité','Calendrier, bilans et données'],
-  ['monde',worldText('menu'),worldText('menuDesc')],['application','Application et aide','Versions et fonctionnement']];
- const menu='<button class="settings-profile-row" data-action="settings-page:compte"><span class="settings-initial" aria-hidden="true">'+safe(initial)+'</span><span><strong>'+safe(name)+'</strong><small>Mon compte</small></span><b aria-hidden="true">›</b></button>'+
+ const items=[['couple',worldText('duoLabel'),hasPartner?state.members.map(m=>m.name).join(' & '):linked?'Invitation en attente':'Inviter mon partenaire'],
+  ['notifications',worldText('notificationsLabel'),worldText('notificationsDetail')],['jeu',worldText('cardsLabel'),worldText('gameDetail')],
+  ['confidentialite',worldText('privacyLabel'),worldText('privacyDetail')],
+  ['monde',worldText('menu'),worldText('menuDesc')],['application',worldText('applicationLabel'),worldText('applicationDetail')]];
+ const menu='<button class="settings-profile-row" data-action="settings-page:compte"><span class="settings-initial" aria-hidden="true">'+safe(initial)+'</span><span><strong>'+safe(name)+'</strong><small>'+safe(worldText('myAccount'))+'</small></span><b aria-hidden="true">›</b></button>'+
   '<nav class="settings-sections" aria-label="Rubriques des réglages">'+items.map(([key,label,detail])=>
    '<button data-action="settings-page:'+key+'" class="settings-section-row"><span class="settings-row-icon">'+settingsIcon(key)+'</span><span><strong>'+label+'</strong><small>'+safe(detail)+'</small></span><b aria-hidden="true">›</b></button>').join('')+'</nav>';
  const page=pages[settingsOpenSection];
