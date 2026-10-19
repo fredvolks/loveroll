@@ -1,0 +1,17 @@
+name: Vérifier le vrai lien Messenger LoveRoll
+on:
+  pull_request:
+    branches: [des-a-deux-apk-20261013]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  messenger-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Vérifier les données Open Graph et l’image en ligne
+        run: |
+          set -euo pipefail
+          python3 -m pip install --user 'Pillow>=10,<13'
+          python3 couple-web/check-messenger-preview.py

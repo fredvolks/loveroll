@@ -1,0 +1,193 @@
+name: Build and release LoveRoll APK
+on:
+  push:
+    branches: [des-a-deux-apk-20261013]
+    # HTML/CSS/share preview updates are live WebView changes, not native APK releases.
+    paths:
+      - 'app/**'
+      - '.github/workflows/android.yml'
+  workflow_dispatch:
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      TAG: des-a-deux-v0.13.12
+      KEYSTORE_B64: ${{ secrets.KEYSTORE || secrets.ANDROID_KEYSTORE_BASE64 }}
+      STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || secrets.ANDROID_STORE_PASSWORD }}
+      SIGN_ALIAS: ${{ secrets.KEY_ALIAS || secrets.ANDROID_KEY_ALIAS }}
+      KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || secrets.ANDROID_KEY_PASSWORD }}
+      LOVEROLL_FIREBASE_APP_ID: ${{ vars.LOVEROLL_FIREBASE_APP_ID }}
+      LOVEROLL_FIREBASE_API_KEY: ${{ vars.LOVEROLL_FIREBASE_API_KEY }}
+      LOVEROLL_FIREBASE_SENDER_ID: ${{ vars.LOVEROLL_FIREBASE_SENDER_ID }}
+      LOVEROLL_FIREBASE_PROJECT_ID: ${{ vars.LOVEROLL_FIREBASE_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Install Android SDK
+        run: |
+          set -euo pipefail
+          SDKMGR="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | head -n 1)"
+          yes | "$SDKMGR" --licenses >/dev/null || true
+          "$SDKMGR" --install 'platforms;android-35' 'build-tools;35.0.0'
+      - name: UI regression checks
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          src=Path('app/src/main/java/ca/desadeux/jeu/MainActivity.java').read_text()
+          assert '{"home","⌂","Accueil"},{"game","⚄","Soirée"},{"special","✦","Défi spécial"},{"advent","🎁","Avent"},{"settings","⚙","Réglages"}' in src
+          assert '{"library","♡","Défis"}' not in src
+          assert 'CONSULTER LES DÉFIS' not in src
+          assert 'settingsRow(game,"♡","Cartes et défis personnalisés"' in src
+          assert 'openConnectedLoveRoll("settings:couple")' in src
+          assert 'void drawSpecial()' in src
+          assert 'CONSULTER LES 20 IDÉES' not in src
+          assert 'showSpecialCatalogue' not in src
+          assert 'SpecialDateData.draw()' in src
+          assert 'SpecialDateData.title(pick)' in src
+          assert 'SpecialDateData.description(saved)' in src
+          assert 'settingsRow(game,"♡","Cartes et défis personnalisés"' in src
+          assert 'void drawWelcome()' in src
+          assert 'welcomeAvailableDp()' in src
+          assert 'Plus qu\'un jeu, votre histoire à deux.' in src
+          assert 'Réservé aux adultes de 18 ans et plus.' in src
+          assert 'welcomeMiniFeature(' in src
+          assert 'loveroll' in Path('app/src/main/AndroidManifest.xml').read_text()
+          assert 'android:host="offline"' in Path('app/src/main/AndroidManifest.xml').read_text()
+          assert src.count('premiumWelcomeButton(hero,') == 2
+          assert 'drawWelcome(){' in src
+          assert 'R.drawable.loveroll_hero' in src
+          assert 'Plus qu\'un jeu, votre histoire à deux.' in src
+          assert 'class LoveRollWelcomeIcon' in Path('app/src/main/java/ca/desadeux/jeu/LoveRollWelcomeIcon.java').read_text()
+          assert Path('app/src/main/res/drawable-nodpi/loveroll_hero.webp').is_file()
+          assert 'static final String LOVEROLL_WEB="https://fredvolks.github.io/mon-wallet-android/"' in src
+          assert 'CRÉER MON COMPTE GRATUITEMENT' in src
+          assert 'loveroll_legacy_offline' in src
+          assert 'LOVEROLL_WEB' in src
+          assert 'new Intent(this,ConnectedLoveRollActivity.class)' in src
+          assert 'android:name=".ConnectedLoveRollActivity"' in Path('app/src/main/AndroidManifest.xml').read_text()
+          manifest_text=Path('app/src/main/AndroidManifest.xml').read_text()
+          assert 'android:name=".ConnectedLoveRollActivity" android:exported="true"' in manifest_text
+          assert manifest_text.index('android:name=".ConnectedLoveRollActivity"')<manifest_text.index('android.intent.category.LAUNCHER')
+          assert 'android:screenOrientation="portrait" android:windowSoftInputMode="adjustResize"' not in manifest_text
+          assert 'web.loadUrl(SITE+suffix)' in Path('app/src/main/java/ca/desadeux/jeu/ConnectedLoveRollActivity.java').read_text()
+          assert 'openLegacyOffline()' in Path('app/src/main/java/ca/desadeux/jeu/ConnectedLoveRollActivity.java').read_text()
+
+          native=Path('app/src/main/java/ca/desadeux/jeu/ConnectedLoveRollActivity.java').read_text()
+          assert 'getCredentialAsync(' in native
+          assert 'GoogleNonce.sha256Hex(nonce)' in native
+          assert '.setNonce(googleNonce)' in native
+          assert 'data.put("nonce",nonce)' in native
+          assert Path('app/src/test/java/ca/desadeux/jeu/GoogleNonceTest.java').is_file()
+          assert 'LoveRollNativeAuth' in native
+          assert 'setDomStorageEnabled(true)' in native
+          assert 'android:theme="@style/LoveRollConnectedTheme"' in Path('app/src/main/AndroidManifest.xml').read_text()
+          assert Path('app/src/main/res/values/styles.xml').is_file()
+          colors=Path('app/src/main/res/values/styles.xml').read_text()
+          assert 'Theme.Material.NoActionBar' in colors
+          assert '#D58BA3' in colors
+          assert 'TRUSTED_HOST.equals(url.getHost())' in native
+          assert 'startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(LOVEROLL_WEB)))' not in src
+          assert 'section("💘  Dates à célébrer")' not in src
+          assert 'Dates récupérées de l’inscription' not in src
+          assert 'void drawOccasions()' in src
+          assert 'void drawOccasionDetail()' in src
+          assert 'LoveOccasions.SURPRISES' in src
+          assert 'specialSaved(now)' in src
+          assert 'new PremiumD20View(this)' in src
+          assert '88 % dans la catégorie choisie' in src
+          assert 'drawEveningTimer(resultCard,receiver,actual,face)' in src
+          assert 'Category.SENSUEL,Category.SEXUEL' in src
+          assert '♥  Votre rituel   ·   2 catégories de défis' in src
+          assert 'DÉFIS  →  Sensuel  ·  Sexuel' in src
+          assert '3 types de dés' not in src
+          assert 'D20  →  Sensuel  ·  Coquin  ·  Sexuel' not in src
+          assert 'ChallengePicker.draw(selected,false,history)' in src
+          assert 'void showGameD20(' in src
+          assert 'SpecialDateData.draw()' in src
+          assert 'BRASSER LE DÉ DU RESTAURANT' in src
+          assert 'restaurant_variant_face' in src
+          assert 'BRASSER LE D6 : QUI INVITE ?' in src
+          assert 'void drawJournal()' in src
+          assert 'void drawFeedback()' in src
+          assert 'void drawFeedbackAnswer()' in src
+          assert 'void drawPrivacy()' in src
+          assert 'TERMINER ET DONNER NOTRE AVIS' in src
+          assert 'new PremiumD20View(this)' in src
+          assert 'PremiumDialog.info(this' in src
+          assert 'new AlertDialog.Builder(this).setTitle("✦ Nos 20 sorties")' not in src
+          assert Path('app/src/main/java/ca/desadeux/jeu/PrivateJournal.java').is_file()
+          assert Path('app/src/main/java/ca/desadeux/jeu/JournalStats.java').is_file()
+          assert Path('app/src/main/java/ca/desadeux/jeu/PremiumDialog.java').is_file()
+          manifest=Path('app/src/main/AndroidManifest.xml').read_text()
+          assert 'android:label="LoveRoll"' in manifest
+          assert '@mipmap/ic_launcher' in manifest
+          assert Path('app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml').is_file()
+          assert Path('app/src/main/res/drawable-nodpi/ic_desadeux.webp').is_file()
+          assert 'tab="library";draw();' not in src
+          assert 'settingsGroup("♙","Compte"' in src
+          assert 'showResultDialog("♥"' in src
+          assert 'RÉSULTAT OFFICIEL' in src
+          assert 'float screenDp=' in src
+          assert 'new AlertDialog.Builder(this).setTitle("♥ Émilie reçoit ' not in src
+          print('Navigation 5 onglets, défi spécial mensuel, bibliothèque dans Réglages, popups sombres: OK')
+          PY
+      - name: Vérifier le cœur natif identique au web avant compilation
+        run: node --test couple-web/native-splash-parity.test.mjs
+      - name: Assemble release APK
+        run: gradle :app:testDebugUnitTest :app:assembleRelease --no-daemon --stacktrace
+      - name: Sign and verify APK
+        run: |
+          set -euo pipefail
+          if [[ -z "$KEYSTORE_B64" || -z "$STORE_PASSWORD" || -z "$SIGN_ALIAS" || -z "$KEY_PASSWORD" ]]; then
+            echo "::error::Signing secrets missing: use existing Android release key."
+            exit 1
+          fi
+          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/des-a-deux.jks"
+          chmod 600 "$RUNNER_TEMP/des-a-deux.jks"
+          keytool -list -keystore "$RUNNER_TEMP/des-a-deux.jks" -storepass "$STORE_PASSWORD" -alias "$SIGN_ALIAS" >/dev/null
+          mkdir -p dist
+          APK_IN="app/build/outputs/apk/release/app-release-unsigned.apk"
+          "$ANDROID_HOME/build-tools/35.0.0/zipalign" -f -p 4 "$APK_IN" "$RUNNER_TEMP/aligned.apk"
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" sign \
+            --ks "$RUNNER_TEMP/des-a-deux.jks" \
+            --ks-key-alias "$SIGN_ALIAS" \
+            --ks-pass env:STORE_PASSWORD \
+            --key-pass env:KEY_PASSWORD \
+            --out dist/LoveRoll-v0.13.12.apk "$RUNNER_TEMP/aligned.apk"
+          cp dist/LoveRoll-v0.13.12.apk dist/Des-a-Deux-v0.13.12.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs dist/LoveRoll-v0.13.12.apk
+          # Confirm this APK can update the installed release without uninstalling.
+          curl -fL --retry 3 'https://github.com/fredvolks/mon-wallet-android/releases/download/des-a-deux-v0.13.11/LoveRoll-v0.13.11.apk' -o "$RUNNER_TEMP/previous-loveroll.apk"
+          installed_cert=$("$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "$RUNNER_TEMP/previous-loveroll.apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
+          update_cert=$("$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs dist/LoveRoll-v0.13.12.apk | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
+          test -n "$installed_cert" && test "$installed_cert" = "$update_cert"
+          echo 'APK signing certificate matches the existing LoveRoll release.'
+          sha256sum dist/LoveRoll-v0.13.12.apk dist/Des-a-Deux-v0.13.12.apk
+          rm -f "$RUNNER_TEMP/des-a-deux.jks"
+      - name: Upload installable APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: LoveRoll-v0.13.12
+          path: dist/*.apk
+          if-no-files-found: error
+      - name: Publish GitHub Release (automatic in-app update source)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" >/dev/null 2>&1; then
+             gh release edit "$TAG" --title "LoveRoll v0.13.12" --notes "Chargement unifié avec lettrage partagé. Nouvelle présentation des notifications, mises à jour, invitations et événements. Calendrier et bilans harmonisés. Mise à jour signée compatible avec les comptes et données existants."
+            gh release upload "$TAG" dist/LoveRoll-v0.13.12.apk dist/Des-a-Deux-v0.13.12.apk --clobber
+          else
+            gh release create "$TAG" dist/LoveRoll-v0.13.12.apk dist/Des-a-Deux-v0.13.12.apk \
+              --target "$GITHUB_SHA" --title "LoveRoll v0.13.12" \
+              --notes "LoveRoll v0.13.12 : chargement unifié avec lettrage partagé, notifications et fenêtre de mise à jour redessinées, invitations et événements harmonisés. Calendrier et bilans accessibles depuis les réglages. Mise à jour signée compatible avec les comptes et données existants."
+          fi

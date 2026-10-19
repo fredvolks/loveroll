@@ -1,0 +1,47 @@
+name: LoveRoll Android FCM compile regression
+on:
+  pull_request:
+    branches: [des-a-deux-apk-20261013]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  android-fcm-check:
+    runs-on: ubuntu-latest
+    env:
+      LOVEROLL_FIREBASE_APP_ID: ${{ vars.LOVEROLL_FIREBASE_APP_ID }}
+      LOVEROLL_FIREBASE_API_KEY: ${{ vars.LOVEROLL_FIREBASE_API_KEY }}
+      LOVEROLL_FIREBASE_SENDER_ID: ${{ vars.LOVEROLL_FIREBASE_SENDER_ID }}
+      LOVEROLL_FIREBASE_PROJECT_ID: ${{ vars.LOVEROLL_FIREBASE_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Install Android SDK 35
+        run: |
+          set -euo pipefail
+          SDKMGR="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | head -n 1)"
+          yes | "$SDKMGR" --licenses >/dev/null || true
+          "$SDKMGR" --install 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Compile Android 0.13.12 and test
+        run: gradle :app:testDebugUnitTest :app:assembleDebug :app:assembleRelease --no-daemon --stacktrace
+      - name: Verify Firebase service and APK metadata
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          manifest=Path('app/src/main/AndroidManifest.xml').read_text()
+          build=Path('app/build.gradle').read_text()
+          service=Path('app/src/main/java/ca/desadeux/jeu/LoveRollFcmService.java').read_text()
+          assert 'POST_NOTIFICATIONS' in manifest
+          assert '.LoveRollFcmService' in manifest
+          assert 'FirebaseMessagingService' in service
+          assert "versionName '0.13.12'" in build
+          assert Path('app/build/outputs/apk/debug/app-debug.apk').exists()
+          assert Path('app/build/outputs/apk/release/app-release-unsigned.apk').exists()
+          print('Android native FCM build & unit checks validated')
+          PY

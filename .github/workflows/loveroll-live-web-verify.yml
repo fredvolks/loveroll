@@ -1,0 +1,85 @@
+name: Verify Live LoveRoll Web v36
+on:
+  pull_request:
+    branches: [des-a-deux-apk-20261013]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check published LoveRoll assets and Messenger preview
+        run: |
+          set -euo pipefail
+          SITE='https://fredvolks.github.io/mon-wallet-android/'
+          curl --fail --silent --show-error --location --max-time 20 --retry 2 --retry-delay 2 "${SITE}web-version.json" -o /tmp/loveroll-live.json
+          echo "Live build:"
+          cat /tmp/loveroll-live.json
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          live=json.loads(Path('/tmp/loveroll-live.json').read_text(encoding='utf-8'))
+          expected=json.loads(Path('couple-web/web-version.json').read_text(encoding='utf-8'))
+          import re
+          def version_key(value):
+              assert re.fullmatch(r'\d{4}-\d{2}-\d{2}\.\d+',str(value)),f'Invalid Web build: {value}'
+              date,build=value.split('.')
+              return date,int(build)
+          assert version_key(live.get('build'))<=version_key(expected.get('build')),f"Live build newer than checked source: {live.get('build')} > {expected.get('build')}"
+          print('Live build:',live.get('build'),'candidate build:',expected.get('build'))
+          PY
+          curl --fail --silent --show-error --location --max-time 20 "${SITE}index.html" -o /tmp/loveroll-live.html
+          grep -F 'settings-premium.css?' /tmp/loveroll-live.html
+          grep -F 'invite-account.css?' /tmp/loveroll-live.html
+          grep -F 'property="og:image"' /tmp/loveroll-live.html
+          curl --fail --silent --show-error --location --max-time 20 "${SITE}settings-premium.css" -o /tmp/loveroll-settings.css
+          grep -F 'main#app.loveroll-settings-page' /tmp/loveroll-settings.css
+          curl --fail --silent --show-error --location --max-time 20 "${SITE}invite-account.css" -o /tmp/loveroll-invite.css
+          grep -F '.invite-account-screen' /tmp/loveroll-invite.css
+          curl --fail --silent --show-error --location --max-time 20 "${SITE}app.js" -o /tmp/loveroll-invite-app.js
+          grep -F 'signInWithPassword' /tmp/loveroll-invite-app.js
+          grep -F 'autoAcceptPendingInvite' /tmp/loveroll-invite-app.js
+          curl --fail --silent --show-error --location --max-time 20 --retry 2 "${SITE}assets/loveroll-invitation-hero-hd.webp" -o /tmp/loveroll-hero-hd.webp
+          python3 - <<'PY'
+          from pathlib import Path
+          from html.parser import HTMLParser
+          from urllib.request import urlopen
+          from urllib.parse import urlsplit
+          import struct
+          hero=Path('/tmp/loveroll-hero-hd.webp').read_bytes()
+          assert len(hero)>=100000 and hero[:4]==b'RIFF','Invalid HD hero image'
+          class OG(HTMLParser):
+              def __init__(self): super().__init__(); self.url=None
+              def handle_starttag(self,tag,attrs):
+                  attrs=dict(attrs)
+                  if tag=='meta' and attrs.get('property')=='og:image':
+                      self.url=attrs.get('content')
+          meta=OG()
+          meta.feed(Path('/tmp/loveroll-live.html').read_text())
+          url=meta.url
+          assert url and urlsplit(url).scheme=='https' and urlsplit(url).netloc=='fredvolks.github.io',f'Invalid OG URL: {url}'
+          with urlopen(url,timeout=20) as res: data=res.read()
+          assert len(data)>30000,'Messenger OG image missing or too small'
+          if data.startswith(b'\x89PNG\r\n\x1a\n'):
+              width,height=struct.unpack('>II',data[16:24])
+          elif data[:2]==b'\xff\xd8':
+              pos=2
+              while pos<len(data):
+                  if data[pos]!=255: pos+=1; continue
+                  while pos<len(data) and data[pos]==255: pos+=1
+                  marker=data[pos]; pos+=1
+                  if marker in (0xd8,0xd9,0x01) or 0xd0<=marker<=0xd7: continue
+                  seglen=struct.unpack('>H',data[pos:pos+2])[0]
+                  if marker in (0xc0,0xc1,0xc2,0xc3,0xc5,0xc6,0xc7,0xc9,0xca,0xcb,0xcd,0xce,0xcf):
+                      height,width=struct.unpack('>HH',data[pos+3:pos+7]); break
+                  pos+=seglen
+              else: raise AssertionError('JPEG dimensions missing')
+          else: raise AssertionError('Unsupported OG image format')
+          assert (width,height)==(1200,630),(width,height)
+          print('Live Messenger OG asset verified:',url,len(data),'bytes,',width,'x',height)
+          PY
+          curl --fail --silent --show-error --location --max-time 20 "${SITE}discover.mjs" -o /tmp/loveroll-landing.js
+          grep -F 'loveroll-invitation-hero-hd.webp' /tmp/loveroll-landing.js
+          echo 'Verified LoveRoll current build, invitation page and public Messenger preview image.'

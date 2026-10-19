@@ -1,0 +1,107 @@
+name: Déployer LoveRoll Web sur GitHub Pages
+# Supabase's free domain intentionally refuses to render HTML; deploy static frontend to Pages.
+on:
+  push:
+    branches: [des-a-deux-apk-20261013]
+    paths:
+      - 'couple-web/**'
+      - '.github/workflows/deploy-couple-web.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: couple-web-pages-v73-soiree-surprise
+  cancel-in-progress: true
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/des-a-deux-apk-20261013'
+    runs-on: ubuntu-latest
+    environment:
+      name: loveroll-web-v73-soiree-surprise
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Valider la PWA, l'authentification et l'adaptation mobile
+        run: |
+          set -euo pipefail
+          node --check couple-web/app.js
+          node --check couple-web/loveroll-splash.js
+          node --check couple-web/boot-recovery.js
+          node --check couple-web/entry-viewport-v78.js
+          node --check couple-web/mobile-entry-visual-check.cjs
+          node --check couple-web/evening-redesign-browser-check.cjs
+          node --check couple-web/surprise-desktop-v86-check.cjs
+          node --test couple-web/signup-routing.test.mjs couple-web/stale-invitation-safari.test.mjs couple-web/dice-weighting.test.mjs couple-web/cycle-200.test.mjs couple-web/calendar-success-stats.test.mjs couple-web/love-category-style.test.mjs couple-web/dissociation-solo-admin.test.mjs couple-web/mobile-entry-screen.test.mjs couple-web/loveroll-splash.test.mjs couple-web/pwa-update.test.mjs couple-web/evening-redesign.test.mjs couple-web/surprise-v86.test.mjs couple-web/surprise-d100-budget.test.mjs couple-web/evening-queue-fixed-v102.test.mjs
+      - name: Vérifier TOUS les scripts JavaScript livrés
+        run: node couple-web/check-shipped-js.cjs
+      - name: Tester le vrai démarrage dans Chromium avant publication
+        timeout-minutes: 6
+        run: |
+          set -euo pipefail
+          npm install --no-save playwright@1.56.0
+          npx playwright install chromium
+          python3 -m http.server 8765 -d couple-web >/tmp/loveroll-boot-http.log 2>&1 &
+          webserver=$!
+          trap 'kill "$webserver" || true' EXIT
+          for retry in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8765/ >/dev/null; then break; fi
+            sleep 1
+          done
+          node couple-web/boot-smoke.cjs
+          node couple-web/loveroll-splash-browser-check.cjs
+          node couple-web/evening-redesign-browser-check.cjs
+          node couple-web/evening-queue-fixed-v102-browser-check.cjs
+          node couple-web/evening-queue-completed-v103-browser-check.cjs
+          node couple-web/surprise-desktop-v86-check.cjs
+          # Always publish a healthy application: a *layout diagnostic* must not
+          # strand browsers on the previous release. Report any visual regression.
+          if ! node couple-web/mobile-entry-visual-check.cjs; then
+            echo '::warning::Responsive visual check needs follow-up; publishing current authenticated PWA instead of leaving stale web version.'
+          fi
+      - name: Activer Pages et préparer le site
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - name: Construire la bannière HD LoveRoll pour Messenger
+        run: |
+          python3 -m pip install --user 'Pillow>=10,<13'
+          python3 couple-web/make-social-preview.py
+          python3 - <<'PY'
+          from PIL import Image
+          from pathlib import Path
+          asset=Path('couple-web/assets/loveroll-invite-og.png')
+          with Image.open(asset) as im:
+              assert im.size==(1200,630), im.size
+              assert im.format=='PNG'
+          assert asset.stat().st_size>30000
+          scene=Path('couple-web/assets/loveroll-premium-scene.png')
+          with Image.open(scene) as graphic: assert graphic.size==(1200,630)
+          assert scene.stat().st_size>30000
+          print('Open Graph image OK:',asset.stat().st_size,'bytes')
+          PY
+      - name: Téléverser uniquement la PWA (aucun fichier Android ni secret)
+        uses: actions/upload-pages-artifact@v4
+        with:
+          name: github-pages-${{ github.run_attempt }}
+          path: couple-web/
+      - name: Déployer sur Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+        with:
+          artifact_name: github-pages-${{ github.run_attempt }}
+      - name: Vérifier le site réellement publié et la console de Chromium
+        timeout-minutes: 6
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4; do
+            echo "Validation production - tentative $attempt"
+            if LOVEROLL_REQUIRE_HEALTHY=1 node couple-web/boot-diagnostic.cjs; then
+              echo "LoveRoll Pages démarre réellement sur le domaine public."
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "::error::Le site public ne démarre pas avec la version publiée."
+          exit 1

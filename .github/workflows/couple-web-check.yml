@@ -1,0 +1,378 @@
+name: LoveRoll connected web checks
+on:
+  push:
+    branches: [des-a-deux-apk-20261013]
+  pull_request:
+    branches: [des-a-deux-apk-20261013]
+  workflow_dispatch:
+concurrency:
+  group: loveroll-web-checks-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  web-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: JavaScript syntax
+        run: |
+          node --check couple-web/app.js
+          node --check couple-web/loveroll-splash.js
+          node --check couple-web/boot-recovery.js
+          node --test couple-web/loveroll-splash.test.mjs
+          node --check couple-web/premium-home.mjs
+          node --check couple-web/premium-evening.mjs
+          node --check couple-web/evening-calendar.mjs
+          node --check couple-web/evening-review.mjs
+          node --check couple-web/evening-private-queue.mjs
+          node --test couple-web/evening-private-queue.test.mjs couple-web/evening-redesign.test.mjs couple-web/evening-calendar.test.mjs couple-web/evening-category-v93.test.mjs couple-web/evening-review.test.mjs
+          node --test couple-web/soiree-surprise-recovery.test.mjs
+          node --check couple-web/premium-surprise.mjs
+          node --check couple-web/premium-advent.mjs
+          node --check couple-web/dice3d.js
+          node --check couple-web/dice-roll-motion.mjs
+          node --check couple-web/couple-live-sync.mjs
+          node --test couple-web/couple-live-sync.test.mjs
+          node --check couple-web/premium-dialogs.mjs
+          node --check couple-web/premium-dialogs-visual-check.cjs
+          node --check couple-web/onboarding.mjs
+          node --check couple-web/email-auth.mjs
+          node --check couple-web/discover.mjs
+          node --check couple-web/demo-couple.mjs
+          node --check couple-web/invite-links.mjs
+          node --check couple-web/wellbeing.mjs
+          node --check couple-web/config.js
+          node --check couple-web/couple-dashboard.mjs
+          node --check couple-web/home-install.mjs
+          node --check couple-web/json-libraries.mjs
+          node --check couple-web/json-library-ui.mjs
+          node --check couple-web/invite-email.mjs
+          node --check couple-web/push-notifications.mjs
+          node --check couple-web/evening-turns.mjs
+          node --check couple-web/service-worker.js
+          node --check couple-web/premium-invite-auth-visual-check.cjs
+          node --check couple-web/premium-settings-visual-check.cjs
+      - name: Validate Messenger image renderer
+        run: |
+          python3 -m pip install --user 'Pillow>=10,<13'
+          python3 couple-web/make-social-preview.py
+          python3 - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+          path=Path('couple-web/assets/loveroll-invite-og.png')
+          with Image.open(path) as graphic:
+              assert graphic.size==(1200,630)
+              assert graphic.format=='PNG'
+          assert path.stat().st_size>30000
+          scene=Path('couple-web/assets/loveroll-premium-scene.png')
+          with Image.open(scene) as graphic: assert graphic.size==(1200,630)
+          assert scene.stat().st_size>30000
+          card=Path('couple-web/assets/loveroll-messenger-og-v142.jpg')
+          with Image.open(card) as image:
+              assert image.size==(1200,630)
+              assert image.format=='JPEG' and image.mode=='RGB'
+          assert 30000 < card.stat().st_size < 250000
+          page=Path('couple-web/index.html').read_text(encoding='utf8')
+          assert 'loveroll-messenger-og-v142.jpg' in page
+          assert 'og:image:type" content="image/jpeg"' in page
+          PY
+      - name: Validate HD invitation artwork and crisp SVG icons
+        run: |
+          python3 design/loveroll-icon/check.py
+          python3 - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+          asset=Path('couple-web/assets/loveroll-invitation-scene-v139.webp')
+          with Image.open(asset) as im:
+              im.verify()
+          with Image.open(asset) as im:
+              assert im.width>=900 and im.height>=450 and im.format=='WEBP'
+          assert asset.stat().st_size>80000, 'Invitation must use a high-resolution asset'
+          page=Path('couple-web/discover.mjs').read_text(encoding='utf8')
+          styles=Path('couple-web/entry-ritual-v139.css').read_text(encoding='utf8')
+          assert 'loveroll-invitation-scene-v139.webp' in page
+          assert 'editorialIcon(icon)' in page
+          assert 'discover-ritual' in page
+          assert '.discover-ritual .discover-editorial-icon svg' in styles
+          assert '.discover-ritual .discover-accept' in styles
+          assert 'entry-ritual-v139.css' in Path('couple-web/index.html').read_text()
+          PY
+      - name: Static security and logic contracts
+        run: node --test couple-web/reset-ghost-session.test.mjs couple-web/all-dice-reset.test.mjs couple-web/dice-roll-motion.test.mjs couple-web/checks.test.mjs couple-web/couple-dashboard.test.mjs couple-web/json-libraries.test.mjs couple-web/push-and-invite.test.mjs couple-web/evening-turns.test.mjs couple-web/discover-flow.test.mjs couple-web/invite-links.test.mjs couple-web/signup-routing.test.mjs couple-web/stale-invitation-safari.test.mjs couple-web/dice-weighting.test.mjs couple-web/cycle-200.test.mjs couple-web/calendar-success-stats.test.mjs couple-web/love-category-style.test.mjs couple-web/dissociation-solo-admin.test.mjs couple-web/demo-couple.test.mjs couple-web/email-auth.test.mjs couple-web/premium-home.test.mjs couple-web/force-weekly-reset.test.mjs couple-web/pwa-update.test.mjs couple-web/premium-couple-pages.test.mjs couple-web/dice-visibility-layout.test.mjs couple-web/settings-premium.test.mjs couple-web/invite-password-auth.test.mjs couple-web/auth-push-dice.test.mjs couple-web/email-confirm-existing-google.test.mjs couple-web/existing-account-profile.test.mjs couple-web/native-bridge-login-recovery.test.mjs couple-web/android-native-bridge-thread.test.mjs couple-web/premium-advent.test.mjs couple-web/premium-dialogs.test.mjs couple-web/audit-journal-regressions.test.mjs couple-web/boot-hotfix.test.mjs
+
+      - name: Verify Surprise D100, prices and D6 pair/impair flow
+        run: node --test couple-web/surprise-v86.test.mjs couple-web/surprise-host-flow-v107.test.mjs couple-web/surprise-date-editor-v109.test.mjs couple-web/surprise-d100-budget.test.mjs
+
+      - name: Capture landing on Galaxy S25 Ultra representative viewport
+        run: |
+          set -euo pipefail
+          npm install --no-save playwright@1.56.0
+          npx playwright install chromium
+          cat > couple-web/__landing-test.html <<'EOF'
+          <!doctype html><html lang="fr-CA"><head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width,initial-scale=1">
+          <link rel="stylesheet" href="./styles.css"></head>
+          <body><main id="app"></main>
+          <script type="module">
+          import {marketingHtml} from './onboarding.mjs';
+          document.querySelector('#app').innerHTML=marketingHtml();
+          </script></body></html>
+          EOF
+          python3 -m http.server 8765 -d couple-web > /tmp/love-http.log 2>&1 &
+          echo $! > /tmp/love-http.pid
+          mkdir -p landing-captures
+          cat > capture-landing.cjs <<'EOF'
+          const { chromium } = require('playwright');
+          (async () => {
+            const browser=await chromium.launch({headless:true});
+            for(const {name,width,height,requireOneScreen} of [
+              {name:'S25-Ultra',width:412,height:824,requireOneScreen:true},
+              {name:'S25-Ultra-long',width:412,height:915,requireOneScreen:true},
+              {name:'Petit-Android',width:360,height:700,requireOneScreen:false},
+              {name:'iPhone',width:393,height:780,requireOneScreen:false},
+              {name:'iPad-portrait',width:820,height:1180,requireOneScreen:false},
+              {name:'iPad-landscape',width:1180,height:820,requireOneScreen:false}
+            ]){
+              const page=await browser.newPage({viewport:{width,height},deviceScaleFactor:2,
+                isMobile:true,hasTouch:true});
+              await page.goto('http://127.0.0.1:8765/__landing-test.html',{waitUntil:'load'});
+              await page.locator('.love-hero-art').waitFor();
+              await page.waitForFunction(()=>document.querySelector('.love-hero-art')?.complete);
+              const data=await page.evaluate(()=>{
+                const ct=[...document.querySelectorAll('[data-action="show-auth"]')];
+                const top=document.querySelector('.love-cta-group').getBoundingClientRect();
+                const image=document.querySelector('.love-hero-art');
+                const legal=document.querySelector('.love-compact-footer').getBoundingClientRect();
+                const main=document.querySelector('.marketing-shell').getBoundingClientRect();
+                return {
+                  ctas:ct.length, imageLoaded:image.naturalWidth>0,
+                  buttonsVisible:ct.every(b=>b.getBoundingClientRect().width>0),
+                  noHorizontalOverflow:document.documentElement.scrollWidth<=innerWidth+2,
+                  buttonsInFirstScreen:top.bottom<innerHeight-8,
+                  oneScreen:Math.max(document.documentElement.scrollHeight,document.body.scrollHeight)<=innerHeight+2&&legal.bottom<=innerHeight+2,
+                  legalVisible:legal.width>0,
+                  footerBottom:Math.round(legal.bottom),
+                  screenHeight:innerHeight,
+                  pageHeight:Math.round(main.height),
+                  accessibleButtons:ct.every(b=>b.getBoundingClientRect().height>=48),
+                  features:document.querySelectorAll('.love-feature').length,
+                  emotionalBanners:document.querySelectorAll('.love-mini-finale').length
+                };
+              });
+              if(data.ctas!==2||!data.imageLoaded||!data.buttonsVisible||
+                !data.noHorizontalOverflow||!data.buttonsInFirstScreen||
+                !data.accessibleButtons||!data.legalVisible||
+                (requireOneScreen&&!data.oneScreen)||
+                data.features!==4||data.emotionalBanners!==1){
+                throw new Error(name+': '+JSON.stringify(data));
+              }
+              await page.screenshot({path:'landing-captures/'+name+'-premier-ecran.png'});
+              await page.screenshot({path:'landing-captures/'+name+'-page-complete.png',fullPage:true});
+              console.log(name,JSON.stringify(data));
+              await page.close();
+            }
+            await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          EOF
+          node capture-landing.cjs
+          cat > couple-web/__tablet-settings-test.html <<'EOF'
+          <!doctype html><html lang="fr-CA"><head><meta charset="utf-8">
+          <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+          <link rel="stylesheet" href="./styles.css"></head><body>
+          <main><header class="header"><h1>♡ Réglages</h1></header>
+            <div class="settings-grid">
+              <details class="settings-group" open><summary><span class="settings-group-icon">♡</span>
+                <span class="settings-group-heading"><strong>Compte</strong><small>Profil</small></span></summary>
+                <div class="settings-group-content"><button>Gérer mon profil</button></div></details>
+              <details class="settings-group"><summary><span class="settings-group-icon">♥</span>
+                <span class="settings-group-heading"><strong>Couple</strong><small>Invitations</small></span></summary></details>
+              <details class="settings-group"><summary><span class="settings-group-icon">🎲</span>
+                <span class="settings-group-heading"><strong>Jeu</strong><small>Défis</small></span></summary></details>
+              <details class="settings-group"><summary><span class="settings-group-icon">♧</span>
+                <span class="settings-group-heading"><strong>Notifications</strong><small>Rappels</small></span></summary></details>
+            </div>
+            <nav class="nav"><div class="nav-inner">
+              <button>Accueil</button><button>Soirée</button><button>Défi spécial</button>
+              <button>Avent</button><button>Réglages</button></div></nav>
+          </main></body></html>
+          EOF
+          cat > verify-ipad.cjs <<'EOF'
+          const {chromium}=require('playwright');
+          (async()=>{
+            const browser=await chromium.launch();
+            for(const device of [
+              {name:'iPad portrait',width:820,height:1180,columns:2},
+              {name:'iPad paysage',width:1180,height:820,columns:3},
+              {name:'iPhone',width:390,height:844,columns:1}
+            ]){
+              const page=await browser.newPage({viewport:{width:device.width,height:device.height},isMobile:true,hasTouch:true});
+              await page.goto('http://127.0.0.1:8765/__tablet-settings-test.html');
+              const check=await page.evaluate(()=>{
+                const grid=document.querySelector('.settings-grid');
+                const widths=getComputedStyle(grid).gridTemplateColumns.split(' ').length;
+                return {columns:widths,mainWidth:document.querySelector('main').getBoundingClientRect().width,
+                  overflow:document.documentElement.scrollWidth>innerWidth+2,
+                  navButtons:document.querySelectorAll('.nav button').length};
+              });
+              if(check.columns!==device.columns||check.overflow||check.navButtons!==5||
+                (device.width>700&&check.mainWidth<700))
+                throw Error(device.name+': '+JSON.stringify(check));
+              await page.locator('.settings-group:nth-child(2) summary').click();
+              if(!await page.locator('.settings-group:nth-child(2)').evaluate(e=>e.open))
+                throw Error('Settings accordion cannot open on '+device.name);
+              await page.screenshot({path:'landing-captures/'+device.name.replace(' ','-')+'-reglages.png'});
+              console.log(device.name,check);
+              await page.close();
+            }
+            await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          EOF
+          node verify-ipad.cjs
+          node --test couple-web/editorial-details.test.mjs
+      - name: Capture actual premium invitation and account pages on S25 / iPhone
+        run: |
+          python3 -m http.server 8765 -d couple-web >/tmp/love-invite58-http.log 2>&1 &
+          sleep 1
+          node couple-web/premium-invite-auth-visual-check.cjs
+
+      - name: Verify and capture true premium couple home with WebGL
+        run: |
+          set -euo pipefail
+          cat > couple-web/__real-home-test.html <<'EOF'
+          <!doctype html><html lang="fr-CA"><head>
+          <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+          <link rel="stylesheet" href="./styles.css">
+          <link rel="stylesheet" href="./satin-reference.css">
+          <link rel="stylesheet" href="./mobile-one-screen-v74.css">
+          <link rel="stylesheet" href="./premium-theme.css">
+          <link rel="stylesheet" href="./premium-home.css">
+          </head><body><main id="app" class="loveroll-real-home"></main>
+          <script type="module">
+          import {premiumHomeHtml} from './premium-home.mjs';
+          import {dieOn} from './dice3d.js';
+          const root=document.querySelector('#app');
+          const weekly=new URLSearchParams(location.search).has('unrolled')?null:{
+            face:2,actor:'owner',created_at:'2026-10-14T15:00:00Z'
+          };
+          // The connected app renders premiumHomeHtml directly; its logo is inside.
+          root.innerHTML=premiumHomeHtml({
+            weekly,members:[{user_id:'owner',name:'Fred'},{user_id:'partner',name:'Émilie'}],
+            challenges:[
+              {recipient:'owner',category:'SENSUEL',status:'pending'},
+              {recipient:'owner',category:'SEXUEL',status:'done'},
+              {recipient:'partner',category:'SENSUEL',status:'pending'}
+            ],
+            history:[
+              {session_id:'historical-1',recipient:'owner',category:'SENSUEL',status:'completed',created_at:'2026-10-07T15:00:00Z'},
+              {session_id:'historical-1',recipient:'partner',category:'SEXUEL',status:'completed',created_at:'2026-10-07T15:00:00Z'}
+            ],
+            sessions:[{id:'historical-1',finished_at:'2026-10-07T18:00:00Z',counted:true}],
+            now:new Date('2026-10-14T15:00:00Z')
+          })+
+          '<nav class="nav"><div class="nav-inner">'+
+          [['⌂','Accueil'],['☾','Soirée'],['✦','Surprise'],['🎁','Avent'],['⚙','Réglages']].map(
+           ([ic,name],i)=>'<button class="'+(i===0?'active':'')+'"><span>'+ic+'</span>'+name+'</button>').join('')+
+          '</div></nav>';
+          const canvas=root.querySelector('canvas');
+          window.__dieCleanup=dieOn(canvas,6,weekly?.face||1,false);
+          </script></body></html>
+          EOF
+          cat > verify-real-home.cjs <<'EOF'
+          const {chromium}=require('playwright');
+          (async()=>{
+           const browser=await chromium.launch({headless:true,args:['--enable-webgl','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+           for(const d of [{name:'S25-Ultra',width:412,height:824},
+                            {name:'S25-Ultra-long',width:412,height:915}]){
+            const page=await browser.newPage({viewport:{width:d.width,height:d.height},
+             deviceScaleFactor:2,isMobile:true,hasTouch:true});
+            const errors=[];page.on('pageerror',e=>errors.push(e.message));
+            await page.goto('http://127.0.0.1:8765/__real-home-test.html',{waitUntil:'load'});
+            await page.locator('.home-die-platform canvas').waitFor();
+            await page.waitForFunction(()=>document.querySelector('.home-die-platform canvas')?.dataset.webglReady==='true',null,{timeout:18000});
+            await page.waitForTimeout(800);
+            const data=await page.evaluate(()=>{
+             const nav=document.querySelector('.nav').getBoundingClientRect();
+             const shorts=document.querySelector('.home-stats-grid').getBoundingClientRect();
+             const weights=document.querySelectorAll('.home-weight');
+             const root=document.querySelector('#app');
+             const canvas=document.querySelector('.home-die-platform canvas');
+             return {
+              oneScreen:document.documentElement.scrollHeight<=innerHeight+2&&root.scrollHeight<=innerHeight+2,
+              lastCardVisible:shorts.bottom<=nav.top+2,
+              horizontalOverflow:document.documentElement.scrollWidth>innerWidth+2,
+              weights:weights.length,stats:document.querySelectorAll('.home-stat-card').length,
+              nav:document.querySelectorAll('.nav button').length,
+              webgl:canvas.dataset.webglReady==='true',
+              canvasHeight:Math.round(canvas.getBoundingClientRect().height),
+              pageHeight:document.documentElement.scrollHeight,windowHeight:innerHeight,
+              cardBottom:Math.round(shorts.bottom),navTop:Math.round(nav.top)
+             };
+            });
+            console.log(d.name,JSON.stringify({data,errors}));
+            if(errors.length||!data.oneScreen||!data.lastCardVisible||data.horizontalOverflow||
+              data.weights!==6||data.stats!==4||data.nav!==5||!data.webgl||data.canvasHeight<100)
+             throw Error('Accueil réel non conforme '+d.name+' '+JSON.stringify({data,errors}));
+            await page.screenshot({path:'landing-captures/'+d.name+'-VRAI-ACCUEIL-PREMIUM.png'});
+            await page.close();
+           }
+           await browser.close();
+          })().catch(e=>{console.error(e);process.exit(1)});
+          EOF
+          node verify-real-home.cjs
+      - name: Fail on syntax errors in any shipped JS file
+        run: node couple-web/check-shipped-js.cjs
+
+      - name: Real app boot in Chromium (anonymous, Google callback, existing session)
+        run: node couple-web/boot-smoke.cjs
+
+      - name: Verify REAL account and invite behaviors against mocked Supabase API
+        run: node couple-web/auth-behavior-v58.cjs
+
+      - name: Verify rendez-vous and account fit in Messenger on Android and iPhone
+        run: node couple-web/entry-rendezvous-browser-check.cjs
+      - name: Verify shared account palette and unobstructed switches in the real app
+        run: node couple-web/controls-palette-browser-check.cjs
+      - name: Verify REAL public discover and invitation on Android / iPhone responsive widths
+        run: node couple-web/actual-discover-visual-check.cjs
+
+      - name: Verify real couple Evening and Surprise in WebGL at S25 sizes
+        run: |
+          node couple-web/premium-couple-visual-check.cjs
+
+      - name: Verify Soirée responsive Step 1 and unchanged D35 on phones and tablets
+        run: node couple-web/evening-redesign-browser-check.cjs
+
+      - name: Verify category switches never remount live WebGL dice
+        run: node couple-web/evening-category-no-flicker-browser-check.cjs
+
+      - name: Verify end-of-evening 5-heart review on phone tablet and desktop
+        run: node couple-web/evening-review-browser-check.cjs
+
+      - name: Verify shared calendar expanding both partners on phone, tablet and PC
+        run: node couple-web/evening-calendar-browser-check.cjs
+
+      - name: Verify weekly 3D die and photographed marble plinth on iPad
+        run: LOVE_PAD_ONLY=1 node couple-web/home-podium-browser-check.cjs
+
+      - name: Verify 25 Advent envelopes on Galaxy S25 and iPad
+        run: node couple-web/premium-advent-visual-check.cjs
+
+      - name: Verify five Settings routes and saved forms on phone tablet and PC
+        run: node couple-web/premium-settings-visual-check.cjs
+
+      - name: Verify invitation and account pages on Galaxy S25 Ultra
+        run: node couple-web/premium-invite-auth-visual-check.cjs
+
+      - name: Verify premium gift/couple dialogs and safe notifications on S25 Ultra
+        run: node couple-web/premium-dialogs-visual-check.cjs
+
+      - name: Publier les captures comparatives
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LoveRoll-landing-captures
+          path: landing-captures/*.png
+          if-no-files-found: warn

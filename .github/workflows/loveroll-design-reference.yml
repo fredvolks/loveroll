@@ -1,0 +1,88 @@
+name: LoveRoll design 2 verification
+on:
+  pull_request:
+    branches: [des-a-deux-apk-20261013]
+    paths: ['couple-web/**', '.github/workflows/loveroll-design-reference.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  design:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: loveroll-test-only
+          POSTGRES_DB: loveroll_advent_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d loveroll_advent_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test couple-web/*.test.mjs
+      - name: Real PostgreSQL Advent dates, authorization and simultaneous openings
+        env:
+          PGHOST: localhost
+          PGPORT: '5432'
+          PGUSER: postgres
+          PGPASSWORD: loveroll-test-only
+          PGDATABASE: loveroll_advent_test
+        run: python3 couple-web/advent-postgres-check.py
+      - run: node couple-web/check-shipped-js.cjs
+      - run: npm install --no-save playwright@1.56.0
+      - run: npx playwright install --with-deps chromium
+      - name: Production UI at five device sizes, real WebGL, safe simulated couple
+        run: |
+          python3 -m http.server 8765 -d couple-web > /tmp/loveroll-design-http.log 2>&1 &
+          check_status=0
+          for check in design-reference-browser-check evening-redesign-browser-check evening-d100-official-browser-check evening-couple-flow-browser-check surprise-desktop-v86-check mobile-entry-visual-check advent-letters-browser-check romantic-settings-surprise-browser-check; do
+            node "couple-web/$check.cjs" || check_status=1
+          done
+          exit "$check_status"
+      - name: Preserve screenshots and geometry even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LoveRoll-design-2
+          path: design-captures/
+
+  editorial-details:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright@1.56.0
+      - run: npx playwright install --with-deps chromium
+      - name: Six editorial boards, sixteen screens, six viewports and account/import flows
+        run: |
+          python3 -m http.server 8765 -d couple-web > /tmp/loveroll-editorial-http.log 2>&1 &
+          node couple-web/editorial-details-browser-check.cjs
+      - name: Original WebGL dice fixed at rest and aligned with the marble podium
+        run: |
+          python3 -m http.server 8765 -d couple-web > /tmp/loveroll-podium-http.log 2>&1 &
+          node couple-web/dice-podium-browser-check.cjs
+          node couple-web/home-podium-browser-check.cjs
+          node couple-web/home-card-centering-browser-check.cjs
+          node couple-web/app-icon-browser-check.cjs
+          node couple-web/loveroll-splash-browser-check.cjs
+      - name: Notifications, invitations and every corrected secondary route
+        run: |
+          node couple-web/notification-design-v127-browser-check.cjs
+          node couple-web/waiting-invitation-browser-check.cjs
+          node couple-web/secondary-pages-v127-browser-check.cjs
+          node couple-web/web-dialogs-v127-browser-check.cjs
+      - name: Preserve editorial and podium evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LoveRoll-editorial-121
+          path: design-captures/
