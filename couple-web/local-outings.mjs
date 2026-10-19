@@ -26,7 +26,7 @@ export function drivingKilometres(route){
 }
 export function isRouteWithinRadius(route,maxKm){
  const km=drivingKilometres(route);
- return km!==null&&Number.isFinite(Number(maxKm))&&km<=Number(maxKm);
+ return km!==null&&Number.isFinite(Number(maxKm))&&Number(route.distance_meters)<=Number(maxKm)*1000;
 }
 export function chooseNearbyVenue(places,roadRoutes,maxKm,{category=null}={}){
  const allowed=Object.values(VENUE_CATEGORIES);
@@ -34,9 +34,9 @@ export function chooseNearbyVenue(places,roadRoutes,maxKm,{category=null}={}){
  const candidate=(Array.isArray(places)?places:[]).map(place=>{
   const id=String(place?.place_id||'').trim(),name=String(place?.name||'').trim();
   const route=id&&roadRoutes?.[id],km=drivingKilometres(route);
-  if(!id||!name||km===null||km>Number(maxKm))return null;
+  if(!id||!name||!isRouteWithinRadius(route,maxKm))return null;
   if(category&&!String(place?.categories||'').split(',').some(x=>x===category||x.startsWith(category+'.')))return null;
-  return {place_id:id,name,address:String(place.address||'').trim(),distance_km:km,source:'Geoapify'};
+  return {place_id:id,name,address:String(place.address||'').trim(),distance_km:km,distance_meters:Number(route.distance_meters),source:'Geoapify'};
  }).filter(Boolean).sort((a,b)=>a.distance_km-b.distance_km||a.place_id.localeCompare(b.place_id));
  return candidate[0]||null;
 }
@@ -44,7 +44,7 @@ export function localActivityResult(roll,venue,shared){
  // Does not alter the original monthly face/title/description.
  if(!Number.isInteger(roll?.face)||roll.face<1||roll.face>100)throw Error('Invalid official monthly face');
  if(!venue)return {face:roll.face,venue:null,found:false};
- if(!isRouteWithinRadius({distance_meters:venue.distance_km*1000},shared?.travel_radius_km))
+ if(!isRouteWithinRadius({distance_meters:venue.distance_meters},shared?.travel_radius_km))
   throw Error('Venue outside requested driving radius');
  return {face:roll.face,venue,found:true,source:'verified-route'};
 }
