@@ -105,11 +105,11 @@ test('A member waiting for their match is notified when the partner accepts',()=
  assert.match(app,/liveSync.request\(200\)/);
 });
 test('The five bottom tabs keep Settings while Journal and questionnaires move to Soirée',()=>{
- assert.match(app,/\['settings','⚙','Réglages'\]/);
+ assert.match(app,/\['settings','⚙',worldText\('settings'\)\]/);
  assert.match(app,/Ouvrir notre calendrier partagé/);
  assert.match(app,/rpc\('save_love_evening_review'/);
  assert.doesNotMatch(app,/NOS AVIS APRÈS LA SOIRÉE|choose-feedback/);
- assert.match(app,/compte:\{title:'Mon compte'/);
+ assert.match(app,/compte:\{title:worldText\('myAccount'\)/);
 });
 
 test('Only the dedicated Supabase project and its publishable client key are configured',()=>{
@@ -900,10 +900,10 @@ test('Real-time server D35 odds mirror 88/12 preference and keep safeguards',()=
 
 test('Settings groups remain settings-only; after-party forms live under Soirée',()=>{
  const settings=app.slice(app.indexOf('function renderSettings(){'),app.indexOf('async function refreshAndShow()',app.indexOf('function renderSettings()')));
- assert.match(settings,/compte:\{title:'Mon compte'/);
- assert.match(settings,/couple:\{title:'Notre duo'/);
- assert.match(settings,/notifications:\{title:'Notifications'/);
- assert.match(settings,/application:\{title:'Application et aide'/);
+ assert.match(settings,/compte:\{title:worldText\('myAccount'\)/);
+ assert.match(settings,/couple:\{title:worldText\('duoLabel'\)/);
+ assert.match(settings,/notifications:\{title:worldText\('notificationsLabel'\)/);
+ assert.match(settings,/application:\{title:worldText\('applicationLabel'\)/);
  assert.doesNotMatch(settings,/button\('tab:feedback'/);
  assert.match(app,/if\(!s&&state\.sessions\?\.some/);
  assert.match(app,/if\(verb==='review-open'\)/);
@@ -938,7 +938,7 @@ test('Android APK and Web use one shared LoveRoll interface; iPad layout is adap
 test('LoveRoll user-facing navigation uses inviting words instead of technical dice codes',()=>{
  const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
  const nav=app.slice(app.indexOf('function nav(){'),app.indexOf('function bindActions(){'));
- assert.match(nav,/Surprise/);
+ assert.match(nav,/worldText\('surprise'\)/);
  assert.doesNotMatch(nav,/D6|D20|D35/);
  assert.match(readFileSync(new URL('./premium-home.mjs',import.meta.url),'utf8'),/BRASSER LE DÉ/);
  assert.match(app,/DÉCOUVRIR UN DÉFI POUR/);
