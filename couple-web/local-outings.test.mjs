@@ -23,6 +23,8 @@ test('Never use straight-line distance or fabricated names; road radius is stric
  assert.equal(chooseNearbyVenue(places,{},125),null);
  assert.equal(chooseNearbyVenue(places,routes,50),null);
  assert.equal(isRouteWithinRadius({distance_meters:125900},125),false);
+ assert.equal(isRouteWithinRadius({distance_meters:125040},125),false);
+ assert.equal(chooseNearbyVenue([{place_id:'boundary',name:'Hors limite'}],{boundary:{distance_meters:125040}},125),null);
  const res=localActivityResult({face:37,title:'Détente'},p,{travel_radius_km:125});
  assert.equal(res.face,37);assert.equal(res.found,true);
  assert.throws(()=>localActivityResult({face:37},p,{travel_radius_km:100}),/radius/);
