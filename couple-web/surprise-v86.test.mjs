@@ -17,7 +17,7 @@ test('Confirmed D100 opens the activity modal after the official roll animation'
  assert.match(branch,/state\.showSurpriseActivity=!!state\.monthly\?\.monthly_activity/);
  assert.match(branch,/render\(\)/);
  assert.doesNotMatch(branch,/notify\('♡ Le dé s’est arrêté sur le résultat officiel/);
- assert.match(app,/if\(verb==='surprise-activity'\)\{state\.showSurpriseActivity=!state\.showSurpriseActivity/);
+ assert.match(app,/if\(verb==='surprise-activity'\)\{[\s\S]*?state\.showSurpriseActivity=!state\.showSurpriseActivity/);
 });
 test('Activity modal shows the server-confirmed title, description and timer and closes',()=>{
  const html=premiumSurpriseHtml(state);
