@@ -164,7 +164,7 @@ create or replace function public.love_promo_confirm_verified_payment(
 as $$
 declare v_code public.love_promo_codes%rowtype;v_discount integer;
 begin
- if auth.role()<>'service_role' then
+ if auth.role() is distinct from 'service_role' then
   raise exception 'Appel serveur exclusivement' using errcode='42501';
  end if;
  if p_audience not in ('annual_new','annual_renewal')
