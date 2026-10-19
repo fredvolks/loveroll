@@ -2339,7 +2339,38 @@ async function handle(action,element){
   }
   return;
  }
- if(verb==='surprise-activity'){state.showSurpriseActivity=!state.showSurpriseActivity;render();return;}
+ if(verb==='surprise-activity'){
+  state.showSurpriseActivity=!state.showSurpriseActivity;state.geoBookingEdit=false;
+  render();
+  if(state.showSurpriseActivity&&worldGeoEnabled()){geoFetchSeen.delete(state.monthly.monthly_activity.id);void resolveMonthlyGeo();}
+  return;
+ }
+ if(verb==='geo-booking-editor'){
+  if(currentHost()?.user_id!==state.user?.id)throw Error('Seule la personne qui invite peut réserver.');
+  state.geoBookingEdit=!state.geoBookingEdit;render();return;
+ }
+ if(verb==='geo-booking-save'){
+  if(currentHost()?.user_id!==state.user?.id)throw Error('Réservation réservée à la personne qui invite.');
+  const raw=id('geo-booking-date')?.value||'',date=new Date(raw);
+  if(!raw||!Number.isFinite(date.getTime())||date.getTime()<=Date.now())throw Error('Choisissez une date et une heure futures.');
+  const title=String(id('geo-booking-name')?.value||'').trim(),address=String(id('geo-booking-address')?.value||'').trim();
+  const confirmed=!!id('geo-booking-confirmed')?.checked,paid=!!id('geo-booking-paid')?.checked;
+  if(paid&&!confirmed)throw Error('La réservation doit être confirmée avant de marquer le paiement.');
+  await rpc('save_love_monthly_reservation',{
+   p_roll:state.monthly.monthly_activity.id,p_when:date.toISOString(),p_venue:title,p_address:address,
+   p_booking_url:state.geoVenue?.booking_url||null,p_menu_url:state.geoVenue?.menu_url||null,
+   p_photo_url:state.geoVenue?.photo_url||null,p_notes:'',p_confirmed:confirmed,p_paid:paid
+  });
+  state.geoBookingEdit=false;await refreshAndShow();return;
+ }
+ if(verb==='geo-booking-cancel'){
+  if(currentHost()?.user_id!==state.user?.id)throw Error('Seule la personne qui invite peut annuler.');
+  if(!(await premiumConfirm('Annuler le rappel dans LoveRoll ? Cela n’annule pas la réservation auprès du lieu.',{
+   kind:'library',title:'Annuler notre sortie ?',accept:'Oui, annuler',cancel:'Conserver'
+  })))return;
+  await rpc('cancel_love_monthly_reservation',{p_roll:state.monthly.monthly_activity.id});
+  state.geoBookingEdit=false;await refreshAndShow();return;
+ }
  if(verb==='surprise-season'){if(!['hiver','ete'].includes(parts[0])||!state.showSurpriseActivity)return;state.surpriseSeason=parts[0];render();return;}
  if(verb==='surprise-how'){
    notify('Chaque événement : un D6 choisit l’activité puis un second D6 choisit sa variante. Les résultats sont synchronisés.');
