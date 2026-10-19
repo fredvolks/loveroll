@@ -1,34 +1,44 @@
 <!doctype html>
-<html lang="fr-CA"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<html lang="fr-CA"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
 <meta name="theme-color" content="#180811"><meta name="robots" content="noindex,nofollow">
 <title>LoveRoll — Mon abonnement</title><link rel="icon" href="./assets/loveroll-icon-192.png">
-<link rel="stylesheet" href="./checkout.css?v=20261019-best163"></head>
+<link rel="stylesheet" href="./checkout.css?v=20261019-best163">
+<link rel="stylesheet" href="./checkout-one-screen.css?v=20261019-checkout173">
+</head>
 <body>
-<main class="checkout-shell"><header><a href="./" class="back">← Retour à LoveRoll</a><strong class="wordmark">LoveRoll <span>♡</span></strong></header>
-<section class="checkout-card">
- <div class="eyebrow">♡ NOTRE ABONNEMENT</div><h1>Une année à deux.</h1>
- <p class="description">Abonnement annuel LoveRoll Premium</p>
- <label class="period-label" for="checkout-audience">Type de paiement (aperçu)</label>
- <select id="checkout-audience" aria-describedby="checkout-period-note">
-  <option value="annual_new">Première année</option>
-  <option value="annual_renewal">Renouvellement annuel</option>
- </select>
- <p id="checkout-period-note" class="period-note">Au renouvellement, LoveRoll compare le code promo et les crédits de parrainage et applique seulement le meilleur.</p>
- <div class="line"><span>Abonnement annuel</span><strong id="checkout-base">—</strong></div>
- <form id="checkout-promo-form" autocomplete="off"><label for="checkout-code">Tu as un code promo ?</label>
-  <div class="promo-entry"><input id="checkout-code" type="text" maxlength="32" spellcheck="false" autocomplete="off"
-   placeholder="Ex. LOVEROLL20" aria-describedby="checkout-promo-status">
+<main class="checkout-shell" id="checkout-viewport">
+ <header class="checkout-header"><a href="./" class="back">← Retour à LoveRoll</a><strong class="wordmark">LoveRoll <span>♡</span></strong></header>
+ <section class="checkout-card" aria-labelledby="checkout-title">
+  <div class="checkout-hero"><div class="eyebrow">♡ NOTRE ABONNEMENT</div><h1 id="checkout-title">Une année à deux.</h1>
+  <p class="description">LoveRoll Premium · abonnement annuel</p></div>
+  <div class="checkout-basics">
+   <div class="checkout-audience-field"><label class="period-label" for="checkout-audience">Type de paiement <small>(aperçu)</small></label>
+    <select id="checkout-audience" aria-describedby="checkout-period-note"><option value="annual_new">Première année</option><option value="annual_renewal">Renouvellement annuel</option></select>
+   </div>
+   <div class="line checkout-base-line"><span>Prix annuel</span><strong id="checkout-base">—</strong></div>
+  </div>
+  <p id="checkout-period-note" class="period-note">Au renouvellement, seul le meilleur rabais est retenu.</p>
+  <form id="checkout-promo-form" autocomplete="off"><label for="checkout-code">Tu as un code promo ?</label>
+   <div class="promo-entry"><input id="checkout-code" type="text" maxlength="32" spellcheck="false" autocomplete="off" placeholder="Ex. LOVEROLL20" aria-describedby="checkout-promo-status">
    <button type="submit" id="checkout-apply">Appliquer</button></div>
- </form>
- <p id="checkout-promo-status" class="promo-status" role="status" aria-live="polite"></p>
- <p id="checkout-referral-balance" class="referral-balance" hidden></p>
- <div class="line discount-line" id="checkout-discount-row" hidden><span id="checkout-discount-label">Code promo</span>
-  <strong id="checkout-discount">—</strong></div>
- <div class="line total"><span>Total avant taxes</span><strong id="checkout-total">—</strong></div>
- <p class="disclosure">Un seul rabais est permis par paiement : le plus avantageux des codes promo et des crédits de parrainage. Le rabais non retenu n’est pas consommé et reste soumis à ses dates et conditions. Les crédits de parrainage s’appliquent au renouvellement seulement. Il s’agit d’un aperçu : la facturation réelle n’est pas encore connectée.</p>
- <button id="checkout-pay" disabled type="button">Paiement bientôt disponible</button>
- <p class="safety" id="checkout-safety">Les paiements ne sont pas encore activés. Aucun montant ne sera prélevé.</p>
-</section>
-<footer>LoveRoll ♡ Votre espace privé · Prix en dollars canadiens</footer></main>
+  </form>
+  <p id="checkout-promo-status" class="promo-status" role="status" aria-live="polite"></p>
+  <p id="checkout-referral-balance" class="referral-balance" hidden></p>
+  <div class="checkout-final">
+   <div class="line discount-line" id="checkout-discount-row" hidden><span id="checkout-discount-label">Code promo</span><strong id="checkout-discount">—</strong></div>
+   <div class="line total"><span>Total avant taxes</span><strong id="checkout-total">—</strong></div>
+  </div>
+  <button id="checkout-pay" disabled type="button">Paiement bientôt disponible</button>
+  <p class="safety" id="checkout-safety">Aucun prélèvement possible pour le moment.</p>
+  <details class="checkout-conditions"><summary>Conditions des rabais et confidentialité <span aria-hidden="true">⌄</span></summary>
+   <div class="checkout-conditions-content">
+    <p>Le code promo et les crédits de parrainage ne se cumulent jamais : LoveRoll choisit le rabais le plus avantageux. Le rabais non retenu n’est pas consommé et reste soumis à ses dates et conditions.</p>
+    <p>Les crédits de parrainage s’utilisent seulement au renouvellement annuel. Ils sont propres à chaque membre et sont additionnés pour le duo au moment du renouvellement, sans dépasser le prix d’une année.</p>
+    <p>Cette page est un aperçu : le système de paiement n’est pas connecté. Aucun montant n’est débité ni aucun abonnement activé depuis cet écran.</p>
+   </div>
+  </details>
+ </section>
+ <footer>LoveRoll ♡ Votre espace privé · Prix en dollars canadiens</footer>
+</main>
 <script type="module" src="./checkout.js?v=20261019-best163"></script>
 </body></html>
