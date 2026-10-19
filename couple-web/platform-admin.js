@@ -3,6 +3,7 @@
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.57.0';
 import {CONFIG} from './config.js';
 import {createPromoAdmin} from './platform-promos.mjs?v=20261019-promo161';
+import {createGeoUsageAdmin} from './platform-geo-usage.mjs?v=20261019-geo165';
 const $=id=>document.getElementById(id);
 const client=createClient(CONFIG.supabaseUrl,CONFIG.supabasePublishableKey,{
  auth:{flowType:'pkce',autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}
@@ -18,6 +19,7 @@ async function rpc(name,args={}){
  return data;
 }
 const promoAdmin=createPromoAdmin({rpc});
+const geoUsage=createGeoUsageAdmin({rpc});
 const gated=()=>{$('gate').hidden=false;$('dashboard').hidden=true;$('signout').hidden=true;};
 async function bootstrap(){
  try{
@@ -56,6 +58,7 @@ function render(){
 function choosePane(name){
  pane=name;
  if(name==='promos')promoAdmin.refresh(true);
+ if(name==='geo')geoUsage.refresh();
  if(name==='geo')refreshGeoUsage();
  document.querySelectorAll('[data-panel]').forEach(el=>el.hidden=el.dataset.panel!==name);
  document.querySelectorAll('button[data-pane]').forEach(el=>{
