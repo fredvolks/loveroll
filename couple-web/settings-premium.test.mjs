@@ -9,9 +9,9 @@ const css=read('./settings-premium.css');
 const push=read('./push-notifications.mjs');
 const native=read('../app/src/main/java/ca/desadeux/jeu/ConnectedLoveRollActivity.java');
 
-test('Profile is separate from exactly five editorial settings routes',()=>{
+test('Profile is separate from the global ten-language Settings route',()=>{
  const settings=app.slice(app.indexOf('function renderSettings(){'),app.indexOf('async function refreshAndShow()'));
- for(const label of ['Notre duo','Notifications','Cartes et activités','Journal et confidentialité','Application et aide'])assert.ok(settings.includes(label),label);
+ for(const label of ["worldText('duoLabel')","worldText('notificationsLabel')","worldText('cardsLabel')","worldText('privacyLabel')","worldText('applicationLabel')","worldText('menu')"])assert.ok(settings.includes(label),label);
  assert.match(settings,/settings-profile-row/);assert.match(settings,/settings-sections/);
  assert.doesNotMatch(settings,/settingGroup|Mon ressenti|wellbeingFields|save-wellbeing/);
  assert.match(settings,/canEdit\?'<div class="settings-advanced">'/);
