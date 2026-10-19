@@ -14,6 +14,15 @@ let data=null,referralData=null,activeFace=null,pane=panes.has(initialPane)?init
 let geoSummary=null,promoTotal=null;
 const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const fmt=n=>new Intl.NumberFormat('fr-CA').format(n||0);
+const studioIconPaths={"users":"<circle cx=\"9\" cy=\"7\" r=\"3\"/><path d=\"M3 19v-2a6 6 0 0 1 12 0v2\"/><circle cx=\"18\" cy=\"9\" r=\"2.5\"/><path d=\"M17 15c2.9 0 4 1.4 4 4v1\"/>","heart":"<path d=\"M20.8 5.6c-2.5-3-6.4-2.5-8.8.1C9.6 3 5.7 2.6 3.2 5.6.3 9.2 4.3 13.5 12 20c7.7-6.5 11.7-10.8 8.8-14.4Z\"/>","dice":"<rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"3\"/><circle cx=\"8\" cy=\"8\" r=\"1\"/><circle cx=\"16\" cy=\"8\" r=\"1\"/><circle cx=\"12\" cy=\"12\" r=\"1\"/><circle cx=\"8\" cy=\"16\" r=\"1\"/><circle cx=\"16\" cy=\"16\" r=\"1\"/>","coins":"<ellipse cx=\"12\" cy=\"5\" rx=\"8\" ry=\"3\"/><path d=\"M4 5v5c0 4 16 4 16 0V5M4 10v5c0 4 16 4 16 0v-5M4 15v4c0 4 16 4 16 0v-4\"/>","map-pin":"<path d=\"M20 10c0 6-8 12-8 12S4 16 4 10a8 8 0 0 1 16 0Z\"/><circle cx=\"12\" cy=\"10\" r=\"2.6\"/>","calendar":"<rect x=\"3\" y=\"5\" width=\"18\" height=\"16\" rx=\"2\"/><path d=\"M7 3v4M17 3v4M3 10h18\"/>","credit-card":"<rect x=\"2\" y=\"5\" width=\"20\" height=\"14\" rx=\"2\"/><path d=\"M2 10h20M6 15h5\"/>","ticket":"<path d=\"M3 8a3 3 0 0 0 0 6v4h18v-4a3 3 0 0 1 0-6V4H3v4Z\"/><path d=\"M13 4v3m0 3v4m0 3v1\"/>","tag":"<path d=\"M3 4h9l9 9-8 8L3 11V4Z\"/><circle cx=\"8\" cy=\"8\" r=\"1.5\"/>","star":"<path d=\"m12 2 3.2 6.5 7.2 1-5.2 5 .9 7.3L12 18.3 5.9 21.8l.9-7.3-5.2-5 7.2-1L12 2Z\"/>","bell":"<path d=\"M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4\"/>","shield-check":"<path d=\"M12 2 4 5v6c0 5 4 9 8 11 4-2 8-6 8-11V5l-8-3Z\"/><path d=\"m8 12 3 3 5-5\"/>","book-open":"<path d=\"M12 6c-4-3-8-2-10-1v14c3-2 7-2 10 0 3-2 7-2 10 0V5c-2-1-6-2-10 1Z\"/><path d=\"M12 6v13\"/>","notebook":"<rect x=\"5\" y=\"2\" width=\"16\" height=\"20\" rx=\"2\"/><path d=\"M9 2v20M13 8h5M13 12h5M13 16h4M3 6h4M3 12h4M3 18h4\"/>","crown":"<path d=\"m2 6 5 4 5-6 5 6 5-4-2 13H4L2 6Z\"/><path d=\"M5 22h14\"/>","layers":"<path d=\"m12 2 9 5-9 5-9-5 9-5Zm-9 10 9 5 9-5M3 17l9 5 9-5\"/>","chart":"<path d=\"M5 22V13M12 22V7M19 22V2\"/>","circle-help":"<circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M9 9a3 3 0 0 1 6 0c0 2-3 2.7-3 5\"/><circle cx=\"12\" cy=\"18\" r=\".7\"/>"};
+const studioSvg=key=>'<svg class="studio-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true">'+(studioIconPaths[key]||studioIconPaths.tag)+'</svg>';
+function decorateStudioIcons(){
+ document.querySelectorAll('[data-studio-icon]').forEach(el=>{
+  el.innerHTML=studioSvg(el.getAttribute('data-studio-icon'));
+ });
+}
+decorateStudioIcons();
+
 const money=cents=>(Number(cents)/100).toFixed(2);
 const msg=(value,err=false)=>{const el=$('feedback');if(el){el.textContent=value;el.style.color=err?'#ffaaaa':'#f9cfde';}};
 async function rpc(name,args={}){
@@ -40,21 +49,29 @@ async function bootstrap(){
 }
 function renderDashboardStats(){
  const stats=data?.stats||{};
+ const percentage=geoSummary?Math.min(100,Math.max(0,Math.round(
+  100*Number(geoSummary.used_today||0)/Math.max(1,Number(geoSummary.quota)||3000)))):null;
  const rows=[
-  {label:'Comptes créés',value:fmt(stats.registered_users),icon:'♙'},
-  {label:'Couples actifs',value:fmt(stats.couples),icon:'♡'},
-  {label:'Tirages D100',value:fmt(stats.monthly_draws),icon:'⚄'},
-  {label:'Crédits Geoapify utilisés',value:geoSummary?' '+Math.round(100*Number(geoSummary.used_today||0)/Math.max(1,Number(geoSummary.quota)||3000))+' %':'—',icon:'◈',meter:geoSummary?Math.min(100,100*Number(geoSummary.used_today||0)/Math.max(1,Number(geoSummary.quota)||3000)):null},
-  {label:'Lieux confirmés',value:fmt(stats.geo_ready),icon:'⌖'},
-  {label:'Réservations',value:fmt(stats.bookings),icon:'▣'},
-  {label:'Paiements vérifiés',value:fmt(stats.paid_grants),icon:'▤'},
-  {label:'Codes promo actifs',value:promoTotal===null?'—':fmt(promoTotal),icon:'◇'}
+  {label:'Comptes créés',value:fmt(stats.registered_users),icon:'users'},
+  {label:'Couples actifs',value:fmt(stats.couples),icon:'heart'},
+  {label:'Tirages D100',value:fmt(stats.monthly_draws),icon:'dice'},
+  {label:'Crédits Geoapify',value:percentage===null?'—':percentage+' %',icon:'coins',meter:percentage},
+  {label:'Lieux confirmés',value:fmt(stats.geo_ready),icon:'map-pin'},
+  {label:'Réservations',value:fmt(stats.bookings),icon:'calendar'},
+  {label:'Paiements vérifiés',value:fmt(stats.paid_grants),icon:'credit-card'},
+  {label:'Codes promo actifs',value:promoTotal===null?'—':fmt(promoTotal),icon:'ticket'}
  ];
- $('stats').innerHTML=rows.map(row=>
-  '<div class="stat studio-stat"><span class="studio-stat-icon" aria-hidden="true">'+esc(row.icon)+'</span>'+
-  '<span>'+esc(row.label)+'</span><strong>'+esc(row.value)+'</strong>'+
-  (row.meter!==undefined?'<div class="studio-stat-meter" role="progressbar" aria-label="Pourcentage du quota Geoapify utilisé" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+(row.meter===null?0:Math.round(row.meter))+'"><i style="width:'+(row.meter||0)+'%"></i></div><small>Estimation du jour · quota de référence</small>':'')+
-  '</div>').join('');
+ $('stats').innerHTML=rows.map(row=>{
+  const progress=row.meter===undefined?'':(
+   '<div class="studio-stat-meter" role="progressbar" aria-label="Pourcentage du quota Geoapify utilisé" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+(row.meter===null?0:row.meter)+'">'+
+   '<i style="width:'+(row.meter||0)+'%"></i></div><small class="studio-stat-caption">Estimation du jour · quota de référence</small>');
+  const spark=row.meter===undefined?'<svg class="studio-stat-spark" viewBox="0 0 100 30" aria-hidden="true"><path d="M2 25C15 25 15 7 28 7s16 19 28 16 17-16 29-9 11 11 13 9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>':'';
+  return '<div class="stat studio-stat">'+
+   '<span class="studio-stat-icon">'+studioSvg(row.icon)+'</span>'+
+   '<span class="studio-stat-label">'+esc(row.label)+'</span>'+
+   '<strong>'+esc(row.value)+'</strong>'+
+   (progress||spark)+'</div>';
+ }).join('');
 }
 async function loadDashboardMetrics(){
  const [geo,promos]=await Promise.allSettled([
