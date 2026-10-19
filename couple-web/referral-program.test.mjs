@@ -20,10 +20,13 @@ test('Settings show couple-owned, annual-payment-only referral benefits',()=>{
  reward_cad_cents:500,reward_mode:'renewal_credit',pending_count:2,paid_count:3,earned_cad_cents:1500});
  assert.match(html,/referral-copy/);assert.match(html,/referral-share/);
  assert.match(html,/5,00/);assert.match(html,/premier abonnement annuel/);
- assert.match(html,/crédits acquis par notre duo/i);
+ assert.match(html,/Crédits obtenus par notre duo/i);
+ assert.match(html,/Partagez votre lien personnel/);
+ assert.match(html,/Le nouveau couple s’inscrit et s’abonne/);
+ assert.match(html,/Le premier paiement annuel doit être confirmé/);
  assert.doesNotMatch(html,/bad<script>/);
- assert.match(referralSettingsHtml({enabled:false}),/n’est pas actif/);
- assert.match(referralSettingsHtml({enabled:true,couple_ready:false}),/Créez d’abord votre duo/);
+ assert.match(referralSettingsHtml({enabled:false}),/désactivé/);
+ assert.match(referralSettingsHtml({enabled:true,couple_ready:false}),/Créez votre duo/);
  assert.match(referralModeText('wallet_credit'),/solde de crédits/i);
 });
 test('Account Settings and secure signup wiring keep referral separate from invite',()=>{
@@ -32,6 +35,13 @@ test('Account Settings and secure signup wiring keep referral separate from invi
  assert.match(app,/sessionStorage\.setItem\(REFERRAL_PENDING_STORAGE_KEY,code\)/);
  assert.ok(app.includes("rpc('love_referral_claim'"));
  assert.ok(app.includes('referralSettingsHtml(state.referral)'));
+ // A separate conditional Settings route; no referral card embedded in Profile.
+ assert.match(app,/parrainage:\{title:'Parrainage',body:referralSettingsHtml\(state.referral\)/);
+ assert.match(app,/state.referral\?\.enabled===true\?\[\['parrainage','Parrainage'/);
+ assert.match(app,/data-referral-active/);
+ assert.match(app,/if\(section==='parrainage'&&state.referral\?\.enabled!==true\)return/);
+ const account=app.slice(app.indexOf("const account='<div class"),app.indexOf("let partner='"));
+ assert.doesNotMatch(account,/referralSettingsHtml/);
  assert.ok(app.includes('pendingInviteReference(sessionStorage)'));
  assert.ok(app.includes("state.couple?.owner_user_id===state.user.id"));
  assert.ok(app.includes('if(pendingRef)url.searchParams.set'));
