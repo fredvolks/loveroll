@@ -1,0 +1,139 @@
+/* LoveRoll Checkout v173 · One-screen customer subpage.
+   Deliberately scoped to checkout.html; DOES NOT affect Accueil, Soirée, Surprise,
+   Avent, the dice, the connected application, nor Settings. */
+html,body{
+ width:100%;height:100%;margin:0;overflow:hidden;
+ overscroll-behavior:none;background:#150814;
+}
+body{background:radial-gradient(ellipse at 50% -7%,#7e265066,transparent 58%),linear-gradient(#1e091a,#130813)}
+.checkout-shell{
+ box-sizing:border-box;height:100dvh;min-height:0;max-height:100dvh;
+ width:min(760px,100%);margin:0 auto;
+ padding:clamp(7px,1.6dvh,14px) clamp(12px,3.3vw,22px) max(8px,env(safe-area-inset-bottom,0px));
+ display:grid;grid-template-rows:auto minmax(0,1fr) auto;
+ align-content:stretch;gap:clamp(5px,1.1dvh,10px);justify-content:stretch;
+ overflow:hidden;
+}
+.checkout-shell>.checkout-header{
+ display:flex;align-items:center;justify-content:space-between;
+ gap:10px;min-height:31px;margin:0;padding:0 3px;flex:none;
+}
+.checkout-header .back{font-size:clamp(11px,2.5vw,13px);white-space:nowrap}
+.checkout-header .wordmark{font:italic clamp(23px,5.5vw,33px)/1.05 Georgia,serif;white-space:nowrap}
+.checkout-header .wordmark span{color:#ff9dc5;text-shadow:0 0 9px #f749929e}
+.checkout-card{
+ display:flex;flex-direction:column;justify-content:space-evenly;
+ gap:clamp(2px,.6dvh,7px);min-height:0;
+ padding:clamp(12px,2.4dvh,23px) clamp(13px,3.2vw,23px);
+ border:1px solid #ac6687;border-radius:22px;
+ background:
+ radial-gradient(ellipse at 85% -10%,rgba(165,42,88,.22),transparent 54%),
+ linear-gradient(156deg,#452036f5,#23101eec);
+ box-shadow:inset 0 1px #ffd5e433,0 14px 34px #0006;
+}
+.checkout-hero{display:grid;gap:0;position:relative;min-width:0;padding:0 60px 3px 0}
+.checkout-hero:after{content:"";position:absolute;right:0;top:0;width:57px;height:57px;
+ background:url('./assets/loveroll-glass-heart-v123.webp') center/contain no-repeat;
+ filter:drop-shadow(0 0 10px #f84f9980);opacity:.86;pointer-events:none}
+.checkout-card .eyebrow{font:650 clamp(9px,1.9vw,11px)/1.1 system-ui,sans-serif;letter-spacing:.18em;color:#f7adc9}
+.checkout-card h1{font:italic clamp(26px,5.5vw,38px)/1.08 Georgia,serif;margin:3px 0 1px}
+.checkout-card .description{margin:0;font-size:clamp(10px,2.2vw,12px);line-height:1.3;color:#d9b7c9}
+.checkout-basics{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.9fr);align-items:end;gap:10px}
+.checkout-audience-field{min-width:0}
+.checkout-card .period-label{font-size:clamp(10px,2.2vw,12px);margin:0 0 5px;line-height:1.2}
+.checkout-card .period-label small{font-size:10px;color:#bf9aae}
+.checkout-card #checkout-audience{height:40px;min-width:0;width:100%;margin:0;padding:6px 25px 6px 10px;
+ color:#fff1f8;background-color:#2a1323;border:1px solid #b37595;border-radius:11px;
+ font-size:clamp(11px,2.55vw,14px);color-scheme:dark}
+.checkout-base-line{display:grid!important;justify-content:stretch!important;align-content:end;
+ gap:1px!important;padding:0!important;height:60px;border:0!important}
+.checkout-base-line span{color:#d4b0c3;font-size:clamp(10px,2.2vw,12px)}
+.checkout-base-line strong{font-size:clamp(17px,4.1vw,23px);color:#ffe7f0;line-height:1.4}
+.checkout-card .period-note{margin:0;color:#dcb2c8;font-size:clamp(10px,2.2vw,11px);line-height:1.25}
+.checkout-card #checkout-promo-form{margin:0;min-width:0}
+.checkout-card #checkout-promo-form>label{font-size:clamp(11px,2.5vw,13px);margin:0 0 5px}
+.checkout-card .promo-entry{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px;align-items:stretch}
+.checkout-card .promo-entry input{height:42px;min-width:0;padding:8px 11px;font-size:clamp(12px,3vw,14px)}
+.checkout-card .promo-entry button{height:42px;min-width:91px;padding:7px 10px;font-size:clamp(12px,3vw,14px)}
+.checkout-card .promo-status{min-height:14px;max-height:58px;overflow-y:auto;overscroll-behavior:contain;
+ margin:0;font-size:10px;line-height:1.25;color:#f1bfd2;scrollbar-width:thin}
+.checkout-card .referral-balance{margin:0;padding:6px 9px;border-radius:10px;
+ font-size:10px;line-height:1.28;color:#f3cee0;background:#361b2d;border:1px solid #85506c}
+.checkout-final{display:grid;gap:0;margin:1px 0}
+.checkout-final .line{display:flex;align-items:center;justify-content:space-between;gap:8px;
+ padding:6px 0;margin:0;font-size:clamp(11px,2.5vw,13px);line-height:1.24;
+ border-bottom:1px solid #87506b77}
+.checkout-final .line strong{font-weight:700;white-space:nowrap}
+.checkout-final .discount-line strong{color:#bcefcf}
+.checkout-final .line.total{border:0;border-top:1px solid #ab748e;margin:0;padding:7px 0 3px;
+ font-size:clamp(15px,3.45vw,19px)}
+.checkout-final .line.total strong{font-size:clamp(25px,6.6vw,35px);color:#ffdae9;line-height:1}
+.checkout-card #checkout-pay{min-height:43px;height:43px;width:100%;padding:6px 10px;
+ font-size:clamp(12px,2.9vw,15px);flex:none;box-shadow:0 0 10px #c94e8050}
+.checkout-card #checkout-pay:disabled{opacity:.7}
+.checkout-card .safety{margin:0;text-align:center;color:#e4bdcd;font-size:10px;line-height:1.22}
+.checkout-conditions{position:relative;flex:none;margin:0;min-width:0;text-align:center}
+.checkout-conditions summary{display:inline-flex;align-items:center;gap:7px;cursor:pointer;
+ color:#f5c4da;font-size:11px;line-height:1.25;text-decoration:underline;
+ text-underline-offset:3px;list-style:none}
+.checkout-conditions summary::-webkit-details-marker{display:none}
+.checkout-conditions summary>span{display:inline-block;text-decoration:none}
+.checkout-conditions[open] summary>span{transform:rotate(180deg)}
+.checkout-conditions-content{position:absolute;z-index:20;bottom:calc(100% + 7px);
+ left:0;width:100%;max-height:min(49dvh,340px);overflow-y:auto;overscroll-behavior:contain;
+ padding:11px 13px;border:1px solid #eaa2c7;border-radius:13px;
+ background:linear-gradient(140deg,#51213b,#260e20);box-shadow:0 12px 35px #000c;
+ text-align:left;font-size:11px;line-height:1.4;color:#ffe8f3}
+.checkout-conditions-content p{margin:0 0 8px}.checkout-conditions-content p:last-child{margin:0}
+.checkout-shell>footer{min-height:13px;padding:0;margin:0;text-align:center;
+ color:#ad88a0;font-size:10px;line-height:1.15}
+/* Compact screens: preserve the payment summary and buttons, not decorative spacing. */
+@media(max-height:720px){
+ .checkout-shell{gap:4px;padding-top:6px;padding-bottom:max(6px,env(safe-area-inset-bottom,0px))}
+ .checkout-card{padding-block:9px;gap:3px}
+ .checkout-card h1{font-size:clamp(24px,5vw,32px)}
+ .checkout-hero:after{width:49px;height:49px}
+ .checkout-card .description{font-size:10px}
+ .checkout-card #checkout-audience,.checkout-card .promo-entry input,
+ .checkout-card .promo-entry button{height:38px}
+ .checkout-card #checkout-pay{height:39px;min-height:39px}
+ .checkout-final .line{padding:4px 0}
+ .checkout-card .promo-status{font-size:10px;max-height:45px}
+ .checkout-shell>footer{display:none}
+ .checkout-shell{grid-template-rows:auto minmax(0,1fr)}
+}
+@media(max-height:610px){
+ .checkout-shell{padding-block:4px}
+ .checkout-hero{padding-right:44px}
+ .checkout-hero:after{width:42px;height:42px}
+ .checkout-card .eyebrow{font-size:9px}
+ .checkout-card h1{font-size:24px}
+ .checkout-card .description{display:none}
+ .checkout-card .period-note{font-size:9px}
+ .checkout-card .period-label{margin-bottom:2px}
+ .checkout-base-line{height:47px}
+ .checkout-card .promo-status{max-height:32px}
+ .checkout-final .line.total strong{font-size:25px}
+ .checkout-conditions summary{font-size:10px}
+}
+@media(max-width:380px){
+ .checkout-shell{padding-inline:9px}
+ .checkout-card{padding-inline:11px}
+ .checkout-card .promo-entry{display:grid;grid-template-columns:minmax(0,1fr) auto}
+ .checkout-card .promo-entry button{min-width:82px;padding-inline:7px}
+ .checkout-card #checkout-audience{padding-inline:7px;font-size:11px}
+ .checkout-card .promo-entry input{font-size:12px;padding-inline:7px}
+}
+@media(orientation:landscape) and (max-height:500px){
+ /* Avoid cropping interactive controls on landscape; a short screen cannot
+    physically display a full checkout without allowing temporary scrolling. */
+ html,body{overflow-y:auto}
+ .checkout-shell{height:auto;min-height:100dvh;max-height:none;overflow:visible}
+ .checkout-card{gap:5px;overflow:visible}
+}
+@media(max-height:490px) and (orientation:portrait){
+ /* Accessibility/keyboard fallback only: do not trap focused controls. */
+ html,body{overflow-y:auto}
+ .checkout-shell{height:auto;min-height:100dvh;max-height:none;overflow:visible}
+}
+@media(prefers-reduced-motion:reduce){.checkout-conditions summary>span{transition:none}}
