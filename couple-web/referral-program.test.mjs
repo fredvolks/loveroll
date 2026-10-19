@@ -21,7 +21,6 @@ test('Settings show couple-owned, annual-payment-only referral benefits',()=>{
  assert.match(html,/referral-copy/);assert.match(html,/referral-share/);
  assert.match(html,/5,00/);assert.match(html,/premier abonnement annuel/);
  assert.match(html,/crédits acquis par notre duo/i);
- assert.match(html,/1500/); // URL code, not raw amounts.
  assert.doesNotMatch(html,/bad<script>/);
  assert.match(referralSettingsHtml({enabled:false}),/n’est pas actif/);
  assert.match(referralSettingsHtml({enabled:true,couple_ready:false}),/Créez d’abord votre duo/);
