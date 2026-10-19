@@ -177,3 +177,48 @@ main#app.loveroll-settings-page .world-prefs input{width:100%;max-width:100%;}
  }
  main#app.loveroll-settings-page .world-prefs-card{padding:12px;gap:10px;}
 }
+
+
+/* Referral program: personal link in each partner's own Account Settings page. */
+main#app.loveroll-settings-page .settings-referral-card{
+ display:grid;gap:10px;width:100%;margin:15px 0;padding:14px 13px;
+ border:1px solid #e7adc180;border-radius:17px;
+ background:linear-gradient(135deg,#4b1b32d9,#24121ee8);
+ color:#fae7ee;
+}
+main#app.loveroll-settings-page .settings-referral-card h3{
+ font:italic 21px/1.2 Georgia,serif;margin:0;color:#fff1f6;
+}
+main#app.loveroll-settings-page .settings-referral-card p{
+ margin:0;color:#edceda;line-height:1.42;font-size:12px;
+}
+main#app.loveroll-settings-page .settings-referral-card .settings-referral-label{
+ font-size:11px;color:#f4b5ca;font-weight:650;
+}
+main#app.loveroll-settings-page .settings-referral-card input{
+ width:100%;min-width:0;border:1px solid #c17f9a;border-radius:10px;
+ background:#27121f;color:#fff4f9;padding:9px;font-size:12px;
+}
+main#app.loveroll-settings-page .settings-referral-actions{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;
+}
+main#app.loveroll-settings-page .settings-referral-actions button{
+ padding:8px 5px;min-height:40px;font-size:12px;
+}
+main#app.loveroll-settings-page .settings-referral-stats{
+ display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;
+}
+main#app.loveroll-settings-page .settings-referral-stats>div{
+ min-width:0;padding:8px 5px;background:#3b192bc7;
+ border:1px solid #b56b8a72;border-radius:10px;
+ text-align:center;display:grid;align-content:start;gap:3px;
+}
+main#app.loveroll-settings-page .settings-referral-stats strong{
+ color:#fff5f7;font-size:16px;
+}
+main#app.loveroll-settings-page .settings-referral-stats small{
+ color:#eec2d2;font-size:9px;line-height:1.2;
+}
+main#app.loveroll-settings-page .settings-referral-card>small{
+ color:#d9b8c6;font-size:10px;line-height:1.45;
+}
