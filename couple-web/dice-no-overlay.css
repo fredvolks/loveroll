@@ -1,0 +1,37 @@
+/* LoveRoll v65. Numeric results are drawn exclusively on the actual 3D face.
+   Backup DOM is a neutral heart, never a result. Hide it when WebGL draws. */
+.home-die-platform.webgl-ready .dice-fallback,
+.love3d-stage.webgl-ready .dice-fallback,
+.premium-die.ready .dice-fallback,
+.home-die-platform:has(canvas[data-spinning="true"]) .dice-fallback,
+.love3d-stage:has(canvas[data-spinning="true"]) .dice-fallback,
+.premium-die:has(canvas[data-spinning="true"]) .dice-fallback{
+ display:none!important;visibility:hidden!important;opacity:0!important;
+}
+.home-die-platform:has(canvas[data-spinning="true"]),
+.love3d-stage:has(canvas[data-spinning="true"]){
+ isolation:isolate;
+}
+/* Home's satin hero uses its own positioning. Smaller 3D stages
+   require an ABSOLUTE canvas, otherwise WebGL enlarges the grid row and
+   visually escapes over the controls (notably on Samsung/Messenger). */
+.home-die-platform .dice-canvas{position:relative;z-index:2}
+.love3d-stage{position:relative;min-width:0;min-height:0;overflow:hidden;isolation:isolate}
+.love3d-stage .dice-canvas{
+ position:absolute!important;inset:0!important;z-index:2;
+ display:block!important;width:100%!important;height:100%!important;
+ max-width:100%!important;max-height:100%!important;
+ object-fit:contain;
+}
+.surprise-d20-scene,.surprise-host-die{
+ position:relative;min-width:0;min-height:0;overflow:hidden;isolation:isolate;
+}
+:where(#app:not(.loveroll-surprise-ecrin)) .surprise-d20-scene .love3d,:where(#app:not(.loveroll-surprise-ecrin)) .surprise-d20-scene .love3d-stage,
+.surprise-host-die .love3d,.surprise-host-die .love3d-stage{
+ box-sizing:border-box;position:relative;width:100%!important;height:100%!important;
+ min-width:0;min-height:0;max-width:100%;max-height:none!important;overflow:hidden;
+}
+.surprise-d20-scene .dice-canvas,.surprise-host-die .dice-canvas{
+ position:absolute!important;inset:0!important;
+ display:block;width:100%!important;height:100%!important;
+}
