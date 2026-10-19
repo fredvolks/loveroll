@@ -337,8 +337,7 @@ begin
       else 'awaiting_application' end,
     applied_at=case when remaining_cad_cents=v_delta then now()
       else null end,
-    application_ref=case when remaining_cad_cents=v_delta then p_payment_ref
-      else null end
+    application_ref=null
    where id=v_row.id;
    insert into public.love_referral_credit_usage(
     ledger_id,beneficiary_user_id,provider_payment_ref,amount_cad_cents)
