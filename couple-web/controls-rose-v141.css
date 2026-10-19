@@ -1,0 +1,95 @@
+/* Shared account palette. Control sizes, page layouts and actions stay owned
+   by their original components; only control surfaces and states are unified. */
+#app :is(
+ .home-roll-button,.evening-primary,.evening-small-roll,.evening-finale-start,
+ .evening-locked-cta,.surprise-primary,.surprise-invite-button,.advent-primary,
+ .settings-primary,.auth-primary,.entry-auth-submit,.discover-accept,
+ .lr-review-save,.love-dialog-confirm,.landing-cta,.love-cta-primary,
+ .loveroll-invite-cta,.install-primary,
+ .push-actions>button,.notification-action:not(.settings-signout),
+ .json-tool-buttons>button,.json-tool-buttons>.json-file-button,
+ .invite-existing-space [data-action="join-invite-from-solo"],
+ .legacy-session-scroll button:not(.subtle):not(.pill)
+):not(:disabled):not([aria-disabled="true"]):not(.is-used),
+#app .install-modal .install-actions button:not(.subtle):not(:disabled),
+#lr-dialog-overlay .lr-dialog-actions .lr-dialog-accept:not(:disabled),
+.love-boot-error .boot-retry-button{
+ background:var(--control-primary)!important;
+ border-color:var(--control-border)!important;
+ color:var(--control-text)!important;
+ box-shadow:var(--control-shadow)!important;
+}
+
+/* A quieter filled state matches the account's selected segment. */
+#app :is(
+ .pill.selected,.evening-choice-btn.selected,
+ .evening-choice-btn[aria-pressed="true"],.editorial-segments>button.selected,
+ .entry-auth-segments button.is-active,.invite-auth-segments button.is-active,
+ .love-answer-option[aria-checked="true"],.calendar button.selected,
+ .evening-cal-day.selected,.evening-cal-toolbar button[aria-pressed="true"],
+ .advent-dialog-year.selected,.demo-body .day-grid button.demo-active,.nav button.active
+){
+ background:var(--control-selected)!important;
+ border-color:var(--control-selected-border)!important;
+ box-shadow:var(--control-selected-shadow)!important;
+ color:var(--control-text)!important;
+}
+#app .nav button.active::after{
+ background:#c59ba9;box-shadow:none;
+}
+
+/* Neutral actions retain a different weight from the primary CTA. */
+#app :is(.settings-secondary,.entry-auth-provider,.auth-secondary,
+ .love-cta-secondary,.profile-switch-account,.invite-confirm-resend,
+ .evening-cal-return,.evening-cal-toolbar button:not([aria-pressed="true"])),
+#app .install-modal .install-actions .subtle,
+#lr-dialog-overlay .lr-dialog-actions .lr-dialog-cancel{
+ background:var(--control-secondary)!important;
+ border-color:var(--control-secondary-border)!important;
+ color:var(--control-secondary-text)!important;
+ box-shadow:none!important;
+}
+#lr-dialog-overlay .lr-dialog-actions .lr-dialog-accept.lr-dialog-danger{
+ background:linear-gradient(110deg,#89415a,#5b2539)!important;
+ border-color:var(--control-border)!important;
+}
+
+/* Standard switches: preserve native checked/disabled behavior and the knob. */
+main#app.loveroll-settings-page .push-option input[type="checkbox"]:not(.notification-toggle){
+ border-color:var(--control-secondary-border);
+ background:#351b28;
+}
+main#app.loveroll-settings-page .push-option input[type="checkbox"]:not(.notification-toggle):checked{
+ background:var(--control-primary);
+ border-color:var(--control-border);
+ box-shadow:inset 0 1px 1px #f5c8d33b;
+}
+main#app.loveroll-settings-page .push-option input[type="checkbox"]:not(.notification-toggle)::before{
+ background:#a87b8d;
+}
+main#app.loveroll-settings-page .push-option input[type="checkbox"]:not(.notification-toggle):checked::before{
+ background:var(--control-text);
+}
+
+/* Notification controls use a separate 48 x 44 hit area. Color the track,
+   never its transparent hit area or its independently moving knob. */
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings
+ :is(.notification-toggle:checked:not(:disabled),.notification-local-switch[aria-checked="true"])::before{
+ background:var(--control-primary);
+ border-color:var(--control-border);
+}
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings
+ :is(.notification-toggle:checked:not(:disabled),.notification-local-switch[aria-checked="true"])::after{
+ background:var(--control-text);
+}
+#app input[type="checkbox"]{accent-color:#89506b;}
+#app.loveroll-real-home .home-gift-icon{
+ background:var(--control-selected);border-color:var(--control-selected-border);
+ color:var(--control-text);
+}
+
+/* The label owns all remaining width; switches cannot cover its words. */
+main#app.loveroll-settings-page .push-option>input[role="switch"]{
+ justify-self:end;flex-shrink:0;
+}
+main#app.loveroll-settings-page .push-option>span{min-width:0;}
