@@ -1,0 +1,89 @@
+/* LoveRoll v96 – end-of-evening hearts modal and common calendar report. */
+.lr-review-backdrop{position:fixed;inset:0;z-index:16000;display:flex;align-items:center;justify-content:center;
+ padding:calc(env(safe-area-inset-top,0px) + 10px) 10px calc(env(safe-area-inset-bottom,0px) + 10px);
+ box-sizing:border-box;background:rgba(13,1,13,.84);backdrop-filter:blur(8px)}
+.lr-review-modal{position:relative;box-sizing:border-box;display:flex;flex-direction:column;gap:clamp(7px,1dvh,13px);
+ overflow-x:hidden;overflow-y:auto;overscroll-behavior:contain;
+ width:min(100%,650px);max-width:650px;max-height:100%;padding:clamp(17px,3vw,32px);
+ border:2px solid #fa5fa7;border-radius:clamp(22px,5vw,33px);
+ box-shadow:inset 0 0 28px #d63f8242,0 0 40px #ec33734d;
+ background:radial-gradient(ellipse at 26% 0%,#8d2b5e8c,transparent 55%),
+ linear-gradient(140deg,#430b2f,#1b051a 69%,#3c0b29);color:#fff0f7}
+.lr-review-modal button{font-family:inherit}
+.lr-review-x{position:absolute;right:clamp(8px,2.5vw,21px);top:clamp(8px,2vw,19px);
+ width:38px;height:38px;min-height:38px!important;padding:0!important;display:grid;place-items:center;
+ border-radius:50%;border:1px solid #fa82bd!important;background:#400c2f;
+ font-size:1.8rem!important;line-height:1!important;color:#ffe5f3;z-index:2}
+.lr-review-eyebrow{text-align:center;font-size:clamp(.7rem,1.6vw,.89rem);font-weight:850;
+ color:#ff96c9;letter-spacing:.17em;padding:3px 30px 0}
+.lr-review-modal h2{font:800 clamp(1.45rem,4.5vw,2.3rem)/1.05 Georgia,serif!important;
+ text-align:center;color:#fff0f6;margin:0!important}
+.lr-review-modal #lr-review-intro{text-align:center;margin:0!important;
+ font-size:clamp(.76rem,2.3vw,.97rem);color:#ead0e1}
+.lr-review-questions{display:grid;gap:clamp(6px,.9dvh,10px)}
+.lr-review-question{display:grid;grid-template-columns:clamp(28px,6vw,43px) minmax(0,.85fr) minmax(0,1.4fr);
+ align-items:center;gap:clamp(5px,1vw,12px);min-width:0;
+ padding:clamp(7px,1dvh,12px);border:1px solid #ed5797af;
+ background:linear-gradient(115deg,#4c1338d4,#2a0b29db);
+ border-radius:clamp(12px,2.7vw,20px)}
+.lr-review-icon{display:grid;place-items:center;width:100%;aspect-ratio:1;
+ border-radius:50%;border:1px solid #fe72b3;background:#3f082b;color:#ffb7d8;font-size:clamp(1rem,3vw,1.55rem)}
+.lr-review-question>strong{font-size:clamp(.7rem,2.1vw,1.02rem);font-weight:780;line-height:1.16;overflow-wrap:anywhere;min-width:0}
+.lr-review-hearts{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:clamp(1px,.5vw,6px);min-width:0}
+.lr-review-heart{display:flex!important;flex-direction:column;align-items:center;justify-content:center;
+ gap:0!important;min-height:38px!important;height:auto!important;min-width:0!important;width:100%!important;
+ padding:2px 0!important;margin:0!important;border:0!important;background:transparent;
+ box-shadow:none;border-radius:8px}
+.lr-review-heart>span{font-size:clamp(1.1rem,4.7vw,2.1rem);line-height:1.05;color:#ac507b;
+ text-shadow:0 0 3px #ed4d9566}
+.lr-review-heart.is-lit>span{color:#ff70b4;text-shadow:0 0 10px #fa63aa,0 0 3px #fff1f8}
+.lr-review-heart>small{font-size:clamp(.53rem,1.6vw,.73rem);color:#efb3d1}
+.lr-review-heart:focus-visible,.lr-review-x:focus-visible{outline:2px solid #fff;outline-offset:2px}
+.lr-review-comment-label{font-size:clamp(.86rem,2vw,1.06rem);font-weight:780;color:#ffe3f1}
+.lr-review-note{border:1px solid #ef71ada6;border-radius:15px;background:#2a0a24be;
+ padding:7px 10px;display:flex;flex-direction:column;min-height:90px}
+.lr-review-note textarea{box-sizing:border-box;resize:vertical;width:100%;min-height:74px;
+ color:#ffe8f4;background:transparent;border:0!important;box-shadow:none;
+ font:inherit;font-size:clamp(.78rem,2.3vw,.96rem);outline:none;padding:2px}
+.lr-review-note textarea::placeholder{color:#c5a0b6}
+.lr-review-note span{align-self:end;font-size:.68rem;color:#cda0b9}
+.lr-review-calendar-note{text-align:center!important;font-size:clamp(.68rem,1.8vw,.83rem);
+ line-height:1.24;color:#eec3dc;margin:0!important}
+.lr-review-save{box-sizing:border-box;width:100%!important;
+ min-height:clamp(44px,6dvh,54px)!important;margin:0!important;border-radius:999px;
+ padding:8px!important;font-size:clamp(.86rem,2.5vw,1.05rem)!important;font-weight:830}
+.lr-review-save{background:linear-gradient(105deg,#ff87bb,#f00080);
+ border:1px solid #ffd4e6!important;color:#fff}
+.lr-review-save:disabled{opacity:.65}
+.lr-review-error{color:#ffcfdf;padding:6px;margin:0}
+.evening-review-person{min-width:0;margin-top:13px;border:1px solid #c9589382;border-radius:13px;
+ background:#3f0f30bd;padding:clamp(9px,2.2vw,15px);overflow-wrap:anywhere}
+.evening-review-person h4{font:800 clamp(.95rem,2.8vw,1.2rem) Georgia,serif;color:#ffc1df;margin:0 0 11px}
+.evening-cal-person-content>.evening-review-person{width:100%;max-width:100%;box-sizing:border-box}
+.evening-cal-person-group[open] .evening-review-person{animation:none}
+.evening-review-person>strong{color:#ffd4e9;overflow-wrap:anywhere}
+.evening-review-person>p{margin:8px 0;font-size:.8rem;color:#e8bdd3;overflow-wrap:anywhere}
+.evening-review-score{margin-top:8px;display:flex;flex-direction:column;gap:2px}
+.evening-review-score span{font-size:clamp(.65rem,1.7vw,.84rem);color:#ecd2e2}
+.evening-review-score strong{font-size:clamp(.8rem,2.4vw,1.16rem);letter-spacing:.04em;color:#f36ca8}
+.evening-review-note{padding:8px;border:1px solid #ff8ac18a;border-radius:9px;white-space:pre-wrap}
+.evening-review-edit{margin-top:9px;min-height:36px!important;width:100%!important;
+ border-radius:10px;background:#811c52a8;border:1px solid #e47aac!important;
+ padding:7px!important;font-size:.75rem!important}
+@media(max-width:480px){
+ .lr-review-modal{padding:17px 10px 12px;gap:7px}
+ .lr-review-question{grid-template-columns:28px minmax(0,.78fr) minmax(0,1.5fr);
+  gap:5px;padding:7px 5px}
+ .lr-review-note{min-height:80px}
+ .lr-review-note textarea{min-height:60px}
+ .lr-review-x{width:32px;height:32px;min-height:32px!important}
+}
+@media(max-height:700px){
+ .lr-review-backdrop{padding:5px}
+ .lr-review-modal{padding-top:12px;padding-bottom:10px;gap:5px}
+ .lr-review-question{padding-block:5px}
+ .lr-review-heart{min-height:32px!important}
+ .lr-review-note textarea{min-height:54px}
+ .lr-review-modal h2{font-size:clamp(1.3rem,4vw,1.9rem)!important}
+}
+@media(prefers-reduced-motion:reduce){.lr-review-modal,.lr-review-backdrop{transition:none!important}}

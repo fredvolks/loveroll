@@ -1,0 +1,244 @@
+/* LoveRoll v89 - Soirée only. The existing WebGL D6/D35 engines are unchanged.
+   Two equal, readable personal cards; result directly BELOW each confirmed D6.
+   Compact no-scroll primary view on phones, tablets and PCs. */
+main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-d6-grid{
+ display:grid!important;
+ grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+ gap:clamp(5px,1.4vw,16px)!important;min-width:0!important;min-height:0!important;
+ align-items:stretch!important;overflow:hidden!important;
+}
+main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-user-die,
+main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-partner-card{
+ box-sizing:border-box!important;
+ min-width:0!important;min-height:0!important;
+ height:100%!important;padding:clamp(5px,1vw,13px)!important;
+ border-radius:clamp(15px,2vw,24px)!important;
+ overflow:hidden!important;
+}
+main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-user-die{
+ display:flex!important;flex-direction:column!important;
+ align-items:center!important;justify-content:center!important;
+ gap:clamp(2px,.7dvh,9px)!important;
+ background:radial-gradient(ellipse at 50% 55%,#b4286257,transparent 75%),linear-gradient(150deg,#5c143c,#260a22)!important;
+}
+main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-user-die .evening-person{
+ display:none!important;
+}
+main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-user-die .love3d{
+ position:relative!important;display:grid!important;place-items:center!important;
+ flex:0 1 auto!important;min-width:0!important;min-height:0!important;
+ width:min(100%,min(37vw,23dvh,230px))!important;
+ height:auto!important;aspect-ratio:1!important;
+ max-width:none!important;max-height:48%!important;
+ margin:0 auto!important;overflow:hidden!important;
+}
+main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-user-die .love3d-stage{
+ position:relative!important;box-sizing:border-box!important;
+ display:grid!important;place-items:center!important;
+ width:100%!important;height:100%!important;
+ max-width:none!important;max-height:none!important;aspect-ratio:1!important;
+ overflow:hidden!important;
+}
+main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-user-die .dice-canvas{
+ position:absolute!important;inset:0!important;
+ width:100%!important;height:100%!important;
+ object-fit:contain!important;
+}
+/* No tall result box, no border and no second column alongside the own die. */
+main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-face-result,
+main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-partner-result{
+ display:flex!important;flex:0 0 auto!important;
+ flex-direction:column!important;justify-content:center!important;align-items:center!important;
+ grid-column:auto!important;grid-row:auto!important;
+ width:100%!important;height:auto!important;min-height:0!important;
+ margin:0!important;padding:0!important;
+ background:none!important;border:0!important;border-radius:0!important;
+ box-shadow:none!important;gap:2px!important;text-align:center!important;
+}
+main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-face-result.is-empty{
+ display:none!important;
+}
+main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-face-result strong,
+main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-partner-result strong{
+ font:800 clamp(1.15rem,3.4vw,1.85rem)/1 Georgia,serif!important;
+ color:#ffbadb!important;text-shadow:0 0 10px #ec4d9b65;
+}
+main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-face-result small,
+main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-partner-result small{
+ font:600 clamp(.6rem,1.65vw,.86rem)/1.14 system-ui,sans-serif!important;
+ padding:0!important;color:#fff0f6!important;margin:0!important;
+}
+main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-original-d6{
+ font-size:clamp(.52rem,1.4vw,.72rem)!important;color:#dca2c1!important;
+}
+main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-small-roll{
+ flex:0 0 auto!important;align-self:stretch!important;
+ width:100%!important;min-height:44px!important;
+ max-height:50px!important;margin:clamp(3px,.7dvh,8px) 0 0!important;
+ padding:5px!important;border-radius:14px!important;
+}
+main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-partner-card{
+ display:flex!important;flex-direction:column!important;
+ align-items:center!important;justify-content:center!important;
+ gap:clamp(4px,1dvh,12px)!important;
+ background:radial-gradient(ellipse at 50% 46%,#a71f5d48,transparent 78%),linear-gradient(145deg,#44102d,#1c091e)!important;
+}
+main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-partner-caption{
+ display:block!important;flex:0 0 auto!important;text-align:center!important;
+ width:100%!important;white-space:nowrap!important;overflow:hidden!important;
+ text-overflow:ellipsis!important;
+ font-size:clamp(.76rem,1.7vw,1.06rem)!important;
+}
+main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-partner-die{
+ display:grid!important;place-items:center!important;
+ flex:0 1 auto!important;width:min(100%,min(33vw,21dvh,220px))!important;
+ max-width:none!important;max-height:47%!important;aspect-ratio:1!important;
+ overflow:hidden!important;
+}
+main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-partner-die .love3d,
+main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-partner-die .love3d-stage{
+ width:100%!important;height:100%!important;max-width:none!important;
+ max-height:none!important;min-width:0!important;min-height:0!important;
+ aspect-ratio:1!important;position:relative!important;overflow:hidden!important;
+}
+main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-partner-die .dice-canvas{
+ position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+}
+main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-partner-pending{
+ display:flex!important;min-height:0!important;flex-direction:column!important;
+ align-items:center!important;justify-content:center!important;
+ gap:clamp(4px,.8dvh,9px)!important;
+}
+main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-partner-medallion{
+ display:grid!important;place-items:center!important;
+ width:clamp(44px,12vw,85px)!important;height:clamp(44px,12vw,85px)!important;
+ max-height:none!important;aspect-ratio:1!important;
+ font-size:clamp(1.4rem,4vw,2.5rem)!important;
+}
+main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-partner-message{
+ font-size:clamp(.72rem,1.9vw,1rem)!important;
+}
+main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-partner-pending small{
+ font-size:clamp(.61rem,1.45vw,.83rem)!important;
+}
+/* The old ready summary stays compact to leave Step 2 with its 35-faced die. */
+main#app.loveroll-evening-page .evening-step.one.is-complete .evening-summary-person b{
+ font-size:clamp(1rem,2.4vw,1.5rem)!important;
+}
+/* Phone: keep the whole tab fixed in the available viewport above bottom navigation. */
+@media (max-width:767px){
+ main#app.loveroll-evening-page .evening-premium-view.is-waiting{
+  grid-template-rows:minmax(42px,.7fr) minmax(164px,3.7fr)
+   minmax(54px,.85fr) minmax(57px,.86fr)!important;
+ }
+ main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-d6-grid{
+  flex:1 1 0!important;
+ }
+ main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-user-die,
+ main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-partner-card{
+  padding:5px!important;gap:3px!important;
+ }
+ main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-user-die .love3d{
+  width:min(100%,min(35vw,18dvh,175px))!important;
+  height:auto!important;max-width:none!important;max-height:45%!important;
+ }
+ main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-partner-die{
+  width:min(100%,min(32vw,17dvh,168px))!important;
+  max-height:43%!important;
+ }
+ main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-face-result strong,
+ main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-partner-result strong{
+  font-size:clamp(1.08rem,4.3vw,1.38rem)!important;
+ }
+ main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-face-result small,
+ main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-partner-result small{
+  font-size:clamp(.6rem,2.1vw,.72rem)!important;
+ }
+ main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-partner-caption{
+  font-size:clamp(.73rem,2.65vw,.9rem)!important;
+ }
+}
+@media (max-width:767px) and (max-height:690px){
+ main#app.loveroll-evening-page .evening-premium-view.is-waiting{
+  grid-template-rows:minmax(36px,.57fr) minmax(140px,3.5fr)
+    minmax(48px,.8fr) minmax(52px,.9fr)!important;
+ }
+ main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-user-die .love3d{
+  width:min(100%,min(31vw,15dvh,138px))!important;
+ }
+ main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-partner-die{
+  width:min(100%,min(30vw,14dvh,130px))!important;
+ }
+}
+/* Tablet: one column, four sections all visible (never an off-screen Step 2). */
+@media (min-width:768px) and (max-width:1099px){
+ main#app.loveroll-evening-page{
+  box-sizing:border-box!important;display:flex!important;flex-direction:column!important;
+  height:100dvh!important;min-height:0!important;max-height:100dvh!important;
+  overflow:hidden!important;padding:calc(79px + env(safe-area-inset-top,0px)) 16px 10px!important;
+ }
+ main#app.loveroll-evening-page .evening-premium-view{
+  flex:1 1 0!important;display:grid!important;
+  width:min(100%,920px)!important;max-width:920px!important;
+  margin:0 auto!important;min-height:0!important;height:auto!important;
+  overflow:hidden!important;padding:0!important;gap:clamp(6px,1dvh,10px)!important;
+  grid-template-columns:minmax(0,1fr)!important;
+ }
+ main#app.loveroll-evening-page .evening-premium-view.is-waiting{
+  grid-template-rows:minmax(49px,.62fr) minmax(220px,3.4fr)
+    minmax(58px,.85fr) minmax(68px,.9fr)!important;
+ }
+ main#app.loveroll-evening-page .evening-premium-view.is-ready{
+  grid-template-rows:minmax(48px,.57fr) minmax(100px,1fr)
+    minmax(0,4.8fr) minmax(65px,.8fr)!important;
+ }
+ main#app.loveroll-evening-page .evening-premium-view>.evening-intro,
+ main#app.loveroll-evening-page .evening-premium-view>.evening-step.one,
+ main#app.loveroll-evening-page .evening-premium-view>.evening-step.two,
+ main#app.loveroll-evening-page .evening-premium-view>.evening-gift{
+  grid-column:1!important;grid-row:auto!important;min-height:0!important;
+ }
+}
+/* PC: a two-column Soirée, with consistent header, Step 1, Step 2 and gift
+   inside one viewport rather than the older 580px forced column minimum. */
+@media (min-width:1100px){
+ main#app.loveroll-evening-page{
+  box-sizing:border-box!important;display:flex!important;flex-direction:column!important;
+  height:100dvh!important;min-height:0!important;max-height:100dvh!important;
+  overflow:hidden!important;
+  padding:calc(82px + env(safe-area-inset-top,0px)) clamp(14px,2vw,32px) 10px!important;
+ }
+ main#app.loveroll-evening-page .evening-premium-view{
+  flex:1 1 0!important;display:grid!important;
+  width:min(100%,1260px)!important;max-width:1260px!important;
+  height:auto!important;min-height:0!important;overflow:hidden!important;
+  margin:0 auto!important;padding:0!important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1.15fr)!important;
+  gap:clamp(8px,1vw,14px)!important;
+ }
+ main#app.loveroll-evening-page .evening-premium-view.is-waiting,
+ main#app.loveroll-evening-page .evening-premium-view.is-ready{
+  grid-template-rows:minmax(55px,.7fr) minmax(0,5fr) minmax(70px,1fr)!important;
+ }
+ main#app.loveroll-evening-page .evening-premium-view>.evening-intro{
+  grid-column:1/-1!important;grid-row:1!important;min-height:0!important;
+ }
+ main#app.loveroll-evening-page .evening-premium-view>.evening-step.one{
+  grid-column:1!important;grid-row:2!important;min-height:0!important;
+ }
+ main#app.loveroll-evening-page .evening-premium-view>.evening-step.two{
+  grid-column:2!important;grid-row:2/4!important;min-height:0!important;
+ }
+ main#app.loveroll-evening-page .evening-premium-view>.evening-gift{
+  grid-column:1!important;grid-row:3!important;min-height:0!important;
+ }
+ main#app.loveroll-evening-page .evening-premium-view>.evening-empty{
+  grid-column:1/-1!important;grid-row:2/4!important;min-height:0!important;
+ }
+ main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-user-die .love3d{
+  width:min(100%,min(16vw,25dvh,245px))!important;max-width:none!important;
+ }
+ main#app.loveroll-evening-page .evening-step.one.is-incomplete .evening-partner-die{
+  width:min(100%,min(15vw,24dvh,225px))!important;
+ }
+}
