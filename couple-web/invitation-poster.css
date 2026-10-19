@@ -1,0 +1,212 @@
+/* LoveRoll invitation v59: mobile editorial poster inspired by the approved HD reference.
+   Dedicated to the invitation/discovery page. Controls and titles remain real HTML. */
+body:has(.discover-v59){background:#0d020b}
+main#app:has(.discover-v59){width:100%;max-width:none;min-height:100dvh;padding:0!important;overflow-x:clip}
+.love-discover.discover-v59{
+ --lr-bg:#15030f;--lr-hot:#fa499b;--lr-rose:#ff8bbe;
+ width:min(100%,650px);max-width:650px;min-height:100dvh;
+ padding:calc(13px + env(safe-area-inset-top,0px)) clamp(16px,4.2vw,29px)
+ calc(14px + env(safe-area-inset-bottom,0px));gap:0;
+ box-sizing:border-box;margin-inline:auto;display:flex;flex-direction:column;
+ overflow:hidden;isolation:isolate;
+ background:
+  radial-gradient(ellipse 43% 25% at 1% 7%,#fd3d8154,transparent 78%),
+  radial-gradient(ellipse 72% 48% at 105% 26%,#ad165153,transparent 80%),
+  radial-gradient(ellipse 80% 42% at -18% 78%,#f0216e56,transparent 78%),
+  linear-gradient(167deg,#35051c 0%,#0e020b 35%,#220416 64%,#490524 90%,#1a0211);
+}
+.discover-v59:before{
+ content:'♡';position:absolute;top:13%;right:-14%;
+ font:clamp(190px,63vw,430px)/.9 Georgia,serif;
+ color:transparent;-webkit-text-stroke:clamp(5px,1.5vw,12px) #e724714a;
+ transform:rotate(-10deg);text-shadow:none;opacity:.86;pointer-events:none;z-index:-1;
+}
+.discover-v59:after{
+ content:'';inset:0;position:absolute;z-index:-2;pointer-events:none;
+ background:
+  radial-gradient(circle at 4% 3%,#ffb2bb85 0 4px,#fe6ba858 7px,transparent 28px),
+  radial-gradient(circle at 10% 4%,#f5348890 0 5px,transparent 28px),
+  radial-gradient(circle at 5% 9%,#ff6ba774 0 7px,transparent 30px),
+  radial-gradient(ellipse at 36% 72%,#f22b7657,transparent 57%);
+}
+.discover-v59 .discover-header{padding:0;flex:none;position:relative;z-index:2;text-align:left}
+.discover-v59 .discover-brand{
+ font:italic 800 clamp(2.65rem,10.2vw,4.4rem)/.98 Georgia,'Times New Roman',serif;
+ letter-spacing:-.073em;justify-content:center;
+ text-shadow:0 3px 24px #e6338071;
+}
+.discover-v59 .discover-brand span{color:#fff8fd}
+.discover-v59 .discover-brand strong{color:#ff76b3}
+.discover-v59 .discover-brand i{font-size:.48em;margin-left:5px;color:#ff91c8}
+.discover-v59 .discover-kicker{
+ margin-top:clamp(8px,1.25vh,14px);color:#eec2d5;
+ font-size:clamp(.61rem,2.3vw,.84rem);font-weight:610;
+ text-align:center;letter-spacing:clamp(.13em,.55vw,.27em);
+}
+.discover-v59 .discover-editorial-title{
+ max-width:none;margin:clamp(12px,2vh,21px) 0 8px;
+ font:800 clamp(3.22rem,13.5vw,6.55rem)/.87 Georgia,'Times New Roman',serif;
+ letter-spacing:-.08em;text-align:left;text-wrap:nowrap;
+ text-shadow:0 4px 18px #17000ea8;
+}
+.discover-v59 .discover-editorial-title>span,
+.discover-v59 .discover-editorial-title>em{display:block}
+.discover-v59 .discover-editorial-title>span>b{font-weight:inherit;color:#fff8fa}
+.discover-v59 .discover-editorial-title>span>em,
+.discover-v59 .discover-editorial-title>em{font-style:normal;color:#ff60a7}
+.discover-v59 .discover-editorial-intro{
+ max-width:95%;margin:10px 0 2px;
+ font:400 clamp(.96rem,3.32vw,1.49rem)/1.19 Georgia,'Times New Roman',serif;
+ color:#fff0f7;text-wrap:pretty;text-align:left;
+ text-shadow:0 2px 8px #15020d70;
+}
+.discover-v59 .discover-editorial-stage{
+ position:relative;z-index:1;flex:1 1 auto;
+ min-height:clamp(260px,41dvh,560px);margin:clamp(9px,1.3vh,15px) 0 0;
+ display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);
+ column-gap:0;align-items:stretch;
+}
+.discover-v59 .discover-editorial-die{
+ position:relative;min-width:0;min-height:0;height:100%;
+ display:flex;align-items:center;justify-content:center;
+ overflow:visible;pointer-events:none;isolation:isolate;
+}
+.discover-v59 .discover-editorial-satin{
+ position:absolute;z-index:-1;inset:-12% -24% -10% -42%;
+ border-radius:45% 19% 33% 41%;transform:rotate(-9deg);
+ filter:none;box-shadow:0 0 65px #f330855b;
+ background:
+  radial-gradient(ellipse 46% 19% at 50% 92%,#ffb2be96 0%,#a90e5180 44%,transparent 91%),
+  repeating-linear-gradient(155deg,transparent 0 22px,#ff56a725 36px,#5c04273c 59px,transparent 86px),
+  linear-gradient(141deg,#2b031b,#990c4c 19%,#140312 39%,#f5429a99 49%,#36051d 58%,#ab1355 77%,#13020d 100%);
+}
+.discover-v59 .discover-editorial-die:before{
+ content:'';position:absolute;z-index:0;inset:2% -15% 0 -25%;
+ background:linear-gradient(154deg,transparent 16%,#ff64ac43 31%,transparent 43%,#ff9cba50 60%,transparent 68%);
+ filter:blur(14px);opacity:.8;pointer-events:none;
+}
+.discover-v59 .discover-editorial-die>img{
+ display:block;position:relative;z-index:1;max-width:none;
+ width:172%;height:82%;object-fit:cover;object-position:center;
+ transform:translate(-5%,4%) rotate(-7deg);
+ border-radius:20px;
+ -webkit-mask-image:radial-gradient(ellipse 65% 62% at 48% 49%,black 45%,#000b 73%,transparent 99%);
+ mask-image:radial-gradient(ellipse 65% 62% at 48% 49%,black 45%,#000b 73%,transparent 99%);
+ filter:contrast(1.14) saturate(1.15)
+ drop-shadow(0 19px 19px #21000db5) drop-shadow(0 0 25px #ff2a8599);
+ image-rendering:auto;
+}
+.discover-v59 .discover-editorial-sparkle{
+ z-index:2;font:clamp(1.4rem,5vw,2.7rem) Georgia,serif;
+ color:#ffadd0;text-shadow:0 0 13px #ff489d,0 0 27px #ff2a8e;
+}
+.discover-v59 .discover-sparkle-one{left:1%;top:26%;transform:rotate(-13deg)}
+.discover-v59 .discover-sparkle-two{right:0;bottom:26%}
+.discover-v59 .discover-editorial-list{
+ z-index:3;align-self:stretch;display:flex;flex-direction:column;justify-content:space-evenly;
+ box-sizing:border-box;overflow:hidden;min-width:0;
+ padding:clamp(5px,1.4vh,12px) clamp(8px,1.9vw,17px);
+ border:1.5px solid #fc81b8;
+ border-radius:clamp(18px,4vw,31px);
+ background:
+  radial-gradient(ellipse 80% 40% at 100% 100%,#ae185b41,transparent),
+  linear-gradient(160deg,#3d0924f0 0%,#170311f5 56%,#38071ce9 100%);
+ box-shadow:inset 0 1px #ffcfdf8c,0 0 14px #ff398659,0 18px 27px #140212b3;
+ backdrop-filter:blur(6px);
+}
+.discover-v59 .discover-editorial-item{
+ display:grid;grid-template-columns:clamp(42px,12vw,86px) minmax(0,1fr);
+ align-items:center;gap:clamp(8px,2vw,19px);
+ min-height:0;flex:1 1 25%;padding:clamp(7px,1.1vh,17px) 0;
+ cursor:default;pointer-events:none;
+}
+.discover-v59 .discover-editorial-item+.discover-editorial-item{
+ border-top:1px solid #ed5e9b5b;
+}
+.discover-v59 .discover-editorial-icon{
+ display:grid;place-items:center;width:100%;aspect-ratio:1;
+ border-radius:clamp(10px,2.5vw,18px);
+ border:1px solid #ee5e9c9e;
+ background:radial-gradient(circle at 35% 25%,#9b195aa1 0%,#400720d6 46%,#16030f 100%);
+ box-shadow:inset 0 2px #ffc1e044,0 0 13px #fa2f8054;
+ text-shadow:none;
+}
+.discover-v59 .discover-editorial-icon svg{
+ display:block;width:86%;height:86%;overflow:visible;
+ filter:drop-shadow(0 0 4px #ff4f9f65);
+}
+.discover-v59 .discover-editorial-item h2{
+ font:700 clamp(1.08rem,4.4vw,1.92rem)/1.08 Georgia,'Times New Roman',serif;
+ letter-spacing:-.035em;margin:0 0 5px;
+ color:#fff7fa;white-space:nowrap;
+}
+.discover-v59 .discover-editorial-item p{
+ font:400 clamp(.66rem,2.45vw,1rem)/1.34 Inter,system-ui,sans-serif;
+ color:#e8c8d9;margin:0;overflow-wrap:anywhere;
+}
+.discover-v59 .discover-editorial-bottom{
+ flex:0 0 auto;margin-top:clamp(12px,2vh,23px);
+ position:relative;z-index:4;text-align:center;
+}
+.discover-v59 .discover-editorial-bottom>h2{
+ font:700 clamp(1.76rem,6.45vw,3.1rem)/1.09 Georgia,serif;
+ letter-spacing:-.042em;margin:0 0 clamp(10px,1.7vh,19px);
+ color:#fff1f8;text-shadow:0 2px 14px #360412;
+ white-space:nowrap;
+}
+.discover-v59 .discover-accept{
+ width:100%;min-height:clamp(59px,8.4dvh,88px);
+ border:2px solid #ffdbed!important;border-radius:999px;
+ padding:10px clamp(12px,3vw,32px);
+ color:#fff;font:900 clamp(1.05rem,4.1vw,1.6rem)/1.2 Inter,system-ui,sans-serif;
+ letter-spacing:.014em;text-shadow:0 2px 4px #931446ab;
+ background:linear-gradient(180deg,#ff9dc9 0%,#ff68aa 24%,#f33891 68%,#c21675 100%);
+ box-shadow:inset 0 3px 2px #fff4fba6,0 0 26px #f83c93b6,0 8px 25px #87043bba;
+}
+.discover-v59 .discover-accept:active{transform:scale(.99)}
+.discover-v59 .discover-privacy{
+ color:#d7abbf;margin:clamp(8px,1.25vh,13px) 0 0;
+ font:400 clamp(.69rem,2.2vw,.85rem)/1.25 Inter,system-ui,sans-serif;
+ letter-spacing:.035em;
+}
+/* Messenger keeps a useful Chrome handoff without a second pink CTA or oversized panel. */
+.discover-v59 .messenger-browser-handoff{
+ margin:6px 0 0;padding:0;min-height:0;
+ border:0;background:transparent;box-shadow:none;border-radius:0;
+}
+.discover-v59 .messenger-browser-handoff>strong{display:none}
+.discover-v59 .messenger-browser-primary{
+ display:inline-flex!important;min-height:32px;width:auto;
+ border:0!important;border-radius:0;box-shadow:none;
+ background:transparent;color:#ffc1de;
+ font-size:clamp(.72rem,2.3vw,.85rem);text-decoration:underline!important;
+ padding:4px 8px;
+}
+.discover-v59 .messenger-browser-handoff details{display:none}
+@media(max-width:385px){
+ .love-discover.discover-v59{padding-inline:13px}
+ .discover-v59 .discover-editorial-title{font-size:clamp(2.97rem,13.3vw,4.5rem)}
+ .discover-v59 .discover-editorial-stage{grid-template-columns:50% 50%}
+ .discover-v59 .discover-editorial-item{grid-template-columns:39px minmax(0,1fr);gap:7px;padding-block:6px}
+ .discover-v59 .discover-editorial-item h2{font-size:1.03rem}
+ .discover-v59 .discover-editorial-item p{font-size:.65rem}
+}
+@media(max-height:795px) and (max-width:650px){
+ .love-discover.discover-v59{padding-top:8px;padding-bottom:8px}
+ .discover-v59 .discover-brand{font-size:clamp(2.3rem,9.3vw,3.5rem)}
+ .discover-v59 .discover-kicker{margin-top:5px}
+ .discover-v59 .discover-editorial-title{font-size:clamp(2.95rem,12.15vw,4.3rem);margin-top:9px}
+ .discover-v59 .discover-editorial-intro{font-size:clamp(.82rem,3vw,1.07rem);margin-top:6px}
+ .discover-v59 .discover-editorial-stage{min-height:235px;margin-top:7px}
+ .discover-v59 .discover-editorial-bottom{margin-top:9px}
+ .discover-v59 .discover-editorial-bottom>h2{font-size:clamp(1.55rem,5.7vw,2.05rem);margin-bottom:9px}
+ .discover-v59 .discover-accept{min-height:53px}
+ .discover-v59 .discover-privacy{margin-top:6px}
+}
+@media(max-height:590px) and (max-width:650px){
+ .discover-v59 .discover-editorial-stage{min-height:218px}
+ .discover-v59 .discover-editorial-title{font-size:clamp(2.5rem,10.5vw,3.6rem)}
+ .discover-v59 .discover-editorial-item h2{font-size:.99rem}
+ .discover-v59 .discover-editorial-item p{font-size:.62rem}
+}
+@media(prefers-reduced-motion:reduce){.discover-v59 *{animation:none!important;transition:none!important}}

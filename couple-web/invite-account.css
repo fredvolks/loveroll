@@ -1,0 +1,337 @@
+/* LoveRoll invitation account screen: isolated styling, no changes to gameplay. */
+body:has(.invite-account-screen){background:#0d040d;color:#fff4f9}
+main#app:has(.invite-account-screen){width:100%;max-width:none;min-height:100dvh;padding:0 10px 0;margin:0 auto;overflow-x:hidden}
+.invite-account-screen{--pink:#ff4b9c;--white:#fff4fc;--mute:#dfb5ca;position:relative;isolation:isolate;display:flex;flex-direction:column;
+ width:min(100%,600px);min-height:100dvh;margin:auto;padding:calc(14px + env(safe-area-inset-top,0px)) 0 calc(14px + env(safe-area-inset-bottom,0px));color:var(--white);
+ font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+.invite-account-screen:before{content:"";position:absolute;inset:0;z-index:-2;pointer-events:none;background:radial-gradient(ellipse 54% 39% at 50% 12%,#870c4b70,transparent),linear-gradient(180deg,#160513,#0d050d 55%,#180719)}
+.invite-account-hero{position:relative;flex:0 0 auto;height:clamp(146px,21dvh,192px);padding:5px 9px 0;overflow:hidden;text-align:center;
+ background:radial-gradient(ellipse 76% 84% at 95% 80%,#af1e646e,transparent 62%),radial-gradient(ellipse 60% 90% at 3% 70%,#820c5369,transparent 74%);
+ border-radius:26px 26px 9px 9px}
+.invite-account-hero:before{content:"";position:absolute;inset:34% -15% -70%;pointer-events:none;opacity:.65;background:
+ linear-gradient(167deg,transparent 18%,#ee237045 30%,#ff82ad75 34%,#39031942 40%,transparent 52%),
+ linear-gradient(14deg,transparent 40%,#ff38875f 48%,#8e104a7e 52%,transparent 70%);filter:blur(5px)}
+.invite-account-hero:after{content:"♡";position:absolute;right:2%;top:8px;transform:rotate(17deg);font-size:clamp(74px,23vw,134px);font-family:Georgia,serif;color:#ff308e25;text-shadow:0 0 15px #ff197b95,0 0 36px #fc185b59;pointer-events:none}
+.invite-decor-heart{position:absolute;left:3%;top:40px;transform:rotate(-15deg);font-family:Georgia,serif;font-size:74px;line-height:1;color:#e6177c82;text-shadow:0 0 17px #f82789b9}
+.invite-auth-brand{position:relative;z-index:1;display:flex;align-items:baseline;justify-content:center;font:italic 800 clamp(2.28rem,9.5vw,3.35rem)/1 Georgia,'Times New Roman',serif;letter-spacing:-.06em;text-shadow:0 8px 22px #fc34864f}
+.invite-auth-brand span{color:#fff7ff}.invite-auth-brand strong{color:#ff68ac}.invite-auth-brand i{font-size:.5em;font-style:normal;color:#ff8dc6;margin-left:7px}
+.invite-account-hero>p{position:relative;z-index:1;margin:7px 0 0;color:#fa9dc6;font-size:clamp(.55rem,2.2vw,.74rem);font-weight:830;letter-spacing:.15em}
+.invite-account-progress{position:absolute;bottom:12px;left:22%;right:22%;display:grid;grid-template-columns:auto 1fr auto;align-items:start;gap:8px;z-index:2}
+.invite-progress-item{display:grid;gap:4px;justify-items:center;color:#ecbbd2;font-size:.67rem;font-weight:700;line-height:1.15;min-width:68px}
+.invite-progress-item b{width:35px;height:35px;display:grid;place-items:center;background:#3d1532;border:2px solid #ffadce;border-radius:50%;font-size:1rem;box-shadow:0 0 12px #ee458157}
+.invite-progress-item.is-current{color:#ff81b6}
+.invite-progress-item.is-current b{background:linear-gradient(145deg,#ff7bb7,#ee2381);border-color:#ffb8d3;color:#fff;box-shadow:0 0 14px #ff3488ad}
+.invite-progress-line{align-self:start;height:2px;background:linear-gradient(90deg,#ffb4d5,#c9367c);margin-top:17px;min-width:45px}
+.invite-progress-line i{display:block;width:50%;height:2px;background:#fc6aab}
+.invite-auth-card{position:relative;z-index:1;flex:1 0 auto;margin:0 3px;padding:clamp(13px,3.1vw,24px);
+ border:1px solid #d44c89b9;border-radius:24px 24px 24px 24px;background:
+ radial-gradient(ellipse 48% 36% at 14% 0%,#70204e8e,transparent),
+ linear-gradient(145deg,#38112cfa 0%,#200d24fc 55%,#140b1afd 100%);
+ box-shadow:0 15px 34px #040105bc,inset 0 1px #ffb9d54a,0 0 22px #ed418224}
+.invite-auth-title{display:flex;gap:13px;align-items:center;margin:2px 0 8px}
+.invite-account-icon{flex:0 0 51px;width:51px;height:51px;display:grid;place-items:center;border:1px solid #ff76afaf;
+ border-radius:16px;font-size:2rem;color:#ff81bb;background:linear-gradient(135deg,#732349,#32112a);box-shadow:inset 0 1px #ffbfd966}
+.invite-auth-title h1,.invite-profile-card h1,.invite-error-card h1{font:700 clamp(1.3rem,5.4vw,2.02rem)/1.04 Georgia,"Times New Roman",serif;margin:0;letter-spacing:-.032em;color:#fff8fc}
+.invite-auth-title h2{font:600 clamp(.96rem,3.8vw,1.34rem)/1.11 Georgia,serif;margin:4px 0 0;color:#ffe4f1}
+.invite-auth-lead{font-size:clamp(.8rem,2.7vw,.95rem);line-height:1.35;color:#e8c5d6;margin:12px 2px 14px}
+.invite-auth-segments{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:0 0 12px}
+.invite-account-screen .invite-auth-segments button{min-height:46px;border:1px solid #944464!important;border-radius:12px;background:#30132b;color:#efd5e3;font-size:.86rem;font-weight:750;box-shadow:inset 0 1px #ff84b520}
+.invite-account-screen .invite-auth-segments button.is-active{background:linear-gradient(100deg,#fd63a8,#e52b7f);border-color:#ff94c3;color:white;box-shadow:0 0 17px #f331833e}
+.invite-auth-fields{display:grid;gap:8px}
+.invite-auth-field{margin:0;display:flex;align-items:center;gap:10px;min-height:58px;padding:8px 12px;min-width:0;
+ border:1px solid #9c4572b4;border-radius:12px;background:linear-gradient(115deg,#401a37d6,#1e0f23f5);
+ box-shadow:inset 0 1px #ffafd82d}
+.invite-auth-field:focus-within{border-color:#fc80b9;box-shadow:0 0 0 2px #f7468b2c}
+.invite-field-icon{flex:0 0 29px;text-align:center;font-size:1.5rem;color:#f18bbd}
+.invite-field-body{display:grid;gap:3px;flex:1;min-width:0}
+.invite-field-body>span{font-size:.77rem;color:#f7dbeb}
+.invite-account-screen .invite-field-body input{width:100%;min-width:0;min-height:25px;height:25px;box-sizing:border-box;margin:0;padding:0;
+ background:transparent;border:0!important;outline:none!important;box-shadow:none;border-radius:0;
+ color:#fff5fb;font-size:.86rem;font-weight:500}
+.invite-field-body input::placeholder{color:#b18a9e}
+.invite-account-screen .invite-password-eye{width:36px;height:36px;flex:0 0 36px;min-height:36px;padding:8px!important;
+ border:0!important;border-radius:10px;background:transparent;color:#ffc2dd;box-shadow:none}
+.invite-password-eye svg{width:20px;height:20px}
+.invite-password-meter{margin:8px 3px 11px}
+.invite-meter-bars{display:grid;grid-template-columns:repeat(4,1fr);gap:5px}
+.invite-meter-bars i{height:5px;background:#5b344d;border-radius:99px}
+.invite-password-meter[data-level="1"] i:nth-child(-n+1),.invite-password-meter[data-level="2"] i:nth-child(-n+2),
+.invite-password-meter[data-level="3"] i:nth-child(-n+3),.invite-password-meter[data-level="4"] i{background:linear-gradient(90deg,#ff77b5,#d53985)}
+.invite-password-meter p{margin:7px 0 0;color:#d6b4c5;font-size:.73rem;line-height:1.22}
+.invite-auth-feedback:empty{display:none}
+.invite-auth-feedback:not(:empty){margin:8px 0;border:1px solid #d76b91;border-radius:10px;padding:10px;color:#ffe9f4;background:#581c3d;font-size:.8rem;line-height:1.35}
+.invite-account-screen .invite-auth-submit{position:relative;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:3px;
+ width:100%;min-height:57px;padding:9px 28px!important;border:1px solid #ffbedb!important;border-radius:15px;
+ color:white;background:linear-gradient(110deg,#ff6daf,#f42e8f 62%,#c4116e);
+ box-shadow:inset 0 1px #ffddeaa6,0 0 16px #fb368b66;font-size:clamp(.9rem,3.4vw,1.11rem);font-weight:790}
+.invite-auth-submit small{font-size:.75rem;font-weight:550;color:#fff0f6}
+.invite-auth-submit span{position:absolute;right:15px;top:50%;transform:translateY(-50%);font-size:1.8rem}
+.invite-auth-submit:disabled{opacity:.6!important}
+.invite-account-screen .invite-auth-link,.invite-account-screen .invite-auth-back{
+ width:100%;display:block;background:transparent;border:0!important;box-shadow:none;
+ text-align:center;color:#f5a2c8;padding:7px!important;min-height:34px;font-size:.82rem}
+.invite-or{position:relative;text-align:center;margin:7px 0 9px;color:#dcc0cd;font-size:.79rem}
+.invite-or:before{content:"";height:1px;background:linear-gradient(90deg,transparent,#9e4879,transparent);position:absolute;left:0;right:0;top:50%}
+.invite-or span{position:relative;background:#220e23;padding:0 12px}
+.invite-account-screen .invite-google{display:flex;align-items:center;justify-content:center;gap:14px;
+ width:100%;min-height:49px;padding:9px!important;border-radius:13px;border:1px solid #d04788!important;
+ background:#160d19;color:#fff9fc;box-shadow:0 0 7px #ce35732f;font-size:.93rem;font-weight:760}
+.invite-google-mark{font:bold 1.44rem Arial,sans-serif;background:conic-gradient(#4285f4 0 25%,#34a853 25% 46%,#fbbc05 46% 66%,#ea4335 66% 89%,#4285f4 89%);
+ background-clip:text;-webkit-background-clip:text;color:transparent}
+.invite-auth-trust{display:flex;gap:12px;align-items:center;margin:12px 0 2px;padding:10px 12px;border:1px solid #8d426a;
+ border-radius:13px;background:linear-gradient(110deg,#381730,#231127);color:#cfa9c0}
+.invite-auth-trust>span{flex:0 0 35px;display:grid;place-items:center;width:35px;height:35px;border:1px solid #cb5994;
+ border-radius:12px;color:#f6a2c9;font-size:1.6rem}
+.invite-auth-trust p{margin:0;font-size:.72rem;line-height:1.32;color:#d9bccc}
+.invite-profile-card{padding:17px 20px}
+.invite-profile-card>p,.invite-error-card p{font-size:.83rem;color:#dfc0d0;line-height:1.4}
+.invite-profile-card label{font-size:.81rem;color:#f6dcea}
+.invite-profile-card h3{font-size:.91rem;margin:9px 0 6px}
+.invite-profile-card .love-answer-field{margin:8px 0}
+.invite-profile-card .love-answer-label{font-size:.8rem}
+.invite-profile-card .checkline{display:flex;align-items:center;gap:10px;margin:9px 0}
+.invite-profile-card .checkline input{accent-color:#ff539e}
+.invite-small-note{font-size:.72rem!important}
+.invite-error-card{margin-top:12dvh;display:grid;gap:12px}
+.invite-welcome{height:100dvh;display:flex;align-items:center;justify-content:center;flex-direction:column;color:#fff5fa;
+ background:radial-gradient(circle at 50% 42%,#8d1b52,#150819 60%,#0c050e);text-align:center}
+.invite-welcome>div{font-size:7rem;line-height:1;color:#ff57a2;text-shadow:0 0 21px #ff168b,0 0 60px #f62579}
+.invite-welcome h1{font:700 1.8rem Georgia,serif;margin:13px 0}
+.invite-welcome p{font-size:.96rem;color:#e4bdd1}
+@media(max-width:360px){
+ .invite-account-screen{padding-top:8px}
+ .invite-account-hero{height:134px}
+ .invite-auth-card{padding:11px}
+ .invite-account-progress{bottom:5px}
+ .invite-auth-title{gap:8px}
+ .invite-account-icon{flex-basis:43px;width:43px;height:43px}
+ .invite-auth-lead{margin:7px 0}
+ .invite-auth-field{min-height:53px}
+ .invite-auth-trust{margin-top:8px}
+}
+@media(max-height:850px) and (max-width:600px){
+ .invite-account-screen{padding-top:7px;padding-bottom:7px}
+ .invite-account-hero{height:131px}
+ .invite-account-hero:after{font-size:88px}
+ .invite-decor-heart{font-size:55px}
+ .invite-account-progress{bottom:4px}
+ .invite-auth-card{padding:11px 14px}
+ .invite-auth-lead{margin:8px 1px 10px}
+ .invite-auth-field{min-height:54px}
+ .invite-auth-segments{margin-bottom:8px}
+ .invite-auth-trust{margin-top:7px;padding:8px}
+ .invite-account-screen .invite-auth-submit{min-height:51px}
+}
+@media(min-width:700px){
+ main#app:has(.invite-account-screen){padding-inline:18px}
+ .invite-account-screen{width:min(600px,90vw)}
+ .invite-account-hero{height:207px}
+ .invite-auth-card{padding:24px}
+}
+@media(prefers-reduced-motion:reduce){.invite-account-screen *{animation:none!important;transition:none!important}}
+
+/* Pending confirmation: a real Supabase-backed gate, never a mock success. */
+.email-confirm-screen .invite-auth-card{margin-top:6px;text-align:center;display:flex;flex-direction:column;justify-content:center;gap:12px}
+.email-confirm-screen .invite-auth-card>h1{
+ font:700 clamp(1.38rem,5vw,2.05rem)/1.1 Georgia,serif;color:#fff5fa;margin:0;
+}
+.email-confirm-envelope{
+ display:grid;place-items:center;width:92px;height:92px;margin:0 auto;
+ color:#ff92c5;font-size:2.65rem;border-radius:24px;border:1px solid #fe77b3;
+ background:linear-gradient(135deg,#702348,#300c28);text-shadow:0 0 16px #ff3893;
+ box-shadow:inset 0 2px #ffdcf04a,0 0 32px #ec378c7c;
+}
+.email-confirm-screen .invite-auth-card>p{font-size:.91rem;color:#efd1e1;line-height:1.38;margin:0}
+.email-confirm-recipient{overflow-wrap:anywhere;font-weight:800;color:#ff8bbd}
+.email-confirm-screen button{width:100%;min-height:44px}
+.email-confirm-screen #email-confirm-status:empty{display:none}
+.email-confirm-screen #email-confirm-status:not(:empty){
+ font-size:.83rem;border:1px solid #e65894;background:#3d1234;color:#ffe4f2;
+ padding:10px;border-radius:12px;
+}
+
+/* Recovery route for an existing user who reaches the profile-completion form. */
+.profile-account-choice{display:grid;gap:6px;margin:11px 0 17px;padding:12px 13px;min-width:0;
+ border:1px solid #da70a3a0;border-radius:14px;background:linear-gradient(115deg,#511833c7,#281028c9);
+ box-shadow:inset 0 1px 0 #ffcae647}
+.profile-account-choice p{margin:0;color:#f6e0ed;font-size:.85rem;line-height:1.35;overflow-wrap:anywhere}
+.profile-account-choice strong{color:#ffaad3;font-weight:790}
+.profile-account-choice .profile-switch-account{display:block;width:100%;min-height:46px;margin:3px 0 0;
+ padding:10px 12px;border:1px solid #ff87bc!important;border-radius:12px;
+ background:linear-gradient(120deg,#753251,#411c39);color:#fff8fc;
+ font-size:.9rem!important;font-weight:790!important;box-shadow:0 0 13px #ef469633}
+.profile-account-choice .profile-switch-account:active{transform:scale(.985)}
+.profile-account-choice .profile-switch-account:focus-visible{outline:2px solid #ffc1df;outline-offset:2px}
+.profile-account-choice small{font-size:.73rem;line-height:1.3;color:#d9afc5}
+@media(max-width:370px){.profile-account-choice{padding:10px}.profile-account-choice p{font-size:.78rem}}
+
+/* LoveRoll v58 — registration is an actual accessible form in smoked-glass satin.
+   Styled from the approved PAGE 2 image; does not alter Supabase auth. */
+body:has(.invite-account-screen){
+ background:radial-gradient(ellipse at 10% 28%,#7110357a,transparent 42%),
+  radial-gradient(ellipse at 95% 70%,#6e103c6b,transparent 47%),#0d040e
+}
+.invite-account-screen{
+ --white:#fff7fb;
+ width:min(100%,650px);
+ box-sizing:border-box;
+ padding:calc(9px + env(safe-area-inset-top,0px)) clamp(4px,1vw,9px)
+ calc(15px + env(safe-area-inset-bottom,0px));
+}
+.invite-account-screen:before{
+ background:radial-gradient(ellipse at 50% 0%,#6b0d387a,transparent 44%),
+  repeating-linear-gradient(143deg,transparent 0 32px,#fd337712 62px,#2607132d 95px),
+  linear-gradient(152deg,#170613,#27071c 34%,#09040b 60%,#3a0a21)
+}
+.invite-account-screen:after{
+ content:'♡';font:clamp(145px,46vw,310px)/1 Georgia,serif;
+ color:#f52d8226;text-shadow:0 0 40px #fa1b7350;
+ position:absolute;right:-9%;top:12%;pointer-events:none;z-index:-1;transform:rotate(12deg)
+}
+.invite-account-hero{
+ background:none;height:clamp(142px,20dvh,188px);overflow:visible;
+ padding:7px 8px 0!important;isolation:isolate;border-radius:0;
+}
+.invite-account-hero:before{background:radial-gradient(ellipse at 30% 85%,#eb297a44,transparent 50%);opacity:.65}
+.invite-account-hero:after{right:-2%;font-size:90px;opacity:.48}
+.invite-account-hero>p{font-size:clamp(.64rem,2.4vw,.82rem);letter-spacing:.21em;color:#f5d2e5}
+.invite-auth-brand{font-size:clamp(2.6rem,10.7vw,4rem);letter-spacing:-.07em}
+.invite-account-progress{left:18%;right:18%;bottom:6px;gap:12px}
+.invite-progress-item b{width:42px;height:42px;font-size:1.2rem;box-shadow:0 0 18px #f53b8d8a}
+.invite-progress-item.is-done b{background:linear-gradient(130deg,#49172c,#1a091b)}
+.invite-progress-item.is-current b{background:linear-gradient(150deg,#ff83c2,#ed1677);box-shadow:0 0 26px #f82c8cbe}
+.invite-progress-line{margin-top:21px;height:3px;background:linear-gradient(90deg,#f7a7cd,#d73488)}
+.invite-auth-card{
+ flex:0 0 auto;padding:clamp(16px,3.9vw,29px);
+ margin:6px 3px 0;border-radius:28px;border:1.5px solid #f56da6;
+ background:radial-gradient(ellipse at 5% 10%,#79163e7a,transparent 48%),
+  linear-gradient(150deg,#3c102deb,#1b0918f8 66%,#2e0c24f8);
+ box-shadow:0 0 32px #f4428e45,0 18px 45px #050208c2,inset 0 2px #ffc0df79;
+ backdrop-filter:blur(12px);
+}
+.invite-auth-title{justify-content:center;gap:0;text-align:center;margin:5px 0 9px}
+.invite-auth-title h1{font:700 clamp(2.03rem,7.2vw,3.2rem)/1.02 Georgia,serif;
+ letter-spacing:-.045em;margin:0;color:#fffafc}
+.invite-auth-title h2{font:600 clamp(1.1rem,4.3vw,1.7rem)/1.19 Georgia,serif;margin:6px 0 0;color:#fbe5f1}
+.invite-auth-lead{
+ text-align:center;margin:12px auto 19px;
+ max-width:490px;font-size:clamp(.87rem,3vw,1.05rem);line-height:1.43;color:#eed3e3
+}
+.invite-auth-segments{gap:0;border:1px solid #b54878;border-radius:13px;padding:2px;margin-bottom:14px;background:#25101f}
+.invite-account-screen .invite-auth-segments button{
+ border-radius:10px;min-height:46px;background:transparent;
+ border:0!important;box-shadow:none;font-size:clamp(.83rem,3.1vw,1rem)
+}
+.invite-account-screen .invite-auth-segments button.is-active{
+ background:linear-gradient(160deg,#ff70b0,#e62081);
+ border:1px solid #ffa1d0!important;
+ box-shadow:0 0 13px #ff2a84c2,inset 0 1px #fff4fa7a
+}
+.invite-auth-fields{gap:11px}
+.invite-auth-field{
+ min-height:clamp(63px,8.2vh,77px);padding:11px clamp(12px,2.5vw,18px);
+ border-color:#db689e;border-radius:15px;
+ background:linear-gradient(110deg,#4c1735dc,#240d21f0);
+ box-shadow:inset 0 1px #ffd3e43b,0 0 12px #db2a8340;
+}
+.invite-field-icon{font-size:1.65rem;color:#f280b7}
+.invite-field-body>span{font-size:clamp(.81rem,2.8vw,.97rem);color:#fff0f8}
+.invite-account-screen .invite-field-body input{
+ height:28px;min-height:28px;font-size:clamp(.88rem,3.2vw,1.04rem);color:#fff7fa
+}
+.invite-account-screen .invite-password-eye{
+ flex-basis:44px;width:44px;height:44px;min-height:44px!important;display:grid;place-items:center
+}
+.invite-password-eye svg{width:25px;height:25px}
+.invite-password-meter{margin:11px 3px 14px}
+.invite-meter-bars i{height:6px}
+.invite-password-meter p{font-size:.77rem;line-height:1.27}
+.invite-account-screen .invite-auth-submit{
+ min-height:clamp(66px,9.5vh,82px);border-radius:20px;
+ font-family:Georgia,serif;font-size:clamp(1.19rem,4.8vw,1.62rem);
+ background:linear-gradient(180deg,#ff85bd 0%,#ff4499 42%,#e70d78 100%);
+ box-shadow:0 0 26px #fa298dbb,inset 0 2px #fff4fa9e,0 7px 18px #9d135b8f;
+ border:2px solid #ffbedd!important
+}
+.invite-auth-submit small{font-family:system-ui,sans-serif;font-size:.8rem;color:#fff7fb}
+.invite-auth-submit span{display:none}
+.invite-account-screen .invite-google{
+ min-height:55px;border:1px solid #f16da6!important;
+ border-radius:16px;background:#1a0918;
+ box-shadow:0 0 12px #e0388c3a;font-size:1.02rem
+}
+.invite-auth-trust{min-height:59px;border-color:#aa477b;padding:11px 13px}
+.invite-auth-trust>span{border-radius:50%;width:41px;height:41px;flex-basis:41px}
+.invite-auth-trust p{font-size:.79rem;line-height:1.4}
+.invite-or{margin:12px 0;font-size:.87rem}
+.invite-account-screen .invite-auth-link,.invite-account-screen .invite-auth-back{
+ min-height:44px;font-size:.88rem;color:#ffb4d5;font-weight:700
+}
+.invite-confirm-resend{
+ margin:14px 0;padding:13px;border:1px solid #ee74a6;border-radius:14px;
+ background:#571b3b99;color:#ffe6f2;text-align:left
+}
+.invite-confirm-resend strong{font-size:.98rem}
+.invite-confirm-resend p{font-size:.84rem;line-height:1.4;margin:8px 0}
+.invite-account-screen .invite-auth-resend{
+ display:block;min-height:48px!important;width:100%;border:1px solid #ffa5d0!important;
+ border-radius:12px;color:#fff;
+ background:linear-gradient(100deg,#af3273,#6e1a4b);font-weight:800
+}
+.invite-confirm-resend p:empty{display:none}
+.invite-copy-manual{display:grid;gap:6px;margin-top:12px;color:#ffe2f3;font-size:.85rem}
+.invite-copy-manual input{width:100%;min-width:0;border-radius:10px;border:1px solid #ec7cb6;
+ background:#140914;color:#fff;font-size:.83rem;padding:12px;user-select:all}
+@media(max-height:810px) and (max-width:650px){
+ .invite-account-hero{height:135px!important}
+ .invite-auth-card{padding:14px}
+ .invite-auth-title h1{font-size:clamp(1.75rem,6.4vw,2.4rem)}
+ .invite-auth-lead{margin:7px auto 11px}
+ .invite-auth-field{min-height:57px;padding:8px 12px}
+ .invite-account-screen .invite-auth-submit{min-height:61px}
+ .invite-auth-trust{padding:8px;min-height:54px}
+}
+@media(max-width:360px){
+ .invite-account-hero{height:132px!important}
+ .invite-account-progress{left:16%;right:16%;gap:8px}
+ .invite-auth-card{padding:11px}
+ .invite-auth-title h1{font-size:1.77rem}
+ .invite-auth-lead{font-size:.8rem}
+ .invite-account-screen .invite-google{font-size:.85rem}
+}
+@media(prefers-reduced-motion:reduce){.invite-account-screen *{animation:none!important}}
+
+/* Invitation recipient already has a SINGLE-member LoveRoll space (v60).
+   Show the real issue instead of accusing the authenticated email. */
+main#app:has(.invite-existing-space){
+ width:100%;max-width:650px;min-height:100dvh;
+ padding:clamp(18px,4vw,28px) clamp(14px,4.5vw,28px) calc(24px + env(safe-area-inset-bottom,0px));
+}
+.invite-existing-space{
+ margin-top:21px;padding:clamp(21px,5vw,30px);
+ border:1px solid #e96da4;border-radius:27px;
+ background:radial-gradient(ellipse at 4% 0%,#a92e6945,transparent 58%),linear-gradient(150deg,#41182f,#1e0b1c);
+ box-shadow:0 16px 35px #0e031299,inset 0 1px #ffb4d150;
+}
+.invite-existing-space h2{
+ color:#fff3fa;font:700 clamp(1.65rem,6.2vw,2.7rem)/1.08 Georgia,serif;
+ margin:16px 0 20px;letter-spacing:-.035em;
+}
+.invite-existing-space p{font-size:clamp(.9rem,3.5vw,1.04rem);line-height:1.47;color:#f0d3e2;margin-bottom:14px}
+.invite-existing-space .invite-archive-note{
+ padding:12px;border-radius:13px;border:1px solid #bb6295b0;
+ background:#4e19377d;color:#ffe3f0;font-size:.85rem;
+}
+.invite-existing-space button[data-action="join-invite-from-solo"]{
+ width:100%;margin-top:12px;min-height:67px;border-radius:18px;
+ border:2px solid #ffbedb;
+ background:linear-gradient(180deg,#ff85bc,#f52e88 65%,#bb1269);
+ color:white;font-size:clamp(.99rem,3.8vw,1.2rem);font-weight:900;
+ box-shadow:0 0 25px #ff39876b,inset 0 2px #fff4fa92;
+}
+.invite-existing-space button[data-action="switch-account-invite"],
+.invite-existing-space button[data-action="invite-return"]{
+ display:block;width:100%;margin-top:12px;min-height:50px;
+ border:1px solid #9a5a81;background:#32142a;color:#f5d0e3;
+}
+.invite-existing-space .invite-auth-feedback{padding:12px;font-size:.88rem}
