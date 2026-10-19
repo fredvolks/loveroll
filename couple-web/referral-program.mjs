@@ -59,7 +59,8 @@ export function referralSettingsHtml(referral){
    '<p>3. Après validation du paiement annuel, votre couple obtient son crédit : '+esc(reward)+' par nouveau duo, ou moins si vous approchez du plafond.</p>'+
    '<p>4. Vous voyez le rabais s’ajouter ici. Les deux partenaires partagent le même total. '+
    'Vous ne pouvez jamais dépasser la valeur d’un renouvellement annuel ('+esc(dollars(prog.max))+').</p>'+
-   '<p>5. Une fois les crédits utilisés au renouvellement, la progression pourra recommencer pour l’année suivante.</p>'+
+   '<p>5. Si un code promotionnel est aussi disponible, seul le rabais le plus élevé est appliqué. En cas d’égalité, les crédits gagnent. Aucun cumul : le rabais non retenu n’est pas consommé, mais le code reste soumis à sa date d’expiration.</p>'+
+   '<p>6. Une fois les crédits utilisés au renouvellement, la progression pourra recommencer pour l’année suivante.</p>'+
    '<p>Un simple compte ou un achat mensuel ne donne aucun crédit. Les inscriptions existantes, les auto-parrainages et les paiements non vérifiés ne sont pas admissibles.</p>'+
   '</details>'+
   '<small>Mode actuel : '+esc(referralModeText(v.reward_mode))+
