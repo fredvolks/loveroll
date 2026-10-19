@@ -2,7 +2,7 @@
 <html lang="fr-CA"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow,noarchive"><meta name="theme-color" content="#210d18">
 <title>LoveRoll Studio — Administration</title><link rel="icon" href="./assets/loveroll-icon-192.png">
-<link rel="stylesheet" href="./platform-admin.css?v=20261019-center170"></head>
+<link rel="stylesheet" href="./platform-admin.css?v=20261019-center170"><link rel="stylesheet" href="./platform-admin-luxe.css?v=20261019-luxe172"></head>
 <body><div class="studio-app">
 <header class="studio-header"><div class="studio-mark"><span>♡</span><div><strong>LoveRoll</strong><small>STUDIO · ADMINISTRATION</small></div></div>
 <nav class="studio-top-nav"><a href="./">Retour à LoveRoll</a><button id="signout" hidden>Déconnexion</button></nav></header>
@@ -19,16 +19,16 @@
 <p>Configuration globale, catalogue D100, statistiques et préparation de la facturation.</p></div>
 <span id="safety-status" class="status-tag">Paiements non connectés</span></div>
 <div class="stats" id="stats" aria-live="polite"></div>
-<nav class="studio-quick-grid" aria-label="Centre de commande · choisir une rubrique">
-<button type="button" data-pane="prices"><span class="studio-quick-icon">♧</span><strong>Tarifs &amp; forfaits</strong><span class="studio-quick-arrow">›</span></button>
-<button type="button" data-pane="referrals"><span class="studio-quick-icon">☆</span><strong>Référencement</strong><span class="studio-quick-arrow">›</span></button>
-<button type="button" data-pane="promos"><span class="studio-quick-icon">◇</span><strong>Codes promo</strong><span class="studio-quick-arrow">›</span></button>
-<button type="button" data-pane="geo"><span class="studio-quick-icon">⌖</span><strong>Géolocalisation</strong><span class="studio-quick-arrow">›</span></button>
-<button type="button" data-pane="d100"><span class="studio-quick-icon">⚄</span><strong>D100 &amp; activités</strong><span class="studio-quick-arrow">›</span></button>
-<button type="button" data-pane="notifications"><span class="studio-quick-icon">♧</span><strong>Notifications</strong><span class="studio-quick-arrow">›</span></button>
-<button type="button" data-pane="audience"><span class="studio-quick-icon">♧</span><strong>Sécurité</strong><span class="studio-quick-arrow">›</span></button>
-<button type="button" data-pane="catalogue"><span class="studio-quick-icon">▤</span><strong>Catalogue D100</strong><span class="studio-quick-arrow">›</span></button>
-<button type="button" data-pane="history"><span class="studio-quick-icon">▤</span><strong>Journal</strong><span class="studio-quick-arrow">›</span></button>
+<nav class="studio-quick-grid" aria-label="Rubriques du centre de commande">
+<button type="button" data-pane="prices" data-studio-tile="prices"><span class="studio-quick-icon" data-studio-icon="tag" aria-hidden="true"></span><strong>Tarifs &amp; forfaits</strong><span class="studio-quick-arrow" aria-hidden="true">›</span></button>
+<button type="button" data-pane="referrals" data-studio-tile="referrals"><span class="studio-quick-icon" data-studio-icon="star" aria-hidden="true"></span><strong>Référencement</strong><span class="studio-quick-arrow" aria-hidden="true">›</span></button>
+<button type="button" data-pane="promos" data-studio-tile="promos"><span class="studio-quick-icon" data-studio-icon="ticket" aria-hidden="true"></span><strong>Codes promo</strong><span class="studio-quick-arrow" aria-hidden="true">›</span></button>
+<button type="button" data-pane="geo" data-studio-tile="geo"><span class="studio-quick-icon" data-studio-icon="map-pin" aria-hidden="true"></span><strong>Géolocalisation</strong><span class="studio-quick-arrow" aria-hidden="true">›</span></button>
+<button type="button" data-pane="d100" data-studio-tile="d100"><span class="studio-quick-icon" data-studio-icon="dice" aria-hidden="true"></span><strong>D100 &amp; activités</strong><span class="studio-quick-arrow" aria-hidden="true">›</span></button>
+<button type="button" data-pane="notifications" data-studio-tile="notifications"><span class="studio-quick-icon" data-studio-icon="bell" aria-hidden="true"></span><strong>Notifications</strong><span class="studio-quick-arrow" aria-hidden="true">›</span></button>
+<button type="button" data-pane="audience" data-studio-tile="audience"><span class="studio-quick-icon" data-studio-icon="shield-check" aria-hidden="true"></span><strong>Sécurité</strong><span class="studio-quick-arrow" aria-hidden="true">›</span></button>
+<button type="button" data-pane="catalogue" data-studio-tile="catalogue"><span class="studio-quick-icon" data-studio-icon="book-open" aria-hidden="true"></span><strong>Catalogue D100</strong><span class="studio-quick-arrow" aria-hidden="true">›</span></button>
+<button type="button" data-pane="history" data-studio-tile="history"><span class="studio-quick-icon" data-studio-icon="notebook" aria-hidden="true"></span><strong>Journal</strong><span class="studio-quick-arrow" aria-hidden="true">›</span></button>
 </nav>
 <div class="studio-layout">
 <aside class="studio-sidebar" id="tabs" aria-label="Sections administration">
@@ -168,4 +168,4 @@
 <div class="savebar"><span id="feedback" role="status" aria-live="polite"></span><button class="primary" id="save-settings" type="submit">Enregistrer les réglages</button></div>
 </form></div></div></section>
 </main><footer>LoveRoll Studio · Accès privé · Aucune facturation effectuée depuis cette console.</footer>
-</div><script type="module" src="./platform-admin.js?v=20261019-center170"></script></body></html>
+</div><script type="module" src="./platform-admin.js?v=20261019-luxe172"></script></body></html>
