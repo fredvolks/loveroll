@@ -1,0 +1,75 @@
+/* Notifications — the real settings page, using the shared Home materials.
+   Every control keeps its existing action and account/device state. */
+main#app.loveroll-settings-page .settings-detail-body[data-settings-page="notifications"]{display:block;min-height:0;padding:0;overflow:auto;scrollbar-width:thin;}
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings{--notification-gap:12px;display:flex;flex-direction:column;gap:var(--notification-gap);width:100%;min-width:0;padding:0 0 4px;color:var(--ritual-text);}
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings *{box-sizing:border-box;}
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-summary{display:grid;grid-template-columns:42px minmax(0,1fr);align-items:center;gap:14px;margin:0;padding:16px;border:1px solid var(--ritual-border);border-radius:18px;background:var(--ritual-card);box-shadow:inset 0 1px 0 #ffe4e807;}
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-summary .notification-emblem{display:grid;place-items:center;width:42px;height:42px;border:1px solid #bc80944d;border-radius:50%;background:radial-gradient(circle,#97435524,transparent 72%);color:var(--ritual-rose);}
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-summary .notification-emblem svg{width:23px;height:23px;}
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-summary strong{display:block;font:400 23px/1.12 Georgia,serif;letter-spacing:-.02em;color:var(--ritual-text);}
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-summary p{margin:6px 0 0;font:12px/1.45 system-ui,sans-serif;color:var(--ritual-muted);}
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings[data-notification-state="active"] .notification-emblem{background:#80405729;border-color:#ca91a577;box-shadow:0 0 18px #a24c6612;}
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-choices{display:grid;gap:2px;min-width:0;}
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-section-heading{display:flex;align-items:baseline;justify-content:space-between;gap:12px;min-height:28px;padding:3px 0 0;}
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-section-heading h2{margin:0;font:400 21px/1.2 Georgia,serif;letter-spacing:-.015em;color:var(--ritual-text);}
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-section-heading>span{font:11px/1.3 system-ui,sans-serif;color:var(--ritual-muted);text-align:right;}
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-options{display:grid;gap:0;padding:0;border-top:1px solid var(--ritual-border);}
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-option{display:grid;grid-template-columns:27px minmax(0,1fr) 48px;align-items:center;gap:11px;min-height:64px;margin:0;padding:6px 0;border:0;border-bottom:1px solid var(--ritual-border);border-radius:0;cursor:pointer;}
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-row-icon{display:grid;place-items:center;flex:none;width:27px;min-width:0;color:var(--ritual-rose);}
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-row-icon svg{width:23px;height:23px;}
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-choice-copy{display:grid;gap:3px;min-width:0;}
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-choice-copy strong{display:block;font:500 14px/1.25 system-ui,sans-serif;color:var(--ritual-text);}
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-choice-copy small{display:block;margin:0;font:12px/1.3 system-ui,sans-serif;color:var(--ritual-muted);}
+/* A 48×44 hit area surrounds each 44×26 track. Keyboard, screen-reader and
+   checked/disabled behavior remains native to the input or switch button. */
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings input.notification-toggle[type="checkbox"],
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings button.notification-local-switch{appearance:none;position:relative;display:block;align-self:center;justify-self:end;flex:none;width:48px;min-width:48px;height:44px;min-height:44px;margin:0;padding:0;border:0;border-radius:12px;background:none;box-shadow:none;cursor:pointer;touch-action:manipulation;opacity:1;}
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-toggle::before,
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-local-switch::before{content:"";position:absolute;inset:9px auto auto 2px;width:44px;height:26px;border:1px solid #ad7a8c66;border-radius:99px;background:#351b28;transform:none;transition:background .16s ease,border-color .16s ease;}
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-toggle::after,
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-local-switch::after{content:"";position:absolute;top:12px;left:5px;width:20px;height:20px;border:0;border-radius:50%;background:#a87b8d;box-shadow:0 1px 3px #08040955;transform:translateX(0);transition:transform .16s ease,background .16s ease;}
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-toggle:checked::before,
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-local-switch[aria-checked="true"]::before{background:linear-gradient(135deg,#c7889f,#804158);border-color:#cf99acaa;transform:none;}
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-toggle:checked::after,
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-local-switch[aria-checked="true"]::after{transform:translateX(18px);background:#f5dcd8;}
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-toggle:disabled{opacity:1;cursor:not-allowed;}
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-toggle:disabled::before{background:#2c1821;border-color:#76506366;}
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-toggle:disabled::after{background:#775465;box-shadow:none;}
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-toggle:focus-visible,
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-local-switch:focus-visible{outline:2px solid var(--ritual-text);outline-offset:2px;}
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-local{display:grid;grid-template-columns:27px minmax(0,1fr) 48px;align-items:center;gap:11px;min-height:58px;padding:5px 10px;border:1px solid var(--ritual-border);border-radius:14px;background:#25131c88;}
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-actions{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:10px;margin:0;padding:0;}
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-actions .notification-action{display:flex;align-items:center;justify-content:center;gap:6px;min-width:0;min-height:48px;width:100%;margin:0;padding:10px 12px;border:1px solid #d49cab66;border-radius:14px;font:500 14px/1.3 system-ui,sans-serif;text-align:center;background:var(--ritual-button);box-shadow:var(--ritual-shadow);color:var(--ritual-text);}
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-actions .settings-signout{border-color:var(--ritual-border);background:var(--ritual-card);box-shadow:none;color:var(--ritual-muted);}
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-privacy{display:flex;align-items:center;justify-content:center;gap:7px;margin:0;font:11px/1.4 system-ui,sans-serif;color:var(--ritual-muted);text-align:center;}
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-privacy svg{width:15px;height:15px;flex:none;color:var(--ritual-rose);}
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-feedback{margin:0;padding:9px 11px;border:1px solid var(--ritual-border);border-radius:12px;background:#391c2988;font:12px/1.4 system-ui,sans-serif;color:var(--ritual-text);overflow-wrap:anywhere;}
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-feedback[data-tone="error"]{border-color:#d993a780;color:#ffe0e7;background:#47202c99;}
+main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings [hidden]{display:none;}
+@media(max-width:767px) and (max-height:700px){
+ main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings{--notification-gap:6px;}
+ main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-summary{grid-template-columns:34px minmax(0,1fr);gap:10px;padding:10px 12px;border-radius:15px;}
+ main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-summary .notification-emblem{width:34px;height:34px;}
+ main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-summary .notification-emblem svg{width:20px;height:20px;}
+ main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-summary strong{font-size:20px;line-height:1.12;}
+ main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-summary p{margin-top:4px;font-size:11.5px;line-height:1.35;}
+ main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-section-heading{min-height:24px;padding-top:1px;}
+ main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-section-heading h2{font-size:19px;}
+ main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-section-heading>span{font-size:10px;}
+ main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-option{grid-template-columns:24px minmax(0,1fr) 48px;gap:9px;min-height:49px;padding:2px 0;}
+ main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-row-icon{width:24px;}
+ main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-row-icon svg{width:21px;height:21px;}
+ main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-choice-copy{gap:2px;}
+ main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-choice-copy strong{font-size:13px;line-height:1.2;}
+ main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-choice-copy small{font-size:11px;line-height:1.25;}
+ main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-local{grid-template-columns:24px minmax(0,1fr) 48px;gap:9px;min-height:48px;padding:1px 8px;}
+ main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-actions{gap:8px;}
+ main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-actions .notification-action{min-height:44px;padding:8px 10px;font-size:13px;border-radius:12px;}
+ main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-privacy{font-size:10px;line-height:1.3;}
+}
+@media(prefers-reduced-motion:reduce){
+ main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-toggle::before,
+ main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-toggle::after,
+ main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-local-switch::before,
+ main#app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings .notification-local-switch::after{transition:none;}
+}
