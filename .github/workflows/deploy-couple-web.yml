@@ -2,7 +2,7 @@ name: Déployer LoveRoll Web sur GitHub Pages
 # Supabase's free domain intentionally refuses to render HTML; deploy static frontend to Pages.
 on:
   push:
-    branches: [des-a-deux-apk-20261013]
+    branches: [main]
     paths:
       - 'couple-web/**'
       - '.github/workflows/deploy-couple-web.yml'
@@ -12,14 +12,14 @@ permissions:
   pages: write
   id-token: write
 concurrency:
-  group: couple-web-pages-v73-soiree-surprise
+  group: loveroll-pages-main
   cancel-in-progress: true
 jobs:
   deploy:
-    if: github.ref == 'refs/heads/des-a-deux-apk-20261013'
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
-      name: loveroll-web-v73-soiree-surprise
+      name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
@@ -27,6 +27,7 @@ jobs:
         run: |
           set -euo pipefail
           node --check couple-web/app.js
+          node --check couple-web/platform-admin.js
           node --check couple-web/loveroll-splash.js
           node --check couple-web/boot-recovery.js
           node --check couple-web/entry-viewport-v78.js
@@ -97,7 +98,7 @@ jobs:
           set -euo pipefail
           for attempt in 1 2 3 4; do
             echo "Validation production - tentative $attempt"
-            if LOVEROLL_REQUIRE_HEALTHY=1 node couple-web/boot-diagnostic.cjs; then
+            if LOVEROLL_DIAGNOSTIC_URL=https://fredvolks.github.io/loveroll/ LOVEROLL_REQUIRE_HEALTHY=1 node couple-web/boot-diagnostic.cjs; then
               echo "LoveRoll Pages démarre réellement sur le domaine public."
               exit 0
             fi
