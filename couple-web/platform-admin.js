@@ -2,6 +2,7 @@
 // Admin rights are verified by Supabase security-definer RPC on every write.
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.57.0';
 import {CONFIG} from './config.js';
+import {createPromoAdmin} from './platform-promos.mjs?v=20261019-promo161';
 const $=id=>document.getElementById(id);
 const client=createClient(CONFIG.supabaseUrl,CONFIG.supabasePublishableKey,{
  auth:{flowType:'pkce',autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}
@@ -16,6 +17,7 @@ async function rpc(name,args={}){
  if(error)throw Error(error.message||'Erreur Supabase');
  return data;
 }
+const promoAdmin=createPromoAdmin({rpc});
 const gated=()=>{$('gate').hidden=false;$('dashboard').hidden=true;$('signout').hidden=true;};
 async function bootstrap(){
  try{
@@ -53,11 +55,12 @@ function render(){
 }
 function choosePane(name){
  pane=name;
+ if(name==='promos')promoAdmin.refresh();
  document.querySelectorAll('[data-panel]').forEach(el=>el.hidden=el.dataset.panel!==name);
  document.querySelectorAll('button[data-pane]').forEach(el=>{
   el.classList.toggle('active',el.dataset.pane===name);el.setAttribute('aria-current',el.dataset.pane===name?'page':'false');
  });
- $('save-settings').hidden=['catalogue','history','referrals'].includes(name);
+ $('save-settings').hidden=['catalogue','history','referrals','promos'].includes(name);
 }
 function renderReferralSettings(){
  const info=referralData;
