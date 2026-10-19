@@ -34,7 +34,8 @@ import { SPECIAL_SURPRISES,OCCASIONS,occasionDate,dueOccasions,specialSurprise,o
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.0';
 import {worldwideSettingsHtml,localeOrDefault,currencyOrDefault,normalizeSharedTravel,t as worldT} from './world-preferences.mjs';
 import {cadExchangeRate} from './currency-exchange.mjs';
-import {referralSettingsHtml,referralLink,REFERRAL_CODE_PATTERN,REFERRAL_PENDING_STORAGE_KEY} from './referral-program.mjs?v=20261019-ref160';
+import {referralSettingsHtml,referralLink,REFERRAL_CODE_PATTERN,REFERRAL_PENDING_STORAGE_KEY} from './referral-program.mjs?v=20261019-personal171';
+import {enhanceLoveRollSettingsSelects} from './loveroll-premium-pickers.mjs?v=20261019-personal171';
 import { CONFIG } from './config.js';
 import {normalizeInviteEmail,composeInviteEmail} from './invite-email.mjs';
 import {enablePush,disablePush,updatePushPreference,sendTestPush,notificationSettingsMarkup,safeNativePushToken,currentPushDevice} from './push-notifications.mjs?v=20261017-complete127';
@@ -341,6 +342,7 @@ function frame(body,title='LOVEROLL',subtitle='Un jeu intime, juste pour vous de
   }else{canvas.loveRollCleanup();diceCleanup=diceCleanup.filter(fn=>fn!==canvas.loveRollCleanup);}
  }
  restoreDraft(draft);
+ if(realSettings)enhanceLoveRollSettingsSelects(root);
  fitHomeLayout(root);
  bindActions();
  focusInlineLoveDialog(root,openerAction);
@@ -1907,25 +1909,27 @@ function renderSettings(){
   futureCoupleStyleMix(state.profile?.play_style,state.profile?.play_style);
  const futureMixLabel=futureMix.map(entry=>playStyleLabel(entry.style)+' '+entry.weight+' %').join(' · ');
  const account='<div class="settings-account-form">'+
-  '<p class="settings-detail-intro">Compte connecté</p>'+
+  '<div class="settings-premium-section-head"><span>MON COMPTE LOVEROLL</span><h2>Votre espace personnel</h2><p>Un profil privé pour vos défis, vos préférences et vos invitations.</p></div>'+
+  '<section class="settings-premium-glass-group"><h3>Mes informations</h3>'+
   '<label class="settings-inline-name"><span>Prénom affiché</span>'+
   '<input id="profile-name" type="text" autocomplete="given-name" value="'+safe(state.profile.display_name)+'" maxlength="80" aria-label="Prénom affiché"></label>'+
   profileGenderSelect(state.profile.gender)+profilePlayStyleSelect(state.profile.play_style)+
   '<div class="settings-birthday-edit"><span>Mon anniversaire</span>'+monthDayInputs('settings-birthday',state.profile.birthday_md)+'</div>'+
   '<label>Courriel du compte<input type="email" readonly aria-readonly="true" value="'+safe(state.user.email||'')+'" autocomplete="email"></label>'+
   button('profile','Enregistrer mon profil','class="settings-primary"')+
-  '<div class="settings-danger-zone">'+button('signout','Se déconnecter','class="settings-signout"')+'</div></div>';
+  '</section><div class="settings-danger-zone">'+button('signout','Se déconnecter','class="settings-signout"')+'</div></div>';
  let partner='';
  if(hasPartner){
   const initials=[state.profile.display_name,other()?.name||'Partenaire'].map(n=>safe(Array.from(n||'♡')[0]));
-  partner='<div class="settings-duo-card"><div class="settings-duo-initials"><span>'+initials[0]+'</span><i>'+editorialIcon('heart')+'</i><span>'+initials[1]+'</span></div>'+
+  partner='<div class="settings-premium-section-head"><span>NOTRE DUO</span><h2>Un espace, deux comptes</h2><p>Vos activités sont communes; chacun conserve son compte et ses crédits de parrainage.</p></div>'+
+  '<div class="settings-duo-card"><div class="settings-duo-initials"><span>'+initials[0]+'</span><i>'+editorialIcon('heart')+'</i><span>'+initials[1]+'</span></div>'+
    '<strong>'+safe(state.profile.display_name)+' &amp; '+safe(other()?.name||'Votre partenaire')+'</strong><small>● Connectés · '+(isLoveAdmin()?'Administrateur':'Membre')+'</small></div>'+
    editorialRow('Invitation acceptée','','','check')+
    (state.cycleStatus?.pending?editorialRow('Bilan des 200 défis',
     state.cycleStatus.answered_self?'Réponse enregistrée · en attente du partenaire':'Choisir votre prochaine intensité',
     'cycle-reopen','heart'):'')+
    '<p class="tiny-note">Styles du duo : '+safe(futureMixLabel)+'. '+(state.couple?.sexual_card_mode==='automatic'?'Sélection automatique active pour les prochains défis SEXUEL.':'Mode personnalisé actif pour les prochains défis SEXUEL.')+'</p>'+
-   '<div class="settings-date-outer"><h3>Notre anniversaire</h3>'+renderCoupleDateSetting()+'</div>'+
+   '<div class="settings-date-outer settings-premium-glass-group"><h3>Notre anniversaire</h3>'+renderCoupleDateSetting()+'</div>'+
    (isLoveAdmin()?button('save-couple-date','Enregistrer notre date','class="settings-primary"'):'')+
    '<div class="settings-danger-zone">'+button('end-couple',editorialIcon('unlink')+' Dissocier notre duo','class="settings-signout"')+
    '<p class="tiny-note">Chacun deviendra administrateur de son propre espace. Vos comptes et archives sont conservés.</p></div>';
