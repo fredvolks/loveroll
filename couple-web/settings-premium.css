@@ -286,3 +286,53 @@ main#app.loveroll-settings-page .settings-referral-waiting{
  main#app.loveroll-settings-menu .settings-profile-row{min-height:55px;padding:7px}
  main#app.loveroll-settings-menu .settings-sections[data-referral-active="true"] .settings-section-row{padding:5px 3px}
 }
+
+
+/* Shared renewal discount progress: one annual bill is the hard ceiling. */
+main#app.loveroll-settings-page .settings-referral-eyebrow{
+ font-size:10px;font-weight:700;letter-spacing:.16em;color:#f7bbd4;
+}
+main#app.loveroll-settings-page .settings-referral-progress-head{
+ display:flex;align-items:baseline;justify-content:space-between;gap:10px;
+ margin-top:5px;color:#fff6f9;font-weight:650;
+}
+main#app.loveroll-settings-page .settings-referral-progress-head strong{
+ font-size:clamp(20px,6vw,26px);font-variant-numeric:tabular-nums;
+}
+main#app.loveroll-settings-page .settings-referral-progress-head strong span{
+ color:#f2bfd2;font-weight:400;font-size:14px;
+}
+main#app.loveroll-settings-page .settings-referral-progress-head>span{
+ color:#ffc6d9;font-size:13px;font-variant-numeric:tabular-nums;
+}
+main#app.loveroll-settings-page .settings-referral-progress-track{
+ position:relative;height:13px;width:100%;border-radius:50px;
+ background:#160a13;border:1px solid #da7ea0a6;overflow:hidden;
+}
+main#app.loveroll-settings-page .settings-referral-progress-fill{
+ height:100%;border-radius:inherit;background:linear-gradient(90deg,#d4779d,#ffd6e3);
+ transition:width .32s ease;
+}
+main#app.loveroll-settings-page .settings-referral-due{
+ font-size:12px;line-height:1.5;color:#ffd0dd;
+}
+main#app.loveroll-settings-page .settings-referral-rules{
+ border-top:1px solid #cf89a36b;padding:9px 0 2px;
+}
+main#app.loveroll-settings-page .settings-referral-rules summary{
+ cursor:pointer;font-weight:650;font-size:12px;color:#ffe5ed;
+}
+main#app.loveroll-settings-page .settings-referral-rules p{
+ font-size:11px;padding:6px 0 0;color:#edceda;
+}
+@media(max-width:400px){
+ main#app.loveroll-settings-page .settings-referral-stats{
+  grid-template-columns:repeat(3,minmax(0,1fr));
+ }
+ main#app.loveroll-settings-page .settings-referral-card{
+  margin:6px 0;padding:11px;gap:8px;
+ }
+ main#app.loveroll-settings-page .settings-referral-progress-head strong{
+  font-size:20px;
+ }
+}
