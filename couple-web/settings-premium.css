@@ -336,3 +336,20 @@ main#app.loveroll-settings-page .settings-referral-rules p{
   font-size:20px;
  }
 }
+
+/* Personal referral wallets — same rose-glass palette as LoveRoll cards. */
+main#app.loveroll-settings-page .settings-referral-wallets{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;
+}
+main#app.loveroll-settings-page .settings-referral-wallets>div{
+ display:grid;align-content:center;gap:5px;min-width:0;padding:10px 8px;
+ border:1px solid #cb8ca77f;border-radius:12px;
+ background:linear-gradient(135deg,#542239c7,#2b1525db);
+}
+main#app.loveroll-settings-page .settings-referral-wallets small{
+ color:#f4c9d9;font-size:10px;line-height:1.3;
+}
+main#app.loveroll-settings-page .settings-referral-wallets strong{
+ color:#fff4f8;font-size:clamp(14px,4.5vw,19px);
+ font-variant-numeric:tabular-nums;overflow-wrap:anywhere;
+}
