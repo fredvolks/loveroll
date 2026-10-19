@@ -27,14 +27,31 @@ const apiFetch=async(url:string,init?:RequestInit)=>{
  }finally{clearTimeout(timer);}
 };
 const apiKey=Deno.env.get('GEOAPIFY_API_KEY')||'';
+// Charges shown in LoveRoll Studio are ESTIMATES for server-observed calls, not Geoapify account billing.
+// A failed request may still be counted by Geoapify. Logging never contains coordinates, keys or couple IDs.
+const observedGeoFetch=async(admin:any,api:'geocoding'|'places'|'route_matrix',url:string,
+ credits:number|((result:any)=>number),init?:RequestInit)=>{
+ let body:any=null,outcome:'ok'|'error'='error';
+ try{body=await apiFetch(url,init);outcome='ok';return body;}
+ finally{
+  try{
+   const value=typeof credits==='function'&&body?credits(body):typeof credits==='number'?credits:0;
+   const estimated=Math.min(10000,Math.max(0,Math.ceil(Number(value)||0)));
+   const {error}=await admin.from('love_geo_api_usage').insert({
+    api_name:api,estimated_credits:estimated,outcome
+   });
+   if(error)console.warn('LoveRoll Geoapify usage logging unavailable');
+  }catch{console.warn('LoveRoll Geoapify usage logging unavailable');}
+ }
+};
 const coordinates=(row:any):{lon:number,lat:number}|null=>{
  const lat=Number(row?.travel_origin_lat),lon=Number(row?.travel_origin_lon);
  if(row?.travel_origin_lat===null||row?.travel_origin_lon===null||!Number.isFinite(lat)||!Number.isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180)return null;
  return {lat,lon};
 };
-const geocode=async(label:string)=>{
+const geocode=async(label:string,admin:any)=>{
  const url='https://api.geoapify.com/v1/geocode/search?'+new URLSearchParams({text:label,format:'json',limit:'1',apiKey});
- const payload=await apiFetch(url);
+ const payload=await observedGeoFetch(admin,'geocoding',url,1);
  const p=payload?.results?.[0];
  return p&&Number.isFinite(Number(p.lat))&&Number.isFinite(Number(p.lon))?
   {lat:Math.round(Number(p.lat)*100)/100,lon:Math.round(Number(p.lon)*100)/100}:null;
@@ -118,7 +135,7 @@ Deno.serve(async req=>{
   if(!origin){
    const place=asText(settings.travel_origin_label,120);
    if(place.length<2)throw Error('Définissez une ville ou activez le GPS dans Réglages');
-   origin=await geocode(place);
+   origin=await geocode(place,admin);
    if(!origin)throw Error('Ville impossible à localiser');
    // Approximate geocoding coordinates only, not precise GPS.
    await admin.from('couples').update({travel_origin_lat:origin.lat,travel_origin_lon:origin.lon})
@@ -129,7 +146,7 @@ Deno.serve(async req=>{
    filter:'circle:'+origin.lon+','+origin.lat+','+(radius*1000),
    bias:'proximity:'+origin.lon+','+origin.lat,limit:'20',apiKey
   });
-  const placesResp=await apiFetch(placesUrl);
+  const placesResp=await observedGeoFetch(admin,'places',placesUrl,1);
   const locations=(Array.isArray(placesResp?.features)?placesResp.features:[])
    .map(parsedPlace).filter((x:Place|null):x is Place=>!!x);
   const seen=new Set();
@@ -141,7 +158,13 @@ Deno.serve(async req=>{
   if(!candidates.length){await finalize({state:'unavailable'});return json({status:'unavailable'});}
   const routeBody={mode:'drive',sources:[{location:[origin.lon,origin.lat]}],
    targets:candidates.map(p=>({location:[p.lon,p.lat]}))};
-  const routes=await apiFetch('https://api.geoapify.com/v1/routematrix?'+new URLSearchParams({apiKey}),{
+  const routes=await observedGeoFetch(admin,'route_matrix',
+   'https://api.geoapify.com/v1/routematrix?'+new URLSearchParams({apiKey}),
+   (response:any)=>candidates.length+(
+    Array.isArray(response?.sources_to_targets?.[0])?
+    response.sources_to_targets[0].reduce((sum:number,route:any)=>sum+
+      (Number.isFinite(Number(route?.distance))?Math.floor(Math.max(0,Number(route.distance))/500000):0),0):0
+   ),{
    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(routeBody)
   });
   const matrix=routes?.sources_to_targets?.[0];
