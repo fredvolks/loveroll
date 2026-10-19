@@ -55,7 +55,7 @@ function render(){
 }
 function choosePane(name){
  pane=name;
- if(name==='promos')promoAdmin.refresh();
+ if(name==='promos')promoAdmin.refresh(true);
  document.querySelectorAll('[data-panel]').forEach(el=>el.hidden=el.dataset.panel!==name);
  document.querySelectorAll('button[data-pane]').forEach(el=>{
   el.classList.toggle('active',el.dataset.pane===name);el.setAttribute('aria-current',el.dataset.pane===name?'page':'false');
