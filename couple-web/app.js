@@ -754,6 +754,8 @@ async function reload(){
    state.coupleId=latest[0]?.couple_id||null;
   }
  }
+ try{state.referral=await rpc('love_my_referral');}
+ catch(error){state.referral=null;console.warn('Référencement indisponible',error?.message||'error');}
  if(!state.coupleId){
   if(state.channel){await client.removeChannel(state.channel);state.channel=null;}
   state.couple=null;state.members=[];state.weekly=null;state.monthly={};state.customCards=[];state.monthlyActivities=[];state.rollStatus=null;state.gifts=[];
@@ -799,8 +801,7 @@ async function reload(){
    }catch(error){console.warn('Référencement en attente',error?.message||'error');}
   }else clearPendingReferral();
  }
- try{state.referral=await rpc('love_my_referral');}
- catch(error){state.referral=null;console.warn('Référencement indisponible',error?.message||'error');}
+
  if(state.couple?.owner_user_id===state.user.id){
   const [cards,personalSexualCards,activities,adventConfig,adventDays,specialSettings]=await Promise.all([
    query('love_custom_challenges',{eq:{couple_id:state.coupleId}}),
