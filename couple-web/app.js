@@ -1797,6 +1797,7 @@ function settingsIcon(key){
   notifications:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 10h18c0-2-3-3-3-10ZM10 21h4"/>',
   jeu:'<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r=".8" fill="currentColor"/><circle cx="16" cy="16" r=".8" fill="currentColor"/><circle cx="12" cy="12" r=".8" fill="currentColor"/>',
   monde:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c-3 3-4 6-4 9s1 6 4 9M12 3c3 3 4 6 4 9s-1 6-4 9"/>',
+  parrainage:'<path d="M9.5 14.5 14.5 9.5M7.5 11.5l-2 2a3.5 3.5 0 0 0 5 5l2-2M11.5 7.5l2-2a3.5 3.5 0 0 1 5 5l-2 2"/>',
   admin:'<path d="M12 2 20 5v6c0 5-3.3 8.6-8 11-4.7-2.4-8-6-8-11V5Z"/>',
   application:'<rect x="6" y="2" width="12" height="20" rx="2"/><path d="M10 18h4"/>',
   confidentialite:'<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
@@ -1874,9 +1875,10 @@ function adminCategoryWeightEditor(){
   '</div></details>';
 }
 function openSettingsPage(section=''){
- const allowed=['','compte','couple','notifications','jeu','confidentialite','application','monde','aide','aide-connexion','aide-des','aide-sync','admin'];
+ const allowed=['','compte','couple','notifications','jeu','confidentialite','application','monde','parrainage','aide','aide-connexion','aide-des','aide-sync','admin'];
  if(!allowed.includes(section))return;
  if(section==='admin'&&!isLoveAdmin())throw Error('Options réservées au créateur du couple.');
+ if(section==='parrainage'&&state.referral?.enabled!==true)return;
  if(section!==settingsOpenSection||state.tab!=='settings')notificationFeedback=null;
  settingsOpenSection=section;state.tab='settings';render();
  window.scrollTo({top:0,behavior:'instant'});
@@ -1894,7 +1896,6 @@ function renderSettings(){
   profileGenderSelect(state.profile.gender)+profilePlayStyleSelect(state.profile.play_style)+
   '<div class="settings-birthday-edit"><span>Mon anniversaire</span>'+monthDayInputs('settings-birthday',state.profile.birthday_md)+'</div>'+
   '<label>Courriel du compte<input type="email" readonly aria-readonly="true" value="'+safe(state.user.email||'')+'" autocomplete="email"></label>'+
-  referralSettingsHtml(state.referral)+
   button('profile','Enregistrer mon profil','class="settings-primary"')+
   '<div class="settings-danger-zone">'+button('signout','Se déconnecter','class="settings-signout"')+'</div></div>';
  let partner='';
@@ -2015,6 +2016,7 @@ function renderSettings(){
   '<p>'+safe(answer)+'</p></details>').join('')+'</div>';
  const world=worldwideSettingsHtml({locale:worldLocale(),currency:currencyOrDefault(state.profile?.preferred_currency),couple:state.couple||{}});
  const pages={compte:{title:worldText('myAccount'),body:account},couple:{title:worldText('duoLabel'),body:partner},
+  ...(state.referral?.enabled===true?{parrainage:{title:'Parrainage',body:referralSettingsHtml(state.referral)}}:{}),
   notifications:{title:worldText('notificationsLabel'),body:notifications},jeu:{title:worldText('cardsLabel'),body:game},
   confidentialite:{title:worldText('privacyLabel'),body:privacy},
   application:{title:worldText('applicationLabel'),body:appSettings},
@@ -2031,9 +2033,11 @@ function renderSettings(){
  const items=[['couple',worldText('duoLabel'),hasPartner?state.members.map(m=>m.name).join(' & '):linked?'Invitation en attente':'Inviter mon partenaire'],
   ['notifications',worldText('notificationsLabel'),worldText('notificationsDetail')],['jeu',worldText('cardsLabel'),worldText('gameDetail')],
   ['confidentialite',worldText('privacyLabel'),worldText('privacyDetail')],
-  ['monde',worldText('menu'),worldText('menuDesc')],['application',worldText('applicationLabel'),worldText('applicationDetail')]];
+  ['monde',worldText('menu'),worldText('menuDesc')],
+  ...(state.referral?.enabled===true?[['parrainage','Parrainage','Inviter des couples · Gagner des crédits']]:[]),
+  ['application',worldText('applicationLabel'),worldText('applicationDetail')]];
  const menu='<button class="settings-profile-row" data-action="settings-page:compte"><span class="settings-initial" aria-hidden="true">'+safe(initial)+'</span><span><strong>'+safe(name)+'</strong><small>'+safe(worldText('myAccount'))+'</small></span><b aria-hidden="true">›</b></button>'+
-  '<nav class="settings-sections" aria-label="Rubriques des réglages">'+items.map(([key,label,detail])=>
+  '<nav class="settings-sections" data-referral-active="'+(state.referral?.enabled===true?'true':'false')+'" aria-label="Rubriques des réglages">'+items.map(([key,label,detail])=>
    '<button data-action="settings-page:'+key+'" class="settings-section-row"><span class="settings-row-icon">'+settingsIcon(key)+'</span><span><strong>'+label+'</strong><small>'+safe(detail)+'</small></span><b aria-hidden="true">›</b></button>').join('')+'</nav>';
  const page=pages[settingsOpenSection];
  const parent=settingsOpenSection==='admin'?'jeu':settingsOpenSection.startsWith('aide')?'application':'';
