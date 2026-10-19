@@ -2,7 +2,7 @@
 <html lang="fr-CA"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow,noarchive"><meta name="theme-color" content="#210d18">
 <title>LoveRoll Studio — Administration</title><link rel="icon" href="./assets/loveroll-icon-192.png">
-<link rel="stylesheet" href="./platform-admin.css?v=20261019-geo162"></head>
+<link rel="stylesheet" href="./platform-admin.css?v=20261019-center170"></head>
 <body><div class="studio-app">
 <header class="studio-header"><div class="studio-mark"><span>♡</span><div><strong>LoveRoll</strong><small>STUDIO · ADMINISTRATION</small></div></div>
 <nav class="studio-top-nav"><a href="./">Retour à LoveRoll</a><button id="signout" hidden>Déconnexion</button></nav></header>
@@ -18,7 +18,18 @@
 <div class="studio-heading"><div><span class="eyebrow">CENTRE DE COMMANDE</span><h1>Votre application, vos réglages.</h1>
 <p>Configuration globale, catalogue D100, statistiques et préparation de la facturation.</p></div>
 <span id="safety-status" class="status-tag">Paiements non connectés</span></div>
-<div class="stats" id="stats"></div>
+<div class="stats" id="stats" aria-live="polite"></div>
+<nav class="studio-quick-grid" aria-label="Centre de commande · choisir une rubrique">
+<button type="button" data-pane="prices"><span class="studio-quick-icon">♧</span><strong>Tarifs &amp; forfaits</strong><span class="studio-quick-arrow">›</span></button>
+<button type="button" data-pane="referrals"><span class="studio-quick-icon">☆</span><strong>Référencement</strong><span class="studio-quick-arrow">›</span></button>
+<button type="button" data-pane="promos"><span class="studio-quick-icon">◇</span><strong>Codes promo</strong><span class="studio-quick-arrow">›</span></button>
+<button type="button" data-pane="geo"><span class="studio-quick-icon">⌖</span><strong>Géolocalisation</strong><span class="studio-quick-arrow">›</span></button>
+<button type="button" data-pane="d100"><span class="studio-quick-icon">⚄</span><strong>D100 &amp; activités</strong><span class="studio-quick-arrow">›</span></button>
+<button type="button" data-pane="notifications"><span class="studio-quick-icon">♧</span><strong>Notifications</strong><span class="studio-quick-arrow">›</span></button>
+<button type="button" data-pane="audience"><span class="studio-quick-icon">♧</span><strong>Sécurité</strong><span class="studio-quick-arrow">›</span></button>
+<button type="button" data-pane="catalogue"><span class="studio-quick-icon">▤</span><strong>Catalogue D100</strong><span class="studio-quick-arrow">›</span></button>
+<button type="button" data-pane="history"><span class="studio-quick-icon">▤</span><strong>Journal</strong><span class="studio-quick-arrow">›</span></button>
+</nav>
 <div class="studio-layout">
 <aside class="studio-sidebar" id="tabs" aria-label="Sections administration">
 <button data-pane="prices" class="active">Tarifs et forfaits</button><button data-pane="referrals">Référencement et crédits</button><button data-pane="promos">Codes promotionnels</button><button data-pane="d100">D100 et activités</button>
@@ -157,4 +168,4 @@
 <div class="savebar"><span id="feedback" role="status" aria-live="polite"></span><button class="primary" id="save-settings" type="submit">Enregistrer les réglages</button></div>
 </form></div></div></section>
 </main><footer>LoveRoll Studio · Accès privé · Aucune facturation effectuée depuis cette console.</footer>
-</div><script type="module" src="./platform-admin.js?v=20261019-menu166"></script></body></html>
+</div><script type="module" src="./platform-admin.js?v=20261019-center170"></script></body></html>
