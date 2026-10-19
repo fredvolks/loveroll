@@ -1,0 +1,37 @@
+/* The five primary tabs share one title line below their existing ritual caption.
+   Card headings, dialogs and Settings detail pages keep their own hierarchy. */
+:root{
+ --ritual-title-size:clamp(20px,6vw,30px);
+ --ritual-title-height:calc(var(--ritual-title-size) * 1.2);
+ --ritual-title-gap:8px;
+}
+main#app:is(.loveroll-real-home,.loveroll-evening-page,.loveroll-surprise-ecrin,.loveroll-advent-letters,.loveroll-settings-menu)
+ :is(.home-title,.evening-intro,.surprise-header,.advent-intro,.editorial-title)>.ritual-page-title{
+ display:block;box-sizing:border-box;width:100%;max-width:none;min-width:0;
+ height:var(--ritual-title-height);margin:0;padding:0;
+ font:600 var(--ritual-title-size)/var(--ritual-title-height) Georgia,"Times New Roman",serif;
+ letter-spacing:-.025em;color:var(--ritual-text);text-shadow:none;
+ text-align:center;white-space:nowrap;text-wrap:nowrap;
+}
+main#app.loveroll-real-home .home-title{padding-top:var(--ritual-title-gap);}
+main#app.loveroll-evening-page .evening-premium-view,
+main#app.loveroll-advent-letters .advent-premium-view,
+main#app.loveroll-settings-menu .settings-editorial{row-gap:var(--ritual-title-gap);}
+main#app.loveroll-surprise-ecrin .surprise-header{gap:var(--ritual-title-gap);}
+main#app.loveroll-advent-letters .advent-intro{text-align:center;}
+main#app.loveroll-settings-menu .editorial-title{justify-content:center;margin:0;}
+@media(min-width:1050px){
+ main#app.loveroll-advent-letters .advent-premium-view{
+  grid-template-rows:var(--ritual-heading-height) var(--ritual-title-height) 36px minmax(0,1fr) auto;
+ }
+ main#app.loveroll-advent-letters .advent-intro{grid-column:1/-1;grid-row:2;}
+ main#app.loveroll-advent-letters .advent-month-row{grid-column:2;grid-row:3;}
+ main#app.loveroll-advent-letters .advent-tiles{grid-column:2;grid-row:4/6;}
+ main#app.loveroll-advent-letters .advent-footer{grid-column:1;grid-row:3/6;align-self:center;}
+}
+@media(min-width:600px) and (orientation:landscape) and (max-height:600px){
+ :root{--ritual-title-size:22px;--ritual-title-gap:6px;}
+ main#app.loveroll-real-home .real-home-shell{row-gap:var(--ritual-title-gap);}
+ main#app.loveroll-real-home .home-title{grid-column:1/-1;grid-row:2;padding-top:0;}
+ main#app.loveroll-real-home .home-bottom-stack{grid-row:3/6;}
+}
