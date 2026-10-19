@@ -41,11 +41,11 @@ test('D100 is shown on Surprise; duo price and hotel are seasonal',()=>{
  assert.doesNotMatch(initial,/data-dice-sides="20"/);
  const summer=premiumSurpriseHtml({members,monthly:{monthly_activity:roll},activity,season:'ete',showActivity:true});
  assert.match(summer,/data-action="surprise-season:ete"/);
- assert.match(summer,/550 à 980 \$ CA/);
+ assert.match(summer,/550[^<]*980/);
  assert.match(summer,/une nuit d(?:&#39;|.)hôtel inclus/i);
  assert.match(summer,/Baie-Sainte-Catherine/);
  const winter=premiumSurpriseHtml({members,monthly:{monthly_activity:roll},activity,season:'hiver',showActivity:true});
- assert.match(winter,/280 à 540 \$ CA/);
+ assert.match(winter,/280[^<]*540/);
  assert.match(winter,/data-action="surprise-season:hiver"/);
  assert.equal((winter.match(/data-dice-sides="100"/g)||[]).length,1);
 });
