@@ -1,0 +1,27 @@
+/* Démonstration couple - toujours locale, distincte d'un vrai jumelage. */
+.demo-shell{width:min(100%,640px);margin:auto;color:#fff1fa;min-height:100dvh;padding:0 16px calc(100px + env(safe-area-inset-bottom));background:radial-gradient(ellipse at 50% -8%,#61174399,transparent 42%),#110717}
+body:has(.demo-shell) main{max-width:none;padding:0;background:#110717}
+.demo-control{position:sticky;top:0;z-index:99;margin:0 -16px 14px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid #ff9ac488;background:linear-gradient(125deg,#662049f8,#230b23f8);box-shadow:0 8px 24px #0a0312a8;backdrop-filter:blur(18px)}
+.demo-control span{font-size:.7rem;letter-spacing:.09em;font-weight:900;color:#ffd2e9}
+.demo-control .demo-exit{min-height:40px;background:#3a1830;border:1px solid #d06e9c;color:#fff1f7;border-radius:12px;font-size:.76rem;padding:7px 12px;white-space:nowrap}
+.demo-body .premium-intro{padding:16px 12px;margin:0 0 12px;text-align:center}
+.demo-body .premium-intro h2{font-family:Georgia,serif;font-size:clamp(1.7rem,7vw,2.6rem);color:#fff4fa;line-height:1.07}
+.demo-body .premium-intro h2 span{color:#ff73b7}
+.demo-card{border:1px solid #f392bf7d!important;background:radial-gradient(ellipse at 20% 7%,#74274b55,transparent 60%),linear-gradient(135deg,#441a35,#200b21);box-shadow:inset 0 1px #fff2,0 10px 30px #09010fbb;border-radius:22px}
+.demo-card h2{font:700 1.48rem Georgia,serif}
+.demo-card h3{font-family:Georgia,serif;color:#ffd6e9}
+.demo-big-die{height:112px;display:flex;align-items:center;justify-content:center;gap:15px;font:3rem Georgia,serif;color:#ff81c0;background:radial-gradient(ellipse,#8a2360,#320d2d 70%,transparent);text-shadow:0 0 20px #ff48a0}
+.demo-big-die strong{font-size:2rem;color:white}
+.demo-card .stat{border:1px solid #a85888;background:#451b35}
+.demo-challenge{border:1px solid #f28ab78c;border-radius:18px;padding:15px;margin:12px 0;background:linear-gradient(135deg,#8d1c51,#330d2e)}
+.demo-challenge span{color:#ffccdf;font-size:.72rem;letter-spacing:.15em;font-weight:800}
+.demo-challenge p{color:#ffe0ee}
+.demo-disclaimer{text-align:center;font-size:.69rem;color:#cda8be;line-height:1.3;margin:18px 0}
+.demo-nav{z-index:150}
+.demo-nav .nav-inner{width:min(100%,640px)}
+.demo-calendar{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;margin:16px 0}
+.demo-calendar span{display:grid;place-items:center;min-height:35px;border-radius:10px;background:#32162e;color:#eecbe0}
+.demo-calendar span.marked{background:#b82d77;box-shadow:0 0 14px #ff4b9444;color:white}
+.demo-body .day-grid button.demo-active{background:#bf287a;box-shadow:0 0 14px #f56eaa8c}
+@media(max-width:375px){.demo-control{padding-inline:10px}.demo-control span{font-size:.62rem}.demo-card{padding:12px!important}}
+\n.demo-pairline{text-align:center;padding:8px 10px;margin:-4px auto 12px;border:1px solid #d05c8a66;border-radius:15px;background:linear-gradient(90deg,#43172f,#261022);color:#ffe0ef;font-size:.85rem;font-weight:800}.demo-pairline span{color:#ff8fc4;margin:0 10px}\n
