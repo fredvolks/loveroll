@@ -1,0 +1,452 @@
+
+/* Connected LoveRoll "Soirée" and "Surprise": compact one-screen UI.
+   Existing authenticated navigation, Supabase RPC, challenges and history preserved. */
+main#app.loveroll-evening-page:not(.loveroll-editorial),
+main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin){
+ width:100%;max-width:none!important;height:100dvh;min-height:0;
+ padding:max(28px,env(safe-area-inset-top,0px)) clamp(10px,3vw,24px) 0!important;
+ overflow:hidden;display:flex;flex-direction:column;
+ background:
+ radial-gradient(ellipse at 52% 4%,#710c4480,transparent 42%),
+ radial-gradient(ellipse at 48% 48%,#7f08384b,transparent 42%),
+ linear-gradient(180deg,#120310,#210817 48%,#08040b);
+}
+.loveroll-evening-page .header,.loveroll-surprise-page:not(.loveroll-surprise-ecrin) .header{display:none}
+.loveroll-evening-page .nav,.loveroll-surprise-page:not(.loveroll-surprise-ecrin) .nav{
+ background:linear-gradient(180deg,#2d0824f5,#100512fa);
+ border-top:1px solid #f26f9f80;
+ box-shadow:0 -7px 17px #1b01178c;
+}
+.loveroll-evening-page .nav-inner button.active,
+.loveroll-surprise-page:not(.loveroll-surprise-ecrin) .nav-inner button.active{
+ background:linear-gradient(125deg,#c52975,#65113e);
+ border:1px solid #f778b3;
+ box-shadow:0 0 12px #f12d7a66,inset 0 1px #ffc9dd70
+}
+#app:not(.loveroll-editorial) .evening-premium-view,.surprise-premium-view{
+ flex:1;min-height:0;margin:0 auto;
+ width:min(100%,820px);
+ overflow:hidden;display:grid;
+ row-gap:clamp(4px,.6dvh,8px);
+ padding-bottom:calc(88px + env(safe-area-inset-bottom));
+}
+#app:not(.loveroll-editorial) .evening-premium-view{
+ grid-template-rows:minmax(60px,.8fr) minmax(61px,.74fr)
+ minmax(183px,2.2fr) minmax(248px,3fr) minmax(67px,.85fr)
+}
+#app:not(.loveroll-editorial) .evening-topline,.surprise-header{display:flex;justify-content:space-between;align-items:center;min-height:0;position:relative}
+#app:not(.loveroll-editorial) .evening-topline>div{flex:1;min-width:0}
+#app:not(.loveroll-editorial) .evening-topline h1,.surprise-header h1{
+ margin:0;font:800 clamp(1.34rem,5.25vw,2.1rem)/1.05 Georgia,serif;
+ color:#fff8fc;letter-spacing:.01em;
+}
+#app:not(.loveroll-editorial) .evening-topline p,.surprise-header p{margin:2px 0 0;font-size:clamp(.62rem,2.3vw,.91rem);line-height:1.14}
+#app:not(.loveroll-editorial) .evening-topline .heartline{font:2.5rem Georgia;color:#ff81b3;margin-right:7px;text-shadow:0 0 17px #fc3795}
+#app:not(.loveroll-editorial) .evening-more-button{
+ width:46px;height:46px;min-height:0;background:linear-gradient(145deg,#561638,#1a061a);
+ border:1px solid #f36a9c;border-radius:14px;box-shadow:0 0 12px #ff3e9b55;
+ font-size:2rem;line-height:1;flex:none
+}
+#app:not(.loveroll-editorial) .evening-intro{text-align:center;display:flex;flex-direction:column;justify-content:center}
+#app:not(.loveroll-editorial) .evening-intro>span{color:#f99ec7;font-size:clamp(.66rem,2.2vw,.9rem);font-weight:800;letter-spacing:.18em}
+#app:not(.loveroll-editorial) .evening-intro h2{font:800 clamp(1.5rem,5.5vw,2.3rem)/1 Georgia,serif;margin:3px 0}
+#app:not(.loveroll-editorial) .evening-intro p{font-size:clamp(.67rem,2.1vw,.86rem);margin:0;line-height:1.1}
+#app:not(.loveroll-editorial) .evening-step,.evening-gift,.surprise-month,.surprise-host,.surprise-special{
+ min-height:0;border:1px solid #db497ebf;border-radius:21px;
+ background:radial-gradient(ellipse at 55% -20%,#af1c5370,transparent 64%),
+ linear-gradient(145deg,#441129da,#21051bef);
+ box-shadow:inset 0 1px #ffb2dc46,0 7px 13px #11030f6b;
+ overflow:hidden;
+}
+#app:not(.loveroll-editorial) .evening-step{padding:clamp(7px,1.3vw,12px);display:flex;flex-direction:column;gap:5px}
+#app:not(.loveroll-editorial) .evening-step-label{display:flex;align-items:center;gap:9px;flex:none;min-height:35px}
+.step-number{
+ font:800 1.15rem/1 Georgia,serif;width:34px;height:34px;display:grid;place-items:center;
+ border-radius:50%;border:1px solid #ff8ac0;color:#fff6fa;background:#73133d;flex:none;
+ box-shadow:0 0 10px #f23588a1;
+}
+#app:not(.loveroll-editorial) .evening-step-label>div:not(.evening-progress){min-width:0;flex:1}
+#app:not(.loveroll-editorial) .evening-step-label strong,.surprise-headline strong{
+ display:block;color:#ff84b7;font-weight:900;
+ font-size:clamp(.72rem,2.4vw,.96rem);letter-spacing:.065em;line-height:1.12
+}
+#app:not(.loveroll-editorial) .evening-step-label small{font-size:clamp(.58rem,1.9vw,.77rem);line-height:1.12;display:block}
+#app:not(.loveroll-editorial) .evening-d6-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;min-height:0;flex:1}
+#app:not(.loveroll-editorial) .evening-user-die{
+ display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.65fr);
+ grid-template-rows:18px minmax(0,1fr) auto;min-height:0;
+ background:linear-gradient(145deg,#65113b9c,#290b26ac);
+ border:1px solid #ed578896;border-radius:17px;padding:4px;
+ gap:2px;position:relative;
+}
+#app:not(.loveroll-editorial) .evening-person{grid-column:1/-1;display:block;font-weight:750;text-align:center;font-size:clamp(.72rem,2.5vw,.9rem);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#app:not(.loveroll-editorial) .evening-user-die .love3d{grid-row:2;grid-column:1;min-height:0}
+#app:not(.loveroll-editorial) .evening-face-result{
+ grid-column:2;grid-row:2;display:flex;justify-content:center;align-items:center;flex-direction:column;
+ background:#59103885;border:1px solid #fc559a42;border-radius:12px;
+}
+#app:not(.loveroll-editorial) .evening-face-result strong{font:800 clamp(1.2rem,4.4vw,1.9rem)/1 Georgia,serif;color:#fff5f9}
+#app:not(.loveroll-editorial) .evening-face-result small{font-size:clamp(.51rem,1.65vw,.75rem);text-align:center;line-height:1.1;margin:3px}
+#app:not(.loveroll-editorial) .evening-original-d6{
+ display:block;max-width:100%;margin-top:3px;text-align:center;
+ font-size:clamp(.48rem,1.53vw,.68rem);font-weight:700;line-height:1.1;
+ color:#ff9dc9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+}
+#app:not(.loveroll-editorial) .evening-small-roll,.evening-wait{
+ grid-column:1/-1;grid-row:3;text-align:center;
+ font-size:clamp(.58rem,1.8vw,.73rem);min-height:25px;padding:2px 3px;
+ border-radius:13px;background:linear-gradient(110deg,#f45e9b,#c1136a);
+}
+#app:not(.loveroll-editorial) .evening-wait{background:#452035;color:#e9b6d2;display:grid;place-items:center}
+#app:not(.loveroll-editorial) .evening-ready{
+ flex:none;text-align:center;border-radius:14px;padding:4px;
+ background:#36142b;color:#f3b5d4;font-size:clamp(.6rem,1.95vw,.8rem);
+}
+#app:not(.loveroll-editorial) .evening-ready.yes{background:#123925b8;border:1px solid #4ede8a80;color:#b8ffce}
+#app:not(.loveroll-editorial) .evening-step.two{gap:5px}
+#app:not(.loveroll-editorial) .evening-progress{display:flex;gap:4px;margin-left:auto;min-width:0}
+#app:not(.loveroll-editorial) .evening-progress span{
+ min-width:58px;max-width:85px;text-align:center;border-radius:9px;padding:2px 4px;
+ border:1px solid #ee569261;background:#48132eb0;
+ font-size:clamp(.57rem,1.75vw,.72rem);
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis
+}
+#app:not(.loveroll-editorial) .evening-progress b{display:block;font-size:clamp(.7rem,2.5vw,1rem);color:#fff}
+#app:not(.loveroll-editorial) .evening-play{display:grid;grid-template-columns:49% minmax(0,1fr);gap:7px;min-height:0;flex:1}
+#app:not(.loveroll-editorial) .evening-d35-col{min-height:0;display:flex;flex-direction:column;align-items:stretch}
+#app:not(.loveroll-editorial) .evening-d35-col .love3d{flex:1;min-height:0}
+#app:not(.loveroll-editorial) .evening-d35-result{
+ align-self:center;flex:none;min-height:19px;max-width:100%;margin:0 0 2px;
+ padding:3px 10px;border-radius:999px;
+ border:1px solid #fb7db29c;
+ background:linear-gradient(110deg,#64153eb8,#400c2fc9);
+ color:#ffe0f0;text-align:center;
+ font-size:clamp(.63rem,2.03vw,.8rem);font-weight:850;line-height:1.15;
+ white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+ box-shadow:0 0 10px #ff368b35;
+}
+#app:not(.loveroll-editorial) .evening-play-state{
+ font-size:clamp(.6rem,2vw,.77rem);text-align:center;color:#ff9eca;
+ font-weight:750;line-height:1.1;padding-bottom:2px
+}
+#app:not(.loveroll-editorial) .evening-play-controls{display:flex;flex-direction:column;justify-content:space-evenly;gap:3px;min-width:0;min-height:0}
+#app:not(.loveroll-editorial) .evening-play-controls p{font-size:clamp(.57rem,1.9vw,.79rem);line-height:1.2;margin:0}
+#app:not(.loveroll-editorial) .evening-choice{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+#app:not(.loveroll-editorial) .evening-choice-btn{
+ min-width:0;min-height:34px;padding:4px 2px;
+ border:1px solid #9d4274;border-radius:24px;
+ background:#4f1735;color:#f9cde1;font-weight:750;font-size:clamp(.62rem,1.85vw,.83rem)
+}
+#app:not(.loveroll-editorial) .evening-choice-btn.selected{border:1px solid #ff8fc4;background:linear-gradient(145deg,#ff4999,#ae095d)}
+#app:not(.loveroll-editorial) .evening-play-controls>small{font-size:clamp(.53rem,1.65vw,.71rem);line-height:1.13}
+#app:not(.loveroll-editorial) .evening-primary,.surprise-primary{
+ min-height:41px!important;padding:5px 9px!important;
+ border:1px solid #ffa9cc!important;border-radius:18px;
+ background:linear-gradient(115deg,#ff80b3,#f32280 54%,#bc075d);
+ box-shadow:inset 0 2px #ffdcf180,0 0 16px #f92e8380;
+ color:#fff;font-weight:850!important;font-size:clamp(.78rem,2.6vw,1.06rem)!important;
+}
+#app:not(.loveroll-editorial) .evening-gift{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;gap:7px}
+#app:not(.loveroll-editorial) .evening-gift strong{font-size:clamp(.71rem,2.15vw,.88rem);color:#ff86bb}
+#app:not(.loveroll-editorial) .evening-gift p{font-size:clamp(.56rem,1.85vw,.74rem);line-height:1.2;margin:2px 0}
+#app:not(.loveroll-editorial) .evening-gift-btn{
+ flex:none;max-width:43%;min-height:43px;padding:5px 8px;
+ border:1px solid #ff95c7;border-radius:15px;
+ background:linear-gradient(130deg,#f96caa,#db176d);
+ font-size:clamp(.62rem,2vw,.85rem)
+}
+#app:not(.loveroll-editorial) .evening-empty{text-align:center;grid-row:3/6;display:flex;justify-content:center;align-items:center;flex-direction:column;gap:14px}
+#app:not(.loveroll-editorial) .evening-empty p{margin:0}
+#app:not(.loveroll-editorial) .evening-more-menu,.evening-confirm{
+ position:fixed;left:50%;top:22%;width:min(94vw,410px);z-index:8002;
+ transform:translateX(-50%);padding:20px;
+ border-radius:18px;border:1px solid #fc87bb;
+ background:linear-gradient(145deg,#481431,#140618);box-shadow:0 0 0 100vh #060308a8;
+}
+#app:not(.loveroll-editorial) .evening-more-menu button{width:100%;margin:4px 0}
+.love3d{display:grid;place-items:center;min-width:0;min-height:0;isolation:isolate}
+.love3d-stage{
+ position:relative;display:grid;place-items:center;
+ width:100%;height:100%;min-height:0;max-height:230px;
+ background:radial-gradient(ellipse at 48% 74%,#fd328449,transparent 45%);
+}
+.love3d-stage .dice-canvas{position:absolute;inset:0;display:block;width:100%;height:100%}
+/* No unrolled D6 should display a fake one-pip result. */
+.love3d-stage.is-unrolled .dice-canvas{visibility:visible!important}
+.love3d-stage.is-unrolled .dice-fallback{visibility:visible!important}
+.love3d-stage .dice-fallback{color:#ff82b7;text-shadow:0 0 12px #f83f8f;font-size:2rem}
+.love3d-stage.is-rolling .dice-fallback,
+.love3d-stage.webgl-ready .dice-fallback{visibility:hidden}
+.surprise-premium-view{
+ /* Give the D6 its own reserved row without losing the single-screen layout. */
+ grid-template-rows:minmax(63px,.8fr) minmax(218px,2.9fr)
+ minmax(176px,2.25fr) minmax(215px,2.8fr);
+}
+.surprise-header h1{font-size:clamp(1.5rem,5.2vw,2.1rem)}
+.surprise-header h1 em{font-style:normal;color:#ffb9d8}
+.surprise-banner{font:3.8rem Georgia,serif;color:#ff5c9b;text-shadow:0 0 28px #ff2893}
+.surprise-month,.surprise-host,.surprise-special{padding:clamp(7px,1.3vw,13px);display:flex;flex-direction:column;gap:5px}
+.surprise-headline{display:flex;justify-content:space-between;gap:4px;align-items:center}
+.surprise-headline span{font-size:clamp(.53rem,1.73vw,.71rem);color:#e4bed0;white-space:nowrap}
+.surprise-month-title{text-align:center;line-height:1.15}
+.surprise-month-title strong{font-size:clamp(.8rem,2.7vw,1.1rem);color:#fff3fb}
+.surprise-month-title small{display:block;font-size:clamp(.57rem,1.9vw,.75rem);margin-top:4px}
+.surprise-d20-scene{min-height:0;flex:1;position:relative;background:
+ radial-gradient(ellipse at 50% 75%,#ff358747,transparent 54%),
+ radial-gradient(ellipse at 50% 30%,#8c0c4670,transparent 72%);
+ border-radius:15px}
+.surprise-d20-scene .love3d{height:100%;width:100%}
+.surprise-d20-scene .love3d-stage{max-height:none}
+.surprise-scene-heart{position:absolute;z-index:0;right:18px;top:5px;
+ font-size:2.9rem;color:#fa55975e;text-shadow:0 0 13px #f22d89}
+.surprise-month>.surprise-primary{flex:none;width:75%;margin:0 auto}
+.surprise-host>p,.surprise-special>p{margin:0;font-size:clamp(.58rem,1.9vw,.74rem);line-height:1.18}
+.surprise-host-grid{
+ flex:0 0 83px;min-height:83px;display:grid;
+ grid-template-columns:minmax(0,1fr) minmax(82px,.9fr) minmax(0,1fr);
+ align-items:center;gap:6px;
+}
+.surprise-host-die{width:100%;height:83px;min-width:0;min-height:0;align-self:center}
+.surprise-host-die .love3d,
+.surprise-host-die .love3d-stage{width:100%;height:100%;min-width:0;min-height:0;max-height:none}
+.surprise-host-die .love3d-stage.is-unrolled .dice-canvas{visibility:visible!important}
+.surprise-host-die .love3d-stage.is-unrolled.webgl-ready .dice-fallback{visibility:hidden!important}
+.surprise-host-die .love3d-stage.is-unrolled:not(.webgl-ready) .dice-fallback{visibility:visible!important}
+.surprise-host-partner{display:flex;flex-direction:column;justify-content:center;align-items:center;
+ border:1px solid #f75d9b69;border-radius:14px;background:#380d29a6;
+ min-width:0;min-height:68px;text-align:center}
+.surprise-host-partner b{font-size:clamp(.76rem,2.6vw,1.2rem)}
+.surprise-host-partner span{font-size:clamp(.66rem,2.2vw,.87rem);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.surprise-host>.surprise-primary{
+ position:relative;flex:0 0 42px;min-height:42px!important;
+ width:min(79%,340px);margin:1px auto 0!important;z-index:1
+}
+.surprise-host>.surprise-primary:disabled{
+ opacity:1!important;cursor:not-allowed;
+ background:linear-gradient(115deg,#57233f,#43132f);
+ color:#b29aab;border-color:#8c4b6f;
+ box-shadow:inset 0 1px #b7789a55
+}
+.surprise-winner{text-align:center;font-weight:800;color:#ff9ccc;font-size:clamp(.69rem,2.2vw,.9rem)}
+.surprise-restaurant,.surprise-restaurant-button{font-size:.7rem;text-align:center}
+.surprise-restaurant-button{min-height:30px;padding:3px}
+.surprise-special-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+ grid-template-rows:repeat(2,minmax(0,1fr));gap:5px;flex:1;min-height:0}
+.surprise-event-card{
+ display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;
+ min-width:0;min-height:0;gap:2px;border-radius:14px;
+ border:1px solid #f35f9ab0;background:linear-gradient(150deg,#450c2d,#240a22);
+ box-shadow:inset 0 1px #ff93c23d
+}
+.surprise-event-symbol{font-size:clamp(1.3rem,4.2vw,2rem);line-height:1;color:#ff6fae;
+ text-shadow:0 0 9px #ff3697,0 0 17px #ed317a}
+.surprise-event-title{font-size:clamp(.53rem,1.75vw,.77rem);line-height:1.04;font-weight:720}
+.surprise-event-days{font-size:clamp(.53rem,1.72vw,.72rem);line-height:1.05;
+ padding:2px 11px;border-radius:50px;background:#a20b5f;color:#ffeaf4;font-weight:850}
+.surprise-event-chevron{position:absolute;right:5px;bottom:24%;color:#ff83bd}
+.surprise-bottom-info{display:flex;gap:8px;align-items:center;justify-content:center;
+ color:#f6c5d9;font-size:clamp(.55rem,1.7vw,.71rem);line-height:1.13;
+ border:1px solid #9c3771a2;border-radius:12px;padding:3px}
+.surprise-info-button{min-height:0;height:20px;padding:0 7px;background:transparent;color:#ff9ccc;font-size:1.3rem}
+.surprise-modal{
+ position:fixed;z-index:8002;inset:0;display:grid;place-items:center;
+ padding:16px;background:#0b0312c9;
+}
+.surprise-modal-content{
+ width:min(94vw,500px);max-height:75dvh;overflow:auto;
+ padding:20px;border-radius:20px;border:1px solid #f76e9d;
+ background:linear-gradient(145deg,#571637,#190718);
+}
+.surprise-modal-content h2{font:800 1.5rem Georgia,serif;color:#ffadda}
+@media(max-height:760px){
+ main#app.loveroll-evening-page:not(.loveroll-editorial),main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin){
+ padding-top:max(22px,env(safe-area-inset-top,0px))!important;
+ }
+ #app:not(.loveroll-editorial) .evening-premium-view{padding-bottom:calc(80px + env(safe-area-inset-bottom));
+ grid-template-rows:minmax(47px,.75fr) minmax(49px,.68fr)
+ minmax(153px,2.2fr) minmax(197px,2.9fr) minmax(53px,.85fr);}
+ .surprise-premium-view{padding-bottom:calc(80px + env(safe-area-inset-bottom));
+ grid-template-rows:minmax(55px,.8fr) minmax(180px,2.85fr)
+ minmax(172px,2.4fr) minmax(178px,2.7fr);}
+ .surprise-host-grid{flex-basis:78px;min-height:78px}
+ .surprise-host-die{height:78px}
+ .surprise-host>.surprise-primary{flex-basis:40px;min-height:40px!important}
+ #app:not(.loveroll-editorial) .evening-user-die{grid-template-rows:15px minmax(0,1fr) auto}
+ #app:not(.loveroll-editorial) .evening-small-roll,.evening-wait{min-height:20px}
+ #app:not(.loveroll-editorial) .evening-ready{padding:2px}
+ #app:not(.loveroll-editorial) .evening-step-label{min-height:29px}
+ .step-number{width:28px;height:28px}
+ #app:not(.loveroll-editorial) .evening-step{padding:5px}
+ #app:not(.loveroll-editorial) .evening-gift{padding:4px 7px}
+}
+@media(max-width:350px){
+ #app:not(.loveroll-editorial) .evening-play{grid-template-columns:45% 1fr}
+ #app:not(.loveroll-editorial) .evening-progress span{min-width:44px;max-width:60px}
+ .surprise-special-grid{gap:3px}
+ .surprise-event-card{padding:2px 0}
+}
+@media (prefers-reduced-motion:reduce){
+ #app:not(.loveroll-editorial) .evening-premium-view *, .surprise-premium-view *{scroll-behavior:auto;transition:none}
+}
+
+/* Reference-match finish: transparent burgundy tiles, not generic bright-pink buttons. */
+main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin) .surprise-event-card{
+ background:linear-gradient(151deg,#541334ed,#250a22f5 66%,#170614f7);
+ color:#fff4fb;
+ border:1px solid #f45e9bbd!important;
+ box-shadow:inset 0 1px #ffaad757,0 0 9px #fc418522;
+}
+main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin) .surprise-event-card:active{
+ background:linear-gradient(146deg,#962151,#420d30);
+}
+.surprise-event-symbol{
+ display:grid;place-items:center;
+ line-height:1!important;width:clamp(27px,6.4vw,47px);height:clamp(27px,6.4vw,47px);
+}
+.surprise-event-svg{
+ width:100%;height:100%;
+ filter:drop-shadow(0 0 5px #ff4b9d) drop-shadow(0 0 8px #f31d80a0);
+}
+.surprise-event-title{
+ color:#fff5fa;font-size:clamp(.61rem,1.95vw,.83rem);
+ text-shadow:0 0 8px #f6257548;
+}
+.surprise-event-days{
+ background:linear-gradient(100deg,#e62983,#940552);
+ border:1px solid #ff7ebfa8;
+}
+.surprise-event-chevron{font-size:clamp(1rem,3.2vw,1.35rem)}
+.surprise-event-card.no-date .surprise-event-days{
+ padding:2px 4px;font-size:clamp(.49rem,1.5vw,.62rem);
+}
+.surprise-d20-scene{
+ box-shadow:inset 0 -12px 25px #ff2e7c11;
+}
+
+/* Show both genuine 3D personal D6s before rolling.
+   Neutral heart sides are decorative; no false pip value is displayed. */
+.evening-premium-view .evening-user-die .love3d,
+#app:not(.loveroll-editorial) .evening-premium-view .evening-user-die .love3d-stage{
+ width:100%;height:100%;min-width:0;min-height:0;
+}
+#app:not(.loveroll-editorial) .evening-premium-view .love3d-stage.is-unrolled .dice-canvas{
+ visibility:visible!important;
+}
+#app:not(.loveroll-editorial) .evening-premium-view .love3d-stage.is-unrolled.webgl-ready .dice-fallback{
+ visibility:hidden!important;
+}
+#app:not(.loveroll-editorial) .evening-premium-view .love3d-stage.is-unrolled:not(.webgl-ready) .dice-fallback{
+ visibility:visible!important;
+}
+
+/* Audit: global premium-theme button styles must not erase selected categories. */
+main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-choice-btn:not(.selected){
+ background:linear-gradient(145deg,#452039,#2b1229);
+ border:2px solid #8a5275!important;color:#efd0e0;
+ box-shadow:none;opacity:.88;
+}
+main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-choice-btn.selected,
+main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-choice-btn[aria-pressed="true"]{
+ background:linear-gradient(125deg,#ff78ba,#ed2d8d 65%,#ae095d);
+ border:2px solid #ffdfef!important;color:#fff;
+ box-shadow:0 0 15px #f3278c99,inset 0 1px #ffffff88;opacity:1;
+}
+main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-choice-btn{min-height:44px!important}
+main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-small-roll{
+ min-height:46px!important;padding:10px 5px!important;
+ display:grid;place-items:center;line-height:1.18;touch-action:manipulation;
+}
+/* The step heading gets its own row; names wrap/truncate independently. */
+main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-step.two>.evening-step-label{
+ width:100%;display:flex;min-height:34px;flex:none;
+}
+main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-step.two>.evening-progress{
+ width:100%;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:8px;flex:none;margin:0;
+}
+main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-progress>span{
+ min-width:0;max-width:none;display:grid;grid-template-columns:minmax(0,1fr) auto;
+ align-items:center;gap:6px;white-space:normal;overflow-wrap:anywhere;
+ text-align:left;padding:5px 8px;
+}
+main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-progress b{white-space:nowrap;line-height:1}
+main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-more-button{
+ min-width:92px;min-height:44px;padding:7px 12px;font-size:.84rem;
+ white-space:nowrap;flex:none;
+}
+main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-aftercare{
+ display:grid;gap:8px;width:min(100%,450px);padding:12px;
+ border:1px solid #e45a9f;border-radius:18px;
+ background:linear-gradient(155deg,#551539,#220e27);
+}
+main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-aftercare h2{
+ font:800 clamp(1.05rem,3vw,1.4rem) Georgia,serif;color:#ffd0e6;margin:0;
+}
+main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-aftercare p{line-height:1.34;font-size:.84rem}
+main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-aftercare button{min-height:44px}
+main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-empty{overflow-y:auto;justify-content:flex-start;padding:10px 0}
+/* Never clip essential actions on shorter screens, larger fonts or a visible keyboard. */
+@media(max-height:760px),(max-width:380px){
+ main#app.loveroll-evening-page:not(.loveroll-editorial),main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin){
+   min-height:100dvh;height:auto!important;overflow-x:hidden!important;
+   overflow-y:auto!important;overscroll-behavior-y:contain;
+ }
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-premium-view,
+ main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin) .surprise-premium-view{
+   height:auto!important;min-height:calc(100dvh - 95px);
+   grid-template-rows:none!important;grid-auto-rows:auto!important;
+   overflow:visible!important;
+ }
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-step,
+ main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin) .surprise-month,
+ main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin) .surprise-host{
+   min-height:180px;
+ }
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-d6-grid{min-height:128px}
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-play{min-height:170px}
+}
+@media(prefers-reduced-motion:reduce){
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-choice-btn{transition:none!important}
+}
+
+/* Recover die viewing area on the S25 while keeping the roll button 46px. */
+@media (min-height:761px) and (max-width:650px){
+ main#app.loveroll-evening-page:not(.loveroll-editorial) .evening-user-die{
+  grid-template-rows:15px minmax(0,1fr) auto;
+  padding:3px;gap:1px;
+ }
+}
+
+/* Events share the premium hierarchy used by Rendez-vous Surprise. */
+main#app .occasion-back-top{margin:0 auto 10px;max-width:680px}
+main#app .occasion-back-top button{min-height:44px}
+main#app .occasion-premium-card{
+ width:min(100%,680px);margin:10px auto;
+ background:linear-gradient(146deg,#481430,#281023 75%,#1a0b19);
+ border:1px solid #dd5994;border-radius:22px;
+ box-shadow:0 9px 26px #09030e6b,inset 0 1px 0 #ffbee35c;
+ padding:clamp(13px,3vw,23px);
+}
+main#app .occasion-premium-card>.eyebrow{
+ font:800 clamp(1.08rem,4vw,1.55rem) Georgia,serif;
+ color:#ffcee5;letter-spacing:.03em
+}
+main#app .occasion-premium-card .occasion-date{
+ color:#eebed5;font-size:.92rem;line-height:1.35
+}
+main#app .occasion-premium-card .occasion-step-label{
+ font-weight:800;font-size:.76rem;letter-spacing:.1em;color:#ff91c6;
+ padding:10px 0 4px;border-top:1px solid #a5447d55;margin-top:12px
+}
+main#app .occasion-premium-card button{min-height:44px;max-width:100%;white-space:normal}
+main#app .surprise-modal[aria-modal="true"] .surprise-modal-content,
+main#app .advent-dialog-shade[aria-modal="true"] .advent-dialog{
+ overflow-y:auto;max-height:calc(100dvh - 72px - env(safe-area-inset-bottom,0px));
+ overscroll-behavior:contain;
+}
+
+/* Minimum touch targets survive large text and compact screens. */
+main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin) .surprise-primary{min-height:44px!important}
+main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin) .surprise-host>.surprise-primary{
+ flex:0 0 44px;min-height:44px!important
+}

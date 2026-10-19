@@ -1,0 +1,117 @@
+/* LoveRoll premium dialog system: gifts, disassociation, resets, imports, journal. */
+.lr-dialog-overlay{
+ position:fixed;inset:0;z-index:6500;display:flex;align-items:center;justify-content:center;
+ padding:calc(20px + env(safe-area-inset-top,0px)) 18px calc(20px + env(safe-area-inset-bottom,0px));
+ background:rgba(9,0,10,.80);backdrop-filter:blur(9px);
+ -webkit-backdrop-filter:blur(9px);overflow-y:auto;
+ animation:lrDialogAppear .18s ease-out both;
+}
+.lr-dialog-card{
+ position:relative;box-sizing:border-box;width:min(100%,450px);max-height:min(85dvh,690px);
+ overflow-y:auto;overscroll-behavior:contain;text-align:center;
+ border:2px solid #ff62ac;border-radius:28px;padding:24px 21px 22px;
+ background:radial-gradient(ellipse at 50% 2%,#6b1845 0,#39091f 44%,#1e071b 100%);
+ box-shadow:0 14px 65px #000b,0 0 32px #ef398e70,inset 0 1px 0 #ffdeec80;
+ color:#fff2f8;
+}
+.lr-dialog-card::before{
+ content:"";position:absolute;inset:1px;z-index:0;pointer-events:none;
+ border-radius:26px;background:linear-gradient(118deg,#ffbed315,transparent 33%,transparent 75%,#ff398117);
+}
+.lr-dialog-card>*{position:relative;z-index:1}
+.lr-dialog-icon{
+ margin:2px auto 12px;width:76px;height:76px;display:grid;place-items:center;
+ font-size:42px;color:#ff94c6;border-radius:50%;border:1px solid #f6539d;
+ text-shadow:0 0 20px #ff76b9;
+ background:radial-gradient(circle,#882452 0%,#45102d 62%,#2b0b23 100%);
+ box-shadow:0 0 0 8px #f7388616,0 0 30px #ef338f55,inset 0 2px #ffd8e578;
+}
+.lr-dialog-eyebrow{color:#ffadd2;letter-spacing:.17em;font-size:.72rem;font-weight:800;margin:5px 0 9px}
+.lr-dialog-card h2{
+ color:#fff5fb;font:700 clamp(1.5rem,6vw,2.15rem)/1.12 Georgia,'Times New Roman',serif;
+ margin:7px 0 14px;letter-spacing:-.02em;
+}
+.lr-dialog-card p#lr-dialog-description{
+ color:#fff0f8;font:400 clamp(.95rem,3.9vw,1.08rem)/1.55 Inter,system-ui,sans-serif;
+ margin:0 auto 18px;max-width:38ch;white-space:pre-line;overflow-wrap:anywhere;
+}
+.lr-dialog-close{
+ position:absolute;top:15px;right:15px;width:39px;height:39px;min-height:39px;
+ display:grid;place-items:center;padding:0;border:1px solid #ff6cafb0;
+ border-radius:50%;color:#ffc2df;background:#350d29;font-size:27px;line-height:1;
+}
+.lr-dialog-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:13px}
+.lr-dialog-actions button{
+ min-width:0;min-height:54px;padding:11px 8px;border-radius:26px;
+ font-size:clamp(.86rem,3.8vw,1.05rem);font-weight:800;line-height:1.2;
+ transition:transform .14s ease,box-shadow .14s ease;
+}
+.lr-dialog-actions button:active{transform:scale(.97)}
+.lr-dialog-cancel{
+ background:linear-gradient(135deg,#340b28,#491330);
+ border:1px solid #db3c85;color:#ffacd2;
+}
+.lr-dialog-accept{
+ border:1px solid #ffd4e9;color:#fff;
+ background:linear-gradient(115deg,#ff7ab6,#f53192 50%,#c71067);
+ box-shadow:0 4px 22px #ee36886e,inset 0 2px 0 #ffe8f180;
+}
+.lr-dialog-accept.lr-dialog-danger{background:linear-gradient(110deg,#c33b75,#a81658)}
+.lr-dialog-copy{margin:0 auto 12px;}
+.lr-dialog-copy textarea{
+ display:block;box-sizing:border-box;width:100%;font-size:.82rem;color:#fff;
+ padding:12px;resize:none;background:#210a20;border:1px solid #ad4c86;
+ border-radius:12px;overflow-wrap:anywhere;
+}
+.lr-dialog-copy-hint{font-size:.72rem!important;color:#dda5c4;margin:6px 0!important}
+.lr-dialog-card :focus-visible{outline:2px solid #fff2bb;outline-offset:3px}
+@keyframes lrDialogAppear{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+@media(max-width:360px){
+ .lr-dialog-overlay{padding-left:11px;padding-right:11px}
+ .lr-dialog-card{padding:20px 12px 17px;border-radius:20px}
+ .lr-dialog-icon{width:61px;height:61px;font-size:34px}
+ .lr-dialog-actions button{font-size:.83rem}
+}
+@media(max-height:630px){.lr-dialog-overlay{align-items:flex-start}
+ .lr-dialog-card{margin:auto 0;max-height:calc(100dvh - 70px)}
+ .lr-dialog-icon{width:54px;height:54px;font-size:29px}
+}
+@media(prefers-reduced-motion:reduce){.lr-dialog-overlay{animation:none}
+ .lr-dialog-actions button{transition:none}}
+/* No more top cut-off: honor Android/iOS safe areas and leave room for status icons. */
+#toast.lr-premium-toast{
+ display:none;position:fixed;z-index:6100;box-sizing:border-box;
+ top:max(62px,calc(env(safe-area-inset-top,0px) + 18px));
+ left:50%;transform:translateX(-50%);
+ width:max-content;min-width:min(240px,90vw);max-width:min(90vw,430px);
+ margin:0;padding:12px 11px;gap:10px;align-items:center;
+ color:#fff5fb;background:linear-gradient(130deg,#59193e,#321027 70%,#1d0d20);
+ border:1px solid #f46fac;border-radius:17px;
+ box-shadow:0 7px 26px #0009,0 0 20px #d8327a33,inset 0 1px #f9c0db75;
+ font:600 .88rem/1.35 Inter,system-ui,sans-serif;
+}
+#toast.lr-premium-toast.visible{display:flex}
+#toast .lr-toast-glyph{
+ width:35px;height:35px;flex-shrink:0;display:grid;place-items:center;
+ border-radius:12px;color:#ffb4d5;background:#70274e;font-size:20px;
+ box-shadow:0 0 12px #ed4e9f40;
+}
+#toast .lr-toast-message{flex:1;min-width:0;white-space:normal;overflow-wrap:anywhere}
+#toast .lr-toast-close{
+ min-width:28px;min-height:31px;margin:0;padding:0;
+ background:transparent;border:0;color:#ffb9d8;font-size:22px;
+}
+#toast.lr-toast-result{border-color:#ffadd5;box-shadow:0 8px 28px #000b,0 0 20px #ff5fa266}
+#toast.lr-toast-error{border-color:#edbd8f}
+@media(max-height:720px){#toast.lr-premium-toast{top:max(51px,calc(env(safe-area-inset-top,0px) + 11px))}}
+
+/* Compact genuine roll outcome: clear number, source and safe-area margins. */
+#toast .lr-toast-kicker{display:block;color:#ffa0ca;font-size:.64rem;font-weight:850;letter-spacing:.14em;margin-bottom:3px}
+#toast .lr-toast-result-line{display:flex;align-items:center;gap:9px;font-size:.82rem;font-weight:700}
+#toast .lr-toast-result-number{font:750 1.85rem/1 Georgia,serif;color:#fff;min-width:22px;
+ text-align:center;text-shadow:0 0 16px #ff8fc9}
+
+/* No floating toast, even if old cached markup attempts to display one. */
+#toast,#toast.visible,#toast.lr-premium-toast.visible{display:none!important}
+/* Real errors are shown within the current page, not above it. */
+.lr-inline-feedback{margin:10px 0 0;padding:9px 12px;border:1px solid #e57da4;border-radius:12px;background:rgba(75,16,42,.45);color:#ffe4f2;font-size:.85rem;line-height:1.4}
