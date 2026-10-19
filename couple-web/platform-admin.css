@@ -6,3 +6,18 @@
 #ref-stats{margin-bottom:0}
 #ref-feedback{font-size:12px;color:#f9cfde}
 [data-panel=referrals] .notice p{font-size:12px;line-height:1.5;margin:6px 0 0}
+
+/* Codes promo · owner-only manager */
+#promo-list{display:grid;gap:10px}#promo-count{color:#f7cadc}
+.promo-top{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:0 0 17px}
+.promo-editor{display:grid;gap:18px;border:1px solid #95526e;border-radius:19px;padding:clamp(15px,3vw,22px);background:#1e0d1a}
+.promo-editor h3,.promo-list-title{font:italic 24px Georgia,serif;margin:0}
+[data-panel=promos] select{width:100%;min-height:44px;border:1px solid #8d4f6a;border-radius:12px;padding:10px;background:#1c111b;color:#fff4f7;font:inherit}
+[data-panel=promos] .notice p{font-size:12px;line-height:1.5;margin:6px 0 0}
+.promo-active-row{margin-top:2px}.promo-list-title{margin:24px 0 13px}
+.promo-item{display:flex;justify-content:space-between;gap:12px;align-items:center;border:1px solid #77445c;border-radius:14px;background:#351b2b;padding:14px}
+.promo-item strong{font-size:17px;color:#ffe1eb;overflow-wrap:anywhere}
+.promo-item small{display:block;color:#d7acbe;margin-top:6px;font-size:12px}
+.promo-item-actions{display:flex;gap:7px;flex-wrap:wrap}
+.promo-item-actions button{min-height:37px;padding:8px 11px;font-size:12px}
+@media(max-width:570px){.promo-top,.promo-item{align-items:stretch;flex-direction:column}}
