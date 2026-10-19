@@ -42,7 +42,24 @@ const UI=Object.freeze({
 export function localeOrDefault(locale){return LANGUAGES.some(([key])=>key===locale)?locale:'fr-CA';}
 export function currencyOrDefault(currency){return CURRENCIES.includes(currency)?currency:'CAD';}
 export function radiusOrDefault(radius){const n=Number(radius);return Number.isInteger(n)&&n>=10&&n<=500?n:125;}
-export function t(locale,key){return (UI[localeOrDefault(locale)]||UI['fr-CA'])[key]||UI['fr-CA'][key]||key;}
+// Core Settings navigation in all supported interface languages.
+const SETTINGS_NAV={
+ 'fr-CA':['Mon compte','Notre duo','Notifications','Cartes et activités','Journal et confidentialité','Application et aide','Options avancées','Rappels et autorisations','Soirée, Surprise et Avent','Calendrier, bilans et données','Versions et fonctionnement'],
+ en:['My account','Our couple','Notifications','Cards and activities','Journal and privacy','App and help','Advanced options','Reminders and permissions','Evening, Surprise and Advent','Calendar, reviews and data','Versions and help'],
+ es:['Mi cuenta','Nuestra pareja','Notificaciones','Cartas y actividades','Diario y privacidad','Aplicación y ayuda','Opciones avanzadas','Avisos y permisos','Velada, Sorpresa y Adviento','Calendario, opiniones y datos','Versiones y ayuda'],
+ pt:['Minha conta','O nosso casal','Notificações','Cartas e atividades','Diário e privacidade','Aplicação e ajuda','Opções avançadas','Lembretes e permissões','Noite, Surpresa e Advento','Calendário, avaliações e dados','Versões e ajuda'],
+ de:['Mein Konto','Unser Paar','Benachrichtigungen','Karten und Aktivitäten','Journal und Datenschutz','App und Hilfe','Erweiterte Optionen','Erinnerungen und Berechtigungen','Abend, Überraschung und Advent','Kalender, Bewertungen und Daten','Versionen und Hilfe'],
+ it:['Il mio account','La nostra coppia','Notifiche','Carte e attività','Diario e privacy','App e aiuto','Opzioni avanzate','Promemoria e permessi','Serata, Sorpresa e Avvento','Calendario, valutazioni e dati','Versioni e aiuto'],
+ nl:['Mijn account','Ons duo','Meldingen','Kaarten en activiteiten','Dagboek en privacy','App en hulp','Geavanceerde opties','Herinneringen en toestemmingen','Avond, Verrassing en Advent','Kalender, beoordelingen en gegevens','Versies en hulp'],
+ ar:['حسابي','نحن الاثنان','الإشعارات','البطاقات والأنشطة','اليوميات والخصوصية','التطبيق والمساعدة','خيارات متقدمة','التذكيرات والأذونات','أمسية ومفاجأة وديسمبر','التقويم والتقييمات والبيانات','الإصدارات والمساعدة'],
+ ja:['マイアカウント','ふたりの設定','通知','カードとアクティビティ','日記とプライバシー','アプリとヘルプ','詳細設定','リマインダーと権限','今夜・サプライズ・アドベント','カレンダー・感想・データ','バージョンとヘルプ'],
+ 'zh-CN':['我的账户','我们的双人空间','通知','卡片与活动','日记与隐私','应用与帮助','高级选项','提醒与权限','约会、惊喜与圣诞日历','日历、评价与数据','版本与帮助']
+};
+const SETTINGS_KEYS=['myAccount','duoLabel','notificationsLabel','cardsLabel','privacyLabel','applicationLabel','advancedLabel','notificationsDetail','gameDetail','privacyDetail','applicationDetail'];
+const SETTINGS_LABELS=Object.fromEntries(Object.entries(SETTINGS_NAV).map(([locale,labels])=>
+ [locale,Object.fromEntries(SETTINGS_KEYS.map((key,i)=>[key,labels[i]]))]));
+
+export function t(locale,key){const l=localeOrDefault(locale);return (SETTINGS_LABELS[l]||{})[key]||(UI[l]||{})[key]||SETTINGS_LABELS['fr-CA'][key]||UI['fr-CA'][key]||key;}
 export function htmlDirection(locale){return locale==='ar'?'rtl':'ltr';}
 export function money(amount,currency='CAD',locale='fr-CA'){
  const n=Number(amount);
