@@ -222,3 +222,67 @@ main#app.loveroll-settings-page .settings-referral-stats small{
 main#app.loveroll-settings-page .settings-referral-card>small{
  color:#d9b8c6;font-size:10px;line-height:1.45;
 }
+
+/* Optional seventh Settings route: shown ONLY while the referral program is on.
+   Shrink rows first; allow contained menu scroll on unusually short displays
+   instead of clipping a route or moving the fixed bottom navigation. */
+main#app.loveroll-settings-menu .settings-sections[data-referral-active="true"]{
+ grid-template-rows:repeat(7,minmax(44px,1fr));
+ max-height:none;
+ overflow-y:auto;
+ overscroll-behavior:contain;
+ scrollbar-width:thin;
+}
+main#app.loveroll-settings-menu .settings-sections[data-referral-active="true"] .settings-section-row{
+ min-height:44px;padding:7px 5px;gap:10px;
+}
+main#app.loveroll-settings-menu .settings-sections[data-referral-active="true"] .settings-section-row strong{
+ font-size:clamp(13px,3.5vw,16px);
+}
+main#app.loveroll-settings-menu .settings-sections[data-referral-active="true"] .settings-section-row small{
+ font-size:clamp(10px,2.7vw,12px);
+}
+main#app.loveroll-settings-menu .settings-sections[data-referral-active="true"] .settings-row-icon svg{
+ width:23px;height:23px;
+}
+main#app.loveroll-settings-page .settings-referral-hero{
+ display:grid;gap:5px;
+}
+main#app.loveroll-settings-page .settings-referral-hero>span{
+ color:#f5b7cd;font-size:10px;letter-spacing:.11em;font-weight:600;
+}
+main#app.loveroll-settings-page .settings-referral-hero h3{
+ font-size:clamp(19px,5vw,24px);
+}
+main#app.loveroll-settings-page .settings-referral-steps{
+ display:grid;gap:7px;margin:0;padding:0;list-style:none;counter-reset:loveroll-referrals;
+}
+main#app.loveroll-settings-page .settings-referral-steps li{
+ counter-increment:loveroll-referrals;position:relative;min-height:43px;
+ padding:7px 9px 7px 39px;border-radius:11px;border:1px solid #b56b8a65;
+ background:#311728c9;display:grid;gap:3px;
+}
+main#app.loveroll-settings-page .settings-referral-steps li::before{
+ content:counter(loveroll-referrals);position:absolute;left:10px;top:8px;
+ display:grid;place-items:center;border:1px solid #eeb0c8;color:#ffebf2;
+ border-radius:50%;width:21px;height:21px;font-size:11px;
+}
+main#app.loveroll-settings-page .settings-referral-steps strong{
+ color:#fff0f5;font-size:12px;line-height:1.25;
+}
+main#app.loveroll-settings-page .settings-referral-steps small{
+ color:#dbb2c2;font-size:10px;line-height:1.35;
+}
+main#app.loveroll-settings-page .settings-referral-link-card{
+ display:grid;gap:8px;padding:10px;border:1px solid #be72938c;border-radius:13px;
+ background:#2a1323d9;min-width:0;
+}
+main#app.loveroll-settings-page .settings-referral-waiting{
+ padding:12px;border-radius:11px;background:#371b2a;
+ border:1px solid #b77391a8;
+}
+@media(max-height:735px) and (max-width:767px){
+ main#app.loveroll-settings-menu .settings-editorial-content{gap:7px}
+ main#app.loveroll-settings-menu .settings-profile-row{min-height:55px;padding:7px}
+ main#app.loveroll-settings-menu .settings-sections[data-referral-active="true"] .settings-section-row{padding:5px 3px}
+}
