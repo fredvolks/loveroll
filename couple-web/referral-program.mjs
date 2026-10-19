@@ -13,7 +13,7 @@ export function referralLink(code,base=REFERRAL_PUBLIC_BASE){
 }
 export function referralModeText(mode){
  return {renewal_credit:'crédit sur le prochain renouvellement annuel',
-  wallet_credit:'solde personnel LoveRoll (utilisation limitée à un an par renouvellement)',
+  wallet_credit:'solde de crédits personnel LoveRoll (utilisation limitée à un an par renouvellement)',
   manual:'avantage personnel traité par LoveRoll (limite au renouvellement)'}[mode]||'crédit LoveRoll';
 }
 export function referralProgress(referral){
