@@ -22,6 +22,8 @@ jobs:
           node --check couple-web/world-preferences.mjs
           node --check couple-web/currency-exchange.mjs
           node --test couple-web/world-preferences.test.mjs
+          node --check couple-web/local-outings.mjs
+          node --test couple-web/local-outings.test.mjs
           node --check couple-web/loveroll-splash.js
           node --check couple-web/boot-recovery.js
           node --test couple-web/loveroll-splash.test.mjs
