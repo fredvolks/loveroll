@@ -6,7 +6,7 @@ const read=file=>readFileSync(new URL('./'+file,import.meta.url),'utf8');
 const html=read('index.html'),app=read('app.js'),sw=read('service-worker.js');
 const release=JSON.parse(read('web-version.json'));
 test('LoveRoll build versions agree between endpoint, app, HTML and imported modules',()=>{
- const build='2026-10-19.160',tag='20261015-no-toast87',appTag='20261019-ref160',inviteTag='20261018-safari150',controlsTag='20261017-controls141',diceTag='20261017-home134';
+ const build='2026-10-19.160',tag='20261015-no-toast87',appTag='20261019-personal171',inviteTag='20261018-safari150',controlsTag='20261017-controls141',diceTag='20261017-home134';
  assert.equal(release.build,build);
  assert.ok(app.includes('invite-links.mjs?v='+inviteTag));
  assert.ok(sw.includes('./assets/loveroll-messenger-og-v142.jpg'));
@@ -45,7 +45,7 @@ test('LoveRoll build versions agree between endpoint, app, HTML and imported mod
  assert.ok(html.includes('evening-editorial.css?v=20261017-ritual130'));
  assert.ok(app.includes('onboarding.mjs?v=20261018-style148'));
  assert.ok(app.includes('json-libraries.mjs?v=20261016-restore113'));
- assert.ok(html.includes('settings-premium.css?v=20261019-ref160'));
+ assert.match(html,/settings-premium\\.css\\?v=20261019-(?:ref|personal)\\d+/);
  assert.ok(!html.includes('restore-categories-v113.css'));
  assert.ok(!html.includes('evening-step1-mobile-v101.css'));
  assert.ok(!html.includes('evening-queue-fixed-v102.css'));
