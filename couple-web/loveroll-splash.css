@@ -1,0 +1,34 @@
+/* Immediate local Web/PWA/APK composition. Identical outlined lettering on every platform. */
+.lr-splash,.lr-splash *{box-sizing:border-box}
+.lr-splash{
+ --splash-bg:var(--ritual-bg,#10070c);--splash-text:var(--ritual-text,#f5dcd8);
+ --splash-logo-size:clamp(42px,10.8vw,62px);--splash-caption-size:clamp(14px,2.8vw,16px);
+ position:fixed;inset:0;z-index:11000;width:100%;height:100vh;height:100dvh;
+ overflow:clip;overscroll-behavior:none;isolation:isolate;
+ background:var(--splash-bg);color:var(--splash-text);font-family:system-ui,-apple-system,sans-serif;
+}
+.lr-splash__decor{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center bottom;pointer-events:none;}
+.lr-splash__content{
+ position:absolute;top:48%;left:50%;transform:translate(-50%,-50%);
+ width:min(88%,440px);display:flex;flex-direction:column;align-items:center;
+ padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px);text-align:center;
+}
+.lr-splash__scene{position:relative;width:min(44vw,23dvh,236px);aspect-ratio:1;flex:none;}
+.lr-splash__scene::before{content:"";position:absolute;inset:-30%;border-radius:50%;background:radial-gradient(ellipse,#7b1d354d,transparent 68%);pointer-events:none;}
+.lr-splash__heart{position:relative;display:block;width:100%;height:100%;object-fit:contain;animation:lr-splash-beat 3s ease-in-out infinite;transform-origin:50% 56%;}
+.lr-splash__logo{display:flex;align-items:center;justify-content:center;gap:16px;width:100%;margin:12px 0 0;white-space:nowrap;}
+.lr-splash__wordmark{display:block;flex:none;width:calc(var(--splash-logo-size)*4.2);height:calc(var(--splash-logo-size)*1.15);object-fit:contain;}
+.lr-splash__logo::before,.lr-splash__logo::after{content:"";width:clamp(28px,10vw,58px);height:1px;background:#d58ba399;flex:none;}
+.lr-splash__dots{display:flex;gap:10px;margin:23px 0 13px;}
+.lr-splash__dots i{display:block;width:8px;height:8px;border-radius:50%;background:#e8a0b5;opacity:.28;animation:lr-splash-dot 1.8s ease-in-out infinite;}
+.lr-splash__dots i:nth-child(2){animation-delay:-.6s;}
+.lr-splash__dots i:nth-child(3){animation-delay:-1.2s;}
+.lr-splash__caption{margin:0;flex:none;width:calc(var(--splash-caption-size)*14);height:calc(var(--splash-caption-size)*1.5);}
+.lr-splash__caption img{display:block;width:100%;height:100%;object-fit:contain;}
+@keyframes lr-splash-beat{0%,100%{transform:scale(1);}50%{transform:scale(1.018);}}
+@keyframes lr-splash-dot{0%,60%,100%{opacity:.28;}30%{opacity:1;}}
+.lr-splash--overlay{pointer-events:all;opacity:1;transition:opacity .2s ease;}
+.lr-splash.lr-splash--leaving{opacity:0;pointer-events:none;transition:opacity .2s ease;}
+@media(min-aspect-ratio:1/1){.lr-splash__decor{top:auto;height:40%;object-position:center 76%;opacity:.72;mask-image:linear-gradient(transparent,#000 30%);}.lr-splash__content{top:47%;}.lr-splash::after{content:"";position:absolute;inset:auto 0 0;height:10%;background:url("./assets/loveroll-splash-satin-v123.webp") center bottom/cover no-repeat;opacity:.72;mask-image:linear-gradient(transparent,#000 35%);pointer-events:none;}}
+@media(max-height:450px){.lr-splash{--splash-logo-size:34px;}.lr-splash__scene{width:min(32vh,145px);}.lr-splash__logo{margin-top:4px;}.lr-splash__dots{margin:13px 0 8px;}}
+@media(prefers-reduced-motion:reduce){.lr-splash__heart,.lr-splash__dots i{animation:none;}.lr-splash__dots i:nth-child(2){opacity:1;}.lr-splash.lr-splash--leaving,.lr-splash--overlay{transition:none;}}

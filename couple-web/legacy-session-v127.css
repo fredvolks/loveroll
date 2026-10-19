@@ -1,0 +1,30 @@
+/* Existing shared-turn sessions keep their rules inside the common editorial shell. */
+main#app.loveroll-settings-page .legacy-session-scroll{display:flex;flex-direction:column;gap:18px;flex:1;min-height:0;min-width:0;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;scroll-padding-block:12px;padding:2px 3px 14px;}
+main#app.loveroll-settings-page .legacy-session-scroll:focus-visible{outline:2px solid var(--ritual-text);outline-offset:2px;}
+main#app.loveroll-settings-page .legacy-session-scroll>*{flex:none;}
+main#app.loveroll-settings-page .legacy-session-scroll :is(.card,.aftercare-card,.timer-panel){display:flex;flex-direction:column;gap:14px;min-width:0;max-width:100%;box-sizing:border-box;margin:0;padding:16px;border:1px solid var(--ritual-border);border-radius:16px;background:var(--ritual-card);box-shadow:none;text-align:center;}
+main#app.loveroll-settings-page .legacy-session-scroll>.hero-game-card{gap:18px;padding:0 0 20px;border:0;border-bottom:1px solid var(--ritual-border);border-radius:0;background:none;}
+main#app.loveroll-settings-page .legacy-session-scroll :is(h2,h3){margin:0;color:var(--ritual-text);font:500 22px/1.25 Georgia,serif;letter-spacing:-.02em;text-shadow:none;overflow-wrap:anywhere;}
+main#app.loveroll-settings-page .legacy-session-scroll p{margin:0;color:var(--ritual-muted);font:14px/1.55 system-ui,sans-serif;overflow-wrap:anywhere;}
+main#app.loveroll-settings-page .legacy-session-scroll :is(.tiny-note,small){margin:0;color:var(--ritual-muted);font:12px/1.45 system-ui,sans-serif;}
+main#app.loveroll-settings-page .legacy-session-scroll :is(.eyebrow,.premium-eyebrow){margin:0;color:var(--ritual-rose);font:500 12px/1.4 system-ui,sans-serif;letter-spacing:.06em;text-shadow:none;}
+main#app.loveroll-settings-page .legacy-session-scroll .challenge-roles{margin:0;padding:0;border:0;border-radius:0;background:none;color:var(--ritual-rose);font:500 12px/1.45 system-ui,sans-serif;letter-spacing:.02em;overflow-wrap:anywhere;}
+main#app.loveroll-settings-page .legacy-session-scroll .dice-row{display:grid;grid-template-columns:128px minmax(0,1fr);align-items:center;gap:16px;width:min(100%,390px);min-height:0;margin:0 auto;padding:0;border:0;background:none;}
+main#app.loveroll-settings-page .legacy-session-scroll .die.premium-die{position:relative;width:128px;height:128px;min-height:0;margin:0;border:0;border-radius:0;background:none;box-shadow:none;isolation:isolate;}
+main#app.loveroll-settings-page .legacy-session-scroll .die.premium-die canvas{position:absolute;inset:0;display:block;width:100%;height:100%;}
+main#app.loveroll-settings-page .legacy-session-scroll .die.premium-die .dice-fallback{color:var(--ritual-rose);font:52px/1 Georgia,serif;text-shadow:none;}
+main#app.loveroll-settings-page .legacy-session-scroll .die.premium-die:has(canvas[data-webgl-ready="true"]) .dice-fallback{display:none;}
+main#app.loveroll-settings-page .legacy-session-scroll .premium-die-caption{min-width:0;max-width:none;text-align:left;}
+main#app.loveroll-settings-page .legacy-session-scroll .premium-die-caption p{margin:5px 0 0;font-size:12px;}
+main#app.loveroll-settings-page .legacy-session-scroll :is(.two,.stat-grid){display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0;}
+main#app.loveroll-settings-page .legacy-session-scroll .stat{display:grid;gap:5px;min-width:0;margin:0;padding:12px;border:1px solid var(--ritual-border);border-radius:12px;background:var(--ritual-card);color:var(--ritual-text);box-shadow:none;}
+main#app.loveroll-settings-page .legacy-session-scroll .stat strong{color:var(--ritual-text);font:500 26px/1.15 Georgia,serif;text-shadow:none;}
+main#app.loveroll-settings-page .legacy-session-scroll .stat small{overflow-wrap:anywhere;}
+main#app.loveroll-settings-page .legacy-session-scroll .actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0;}
+main#app.loveroll-settings-page .legacy-session-scroll .chipline{display:flex;flex-wrap:wrap;justify-content:center;gap:9px;margin:0;}
+main#app.loveroll-settings-page .legacy-session-scroll button{flex:none;box-sizing:border-box;min-width:0;min-height:48px;margin:0;padding:12px 16px;border:1px solid var(--ritual-border);border-radius:999px;background:var(--ritual-card);color:var(--ritual-text);box-shadow:none;font:550 14px/1.35 system-ui,sans-serif;letter-spacing:0;text-transform:none;white-space:normal;overflow-wrap:anywhere;touch-action:manipulation;}
+main#app.loveroll-settings-page .legacy-session-scroll button:not(.subtle):not(.pill){border-color:#e5b3c381;background:var(--ritual-button);box-shadow:var(--ritual-shadow);}
+main#app.loveroll-settings-page .legacy-session-scroll button.pill{min-height:44px;padding:10px 16px;}
+main#app.loveroll-settings-page .legacy-session-scroll button.pill.selected{border-color:var(--ritual-rose);background:var(--ritual-button);}
+main#app.loveroll-settings-page .legacy-session-scroll .timer-clock{margin:0;color:var(--ritual-text);font:500 clamp(36px,10vw,48px)/1.15 Georgia,serif;text-shadow:none;}
+@media(max-width:767px) and (max-height:700px){main#app.loveroll-settings-page .legacy-session-editorial{gap:10px;}main#app.loveroll-settings-page .legacy-session-editorial .editorial-title{margin:4px 0 12px;}main#app.loveroll-settings-page .legacy-session-scroll{gap:14px;}main#app.loveroll-settings-page .legacy-session-scroll>.hero-game-card{gap:14px;}main#app.loveroll-settings-page .legacy-session-scroll :is(.card,.aftercare-card,.timer-panel){padding:12px;gap:12px;}main#app.loveroll-settings-page .legacy-session-scroll .dice-row{grid-template-columns:108px minmax(0,1fr);gap:12px;}main#app.loveroll-settings-page .legacy-session-scroll .die.premium-die{width:108px;height:108px;}}
