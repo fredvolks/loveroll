@@ -33,6 +33,7 @@ import {guidedIdeas,guidanceFor} from './wellbeing.mjs';
 import { SPECIAL_SURPRISES,OCCASIONS,occasionDate,dueOccasions,specialSurprise,occasionRoles,TARGETED_OCCASIONS } from './special-occasions.mjs';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.0';
 import {worldwideSettingsHtml,localeOrDefault,currencyOrDefault,normalizeSharedTravel,t as worldT} from './world-preferences.mjs';
+import {cadExchangeRate} from './currency-exchange.mjs';
 import { CONFIG } from './config.js';
 import {normalizeInviteEmail,composeInviteEmail} from './invite-email.mjs';
 import {enablePush,disablePush,updatePushPreference,sendTestPush,notificationSettingsMarkup,safeNativePushToken,currentPushDevice} from './push-notifications.mjs?v=20261017-complete127';
@@ -54,6 +55,7 @@ const requestedSettingsSection=launchParams.get('section')||'';
 let settingsOpenSection=requestedSettingsSection||'';
 let notificationFeedback=null;
 let worldGpsDraft=null;
+let worldFx=null,worldFxPending=null,worldFxFailed=null;
 const worldLocale=()=>localeOrDefault(state.profile?.preferred_locale);
 const worldText=key=>worldT(worldLocale(),key);
 const state={user:null,profile:null,members:[],coupleId:null,couple:null,
@@ -708,6 +710,7 @@ async function reload(){
  state.pushDevice=await currentPushDevice(client,state.user?.id);
 
  state.profile=profiles[0]||null;
+ document.documentElement.lang=localeOrDefault(state.profile?.preferred_locale);
  state.wellbeing=assessments[0]||null;
  state.personalJournal=personal;
  // Safari can retain an old invitation while this verified account already
@@ -1362,6 +1365,13 @@ function optionalRolledTimer(roll){
   button('special-timer:'+key,editorialIcon('clock')+' Minuteur · '+roll.timer_minutes+' min','class="subtle occasion-timer"');
 }
 function renderSpecial(){
+ const quote=currencyOrDefault(state.profile?.preferred_currency);
+ if(state.showSurpriseActivity&&quote!=='CAD'&&worldFx?.quote!==quote&&worldFxPending!==quote&&worldFxFailed!==quote){
+  worldFxPending=quote;
+  cadExchangeRate(quote).then(rate=>{worldFx=rate;worldFxFailed=null;})
+   .catch(()=>{worldFxFailed=quote;})
+   .finally(()=>{worldFxPending=null;if(state.tab==='special'&&state.showSurpriseActivity)render();});
+ }
  const original=state.monthly||{},active=original.monthly_activity;
  const rollingKind=state.diceStatus?state.rollAnimationKind:null;
  const monthly={...original};
@@ -1370,7 +1380,7 @@ function renderSpecial(){
  if(rollingKind==='monthly_host')monthly.monthly_host=null;
  frame(premiumSurpriseHtml({
    monthly,members:state.members,settings:state.occasionSettings||{},
-   activity,
+   activity,currency:quote,locale:worldLocale(),exchange:worldFx?.quote===quote?worldFx:null,
    timerHtml:state.showSurpriseActivity&&activity?.timer_minutes?
     timerWidget({id:'monthly-'+month()},activity.timer_minutes):'',
    rolling:!!state.diceStatus,rollingKind,rollFace:state.rollAnimationFace,
@@ -2081,6 +2091,7 @@ async function handle(action,element){
   const {error}=await client.from('couple_profiles').update({preferred_locale:locale,preferred_currency:currency}).eq('id',state.user.id);
   if(error)throw error;
   state.profile={...state.profile,preferred_locale:locale,preferred_currency:currency};
+  if(worldFx?.quote!==currency){worldFx=null;worldFxFailed=null;}
   document.documentElement.lang=locale;worldGpsDraft=null;
   render();notify(worldText('saved'));return;
  }
