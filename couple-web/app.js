@@ -34,6 +34,7 @@ import { SPECIAL_SURPRISES,OCCASIONS,occasionDate,dueOccasions,specialSurprise,o
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.0';
 import {worldwideSettingsHtml,localeOrDefault,currencyOrDefault,normalizeSharedTravel,t as worldT} from './world-preferences.mjs';
 import {cadExchangeRate} from './currency-exchange.mjs';
+import {referralSettingsHtml,referralLink,REFERRAL_CODE_PATTERN,REFERRAL_PENDING_STORAGE_KEY} from './referral-program.mjs?v=20261019-ref158';
 import { CONFIG } from './config.js';
 import {normalizeInviteEmail,composeInviteEmail} from './invite-email.mjs';
 import {enablePush,disablePush,updatePushPreference,sendTestPush,notificationSettingsMarkup,safeNativePushToken,currentPushDevice} from './push-notifications.mjs?v=20261017-complete127';
@@ -51,6 +52,21 @@ const opts={auth:{flowType:'pkce',autoRefreshToken:true,persistSession:true,dete
 const client=CONFIG.supabaseUrl&&CONFIG.supabasePublishableKey?
  createClient(CONFIG.supabaseUrl,CONFIG.supabasePublishableKey,opts):null;
 const launchParams=new URLSearchParams(location.search);
+function pendingReferralCode(){
+ try{const value=String(sessionStorage.getItem(REFERRAL_PENDING_STORAGE_KEY)||'').trim().toLowerCase();
+ return REFERRAL_CODE_PATTERN.test(value)?value:null;}catch{return null;}
+}
+function captureReferralFromUrl(){
+ const code=String(launchParams.get('ref')||'').trim().toLowerCase();
+ if(!REFERRAL_CODE_PATTERN.test(code))return;
+ try{sessionStorage.setItem(REFERRAL_PENDING_STORAGE_KEY,code);}catch{}
+}
+function clearPendingReferral(){
+ try{sessionStorage.removeItem(REFERRAL_PENDING_STORAGE_KEY);}catch{}
+ const url=new URL(location.href);
+ if(url.searchParams.has('ref')){url.searchParams.delete('ref');history.replaceState(null,'',url.pathname+url.search+url.hash);}
+}
+captureReferralFromUrl();
 const requestedSettingsSection=launchParams.get('section')||'';
 let settingsOpenSection=requestedSettingsSection||'';
 let notificationFeedback=null;
@@ -64,7 +80,7 @@ const worldText=key=>worldT(worldLocale(),key);
 const state={user:null,profile:null,members:[],coupleId:null,couple:null,
  tab:launchParams.has('settings')?'settings':(['home','session','special','advent'].includes(launchParams.get('open'))?launchParams.get('open'):'home'),weekly:null,monthly:{},session:null,personal:[],challenges:[],gifts:[],rollStatus:null,customCards:[],customCategory:'SENSUEL',customSlot:1,customSearch:'',customFilter:'all',monthlyActivities:[],monthlySlot:1,libraryScreen:'list',libraryImportKind:null,specialEditorKey:null,specialEditorStage:'D6_activite',specialEditorFace:1,adventEditorDay:1,pushDevice:null,
  events:[],journal:[],advent:[],advent2026Config:null,advent2026Days:[],selectedDay:1,adventYear:null,adventSelected:null,adventHistory:false,adventOpening:null,adventRevealing:false,adventServerDate:null,unlockKey:null,channel:null,
- occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],calendarPassMonth:null,cycleStatus:null,cycleDeferred:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoBookingEdit:false};
+ occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],calendarPassMonth:null,cycleStatus:null,cycleDeferred:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoBookingEdit:false,referral:null};
 const names={SENSUEL:'Sensuel',COQUIN:'Coquin',SEXUEL:'Sexuel'};
 function isSharedCoupleReady(coupleId,members){
  return !!coupleId&&Array.isArray(members)&&members.length===2;
@@ -482,7 +498,11 @@ function bindActions(){
 
 let inviteAcceptanceBusy=false;
 function pendingInviteUrl(recover=false){
- const url=new URL(CONFIG.siteUrl||location.href);
+ // A referral signup must return to the current website after Google OAuth
+ // and after email verification, not to the legacy Mon Wallet Pages origin.
+ const pendingRef=pendingReferralCode();
+ const url=new URL(pendingRef?new URL('./',location.href):CONFIG.siteUrl||location.href);
+ if(pendingRef)url.searchParams.set('ref',pendingRef);
  const pending=pendingInviteReference(sessionStorage);
  if(pending?.kind==='id'){url.searchParams.set('invite_id',pending.value);url.searchParams.set('v',INVITATION_REVISION);}
  if(pending?.kind==='token')url.hash='invite='+pending.value;
@@ -768,6 +788,19 @@ async function reload(){
   finishInviteReference();
  }
  state.couple=couple[0]||null;
+ // Claims are only for the newly-registered creator of a NEW duo, never
+ // for an invited partner of an already existing couple.
+ const pendingCode=pendingReferralCode();
+ if(pendingCode&&state.coupleId){
+  if(state.couple?.owner_user_id===state.user.id){
+   try{
+    const result=await rpc('love_referral_claim',{p_code:pendingCode});
+    if(result?.status!=='create_duo_first')clearPendingReferral();
+   }catch(error){console.warn('Référencement en attente',error?.message||'error');}
+  }else clearPendingReferral();
+ }
+ try{state.referral=await rpc('love_my_referral');}
+ catch(error){state.referral=null;console.warn('Référencement indisponible',error?.message||'error');}
  if(state.couple?.owner_user_id===state.user.id){
   const [cards,personalSexualCards,activities,adventConfig,adventDays,specialSettings]=await Promise.all([
    query('love_custom_challenges',{eq:{couple_id:state.coupleId}}),
@@ -1860,6 +1893,7 @@ function renderSettings(){
   profileGenderSelect(state.profile.gender)+profilePlayStyleSelect(state.profile.play_style)+
   '<div class="settings-birthday-edit"><span>Mon anniversaire</span>'+monthDayInputs('settings-birthday',state.profile.birthday_md)+'</div>'+
   '<label>Courriel du compte<input type="email" readonly aria-readonly="true" value="'+safe(state.user.email||'')+'" autocomplete="email"></label>'+
+  referralSettingsHtml(state.referral)+
   button('profile','Enregistrer mon profil','class="settings-primary"')+
   '<div class="settings-danger-zone">'+button('signout','Se déconnecter','class="settings-signout"')+'</div></div>';
  let partner='';
@@ -2120,6 +2154,19 @@ function keepAuthModeInUrl(mode){
 }
 async function handle(action,element){
  const [verb,...parts]=action.split(':');
+ if(verb==='referral-copy'||verb==='referral-share'){
+  const url=referralLink(state.referral?.code);
+  if(!url)throw Error('Le lien de référencement n’est pas encore disponible.');
+  if(verb==='referral-share'&&typeof navigator.share==='function'){
+   try{await navigator.share({title:'LoveRoll · On vous invite',text:'Découvrez LoveRoll en couple ♡',url});}
+   catch(error){if(error?.name!=='AbortError')throw error;}
+  }else{
+   if(!navigator.clipboard?.writeText)throw Error('Copie indisponible : sélectionnez et copiez le lien affiché.');
+   await navigator.clipboard.writeText(url);
+   notify('♡ Lien de référencement copié !');
+  }
+  return;
+ }
  if(['editor-back','editor-import','editor-import-back','custom-slot','custom-category','monthly-slot','special-editor-event','special-editor-back','special-editor-stage','special-editor-face','set-celebrant'].includes(verb)){
   if(hasUnsavedForm()&&!(await premiumConfirm('Vos modifications non enregistrées seront perdues. Voulez-vous quitter cette page ?', {kind:'library',title:'Quitter sans enregistrer ?',accept:'Quitter',cancel:'Rester'})))return;
   lastFormTab=null;
