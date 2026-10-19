@@ -55,17 +55,30 @@
  </div>
 </div>
 <div class="studio-content"><form id="settings" autocomplete="off">
-<section data-panel="prices">
-<div class="section-head"><span class="eyebrow">MONÉTISATION</span><h2>Tarifs pour deux</h2><p>Les montants sont en $ CA. Aucun paiement n’est prélevé depuis cette page.</p></div>
-<div class="fields">
-<label>Abonnement annuel de base ($ CA)<input type="number" min="0" max="10000" step="0.01" name="annual_base_cad_cents" data-cents></label>
-<label>Mensuel de base ($ CA, facultatif)<input type="number" min="0" max="10000" step="0.01" name="monthly_base_cad_cents" data-cents placeholder="Non disponible"></label>
-<label>2 activités / mois ($ CA)<input type="number" min="0.01" step="0.01" name="activities_2_cad_cents" data-cents required></label>
-<label>3 activités / mois ($ CA)<input type="number" min="0.01" step="0.01" name="activities_3_cad_cents" data-cents required></label>
-<label>4 activités / mois ($ CA)<input type="number" min="0.01" step="0.01" name="activities_4_cad_cents" data-cents required></label>
-<label>Activités mensuelles comprises<input type="number" min="1" max="4" step="1" name="included_monthly_draws" required></label>
-<label>Maximum d'activités par mois<input type="number" min="1" max="12" step="1" name="max_monthly_draws" required></label>
-</div><p class="hint"><a href="./checkout.html" target="_blank" rel="noopener noreferrer">Prévisualiser le paiement annuel et le champ « Code promo » ↗</a></p><div class="hint">Les formules 2/3/4 servent à configurer les prix. Les tirages payants resteront verrouillés jusqu'à une intégration de paiement avec confirmation serveur.</div>
+<section data-panel="prices" class="studio-pricing-panel">
+<div class="studio-price-heading">
+ <div class="studio-price-emblem" data-studio-icon="tag" aria-hidden="true"></div>
+ <div class="section-head"><span class="eyebrow">TARIFS &amp; FORFAITS</span><h2>Tarifs pour deux</h2>
+ <p>Les montants sont en $ CA. Aucun paiement n’est prélevé depuis cette page.</p></div>
+ <details class="studio-price-help"><summary><span data-studio-icon="circle-help" aria-hidden="true"></span> Aide</summary>
+ <p>Ces tarifs configurent LoveRoll. Les achats resteront inactifs tant que le système de paiement sécurisé n’est pas connecté.</p></details>
+</div>
+<div class="fields studio-price-fields">
+<label class="studio-price-field studio-price-annual"><span class="studio-price-label"><span data-studio-icon="crown" aria-hidden="true"></span>Abonnement annuel de base</span><span class="studio-price-input"><input name="annual_base_cad_cents" type="number" min="0" max="10000" step="0.01" data-cents><span>$ CA</span></span></label>
+<label class="studio-price-field studio-price-monthly"><span class="studio-price-label"><span data-studio-icon="calendar" aria-hidden="true"></span>Mensuel de base <small>facultatif</small></span><span class="studio-price-input"><input name="monthly_base_cad_cents" type="number" min="0" max="10000" step="0.01" data-cents placeholder="Non disponible"><span>$ CA</span></span></label>
+<label class="studio-price-field studio-price-two"><span class="studio-price-label"><span data-studio-icon="users" aria-hidden="true"></span>2 activités / mois</span><span class="studio-price-input"><input name="activities_2_cad_cents" type="number" min="0.01" step="0.01" data-cents required><span>$ CA</span></span></label>
+<label class="studio-price-field studio-price-three"><span class="studio-price-label"><span data-studio-icon="users" aria-hidden="true"></span>3 activités / mois</span><span class="studio-price-input"><input name="activities_3_cad_cents" type="number" min="0.01" step="0.01" data-cents required><span>$ CA</span></span></label>
+<label class="studio-price-field studio-price-four"><span class="studio-price-label"><span data-studio-icon="users" aria-hidden="true"></span>4 activités / mois</span><span class="studio-price-input"><input name="activities_4_cad_cents" type="number" min="0.01" step="0.01" data-cents required><span>$ CA</span></span></label>
+<label class="studio-price-field studio-price-included"><span class="studio-price-label"><span data-studio-icon="layers" aria-hidden="true"></span>Activités mensuelles comprises</span><span class="studio-price-input"><input name="included_monthly_draws" type="number" min="1" max="4" step="1" required><span>activité(s)</span></span></label>
+<label class="studio-price-field studio-price-maximum"><span class="studio-price-label"><span data-studio-icon="chart" aria-hidden="true"></span>Maximum d’activités par mois</span><span class="studio-price-input"><input name="max_monthly_draws" type="number" min="1" max="12" step="1" required><span>activité(s)</span></span></label>
+</div>
+<a class="studio-checkout-preview" href="./checkout.html" target="_blank" rel="noopener noreferrer">
+ <span class="studio-checkout-icon" data-studio-icon="credit-card" aria-hidden="true"></span>
+ <span><strong>Prévisualiser le paiement annuel et le champ « Code promo »</strong>
+ <small>Voir ce que les clients verront au moment de payer.</small></span>
+ <span class="studio-checkout-arrow" aria-hidden="true">›</span>
+</a>
+<p class="studio-price-footnote">Les formules de 2, 3 ou 4 activités servent à configurer les prix. Aucun achat n’est débité avant la connexion du paiement sécurisé.</p>
 </section>
 <section data-panel="referrals" hidden>
 <div class="section-head"><span class="eyebrow">PARRAINAGE LOVEROLL</span>
