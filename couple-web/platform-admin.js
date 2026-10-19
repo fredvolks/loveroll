@@ -65,6 +65,7 @@ function renderReferralSettings(){
  $('ref-enabled').checked=info.enabled===true;
  $('ref-reward').value=(Number(info.reward_cad_cents)/100).toFixed(2);
  $('ref-mode').value=info.reward_mode||'renewal_credit';
+ $('ref-cap-note').textContent='Plafond automatique : '+money(data?.config?.annual_base_cad_cents??4999)+' $ CA de rabais par duo pour son prochain renouvellement annuel.';
  const entries=[['links','Liens créés'],['awaiting_payment','En attente de paiement'],
   ['earned_referrals','Parrainages payés'],['pending_application_cad_cents','Crédits à appliquer']];
  $('ref-stats').innerHTML=entries.map(([key,label])=>{
