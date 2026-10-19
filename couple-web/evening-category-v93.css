@@ -1,0 +1,85 @@
+/* LoveRoll v93 - Soirée only. Preserve existing 3D polyhedral die engine,
+   turn ownership, gifts, private lists and responsive layouts. */
+main#app.loveroll-evening-page .evening-step.two .evening-play{
+  grid-template-rows:minmax(57px,.68fr) minmax(0,4.2fr) minmax(78px,1.2fr)!important;
+}
+main#app.loveroll-evening-page .evening-step.two .evening-choice{
+  width:100%!important;min-width:0!important;max-width:100%!important;
+  display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:clamp(4px,1.35vw,12px)!important;
+  align-items:stretch!important;justify-items:stretch!important;
+  overflow:visible!important;
+}
+main#app.loveroll-evening-page .evening-step.two .evening-choice-option{
+  min-width:0;min-height:0;display:flex;flex-direction:column;
+  justify-content:center;align-items:stretch;gap:2px;
+}
+main#app.loveroll-evening-page .evening-step.two .evening-choice-option .evening-choice-btn{
+  box-sizing:border-box!important;display:grid!important;place-items:center!important;
+  width:100%!important;max-width:none!important;
+  height:auto!important;min-height:36px!important;flex:0 0 auto!important;
+  padding:4px 2px!important;margin:0!important;
+  border-radius:999px;white-space:nowrap!important;
+  font-size:clamp(.65rem,2.5vw,.95rem)!important;
+  line-height:1.1!important;
+}
+main#app.loveroll-evening-page .evening-step.two .evening-choice-odds{
+  display:block;flex:0 0 auto;min-width:0;
+  margin:0;padding:0 1px;color:#ffabd4;
+  text-align:center;font-weight:800;
+  font-size:clamp(.56rem,1.75vw,.74rem);line-height:1.08;
+  white-space:nowrap;
+}
+main#app.loveroll-evening-page .evening-step.two .evening-choice-odds span{
+  display:block;font-weight:600;white-space:nowrap;
+}
+main#app.loveroll-evening-page .evening-step.two .evening-choice-btn.selected{
+  border-color:#ffb8dc;background:linear-gradient(135deg,#c52579,#6d1849);
+  color:#fff9fc;box-shadow:0 0 14px #fa3a9259,inset 0 1px #ffe6f56d;
+}
+main#app.loveroll-evening-page .evening-step.two .evening-die-row{
+  box-sizing:border-box!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  width:100%!important;min-width:0!important;min-height:0!important;
+  align-items:center!important;justify-items:center!important;
+  background:radial-gradient(ellipse at 50% 78%,#fb187d35,transparent 54%);
+}
+main#app.loveroll-evening-page .evening-step.two .evening-d35-col{
+  grid-column:1!important;width:100%!important;max-width:100%!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  min-width:0!important;
+}
+main#app.loveroll-evening-page .evening-step.two .evening-d35-col .love3d{
+  margin-inline:auto!important;justify-self:center!important;
+}
+main#app.loveroll-evening-page .evening-step.two .evening-probability{
+  display:none!important;
+}
+@media (max-width:767px){
+ main#app.loveroll-evening-page .evening-step.two .evening-play{
+  grid-template-rows:minmax(57px,.68fr) minmax(0,4.3fr) minmax(73px,1.2fr)!important;
+  gap:clamp(2px,.4dvh,5px)!important;
+ }
+ main#app.loveroll-evening-page .evening-step.two .evening-choice-option .evening-choice-btn{
+  min-height:35px!important;
+ }
+}
+@media (max-width:767px) and (max-height:710px){
+ main#app.loveroll-evening-page .evening-step.two .evening-play{
+  grid-template-rows:minmax(55px,.7fr) minmax(0,4.4fr) minmax(67px,1.25fr)!important;
+ }
+ main#app.loveroll-evening-page .evening-step.two .evening-choice-option .evening-choice-btn{
+  min-height:33px!important;font-size:clamp(.6rem,2.2vw,.77rem)!important;
+ }
+ main#app.loveroll-evening-page .evening-step.two .evening-choice-odds{
+  font-size:clamp(.56rem,1.65vw,.65rem)!important;
+ }
+}
+@media (min-width:768px){
+ main#app.loveroll-evening-page .evening-step.two .evening-play{
+  grid-template-rows:minmax(59px,.65fr) minmax(0,4.25fr) minmax(84px,1.1fr)!important;
+ }
+ main#app.loveroll-evening-page .evening-step.two .evening-choice-option .evening-choice-btn{
+  min-height:42px!important;font-size:clamp(.78rem,1.1vw,1rem)!important;
+ }
+}
