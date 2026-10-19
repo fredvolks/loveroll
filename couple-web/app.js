@@ -1179,6 +1179,23 @@ function updateChallengeClock(){
  if(status)status.textContent=challengeTimer.running?'En cours':challengeTimer.remainingMs===0?'Terminé':'À votre rythme';
 }
 setInterval(updateChallengeClock,500);
+// Referral balances are updated while this Settings page is being viewed.
+// Both partners share the same renewal credit ledger; the server remains
+// authoritative and no browser event can create referral rewards.
+let referralPolling=false;
+setInterval(async()=>{
+ if(referralPolling||!state.user||document.hidden||state.tab!=='settings'||
+    settingsOpenSection!=='parrainage'||!state.referral?.enabled)return;
+ referralPolling=true;
+ try{
+  const next=await rpc('love_my_referral');
+  if(state.tab==='settings'&&settingsOpenSection==='parrainage'&&
+     JSON.stringify(next)!==JSON.stringify(state.referral)){
+   state.referral=next;render();
+  }
+ }catch(error){console.warn('Actualisation des crédits différée',error?.message||'error');}
+ finally{referralPolling=false;}
+},15000);
 function timerWidget(challenge,minutes){
  if(minutes===null||minutes===undefined||minutes===0)return '<p class="tiny-note">♡ Sans minuteur · l’activité se termine quand vous le souhaitez.</p>';
  activeTimer(challenge,minutes);
