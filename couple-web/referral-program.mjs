@@ -18,25 +18,30 @@ export function referralModeText(mode){
 }
 export function referralSettingsHtml(referral){
  const v=referral||{},amount=dollars(v.reward_cad_cents??500);
- const head='<section class="settings-referral-card"><h3>♡ Parrainer un couple</h3>';
- if(!v.enabled)return head+'<p>Le programme de référencement n’est pas actif pour le moment.</p></section>';
- if(!v.couple_ready||!v.code)return head+
-  '<p>Créez d’abord votre duo pour obtenir votre lien personnel de recommandation.</p></section>';
+ const head='<section class="settings-referral-card" aria-label="Programme de parrainage LoveRoll">'+
+  '<div class="settings-referral-hero"><span>♡ LOVEROLL · PARRAINAGE</span><h3>Invitez un couple, gagnez ensemble.</h3></div>';
+ if(!v.enabled)return head+'<p>Le programme de parrainage est temporairement désactivé. Les crédits déjà acquis sont conservés.</p></section>';
+ const explainer='<p>Chaque partenaire peut partager son propre lien. Lorsqu’un nouveau couple rejoint LoveRoll et paie son <strong>premier abonnement annuel</strong>, <strong>votre duo reçoit '+esc(amount)+'</strong> sous forme de '+esc(referralModeText(v.reward_mode))+'.</p>'+
+  '<ol class="settings-referral-steps"><li><strong>Partagez votre lien personnel</strong><small>Par message, Messenger ou ailleurs.</small></li>'+
+  '<li><strong>Le nouveau couple s’inscrit et s’abonne</strong><small>Le premier paiement annuel doit être confirmé. Un simple compte gratuit ne suffit pas.</small></li>'+
+  '<li><strong>Votre couple gagne '+esc(amount)+'</strong><small>Les récompenses se cumulent pour le même duo et sont suivies dans LoveRoll.</small></li></ol>';
+ const disclaimer='<small>Un seul parrainage par nouveau couple. Aucun crédit pour un achat mensuel ou une inscription seule. '+
+  'Les crédits confirmés seront appliqués lorsque la facturation sécurisée sera connectée. '+
+  'Les conditions du programme peuvent évoluer pour les nouvelles recommandations.</small>';
+ if(!v.couple_ready||!v.code)return head+explainer+
+  '<p class="settings-referral-waiting">♡ Créez votre duo pour obtenir votre lien de parrainage personnel.</p>'+
+  disclaimer+'</section>';
  const url=referralLink(v.code);
- return head+
-  '<p>Partagez votre lien. Lorsqu’un nouveau couple crée un compte et règle son <strong>premier abonnement annuel</strong>, votre couple gagne <strong>'+
-  esc(amount)+'</strong> en '+esc(referralModeText(v.reward_mode))+'.</p>'+
-  '<label class="settings-referral-label" for="loveroll-referral-link">Mon lien personnel</label>'+
-  '<input id="loveroll-referral-link" readonly aria-label="Mon lien de référencement" value="'+esc(url)+'">'+
+ return head+explainer+
+  '<div class="settings-referral-link-card"><label class="settings-referral-label" for="loveroll-referral-link">VOTRE LIEN PERSONNEL</label>'+
+  '<input id="loveroll-referral-link" readonly aria-label="Mon lien de parrainage" value="'+esc(url)+'">'+
   '<div class="settings-referral-actions">'+
-  '<button type="button" data-action="referral-copy" class="settings-primary">Copier mon lien</button>'+
-  '<button type="button" data-action="referral-share" class="settings-secondary">Partager</button></div>'+
+  '<button type="button" data-action="referral-copy" class="settings-primary">Copier le lien</button>'+
+  '<button type="button" data-action="referral-share" class="settings-secondary">Partager</button></div></div>'+
   '<div class="settings-referral-stats">'+
    '<div><strong>'+esc(v.pending_count??0)+'</strong><small>En attente du paiement annuel</small></div>'+
-   '<div><strong>'+esc(v.paid_count??0)+'</strong><small>Référencements validés</small></div>'+
-   '<div><strong>'+esc(dollars(v.earned_cad_cents))+'</strong><small>Crédits acquis par notre duo</small></div>'+
-  '</div>'+
-  '<small>Un seul parrainage par nouveau couple. Le rabais est cumulable pour les deux partenaires. Aucune récompense pour une inscription seule ni pour un achat mensuel. '+
-   'L’application des crédits sur les factures sera activée après la connexion du système de paiement sécurisé.</small>'+
+   '<div><strong>'+esc(v.paid_count??0)+'</strong><small>Parrainages confirmés</small></div>'+
+   '<div><strong>'+esc(dollars(v.earned_cad_cents))+'</strong><small>Crédits obtenus par notre duo</small></div>'+
+  '</div>'+disclaimer+
   '</section>';
 }
