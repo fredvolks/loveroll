@@ -98,7 +98,30 @@
 <section data-panel="geo" hidden><div class="section-head"><span class="eyebrow">GEOAPIFY</span><h2>Activités locales</h2><p>Recherche serveur sécurisée après le tirage; aucun jeton Geoapify n’est affiché ici.</p></div>
 <div class="setting-row"><div><strong>Recherche Geoapify autorisée</strong><small>Le couple doit aussi activer la localisation dans ses Réglages.</small></div><input name="geo_enabled" type="checkbox"></div>
 <div class="fields"><label>Établissements maximum à vérifier<input name="geo_max_candidates" type="number" min="1" max="20" step="1" required></label><label>Distance maximale configurable (km)<input name="geo_max_radius_km" type="number" min="10" max="500" step="1" required></label></div>
-<div class="hint">La clé doit être enregistrée dans les secrets Supabase sous <code>GEOAPIFY_API_KEY</code>. La ville, la distance et l’établissement appartiennent au couple, pas au catalogue mondial.</div>
+<div class="geo-monitor" aria-labelledby="geo-monitor-title">
+ <div class="geo-monitor-head"><div><span class="eyebrow">CONSOMMATION API</span><h3 id="geo-monitor-title">Crédits Geoapify · estimation LoveRoll</h3></div>
+ <button type="button" class="secondary" id="geo-refresh">↻ Actualiser</button></div>
+ <p class="small-note">Ces données sont calculées à partir des appels effectués par LoveRoll depuis l'activation du suivi. Elles ne représentent pas ton solde officiel : d'autres services, clés ou appels peuvent consommer des crédits. <a href="https://myprojects.geoapify.com/" target="_blank" rel="noopener noreferrer">Vérifier dans Geoapify ↗</a></p>
+ <div class="geo-usage-stats" aria-live="polite">
+  <div class="geo-metric"><small>Crédits estimés aujourd'hui</small><strong id="geo-used-today">—</strong></div>
+  <div class="geo-metric"><small>Restants estimés</small><strong id="geo-remaining">—</strong></div>
+  <div class="geo-metric"><small>Appels aujourd'hui</small><strong id="geo-calls-today">—</strong></div>
+  <div class="geo-metric"><small>Crédits estimés · 30 jours</small><strong id="geo-used-30d">—</strong></div>
+ </div>
+ <div class="geo-progress-caption"><span id="geo-percent">—</span><span>Quota de référence : <strong id="geo-quota">—</strong> / jour</span></div>
+ <div id="geo-usage-meter" class="geo-meter" role="progressbar" aria-label="Estimation du quota Geoapify consommé" aria-valuemin="0" aria-valuenow="0" aria-valuemax="3000"><div id="geo-usage-progress"></div></div>
+ <p class="small-note" id="geo-usage-period"></p>
+ <div class="geo-charts-grid">
+  <div><h4>7 derniers jours (UTC)</h4><div class="geo-history" id="geo-history"></div></div>
+  <div><h4>Par service aujourd'hui</h4><div class="geo-breakdown" id="geo-breakdown"></div></div>
+ </div>
+ <div class="geo-quota-control"><label for="geo-limit">Quota quotidien de référence (crédits)<input id="geo-limit" type="number" min="1" max="100000000" step="1" value="3000"></label>
+ <button type="button" class="secondary" id="geo-save-limit">Enregistrer le quota</button></div>
+ <p class="small-note">Le forfait gratuit Geoapify offre 3 000 crédits par jour. Ce champ sert uniquement au calcul local du reste estimé; modifier cette valeur ne change pas ton forfait chez Geoapify.</p>
+ <p class="small-note" id="geo-tracking-note">Chargement de l'historique…</p>
+ <p id="geo-usage-feedback" role="status" aria-live="polite"></p>
+ </div>
+ <div class="hint">La clé doit être enregistrée dans les secrets Supabase sous <code>GEOAPIFY_API_KEY</code>. La ville, la distance et l’établissement appartiennent au couple, pas au catalogue mondial.</div>
 <div class="geo-usage-block" aria-label="Consommation Geoapify suivie par LoveRoll">
  <div class="geo-usage-head"><div><span class="eyebrow">SUIVI DES CRÉDITS</span><h3>Utilisation de Geoapify</h3><p>Estimation basée sur les appels de LoveRoll, pas le solde officiel Geoapify.</p></div>
  <button type="button" class="secondary" id="geo-refresh">↻ Actualiser</button></div>
