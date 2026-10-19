@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="fr-CA"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow,noarchive"><meta name="theme-color" content="#210d18">
+<title>LoveRoll Studio — Administration</title><link rel="icon" href="./assets/loveroll-icon-192.png">
+<link rel="stylesheet" href="./platform-admin.css?v=20261019-a1"></head>
+<body><div class="studio-app">
+<header class="studio-header"><div class="studio-mark"><span>♡</span><div><strong>LoveRoll</strong><small>STUDIO · ADMINISTRATION</small></div></div>
+<nav class="studio-top-nav"><a href="./">Retour à LoveRoll</a><button id="signout" hidden>Déconnexion</button></nav></header>
+<main>
+<section id="gate" class="studio-gate">
+<div class="studio-gate-card"><span class="eyebrow">ESPACE PRIVÉ</span><h1>Gérer LoveRoll</h1>
+<p>Connecte-toi avec ton compte propriétaire. Les réglages de tous les couples sont protégés côté Supabase.</p>
+<form id="login"><label>Adresse courriel<input type="email" id="email" autocomplete="username" required placeholder="ton@courriel.ca"></label>
+<label>Mot de passe<input type="password" id="password" autocomplete="current-password" required></label>
+<button class="primary" type="submit">Me connecter</button></form><button class="secondary" id="google" type="button">Se connecter avec Google</button>
+<p class="small-note">Être administrateur d’un couple ne donne pas accès à cette console globale.</p></div></section>
+<section id="dashboard" hidden>
+<div class="studio-heading"><div><span class="eyebrow">CENTRE DE COMMANDE</span><h1>Votre application, vos réglages.</h1>
+<p>Configuration globale, catalogue D100, statistiques et préparation de la facturation.</p></div>
+<span id="safety-status" class="status-tag">Paiements non connectés</span></div>
+<div class="stats" id="stats"></div>
+<div class="studio-layout">
+<aside class="studio-sidebar" id="tabs" aria-label="Sections administration">
+<button data-pane="prices" class="active">Tarifs et forfaits</button><button data-pane="d100">D100 et activités</button>
+<button data-pane="geo">Géolocalisation</button><button data-pane="notifications">Notifications</button>
+<button data-pane="audience">Utilisateurs et sécurité</button><button data-pane="catalogue">Catalogue des 100</button>
+<button data-pane="history">Journal des modifications</button></aside>
+<div class="studio-content"><form id="settings" autocomplete="off">
+<section data-panel="prices">
+<div class="section-head"><span class="eyebrow">MONÉTISATION</span><h2>Tarifs pour deux</h2><p>Les montants sont en $ CA. Aucun paiement n’est prélevé depuis cette page.</p></div>
+<div class="fields">
+<label>Abonnement annuel de base ($ CA)<input type="number" min="0" max="10000" step="0.01" name="annual_base_cad_cents" data-cents></label>
+<label>Mensuel de base ($ CA, facultatif)<input type="number" min="0" max="10000" step="0.01" name="monthly_base_cad_cents" data-cents placeholder="Non disponible"></label>
+<label>2 activités / mois ($ CA)<input type="number" min="0.01" step="0.01" name="activities_2_cad_cents" data-cents required></label>
+<label>3 activités / mois ($ CA)<input type="number" min="0.01" step="0.01" name="activities_3_cad_cents" data-cents required></label>
+<label>4 activités / mois ($ CA)<input type="number" min="0.01" step="0.01" name="activities_4_cad_cents" data-cents required></label>
+<label>Activités mensuelles comprises<input type="number" min="1" max="4" step="1" name="included_monthly_draws" required></label>
+<label>Maximum d'activités par mois<input type="number" min="1" max="12" step="1" name="max_monthly_draws" required></label>
+</div><div class="hint">Les formules 2/3/4 servent à configurer les prix. Les tirages payants resteront verrouillés jusqu'à une intégration de paiement avec confirmation serveur.</div>
+</section>
+<section data-panel="d100" hidden><div class="section-head"><span class="eyebrow">EXPÉRIENCES</span><h2>100 faces, 15 familles</h2><p>Le D100 reste 3D et son résultat est choisi et enregistré par Supabase.</p></div>
+<div class="setting-row"><div><strong>Éviter les répétitions durant l’année</strong><small>Chaque couple ne tire pas deux fois la même face.</small></div><input name="annual_no_repeat" type="checkbox"></div>
+<p class="hint">Les fiches des 100 activités peuvent être modifiées sous « Catalogue des 100 ». Les tirages historiques ne seront pas réécrits.</p></section>
+<section data-panel="geo" hidden><div class="section-head"><span class="eyebrow">GEOAPIFY</span><h2>Activités locales</h2><p>Recherche serveur sécurisée après le tirage; aucun jeton Geoapify n’est affiché ici.</p></div>
+<div class="setting-row"><div><strong>Recherche Geoapify autorisée</strong><small>Le couple doit aussi activer la localisation dans ses Réglages.</small></div><input name="geo_enabled" type="checkbox"></div>
+<div class="fields"><label>Établissements maximum à vérifier<input name="geo_max_candidates" type="number" min="1" max="20" step="1" required></label><label>Distance maximale configurable (km)<input name="geo_max_radius_km" type="number" min="10" max="500" step="1" required></label></div>
+<div class="hint">La clé doit être enregistrée dans les secrets Supabase sous <code>GEOAPIFY_API_KEY</code>. La ville, la distance et l’établissement appartiennent au couple, pas au catalogue mondial.</div></section>
+<section data-panel="notifications" hidden><div class="section-head"><span class="eyebrow">RAPPELS</span><h2>Réservations et push</h2><p>Une réservation déclarée confirmée planifie un rappel pour les deux partenaires ayant activé les notifications.</p></div>
+<div class="fields"><label>Délai du rappel avant l’activité (heures)<input name="reminder_hours" type="number" min="1" max="168" step="1" required></label></div>
+<div class="hint">Les alertes existantes passent par l’envoi Supabase programmé toutes les 15 minutes. La date et l’heure sont celles enregistrées pour la sortie, et non la date du tirage.</div></section>
+<section data-panel="audience" hidden><div class="section-head"><span class="eyebrow">SÉCURITÉ & AUDIENCE</span><h2>Vue globale</h2><p>Compte administrateur de plateforme distinct des administrateurs de couples.</p></div>
+<div class="notice">Seuls les comptes inscrits dans <code>love_platform_admins</code> peuvent lire et modifier ces paramètres. Les données intimes, défis privés et messages des couples ne sont pas exposés à cette console.</div>
+<label>Message administratif non bloquant<textarea name="maintenance_message" rows="3" maxlength="240" placeholder="Facultatif"></textarea></label>
+<div class="hint">Aucune vue des paiements bancaires ni des contenus privés. Les tarifs ne déclenchent pas automatiquement de prélèvements.</div></section>
+<section data-panel="catalogue" hidden><div class="section-head"><span class="eyebrow">D100 GLOBAL</span><h2>Éditer une expérience</h2><p>Modifier le titre, la description et les catégories de recherche d'une face sans effacer les tirages existants.</p></div>
+<label>Rechercher parmi les 100 faces<input id="face-search" type="search" placeholder="Ex. 54, restaurant, spa…"></label>
+<div id="face-list" class="face-list"></div>
+<div id="face-editor" class="face-editor" hidden><div class="fields"><label>Face<input id="face-number" type="number" readonly></label><label>Famille<input id="face-theme" maxlength="45"></label></div><label>Titre<input id="face-title" maxlength="130"></label><label>Description<textarea id="face-description" rows="4" maxlength="700"></textarea></label><label>Catégories Geoapify<input id="face-categories" maxlength="300"></label><button id="face-save" type="button" class="secondary">Enregistrer cette face</button></div>
+</section>
+<section data-panel="history" hidden><div class="section-head"><span class="eyebrow">TRAÇABILITÉ</span><h2>Journal des modifications</h2><p>Historique des réglages de plateforme changés depuis cette console.</p></div><div id="audit"></div></section>
+<div class="savebar"><span id="feedback" role="status" aria-live="polite"></span><button class="primary" id="save-settings" type="submit">Enregistrer les réglages</button></div>
+</form></div></div></section>
+</main><footer>LoveRoll Studio · Accès privé · Aucune facturation effectuée depuis cette console.</footer>
+</div><script type="module" src="./platform-admin.js?v=20261019-a1"></script></body></html>
