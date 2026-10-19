@@ -1724,6 +1724,7 @@ function settingsIcon(key){
   couple:'<path d="M12 21s-8-5.2-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.8-8 11-8 11Z"/>',
   notifications:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 10h18c0-2-3-3-3-10ZM10 21h4"/>',
   jeu:'<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r=".8" fill="currentColor"/><circle cx="16" cy="16" r=".8" fill="currentColor"/><circle cx="12" cy="12" r=".8" fill="currentColor"/>',
+  monde:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c-3 3-4 6-4 9s1 6 4 9M12 3c3 3 4 6 4 9s-1 6-4 9"/>',
   admin:'<path d="M12 2 20 5v6c0 5-3.3 8.6-8 11-4.7-2.4-8-6-8-11V5Z"/>',
   application:'<rect x="6" y="2" width="12" height="20" rx="2"/><path d="M10 18h4"/>',
   confidentialite:'<rect x="5" y="10" width="14" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
