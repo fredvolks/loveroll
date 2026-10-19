@@ -2,6 +2,7 @@
 import {ritualHeadingHtml} from './brand.mjs?v=20261017-ritual130';
 import {occasionDate,dueOccasions} from './special-occasions.mjs';
 import {displayCadRange} from './currency-exchange.mjs';
+import {monthlyGeoCardHtml} from './monthly-geo-ui.mjs';
 import {premiumPolyDie} from './premium-evening.mjs';
 import {surpriseSlot,surpriseCustom,surpriseTitle,displaySurpriseDate} from './surprise-event-config.mjs';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','"':'&quot;',"'":'&#39;'}[c]));
@@ -47,7 +48,8 @@ export function sixSpecialEvents(now,settings={},members=[]){
 export function premiumSurpriseHtml({
  monthly={},members=[],settings={},now=new Date(),activity=null,
  rolling=false,rollingKind=null,rollFace=1,settlingHost=false,showActivity=false,timerHtml='',editSlot=null,season=null,
- currency='CAD',locale='fr-CA',exchange=null
+ currency='CAD',locale='fr-CA',exchange=null,
+ geoEnabled=false,geoVenue=null,geoLookup='idle',reservation=null,canReserve=false,bookingEditor=false
 }={}){
  const a=monthly.monthly_activity,h=monthly.monthly_host;
  const rollingActivity=rolling&&rollingKind==='monthly_activity';
@@ -127,7 +129,8 @@ export function premiumSurpriseHtml({
    '<div class="surprise-modal" role="dialog" aria-modal="true" aria-label="Notre activité du mois">'+
     '<article class="surprise-modal-content surprise-season-modal">'+
      '<strong class="surprise-season-overline">♡ ACTIVITÉ DU MOIS · D100 · '+esc(a.face)+'</strong>'+
-     '<h2>'+activityTitle+'</h2>'+
+     '<h2>'+esc(geoEnabled&&geoVenue?.state==='ready'&&geoVenue?.name?geoVenue.name:activity?.title||'Notre rendez-vous')+'</h2>'+ 
+      (geoEnabled?'<small class="surprise-geo-concept">Expérience D100 : '+activityTitle+'</small>':'')+
      (outingPlace?'<p class="surprise-location">'+outingPlace+'</p>':'')+
      (activity?.hiver||activity?.ete?
        '<div class="surprise-season-switch" role="group" aria-label="Choisir la saison">'+
@@ -141,6 +144,8 @@ export function premiumSurpriseHtml({
        (activity?.distance_km_est!=null?'<small>Environ '+esc(activity.distance_km_est)+' km de Québec (aller simple).</small>':'')+
        '</div>':'')+
      '<small class="surprise-season-disclaimer">Tarifs variables selon les dates, les réservations et la météo. Vérifiez les horaires et la disponibilité avant de partir.</small>'+
+     monthlyGeoCardHtml({venue:geoVenue,lookup:geoLookup,enabled:geoEnabled,
+       host:host?.name||null,canReserve,reservation,editing:bookingEditor,locale,experienceTitle:activity?.title||''})+
      timerHtml+button('surprise-activity','Fermer','surprise-primary')+
     '</article></div>':'')+
  '</div>';
