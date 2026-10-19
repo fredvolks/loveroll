@@ -130,3 +130,50 @@ main#app.loveroll-settings-page .admin-category-weight-grid{grid-template-column
 .lr-cycle-card .lr-cycle-note{font-size:12px;opacity:.8;}
 .lr-cycle-later{background:transparent;border:0;border-bottom:1px solid rgba(231,157,184,.5);
  margin:8px auto 0;padding:7px 2px;color:#e4b9cb;font-size:13px;}
+
+
+/* Worldwide preferences: same editor for the couple admin and partner. */
+main#app.loveroll-settings-page .settings-sections{
+ grid-template-rows:repeat(6,minmax(53px,1fr));
+ max-height:510px;
+}
+main#app.loveroll-settings-page .world-prefs{
+ display:grid;gap:16px;min-width:0;max-width:100%;
+}
+main#app.loveroll-settings-page .world-prefs-card{
+ display:grid;gap:14px;padding:16px 14px;min-width:0;
+ border-radius:18px;border:1px solid var(--ritual-border);
+ background:var(--ritual-card);
+}
+main#app.loveroll-settings-page .world-prefs-card h2{
+ margin:0;font:500 clamp(21px,5vw,27px)/1.17 Georgia,serif;
+ color:var(--ritual-text);
+}
+main#app.loveroll-settings-page .world-prefs-card label{
+ display:grid;gap:7px;min-width:0;
+ color:var(--ritual-text);font-weight:500;
+}
+main#app.loveroll-settings-page .world-prefs-card .push-option{
+ display:flex;align-items:center;justify-content:space-between;
+ padding:12px;border:1px solid var(--ritual-border);border-radius:12px;
+}
+main#app.loveroll-settings-page .world-prefs-card .push-option input{
+ flex:none;width:20px;height:20px;
+}
+main#app.loveroll-settings-page .world-prefs-card button{
+ white-space:normal;line-height:1.25;min-height:48px;
+}
+main#app.loveroll-settings-page .world-prefs-card .tiny-note{
+ margin:0;line-height:1.5;color:var(--ritual-muted);
+}
+main#app.loveroll-settings-page #world-gps-status:empty{display:none;}
+main#app.loveroll-settings-page #world-gps-status{color:var(--ritual-rose);font-size:13px;}
+main#app.loveroll-settings-page .world-prefs[dir=rtl]{text-align:right;}
+main#app.loveroll-settings-page .world-prefs select,
+main#app.loveroll-settings-page .world-prefs input{width:100%;max-width:100%;}
+@media(max-width:767px) and (max-height:760px){
+ main#app.loveroll-settings-page .settings-sections{
+  grid-template-rows:repeat(6,minmax(49px,1fr));
+ }
+ main#app.loveroll-settings-page .world-prefs-card{padding:12px;gap:10px;}
+}
