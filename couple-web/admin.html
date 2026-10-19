@@ -2,7 +2,7 @@
 <html lang="fr-CA"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow,noarchive"><meta name="theme-color" content="#210d18">
 <title>LoveRoll Studio — Administration</title><link rel="icon" href="./assets/loveroll-icon-192.png">
-<link rel="stylesheet" href="./platform-admin.css?v=20261019-ref158"></head>
+<link rel="stylesheet" href="./platform-admin.css?v=20261019-promo161"></head>
 <body><div class="studio-app">
 <header class="studio-header"><div class="studio-mark"><span>♡</span><div><strong>LoveRoll</strong><small>STUDIO · ADMINISTRATION</small></div></div>
 <nav class="studio-top-nav"><a href="./">Retour à LoveRoll</a><button id="signout" hidden>Déconnexion</button></nav></header>
@@ -21,7 +21,7 @@
 <div class="stats" id="stats"></div>
 <div class="studio-layout">
 <aside class="studio-sidebar" id="tabs" aria-label="Sections administration">
-<button data-pane="prices" class="active">Tarifs et forfaits</button><button data-pane="referrals">Référencement et crédits</button><button data-pane="d100">D100 et activités</button>
+<button data-pane="prices" class="active">Tarifs et forfaits</button><button data-pane="referrals">Référencement et crédits</button><button data-pane="promos">Codes promotionnels</button><button data-pane="d100">D100 et activités</button>
 <button data-pane="geo">Géolocalisation</button><button data-pane="notifications">Notifications</button>
 <button data-pane="audience">Utilisateurs et sécurité</button><button data-pane="catalogue">Catalogue des 100</button>
 <button data-pane="history">Journal des modifications</button></aside>
@@ -63,6 +63,35 @@
 <div class="savebar"><span id="ref-feedback" role="status" aria-live="polite"></span>
 <button id="save-referral" type="button" class="primary">Enregistrer le programme</button></div>
 </section>
+<section data-panel="promos" hidden>
+<div class="section-head"><span class="eyebrow">OFFRES & RÉDUCTIONS</span><h2>Codes promotionnels</h2>
+<p>Crée des réductions en pourcentage, contrôle leur période de validité et limite le nombre de couples qui peuvent les utiliser. Un code est utilisable une seule fois par couple.</p></div>
+<div class="promo-top"><strong id="promo-count">Chargement…</strong><button type="button" class="secondary" id="promo-new">+ Nouveau code</button></div>
+<div class="promo-editor" aria-labelledby="promo-editor-title"><h3 id="promo-editor-title">Créer un code promotionnel</h3>
+<div class="fields">
+<label>Code personnalisé (facultatif)
+<input id="promo-code" maxlength="32" autocomplete="off" spellcheck="false" placeholder="Laisser vide pour générer automatiquement"></label>
+<label>Rabais (%)<input id="promo-percent" type="number" min="1" max="100" step="1" value="20"></label>
+<label>Début de validité<input id="promo-start" type="datetime-local"></label>
+<label>Durée rapide
+<select id="promo-duration"><option value="">Choisir ou fixer la fin</option><option value="1">1 jour</option>
+<option value="7">7 jours</option><option value="30">30 jours</option><option value="90">90 jours</option>
+<option value="365">1 an</option></select></label>
+<label>Expiration du code<input id="promo-end" type="datetime-local"></label>
+<label>Utilisations maximum<input id="promo-limit" type="number" min="1" step="1" placeholder="Illimité"></label>
+<label>Utilisable sur
+<select id="promo-audience"><option value="annual_new">Première année seulement</option>
+<option value="annual_renewal">Renouvellements seulement</option>
+<option value="both">Première année et renouvellements</option></select></label>
+</div>
+<div class="setting-row promo-active-row"><div><strong>Code actif</strong><small>Tu peux désactiver un code immédiatement, sans effacer son historique.</small></div>
+<input type="checkbox" id="promo-active" checked aria-label="Code promo actif"></div>
+<p class="small-note" id="promo-generate-note">Laisse le code vide pour que LoveRoll génère un identifiant aléatoire sécurisé de type LOVE-XXXXXXXXXXXX.</p>
+<div class="notice"><strong>Règles de sécurité</strong><p>Le rabais est calculé par Supabase, jamais par le navigateur. Un code expiré, désactivé, épuisé ou déjà utilisé par un duo est refusé. Aucun abonnement n'est activé tant qu'un paiement n'a pas été confirmé côté serveur. Les crédits de parrainage restent distincts et le total payable ne peut pas être négatif.</p></div>
+<div class="savebar"><span id="promo-feedback" role="status" aria-live="polite"></span>
+<button type="button" class="primary" id="promo-save">Créer le code</button></div></div>
+<h3 class="promo-list-title">Mes codes créés</h3><div id="promo-list" class="promo-list" aria-live="polite"></div>
+</section>
 <section data-panel="d100" hidden><div class="section-head"><span class="eyebrow">EXPÉRIENCES</span><h2>100 faces, 15 familles</h2><p>Le D100 reste 3D et son résultat est choisi et enregistré par Supabase.</p></div>
 <div class="setting-row"><div><strong>Éviter les répétitions durant l’année</strong><small>Chaque couple ne tire pas deux fois la même face.</small></div><input name="annual_no_repeat" type="checkbox"></div>
 <p class="hint">Les fiches des 100 activités peuvent être modifiées sous « Catalogue des 100 ». Les tirages historiques ne seront pas réécrits.</p></section>
@@ -86,4 +115,4 @@
 <div class="savebar"><span id="feedback" role="status" aria-live="polite"></span><button class="primary" id="save-settings" type="submit">Enregistrer les réglages</button></div>
 </form></div></div></section>
 </main><footer>LoveRoll Studio · Accès privé · Aucune facturation effectuée depuis cette console.</footer>
-</div><script type="module" src="./platform-admin.js?v=20261019-ref160"></script></body></html>
+</div><script type="module" src="./platform-admin.js?v=20261019-promo161"></script></body></html>
