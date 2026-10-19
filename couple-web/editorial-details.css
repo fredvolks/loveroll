@@ -1,0 +1,170 @@
+/* Six editorial boards: shared Home materials, real forms, one layout owner. */
+main#app.loveroll-settings-page{height:100dvh;min-height:0;overflow:visible;}
+main#app.loveroll-settings-page .settings-editorial{height:100%;}
+main#app.loveroll-settings-page .settings-editorial-content{display:flex;flex-direction:column;min-height:0;}
+main#app.loveroll-settings-page .settings-detail-body{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;align-content:start;padding-bottom:12px;scrollbar-width:thin;}
+main#app.loveroll-library-page .editorial-content{flex:1;overflow:auto;overscroll-behavior:contain;padding-bottom:8px;scrollbar-width:thin;}
+main#app.loveroll-library-list .editorial-content{overflow:visible;padding-bottom:0;}
+main#app.loveroll-settings-page .editorial-title{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:5px 0 18px;}
+main#app.loveroll-settings-page .editorial-title h1{margin:0;}
+main#app.loveroll-settings-menu .editorial-title{margin:0;}
+main#app.loveroll-settings-page .settings-back>span:last-child{font:13px/1.25 system-ui,sans-serif;max-width:125px;text-align:left;}
+main#app.loveroll-settings-page .settings-back>span:first-child{font:30px/1 Georgia,serif;}
+main#app.loveroll-settings-page .editorial-badge{display:inline-flex;align-items:center;gap:5px;flex:none;color:var(--ritual-rose);font:12px/1.2 system-ui,sans-serif;}
+main#app.loveroll-settings-page .editorial-badge svg{width:20px;height:20px;}
+main#app.loveroll-settings-page .editorial-row{box-sizing:border-box;display:grid;grid-template-columns:28px minmax(0,1fr) auto;align-items:center;gap:14px;min-height:64px;width:100%;padding:13px 2px;margin:0;border:0;border-bottom:1px solid var(--ritual-border);border-radius:0;background:none;box-shadow:none;color:var(--ritual-text);text-align:left;font:15px/1.35 system-ui,sans-serif;}
+main#app.loveroll-settings-page .editorial-row>span:not(.editorial-row-icon){display:grid;gap:4px;min-width:0;}
+main#app.loveroll-settings-page .editorial-row strong{font-size:15px;font-weight:500;overflow-wrap:anywhere;}
+main#app.loveroll-settings-page .editorial-row small{font-size:12px;color:var(--ritual-muted);line-height:1.35;overflow-wrap:anywhere;}
+main#app.loveroll-settings-page .editorial-row b{font:25px/1 Georgia,serif;color:var(--ritual-rose);font-weight:400;}
+main#app.loveroll-settings-page .editorial-row-icon{display:grid;place-items:center;color:var(--ritual-rose);}
+main#app.loveroll-settings-page .editorial-row :is(svg,.editorial-row-icon svg){width:26px;height:26px;color:var(--ritual-rose);}
+main#app.loveroll-settings-page .editorial-separated{margin-top:18px;padding-top:18px;border-top:1px solid var(--ritual-border);}
+main#app.loveroll-settings-page .settings-detail-body p{font-size:14px;line-height:1.55;color:var(--ritual-muted);margin:0;}
+main#app.loveroll-settings-page .settings-detail-body>.editorial-row{margin:0;}
+main#app.loveroll-settings-page .settings-duo-card{display:grid;justify-items:center;gap:8px;padding:16px;border:1px solid var(--ritual-border);border-radius:16px;background:var(--ritual-card);}
+main#app.loveroll-settings-page .settings-duo-initials{display:flex;align-items:center;justify-content:center;width:min(100%,250px);}
+main#app.loveroll-settings-page .settings-duo-initials>span{display:grid;place-items:center;flex:none;width:52px;height:52px;border:1px solid var(--ritual-rose);border-radius:50%;font:28px/1 Georgia,serif;background:var(--ritual-button);}
+main#app.loveroll-settings-page .settings-duo-initials>i{display:grid;place-items:center;position:relative;flex:1;color:var(--ritual-rose);font-style:normal;}
+main#app.loveroll-settings-page .settings-duo-initials i:before,main#app.loveroll-settings-page .settings-duo-initials i:after{content:'';width:28%;height:1px;background:var(--ritual-border);position:absolute;top:50%;left:0;}
+main#app.loveroll-settings-page .settings-duo-initials i:after{left:auto;right:0;}
+main#app.loveroll-settings-page .settings-duo-initials svg{width:28px;height:28px;}
+main#app.loveroll-settings-page .settings-duo-card strong{font-size:15px;font-weight:500;}
+main#app.loveroll-settings-page .settings-duo-card small{font-size:12px;color:var(--ritual-muted);}
+main#app.loveroll-settings-page .settings-danger-zone svg,main#app.loveroll-settings-page .settings-reset svg{width:22px;height:22px;vertical-align:middle;margin-right:8px;}
+main#app.loveroll-settings-page .settings-status-list .editorial-row{min-height:70px;}
+main#app.loveroll-settings-page .settings-detail-body .push-status{display:grid;grid-template-columns:30px minmax(0,1fr);gap:12px;align-items:center;margin:0;}
+main#app.loveroll-settings-page .push-status strong{font-size:15px;font-weight:500;}
+main#app.loveroll-settings-page .push-status p{font-size:12px;line-height:1.4;margin:5px 0 0;}
+main#app.loveroll-settings-page .settings-detail-body .push-option{display:grid;grid-template-columns:minmax(0,1fr) 44px;align-items:center;gap:14px;min-height:70px;}
+main#app.loveroll-settings-page .settings-detail-body .push-option svg{width:26px;height:26px;}
+main#app.loveroll-settings-page .settings-detail-body .push-actions{display:grid;gap:12px;margin-top:8px;}
+main#app.loveroll-settings-page .settings-detail-body .push-actions .settings-signout{background:none;box-shadow:none;border:0;color:var(--ritual-rose);}
+main#app.loveroll-library-page .editorial-workspace{width:min(100%,960px);}
+main#app.loveroll-library-list{height:100dvh;min-height:0;}
+main#app.loveroll-library-list .editorial-workspace{height:100%;}
+main#app.loveroll-library-page .editorial-content{display:flex;flex-direction:column;gap:14px;min-height:0;}
+main#app.loveroll-library-list .settings-editorial-content{display:flex;flex-direction:column;min-height:0;}
+main#app.loveroll-library-list .editorial-content{flex:1;gap:8px;}
+main#app.loveroll-settings-page .editorial-library-count{margin:0;text-align:center;font-size:12px;line-height:1.3;color:var(--ritual-muted);}
+main#app.loveroll-settings-page .editorial-segments{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);border:1px solid var(--ritual-border);border-radius:12px;}
+main#app.loveroll-settings-page .editorial-segments>button{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:8px 5px;border:0;border-radius:10px;background:none;box-shadow:none;color:var(--ritual-text);font-size:14px;}
+main#app.loveroll-settings-page .editorial-segments>button.selected{background:var(--ritual-button);box-shadow:var(--ritual-shadow);}
+main#app.loveroll-settings-page .editorial-segments svg{width:24px;height:24px;color:var(--ritual-rose);}
+main#app.loveroll-settings-page .editorial-library-filters{display:grid;grid-template-columns:1fr;gap:8px;align-items:end;}
+main#app.loveroll-settings-page .editorial-search{position:relative;display:flex;min-width:0;}
+main#app.loveroll-settings-page .editorial-search svg{position:absolute;left:11px;bottom:13px;width:22px;height:22px;color:var(--ritual-rose);pointer-events:none;}
+main#app.loveroll-settings-page .editorial-search input[type=search]{padding-left:40px;}
+main#app.loveroll-settings-page .visually-labelled{font-size:12px;}
+main#app.loveroll-settings-page .editorial-draw-rule{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;border-bottom:1px solid var(--ritual-border);}
+main#app.loveroll-settings-page .editorial-draw-rule .push-option{border:0;min-height:46px;gap:8px;padding:4px 0;}
+main#app.loveroll-settings-page .editorial-draw-rule .push-option>span{display:flex;flex-direction:row;align-items:center;gap:8px;font-size:13px;}
+main#app.loveroll-settings-page .editorial-draw-rule svg{width:20px;height:20px;color:var(--ritual-rose);}
+main#app.loveroll-library-page .editorial-draw-rule>.settings-secondary{min-height:44px;padding:6px 10px;font-size:12px;}
+main#app.loveroll-settings-page .editorial-card-list{display:flex;flex-direction:column;flex:1;min-height:85px;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin;}
+main#app.loveroll-library-page .editorial-card-list .custom-card-tile{display:grid;grid-template-columns:30px minmax(0,1fr) 20px;align-items:center;gap:12px;min-height:52px;flex:none;width:100%;padding:12px 3px;border:0;border-bottom:1px solid var(--ritual-border);border-radius:0;background:none;box-shadow:none;text-align:left;color:var(--ritual-text);}
+main#app.loveroll-library-page .editorial-card-list .custom-card-tile[hidden]{display:none;}
+main#app.loveroll-settings-page .editorial-card-list .custom-tile-number{font-size:14px;color:var(--ritual-rose);font-weight:400;}
+main#app.loveroll-settings-page .editorial-card-list .custom-tile-name{font-size:14px;font-weight:400;line-height:1.35;white-space:normal;overflow-wrap:anywhere;}
+main#app.loveroll-settings-page .editorial-card-list b{font:25px/1 Georgia,serif;color:var(--ritual-rose);}
+main#app.loveroll-settings-page .editorial-note{display:flex;align-items:flex-start;gap:8px;margin:0;font-size:12px;line-height:1.4;color:var(--ritual-muted);}
+main#app.loveroll-settings-page .editorial-note>svg{flex:none;width:18px;height:18px;color:var(--ritual-rose);}
+main#app.loveroll-settings-page .editorial-form{display:grid;gap:17px;min-width:0;}
+main#app.loveroll-settings-page .editorial-form fieldset{display:grid;gap:8px;min-width:0;margin:0;padding:0;border:0;}
+main#app.loveroll-settings-page .editorial-form legend{font-size:14px;line-height:1.35;color:var(--ritual-muted);padding:0;margin-bottom:8px;}
+main#app.loveroll-settings-page .editorial-person-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid var(--ritual-border);border-radius:10px;}
+main#app.loveroll-settings-page .editorial-person-choices>label{position:relative;display:grid;place-items:center;min-height:44px;}
+main#app.loveroll-settings-page .editorial-person-choices input{appearance:none;position:absolute;inset:0;width:100%;height:100%;margin:0;border:0;border-radius:9px;cursor:pointer;}
+main#app.loveroll-settings-page .editorial-person-choices input:checked{background:var(--ritual-button);}
+main#app.loveroll-settings-page .editorial-person-choices span{position:relative;pointer-events:none;color:var(--ritual-text);font-size:14px;}
+main#app.loveroll-settings-page .editorial-person-choices input:focus-visible{outline:2px solid var(--ritual-text);outline-offset:2px;}
+main#app.loveroll-settings-page .editorial-timer{display:grid;gap:10px;padding:4px 0 12px;border-block:1px solid var(--ritual-border);}
+main#app.loveroll-settings-page .editorial-timer .push-option{padding:0;border:0;min-height:44px;}
+main#app.loveroll-settings-page .editorial-timer .push-option>span{display:flex;flex-direction:row;align-items:center;gap:10px;}
+main#app.loveroll-settings-page .editorial-timer svg{width:24px;height:24px;color:var(--ritual-rose);}
+main#app.loveroll-settings-page .editorial-timer .editorial-timer-duration{display:grid;grid-template-columns:minmax(0,1fr) minmax(100px,45%);align-items:center;}
+main#app.loveroll-settings-page .editorial-timer-duration[hidden]{display:none;}
+main#app.loveroll-settings-page .editorial-event-list{display:grid;gap:8px;}
+main#app.loveroll-settings-page .editorial-event-list .editorial-row,main#app.loveroll-settings-page .editorial-json-actions .editorial-row{border:1px solid var(--ritual-border);border-radius:12px;padding:10px 12px;min-height:52px;background:var(--ritual-card);}
+main#app.loveroll-settings-page .json-tools{display:grid;gap:15px;border:0;padding:0;margin:0;background:none;box-shadow:none;}
+main#app.loveroll-settings-page .editorial-json-actions{display:grid;gap:10px;}
+main#app.loveroll-settings-page .json-file-button{position:relative;cursor:pointer;}
+main#app.loveroll-settings-page .json-file-button input[type=file]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;}
+main#app.loveroll-settings-page .json-preview{display:grid;grid-template-columns:30px minmax(0,1fr);align-items:start;gap:8px 12px;border:1px solid var(--ritual-border);padding:16px;border-radius:14px;background:var(--ritual-card);}
+main#app.loveroll-settings-page .json-preview>svg{width:28px;height:28px;color:var(--ritual-rose);grid-row:1/4;}
+main#app.loveroll-settings-page .json-preview :is(p,small){margin:0;font-size:13px;color:var(--ritual-muted);}
+main#app.loveroll-settings-page .json-preview>button{grid-column:1/-1;}
+main#app.loveroll-settings-page .editorial-error{padding:12px;border:1px solid var(--ritual-rose);border-radius:12px;color:var(--ritual-text);font-size:14px;line-height:1.45;}
+main#app.loveroll-settings-page .editorial-error[hidden]{display:none;}
+@media(min-width:1000px){main#app.loveroll-settings-page .editorial-form{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 24px;}main#app.loveroll-settings-page .editorial-form>:is(button,.editorial-timer,h3,.editorial-segments),main#app.loveroll-settings-page .editorial-form>label:has(textarea),main#app.loveroll-settings-page .editorial-form>label:has(select[data-editor-select]){grid-column:1/-1;}main#app.loveroll-settings-page .editorial-event-list{grid-template-columns:repeat(2,minmax(0,1fr));}main#app.loveroll-settings-page .editorial-event-list .editorial-row{min-height:80px;}main#app.loveroll-settings-page .editorial-card-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));align-content:start;column-gap:28px;}main#app.loveroll-settings-page .editorial-card-list .custom-card-tile{align-self:start;}}
+@media(max-width:767px) and (max-height:700px){main#app.loveroll-library-page .settings-editorial{gap:10px;}main#app.loveroll-library-page .editorial-title{margin:0 0 10px;}main#app.loveroll-library-page h1{font-size:30px;}main#app.loveroll-settings-page .editorial-library-filters input,main#app.loveroll-settings-page .editorial-library-filters select{min-height:44px;font-size:14px;}main#app.loveroll-settings-page .editorial-library-filters .visually-labelled{font-size:0;}main#app.loveroll-settings-page .editorial-library-filters .visually-labelled select{font-size:13px;}main#app.loveroll-settings-page .editorial-page-list .editorial-note{font-size:11px;line-height:1.3;}main#app.loveroll-settings-page .editorial-draw-rule>.settings-secondary{max-width:100px;}main#app.loveroll-settings-page .editorial-draw-rule>.settings-secondary{font-size:11px;}main#app.loveroll-settings-page .editorial-page-list .editorial-row{min-height:44px;padding-block:8px;}}
+/* New entry forms deliberately do not inherit the superseded fixed invitation form. */
+html:has(.auth-editorial),body:has(.auth-editorial){min-height:100%;height:auto;overflow:visible;background:var(--ritual-page);}
+main#app:has(>.auth-editorial){width:100%;max-width:none;height:auto;min-height:100dvh;margin:0;padding:0;background:var(--ritual-page);color:var(--ritual-text);}
+#app>.auth-editorial{box-sizing:border-box;position:relative;display:flex;flex-direction:column;gap:22px;width:min(100%,470px);min-height:100dvh;margin:auto;padding:max(14px,env(safe-area-inset-top,0px)) 24px max(20px,env(safe-area-inset-bottom,0px));background:none;color:var(--ritual-text);}
+#app .auth-editorial .entry-account-hero{flex:none;position:relative;display:flex;flex-direction:column;align-items:center;gap:10px;height:auto;padding:0;background:none;overflow:visible;}
+#app .auth-editorial .entry-account-hero>p{font:500 10px/1.4 system-ui,sans-serif;letter-spacing:.23em;margin:0;color:var(--ritual-rose);}
+#app .auth-editorial .ritual-brand{margin:0;color:var(--ritual-text);}
+#app .auth-editorial .ritual-brand b{font:italic 25px/1.15 Georgia,serif;}
+#app .auth-editorial .ritual-brand i{font:27px/1 Georgia,serif;}
+#app .auth-editorial .entry-account-progress{display:flex;align-items:center;justify-content:center;gap:12px;position:static;width:100%;margin:10px 0 0;font-size:12px;line-height:1.2;color:var(--ritual-muted);}
+#app .auth-editorial .entry-account-progress>span{display:flex;align-items:center;gap:8px;}
+#app .auth-editorial .entry-account-progress b{display:grid;place-items:center;width:25px;height:25px;border-radius:50%;background:var(--ritual-button);color:var(--ritual-text);font-weight:500;}
+#app .auth-editorial .entry-account-progress i{width:22px;height:1px;background:var(--ritual-border);}
+#app .auth-editorial .entry-auth-card{display:flex;flex-direction:column;gap:16px;flex:1;position:relative;margin:0;padding:0;background:none;border:0;border-radius:0;box-shadow:none;}
+#app .auth-editorial h1{font:500 clamp(32px,8.4vw,42px)/1.08 Georgia,serif;letter-spacing:-.025em;margin:6px 0 0;color:var(--ritual-text);text-shadow:none;}
+#app .auth-editorial h1 em{font-weight:400;color:var(--ritual-rose);}
+#app .auth-editorial p{font-size:14px;line-height:1.45;margin:0;color:var(--ritual-muted);}
+#app .auth-editorial .entry-auth-title{display:block;margin:0;}
+#app .auth-editorial .entry-auth-lead{margin:-6px 0 0;}
+#app .auth-editorial .entry-auth-segments{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border:1px solid var(--ritual-border);border-radius:12px;}
+#app .auth-editorial .entry-auth-segments button{min-height:44px;padding:10px 5px;border:0;border-radius:10px;background:none;box-shadow:none;color:var(--ritual-text);font-size:14px;}
+#app .auth-editorial .entry-auth-segments button.is-active{background:var(--ritual-button);}
+#app .auth-editorial :is(#invite-auth-form,.entry-auth-fields,.editorial-form){display:grid;gap:16px;}
+#app .auth-editorial label{display:grid;gap:8px;margin:0;font:14px/1.35 system-ui,sans-serif;color:var(--ritual-muted);min-width:0;}
+#app .auth-editorial input:not([type=checkbox]),#app .auth-editorial select{box-sizing:border-box;width:100%;min-width:0;min-height:48px;padding:11px 12px;margin:0;border:1px solid var(--ritual-border);border-radius:10px;background:var(--ritual-card);color:var(--ritual-text);font:16px/1.3 system-ui,sans-serif;color-scheme:dark;}
+#app .auth-editorial .entry-input{display:flex;flex-direction:row;align-items:center;gap:10px;min-height:48px;padding:0 12px;border:1px solid var(--ritual-border);border-radius:10px;background:var(--ritual-card);}
+#app .auth-editorial .entry-input>svg{flex:none;width:22px;height:22px;color:var(--ritual-rose);}
+#app .auth-editorial .entry-input input{flex:1;border:0;background:none;padding:10px 0;outline-offset:2px;}
+#app .auth-editorial .entry-password-eye{flex:none;display:grid;place-items:center;width:44px;min-height:44px;padding:10px 5px;border:0;background:none;box-shadow:none;color:var(--ritual-rose);}
+#app .auth-editorial .entry-password-eye svg{width:22px;height:22px;}
+#app .auth-editorial .entry-password-meter{display:grid;gap:7px;margin:-3px 0 0;}
+#app .auth-editorial .entry-meter-bars{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;}
+#app .auth-editorial .entry-meter-bars i{height:5px;border-radius:9px;background:var(--ritual-card);border:1px solid var(--ritual-border);}
+#app .entry-password-meter[data-level="1"] i:first-child,#app .entry-password-meter[data-level="2"] i:nth-child(-n+2),#app .entry-password-meter[data-level="3"] i:nth-child(-n+3),#app .entry-password-meter[data-level="4"] i{background:var(--ritual-button);}
+#app .auth-editorial .entry-password-meter p{font-size:12px;line-height:1.35;}
+#app .auth-editorial .entry-auth-feedback:empty{display:none;}
+#app .auth-editorial .entry-auth-feedback:not(:empty){padding:10px 12px;border:1px solid var(--ritual-border);border-radius:10px;font-size:14px;line-height:1.4;color:var(--ritual-text);}
+#app .auth-editorial .entry-auth-submit{width:100%;min-height:50px;padding:12px 16px;border:1px solid var(--ritual-border);border-radius:999px;background:var(--ritual-button);box-shadow:var(--ritual-shadow);color:var(--ritual-text);font:500 16px/1.3 system-ui,sans-serif;}
+#app .auth-editorial button:disabled{opacity:.55;cursor:wait;}
+#app .auth-editorial :is(.entry-auth-back,.entry-auth-link,.entry-auth-resend,.entry-google,.entry-switch-account){min-height:44px;padding:10px 8px;border:1px solid var(--ritual-border);border-radius:10px;box-shadow:none;background:var(--ritual-card);color:var(--ritual-rose);font:14px/1.3 system-ui,sans-serif;}
+#app .auth-editorial .entry-auth-link{border:0;background:none;text-decoration:underline;}
+#app .auth-editorial .entry-auth-back{border:0;background:none;text-align:left;}
+#app .auth-editorial .entry-or{display:flex;align-items:center;gap:12px;font-size:13px;line-height:1;color:var(--ritual-muted);}
+#app .auth-editorial .entry-or:before,#app .auth-editorial .entry-or:after{content:'';flex:1;height:1px;background:var(--ritual-border);}
+#app .auth-editorial .entry-google{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;color:var(--ritual-text);}
+#app .auth-editorial .entry-google svg{width:22px;height:22px;flex:none;}
+#app .auth-editorial .entry-footer{display:grid;gap:8px;border-top:1px solid var(--ritual-border);padding-top:12px;margin-top:auto;}
+#app .auth-editorial .entry-footer p{font-size:12px;text-align:center;}
+#app .auth-editorial .entry-symbol{display:flex;align-items:center;justify-content:center;gap:16px;margin:12px 0 0;color:var(--ritual-rose);}
+#app .auth-editorial .entry-symbol:before,#app .auth-editorial .entry-symbol:after{content:'';height:1px;width:44px;background:var(--ritual-border);}
+#app .auth-editorial .entry-symbol svg{width:38px;height:38px;}
+#app .auth-editorial .entry-small-note{font-size:12px;line-height:1.4;}
+#app .auth-editorial .entry-account-choice{display:grid;gap:4px;border-bottom:1px solid var(--ritual-border);padding-bottom:10px;}
+#app .auth-editorial .entry-account-choice p{font-size:12px;overflow-wrap:anywhere;}
+#app .auth-editorial .entry-account-choice small{font-size:11px;line-height:1.35;color:var(--ritual-muted);}
+#app .auth-editorial .entry-switch-account{border:0;background:none;text-align:left;padding-inline:0;font-size:12px;min-height:36px;}
+#app .auth-editorial .entry-birthday{display:grid;gap:8px;font-size:14px;color:var(--ritual-muted);}
+#app .auth-editorial .date-fields{display:grid;grid-template-columns:minmax(0,1fr) minmax(90px,.65fr);gap:12px;}
+#app .auth-editorial .checkline{display:flex;align-items:center;gap:12px;min-height:44px;}
+#app .auth-editorial .checkline input{flex:none;width:24px;height:24px;accent-color:var(--ritual-rose);}
+#app .auth-editorial button:focus-visible,#app .auth-editorial input:focus-visible{outline:2px solid var(--ritual-text);outline-offset:2px;}
+@media(max-height:720px){#app>.auth-editorial{gap:14px;padding-top:max(10px,env(safe-area-inset-top,0px));padding-inline:20px;}#app .auth-editorial .entry-auth-card,#app .auth-editorial :is(#invite-auth-form,.entry-auth-fields){gap:12px;}#app .auth-editorial h1{font-size:32px;}#app .auth-editorial .entry-account-hero{gap:7px;}#app .auth-editorial .entry-account-progress{margin-top:3px;}}
+@media(min-width:1000px){#app>.auth-editorial{padding-block:max(30px,env(safe-area-inset-top,0px));}#app .auth-editorial .editorial-form{grid-template-columns:1fr;}#app .auth-editorial .editorial-form>*{grid-column:1;}}
+@media(prefers-reduced-motion:reduce){#app .auth-editorial *,#app .editorial-workspace *{animation:none;transition:none;scroll-behavior:auto;}}
+
+main#app.loveroll-settings-page .settings-detail-body[data-settings-page="notifications"]{gap:12px;}
+main#app.loveroll-settings-page .settings-danger-zone{background:none;border:0;border-top:1px solid var(--ritual-border);border-radius:0;padding:16px 0 0;}
+@media(max-width:767px) and (max-height:700px){main#app.loveroll-settings-page .editorial-library-filters{grid-template-columns:minmax(0,1.2fr) minmax(110px,.8fr);}}
+
+@media(min-width:1000px){main#app.loveroll-settings-page .settings-editorial:has([data-settings-page="application"]){width:min(100%,960px);}main#app.loveroll-settings-page [data-settings-page="application"]{grid-template-columns:repeat(2,minmax(0,1fr));gap:36px;}main#app.loveroll-settings-page .settings-app-group{min-width:0;}}
