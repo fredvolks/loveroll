@@ -11,6 +11,7 @@ const client=createClient(CONFIG.supabaseUrl,CONFIG.supabasePublishableKey,{
 const panes=new Set(['prices','referrals','promos','d100','geo','notifications','audience','catalogue','history']);
 const initialPane=new URLSearchParams(location.search).get('panel');
 let data=null,referralData=null,activeFace=null,pane=panes.has(initialPane)?initialPane:'prices';
+let geoSummary=null,promoTotal=null;
 const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const fmt=n=>new Intl.NumberFormat('fr-CA').format(n||0);
 const money=cents=>(Number(cents)/100).toFixed(2);
@@ -31,18 +32,43 @@ async function bootstrap(){
   data=info;referralData=referrals;
   $('gate').hidden=true;$('dashboard').hidden=false;$('signout').hidden=false;
   render();
+  loadDashboardMetrics().catch(()=>{});
  }catch(error){
   console.warn('Admin access denied',error?.message||'authentication required');
   gated();$('gate').querySelector('.small-note').textContent='Accès réservé au propriétaire de la plateforme. Contactez l’administrateur pour activer votre compte.';
  }
 }
+function renderDashboardStats(){
+ const stats=data?.stats||{};
+ const rows=[
+  {label:'Comptes créés',value:fmt(stats.registered_users),icon:'♙'},
+  {label:'Couples actifs',value:fmt(stats.couples),icon:'♡'},
+  {label:'Tirages D100',value:fmt(stats.monthly_draws),icon:'⚄'},
+  {label:'Crédits Geoapify utilisés',value:geoSummary?' '+Math.round(100*Number(geoSummary.used_today||0)/Math.max(1,Number(geoSummary.quota)||3000))+' %':'—',icon:'◈',meter:geoSummary?Math.min(100,100*Number(geoSummary.used_today||0)/Math.max(1,Number(geoSummary.quota)||3000)):null},
+  {label:'Lieux confirmés',value:fmt(stats.geo_ready),icon:'⌖'},
+  {label:'Réservations',value:fmt(stats.bookings),icon:'▣'},
+  {label:'Paiements vérifiés',value:fmt(stats.paid_grants),icon:'▤'},
+  {label:'Codes promo actifs',value:promoTotal===null?'—':fmt(promoTotal),icon:'◇'}
+ ];
+ $('stats').innerHTML=rows.map(row=>
+  '<div class="stat studio-stat"><span class="studio-stat-icon" aria-hidden="true">'+esc(row.icon)+'</span>'+
+  '<span>'+esc(row.label)+'</span><strong>'+esc(row.value)+'</strong>'+
+  (row.meter!==undefined?'<div class="studio-stat-meter" role="progressbar" aria-label="Pourcentage du quota Geoapify utilisé" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+(row.meter===null?0:Math.round(row.meter))+'"><i style="width:'+(row.meter||0)+'%"></i></div><small>Estimation du jour · quota de référence</small>':'')+
+  '</div>').join('');
+}
+async function loadDashboardMetrics(){
+ const [geo,promos]=await Promise.allSettled([
+  rpc('love_admin_geo_usage'),rpc('love_admin_promo_list')
+ ]);
+ geoSummary=geo.status==='fulfilled'?geo.value:null;
+ promoTotal=promos.status==='fulfilled'&&Array.isArray(promos.value)?
+  promos.value.filter(p=>p.active&&Date.parse(p.starts_at)<=Date.now()&&Date.parse(p.expires_at)>Date.now()&&
+   (p.max_redemptions===null||p.max_redemptions===undefined||Number(p.redeemed_count)<Number(p.max_redemptions))).length:null;
+ if(data&&document.getElementById('dashboard')&&!document.getElementById('dashboard').hidden)renderDashboardStats();
+}
 function render(){
  if(!data)return;
- const stats=data.stats||{},labels=[
-  ['registered_users','Comptes créés'],['couples','Duos'],['monthly_draws','Tirages D100'],['geo_ready','Lieux confirmés'],
-  ['geo_pending','Recherches en attente'],['geo_unavailable','Lieux indisponibles'],['bookings','Réservations déclarées'],['paid_grants','Paiements vérifiés']
- ];
- $('stats').innerHTML=labels.map(([key,label])=>'<div class="stat"><span>'+esc(label)+'</span><strong>'+fmt(stats[key])+'</strong></div>').join('');
+ renderDashboardStats();
  const c=data.config||{};
  for(const el of $('settings').querySelectorAll('[name]')){
   if(!(el.name in c))continue;
@@ -70,6 +96,7 @@ function choosePane(name){
  $('save-settings').hidden=['catalogue','history','referrals','promos'].includes(name);
  if(name==='promos')promoAdmin.refresh(true);
  if(name==='geo')geoUsage.refresh();
+ if(name==='geo')loadDashboardMetrics().catch(()=>{});
  const current=new URL(location.href);
  if(current.searchParams.get('panel')!==name){
   current.searchParams.set('panel',name);
@@ -105,7 +132,11 @@ function renderFaces(){
 document.addEventListener('click',event=>{
  const btn=event.target.closest('button[data-pane],button[data-face]');
  if(!btn)return;
- if(btn.dataset.pane){choosePane(btn.dataset.pane);msg('');return;}
+ if(btn.dataset.pane){
+  choosePane(btn.dataset.pane);msg('');
+  if(btn.closest('.studio-quick-grid'))document.querySelector('.studio-content')?.scrollIntoView({behavior:'smooth',block:'start'});
+  return;
+ }
  if(btn.dataset.face){
   const row=(data?.experiences||[]).find(x=>String(x.face)===btn.dataset.face);
   if(!row)return;
