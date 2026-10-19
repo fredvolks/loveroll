@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+ <!-- WebView native dialogs (date/select) must inherit DARK Android colors. -->
+ <style name="LoveRollConnectedTheme" parent="android:style/Theme.Material.NoActionBar">
+  <item name="android:colorAccent">#D58BA3</item>
+  <item name="android:colorControlActivated">#D58BA3</item>
+  <item name="android:windowLightStatusBar">false</item>
+  <item name="android:statusBarColor">#10070C</item>
+  <item name="android:navigationBarColor">#10070C</item>
+  <item name="android:windowActionModeOverlay">true</item>
+   <item name="android:windowBackground">#10070C</item>
+ </style>
+</resources>
