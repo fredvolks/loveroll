@@ -75,7 +75,7 @@ const client=`export function createClient(){
    }
    const page=await setup(w,h,'a','reduce','settings'),g=await geometry(page);
    assert.ok(g.scroll<=2&&g.horizontal<=1&&g.bottom<=g.navTop&&g.touch>=44&&g.textFits,JSON.stringify({name,...g}));
-   assert.equal(await page.locator('.settings-profile-row').count(),1);assert.equal(await page.locator('.settings-section-row').count(),5);
+   assert.equal(await page.locator('.settings-profile-row').count(),1);assert.equal(await page.locator('.settings-section-row').count(),6);
    assert.equal(await page.locator('.settings-profile-row strong').innerText(),'Camille');
    assert.equal(await page.locator('.settings-sections [data-action="settings-page:compte"]').count(),0);
    await page.screenshot({path:'design-captures/settings-editorial-'+name+'.png'});await page.context().close();
