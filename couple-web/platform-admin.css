@@ -21,3 +21,34 @@
 .promo-item-actions{display:flex;gap:7px;flex-wrap:wrap}
 .promo-item-actions button{min-height:37px;padding:8px 11px;font-size:12px}
 @media(max-width:570px){.promo-top,.promo-item{align-items:stretch;flex-direction:column}}
+
+/* Geoapify estimate dashboard, never exposes API secrets. */
+.geo-usage-block{margin-top:22px;border-top:1px solid #87516b;padding-top:24px;display:grid;gap:15px}
+.geo-usage-head{display:flex;justify-content:space-between;align-items:center;gap:14px}
+.geo-usage-head h3{font:italic 25px Georgia,serif;margin:7px 0}
+.geo-usage-head p{color:var(--muted);margin:0;font-size:12px;line-height:1.5}
+.geo-usage-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px}
+.geo-usage-stats .stat{min-width:0}
+.geo-usage-stats .stat strong{font-size:24px}
+.geo-meter{overflow:hidden;height:13px;border-radius:12px;background:#1a0d17;border:1px solid #935269}
+#geo-meter-fill{height:100%;width:0;max-width:100%;background:linear-gradient(90deg,#bc5d84,#f5aec9);border-radius:12px;transition:width .25s}
+.geo-usage-block h4{font-size:13px;font-weight:700;color:#f1b6ce;margin:5px 0 0}
+.geo-api-details{display:grid;gap:7px}
+.geo-api-details>div{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;border:1px solid #78425c;border-radius:11px;padding:10px 12px;background:#281524}
+.geo-api-details>div span{flex:1;min-width:120px}
+.geo-api-details>div small{color:var(--muted)}
+.geo-seven-days{display:grid;gap:10px}
+.geo-day{display:grid;grid-template-columns:100px minmax(0,1fr) 56px;align-items:center;gap:12px;font-size:12px}
+.geo-day time{color:#edd3dd}.geo-day strong{text-align:right}
+.geo-day-track{height:11px;border-radius:8px;background:#1b0d17;overflow:hidden}
+.geo-day-track i{display:block;height:100%;background:#bd6087;border-radius:8px}
+.geo-limit-row{display:flex;gap:12px;align-items:end;flex-wrap:wrap}
+.geo-limit-row label{flex:1;min-width:200px}
+.geo-limit-row button{min-width:150px}
+#geo-feedback{min-height:18px}
+@media(max-width:480px){
+ .geo-usage-head{align-items:flex-start;flex-direction:column}
+ .geo-usage-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .geo-day{grid-template-columns:76px minmax(0,1fr) 43px;gap:7px;font-size:11px}
+ .geo-limit-row{align-items:stretch;flex-direction:column}
+}
