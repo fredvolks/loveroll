@@ -1,0 +1,31 @@
+<!doctype html><html lang="fr-CA"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+
+<style>body{min-height:100dvh;background:radial-gradient(circle at 50% 18%,#5b1641,#180714 77%)}
+.test-screen{padding:8vh 18px;text-align:center}.test-screen h1{font:700 2rem Georgia,serif;color:#fff}
+.test-screen button{display:block;width:90%;margin:16px auto;min-height:56px;border-radius:18px;
+border:1px solid #eb5fa1;background:linear-gradient(130deg,#ba2e76,#fc5e9f);color:#fff;font-weight:700}
+#toast{margin:0}</style><link rel="stylesheet" href="./styles.css?v=20261015-no-toast87"><link rel="stylesheet" href="./premium-couple-pages.css?v=20261017-ecrin120"><link rel="stylesheet" href="./premium-dialogs.css?v=20261015-no-toast87"><link rel="stylesheet" href="./satin-reference.css?v=20261015-no-toast87"><link rel="stylesheet" href="./discover.css?v=20261015-no-toast87"><link rel="stylesheet" href="./approved-artwork.css?v=20261015-no-toast87"><link rel="stylesheet" href="./demo-couple.css?v=20261015-no-toast87"><link rel="stylesheet" href="./invite-account.css?v=20261015-no-toast87"><link rel="stylesheet" href="./invitation-poster.css?v=20261015-no-toast87"><link rel="stylesheet" href="./responsive-fullscreen.css?v=20261017-ecrin120"><link rel="stylesheet" href="./responsive-tablet-desktop.css?v=20261017-ecrin120"><link rel="stylesheet" href="./dice-no-overlay.css?v=20261017-editorial117"><link rel="stylesheet" href="./mobile-one-screen-v74.css?v=20261017-ecrin120"><link rel="stylesheet" href="./mobile-entry-v79.css?v=20261017-entry118"><link rel="stylesheet" href="./loveroll-splash.css?v=20261015-no-toast87"><link rel="stylesheet" href="./evening-calendar.css?v=20261017-editorial117"><link rel="stylesheet" href="./evening-review.css?v=20261016-person-review97"><link rel="stylesheet" href="./premium-theme.css?v=20261017-advent119"><link rel="stylesheet" href="./premium-home.css?v=20261017-ecrin120"><link rel="stylesheet" href="./evening-editorial.css?v=20261017-advent119"><link rel="stylesheet" href="./premium-advent.css?v=20261017-advent119"><link rel="stylesheet" href="./surprise-refined-v104.css?v=20261017-ecrin120"><link rel="stylesheet" href="./settings-premium.css?v=20261017-ecrin120"><link rel="stylesheet" href="./premium-home.css"><link rel="stylesheet" href="./editorial-details.css"></head><body><main class="test-screen"><h1>♥ NOTRE SOIRÉE</h1>
+<p>Nos 70 défis</p><button id="gift">♡ Donner 1 défi à ma partenaire</button>
+<button id="couple">Dissocier mon partenaire</button>
+<button id="result">Voir le résultat</button>
+<p id="test-result">aucune action confirmée</p></main>
+<div id="toast" role="status" aria-live="polite"></div>
+<script type="module">
+import {premiumConfirm} from './premium-dialogs.mjs';
+const out=document.getElementById('test-result');
+document.getElementById('gift').onclick=async()=>{
+ const result=await premiumConfirm('Offrir un de tes défis restants à Camille ? Son nombre de défis à recevoir augmentera de 1 et le tien diminuera de 1.',{kind:'gift'});
+ out.textContent=result?'cadeau confirmé':'cadeau annulé';
+};
+document.getElementById('couple').onclick=async()=>{
+ const result=await premiumConfirm('La dissociation s’appliquera aux deux personnes. Vos comptes, défis et cartes personnalisées seront conservés. Les anciennes données communes resteront privées et inaccessibles.',{kind:'couple'});
+ out.textContent=result?'dissociation confirmée':'dissociation annulée';
+};
+document.getElementById('result').onclick=()=>{
+ const el=document.getElementById('toast');
+ el.className='lr-premium-toast lr-toast-result visible';
+ el.innerHTML='<span class="lr-toast-glyph" aria-hidden="true">🎲</span><span class="lr-toast-message"><span class="lr-toast-kicker">RÉSULTAT OFFICIEL</span><span class="lr-toast-result-line"><strong class="lr-toast-result-number">5</strong><span>tirage de Fred</span></span></span><button class="lr-toast-close" aria-label="Fermer">×</button>';
+ el.querySelector('button').onclick=()=>el.classList.remove('visible');
+};
+</script></body></html>

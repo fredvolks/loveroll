@@ -1,0 +1,44 @@
+<!doctype html><html lang="fr-CA"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+
+
+<link rel="stylesheet" href="./styles.css?v=20261015-no-toast87"><link rel="stylesheet" href="./premium-couple-pages.css?v=20261017-ecrin120"><link rel="stylesheet" href="./premium-dialogs.css?v=20261015-no-toast87"><link rel="stylesheet" href="./satin-reference.css?v=20261015-no-toast87"><link rel="stylesheet" href="./discover.css?v=20261015-no-toast87"><link rel="stylesheet" href="./approved-artwork.css?v=20261015-no-toast87"><link rel="stylesheet" href="./demo-couple.css?v=20261015-no-toast87"><link rel="stylesheet" href="./invite-account.css?v=20261015-no-toast87"><link rel="stylesheet" href="./invitation-poster.css?v=20261015-no-toast87"><link rel="stylesheet" href="./responsive-fullscreen.css?v=20261017-ecrin120"><link rel="stylesheet" href="./responsive-tablet-desktop.css?v=20261017-ecrin120"><link rel="stylesheet" href="./dice-no-overlay.css?v=20261017-editorial117"><link rel="stylesheet" href="./mobile-one-screen-v74.css?v=20261017-ecrin120"><link rel="stylesheet" href="./mobile-entry-v79.css?v=20261017-entry118"><link rel="stylesheet" href="./loveroll-splash.css?v=20261015-no-toast87"><link rel="stylesheet" href="./evening-calendar.css?v=20261017-editorial117"><link rel="stylesheet" href="./evening-review.css?v=20261016-person-review97"><link rel="stylesheet" href="./premium-theme.css?v=20261017-advent119"><link rel="stylesheet" href="./premium-home.css?v=20261017-ecrin120"><link rel="stylesheet" href="./evening-editorial.css?v=20261017-advent119"><link rel="stylesheet" href="./premium-advent.css?v=20261017-advent119"><link rel="stylesheet" href="./surprise-refined-v104.css?v=20261017-ecrin120"><link rel="stylesheet" href="./settings-premium.css?v=20261017-ecrin120"><link rel="stylesheet" href="./premium-home.css"><link rel="stylesheet" href="./editorial-details.css"><link rel="stylesheet" href="./ritual-titles.css?v=20261017-titles136"><link rel="stylesheet" href="./ritual-scenes.css?v=20261017-scenes138"></head><body><main id="app"></main><script type="module">
+import {premiumEveningHtml} from './premium-evening.mjs';
+import {premiumSurpriseHtml} from './premium-surprise.mjs';
+import {dieOn} from './dice3d.js';
+const root=document.querySelector('#app'),q=new URLSearchParams(location.search);
+const members=[{user_id:'owner',name:'Camille',joined_at:'2026-10-01'},{user_id:'partner',name:'Noémie',joined_at:'2026-10-02'}];
+let markup='';
+if(q.get('page')?.startsWith('evening')){
+ root.className='loveroll-evening-page loveroll-editorial';
+ markup=premiumEveningHtml({
+  session:{id:'fixture',paired_turns:true,self_draws:true,starting_user_id:'owner'},
+  members,me:'owner',
+  rolls:q.get('page')==='evening-idle'?[]:[{user_id:'owner',face:1},{user_id:'partner',face:2}],
+  status:q.get('page')==='evening-idle'?{both_ready:false,my_rolled:false,partner_rolled:false}:{both_ready:true,my_rolled:true,partner_rolled:true},
+  turn:q.get('page')==='evening-idle'?{ready:false}:{first:'owner',ready:true,next:'owner',targets:{owner:1,partner:2},
+    completed:{owner:0,partner:0},remaining:{owner:1,partner:2},finished:false,pending:null},
+  category:'SENSUEL',lastD35Face:Number(q.get('face'))||null
+ });
+}else{
+ root.className='loveroll-surprise-page loveroll-surprise-ecrin';
+ markup=premiumSurpriseHtml({
+  members,monthly:q.get('page')==='surprise-done'?{monthly_activity:{face:7},monthly_host:{face:4}}:
+   q.get('page')==='surprise-ready'?{monthly_activity:{face:7}}:{},
+  activity:['surprise-ready','surprise-done'].includes(q.get('page'))?
+   {title:'Un rendez-vous romantique',description:'À deux'}:null,
+  settings:{anniversary_md:'06-15',birthday_by_user:{owner:'01-21',partner:'03-04'}},
+  now:new Date('2026-10-14T15:00:00Z')
+ });
+}
+const nav='<nav class="nav"><div class="nav-inner">'+
+ [['⌂','Accueil'],['🎲','Soirée'],['✦','Surprise'],['🎁','Avent'],['⚙','Réglages']].map((x,i)=>
+ '<button class="'+((q.get('page')?.startsWith('evening')?i===1:i===2)?'active':'')+'"><span>'+x[0]+'</span>'+x[1]+'</button>').join('')+
+ '</div></nav>';
+root.innerHTML=markup+nav;
+const disposers=[];
+for(const canvas of root.querySelectorAll('canvas[data-dice-sides]')){
+ disposers.push(dieOn(canvas,Number(canvas.dataset.diceSides),Number(canvas.dataset.face),false));
+}
+window.__disposers=disposers;
+</script></body></html>
