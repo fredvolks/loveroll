@@ -1,0 +1,155 @@
+/* LoveRoll — personal evening challenge queue. Actual accessible interactive UI. */
+.evening-queue-open-btn{
+ width:100%;min-height:44px;padding:9px 12px;border-radius:15px;
+ color:#ffe8f5;background:linear-gradient(125deg,#641642,#390f32);
+ border:1px solid #ffa2ca;font-size:clamp(.77rem,2.6vw,1rem);
+ font-weight:850;box-shadow:inset 0 1px #ffd6e34a;
+}
+.evening-play-controls .evening-queue-open-btn{flex:none;margin-top:3px}
+.evening-draw-done{font-size:.79rem!important;text-align:center;color:#ffd3e4}
+.evening-queue-modal{
+ z-index:8100!important;
+ padding:max(12px,env(safe-area-inset-top)) 12px
+  max(12px,env(safe-area-inset-bottom))!important;
+}
+.evening-queue-modal .evening-queue-content{
+ box-sizing:border-box;
+ width:min(94vw,680px);max-height:min(88dvh,850px);
+ overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;
+ padding:clamp(16px,4vw,27px);
+ border:1px solid #ff82b7;border-radius:23px;
+ background:radial-gradient(ellipse at 10% 0%,#b624645c,transparent 55%),
+ linear-gradient(145deg,#431329,#180718 83%);
+ box-shadow:0 24px 70px #0b0114d9,0 0 26px #eb227a66;
+}
+.evening-queue-content>.eyebrow{color:#fda2cb;letter-spacing:.14em}
+.evening-queue-content h2{
+ margin:8px 0 13px;color:#fff2fa;
+ font:800 clamp(1.45rem,5vw,2.05rem)/1.1 Georgia,serif;
+}
+.evening-queue-heading,.evening-queue-nav{
+ display:flex;align-items:center;justify-content:space-between;
+ gap:9px;min-width:0;margin:6px 0 14px;
+}
+.evening-queue-heading h2{margin:0;flex:1}
+.evening-queue-nav button,.evening-queue-heading button{
+ border-radius:12px;padding:8px 11px;min-height:43px;
+ border:1px solid #d77aaa;background:#40122f;color:#ffe4f0;
+ font-size:.86rem;font-weight:760;
+}
+.evening-queue-nav>span{width:38px}
+.evening-queue-list{display:flex;flex-direction:column;gap:9px;margin-top:14px}
+.evening-queue-item{
+ width:100%;display:flex;align-items:center;gap:11px;text-align:left;
+ background:linear-gradient(120deg,#651a45,#32102a);
+ border:1px solid #d96eaa;border-radius:15px;padding:10px 13px;
+ min-height:70px;color:#fff1f7;
+}
+.evening-queue-num{
+ display:grid;place-items:center;flex:0 0 34px;height:34px;
+ border-radius:50%;background:#9b1f59;
+ border:1px solid #fa94c6;font-family:Georgia,serif;font-size:1.1rem;
+}
+.evening-queue-entry{flex:1;min-width:0}
+.evening-queue-entry strong{display:block;line-height:1.2;font-size:.95rem}
+.evening-queue-entry small{display:block;margin-top:4px;color:#ffc1de;font-size:.77rem}
+.evening-queue-detail p,.evening-queue-instructions{
+ line-height:1.5;font-size:clamp(.88rem,3vw,1.06rem);color:#f9d2e5;
+}
+.evening-queue-detail>.evening-primary{
+ display:block;width:100%;min-height:49px!important;margin:14px 0;
+}
+.evening-queue-detail>.subtle{
+ display:block;min-height:44px;width:100%;margin:10px 0;
+}
+.evening-queue-detail .timer-panel{
+ border:1px solid #e56fa1;border-radius:17px;
+ padding:12px;background:#23071ca8;margin:15px 0;
+}
+.evening-queue-detail .timer-clock{
+ font-size:clamp(1.9rem,7vw,3rem);font-variant-numeric:tabular-nums;
+}
+@media(max-width:390px){
+ .evening-play-controls{justify-content:space-between!important;gap:2px!important}
+ .evening-play-controls .evening-primary{min-height:42px!important;padding:6px 4px!important}
+ .evening-play-controls .evening-queue-open-btn{min-height:40px;padding:6px;font-size:.75rem}
+ .evening-queue-content{max-height:88dvh}
+ .evening-queue-modal .evening-queue-content{padding:14px}
+}
+@media(min-width:768px){
+ .evening-queue-modal .evening-queue-content{width:min(86vw,740px)}
+ .evening-play-controls .evening-queue-open-btn{min-height:49px;font-size:1rem}
+}
+
+/* IMPORTANT: the earlier dice-no-overlay sheet switched WebGL canvases to
+   position:relative. On narrow Samsung screens this pushed the dice outside
+   their card and overlaid the roll button. Keep each renderer CONTAINED. */
+main#app.loveroll-evening-page .evening-user-die{
+ min-width:0;min-height:0;overflow:hidden;
+}
+main#app.loveroll-evening-page .evening-user-die .love3d,
+main#app.loveroll-evening-page .evening-user-die .love3d-stage{
+ position:relative;min-width:0;min-height:0;overflow:hidden;
+ width:100%;height:100%;box-sizing:border-box;
+}
+main#app.loveroll-evening-page .evening-user-die .love3d-stage .dice-canvas,
+main#app.loveroll-evening-page .evening-d35-col .love3d-stage .dice-canvas{
+ position:absolute!important;inset:0!important;
+ display:block!important;width:100%!important;height:100%!important;
+ max-width:100%;max-height:100%;object-fit:contain;z-index:2;
+}
+main#app.loveroll-evening-page .evening-d35-col .love3d,
+main#app.loveroll-evening-page .evening-d35-col .love3d-stage{
+ min-width:0;min-height:0;max-width:100%;overflow:hidden;position:relative;
+}
+main#app.loveroll-evening-page .evening-small-roll{
+ position:relative;z-index:5;grid-row:3;grid-column:1/-1;
+ min-height:46px!important;
+}
+@media(max-width:580px){
+ main#app.loveroll-evening-page .evening-user-die{
+  grid-template-columns:minmax(0,1fr) minmax(63px,.78fr);
+  grid-template-rows:20px minmax(80px,1fr) minmax(46px,auto);
+  isolation:isolate;
+ }
+ main#app.loveroll-evening-page .evening-d6-grid{gap:6px}
+ main#app.loveroll-evening-page .evening-play-controls{
+  min-width:0;overflow-wrap:anywhere;
+ }
+ main#app.loveroll-evening-page .evening-play-controls .evening-queue-open-btn{
+  flex:none;min-height:42px;
+ }
+}
+
+/* v103: finished cards remain readable and openable for review, but no longer
+   look like actionable hot-pink challenges. Only status=completed is muted. */
+main#app.loveroll-evening-page .evening-queue-list
+ button.evening-queue-item.is-completed,
+main#app.loveroll-evening-page .evening-queue-list
+ button.evening-queue-item.is-completed:hover,
+main#app.loveroll-evening-page .evening-queue-list
+ button.evening-queue-item.is-completed:active{
+ background:linear-gradient(120deg,#39323b,#211e28)!important;
+ border:1px solid #847985!important;
+ box-shadow:inset 0 1px #ffffff13!important;
+ color:#d0c8d0!important;
+ filter:none!important;
+ opacity:1!important;
+}
+main#app.loveroll-evening-page .evening-queue-list
+ .evening-queue-item.is-completed .evening-queue-num{
+ background:#57505b!important;border-color:#8c828e!important;
+ color:#eee6ed!important;
+}
+main#app.loveroll-evening-page .evening-queue-list
+ .evening-queue-item.is-completed .evening-queue-entry strong{
+ color:#dfd7df!important;text-shadow:none!important;
+}
+main#app.loveroll-evening-page .evening-queue-list
+ .evening-queue-item.is-completed .evening-queue-entry small{
+ color:#bcb0bd!important;
+}
+main#app.loveroll-evening-page .evening-queue-list
+ .evening-queue-item.is-completed:focus-visible{
+ outline:2px solid #ff9acb!important;outline-offset:3px;
+}
