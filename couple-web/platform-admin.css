@@ -100,3 +100,51 @@
  .studio-mobile-shortcuts button.active{background:#8c405f;border-color:#f2b2ce;color:#fff}
  .studio-layout{gap:14px}
 }
+
+/* Studio premium visual dashboard; uses LoveRoll's already shipped glass heart and palette. */
+.studio-heading{position:relative;min-height:200px;padding:27px clamp(18px,3vw,32px);border-radius:23px;
+ border:1px solid #99496c;background:linear-gradient(95deg,#350d25ee,#280c1fd6 66%,#1a0919e0),
+ url('./assets/loveroll-splash-satin-v123.webp') center/cover no-repeat;overflow:hidden}
+.studio-heading:after{content:"";position:absolute;right:18px;top:3px;width:clamp(105px,16vw,180px);
+ aspect-ratio:1;background:url('./assets/loveroll-glass-heart-v123.webp') center/contain no-repeat;
+ opacity:.92;filter:drop-shadow(0 0 16px #bc517b77);pointer-events:none}
+.studio-heading>div{z-index:1;position:relative;max-width:min(590px,80%)}
+.studio-heading h1{font-family:Georgia,serif;font-style:italic;font-weight:400;text-wrap:balance;line-height:1.08}
+.studio-heading .status-tag{position:relative;z-index:1;align-self:flex-start;background:#2b1423d9}
+.studio-stat{position:relative;min-height:110px;overflow:hidden;padding:15px 13px 15px 50px}
+.studio-stat-icon{position:absolute;top:13px;left:13px;font-size:27px!important;line-height:1;color:#f4a3c8}
+.studio-stat strong{font-variant-numeric:tabular-nums;font-size:clamp(22px,3vw,28px)}
+.studio-stat small{font-size:10px;color:#e3acc4}
+.studio-stat-meter{height:9px;background:#4c2539;border:1px solid #a66a85;border-radius:9px;overflow:hidden}
+.studio-stat-meter i{display:block;height:100%;background:linear-gradient(90deg,#db689e,#ffcee1);border-radius:9px}
+.studio-quick-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px;margin:0 0 23px}
+.studio-quick-grid button{min-width:0;min-height:96px;display:grid;grid-template-columns:1fr auto;
+ grid-template-rows:1fr auto;gap:5px;padding:13px;align-items:end;text-align:left;position:relative;
+ border:1px solid #a05476;border-radius:17px;color:#fff2f7;
+ background:linear-gradient(155deg,#4a1c34,#220d1e);box-shadow:0 12px 30px #0003}
+.studio-quick-grid button:hover,.studio-quick-grid button.active{border-color:#ffb0d1;
+ background:linear-gradient(140deg,#7e2c51,#3b1730);box-shadow:0 0 15px #ef78ad4d}
+.studio-quick-grid button strong{font-size:14px;line-height:1.2;font-weight:600;grid-column:1;font-family:system-ui,sans-serif}
+.studio-quick-icon{font-size:28px;color:#f4a1c7;grid-column:1/-1;line-height:1}
+.studio-quick-arrow{display:grid;place-items:center;border:1px solid #dd95b1;background:#6c3050;
+ border-radius:50%;color:#ffdae8;font:22px/1 Georgia,serif;width:27px;height:27px;grid-column:2;grid-row:2}
+.studio-layout{display:block}.studio-sidebar,.studio-mobile-nav{display:none!important}
+.studio-content{scroll-margin-top:15px;max-width:none}
+.studio-content .section-head h2{font:italic clamp(26px,4vw,34px) Georgia,serif}
+.studio-content .fields>label{border:1px solid #83415e;padding:11px 13px;border-radius:14px;background:#421d32a9}
+@media(max-width:850px){.studio-quick-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .studio-heading{min-height:185px}.studio-heading:after{width:125px;opacity:.53}
+ .studio-heading h1{font-size:clamp(26px,6vw,38px)}
+ .studio-stat{padding-left:44px}.studio-stat-icon{left:10px;font-size:24px!important}
+}
+@media(max-width:520px){.studio-quick-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ .studio-quick-grid button{min-height:94px;padding:12px}
+ .studio-heading{min-height:178px;padding:18px}
+ .studio-heading>div{max-width:95%}
+ .studio-heading:after{width:102px;top:24px;right:4px;opacity:.35}
+ .studio-heading h1{max-width:80%;font-size:clamp(28px,7vw,36px)}
+ .studio-heading p{max-width:80%;font-size:12px}
+ .studio-stat{min-height:112px}
+ .studio-stat>span:not(.studio-stat-icon){font-size:11px}
+ .studio-stat strong{font-size:25px}
+}
