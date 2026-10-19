@@ -66,7 +66,9 @@ async function quote(){
   renderQuote(q);
  }catch(error){
   if(current!==revision)return;
-  reset();
+  $('checkout-discount-row').hidden=true;
+  $('checkout-referral-balance').hidden=true;
+  if(annual!==null)$('checkout-total').textContent=money(annual);
   status('Vérification impossible : '+(error.message||'Erreur'),true);
  }finally{if(current===revision)btn.disabled=false;}
 }
