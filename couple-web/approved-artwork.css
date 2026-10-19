@@ -1,0 +1,107 @@
+/* Approved LoveRoll concept: cinematic satin, glossy photorealistic dice and real interactive controls. */
+body:has(.love-discover){background:#0c0310}
+main:has(.love-discover){min-height:100dvh;max-width:none;padding:0!important;overflow-x:clip}
+.love-discover{
+ width:min(100%,620px);min-height:100dvh;gap:clamp(9px,2.1vw,15px);
+ padding:clamp(12px,3vw,24px) clamp(12px,3.4vw,24px) calc(14px + env(safe-area-inset-bottom));
+ background:
+  radial-gradient(ellipse at 0% 28%,#9a1d4b40,transparent 41%),
+  radial-gradient(ellipse at 104% 1%,#db28632a,transparent 37%),
+  radial-gradient(ellipse at 56% 57%,#871a5255,transparent 60%),
+  linear-gradient(175deg,#220518 0%,#0a0410 62%,#110514 100%);
+}
+.love-discover:before{
+ content:'♡';top:30px;right:-17px;font:240px/.8 Georgia,serif;
+ color:#f54d8918;text-shadow:0 0 32px #e9368033;
+ transform:rotate(-11deg);z-index:0
+}
+.discover-header,.discover-showcase,.discover-gallery,.discover-finale,.discover-action-area{position:relative;z-index:1}
+.discover-header{padding:0 0 2px}
+.discover-brand{font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:clamp(2.55rem,10.8vw,3.8rem);font-weight:700}
+.discover-brand strong{color:#ff76b5}
+.discover-brand i{color:#ffa1ce;font-size:.52em}
+.discover-kicker{color:#f994c1;margin-top:6px;letter-spacing:.19em;font-size:clamp(.61rem,2.15vw,.76rem)}
+.discover-header h1{font-family:Georgia,serif;font-size:clamp(1.65rem,7.4vw,2.85rem);font-weight:700;line-height:1.07;margin:12px auto 9px;max-width:530px}
+.discover-header h1 em{color:#fc6fae}
+.discover-header>p{font-size:clamp(.81rem,2.8vw,1rem);color:#ead3df;max-width:485px}
+.discover-showcase{
+ display:grid;grid-template-columns:52% 48%;min-height:clamp(175px,45vw,275px);
+ padding:0 15px 0 0;border:1.5px solid #ff8cbee6;border-radius:clamp(22px,5.3vw,30px);
+ background:
+  radial-gradient(ellipse at 21% 90%,#e924874f,transparent 50%),
+  radial-gradient(ellipse at 85% 13%,#8d215f66,transparent 65%),
+  linear-gradient(130deg,#53102e,#180619 84%);
+ box-shadow:inset 0 2px #ffd8ed77,0 0 18px #ff428840,0 18px 31px #07020aaa;overflow:hidden
+}
+.discover-showcase:before{content:'';position:absolute;inset:auto -20% -16px -15%;height:52%;border-top:1px solid #fd62aa6b;background:linear-gradient(167deg,#cb2e7d2e,#4f082b91 60%,#12071a);transform:rotate(-5deg);filter:blur(1px);pointer-events:none;z-index:0}
+.discover-showcase:after{content:'';position:absolute;bottom:3px;left:-50px;width:105%;height:1px;transform:rotate(-10deg);background:#ff77b075;box-shadow:0 0 16px 3px #ff258568;z-index:0;pointer-events:none}
+.discover-die-stage{position:relative;min-height:clamp(170px,44vw,273px);height:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;filter:none}
+.discover-premium-die{position:relative;z-index:1;width:min(90%,220px);opacity:.35;animation:none!important}
+.discover-approved-die{
+ position:absolute;z-index:2;left:-3%;top:-4%;width:105%;height:108%;object-fit:cover;
+ filter:saturate(1.07) contrast(1.04) drop-shadow(0 10px 15px #1d0312);
+ -webkit-mask-image:linear-gradient(90deg,#000 0%,#000 79%,transparent 100%);
+ mask-image:linear-gradient(90deg,#000 0%,#000 79%,transparent 100%);
+}
+.discover-heart-float{display:none}
+.discover-preview-copy{z-index:3;padding-left:0}
+.discover-preview-copy small{
+ margin-bottom:clamp(9px,2.5vw,19px);padding:5px 8px;
+ border-color:#f68cbd78;color:#ffbfdc;font-size:clamp(.49rem,1.7vw,.68rem)
+}
+.discover-preview-copy h2{
+ font:700 clamp(1.27rem,5.45vw,2.6rem)/1.05 Georgia,'Times New Roman',serif;
+ letter-spacing:-.025em;margin:0 0 10px;text-shadow:0 2px 14px #11010b
+}
+.discover-preview-copy h2 em{color:#ff87bd}
+.discover-preview-copy p{font-size:clamp(.66rem,2.45vw,.95rem);color:#f8dde9;line-height:1.27}
+.discover-gallery{gap:clamp(8px,2.3vw,15px)}
+.discover-feature{
+ grid-template-columns:27% minmax(0,1fr);
+ gap:8px;min-height:clamp(88px,22vw,135px);padding:clamp(9px,2.45vw,15px);
+ border:1px solid #e582b2a8;border-radius:clamp(17px,4vw,24px);
+ background:
+  radial-gradient(ellipse at 2% 98%,#ad215f50,transparent 73%),
+  linear-gradient(120deg,#461c37e8,#220f21 92%);
+ box-shadow:inset 0 2px #ffdded25,0 8px 21px #08010cad
+}
+.discover-feature-symbol{
+ width:100%;height:100%;min-height:45px;
+ display:flex;align-items:center;justify-content:center;
+ font-family:Georgia,serif;font-size:clamp(2rem,6vw,3.2rem);
+ color:#ff70b1;text-shadow:0 0 16px #ff3e97d0,0 0 28px #dc2477bb;
+}
+.discover-icon-dice{font-size:clamp(1.6rem,5vw,2.4rem);filter:drop-shadow(0 0 12px #ff409d)}
+.discover-feature h2{font-family:Georgia,serif;font-size:clamp(1.07rem,4vw,1.55rem);line-height:1.1;margin:0 0 6px;color:#fff3fa}
+.discover-feature p{font-size:clamp(.64rem,2.25vw,.93rem);line-height:1.24;color:#eccfe0}
+.discover-finale{
+ border:1px solid #e378a69c;min-height:clamp(67px,17vw,100px);gap:10px;
+ background:
+ radial-gradient(ellipse at 100% 100%,#ad22677d,transparent 48%),
+ linear-gradient(135deg,#41162c,#200b1c);
+ box-shadow:inset 0 2px #ffd3e42b,0 11px 27px #04010a99
+}
+.discover-finale-art{font-size:clamp(2rem,6.5vw,3.5rem)}
+.discover-finale strong{color:#ffa4ce}
+.discover-finale-heart{font-size:clamp(3rem,12vw,6rem);color:#fc65af;opacity:.9;text-shadow:0 0 14px #f72d8c,0 0 45px #ff2575}
+.discover-accept{
+ border:1.5px solid #ffe0ef!important;
+ min-height:clamp(56px,14vw,78px);
+ background:linear-gradient(160deg,#ff82ba 0%,#f44794 52%,#bc1f6c 100%);
+ box-shadow:inset 0 3px 4px #ffe4ef7d,0 0 26px #f6368c8c,0 10px 28px #bf0a646b;
+ border-radius:999px;font-size:clamp(.95rem,3.35vw,1.3rem)
+}
+.discover-action-area{margin-top:auto}
+@media(max-height:760px) and (max-width:500px){
+ .love-discover{gap:7px;padding-top:8px}
+ .discover-brand{font-size:2.4rem}
+ .discover-kicker{margin-top:3px}
+ .discover-header h1{font-size:1.63rem;margin:7px auto 5px}
+ .discover-header>p{font-size:.78rem}
+ .discover-showcase{min-height:160px}
+ .discover-die-stage{min-height:154px}
+ .discover-feature{min-height:75px;padding:8px}
+ .discover-finale{min-height:61px;padding:8px 13px}
+ .discover-accept{min-height:52px}
+}
+@media(prefers-reduced-motion:reduce){.discover-approved-die{animation:none}}
