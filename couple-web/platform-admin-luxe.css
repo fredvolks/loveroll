@@ -1,0 +1,301 @@
+/* LoveRoll Studio LUXE v172
+   Editorial burgundy / rose-glass companion to LoveRoll (same shipped heart/satin art).
+   All data and business operations remain in the existing admin HTML/JS. */
+:root{--luxe-hot:#ff73b5;--luxe-pink:#f3a0ca;--luxe-bordo:#1a0715;--luxe-line:#bd648d;--luxe-white:#fff1f8}
+body{
+ background:
+ radial-gradient(ellipse at 65% 9%,rgba(160,35,84,.27),transparent 38%),
+ radial-gradient(ellipse at 18% 72%,rgba(83,17,55,.28),transparent 42%),
+ linear-gradient(180deg,#170614,#1a0815 46%,#100710);
+ color:var(--luxe-white);
+}
+.studio-header{
+ position:relative;isolation:isolate;overflow:hidden;min-height:102px;
+ border-bottom:1px solid rgba(228,92,150,.55);
+ background:
+ linear-gradient(90deg,rgba(30,4,20,.85),rgba(52,9,36,.47),rgba(18,5,14,.87)),
+ url('./assets/loveroll-splash-satin-v123.webp') center 48%/cover;
+ box-shadow:0 8px 28px #08000a55;
+}
+.studio-header::after{
+ content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+ background:radial-gradient(circle at 74% 22%,#e8459440,transparent 36%);
+}
+.studio-mark{gap:14px}
+.studio-mark>span{display:block;font:italic 55px/.8 Georgia,serif;color:#ff93c5;
+ text-shadow:0 0 9px #f05d9899,0 0 21px #f0378988}
+.studio-mark strong{font:italic clamp(29px,4.5vw,46px)/1 Georgia,serif;letter-spacing:.012em}
+.studio-mark small{color:#f5b6d4;letter-spacing:.29em;line-height:1.5;max-width:170px}
+.studio-top-nav{display:grid;gap:9px;justify-items:stretch}
+.studio-top-nav a,.studio-top-nav button{
+ display:flex;align-items:center;justify-content:center;min-height:35px;
+ border:1px solid #9d536d;border-radius:999px;padding:7px 14px;
+ background:linear-gradient(180deg,#3e1530,#1d0b19);color:#fbd9e6;
+ text-align:center;white-space:nowrap;text-decoration:none;
+ font:500 12px/1.2 system-ui,sans-serif;
+}
+.studio-top-nav a:hover,.studio-top-nav button:hover{border-color:#efadd0}
+.studio-app main{width:min(1170px,100%);padding:clamp(14px,2.3vw,26px)}
+#dashboard{min-width:0}
+.studio-heading{
+ display:flex;position:relative;isolation:isolate;align-items:center;justify-content:space-between;
+ min-height:249px;margin-bottom:15px;overflow:hidden;border:1px solid #af577e;
+ border-radius:23px;padding:28px clamp(20px,4vw,38px);
+ background:
+ radial-gradient(circle at 59% 10%,#fd599d55,transparent 26%),
+ linear-gradient(90deg,rgba(23,5,17,.96) 0%,rgba(46,9,30,.82) 53%,rgba(25,5,17,.26) 100%),
+ url('./assets/loveroll-splash-satin-v123.webp') center/cover no-repeat;
+ box-shadow:inset 0 1px #ffcde840,0 15px 35px #05000655;
+}
+.studio-heading::after{
+ content:"";position:absolute;pointer-events:none;z-index:-1;
+ top:10px;right:2%;width:clamp(145px,23vw,268px);aspect-ratio:1;
+ background:url('./assets/loveroll-glass-heart-v123.webp') center/contain no-repeat;
+ opacity:.98;filter:drop-shadow(0 0 21px rgba(255,61,143,.46));
+}
+.studio-heading::before{
+ content:"";position:absolute;top:22%;left:44%;width:29%;height:72%;
+ background:radial-gradient(ellipse at center,#c423693c,transparent 69%);
+ transform:rotate(-21deg);pointer-events:none;z-index:-1;
+}
+.studio-heading>div{max-width:min(680px,74%);position:relative;z-index:1}
+.studio-heading .eyebrow{color:#ffb1d2;letter-spacing:.27em;font-size:clamp(10px,1.4vw,13px)}
+.studio-heading h1{font:italic 400 clamp(39px,6.2vw,66px)/.99 Georgia,'Times New Roman',serif;
+ letter-spacing:-.025em;text-wrap:balance;color:#fff3f7;
+ margin:12px 0 24px;max-width:680px}
+.studio-heading h1::after{
+ content:"";display:block;width:68px;height:4px;margin-top:16px;border-radius:999px;
+ background:linear-gradient(90deg,#fa85b8,#b84f85);box-shadow:0 0 11px #ff8abc66;
+}
+.studio-heading p{max-width:530px;font-size:clamp(12px,2vw,16px);line-height:1.5;color:#e7bece}
+.studio-heading .status-tag{position:absolute;left:clamp(20px,4vw,38px);bottom:14px;
+ max-width:calc(100% - 40px);border:1px solid #bd7d9b;color:#f7cadc;
+ font-size:11px;background:#331225e5;white-space:normal}
+/* Rebalanced compact metric cards, with decorative (not fabricated) rose stroke. */
+#dashboard>.stats{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:18px}
+#dashboard .studio-stat{
+ min-height:124px;height:auto;display:grid;grid-template-rows:auto auto 1fr auto;
+ grid-template-columns:38px minmax(0,1fr);align-items:center;gap:3px 7px;
+ padding:13px 13px 10px;border:1px solid rgba(242,101,164,.54);border-radius:16px;
+ background:
+ radial-gradient(ellipse at 95% 0%,#dc398142,transparent 60%),
+ linear-gradient(145deg,rgba(73,18,49,.96),rgba(39,10,30,.95));
+ box-shadow:inset 0 1px #ffd3e329,0 8px 19px #10000a52;
+}
+#dashboard .studio-stat-icon{position:static;grid-column:1;grid-row:1;display:flex;align-items:center;justify-content:flex-start;
+ padding:0;color:#f77cba}
+.studio-svg{display:block;width:100%;height:100%;stroke:currentColor}
+#dashboard .studio-stat-icon .studio-svg{width:31px;height:31px;stroke-width:2;filter:drop-shadow(0 0 5px #f875bb66)}
+#dashboard .studio-stat-label{grid-column:2;grid-row:1;color:#f2cedf;font:500 12px/1.23 system-ui,sans-serif;align-self:center}
+#dashboard .studio-stat strong{grid-column:1/-1;grid-row:2;color:#fff0f6;
+ font:650 clamp(25px,3.2vw,34px)/1.1 system-ui,sans-serif;
+ text-align:center;margin:2px 0 3px;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+#dashboard .studio-stat-spark{grid-column:1/-1;grid-row:4;width:80px;height:22px;color:#ec75ad;opacity:.9;filter:drop-shadow(0 0 5px #ff7ab657)}
+#dashboard .studio-stat-meter{grid-column:1/-1;grid-row:3;align-self:end;
+ height:11px;border-radius:99px;overflow:hidden;border:1px solid #a9678b;
+ background:#4a1d36;box-shadow:inset 0 1px 3px #0b0311}
+#dashboard .studio-stat-meter i{display:block;height:100%;background:linear-gradient(90deg,#f469a8,#ffb8d2);border-radius:inherit}
+#dashboard .studio-stat-caption{grid-column:1/-1;grid-row:4;margin-top:2px;color:#d4a4bb;
+ font:400 10px/1.2 system-ui,sans-serif}
+.studio-quick-grid{
+ display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;
+ margin:0 0 20px;
+}
+.studio-quick-grid button{
+ position:relative;display:grid;grid-template-columns:1fr auto;grid-template-rows:1fr auto;
+ min-width:0;min-height:120px;padding:15px;gap:9px;overflow:hidden;align-items:end;
+ text-align:left;border:1px solid rgba(236,98,161,.60);border-radius:16px;
+ color:#ffe3ef;background:
+ radial-gradient(circle at 95% 12%,#ed307a2d,transparent 55%),
+ linear-gradient(146deg,#40132c,#220c1d 86%);
+ box-shadow:0 10px 30px #0003,inset 0 1px #ffdae31e;
+ transition:border-color .17s ease,box-shadow .17s ease,background .17s ease;
+}
+.studio-quick-grid button::after{
+ content:"";position:absolute;inset:6px 0 0 auto;width:55%;pointer-events:none;opacity:.2;
+ background:radial-gradient(ellipse at center,#ff80b8,transparent 57%);
+ transform:rotate(33deg);
+}
+.studio-quick-grid button.active,.studio-quick-grid button:hover,
+.studio-quick-grid button:focus-visible{
+ border-color:#ffc0df;background:
+ radial-gradient(circle at 88% 8%,#f54e9c50,transparent 57%),
+ linear-gradient(155deg,#6d244d,#2b1024);
+ box-shadow:0 0 17px #f35b9f62,inset 0 1px #ffe2f475;
+}
+.studio-quick-grid button:focus-visible{outline:2px solid #fff0f6;outline-offset:2px}
+.studio-quick-icon{grid-column:1/-1;grid-row:1;display:block;width:35px;height:35px;
+ color:#ff83bc;filter:drop-shadow(0 0 7px #fb4c9a66)}
+.studio-quick-grid button strong{
+ grid-column:1;grid-row:2;font:600 clamp(11px,1.55vw,15px)/1.28 system-ui,sans-serif;
+ color:#fff1f7;z-index:1}
+.studio-quick-arrow{grid-column:2;grid-row:2;display:grid;place-items:center;
+ width:27px;height:27px;border:1px solid #d785a9;border-radius:50%;
+ background:linear-gradient(140deg,#a34570,#54243f);
+ color:#ffe7f1;font:22px/1 Georgia,serif;box-shadow:inset 0 1px #ffd9ed50;z-index:1}
+.studio-layout{display:block}
+.studio-sidebar,.studio-mobile-nav{display:none!important}
+.studio-content{
+ max-width:none;scroll-margin-top:18px;
+ border:1px solid #a3557a;border-radius:23px;padding:clamp(13px,2vw,23px);
+ background:linear-gradient(160deg,#3c192def,#220e1dfe);
+ box-shadow:0 18px 42px #0005,inset 0 1px #f4b0d023;
+}
+/* Prices panel, using actual editable fields: 2 / 3 / 2 like the approved art. */
+[data-panel="prices"] .studio-price-heading{
+ display:grid;grid-template-columns:64px minmax(0,1fr) auto;align-items:start;gap:13px;
+ margin-bottom:19px;min-width:0;
+}
+[data-panel="prices"] .studio-price-emblem{width:58px;height:58px;display:grid;place-items:center;
+ padding:13px;border:1px solid #a35d7f;border-radius:50%;
+ background:#71294bb0;color:#ff8fbe;filter:drop-shadow(0 0 8px #e63c875c)}
+[data-panel="prices"] .section-head{margin:0;gap:3px}
+[data-panel="prices"] .section-head .eyebrow{color:#f1a6c7;font-size:10px;letter-spacing:.23em}
+[data-panel="prices"] .section-head h2{font:italic clamp(31px,4.4vw,46px)/1.08 Georgia,serif;margin:1px 0 1px}
+[data-panel="prices"] .section-head p{font-size:12px;line-height:1.38;color:#d9b5c7}
+[data-panel="prices"] .studio-price-help{position:relative;z-index:4;max-width:210px;align-self:start}
+[data-panel="prices"] .studio-price-help summary{
+ display:flex;align-items:center;gap:6px;min-width:71px;min-height:34px;cursor:pointer;
+ padding:7px 10px;border:1px solid #9f597a;border-radius:14px;
+ background:#371426;color:#f5c5d9;font-size:12px;list-style:none}
+[data-panel="prices"] .studio-price-help summary::-webkit-details-marker{display:none}
+[data-panel="prices"] .studio-price-help summary .studio-svg{width:17px;height:17px}
+[data-panel="prices"] .studio-price-help p{
+ font-size:11px;line-height:1.48;color:#f7dce8;padding:10px 12px;
+ border:1px solid #ac6587;border-radius:12px;background:#371729;
+ box-shadow:0 10px 28px #0007;margin:8px 0 0;max-width:240px}
+[data-panel="prices"] .studio-price-fields{grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
+[data-panel="prices"] .studio-price-field{
+ display:grid;grid-template-rows:minmax(40px,auto) 45px;gap:6px;min-width:0;
+ padding:10px 12px 11px;border:1px solid #a1597a;border-radius:13px;
+ background:linear-gradient(155deg,#52253bc8,#37182dd9);
+ box-shadow:inset 0 1px #ffe8f025;color:#eed2df;
+ font:500 12px/1.25 system-ui,sans-serif;
+}
+[data-panel="prices"] .studio-price-field .studio-price-label{
+ display:flex;gap:9px;align-items:center;min-width:0;overflow-wrap:anywhere;
+}
+[data-panel="prices"] .studio-price-field .studio-price-label .studio-svg{width:21px;height:21px;flex:none;color:#f084b7}
+[data-panel="prices"] .studio-price-field small{font-size:10px;color:#cba0b4}
+[data-panel="prices"] .studio-price-input{
+ display:flex;align-items:center;gap:6px;min-width:0;min-height:43px;
+ border:1px solid #a76c88;border-radius:10px;background:#24101f;
+}
+[data-panel="prices"] .studio-price-input:focus-within{border-color:#ffd0e5;box-shadow:0 0 0 2px #fba7cc42}
+[data-panel="prices"] .studio-price-input input{
+ flex:1;width:100%;min-width:0;height:42px;padding:5px 8px 5px 11px;
+ color:#fff3f8;background:transparent;border:0;border-radius:10px;
+ font:500 clamp(13px,1.9vw,17px)/1 system-ui,sans-serif;
+ box-shadow:none;outline:none;
+}
+[data-panel="prices"] .studio-price-input input:focus{box-shadow:none}
+[data-panel="prices"] .studio-price-input>span{flex:none;max-width:44%;
+ color:#b78da4;font-size:10px;white-space:nowrap;padding-right:9px}
+[data-panel="prices"] .studio-price-input input::placeholder{color:#a48b9a}
+[data-panel="prices"] .studio-price-annual,[data-panel="prices"] .studio-price-monthly,
+[data-panel="prices"] .studio-price-included,[data-panel="prices"] .studio-price-maximum{grid-column:span 3}
+[data-panel="prices"] .studio-price-two,[data-panel="prices"] .studio-price-three,
+[data-panel="prices"] .studio-price-four{grid-column:span 2}
+[data-panel="prices"] input[type=number]::-webkit-inner-spin-button{opacity:.45}
+[data-panel="prices"] .studio-checkout-preview{
+ display:grid;grid-template-columns:40px minmax(0,1fr) 29px;align-items:center;gap:12px;
+ margin-top:14px;min-height:62px;padding:10px 13px;border:1px solid #94506f;
+ border-radius:13px;text-decoration:none;color:#f5c6db;
+ background:linear-gradient(112deg,#652b46,#33152a);
+}
+[data-panel="prices"] .studio-checkout-preview:hover,[data-panel="prices"] .studio-checkout-preview:focus-visible{
+ border-color:#f0a6c8;background:#75304f}
+[data-panel="prices"] .studio-checkout-icon{display:grid;place-items:center;
+ width:39px;height:39px;border:1px solid #aa6b88;border-radius:11px;
+ background:#4c1a35;color:#ff94c5;padding:8px}
+[data-panel="prices"] .studio-checkout-preview strong{display:block;color:#ffe3ef;font-size:12px;line-height:1.35}
+[data-panel="prices"] .studio-checkout-preview small{display:block;color:#cba7bb;font-size:10px;line-height:1.36;margin-top:4px}
+[data-panel="prices"] .studio-checkout-arrow{display:grid;place-items:center;width:28px;height:28px;
+ background:#8f3c64;border:1px solid #d08dac;border-radius:50%;
+ color:#ffdae8;font:24px/1 Georgia,serif}
+[data-panel="prices"] .studio-price-footnote{font-size:11px;line-height:1.5;color:#bc99ad;
+ margin:13px 0 0;padding:0 2px}
+.studio-content .savebar{justify-content:flex-end;border-color:#73415b;padding-top:15px;margin-top:19px}
+.studio-content .savebar .primary{min-width:min(100%,360px);min-height:45px;
+ background:linear-gradient(100deg,#bd4f89,#ed70ac 60%,#bf4d8c);
+ box-shadow:0 0 18px #f64a9661,inset 0 1px #ffdaed77;
+ color:#fff8fb;border-color:#ffc3df}
+.studio-content .savebar .primary:hover{filter:brightness(1.06)}
+.studio-content .section-head h2{font-family:Georgia,serif}
+.studio-content [data-panel]:not([data-panel=prices]) .fields>label{
+ background:#401c30bf;border-color:#945371;
+}
+.studio-content .notice,.studio-content .hint{border-color:#864961;background:#391b2e}
+#dashboard footer{font-size:11px}
+@media(max-width:900px){
+ #dashboard>.stats{grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+ #dashboard .studio-stat{grid-template-columns:27px minmax(0,1fr);padding:10px 9px}
+ #dashboard .studio-stat-icon .studio-svg{width:25px;height:25px}
+ #dashboard .studio-stat-label{font-size:11px}
+ #dashboard .studio-stat strong{font-size:27px}
+ .studio-quick-grid{gap:9px}
+ .studio-quick-grid button{min-height:103px;padding:12px}
+ .studio-heading{min-height:226px}
+}
+@media(max-width:680px){
+ .studio-header{min-height:83px;padding:11px 15px}
+ .studio-mark>span{font-size:42px}
+ .studio-mark strong{font-size:28px}
+ .studio-mark small{font-size:9px;max-width:115px;letter-spacing:.15em}
+ .studio-top-nav{gap:6px}
+ .studio-top-nav a,.studio-top-nav button{font-size:10px;min-height:29px;padding:6px 10px}
+ .studio-app main{padding:12px}
+ .studio-heading{min-height:205px;padding:20px 16px 54px;margin-bottom:12px}
+ .studio-heading>div{max-width:83%}
+ .studio-heading h1{font-size:clamp(30px,7vw,43px);line-height:1.04;margin:7px 0 13px}
+ .studio-heading h1::after{width:45px;height:3px;margin-top:11px}
+ .studio-heading p{font-size:11px;line-height:1.35}
+ .studio-heading::after{top:9px;right:-16px;width:35%;opacity:.75}
+ .studio-heading .status-tag{bottom:12px;left:16px;max-width:calc(100% - 32px);
+  font-size:10px;padding:7px 9px}
+ #dashboard>.stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:12px}
+ #dashboard .studio-stat{min-height:101px;grid-template-columns:29px minmax(0,1fr);gap:2px 4px;padding:10px 9px 8px}
+ #dashboard .studio-stat-icon .studio-svg{width:26px;height:26px}
+ #dashboard .studio-stat-label{font-size:11px;line-height:1.15}
+ #dashboard .studio-stat strong{font-size:26px;margin:0}
+ #dashboard .studio-stat-spark{width:50px;height:13px}
+ #dashboard .studio-stat-caption{font-size:9px}
+ #dashboard .studio-stat-meter{height:8px}
+ .studio-quick-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:13px}
+ .studio-quick-grid button{min-height:85px;padding:10px 12px;gap:5px;border-radius:13px}
+ .studio-quick-icon{width:29px;height:29px}
+ .studio-quick-grid button strong{font-size:12px}
+ .studio-quick-arrow{width:25px;height:25px;font-size:20px}
+ .studio-content{padding:12px;border-radius:18px}
+ [data-panel="prices"] .studio-price-heading{grid-template-columns:35px minmax(0,1fr) auto;gap:9px;margin-bottom:13px}
+ [data-panel="prices"] .studio-price-emblem{width:35px;height:35px;padding:7px}
+ [data-panel="prices"] .section-head h2{font-size:clamp(25px,6.2vw,32px)}
+ [data-panel="prices"] .section-head p{font-size:10px;line-height:1.35}
+ [data-panel="prices"] .studio-price-help summary{min-width:34px;padding:6px 8px;font-size:0}
+ [data-panel="prices"] .studio-price-help summary .studio-svg{width:18px;height:18px}
+ [data-panel="prices"] .studio-price-help p{position:absolute;right:0;top:35px;width:210px}
+ [data-panel="prices"] .studio-price-fields{grid-template-columns:repeat(6,minmax(0,1fr));gap:7px}
+ [data-panel="prices"] .studio-price-field{padding:8px 7px;grid-template-rows:minmax(42px,auto) 39px;gap:5px}
+ [data-panel="prices"] .studio-price-field .studio-price-label{font-size:11px;gap:5px;align-items:flex-start}
+ [data-panel="prices"] .studio-price-field .studio-price-label .studio-svg{width:15px;height:15px}
+ [data-panel="prices"] .studio-price-field small{font-size:9px}
+ [data-panel="prices"] .studio-price-input{min-height:37px;gap:2px}
+ [data-panel="prices"] .studio-price-input input{height:37px;font-size:14px;padding:6px 5px}
+ [data-panel="prices"] .studio-price-input>span{font-size:9px;padding-right:5px}
+ [data-panel="prices"] .studio-price-two .studio-price-input>span,
+ [data-panel="prices"] .studio-price-three .studio-price-input>span,
+ [data-panel="prices"] .studio-price-four .studio-price-input>span{display:none}
+ [data-panel="prices"] .studio-checkout-preview{grid-template-columns:32px minmax(0,1fr) 24px;gap:9px;padding:10px}
+ [data-panel="prices"] .studio-checkout-icon{width:31px;height:31px;padding:6px}
+ [data-panel="prices"] .studio-checkout-preview strong{font-size:11px}
+ .studio-content .savebar{flex-direction:column;align-items:stretch}
+ .studio-content .savebar .primary{width:100%;min-width:0}
+}
+@media(max-width:350px){
+ [data-panel="prices"] .studio-price-field{padding:7px 5px}
+ [data-panel="prices"] .studio-price-field .studio-price-label{font-size:10px;gap:3px}
+ [data-panel="prices"] .studio-price-field .studio-price-label .studio-svg{width:13px;height:13px}
+ [data-panel="prices"] .studio-price-input>span{display:none}
+ .studio-heading::after{opacity:.45}
+}
+@media(prefers-reduced-motion:reduce){.studio-quick-grid button{transition:none}}
