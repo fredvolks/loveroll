@@ -25,6 +25,24 @@
 <button data-pane="geo">Géolocalisation</button><button data-pane="notifications">Notifications</button>
 <button data-pane="audience">Utilisateurs et sécurité</button><button data-pane="catalogue">Catalogue des 100</button>
 <button data-pane="history">Journal des modifications</button></aside>
+<div class="studio-mobile-nav">
+ <label for="studio-pane-select">Choisir une section de l’administration</label>
+ <select id="studio-pane-select" aria-label="Section de LoveRoll Studio">
+  <option value="prices">Tarifs et forfaits</option>
+  <option value="referrals">Référencement et crédits</option>
+  <option value="promos">Codes promotionnels</option>
+  <option value="d100">D100 et activités</option>
+  <option value="geo">Géolocalisation · Geoapify</option>
+  <option value="notifications">Notifications</option>
+  <option value="audience">Utilisateurs et sécurité</option>
+  <option value="catalogue">Catalogue des 100</option>
+  <option value="history">Journal des modifications</option>
+ </select>
+ <div class="studio-mobile-shortcuts" aria-label="Accès rapides">
+  <button type="button" data-pane="promos">Codes promo</button>
+  <button type="button" data-pane="geo">Géolocalisation</button>
+ </div>
+</div>
 <div class="studio-content"><form id="settings" autocomplete="off">
 <section data-panel="prices">
 <div class="section-head"><span class="eyebrow">MONÉTISATION</span><h2>Tarifs pour deux</h2><p>Les montants sont en $ CA. Aucun paiement n’est prélevé depuis cette page.</p></div>
@@ -122,20 +140,7 @@
  <p id="geo-usage-feedback" role="status" aria-live="polite"></p>
  </div>
  <div class="hint">La clé doit être enregistrée dans les secrets Supabase sous <code>GEOAPIFY_API_KEY</code>. La ville, la distance et l’établissement appartiennent au couple, pas au catalogue mondial.</div>
-<div class="geo-usage-block" aria-label="Consommation Geoapify suivie par LoveRoll">
- <div class="geo-usage-head"><div><span class="eyebrow">SUIVI DES CRÉDITS</span><h3>Utilisation de Geoapify</h3><p>Estimation basée sur les appels de LoveRoll, pas le solde officiel Geoapify.</p></div>
- <button type="button" class="secondary" id="geo-refresh">↻ Actualiser</button></div>
- <div class="geo-usage-stats" id="geo-usage-stats" aria-live="polite">Chargement des statistiques…</div>
- <div class="geo-meter" id="geo-meter" role="progressbar" aria-label="Crédits estimés utilisés aujourd’hui" aria-valuemin="0" aria-valuemax="3000" aria-valuenow="0"><div id="geo-meter-fill"></div></div>
- <div class="small-note" id="geo-usage-period">Journée en cours (UTC) · Suivi à partir du premier appel enregistré.</div>
- <h4>Détail des appels aujourd’hui</h4><div id="geo-by-api" class="geo-api-details"></div>
- <h4>Consommation des 7 derniers jours</h4><div id="geo-seven-days" class="geo-seven-days"></div>
- <div class="geo-limit-row"><label for="geo-daily-limit">Quota quotidien de référence (crédits)
- <input id="geo-daily-limit" type="number" min="1" max="100000000" step="1" value="3000"></label>
- <button id="geo-limit-save" class="secondary" type="button">Enregistrer le quota</button></div>
- <div id="geo-feedback" role="status" class="small-note"></div>
- <p class="hint">Le quota ici sert à estimer le reste disponible. Modifier ce chiffre ne change pas le forfait Geoapify. Les recherches faites hors LoveRoll ou avant le suivi ne sont pas incluses. Pour le solde officiel, ouvrez <a href="https://myprojects.geoapify.com/" target="_blank" rel="noopener noreferrer">les statistiques Geoapify</a>. La clé API reste uniquement dans les secrets Supabase.</p>
-</div></section>
+</section>
 <section data-panel="notifications" hidden><div class="section-head"><span class="eyebrow">RAPPELS</span><h2>Réservations et push</h2><p>Une réservation déclarée confirmée planifie un rappel pour les deux partenaires ayant activé les notifications.</p></div>
 <div class="fields"><label>Délai du rappel avant l’activité (heures)<input name="reminder_hours" type="number" min="1" max="168" step="1" required></label></div>
 <div class="hint">Les alertes existantes passent par l’envoi Supabase programmé toutes les 15 minutes. La date et l’heure sont celles enregistrées pour la sortie, et non la date du tirage.</div></section>
@@ -152,4 +157,4 @@
 <div class="savebar"><span id="feedback" role="status" aria-live="polite"></span><button class="primary" id="save-settings" type="submit">Enregistrer les réglages</button></div>
 </form></div></div></section>
 </main><footer>LoveRoll Studio · Accès privé · Aucune facturation effectuée depuis cette console.</footer>
-</div><script type="module" src="./platform-admin.js?v=20261019-geo162"></script></body></html>
+</div><script type="module" src="./platform-admin.js?v=20261019-menu166"></script></body></html>
