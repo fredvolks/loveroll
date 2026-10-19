@@ -5,7 +5,7 @@ const {chromium}=require('playwright');
 const fs=require('node:fs'), crypto=require('node:crypto'), {execFileSync}=require('node:child_process');
 let runningBrowser=null;
 (async()=>{
- const url='https://fredvolks.github.io/mon-wallet-android/';
+ const url=process.env.LOVEROLL_DIAGNOSTIC_URL||'https://fredvolks.github.io/mon-wallet-android/';
  const controller=new AbortController(), timer=setTimeout(()=>controller.abort(),25000);
  let remote,status,version;
  try{
