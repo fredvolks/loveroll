@@ -23,6 +23,9 @@ const fs=require('node:fs');
     const page=await browser.newPage({viewport:{width,height}});
     const html='<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1">'+links+'</head><body><main id="app" class="'+cls+'">'+body+'<nav class="nav"><div class="nav-inner" style="grid-template-columns:repeat(5,minmax(0,1fr))">'+buttons(active)+'</div></nav></main></body></html>';
     await page.setContent(html,{waitUntil:'load'});
+    // Allow shared 160ms background/border transitions to fully settle before
+    // comparing visual colors. Transient intermediate RGBA alpha is not a mismatch.
+    await page.waitForTimeout(400);
     metrics[mode]=await page.evaluate(()=>{
      const nav=document.querySelector('.nav'),inner=nav.querySelector('.nav-inner'),b=nav.querySelector('button'),selected=nav.querySelector('button.active');
      const rect=e=>{let r=e.getBoundingClientRect();return {top:r.top,bottom:r.bottom,left:r.left,width:r.width,height:r.height};};
