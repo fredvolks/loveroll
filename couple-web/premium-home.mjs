@@ -175,12 +175,12 @@ export function premiumHomeHtml({weekly=null,rolling=false,disabled=false,member
     (rolling?'Brassage 3D en cours…':disabled?'Préparation du brassage…':'🎲 BRASSER LE DÉ')+'</button>')+
    '</div>'+
    '<div class="home-bottom-stack">'+
-   '<button class="home-next-month" data-action="tab:special" type="button">'+
+   '<button class="home-next-month" data-action="'+(activity?'tab:eclat':'tab:special')+'" type="button" aria-label="'+(activity?'Découvrir LoveRoll Éclat, nos douze coffrets':'Brasser notre surprise mensuelle')+'">'+
    '<span class="home-calendar-icon home-present" aria-hidden="true">'+iconSvg('surprises')+'</span>'+ 
-   '<span><small>'+(activity?'Surprise du mois tirée':'Surprise du mois disponible')+'</small>'+
-   '<strong>'+(activity?'Voir notre résultat':'Brasser notre surprise')+'</strong>'+
-   '<em>'+(activity?'Prochaine surprise : '+escape(m.label):'Un tirage commun ce mois-ci')+'</em></span>'+
-   '<span class="home-gift-icon" aria-hidden="true">›</span></button>'+ 
+   '<span><small>'+(activity?'♡ LOVEROLL ÉCLAT':'Surprise du mois disponible')+'</small>'+
+   '<strong>'+(activity?'Ouvrir nos coffrets':'Brasser notre surprise')+'</strong>'+
+   '<em>'+(activity?'12 soirées immersives à découvrir':'Un tirage commun ce mois-ci')+'</em></span>'+
+   '<span class="home-gift-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></svg></span></button>'+ 
    '<div class="home-dashboard">'+
    '<section class="home-panel home-tonight-panel" aria-labelledby="home-tonight-title">'+
    '<h3 id="home-tonight-title"><span aria-hidden="true">♢</span>Ce soir</h3><div class="home-challenge-stats">'+
