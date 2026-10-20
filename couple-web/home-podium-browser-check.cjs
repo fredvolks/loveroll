@@ -33,7 +33,7 @@ const {glassState}=require('./crystal-glass-browser-check.cjs');
       assert.ok(result.platformHeight<=result.sceneHeight+2,'iPad 3D platform extends below the photo frame: '+JSON.stringify(result));
       assert.ok(result.sceneHeight-result.contact>=28,'iPad marble base is outside the photo frame: '+JSON.stringify(result));
      }
-     assert.equal(result.preview,face===null,'Only an unrolled Home D6 is a preview');
+     assert.equal(result.preview,face===null,'Only an unrolled Home D6 is a preview');if(face===null)assert.equal(result.face,'3','Unrolled Home preview must display three physical pips');
      assert.ok(Math.abs(result.meshBottom-result.contact)<=2,JSON.stringify(result));assert.ok(result.meshTop>=-2&&result.meshBottom<=result.sceneHeight+2,JSON.stringify(result));
      assert.ok(result.meshTop>=result.headroom-1,'Die lost its breathing room: '+JSON.stringify(result));
      assert.ok(result.titleGap>=result.headroom,'Die overlaps the header: '+JSON.stringify(result));
