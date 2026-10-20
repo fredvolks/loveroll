@@ -5,8 +5,8 @@
  --ritual-title-height:calc(var(--ritual-title-size) * 1.2);
  --ritual-title-gap:8px;
 }
-main#app:is(.loveroll-real-home,.loveroll-evening-page,.loveroll-surprise-ecrin,.loveroll-advent-letters,.loveroll-settings-menu)
- :is(.home-title,.evening-intro,.surprise-header,.advent-intro,.editorial-title)>.ritual-page-title{
+main#app:is(.loveroll-real-home,.loveroll-evening-page,.loveroll-surprise-ecrin,.loveroll-advent-letters,.loveroll-settings-menu,.loveroll-eclat-page)
+ :is(.home-title,.evening-intro,.surprise-header,.advent-intro,.editorial-title,.eclat-page-title)>.ritual-page-title{
  display:block;box-sizing:border-box;width:100%;max-width:none;min-width:0;
  height:var(--ritual-title-height);margin:0;padding:0;
  font:600 var(--ritual-title-size)/var(--ritual-title-height) Georgia,"Times New Roman",serif;
