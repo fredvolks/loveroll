@@ -172,7 +172,7 @@ export function premiumHomeHtml({weekly=null,rolling=false,disabled=false,member
    (ready?
     '<button class="home-roll-button is-used" type="button" disabled>Déjà brassé cette semaine, revenez la semaine prochaine</button>':
     '<button class="home-roll-button" type="button" data-action="roll:weekly" '+(pending?'disabled':'')+'>'+
-    (rolling?'Brassage 3D en cours…':disabled?'Préparation du brassage…':'🎲 BRASSER LE DÉ')+'</button>')+
+    (rolling?'Brassage 3D en cours…':disabled?'Préparation du brassage…':'🎲 Brasser le dé')+'</button>')+
    '</div>'+
    '<div class="home-bottom-stack">'+
    '<button class="home-next-month" data-action="'+(activity?'tab:eclat':'tab:special')+'" type="button" aria-label="'+(activity?'Découvrir LoveRoll Éclat, nos douze coffrets':'Brasser notre surprise mensuelle')+'">'+
