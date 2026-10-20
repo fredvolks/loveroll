@@ -114,20 +114,20 @@ main#app:has(.discover-ritual){
 #app .home-die-platform .dice-canvas,
 #app .love3d-stage>.dice-canvas{filter:none!important;}
 /* Main navigation: one common geometry across ALL tabs. Only color/material. */
-main#app>.nav{
+main#app:is(.loveroll-real-home,.loveroll-evening-page,.loveroll-surprise-ecrin,.loveroll-advent-letters,.loveroll-eclat-page,.loveroll-settings-page) .nav{
  background:linear-gradient(140deg,#2c020fcf,#190106ed 60%,#33040de6)!important;
  border-top-color:#ed57768a!important;
  box-shadow:0 -5px 20px #15020caf,inset 0 1px #ffe4d233!important;
  backdrop-filter:blur(14px);
 }
-main#app>.nav .nav-inner>button.active{
+main#app:is(.loveroll-real-home,.loveroll-evening-page,.loveroll-surprise-ecrin,.loveroll-advent-letters,.loveroll-eclat-page,.loveroll-settings-page) .nav .nav-inner>button.active{
  background:var(--loveroll-ruby-button)!important;
  border-color:#ff5d83!important;
  box-shadow:var(--loveroll-ruby-ring)!important;
  color:#fff4f1!important;
 }
-main#app>.nav .nav-inner>button:not(.active){background:transparent!important;box-shadow:none!important;}
-main#app>.nav .nav-inner>button span{color:#ffe0e4!important;}
+main#app:is(.loveroll-real-home,.loveroll-evening-page,.loveroll-surprise-ecrin,.loveroll-advent-letters,.loveroll-eclat-page,.loveroll-settings-page) .nav .nav-inner>button:not(.active){background:transparent!important;box-shadow:none!important;}
+main#app:is(.loveroll-real-home,.loveroll-evening-page,.loveroll-surprise-ecrin,.loveroll-advent-letters,.loveroll-eclat-page,.loveroll-settings-page) .nav .nav-inner>button span{color:#ffe0e4!important;}
 /* Home: dense glass cards and a subtle soft shadow to preserve existing layout. */
 main#app.loveroll-real-home .home-panel{
  background:linear-gradient(160deg,#430612df,#26040bdc 70%,#1b0309e8)!important;
