@@ -238,7 +238,11 @@ function crystalBackdrop(renderer,scene,canvas,onLoad){
  const sync=()=>{
   target=canvas.parentElement;
   while(target&&getComputedStyle(target).backgroundImage==='none')target=target.parentElement;
-  const style=target?getComputedStyle(target):null;
+  let style=target?getComputedStyle(target):null;
+  const independentPlinth=canvas.closest('.home-die-theater')?.querySelector('.home-pedestal');
+  if(independentPlinth&&getComputedStyle(independentPlinth).display!=='none'){
+   target=canvas.closest('#app');style=getComputedStyle(target,'::before');
+  }
   const url=style?.backgroundImage.match(/url\(["']?(.*?)["']?\)/)?.[1]||new URL('./assets/ritual-satin-v115.webp',import.meta.url).href;
   if(url!==source){
    source=url;loaded=false;texture?.dispose();
@@ -258,7 +262,7 @@ function crystalBackdrop(renderer,scene,canvas,onLoad){
 
 const cubeFaces=[[1,[0,0,1]],[6,[0,0,-1]],[2,[0,1,0]],[5,[0,-1,0]],[3,[1,0,0]],[4,[-1,0,0]]];
 function engravedCube(surface){
- const original=new RoundedBoxGeometry(1.8,1.8,1.8,9,.30),p=original.getAttribute('position'),n=original.getAttribute('normal');
+ const original=new RoundedBoxGeometry(1.8,1.8,1.8,9,.18),p=original.getAttribute('position'),n=original.getAttribute('normal');
  const positions=[],normals=[];
  for(let i=0;i<p.count;i+=3){
   // Keep the original rounded box's bevels, corners and silhouette exactly.
@@ -317,7 +321,7 @@ outgoingLight += vec3(0.06,0.0005,0.005) * pow(crystalFacing,2.0);
  group.add(new THREE.Mesh(geo,mat));
  // A continuous optical back wall gives the volume a clean internal rim.
  // Refracting through the reverse of engraved text would make ghost digits.
- const backGeometry=polygons?roundedPolyhedron(polygons,{bevel:sides===20?.13:.095,shrink:sides===20?.095:.07,steps:8}):new RoundedBoxGeometry(1.8,1.8,1.8,9,.30);
+ const backGeometry=polygons?roundedPolyhedron(polygons,{bevel:sides===20?.13:.095,shrink:sides===20?.095:.07,steps:8}):new RoundedBoxGeometry(1.8,1.8,1.8,9,.18);
  const backMaterial=mat.clone();backMaterial.side=THREE.DoubleSide;
  backMaterial.onBeforeCompile=mat.onBeforeCompile;backMaterial.customProgramCacheKey=mat.customProgramCacheKey;
  const opticalBack=new THREE.Mesh(backGeometry,backMaterial);opticalBack.renderOrder=-1;
@@ -381,6 +385,10 @@ export function dieOn(canvas,sides,value,rolling){
  const neutral=canvas.dataset.diceUnrolled==='true'&&sides===6;
  let preview=canvas.dataset.dicePreview==='true'&&sides===6;
  const built=geometry(sides,canvas.dataset.diceMarkers==='pips',neutral);scene.add(built.group);
+ if(canvas.closest('.home-die-platform')){
+  built.material.emissive.setHex(0x730012);built.material.emissiveIntensity=.14;
+  renderer.toneMappingExposure=1.4;
+ }
  // A soft contact shadow stays on the stage while the die rises and settles.
  const shadow=new THREE.Mesh(new THREE.CircleGeometry(1.08,40),
   new THREE.MeshBasicMaterial({color:0x08030b,transparent:true,opacity:.28,depthWrite:false}));
@@ -389,7 +397,7 @@ export function dieOn(canvas,sides,value,rolling){
  // A server-confirmed face owns the final quaternion. Do not ever restore
  // the initial mesh rotation after a live D100 throw.
  const tilt=new THREE.Quaternion().setFromEuler(sides===6?
-  (canvas.closest('.home-die-platform')?new THREE.Euler(.57,-.63,0):new THREE.Euler(.16,-.18,-.02)):new THREE.Euler(.075,-.09,0));
+  (canvas.closest('.home-die-platform')?new THREE.Euler(.36,-.50,0):new THREE.Euler(.16,-.18,-.02)):new THREE.Euler(.075,-.09,0));
  const podiumSelector='.home-die-theater,.surprise-main-die-scene,.evening-user-die>.love3d,.evening-die-row,.evening-finale-hero';
  let podium=canvas.closest(podiumSelector);
  const orientationFor=face=>{
@@ -434,11 +442,15 @@ export function dieOn(canvas,sides,value,rolling){
   // Home reserves visible air above the mesh; other podiums keep their 4px inset.
   const headroom=Math.max(4,parseFloat(podiumStyle.getPropertyValue('--dice-headroom'))||4);
   // The center of the marble top is at y=678 in the existing 1536x1024 artwork.
-  const contact=sceneRect.top+(sceneRect.height-1024*scale)*percent+678*scale;
+  const marker=podium.querySelector('.home-pedestal-contact');
+  const markerVisible=marker&&marker.getBoundingClientRect().width===0&&getComputedStyle(marker.parentElement).display!=='none';
+  const contact=markerVisible?marker.getBoundingClientRect().top:
+   sceneRect.top+(sceneRect.height-1024*scale)*percent+678*scale;
   let bounds=projectedBounds();
   // Keep the entire real mesh above the marble, including short phone scenes.
   camera.zoom=Math.min(1,(contact-sceneRect.top-headroom)/((bounds.bottom-bounds.top)*rect.height),
-   (sceneRect.width-12)/((bounds.right-bounds.left)*rect.width));
+   (sceneRect.width-12)/((bounds.right-bounds.left)*rect.width),
+   markerVisible?(sceneRect.width*.43)/((bounds.right-bounds.left)*rect.width):1);
   camera.updateProjectionMatrix();bounds=projectedBounds();
   built.group.quaternion.copy(pose);built.group.position.copy(position);built.group.updateMatrixWorld(true);
   const delta=contact-(rect.top+bounds.bottom*rect.height);

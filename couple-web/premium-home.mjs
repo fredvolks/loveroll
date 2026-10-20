@@ -161,6 +161,7 @@ export function premiumHomeHtml({weekly=null,rolling=false,disabled=false,member
    '<div class="home-die-theater" aria-label="Dé à six faces en trois dimensions">'+
    '<div class="home-fabric-photo" aria-hidden="true"></div>'+
    '<div class="home-satin-orbit" aria-hidden="true"></div>'+
+   '<div class="home-pedestal" aria-hidden="true"><span class="home-pedestal-contact"></span></div>'+
    '<div class="home-die-platform"><strong class="dice-fallback" '+(rolling?'aria-hidden="true"':'')+'>'+
    (ready?pipFace(weekly.face):'—')+'</strong>'+
    '<canvas class="dice-canvas" width="300" height="300" data-dice-sides="6" '+

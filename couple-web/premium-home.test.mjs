@@ -145,7 +145,7 @@ test('Unpaired statistics are zero or no-data instead of invented sample figures
  assert.deepEqual(noData,{completed:0,byPartner:[0,0],sensualPercent:null,sexualPercent:null,streak:0});
 });
 test('D6 uses an actual bevel and no neon wireframe; fallback hidden during throws',()=>{
- assert.match(die,/RoundedBoxGeometry\(1\.8,1\.8,1\.8,9,\.30\)/);
+ assert.match(die,/RoundedBoxGeometry\(1\.8,1\.8,1\.8,9,\.18\)/);
  assert.doesNotMatch(die,/new THREE\.LineSegments/);
  assert.match(die,/function roundedPolyhedron\(/);
  assert.match(die,/if\(duration\)prepareMotion\(\)/);

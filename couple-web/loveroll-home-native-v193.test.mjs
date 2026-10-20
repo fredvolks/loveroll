@@ -16,6 +16,6 @@ test('Native press animation keeps live data untouched',()=>{
  const js=read('loveroll-home-touch-v193.js'),sw=read('service-worker.js');
  assert.match(js,/pointerdown/);assert.match(js,/lr-pressed/);
  assert.doesNotMatch(js,/rpc\(|localStorage\.clear|sessionStorage\.clear/);
- assert.match(sw,/loveroll-static-v193/);
+ assert.match(sw,/loveroll-static-v194/);
  assert.ok(sw.includes('./loveroll-home-native-v193.css'));
 });
