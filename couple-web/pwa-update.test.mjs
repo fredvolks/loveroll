@@ -21,7 +21,7 @@ test('LoveRoll build versions agree between endpoint, app, HTML and imported mod
  for(const f of ['eclat.css','eclat-catalog.mjs','eclat-scenes-a.mjs','eclat-scenes-b.mjs','eclat-ui.mjs','eclat-audio.mjs'])assert.ok(sw.includes('./'+f),f+' must be cached');
  assert.ok(html.includes('ritual-titles.css?v=20261020-switch178'));
  assert.ok(sw.includes('./ritual-titles.css'));
- assert.ok(app.includes('premium-advent.mjs?v=20261020-home187'));
+ assert.ok(app.includes('premium-advent.mjs?v=20261019-bubble175'));
  assert.ok(app.includes('evening-calendar.mjs?v=20261018-stats148'));
  assert.ok(app.includes('play-style.mjs?v=20261018-styles149'));
  assert.ok(sw.includes('./calendar-success-stats.mjs'));
