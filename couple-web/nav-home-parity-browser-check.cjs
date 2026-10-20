@@ -37,7 +37,8 @@ const fs=require('node:fs');
    for(const mode of ['evening','eclat']){
     const v=metrics[mode];
     for(const area of ['nav','inner','button','active','svg']){
-     for(const prop of ['top','left','width','height']){
+     for(const prop of (['active','svg'].includes(area)?['top','width','height']:['top','left','width','height'])){
+      // The selected tab moves from Accueil (column 1) to Soirée (column 2).
       const n=Math.abs(v[area][prop]-base[area][prop]);
       if(n>1.5)throw Error('NAV_NOT_SAME_AS_HOME '+JSON.stringify({width,height,mode,area,prop,diff:n,home:base[area],other:v[area]}));
      }
