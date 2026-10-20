@@ -16,7 +16,7 @@ main#app.loveroll-eclat-page{
 #app:is(.loveroll-evening-page,.loveroll-eclat-page)>.nav{
  position:fixed!important;inset:auto 0 0!important;
  box-sizing:border-box!important;width:100%!important;
- height:clamp(80px,11dvh,103px)!important;min-height:0!important;
+ height:clamp(72px,10dvh,96px)!important;min-height:0!important;
  padding:5px 8px calc(6px + env(safe-area-inset-bottom,0px))!important;
  background:#130b11ee!important;border:1px solid #bd82984a!important;
  border-bottom:0!important;border-radius:24px 24px 0 0!important;
@@ -48,7 +48,7 @@ main#app.loveroll-eclat-page{
 }
 /* Also match Eclat content clearance to the common navigation's actual height. */
 #app.loveroll-eclat-page .eclat-shell{
- height:calc(100dvh - clamp(80px,11dvh,103px) - env(safe-area-inset-bottom,0px))!important;
+ height:calc(100dvh - clamp(72px,10dvh,96px) - env(safe-area-inset-bottom,0px))!important;
 }
 /* Premium picker: native dialog is now an actually centered, properly sized layer. */
 dialog.lr-premium-picker-dialog[open]{
