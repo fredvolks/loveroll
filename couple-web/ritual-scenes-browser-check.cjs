@@ -26,7 +26,9 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
     await page.locator('.nav [data-action="tab:home"]').click();await page.locator('.home-die-theater').waitFor();
     const home=await rect(page,'.home-die-theater');
     for(const key of ['x','y','width'])close(home[key],reference[key],name+' Home '+key);
-    for(const key of ['border','color','radius'])assert.equal(home[key],reference[key],name+' Home '+key);
+    assert.equal(parseFloat(home.border),0,name+' Home must have no frame');
+    assert.equal(home.radius,'0px',name+' Home must have square/faded photo edges');
+    assert.ok(home.image.includes('ritual-satin-v115.webp'),name+' Home must show its marble pedestal');
     for(const phase of ['before','host','done']){
      const month=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Toronto',year:'numeric',month:'2-digit'}).format(new Date()).slice(0,7);
      world.rolls=phase==='before'?[]:[{id:'activity',couple_id:'c',kind:'monthly_activity',key:month,face:19,activity_title:'Activité officielle',activity_description:'Texte officiel.'},...(phase==='done'?[{id:'host',couple_id:'c',kind:'monthly_host',key:month,face:4}]:[])];
