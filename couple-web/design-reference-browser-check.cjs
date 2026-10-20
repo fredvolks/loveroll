@@ -10,7 +10,7 @@ const fake=fs.readFileSync('couple-web/boot-smoke.cjs','utf8').match(/const fake
  for(const [name,width,height] of [['S25',412,915],['S25-short',412,824],['small',360,640],['Android',360,740],['iPhone',393,852],['iPad',820,1180],['PC',1440,1000],['PC-768',1366,768],['PC-short',1366,700]]){
   const page=await browser.newPage({viewport:{width,height},serviceWorkers:'block',isMobile:width<768,hasTouch:width<900});
   const errors=[];page.on('pageerror',err=>errors.push(err.message));
-  await page.route('https://esm.sh/@supabase/supabase-js@2.57.0*',r=>r.fulfill({contentType:'application/javascript',body:fake}));
+  await page.route('https://esm.sh/@supabase/supabase-js@2.107.0*',r=>r.fulfill({contentType:'application/javascript',body:fake}));
   await page.goto('http://127.0.0.1:8765/?boot_case=paired-active');
   await page.locator('.real-home-shell').waitFor();
   let mobileNavHeight,homeWordTop,homeKicker,homeTitle;
