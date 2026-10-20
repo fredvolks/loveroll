@@ -49,7 +49,7 @@ import {invitationStatus,coupleStats,formatCoupleDate,invitationEmailText,invita
 import {premiumConfirm,premiumCopyLink,focusInlineLoveDialog} from './premium-dialogs.mjs?v=20261017-complete127';
 
 
-const WEB_RELEASE='2026-10-20.191';
+const WEB_RELEASE='2026-10-20.192';
 const root=document.querySelector('#app');
 const enc=new TextEncoder(),dec=new TextDecoder();
 let diceCleanup=[],renderToken=0;
@@ -3541,6 +3541,10 @@ async function handle(action,element){
     throw Error('Associez deux comptes pour le dé hebdomadaire.');
    if(state.weekly)throw Error('Le dé a déjà été brassé cette semaine.');
    if(state.diceStatus)return;
+   const confirmed=await premiumConfirm(
+    'Ce tirage est commun à votre couple et ne pourra pas être refait avant la semaine prochaine. Êtes-vous sûrs de vouloir brasser le dé ?',
+    {kind:'weekly',title:'Brasser le dé ?',accept:'Oui, brasser',cancel:'Annuler'});
+   if(!confirmed||state.diceStatus||state.weekly)return;
    state.diceStatus='pending';render();
    try{
     // Supabase selects and persists the one true face under a couple row lock;
@@ -4058,6 +4062,6 @@ start().catch(error=>{fail(error);window.LoveRollBoot?.showFailure();});
 
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   window.addEventListener('load', () =>
-    navigator.serviceWorker.register('./service-worker.js?v=20261020-crisp191',
+    navigator.serviceWorker.register('./service-worker.js?v=20261020-button192',
      {scope:'./',updateViaCache:'none'}).then(reg=>reg.update()).catch(console.warn));
 }
