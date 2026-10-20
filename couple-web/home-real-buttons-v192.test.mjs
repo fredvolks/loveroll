@@ -1,0 +1,36 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import {readFileSync} from 'node:fs';
+const get=n=>readFileSync(new URL('./'+n,import.meta.url),'utf8');
+test('Approved Home buttons are visible live HTML controls, never transparent hotspots',()=>{
+ const css=get('home-real-buttons-v192.css'),script=get('home-real-buttons-v192.js');
+ const html=get('index.html'),sw=get('service-worker.js');
+ assert.match(html,/home-real-buttons-v192\.css\?v=20261020-button192/);
+ assert.match(html,/home-real-buttons-v192\.js\?v=20261020-button192/);
+ assert.match(sw,/\.\/home-real-buttons-v192\.css/);
+ assert.match(sw,/\.\/home-real-buttons-v192\.js/);
+ assert.match(css,/\.home-roll-button:not\(:disabled\)/);
+ assert.match(css,/opacity:1!important/);
+ assert.match(css,/\.home-bottom-stack \.home-next-month/);
+ assert.match(css,/> \.nav\{/);
+ assert.match(css,/translateY\(2px\) scale\(\.988\)/);
+ assert.match(css,/inset 0 6px 13px/);
+ assert.match(css,/focus-visible/);
+ assert.match(script,/pointerdown/);
+ assert.match(script,/pointercancel/);
+ assert.match(script,/approved-home-idle/);
+ assert.doesNotMatch(script,/\.click\(|dispatchEvent\(|rpc\(|fetch\(/);
+});
+test('Weekly click asks approval before RPC and keeps official server results',()=>{
+ const app=get('app.js'),home=get('premium-home.mjs');
+ const i=app.indexOf("if(verb==='roll'){");
+ const weekly=app.slice(i,app.indexOf("const result=await animateRoll",i));
+ const positionConfirm=weekly.indexOf('const confirmed=await premiumConfirm(');
+ const positionRPC=weekly.indexOf("rpc('roll_couple_once'");
+ assert.ok(positionConfirm>=0&&positionRPC>positionConfirm);
+ assert.match(weekly,/if\(!confirmed\|\|state\.diceStatus\|\|state\.weekly\)return/);
+ assert.match(weekly,/p_kind:'weekly'/);
+ assert.match(home,/data-action="roll:weekly"/);
+ assert.match(home,/home-action-die/);
+ assert.match(home,/home-next-month/);
+});
