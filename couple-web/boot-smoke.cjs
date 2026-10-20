@@ -93,7 +93,7 @@ export function createClient(){
   const errors=[];
   page.on('pageerror',err=>errors.push(err.message));
   page.on('console',msg=>{if(msg.type()==='error')errors.push('console: '+msg.text().slice(0,250));});
-  await page.route('https://esm.sh/@supabase/supabase-js@2.57.0*',
+  await page.route('https://esm.sh/@supabase/supabase-js@2.107.0*',
     route=>route.fulfill({status:200,contentType:'application/javascript',body:fakeSupabase}));
   await page.goto(site+query,{waitUntil:'domcontentloaded'});
   await page.locator(expected).waitFor({timeout:20000});
@@ -225,7 +225,7 @@ export function createClient(){
  ]){
   const page=await browser.newPage({viewport:{width:v.width,height:v.height},serviceWorkers:'block'});
   const errors=[];page.on('pageerror',err=>errors.push(err.message));
-  await page.route('https://esm.sh/@supabase/supabase-js@2.57.0*',
+  await page.route('https://esm.sh/@supabase/supabase-js@2.107.0*',
    route=>route.fulfill({status:200,contentType:'application/javascript',body:fakeSupabase}));
   await page.goto(site+'?boot_case=paired',{waitUntil:'domcontentloaded'});
   await page.locator('.loveroll-real-home .real-home-shell').waitFor({timeout:20000});
