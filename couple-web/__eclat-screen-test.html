@@ -2,7 +2,7 @@
 <link rel="stylesheet" href="./styles.css"><link rel="stylesheet" href="./premium-theme.css"><link rel="stylesheet" href="./premium-home.css"><link rel="stylesheet" href="./eclat.css">
 </head><body><main id="app"></main><script type="module">
 import {eclatHtml} from './eclat-ui.mjs';
-import {premiumHomeHtml} from './premium-home.mjs';
+import {premiumHomeHtml,fitHomeLayout} from './premium-home.mjs';
 const p=new URLSearchParams(location.search),mode=p.get('mode')||'gallery';
 const people=[{user_id:'one',name:'Émilie'},{user_id:'two',name:'Fred'}];
 const stage={access:true,active:true,coffret_id:12,minutes:60,chapter_index:2,chapter_number:2,variant_number:3,chapter_total:6,session_id:'test',my_choice:null,both_chosen:false,my_ready:false};
@@ -23,5 +23,5 @@ if(mode==='home'){
  root.innerHTML=eclatHtml(params[mode]||params.gallery);
 }
 root.insertAdjacentHTML('beforeend','<nav class="nav"><div class="nav-inner"><button>Accueil</button><button>Soirée</button><button>Surprise</button><button>Avent</button><button>Réglages</button></div></nav>');
-window.__fixtureReady=true;
+if(mode==='home'){fitHomeLayout(root);await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));}\nwindow.__fixtureReady=true;
 </script></body></html>
