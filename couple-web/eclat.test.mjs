@@ -72,13 +72,21 @@ test('Eclat is separate from old official dice and protected by Supabase',()=>{
  assert.ok(!app.includes('localStorage.clear()'));
 });
 
-test('Soirée has one luxury Éclat entry on the hero and no duplicate header button',()=>{
+test('Selected Soirée / Éclat Premium tabs are outside the unobstructed 3D image',()=>{
  const src=read('./premium-evening.mjs');
- assert.doesNotMatch(src,/evening-eclat-shortcut/);
- assert.equal(src.split('eclat-evening-entry').length-1,1);
- assert.ok(src.indexOf('eclat-evening-entry')>src.indexOf('evening-finale-hero'));
- assert.match(src,/eclat-entry-copy/);
- assert.match(read('./eclat.css'),/eclat-entry-sigil/);
+ assert.match(src,/eveningEclatSwitcher\('session'\)/);
+ assert.doesNotMatch(src,/eclat-evening-entry|evening-eclat-shortcut/);
+ const picker=read('./evening-eclat-switcher.mjs');
+ assert.match(picker,/data-action="tab:session"/);
+ assert.match(picker,/data-action="tab:eclat"/);
+ assert.match(picker,/Notre soirée/);
+ assert.match(picker,/PREMIUM/);
+ const eclat=read('./eclat-ui.mjs');
+ assert.match(eclat,/ritualHeadingHtml/);
+ assert.match(eclat,/eveningEclatSwitcher\('eclat'\)/);
+ const style=read('./evening-eclat-switcher.css');
+ assert.match(style,/ritual-title-height/);
+ assert.match(style,/evening-intro>/);
 });
 test('Music control is only shown inside an active coffret',()=>{
  const inactive={access:true,active:false};
