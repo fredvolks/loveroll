@@ -21,7 +21,7 @@ const client=`export function createClient(){
    if(!fs.existsSync(file))return route.fulfill({status:404,body:''});
    await route.fulfill({contentType:types[path.extname(file)]||'application/octet-stream',body:fs.readFileSync(file)});
   });
-  await context.route('https://esm.sh/@supabase/supabase-js@2.57.0*',r=>r.fulfill({contentType:'application/javascript',body:client}));
+  await context.route('https://esm.sh/@supabase/supabase-js@2.107.0*',r=>r.fulfill({contentType:'application/javascript',body:client}));
   await context.route('**/__advent-fixture',async route=>{
    const req=JSON.parse(route.request().postData()),{uid,name,args={}}=req;let data=[],error=null;
    if(req.table){const tables={couple_profiles:members.map(m=>({id:m.user_id,display_name:m.name,birthday_md:'04-12',gender:m.user_id==='a'?'him':'her'})),love_wellbeing:[{user_id:uid,relationship:'well',intimacy:'well'}],couple_members:members.map((m,i)=>({...m,couple_id:'c',joined_at:'2026-10-0'+(i+1)+'T00:00:00Z'})),couples:[{id:'c',owner_user_id:'a',journal_salt:'test-only',show_sensuel_button:true,show_sexuel_button:true}],couple_advent:world.openings};data=tables[req.table]||[];for(const [k,v] of req.filters)data=data.filter(r=>r[k]===v);}
