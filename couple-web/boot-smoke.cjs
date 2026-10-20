@@ -17,6 +17,25 @@ async function selectTab(page,tab){
   await target.click();
   await selected.waitFor({timeout:10000});
  }
+ // Full-couple refresh can replace a selected tab's view after the navigation
+ // button itself turned active. Retry the real click once, never skip assertions.
+ const view={session:'.evening-premium-view',special:'.surprise-premium-view'}[tab];
+ if(view){
+  try{await page.locator(view).waitFor({timeout:4000});}
+  catch(error){
+   const current=await page.locator('.nav .active').getAttribute('data-action').catch(()=>null);
+   console.log('NAV_VIEW_REPLACED_RETRY',JSON.stringify({tab,current}));
+   if(!await target.isEnabled()||await page.locator('[role="alertdialog"]:visible,[role="dialog"]:visible').count())throw error;
+   await target.click();
+   try{await page.locator(view).waitFor({timeout:12000});}
+   catch(second){
+    const snapshot=await page.evaluate(()=>({active:document.querySelector('.nav .active')?.dataset.action,
+      mainClass:document.querySelector('#app')?.className,
+      text:document.querySelector('#app')?.innerText.slice(0,450)}));
+    throw Error('Navigation failed after a real retry: '+JSON.stringify(snapshot)+'; '+second.message);
+   }
+  }
+ }
 }
 const fakeSupabase=`
 const user={id:'test-user-1',email:'example1@test.invalid',email_confirmed_at:'2026-10-12T14:00:00Z'};
