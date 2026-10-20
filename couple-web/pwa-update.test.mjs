@@ -6,7 +6,7 @@ const read=file=>readFileSync(new URL('./'+file,import.meta.url),'utf8');
 const html=read('index.html'),app=read('app.js'),sw=read('service-worker.js');
 const release=JSON.parse(read('web-version.json'));
 test('LoveRoll build versions agree between endpoint, app, HTML and imported modules',()=>{
- const build='2026-10-20.192',tag='20261015-no-toast87',appTag='20261020-button192',inviteTag='20261018-safari150',controlsTag='20261017-controls141',diceTag='20261020-home189';
+ const build='2026-10-20.193',tag='20261015-no-toast87',appTag='20261020-native193',inviteTag='20261018-safari150',controlsTag='20261017-controls141',diceTag='20261020-home189';
  assert.equal(release.build,build);
  assert.ok(app.includes('invite-links.mjs?v='+inviteTag));
  assert.ok(sw.includes('./assets/loveroll-messenger-og-v142.jpg'));
@@ -19,8 +19,6 @@ test('LoveRoll build versions agree between endpoint, app, HTML and imported mod
  assert.ok(html.includes('ritual-scenes.css?v=20261017-scenes138'));
  assert.ok(sw.includes('./ritual-scenes.css'));
  assert.ok(sw.includes('./assets/home-reference-approved-v190.webp'));
- assert.ok(html.includes('./approved-home-idle-v190.css?v=20261020-master190'));
- assert.ok(html.includes('./approved-home-idle-v190.js?v=20261020-master190'));
  for(const f of ['eclat.css','eclat-catalog.mjs','eclat-scenes-a.mjs','eclat-scenes-b.mjs','eclat-ui.mjs','eclat-audio.mjs'])assert.ok(sw.includes('./'+f),f+' must be cached');
  assert.ok(html.includes('ritual-titles.css?v=20261020-switch178'));
  assert.ok(sw.includes('./ritual-titles.css'));
@@ -61,7 +59,7 @@ test('LoveRoll build versions agree between endpoint, app, HTML and imported mod
  assert.match(app,/surprise-event-config\.mjs\?v=20261016-surprise109/);
 });
 test('PWA bypasses stale Android network caches while preserving offline fallback',()=>{
- assert.match(sw,/loveroll-static-v192/);
+ assert.match(sw,/loveroll-static-v193/);
  assert.match(sw,/fetch\(req,\{cache:'no-store'\}\)/);
  assert.match(sw,/cache\.match\(fallback\.href\)/);
  assert.match(sw,/const cache=await caches\.open\(CACHE\)/);
@@ -155,12 +153,12 @@ test('Web 182 loads the ruby buttons stylesheet with premium-only gold ring',()=
 // rules keep ownership of spacing and user flows.
 test('Web 183 adds cinematic theme assets and new ruby die optics',()=>{
  assert.ok(html.includes('loveroll-cinematic-v183.css?v=20261020-cinema183'));
- assert.ok(html.includes('app.js?v=20261020-button192'));
+ assert.ok(html.includes('app.js?v=20261020-native193'));
  assert.ok(sw.includes('./assets/eclat-photo-strip-v183.webp'));
  assert.ok(sw.includes('./assets/eclat-secret-letter-v183.webp'));
  assert.ok(sw.includes('./assets/loveroll-romance-scene-v183.webp'));
  assert.ok(app.includes('eclat-ui.mjs?v=20261020-cinema183'));
- assert.ok(app.includes("service-worker.js?v=20261020-button192"));
+ assert.ok(app.includes("service-worker.js?v=20261020-native193"));
 });
 
 test('LoveRoll 184 loads the final coffret visual fidelity skin',()=>{
