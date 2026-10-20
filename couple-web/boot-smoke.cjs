@@ -172,8 +172,10 @@ export function createClient(){
    if((await page.locator('.toast.visible').allInnerTexts()).some(t=>/reading ['"]items['"]/.test(t)))
     throw Error('S25 user still sees null items error');
    const buttons=await page.locator('.evening-finale-actions button').count();
-   if(buttons!==2 || !(await page.locator('.evening-empty.is-finale > [data-action="tab:eclat"]').count()))
-    throw Error('Soirée waiting state must show two original buttons and the Eclat shortcut: '+JSON.stringify({
+   if(buttons!==2 ||
+     (await page.locator('.evening-empty.is-finale .evening-finale-hero > button.eclat-evening-entry[data-action="tab:eclat"]').count())!==1 ||
+     (await page.locator('.evening-toolbar [data-action="tab:eclat"]').count())!==0)
+    throw Error('Soirée must preserve two original buttons and one Éclat invitation on the photo (not a duplicate in the header): '+JSON.stringify({
      buttons,actions:await page.locator('[data-action]').evaluateAll(nodes=>nodes.map(n=>n.dataset.action).filter(x=>x==='new-session'||x==='evening-calendar')),
      html:(await page.locator('.evening-premium-view').innerHTML()).slice(-1200)
     }));
