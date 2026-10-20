@@ -198,9 +198,9 @@ function glassEnvironment(renderer){
  const softbox=new THREE.CanvasTexture(shape);softbox.colorSpace=THREE.SRGBColorSpace;
  const panels=[];
  for(const [color,power,w,h,position] of [
-  [0xffeadc,5,1.2,3.6,[-2.1,.15,2.8]],
+  [0xffeadc,3,.56,3.1,[-2.1,.15,2.8]],
   [0xffe6df,4,.62,3.1,[2.3,.45,2.4]],
-  [0xfff6ed,3,2.6,.7,[0,2.35,2.6]],
+  [0xfff6ed,2,1.4,.48,[0,2.35,2.6]],
   [0xffffff,1.8,1.2,1.4,[-1.4,1.4,3.5]],
   [0xffe8d4,7,.24,4,[-3,.2,-1.6]],
   [0xfff1df,7,.24,4,[3,.2,-1.6]],
@@ -293,7 +293,7 @@ function geometry(sides,pips=false,neutral=false){
   color:0xffffff,metalness:0,roughness:.018,
   clearcoat:1,clearcoatRoughness:.018,
   specularIntensity:1,ior:1.52,transmission:1,thickness:1.9,
-  attenuationColor:0x980a2e,attenuationDistance:2.7,envMapIntensity:1.24,
+  attenuationColor:0xc41439,attenuationDistance:4.2,envMapIntensity:1.12,
   side:THREE.FrontSide,flatShading:false,transparent:false,opacity:1,depthWrite:true
  });
  // Clear rose crystal: the photograph is refracted by the real face normals,
@@ -306,8 +306,8 @@ vPolishBend = normalMatrix * (position - normal * dot(position,normal));`);
   shader.fragmentShader=shader.fragmentShader.replace('#include <transmission_fragment>',THREE.ShaderChunk.transmission_fragment.replace('material.thickness = thickness;',
    'material.thickness = thickness * mix(0.05,1.0,pow(clamp(dot(normal,normalize(vViewPosition)),0.0,1.0),1.8));'));
   shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
-normal=normalize(normal+vPolishBend*0.42);`).replace('#include <clearcoat_normal_fragment_maps>',`#include <clearcoat_normal_fragment_maps>
-clearcoatNormal=normalize(clearcoatNormal+vPolishBend*0.42);`).replace('#include <opaque_fragment>',`
+normal=normalize(normal+vPolishBend*0.28);`).replace('#include <clearcoat_normal_fragment_maps>',`#include <clearcoat_normal_fragment_maps>
+clearcoatNormal=normalize(clearcoatNormal+vPolishBend*0.28);`).replace('#include <opaque_fragment>',`
 float crystalFacing = clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0);
 outgoingLight += vec3(0.06,0.0005,0.005) * pow(crystalFacing,2.0);
 #include <opaque_fragment>

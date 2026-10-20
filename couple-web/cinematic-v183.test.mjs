@@ -32,7 +32,7 @@ test('Éclat catalog still has twelve real interactive cards and one generated a
 });
 test('3D D6 and D100 retain same renderer, with shared ruby material only',()=>{
  const dice=read('dice3d.js');
- assert.match(dice,/attenuationColor:0x980a2e/);
+ assert.match(dice,/attenuationColor:0xc41439/);
  assert.match(dice,/const mat=new THREE.MeshPhysicalMaterial/);
  assert.match(dice,/transmission:1,thickness:1\.9/);
  const evening=read('premium-evening.mjs');
