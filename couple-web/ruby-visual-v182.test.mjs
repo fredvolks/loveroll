@@ -28,7 +28,7 @@ test('Surprise keeps its real D100 and changes only the activity CTA label',()=>
  assert.match(src,/premiumPolyDie\(100,rollingActivity\?rollFace:a\?\.face\|\|null/);
  assert.match(src,/'surprise-activity','Découvrir notre activité','surprise-primary',rolling/);
  assert.doesNotMatch(src,/'surprise-activity','Voir notre activité','surprise-primary',rolling/);
- const ready=premiumSurpriseHtml({monthly:{monthly_activity:{face:11}},members:[{name:'A'},{name:'B'}]});
+ const ready=premiumSurpriseHtml({monthly:{monthly_activity:{face:11},monthly_host:{face:2}},members:[{name:'A'},{name:'B'}]});
  assert.match(ready,/Découvrir notre activité/);
  assert.match(ready,/data-dice-sides="100"/);
 });
