@@ -7,14 +7,14 @@ import {createCoupleLiveSync} from './couple-live-sync.mjs?v=20261017-advent119'
 import {playableSessionForWeekly} from './couple-reset-view.mjs';
 import {eveningDailyAccess} from './evening-daily-policy.mjs?v=20261016-daily100';
 import {ownEveningChallenges,queuePosition,queueLabel,hasTurnToDraw} from './evening-private-queue.mjs';
-import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261019-eclat174';
+import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261019-bubble175';
 import {eclatHtml} from './eclat-ui.mjs?v=20261019-eclat174';
 import {eclatStage} from './eclat-catalog.mjs?v=20261019-eclat174';
 import {createEclatAudio} from './eclat-audio.mjs?v=20261019-eclat174';
 import {futureCoupleStyleMix,playStyleLabel} from './play-style.mjs?v=20261018-styles149';
 import {cycleIntensityQuestionnaireHtml} from './cycle-questionnaire.mjs?v=20261018-cycle149';
 import {DICE_WEIGHT_CONFIG,configuredDiceWeights,parseDiceWeightInputs} from './dice-weighting.mjs?v=20261018-weights146';
-import {premiumEveningHtml,updateEveningCategoryUi} from './premium-evening.mjs?v=20261019-eclat174';
+import {premiumEveningHtml,updateEveningCategoryUi} from './premium-evening.mjs?v=20261019-bubble175';
 import {eveningHistoryMarkup,eveningLocalDay} from './evening-calendar.mjs?v=20261018-stats148';
 import {eveningReviewModal,validEveningReview} from './evening-review.mjs?v=20261016-person-review97';
 import {premiumSurpriseHtml,sixSpecialEvents} from './premium-surprise.mjs?v=20261018-d100151';
@@ -27,7 +27,7 @@ import { eveningCard, EVENING_CATEGORIES, formatCountdown,customCardSlots,editab
 import {MONTHLY_ACTIVITIES,editableMonthlyActivities,monthlyActivityForRoll} from './monthly-activities.mjs?v=20261018-d100151';
 import {ritualBrandHtml} from './brand.mjs?v=20261017-ritual130';
 import {validateAdventJson,calendarFromSaved} from './advent-calendar.mjs';
-import {adventPremiumHtml,sharedAdventState} from './premium-advent.mjs?v=20261017-titles136';
+import {adventPremiumHtml,sharedAdventState} from './premium-advent.mjs?v=20261019-bubble175';
 import {validateSpecialEventsJson,SPECIAL_EVENT_KEYS,privateSpecialKey} from './private-special-events.mjs';
 import {buildEveningLibrary,buildMonthlyLibrary,librarySummary,normalizeLibraryData,MAX_IMPORT_BYTES} from './json-libraries.mjs?v=20261016-restore113';
 import {jsonToolsPanel,jsonInputId,exportJsonFile} from './json-library-ui.mjs?v=20261017-editorial121';
@@ -4029,6 +4029,6 @@ start().catch(error=>{fail(error);window.LoveRollBoot?.showFailure();});
 
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   window.addEventListener('load', () =>
-    navigator.serviceWorker.register('./service-worker.js?v=20261019-eclat174',
+    navigator.serviceWorker.register('./service-worker.js?v=20261019-bubble175',
      {scope:'./',updateViaCache:'none'}).then(reg=>reg.update()).catch(console.warn));
 }
