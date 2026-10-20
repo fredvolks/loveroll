@@ -23,5 +23,6 @@ if(mode==='home'){
  root.innerHTML=eclatHtml(params[mode]||params.gallery);
 }
 root.insertAdjacentHTML('beforeend','<nav class="nav"><div class="nav-inner"><button>Accueil</button><button>Soirée</button><button>Surprise</button><button>Avent</button><button>Réglages</button></div></nav>');
-if(mode==='home'){fitHomeLayout(root);await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));}\nwindow.__fixtureReady=true;
+if(mode==='home'){fitHomeLayout(root);setTimeout(()=>{window.__fixtureReady=true;},80);}
+else window.__fixtureReady=true;
 </script></body></html>
