@@ -61,8 +61,14 @@ const assert=require('node:assert/strict');
       if(segment&&hero){
        const rect=box(segment),title=box(document.querySelector('.evening-intro .ritual-page-title')),photo=box(hero);
        ret.eclatBounds={width:rect.width,height:rect.height,left:rect.left,right:rect.right};
-       ret.eclatInside=rect.width>=175&&rect.height>=35&&rect.left>=photo.left-1&&
-        rect.right<=photo.right+1&&rect.top>=title.bottom-1&&rect.bottom<=photo.top+2;
+       // Desktop may put the photographic scene in a narrower column;
+       // the tabs belong to the shared header, not inside that column.
+       const centerX=(rect.left+rect.right)/2;
+       const desktop=innerWidth>=768;
+       ret.eclatInside=rect.width>=175&&rect.height>=35&&rect.top>=title.bottom-1&&
+         (desktop?Math.abs(centerX-innerWidth/2)<=3&&rect.right<=innerWidth+1&&rect.left>=-1:
+         rect.left>=photo.left-1&&rect.right<=photo.right+1&&rect.bottom<=photo.top+2);
+       ret.titleTop=title.top;ret.photoTop=photo.top;ret.tabsBottom=rect.bottom;
       }
      }
      return ret;
