@@ -30,6 +30,7 @@ jobs:
           node --check couple-web/evening-eclat-switcher.mjs
           test -s couple-web/assets/eclat-photo-strip.webp
           node --check couple-web/eclat-ui.mjs
+          node --test couple-web/ruby-visual-v182.test.mjs
           node --check couple-web/account-preview-mode.mjs
           node --check couple-web/loveroll-premium-pickers.mjs
           node --check couple-web/platform-admin.js

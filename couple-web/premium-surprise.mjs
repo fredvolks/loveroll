@@ -90,7 +90,7 @@ export function premiumSurpriseHtml({
      '<div class="surprise-host-option"><span>PAIR</span><strong>'+partner(0)+'</strong></div>'+
      '<div class="surprise-host-option"><span>IMPAIR</span><strong>'+partner(1)+'</strong></div></div>':'')+
    (needsHost?button('roll:monthly_host','Brasser le dé','surprise-primary',rolling):
-    a?button('surprise-activity','Voir notre activité','surprise-primary',rolling):
+    a?button('surprise-activity','Découvrir notre activité','surprise-primary',rolling):
       button('roll:monthly_activity','Brasser le dé','surprise-primary',rolling))+
    (h&&!needsHost?'<div class="surprise-host-winner" role="status">♥ '+esc(h?names[h.face%2===0?0:1]:'Partenaire')+
      ' invite cette fois-ci !</div>':'')+

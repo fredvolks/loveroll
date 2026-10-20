@@ -6,7 +6,7 @@ const read=file=>readFileSync(new URL('./'+file,import.meta.url),'utf8');
 const html=read('index.html'),app=read('app.js'),sw=read('service-worker.js');
 const release=JSON.parse(read('web-version.json'));
 test('LoveRoll build versions agree between endpoint, app, HTML and imported modules',()=>{
- const build='2026-10-20.181',tag='20261015-no-toast87',appTag='20261020-homebar181',inviteTag='20261018-safari150',controlsTag='20261017-controls141',diceTag='20261017-home134';
+ const build='2026-10-20.182',tag='20261015-no-toast87',appTag='20261020-ruby182',inviteTag='20261018-safari150',controlsTag='20261017-controls141',diceTag='20261017-home134';
  assert.equal(release.build,build);
  assert.ok(app.includes('invite-links.mjs?v='+inviteTag));
  assert.ok(sw.includes('./assets/loveroll-messenger-og-v142.jpg'));
@@ -33,7 +33,7 @@ test('LoveRoll build versions agree between endpoint, app, HTML and imported mod
  assert.ok(html.includes('evening-calendar.css?v=20261018-stats148'));
  assert.ok(app.includes('couple-live-sync.mjs?v=20261017-advent119'));
  assert.ok(html.includes('premium-advent.css?v=20261019-ipad155'));
- assert.match(app,/const WEB_RELEASE='2026-10-20\.181'/);
+ assert.match(app,/const WEB_RELEASE='2026-10-20\.182'/);
  assert.ok(html.includes('bubble-centering.css?v=20261020-ecrin177'));
  assert.ok(sw.includes('./bubble-centering.css'));
  assert.ok(html.includes('eclat.css?v=20261020-switch178'));
@@ -137,4 +137,13 @@ test('Web 181 reuses original Accueil bottom navigation and preserves stored app
  assert.ok(css.includes('min-height:45px!important'));
  assert.ok(!read('loveroll-layout-fixes-v180.css').includes('height:72px!important'));
  assert.ok(!read('eclat-photo-gallery-v179.css').includes('height:auto!important;min-height:0!important'));
+});
+
+test('Web 182 loads the ruby buttons stylesheet with premium-only gold ring',()=>{
+ assert.ok(html.includes('loveroll-ruby-buttons-v182.css?v=20261020-ruby182'));
+ assert.ok(sw.includes('./loveroll-ruby-buttons-v182.css'));
+ const ruby=read('loveroll-ruby-buttons-v182.css');
+ assert.ok(ruby.includes('--control-primary:linear-gradient'));
+ assert.ok(ruby.includes('.ritual-mode-premium.is-active'));
+ assert.ok(app.includes('premium-surprise.mjs?v=20261020-ruby182'));
 });

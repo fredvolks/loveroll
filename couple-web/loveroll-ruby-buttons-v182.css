@@ -1,0 +1,159 @@
+/* LoveRoll v182 — Dark ruby glass, satin and candlelight.
+   Strictly visual. Button dimensions, spacing, nav geometry, 3D dice,
+   cards, user choices, data and click handlers remain owned by the originals. */
+
+/* Scarlet-bordeaux replaces the previous bright pink tone. */
+:root{
+ --ritual-bg:#110408;
+ --ritual-page:radial-gradient(ellipse at 52% 11%,#67132663 0%,transparent 46%),
+               radial-gradient(ellipse at 0% 62%,#4c0a1844 0%,transparent 54%),
+               linear-gradient(180deg,#130509 0%,#1c080f 55%,#11060a 100%);
+ --ritual-text:#f9e5dd;--ritual-muted:#d8b2ad;--ritual-rose:#cb8b91;
+ --ritual-border:#b66c7564;
+ --ritual-card:linear-gradient(135deg,#3c0f19ee 0%,#270c13f2 47%,#16080ef4 100%);
+ --ritual-button:var(--control-primary);
+ --control-primary:linear-gradient(180deg,#9b153e 0%,#690c2b 20%,#42071b 53%,#1c030e 83%,#6c1030 100%);
+ --control-border:#dc8d9c9e;
+ --control-text:#fff1ea;
+ --control-shadow:inset 0 1px 1px #ffe5e2c2,inset 0 3px 7px #f5376536,
+                  inset 0 -2px 6px #070106b0,0 3px 12px #060105a8;
+ --control-selected:linear-gradient(180deg,#64203b,#481223 56%,#290b1a);
+ --control-selected-border:#c17b8e85;
+ --control-selected-shadow:inset 0 1px #f2bdc75a,inset 0 -1px 4px #14070da6;
+ --control-secondary:#260b17;
+ --control-secondary-border:#a05c6c9a;--control-secondary-text:#f3cbd0;
+ --love-wine:#530e23;--love-rose:#d59a9b;--love-border:var(--ritual-border);
+ --love-glass:var(--ritual-card);
+ --love-glow:inset 0 1px #ffe3dd28,0 7px 23px #0c0208a8;
+ --bg:#100408;--panel:#2d0b16;--edge:#a55c6b;--pink:#bb516f;
+ --text:#f8e1dc;--mute:#cba2ac;
+ --ritual-shadow:inset 0 1px #ffe8e045,0 6px 19px #21030f69;
+}
+body:not(:has(.love-discover)),#app:is(.loveroll-real-home,.loveroll-evening-page,.loveroll-surprise-ecrin,.loveroll-advent-letters,.loveroll-settings-page,.loveroll-eclat-page){
+ background:var(--ritual-page)!important;
+ color:var(--ritual-text);
+}
+/* Dark ruby satin panels — no changes to any geometry or component layout. */
+#app :is(.home-panel,.evening-aftercare,.evening-user-die,.evening-gift,
+ .evening-step,.surprise-month,.surprise-event-card,
+ .settings-group,.settings-hero,.settings-section,.settings-item,
+ .settings-duo-card,.eclat-descriptor,.eclat-detail,.eclat-private,
+ .advent-dialog,.eclat-story,.eclat-offer,.lr-dialog){
+ border-color:var(--ritual-border)!important;
+}
+#app :is(.home-panel,.evening-aftercare,.settings-group,.settings-hero,
+ .settings-section,.settings-item,.settings-duo-card,.evening-gift,
+ .evening-step,.eclat-descriptor,.eclat-detail,.eclat-story){
+ background:var(--ritual-card)!important;
+ box-shadow:var(--love-glow)!important;
+}
+/* Each button retains its authored size, padding, min-height, grid placement,
+   border-radius and pointer behavior. Change only material and color. */
+#app :is(
+ .home-roll-button,.evening-primary,.evening-small-roll,.evening-finale-start,
+ .evening-locked-cta,.surprise-primary,.surprise-invite-button,.advent-primary,
+ .settings-primary,.auth-primary,.entry-auth-submit,.discover-accept,
+ .lr-review-save,.love-dialog-confirm,.landing-cta,.love-cta-primary,
+ .loveroll-invite-cta,.install-primary,.settings-secondary,
+ .auth-secondary,.entry-auth-provider,.entry-auth-resend,.entry-auth-back,
+ .settings-signout,.settings-reset,.evening-queue-open-btn,.evening-gift-btn,
+ .evening-choice-btn,.evening-cal-return,.evening-cal-toolbar button,
+ .surprise-event-activities,.surprise-season-tab,.surprise-season-switch button,
+ .json-tool-buttons>button,.json-tool-buttons>.json-file-button,
+ .advent-history-trigger,.advent-dialog-year,.advent-dialog-close,
+ .eclat-offer-back,.entry-account-hero button,
+ .lr-picker-choice,.account-test-option
+):not(:disabled):not([aria-disabled="true"]){
+ background:var(--control-primary)!important;
+ color:var(--control-text)!important;
+ border-color:var(--control-border)!important;
+ box-shadow:var(--control-shadow)!important;
+}
+/* Preserve the original icon positions and line-height. Only center labels. */
+#app :is(
+ .home-roll-button,.evening-primary,.evening-small-roll,.evening-finale-start,
+ .evening-locked-cta,.surprise-primary,.surprise-invite-button,.advent-primary,
+ .settings-primary,.auth-primary,.entry-auth-submit,.discover-accept,
+ .lr-review-save,.love-dialog-confirm,.landing-cta,.love-cta-primary,
+ .loveroll-invite-cta,.install-primary,.settings-secondary,.auth-secondary,
+ .evening-queue-open-btn,.evening-gift-btn,.eclat-primary,
+ .eclat-duration-choice,.eclat-choice,.eclat-offer-back,
+ .eclat-skip,.eclat-link
+){
+ text-align:center!important;
+ justify-content:center;
+ align-items:center;
+}
+/* Match the rest of the app without tinting photographs, dice or the nav bar. */
+#app :is(.settings-secondary,.entry-auth-provider,.auth-secondary,
+ .entry-auth-link,.evening-queue-open-btn,.evening-choice-btn,
+ .surprise-season-tab,.settings-signout):not(:disabled):not(.selected):not(.is-active){
+ background:linear-gradient(180deg,#491021,#2a0a15 63%,#1b0610)!important;
+ border-color:#a663739c!important;
+ box-shadow:inset 0 1px #ffd9d633,inset 0 -1px #080104a8!important;
+}
+#app :is(.pill.selected,.evening-choice-btn.selected,
+ .evening-choice-btn[aria-pressed="true"],.editorial-segments>button.selected,
+ .account-test-option.selected,.surprise-season-tab.is-active){
+ background:var(--control-selected)!important;
+ border-color:var(--control-selected-border)!important;
+ color:var(--control-text)!important;
+ box-shadow:var(--control-selected-shadow)!important;
+}
+/* Standalone button labels only: never reflow the nested layout of card buttons. */
+#app :is(.home-roll-button,.evening-primary,.surprise-primary,.advent-primary,
+ .settings-primary,.eclat-primary,.eclat-duration-choice,
+ .evening-finale-start,.evening-queue-open-btn) {text-align:center!important;}
+#app :is(.home-weight,.evening-finale-weekly,.evening-finale-status,
+ .evening-finale-counters,.evening-aftercare .evening-finale-person,
+ .evening-finale-progress,.home-stat-card,.home-summary-value,
+ .eclat-descriptor,.eclat-duration,.eclat-duration>span,
+ .surprise-host-option,.surprise-event-details,.settings-duo-card,
+ .advent-state-label){text-align:center;}
+#app :is(.evening-finale-counters,.eclat-descriptor,.surprise-host-option)
+ :is(strong,small,span){text-align:center;}
+#app .surprise-primary:not(:disabled) {text-align:center!important;}
+/* Never alter the original D6 / D35 / D100 canvas, motor, podium or image. */
+
+/* Éclat is the ONLY premium surface with a gilded glass outline.
+   All non-premium button borders above are rose-red (not gold). */
+#app .ritual-mode-switcher .ritual-mode-tab.ritual-mode-premium{
+ border-color:#c9a06a!important;
+ background:linear-gradient(180deg,#631127 0%,#33091b 64%,#17040d 100%)!important;
+ box-shadow:inset 0 0 0 1px #edc89298,inset 0 1px #ffe8c37d,
+            0 1px 5px #0501038c!important;
+}
+#app .ritual-mode-switcher .ritual-mode-tab.ritual-mode-premium.is-active{
+ border-color:#f2cb8f!important;
+ background:linear-gradient(180deg,#8e1836,#590d25 51%,#280615 100%)!important;
+ box-shadow:inset 0 0 0 1px #f8d29fc7,inset 0 2px 3px #ffdaac61,
+            0 0 10px #d3a26643!important;
+}
+#app .ritual-mode-switcher .ritual-mode-premium .ritual-premium-copy :is(strong,small),
+#app .ritual-mode-switcher .ritual-mode-premium .ritual-mode-icon{color:#f6d3a3!important;}
+#app.loveroll-eclat-page :is(
+ button.eclat-primary,button.eclat-duration-choice.is-selected,
+ button.eclat-choice.is-selected,button.eclat-offer-back
+):not(:disabled){
+ background:var(--control-primary)!important;
+ color:#fff0e1!important;
+ border-color:#e0b678!important;
+ box-shadow:inset 0 0 0 1px #f4cd8b9c,inset 0 1px #ffe4be8c,
+            inset 0 -3px 7px #09010688,0 0 11px #c68a4a38!important;
+}
+#app.loveroll-eclat-page button.eclat-duration-choice:not(.is-selected){
+ background:linear-gradient(180deg,#410d20,#230712)!important;
+ border-color:#a26671a8!important;
+ color:#f6d6d4!important;box-shadow:inset 0 1px #f5bcc344!important;
+}
+#app.loveroll-eclat-page .eclat-descriptor>span{
+ background:linear-gradient(140deg,#430c1e,#210810);
+ border-color:#be8a7d80;color:var(--ritual-text);
+}
+#app.loveroll-eclat-page :is(.eclat-tile,.eclat-tile-photo),
+#app .love3d-stage,#app canvas[data-dice-sides],#app .home-pip-svg {
+ /* Preserve all original 3D/photographic materials and dimensions. */
+}
+@media(prefers-reduced-motion:reduce){
+ #app .ritual-mode-switcher button{transition:none!important;}
+}
