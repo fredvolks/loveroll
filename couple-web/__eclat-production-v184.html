@@ -1,0 +1,34 @@
+<!doctype html><html lang="fr-CA"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"></head><body><main id="app"></main>
+<script type="module">
+ import {eclatHtml} from './eclat-ui.mjs';
+ // Read production index.html so no stylesheet is missing, reordered or
+ // accidentally replaced by the simplified isolated testing fixture.
+ const html=await (await fetch('./index.html',{cache:'no-store'})).text();
+ const documentOfProduction=new DOMParser().parseFromString(html,'text/html');
+ const hrefs=[...documentOfProduction.querySelectorAll('link[rel="stylesheet"]')]
+   .map(x=>x.getAttribute('href'));
+ await Promise.all(hrefs.map(href=>new Promise((resolve,reject)=>{
+  const l=document.createElement('link');l.rel='stylesheet';l.href=href;
+  l.onload=resolve;l.onerror=()=>reject(Error('Missing shipped CSS: '+href));
+  document.head.append(l);
+ })));
+ const root=document.getElementById('app');
+ root.className='loveroll-eclat-page';
+ root.innerHTML=eclatHtml({status:{access:true,active:false},selected:1});
+ const icons={
+  home:'<path d="m3 10 9-7 9 7v10H3z M9 20v-7h6v7"/>',
+  session:'<path d="M20 15A9 9 0 0 1 9 4a9 9 0 1 0 11 11Z"/>',
+  special:'<path d="m12 2 2.6 7.4L22 12l-7.4 2.6L12 22l-2.6-7.4L2 12l7.4-2.6Z"/>',
+  advent:'<path d="M3 9h18v4H3z M5 13v8h14v-8 M12 9v12"/>',
+  settings:'<circle cx="12" cy="12" r="4"/><path d="M12 2v3 M12 19v3 M2 12h3 M19 12h3 M4.9 4.9l2.1 2.1 M17 17l2.1 2.1 M19.1 4.9L17 7 M7 17l-2.1 2.1"/>'
+ };
+ const tabs=[['home','Accueil'],['session','Soirée'],['special','Surprise'],['advent','Avent'],['settings','Réglages']];
+ root.insertAdjacentHTML('beforeend','<nav class="nav"><div class="nav-inner" style="grid-template-columns:repeat(5,minmax(0,1fr))">'+
+  tabs.map(([key,name])=>'<button class="'+(key==='session'?'active':'')+'" data-action="tab:'+key+'"><span><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8">'+icons[key]+'</svg></span>'+name+'</button>').join('')+'</div></nav>');
+ // Ensure real photos have finished loading before taking the approved screenshot.
+ await new Promise((resolve,reject)=>{
+  const img=new Image();img.onload=resolve;img.onerror=()=>reject(Error('Real Éclat photo asset did not load'));
+  img.src='./assets/eclat-photo-strip-v183.webp';
+ });
+ window.__fixtureReady=true;
+</script></body></html>

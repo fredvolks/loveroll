@@ -15,7 +15,7 @@ const rect=r=>({x:r.left,y:r.top,w:r.width,h:r.height,right:r.right,bottom:r.bot
   for(const viewport of viewports){
    const page=await browser.newPage({viewport,deviceScaleFactor:1,reducedMotion:'reduce'});
    const errors=[];page.on('pageerror',e=>errors.push(e.message));
-   await page.goto('http://127.0.0.1:8765/__eclat-screen-test.html?mode=gallery',{waitUntil:'load'});
+   await page.goto('http://127.0.0.1:8765/__eclat-production-v184.html',{waitUntil:'load'});
    await page.waitForFunction(()=>window.__fixtureReady===true);
    await page.waitForTimeout(120);
    const metrics=await page.evaluate(()=>{
