@@ -371,3 +371,6 @@ main#app.loveroll-settings-page .editorial-draw-rule input[type="checkbox"]:chec
  background-image:var(--control-primary)!important;
  border-color:var(--control-border)!important;
 }
+
+/* Keep the photographed marble pedestal at the approved height on iPad and phones. */
+main#app.loveroll-real-home .home-die-theater{background-position:center 62%!important;}
