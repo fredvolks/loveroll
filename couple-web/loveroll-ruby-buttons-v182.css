@@ -157,3 +157,58 @@ body:not(:has(.love-discover)),#app:is(.loveroll-real-home,.loveroll-evening-pag
 @media(prefers-reduced-motion:reduce){
  #app .ritual-mode-switcher button{transition:none!important;}
 }
+
+/* v183 — Éclat complete surface treatment, not only its action buttons. */
+#app.loveroll-eclat-page .eclat-shell{
+ background:radial-gradient(ellipse at 50% 22%,#75182b88,transparent 58%),linear-gradient(#180509,#260711 55%,#130408)!important;
+}
+#app.loveroll-eclat-page .eclat-library,
+#app.loveroll-eclat-page .eclat-detail{
+ background:linear-gradient(150deg,#420b19 0%,#24060e 56%,#16040a 100%)!important;
+ border-color:#ad6d75a6!important;
+ box-shadow:inset 0 1px #f5bfaa40,0 10px 25px #090105a8!important;
+}
+#app.loveroll-eclat-page .eclat-tile{
+ background:linear-gradient(145deg,#65152a,#310a17 64%,#18050d)!important;
+ border:1px solid #ae6671b8!important;
+ box-shadow:inset 0 1px #ffc8bd4f,0 5px 12px #07010488!important;
+ overflow:hidden;
+}
+#app.loveroll-eclat-page .eclat-tile-photo{
+ filter:sepia(.42) saturate(1.8) hue-rotate(305deg) brightness(.74)!important;
+ opacity:.66!important;
+}
+#app.loveroll-eclat-page .eclat-tile::after{
+ content:"";position:absolute;inset:0;pointer-events:none;
+ background:linear-gradient(180deg,#4a0b171a 0%,transparent 36%,#1b030cc9 100%);
+}
+#app.loveroll-eclat-page .eclat-tile :is(strong,.eclat-tile-number,.eclat-tile-arrow){
+ position:relative;z-index:1;color:#ffe8db!important;text-shadow:0 1px 4px #100307;
+}
+#app.loveroll-eclat-page .eclat-tile-arrow{color:#edc78f!important;}
+#app.loveroll-eclat-page .eclat-orb{
+ background:radial-gradient(circle at 35% 23%,#d37481 0%,#a62a4a 22%,#640f2c 57%,#270614 100%)!important;
+ color:#ffe8d5!important;
+ border:1px solid #d5a47b!important;
+ box-shadow:inset 0 2px 14px #ffe6dc70,inset 0 -12px 23px #1a0415b0,0 0 32px #8b23465e!important;
+}
+#app.loveroll-eclat-page .eclat-detail :is(h2,.eclat-detail-copy,.eclat-duration>span),
+#app.loveroll-eclat-page .eclat-library-offer{color:#ffe7dd!important;text-align:center!important;}
+#app.loveroll-eclat-page .eclat-descriptor{background:transparent!important;box-shadow:none!important;}
+#app.loveroll-eclat-page .eclat-duration-choice{
+ background:linear-gradient(180deg,#69152b,#390a19 65%,#210610)!important;
+ color:#fff0e6!important;
+ border-color:#a96675!important;
+ box-shadow:inset 0 1px #ffcfcc61,inset 0 -2px #10030b!important;
+}
+#app.loveroll-eclat-page .eclat-duration-choice.is-selected{
+ border-color:#f0c58a!important;
+ box-shadow:inset 0 0 0 1px #f3ce93,inset 0 1px #ffe0b5,0 0 11px #d4a16b58!important;
+}
+#app.loveroll-eclat-page .eclat-primary:not(:disabled){
+ background:linear-gradient(180deg,#a01b3c,#620c28 42%,#2d0618 80%,#65122c)!important;
+ border-color:#e9be7e!important;
+ box-shadow:inset 0 0 0 1px #f6d09c,inset 0 2px 3px #ffe6c07d,0 0 15px #b77c4e57!important;
+}
+#app.loveroll-eclat-page .eclat-detail :is(h2,p,small),
+#app.loveroll-eclat-page .eclat-library :is(h3,p){text-align:center;}
