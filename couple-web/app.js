@@ -31,7 +31,7 @@ import {jsonToolsPanel,jsonInputId,exportJsonFile} from './json-library-ui.mjs?v
 import {guidedIdeas,guidanceFor} from './wellbeing.mjs';
 
 import { SPECIAL_SURPRISES,OCCASIONS,occasionDate,dueOccasions,specialSurprise,occasionRoles,TARGETED_OCCASIONS } from './special-occasions.mjs';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.0';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.107.0';
 import {worldwideSettingsHtml,localeOrDefault,currencyOrDefault,normalizeSharedTravel,t as worldT} from './world-preferences.mjs';
 import {cadExchangeRate} from './currency-exchange.mjs';
 import {referralSettingsHtml,referralLink,REFERRAL_CODE_PATTERN,REFERRAL_PENDING_STORAGE_KEY} from './referral-program.mjs?v=20261019-personal171';
@@ -45,7 +45,7 @@ import {invitationStatus,coupleStats,formatCoupleDate,invitationEmailText,invita
 import {premiumConfirm,premiumCopyLink,focusInlineLoveDialog} from './premium-dialogs.mjs?v=20261017-complete127';
 
 
-const WEB_RELEASE='2026-10-19.172';
+const WEB_RELEASE='2026-10-19.173';
 const root=document.querySelector('#app');
 const enc=new TextEncoder(),dec=new TextDecoder();
 let diceCleanup=[],renderToken=0;
@@ -3793,11 +3793,21 @@ async function start(){
   if(state.inviteAccepted)state.showAuth=true;
  }
  if(!client){render();return;}
- const {data,error}=await client.auth.getUser();
- if(error)console.warn(error.message);
+ // Some mobile browsers keep old auth sessions across multiple LoveRoll tabs.
+ // Never wait forever for an auth or sync operation; no token/storage is deleted.
+ const withBootTimeout=(promise,phase,ms=11000)=>Promise.race([
+  promise,new Promise((_,reject)=>setTimeout(()=>reject(
+   new Error('LoveRoll : '+phase+' trop longue. Fermez les autres onglets LoveRoll, puis réessayez.')),ms))
+ ]);
+ if(window.LoveRollBoot)window.LoveRollBoot.stage='Vérification de votre session';
+ const {data,error}=await withBootTimeout(client.auth.getUser(),'vérification du compte');
+ if(error)console.warn('LoveRoll login recovery:',error?.name||'auth_failure');
  state.user=data?.user||null;
- if(state.user)try{await reload();}catch(e){fail(e);render();}
- else render();
+ if(state.user){
+  if(window.LoveRollBoot)window.LoveRollBoot.stage='Synchronisation de votre espace';
+  try{await withBootTimeout(reload(),'synchronisation du compte',14000);}
+  catch(e){fail(e);window.LoveRollBoot?.showFailure();}
+ }else render();
  client.auth.onAuthStateChange((event,session)=>{
   if(event==='SIGNED_IN'&&session?.user&&!state.user){
    state.user=session.user;
@@ -3923,7 +3933,7 @@ window.addEventListener('loveroll-native-google-result',async event=>{
   console.warn('Google Supabase auth failed',err?.code||'unknown');
  }
 });
-start().catch(fail);
+start().catch(error=>{fail(error);window.LoveRollBoot?.showFailure();});
 
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   window.addEventListener('load', () =>
