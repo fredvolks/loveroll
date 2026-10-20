@@ -8,7 +8,8 @@ import {playableSessionForWeekly} from './couple-reset-view.mjs';
 import {eveningDailyAccess} from './evening-daily-policy.mjs?v=20261016-daily100';
 import {ownEveningChallenges,queuePosition,queueLabel,hasTurnToDraw} from './evening-private-queue.mjs';
 import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261019-bubble175';
-import {eclatHtml} from './eclat-ui.mjs?v=20261020-photo179';
+import {eclatHtml} from './eclat-ui.mjs?v=20261020-offer180';
+import {previewMode,previewCanEdit,previewEclatStatus} from './account-preview-mode.mjs?v=20261020-test180';
 import {eclatStage} from './eclat-catalog.mjs?v=20261019-eclat174';
 import {createEclatAudio} from './eclat-audio.mjs?v=20261019-eclat174';
 import {futureCoupleStyleMix,playStyleLabel} from './play-style.mjs?v=20261018-styles149';
@@ -48,7 +49,7 @@ import {invitationStatus,coupleStats,formatCoupleDate,invitationEmailText,invita
 import {premiumConfirm,premiumCopyLink,focusInlineLoveDialog} from './premium-dialogs.mjs?v=20261017-complete127';
 
 
-const WEB_RELEASE='2026-10-20.179';
+const WEB_RELEASE='2026-10-20.180';
 const root=document.querySelector('#app');
 const enc=new TextEncoder(),dec=new TextDecoder();
 let diceCleanup=[],renderToken=0;
@@ -85,7 +86,7 @@ const worldText=key=>worldT(worldLocale(),key);
 const state={user:null,profile:null,members:[],coupleId:null,couple:null,
  tab:launchParams.has('settings')?'settings':(['home','session','special','advent'].includes(launchParams.get('open'))?launchParams.get('open'):'home'),weekly:null,monthly:{},session:null,personal:[],challenges:[],gifts:[],rollStatus:null,customCards:[],customCategory:'SENSUEL',customSlot:1,customSearch:'',customFilter:'all',monthlyActivities:[],monthlySlot:1,libraryScreen:'list',libraryImportKind:null,specialEditorKey:null,specialEditorStage:'D6_activite',specialEditorFace:1,adventEditorDay:1,pushDevice:null,
  events:[],journal:[],advent:[],advent2026Config:null,advent2026Days:[],selectedDay:1,adventYear:null,adventSelected:null,adventHistory:false,adventOpening:null,adventRevealing:false,adventServerDate:null,unlockKey:null,channel:null,
- occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],calendarPassMonth:null,cycleStatus:null,cycleDeferred:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoBookingEdit:false,referral:null,eclat:null,eclatSelection:1,eclatMinutes:60,eclatDetails:false,eclatMusic:false,eclatFinished:null};
+ occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],calendarPassMonth:null,cycleStatus:null,cycleDeferred:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoBookingEdit:false,referral:null,eclat:null,eclatSelection:1,eclatMinutes:60,eclatDetails:false,eclatMusic:false,eclatFinished:null,testModeEligible:false,testMode:'real'};
 const names={SENSUEL:'Sensuel',COQUIN:'Coquin',SEXUEL:'Sexuel'};
 function isSharedCoupleReady(coupleId,members){
  return !!coupleId&&Array.isArray(members)&&members.length===2;
@@ -727,6 +728,10 @@ async function reload(){
   render();return;
  }
  state.emailVerificationPending=false;
+ // Verified by an authenticated, fixed-identity Supabase RPC. No public email allowlist.
+ try{state.testModeEligible=(await rpc('love_test_mode_allowed'))===true;}
+ catch{state.testModeEligible=false;}
+ state.testMode=previewMode(state.testMode,state.testModeEligible);
  const [profiles,assessments,personal,pushSettings]=await Promise.all([
   query('couple_profiles',{eq:{id:state.user.id}}),
   query('love_wellbeing',{eq:{user_id:state.user.id}}),
@@ -1114,7 +1119,7 @@ async function refreshEclatStatus(){
  return value;
 }
 function renderEclat(){
- const e=state.eclat;
+ const e=previewEclatStatus(state.eclat,state.testMode,state.testModeEligible);
  if(e?.active){
   const current=eclatStage(e.coffret_id,e.chapter_number,e.variant_number);
   if(current)eclatAudio.setMood(current.mood);
@@ -1824,7 +1829,10 @@ async function renderJournal(){
   button('tab:session','Retour à notre soirée','class="subtle"')+'</section>';
  frame(body,'NOTRE JOURNAL','Un calendrier partagé, du contenu chiffré');
 }
-function isLoveAdmin(){return !!(state.coupleId&&state.couple?.owner_user_id===state.user?.id);}
+function isLoveAdmin(){
+ const realOwner=!!(state.coupleId&&state.couple?.owner_user_id===state.user?.id);
+ return previewCanEdit(realOwner,state.testMode,state.testModeEligible);
+}
 function renderCardLibrary(){
  if(!isLoveAdmin()){state.tab='settings';renderSettings();return;}
  if(state.couple?.sexual_card_mode==='automatic'){
@@ -1944,6 +1952,14 @@ function renderSettings(){
   profileGenderSelect(state.profile.gender)+profilePlayStyleSelect(state.profile.play_style)+
   '<div class="settings-birthday-edit"><span>Mon anniversaire</span>'+monthDayInputs('settings-birthday',state.profile.birthday_md)+'</div>'+
   '<label>Courriel du compte<input type="email" readonly aria-readonly="true" value="'+safe(state.user.email||'')+'" autocomplete="email"></label>'+
+  (state.testModeEligible?
+   '<section class="account-test-modes" aria-label="Mode de test de mon compte">'+
+    '<h3>Mode de test de mon compte</h3>'+
+    '<p>Prévisualisation privée : aucun abonnement, paiement ni droit réel n’est modifié.</p>'+
+    '<div class="account-test-options">'+
+    [['real','Compte réel'],['admin','Admin'],['member','Membre'],['eclat','Éclat']].map(([key,label])=>
+     '<button type="button" data-action="account-test:'+key+'" aria-pressed="'+(previewMode(state.testMode,state.testModeEligible)===key)+'" class="account-test-option'+(previewMode(state.testMode,state.testModeEligible)===key?' selected':'')+'">'+label+'</button>').join('')+
+    '</div><small>En mode Membre, les coffrets sont masqués derrière l’offre. Admin et Éclat conservent les permissions réelles de votre compte.</small></section>':'')+
   button('profile','Enregistrer mon profil','class="settings-primary"')+
   '</section><div class="settings-danger-zone">'+button('signout','Se déconnecter','class="settings-signout"')+'</div></div>';
  let partner='';
@@ -2208,6 +2224,18 @@ function keepAuthModeInUrl(mode){
 }
 async function handle(action,element){
  const [verb,...parts]=action.split(':');
+ if(verb==='account-test'){
+  if(!state.testModeEligible)throw Error('Mode réservé au compte de test autorisé.');
+  const next=parts[0];
+  if(!['real','admin','member','eclat'].includes(next))throw Error('Mode de test invalide');
+  if(next==='admin'&&state.couple?.owner_user_id!==state.user?.id)
+   throw Error('Le rôle administrateur ne peut pas être simulé sans les droits réels.');
+  state.testMode=previewMode(next,true);
+  state.eclatDetails=false;
+  eclatAudio.stop();state.eclatMusic=false;
+  render();return;
+ }
+ if(verb==='eclat')
  if(verb==='eclat'){
   if(!isSharedCoupleReady(state.coupleId,state.members))throw Error('Éclat nécessite deux partenaires associés.');
   const kind=parts[0],num=Number(parts[1]);
@@ -2234,7 +2262,7 @@ async function handle(action,element){
   }
   if(kind==='start'){
    if(!Number.isInteger(num)||num<1||num>12)throw Error('Coffret inconnu');
-   if(!state.eclat?.access)throw Error('Ce coffret nécessite le forfait Éclat.');
+   if(!previewEclatStatus(state.eclat,state.testMode,state.testModeEligible)?.access)throw Error('Ce coffret nécessite le forfait Éclat.');
    state.eclat=await rpc('love_eclat_start',{p_coffret:num,p_minutes:state.eclatMinutes});
    state.eclatDetails=false;state.eclatFinished=null;render();return;
   }
@@ -4030,6 +4058,6 @@ start().catch(error=>{fail(error);window.LoveRollBoot?.showFailure();});
 
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   window.addEventListener('load', () =>
-    navigator.serviceWorker.register('./service-worker.js?v=20261019-align176',
+    navigator.serviceWorker.register('./service-worker.js?v=20261020-fixed180',
      {scope:'./',updateViaCache:'none'}).then(reg=>reg.update()).catch(console.warn));
 }

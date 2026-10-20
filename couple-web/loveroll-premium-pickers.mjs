@@ -10,8 +10,12 @@ function openPicker(select,trigger){
  const head=document.createElement('header');head.className='lr-premium-picker-header';
  const title=document.createElement('h2');
  const label=select.closest('label');
- const caption=label?.querySelector('span')?.textContent||
-  label?.childNodes?.[0]?.textContent?.trim()||select.getAttribute('aria-label')||'Choisir une option';
+ // Prefer the control's actual accessible name, never the full label including
+ // its <select> options. The latter previously produced "SoftMediumIntense...".
+ const caption=select.getAttribute('aria-label')?.trim()||
+  label?.querySelector('span')?.textContent?.trim()||
+  [...(label?.childNodes||[])].filter(node=>node.nodeType===3).map(node=>node.textContent?.trim()).find(Boolean)||
+  'Choisir une option';
  title.textContent=caption;
  const close=document.createElement('button');close.type='button';close.className='lr-picker-close';
  close.setAttribute('aria-label','Fermer les choix');close.textContent='✕';
@@ -55,7 +59,7 @@ export function enhanceLoveRollSettingsSelects(root){
   const trigger=document.createElement('button');trigger.type='button';
   trigger.className='lr-premium-picker-trigger';
   trigger.setAttribute('aria-haspopup','dialog');
-  trigger.setAttribute('aria-label','Choisir : '+safeString(select.getAttribute('aria-label')||select.closest('label')?.textContent?.trim()||'option'));
+  trigger.setAttribute('aria-label','Choisir : '+safeString(select.getAttribute('aria-label')||'option'));
   const value=document.createElement('span');value.className='lr-premium-picker-value';
   value.textContent=select.selectedOptions?.[0]?.textContent||'Choisir';
   const chev=document.createElement('span');chev.className='lr-premium-picker-chevron';chev.setAttribute('aria-hidden','true');chev.textContent='⌄';

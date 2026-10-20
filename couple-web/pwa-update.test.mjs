@@ -6,7 +6,7 @@ const read=file=>readFileSync(new URL('./'+file,import.meta.url),'utf8');
 const html=read('index.html'),app=read('app.js'),sw=read('service-worker.js');
 const release=JSON.parse(read('web-version.json'));
 test('LoveRoll build versions agree between endpoint, app, HTML and imported modules',()=>{
- const build='2026-10-20.179',tag='20261015-no-toast87',appTag='20261020-photo179',inviteTag='20261018-safari150',controlsTag='20261017-controls141',diceTag='20261017-home134';
+ const build='2026-10-20.180',tag='20261015-no-toast87',appTag='20261020-photo179',inviteTag='20261018-safari150',controlsTag='20261017-controls141',diceTag='20261017-home134';
  assert.equal(release.build,build);
  assert.ok(app.includes('invite-links.mjs?v='+inviteTag));
  assert.ok(sw.includes('./assets/loveroll-messenger-og-v142.jpg'));
@@ -33,7 +33,7 @@ test('LoveRoll build versions agree between endpoint, app, HTML and imported mod
  assert.ok(html.includes('evening-calendar.css?v=20261018-stats148'));
  assert.ok(app.includes('couple-live-sync.mjs?v=20261017-advent119'));
  assert.ok(html.includes('premium-advent.css?v=20261019-ipad155'));
- assert.match(app,/const WEB_RELEASE='2026-10-20\.179'/);
+ assert.match(app,/const WEB_RELEASE='2026-10-20\.180'/);
  assert.ok(html.includes('bubble-centering.css?v=20261020-ecrin177'));
  assert.ok(sw.includes('./bubble-centering.css'));
  assert.ok(html.includes('eclat.css?v=20261020-switch178'));
@@ -58,7 +58,7 @@ test('LoveRoll build versions agree between endpoint, app, HTML and imported mod
  assert.match(app,/surprise-event-config\.mjs\?v=20261016-surprise109/);
 });
 test('PWA bypasses stale Android network caches while preserving offline fallback',()=>{
- assert.match(sw,/loveroll-static-v179/);
+ assert.match(sw,/loveroll-static-v180/);
  assert.match(sw,/fetch\(req,\{cache:'no-store'\}\)/);
  assert.match(sw,/cache\.match\(fallback\.href\)/);
  assert.match(sw,/const cache=await caches\.open\(CACHE\)/);
@@ -113,4 +113,17 @@ test('Web 179 delivers the selected twelve photographic coffrets offline',()=>{
  const style=read('eclat-photo-gallery-v179.css');
  assert.match(style,/repeat\(2,minmax\(0,1fr\)\)/);
  assert.match(style,/repeat\(6,minmax\(0,1fr\)\)/);
+});
+
+test('Web 180 includes one shared nav geometry, a centered picker, and preview guards',()=>{
+ assert.ok(html.includes('loveroll-layout-fixes-v180.css?v=20261020-fixed180'));
+ assert.ok(app.includes('account-preview-mode.mjs?v=20261020-test180'));
+ assert.ok(sw.includes('./loveroll-layout-fixes-v180.css'));
+ const sheet=read('loveroll-layout-fixes-v180.css');
+ assert.ok(sheet.includes('background:var(--ritual-page)!important'));
+ assert.ok(sheet.includes('.loveroll-evening-page,.loveroll-eclat-page'));
+ assert.ok(sheet.includes('dialog.lr-premium-picker-dialog[open]'));
+ assert.ok(sheet.includes('.eclat-offer'));
+ const picker=read('loveroll-premium-pickers.mjs');
+ assert.match(picker,/select\.getAttribute\('aria-label'\)/);
 });

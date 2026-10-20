@@ -59,6 +59,19 @@ export function eclatHtml({status=null,selected=1,minutes=60,details=false,membe
     '<div class="eclat-play-bottom">'+
      '<span>'+(revealed?ready?'Tu as confirmé · attente de l’autre':'Choisissez tous les deux pour avancer':chosen?'Ton partenaire choisit…':'Ton choix reste privé jusqu’à la révélation')+'</span>'+
      btn('eclat:end','Quitter le coffret','eclat-link')+'</div></footer></section>';
+ }else if(!access){
+  // The catalogue is private to Éclat members. Billing is not enabled yet.
+  body='<section class="eclat-offer" aria-label="Découvrir l’abonnement Éclat">'+
+   '<div class="eclat-offer-symbol" aria-hidden="true">✧</div>'+
+   '<small class="eclat-offer-kicker">COLLECTION PRIVÉE · ÉCLAT PREMIUM</small>'+
+   '<h2>12 expériences pour se retrouver</h2>'+
+   '<p>Des coffrets romantiques, sensoriels et complices. Une nouvelle histoire à vivre ensemble, à votre rythme.</p>'+
+   '<div class="eclat-offer-features"><span>♡ 12 coffrets</span><span>♧ À deux</span><span>◷ 30, 60 ou 90 min</span></div>'+
+   '<div class="eclat-offer-price"><small>Forfait Éclat · total pour le couple</small>'+
+    '<strong>'+fmt(status?.total_cents??999)+'</strong><span> / mois, base incluse</span></div>'+
+   '<p class="eclat-offer-info">L’activation et le paiement en ligne ne sont pas encore disponibles. Aucune somme ne sera débitée.</p>'+
+   btn('tab:session','← Retour à notre soirée','eclat-offer-back')+
+   '</section>';
  }else if(details){
   body='<section class="eclat-detail"><div class="eclat-orb">♡<span>✦</span></div>'+
    '<small>COFFRET '+String(c.id).padStart(2,'0')+' / 12</small><h2>'+esc(c.title)+'</h2>'+

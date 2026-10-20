@@ -20,15 +20,16 @@ test('Twelve complete original coffrets with 384 distinct passages and 36 finale
   }
  }
 });
-test('All 12 are browsable but payment remains disabled for base couples',()=>{
+test('Unsubscribed couples see the offer before the 12 private coffrets',()=>{
  const html=eclatHtml({status:{access:false,total_cents:999,base_cents:699}});
- assert.equal((html.match(/class="eclat-tile"/g)||[]).length,12);
+ assert.match(html,/12 expériences pour se retrouver/);
  assert.match(html,/9,99/);
+ assert.doesNotMatch(html,/class="eclat-tile"/);
+ assert.doesNotMatch(html,/data-action="eclat:detail:/);
  assert.doesNotMatch(html,/data-action="eclat:start:/);
- const detail=eclatHtml({status:{access:false,total_cents:999},details:true,selected:4,minutes:60});
- assert.match(detail,/Activation prochainement/);
- assert.match(detail,/Les portes de minuit/);
- assert.doesNotMatch(detail,/data-action="eclat:start:4"/);
+ assert.match(html,/Aucune somme ne sera débitée/);
+ const member=eclatHtml({status:{access:false},details:true,selected:4});
+ assert.doesNotMatch(member,/Les portes de minuit/);
 });
 test('Both partners have private, distinct roles and choices are not leaked',()=>{
  const active={access:true,active:true,coffret_id:1,minutes:60,chapter_index:1,
@@ -114,4 +115,19 @@ test('Photographic Éclat shows exactly 12 clickable matching coffret pictures',
  assert.match(style,/repeat\(6,minmax\(0,1fr\)\)/);
  assert.match(style,/ritual-heading-height/);
  assert.match(style,/\.nav-inner>button/);
+});
+
+test('Account preview helper never grants Eclat or admin server permissions',async()=>{
+ const {previewMode,previewCanEdit,previewEclatStatus}=await import('./account-preview-mode.mjs');
+ assert.equal(previewMode('admin',false),'real');
+ assert.equal(previewMode('admin',true),'admin');
+ assert.equal(previewCanEdit(false,'admin',true),false);
+ assert.equal(previewCanEdit(true,'member',true),false);
+ assert.equal(previewCanEdit(true,'admin',true),true);
+ assert.equal(previewEclatStatus({access:true,active:false},'member',true).access,false);
+ assert.equal(previewEclatStatus({access:false},'eclat',true).access,false);
+ const app=read('./app.js');
+ assert.match(app,/rpc\('love_test_mode_allowed'\)/);
+ assert.match(app,/previewEclatStatus\(state\.eclat/);
+ assert.match(app,/account-test:/);
 });

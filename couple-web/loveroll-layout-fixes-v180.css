@@ -1,0 +1,173 @@
+/* LoveRoll 180: align Éclat with the real Soirée layout and correct picker dialogs. */
+main#app.loveroll-eclat-page{
+ background:var(--ritual-page)!important;color:var(--ritual-text)!important;
+}
+#app.loveroll-eclat-page .eclat-shell::before{background:none!important;}
+/* 3px flex gap + 4px margin on Soirée = 7px from title to mode bar. */
+#app.loveroll-eclat-page .eclat-shell>.ritual-mode-switcher{
+ margin:7px auto 5px!important;
+}
+/* One navigation geometry across both screens. Avoid Éclat-specific extra height. */
+#app:is(.loveroll-evening-page,.loveroll-eclat-page)>.nav{
+ position:fixed!important;inset:auto 0 0!important;
+ box-sizing:border-box!important;width:100%!important;
+ height:clamp(80px,11dvh,103px)!important;min-height:0!important;
+ padding:5px 8px calc(6px + env(safe-area-inset-bottom,0px))!important;
+ background:#130b11ee!important;border:1px solid #bd82984a!important;
+ border-bottom:0!important;border-radius:24px 24px 0 0!important;
+ box-shadow:0 -5px 24px #06020566!important;
+ backdrop-filter:blur(18px);
+}
+#app:is(.loveroll-evening-page,.loveroll-eclat-page)>.nav .nav-inner{
+ display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;
+ width:min(100%,840px)!important;height:100%!important;gap:5px!important;
+ margin:0 auto!important;align-items:stretch!important;
+}
+#app:is(.loveroll-evening-page,.loveroll-eclat-page)>.nav .nav-inner>button{
+ display:flex!important;flex-direction:column!important;justify-content:center!important;
+ align-items:center!important;min-width:0!important;width:100%!important;
+ min-height:0!important;height:100%!important;max-height:none!important;
+ padding:5px 3px!important;margin:0!important;
+ border-radius:20px!important;color:#d6b4c4!important;
+ font:600 clamp(10px,2.3vw,13px)/1.12 system-ui,sans-serif!important;
+}
+#app:is(.loveroll-evening-page,.loveroll-eclat-page)>.nav .nav-inner>button span{
+ font-size:clamp(19px,5vw,25px)!important;line-height:1.15!important;
+ margin:0 0 3px!important;
+}
+#app:is(.loveroll-evening-page,.loveroll-eclat-page)>.nav .nav-inner>button.active{
+ color:#fff2f4!important;
+ border:1px solid #ba778b70!important;
+ background:linear-gradient(125deg,#713052,#46213b)!important;
+ box-shadow:inset 0 1px #ec82b559!important;
+}
+/* Also match Eclat content clearance to the common navigation's actual height. */
+#app.loveroll-eclat-page .eclat-shell{
+ height:calc(100dvh - clamp(80px,11dvh,103px) - env(safe-area-inset-bottom,0px))!important;
+}
+/* Premium picker: native dialog is now an actually centered, properly sized layer. */
+dialog.lr-premium-picker-dialog[open]{
+ position:fixed!important;inset:0!important;
+ display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;
+ box-sizing:border-box!important;width:100vw!important;height:100dvh!important;
+ max-width:none!important;max-height:none!important;min-width:0!important;
+ margin:0!important;padding:max(16px,env(safe-area-inset-top,0px)) 14px max(16px,env(safe-area-inset-bottom,0px))!important;
+ overflow:hidden!important;border:0!important;transform:none!important;background:transparent!important;
+}
+dialog.lr-premium-picker-dialog[open]::backdrop{background:#0d050bcc!important;backdrop-filter:blur(9px);}
+.lr-premium-picker-dialog .lr-premium-picker-card{
+ box-sizing:border-box!important;display:flex!important;flex:none!important;flex-direction:column!important;
+ width:min(100%,420px)!important;max-width:100%!important;
+ height:auto!important;max-height:min(70dvh,490px)!important;
+ min-width:0!important;margin:auto!important;padding:19px 16px!important;
+ border:1px solid #bd8298b5!important;border-radius:23px!important;
+ background:linear-gradient(155deg,#371627,#170a13 75%)!important;
+ color:#f9dfe7!important;box-shadow:0 20px 70px #070306d9!important;
+}
+.lr-premium-picker-dialog .lr-premium-picker-header{
+ display:flex!important;flex-direction:row!important;
+ align-items:center!important;justify-content:space-between!important;
+ gap:10px!important;padding:0 0 14px!important;
+}
+.lr-premium-picker-dialog .lr-premium-picker-header h2{
+ flex:1 1 auto!important;min-width:0!important;max-width:100%!important;
+ margin:0!important;padding:0!important;
+ font:500 clamp(21px,5.2vw,28px)/1.2 Georgia,serif!important;
+ white-space:normal!important;overflow-wrap:break-word!important;
+ letter-spacing:normal!important;color:#ffedeb!important;
+}
+.lr-premium-picker-dialog .lr-picker-close{
+ flex:0 0 38px!important;width:38px!important;height:38px!important;min-height:38px!important;
+ display:grid!important;place-items:center!important;padding:0!important;
+ border:1px solid #b87692!important;border-radius:50%!important;
+ background:#3c2030!important;color:#ffdee8!important;
+}
+.lr-premium-picker-dialog .lr-picker-options{
+ flex:0 1 auto;display:grid!important;gap:8px!important;min-height:0!important;
+ max-height:55dvh!important;overflow:auto!important;
+}
+.lr-premium-picker-dialog .lr-picker-choice{
+ min-width:0!important;width:100%!important;min-height:48px!important;
+ padding:12px 14px!important;white-space:normal!important;
+ background:linear-gradient(135deg,#512239,#2a1421)!important;
+ border:1px solid #a66e85!important;border-radius:13px!important;
+ color:#ffedef!important;font:500 15px/1.2 system-ui,sans-serif!important;text-align:left!important;
+}
+.lr-premium-picker-dialog .lr-picker-choice.selected{
+ border-color:#f5b7c8!important;background:linear-gradient(135deg,#9b5672,#5b2b44)!important;
+}
+/* Owner-only UI preview lives in My account, never in other couples' profiles. */
+#app.loveroll-settings-page .account-test-modes{
+ display:grid;gap:10px;padding:15px;
+ border:1px solid var(--ritual-border);border-radius:17px;background:var(--ritual-card);
+}
+#app.loveroll-settings-page .account-test-modes h3{
+ margin:0!important;font:500 22px/1.1 Georgia,serif!important;color:var(--ritual-text);
+}
+#app.loveroll-settings-page .account-test-modes p,
+#app.loveroll-settings-page .account-test-modes small{
+ margin:0;color:var(--ritual-muted);font:12px/1.35 system-ui,sans-serif;
+}
+#app.loveroll-settings-page .account-test-options{
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;
+}
+#app.loveroll-settings-page .account-test-option{
+ display:grid;place-items:center;min-width:0;min-height:43px;padding:8px!important;
+ background:#21111a!important;color:var(--ritual-text)!important;
+ border:1px solid #b1798f7d!important;border-radius:13px!important;
+ font:600 13px/1.2 system-ui,sans-serif!important;box-shadow:none!important;
+}
+#app.loveroll-settings-page .account-test-option.selected{
+ background:var(--ritual-button)!important;border-color:#e2a0b7!important;
+}
+/* Premium subscription introduction instead of exposing the locked catalogue. */
+#app.loveroll-eclat-page .eclat-offer{
+ flex:1;min-height:0;display:flex;flex-direction:column;
+ align-items:center;justify-content:center;gap:clamp(9px,2dvh,20px);
+ text-align:center;padding:clamp(12px,4vw,28px);
+ border:1px solid var(--ritual-border);border-radius:23px;
+ background:linear-gradient(150deg,#321523e8,#160a11ed),
+  url('./assets/ritual-satin-v115.webp') center/cover no-repeat;
+ overflow:hidden;
+}
+#app.loveroll-eclat-page .eclat-offer-symbol{
+ display:grid;place-items:center;flex:none;
+ width:clamp(45px,9vh,78px);height:clamp(45px,9vh,78px);
+ border:1px solid #d9a5ae;border-radius:22px;background:#5d2940ad;
+ color:#f4c8cb;font:clamp(27px,5vh,43px)/1 Georgia,serif;
+}
+#app.loveroll-eclat-page .eclat-offer-kicker{
+ font:650 10px/1.2 system-ui,sans-serif;letter-spacing:.12em;color:#e4b0c1;
+}
+#app.loveroll-eclat-page .eclat-offer h2{
+ margin:0;color:var(--ritual-text);font:500 clamp(22px,5.3vw,32px)/1.08 Georgia,serif;
+}
+#app.loveroll-eclat-page .eclat-offer p{
+ max-width:410px;margin:0;color:var(--ritual-muted);
+ font:13px/1.35 system-ui,sans-serif;
+}
+#app.loveroll-eclat-page .eclat-offer-features{
+ display:flex;flex-wrap:wrap;justify-content:center;gap:7px;
+}
+#app.loveroll-eclat-page .eclat-offer-features span{
+ border:1px solid #bb839385;border-radius:999px;padding:7px 10px;
+ background:#27111e9b;font:11px/1.2 system-ui,sans-serif;
+}
+#app.loveroll-eclat-page .eclat-offer-price{
+ display:block;width:min(100%,350px);padding:13px 10px;
+ border:1px solid var(--ritual-border);border-radius:16px;background:#210e1bb3;
+}
+#app.loveroll-eclat-page .eclat-offer-price small{display:block;font-size:10px;margin-bottom:4px;}
+#app.loveroll-eclat-page .eclat-offer-price strong{font:600 clamp(22px,5.5vw,32px)/1 Georgia,serif;}
+#app.loveroll-eclat-page .eclat-offer-price span{font-size:12px;}
+#app.loveroll-eclat-page .eclat-offer .eclat-offer-info{font-size:11px;}
+#app.loveroll-eclat-page button.eclat-offer-back{
+ flex:none;min-height:43px;width:min(100%,310px);padding:8px 16px;
+ background:var(--ritual-button)!important;border:1px solid #dfacc1!important;
+ border-radius:999px!important;color:var(--ritual-text)!important;
+}
+@media(max-height:700px){
+ #app.loveroll-eclat-page .eclat-offer{gap:7px;padding:10px;}
+ #app.loveroll-eclat-page .eclat-offer-features span{padding:5px 7px;}
+ #app.loveroll-eclat-page .eclat-offer-price{padding:8px;}
+}
