@@ -99,7 +99,7 @@ test('Orphaned active evening NEVER blocks a corrected Web release from loading'
 
 test('Éclat mode tabs and title layout resources are cached and versioned',()=>{
  assert.ok(html.includes('evening-eclat-switcher.css?v=20261020-switch178'));
- assert.ok(app.includes('eclat-ui.mjs?v=20261020-photo179'));
+ assert.ok(app.includes('eclat-ui.mjs?v=20261020-offer180'));
  assert.ok(sw.includes('./evening-eclat-switcher.mjs'));
  assert.ok(sw.includes('./evening-eclat-switcher.css'));
  assert.ok(read('ritual-titles.css').includes('.eclat-page-title'));
@@ -107,7 +107,7 @@ test('Éclat mode tabs and title layout resources are cached and versioned',()=>
 
 test('Web 179 delivers the selected twelve photographic coffrets offline',()=>{
  assert.ok(html.includes('eclat-photo-gallery-v179.css?v=20261020-photo179'));
- assert.ok(app.includes('eclat-ui.mjs?v=20261020-photo179'));
+ assert.ok(app.includes('eclat-ui.mjs?v=20261020-offer180'));
  assert.ok(sw.includes('./assets/eclat-photo-strip.webp'));
  assert.ok(sw.includes('./eclat-photo-gallery-v179.css'));
  const style=read('eclat-photo-gallery-v179.css');
