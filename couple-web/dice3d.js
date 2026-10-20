@@ -274,7 +274,7 @@ function engravedCube(surface){
  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geo.setAttribute('normal',new THREE.Float32BufferAttribute(normals,3));geo.computeBoundingSphere();return geo;
 }
 
-function geometry(sides,pips=false,neutral=false,luminousHome=false){
+function geometry(sides,pips=false,neutral=false){
  const group=new THREE.Group(),normals=new Map();
  const inkPositions=[],inkNormals=[],engravings=[];
  const surface=(corners,normal,value)=>{
@@ -293,7 +293,7 @@ function geometry(sides,pips=false,neutral=false,luminousHome=false){
   color:0xffffff,metalness:0,roughness:.018,
   clearcoat:1,clearcoatRoughness:.018,
   specularIntensity:1,ior:1.52,transmission:1,thickness:1.9,
-  attenuationColor:luminousHome?0xc91545:0x980a2e,attenuationDistance:luminousHome?4.2:2.7,envMapIntensity:luminousHome?1.4:1.24,
+  attenuationColor:0x980a2e,attenuationDistance:2.7,envMapIntensity:1.24,
   side:THREE.FrontSide,flatShading:false,transparent:false,opacity:1,depthWrite:true
  });
  // Clear rose crystal: the photograph is refracted by the real face normals,
@@ -354,8 +354,7 @@ export function dieOn(canvas,sides,value,rolling){
  renderer.setSize(initialSize.width,initialSize.height,false);
  renderer.outputColorSpace=THREE.SRGBColorSpace;
  renderer.toneMapping=THREE.ACESFilmicToneMapping;
- const isHomeD6=sides===6&&!!canvas.closest('.home-die-platform');
-  renderer.toneMappingExposure=isHomeD6?1.38:1.25;
+ renderer.toneMappingExposure=1.25;
  const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(42,1,.1,15);camera.position.z=(sides===6?5.25:4.15)/Math.min(1.4,Math.max(.8,Number(canvas.dataset.diceZoom)||1));
  camera.aspect=initialSize.width/initialSize.height;camera.updateProjectionMatrix();
  let previousWidth=initialSize.width,previousHeight=initialSize.height;
@@ -381,7 +380,7 @@ export function dieOn(canvas,sides,value,rolling){
  const white=new THREE.DirectionalLight(0xfff0fa,.25);white.position.set(1.3,3,4);scene.add(white);
  const neutral=canvas.dataset.diceUnrolled==='true'&&sides===6;
  let preview=canvas.dataset.dicePreview==='true'&&sides===6;
- const built=geometry(sides,canvas.dataset.diceMarkers==='pips',neutral,isHomeD6);scene.add(built.group);
+ const built=geometry(sides,canvas.dataset.diceMarkers==='pips',neutral);scene.add(built.group);
  // A soft contact shadow stays on the stage while the die rises and settles.
  const shadow=new THREE.Mesh(new THREE.CircleGeometry(1.08,40),
   new THREE.MeshBasicMaterial({color:0x08030b,transparent:true,opacity:.28,depthWrite:false}));
@@ -390,7 +389,7 @@ export function dieOn(canvas,sides,value,rolling){
  // A server-confirmed face owns the final quaternion. Do not ever restore
  // the initial mesh rotation after a live D100 throw.
  const tilt=new THREE.Quaternion().setFromEuler(sides===6?
-  new THREE.Euler(isHomeD6?.43:.16,isHomeD6?-.49:-.18,-.02):new THREE.Euler(.075,-.09,0));
+  (canvas.closest('.home-die-platform')?new THREE.Euler(.43,-.49,-.02):new THREE.Euler(.16,-.18,-.02)):new THREE.Euler(.075,-.09,0));
  const podiumSelector='.home-die-theater,.surprise-main-die-scene,.evening-user-die>.love3d,.evening-die-row,.evening-finale-hero';
  let podium=canvas.closest(podiumSelector);
  const orientationFor=face=>{
