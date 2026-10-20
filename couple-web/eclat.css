@@ -1,0 +1,148 @@
+
+/* LoveRoll Éclat v174 — editorial one-screen experiences; original navigation intact. */
+#app.loveroll-real-home .home-next-month{
+ display:grid!important;grid-template-columns:clamp(30px,8vw,45px) minmax(0,1fr) clamp(26px,7vw,31px)!important;
+ align-items:center!important;justify-items:center!important;text-align:center!important;
+}
+#app.loveroll-real-home .home-next-month>span:nth-child(2){
+ display:flex!important;flex-direction:column!important;align-items:center!important;
+ justify-content:center!important;text-align:center!important;gap:3px!important;
+ align-self:stretch!important;min-width:0;width:100%;height:100%;
+}
+#app.loveroll-real-home .home-next-month :is(small,strong,em){
+ display:block!important;width:100%;text-align:center!important;margin:0!important;
+}
+#app.loveroll-real-home .home-next-month strong{line-height:1.15!important;overflow-wrap:anywhere;}
+#app.loveroll-real-home .home-next-month .home-calendar-icon{
+ width:100%;height:100%;display:flex!important;align-items:center!important;justify-content:center!important;
+}
+#app.loveroll-real-home .home-next-month .home-calendar-icon svg{max-width:100%;max-height:44px;display:block;}
+#app.loveroll-real-home .home-next-month .home-gift-icon{
+ display:flex!important;align-items:center!important;justify-content:center!important;
+ justify-self:center!important;align-self:center!important;line-height:1!important;padding:0!important;
+ flex-shrink:0;
+}
+#app.loveroll-real-home .home-next-month .home-gift-icon svg{
+ width:17px;height:17px;display:block;fill:none;stroke:currentColor;stroke-width:2;
+ stroke-linecap:round;stroke-linejoin:round;transform:translateX(.5px);
+}
+#app.loveroll-real-home .home-next-month:focus-visible{
+ outline:2px solid #ffadd4;outline-offset:2px;
+}
+main#app.loveroll-eclat-page{
+ width:100%!important;max-width:none!important;height:100dvh!important;min-height:100dvh!important;
+ margin:0!important;padding:0!important;overflow:hidden!important;
+ background:radial-gradient(ellipse at 52% 13%,#5b1937 0%,#210d1c 45%,#11080f 100%);
+}
+#app.loveroll-eclat-page .eclat-shell{
+ position:relative;isolation:isolate;display:flex;flex-direction:column;gap:0;
+ width:min(100%,680px);height:calc(100dvh - 76px - env(safe-area-inset-bottom,0px));
+ min-height:0;margin:0 auto;padding:max(11px,env(safe-area-inset-top,0px)) 16px 8px;
+ color:#f9dce7;overflow:hidden;
+}
+#app.loveroll-eclat-page .eclat-shell::before{
+ content:"";z-index:-1;pointer-events:none;position:absolute;inset:0;
+ background:radial-gradient(ellipse at 50% 40%,#b5366020,transparent 66%);
+}
+#app.loveroll-eclat-page .eclat-top{
+ height:72px;flex:none;display:grid;grid-template-columns:56px minmax(0,1fr) 76px;
+ align-items:center;gap:4px;margin:0 0 7px;border-bottom:1px solid #cd7b9950;
+}
+#app.loveroll-eclat-page .eclat-top>div{text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;}
+#app.loveroll-eclat-page .eclat-top small{font-size:9px;letter-spacing:.17em;color:#dfadc4;font-weight:500;}
+#app.loveroll-eclat-page .eclat-top h1{font:italic 400 clamp(27px,6vw,36px)/1 Georgia,serif;color:#ffe7ec;margin:0;}
+#app.loveroll-eclat-page button.eclat-return{background:none!important;border:0!important;color:#fff0fa!important;font:40px/1 Georgia,serif!important;padding:2px 9px!important;box-shadow:none!important;min-height:45px!important;text-align:left!important;}
+#app.loveroll-eclat-page button.eclat-audio-toggle{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-height:49px;padding:4px!important;background:#3e193040!important;border:1px solid #ac668365!important;border-radius:11px!important;color:#f1cbd9!important;font:10px/1.1 system-ui,sans-serif!important;box-shadow:none!important;}
+#app.loveroll-eclat-page .eclat-audio-toggle svg{width:23px;height:23px;}
+#app.loveroll-eclat-page .eclat-audio-toggle.is-on{border-color:#e592b3!important;color:#fff!important;}
+#app.loveroll-eclat-page :is(.eclat-library,.eclat-detail,.eclat-play){flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;}
+#app.loveroll-eclat-page .eclat-intro{text-align:center;flex:none;padding:4px 4px 9px;}
+#app.loveroll-eclat-page .eclat-intro h2{font:italic 400 clamp(22px,5vw,29px)/1.1 Georgia,serif;margin:0 0 4px;color:#ffe3ec;}
+#app.loveroll-eclat-page .eclat-intro p{font:clamp(11px,2.8vw,13px)/1.3 system-ui,sans-serif;margin:0;color:#d6a9be;}
+#app.loveroll-eclat-page .eclat-grid{
+ flex:1;min-height:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+ grid-template-rows:repeat(4,minmax(0,1fr));gap:7px;padding:1px 0;
+}
+#app.loveroll-eclat-page button.eclat-tile{
+ min-width:0;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:space-evenly;
+ gap:1px;position:relative;padding:7px 5px!important;text-align:center!important;
+ border:1px solid #da7e9a70!important;border-radius:15px!important;
+ background:radial-gradient(ellipse at 50% 10%,#973b6760,transparent 75%),linear-gradient(145deg,#361428e8,#180b16ee)!important;
+ color:#ffe3ed!important;box-shadow:inset 0 1px #ffd7ea20,0 5px 11px #0002!important;
+}
+#app.loveroll-eclat-page .eclat-tile-number{position:absolute;left:8px;top:6px;font:9px system-ui;color:#c88ea9;}
+#app.loveroll-eclat-page .eclat-tile-icon{font:clamp(22px,6vw,33px)/1 Georgia,serif;color:#f6accb;text-shadow:0 0 15px #e469a964;}
+#app.loveroll-eclat-page .eclat-tile strong{font:500 clamp(11px,3.05vw,14px)/1.1 Georgia,serif;max-width:96%;overflow-wrap:anywhere;}
+#app.loveroll-eclat-page .eclat-tile-arrow{position:absolute;right:8px;top:4px;font-size:18px;color:#d98eac;}
+#app.loveroll-eclat-page .eclat-library-offer{flex:none;text-align:center;margin:8px 0 2px;font-size:12px;color:#f8d1df;}
+#app.loveroll-eclat-page .eclat-disclaimer{flex:none;font-size:9px;color:#b38ba1;text-align:center;line-height:1.3;margin:0 0 3px;}
+#app.loveroll-eclat-page .eclat-complete{font-size:11px;text-align:center;color:#ffe0eb;background:#6b22413d;border:1px solid #d578a15d;border-radius:8px;padding:5px;}
+#app.loveroll-eclat-page .eclat-detail{align-items:center;text-align:center;gap:10px;justify-content:center;}
+#app.loveroll-eclat-page .eclat-orb{
+ width:clamp(85px,19vh,155px);height:clamp(85px,19vh,155px);flex:none;border-radius:50%;
+ display:grid;place-items:center;position:relative;
+ background:radial-gradient(circle at 30% 25%,#ffd9eee0 0%,#e989bcae 20%,#9e3d78c9 50%,#38102b 76%);
+ color:#ffeaf5;font:75px/1 Georgia,serif;box-shadow:inset 0 2px 25px #fff6,0 0 40px #cf4a7858;
+}
+#app.loveroll-eclat-page .eclat-orb span{position:absolute;right:12%;top:8%;font-size:25px;}
+#app.loveroll-eclat-page .eclat-detail>small{font:10px/1.1 system-ui;color:#f0afc8;letter-spacing:.14em;}
+#app.loveroll-eclat-page .eclat-detail h2{font:italic 400 clamp(24px,6vw,35px)/1.06 Georgia,serif;margin:0;}
+#app.loveroll-eclat-page .eclat-detail>p{max-width:490px;margin:0;font-size:13px;line-height:1.35;color:#e0b2c6;}
+#app.loveroll-eclat-page .eclat-descriptor{display:flex;flex-wrap:wrap;justify-content:center;gap:5px;}
+#app.loveroll-eclat-page .eclat-descriptor span{background:#743a5552;border:1px solid #be759263;border-radius:99px;padding:6px 8px;font-size:10px;}
+#app.loveroll-eclat-page .eclat-duration{display:grid;gap:7px;width:100%;max-width:350px;}
+#app.loveroll-eclat-page .eclat-duration>span{font-size:12px;}
+#app.loveroll-eclat-page .eclat-duration>div{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;}
+#app.loveroll-eclat-page button.eclat-duration-choice{background:#321626!important;color:#eac3d1!important;border:1px solid #a9617a!important;border-radius:9px!important;min-height:37px!important;padding:5px!important;}
+#app.loveroll-eclat-page button.eclat-duration-choice.is-selected{background:#954365!important;color:#fff!important;border-color:#fab3d2!important;}
+#app.loveroll-eclat-page button.eclat-primary{display:grid;place-items:center;width:100%;max-width:380px;min-height:44px!important;background:linear-gradient(145deg,#dd8aaa,#ae426d,#612140)!important;color:#fff9fb!important;border:1px solid #f2b6ce!important;border-radius:16px!important;font-weight:600!important;letter-spacing:.01em!important;padding:9px 15px!important;box-shadow:0 8px 21px #bd49743b!important;}
+#app.loveroll-eclat-page button.eclat-primary:disabled{opacity:.48;}
+#app.loveroll-eclat-page button.eclat-link,#app.loveroll-eclat-page button.eclat-skip{background:transparent!important;color:#e3afc4!important;box-shadow:none!important;border:0!important;font-size:12px!important;padding:6px!important;}
+#app.loveroll-eclat-page .eclat-paywall{display:grid;gap:5px;width:100%;max-width:380px;padding:8px;border:1px solid #b76a8a5c;border-radius:12px;}
+#app.loveroll-eclat-page .eclat-paywall p{font-size:12px;margin:0;}
+#app.loveroll-eclat-page .eclat-progress{display:flex;justify-content:space-between;gap:6px;align-items:center;font-size:11px;color:#e7b7cb;padding:4px 0 7px;}
+#app.loveroll-eclat-page .eclat-progress small{font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:66%;}
+#app.loveroll-eclat-page .eclat-progress-track{height:4px;flex:none;border-radius:20px;background:#4d1c35;overflow:hidden;}
+#app.loveroll-eclat-page .eclat-progress-track span{display:block;height:100%;border-radius:20px;background:#ffaccc;transition:width .3s ease;}
+#app.loveroll-eclat-page .eclat-story{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;flex:1;min-height:0;text-align:center;padding:8px 8px 4px;}
+#app.loveroll-eclat-page .eclat-chapter-symbol{display:grid;place-items:center;width:clamp(44px,11vh,79px);height:clamp(44px,11vh,79px);flex:none;border:1px solid #f6adcaa6;border-radius:50%;background:radial-gradient(circle at 45% 25%,#ef9cb77a,#6b1e47 75%);box-shadow:0 0 24px #a52c6178;color:#ffe4ed;font:clamp(27px,8vh,50px)/1 Georgia,serif;}
+#app.loveroll-eclat-page .eclat-story>small{font:10px/1.2 system-ui;color:#e9b2ca;letter-spacing:.12em;text-transform:uppercase;}
+#app.loveroll-eclat-page .eclat-story h2{font:italic 400 clamp(22px,5.8vw,35px)/1.05 Georgia,serif;color:#ffe8ee;margin:0;}
+#app.loveroll-eclat-page .eclat-story-main{font:clamp(12px,3.25vw,16px)/1.35 system-ui,sans-serif;color:#f4d4df;margin:0;max-width:540px;}
+#app.loveroll-eclat-page .eclat-private{margin:3px 0 0;padding:9px 11px;background:#461b3370;border:1px solid #d37ea26b;border-radius:14px;max-width:560px;width:100%;}
+#app.loveroll-eclat-page .eclat-private small{font-size:9px;letter-spacing:.12em;color:#e8a6c4;}
+#app.loveroll-eclat-page .eclat-private p{font:clamp(12px,3.05vw,15px)/1.28 system-ui;margin:5px 0 0;}
+#app.loveroll-eclat-page .eclat-choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;flex:none;margin:3px 0;}
+#app.loveroll-eclat-page button.eclat-choice{padding:8px 5px!important;font-size:clamp(10px,2.8vw,13px)!important;min-height:49px!important;line-height:1.2!important;min-width:0;display:grid;place-items:center;text-align:center!important;border-radius:12px!important;border:1px solid #d994b4!important;background:linear-gradient(#a14b76,#622541)!important;color:#fff5fa!important;}
+#app.loveroll-eclat-page .eclat-skip{grid-column:1/-1;min-height:25px!important;padding:1px!important;}
+#app.loveroll-eclat-page .eclat-reveal,#app.loveroll-eclat-page .eclat-wait{padding:11px 9px;background:#6b304c50;border:1px solid #ed9fbd80;border-radius:12px;text-align:center;line-height:1.35;font-size:13px;margin:5px 0;}
+#app.loveroll-eclat-page .eclat-reveal small{font-size:10px;color:#ffd0e6;letter-spacing:.09em;}
+#app.loveroll-eclat-page .eclat-reveal p{margin:5px 0 0;}
+#app.loveroll-eclat-page .eclat-spinner{display:inline-block;width:12px;height:12px;border:2px solid #fad7e5;border-top-color:transparent;border-radius:50%;animation:eclat-spin .8s linear infinite;vertical-align:middle;margin-right:7px;}
+@keyframes eclat-spin{to{transform:rotate(360deg)}}
+#app.loveroll-eclat-page .eclat-play-footer{flex:none;display:grid;justify-items:center;gap:3px;margin-bottom:4px;}
+#app.loveroll-eclat-page .eclat-play-bottom{width:100%;display:flex;align-items:center;justify-content:space-between;gap:5px;}
+#app.loveroll-eclat-page .eclat-play-bottom span{font-size:10px;color:#c7a6b4;line-height:1.25;}
+#app.loveroll-eclat-page .nav{z-index:5000!important;}
+#app.loveroll-eclat-page .nav button[data-action="tab:session"]{color:#ffdeed;border-color:#e689ad4d;background:linear-gradient(130deg,#7c2456,#4a1d42);}
+#app.loveroll-evening-page button.eclat-evening-entry{
+ font:500 12px/1.1 system-ui!important;background:#48203bba!important;border:1px solid #a8658aaa!important;
+ border-radius:12px!important;color:#ffe0ea!important;padding:7px 10px!important;margin:3px auto!important;width:min(100%,340px);min-height:34px!important;
+}
+@media (max-height:690px){
+ #app.loveroll-eclat-page .eclat-shell{padding-top:4px;}
+ #app.loveroll-eclat-page .eclat-top{height:55px;margin-bottom:3px;}
+ #app.loveroll-eclat-page .eclat-intro{padding:2px 0 6px;}
+ #app.loveroll-eclat-page .eclat-story{gap:5px;padding:2px;}
+ #app.loveroll-eclat-page .eclat-story-main{font-size:12px;line-height:1.25;}
+ #app.loveroll-eclat-page .eclat-private{padding:6px;}
+ #app.loveroll-eclat-page .eclat-choices button.eclat-choice{min-height:41px!important;}
+ #app.loveroll-eclat-page .eclat-detail{gap:6px;}
+ #app.loveroll-eclat-page .eclat-orb{width:70px;height:70px;font-size:44px;}
+}
+@media (min-width:700px){
+ #app.loveroll-eclat-page .eclat-grid{gap:10px;}
+ #app.loveroll-eclat-page .eclat-tile strong{font-size:16px;}
+ #app.loveroll-eclat-page .eclat-shell{max-width:750px;padding-left:28px;padding-right:28px;}
+}
+@media (prefers-reduced-motion:reduce){#app.loveroll-eclat-page *,#app.loveroll-eclat-page *::before{animation:none!important;transition:none!important;}}
