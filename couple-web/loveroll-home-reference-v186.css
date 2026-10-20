@@ -1,0 +1,83 @@
+/* LoveRoll v186 — accueil : revenir au vrai socle photographique.
+   Le modèle validé montre un dé SANS cadre, posé sur un socle de marbre.
+   Ne modifie ni les probabilités, ni les actions, ni les valeurs enregistrées. */
+main#app.loveroll-real-home .home-die-theater{
+  /* Le moteur WebGL aligne la base du dé sur la ligne y=678 de cette photo 1536x1024. */
+  background-image:url('./assets/ritual-satin-v115.webp')!important;
+  background-position:center 62%!important;
+  background-size:cover!important;
+  background-repeat:no-repeat!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  outline:0!important;
+  -webkit-mask-image:linear-gradient(to bottom,transparent,#000 7%,#000 94%,transparent)!important;
+  mask-image:linear-gradient(to bottom,transparent,#000 7%,#000 94%,transparent)!important;
+}
+/* Retrouver les chandelles/roses sur les bords sans cacher le marbre ni
+   changer la photo que le verre WebGL doit réfracter. */
+main#app.loveroll-real-home .home-die-theater::before{
+  content:"";position:absolute;inset:0;z-index:0;
+  pointer-events:none;
+  background:url('./assets/loveroll-romance-scene-v183.webp') center center/cover no-repeat;
+  -webkit-mask-image:linear-gradient(90deg,#000 0%,#0009 16%,transparent 36%,transparent 64%,#0009 84%,#000 100%);
+  mask-image:linear-gradient(90deg,#000 0%,#0009 16%,transparent 36%,transparent 64%,#0009 84%,#000 100%);
+  opacity:.72;
+}
+main#app.loveroll-real-home .home-die-platform{
+  z-index:1;
+}
+/* La maquette utilise des libellés serif en verre rubis, jamais un bouton
+   capitalisé en police système avec une flèche ajoutée. */
+main#app.loveroll-real-home .home-roll-button:not(.is-used){
+  width:100%!important;
+  font-family:Georgia,'Times New Roman',serif!important;
+  font-size:clamp(19px,5.2vw,29px)!important;
+  font-weight:500!important;
+  letter-spacing:0!important;
+  text-transform:none!important;
+  border:1.5px solid #ff7890!important;
+  background:
+    radial-gradient(ellipse at 50% -24%,#ff9db8b8,transparent 72%),
+    linear-gradient(180deg,#df113f 0%,#970523 43%,#37000f 79%,#b00932 100%)!important;
+  box-shadow:inset 0 2px 3px #ffdaeaee,inset 0 -3px 3px #f92b6382,0 0 11px #f8174b91!important;
+}
+main#app.loveroll-real-home .home-roll-button:not(.is-used)::after{
+  content:none!important;
+}
+main#app.loveroll-real-home .home-next-month{
+  grid-template-columns:45px minmax(0,1fr) 0px!important;
+  background:
+    radial-gradient(ellipse at 50% -20%,#f24c74a6,transparent 62%),
+    linear-gradient(180deg,#8b0728 0%,#35000f 70%,#7c0725 100%)!important;
+  border:1.5px solid #f35879!important;
+  box-shadow:inset 0 2px 2px #ffd3e599,inset 0 -2px 5px #fa245d70,0 0 8px #ec285a55!important;
+}
+main#app.loveroll-real-home .home-next-month>span:nth-child(2){
+  align-items:center!important;
+  text-align:center!important;
+}
+main#app.loveroll-real-home .home-next-month strong{
+  color:#fff0e9!important;
+  font-family:Georgia,'Times New Roman',serif!important;
+  font-size:clamp(19px,5.2vw,27px)!important;
+  font-weight:500!important;
+  letter-spacing:-.025em!important;
+}
+main#app.loveroll-real-home .home-next-month small,
+main#app.loveroll-real-home .home-next-month em{color:#f5c5d0!important;}
+main#app.loveroll-real-home .home-gift-icon{visibility:hidden!important;}
+main#app.loveroll-real-home .home-weights{
+  background:linear-gradient(145deg,#3c020edf,#210008e8)!important;
+  border:1px solid #f3607bba!important;
+  box-shadow:inset 0 1px 1px #ffd8e633,0 0 9px #e81f5033!important;
+}
+main#app.loveroll-real-home .home-panel{
+  background:linear-gradient(150deg,#31000dcf,#260008d9 65%,#3e0514cc)!important;
+  border:1px solid #e64b6dac!important;
+  box-shadow:inset 0 1px 1px #ffd9e130,0 0 8px #d51e492d!important;
+}
+@media(max-width:767px) and (max-height:700px){
+  main#app.loveroll-real-home .home-roll-button:not(.is-used){font-size:18px!important;}
+  main#app.loveroll-real-home .home-next-month strong{font-size:18px!important;}
+}
