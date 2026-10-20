@@ -114,7 +114,7 @@ test('Photographic Éclat shows exactly 12 clickable matching coffret pictures',
  assert.match(style,/eclat-photo-strip\.webp/);
  assert.match(style,/repeat\(6,minmax\(0,1fr\)\)/);
  assert.match(style,/ritual-heading-height/);
- assert.match(style,/\.nav-inner>button/);
+ assert.match(read('./loveroll-nav-home-v181.css'),/\.nav-inner>button/);
 });
 
 test('Account preview helper never grants Eclat or admin server permissions',async()=>{
