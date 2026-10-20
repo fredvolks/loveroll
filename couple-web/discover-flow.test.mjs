@@ -90,7 +90,7 @@ test('iPad invitation fits one viewport without carousel or overlapping poster',
  assert.match(responsive,/\.discover-editorial-die>img\{/);
  assert.match(responsive,/object-fit:contain!important/);
  assert.match(responsive,/overflow:hidden!important/);
- assert.match(html,/responsive-tablet-desktop\.css\?v=20261017-spacing125/);
+ assert.match(html,/responsive-tablet-desktop\.css\?v=20261020-tablet185/);
  assert.equal((h.match(/class="discover-editorial-item /g)||[]).length,4);
  assert.doesNotMatch(h,/carousel|slider|swiper|overflow-x:auto/i);
 });
