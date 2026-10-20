@@ -30,7 +30,7 @@ test('Inactive Soirée invites a roll and shows actual progress through 200 chal
     {category:'SENSUEL',face:2,status:'accepted'}],2]
  ]){
   const html=premiumEveningHtml({members,challengeHistory});
-  assert.match(html,/<h2 class="ritual-page-title">200 défis à vivre à deux<\/h2><\/div>/);
+  assert.match(html,/<h2 class="ritual-page-title">200 défis à vivre à deux<\/h2><nav class="ritual-mode-switcher"/);
   assert.doesNotMatch(html,/Brassez le dé et découvrez votre prochain défi/);
   assert.ok(html.includes('<strong>'+count+' / 200</strong><span>Défis complétés</span>'));
   assert.doesNotMatch(html,/Nos défis disponibles|100 \+ 100|idées jouables|résultats synchronisés/);
