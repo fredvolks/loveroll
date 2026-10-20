@@ -6,6 +6,7 @@ on:
     paths:
       - 'app/**'
       - '.github/workflows/android.yml'
+      - 'couple-web/native-splash-parity.test.mjs'
   workflow_dispatch:
 jobs:
   release:
