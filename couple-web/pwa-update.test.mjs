@@ -6,7 +6,7 @@ const read=file=>readFileSync(new URL('./'+file,import.meta.url),'utf8');
 const html=read('index.html'),app=read('app.js'),sw=read('service-worker.js');
 const release=JSON.parse(read('web-version.json'));
 test('LoveRoll build versions agree between endpoint, app, HTML and imported modules',()=>{
- const build='2026-10-20.190',tag='20261015-no-toast87',appTag='20261020-master190',inviteTag='20261018-safari150',controlsTag='20261017-controls141',diceTag='20261020-master190';
+ const build='2026-10-20.190',tag='20261015-no-toast87',appTag='20261020-master190',inviteTag='20261018-safari150',controlsTag='20261017-controls141',diceTag='20261020-home189';
  assert.equal(release.build,build);
  assert.ok(app.includes('invite-links.mjs?v='+inviteTag));
  assert.ok(sw.includes('./assets/loveroll-messenger-og-v142.jpg'));
@@ -18,6 +18,9 @@ test('LoveRoll build versions agree between endpoint, app, HTML and imported mod
  }
  assert.ok(html.includes('ritual-scenes.css?v=20261017-scenes138'));
  assert.ok(sw.includes('./ritual-scenes.css'));
+ assert.ok(sw.includes('./assets/home-reference-approved-v190.webp'));
+ assert.ok(html.includes('./approved-home-idle-v190.css?v=20261020-master190'));
+ assert.ok(html.includes('./approved-home-idle-v190.js?v=20261020-master190'));
  for(const f of ['eclat.css','eclat-catalog.mjs','eclat-scenes-a.mjs','eclat-scenes-b.mjs','eclat-ui.mjs','eclat-audio.mjs'])assert.ok(sw.includes('./'+f),f+' must be cached');
  assert.ok(html.includes('ritual-titles.css?v=20261020-switch178'));
  assert.ok(sw.includes('./ritual-titles.css'));
@@ -33,7 +36,7 @@ test('LoveRoll build versions agree between endpoint, app, HTML and imported mod
  assert.ok(html.includes('evening-calendar.css?v=20261018-stats148'));
  assert.ok(app.includes('couple-live-sync.mjs?v=20261017-advent119'));
  assert.ok(html.includes('premium-advent.css?v=20261019-ipad155'));
- assert.match(app,/const WEB_RELEASE='2026-10-20\.189'/);
+ assert.match(app,/const WEB_RELEASE='2026-10-20\.190'/);
  assert.ok(html.includes('bubble-centering.css?v=20261020-ecrin177'));
  assert.ok(sw.includes('./bubble-centering.css'));
  assert.ok(html.includes('eclat.css?v=20261020-switch178'));

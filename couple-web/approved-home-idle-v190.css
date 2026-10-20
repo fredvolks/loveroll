@@ -43,6 +43,19 @@
     visibility:hidden!important;
     pointer-events:none!important;
   }
+  main#app.loveroll-real-home.approved-home-idle .real-home-shell > .home-ritual,
+  main#app.loveroll-real-home.approved-home-idle .real-home-shell > .home-die-theater,
+  main#app.loveroll-real-home.approved-home-idle .real-home-shell > .home-weights {
+    position:absolute!important;
+    top:0!important;
+    left:0!important;
+    width:1px!important;
+    height:1px!important;
+    min-height:0!important;
+    overflow:hidden!important;
+    visibility:hidden!important;
+    pointer-events:none!important;
+  }
   main#app.loveroll-real-home.approved-home-idle .home-roll-area {
     display:block!important;
     position:absolute!important;
@@ -115,6 +128,7 @@
     opacity:.12!important;
   }
   main#app.loveroll-real-home.approved-home-idle .home-dashboard {
+    display:none!important;
     visibility:hidden!important;
     pointer-events:none!important;
   }

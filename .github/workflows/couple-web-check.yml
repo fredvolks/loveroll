@@ -266,7 +266,8 @@ jobs:
           import {premiumHomeHtml} from './premium-home.mjs';
           import {dieOn} from './dice3d.js';
           const root=document.querySelector('#app');
-          const weekly=new URLSearchParams(location.search).has('unrolled')?null:{
+          const unrolled=new URLSearchParams(location.search).has('unrolled');
+          const weekly=unrolled?null:{
             face:2,actor:'owner',created_at:'2026-10-14T15:00:00Z'
           };
           // The connected app renders premiumHomeHtml directly; its logo is inside.
@@ -277,11 +278,11 @@ jobs:
               {recipient:'owner',category:'SEXUEL',status:'done'},
               {recipient:'partner',category:'SENSUEL',status:'pending'}
             ],
-            history:[
+            history:unrolled?[]:[
               {session_id:'historical-1',recipient:'owner',category:'SENSUEL',status:'completed',created_at:'2026-10-07T15:00:00Z'},
               {session_id:'historical-1',recipient:'partner',category:'SEXUEL',status:'completed',created_at:'2026-10-07T15:00:00Z'}
             ],
-            sessions:[{id:'historical-1',finished_at:'2026-10-07T18:00:00Z',counted:true}],
+            sessions:unrolled?[]:[{id:'historical-1',finished_at:'2026-10-07T18:00:00Z',counted:true}],
             now:new Date('2026-10-14T15:00:00Z')
           })+
           '<nav class="nav"><div class="nav-inner">'+
@@ -303,7 +304,8 @@ jobs:
           markup=page.read_text(encoding='utf8')
           markup=re.sub(r'<link rel="stylesheet" href="[^"]+">\s*','',markup)
           styles=''.join(f'<link rel="stylesheet" href="{href}">' for href in links)
-          page.write_text(markup.replace('</head>',styles+'</head>'),encoding='utf8')
+          markup=markup.replace('</head>',styles+'<script defer src="./approved-home-idle-v190.js?v=20261020-master190"></script></head>')
+          page.write_text(markup,encoding='utf8')
           print('HOME_PRODUCTION_CSS_LAYERS',len(links))
           PY
           cat > verify-real-home.cjs <<'EOF'
@@ -316,7 +318,7 @@ jobs:
              deviceScaleFactor:2,isMobile:true,hasTouch:true});
             const errors=[];page.on('pageerror',e=>errors.push(e.message));
             await page.goto('http://127.0.0.1:8765/__real-home-test.html'+(d.name==='S25-Ultra'?'?unrolled':''),{waitUntil:'load'});
-            await page.locator('.home-die-platform canvas').waitFor();
+            await page.locator('.home-die-platform canvas').waitFor({state:'attached'});
             await page.waitForFunction(()=>document.querySelector('.home-die-platform canvas')?.dataset.webglReady==='true',null,{timeout:18000});
             await page.waitForTimeout(800);
             const data=await page.evaluate(()=>{
