@@ -10,7 +10,7 @@ test('Home 193 renders live native controls, not a screenshot with hotspots',()=
  assert.match(home,/home-next-month/);
  assert.match(css,/home-roll-button:not\(\.is-used\):active/);
  assert.doesNotMatch(css,/home-reference-approved-v190/);
- assert.match(app,/title:'Brasser votre dé \?'/);
+ assert.match(app,/title:'Brasser le dé \?'/);
 });
 test('Native press animation keeps live data untouched',()=>{
  const js=read('loveroll-home-touch-v193.js'),sw=read('service-worker.js');
