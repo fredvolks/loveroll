@@ -205,7 +205,7 @@
  }
  main#app.loveroll-real-home .home-roll-button.is-used{
   display:grid!important;place-items:center!important;
-  width:100%!important;min-height:55px!important;height:55px!important;
+  width:96%!important;min-height:55px!important;height:55px!important;margin-inline:auto!important;
   font:600 clamp(11px,3.1vw,14px)/1.2 system-ui,sans-serif!important;
   text-transform:none!important;letter-spacing:0!important;
   padding:8px 12px!important;
