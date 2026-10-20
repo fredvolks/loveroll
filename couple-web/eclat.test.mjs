@@ -71,3 +71,24 @@ test('Eclat is separate from old official dice and protected by Supabase',()=>{
   assert.ok(sw.includes("'./"+file+"'"),file+' offline');
  assert.ok(!app.includes('localStorage.clear()'));
 });
+
+test('Soirée has one luxury Éclat entry on the hero and no duplicate header button',()=>{
+ const src=read('./premium-evening.mjs');
+ assert.doesNotMatch(src,/evening-eclat-shortcut/);
+ assert.equal(src.split('eclat-evening-entry').length-1,1);
+ assert.ok(src.indexOf('eclat-evening-entry')>src.indexOf('evening-finale-hero'));
+ assert.match(src,/eclat-entry-copy/);
+ assert.match(read('./eclat.css'),/eclat-entry-sigil/);
+});
+test('Music control is only shown inside an active coffret',()=>{
+ const inactive={access:true,active:false};
+ assert.doesNotMatch(eclatHtml({status:inactive}),/data-action="eclat:music"/);
+ assert.doesNotMatch(eclatHtml({status:inactive,details:true,selected:2}),/data-action="eclat:music"/);
+ const active={access:true,active:true,coffret_id:1,minutes:60,chapter_index:1,chapter_number:1,variant_number:0,
+ chapter_total:6,session_id:'t',my_choice:null,both_chosen:false,my_ready:false};
+ assert.match(eclatHtml({status:active,members:people,userId:'a'}),/data-action="eclat:music"/);
+ assert.match(eclatHtml({status:active,members:people,userId:'a',music:true}),/Couper le son/);
+ const app=read('./app.js');
+ assert.ok(app.includes("if(!state.eclat?.active){eclatAudio.stop();state.eclatMusic=false;return;}"));
+ assert.ok(app.includes("state.eclatDetails=false;eclatAudio.stop();state.eclatMusic=false;"));
+});
