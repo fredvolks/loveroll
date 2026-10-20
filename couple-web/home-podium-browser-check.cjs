@@ -70,7 +70,9 @@ const {glassState}=require('./crystal-glass-browser-check.cjs');
       assert.ok(await page.evaluate(()=>window.__homeDie===document.querySelector('.home-die-platform canvas')),'Resize replaced WebGL');
       await page.setViewportSize({width,height});
      }
-     await page.screenshot({path:'design-captures/home124-'+name+'-'+(face||'unrolled')+'.png'});console.log('HOME_PODIUM_OK',name,face,JSON.stringify(result));
+     await page.screenshot({path:'design-captures/home124-'+name+'-'+(face||'unrolled')+'.png'});
+     if(name==='S25'&&face===null){const shot=await page.screenshot({type:'jpeg',quality:47});console.log('HOME_APPROVED_VISUAL_JPEG:'+shot.toString('base64'));}
+     console.log('HOME_PODIUM_OK',name,face,JSON.stringify(result));
     }catch(error){failures.push({name,face,error:error.message});await page.screenshot({path:'design-captures/home124-'+name+'-'+(face||'unrolled')+'-FAIL.png'}).catch(()=>{});}
     finally{await context.close();}
    }
