@@ -25,9 +25,8 @@ main#app:is(.loveroll-evening-page,.loveroll-eclat-page)>.nav .nav-inner>button{
  width:auto!important;height:auto!important;max-height:none!important;
  min-width:0!important;min-height:63px!important;
  margin:0!important;padding:7px 3px 5px!important;
- border:1px solid transparent!important;border-radius:20px!important;
- background:transparent!important;box-shadow:none!important;
- color:#d6b4c4!important;font-family:inherit!important;
+ border-radius:20px!important;
+ font-family:inherit!important;
  font-size:clamp(.62rem,2.3vw,.81rem)!important;font-weight:500!important;
  line-height:1.3!important;text-align:center!important;
 }
@@ -36,15 +35,8 @@ main#app:is(.loveroll-evening-page,.loveroll-eclat-page)>.nav .nav-inner>button 
  font-size:1.43rem!important;line-height:1.4!important;
  margin:0 0 1px!important;
 }
-main#app:is(.loveroll-evening-page,.loveroll-eclat-page)>.nav .nav-inner>button.active{
- background:var(--control-selected)!important;
- border-color:var(--control-selected-border)!important;
- box-shadow:var(--control-selected-shadow)!important;
- color:var(--control-text)!important;
-}
-main#app:is(.loveroll-evening-page,.loveroll-eclat-page)>.nav .nav-inner>button.active::after{
- background:#c59ba9!important;box-shadow:none!important;
-}
+/* The selected tab inherits Accueil's one shared --control-selected rule.
+   Never override active backgrounds here. */
 @media(max-width:767px){
  main#app:is(.loveroll-evening-page,.loveroll-eclat-page)>.nav{
   padding:2px 3px calc(3px + env(safe-area-inset-bottom,0px))!important;
