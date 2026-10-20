@@ -450,7 +450,7 @@ export function dieOn(canvas,sides,value,rolling){
   // Keep the entire real mesh above the marble, including short phone scenes.
   camera.zoom=Math.min(1,(contact-sceneRect.top-headroom)/((bounds.bottom-bounds.top)*rect.height),
    (sceneRect.width-12)/((bounds.right-bounds.left)*rect.width),
-   markerVisible?(sceneRect.width*.43)/((bounds.right-bounds.left)*rect.width):1);
+   markerVisible?(sceneRect.width*.53)/((bounds.right-bounds.left)*rect.width):1);
   camera.updateProjectionMatrix();bounds=projectedBounds();
   built.group.quaternion.copy(pose);built.group.position.copy(position);built.group.updateMatrixWorld(true);
   const delta=contact-(rect.top+bounds.bottom*rect.height);

@@ -31,18 +31,18 @@
  main#app.loveroll-real-home .home-die-platform{width:310px!important;height:310px!important;z-index:3!important;}
  main#app.loveroll-real-home .home-die-platform .dice-canvas{filter:none!important;}
  main#app.loveroll-real-home .home-pedestal{
-  display:block;position:absolute;z-index:1;left:15%;width:70%;top:74%;height:25%;
-  border-radius:50% / 24%;pointer-events:none;
-  background:linear-gradient(90deg,#160b0b,#6b3b2c 4%,#160e10 18%,#2b1715 43%,#0c090a 74%,#533125 95%,#160b0b);
-  box-shadow:inset 0 -2px 3px #c08b5066,0 7px 9px #180000c4;
+  display:block;position:absolute;z-index:1;left:15%;width:70%;top:58%;height:42%;
+  border-radius:50% / 13%;pointer-events:none;overflow:hidden;
+  background:linear-gradient(90deg,#090709b8,#5b302057 9%,#0a070976 42%,#080607a6 76%,#5b302067 94%,#080608b8),url('./assets/loveroll-marble-v194.webp') center/100% 100%;
+  box-shadow:inset 0 3px 2px #e5b38969,inset 0 -4px 8px #050304,0 7px 12px #180000c4;
  }
  main#app.loveroll-real-home .home-pedestal::before{
-  content:"";position:absolute;left:0;width:100%;top:-25%;height:70%;border-radius:50%;
-  background:linear-gradient(#1d0d0740,#10080725),url('./assets/loveroll-marble-v194.webp') center/cover;
-  border:1px solid #dba472bd;box-shadow:inset 0 2px 3px #e0a96e55,0 2px 2px #f0b1754d;
+  content:"";position:absolute;left:0;width:100%;top:0;height:56%;border-radius:50%;box-sizing:border-box;
+  background:linear-gradient(#a16a4b12,#10080922),url('./assets/loveroll-marble-v194.webp') center/cover;
+  border:1px solid #bd876da8;box-shadow:inset 0 2px 7px #e0a96e32,0 3px 4px #070404;
  }
- main#app.loveroll-real-home .home-pedestal::after{content:"";position:absolute;width:45%;height:24%;left:27.5%;top:0;border-radius:50%;background:#13000290;filter:blur(4px);}
- main#app.loveroll-real-home .home-pedestal-contact{position:absolute;top:10%;left:50%;width:0;height:0;}
+ main#app.loveroll-real-home .home-pedestal::after{display:none;}
+ main#app.loveroll-real-home .home-pedestal-contact{position:absolute;top:31%;left:50%;width:0;height:0;}
  main#app.loveroll-real-home .home-weights{height:46px!important;border-radius:12px!important;border-color:#cb8c7e!important;background:#280102df!important;box-shadow:inset 0 1px 2px #e4b2a12b!important;}
  main#app.loveroll-real-home .home-weight b,main#app.loveroll-real-home .home-weight span{font:400 11px/1.05 Arial,sans-serif!important;}
  main#app.loveroll-real-home .home-roll-area,main#app.loveroll-real-home .home-roll-button{height:51px!important;min-height:51px!important;}
