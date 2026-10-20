@@ -129,3 +129,15 @@
   width:18px!important;height:20px!important;font-size:23px!important;line-height:20px!important;
  }
 }
+
+/* The old generic tablet/desktop selector matches Éclat and applies
+   height:auto + padded main.  Opt the fixed Éclat experience out of it,
+   preserving the full-height navbar and the six-row photo gallery. */
+@media(min-width:768px){
+ main#app.loveroll-eclat-page:has(>nav.nav){
+  height:100dvh!important;min-height:100dvh!important;max-height:100dvh!important;
+  width:100%!important;max-width:none!important;
+  margin:0!important;padding:0!important;
+  overflow:hidden!important;display:block!important;
+ }
+}
