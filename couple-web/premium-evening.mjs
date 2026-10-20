@@ -154,7 +154,7 @@ export function premiumEveningHtml({
  '<div class="evening-toolbar">'+
   (session?'<button type="button" class="evening-back" data-action="tab:home" aria-label="Retour à l’accueil">‹</button>':'<span></span>')+
   ritualHeadingHtml(session?(ready?'ÉTAPE 2 · DÉFI DU SOIR':'ÉTAPE 1 · NOMBRE DE DÉFIS'):'NOTRE RITUEL DE LA SOIRÉE')+
-  (session?'<button type="button" class="evening-manage" data-action="evening-more" aria-label="Gérer notre soirée">⋯</button>':'<span></span>')+'</div>'+
+  (session?'<button type="button" class="evening-manage" data-action="evening-more" aria-label="Gérer notre soirée">⋯</button>': '<button type="button" class="evening-eclat-shortcut" data-action="tab:eclat" aria-label="Découvrir les douze coffrets Éclat">✦ Éclat</button>')+'</div>'+
  '<div class="evening-intro">'+
  '<h2 class="ritual-page-title">'+(session?(ready?'Votre défi du soir':'À toi de brasser ton dé'):'200 défis à vivre à deux')+'</h2></div>'+
  (session?
@@ -241,7 +241,7 @@ export function premiumEveningHtml({
   '</div></section>')+
  (showMore&&session?'<aside class="evening-more-menu" aria-label="Options de la soirée">'+
   bt('evening-close-request','♡ Clore la soirée','evening-menu-close',!session)+
-  bt('evening-calendar','▦ Calendrier','evening-menu-calendar')+'</aside>':'')+
+  bt('evening-calendar','▦ Calendrier','evening-menu-calendar')+bt('tab:eclat','✦ Découvrir Éclat · 12 coffrets','evening-menu-eclat')+'</aside>':'')+
  (confirmCancel&&session?'<aside class="evening-confirm" role="dialog" aria-modal="true" aria-label="Clore la soirée ?">'+
   '<h3>Clore la soirée ?</h3><p>Les défis réalisés et non réalisés seront conservés dans le calendrier et les statistiques du couple. Aucun résultat ne sera effacé.</p>'+
   bt('evening-close-confirm','♡ Clore et conserver','evening-primary')+
