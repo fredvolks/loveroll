@@ -53,9 +53,16 @@ const assert=require('node:assert/strict');
       const labels=[...document.querySelectorAll('.advent-state-label')];
       for(const label of labels)testCopy(label,[label],'advent-state');
      }else if(mode==='evening'){
-      const e=document.querySelector('.evening-eclat-shortcut');
+      const e=document.querySelector('.evening-finale-hero .eclat-evening-entry');
+      const hero=document.querySelector('.evening-finale-hero');
       ret.eclat=!!e&&e.dataset.action==='tab:eclat';
-      if(e)ret.eclatTextOffset=Math.abs(center(e).x-lines(e)[0]?.x);
+      ret.duplicateHeader=!!document.querySelector('.evening-toolbar .evening-eclat-shortcut');
+      if(e&&hero){
+       const button=box(e),background=box(hero);
+       ret.eclatBounds={width:button.width,height:button.height,left:button.left,right:button.right,bottom:button.bottom};
+       ret.eclatInside=button.width>=175&&button.height>=40&&button.left>=background.left-1&&
+        button.right<=background.right+1&&button.top>=background.top-1&&button.bottom<=background.bottom+1;
+      }
      }
      return ret;
     },mode);
@@ -75,8 +82,9 @@ const assert=require('node:assert/strict');
       for(const x of m.mids)assert.ok(x.errorX<=2,'Advent state misaligned: '+JSON.stringify({viewport,x}));
     }
     if(mode==='evening'){
-      assert.equal(m.eclat,true,'Soirée has no visible Éclat entry');
-      assert.ok(m.eclatTextOffset<=2,'Soirée Éclat label not centered');
+      assert.equal(m.eclat,true,'Soirée has no visible Éclat invitation in its hero');
+      assert.equal(m.duplicateHeader,false,'Duplicate Éclat shortcut in the header');
+      assert.equal(m.eclatInside,true,'Éclat invitation must fit inside the photographic hero: '+JSON.stringify({viewport,m}));
     }
     console.log('BUBBLE_PREMIUM_CENTER_OK',viewport.width+'x'+viewport.height,mode);
    }finally{await page.close();}
