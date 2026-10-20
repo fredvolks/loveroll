@@ -25,7 +25,7 @@ async function setupEditorial(browser,world,{width=412,height=824,actor='a',quer
   const types={'.html':'text/html','.css':'text/css','.js':'application/javascript','.mjs':'application/javascript','.json':'application/json','.svg':'image/svg+xml','.webp':'image/webp','.png':'image/png'};
   await route.fulfill({contentType:types[path.extname(f)]||'application/octet-stream',body:fs.readFileSync(f)});
  });
- await context.route('https://esm.sh/@supabase/supabase-js@2.57.0*',r=>r.fulfill({contentType:'application/javascript',body:fixtureClient}));
+ await context.route('https://esm.sh/@supabase/supabase-js@2.107.0*',r=>r.fulfill({contentType:'application/javascript',body:fixtureClient}));
  await context.route('**/__editorial-api',async route=>{
   const req=JSON.parse(route.request().postData()),uid=world.sessions[req.actor],{name,args={}}=req;let data=[],error=null;
   if(req.auth){
