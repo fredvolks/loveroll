@@ -62,6 +62,7 @@ jobs:
           node couple-web/boot-smoke.cjs
           node couple-web/checkout-one-screen-browser-check.cjs
           node couple-web/eclat-browser-check.cjs
+          node couple-web/eclat-visual-parity-v184.cjs
           node couple-web/settings-picker-browser-check.cjs
           node couple-web/eclat-parity-browser-check.cjs
           node couple-web/nav-home-parity-browser-check.cjs

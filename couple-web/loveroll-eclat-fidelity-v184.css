@@ -1,0 +1,131 @@
+/* LoveRoll 184 — photographed Éclat catalogue fidelity.
+   Source of truth: approved coffrets_à_deux_loveroll_à_la_chandelle.png.
+   Visual-only: no change to catalog IDs, dice, RPC, subscription access or click handlers. */
+#app.loveroll-eclat-page{
+ background-image:linear-gradient(110deg,#16000536,#16000816 45%,#26040b32),var(--loveroll-photo)!important;
+ background-position:center center!important;
+ background-size:cover!important;
+}
+#app.loveroll-eclat-page .eclat-photo-grid {
+ grid-template-columns:repeat(2,minmax(0,1fr))!important;
+ grid-template-rows:repeat(6,minmax(0,1fr))!important;
+ gap:clamp(6px,.9dvh,11px)!important;
+ padding:1px 1px 3px!important;
+ align-content:stretch!important;
+}
+#app.loveroll-eclat-page .eclat-photo-grid button.eclat-tile{
+ position:relative!important;isolation:isolate!important;overflow:hidden!important;
+ display:block!important;min-width:0!important;min-height:0!important;
+ padding:0!important;margin:0!important;
+ border:1px solid #f0785db8!important;
+ border-radius:clamp(10px,2.8vw,16px)!important;
+ background:#21020b!important;
+ box-shadow:inset 0 0 0 1px #720c1c92,inset 0 1px #ffe7c34d,
+            0 0 6px #8a0c2235!important;
+ text-align:left!important;
+}
+#app.loveroll-eclat-page .eclat-photo-grid button.eclat-tile .eclat-tile-photo{
+ position:absolute!important;inset:0!important;z-index:-2!important;
+ width:100%!important;height:100%!important;
+ background-image:url('./assets/eclat-photo-strip-v183.webp')!important;
+ background-position:center var(--photo-y,0%)!important;
+ background-size:100% 1200%!important;
+ background-repeat:no-repeat!important;
+ filter:saturate(1.13) contrast(1.06) brightness(1.02)!important;
+ opacity:1!important;pointer-events:none!important;
+}
+#app.loveroll-eclat-page .eclat-photo-grid button.eclat-tile::after{
+ content:""!important;position:absolute!important;inset:0!important;z-index:-1!important;
+ pointer-events:none!important;
+ background:linear-gradient(180deg,#16020522 0%,transparent 24%,
+  #18010808 46%,#140106d0 100%)!important;
+}
+#app.loveroll-eclat-page .eclat-photo-grid button.eclat-tile .eclat-tile-number{
+ position:absolute!important;display:block!important;z-index:2!important;
+ inset:clamp(7px,1.25dvh,12px) auto auto clamp(8px,1.5vw,13px)!important;
+ transform:none!important;margin:0!important;padding:0!important;
+ width:auto!important;height:auto!important;line-height:1!important;
+ font:400 clamp(12px,3.5vw,16px)/1 Georgia,"Times New Roman",serif!important;
+ color:#fff3e9!important;text-shadow:0 1px 4px #12010add!important;
+ text-align:left!important;pointer-events:none!important;
+}
+#app.loveroll-eclat-page .eclat-photo-grid button.eclat-tile strong{
+ position:absolute!important;display:block!important;z-index:2!important;
+ inset:auto auto clamp(7px,1.15dvh,11px) clamp(8px,1.5vw,13px)!important;
+ transform:none!important;margin:0!important;padding:0!important;
+ width:auto!important;max-width:calc(100% - 22px)!important;
+ height:auto!important;min-height:0!important;
+ text-align:left!important;font:400 clamp(12px,3.55vw,18px)/1.06 Georgia,"Times New Roman",serif!important;
+ letter-spacing:-.015em!important;color:#fff6ec!important;
+ white-space:normal!important;word-break:normal!important;overflow-wrap:normal!important;
+ text-shadow:0 2px 6px #0a0109ed!important;pointer-events:none!important;
+}
+#app.loveroll-eclat-page .eclat-photo-grid button.eclat-tile .eclat-tile-arrow{
+ position:absolute!important;display:grid!important;place-items:center!important;z-index:2!important;
+ inset:clamp(6px,.95dvh,10px) clamp(6px,1.05vw,11px) auto auto!important;
+ transform:none!important;margin:0!important;padding:0!important;
+ width:22px!important;height:24px!important;
+ text-align:center!important;color:#fff7ee!important;
+ font:normal 27px/24px Georgia,"Times New Roman",serif!important;
+ text-shadow:0 1px 4px #070106!important;pointer-events:none!important;
+}
+#app.loveroll-eclat-page .eclat-library:has(.eclat-photo-grid) .eclat-library-offer,
+#app.loveroll-eclat-page .eclat-library:has(.eclat-photo-grid) .eclat-disclaimer{
+ display:none!important;
+}
+#app.loveroll-eclat-page .eclat-library:has(.eclat-photo-grid){padding-bottom:clamp(4px,.8dvh,9px)!important;}
+/* Luminous gold is reserved for the premium option.
+   Gold outline is multi-layered inside a real interactive button. */
+#app .ritual-mode-switcher button.ritual-mode-premium{
+ position:relative!important;isolation:isolate!important;overflow:visible!important;
+ background:radial-gradient(ellipse 80% 110% at 40% -22%,#c8335988,transparent 65%),
+            linear-gradient(180deg,#650b24 0%,#340417 66%,#18020c 100%)!important;
+ border:1px solid #f5c678!important;
+ color:#ffe5b6!important;
+ box-shadow:inset 0 0 0 1px #a95c2e,inset 0 1px 1px #ffeab5b6,
+            inset 0 -1px 2px #f052786c,
+            0 0 0 1px #8d391f,0 0 9px #dd66394d!important;
+}
+#app .ritual-mode-switcher button.ritual-mode-premium.is-active{
+ background:radial-gradient(ellipse 85% 95% at 30% -17%,#ff9bb5ba 0%,
+             #f4376682 17%,transparent 55%),
+            radial-gradient(ellipse 90% 68% at 65% 112%,#cf0a418b,transparent 72%),
+            linear-gradient(180deg,#bd0f3c 0%,#820620 19%,#420414 62%,
+            #1d020c 84%,#bd113f 100%)!important;
+ border-color:#ffe5a2!important;
+ color:#fff0dc!important;
+ box-shadow:inset 0 0 0 1px #a05222,inset 0 2px 1px #fff5d0d9,
+            inset 0 -2px 2px #ff7b917f,0 0 0 1px #ecaa56,
+            0 0 12px #fc254b9c,0 0 4px #ffdb997d!important;
+}
+#app .ritual-mode-switcher button.ritual-mode-premium::before{
+ content:"";pointer-events:none;position:absolute;inset:2px;
+ border-radius:inherit;
+ border:1px solid #f5bd73b2;
+ box-shadow:inset 0 1px 1px #ffebc766,0 -1px 3px #ffa06433;
+}
+#app .ritual-mode-switcher button.ritual-mode-premium.is-active::before{
+ border-color:#fff0bfc9;
+ box-shadow:inset 0 1px 1px #fff6e1d6,0 0 6px #f7a34f91;
+}
+#app .ritual-mode-switcher button.ritual-mode-premium :is(.ritual-mode-icon,.ritual-premium-copy strong,.ritual-premium-copy small){
+ color:#ffe4ac!important;text-shadow:0 1px 3px #26040b;
+}
+#app .ritual-mode-switcher button:not(.ritual-mode-premium).is-active{
+ background:var(--loveroll-ruby-button)!important;
+ border-color:#ff4b75!important;
+ box-shadow:var(--loveroll-ruby-ring)!important;
+}
+/* The generic navigation must always remain ruby, never gold. */
+#app .nav .nav-inner>button.active{border-color:#f04d78!important;}
+@media(max-width:380px),(max-height:700px){
+ #app.loveroll-eclat-page .eclat-photo-grid button.eclat-tile strong{
+  font-size:clamp(10px,3vw,13px)!important;line-height:1.03!important;
+ }
+ #app.loveroll-eclat-page .eclat-photo-grid button.eclat-tile .eclat-tile-number{
+  font-size:clamp(10px,2.9vw,13px)!important;
+ }
+ #app.loveroll-eclat-page .eclat-photo-grid button.eclat-tile .eclat-tile-arrow{
+  width:18px!important;height:20px!important;font-size:23px!important;line-height:20px!important;
+ }
+}
