@@ -9,7 +9,7 @@ export function eclatHtml({status=null,selected=1,minutes=60,details=false,membe
  const access=status?.access===true,active=status?.active===true;
  const c=eclatCoffret(active?status.coffret_id:selected)||ECLAT_COFFRETS[0];
  const heading='<header class="eclat-top"><button type="button" class="eclat-return" data-action="eclat:back" aria-label="Retour à Soirée">‹</button><div><small>♡ LOVEROLL</small><h1>Éclat</h1></div>'+
-  btn('eclat:music',headphones+'<span>'+(music?'Son activé':'Musique')+'</span>','eclat-audio-toggle'+(music?' is-on':''))+'</header>';
+  (active?btn('eclat:music',headphones+'<span>'+(music?'Couper le son':'Musique')+'</span>','eclat-audio-toggle'+(music?' is-on':'')):'<span class="eclat-header-balance" aria-hidden="true"></span>')+'</header>';
  const lead=finished?'<div class="eclat-complete" role="status">♡ Coffret terminé ensemble · '+esc(finished)+'</div>':'';
  const premiumNote='<p class="eclat-disclaimer">Vos 200 défis et les 100 activités Surprise restent indépendants. Aucun achat n’est effectué depuis cet écran.</p>';
  let body='';
