@@ -156,24 +156,7 @@
  overflow-wrap:break-word;
 }
 
-/* Soirée: compact access, visible outside a running session and in its menu. */
-#app.loveroll-editorial .evening-toolbar .evening-eclat-shortcut{
- display:grid!important;place-items:center!important;
- width:60px!important;min-height:36px!important;
- justify-self:end!important;
- padding:5px 4px!important;
- background:linear-gradient(140deg,#6a294e,#3c1834)!important;
- border:1px solid #e1a0bf8f!important;
- border-radius:999px!important;
- color:#ffe5f1!important;
- font:600 11px/1.1 system-ui,sans-serif!important;
- letter-spacing:0!important;
- white-space:nowrap;
- box-shadow:0 2px 11px #2a081f66!important;
-}
-#app.loveroll-editorial .evening-toolbar:has(.evening-eclat-shortcut){
- grid-template-columns:60px minmax(0,1fr) 60px!important;
-}
+/* Éclat's only idle Soirée entry now belongs to the photo. */
 #app.loveroll-editorial .evening-more-menu .evening-menu-eclat{
  display:grid!important;place-items:center!important;
  text-align:center!important;
