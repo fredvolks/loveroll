@@ -1,0 +1,421 @@
+/* LOVE ROLL — V192 | ACCUEIL NATIF RUBIS
+ * Une seule photographie de fond, vrais textes, vrais boutons et vrai D6 WebGL.
+ * Aucun élément d'interface n'est extrait d'une capture d'écran. */
+@media (max-width:767px) {
+ main#app.loveroll-real-home {
+  --lr-page-glass:linear-gradient(155deg,rgba(61,0,13,.92),rgba(32,0,9,.94) 65%,rgba(62,3,17,.92));
+  --lr-edge:rgba(240,91,115,.83);
+  --lr-white:#fff7f2;
+  --lr-muted:#efd4d5;
+  position:relative!important;
+  isolation:isolate!important;
+  height:100dvh!important;
+  min-height:0!important;
+  max-height:100dvh!important;
+  padding:5px 12px calc(72px + env(safe-area-inset-bottom,0px))!important;
+  margin:0!important;
+  overflow:hidden!important;
+  background:#230009!important;
+  color:var(--lr-white)!important;
+ }
+ main#app.loveroll-real-home::before {
+  content:""!important;
+  display:block!important;
+  position:fixed!important;
+  inset:0!important;
+  z-index:-1!important;
+  pointer-events:none!important;
+  background:
+   linear-gradient(180deg,rgba(39,0,11,.06) 0%,rgba(29,0,7,.1) 36%,rgba(39,0,10,.2) 68%,rgba(30,0,7,.35) 100%),
+   url('./assets/loveroll-romance-scene-v183.webp') center/100% 100% no-repeat!important;
+  filter:saturate(1.24) brightness(1.37) contrast(1.08)!important;
+  opacity:1!important;
+ }
+ main#app.loveroll-real-home::after {display:none!important;content:none!important;}
+ main#app.loveroll-real-home > .real-home-shell {
+  position:relative!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  grid-template-rows:max-content minmax(118px,1fr) 42px 55px minmax(0,auto)!important;
+  gap:7px!important;
+  width:100%!important;max-width:600px!important;
+  height:100%!important;min-height:0!important;
+  padding:0!important;
+  margin:0 auto!important;
+  zoom:1!important;transform:none!important;
+  background:none!important;
+  pointer-events:auto!important;
+  z-index:1!important;
+ }
+ main#app.loveroll-real-home .real-home-shell > *,
+ main#app.loveroll-real-home .real-home-shell .home-ritual,
+ main#app.loveroll-real-home .home-bottom-stack {
+  visibility:visible!important;
+  opacity:1!important;
+  pointer-events:auto!important;
+ }
+ main#app.loveroll-real-home .home-ritual {
+  grid-column:1!important;grid-row:1!important;
+  text-align:center!important;min-height:0!important;
+  padding:0!important;margin:0!important;
+ }
+ main#app.loveroll-real-home .home-ritual .ritual-heading,
+ main#app.loveroll-real-home .home-ritual .ritual-brand {
+  margin:0!important;
+  padding:0!important;
+  filter:none!important;
+  text-shadow:none!important;
+ }
+ main#app.loveroll-real-home .home-ritual .ritual-brand b {
+  color:#fff2e9!important;
+  text-shadow:0 1px 2px rgba(12,0,5,.85)!important;
+  font-weight:500!important;
+  letter-spacing:-.025em!important;
+ }
+ main#app.loveroll-real-home .home-ritual .ritual-kicker{
+  color:#f4c4d0!important;font-weight:550!important;
+  letter-spacing:.23em!important;font-size:clamp(9px,2.65vw,12px)!important;
+  text-shadow:0 1px 2px #1d000cd9!important;
+ }
+ main#app.loveroll-real-home .home-ritual .home-title{
+  padding:0!important;margin:0!important;
+  display:block!important;height:auto!important;
+ }
+ main#app.loveroll-real-home .home-ritual .home-title h2 {
+  margin:5px 0 0!important;
+  padding:0!important;max-width:none!important;
+  font-family:Georgia,'Times New Roman',serif!important;
+  font-size:clamp(22px,5.85vw,31px)!important;
+  line-height:1.07!important;letter-spacing:-.025em!important;
+  color:#fff9f4!important;
+  font-weight:700!important;text-wrap:nowrap!important;
+  white-space:nowrap!important;
+  text-shadow:0 1px 2px #1b0009a0!important;
+  filter:none!important;
+  transform:none!important;
+ }
+ main#app.loveroll-real-home .home-die-theater {
+  grid-column:1!important;grid-row:2!important;
+  display:grid!important;place-items:center!important;
+  position:relative!important;
+  overflow:hidden!important;
+  isolation:isolate!important;
+  width:calc(100% + 24px)!important;
+  margin:0 -12px!important;
+  min-height:0!important;
+  border:0!important;border-radius:0!important;outline:0!important;
+  box-shadow:none!important;
+  background-image:url('./assets/ritual-satin-v115.webp')!important;
+  background-size:cover!important;
+  background-position:center 62%!important;
+  background-repeat:no-repeat!important;
+  -webkit-mask-image:radial-gradient(ellipse 78% 90% at 50% 56%,black 45%,rgba(0,0,0,.95) 67%,transparent 100%)!important;
+  mask-image:radial-gradient(ellipse 78% 90% at 50% 56%,black 45%,rgba(0,0,0,.95) 67%,transparent 100%)!important;
+  --dice-headroom:11px!important;
+ }
+ main#app.loveroll-real-home .home-die-theater::before,
+ main#app.loveroll-real-home .home-die-theater::after {display:none!important;content:none!important;}
+ main#app.loveroll-real-home .home-fabric-photo,
+ main#app.loveroll-real-home .home-satin-orbit {display:none!important;}
+ main#app.loveroll-real-home .home-die-platform{
+  position:relative!important;z-index:2!important;
+  width:min(85vw,340px)!important;height:min(85vw,340px)!important;
+  margin:0!important;padding:0!important;
+  background:none!important;filter:none!important;
+  display:grid!important;place-items:center!important;
+  pointer-events:none!important;
+ }
+ main#app.loveroll-real-home .home-die-platform .dice-canvas{
+  position:absolute!important;inset:0!important;
+  display:block!important;width:100%!important;height:100%!important;
+  filter:brightness(1.13) saturate(1.17) contrast(1.04)!important;
+  image-rendering:auto!important;
+  transform:none!important;
+ }
+ main#app.loveroll-real-home .home-weights{
+  grid-column:1!important;grid-row:3!important;
+  display:grid!important;grid-template-columns:repeat(6,minmax(0,1fr))!important;
+  height:42px!important;min-height:0!important;
+  padding:0 2px!important;
+  border:1px solid rgba(235,104,119,.85)!important;
+  border-radius:16px!important;
+  background:linear-gradient(150deg,#39020ceF,#1a0007ed)!important;
+  box-shadow:inset 0 1px 2px #ffd4db36,0 2px 8px #160009ac!important;
+ }
+ main#app.loveroll-real-home .home-weight{
+  grid-template-columns:minmax(15px,20px) minmax(0,auto)!important;
+  align-items:center!important;justify-content:center!important;
+  column-gap:5px!important;min-width:0!important;
+  color:var(--lr-white)!important;border-right:1px solid #cc58665b!important;
+ }
+ main#app.loveroll-real-home .home-pip-svg{width:clamp(16px,4vw,21px)!important;height:clamp(16px,4vw,21px)!important;grid-row:1/3!important;}
+ main#app.loveroll-real-home .home-weight b,
+ main#app.loveroll-real-home .home-weight span{
+  font:400 clamp(10px,2.9vw,13px)/1.05 system-ui,sans-serif!important;
+  text-shadow:none!important;filter:none!important;
+  color:#fff6f4!important;
+ }
+ main#app.loveroll-real-home .home-roll-area {
+  grid-column:1!important;grid-row:4!important;
+  display:block!important;
+  width:100%!important;max-width:none!important;height:55px!important;
+  margin:0!important;padding:0!important;
+  pointer-events:auto!important;
+ }
+ main#app.loveroll-real-home .home-roll-button,
+ main#app.loveroll-real-home .home-next-month{
+  position:relative!important;opacity:1!important;
+  visibility:visible!important;pointer-events:auto!important;
+  transition:transform .12s cubic-bezier(.2,.7,.2,1),box-shadow .12s ease,filter .12s ease!important;
+  touch-action:manipulation!important;
+  -webkit-tap-highlight-color:transparent!important;
+  cursor:pointer!important;
+ }
+ main#app.loveroll-real-home .home-roll-button:not(.is-used){
+  display:flex!important;justify-content:center!important;align-items:center!important;gap:11px!important;
+  width:100%!important;height:55px!important;min-height:55px!important;
+  padding:0 12px!important;margin:0!important;
+  border-radius:40px!important;border:1.5px solid #fd5771!important;
+  color:#fff7ef!important;
+  font:500 clamp(21px,5.5vw,29px)/1 Georgia,'Times New Roman',serif!important;
+  text-transform:none!important;letter-spacing:0!important;
+  background:
+   radial-gradient(ellipse 35% 32% at 10% 2%,#ffcad7a3,transparent 92%),
+   linear-gradient(180deg,#be0632 0%,#85001e 27%,#3b000d 71%,#6c001b 90%,#b4042c 100%)!important;
+  box-shadow:inset 0 2px 2px #ffe9ebc9,inset 0 -2px 5px #ff194e84,0 0 0 1px #690319,0 3px 12px #ce002c87!important;
+  text-shadow:0 1px 1px #160000!important;
+  transform:translateY(0) scale(1)!important;
+ }
+ main#app.loveroll-real-home .home-roll-button .home-roll-icon{
+  display:grid;place-items:center!important;width:27px;height:27px;flex:none;
+ }
+ main#app.loveroll-real-home .home-roll-button .home-roll-icon svg{width:25px;height:25px;filter:none!important;}
+ main#app.loveroll-real-home .home-roll-button::after{display:none!important;content:none!important;}
+ main#app.loveroll-real-home .home-roll-button:not(.is-used):active,
+ main#app.loveroll-real-home .home-roll-button:not(.is-used).lr-pressed{
+  background:linear-gradient(180deg,#500018,#36000d 16%,#4d0013 64%,#850023 100%)!important;
+  box-shadow:inset 0 5px 15px #000c,inset 0 1px 3px #dd466cb0,0 0 0 1px #810522!important;
+  transform:translateY(3px) scale(.982)!important;
+  filter:brightness(.94)!important;
+ }
+ main#app.loveroll-real-home .home-roll-button:focus-visible,
+ main#app.loveroll-real-home .home-next-month:focus-visible,
+ main#app.loveroll-real-home > .nav button:focus-visible {
+  outline:2px solid #ffecda!important;outline-offset:3px!important;
+ }
+ main#app.loveroll-real-home .home-roll-button.is-used{
+  display:grid!important;place-items:center!important;
+  width:100%!important;min-height:55px!important;height:55px!important;
+  font:600 clamp(11px,3.1vw,14px)/1.2 system-ui,sans-serif!important;
+  text-transform:none!important;letter-spacing:0!important;
+  padding:8px 12px!important;
+  border:1px solid #9b5866!important;
+  color:#f7d9e0!important;background:linear-gradient(#470b1e,#26010d)!important;
+  box-shadow:inset 0 1px 2px #ffd6d451!important;
+ }
+ main#app.loveroll-real-home .home-bottom-stack{
+  grid-column:1!important;grid-row:5!important;
+  display:grid!important;grid-template-rows:64px minmax(0,1fr)!important;
+  min-height:0!important;gap:7px!important;
+  width:100%!important;zoom:1!important;
+  background:transparent!important;transform:none!important;
+ }
+ main#app.loveroll-real-home .home-next-month{
+  display:grid!important;
+  grid-template-columns:52px minmax(0,1fr) 0px!important;
+  gap:4px!important;
+  width:100%!important;height:64px!important;min-height:64px!important;
+  max-height:64px!important;padding:7px 9px!important;
+  margin:0!important;border-radius:18px!important;
+  border:1.5px solid #f36b7b!important;
+  background:
+   radial-gradient(ellipse at 50% -20%,#eb477060,transparent 64%),
+   linear-gradient(180deg,#8b0924 0%,#5b0018 40%,#28000b 77%,#6e001a 100%)!important;
+  box-shadow:inset 0 2px 2px #ffd7e29c,inset 0 -2px 4px #f42d5e72,0 2px 10px #150007ca!important;
+  transform:translateY(0) scale(1)!important;
+ }
+ main#app.loveroll-real-home .home-next-month:active,
+ main#app.loveroll-real-home .home-next-month.lr-pressed{
+  box-shadow:inset 0 6px 12px #120004cc,inset 0 1px 2px #fa6586a0,0 0 0 1px #85042e!important;
+  background:linear-gradient(180deg,#420012,#370010,#5c001c)!important;
+  transform:translateY(3px) scale(.983)!important;
+ }
+ main#app.loveroll-real-home .home-next-month > span:nth-child(2){
+  display:flex!important;flex-direction:column!important;
+  justify-content:center!important;align-items:center!important;gap:2px!important;
+  text-align:center!important;
+  min-width:0!important;
+ }
+ main#app.loveroll-real-home .home-next-month small{
+  font:500 clamp(8px,2.55vw,11px)/1.15 system-ui,sans-serif!important;
+  color:#f3c1cc!important;letter-spacing:.10em!important;
+  text-shadow:none!important;
+ }
+ main#app.loveroll-real-home .home-next-month strong{
+  font:500 clamp(18px,4.85vw,27px)/1.03 Georgia,'Times New Roman',serif!important;
+  color:#fff5ef!important;white-space:nowrap!important;
+  text-shadow:0 1px 1px #290008!important;
+ }
+ main#app.loveroll-real-home .home-next-month em{
+  font:400 clamp(9px,2.7vw,12px)/1.05 system-ui,sans-serif!important;
+  color:#f7d7dc!important;text-shadow:none!important;
+ }
+ main#app.loveroll-real-home .home-calendar-icon,
+ main#app.loveroll-real-home .home-calendar-icon svg {
+  visibility:visible!important;
+  filter:none!important;transform:none!important;
+ }
+ main#app.loveroll-real-home .home-calendar-icon svg{width:42px!important;height:42px!important;}
+ main#app.loveroll-real-home .home-dashboard{
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:9px!important;min-height:0!important;
+  width:100%!important;margin:0!important;overflow:hidden!important;
+ }
+ main#app.loveroll-real-home .home-panel{
+  display:flex!important;flex-direction:column!important;
+  min-width:0!important;min-height:0!important;overflow:hidden!important;
+  padding:7px 8px 5px!important;gap:3px!important;
+  border:1px solid #ed667bc2!important;border-radius:17px!important;
+  background:var(--lr-page-glass)!important;
+  box-shadow:inset 0 1px #fff1ec2d,0 3px 12px #11000699!important;
+  filter:none!important;backdrop-filter:none!important;
+ }
+ main#app.loveroll-real-home .home-panel h3 {
+  display:flex!important;justify-content:flex-start!important;align-items:center!important;
+  gap:6px!important;margin:0!important;
+  font:500 clamp(8px,2.4vw,11px)/1.1 system-ui,sans-serif!important;
+  letter-spacing:.12em!important;color:#f4cbd3!important;
+  white-space:nowrap!important;text-shadow:none!important;
+ }
+ main#app.loveroll-real-home .home-monthly-panel h3{justify-content:center!important;}
+ main#app.loveroll-real-home .home-panel h3 > span{font-size:22px!important;line-height:1!important;}
+ main#app.loveroll-real-home .home-challenge-stats,
+ main#app.loveroll-real-home .home-stats-grid{
+  display:grid!important;grid-auto-rows:minmax(0,1fr)!important;
+  min-height:0!important;min-width:0!important;flex:1!important;
+ }
+ main#app.loveroll-real-home .home-challenge-stats>div,
+ main#app.loveroll-real-home .home-stat-card{
+  min-height:0!important;padding:3px 0!important;
+  border-top:1px solid #cc667552!important;filter:none!important;
+  background:none!important;
+ }
+ main#app.loveroll-real-home .home-challenge-stats>div:first-child,
+ main#app.loveroll-real-home .home-stat-card:first-child {border-top:0!important;}
+ main#app.loveroll-real-home .home-summary-content{
+  display:grid!important;grid-template-columns:25px minmax(0,1fr)!important;
+  grid-template-rows:minmax(0,auto) minmax(0,auto)!important;
+  align-items:center!important;column-gap:3px!important;row-gap:0!important;
+  text-align:center!important;
+ }
+ main#app.loveroll-real-home .home-summary-value{display:contents!important;}
+ main#app.loveroll-real-home .home-summary-value>span{
+  grid-column:1!important;grid-row:1/3!important;
+  color:#ff91a8!important;font-size:clamp(21px,5vw,30px)!important;
+  line-height:1!important;
+ }
+ main#app.loveroll-real-home .home-summary-value>strong{
+  grid-column:2!important;grid-row:1!important;
+  text-align:center!important;
+  font:700 clamp(13px,3.5vw,17px)/1 system-ui,sans-serif!important;
+  color:#fff8f5!important;
+ }
+ main#app.loveroll-real-home .home-summary-content small{
+  grid-column:2!important;grid-row:2!important;
+  text-align:center!important;
+  font:400 clamp(9px,2.8vw,12px)/1.12 system-ui,sans-serif!important;
+  color:#f8e3e4!important;text-shadow:none!important;
+ }
+ main#app.loveroll-real-home .home-stat-content{
+  display:grid!important;grid-template-columns:26px minmax(0,1fr)!important;
+  gap:0 4px!important;align-content:center!important;
+  min-height:0!important;text-align:left!important;
+ }
+ main#app.loveroll-real-home .home-stat-card i {
+  grid-column:1!important;grid-row:1/4!important;
+  font:normal clamp(21px,5vw,29px)/1 Georgia,serif!important;
+  color:#ff91aa!important;text-align:center!important;
+ }
+ main#app.loveroll-real-home .home-stat-card strong{
+  grid-column:2!important;grid-row:1!important;
+  font:700 clamp(13px,3.45vw,17px)/1.06 system-ui,sans-serif!important;
+  color:#fff6f2!important;text-align:center!important;
+ }
+ main#app.loveroll-real-home .home-stat-card span{
+  grid-column:2!important;grid-row:2!important;
+  font:400 clamp(9px,2.8vw,12px)/1.1 system-ui,sans-serif!important;
+  color:#fff2ed!important;text-align:center!important;
+ }
+ main#app.loveroll-real-home .home-stat-card small{
+  grid-column:2!important;grid-row:3!important;
+  font:400 clamp(8px,2.35vw,10px)/1.1 system-ui,sans-serif!important;
+  color:#e6b6c3!important;text-align:center!important;
+ }
+ /* VRAIE barre et 5 VRAIS boutons; aucune zone cliquable transparente. */
+ main#app.loveroll-real-home > .nav{
+  position:fixed!important;top:auto!important;
+  bottom:max(0px,env(safe-area-inset-bottom,0px))!important;
+  left:10px!important;right:10px!important;
+  width:auto!important;height:64px!important;
+  min-height:64px!important;max-height:64px!important;
+  padding:3px!important;margin:0!important;
+  border:1px solid #e36f87b6!important;border-radius:25px!important;
+  background:linear-gradient(165deg,#36010bef,#1a0005f7 70%,#39030ef0)!important;
+  box-shadow:inset 0 1px 2px #f9c3cc60,0 -2px 9px #140009a8!important;
+  backdrop-filter:none!important;opacity:1!important;z-index:500!important;
+ }
+ main#app.loveroll-real-home > .nav .nav-inner{
+  display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  gap:3px!important;align-items:stretch!important;
+  height:100%!important;width:100%!important;max-width:none!important;
+  padding:0!important;margin:0!important;background:none!important;
+ }
+ main#app.loveroll-real-home > .nav button{
+  position:relative!important;display:flex!important;
+  flex-direction:column!important;align-items:center!important;justify-content:center!important;
+  gap:0!important;width:100%!important;min-width:0!important;
+  min-height:0!important;height:100%!important;
+  margin:0!important;padding:1px!important;
+  border-radius:21px!important;
+  font:500 clamp(9px,2.6vw,12px)/1.05 system-ui,sans-serif!important;
+  color:#fff2ed!important;text-shadow:none!important;opacity:1!important;
+  background:transparent!important;
+  transition:transform .13s ease,background .12s ease,box-shadow .12s ease!important;
+  -webkit-tap-highlight-color:transparent!important;
+ }
+ main#app.loveroll-real-home > .nav .nav-inner>button.active {
+  background:linear-gradient(180deg,#a90431 0%,#5b0019 52%,#360008 100%)!important;
+  box-shadow:inset 0 2px 3px #ffc5d0b8,inset 0 -2px 3px #db145887,0 0 7px #e40646a3!important;
+  border:1px solid #ff7790!important;
+ }
+ main#app.loveroll-real-home > .nav button:active,
+ main#app.loveroll-real-home > .nav button.lr-pressed{
+  transform:translateY(2px) scale(.95)!important;
+  background:linear-gradient(#5b0825,#27000b)!important;
+  box-shadow:inset 0 5px 9px #100005d8!important;
+ }
+ main#app.loveroll-real-home > .nav button span {
+  font-size:clamp(19px,5vw,26px)!important;
+  line-height:1.12!important;filter:none!important;
+  text-shadow:none!important;
+ }
+}
+@media (max-width:767px) and (max-height:720px){
+ main#app.loveroll-real-home{padding-bottom:calc(59px + env(safe-area-inset-bottom,0px))!important;padding-top:2px!important;}
+ main#app.loveroll-real-home>.real-home-shell{grid-template-rows:max-content minmax(80px,1fr) 33px 45px minmax(0,auto)!important;gap:4px!important;}
+ main#app.loveroll-real-home .home-ritual .home-title h2{font-size:clamp(18px,5.2vw,24px)!important;}
+ main#app.loveroll-real-home .home-weights{height:33px!important;}
+ main#app.loveroll-real-home .home-roll-area,
+ main#app.loveroll-real-home .home-roll-button:not(.is-used),
+ main#app.loveroll-real-home .home-roll-button.is-used{height:45px!important;min-height:45px!important;}
+ main#app.loveroll-real-home .home-bottom-stack{grid-template-rows:51px minmax(0,1fr)!important;gap:4px!important;}
+ main#app.loveroll-real-home .home-next-month{height:51px!important;min-height:51px!important;max-height:51px!important;}
+ main#app.loveroll-real-home > .nav{height:55px!important;min-height:55px!important;max-height:55px!important;}
+ main#app.loveroll-real-home .home-next-month strong{font-size:17px!important;}
+ main#app.loveroll-real-home .home-summary-content small,
+ main#app.loveroll-real-home .home-stat-card span{font-size:9px!important;}
+ main#app.loveroll-real-home .home-stat-card small{font-size:8px!important;}
+}
+@media (prefers-reduced-motion:reduce) {
+ main#app.loveroll-real-home button{transition:none!important;}
+}
