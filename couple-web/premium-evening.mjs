@@ -201,6 +201,7 @@ export function premiumEveningHtml({
     'evening-gift-btn',!canGive||rolling)+'</section>'
   :
   '<section class="evening-empty is-finale ritual-gallery">'+
+  '<button type="button" class="eclat-evening-entry" data-action="tab:eclat" aria-label="Découvrir les douze coffrets Éclat">✦ Éclat</button>'+
   '<div class="evening-finale-hero" aria-hidden="true">'+
     '<span class="evening-finale-velvet"></span>'+
     '<div class="evening-finale-dice">'+premiumPolyDie(100,null,'Dé 100 faces décoratif',false,true)+'</div></div>'+
@@ -236,7 +237,6 @@ export function premiumEveningHtml({
     '<div class="evening-finale-actions">'+
       bt('new-session','♡ COMMENCER NOTRE SOIRÉE','evening-finale-start',!canStartEvening)+
       bt('evening-calendar','▦ Consulter notre calendrier','evening-finale-calendar')+
-      bt('tab:eclat','✦ Découvrir nos 12 coffrets Éclat','eclat-evening-entry')+
     '</div>'+
   '</div></section>')+
  (showMore&&session?'<aside class="evening-more-menu" aria-label="Options de la soirée">'+
