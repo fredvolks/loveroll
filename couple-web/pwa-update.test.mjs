@@ -6,7 +6,7 @@ const read=file=>readFileSync(new URL('./'+file,import.meta.url),'utf8');
 const html=read('index.html'),app=read('app.js'),sw=read('service-worker.js');
 const release=JSON.parse(read('web-version.json'));
 test('LoveRoll build versions agree between endpoint, app, HTML and imported modules',()=>{
- const build='2026-10-19.175',tag='20261015-no-toast87',appTag='20261019-bubble175',inviteTag='20261018-safari150',controlsTag='20261017-controls141',diceTag='20261017-home134';
+ const build='2026-10-19.176',tag='20261015-no-toast87',appTag='20261019-align176',inviteTag='20261018-safari150',controlsTag='20261017-controls141',diceTag='20261017-home134';
  assert.equal(release.build,build);
  assert.ok(app.includes('invite-links.mjs?v='+inviteTag));
  assert.ok(sw.includes('./assets/loveroll-messenger-og-v142.jpg'));
@@ -33,9 +33,10 @@ test('LoveRoll build versions agree between endpoint, app, HTML and imported mod
  assert.ok(html.includes('evening-calendar.css?v=20261018-stats148'));
  assert.ok(app.includes('couple-live-sync.mjs?v=20261017-advent119'));
  assert.ok(html.includes('premium-advent.css?v=20261019-ipad155'));
- assert.match(app,/const WEB_RELEASE='2026-10-19\.175'/);
- assert.ok(html.includes('bubble-centering.css?v=20261019-bubble175'));
+ assert.match(app,/const WEB_RELEASE='2026-10-19\.176'/);
+ assert.ok(html.includes('bubble-centering.css?v=20261019-align176'));
  assert.ok(sw.includes('./bubble-centering.css'));
+ assert.ok(html.includes('eclat.css?v=20261019-align176'));
  assert.match(html,new RegExp('app\\.js\\?v='+appTag));
  for(const css of ['satin-reference.css','discover.css']){
   assert.ok(html.includes(css+'?v='+tag),css);
@@ -57,7 +58,7 @@ test('LoveRoll build versions agree between endpoint, app, HTML and imported mod
  assert.match(app,/surprise-event-config\.mjs\?v=20261016-surprise109/);
 });
 test('PWA bypasses stale Android network caches while preserving offline fallback',()=>{
- assert.match(sw,/loveroll-static-v175/);
+ assert.match(sw,/loveroll-static-v176/);
  assert.match(sw,/fetch\(req,\{cache:'no-store'\}\)/);
  assert.match(sw,/cache\.match\(fallback\.href\)/);
  assert.match(sw,/const cache=await caches\.open\(CACHE\)/);
