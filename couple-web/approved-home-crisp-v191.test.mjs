@@ -1,0 +1,20 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+const read=p=>readFileSync(new URL('./'+p,import.meta.url),'utf8');
+test('Home 191 keeps original reference and makes it sharp at device resolution',()=>{
+ const html=read('index.html'),js=read('approved-home-crisp-v191.js');
+ const css=read('approved-home-crisp-v191.css'),sw=read('service-worker.js');
+ assert.ok(html.includes('approved-home-crisp-v191.css?v=20261020-crisp191'));
+ assert.ok(html.includes('approved-home-crisp-v191.js?v=20261020-crisp191'));
+ assert.ok(sw.includes('./approved-home-crisp-v191.css'));
+ assert.ok(sw.includes('./approved-home-crisp-v191.js'));
+ assert.match(js,/getImageData\(0,0,w,h\)/);
+ assert.match(js,/imageSmoothingQuality='high'/);
+ assert.match(js,/\.345-\.016\*amount/);
+ assert.match(js,/\.899,\.974,\.915,\.990/);
+ assert.match(js,/approved-home-idle/);
+ assert.doesNotMatch(js,/rpc\(|rollTo\(|localStorage\.clear|sessionStorage\.clear/);
+ assert.match(css,/top:91\.5dvh!important/);
+ assert.match(css,/background-image:var\(--loveroll-home-crisp-image/);
+});

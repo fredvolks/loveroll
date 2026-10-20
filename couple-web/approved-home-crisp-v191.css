@@ -1,0 +1,17 @@
+/* LoveRoll 191 — actual sharp pixels and honest proportions on mobile.
+   Only the approved idle Home; other tabs and server-state views stay intact. */
+@media (max-width:767px) and (orientation:portrait) {
+ main#app.loveroll-real-home.approved-home-idle::after {
+  background-image:var(--loveroll-home-crisp-image,
+   url('./assets/home-reference-approved-v190.webp'))!important;
+  background-position:center center!important;
+  background-size:100% 100%!important;
+  image-rendering:auto!important;
+  filter:none!important;
+ }
+ /* Match the lowered photographed tab bar, not an invisible hotspot higher up. */
+ main#app.loveroll-real-home.approved-home-idle > .nav {
+  top:91.5dvh!important;
+  height:7.5dvh!important;
+ }
+}
