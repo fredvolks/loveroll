@@ -1,0 +1,11 @@
+<!doctype html><html lang="fr-CA"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="stylesheet" href="./styles.css"><link rel="stylesheet" href="./premium-theme.css">
+<link rel="stylesheet" href="./settings-premium.css"><link rel="stylesheet" href="./loveroll-layout-fixes-v180.css">
+</head><body><main id="app" class="loveroll-settings-page loveroll-settings-detail">
+<section class="settings-editorial"><article class="settings-detail-body">
+<label class="loveroll-gender-select">Choisir mon genre
+<select id="test-gender" aria-label="Mon genre"><option value="him">Homme</option><option value="her">Femme</option></select></label>
+<label class="loveroll-style-select">Mon style de jeu
+<select id="test-style" aria-label="Mon style de jeu"><option value="soft">Soft</option><option value="medium" selected>Medium</option><option value="intense">Intense</option></select></label>
+</article></section></main>
+<script type="module">import {enhanceLoveRollSettingsSelects} from './loveroll-premium-pickers.mjs';enhanceLoveRollSettingsSelects(document.querySelector('#app'));window.__fixtureReady=true;</script></body></html>
