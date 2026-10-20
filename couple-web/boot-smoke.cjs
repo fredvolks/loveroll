@@ -153,8 +153,8 @@ export function createClient(){
    if((await page.locator('.toast.visible').allInnerTexts()).some(t=>/reading ['"]items['"]/.test(t)))
     throw Error('S25 user still sees null items error');
    const buttons=await page.locator('.evening-finale-actions button').count();
-   if(buttons!==2)
-    throw Error('Soirée waiting state must show exactly two buttons: '+JSON.stringify({
+   if(buttons!==3 || !(await page.locator('.evening-finale-actions [data-action="tab:eclat"]').count()))
+    throw Error('Soirée waiting state must show two original buttons and the Eclat shortcut: '+JSON.stringify({
      buttons,actions:await page.locator('[data-action]').evaluateAll(nodes=>nodes.map(n=>n.dataset.action).filter(x=>x==='new-session'||x==='evening-calendar')),
      html:(await page.locator('.evening-premium-view').innerHTML()).slice(-1200)
     }));
