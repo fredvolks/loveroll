@@ -43,10 +43,10 @@ const {chromium}=require('playwright');
      const photoGrid=root.querySelector('.eclat-photo-grid');
      const imageOK=images.length===12&&images.every(el=>{
        const styles=getComputedStyle(el);
-       return styles.backgroundImage.includes('eclat-photo-strip.webp')&&el.getBoundingClientRect().height>25;
+       return styles.backgroundImage.includes('eclat-photo-strip-v183.webp')&&el.getBoundingClientRect().height>25;
      });
      const gridCols=photoGrid?getComputedStyle(photoGrid).gridTemplateColumns.trim().split(/\s+/).length:0;
-     const photoLoaded=images.length?performance.getEntriesByType('resource').some(x=>x.name.includes('eclat-photo-strip.webp')):true;
+     const photoLoaded=images.length?performance.getEntriesByType('resource').some(x=>x.name.includes('eclat-photo-strip-v183.webp')):true;
      return {photoGridCols:gridCols,imageOK,photoLoaded,width:innerWidth,height:innerHeight,noHorizontalScroll:document.documentElement.scrollWidth<=innerWidth+2,
       noVerticalScroll:document.documentElement.scrollHeight<=innerHeight+2,
       shellFits:rect.bottom<=last+2,visible,tiles:root.querySelectorAll('.eclat-tile').length,centered,
