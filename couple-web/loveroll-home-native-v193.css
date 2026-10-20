@@ -424,3 +424,11 @@
 main#app.loveroll-real-home .home-action-die svg{fill:none!important;stroke:none!important;filter:none!important;}
 main#app.loveroll-real-home .home-action-die rect{fill:#fff9f5!important;stroke:#f0cbd3!important;stroke-width:1.2!important;}
 main#app.loveroll-real-home .home-action-die circle{fill:#4c0920!important;stroke:none!important;}
+
+/* All five tabs use the identical real button padding. Older Soirée skin
+   targets .nav-inner > button more specifically, so normalize at that level. */
+@media(max-width:767px){
+ main#app:is(.loveroll-real-home,.loveroll-evening-page,.loveroll-eclat-page,.loveroll-surprise-ecrin,.loveroll-advent-letters,.loveroll-settings-page) > .nav .nav-inner > button{
+  padding:1px!important;
+ }
+}
