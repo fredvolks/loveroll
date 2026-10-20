@@ -186,7 +186,7 @@ $('settings').addEventListener('submit',async event=>{
  try{
   const patch={};
   const sectionNames={
-   prices:['annual_base_cad_cents','monthly_base_cad_cents','activities_2_cad_cents','activities_3_cad_cents','activities_4_cad_cents','included_monthly_draws','max_monthly_draws'],
+   prices:['annual_base_cad_cents','monthly_base_cad_cents','eclat_total_cad_cents','activities_2_cad_cents','activities_3_cad_cents','activities_4_cad_cents','included_monthly_draws','max_monthly_draws'],
    d100:['annual_no_repeat'],geo:['geo_enabled','geo_max_candidates','geo_max_radius_km'],
    notifications:['reminder_hours'],audience:['maintenance_message']
   };
