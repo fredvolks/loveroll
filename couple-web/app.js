@@ -8,13 +8,13 @@ import {playableSessionForWeekly} from './couple-reset-view.mjs';
 import {eveningDailyAccess} from './evening-daily-policy.mjs?v=20261016-daily100';
 import {ownEveningChallenges,queuePosition,queueLabel,hasTurnToDraw} from './evening-private-queue.mjs';
 import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261019-bubble175';
-import {eclatHtml} from './eclat-ui.mjs?v=20261019-eclat174';
+import {eclatHtml} from './eclat-ui.mjs?v=20261020-audio177';
 import {eclatStage} from './eclat-catalog.mjs?v=20261019-eclat174';
 import {createEclatAudio} from './eclat-audio.mjs?v=20261019-eclat174';
 import {futureCoupleStyleMix,playStyleLabel} from './play-style.mjs?v=20261018-styles149';
 import {cycleIntensityQuestionnaireHtml} from './cycle-questionnaire.mjs?v=20261018-cycle149';
 import {DICE_WEIGHT_CONFIG,configuredDiceWeights,parseDiceWeightInputs} from './dice-weighting.mjs?v=20261018-weights146';
-import {premiumEveningHtml,updateEveningCategoryUi} from './premium-evening.mjs?v=20261019-bubble175';
+import {premiumEveningHtml,updateEveningCategoryUi} from './premium-evening.mjs?v=20261020-ecrin177';
 import {eveningHistoryMarkup,eveningLocalDay} from './evening-calendar.mjs?v=20261018-stats148';
 import {eveningReviewModal,validEveningReview} from './evening-review.mjs?v=20261016-person-review97';
 import {premiumSurpriseHtml,sixSpecialEvents} from './premium-surprise.mjs?v=20261018-d100151';
@@ -48,7 +48,7 @@ import {invitationStatus,coupleStats,formatCoupleDate,invitationEmailText,invita
 import {premiumConfirm,premiumCopyLink,focusInlineLoveDialog} from './premium-dialogs.mjs?v=20261017-complete127';
 
 
-const WEB_RELEASE='2026-10-19.176';
+const WEB_RELEASE='2026-10-20.177';
 const root=document.querySelector('#app');
 const enc=new TextEncoder(),dec=new TextDecoder();
 let diceCleanup=[],renderToken=0;
@@ -1118,7 +1118,7 @@ function renderEclat(){
  if(e?.active){
   const current=eclatStage(e.coffret_id,e.chapter_number,e.variant_number);
   if(current)eclatAudio.setMood(current.mood);
- }
+ }else if(state.eclatMusic){eclatAudio.stop();state.eclatMusic=false;}
  frame(eclatHtml({status:e,selected:state.eclatSelection,minutes:state.eclatMinutes,
   details:state.eclatDetails,members:state.members,userId:state.user?.id,
   music:state.eclatMusic,finished:state.eclatFinished}), 'Éclat','Notre expérience à deux');
@@ -2213,6 +2213,7 @@ async function handle(action,element){
   const kind=parts[0],num=Number(parts[1]);
   if(kind==='back'){await handle('tab:session',element);return;}
   if(kind==='music'){
+   if(!state.eclat?.active){eclatAudio.stop();state.eclatMusic=false;return;}
    if(state.eclatMusic){eclatAudio.stop();state.eclatMusic=false;}
    else{
     const current=state.eclat?.active?eclatStage(state.eclat.coffret_id,state.eclat.chapter_number,state.eclat.variant_number):null;
@@ -2247,7 +2248,7 @@ async function handle(action,element){
    const last=state.eclat.chapter_index===state.eclat.chapter_total;
    const title=last?eclatStage(state.eclat.coffret_id,8,0)?.coffret?.title:null;
    state.eclat=await rpc('love_eclat_next');
-   if(last&&!state.eclat?.active){state.eclatFinished=title||'Expérience terminée';state.eclatDetails=false;}
+   if(last&&!state.eclat?.active){state.eclatFinished=title||'Expérience terminée';state.eclatDetails=false;eclatAudio.stop();state.eclatMusic=false;}
    render();return;
   }
   if(kind==='end'){
@@ -2256,7 +2257,7 @@ async function handle(action,element){
     kind:'library',title:'Quitter Éclat ?',accept:'Quitter',cancel:'Continuer'
    });
    if(!yes)return;
-   state.eclat=await rpc('love_eclat_end');state.eclatDetails=false;state.eclatFinished=null;render();return;
+   state.eclat=await rpc('love_eclat_end');state.eclatDetails=false;state.eclatFinished=null;eclatAudio.stop();state.eclatMusic=false;render();return;
   }
   throw Error('Commande Éclat inconnue');
  }
