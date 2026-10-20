@@ -1,6 +1,6 @@
 /* LoveRoll v187 — home based on the approved 864x1536 editorial reference.
    Functional buttons, stats, server draws and WebGL remain real. Only Home. */
-@media (orientation:portrait) {
+@media (orientation:portrait) and (max-width:767px) {
   /* Keep the FULL red velvet / roses / candlelit photo visible behind panels.
      The legacy tiled image has low exposure, so brighten only the photography. */
   main#app.loveroll-real-home{
