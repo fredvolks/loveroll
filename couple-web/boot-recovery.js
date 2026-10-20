@@ -19,6 +19,11 @@
   var title=document.createElement('h1');title.textContent='♡ LoveRoll ne démarre pas';
   var message=document.createElement('p');
   message.textContent='La page n’a pas pu s’ouvrir. Vos comptes, invitations et données restent enregistrés.';
+  if(/session|Synchronisation/i.test(String(window.LoveRollBoot?.stage||''))){
+   var help=document.createElement('p');help.className='love-boot-help';
+   help.textContent='Votre connexion a pris trop de temps. Fermez les autres onglets LoveRoll dans Chrome, puis réessayez ici. Aucun effacement de données n’est nécessaire.';
+   card.appendChild(help);
+  }
   var retry=document.createElement('button');
   retry.type='button';retry.textContent='Réessayer';retry.className='boot-retry-button';
   retry.addEventListener('click',function(){
