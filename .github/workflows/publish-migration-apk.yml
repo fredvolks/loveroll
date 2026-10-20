@@ -1,0 +1,54 @@
+name: Publish verified signed LoveRoll migration APK to new repository
+# The v0.13.13 package was built from the dedicated loveroll source, signed
+# with the original certificate in the legacy repo, and published there
+# for installed users. Mirror that exact SHA-256 verified file, never re-sign.
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publish-migration-apk.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      TAG: des-a-deux-v0.13.13
+      BRIDGE_APK: https://github.com/fredvolks/mon-wallet-android/releases/download/des-a-deux-v0.13.13/LoveRoll-v0.13.13.apk
+      ORIGINAL_APK: https://github.com/fredvolks/mon-wallet-android/releases/download/des-a-deux-v0.13.12/LoveRoll-v0.13.12.apk
+      EXPECTED_SHA256: 892561db9816fcc7120548b220987639da7ab0d2ea18414bf200d962593a7fb3
+      GH_REPO: fredvolks/loveroll
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download and verify the signed upgrade without exposing signing keys
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          curl --fail --location --retry 3 "$BRIDGE_APK" --output dist/LoveRoll-v0.13.13.apk
+          echo "$EXPECTED_SHA256  dist/LoveRoll-v0.13.13.apk" | sha256sum --check
+          cp dist/LoveRoll-v0.13.13.apk dist/Des-a-Deux-v0.13.13.apk
+      - name: Confirm same signer and new Android app identity
+        run: |
+          set -euo pipefail
+          SDKMGR="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | head -n 1)"
+          yes | "$SDKMGR" --licenses >/dev/null || true
+          "$SDKMGR" --install 'build-tools;35.0.0'
+          curl --fail --location --retry 3 "$ORIGINAL_APK" --output "$RUNNER_TEMP/previous-loveroll.apk"
+          signer=$("$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs dist/LoveRoll-v0.13.13.apk | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
+          previous=$("$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "$RUNNER_TEMP/previous-loveroll.apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
+          test -n "$signer" && test "$signer" = "$previous"
+          "$ANDROID_HOME/build-tools/35.0.0/aapt" dump badging dist/LoveRoll-v0.13.13.apk | tee "$RUNNER_TEMP/loveroll-package.txt"
+          grep -q "name='ca.desadeux.jeu'.*versionCode='130013'.*versionName='0.13.13'" "$RUNNER_TEMP/loveroll-package.txt"
+      - name: Release same verified APK on the dedicated LoveRoll GitHub repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "LoveRoll v0.13.13 already published; not replacing any existing signed release."
+            exit 0
+          fi
+          gh release create "$TAG" dist/LoveRoll-v0.13.13.apk dist/Des-a-Deux-v0.13.13.apk \
+            --target "$GITHUB_SHA" --title "LoveRoll v0.13.13 – dépôt indépendant" \
+            --notes "Première version Android distribuée par le dépôt LoveRoll indépendant. APK signé avec le certificat original, compatible avec la version 0.13.12. Interface Web via https://fredvolks.github.io/loveroll/."
