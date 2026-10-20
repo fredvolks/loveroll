@@ -230,6 +230,13 @@ export function createClient(){
    await selectTab(page,'special');
    await page.locator('.surprise-premium-view').waitFor({timeout:10000});
    await selectTab(page,'session');
+   // Synthetic live-sync may complete a scheduled redraw immediately after
+   // selectTab sees the view. Retry only if that redraw actually lost it.
+   await page.waitForTimeout(250);
+   if(!await page.locator('.evening-premium-view').isVisible()){
+    console.log('SOIREE_AFTER_LIVE_REFRESH_RETRY');
+    await selectTab(page,'session');
+   }
    await page.locator('.evening-premium-view').waitFor({timeout:10000});
    if(errors.length)throw Error('Returning from Surprise to Soirée caused exception '+JSON.stringify(errors));
    console.log('SOIREE_ACTIVE_ACCESS_OK','two confirmed dice, shared live board, queue button, tab revisit');
