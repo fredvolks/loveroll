@@ -20,6 +20,26 @@ Sources officielles :
 - https://support.stripe.com/questions/prohibited-and-restricted-businesses-list-faqs
 - https://support.stripe.com/questions/types-of-business-and-structure-guidelines-in-canada
 
+## Catalogue Stripe — renseignements fournis par le propriétaire
+
+- **Produit :** LoveRoll Premium
+- **ID du produit Stripe :** `prod_VTO4sufQPYduLK`
+- **ID du tarif annuel :** `price_1USRISH2YSeUAgDNfCycui0D`
+- **Clé de recherche du tarif :** `loveroll_premium_annual_cad`
+- **Montant affiché dans le tableau de bord :** 49,99 $ CAD / an, tarif fixe
+- **Environnement du tarif :** **NON VÉRIFIÉ** (test ou production à confirmer)
+- **Admissibilité Stripe du contenu LoveRoll :** **NON CONFIRMÉE**
+- **Paiements clients :** désactivés dans LoveRoll; aucun identifiant Stripe ci-dessus
+  ne doit activer le paiement en production.
+
+Ces identifiants sont des références publiques/non secrètes et ne prouvent
+pas que Stripe a accepté le modèle commercial. Avant un appel réel au
+prestataire, lire les identifiants depuis la configuration **serveur**
+propre à l'environnement et vérifier que le prix actif chez Stripe
+correspond au tarif souhaité. Ne pas confondre la clé de recherche
+`loveroll_premium_annual_cad` avec un ID de tarif `price_...`.
+Ne jamais recopier une clé API Stripe `sk_...` ou `whsec_...` dans ce dépôt.
+
 ## Modèle commercial proposé — à valider
 
 - Un abonnement annuel **par couple**, montant depuis `love_platform_settings.annual_base_cad_cents` (actuellement 4 999 cents CA).
