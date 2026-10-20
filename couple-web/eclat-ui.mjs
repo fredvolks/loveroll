@@ -1,5 +1,7 @@
 
 import {ECLAT_COFFRETS,eclatCoffret,eclatStage,ECLAT_MOODS} from './eclat-catalog.mjs';
+import {ritualHeadingHtml} from './brand.mjs?v=20261017-ritual130';
+import {eveningEclatSwitcher} from './evening-eclat-switcher.mjs';
 const esc=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const fmt=cents=>((Number(cents)||0)/100).toLocaleString('fr-CA',{minimumFractionDigits:2,maximumFractionDigits:2})+' $';
 const btn=(action,label,cls='',disabled=false)=>'<button type="button" data-action="'+esc(action)+'" class="'+cls+'"'+(disabled?' disabled':'')+'>'+label+'</button>';
@@ -8,8 +10,11 @@ const headphones='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
 export function eclatHtml({status=null,selected=1,minutes=60,details=false,members=[],userId=null,music=false,finished=null}={}){
  const access=status?.access===true,active=status?.active===true;
  const c=eclatCoffret(active?status.coffret_id:selected)||ECLAT_COFFRETS[0];
- const heading='<header class="eclat-top"><button type="button" class="eclat-return" data-action="eclat:back" aria-label="Retour à Soirée">‹</button><div><small>♡ LOVEROLL</small><h1>Éclat</h1></div>'+
-  (active?btn('eclat:music',headphones+'<span>'+(music?'Couper le son':'Musique')+'</span>','eclat-audio-toggle'+(music?' is-on':'')):'<span class="eclat-header-balance" aria-hidden="true"></span>')+'</header>';
+ const heading='<header class="eclat-top"><button type="button" class="eclat-return" data-action="tab:session" aria-label="Retour à notre soirée">‹</button>'+
+  ritualHeadingHtml('NOTRE RITUEL DE LA SOIRÉE')+
+  (active?btn('eclat:music',headphones+'<span>'+(music?'Couper le son':'Musique')+'</span>','eclat-audio-toggle'+(music?' is-on':'')):'<span class="eclat-header-balance" aria-hidden="true"></span>')+'</header>'+
+  '<div class="eclat-page-title"><h2 class="ritual-page-title">Nos 12 coffrets à deux</h2></div>'+
+  eveningEclatSwitcher('eclat');
  const lead=finished?'<div class="eclat-complete" role="status">♡ Coffret terminé ensemble · '+esc(finished)+'</div>':'';
  const premiumNote='<p class="eclat-disclaimer">Vos 200 défis et les 100 activités Surprise restent indépendants. Aucun achat n’est effectué depuis cet écran.</p>';
  let body='';
