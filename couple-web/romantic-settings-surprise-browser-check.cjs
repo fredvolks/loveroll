@@ -22,7 +22,7 @@ const client=`export function createClient(){
    if(process.env.LOVEROLL_LAYOUT_ONLY&&name==='/dice3d.js')return route.fulfill({contentType:'application/javascript',body:'export function dieOn(){return ()=>{}}'});
    await route.fulfill({contentType:types[path.extname(file)]||'application/octet-stream',body:fs.readFileSync(file)});
   });
-  await context.route('https://esm.sh/@supabase/supabase-js@2.57.0*',r=>r.fulfill({contentType:'application/javascript',body:client}));
+  await context.route('https://esm.sh/@supabase/supabase-js@2.107.0*',r=>r.fulfill({contentType:'application/javascript',body:client}));
   await context.route('**/__romantic-fixture',async route=>{
    const req=JSON.parse(route.request().postData()),{uid,name,args={}}=req;let data=[],error=null;
    if(req.table){const tables={couple_profiles:world.profiles,love_wellbeing:[{user_id:uid,relationship:'well',intimacy:'well'}],couple_members:world.profiles.map((p,i)=>({user_id:p.id,couple_id:'c',joined_at:'2026-10-0'+(i+1)+'T00:00:00Z'})),couples:[world.couple],couple_rolls:world.rolls,couple_occasion_settings:[world.settings]};data=tables[req.table]||[];for(const [k,v] of req.filters)data=data.filter(r=>r[k]===v);}
