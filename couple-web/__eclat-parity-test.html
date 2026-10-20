@@ -1,0 +1,22 @@
+<!doctype html><html lang="fr-CA"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="stylesheet" href="./styles.css"><link rel="stylesheet" href="./premium-theme.css">
+<link rel="stylesheet" href="./premium-home.css"><link rel="stylesheet" href="./evening-editorial.css">
+<link rel="stylesheet" href="./ritual-titles.css"><link rel="stylesheet" href="./ritual-scenes.css">
+<link rel="stylesheet" href="./eclat.css"><link rel="stylesheet" href="./evening-eclat-switcher.css">
+<link rel="stylesheet" href="./eclat-photo-gallery-v179.css"><link rel="stylesheet" href="./loveroll-layout-fixes-v180.css">
+</head><body><main id="app"></main><script type="module">
+import {premiumEveningHtml} from './premium-evening.mjs';
+import {eclatHtml} from './eclat-ui.mjs';
+const p=new URLSearchParams(location.search),mode=p.get('mode')||'evening';
+const root=document.querySelector('#app');
+const people=[{user_id:'one',name:'A'},{user_id:'two',name:'B'}];
+if(mode==='evening'){
+ root.className='loveroll-evening-page loveroll-editorial';
+ root.innerHTML=premiumEveningHtml({members:people,me:'one',weeklyReady:false,weeklyCount:0,weeklyLimit:1,canStartEvening:false});
+}else{
+ root.className='loveroll-eclat-page';
+ root.innerHTML=eclatHtml({status:{access:true,active:false}});
+}
+root.insertAdjacentHTML('beforeend','<nav class="nav"><div class="nav-inner"><button><span>⌂</span>Accueil</button><button class="active"><span>☾</span>Soirée</button><button><span>✦</span>Surprise</button><button><span>♢</span>Avent</button><button><span>⚙</span>Réglages</button></div></nav>');
+window.__fixtureReady=true;
+</script></body></html>
