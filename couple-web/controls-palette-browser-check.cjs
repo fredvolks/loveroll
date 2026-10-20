@@ -11,7 +11,7 @@ const click=async(p,name)=>{const b=p.locator('[data-action="'+name+'"]');await 
   const {page:auth}=await open(createWorld(),{actor:'guest',query:'auth=signup'});
   const reference=await auth.locator('.entry-auth-submit').evaluate(appearance);
   const selected=await auth.locator('.entry-auth-segments .is-active').evaluate(appearance);
-  assert.match(reference.background,/173, 102, 127/,'Account reference remains the approved muted mauve');
+  assert.match(reference.background,/155, 21, 62/,'Account reference uses the newly approved deep ruby theme');
   for(const [width,height] of [[360,640],[412,824],[820,1180]]){
    const world=createWorld(),{page:p,errors}=await open(world,{width,height,query:''});
    const primary=async selector=>{
