@@ -69,7 +69,7 @@ const client=`export function createClient(){
   for(const uid of ['a','b']){
    const context=await browser.newContext({viewport:{width:412,height:824},reducedMotion:'reduce',serviceWorkers:'block'}),page=await context.newPage();
    await page.route('**/__loveroll-fixture',serve);
-   await page.route('https://esm.sh/@supabase/supabase-js@2.57.0*',r=>r.fulfill({contentType:'application/javascript',body:client}));
+   await page.route('https://esm.sh/@supabase/supabase-js@2.107.0*',r=>r.fulfill({contentType:'application/javascript',body:client}));
    await page.goto('http://127.0.0.1:8765/?actor='+uid);await page.locator('.real-home-shell').waitFor();pages.push(page);
   }
   const [a,b]=pages;
