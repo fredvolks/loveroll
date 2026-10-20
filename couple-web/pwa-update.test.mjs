@@ -6,7 +6,7 @@ const read=file=>readFileSync(new URL('./'+file,import.meta.url),'utf8');
 const html=read('index.html'),app=read('app.js'),sw=read('service-worker.js');
 const release=JSON.parse(read('web-version.json'));
 test('LoveRoll build versions agree between endpoint, app, HTML and imported modules',()=>{
- const build='2026-10-20.177',tag='20261015-no-toast87',appTag='20261020-ecrin177',inviteTag='20261018-safari150',controlsTag='20261017-controls141',diceTag='20261017-home134';
+ const build='2026-10-20.178',tag='20261015-no-toast87',appTag='20261020-switch178',inviteTag='20261018-safari150',controlsTag='20261017-controls141',diceTag='20261017-home134';
  assert.equal(release.build,build);
  assert.ok(app.includes('invite-links.mjs?v='+inviteTag));
  assert.ok(sw.includes('./assets/loveroll-messenger-og-v142.jpg'));
@@ -19,7 +19,7 @@ test('LoveRoll build versions agree between endpoint, app, HTML and imported mod
  assert.ok(html.includes('ritual-scenes.css?v=20261017-scenes138'));
  assert.ok(sw.includes('./ritual-scenes.css'));
  for(const f of ['eclat.css','eclat-catalog.mjs','eclat-scenes-a.mjs','eclat-scenes-b.mjs','eclat-ui.mjs','eclat-audio.mjs'])assert.ok(sw.includes('./'+f),f+' must be cached');
- assert.ok(html.includes('ritual-titles.css?v=20261017-titles136'));
+ assert.ok(html.includes('ritual-titles.css?v=20261020-switch178'));
  assert.ok(sw.includes('./ritual-titles.css'));
  assert.ok(app.includes('premium-advent.mjs?v=20261019-bubble175'));
  assert.ok(app.includes('evening-calendar.mjs?v=20261018-stats148'));
@@ -33,10 +33,10 @@ test('LoveRoll build versions agree between endpoint, app, HTML and imported mod
  assert.ok(html.includes('evening-calendar.css?v=20261018-stats148'));
  assert.ok(app.includes('couple-live-sync.mjs?v=20261017-advent119'));
  assert.ok(html.includes('premium-advent.css?v=20261019-ipad155'));
- assert.match(app,/const WEB_RELEASE='2026-10-20\.177'/);
+ assert.match(app,/const WEB_RELEASE='2026-10-20\.178'/);
  assert.ok(html.includes('bubble-centering.css?v=20261020-ecrin177'));
  assert.ok(sw.includes('./bubble-centering.css'));
- assert.ok(html.includes('eclat.css?v=20261020-ecrin177'));
+ assert.ok(html.includes('eclat.css?v=20261020-switch178'));
  assert.match(html,new RegExp('app\\.js\\?v='+appTag));
  for(const css of ['satin-reference.css','discover.css']){
   assert.ok(html.includes(css+'?v='+tag),css);
@@ -45,7 +45,7 @@ test('LoveRoll build versions agree between endpoint, app, HTML and imported mod
  assert.match(html,/premium-home\.css\?v=20261019-ipad155/);
  assert.match(app,/premium-home\.mjs\?v=20261019-bubble175/);
  assert.match(app,new RegExp("dice3d\\.js\\?v="+diceTag));
- assert.ok(app.includes('premium-evening.mjs?v=20261020-ecrin177'));
+ assert.ok(app.includes('premium-evening.mjs?v=20261020-switch178'));
  assert.ok(html.includes('evening-editorial.css?v=20261017-ritual130'));
  assert.ok(app.includes('onboarding.mjs?v=20261018-style148'));
  assert.ok(app.includes('json-libraries.mjs?v=20261016-restore113'));
@@ -58,7 +58,7 @@ test('LoveRoll build versions agree between endpoint, app, HTML and imported mod
  assert.match(app,/surprise-event-config\.mjs\?v=20261016-surprise109/);
 });
 test('PWA bypasses stale Android network caches while preserving offline fallback',()=>{
- assert.match(sw,/loveroll-static-v177/);
+ assert.match(sw,/loveroll-static-v178/);
  assert.match(sw,/fetch\(req,\{cache:'no-store'\}\)/);
  assert.match(sw,/cache\.match\(fallback\.href\)/);
  assert.match(sw,/const cache=await caches\.open\(CACHE\)/);
@@ -95,4 +95,12 @@ test('Orphaned active evening NEVER blocks a corrected Web release from loading'
  assert.match(checker,/hasUnsavedForm\(\)/);
  assert.match(checker,/location\.replace\(latest\.toString\(\)\)/);
  assert.match(app,/setInterval\(\(\)=>\{if\(state\.user&&!document\.hidden\)/);
+});
+
+test('Éclat mode tabs and title layout resources are cached and versioned',()=>{
+ assert.ok(html.includes('evening-eclat-switcher.css?v=20261020-switch178'));
+ assert.ok(app.includes('eclat-ui.mjs?v=20261020-switch178'));
+ assert.ok(sw.includes('./evening-eclat-switcher.mjs'));
+ assert.ok(sw.includes('./evening-eclat-switcher.css'));
+ assert.ok(read('ritual-titles.css').includes('.eclat-page-title'));
 });
