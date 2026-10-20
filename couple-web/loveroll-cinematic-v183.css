@@ -359,3 +359,5 @@ main#app.loveroll-settings-page{overflow-x:hidden!important;overflow-y:auto!impo
 @media(prefers-reduced-motion:reduce){
  #app button{transition:none!important;}
 }
+/* One final canonical border tone at every breakpoint, including tablet. */
+body:has(main#app) main#app .nav{border-top:1px solid #ed57768a!important;}
