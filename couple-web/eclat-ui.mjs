@@ -74,15 +74,13 @@ export function eclatHtml({status=null,selected=1,minutes=60,details=false,membe
    btn('eclat:library','← Voir les 12 coffrets','eclat-link')+'</section>';
  }else{
   body='<section class="eclat-library">'+lead+
-   '<div class="eclat-intro"><h2>Nos douze expériences</h2>'+
-   '<p>'+esc(access?'Choisissez votre coffret. Chaque soirée raconte une nouvelle histoire.':
-   'Découvrez des soirées guidées, originales et synchronisées sur vos deux téléphones.')+'</p></div>'+
-   '<div class="eclat-grid" role="list">'+ECLAT_COFFRETS.map(coff=>
-    '<button role="listitem" type="button" class="eclat-tile" data-action="eclat:detail:'+coff.id+'">'+
+   '<h3 class="eclat-gallery-a11y">Nos douze expériences · choisir un coffret</h3>'+
+   '<div class="eclat-grid eclat-photo-grid" role="list">'+ECLAT_COFFRETS.map((coff,i)=>
+    '<button role="listitem" type="button" class="eclat-tile" data-action="eclat:detail:'+coff.id+'" aria-label="Ouvrir le coffret '+String(coff.id).padStart(2,'0')+' : '+esc(coff.title)+'">'+
+     '<span aria-hidden="true" class="eclat-tile-photo" style="--photo-y:'+(100*i/11).toFixed(5)+'%"></span>'+
      '<span class="eclat-tile-number">'+String(coff.id).padStart(2,'0')+'</span>'+
-     '<span class="eclat-tile-icon">'+(moods[coff.music]||'♡')+'</span>'+
      '<strong>'+esc(coff.title)+'</strong>'+
-     '<span class="eclat-tile-arrow">›</span></button>').join('')+'</div>'+
+     '<span aria-hidden="true" class="eclat-tile-arrow">›</span></button>').join('')+'</div>'+
     (!access?'<p class="eclat-library-offer">Éclat : '+fmt(status?.total_cents??999)+'/mois au total pour le couple</p>':'<p class="eclat-library-offer">12 coffrets · Accès illimité · 30, 60 ou 90 minutes</p>')+
     premiumNote+'</section>';
  }

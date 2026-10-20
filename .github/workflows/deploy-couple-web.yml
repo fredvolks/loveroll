@@ -28,6 +28,8 @@ jobs:
           set -euo pipefail
           node --check couple-web/app.js
           node --check couple-web/evening-eclat-switcher.mjs
+          test -s couple-web/assets/eclat-photo-strip.webp
+          node --check couple-web/eclat-ui.mjs
           node --check couple-web/platform-admin.js
           node --check couple-web/loveroll-splash.js
           node --check couple-web/boot-recovery.js

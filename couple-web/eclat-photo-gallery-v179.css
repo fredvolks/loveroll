@@ -1,0 +1,139 @@
+/* LoveRoll v179 — coffrets photographiques issus du visuel choisi.
+   Each photo is a crop of the user's chosen mockup, not a generated replacement.
+   All 12 remain live semantic buttons. No changes to Éclat's game engine. */
+#app.loveroll-eclat-page{
+ background:radial-gradient(ellipse at 50% 17%,#3b1329 0%,#1a0b15 46%,#13070f 100%)!important;
+}
+/* The same centered wordmark and subtitle position as the five main tabs. */
+#app.loveroll-eclat-page .eclat-top{
+ position:relative!important;display:flex!important;align-items:flex-start!important;
+ justify-content:center!important;width:100%!important;height:var(--ritual-heading-height)!important;
+ min-height:var(--ritual-heading-height)!important;margin:0 0 var(--ritual-title-gap)!important;
+ border:0!important;flex:none!important;
+}
+#app.loveroll-eclat-page .eclat-top>.ritual-heading{
+ display:flex!important;flex-direction:column!important;align-items:center!important;
+ justify-content:flex-start!important;gap:var(--ritual-brand-gap)!important;
+ width:100%!important;min-width:0!important;height:var(--ritual-heading-height)!important;
+ grid-column:auto!important;grid-row:auto!important;margin:0!important;
+}
+#app.loveroll-eclat-page .eclat-top>.eclat-return{
+ position:absolute!important;left:0!important;top:5px!important;z-index:2;
+}
+#app.loveroll-eclat-page .eclat-top>.eclat-audio-toggle,
+#app.loveroll-eclat-page .eclat-top>.eclat-header-balance{
+ position:absolute!important;right:0!important;top:0!important;z-index:2;
+}
+/* Same main title coordinates and serif font as Soirée. */
+#app.loveroll-eclat-page .eclat-page-title{
+ height:var(--ritual-title-height)!important;min-height:var(--ritual-title-height)!important;
+ display:flex;align-items:center;justify-content:center;flex:none;
+}
+#app.loveroll-eclat-page .eclat-page-title .ritual-page-title{
+ height:var(--ritual-title-height)!important;line-height:var(--ritual-title-height)!important;
+ padding:0!important;margin:0!important;
+}
+/* The same bottom-nav component, same height, shape and icon positions as Soirée.
+   Apply identical proportions, without changing the other tabs. */
+#app.loveroll-eclat-page .nav{
+ height:auto!important;min-height:0!important;
+ padding:7px 8px calc(9px + env(safe-area-inset-bottom))!important;
+ background:#130b11ee!important;border-top:1px solid #bd82984a!important;
+ border-radius:24px 24px 0 0!important;box-shadow:0 -5px 24px #06020566!important;
+ backdrop-filter:blur(18px);
+}
+#app.loveroll-eclat-page .nav-inner{
+ width:min(100%,840px)!important;max-width:960px!important;
+ grid-template-columns:repeat(5,minmax(0,1fr));gap:5px!important;
+}
+#app.loveroll-eclat-page .nav-inner>button{
+ min-width:0!important;min-height:63px!important;
+ padding:7px 3px 5px!important;border-radius:20px!important;
+ font-size:clamp(.62rem,2.3vw,.81rem)!important;font-weight:750!important;line-height:1.3!important;
+}
+#app.loveroll-eclat-page .nav-inner>button.active{
+ background:linear-gradient(125deg,#713052,#46213b)!important;color:#ffe1eb!important;
+ border:1px solid #ba778b70!important;box-shadow:inset 0 1px #ec82b559!important;
+}
+#app.loveroll-eclat-page .nav-inner>button.active::after{
+ content:"";position:absolute;bottom:4px;left:27%;right:27%;height:2px;
+ border-radius:2px;background:#ecb2c6;box-shadow:0 0 7px #e184a15c;
+}
+/* Coffrets photo grid: six balanced rows, two columns, no page scroll. */
+#app.loveroll-eclat-page .eclat-shell{padding-inline:clamp(10px,3vw,22px)!important;}
+#app.loveroll-eclat-page .eclat-shell>.ritual-mode-switcher{
+ margin:4px auto clamp(6px,1dvh,11px)!important;
+}
+#app.loveroll-eclat-page .eclat-library{
+ display:flex!important;flex-direction:column!important;
+ min-height:0!important;gap:0!important;
+}
+#app.loveroll-eclat-page .eclat-gallery-a11y{
+ position:absolute!important;width:1px!important;height:1px!important;overflow:hidden!important;
+ clip-path:inset(50%);white-space:nowrap;
+}
+#app.loveroll-eclat-page .eclat-photo-grid{
+ flex:1!important;min-height:0!important;
+ grid-template-columns:repeat(2,minmax(0,1fr))!important;
+ grid-template-rows:repeat(6,minmax(0,1fr))!important;
+ gap:clamp(5px,.9dvh,9px)!important;padding:1px 0 0!important;
+ align-content:stretch;
+}
+#app.loveroll-eclat-page .eclat-photo-grid button.eclat-tile{
+ isolation:isolate;position:relative;overflow:hidden;
+ display:flex!important;flex-direction:column!important;align-items:flex-start!important;
+ justify-content:flex-end!important;gap:0!important;
+ padding:8px clamp(6px,1.7vw,12px)!important;
+ border:1px solid #bb6c8b9c!important;border-radius:clamp(10px,3vw,17px)!important;
+ background:#1b0b16!important;
+ box-shadow:inset 0 1px #ffe8eb17,0 2px 6px #0005!important;
+ text-align:left!important;touch-action:manipulation;
+}
+#app.loveroll-eclat-page .eclat-photo-grid .eclat-tile-photo{
+ position:absolute;z-index:-2;inset:0;display:block;
+ background-image:url('./assets/eclat-photo-strip.webp');
+ background-repeat:no-repeat;background-size:100% 1200%;
+ background-position:center var(--photo-y,0%);
+ filter:saturate(.98) contrast(1.05);
+ pointer-events:none;
+}
+#app.loveroll-eclat-page .eclat-photo-grid .eclat-tile::after{
+ content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+ background:linear-gradient(90deg,#130710e5 0%,#1c0812bc 24%,#1c081252 56%,transparent 90%),
+ linear-gradient(0deg,#130811aa,transparent 65%);
+}
+#app.loveroll-eclat-page .eclat-photo-grid .eclat-tile-number{
+ top:clamp(5px,.7dvh,9px)!important;left:clamp(7px,1.6vw,11px)!important;
+ font:500 clamp(9px,2.5vw,13px)/1 system-ui,sans-serif!important;
+ color:#f3d3da!important;z-index:1;letter-spacing:.02em;
+}
+#app.loveroll-eclat-page .eclat-photo-grid .eclat-tile strong{
+ position:relative;z-index:1;max-width:73%!important;min-width:0!important;
+ margin:0!important;text-align:left!important;white-space:normal!important;
+ word-break:normal;overflow-wrap:normal!important;
+ font:500 clamp(11px,3.15vw,16px)/1.05 Georgia,serif!important;
+ letter-spacing:-.02em!important;color:#fff3ed!important;
+ text-shadow:0 2px 5px #11000dbb!important;
+}
+#app.loveroll-eclat-page .eclat-photo-grid .eclat-tile-arrow{
+ right:clamp(6px,1.4vw,10px)!important;top:clamp(3px,.6dvh,8px)!important;
+ z-index:1;color:#fff1eb!important;font:26px/1 Georgia,serif!important;
+ text-shadow:0 1px 3px #130713cc;
+}
+/* All 12 available while the 200 challenge game stays independent. */
+#app.loveroll-eclat-page .eclat-library-offer{
+ flex:none!important;margin:clamp(5px,.8dvh,9px) 0 2px!important;
+ font:clamp(10px,2.8vw,13px)/1.16 system-ui,sans-serif!important;
+ color:#eed8de!important;text-align:center!important;white-space:nowrap;
+}
+#app.loveroll-eclat-page .eclat-disclaimer{
+ margin:0 0 2px!important;flex:none!important;
+ font:clamp(8px,2.1vw,10px)/1.2 system-ui,sans-serif!important;
+ text-align:center!important;color:#bd9eaa!important;
+}
+@media (max-width:370px),(max-height:690px){
+ #app.loveroll-eclat-page .eclat-photo-grid button.eclat-tile{padding:5px 7px!important;}
+ #app.loveroll-eclat-page .eclat-photo-grid .eclat-tile strong{font-size:clamp(10px,2.9vw,13px)!important;}
+ #app.loveroll-eclat-page .eclat-library-offer{font-size:10px!important;}
+ #app.loveroll-eclat-page .eclat-disclaimer{font-size:8px!important;}
+}

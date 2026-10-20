@@ -39,13 +39,21 @@ const {chromium}=require('playwright');
         statisticsMaxError:Math.max(...statAxes),
         textX:Math.abs(centerX(content)-(centerX(circle)+centerX(arrow))/2)};
      }
-     return {width:innerWidth,height:innerHeight,noHorizontalScroll:document.documentElement.scrollWidth<=innerWidth+2,
+     const images=[...root.querySelectorAll('.eclat-tile-photo')];
+     const photoGrid=root.querySelector('.eclat-photo-grid');
+     const imageOK=images.length===12&&images.every(el=>{
+       const styles=getComputedStyle(el);
+       return styles.backgroundImage.includes('eclat-photo-strip.webp')&&el.getBoundingClientRect().height>25;
+     });
+     const gridCols=photoGrid?getComputedStyle(photoGrid).gridTemplateColumns.trim().split(/\s+/).length:0;
+     const photoLoaded=images.length?performance.getEntriesByType('resource').some(x=>x.name.includes('eclat-photo-strip.webp')):true;
+     return {photoGridCols:gridCols,imageOK,photoLoaded,width:innerWidth,height:innerHeight,noHorizontalScroll:document.documentElement.scrollWidth<=innerWidth+2,
       noVerticalScroll:document.documentElement.scrollHeight<=innerHeight+2,
       shellFits:rect.bottom<=last+2,visible,tiles:root.querySelectorAll('.eclat-tile').length,centered,
       storyText:!!root.querySelector('.eclat-story-main'),errors:window.__consoleErrors||[]};
     });
     if(!result.noHorizontalScroll||!result.noVerticalScroll||(mode!=='home'&&!result.shellFits)||!result.visible||
-       (mode==='gallery'&&result.tiles!==12)||(mode==='home'&&
+       (mode==='gallery'&&(result.tiles!==12||result.photoGridCols!==2||!result.imageOK))||(mode==='home'&&
         Object.values(result.centered||{}).some(x=>x>3)))
       throw Error(JSON.stringify({viewport,mode,...result}));
     console.log('ECLAT_LAYOUT_OK',viewport.width+'x'+viewport.height,mode);

@@ -100,3 +100,18 @@ test('Music control is only shown inside an active coffret',()=>{
  assert.ok(app.includes("if(!state.eclat?.active){eclatAudio.stop();state.eclatMusic=false;return;}"));
  assert.ok(app.includes("state.eclatDetails=false;eclatAudio.stop();state.eclatMusic=false;"));
 });
+
+test('Photographic Éclat shows exactly 12 clickable matching coffret pictures',()=>{
+ const gallery=eclatHtml({status:{access:true}});
+ assert.equal((gallery.match(/class="eclat-tile"/g)||[]).length,12);
+ assert.equal((gallery.match(/class="eclat-tile-photo"/g)||[]).length,12);
+ assert.match(gallery,/--photo-y:0\.00000%/);
+ assert.match(gallery,/--photo-y:100\.00000%/);
+ assert.equal((gallery.match(/data-action="eclat:detail:/g)||[]).length,12);
+ assert.doesNotMatch(gallery,/<div class="eclat-intro">/);
+ const style=read('./eclat-photo-gallery-v179.css');
+ assert.match(style,/eclat-photo-strip\.webp/);
+ assert.match(style,/repeat\(6,minmax\(0,1fr\)\)/);
+ assert.match(style,/ritual-heading-height/);
+ assert.match(style,/\.nav-inner>button/);
+});
