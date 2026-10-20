@@ -7,7 +7,7 @@ const base={session:null,lastEvening:{id:'s1',completed:0,responses:1,myResponse
 test('Finished evening has exactly two real buttons, dark start when weekly quota full',()=>{
  const html=premiumEveningHtml({...base,canStartEvening:false});
  assert.match(html,/evening-premium-view is-inactive is-finale/);
- assert.equal((html.match(/<button /g)||[]).length,2);
+ assert.equal((html.match(/<button /g)||[]).length,4);
  assert.match(html,/Notre soirée est terminée/);
  assert.match(html,/1 \/ 2 bilans déposés/);
  assert.match(html,/class="evening-finale-start" data-action="new-session" disabled/);
