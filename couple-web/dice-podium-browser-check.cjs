@@ -12,7 +12,7 @@ const {glassState,verifyCrystalMaterials}=require('./crystal-glass-browser-check
     world.rolls=phase==='host'?[{id:'activity',couple_id:'c',kind:'monthly_activity',key:new Intl.DateTimeFormat('en-CA',{timeZone:'America/Toronto',year:'numeric',month:'2-digit'}).format(new Date()).slice(0,7),face:19,activity_title:'Activité officielle',activity_description:'Texte officiel conservé.'}]:[];
     const {page,context,errors}=await setupEditorial(browser,world,{width,height,query:'open=special',motion:'no-preference'});
     if(['d6','d100','intro'].includes(phase)){
-     await page.route('https://esm.sh/@supabase/supabase-js@2.57.0*',r=>r.fulfill({contentType:'application/javascript',body:fake}));
+     await page.route('https://esm.sh/@supabase/supabase-js@2.107.0*',r=>r.fulfill({contentType:'application/javascript',body:fake}));
      await page.goto('http://127.0.0.1:8765/?boot_case='+(phase==='d6'?'paired-pending':phase==='intro'?'paired':'paired-active')+'&open=session');
     }
     await page.waitForFunction(()=>{const cs=[...document.querySelectorAll('canvas[data-dice-sides]')];return cs.length&&cs.every(c=>c.loveRollDie?.readState().optics.loaded)});
