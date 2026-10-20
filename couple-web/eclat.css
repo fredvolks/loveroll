@@ -36,7 +36,7 @@ main#app.loveroll-eclat-page{
 }
 #app.loveroll-eclat-page .eclat-shell{
  position:relative;isolation:isolate;display:flex;flex-direction:column;gap:0;
- width:min(100%,680px);height:calc(100dvh - 76px - env(safe-area-inset-bottom,0px));
+ width:min(100%,680px);height:calc(100dvh - 102px - env(safe-area-inset-bottom,0px));
  min-height:0;margin:0 auto;padding:max(11px,env(safe-area-inset-top,0px)) 16px 8px;
  color:#f9dce7;overflow:hidden;
 }
