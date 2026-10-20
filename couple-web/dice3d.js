@@ -290,10 +290,10 @@ function geometry(sides,pips=false,neutral=false){
  custom?.geo.dispose();
  custom?.edges.dispose();
  const mat=new THREE.MeshPhysicalMaterial({
-  color:0xffffff,metalness:0,roughness:.025,
-  clearcoat:1,clearcoatRoughness:.025,
+  color:0xffffff,metalness:0,roughness:.018,
+  clearcoat:1,clearcoatRoughness:.018,
   specularIntensity:1,ior:1.52,transmission:1,thickness:1.9,
-  attenuationColor:0xa62d42,attenuationDistance:2.4,envMapIntensity:1.15,
+  attenuationColor:0x980a2e,attenuationDistance:2.7,envMapIntensity:1.24,
   side:THREE.FrontSide,flatShading:false,transparent:false,opacity:1,depthWrite:true
  });
  // Clear rose crystal: the photograph is refracted by the real face normals,

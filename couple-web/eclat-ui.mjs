@@ -73,7 +73,8 @@ export function eclatHtml({status=null,selected=1,minutes=60,details=false,membe
    btn('tab:session','← Retour à notre soirée','eclat-offer-back')+
    '</section>';
  }else if(details){
-  body='<section class="eclat-detail"><div class="eclat-orb">♡<span>✦</span></div>'+
+  body='<section class="eclat-detail">'+
+   '<div class="eclat-detail-hero'+(Number(c.id)===1?' is-secret':'')+'" role="img" aria-label="Décor du coffret '+esc(c.title)+'"><span class="eclat-detail-hero-photo" style="--photo-y:'+(100*(Number(c.id)-1)/11).toFixed(5)+'%"></span></div>'+
    '<small>COFFRET '+String(c.id).padStart(2,'0')+' / 12</small><h2>'+esc(c.title)+'</h2>'+
    '<p>'+esc(c.subtitle)+'</p><div class="eclat-descriptor"><span>8 chapitres</span><span>4 variantes chacun</span><span>Deux téléphones</span></div>'+
    '<p class="eclat-detail-copy">Une expérience scénarisée à vivre à votre rythme. Chaque partenaire reçoit des instructions différentes; vos choix transforment les chapitres suivants.</p>'+

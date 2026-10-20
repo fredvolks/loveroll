@@ -1,0 +1,361 @@
+/* LoveRoll 183 — complete cinematic ruby skin based on the approved 8-screen designs.
+   Visual layer only: no dice geometry, action, Supabase record, role, probability
+   or navigation behavior is changed.  All clickable controls remain native. */
+:root {
+  --loveroll-photo: url('./assets/loveroll-romance-scene-v183.webp');
+  --loveroll-deep:#170208;
+  --loveroll-cherry:#8b082d;
+  --loveroll-hot:#f7255a;
+  --loveroll-cream:#fff3e9;
+  --loveroll-glass:linear-gradient(166deg,#5f0717e9 0%,#3d0311f0 36%,#24020bea 81%,#500819eb 100%);
+  --loveroll-glass-border:#e83f64be;
+  --loveroll-glass-shine:inset 0 1px 0 #ffd8d69c,inset 0 -2px 7px #0b0008aa,0 4px 16px #12020ac9;
+  --loveroll-ruby-button:
+    radial-gradient(ellipse 55% 100% at 16% -8%,#ffb1bfeb 0%,#ff7b97a8 20%,transparent 65%),
+    radial-gradient(ellipse 76% 80% at 54% 110%,#9b092ea0,transparent 69%),
+    linear-gradient(180deg,#e31548 0%,#a40732 12%,#63071f 48%,#24020e 78%,#820924 96%,#ff3460 100%);
+  --loveroll-ruby-ring:inset 0 1px 1px #ffccd0ed,inset 0 3px 5px #fe1d6370,
+                         inset 0 -3px 7px #080006ab,0 0 0 1px #c31943,0 3px 12px #140009b8;
+  --loveroll-gold:linear-gradient(115deg,#fce7ac,#a86b30 25%,#fff2bd 47%,#bf853c 72%,#f7d78c);
+  --ritual-text:#fff0e6;--ritual-muted:#e2bcb7;--ritual-rose:#ff91ae;
+  --ritual-page:linear-gradient(90deg,#16020d8a,#1301084a 48%,#16020b88),var(--loveroll-photo) center center / cover no-repeat;
+  --ritual-border:#e548688a;
+  --ritual-card:var(--loveroll-glass);
+  --ritual-button:var(--loveroll-ruby-button);
+  --control-primary:var(--loveroll-ruby-button);
+  --control-border:#f35b7b;
+  --control-text:#fff3ee;
+  --control-shadow:var(--loveroll-ruby-ring);
+  --control-selected:var(--loveroll-ruby-button);
+  --control-selected-border:#f64b72;
+  --control-selected-shadow:var(--loveroll-ruby-ring);
+  --love-glass:var(--loveroll-glass);
+  --love-border:var(--ritual-border);
+  --love-glow:var(--loveroll-glass-shine);
+  --bg:#110208;--panel:#310511;--edge:#dc4668;--pink:#d82958;
+  --text:#fff0e6;--mute:#dfbdb8;
+}
+html,body{background:#140108;color:var(--loveroll-cream);}
+/* Cinematic photographic environment on every main tab, including nested settings,
+   and on entry, invitation, recovery and waiting-for-partner screens. */
+main#app:is(.loveroll-real-home,.loveroll-evening-page,.loveroll-surprise-ecrin,
+            .loveroll-advent-page,.loveroll-settings-page,.loveroll-eclat-page),
+main#app:has(.entry-access-screen),main#app:has(.invite-panel),
+main#app:has(.waiting-partner),main#app:has(.auth-panel),
+main#app:has(.discover-ritual){
+ background-color:#180208!important;
+ background-image:linear-gradient(90deg,#23020c64,#1001064a 50%,#22010d67),var(--loveroll-photo)!important;
+ background-size:cover!important;
+ background-repeat:no-repeat!important;
+ background-position:center center!important;
+ color:#fff1e9;
+}
+/* The top mark and tab title intentionally inherit the earlier shared sizes and
+   offsets; only the photography and typography colors change. */
+#app .ritual-brand b,#app .ritual-heading .ritual-wordmark{color:#fff1ed!important;
+ text-shadow:0 2px 8px #1b020bbb;}
+#app :is(.ritual-page-title,.home-title h2,.settings-page-title,
+ .advent-intro h1,.settings-editorial-title,.settings-detail-title,
+ .eclat-page-title h2){color:#fff1e8!important;text-shadow:0 2px 14px #090108a3;}
+#app .ritual-kicker{color:#f2a0b2!important;}
+#app :is(.home-die-theater,.evening-finale-hero,.evening-user-die>.love3d,
+ .surprise-main-die-scene){
+ background-image:radial-gradient(ellipse at 50% 45%,#4e041b0a,#20020c4c 75%),var(--loveroll-photo)!important;
+ background-size:cover!important;background-position:center 43%!important;
+}
+/* Buttons are glass ruby, not flat gradients. Non-premium controls have only
+   crimson/pink edges; gilding is limited to active Éclat surfaces below. */
+#app :is(.home-roll-button,.evening-primary,.evening-small-roll,
+ .evening-finale-start,.evening-calendar-action,.evening-calendar-toolbar button,
+ .evening-queue-open-btn,.evening-locked-cta,.surprise-primary,
+ .surprise-invite-button,.advent-primary,.settings-primary,
+ .auth-primary,.entry-auth-submit,.entry-auth-primary,.entry-auth-provider,
+ .discover-accept,.love-dialog-confirm,.lr-review-save,.install-primary,
+ .landing-cta,.invite-primary,.invite-accept,.invitation-accept,
+ .evening-roll-button,.surprise-event-activities,.settings-secondary,
+ .lr-picker-choice,.account-test-option,.home-next-month,
+ .settings-section-row,.settings-profile-row,.settings-link-row
+ ):not(:disabled):not([aria-disabled="true"]){
+ background:var(--loveroll-ruby-button)!important;
+ color:#fff4ed!important;
+ border-color:#db3d60!important;
+ box-shadow:var(--loveroll-ruby-ring)!important;
+}
+#app :is(.home-roll-button,.evening-primary,.evening-finale-start,.surprise-primary,
+ .surprise-invite-button,.advent-primary,.settings-primary,.auth-primary,
+ .entry-auth-submit,.entry-auth-primary,.discover-accept,
+ .eclat-primary,.eclat-duration-choice,.eclat-offer-back){
+ text-align:center!important;justify-content:center;align-items:center;
+}
+#app :is(.evening-primary,.surprise-primary,.home-roll-button,
+ .advent-primary,.settings-primary,.eclat-primary):not(:disabled):active{
+ filter:brightness(1.08);box-shadow:inset 0 3px 11px #12020dc2,0 0 0 1px #ff6c90!important;
+}
+#app button:focus-visible,#app a:focus-visible,#app input:focus-visible,
+#app select:focus-visible{outline:2px solid #ffe1b4!important;outline-offset:3px;}
+#app :is(.home-panel,.evening-aftercare,.evening-step,.evening-gift,
+ .surprise-month,.surprise-special,.surprise-event-card,.surprise-host,
+ .settings-group,.settings-hero,.settings-section,.settings-item,
+ .settings-duo-card,.settings-editorial-card,.settings-referral-card,
+ .eclat-detail,.eclat-private,.eclat-story,.eclat-play,
+ .advent-dialog,.evening-calendar-session,.love-dialog,.lr-dialog){
+ border-color:var(--loveroll-glass-border)!important;
+ background:var(--loveroll-glass)!important;
+ box-shadow:var(--loveroll-glass-shine)!important;
+}
+/* Keep counters and multiline texts optically centered and readable. */
+#app :is(.home-panel h3,.home-stat-card,.evening-finale-tiles>div,
+ .evening-finale-weekly,.evening-finale-status,.surprise-month,
+ .surprise-host-option,.advent-state-label,.eclat-descriptor,
+ .eclat-duration,.account-test-option){text-align:center;}
+#app :is(.home-stat-card,.evening-finale-tiles>div,.surprise-host-option)
+ :is(strong,small,span){text-align:center;}
+/* PIP D6 / numeric D100 are still WebGL canvases, never overlay or exchange them. */
+#app .home-die-platform .dice-canvas,
+#app .love3d-stage>.dice-canvas{filter:none!important;}
+/* Main navigation: one common geometry across ALL tabs. Only color/material. */
+main#app>.nav{
+ background:linear-gradient(140deg,#2c020fcf,#190106ed 60%,#33040de6)!important;
+ border-top-color:#ed57768a!important;
+ box-shadow:0 -5px 20px #15020caf,inset 0 1px #ffe4d233!important;
+ backdrop-filter:blur(14px);
+}
+main#app>.nav .nav-inner>button.active{
+ background:var(--loveroll-ruby-button)!important;
+ border-color:#ff5d83!important;
+ box-shadow:var(--loveroll-ruby-ring)!important;
+ color:#fff4f1!important;
+}
+main#app>.nav .nav-inner>button:not(.active){background:transparent!important;box-shadow:none!important;}
+main#app>.nav .nav-inner>button span{color:#ffe0e4!important;}
+/* Home: dense glass cards and a subtle soft shadow to preserve existing layout. */
+main#app.loveroll-real-home .home-panel{
+ background:linear-gradient(160deg,#430612df,#26040bdc 70%,#1b0309e8)!important;
+ border-color:#cd3e638a!important;
+}
+main#app.loveroll-real-home .home-weights,
+main#app.loveroll-real-home .home-challenge-stats>div,
+main#app.loveroll-real-home .home-stat-card{
+ background:linear-gradient(165deg,#390410c9,#17020cda)!important;
+ border-color:#d4476685!important;
+}
+main#app.loveroll-real-home .home-next-month{
+ border-color:#fc426fba!important;
+ background:radial-gradient(ellipse at 8% 0%,#b4124280,transparent 65%),var(--loveroll-glass)!important;
+}
+/* Soirée: active/inactive buttons visually shared with the rest of LoveRoll. */
+#app.loveroll-evening-page :is(.evening-aftercare,.evening-finale-tiles>div,
+ .evening-user-die,.evening-gift,.evening-step){border-color:#e5426a96!important;}
+#app.loveroll-evening-page .evening-finale-hero{
+ border-color:#dd456e7a!important;
+ box-shadow:inset 0 1px #fac9c44d!important;
+}
+#app.loveroll-evening-page .evening-choice-btn[aria-pressed="true"]{
+ background:var(--loveroll-ruby-button)!important;
+ border-color:#f7567a!important;box-shadow:var(--loveroll-ruby-ring)!important;
+}
+/* Surprise: same photo card surface; preserve D100 and its stage. */
+#app.loveroll-surprise-ecrin .surprise-main-die-scene,
+#app.loveroll-surprise-ecrin .surprise-event-card{
+ border-color:#f04c76a3!important;
+}
+#app.loveroll-surprise-ecrin .surprise-month,
+#app.loveroll-surprise-ecrin .surprise-special{
+ background:linear-gradient(120deg,#600b20eb,#28030fef 75%)!important;
+}
+#app.loveroll-surprise-ecrin .surprise-event-symbol{
+ border-color:#fa5383a8!important;
+ background:var(--loveroll-ruby-button)!important;
+ box-shadow:inset 0 1px #ffe5e66b,0 4px 9px #1000099c!important;
+}
+/* Advent: 25 original clickable envelopes, red satin material, not a raster screenshot. */
+#app.loveroll-advent-letters .advent-envelope{
+ border-color:#d54463bb!important;
+ border-radius:clamp(5px,1.5vw,11px)!important;
+ background:var(--loveroll-ruby-button)!important;
+ box-shadow:inset 0 2px #ffb5c870,inset 0 -5px 8px #0b010bcd,0 3px 10px #0a010cb0!important;
+}
+#app.loveroll-advent-letters :is(.advent-envelope-front,.advent-envelope-flap){
+ background:linear-gradient(162deg,#bf1746,#650820 42%,#320510 100%)!important;
+}
+#app.loveroll-advent-letters .advent-envelope-flap{
+ background:linear-gradient(150deg,#ff456ec9,#730b2c 42%,#4d051c)!important;
+}
+#app.loveroll-advent-letters .advent-fold{stroke:#f894a3!important;stroke-width:1.1!important;}
+#app.loveroll-advent-letters .advent-seal{
+ background:radial-gradient(circle at 24% 15%,#fe547d,#7a0b29 63%,#380414)!important;
+ border-color:#ff8097!important;color:#ffe2e7!important;
+}
+#app.loveroll-advent-letters .advent-box.available .advent-envelope{
+ box-shadow:0 0 0 1px #ff6a8d,0 0 14px #f81956b0,inset 0 2px #ffe3d19c!important;
+}
+#app.loveroll-advent-letters .advent-box-number{color:#fff1eb!important;text-shadow:0 1px 6px #20010dd0;}
+/* Settings: replace plain divider rows with full glossy ruby cards; preserve
+   all settings routes, input names, handlers and the existing compact layout. */
+main#app.loveroll-settings-page .settings-sections{
+ border:0!important;gap:clamp(5px,.9dvh,10px)!important;
+}
+main#app.loveroll-settings-page :is(.settings-section-row,.settings-profile-row,
+ .settings-link-row){
+ min-width:0!important;border:1px solid #ea4167a6!important;
+ border-radius:clamp(14px,3.1vw,20px)!important;
+ background:var(--loveroll-glass)!important;
+ box-shadow:var(--loveroll-glass-shine)!important;
+ color:#fff3e9!important;
+ padding:clamp(5px,1dvh,12px) clamp(8px,2.8vw,15px)!important;
+}
+main#app.loveroll-settings-page .settings-section-row{
+ grid-template-columns:clamp(39px,11vw,50px) minmax(0,1fr) 18px!important;
+ align-items:center!important;
+ column-gap:clamp(8px,2.5vw,14px)!important;
+ min-height:0!important;
+ text-align:left!important;
+}
+main#app.loveroll-settings-page .settings-profile-row{min-height:60px!important;}
+main#app.loveroll-settings-page .settings-section-row .settings-row-icon{
+ display:grid!important;place-items:center!important;
+ border:1px solid #e75b80bd;border-radius:12px!important;
+ width:clamp(37px,10vw,47px);height:clamp(37px,10vw,47px);
+ background:var(--loveroll-ruby-button)!important;
+ box-shadow:inset 0 1px 2px #ffd8d8bc,inset 0 -3px 7px #09010ab1!important;
+}
+main#app.loveroll-settings-page .settings-row-icon svg{
+ width:clamp(23px,6vw,29px)!important;height:clamp(23px,6vw,29px)!important;
+ stroke:#ffb0c4!important;
+}
+main#app.loveroll-settings-page .settings-section-row>span:not(.settings-row-icon),
+main#app.loveroll-settings-page .settings-link-copy{align-content:center;}
+main#app.loveroll-settings-page .settings-section-row strong,
+main#app.loveroll-settings-page .settings-link-copy strong{
+ color:#fff0ea!important;font-family:Georgia,serif;font-weight:500!important;
+ font-size:clamp(14px,4vw,20px)!important;
+}
+main#app.loveroll-settings-page .settings-section-row small,
+main#app.loveroll-settings-page .settings-link-copy small{color:#e6bfc0!important;}
+main#app.loveroll-settings-page .settings-section-row>b,
+main#app.loveroll-settings-page .settings-link-affordance b{color:#ff99af!important;}
+main#app.loveroll-settings-page .settings-editorial-content,
+main#app.loveroll-settings-page .settings-detail-body{min-width:0;}
+main#app.loveroll-settings-page :is(.settings-detail-body,.settings-account-form)
+ :is(input,select,textarea){
+ border-color:#db4e7296!important;background:#25040fdd!important;color:#fff1ea!important;
+ box-shadow:inset 0 1px 4px #0c0109a8!important;
+}
+main#app.loveroll-settings-page :is(.settings-help-item,.push-option,.settings-referral-card,
+ .settings-referral-stats>div){border-color:#c849688c!important;}
+/* Invitation, sign-up, login, forgotten-password and pair acceptance.
+   Keep the original native field/input/button functionality and validation. */
+#app :is(.entry-auth-card,.entry-account-hero,.auth-panel,.invite-panel,
+ .waiting-hero,.waiting-card,.entry-invitation-card,.love-invitation-card){
+ border-color:#e74b73b5!important;
+ background:linear-gradient(145deg,#480513ef,#20030de9 62%,#420918e8)!important;
+ box-shadow:inset 0 1px #ffe9de5c,0 12px 24px #090108ad!important;
+}
+#app :is(.entry-auth-segments,.entry-auth-field,.entry-input,.auth-input-wrap){
+ border-color:#d64a6f94!important;background:#260511c9!important;
+}
+#app .entry-access-screen :is(.entry-auth-title h1,.entry-account-hero h1){color:#fff1e9!important;}
+#app :is(.entry-auth-primary,.entry-auth-submit,.auth-primary,.invite-primary,.discover-accept){
+ background:var(--loveroll-ruby-button)!important;border-color:#fb5278!important;
+ box-shadow:var(--loveroll-ruby-ring)!important;color:#fff3ea!important;
+}
+#app :is(.entry-auth-segments button.is-active,.settings-segmented button.active){
+ background:var(--loveroll-ruby-button)!important;border-color:#e54e70!important;
+ box-shadow:var(--loveroll-ruby-ring)!important;
+}
+#app .lr-premium-picker-card,
+#app .love-dialog{border-color:#d64b6899!important;background:var(--loveroll-glass)!important;}
+/* Éclat catalog: restored photographic cards at natural quality. All image text
+   and arrows were excluded from the source crops; native labels remain readable. */
+#app.loveroll-eclat-page .eclat-shell{background:transparent!important;}
+#app.loveroll-eclat-page .eclat-detail{
+ background:linear-gradient(155deg,#340512ab,#160208b8 70%,#340512b3)!important;
+ border:1px solid #e3446b98!important;
+ border-radius:20px!important;
+}
+#app.loveroll-eclat-page .eclat-photo-grid .eclat-tile-photo{
+ background-image:url('./assets/eclat-photo-strip-v183.webp')!important;
+ filter:none!important;opacity:1!important;
+ background-size:100% 1200%!important;
+ background-repeat:no-repeat!important;
+}
+#app.loveroll-eclat-page .eclat-photo-grid button.eclat-tile{
+ border-color:#e53b629e!important;
+ box-shadow:inset 0 1px #fff1ec2d,0 3px 8px #150209bf!important;
+ background:#2b0413!important;
+}
+#app.loveroll-eclat-page .eclat-photo-grid button.eclat-tile::after{
+ background:linear-gradient(180deg,#24030b22 0%,transparent 26%,#120107d1 100%)!important;
+}
+#app.loveroll-eclat-page .eclat-photo-grid :is(.eclat-tile-arrow,.eclat-tile-number,.eclat-tile strong){
+ color:#fff2e9!important;text-shadow:0 1px 6px #0a010a!important;
+}
+#app.loveroll-eclat-page .eclat-photo-grid .eclat-tile-arrow{font-size:25px!important;}
+#app.loveroll-eclat-page .eclat-detail-hero{
+ display:block;position:relative;isolation:isolate;flex:1 1 auto;
+ width:min(100%,490px);min-height:100px;max-height:min(31dvh,275px);
+ overflow:hidden;border:1px solid #e64b638a;border-radius:21px;
+ box-shadow:0 7px 22px #13010c9e,inset 0 1px #ffdccc52;
+ background:#2d0615;
+}
+#app.loveroll-eclat-page .eclat-detail-hero-photo{
+ position:absolute;inset:0;display:block;background-image:url('./assets/eclat-photo-strip-v183.webp');
+ background-position:50% var(--photo-y,0%);background-size:100% 1200%;background-repeat:no-repeat;
+}
+#app.loveroll-eclat-page .eclat-detail-hero.is-secret .eclat-detail-hero-photo{
+ background-image:url('./assets/eclat-secret-letter-v183.webp');
+ background-size:cover;background-position:center 50%;
+}
+#app.loveroll-eclat-page .eclat-detail-hero::after{
+ content:'';position:absolute;inset:0;z-index:1;pointer-events:none;
+ background:linear-gradient(0deg,#27030c60,transparent 40%);
+}
+#app.loveroll-eclat-page .eclat-detail>small{color:#ffc7c4!important;}
+#app.loveroll-eclat-page .eclat-descriptor>span{
+ border-color:#d76b788c!important;background:#260712cd!important;
+ color:#ffe8df!important;
+}
+#app.loveroll-eclat-page :is(.eclat-primary,.eclat-duration-choice.is-selected,
+ .eclat-offer-back,.eclat-choose-primary){
+ background:var(--loveroll-ruby-button)!important;
+ border-color:#e5b76b!important;
+ box-shadow:inset 0 0 0 1px #ffe7bbd4,inset 0 2px 3px #fff1d38e,
+            inset 0 -4px 6px #11010bb0,0 0 0 1px #b77930,0 0 13px #f4bd6963!important;
+ color:#fff8ea!important;
+}
+#app .ritual-mode-switcher .ritual-mode-premium{
+ background:linear-gradient(175deg,#7e0e27,#3e0619 62%,#25030e)!important;
+ border-color:#e5ae5f!important;
+ box-shadow:inset 0 0 0 1px #ffe8b7a5,0 0 0 1px #965a2c!important;
+}
+#app .ritual-mode-switcher .ritual-mode-premium.is-active{
+ background:var(--loveroll-ruby-button)!important;
+ border-color:#ffdc96!important;
+ box-shadow:inset 0 0 0 1px #fff5c7,inset 0 2px 3px #ffecd5ac,
+            inset 0 -3px 9px #1a0310a4,0 0 0 1px #bb7f36,0 0 12px #e8a84d87!important;
+}
+#app .ritual-mode-switcher .ritual-mode-premium :is(.ritual-mode-icon,.ritual-premium-copy strong,
+ .ritual-premium-copy small){color:#ffe4b1!important;}
+/* Ensure ordinary buttons and selected bottom-navigation items are NOT gilded. */
+#app.loveroll-eclat-page .nav button.active,
+#app .nav button.active{border-color:#f04d78!important;}
+/* Layout safety: menu uses original dimensions; hide accidental page scroll
+   for the five fixed game tabs, while leaving complex Settings accessible. */
+html:has(#app.loveroll-real-home),html:has(#app.loveroll-evening-page),
+html:has(#app.loveroll-surprise-ecrin),html:has(#app.loveroll-advent-letters),
+html:has(#app.loveroll-eclat-page){overflow:hidden!important;}
+main#app:is(.loveroll-real-home,.loveroll-evening-page,.loveroll-surprise-ecrin,
+ .loveroll-advent-letters,.loveroll-eclat-page){overflow:hidden!important;}
+main#app.loveroll-settings-page{overflow-x:hidden!important;overflow-y:auto!important;}
+@media(max-height:710px){
+ #app.loveroll-eclat-page .eclat-detail{gap:clamp(4px,1dvh,8px)!important;}
+ #app.loveroll-eclat-page .eclat-detail-hero{max-height:min(25dvh,180px);}
+ #app.loveroll-eclat-page .eclat-detail>p{font-size:clamp(11px,2.6vw,13px)!important;}
+ main#app.loveroll-settings-page .settings-section-row small{font-size:clamp(10px,2.8vw,12px)!important;}
+}
+@media(min-width:768px){
+ #app.loveroll-eclat-page .eclat-detail-hero{max-height:min(38dvh,305px);}
+}
+@media(prefers-reduced-motion:reduce){
+ #app button{transition:none!important;}
+}
