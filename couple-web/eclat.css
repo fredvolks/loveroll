@@ -49,6 +49,7 @@ main#app.loveroll-eclat-page{
  align-items:center;gap:4px;margin:0 0 7px;border-bottom:1px solid #cd7b9950;
 }
 #app.loveroll-eclat-page .eclat-top>div{text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;}
+#app.loveroll-eclat-page .eclat-header-balance{width:76px;height:1px;}
 #app.loveroll-eclat-page .eclat-top small{font-size:9px;letter-spacing:.17em;color:#dfadc4;font-weight:500;}
 #app.loveroll-eclat-page .eclat-top h1{font:italic 400 clamp(27px,6vw,36px)/1 Georgia,serif;color:#ffe7ec;margin:0;}
 #app.loveroll-eclat-page button.eclat-return{background:none!important;border:0!important;color:#fff0fa!important;font:40px/1 Georgia,serif!important;padding:2px 9px!important;box-shadow:none!important;min-height:45px!important;text-align:left!important;}
@@ -125,12 +126,43 @@ main#app.loveroll-eclat-page{
 #app.loveroll-eclat-page .eclat-play-bottom span{font-size:10px;color:#c7a6b4;line-height:1.25;}
 #app.loveroll-eclat-page .nav{z-index:5000!important;}
 #app.loveroll-eclat-page .nav button[data-action="tab:session"]{color:#ffdeed;border-color:#e689ad4d;background:linear-gradient(130deg,#7c2456,#4a1d42);}
-#app.loveroll-evening-page .evening-empty.is-finale{position:relative!important;}
+/* Éclat v177 — one compact champagne-and-bordeaux invitation over the photo. */
+#app.loveroll-evening-page .evening-finale-hero{isolation:isolate;}
 #app.loveroll-evening-page button.eclat-evening-entry{
- position:absolute!important;z-index:8!important;right:13px!important;top:13px!important;
- width:auto!important;min-height:31px!important;max-width:90px!important;
- font:500 12px/1.1 system-ui!important;background:#48203bba!important;border:1px solid #a8658aaa!important;
- border-radius:12px!important;color:#ffe0ea!important;padding:7px 10px!important;margin:0!important;min-height:31px!important;
+ position:absolute!important;inset:auto clamp(10px,2.9vw,22px) clamp(10px,2.5vw,18px) auto!important;
+ z-index:9!important;box-sizing:border-box!important;width:clamp(184px,49%,242px)!important;
+ min-height:70px!important;max-width:none!important;display:grid!important;
+ grid-template-columns:34px minmax(0,1fr) 15px!important;align-items:center!important;gap:8px!important;
+ padding:8px 11px!important;margin:0!important;
+ border:1px solid #edbfc1b8!important;border-radius:17px!important;
+ background:linear-gradient(125deg,#602b44e8,#311421f2 61%,#1e0b18e9)!important;
+ color:#fff0e5!important;box-shadow:0 8px 23px #0b020b9b,inset 0 1px #fff5e84f!important;
+ backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+ text-align:left!important;line-height:1!important;letter-spacing:normal!important;transform:none!important;
+ cursor:pointer;touch-action:manipulation;
+}
+#app.loveroll-evening-page button.eclat-evening-entry:focus-visible{outline:2px solid #ffe1c8!important;outline-offset:3px!important;}
+#app.loveroll-evening-page .eclat-entry-sigil{
+ display:grid;place-items:center;width:34px;height:34px;border-radius:12px;border:1px solid #f2c5c0bb;
+ background:radial-gradient(circle at 30% 20%,#dfa4be7c,#5d2346 65%,#29101f);
+ box-shadow:inset 0 1px #ffe6dc85,0 0 14px #a64d6f9e;
+ font:28px/1 Georgia,serif;color:#ffe2c7;text-shadow:0 0 10px #ffe0c69b;
+}
+#app.loveroll-evening-page .eclat-entry-copy{
+ display:flex!important;flex-direction:column;align-items:flex-start;justify-content:center;min-width:0;gap:2px;white-space:nowrap;
+}
+#app.loveroll-evening-page .eclat-entry-copy small{font:600 8px/1.1 system-ui,sans-serif!important;letter-spacing:.15em!important;color:#edbfc2!important;}
+#app.loveroll-evening-page .eclat-entry-copy strong{font:italic 400 clamp(21px,5vw,27px)/1 Georgia,serif!important;color:#ffefe5!important;text-shadow:0 1px 8px #cf859255;}
+#app.loveroll-evening-page .eclat-entry-copy em{font:normal 10px/1.2 system-ui,sans-serif!important;color:#ebc8c8!important;}
+#app.loveroll-evening-page .eclat-entry-arrow{display:grid;place-items:center;justify-self:end;font:25px/1 Georgia,serif;color:#ffe0cc;}
+@media (max-width:375px),(max-height:675px){
+ #app.loveroll-evening-page button.eclat-evening-entry{
+ width:184px!important;min-height:62px!important;gap:6px!important;padding:7px 9px!important;
+ grid-template-columns:28px minmax(0,1fr) 12px!important;
+ }
+ #app.loveroll-evening-page .eclat-entry-sigil{width:28px;height:28px;font-size:23px;}
+ #app.loveroll-evening-page .eclat-entry-copy small{font-size:7px!important;}
+ #app.loveroll-evening-page .eclat-entry-copy em{font-size:9px!important;}
 }
 @media (max-height:690px){
  #app.loveroll-eclat-page .eclat-shell{padding-top:4px;}
