@@ -1,5 +1,6 @@
 // LoveRoll connected couple — production UI, not a demo. All results are provided by Supabase.
 import {ritualHeadingHtml} from './brand.mjs?v=20261017-ritual130';
+import {eveningEclatSwitcher} from './evening-eclat-switcher.mjs';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','"':'&quot;',"'":'&#39;'}[c]));
 const bt=(action,text,cls='',disabled=false)=>'<button type="button" class="'+cls+'" data-action="'+esc(action)+'"'+
  (action.startsWith('category:')?' aria-pressed="'+(cls.includes('selected')?'true':'false')+'"':'')+
@@ -156,7 +157,7 @@ export function premiumEveningHtml({
   ritualHeadingHtml(session?(ready?'ÉTAPE 2 · DÉFI DU SOIR':'ÉTAPE 1 · NOMBRE DE DÉFIS'):'NOTRE RITUEL DE LA SOIRÉE')+
   (session?'<button type="button" class="evening-manage" data-action="evening-more" aria-label="Gérer notre soirée">⋯</button>':'<span aria-hidden="true"></span>')+'</div>'+
  '<div class="evening-intro">'+
- '<h2 class="ritual-page-title">'+(session?(ready?'Votre défi du soir':'À toi de brasser ton dé'):'200 défis à vivre à deux')+'</h2></div>'+
+ '<h2 class="ritual-page-title">'+(session?(ready?'Votre défi du soir':'À toi de brasser ton dé'):'200 défis à vivre à deux')+'</h2>'+eveningEclatSwitcher('session')+'</div>'+
  (session?
   '<section class="evening-step one '+(ready?'is-complete':'is-incomplete')+'"><div class="evening-step-label"><span class="step-number">1</span><div>'+
   '<strong>ÉTAPE 1 · NOMBRE DE DÉFIS</strong><small>Chacun lance son dé depuis son propre compte.</small></div></div>'+
@@ -204,11 +205,7 @@ export function premiumEveningHtml({
   '<div class="evening-finale-hero">'+
     '<span class="evening-finale-velvet" aria-hidden="true"></span>'+
     '<div class="evening-finale-dice" aria-hidden="true">'+premiumPolyDie(100,null,'Dé 100 faces décoratif',false,true)+'</div>'+
-    '<button type="button" class="eclat-evening-entry" data-action="tab:eclat" aria-label="Découvrir Éclat, douze coffrets à vivre à deux">'+
-      '<span class="eclat-entry-sigil" aria-hidden="true">✧</span>'+
-      '<span class="eclat-entry-copy"><small>COLLECTION PRIVÉE</small><strong>Éclat</strong><em>12 coffrets à deux</em></span>'+
-      '<span class="eclat-entry-arrow" aria-hidden="true">›</span>'+
-    '</button></div>'+
+    '</div>'+
   '<div class="evening-aftercare">'+
     '<div class="evening-finale-ornament" aria-hidden="true"><span>♡</span></div>'+
     '<div class="evening-finale-weekly">♡ SOIRÉES CETTE SEMAINE · '+
