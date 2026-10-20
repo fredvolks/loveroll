@@ -389,7 +389,7 @@ export function dieOn(canvas,sides,value,rolling){
  // A server-confirmed face owns the final quaternion. Do not ever restore
  // the initial mesh rotation after a live D100 throw.
  const tilt=new THREE.Quaternion().setFromEuler(sides===6?
-  (canvas.closest('.home-die-platform')?new THREE.Euler(.43,-.49,-.02):new THREE.Euler(.16,-.18,-.02)):new THREE.Euler(.075,-.09,0));
+  (canvas.closest('.home-die-platform')?new THREE.Euler(.31,-.40,0):new THREE.Euler(.16,-.18,-.02)):new THREE.Euler(.075,-.09,0));
  const podiumSelector='.home-die-theater,.surprise-main-die-scene,.evening-user-die>.love3d,.evening-die-row,.evening-finale-hero';
  let podium=canvas.closest(podiumSelector);
  const orientationFor=face=>{
