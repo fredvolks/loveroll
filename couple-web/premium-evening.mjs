@@ -236,6 +236,7 @@ export function premiumEveningHtml({
     '<div class="evening-finale-actions">'+
       bt('new-session','♡ COMMENCER NOTRE SOIRÉE','evening-finale-start',!canStartEvening)+
       bt('evening-calendar','▦ Consulter notre calendrier','evening-finale-calendar')+
+      bt('tab:eclat','✦ Découvrir nos 12 coffrets Éclat','eclat-evening-entry')+
     '</div>'+
   '</div></section>')+
  (showMore&&session?'<aside class="evening-more-menu" aria-label="Options de la soirée">'+
