@@ -17,7 +17,7 @@ test('Google OAuth explicitly uses official Google account chooser',()=>{
  assert.doesNotMatch(app,/google\.com\/logout|auth\.signOut\(\).*google/);
 });
 test('Reliable PWA boot has a standalone module failure fallback and user-visible retry',()=>{
- assert.match(html,/script defer src="\.\/boot-recovery\.js\?v=20261017-glass123"/);
+ assert.match(html,/script defer src="\.\/boot-recovery\.js\?v=20261019-boot173"/);
  assert.match(boot,/addEventListener\('error'/);
  assert.match(boot,/\[data-lr-boot\]/);
  assert.match(html,/data-lr-boot/);
