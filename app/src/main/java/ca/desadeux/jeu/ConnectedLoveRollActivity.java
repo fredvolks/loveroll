@@ -147,7 +147,7 @@ public final class ConnectedLoveRollActivity extends Activity {
   });
  }
  private static final String TRUSTED_HOST = "fredvolks.github.io";
- private static final String TRUSTED_PATH = "/mon-wallet-android/";
+ private static final String TRUSTED_PATH = "/loveroll/";
  private static final String SITE = "https://" + TRUSTED_HOST + TRUSTED_PATH;
  // Public OAuth client ID (not a client secret); must match Supabase Google provider.
  private static final String GOOGLE_WEB_CLIENT_ID =

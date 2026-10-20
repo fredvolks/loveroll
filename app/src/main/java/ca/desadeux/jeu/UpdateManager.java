@@ -22,7 +22,7 @@ import java.time.ZoneId;
 import java.util.Locale;
 
 public final class UpdateManager {
- private static final String REPO="fredvolks/mon-wallet-android";
+ private static final String REPO="fredvolks/loveroll";
  private static final String PREFIX="des-a-deux-v";
  private static final String API="https://api.github.com/repos/"+REPO+"/releases?per_page=50";
  private static boolean working=false;

@@ -265,7 +265,7 @@ public final class MainActivity extends Activity {
   }catch(Exception ignored){}
  }
 
- static final String LOVEROLL_WEB="https://fredvolks.github.io/mon-wallet-android/";
+ static final String LOVEROLL_WEB="https://fredvolks.github.io/loveroll/";
  // Keep registration and login inside the installed app.
  void openConnectedLoveRoll(){openConnectedLoveRoll("auth");}
  void openConnectedLoveRoll(String destination){

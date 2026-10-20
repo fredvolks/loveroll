@@ -3,7 +3,7 @@ plugins { id 'com.android.application' }
 def firebaseVar = { String key -> (System.getenv(key) ?: '').replace('\\','\\\\').replace('"','\\"') }
 android { namespace 'ca.desadeux.jeu'
  compileSdk 35
- defaultConfig { applicationId 'ca.desadeux.jeu'; minSdk 26; targetSdk 35; versionCode 130012; versionName '0.13.12'  }
+ defaultConfig { applicationId 'ca.desadeux.jeu'; minSdk 26; targetSdk 35; versionCode 130013; versionName '0.13.13'  }
  buildFeatures { buildConfig true }
  defaultConfig {
   buildConfigField 'String','FIREBASE_APP_ID','"'+firebaseVar('LOVEROLL_FIREBASE_APP_ID')+'"'

@@ -1,7 +1,7 @@
 name: Build and release LoveRoll APK
 on:
   push:
-    branches: [des-a-deux-apk-20261013]
+    branches: [main]
     # HTML/CSS/share preview updates are live WebView changes, not native APK releases.
     paths:
       - 'app/**'
@@ -13,7 +13,7 @@ jobs:
     permissions:
       contents: write
     env:
-      TAG: des-a-deux-v0.13.12
+      TAG: des-a-deux-v0.13.13
       KEYSTORE_B64: ${{ secrets.KEYSTORE || secrets.ANDROID_KEYSTORE_BASE64 }}
       STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || secrets.ANDROID_STORE_PASSWORD }}
       SIGN_ALIAS: ${{ secrets.KEY_ALIAS || secrets.ANDROID_KEY_ALIAS }}
@@ -67,7 +67,7 @@ jobs:
           assert 'Plus qu\'un jeu, votre histoire à deux.' in src
           assert 'class LoveRollWelcomeIcon' in Path('app/src/main/java/ca/desadeux/jeu/LoveRollWelcomeIcon.java').read_text()
           assert Path('app/src/main/res/drawable-nodpi/loveroll_hero.webp').is_file()
-          assert 'static final String LOVEROLL_WEB="https://fredvolks.github.io/mon-wallet-android/"' in src
+          assert 'static final String LOVEROLL_WEB="https://fredvolks.github.io/loveroll/"' in src
           assert 'CRÉER MON COMPTE GRATUITEMENT' in src
           assert 'loveroll_legacy_offline' in src
           assert 'LOVEROLL_WEB' in src
@@ -94,6 +94,8 @@ jobs:
           assert 'Theme.Material.NoActionBar' in colors
           assert '#D58BA3' in colors
           assert 'TRUSTED_HOST.equals(url.getHost())' in native
+          assert 'private static final String TRUSTED_PATH = "/loveroll/";' in native
+          assert 'private static final String REPO="fredvolks/loveroll";' in Path('app/src/main/java/ca/desadeux/jeu/UpdateManager.java').read_text()
           assert 'startActivity(new Intent(Intent.ACTION_VIEW,Uri.parse(LOVEROLL_WEB)))' not in src
           assert 'section("💘  Dates à célébrer")' not in src
           assert 'Dates récupérées de l’inscription' not in src
@@ -161,21 +163,21 @@ jobs:
             --ks-key-alias "$SIGN_ALIAS" \
             --ks-pass env:STORE_PASSWORD \
             --key-pass env:KEY_PASSWORD \
-            --out dist/LoveRoll-v0.13.12.apk "$RUNNER_TEMP/aligned.apk"
-          cp dist/LoveRoll-v0.13.12.apk dist/Des-a-Deux-v0.13.12.apk
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs dist/LoveRoll-v0.13.12.apk
+            --out dist/LoveRoll-v0.13.13.apk "$RUNNER_TEMP/aligned.apk"
+          cp dist/LoveRoll-v0.13.13.apk dist/Des-a-Deux-v0.13.13.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs dist/LoveRoll-v0.13.13.apk
           # Confirm this APK can update the installed release without uninstalling.
-          curl -fL --retry 3 'https://github.com/fredvolks/mon-wallet-android/releases/download/des-a-deux-v0.13.11/LoveRoll-v0.13.11.apk' -o "$RUNNER_TEMP/previous-loveroll.apk"
+          curl -fL --retry 3 'https://github.com/fredvolks/mon-wallet-android/releases/download/des-a-deux-v0.13.12/LoveRoll-v0.13.12.apk' -o "$RUNNER_TEMP/previous-loveroll.apk"
           installed_cert=$("$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "$RUNNER_TEMP/previous-loveroll.apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
-          update_cert=$("$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs dist/LoveRoll-v0.13.12.apk | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
+          update_cert=$("$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs dist/LoveRoll-v0.13.13.apk | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
           test -n "$installed_cert" && test "$installed_cert" = "$update_cert"
           echo 'APK signing certificate matches the existing LoveRoll release.'
-          sha256sum dist/LoveRoll-v0.13.12.apk dist/Des-a-Deux-v0.13.12.apk
+          sha256sum dist/LoveRoll-v0.13.13.apk dist/Des-a-Deux-v0.13.13.apk
           rm -f "$RUNNER_TEMP/des-a-deux.jks"
       - name: Upload installable APK
         uses: actions/upload-artifact@v4
         with:
-          name: LoveRoll-v0.13.12
+          name: LoveRoll-v0.13.13
           path: dist/*.apk
           if-no-files-found: error
       - name: Publish GitHub Release (automatic in-app update source)
@@ -185,9 +187,9 @@ jobs:
           set -euo pipefail
           if gh release view "$TAG" >/dev/null 2>&1; then
              gh release edit "$TAG" --title "LoveRoll v0.13.12" --notes "Chargement unifié avec lettrage partagé. Nouvelle présentation des notifications, mises à jour, invitations et événements. Calendrier et bilans harmonisés. Mise à jour signée compatible avec les comptes et données existants."
-            gh release upload "$TAG" dist/LoveRoll-v0.13.12.apk dist/Des-a-Deux-v0.13.12.apk --clobber
+            gh release upload "$TAG" dist/LoveRoll-v0.13.13.apk dist/Des-a-Deux-v0.13.13.apk --clobber
           else
-            gh release create "$TAG" dist/LoveRoll-v0.13.12.apk dist/Des-a-Deux-v0.13.12.apk \
+            gh release create "$TAG" dist/LoveRoll-v0.13.13.apk dist/Des-a-Deux-v0.13.13.apk \
               --target "$GITHUB_SHA" --title "LoveRoll v0.13.12" \
               --notes "LoveRoll v0.13.12 : chargement unifié avec lettrage partagé, notifications et fenêtre de mise à jour redessinées, invitations et événements harmonisés. Calendrier et bilans accessibles depuis les réglages. Mise à jour signée compatible avec les comptes et données existants."
           fi
