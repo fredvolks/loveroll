@@ -940,7 +940,7 @@ test('LoveRoll user-facing navigation uses inviting words instead of technical d
  const nav=app.slice(app.indexOf('function nav(){'),app.indexOf('function bindActions(){'));
  assert.match(nav,/worldText\('surprise'\)/);
  assert.doesNotMatch(nav,/D6|D20|D35/);
- assert.match(readFileSync(new URL('./premium-home.mjs',import.meta.url),'utf8'),/BRASSER LE DÉ/);
+ assert.match(readFileSync(new URL('./premium-home.mjs',import.meta.url),'utf8'),/Brasser le dé/);
  assert.match(app,/DÉCOUVRIR UN DÉFI POUR/);
  assert.match(readFileSync(new URL('./premium-surprise.mjs',import.meta.url),'utf8'),/Brasser le dé/);
  assert.match(app,/SURPRISE DU MOIS|RENDEZ-VOUS SURPRISE/);
