@@ -32,7 +32,7 @@ test('LoveRoll build versions agree between endpoint, app, HTML and imported mod
  assert.ok(html.includes('evening-calendar.css?v=20261018-stats148'));
  assert.ok(app.includes('couple-live-sync.mjs?v=20261017-advent119'));
  assert.ok(html.includes('premium-advent.css?v=20261019-ipad155'));
- assert.match(app,/const WEB_RELEASE='2026-10-19\.171'/);
+ assert.match(app,/const WEB_RELEASE='2026-10-19\.172'/);
  assert.match(html,new RegExp('app\\.js\\?v='+appTag));
  for(const css of ['satin-reference.css','discover.css']){
   assert.ok(html.includes(css+'?v='+tag),css);
