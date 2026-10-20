@@ -61,6 +61,7 @@ const rect=r=>({x:r.left,y:r.top,w:r.width,h:r.height,right:r.right,bottom:r.bot
    assert.deepEqual(errors,[]);
    const screenshot=path.join('design-captures','coffrets-v184-'+viewport.width+'x'+viewport.height+'.png');
    await page.screenshot({path:screenshot});
+   fs.writeFileSync(screenshot.replace(/\.png$/,'.json'),JSON.stringify(metrics));
    console.log('ECLAT_APPROVED_LAYOUT_OK',viewport.width+'x'+viewport.height,
     '12 photos, numbers top-left, titles bottom-left, arrows top-right, no overlapping labels, glossy gold');
    await page.close();

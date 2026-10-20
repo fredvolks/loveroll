@@ -347,8 +347,20 @@ jobs:
         run: node couple-web/entry-rendezvous-browser-check.cjs
       - name: Verify shared account palette and unobstructed switches in the real app
         run: node couple-web/controls-palette-browser-check.cjs
-      - name: Vérifier les 12 coffrets par positions visuelles réelles
-        run: node couple-web/eclat-visual-parity-v184.cjs
+      - name: Vérifier les 12 coffrets par positions et pixels réels
+        run: |
+          node couple-web/eclat-visual-parity-v184.cjs
+          python3 -m pip install --quiet 'Pillow>=10,<13'
+          python3 couple-web/eclat-pixel-reference-v184.py
+      - name: Archiver la comparaison réelle des coffrets
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LoveRoll-Eclat-approved-v184-${{ github.run_number }}
+          path: |
+            design-captures/coffrets-v184-*.png
+            design-captures/coffrets-v184-*.json
+          if-no-files-found: warn
       - name: Verify REAL public discover and invitation on Android / iPhone responsive widths
         run: node couple-web/actual-discover-visual-check.cjs
 
