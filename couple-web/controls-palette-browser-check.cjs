@@ -32,7 +32,8 @@ const click=async(p,name)=>{const b=p.locator('[data-action="'+name+'"]');await 
     const geometry=await toggle.evaluate(el=>{const row=el.closest('label'),label=row.querySelector('span'),t=el.getBoundingClientRect(),l=label.getBoundingClientRect(),r=row.getBoundingClientRect(),s=getComputedStyle(el);return {gap:t.left-l.right,right:r.right-t.right,width:t.width,background:s.backgroundImage};});
     assert.ok(geometry.gap>=10,id+' must not cover its label: '+JSON.stringify(geometry));
     assert.ok(geometry.right<=2,id+' must align to the row right edge');
-    assert.equal(geometry.width,44);assert.equal(geometry.background,reference.background);
+    assert.equal(geometry.width,44);await toggle.check();
+    assert.equal(await toggle.evaluate(el=>getComputedStyle(el).backgroundImage),reference.background,'Checked switch has the shared ruby material');
     await toggle.uncheck();assert.equal(await toggle.isChecked(),false);
     assert.equal(await toggle.evaluate(el=>getComputedStyle(el).backgroundImage),'none');
     await toggle.check();count+=3;
