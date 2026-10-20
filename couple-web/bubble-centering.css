@@ -28,6 +28,7 @@
 /* Home: the outer gift symbol and the circle-arrow remain vertically centered.
    The whole copy block is centered within its OWN column, not top-biased. */
 #app.loveroll-real-home .home-next-month{
+ grid-template-columns:clamp(34px,9vw,45px) minmax(0,1fr) clamp(34px,9vw,45px)!important;
  align-items:center!important;
  justify-items:center!important;
  text-align:center!important;
