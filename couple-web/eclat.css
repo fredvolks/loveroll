@@ -219,7 +219,7 @@ main#app.loveroll-eclat-page{
 /* All three visual anchors of the Surprise/Éclat tile have the same center Y.
    SVG path is centred in the actual arrow circle (no font-glyph offset). */
 #app.loveroll-real-home .home-next-month{
- grid-template-columns:clamp(34px,9vw,48px) minmax(0,1fr) clamp(27px,7.4vw,32px)!important;
+ grid-template-columns:clamp(34px,9vw,48px) minmax(0,1fr) clamp(34px,9vw,48px)!important;
  gap:clamp(5px,1.3vw,10px)!important;
  align-items:center!important;
  justify-items:center!important;
