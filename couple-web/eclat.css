@@ -125,9 +125,12 @@ main#app.loveroll-eclat-page{
 #app.loveroll-eclat-page .eclat-play-bottom span{font-size:10px;color:#c7a6b4;line-height:1.25;}
 #app.loveroll-eclat-page .nav{z-index:5000!important;}
 #app.loveroll-eclat-page .nav button[data-action="tab:session"]{color:#ffdeed;border-color:#e689ad4d;background:linear-gradient(130deg,#7c2456,#4a1d42);}
+#app.loveroll-evening-page .evening-empty.is-finale{position:relative!important;}
 #app.loveroll-evening-page button.eclat-evening-entry{
+ position:absolute!important;z-index:8!important;right:13px!important;top:13px!important;
+ width:auto!important;min-height:31px!important;max-width:90px!important;
  font:500 12px/1.1 system-ui!important;background:#48203bba!important;border:1px solid #a8658aaa!important;
- border-radius:12px!important;color:#ffe0ea!important;padding:7px 10px!important;margin:3px auto!important;width:min(100%,340px);min-height:34px!important;
+ border-radius:12px!important;color:#ffe0ea!important;padding:7px 10px!important;margin:0!important;min-height:31px!important;
 }
 @media (max-height:690px){
  #app.loveroll-eclat-page .eclat-shell{padding-top:4px;}
