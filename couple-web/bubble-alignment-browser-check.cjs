@@ -53,15 +53,16 @@ const assert=require('node:assert/strict');
       const labels=[...document.querySelectorAll('.advent-state-label')];
       for(const label of labels)testCopy(label,[label],'advent-state');
      }else if(mode==='evening'){
-      const e=document.querySelector('.evening-finale-hero .eclat-evening-entry');
+      const segment=document.querySelector('.evening-intro .ritual-mode-switcher');
       const hero=document.querySelector('.evening-finale-hero');
-      ret.eclat=!!e&&e.dataset.action==='tab:eclat';
-      ret.duplicateHeader=!!document.querySelector('.evening-toolbar .evening-eclat-shortcut');
-      if(e&&hero){
-       const button=box(e),background=box(hero);
-       ret.eclatBounds={width:button.width,height:button.height,left:button.left,right:button.right,bottom:button.bottom};
-       ret.eclatInside=button.width>=175&&button.height>=40&&button.left>=background.left-1&&
-        button.right<=background.right+1&&button.top>=background.top-1&&button.bottom<=background.bottom+1;
+      const buttons=segment?.querySelectorAll('button')||[];
+      ret.eclat=!!segment&&buttons.length===2&&buttons[1].dataset.action==='tab:eclat';
+      ret.duplicateHeader=!!document.querySelector('.evening-finale-hero button.eclat-evening-entry');
+      if(segment&&hero){
+       const rect=box(segment),title=box(document.querySelector('.evening-intro .ritual-page-title')),photo=box(hero);
+       ret.eclatBounds={width:rect.width,height:rect.height,left:rect.left,right:rect.right};
+       ret.eclatInside=rect.width>=175&&rect.height>=35&&rect.left>=photo.left-1&&
+        rect.right<=photo.right+1&&rect.top>=title.bottom-1&&rect.bottom<=photo.top+2;
       }
      }
      return ret;
@@ -84,7 +85,7 @@ const assert=require('node:assert/strict');
     if(mode==='evening'){
       assert.equal(m.eclat,true,'Soirée has no visible Éclat invitation in its hero');
       assert.equal(m.duplicateHeader,false,'Duplicate Éclat shortcut in the header');
-      assert.equal(m.eclatInside,true,'Éclat invitation must fit inside the photographic hero: '+JSON.stringify({viewport,m}));
+      assert.equal(m.eclatInside,true,'Éclat selector must stay between fixed title and photograph: '+JSON.stringify({viewport,m}));
     }
     console.log('BUBBLE_PREMIUM_CENTER_OK',viewport.width+'x'+viewport.height,mode);
    }finally{await page.close();}
