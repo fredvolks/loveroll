@@ -132,7 +132,7 @@ test('Web 181 reuses original Accueil bottom navigation and preserves stored app
  assert.ok(html.includes('loveroll-nav-home-v181.css?v=20261020-homebar181'));
  assert.ok(sw.includes('./loveroll-nav-home-v181.css'));
  const css=read('loveroll-nav-home-v181.css');
- assert.ok(css.includes('var(--control-selected)'));
+ assert.ok(css.includes('selected tab inherits Accueil'));
  assert.ok(css.includes('min-height:52px!important'));
  assert.ok(css.includes('min-height:45px!important'));
  assert.ok(!read('loveroll-layout-fixes-v180.css').includes('height:72px!important'));
