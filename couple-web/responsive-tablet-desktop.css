@@ -55,7 +55,7 @@
  }
  .discover-v59 .discover-login{min-height:49px;font-size:clamp(.91rem,1.25vw,1.07rem);}
  /* All connected tabs: centered large workspace with bottom navigation. */
- main#app:not(.loveroll-editorial):not(.loveroll-advent-letters):not(.loveroll-surprise-ecrin):not(.loveroll-settings-page):not(.loveroll-real-home):has(> nav.nav){
+ main#app:not(.loveroll-editorial):not(.loveroll-advent-letters):not(.loveroll-surprise-ecrin):not(.loveroll-settings-page):not(.loveroll-real-home):not(.loveroll-eclat-page):has(> nav.nav){
   box-sizing:border-box;width:min(100%,1240px)!important;
   max-width:1240px!important;min-height:100dvh!important;
   margin-inline:auto!important;
@@ -304,7 +304,7 @@
 @media (min-width:768px) and (max-height:670px) {
  main#app>.love-discover.discover-v59{min-height:760px!important;}
  .discover-v59 .discover-editorial-stage{min-height:440px!important;}
- main#app:not(.loveroll-editorial):not(.loveroll-advent-letters):not(.loveroll-surprise-ecrin):not(.loveroll-settings-page):not(.loveroll-real-home):has(> nav.nav){padding-top:78px!important;}
+ main#app:not(.loveroll-editorial):not(.loveroll-advent-letters):not(.loveroll-surprise-ecrin):not(.loveroll-settings-page):not(.loveroll-real-home):not(.loveroll-eclat-page):has(> nav.nav){padding-top:78px!important;}
  main#app:not(.loveroll-editorial):not(.loveroll-advent-letters):not(.loveroll-surprise-ecrin):not(.loveroll-settings-page):has(> nav.nav)>.nav{min-height:62px!important;}
 }
 @media (prefers-reduced-motion:reduce) {
