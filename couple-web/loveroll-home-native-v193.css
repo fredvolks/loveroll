@@ -186,10 +186,10 @@
   text-shadow:0 1px 1px #160000!important;
   transform:translateY(0) scale(1)!important;
  }
- main#app.loveroll-real-home .home-roll-button .home-roll-icon{
+ main#app.loveroll-real-home .home-roll-button .home-action-die{
   display:grid;place-items:center!important;width:27px;height:27px;flex:none;
  }
- main#app.loveroll-real-home .home-roll-button .home-roll-icon svg{width:25px;height:25px;filter:none!important;}
+ main#app.loveroll-real-home .home-roll-button .home-action-die svg{width:25px;height:25px;filter:none!important;}
  main#app.loveroll-real-home .home-roll-button::after{display:none!important;content:none!important;}
  main#app.loveroll-real-home .home-roll-button:not(.is-used):active,
  main#app.loveroll-real-home .home-roll-button:not(.is-used).lr-pressed{
@@ -419,3 +419,8 @@
 @media (prefers-reduced-motion:reduce) {
  main#app.loveroll-real-home button{transition:none!important;}
 }
+
+/* Crisp custom glyphs already embedded in the native markup. */
+main#app.loveroll-real-home .home-action-die svg{fill:none!important;stroke:none!important;filter:none!important;}
+main#app.loveroll-real-home .home-action-die rect{fill:#fff9f5!important;stroke:#f0cbd3!important;stroke-width:1.2!important;}
+main#app.loveroll-real-home .home-action-die circle{fill:#4c0920!important;stroke:none!important;}
