@@ -155,7 +155,7 @@ test('D6 uses an actual bevel and no neon wireframe; fallback hidden during thro
 });
 
 test('Connected Home restores centered LoveRoll brand and preserves weekly status',()=>{
- assert.match(app,/root\.innerHTML=\(realHome\|\|realEvening\|\|realSurprise\|\|realSettings\|\|realEditor\|\|eveningArchive\|\|\(isCouple&&state\.tab==='advent'\)\?'':usualHeader\)\+body/);
+ assert.match(app,/root\.innerHTML=\(realHome\|\|realEvening\|\|realSurprise\|\|realEclat\|\|realSettings\|\|realEditor\|\|eveningArchive\|\|\(isCouple&&state\.tab==='advent'\)\?'':usualHeader\)\+body/);
  assert.doesNotMatch(app,/const homeHeader=|data-action="home-notices" aria-label="Notifications du couple"/);
  const html=premiumHomeHtml({
   weekly:{face:1,actor:'a'},members:[{user_id:'a',name:'Fred'},{user_id:'b',name:'Émilie'}]
@@ -168,7 +168,11 @@ test('Connected Home restores centered LoveRoll brand and preserves weekly statu
  assert.match(css,/min-height:48px/);
  assert.match(css,/width:96%/);
  assert.match(css,/home-calendar-icon svg/);
- assert.match(html,/aria-hidden="true">›/);
+ assert.match(html,/home-gift-icon[^>]*><svg viewBox="0 0 24 24"/);
+ const afterDraw=premiumHomeHtml({members:[{user_id:'a',name:'Fred'},{user_id:'b',name:'Émilie'}],monthly:{monthly_activity:{face:7}}});
+ assert.match(afterDraw,/data-action="tab:eclat"/);
+ assert.match(afterDraw,/Ouvrir nos coffrets/);
+ assert.doesNotMatch(afterDraw,/Voir notre résultat/);
 });
 
 test('Partner statistics distinguish saved profiles with the same first name',()=>{
