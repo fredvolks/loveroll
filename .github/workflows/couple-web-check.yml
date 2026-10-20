@@ -19,6 +19,10 @@ jobs:
       - name: JavaScript syntax
         run: |
           node --check couple-web/app.js
+          node --check couple-web/eclat-catalog.mjs
+          node --check couple-web/eclat-ui.mjs
+          node --check couple-web/eclat-audio.mjs
+          node --test couple-web/eclat.test.mjs
           node --check couple-web/platform-admin.js
           node --check couple-web/referral-program.mjs
           node --test couple-web/referral-program.test.mjs
