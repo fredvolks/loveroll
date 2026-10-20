@@ -1,0 +1,78 @@
+/* v178: photo unmasked, captions and titles retain their identical shared anchors. */
+:root{--ritual-mode-height:clamp(39px,5.3dvh,48px);}
+main#app .ritual-mode-switcher{
+ box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+ gap:3px;width:min(100%,540px);height:var(--ritual-mode-height);min-height:0;
+ margin:4px auto 0;padding:3px;border:1px solid #d99baa9c;
+ border-radius:999px;background:linear-gradient(110deg,#310e24ec,#1e0d19eb);
+ box-shadow:inset 0 1px #f2d0d42e;overflow:hidden;
+}
+main#app .ritual-mode-switcher button.ritual-mode-tab{
+ display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:center!important;
+ gap:clamp(5px,2vw,12px);box-sizing:border-box;width:100%;height:100%;min-height:0!important;
+ margin:0!important;padding:2px 5px!important;border:1px solid transparent!important;
+ border-radius:999px!important;background:transparent!important;box-shadow:none!important;
+ color:#eac6d3!important;text-align:center!important;white-space:nowrap!important;
+ font-family:Georgia,"Times New Roman",serif!important;font-size:clamp(12px,3.3vw,18px)!important;
+ font-weight:400!important;line-height:1!important;letter-spacing:normal!important;
+}
+main#app .ritual-mode-switcher button.ritual-mode-tab.is-active{
+ background:linear-gradient(125deg,#9c5975bb,#55263dc9)!important;
+ border-color:#e6a8c3bb!important;color:#fff0f6!important;
+ box-shadow:inset 0 1px #ffe7f28d,0 0 8px #ba52775c!important;
+}
+main#app .ritual-mode-switcher .ritual-mode-icon{
+ flex:none;display:block;font:clamp(19px,5vw,27px)/1 Georgia,serif;color:#f7c6cf;
+}
+main#app .ritual-mode-switcher .ritual-mode-name{font-style:italic;}
+main#app .ritual-mode-switcher .ritual-premium-copy{
+ display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-width:0;
+}
+main#app .ritual-mode-switcher .ritual-premium-copy strong{
+ font:italic 400 clamp(13px,3.4vw,20px)/1 Georgia,serif;color:#fff0e3;
+}
+main#app .ritual-mode-switcher .ritual-premium-copy small{
+ font:600 clamp(7px,1.7vw,9px)/1 system-ui,sans-serif;letter-spacing:.15em;color:#e9bca8;
+}
+main#app .ritual-mode-switcher .ritual-crown{font-style:normal;font-size:.62em;color:#e9b68e;}
+main#app .ritual-mode-switcher button:focus-visible{outline:2px solid #fff2dc!important;outline-offset:-3px!important;}
+/* Title first to keep the same pixel Y coordinate on every main tab. */
+main#app.loveroll-evening-page .evening-intro{
+ display:flex;flex-direction:column;align-items:center;gap:3px;
+}
+main#app.loveroll-evening-page .evening-intro>.ritual-page-title{
+ width:100%;flex:none;order:0;margin:0!important;
+}
+main#app.loveroll-evening-page .evening-intro>.ritual-mode-switcher{order:1;flex:none;}
+main#app.loveroll-eclat-page .eclat-shell{
+ width:min(100%,680px);height:calc(100dvh - 102px - env(safe-area-inset-bottom,0px));
+ padding:max(var(--ritual-page-top),env(safe-area-inset-top,0px)) 12px 4px;
+}
+main#app.loveroll-eclat-page .eclat-top{
+ height:var(--ritual-heading-height);min-height:var(--ritual-heading-height);
+ flex:none;display:grid;grid-template-columns:44px minmax(0,1fr) 76px;
+ gap:4px;align-items:center;margin:0 0 var(--ritual-title-gap);border:0;background:transparent;
+}
+main#app.loveroll-eclat-page .eclat-top>.ritual-heading{
+ grid-column:2;grid-row:1;width:100%;height:var(--ritual-heading-height);margin:0;
+}
+main#app.loveroll-eclat-page .eclat-top>.eclat-return{
+ grid-column:1;grid-row:1;justify-self:start;
+ font-size:30px!important;min-height:38px!important;line-height:1!important;
+}
+main#app.loveroll-eclat-page .eclat-top>.eclat-audio-toggle,
+main#app.loveroll-eclat-page .eclat-top>.eclat-header-balance{
+ grid-column:3;grid-row:1;justify-self:end;
+}
+main#app.loveroll-eclat-page .eclat-page-title{
+ text-align:center;flex:none;min-height:var(--ritual-title-height);margin:0;
+}
+main#app.loveroll-eclat-page .eclat-page-title>.ritual-page-title{
+ width:100%;height:var(--ritual-title-height);margin:0!important;
+}
+main#app.loveroll-eclat-page .eclat-shell>.ritual-mode-switcher{flex:none;margin:4px auto 5px;}
+@media(max-height:700px){
+ :root{--ritual-mode-height:37px;}
+ main#app.loveroll-evening-page .evening-intro>.ritual-mode-switcher{margin-top:1px;}
+ main#app.loveroll-eclat-page .eclat-shell>.ritual-mode-switcher{margin-top:1px;margin-bottom:2px;}
+}
