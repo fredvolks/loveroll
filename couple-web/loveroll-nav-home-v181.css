@@ -59,5 +59,28 @@ main#app:is(.loveroll-evening-page,.loveroll-eclat-page)>.nav .nav-inner>button 
  main#app.loveroll-eclat-page{--love-bottom-nav-reserve:54px;}
 }
 @media(min-width:768px){
+ /* Accueil's original desktop rules are in responsive-tablet-desktop.css.
+    Restore the same horizontal tab layout for Soirée and Éclat. */
+ main#app:is(.loveroll-evening-page,.loveroll-eclat-page)>.nav{
+  padding:8px clamp(16px,3vw,40px)!important;
+  min-height:68px!important;
+ }
+ main#app:is(.loveroll-evening-page,.loveroll-eclat-page)>.nav .nav-inner{
+  align-items:center!important;
+  width:min(100%,1180px)!important;max-width:1180px!important;
+  gap:clamp(5px,1vw,15px)!important;
+ }
+ main#app:is(.loveroll-evening-page,.loveroll-eclat-page)>.nav .nav-inner>button{
+  display:flex!important;flex-direction:row!important;align-items:center!important;
+  justify-content:center!important;width:100%!important;
+  gap:10px!important;min-height:49px!important;
+  padding:8px 14px!important;
+  font-size:clamp(.84rem,1.14vw,1.06rem)!important;
+  white-space:nowrap!important;border-radius:15px!important;
+ }
+ main#app:is(.loveroll-evening-page,.loveroll-eclat-page)>.nav .nav-inner>button span{
+  font-size:clamp(1.3rem,1.8vw,1.65rem)!important;
+  line-height:1!important;
+ }
  main#app.loveroll-eclat-page{--love-bottom-nav-reserve:86px;}
 }
