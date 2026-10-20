@@ -18,7 +18,7 @@
     position:relative;z-index:1;
   }
   /* Do not let the mobile navigation fill the entire edge of the screen. */
-  main#app.loveroll-real-home>.nav{
+  main#app:is(.loveroll-real-home,.loveroll-evening-page,.loveroll-surprise-ecrin,.loveroll-advent-letters,.loveroll-settings-page,.loveroll-eclat-page)>.nav{
     left:clamp(13px,3.1vw,26px)!important;
     right:clamp(13px,3.1vw,26px)!important;
     width:auto!important;
