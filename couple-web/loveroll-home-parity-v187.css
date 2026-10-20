@@ -36,7 +36,7 @@ main#app.loveroll-real-home .home-die-theater{
   background-position:center 62%!important;
 }
 main#app.loveroll-real-home .home-die-theater::before{
-  opacity:.37!important;
+  opacity:.70!important;
   filter:brightness(1.30) saturate(1.22);
 }
 main#app.loveroll-real-home .home-die-platform{
@@ -50,13 +50,13 @@ main#app.loveroll-real-home .home-die-platform .dice-canvas{
 main#app.loveroll-real-home .home-roll-button:not(.is-used){
   font-size:clamp(21px,5.5vw,28px)!important;
   background:
-    radial-gradient(ellipse at 50% -37%,#ff7c9e7d,transparent 62%),
+    radial-gradient(ellipse at 50% -37%,#ff7c9e54,transparent 62%),
     linear-gradient(180deg,#dd0939 0%,#94041f 23%,#42000e 57%,#200008 82%,#a6042b 100%)!important;
   box-shadow:inset 0 2px 2px #fff1f0e0,inset 0 -2px 4px #ff335e8c,0 1px 9px #d908396e!important;
 }
 main#app.loveroll-real-home .home-next-month{
   background:
-    radial-gradient(ellipse at 50% -30%,#f450797c,transparent 62%),
+    radial-gradient(ellipse at 50% -30%,#f4507950,transparent 62%),
     linear-gradient(180deg,#a40b2a 0%,#610519 33%,#290008 75%,#76021c 100%)!important;
   box-shadow:inset 0 2px 2px #ffe4e7b6,inset 0 -2px 3px #e81e4e9c,0 0 8px #aa0b336b!important;
 }
