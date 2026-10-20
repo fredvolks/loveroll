@@ -29,7 +29,7 @@ const {glassState}=require('./crystal-glass-browser-check.cjs');
      assert.deepEqual(result.q,initial.q,'Idle weekly die moved');assert.equal(result.webgl,'true');
      assert.equal(result.markers,'pips','Home D6 must use classic points');
      if(name.startsWith('iPad')){
-      assert.equal(result.sceneBackgroundY,'62%','iPad photographed marble plinth is positioned below the die');
+      assert.ok(result.sceneBackgroundY.split(',').every(y=>y.trim()==='62%'),'iPad photographed marble plinth is positioned below the die: '+result.sceneBackgroundY);
       assert.ok(result.platformHeight<=result.sceneHeight+2,'iPad 3D platform extends below the photo frame: '+JSON.stringify(result));
       assert.ok(result.sceneHeight-result.contact>=28,'iPad marble base is outside the photo frame: '+JSON.stringify(result));
      }
