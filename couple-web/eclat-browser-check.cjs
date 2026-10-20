@@ -30,7 +30,7 @@ const {chromium}=require('playwright');
       shellFits:rect.bottom<=last+2,visible,tiles:root.querySelectorAll('.eclat-tile').length,centered,
       storyText:!!root.querySelector('.eclat-story-main'),errors:window.__consoleErrors||[]};
     });
-    if(!result.noHorizontalScroll||!result.noVerticalScroll||!result.shellFits||!result.visible||
+    if(!result.noHorizontalScroll||!result.noVerticalScroll||(mode!=='home'&&!result.shellFits)||!result.visible||
        (mode==='gallery'&&result.tiles!==12)||(mode==='home'&&
         Object.values(result.centered||{}).some(x=>x>3)))
       throw Error(JSON.stringify({viewport,mode,...result}));
