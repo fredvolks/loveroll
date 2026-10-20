@@ -56,7 +56,7 @@ async function assertNativeReady(page,serial){
   for(const [name,query,expected] of bootRoutes){
    const page=await browser.newPage({viewport:{width:412,height:824},serviceWorkers:'block'});
    await page.addInitScript(()=>{window.__bootGate=new Promise(resolve=>window.__releaseBoot=resolve);});
-   await page.route('https://esm.sh/@supabase/supabase-js@2.57.0*',r=>r.fulfill({contentType:'application/javascript',body:gated}));
+   await page.route('https://esm.sh/@supabase/supabase-js@2.107.0*',r=>r.fulfill({contentType:'application/javascript',body:gated}));
    await page.goto(origin+'?'+query,{waitUntil:'domcontentloaded'});await page.locator('[data-lr-boot]').waitFor();assert.equal(await page.locator('.nav').count(),0);
    await page.evaluate(()=>window.__releaseBoot());await page.locator(expected).waitFor();
    const leaving=page.locator('.lr-splash--leaving');if(await leaving.count())assert.equal(await leaving.evaluate(e=>getComputedStyle(e).pointerEvents),'none');
@@ -66,7 +66,7 @@ async function assertNativeReady(page,serial){
    const page=await browser.newPage({viewport:{width,height},isMobile:true,hasTouch:true,serviceWorkers:'block'});
    await page.addInitScript(nativeBridgeFixture);
    await page.addInitScript(()=>{window.__bootGate=new Promise(resolve=>window.__releaseBoot=resolve);});
-   await page.route('https://esm.sh/@supabase/supabase-js@2.57.0*',r=>r.fulfill({contentType:'application/javascript',body:gated}));
+   await page.route('https://esm.sh/@supabase/supabase-js@2.107.0*',r=>r.fulfill({contentType:'application/javascript',body:gated}));
    await page.goto(origin+'?'+query,{waitUntil:'domcontentloaded'});
    await page.locator('[data-lr-boot]').waitFor();
    await installNativeStartup(page,101);
@@ -114,7 +114,7 @@ async function assertNativeReady(page,serial){
    const page=await browser.newPage({viewport:{width:412,height:824},serviceWorkers:'block'});
    await page.addInitScript(nativeBridgeFixture);
    await page.addInitScript(()=>{window.__bootGate=new Promise(resolve=>window.__releaseBoot=resolve);});
-   await page.route('https://esm.sh/@supabase/supabase-js@2.57.0*',r=>r.fulfill({contentType:'application/javascript',body:gated}));
+   await page.route('https://esm.sh/@supabase/supabase-js@2.107.0*',r=>r.fulfill({contentType:'application/javascript',body:gated}));
    await page.goto(origin+'?boot_case=anonymous',{waitUntil:'domcontentloaded'});await page.locator('[data-lr-boot]').waitFor();
    await installNativeStartup(page,401);await installNativeStartup(page,402);
    assert.equal(await page.evaluate(()=>window.__loveRollNativeStartup.serial),401,'A document cannot be relabeled as a newer navigation');
