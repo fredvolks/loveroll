@@ -44,7 +44,7 @@ export function eclatHtml({status=null,selected=1,minutes=60,details=false,membe
    '<div class="eclat-private"><small>♡ TON RÔLE SECRET</small><p>'+esc(stage.roles[roleIdx])+'</p></div>'+
    '</div>'+
    (revealed?
-    '<div class="eclat-reveal" role="status"><small>♡ VOTRE RÉVÉLATION COMMUNE</small><p>'+esc(isFinal?finale:scenes[outcome-1])+'</p></div>'+
+    '<div class="eclat-reveal" role="status"><small>♡ VOTRE RÉVÉLATION COMMUNE</small><p>'+esc(isFinal?finale:scenes[outcome-1])+'</p></div>':
     chosen?'<div class="eclat-wait" role="status"><span class="eclat-spinner"></span> Ton choix est enregistré. On attend ton partenaire…</div>':
     '<div class="eclat-choices" aria-label="Choix privé pour cette étape">'+
       c.choices.map((label,i)=>btn('eclat:choose:'+(i+1),esc(label),'eclat-choice')).join('')+
