@@ -21,9 +21,23 @@ const {chromium}=require('playwright');
       const card=home.getBoundingClientRect(),content=home.querySelector('span:nth-child(2)').getBoundingClientRect();
       const arrow=home.querySelector('.home-gift-icon').getBoundingClientRect();
       const circle=home.querySelector('.home-calendar-icon').getBoundingClientRect();
-      centered={textY:Math.abs((card.top+card.bottom)/2-(content.top+content.bottom)/2),
-        arrowY:Math.abs((card.top+card.bottom)/2-(arrow.top+arrow.bottom)/2),
-        circleY:Math.abs((card.top+card.bottom)/2-(circle.top+circle.bottom)/2)};
+      const centerX=r=>(r.left+r.right)/2,centerY=r=>(r.top+r.bottom)/2;
+      const stats=[...root.querySelectorAll('.home-stat-card')];
+      const statAxes=stats.flatMap(row=>{
+       const r=row.getBoundingClientRect();
+       const text=[...row.querySelectorAll('strong,span,small')];
+       const icon=row.querySelector('i')?.getBoundingClientRect();
+       const common=text.map(el=>Math.abs(centerX(el.getBoundingClientRect())-centerX(r)));
+       return [...common,icon?Math.abs(centerY(icon)-centerY(r)):100];
+      });
+      const arrowSvg=home.querySelector('.home-gift-icon svg')?.getBoundingClientRect();
+      centered={textY:Math.abs(centerY(card)-centerY(content)),
+        arrowY:Math.abs(centerY(card)-centerY(arrow)),
+        circleY:Math.abs(centerY(card)-centerY(circle)),
+        arrowSvgX:Math.abs(centerX(arrow)-centerX(arrowSvg)),
+        arrowSvgY:Math.abs(centerY(arrow)-centerY(arrowSvg)),
+        statisticsMaxError:Math.max(...statAxes),
+        textX:Math.abs(centerX(content)-(centerX(circle)+centerX(arrow))/2)};
      }
      return {width:innerWidth,height:innerHeight,noHorizontalScroll:document.documentElement.scrollWidth<=innerWidth+2,
       noVerticalScroll:document.documentElement.scrollHeight<=innerHeight+2,
