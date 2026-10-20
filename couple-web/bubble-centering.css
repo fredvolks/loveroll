@@ -1,0 +1,237 @@
+/* LoveRoll 175 — precise text and icon centering in decorative bubbles.
+ * Scoped to card faces and pill actions. Form fields, journal text and settings
+ * lists deliberately keep their normal reading alignment.
+ */
+
+/* Shared controls: actual text is centered along both axes, regardless of font metrics. */
+#app :is(
+ .home-roll-button,
+ .surprise-primary,.surprise-host-option,.surprise-host-winner,
+ .surprise-event-card,
+ .evening-primary,.evening-small-roll,.evening-choice-btn,
+ .evening-queue-open-btn,.evening-finale-calendar,.evening-finale-start,
+ .evening-finale-tiles>div,.evening-summary-person,
+ .advent-primary,.advent-state-label,
+ .eclat-tile,.eclat-primary,.eclat-choice,
+ .lr-review-heart
+){
+ text-align:center!important;
+ justify-content:center!important;
+ align-items:center!important;
+ justify-items:center!important;
+}
+#app :is(.surprise-host-option,.surprise-event-card,.evening-finale-tiles>div,.advent-state-label,.eclat-tile) :is(strong,small,span,p,h3){
+ text-align:center!important;
+}
+#app .surprise-event-details{align-items:center!important;justify-content:center!important;text-align:center!important;}
+
+/* Home: the outer gift symbol and the circle-arrow remain vertically centered.
+   The whole copy block is centered within its OWN column, not top-biased. */
+#app.loveroll-real-home .home-next-month{
+ align-items:center!important;
+ justify-items:center!important;
+ text-align:center!important;
+}
+#app.loveroll-real-home .home-next-month>span:nth-child(2){
+ display:flex!important;
+ flex-direction:column!important;
+ justify-content:center!important;
+ align-items:center!important;
+ align-self:stretch!important;
+ text-align:center!important;
+ width:100%!important;
+ min-width:0;
+ gap:3px!important;
+}
+#app.loveroll-real-home .home-next-month>span:nth-child(2)>*{
+ width:100%;
+ margin:0!important;
+ text-align:center!important;
+}
+#app.loveroll-real-home .home-next-month .home-calendar-icon,
+#app.loveroll-real-home .home-next-month .home-gift-icon{
+ display:grid!important;
+ place-items:center!important;
+ justify-self:center!important;
+ align-self:center!important;
+}
+#app.loveroll-real-home .home-next-month .home-gift-icon svg{
+ display:block!important;
+ width:17px!important;height:17px!important;
+ margin:auto!important;transform:none!important;
+}
+
+/* The statistics card is four geometrically equal rows. The icon has its own
+   absolute anchor; numeric value + title + detail share the same center axis. */
+#app.loveroll-real-home .home-stats-grid{
+ grid-template-rows:repeat(4,minmax(0,1fr));
+ align-items:stretch;
+}
+#app.loveroll-real-home .home-stat-card{
+ min-height:0;
+ padding-block:3px;
+ display:grid;
+ place-items:center;
+}
+#app.loveroll-real-home .home-stat-content{
+ position:relative;
+ width:100%;
+ min-height:0;
+ display:flex!important;
+ flex-direction:column;
+ align-items:center!important;
+ justify-content:center!important;
+ justify-items:center!important;
+ gap:1px;
+ padding-inline:20px!important;
+ text-align:center!important;
+}
+#app.loveroll-real-home .home-stat-content i{
+ position:absolute!important;
+ left:0;top:50%;
+ transform:translateY(-50%);
+ grid-column:auto!important;grid-row:auto!important;
+ width:18px;
+ margin:0;
+ display:grid;
+ place-items:center;
+}
+#app.loveroll-real-home .home-stat-content :is(strong,span,small){
+ position:static!important;
+ display:block;
+ width:100%;
+ margin:0!important;
+ text-align:center!important;
+ justify-self:center!important;
+ line-height:1.15!important;
+}
+#app.loveroll-real-home .home-stat-card strong{
+ font-variant-numeric:tabular-nums;
+}
+#app.loveroll-real-home .home-monthly-panel h3{
+ display:flex;justify-content:center;align-items:center;text-align:center;
+}
+#app.loveroll-real-home .home-challenge-stats{
+ grid-template-rows:repeat(3,minmax(0,1fr));
+}
+#app.loveroll-real-home .home-challenge-stats>div{
+ min-height:0;display:grid;place-items:center;
+ padding-block:3px;
+}
+#app.loveroll-real-home .home-summary-content{
+ position:relative;
+ width:100%;
+ min-height:0;
+ padding:0 23px;
+ display:flex!important;
+ flex-direction:column!important;
+ justify-content:center!important;
+ align-items:center!important;
+ gap:2px!important;
+ text-align:center!important;
+}
+#app.loveroll-real-home .home-summary-value{display:contents!important;}
+#app.loveroll-real-home .home-summary-value>span{
+ position:absolute!important;
+ top:50%;left:0;
+ transform:translateY(-50%);
+ width:20px;
+ display:grid!important;
+ place-items:center!important;
+ margin:0!important;
+ text-align:center!important;
+}
+#app.loveroll-real-home .home-summary-value>strong,
+#app.loveroll-real-home .home-summary-content>small{
+ position:static!important;
+ display:block!important;
+ width:100%!important;
+ margin:0!important;
+ text-align:center!important;
+ line-height:1.15!important;
+ justify-self:center!important;
+}
+#app.loveroll-real-home .home-summary-content>small{
+ overflow-wrap:break-word;
+}
+
+/* Soirée: compact access, visible outside a running session and in its menu. */
+#app.loveroll-editorial .evening-toolbar .evening-eclat-shortcut{
+ display:grid!important;place-items:center!important;
+ width:60px!important;min-height:36px!important;
+ justify-self:end!important;
+ padding:5px 4px!important;
+ background:linear-gradient(140deg,#6a294e,#3c1834)!important;
+ border:1px solid #e1a0bf8f!important;
+ border-radius:999px!important;
+ color:#ffe5f1!important;
+ font:600 11px/1.1 system-ui,sans-serif!important;
+ letter-spacing:0!important;
+ white-space:nowrap;
+ box-shadow:0 2px 11px #2a081f66!important;
+}
+#app.loveroll-editorial .evening-toolbar:has(.evening-eclat-shortcut){
+ grid-template-columns:60px minmax(0,1fr) 60px!important;
+}
+#app.loveroll-editorial .evening-more-menu .evening-menu-eclat{
+ display:grid!important;place-items:center!important;
+ text-align:center!important;
+ background:#6b274c!important;color:#ffe6f0!important;
+ border:1px solid #e59bbb!important;
+}
+#app.loveroll-editorial :is(.evening-partner-card,.evening-ready,.evening-step1-summary,
+ .evening-finale-status,.evening-finale-person,.evening-finale-progress,.evening-finale-tiles,
+ .evening-finale-description,.evening-finale-weekly){
+ text-align:center!important;
+}
+#app.loveroll-editorial .evening-step-label>div{display:grid;align-content:center;gap:3px;}
+#app.loveroll-editorial .evening-step-label>div :is(strong,small){text-align:center!important;}
+#app.loveroll-editorial .evening-queue-item .evening-queue-entry{
+ text-align:center!important;align-items:center!important;justify-content:center!important;
+}
+
+/* December: the padlock heart/seal is at the exact envelope center for EVERY
+   viewport, overriding the former mobile 60/60 and tablet 50/57 positions. */
+main#app.loveroll-advent-letters .advent-envelope{position:relative;}
+main#app.loveroll-advent-letters .advent-seal{
+ left:50%!important;top:50%!important;
+ right:auto!important;bottom:auto!important;
+ transform:translate(-50%,-50%)!important;
+ margin:0!important;padding:0!important;
+ display:grid!important;place-items:center!important;
+ align-items:center!important;justify-content:center!important;
+}
+main#app.loveroll-advent-letters .advent-seal svg{
+ display:block!important;margin:0 auto!important;
+ transform:none!important;
+}
+main#app.loveroll-advent-letters .advent-box-number{
+ left:6px!important;top:5px!important;
+ right:auto!important;bottom:auto!important;
+ transform:none!important;margin:0!important;
+ font-size:clamp(13px,3.6vw,20px)!important;
+ line-height:1!important;
+ font-variant-numeric:tabular-nums!important;
+ text-align:left!important;
+}
+main#app.loveroll-advent-letters .advent-state-label{
+ display:grid!important;place-items:center!important;
+ text-align:center!important;margin:0!important;
+}
+@media(max-width:767px) and (max-height:760px){
+ main#app.loveroll-advent-letters .advent-box-number{
+  left:4px!important;top:3px!important;
+  font-size:clamp(11px,3vw,15px)!important;
+ }
+ main#app.loveroll-advent-letters .advent-seal{width:19px!important;height:19px!important;}
+ main#app.loveroll-advent-letters .advent-seal svg{width:11px!important;height:11px!important;}
+}
+
+/* Account and navigation tiles: icons and captions share a true center. */
+#app :is(.settings-duo-initials>span,.editorial-person-choices>label,
+ .entry-auth-segments>button,.editorial-segments>button,
+ .surprise-edit-close,.advent-history-trigger){
+ text-align:center!important;align-items:center!important;
+ justify-content:center!important;justify-items:center!important;
+}
+#app .nav button{text-align:center!important;align-items:center!important;justify-content:center!important;}
