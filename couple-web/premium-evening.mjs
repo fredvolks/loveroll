@@ -154,7 +154,7 @@ export function premiumEveningHtml({
  '<div class="evening-toolbar">'+
   (session?'<button type="button" class="evening-back" data-action="tab:home" aria-label="Retour à l’accueil">‹</button>':'<span></span>')+
   ritualHeadingHtml(session?(ready?'ÉTAPE 2 · DÉFI DU SOIR':'ÉTAPE 1 · NOMBRE DE DÉFIS'):'NOTRE RITUEL DE LA SOIRÉE')+
-  (session?'<button type="button" class="evening-manage" data-action="evening-more" aria-label="Gérer notre soirée">⋯</button>': '<button type="button" class="evening-eclat-shortcut" data-action="tab:eclat" aria-label="Découvrir les douze coffrets Éclat">✦ Éclat</button>')+'</div>'+
+  (session?'<button type="button" class="evening-manage" data-action="evening-more" aria-label="Gérer notre soirée">⋯</button>':'<span aria-hidden="true"></span>')+'</div>'+
  '<div class="evening-intro">'+
  '<h2 class="ritual-page-title">'+(session?(ready?'Votre défi du soir':'À toi de brasser ton dé'):'200 défis à vivre à deux')+'</h2></div>'+
  (session?
@@ -201,10 +201,14 @@ export function premiumEveningHtml({
     'evening-gift-btn',!canGive||rolling)+'</section>'
   :
   '<section class="evening-empty is-finale ritual-gallery">'+
-  '<button type="button" class="eclat-evening-entry" data-action="tab:eclat" aria-label="Découvrir les douze coffrets Éclat">✦ Éclat</button>'+
-  '<div class="evening-finale-hero" aria-hidden="true">'+
-    '<span class="evening-finale-velvet"></span>'+
-    '<div class="evening-finale-dice">'+premiumPolyDie(100,null,'Dé 100 faces décoratif',false,true)+'</div></div>'+
+  '<div class="evening-finale-hero">'+
+    '<span class="evening-finale-velvet" aria-hidden="true"></span>'+
+    '<div class="evening-finale-dice" aria-hidden="true">'+premiumPolyDie(100,null,'Dé 100 faces décoratif',false,true)+'</div>'+
+    '<button type="button" class="eclat-evening-entry" data-action="tab:eclat" aria-label="Découvrir Éclat, douze coffrets à vivre à deux">'+
+      '<span class="eclat-entry-sigil" aria-hidden="true">✧</span>'+
+      '<span class="eclat-entry-copy"><small>COLLECTION PRIVÉE</small><strong>Éclat</strong><em>12 coffrets à deux</em></span>'+
+      '<span class="eclat-entry-arrow" aria-hidden="true">›</span>'+
+    '</button></div>'+
   '<div class="evening-aftercare">'+
     '<div class="evening-finale-ornament" aria-hidden="true"><span>♡</span></div>'+
     '<div class="evening-finale-weekly">♡ SOIRÉES CETTE SEMAINE · '+
