@@ -289,9 +289,23 @@ jobs:
            ([ic,name],i)=>'<button class="'+(i===0?'active':'')+'"><span>'+ic+'</span>'+name+'</button>').join('')+
           '</div></nav>';
           const canvas=root.querySelector('canvas');
-          window.__dieCleanup=dieOn(canvas,6,weekly?.face||1,false);
+          window.__dieCleanup=dieOn(canvas,6,Number(canvas.dataset.face),false);
           </script></body></html>
           EOF
+          # All Home screenshots MUST load the same CSS cascade as index.html.
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          actual=Path('couple-web/index.html').read_text(encoding='utf8')
+          links=re.findall(r'<link rel="stylesheet" href="([^"]+)"',actual)
+          assert any('loveroll-home-parity-v187.css' in href for href in links)
+          page=Path('couple-web/__real-home-test.html')
+          markup=page.read_text(encoding='utf8')
+          markup=re.sub(r'<link rel="stylesheet" href="[^"]+">\s*','',markup)
+          styles=''.join(f'<link rel="stylesheet" href="{href}">' for href in links)
+          page.write_text(markup.replace('</head>',styles+'</head>'),encoding='utf8')
+          print('HOME_PRODUCTION_CSS_LAYERS',len(links))
+          PY
           cat > verify-real-home.cjs <<'EOF'
           const {chromium}=require('playwright');
           (async()=>{
@@ -328,6 +342,7 @@ jobs:
               data.weights!==6||data.stats!==4||data.nav!==5||!data.webgl||data.canvasHeight<100)
              throw Error('Accueil réel non conforme '+d.name+' '+JSON.stringify({data,errors}));
             await page.screenshot({path:'landing-captures/'+d.name+'-VRAI-ACCUEIL-PREMIUM.png'});
+            if(d.name==='S25-Ultra'){const shot=await page.screenshot({type:'jpeg',quality:48});console.log('HOME_PRODUCTION_S25_JPEG:'+shot.toString('base64'));}
             await page.close();
            }
            await browser.close();
