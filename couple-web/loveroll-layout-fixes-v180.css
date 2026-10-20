@@ -5,7 +5,12 @@ main#app.loveroll-eclat-page{
 #app.loveroll-eclat-page .eclat-shell::before{background:none!important;}
 /* 3px flex gap + 4px margin on Soirée = 7px from title to mode bar. */
 #app.loveroll-eclat-page .eclat-shell>.ritual-mode-switcher{
- margin:4px auto 5px!important;
+ margin:7px auto 5px!important;
+}
+@media(max-height:700px){
+ #app.loveroll-eclat-page .eclat-shell>.ritual-mode-switcher{
+  margin-top:4px!important;
+ }
 }
 /* One navigation geometry across both screens. Avoid Éclat-specific extra height. */
 #app:is(.loveroll-evening-page,.loveroll-eclat-page)>.nav{
