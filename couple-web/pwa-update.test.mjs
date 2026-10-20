@@ -19,8 +19,8 @@ test('LoveRoll build versions agree between endpoint, app, HTML and imported mod
  assert.ok(html.includes('ritual-scenes.css?v=20261017-scenes138'));
  assert.ok(sw.includes('./ritual-scenes.css'));
  assert.ok(sw.includes('./assets/home-reference-approved-v190.webp'));
- assert.ok(html.includes('./approved-home-idle-v190.css?v=20261020-crisp191'));
- assert.ok(html.includes('./approved-home-idle-v190.js?v=20261020-crisp191'));
+ assert.ok(html.includes('./approved-home-idle-v190.css?v=20261020-master190'));
+ assert.ok(html.includes('./approved-home-idle-v190.js?v=20261020-master190'));
  for(const f of ['eclat.css','eclat-catalog.mjs','eclat-scenes-a.mjs','eclat-scenes-b.mjs','eclat-ui.mjs','eclat-audio.mjs'])assert.ok(sw.includes('./'+f),f+' must be cached');
  assert.ok(html.includes('ritual-titles.css?v=20261020-switch178'));
  assert.ok(sw.includes('./ritual-titles.css'));
@@ -36,7 +36,7 @@ test('LoveRoll build versions agree between endpoint, app, HTML and imported mod
  assert.ok(html.includes('evening-calendar.css?v=20261018-stats148'));
  assert.ok(app.includes('couple-live-sync.mjs?v=20261017-advent119'));
  assert.ok(html.includes('premium-advent.css?v=20261019-ipad155'));
- assert.match(app,/const WEB_RELEASE='2026-10-20\.190'/);
+ assert.match(app,/const WEB_RELEASE='2026-10-20\.191'/);
  assert.ok(html.includes('bubble-centering.css?v=20261020-ecrin177'));
  assert.ok(sw.includes('./bubble-centering.css'));
  assert.ok(html.includes('eclat.css?v=20261020-switch178'));
