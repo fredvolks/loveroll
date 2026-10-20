@@ -361,3 +361,13 @@ main#app.loveroll-settings-page{overflow-x:hidden!important;overflow-y:auto!impo
 }
 /* One final canonical border tone at every breakpoint, including tablet. */
 body:has(main#app) main#app .nav{border-top:1px solid #ed57768a!important;}
+
+/* Maintain stateful switch tracks under the universal input skin: checked
+   state must receive the exact same real ruby gradient as primary buttons. */
+main#app.loveroll-settings-page .settings-detail-body .push-option input[type="checkbox"]:checked,
+main#app.loveroll-settings-page .settings-detail-body input#no-repeat-cards:checked,
+main#app.loveroll-settings-page .editorial-draw-rule input[type="checkbox"]:checked {
+ background:var(--control-primary)!important;
+ background-image:var(--control-primary)!important;
+ border-color:var(--control-border)!important;
+}
