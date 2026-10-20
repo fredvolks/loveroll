@@ -33,32 +33,7 @@
  height:var(--ritual-title-height)!important;line-height:var(--ritual-title-height)!important;
  padding:0!important;margin:0!important;
 }
-/* The same bottom-nav component, same height, shape and icon positions as Soirée.
-   Apply identical proportions, without changing the other tabs. */
-#app.loveroll-eclat-page .nav{
- height:auto!important;min-height:0!important;
- padding:7px 8px calc(9px + env(safe-area-inset-bottom))!important;
- background:#130b11ee!important;border-top:1px solid #bd82984a!important;
- border-radius:24px 24px 0 0!important;box-shadow:0 -5px 24px #06020566!important;
- backdrop-filter:blur(18px);
-}
-#app.loveroll-eclat-page .nav-inner{
- width:min(100%,840px)!important;max-width:960px!important;
- grid-template-columns:repeat(5,minmax(0,1fr));gap:5px!important;
-}
-#app.loveroll-eclat-page .nav-inner>button{
- min-width:0!important;min-height:63px!important;
- padding:7px 3px 5px!important;border-radius:20px!important;
- font-size:clamp(.62rem,2.3vw,.81rem)!important;font-weight:750!important;line-height:1.3!important;
-}
-#app.loveroll-eclat-page .nav-inner>button.active{
- background:linear-gradient(125deg,#713052,#46213b)!important;color:#ffe1eb!important;
- border:1px solid #ba778b70!important;box-shadow:inset 0 1px #ec82b559!important;
-}
-#app.loveroll-eclat-page .nav-inner>button.active::after{
- content:"";position:absolute;bottom:4px;left:27%;right:27%;height:2px;
- border-radius:2px;background:#ecb2c6;box-shadow:0 0 7px #e184a15c;
-}
+/* Navigation shared with Accueil; no Éclat-specific overrides. */
 /* Coffrets photo grid: six balanced rows, two columns, no page scroll. */
 #app.loveroll-eclat-page .eclat-shell{padding-inline:clamp(10px,3vw,22px)!important;}
 #app.loveroll-eclat-page .eclat-shell>.ritual-mode-switcher{

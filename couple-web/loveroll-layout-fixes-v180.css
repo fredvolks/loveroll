@@ -12,43 +12,10 @@ main#app.loveroll-eclat-page{
   margin-top:4px!important;
  }
 }
-/* One navigation geometry across both screens. Avoid Éclat-specific extra height. */
-#app:is(.loveroll-evening-page,.loveroll-eclat-page)>.nav{
- position:fixed!important;inset:auto 0 0!important;
- box-sizing:border-box!important;width:100%!important;
- height:72px!important;min-height:0!important;
- padding:5px 8px calc(6px + env(safe-area-inset-bottom,0px))!important;
- background:#130b11ee!important;border:1px solid #bd82984a!important;
- border-bottom:0!important;border-radius:24px 24px 0 0!important;
- box-shadow:0 -5px 24px #06020566!important;
- backdrop-filter:blur(18px);
-}
-#app:is(.loveroll-evening-page,.loveroll-eclat-page)>.nav .nav-inner{
- display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;
- width:min(100%,840px)!important;height:100%!important;gap:5px!important;
- margin:0 auto!important;align-items:stretch!important;
-}
-#app:is(.loveroll-evening-page,.loveroll-eclat-page)>.nav .nav-inner>button{
- display:flex!important;flex-direction:column!important;justify-content:center!important;
- align-items:center!important;min-width:0!important;width:100%!important;
- min-height:0!important;height:100%!important;max-height:none!important;
- padding:5px 3px!important;margin:0!important;
- border-radius:20px!important;color:#d6b4c4!important;
- font:600 clamp(10px,2.3vw,13px)/1.12 system-ui,sans-serif!important;
-}
-#app:is(.loveroll-evening-page,.loveroll-eclat-page)>.nav .nav-inner>button span{
- font-size:clamp(19px,5vw,25px)!important;line-height:1.15!important;
- margin:0 0 3px!important;
-}
-#app:is(.loveroll-evening-page,.loveroll-eclat-page)>.nav .nav-inner>button.active{
- color:#fff2f4!important;
- border:1px solid #ba778b70!important;
- background:linear-gradient(125deg,#713052,#46213b)!important;
- box-shadow:inset 0 1px #ec82b559!important;
-}
-/* Also match Eclat content clearance to the common navigation's actual height. */
+/* Bottom navigation now reuses Accueil's shared style.
+   Do not add per-page nav height, font or active-tab overrides here. */
 #app.loveroll-eclat-page .eclat-shell{
- height:calc(100dvh - 72px - env(safe-area-inset-bottom,0px))!important;
+ height:calc(100dvh - var(--love-bottom-nav-reserve,62px) - env(safe-area-inset-bottom,0px))!important;
 }
 /* Premium picker: native dialog is now an actually centered, properly sized layer. */
 dialog.lr-premium-picker-dialog[open]{
