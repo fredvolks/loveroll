@@ -6,7 +6,7 @@ const read=file=>readFileSync(new URL('./'+file,import.meta.url),'utf8');
 const html=read('index.html'),app=read('app.js'),sw=read('service-worker.js');
 const release=JSON.parse(read('web-version.json'));
 test('LoveRoll build versions agree between endpoint, app, HTML and imported modules',()=>{
- const build='2026-10-20.180',tag='20261015-no-toast87',appTag='20261020-photo179',inviteTag='20261018-safari150',controlsTag='20261017-controls141',diceTag='20261017-home134';
+ const build='2026-10-20.180',tag='20261015-no-toast87',appTag='20261020-fixed180',inviteTag='20261018-safari150',controlsTag='20261017-controls141',diceTag='20261017-home134';
  assert.equal(release.build,build);
  assert.ok(app.includes('invite-links.mjs?v='+inviteTag));
  assert.ok(sw.includes('./assets/loveroll-messenger-og-v142.jpg'));
