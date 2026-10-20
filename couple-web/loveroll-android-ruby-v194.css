@@ -135,3 +135,19 @@
  main#app.loveroll-real-home .real-home-shell .home-bottom-stack button.home-next-month:not(:disabled):not(.is-used):is(:active,.lr-pressed){background:linear-gradient(#4e0008,#72000e 70%,#a70924)!important;box-shadow:inset 0 6px 12px #100000e0,inset 0 -1px 3px #ff647a80,0 1px 2px #7a112750!important;}
  main#app.loveroll-real-home .real-home-shell .home-next-month strong{font-size:clamp(19px,5.4vw,22px)!important;}
 }
+/* The Android reference is also the default material for account and standard
+   primary controls. Keep their existing sizes, switch states and actions. */
+@media(max-width:767px){
+ :root{
+  --loveroll-ruby-button:radial-gradient(ellipse 50% 50% at 22% -28%,#fff4dbbf,transparent 90%),linear-gradient(180deg,#eb1235 0%,#b0001d 16%,#69000e 56%,#4e0006 77%,#ac0c25 100%);
+  --loveroll-ruby-ring:inset 0 2px 2px #fff3e0db,inset 2px 0 3px #ff697b99,inset -2px -3px 4px #ff355cc7,0 2px 5px #190000,0 0 5px #d4153b80;
+  --control-primary:var(--loveroll-ruby-button);--control-shadow:var(--loveroll-ruby-ring);
+  --control-selected:var(--loveroll-ruby-button);--control-selected-shadow:var(--loveroll-ruby-ring);
+ }
+ main#app button:is(.evening-primary,.surprise-primary,.advent-primary,.settings-primary,.auth-primary,.entry-auth-submit,.love-dialog-confirm):not(:disabled):active{
+  --control-primary:linear-gradient(#4e0008,#72000e 70%,#a70924);
+  --control-shadow:inset 0 6px 12px #100000e0,inset 0 -1px 3px #ff647a80,0 1px 2px #7a112750;
+  --loveroll-ruby-button:var(--control-primary);--loveroll-ruby-ring:var(--control-shadow);
+  transform:translateY(3px) scale(.985)!important;
+ }
+}

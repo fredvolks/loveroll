@@ -11,8 +11,13 @@ const click=async(p,name)=>{const b=p.locator('[data-action="'+name+'"]');await 
   const {page:auth}=await open(createWorld(),{actor:'guest',query:'auth=signup'});
   const reference=await auth.locator('.entry-auth-submit').evaluate(appearance);
   const selected=await auth.locator('.entry-auth-segments .is-active').evaluate(appearance);
-  assert.match(reference.background,/227, 21, 72/,'Account reference uses the approved vivid ruby glass theme');
+  assert.match(reference.background,/235, 18, 53/,'Account reference uses the approved vivid ruby glass theme');
   for(const [width,height] of [[360,640],[412,824],[820,1180]]){
+   // Android has its new ruby material; tablet keeps its existing palette.
+   // Compare each page to the account CTA in the SAME viewport.
+   const {page:viewportAuth}=await open(createWorld(),{actor:'guest',query:'auth=signup',width,height});
+   const reference=await viewportAuth.locator('.entry-auth-submit').evaluate(appearance);
+   const selected=await viewportAuth.locator('.entry-auth-segments .is-active').evaluate(appearance);
    const world=createWorld(),{page:p,errors}=await open(world,{width,height,query:''});
    const primary=async selector=>{
     const b=p.locator(selector).first();await b.waitFor();
