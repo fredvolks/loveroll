@@ -315,7 +315,7 @@ jobs:
             const page=await browser.newPage({viewport:{width:d.width,height:d.height},
              deviceScaleFactor:2,isMobile:true,hasTouch:true});
             const errors=[];page.on('pageerror',e=>errors.push(e.message));
-            await page.goto('http://127.0.0.1:8765/__real-home-test.html',{waitUntil:'load'});
+            await page.goto('http://127.0.0.1:8765/__real-home-test.html'+(d.name==='S25-Ultra'?'?unrolled':''),{waitUntil:'load'});
             await page.locator('.home-die-platform canvas').waitFor();
             await page.waitForFunction(()=>document.querySelector('.home-die-platform canvas')?.dataset.webglReady==='true',null,{timeout:18000});
             await page.waitForTimeout(800);
