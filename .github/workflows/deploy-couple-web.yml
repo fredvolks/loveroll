@@ -59,6 +59,7 @@ jobs:
           node couple-web/checkout-one-screen-browser-check.cjs
           node couple-web/eclat-browser-check.cjs
           node couple-web/settings-picker-browser-check.cjs
+          node couple-web/eclat-parity-browser-check.cjs
           node couple-web/bubble-alignment-browser-check.cjs
           node couple-web/loveroll-splash-browser-check.cjs
           node couple-web/evening-redesign-browser-check.cjs
