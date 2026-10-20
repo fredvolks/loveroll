@@ -2,6 +2,7 @@
 // The caller decides whether to commit a destructive mutation after confirmation.
 import {editorialIcon} from './editorial-ui.mjs';
 const KINDS={
+ weekly:{title:'Brasser votre dé ?',eyebrow:'NOTRE RITUEL DE LA SEMAINE',icon:'dice',accept:'Oui, brasser',cancel:'Annuler'},
  gift:{title:'Offrir 1 défi ?',eyebrow:'UN PETIT CADEAU',icon:'heart',accept:'Offrir',cancel:'Annuler'},
  couple:{title:'Dissocier notre couple ?',eyebrow:'NOTRE ESPACE À DEUX',icon:'heart',accept:'Dissocier',cancel:'Garder notre couple',danger:true},
  reset:{title:'Confirmer la réinitialisation ?',eyebrow:'GESTION DU JEU',icon:'reset',accept:'Réinitialiser',cancel:'Annuler',danger:true},
