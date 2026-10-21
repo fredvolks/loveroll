@@ -38,15 +38,20 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
    console.log('SOIREE_LAYOUT',width,layout);
    assert.equal(layout.scroll,0);assert.equal(layout.horizontal,0);
    assert.ok(Math.abs(layout.meshBottom-layout.contact)<1);assert.ok(Math.abs(layout.meshCenter-width/2)<3);
-   assert.ok(layout.cardBottom<=layout.navTop-6);assert.ok(layout.premium.includes('255, 240, 190'));
+   assert.ok(layout.cardBottom<=layout.navTop-6);assert.ok(layout.premium.includes('255, 249, 206'));
    assert.equal(await page.locator('.evening-finale-start').isDisabled(),true);
+   if(await page.locator('.evening-start-reminder').count()){
+    await page.locator('.evening-start-reminder').click();await page.waitForSelector('.evening-weekly-reminder[open]');
+    assert.match(await page.locator('.evening-weekly-reminder').innerText(),/Brassez le dé de la semaine/);
+    await page.locator('.reminder-close').click();
+   }
    assert.equal(await page.locator('.evening-finale-actions button').count(),2);
    if(process.env.LOVEROLL_CAPTURE_DIR)await page.screenshot({path:path.join(process.env.LOVEROLL_CAPTURE_DIR,`soiree-${width}-${height}.png`)});
    if(width===360){
     const {nextMonday}=await import('./premium-home.mjs');
     const monday=new Date(nextMonday()+'T12:00:00Z');monday.setUTCDate(monday.getUTCDate()-7);
     const now=new Date().toISOString();
-    world.rolls=[{id:'weekly',couple_id:'c',kind:'weekly',key:monday.toISOString().slice(0,10),face:3}];
+    world.rolls=[{id:'weekly',couple_id:'c',kind:'weekly',key:monday.toISOString().slice(0,10),face:3,created_at:new Date(Date.now()-120000).toISOString()}];
     world.eveningSessions=[{id:'closed',couple_id:'c',started_at:now,finished_at:now,counted:true,paired_turns:true,self_draws:true}];
     world.reviews=[{session_id:'closed',author_id:'a'}];
     await page.reload();await page.waitForSelector('.home-dashboard');
@@ -58,6 +63,18 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
     assert.equal(overflows,false,'Aftercare information stays inside the shared bubble');
     if(process.env.LOVEROLL_CAPTURE_DIR)await page.screenshot({path:path.join(process.env.LOVEROLL_CAPTURE_DIR,'soiree-aftercare.png')});
    }
+   await page.locator('[data-action="evening-calendar"]').click();await page.waitForSelector('.has-ruby-calendar .evening-cal-grid');
+   const calendar=await measure();for(const key of ['heart','brand','kicker'])assert.deepEqual(calendar[key],home[key],key+' calendar matches Home');
+   assert.equal(calendar.title.top,home.title.top);assert.equal(calendar.title.font,home.title.font);
+   const calLayout=await page.evaluate(()=>({scroll:document.documentElement.scrollHeight-innerHeight,horizontal:document.documentElement.scrollWidth-innerWidth,
+    bottom:document.querySelector('.evening-cal-return').getBoundingClientRect().bottom,nav:document.querySelector('.nav').getBoundingClientRect().top}));
+   assert.equal(calLayout.scroll,0);assert.equal(calLayout.horizontal,0);assert.ok(calLayout.bottom<=calLayout.nav-6);
+   if(process.env.LOVEROLL_CAPTURE_DIR)await page.screenshot({path:path.join(process.env.LOVEROLL_CAPTURE_DIR,`calendar-${width}-${height}.png`)});
+   const month=await page.locator('.evening-cal-toolbar h3').textContent();await page.locator('[data-action="evening-month-prev"]').click();
+   await page.waitForFunction(old=>document.querySelector('.evening-cal-toolbar h3').textContent!==old,month);
+   await page.locator('.evening-cal-day').first().click();
+   await page.waitForFunction(()=>document.querySelector('.evening-cal-day[aria-pressed="true"]')!==null);
+   await page.locator('.evening-cal-return').click();await page.waitForSelector('.evening-premium-view');
    await page.locator('[data-action="tab:eclat"]').click();await page.waitForSelector('.eclat-shell');
    assert.equal(world.calls.filter(c=>c.name==='roll_couple_once').length,0);
    assert.deepEqual(errors,[]);await context.close();

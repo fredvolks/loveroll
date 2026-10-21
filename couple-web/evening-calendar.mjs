@@ -40,7 +40,7 @@ export function eveningHistoryMarkup({sessions=[],members=[],stats=[],historyCha
  const freeByChallenge=new Set((passQuota||[]).filter(p=>p.free_pass).map(p=>p.challenge_id));
  const chargedByChallenge=new Set((passQuota||[]).filter(p=>!p.free_pass).map(p=>p.challenge_id));
  const extraStats='<div class="evening-cal-stats evening-cal-extra" aria-label="Taux de réussite et passes mensuelles">'+
-  '<span><strong>'+(weekResult.hasRoll?weekResult.percent+' %':'—')+'</strong>'+
+  '<span><strong>'+(weekResult.percent!==null?weekResult.percent+' %':'—')+'</strong>'+
    (weekResult.hasRoll?weekResult.completed+' / '+weekResult.possible+' soirées possibles':'Aucun dé cette semaine')+'</span>'+
   monthlyResults.slice(0,2).map(item=>'<span><strong>'+(item.percent===null?'—':item.percent+' %')+'</strong>'+
    safe(item.name)+' · défis réalisés'+

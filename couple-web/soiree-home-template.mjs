@@ -16,6 +16,16 @@ export function fitSoireeHomeTemplate(root){
   const start=actions.querySelector('.evening-finale-start');
   start.classList.add('lr-surface','lr-ruby-control','lr-ruby-action');
   start.textContent='♡ Commencer notre soirée';
+  if(start.disabled&&card.querySelector('.evening-finale-description')?.textContent.includes('Brassez d’abord')){
+   const trigger=document.createElement('div');trigger.className='evening-start-reminder';
+   trigger.tabIndex=0;trigger.setAttribute('role','button');trigger.setAttribute('aria-label','Pourquoi commencer notre soirée est indisponible');
+   start.replaceWith(trigger);trigger.append(start);
+   const dialog=document.createElement('dialog');dialog.className='evening-weekly-reminder lr-surface';
+   dialog.innerHTML='<h2>Brassez le dé de la semaine</h2><p>Allez à l’accueil et brassez le dé hebdomadaire pour découvrir votre nombre de soirées.</p><button type="button" class="lr-ruby-control lr-ruby-action lr-surface" data-action="tab:home">Aller à l’accueil</button><button type="button" class="reminder-close">Fermer</button>';
+   view.append(dialog);dialog.querySelector('.reminder-close').addEventListener('click',()=>dialog.close());
+   trigger.addEventListener('click',()=>dialog.showModal());
+   trigger.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();dialog.showModal();}});
+  }
   view.querySelector('.ritual-mode-switcher').classList.add('lr-surface');
   const hero=view.querySelector('.evening-finale-hero');
   hero.insertAdjacentHTML('beforeend','<div class="soiree-pedestal-marker" aria-hidden="true"><span class="home-pedestal-contact"></span></div>');
@@ -29,4 +39,18 @@ export function fitSoireeHomeTemplate(root){
   root.style.setProperty('--home-scene-contact',split*.342/.438+'px');
  };
  observer=new ResizeObserver(fit);observer.observe(root);fit();document.fonts.ready.then(fit);
+}
+
+export function fitRubyCalendar(root){
+ const shell=root.querySelector('.evening-calendar-shell');
+ if(!shell||!matchMedia('(max-width:767px)').matches)return;
+ root.classList.add('has-ruby-calendar');
+ shell.querySelector('.evening-cal-head h2')?.classList.add('ritual-page-title');
+ const groups=[...shell.querySelectorAll(':scope>.evening-cal-stats')];
+ if(groups.length){
+  const summary=document.createElement('div');summary.className='calendar-summary lr-surface';
+  groups[0].before(summary);for(const group of groups)summary.append(group);
+ }
+ for(const selector of ['.evening-cal-month','.evening-cal-history','.evening-cal-return'])shell.querySelector(selector)?.classList.add('lr-surface');
+ shell.querySelector('.evening-cal-return')?.classList.add('lr-ruby-control','lr-ruby-action');
 }

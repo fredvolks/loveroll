@@ -193,3 +193,29 @@
   .evening-premium-view.is-inactive.has-home-soiree-template :is(.ritual-mode-switcher,.evening-summary-shell){position:relative!important;}
  }
 }
+@layer loveroll-soiree-template{
+ @media(max-width:767px){
+  .evening-premium-view.is-inactive.has-home-soiree-template .evening-finale-hero{overflow:visible!important;position:relative!important;z-index:1!important;}
+  .evening-premium-view.is-inactive.has-home-soiree-template .evening-intro{position:relative!important;z-index:3!important;}
+  .evening-premium-view.is-inactive.has-home-soiree-template .ritual-mode-premium{
+   background:linear-gradient(165deg,#fff9ce 0%,#ffe786 22%,#ebc242 48%,#ffde70 74%,#fff1ae 100%)!important;
+   border-color:#fff4b0!important;box-shadow:inset 0 1px 2px #fffde7,inset 0 -1px 2px #c49d32,0 0 6px #ffe48550!important;
+   color:#483408!important;text-shadow:0 1px #fff8d9!important;
+  }
+  .evening-premium-view.is-inactive.has-home-soiree-template .ritual-mode-premium :is(strong,small,.ritual-mode-icon,.ritual-crown){color:#483408!important;}
+  .evening-start-reminder{position:relative;min-width:0;height:55px;cursor:pointer;}
+  .evening-start-reminder .evening-finale-start{pointer-events:none!important;}
+  .evening-start-reminder:focus-visible{outline:2px solid #fff4dc;outline-offset:3px;border-radius:18px;}
+  dialog.evening-weekly-reminder{position:fixed!important;inset:0!important;margin:auto!important;width:calc(100% - 40px);max-width:390px;padding:24px 20px;color:#fff0e5;text-align:center;}
+  dialog.evening-weekly-reminder::backdrop{background:#160006b8;backdrop-filter:blur(5px);}
+  .evening-weekly-reminder h2{font:500 26px/1.1 'LoveRoll Cormorant',Georgia,serif;margin:0 0 15px;}
+  .evening-weekly-reminder p{font:14px/1.5 Arial,sans-serif;margin:0 0 20px;color:#ead1d3;}
+  .evening-weekly-reminder button{min-height:44px!important;font-size:22px!important;}
+  .evening-weekly-reminder .reminder-close{margin:12px auto 0;padding:8px 16px;border:0;background:none;color:#ead1d3;font:14px Arial;box-shadow:none;}
+ }
+}
+@layer loveroll-soiree-template{
+ @media(max-width:767px){
+  .evening-premium-view.is-inactive.has-home-soiree-template .evening-finale-actions{position:relative!important;z-index:2!important;}
+ }
+}

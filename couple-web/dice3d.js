@@ -535,6 +535,7 @@ export function dieOn(canvas,sides,value,rolling){
    markerVisible?(sceneRect.width*(photoStage ? .56 : .53))/((bounds.right-bounds.left)*rect.width):1);
   // Scale the fitted Home die uniformly; preserve the floor angle and re-anchor below.
   if(photoStage)camera.zoom*=.85;
+  if(photoSoiree)camera.zoom*=1.25;
   camera.updateProjectionMatrix();bounds=projectedBounds();
   built.group.quaternion.copy(pose);built.group.position.copy(position);built.group.updateMatrixWorld(true);
   const delta=contact-(rect.top+bounds.bottom*rect.height);
