@@ -229,9 +229,9 @@
 @media (max-width:767px) {
  main#app.loveroll-real-home {
   --home-scene-split:37vh;
-  --home-scene-top-image-height:80.435vh;
-  --home-scene-bottom-image-height:116.667vh;
-  --home-scene-contact:27.509vh;
+  --home-scene-top-image-height:84.475vh;
+  --home-scene-bottom-image-height:112.1vh;
+  --home-scene-contact:28.89vh;
  }
  main#app.loveroll-real-home::before {
   inset:0 0 auto!important;height:var(--home-scene-split)!important;

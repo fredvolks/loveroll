@@ -14,7 +14,7 @@ const stage=await page.evaluate(()=>{
 });
 assert.ok(stage.photo.includes('loveroll-home-portrait-v202.webp'),'New photographed velvet stage must load');
 assert.ok(Math.abs(stage.split-stage.odds)<1&&Math.abs(stage.lowerTop-stage.odds)<1,'Velvet crops must meet exactly above the roll button');
-assert.ok(stage.odds-stage.base>=6&&stage.odds-stage.base<=28,'The photographed marble base must stay just above the roll button');
+assert.ok(Math.abs(stage.odds-stage.base)<1,'The photographed marble base must align with the top of the roll button');
 assert.ok(Math.abs(stage.contact-stage.dieBottom)<1,'The live die must rest on the photographed marble surface');
 await assert.equal(await page.locator('.real-home-shell>.home-weights').isVisible(),false);
 await page.locator('[data-home-odds-open]').click();

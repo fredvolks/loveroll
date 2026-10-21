@@ -26,8 +26,8 @@ export function fitHomeLayout(root){
   dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close();});
   dialog.addEventListener('close',()=>info.focus({preventScroll:true}));
  }
- // The photographed stage ends in velvet at 46% of the portrait asset.
- // Fit that point to the roll button; stretch only the velvet below it.
+ // The photographed marble base ends at 43.8% of the portrait asset.
+ // Align its lower edge with the roll button; extend the velvet below it.
  const fitScene=()=>{
   if(!win.matchMedia('(max-width:767px)').matches)return;
   const roll=shell.querySelector('.home-roll-area');
@@ -35,9 +35,9 @@ export function fitHomeLayout(root){
   const split=roll.getBoundingClientRect().top;
   const height=win.innerHeight;
   root.style.setProperty('--home-scene-split',split+'px');
-  root.style.setProperty('--home-scene-top-image-height',split/.46+'px');
-  root.style.setProperty('--home-scene-bottom-image-height',(height-split)/.54+'px');
-  root.style.setProperty('--home-scene-contact',split*.342/.46+'px');
+  root.style.setProperty('--home-scene-top-image-height',split/.438+'px');
+  root.style.setProperty('--home-scene-bottom-image-height',(height-split)/.562+'px');
+  root.style.setProperty('--home-scene-contact',split*.342/.438+'px');
  };
  const fit=()=>{
   if(!shell.isConnected){observer?.disconnect();return;}
