@@ -212,7 +212,7 @@
    Only the live 3D dice remains layered over the stage. */
 @media (max-width:767px) {
  main#app.loveroll-real-home::before {
-  background-image:url('./assets/loveroll-home-portrait-v200.webp')!important;
+  background-image:url('./assets/loveroll-home-portrait-v201.webp')!important;
   background-size:100% 100%!important;
   background-position:center center!important;
  }
