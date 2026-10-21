@@ -36,13 +36,13 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
     const button=page.locator(selector),before=await button.evaluate(e=>({shadow:getComputedStyle(e).boxShadow,y:e.getBoundingClientRect().y}));
     const r=await button.boundingBox();
     await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:r.x+r.width/2,y:r.y+r.height/2,id:1}]});
-    await page.waitForTimeout(160);
+    await page.waitForFunction(({selector,y})=>document.querySelector(selector).getBoundingClientRect().y-y>=2,{selector,y:before.y},{timeout:3000});
     const held=await button.evaluate(e=>({shadow:getComputedStyle(e).boxShadow,y:e.getBoundingClientRect().y}));
     assert.ok(held.y-before.y>=2,'Finger press must physically sink the control');
     assert.notEqual(held.shadow,before.shadow,'Finger press must switch to an inset shadow');
     if(process.env.LOVEROLL_CAPTURE_DIR&&width===412&&height===824)await page.screenshot({path:path.join(process.env.LOVEROLL_CAPTURE_DIR,`pressed-${selector.includes('next')?'feature':selector.includes('nav')?'nav':'action'}.png`)});
     await touch.send('Input.dispatchTouchEvent',{type:'touchCancel',touchPoints:[]});
-    await page.waitForTimeout(160);
+    await page.waitForFunction(({selector,y})=>{const e=document.querySelector(selector);return !e.classList.contains('lr-pressed')&&Math.abs(e.getBoundingClientRect().y-y)<.1;},{selector,y:before.y},{timeout:3000});
     assert.equal(await button.evaluate(e=>e.classList.contains('lr-pressed')),false,'Cancelled touch must release the visual state');
     assert.ok(Math.abs((await button.boundingBox()).y-before.y)<.1,'Control must return to its resting position');
    }
