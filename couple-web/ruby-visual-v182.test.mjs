@@ -7,7 +7,7 @@ test('ruby material is shipped as the last stylesheet with fixed control sizes',
  const html=read('index.html'),sw=read('service-worker.js'),css=read('loveroll-ruby-buttons-v182.css');
  assert.match(html,/loveroll-ruby-buttons-v182\.css\?v=20261020-ruby182/);
  assert.ok(html.indexOf('loveroll-nav-home-v181.css')<html.indexOf('loveroll-ruby-buttons-v182.css'));
- assert.match(sw,/loveroll-static-v201/);
+ assert.match(sw,/loveroll-static-v202/);
  assert.ok(sw.includes('./loveroll-ruby-buttons-v182.css'));
  assert.match(css,/--control-primary:linear-gradient/);
  assert.match(css,/--ritual-page:radial-gradient/);

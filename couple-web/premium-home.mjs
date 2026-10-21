@@ -18,6 +18,20 @@ export function fitHomeLayout(root){
  if(!stack)return;
  const win=root.ownerDocument.defaultView;
  let observer;
+ // The photographed stage ends in velvet at 46% of the portrait asset.
+ // Fit that point to the live odds row; stretch only the velvet below it.
+ // This keeps the marble base above the odds without moving the controls.
+ const fitScene=()=>{
+  if(!win.matchMedia('(max-width:767px)').matches)return;
+  const weights=shell.querySelector('.home-weights');
+  if(!weights)return;
+  const split=weights.getBoundingClientRect().top;
+  const height=win.innerHeight;
+  root.style.setProperty('--home-scene-split',split+'px');
+  root.style.setProperty('--home-scene-top-image-height',split/.46+'px');
+  root.style.setProperty('--home-scene-bottom-image-height',(height-split)/.54+'px');
+  root.style.setProperty('--home-scene-contact',split*.342/.46+'px');
+ };
  const fit=()=>{
   if(!shell.isConnected){observer?.disconnect();return;}
   shell.style.removeProperty('--home-details-scale');shell.classList.remove('home-fit-compact');
@@ -26,7 +40,7 @@ export function fitHomeLayout(root){
    return [stack,...stack.querySelectorAll('.home-panel,.home-next-month,h3,strong,small')]
     .every(el=>el.getBoundingClientRect().bottom<=limit+.1);
   };
-  if(fits())return;
+  if(fits()){fitScene();return;}
   shell.classList.add('home-fit-compact');
   let low=.75,high=1;
   for(let i=0;i<8;i++){
@@ -34,6 +48,7 @@ export function fitHomeLayout(root){
    if(fits())low=scale;else high=scale;
   }
   shell.style.setProperty('--home-details-scale',String(low));
+  fitScene();
  };
  if(win.ResizeObserver){observer=new win.ResizeObserver(fit);observer.observe(root);homeLayoutObserver=observer;}
  fit();win.document.fonts?.ready.then(fit);

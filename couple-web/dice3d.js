@@ -252,9 +252,11 @@ function crystalBackdrop(renderer,scene,canvas,onLoad){
   if(!loaded||!texture.image)return;
   const c=canvas.getBoundingClientRect(),r=(target||canvas).getBoundingClientRect();
   const iw=texture.image.width,ih=texture.image.height,scale=Math.max(r.width/iw,r.height/ih);
-  const width=iw*scale,height=ih*scale;
+  const stageHeight=independentPlinth&&getComputedStyle(independentPlinth).display!=='none'?
+   parseFloat(getComputedStyle(target).getPropertyValue('--home-scene-top-image-height')):0;
+  const width=stageHeight?r.width:iw*scale,height=stageHeight||ih*scale;
   const px=(parseFloat(style?.backgroundPositionX)||50)/100,py=(parseFloat(style?.backgroundPositionY)||62)/100;
-  const left=r.left+(r.width-width)*px,top=r.top+(r.height-height)*py;
+  const left=r.left+(r.width-width)*px,top=stageHeight?0:r.top+(r.height-height)*py;
   material.uniforms.crop.value.set(c.width/width,c.height/height,(c.left-left)/width,1-(c.top+c.height-top)/height);
  };
  return {sync,state:()=>({loaded,source}),dispose:()=>{disposed=true;scene.remove(proxy);proxy.geometry.dispose();material.dispose();texture?.dispose();pixel.dispose();}};

@@ -222,6 +222,37 @@
   display:none!important;
  }
 }
+
+/* v202: one continuous photographed stage. The upper crop follows the odds
+   row, while the lower crop extends the same velvet to the screen bottom. */
+@media (max-width:767px) {
+ main#app.loveroll-real-home {
+  --home-scene-split:37vh;
+  --home-scene-top-image-height:80.435vh;
+  --home-scene-bottom-image-height:116.667vh;
+  --home-scene-contact:27.509vh;
+ }
+ main#app.loveroll-real-home::before {
+  inset:0 0 auto!important;height:var(--home-scene-split)!important;
+  background-image:url('./assets/loveroll-home-portrait-v202.webp')!important;
+  background-size:100% var(--home-scene-top-image-height)!important;
+  background-position:center top!important;
+ }
+ main#app.loveroll-real-home::after {
+  content:""!important;display:block!important;position:fixed!important;
+  inset:var(--home-scene-split) 0 0!important;z-index:-1!important;
+  background:url('./assets/loveroll-home-portrait-v202.webp') center bottom / 100% var(--home-scene-bottom-image-height) no-repeat!important;
+  pointer-events:none!important;opacity:1!important;filter:none!important;
+ }
+ main#app.loveroll-real-home .home-pedestal {
+  display:block!important;position:fixed!important;
+  left:12%!important;width:76%!important;top:var(--home-scene-contact)!important;height:1px!important;
+  background:none!important;box-shadow:none!important;filter:none!important;
+  mask-image:none!important;-webkit-mask-image:none!important;
+  pointer-events:none!important;
+ }
+ main#app.loveroll-real-home .home-pedestal-contact {top:0!important;}
+}
 @media (min-width:768px) {
  main#app.loveroll-real-home::before {
   background-image:url('./assets/loveroll-home-landscape-v199.webp')!important;
