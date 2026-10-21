@@ -296,3 +296,16 @@ main#app.loveroll-real-home .home-odds-grid .home-odds-entry span {grid-column:2
   display:none!important;
  }
 }
+/* One centered pair per probability tile: face + percentage. */
+main#app.loveroll-real-home .home-odds-grid .home-odds-entry{
+ grid-template-columns:28px auto!important;grid-template-rows:1fr!important;
+ justify-content:center!important;align-items:center!important;gap:12px!important;
+ padding:15px 10px!important;min-height:62px!important;
+}
+main#app.loveroll-real-home .home-odds-grid .home-odds-entry svg{grid-row:1!important;}
+main#app.loveroll-real-home .home-odds-grid .home-odds-entry span{
+ grid-row:1!important;text-align:center!important;font:500 17px/1 Arial,sans-serif!important;
+}
+main#app.loveroll-real-home .home-odds-dialog h2{
+ font-size:clamp(21px,5.8vw,24px)!important;margin:5px 0 16px!important;
+}

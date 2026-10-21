@@ -20,6 +20,7 @@ await assert.equal(await page.locator('.real-home-shell>.home-weights').isVisibl
 await page.locator('[data-home-odds-open]').click();
 await page.waitForSelector('.home-odds-dialog[open]');
 assert.deepEqual(await page.locator('.home-odds-grid .home-odds-entry>span').allTextContents(),['50%','25%','12%','8%','4%','1%']);
+assert.equal(await page.locator('.home-odds-entry b').count(),0);
 assert.equal(world.calls.filter(c=>c.name==='roll_couple_once').length,0,'Reading odds must not roll the die');
 if(process.env.LOVEROLL_CAPTURE_DIR)await page.screenshot({path:path.join(process.env.LOVEROLL_CAPTURE_DIR,`android-odds-${w}-${h}.png`)});
 await page.keyboard.press('Escape');

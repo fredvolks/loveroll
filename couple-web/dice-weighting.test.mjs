@@ -43,15 +43,15 @@ test('Home and its information dialog use the same six live weights',()=>{
  const original=premiumHomeHtml(options);
  const custom=premiumHomeHtml({...options,weeklyWeights:[10,20,30,20,10,10]});
  const equal=premiumHomeHtml({...options,weeklyWeightsEnabled:false});
- const percentages=(html,cls='home-weights')=>[...html.match(new RegExp('<div class="'+cls+'"[^>]*>(.*?)</div>','s'))[1].matchAll(/<b>([1-6])x<\/b><span>([0-9,]+)%<\/span><\/span>/g)]
-  .map(match=>match[2]);
+ const percentages=(html,cls='home-weights')=>[...html.match(new RegExp('<div class="'+cls+'"[^>]*>(.*?)</div>','s'))[1].matchAll(/<span>([0-9,]+)%<\/span><\/span>/g)]
+  .map(match=>match[1]);
  assert.deepEqual(percentages(original),['50','25','12','8','4','1']);
  assert.deepEqual(percentages(custom),['10','20','30','20','10','10']);
  assert.deepEqual(percentages(equal),Array(6).fill('16,7'));
  for(const html of [original,custom,equal])assert.deepEqual(percentages(html,'home-odds-grid'),percentages(html));
  const withoutOdds=html=>html
   .replace(/(title="[1-6] soirées? : )[0-9,]+( %")/g,'$1X$2')
-  .replace(/(<b>[1-6]x<\/b><span>)[0-9,]+(%<\/span>)/g,'$1X$2');
+  .replace(/(<span>)[0-9,]+(%<\/span>)/g,'$1X$2');
  assert.equal(withoutOdds(original),withoutOdds(custom));
  assert.equal(withoutOdds(original),withoutOdds(equal));
  assert.equal((custom.match(/class="home-weight"/g)||[]).length,6);

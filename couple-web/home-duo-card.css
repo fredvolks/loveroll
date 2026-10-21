@@ -95,3 +95,10 @@
   .home-duo-dashboard .home-stat-content>small{display:none!important;}
  }
 }
+@layer loveroll-duo-home{
+ @media(max-width:767px){
+  .home-duo-dashboard .home-stat-content{grid-template-columns:15px auto!important;column-gap:5px!important;}
+  .home-duo-dashboard .home-stat-content>span{align-self:center!important;}
+  .home-duo-dashboard .home-stat-content>i,.home-duo-dashboard .home-stat-content>strong{align-self:center!important;}
+ }
+}

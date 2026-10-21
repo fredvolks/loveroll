@@ -158,6 +158,7 @@ export function premiumHomeHtml({weekly=null,rolling=false,disabled=false,member
  const weights=effectiveDicePercentages(weeklyWeights,weeklyWeightsEnabled,WEEKLY_ODDS).map((pct,i)=>
   '<span class="home-weight" title="'+(i+1)+' soirée'+(i===0?'':'s')+' : '+displayedDicePercent(pct)+' %">'+pipFace(i+1)+
   '<b>'+(i+1)+'x</b><span>'+displayedDicePercent(pct)+'%</span></span>').join('');
+ const odds=weights.replaceAll('class="home-weight"','class="home-odds-entry"').replace(/<b>[^<]*<\/b>/g,'');
  const stats=assignedTonight(turn,members),m=nextMonthly(now);
  const activity=monthly?.monthly_activity||null;
  const shown=value=>value===null?'—':String(value);
@@ -202,8 +203,8 @@ export function premiumHomeHtml({weekly=null,rolling=false,disabled=false,member
    '<div class="home-weights" aria-label="Pondération des six faces du dé">'+weights+'</div>'+
    '<dialog id="home-odds-dialog" class="home-odds-dialog" aria-labelledby="home-odds-title"><section>'+
    '<button type="button" class="home-odds-close" data-home-odds-close aria-label="Fermer les probabilités">×</button>'+
-   '<h2 id="home-odds-title">Les probabilités du dé</h2><p>Le dé détermine le nombre de soirées de défis cette semaine.</p>'+
-   '<div class="home-odds-grid">'+weights.replaceAll('class="home-weight"','class="home-odds-entry"')+'</div><p>Un seul tirage commun par semaine.</p>'+
+   '<h2 id="home-odds-title">Les probabilités du dé</h2><p>Le résultat du dé indique le nombre de soirées de défis cette semaine.</p>'+
+   '<div class="home-odds-grid">'+odds+'</div><p>Un seul tirage commun par semaine.</p>'+
    '</section></dialog>'+
    '<div class="home-roll-area">'+
    (ready?
