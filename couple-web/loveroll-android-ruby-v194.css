@@ -207,3 +207,30 @@
  main#app.loveroll-real-home .home-pedestal::after {content:none!important;display:none!important;}
  main#app.loveroll-real-home .home-die-platform {z-index:3!important;}
 }
+
+/* v199: approved photographic stage already includes marble pedestal.
+   Only the live 3D dice remains layered over the stage. */
+@media (max-width:767px) {
+ main#app.loveroll-real-home::before {
+  background-image:url('./assets/loveroll-home-portrait-v199.webp')!important;
+  background-size:100% 100%!important;
+  background-position:center center!important;
+ }
+ main#app.loveroll-real-home .home-pedestal,
+ main#app.loveroll-real-home .home-pedestal::before,
+ main#app.loveroll-real-home .home-pedestal::after {
+  display:none!important;
+ }
+}
+@media (min-width:768px) {
+ main#app.loveroll-real-home::before {
+  background-image:url('./assets/loveroll-home-landscape-v199.webp')!important;
+  background-size:cover!important;
+  background-position:center center!important;
+ }
+ main#app.loveroll-real-home .home-pedestal,
+ main#app.loveroll-real-home .home-pedestal::before,
+ main#app.loveroll-real-home .home-pedestal::after {
+  display:none!important;
+ }
+}
