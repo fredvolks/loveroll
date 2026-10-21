@@ -1,3 +1,5 @@
+/* Optional compact-dashboard elements stay hidden in the original layouts. */
+.home-duo-heading-total,.home-monthly-recap{display:none;}
 /* Accueil — proposition 9. Every layout rule is scoped to the existing Home.
    The seven indicators retain their server-derived data and original controls. */
 main#app.loveroll-real-home{
