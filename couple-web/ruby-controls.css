@@ -112,6 +112,7 @@
   .lr-ruby-control:not(:disabled):is(:active,.lr-pressed)::before,
   .lr-ruby-nav .lr-ruby-tab:not(:disabled):is(:active,.lr-pressed)::before{opacity:.38!important;}
   .lr-ruby-control:not(:disabled):is(:active,.lr-pressed)::after{opacity:.25!important;}
+  .lr-ruby-action.is-used{width:96%!important;margin-inline:auto!important;}
   .lr-ruby-control:disabled{
    background:linear-gradient(180deg,#4f0012,#230008 75%,#44000f)!important;
    box-shadow:inset 0 2px 5px #130007c9,inset 0 -1px 2px #b83b5d59!important;
