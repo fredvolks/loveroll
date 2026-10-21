@@ -18,14 +18,21 @@ export function fitHomeLayout(root){
  if(!stack)return;
  const win=root.ownerDocument.defaultView;
  let observer;
+ const info=shell.querySelector('[data-home-odds-open]'),dialog=shell.querySelector('.home-odds-dialog');
+ if(info&&dialog&&!info.dataset.bound){
+  info.dataset.bound='true';
+  info.addEventListener('click',()=>dialog.showModal());
+  dialog.querySelector('[data-home-odds-close]').addEventListener('click',()=>dialog.close());
+  dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close();});
+  dialog.addEventListener('close',()=>info.focus({preventScroll:true}));
+ }
  // The photographed stage ends in velvet at 46% of the portrait asset.
- // Fit that point to the live odds row; stretch only the velvet below it.
- // This keeps the marble base above the odds without moving the controls.
+ // Fit that point to the roll button; stretch only the velvet below it.
  const fitScene=()=>{
   if(!win.matchMedia('(max-width:767px)').matches)return;
-  const weights=shell.querySelector('.home-weights');
-  if(!weights)return;
-  const split=weights.getBoundingClientRect().top;
+  const roll=shell.querySelector('.home-roll-area');
+  if(!roll)return;
+  const split=roll.getBoundingClientRect().top;
   const height=win.innerHeight;
   root.style.setProperty('--home-scene-split',split+'px');
   root.style.setProperty('--home-scene-top-image-height',split/.46+'px');
@@ -182,8 +189,14 @@ export function premiumHomeHtml({weekly=null,rolling=false,disabled=false,member
    '<canvas class="dice-canvas" width="300" height="300" data-dice-sides="6" '+
    'data-face="'+(rolling?rollFace:ready?weekly.face:3)+'" data-spinning="'+(rolling?'true':'false')+'" '+
    'data-dice-markers="pips" '+(!ready&&!rolling?'data-dice-preview="true" ':'')+
-   'aria-label="Dé 3D, '+(rolling?'en cours de brassage':ready?'face '+weekly.face:'en attente du tirage')+'"></canvas></div></div>'+
+   'aria-label="Dé 3D, '+(rolling?'en cours de brassage':ready?'face '+weekly.face:'en attente du tirage')+'"></canvas></div>'+
+   '<button type="button" class="home-odds-info" data-home-odds-open aria-label="Voir les probabilités du dé" aria-haspopup="dialog" aria-controls="home-odds-dialog"><span aria-hidden="true">i</span></button></div>'+
    '<div class="home-weights" aria-label="Pondération des six faces du dé">'+weights+'</div>'+
+   '<dialog id="home-odds-dialog" class="home-odds-dialog" aria-labelledby="home-odds-title"><section>'+
+   '<button type="button" class="home-odds-close" data-home-odds-close aria-label="Fermer les probabilités">×</button>'+
+   '<h2 id="home-odds-title">Les probabilités du dé</h2><p>Le dé détermine le nombre de soirées de défis cette semaine.</p>'+
+   '<div class="home-odds-grid">'+weights.replaceAll('class="home-weight"','class="home-odds-entry"')+'</div><p>Un seul tirage commun par semaine.</p>'+
+   '</section></dialog>'+
    '<div class="home-roll-area">'+
    (ready?
     '<button class="home-roll-button is-used" type="button" disabled>Déjà brassé cette semaine, revenez la semaine prochaine</button>':
