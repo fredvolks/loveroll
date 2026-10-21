@@ -47,7 +47,7 @@ jobs:
       - name: Vérifier TOUS les scripts JavaScript livrés
         run: node couple-web/check-shipped-js.cjs
       - name: Tester le vrai démarrage dans Chromium avant publication
-        timeout-minutes: 6
+        timeout-minutes: 8
         run: |
           set -euo pipefail
           npm install --no-save playwright@1.56.0
@@ -64,6 +64,7 @@ jobs:
           node couple-web/home-ruby-interaction-browser-check.cjs
           node couple-web/ruby-controls-browser-check.cjs
           node couple-web/home-duo-browser-check.cjs
+          node couple-web/soiree-home-template-browser-check.cjs
           node couple-web/checkout-one-screen-browser-check.cjs
           node couple-web/eclat-browser-check.cjs
           node couple-web/eclat-visual-parity-v184.cjs

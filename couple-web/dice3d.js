@@ -179,7 +179,7 @@ function twentyPolygons(geo){
 // Soft studio reflections give transparent glass visible edges on the existing
 // satin photograph. This environment belongs to one renderer and is disposed
 // with it; the photograph, die geometry and official face orientation stay put.
-function glassEnvironment(renderer,referenceRuby=false){
+function glassEnvironment(renderer,referenceRuby=false,manyFacets=false){
  const studio=new THREE.Scene();studio.background=new THREE.Color(0x24050c);
  const shape=document.createElement('canvas');shape.width=64;shape.height=128;
  const ctx=shape.getContext('2d');
@@ -220,6 +220,11 @@ function glassEnvironment(renderer,referenceRuby=false){
   [0xffd9c3,5,3,.9,[0,-2,-1.1]],
   [0x8d1c35,1.5,4,4,[0,.5,-4]]
  ];
+ if(referenceRuby&&manyFacets)lighting.push(
+  [0xfff1e0,9,2,2,[-3,3,4]],
+  [0xffe4e3,7,1.3,2,[3,1,3]],
+  [0xff354a,5,2,2,[-2,-1,3]]
+ );
  for(const [color,power,w,h,position] of lighting){
   const material=new THREE.MeshBasicMaterial({map:softbox,
    color:new THREE.Color(color).multiplyScalar(power),side:THREE.DoubleSide,
@@ -251,7 +256,7 @@ function crystalBackdrop(renderer,scene,canvas,onLoad){
   target=canvas.parentElement;
   while(target&&getComputedStyle(target).backgroundImage==='none')target=target.parentElement;
   let style=target?getComputedStyle(target):null;
-  const independentPlinth=canvas.closest('.home-die-theater')?.querySelector('.home-pedestal');
+  const independentPlinth=canvas.closest('.home-die-theater')?.querySelector('.home-pedestal')||canvas.closest('.evening-finale-hero')?.querySelector('.soiree-pedestal-marker');
   if(independentPlinth&&getComputedStyle(independentPlinth).display!=='none'){
    target=canvas.closest('#app');style=getComputedStyle(target,'::before');
   }
@@ -307,7 +312,7 @@ function geometry(sides,pips=false,neutral=false,referenceRuby=false){
  const custom=sides===35||sides===100?manySidedGeometry(sides):null;
  const original20=sides===20?new THREE.IcosahedronGeometry(1.16,0):null;
  const polygons=custom?custom.polygons:sides===20?twentyPolygons(original20):null;
- const geo=polygons?roundedPolyhedron(polygons,{bevel:sides===20?.13:.095,shrink:sides===20?.095:.07,steps:8,surface}):engravedCube(surface);
+ const geo=polygons?roundedPolyhedron(polygons,{bevel:sides===20?.13:sides===100&&referenceRuby?.035:.095,shrink:sides===20?.095:sides===100&&referenceRuby?.025:.07,steps:8,surface}):engravedCube(surface);
  original20?.dispose();
  custom?.geo.dispose();
  custom?.edges.dispose();
@@ -324,6 +329,7 @@ function geometry(sides,pips=false,neutral=false,referenceRuby=false){
   mat.thickness=1.8;mat.attenuationColor.setHex(0xdc123a);
   mat.attenuationDistance=3.2;mat.envMapIntensity=1.1;
   mat.emissive.setHex(0x6d0012);mat.emissiveIntensity=.035;
+  if(sides===100){mat.roughness=.012;mat.clearcoatRoughness=.008;mat.attenuationDistance=2.7;mat.envMapIntensity=1.5;}
   mat.onBeforeCompile=shader=>{
    shader.vertexShader='varying vec3 vPolishBend;\n'+shader.vertexShader;
    shader.vertexShader=shader.vertexShader.replace('#include <beginnormal_vertex>',`#include <beginnormal_vertex>
@@ -361,12 +367,12 @@ outgoingLight += vec3(0.06,0.0005,0.005) * pow(crystalFacing,2.0);
  }
  // A continuous optical back wall gives the volume a clean internal rim.
  // Refracting through the reverse of engraved text would make ghost digits.
- const backGeometry=polygons?roundedPolyhedron(polygons,{bevel:sides===20?.13:.095,shrink:sides===20?.095:.07,steps:8}):new RoundedBoxGeometry(1.8,1.8,1.8,9,.18);
+ const backGeometry=polygons?roundedPolyhedron(polygons,{bevel:sides===20?.13:sides===100&&referenceRuby?.035:.095,shrink:sides===20?.095:sides===100&&referenceRuby?.025:.07,steps:8}):new RoundedBoxGeometry(1.8,1.8,1.8,9,.18);
  const backMaterial=mat.clone();backMaterial.side=THREE.DoubleSide;
  backMaterial.onBeforeCompile=mat.onBeforeCompile;backMaterial.customProgramCacheKey=mat.customProgramCacheKey;
  const opticalBack=new THREE.Mesh(backGeometry,backMaterial);opticalBack.renderOrder=-1;
  opticalBack.onBeforeRender=renderer=>{const refraction=renderer.getRenderTarget()!==null;backMaterial.colorWrite=refraction;backMaterial.depthWrite=refraction;backGeometry.setDrawRange(0,refraction?Infinity:0);};
- if(!referenceRuby)group.add(opticalBack);
+ if(!referenceRuby||sides===100)group.add(opticalBack);
  else{backGeometry.dispose();backMaterial.dispose();}
  // No wireframe: smooth bevel geometry and PBR specular highlights are the
  // only visible transitions between the glass faces on D6, D20 and D100.
@@ -389,6 +395,9 @@ outgoingLight += vec3(0.06,0.0005,0.005) * pow(crystalFacing,2.0);
 }
 export function dieOn(canvas,sides,value,rolling){
  const flatHome=sides===6&&!!canvas.closest('.home-die-platform');
+ const photoSoiree=sides===100&&!!canvas.closest('.evening-premium-view.is-inactive');
+ const photoStage=flatHome||photoSoiree;
+ const referenceRuby=flatHome||(sides===100&&!!canvas.closest('.loveroll-evening-page'));
  let renderer;try{renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});canvas.dataset.webglReady='true';canvas.closest('.home-die-platform, .love3d-stage')?.classList.add('webgl-ready');}catch{return ()=>{};}
  renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
  const layoutSize=()=>{
@@ -402,7 +411,7 @@ export function dieOn(canvas,sides,value,rolling){
  renderer.toneMapping=THREE.ACESFilmicToneMapping;
  renderer.toneMappingExposure=1.25;
  const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(42,1,.1,15);camera.position.z=(sides===6?5.25:4.15)/Math.min(1.4,Math.max(.8,Number(canvas.dataset.diceZoom)||1));
- if(flatHome){
+ if(photoStage){
   // A long lens keeps the die's parallel top and the marble in the same perspective.
   camera.position.z*=6;camera.fov=THREE.MathUtils.radToDeg(2*Math.atan(Math.tan(THREE.MathUtils.degToRad(21))/6));
   camera.far=100;camera.position.y=camera.position.z*.2;camera.lookAt(0,0,0);camera.updateProjectionMatrix();
@@ -423,16 +432,16 @@ export function dieOn(canvas,sides,value,rolling){
  resizeObserver?.observe(canvas);
  const podiumObserver=typeof ResizeObserver==='function'?new ResizeObserver(()=>{alignPodium();request();}):null;
  window.addEventListener('resize',resizeDie);
- const glass=glassEnvironment(renderer,flatHome);scene.environment=glass.texture;
+ const glass=glassEnvironment(renderer,referenceRuby,sides===100);scene.environment=glass.texture;
  const backdrop=crystalBackdrop(renderer,scene,canvas,()=>request());
  scene.add(new THREE.AmbientLight(0xffe1eb,.12));
- const key=new THREE.PointLight(0xffe7ef,flatHome?45:2,12);key.position.set(-2,3.2,3.3);scene.add(key);
- const rim=new THREE.PointLight(0xffb3d0,flatHome?22:1.5,9);rim.position.set(3,-1,1.9);scene.add(rim);
- const white=new THREE.DirectionalLight(0xfff0fa,flatHome?1.2:.25);white.position.set(1.3,3,4);scene.add(white);
+ const key=new THREE.PointLight(0xffe7ef,referenceRuby?45:2,12);key.position.set(-2,3.2,3.3);scene.add(key);
+ const rim=new THREE.PointLight(0xffb3d0,referenceRuby?22:1.5,9);rim.position.set(3,-1,1.9);scene.add(rim);
+ const white=new THREE.DirectionalLight(0xfff0fa,referenceRuby?1.2:.25);white.position.set(1.3,3,4);scene.add(white);
  const neutral=canvas.dataset.diceUnrolled==='true'&&sides===6;
  let preview=canvas.dataset.dicePreview==='true'&&sides===6;
- const built=geometry(sides,canvas.dataset.diceMarkers==='pips',neutral,flatHome);scene.add(built.group);
- if(flatHome)renderer.toneMappingExposure=1.2;
+ const built=geometry(sides,canvas.dataset.diceMarkers==='pips',neutral,referenceRuby);scene.add(built.group);
+ if(referenceRuby)renderer.toneMappingExposure=1.2;
  // A soft contact shadow stays on the stage while the die rises and settles.
  const shadow=new THREE.Mesh(new THREE.CircleGeometry(1.08,40),
   new THREE.MeshBasicMaterial({color:0x08030b,transparent:true,opacity:.28,depthWrite:false}));
@@ -496,7 +505,7 @@ export function dieOn(canvas,sides,value,rolling){
   stage.style.transform='none';camera.zoom=1;camera.updateProjectionMatrix();
   const sceneRect=podium.getBoundingClientRect(),rect=canvas.getBoundingClientRect();
   if(sceneRect.height<1||rect.height<1||rect.width<1){built.group.quaternion.copy(pose);built.group.position.copy(position);return;}
-  if(flatHome){
+  if(photoStage){
    // Match the photographed marble ellipse after the portrait is stretched.
    // Source top: 739px wide by 120px deep in the 941 x 1672 artwork.
    const photoHeight=parseFloat(getComputedStyle(canvas.closest('#app')).getPropertyValue('--home-scene-top-image-height'));
@@ -521,11 +530,11 @@ export function dieOn(canvas,sides,value,rolling){
   let bounds=projectedBounds();
   // Keep the entire real mesh above the marble, including short phone scenes.
   const anchor=bounds.bottom;
-  camera.zoom=Math.min(flatHome?1.08:1,(contact-sceneRect.top-headroom)/((anchor-bounds.top)*rect.height),
+  camera.zoom=Math.min(photoStage?1.08:1,(contact-sceneRect.top-headroom)/((anchor-bounds.top)*rect.height),
    (sceneRect.width-12)/((bounds.right-bounds.left)*rect.width),
-   markerVisible?(sceneRect.width*(flatHome ? .56 : .53))/((bounds.right-bounds.left)*rect.width):1);
+   markerVisible?(sceneRect.width*(photoStage ? .56 : .53))/((bounds.right-bounds.left)*rect.width):1);
   // Scale the fitted Home die uniformly; preserve the floor angle and re-anchor below.
-  if(flatHome)camera.zoom*=.85;
+  if(photoStage)camera.zoom*=.85;
   camera.updateProjectionMatrix();bounds=projectedBounds();
   built.group.quaternion.copy(pose);built.group.position.copy(position);built.group.updateMatrixWorld(true);
   const delta=contact-(rect.top+bounds.bottom*rect.height);

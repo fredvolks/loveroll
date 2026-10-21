@@ -228,8 +228,8 @@ test('Existing server rolls and cards untouched; migration makes configured 6x6 
 });
 test('D20 and D100 are true glossy rounded polyhedra without pink wireframe',()=>{
  assert.match(die,/roundedPolyhedron\(polygons/);
- assert.match(die,/bevel:sides===20\?\.13:\.095/);
- assert.match(die,/shrink:sides===20\?\.095:\.07/);
+ assert.match(die,/bevel:sides===20\?\.13:sides===100&&referenceRuby\?\.035:\.095/);
+ assert.match(die,/shrink:sides===20\?\.095:sides===100&&referenceRuby\?\.025:\.07/);
  assert.match(die,/const n0=arc\(na,nb,j\/steps\)/);
  assert.match(die,/tri\(apex,base\.clone\(\)\.addScaledVector\(n0,bevel\)/);
  assert.match(die,/normal:outward\.clone\(\),value:i\+1/);
