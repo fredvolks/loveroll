@@ -402,7 +402,11 @@ export function dieOn(canvas,sides,value,rolling){
  renderer.toneMapping=THREE.ACESFilmicToneMapping;
  renderer.toneMappingExposure=1.25;
  const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(42,1,.1,15);camera.position.z=(sides===6?5.25:4.15)/Math.min(1.4,Math.max(.8,Number(canvas.dataset.diceZoom)||1));
- if(flatHome){camera.position.y=2.45;camera.lookAt(0,0,0);}
+ if(flatHome){
+  // A long lens keeps the die's parallel top and the marble in the same perspective.
+  camera.position.z*=6;camera.fov=THREE.MathUtils.radToDeg(2*Math.atan(Math.tan(THREE.MathUtils.degToRad(21))/6));
+  camera.far=100;camera.position.y=camera.position.z*.2;camera.lookAt(0,0,0);camera.updateProjectionMatrix();
+ }
  camera.aspect=initialSize.width/initialSize.height;camera.updateProjectionMatrix();
  let previousWidth=initialSize.width,previousHeight=initialSize.height;
  const resizeDie=()=>{
@@ -492,6 +496,18 @@ export function dieOn(canvas,sides,value,rolling){
   stage.style.transform='none';camera.zoom=1;camera.updateProjectionMatrix();
   const sceneRect=podium.getBoundingClientRect(),rect=canvas.getBoundingClientRect();
   if(sceneRect.height<1||rect.height<1||rect.width<1){built.group.quaternion.copy(pose);built.group.position.copy(position);return;}
+  if(flatHome){
+   // Match the photographed marble ellipse after the portrait is stretched.
+   // Source top: 739px wide by 120px deep in the 941 x 1672 artwork.
+   const photoHeight=parseFloat(getComputedStyle(canvas.closest('#app')).getPropertyValue('--home-scene-top-image-height'));
+   const photoWidth=canvas.closest('#app').getBoundingClientRect().width;
+   const ratio=Number.isFinite(photoHeight)&&photoWidth>0?
+    (120*photoHeight/1672)/(739*photoWidth/941):.196;
+   const elevation=Math.asin(Math.min(.4,Math.max(.08,ratio)));
+   camera.position.y=camera.position.z*Math.tan(elevation);
+   camera.lookAt(0,0,0);camera.updateMatrixWorld(true);
+   canvas.dataset.podiumElevation=String(elevation*180/Math.PI);
+  }
   const scale=Math.max(sceneRect.width/1536,sceneRect.height/1024);
   const podiumStyle=getComputedStyle(podium);
   const percent=parseFloat(podiumStyle.backgroundPositionY)/100||.62;
