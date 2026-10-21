@@ -230,7 +230,7 @@ export function premiumHomeHtml({weekly=null,rolling=false,disabled=false,member
    summary('♡',stats.forFirst,memberLabel(memberA,stats.remainingFirst))+
    summary('♡',stats.forSecond,memberLabel(memberB,stats.remainingSecond))+'</div></section>'+
    '<section class="home-panel home-monthly-panel" aria-labelledby="home-statistics-title">'+
-   '<h3 id="home-statistics-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M1 11h3v8H1zm5-7h3v15H6zm5 3h3v12h-3zm5-6h3v18h-3z"/></svg>Nos statistiques</h3>'+
+   '<h3 id="home-statistics-title" aria-label="Nos statistiques du mois"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M1 11h3v8H1zm5-7h3v15H6zm5 3h3v12h-3zm5-6h3v18h-3z"/></svg>Ce mois</h3>'+
    '<div class="home-stats-grid" aria-label="Statistiques réelles du couple">'+
    statistic(String(coupleStats.completed),'Défis réalisés','Ce mois · Couple','completed')+
    statistic(coupleStats.byPartner.join(' / '),'Répartition',nameA+' / '+nameB,'partners')+
