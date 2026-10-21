@@ -1,6 +1,7 @@
 // Real shared-couple Home UI. Official faces and per-couple odds come from Supabase.
 // Preserve the approved HTML/CSS; change only the six visible odds numbers.
 import {WEEKLY_DEFAULT_WEIGHTS,effectiveDicePercentages,displayedDicePercent} from './dice-weighting.mjs?v=20261018-weights146';
+import {monthlyInvitation} from './monthly-invitation.mjs';
 export const WEEKLY_ODDS=WEEKLY_DEFAULT_WEIGHTS;
 export const PIP_POSITIONS=Object.freeze({
   1:[[50,50]],2:[[29,29],[71,71]],3:[[29,29],[50,50],[71,71]],
@@ -153,7 +154,7 @@ export {ritualBrandHtml} from './brand.mjs?v=20261017-ritual130';
 import {ritualHeadingHtml} from './brand.mjs?v=20261017-ritual130';
 export function premiumHomeHtml({weekly=null,rolling=false,disabled=false,members=[],
   turn=null,monthly={},history=[],sessions=[],events=[],rollFace=1,now=new Date(),
-  weeklyWeights=WEEKLY_ODDS,weeklyWeightsEnabled=true}={}){
+  weeklyWeights=WEEKLY_ODDS,weeklyWeightsEnabled=true,monthlyActivity=null}={}){
  const weights=effectiveDicePercentages(weeklyWeights,weeklyWeightsEnabled,WEEKLY_ODDS).map((pct,i)=>
   '<span class="home-weight" title="'+(i+1)+' soirée'+(i===0?'':'s')+' : '+displayedDicePercent(pct)+' %">'+pipFace(i+1)+
   '<b>'+(i+1)+'x</b><span>'+displayedDicePercent(pct)+'%</span></span>').join('');
@@ -176,6 +177,18 @@ export function premiumHomeHtml({weekly=null,rolling=false,disabled=false,member
  const [nameA,nameB]=shortNames[0]===shortNames[1]?displayNames:shortNames;
  const percent=coupleStats.sensualPercent==null?'—':
   coupleStats.sensualPercent+' / '+coupleStats.sexualPercent+' %';
+ const invitation=monthlyInvitation(monthly,members);
+ const monthlyTitle=monthlyActivity?.title||activity?.activity_title||'Activité tirée';
+ const invitationText=invitation?.host&&invitation?.guest?
+  [nameA,nameB][invitation.index]+' invite '+[nameA,nameB][1-invitation.index]:
+  activity?'Qui invite ? À déterminer':'Un tirage commun ce mois-ci';
+ const recap='<button class="home-monthly-recap" type="button" data-action="tab:special" '+
+  'aria-label="'+escape(activity?'Voir notre activité du mois : '+monthlyTitle+'. '+invitationText:'Choisir notre activité du mois')+'">'+
+  '<span class="home-monthly-recap-icon" aria-hidden="true">♧</span><span class="home-monthly-recap-copy">'+
+  '<strong title="'+escape(activity?monthlyTitle:'Notre activité du mois')+'">'+escape(activity?monthlyTitle:'Notre activité du mois')+'</strong>'+
+  '<small>'+escape(activity?invitationText:'À découvrir ensemble')+'</small></span><span aria-hidden="true">›</span></button>';
+ const memberLabel=(name,remaining)=>'<span class="home-member-prefix">Attribués à</span><br class="home-member-break">'+
+  '<span class="home-member-name">'+name+'</span><br class="home-member-break"><span class="home-member-remaining">Restants : '+shown(remaining)+'</span>';
  const pending=rolling||disabled;
  return '<section class="real-home-shell" aria-label="Tableau de bord du couple">'+
    '<div class="home-ritual">'+ritualHeadingHtml('NOTRE RITUEL DE LA SEMAINE')+
@@ -210,12 +223,12 @@ export function premiumHomeHtml({weekly=null,rolling=false,disabled=false,member
    '<strong class="lr-ruby-title">'+(activity?'Ouvrir nos coffrets':'Brasser notre surprise')+'</strong>'+
    '<em class="lr-ruby-caption">'+(activity?'12 soirées immersives à découvrir':'Un tirage commun ce mois-ci')+'</em></span>'+
    '<span class="home-gift-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></svg></span></button>'+ 
-   '<div class="home-dashboard">'+
+   '<div class="home-dashboard home-duo-dashboard">'+
    '<section class="home-panel home-tonight-panel" aria-labelledby="home-tonight-title">'+
-   '<h3 id="home-tonight-title"><span aria-hidden="true">♢</span>Ce soir</h3><div class="home-challenge-stats">'+
+   '<h3 id="home-tonight-title"><span aria-hidden="true">♢</span>Ce soir <strong class="home-duo-heading-total" aria-label="Défis attribués ce soir">'+shown(stats.total)+'</strong></h3><div class="home-challenge-stats">'+
    summary('♢',stats.total,'Défis attribués<br>ce soir')+
-   summary('♡',stats.forFirst,'Attribués à<br>'+memberA+'<br>Restants : '+shown(stats.remainingFirst))+
-   summary('♡',stats.forSecond,'Attribués à<br>'+memberB+'<br>Restants : '+shown(stats.remainingSecond))+'</div></section>'+
+   summary('♡',stats.forFirst,memberLabel(memberA,stats.remainingFirst))+
+   summary('♡',stats.forSecond,memberLabel(memberB,stats.remainingSecond))+'</div></section>'+
    '<section class="home-panel home-monthly-panel" aria-labelledby="home-statistics-title">'+
    '<h3 id="home-statistics-title"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M1 11h3v8H1zm5-7h3v15H6zm5 3h3v12h-3zm5-6h3v18h-3z"/></svg>Nos statistiques</h3>'+
    '<div class="home-stats-grid" aria-label="Statistiques réelles du couple">'+
@@ -223,5 +236,5 @@ export function premiumHomeHtml({weekly=null,rolling=false,disabled=false,member
    statistic(coupleStats.byPartner.join(' / '),'Répartition',nameA+' / '+nameB,'partners')+
    statistic(percent,'Sensuel / Sexuel','Ce mois','categories')+
    statistic(String(coupleStats.streak),'Semaines actives','Série actuelle','streak')+
-   '</div></section></div></div></section>';
+   '</div></section>'+recap+'</div></div></section>';
 }

@@ -1,4 +1,5 @@
 // LoveRoll — Rendez-vous Surprise, connected to real monthly and occasion draws.
+import {monthlyInvitation} from './monthly-invitation.mjs';
 import {ritualHeadingHtml} from './brand.mjs?v=20261017-ritual130';
 import {occasionDate,dueOccasions} from './special-occasions.mjs';
 import {displayCadRange} from './currency-exchange.mjs';
@@ -58,7 +59,7 @@ export function premiumSurpriseHtml({
  // The server owns the official face; parity only selects which partner invites.
  const needsHost=!!a&&!showActivity&&(!h||settlingHost);
  const hostFaceVisible=rollingHost||settlingHost;
- const host=h?members[h.face%2===0?0:1]:null;
+ const invitation=monthlyInvitation(monthly,members),host=invitation?.host||null;
  const cards=sixSpecialEvents(now,settings,members);
  const editEvent=cards.find(e=>e.slot===editSlot)||null;
  const names=partnerNames(members),partner=i=>esc(names[i]);
@@ -92,7 +93,7 @@ export function premiumSurpriseHtml({
    (needsHost?button('roll:monthly_host','Brasser le dé','surprise-primary',rolling):
     a?button('surprise-activity','Découvrir notre activité','surprise-primary',rolling):
       button('roll:monthly_activity','Brasser le dé','surprise-primary',rolling))+
-   (h&&!needsHost?'<div class="surprise-host-winner" role="status">♥ '+esc(h?names[h.face%2===0?0:1]:'Partenaire')+
+   (invitation&&!needsHost?'<div class="surprise-host-winner" role="status">♥ '+esc(names[invitation.index])+
      ' invite cette fois-ci !</div>':'')+
   '</section>'+
   '<section class="surprise-special">'+

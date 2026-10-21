@@ -44,4 +44,4 @@ L’appui descend le bouton de 2,5 px, le réduit légèrement et remplace l’o
 
 ## Validation
 
-`ruby-controls-browser-check.cjs` teste de vrais gestes tactiles Chromium sur 412 × 824, 412 × 915 et 360 × 740 : action principale, surprise et navigation, retour après annulation, police embarquée, absence de tirage involontaire, navigation réelle et statistiques identiques avec et sans la nouvelle feuille de style.
+`ruby-controls-browser-check.cjs` teste de vrais gestes tactiles Chromium sur 412 × 824, 412 × 915 et 360 × 740 : action principale, surprise et navigation, retour après annulation, police embarquée, absence de tirage involontaire, navigation réelle et statistiques inchangées après les gestes d’appui et d’annulation.

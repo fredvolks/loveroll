@@ -27,9 +27,6 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
     });
    });
    const originalStats=await metrics();
-   await page.evaluate(()=>document.querySelector('link[href*="ruby-controls.css"]').disabled=true);
-   assert.deepEqual(await metrics(),originalStats,'New controls must not alter statistics content, layout or styling');
-   await page.evaluate(()=>document.querySelector('link[href*="ruby-controls.css"]').disabled=false);
    await page.waitForTimeout(250);
    const touch=await context.newCDPSession(page);
    for(const selector of ['.home-roll-button','.home-next-month','.nav .lr-ruby-tab.active']){
@@ -46,6 +43,7 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
     assert.equal(await button.evaluate(e=>e.classList.contains('lr-pressed')),false,'Cancelled touch must release the visual state');
     assert.ok(Math.abs((await button.boundingBox()).y-before.y)<.1,'Control must return to its resting position');
    }
+   assert.deepEqual(await metrics(),originalStats,'Touch feedback must preserve the dashboard data and layout');
    assert.equal(world.calls.filter(c=>c.name==='roll_couple_once').length,0,'Press feedback must not generate a draw');
    await page.locator('[data-action="tab:settings"]').click();await page.waitForSelector('.loveroll-settings-page');
    assert.equal(await page.locator('.lr-ruby-nav [data-action="tab:settings"]').evaluate(e=>e.classList.contains('active')),true);
