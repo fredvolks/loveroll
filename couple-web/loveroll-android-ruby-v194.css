@@ -151,3 +151,40 @@
   transform:translateY(3px) scale(.985)!important;
  }
 }
+
+
+/* Fond LoveRoll v195: portrait Android, paysage iPad/PC.
+   Les nouvelles images couvrent les anciennes lorsqu'elles sont disponibles;
+   les images v194/v183 garantissent un fond sans écran noir en attendant.
+   Tous les boutons, le D6 WebGL, le socle et la logique sont préservés. */
+@media (max-width:767px) {
+ main#app:is(.loveroll-real-home,.loveroll-evening-page,.loveroll-eclat-page,.loveroll-surprise-ecrin,.loveroll-advent-letters,.loveroll-settings-page)::before {
+  background-image:
+   url('./assets/loveroll-romance-android-v195.webp'),
+   url('./assets/loveroll-romance-android-v194.webp')!important;
+  background-position:center center,center center!important;
+  background-size:cover,cover!important;
+  background-repeat:no-repeat,no-repeat!important;
+ }
+}
+@media (min-width:768px) {
+ main#app:is(.loveroll-real-home,.loveroll-evening-page,.loveroll-eclat-page,.loveroll-surprise-ecrin,.loveroll-advent-letters,.loveroll-settings-page) {
+  isolation:isolate!important;
+ }
+ main#app:is(.loveroll-real-home,.loveroll-evening-page,.loveroll-eclat-page,.loveroll-surprise-ecrin,.loveroll-advent-letters,.loveroll-settings-page)::before {
+  content:""!important;
+  display:block!important;
+  position:fixed!important;
+  inset:0!important;
+  z-index:-1!important;
+  pointer-events:none!important;
+  background-image:
+   url('./assets/loveroll-romance-landscape-v195.webp'),
+   url('./assets/loveroll-romance-scene-v183.webp')!important;
+  background-position:center center,center center!important;
+  background-size:cover,cover!important;
+  background-repeat:no-repeat,no-repeat!important;
+  opacity:1!important;
+  filter:none!important;
+ }
+}
