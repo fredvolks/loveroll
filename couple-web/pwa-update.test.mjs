@@ -153,7 +153,7 @@ test('Web 182 loads the ruby buttons stylesheet with premium-only gold ring',()=
 // rules keep ownership of spacing and user flows.
 test('Web 183 adds cinematic theme assets and new ruby die optics',()=>{
  assert.ok(html.includes('loveroll-cinematic-v183.css?v=20261020-cinema183'));
- assert.ok(html.includes('app.js?v=20261020-android196'));
+ assert.ok(html.includes('app.js?v=20261021-home200'));
  assert.ok(sw.includes('./assets/eclat-photo-strip-v183.webp'));
  assert.ok(sw.includes('./assets/eclat-secret-letter-v183.webp'));
  assert.ok(sw.includes('./assets/loveroll-romance-scene-v183.webp'));
