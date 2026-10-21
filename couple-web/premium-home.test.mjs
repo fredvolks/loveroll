@@ -162,7 +162,7 @@ test('Connected Home restores centered LoveRoll brand and preserves weekly statu
  });
  assert.match(html,/Déjà brassé cette semaine, revenez la semaine prochaine/);
  assert.doesNotMatch(html,/♡ Dé déjà brassé cette semaine|Mon dé/);
- assert.match(html,/<button class="home-roll-button is-used" type="button" disabled>/);
+ assert.match(html,/<button class="home-roll-button is-used[^"]*" type="button" disabled>/);
  assert.equal((html.match(/home-gift-icon/g)||[]).length,1);
  assert.match(html,/ritual-brand/);
  assert.match(css,/min-height:48px/);

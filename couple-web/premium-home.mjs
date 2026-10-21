@@ -199,16 +199,16 @@ export function premiumHomeHtml({weekly=null,rolling=false,disabled=false,member
    '</section></dialog>'+
    '<div class="home-roll-area">'+
    (ready?
-    '<button class="home-roll-button is-used" type="button" disabled>Déjà brassé cette semaine, revenez la semaine prochaine</button>':
-    '<button class="home-roll-button" type="button" data-action="roll:weekly" '+(pending?'disabled':'')+'>'+
-    (rolling?'Brassage 3D en cours…':disabled?'Préparation du brassage…':'<span class="home-action-die" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="9" cy="9" r="1.5"/><circle cx="15" cy="15" r="1.5"/></svg></span><span class="home-action-label">Brasser le dé</span>')+'</button>')+
+    '<button class="home-roll-button is-used lr-ruby-control lr-ruby-action" type="button" disabled>Déjà brassé cette semaine, revenez la semaine prochaine</button>':
+    '<button class="home-roll-button lr-ruby-control lr-ruby-action" type="button" data-action="roll:weekly" '+(pending?'disabled':'')+'>'+
+    (rolling?'Brassage 3D en cours…':disabled?'Préparation du brassage…':'<span class="home-action-die lr-ruby-icon" aria-hidden="true"><svg class="lr-ruby-die-icon" viewBox="0 0 34 38"><path fill="#fffdf5" d="m17 2 13 6-13 7L4 8Z"/><path fill="#f7e9dc" d="m4 8 13 7v20L5 28Q3 27 3 24V11Q3 9 4 8Z"/><path fill="#cdbdb4" d="m17 15 13-7q1 1 1 3v13q0 3-2 4l-12 7Z"/><path fill="none" stroke="#fff8ed" stroke-width=".8" d="m4 8 13 7 13-7M17 15v20"/><ellipse cx="17" cy="8" rx="2.5" ry="1.2" fill="#3d1020"/><g fill="#421521"><ellipse cx="7.6" cy="15" rx="1.5" ry="2.1" transform="rotate(-18 7.6 15)"/><ellipse cx="10.1" cy="21.5" rx="1.5" ry="2.1" transform="rotate(-18 10.1 21.5)"/><ellipse cx="12.7" cy="28" rx="1.5" ry="2.1" transform="rotate(-18 12.7 28)"/><ellipse cx="26.8" cy="15.5" rx="1.5" ry="2.1" transform="rotate(18 26.8 15.5)"/><ellipse cx="21.6" cy="27.3" rx="1.5" ry="2.1" transform="rotate(18 21.6 27.3)"/></g></svg></span><span class="home-action-label lr-ruby-title">Brasser le dé</span>')+'</button>')+
    '</div>'+
    '<div class="home-bottom-stack">'+
-   '<button class="home-next-month" data-action="'+(activity?'tab:eclat':'tab:special')+'" type="button" aria-label="'+(activity?'Découvrir LoveRoll Éclat, nos douze coffrets':'Brasser notre surprise mensuelle')+'">'+
-   '<span class="home-calendar-icon home-present" aria-hidden="true">'+iconSvg('surprises')+'</span>'+ 
-   '<span><small>'+(activity?'♡ LOVEROLL ÉCLAT':'Surprise du mois disponible')+'</small>'+
-   '<strong>'+(activity?'Ouvrir nos coffrets':'Brasser notre surprise')+'</strong>'+
-   '<em>'+(activity?'12 soirées immersives à découvrir':'Un tirage commun ce mois-ci')+'</em></span>'+
+   '<button class="home-next-month lr-ruby-control lr-ruby-feature" data-action="'+(activity?'tab:eclat':'tab:special')+'" type="button" aria-label="'+(activity?'Découvrir LoveRoll Éclat, nos douze coffrets':'Brasser notre surprise mensuelle')+'">'+
+   '<span class="home-calendar-icon home-present lr-ruby-icon" aria-hidden="true">'+iconSvg('surprises')+'</span>'+
+   '<span class="lr-ruby-copy"><small class="lr-ruby-eyebrow">'+(activity?'♡ LOVEROLL ÉCLAT':'Surprise du mois disponible')+'</small>'+
+   '<strong class="lr-ruby-title">'+(activity?'Ouvrir nos coffrets':'Brasser notre surprise')+'</strong>'+
+   '<em class="lr-ruby-caption">'+(activity?'12 soirées immersives à découvrir':'Un tirage commun ce mois-ci')+'</em></span>'+
    '<span class="home-gift-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></svg></span></button>'+ 
    '<div class="home-dashboard">'+
    '<section class="home-panel home-tonight-panel" aria-labelledby="home-tonight-title">'+
