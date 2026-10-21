@@ -145,7 +145,7 @@ const iconSvg=(kind)=>{
   games:'<g transform="translate(7 6) rotate(-12 15 17)"><rect x="2" y="6" width="31" height="31" rx="7" fill="#240919" stroke="#ff82bd" stroke-width="2.4"/><circle cx="11" cy="15" r="3" fill="#ff60ac"/><circle cx="25" cy="28" r="3" fill="#ff60ac"/></g><g transform="translate(10 8) rotate(13 30 29)"><rect x="18" y="18" width="30" height="30" rx="7" fill="#110712" stroke="#ff8dbc" stroke-width="2.4"/><path d="M33 27c-5-7-13 0 0 11 13-11 5-18 0-11z" fill="#ff5ba3"/></g>',
   challenges:'<path d="M27 48C7 32 3 22 9 14c7-9 18-5 21 1 7-12 25-8 25 5 0 12-13 22-25 32z" fill="#f52b8444" stroke="#ff78bc" stroke-width="3.5"/><path d="M17 14Q24 9 29 21" stroke="#ffdaee" stroke-width="2.3" fill="none"/>',
   dates:'<rect x="9" y="11" width="44" height="43" rx="6" fill="#26091c" stroke="#ff78bc" stroke-width="3"/><path d="M10 23H52M21 5V17M41 5V17" stroke="#ff7dba" stroke-width="4" stroke-linecap="round"/><path d="M31 37c-6-9-15 0 0 11 15-11 6-20 0-11z" fill="#ff5f9e"/>',
-  surprises:'<rect x="9" y="27" width="45" height="27" rx="4" fill="#28071a" stroke="#ff82bb" stroke-width="3"/><rect x="6" y="20" width="50" height="11" rx="3" fill="#5a1139" stroke="#ff89c1" stroke-width="3"/><path d="M32 20V54" stroke="#ff459d" stroke-width="8"/><path d="M31 20c-18-2-19-20-8-17 7 1 8 11 8 17zm2 0c18-2 19-20 8-17-7 1-8 11-8 17z" fill="#fa58a4" stroke="#ffa8d4" stroke-width="2"/>'
+  surprises:'<g fill="none" stroke="#fff0e5" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="12" y="28" width="38" height="26" rx="2.5" fill="#680e2540"/><rect x="9" y="20" width="44" height="9" rx="2"/><path d="M28 21v33m6-33v33M31 20C15 20 12 6 20 6c8 0 11 14 11 14Zm0 0C47 20 50 6 42 6c-8 0-11 14-11 14Z"/></g>'
  };
  return '<svg viewBox="0 0 62 62" aria-hidden="true" focusable="false">'+paths[kind]+'</svg>';
 };
@@ -181,12 +181,7 @@ export function premiumHomeHtml({weekly=null,rolling=false,disabled=false,member
  const monthlyTitle=monthlyActivity?.title||activity?.activity_title||'Activité tirée';
  const invitationText=invitation?.host&&invitation?.guest?
   [nameA,nameB][invitation.index]+' invite '+[nameA,nameB][1-invitation.index]:
-  activity?'Qui invite ? À déterminer':'Un tirage commun ce mois-ci';
- const recap='<button class="home-monthly-recap" type="button" data-action="tab:special" '+
-  'aria-label="'+escape(activity?'Voir notre activité du mois : '+monthlyTitle+'. '+invitationText:'Choisir notre activité du mois')+'">'+
-  '<span class="home-monthly-recap-icon" aria-hidden="true">♧</span><span class="home-monthly-recap-copy">'+
-  '<strong title="'+escape(activity?monthlyTitle:'Notre activité du mois')+'">'+escape(activity?monthlyTitle:'Notre activité du mois')+'</strong>'+
-  '<small>'+escape(activity?invitationText:'À découvrir ensemble')+'</small></span><span aria-hidden="true">›</span></button>';
+  activity?'Déterminer qui invite':'Un tirage commun ce mois-ci';
  const memberLabel=(name,remaining)=>'<span class="home-member-prefix">Attribués à</span><br class="home-member-break">'+
   '<span class="home-member-name">'+name+'</span><br class="home-member-break"><span class="home-member-remaining">Restants : '+shown(remaining)+'</span>';
  const pending=rolling||disabled;
@@ -212,18 +207,18 @@ export function premiumHomeHtml({weekly=null,rolling=false,disabled=false,member
    '</section></dialog>'+
    '<div class="home-roll-area">'+
    (ready?
-    '<button class="home-roll-button is-used lr-ruby-control lr-ruby-action" type="button" disabled>Déjà brassé cette semaine, revenez la semaine prochaine</button>':
-    '<button class="home-roll-button lr-ruby-control lr-ruby-action" type="button" data-action="roll:weekly" '+(pending?'disabled':'')+'>'+
+    '<button class="home-roll-button is-used lr-ruby-control lr-ruby-action lr-surface" type="button" disabled>Déjà brassé cette semaine, revenez la semaine prochaine</button>':
+    '<button class="home-roll-button lr-ruby-control lr-ruby-action lr-surface" type="button" data-action="roll:weekly" '+(pending?'disabled':'')+'>'+
     (rolling?'Brassage 3D en cours…':disabled?'Préparation du brassage…':'<span class="home-action-die lr-ruby-icon" aria-hidden="true"><svg class="lr-ruby-die-icon" viewBox="0 0 34 38"><path fill="#fffdf5" d="m17 2 13 6-13 7L4 8Z"/><path fill="#f7e9dc" d="m4 8 13 7v20L5 28Q3 27 3 24V11Q3 9 4 8Z"/><path fill="#cdbdb4" d="m17 15 13-7q1 1 1 3v13q0 3-2 4l-12 7Z"/><path fill="none" stroke="#fff8ed" stroke-width=".8" d="m4 8 13 7 13-7M17 15v20"/><ellipse cx="17" cy="8" rx="2.5" ry="1.2" fill="#3d1020"/><g fill="#421521"><ellipse cx="7.6" cy="15" rx="1.5" ry="2.1" transform="rotate(-18 7.6 15)"/><ellipse cx="10.1" cy="21.5" rx="1.5" ry="2.1" transform="rotate(-18 10.1 21.5)"/><ellipse cx="12.7" cy="28" rx="1.5" ry="2.1" transform="rotate(-18 12.7 28)"/><ellipse cx="26.8" cy="15.5" rx="1.5" ry="2.1" transform="rotate(18 26.8 15.5)"/><ellipse cx="21.6" cy="27.3" rx="1.5" ry="2.1" transform="rotate(18 21.6 27.3)"/></g></svg></span><span class="home-action-label lr-ruby-title">Brasser le dé</span>')+'</button>')+
    '</div>'+
    '<div class="home-bottom-stack">'+
-   '<button class="home-next-month lr-ruby-control lr-ruby-feature" data-action="'+(activity?'tab:eclat':'tab:special')+'" type="button" aria-label="'+(activity?'Découvrir LoveRoll Éclat, nos douze coffrets':'Brasser notre surprise mensuelle')+'">'+
+   '<button class="home-next-month lr-ruby-control lr-ruby-feature lr-surface'+(activity?' has-monthly-activity':'')+'" data-action="tab:special" type="button" aria-label="'+escape(activity?monthlyTitle+'. '+invitationText:'Brasser notre surprise mensuelle')+'">'+
    '<span class="home-calendar-icon home-present lr-ruby-icon" aria-hidden="true">'+iconSvg('surprises')+'</span>'+
-   '<span class="lr-ruby-copy"><small class="lr-ruby-eyebrow">'+(activity?'♡ LOVEROLL ÉCLAT':'Surprise du mois disponible')+'</small>'+
-   '<strong class="lr-ruby-title">'+(activity?'Ouvrir nos coffrets':'Brasser notre surprise')+'</strong>'+
-   '<em class="lr-ruby-caption">'+(activity?'12 soirées immersives à découvrir':'Un tirage commun ce mois-ci')+'</em></span>'+
+   '<span class="lr-ruby-copy"><small class="lr-ruby-eyebrow">Surprise du mois disponible</small>'+
+   '<strong class="lr-ruby-title" title="'+escape(activity?monthlyTitle:'Brasser notre surprise')+'">'+escape(activity?monthlyTitle:'Brasser notre surprise')+'</strong>'+
+   '<em class="lr-ruby-caption">'+escape(invitationText)+'</em></span>'+
    '<span class="home-gift-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></svg></span></button>'+ 
-   '<div class="home-dashboard home-duo-dashboard">'+
+   '<div class="home-dashboard home-duo-dashboard lr-surface">'+
    '<section class="home-panel home-tonight-panel" aria-labelledby="home-tonight-title">'+
    '<h3 id="home-tonight-title"><span aria-hidden="true">♢</span>Ce soir <strong class="home-duo-heading-total" aria-label="Défis attribués ce soir">'+shown(stats.total)+'</strong></h3><div class="home-challenge-stats">'+
    summary('♢',stats.total,'Défis attribués<br>ce soir')+
@@ -236,5 +231,5 @@ export function premiumHomeHtml({weekly=null,rolling=false,disabled=false,member
    statistic(coupleStats.byPartner.join(' / '),'Répartition',nameA+' / '+nameB,'partners')+
    statistic(percent,'Sensuel / Sexuel','Ce mois','categories')+
    statistic(String(coupleStats.streak),'Semaines actives','Série actuelle','streak')+
-   '</div></section>'+recap+'</div></div></section>';
+   '</div></section>'+'</div></div></section>';
 }

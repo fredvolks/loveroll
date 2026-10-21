@@ -22,20 +22,24 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   const {page,context,errors}=await setupEditorial(browser,world,{width:360,height:740,query:'open=home'});
   const ready=()=>page.waitForFunction(()=>document.querySelector('.home-die-platform canvas')?.loveRollDie?.readState().optics.loaded);
   await ready();
-  assert.equal(await page.locator('.home-monthly-recap strong').textContent(),saved.activity_title);
-  assert.equal(await page.locator('.home-monthly-recap small').textContent(),'Qui invite ? À déterminer');
+  assert.equal(await page.locator('.home-next-month .lr-ruby-title').textContent(),saved.activity_title);
+  assert.equal(await page.locator('.home-next-month .lr-ruby-caption').textContent(),'Déterminer qui invite');
   for(const [face,expected,winner] of [[2,'Fred invite Émilie','Fred'],[5,'Émilie invite Fred','Émilie']]){
    world.rolls=[saved,{id:'monthly-host-'+face,couple_id:'c',kind:'monthly_host',key,face}];
    await page.reload();await ready();
-   assert.equal(await page.locator('.home-monthly-recap small').textContent(),expected);
-   assert.equal(await page.locator('.home-monthly-recap strong').getAttribute('title'),saved.activity_title);
+   assert.equal(await page.locator('.home-next-month .lr-ruby-caption').textContent(),expected);
+   assert.equal(await page.locator('.home-next-month .lr-ruby-title').getAttribute('title'),saved.activity_title);
    const layout=await page.evaluate(()=>{
     const card=document.querySelector('.home-dashboard').getBoundingClientRect(),nav=document.querySelector('.nav').getBoundingClientRect();
     return {height:card.height,bottom:card.bottom,nav:nav.top,scroll:document.documentElement.scrollHeight-innerHeight,horizontal:document.documentElement.scrollWidth-innerWidth};
    });
-   assert.equal(layout.height,184);assert.ok(layout.bottom<=layout.nav-6);assert.equal(layout.scroll,0);assert.equal(layout.horizontal,0);
+   const surfaces=await page.locator('.lr-surface').evaluateAll(nodes=>nodes.map(n=>{const c=getComputedStyle(n);return [c.borderRadius,c.border,c.background,c.boxShadow]}));
+   assert.equal(surfaces.length,4);for(const style of surfaces)assert.deepEqual(style,surfaces[0]);
+   assert.equal(await page.locator('.home-monthly-recap').count(),0);
+   assert.equal(await page.locator('.home-present svg g').getAttribute('stroke'),'#fff0e5');
+   assert.equal(layout.height,140);assert.ok(layout.bottom<=layout.nav-6);assert.equal(layout.scroll,0);assert.equal(layout.horizontal,0);
    if(face===2&&process.env.LOVEROLL_CAPTURE_DIR)await page.screenshot({path:path.join(process.env.LOVEROLL_CAPTURE_DIR,'home-monthly-duo.png')});
-   await page.locator('.home-monthly-recap').click();await page.waitForSelector('.surprise-premium-view');
+   await page.locator('.home-next-month').click();await page.waitForSelector('.surprise-premium-view');
    assert.ok((await page.locator('.surprise-host-winner').textContent()).includes(winner+' invite cette fois-ci'));
   }
   assert.equal(world.calls.filter(c=>c.name==='roll_couple_once').length,0,'Reading the monthly recap must never draw another result');

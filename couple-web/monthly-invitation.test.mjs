@@ -17,14 +17,14 @@ test('Every saved monthly D6 face selects the same inviter on Home and Surprise'
   assert.ok(home.includes(members[index].name+' invite '+members[1-index].name));
   assert.ok(surprise.includes(members[index].name+' invite cette fois-ci'));
   assert.ok(home.includes('Notre activité enregistrée'));
-  assert.ok(home.includes('class="home-monthly-recap" type="button" data-action="tab:special"'));
+  assert.match(home,/class="home-next-month[^"]*" data-action="tab:special"/);assert.doesNotMatch(home,/home-monthly-recap/);
  }
 });
 test('Unrolled and partially rolled months never invent an activity or inviter',()=>{
  const empty=premiumHomeHtml({members});
- assert.match(empty,/Notre activité du mois/);assert.match(empty,/À découvrir ensemble/);
+ assert.match(empty,/Brasser notre surprise/);assert.match(empty,/Un tirage commun ce mois-ci/);
  const pending=premiumHomeHtml({members,monthly:{monthly_activity:activity}});
- assert.match(pending,/Notre activité enregistrée/);assert.match(pending,/Qui invite \? À déterminer/);
+ assert.match(pending,/Notre activité enregistrée/);assert.match(pending,/Déterminer qui invite/);
  assert.doesNotMatch(pending,/Fred invite Émilie|Émilie invite Fred/);
  assert.equal(monthlyInvitation({monthly_host:{face:2}},members),null);
  for(const face of [0,7,NaN,null])assert.equal(monthlyInvitation({monthly_activity:activity,monthly_host:{face}},members),null);

@@ -1,5 +1,5 @@
 /* Compact version of the selected unified ruby glass dashboard. */
-.home-duo-heading-total,.home-monthly-recap{display:none;}
+.home-duo-heading-total{display:none;}
 @layer loveroll-duo-home{
  @media(max-width:767px){
   main#app.loveroll-real-home{padding-bottom:calc(65px + env(safe-area-inset-bottom,0px))!important;}
@@ -7,15 +7,15 @@
    grid-template-rows:max-content minmax(0,1fr) 0px 55px auto!important;gap:8px!important;
   }
   main#app.loveroll-real-home .home-bottom-stack{
-   grid-template-rows:61px 184px!important;gap:8px!important;zoom:1!important;
+   grid-template-rows:61px 140px!important;gap:8px!important;zoom:1!important;
   }
   main#app.loveroll-real-home .home-die-theater{grid-template-columns:minmax(0,1fr)!important;}
   main#app.loveroll-real-home .home-die-platform{justify-self:center!important;width:min(100vw,420px)!important;height:min(100vw,420px)!important;}
   .home-duo-dashboard{
    position:relative!important;isolation:isolate!important;box-sizing:border-box!important;
    display:grid!important;grid-template-columns:minmax(0,1fr)!important;
-   grid-template-rows:64px 57px minmax(0,1fr)!important;gap:4px!important;
-   height:184px!important;min-height:184px!important;max-height:184px!important;
+   grid-template-rows:64px minmax(0,1fr)!important;gap:4px!important;
+   height:140px!important;min-height:140px!important;max-height:140px!important;
    padding:6px 10px!important;border:1px solid #cb6a79!important;border-radius:17px!important;
    background:radial-gradient(ellipse 80% 28% at 15% 0%,#a01b3738,transparent),linear-gradient(145deg,#3d000ce8,#210006f2 66%,#48000de6)!important;
    box-shadow:inset 0 1px 2px #ffd9d780,inset 0 -1px 3px #e51b493b,0 3px 8px #13000399!important;
@@ -93,21 +93,5 @@
    text-align:center!important;white-space:normal!important;color:#edd6d6!important;
   }
   .home-duo-dashboard .home-stat-content>small{display:none!important;}
-  .home-monthly-recap{
-   display:grid!important;grid-template-columns:18px minmax(0,1fr) 8px!important;
-   align-items:center!important;gap:5px!important;box-sizing:border-box!important;min-height:0!important;width:100%!important;
-   margin:0!important;padding:3px 2px 0!important;border:0!important;border-top:1px solid #bf627b40!important;border-radius:0!important;
-   background:none!important;box-shadow:none!important;text-align:left!important;color:#f8e5dd!important;cursor:pointer!important;
-   letter-spacing:0!important;text-transform:none!important;touch-action:manipulation!important;
-  }
-  .home-monthly-recap-icon{font:20px/1 Georgia,serif!important;color:#ff96b6!important;}
-  .home-monthly-recap-copy{display:grid!important;min-width:0!important;gap:2px!important;}
-  .home-monthly-recap-copy strong{
-   display:block!important;min-width:0!important;overflow:hidden!important;white-space:nowrap!important;text-overflow:ellipsis!important;
-   font:400 14px/16px Georgia,serif!important;letter-spacing:0!important;
-  }
-  .home-monthly-recap-copy small{font:400 10px/11px Arial,sans-serif!important;color:#dfbac4!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;}
-  .home-monthly-recap:active{background:#760b2440!important;}
-  .home-monthly-recap:focus-visible{outline:2px solid #ffe6d7!important;outline-offset:-2px!important;}
  }
 }

@@ -170,8 +170,8 @@ test('Connected Home restores centered LoveRoll brand and preserves weekly statu
  assert.match(css,/home-calendar-icon svg/);
  assert.match(html,/home-gift-icon[^>]*><svg viewBox="0 0 24 24"/);
  const afterDraw=premiumHomeHtml({members:[{user_id:'a',name:'Fred'},{user_id:'b',name:'Émilie'}],monthly:{monthly_activity:{face:7}}});
- assert.match(afterDraw,/data-action="tab:eclat"/);
- assert.match(afterDraw,/Ouvrir nos coffrets/);
+ assert.match(afterDraw,/data-action="tab:special"/);
+ assert.match(afterDraw,/Déterminer qui invite/);
  assert.doesNotMatch(afterDraw,/Voir notre résultat/);
 });
 

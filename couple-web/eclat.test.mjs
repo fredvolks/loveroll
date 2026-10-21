@@ -49,16 +49,16 @@ test('Both partners have private, distinct roles and choices are not leaked',()=
  assert.match(revealed,/VOTRE RÉVÉLATION COMMUNE/);
  assert.match(revealed,/eclat:next/);
 });
-test('Monthly Surprise remains unchanged before drawing and Eclat appears after result',()=>{
+test('Monthly Surprise keeps one entry before and after drawing',()=>{
  const normal=premiumHomeHtml({members:people,monthly:{}});
  const played=premiumHomeHtml({members:people,monthly:{monthly_activity:{face:17}}});
  assert.match(normal,/data-action="tab:special"/);
  assert.match(normal,/Brasser notre surprise/);
- assert.match(played,/data-action="tab:eclat"/);
- assert.match(played,/Ouvrir nos coffrets/);
+ assert.match(played,/data-action="tab:special"/);
+ assert.match(played,/Déterminer qui invite/);
  const primary=played.match(/<button class="home-next-month[^"]*"[\s\S]*?<\/button>/)?.[0];
- assert.ok(primary);assert.doesNotMatch(primary,/data-action="tab:special"/);
- assert.match(played,/<button class="home-monthly-recap"[^>]*data-action="tab:special"/);
+ assert.ok(primary);assert.match(primary,/data-action="tab:special"/);
+ assert.doesNotMatch(played,/home-monthly-recap|Ouvrir nos coffrets/);
 });
 test('Eclat is separate from old official dice and protected by Supabase',()=>{
  const app=read('./app.js');
