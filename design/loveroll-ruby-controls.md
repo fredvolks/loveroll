@@ -34,7 +34,7 @@ Hauteur par défaut : 61 px. Les colonnes latérales de largeur identique centre
 
 ### Barre de navigation
 
-La fonction existante `nav()` utilise `nav lr-ruby-nav` et `lr-ruby-tab` sur chaque bouton. La classe `active` sélectionne la pastille rubis. Les actions, la hauteur de 64 px et l’ancrage au bas de l’écran restent ceux de la navigation existante.
+La fonction existante `nav()` utilise `nav lr-ruby-nav` et `lr-ruby-tab` sur chaque bouton. La classe `active` sélectionne la pastille rubis. Les actions, la hauteur de 56 px et l’ancrage au bas de l’écran restent ceux de la navigation existante.
 
 ## Typographie et interactions
 

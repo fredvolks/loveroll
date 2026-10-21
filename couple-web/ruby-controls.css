@@ -123,16 +123,17 @@
   .lr-ruby-control:disabled::before{opacity:.24!important;}
   .lr-ruby-control:disabled::after{opacity:.2!important;}
   .lr-ruby-nav{
+   height:56px!important;min-height:56px!important;max-height:56px!important;
    background:linear-gradient(160deg,#2e0008ed,#120003f5 70%,#300008f0)!important;
-   border:1px solid #b6656a!important;border-radius:24px!important;
+   border:1px solid #b6656a!important;border-radius:20px!important;
    box-shadow:inset 0 1px 1px #edb4aa47,0 -1px 5px #16000473!important;
    overflow:visible!important;
   }
   .lr-ruby-nav .lr-ruby-tab{
    position:relative!important;isolation:isolate!important;overflow:hidden!important;
-   border-radius:17px!important;border:1px solid transparent!important;
+   border-radius:14px!important;border:1px solid transparent!important;
    color:#fff4ee!important;background:transparent!important;box-shadow:none!important;
-   font:500 10px/1.1 Arial,sans-serif!important;gap:4px!important;
+   font:500 10px/1.1 Arial,sans-serif!important;gap:3px!important;
    text-shadow:0 1px 1px #130004!important;
    transform:translateY(0) scale(1)!important;filter:none!important;
    transition:transform 110ms ease,box-shadow 110ms ease,filter 110ms ease!important;
@@ -150,7 +151,7 @@
   }
   .lr-ruby-nav .lr-ruby-tab span{display:grid!important;place-items:center!important;line-height:1!important;}
   .lr-ruby-nav .lr-ruby-tab svg{
-   width:25px!important;height:25px!important;fill:none!important;
+   width:22px!important;height:22px!important;fill:none!important;
    stroke:#fff0e5!important;stroke-width:1.5!important;stroke-linejoin:round!important;stroke-linecap:round!important;
    filter:none!important;
   }
