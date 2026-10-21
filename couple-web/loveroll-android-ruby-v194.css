@@ -188,3 +188,22 @@
   filter:none!important;
  }
 }
+
+/* LoveRoll socle 03: photographie HD indépendante, angle conservé.
+   Fond transparent; base légèrement noyée dans le velours. */
+@media (max-width:767px) {
+ main#app.loveroll-real-home .home-die-theater {isolation:isolate!important;}
+ main#app.loveroll-real-home .home-pedestal {
+  display:block!important;left:10%!important;width:80%!important;
+  top:55%!important;height:44%!important;
+  border-radius:0!important;overflow:visible!important;
+  background:url('./assets/loveroll-pedestal-03-v198.webp') center center / 100% 100% no-repeat!important;
+  box-shadow:none!important;
+  -webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 72%,rgba(0,0,0,.95) 81%,rgba(0,0,0,.15) 100%)!important;
+  mask-image:linear-gradient(to bottom,#000 0%,#000 72%,rgba(0,0,0,.95) 81%,rgba(0,0,0,.15) 100%)!important;
+  filter:drop-shadow(0 5px 7px rgba(15,0,3,.7))!important;
+ }
+ main#app.loveroll-real-home .home-pedestal::before,
+ main#app.loveroll-real-home .home-pedestal::after {content:none!important;display:none!important;}
+ main#app.loveroll-real-home .home-die-platform {z-index:3!important;}
+}
