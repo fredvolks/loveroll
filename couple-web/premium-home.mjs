@@ -187,7 +187,7 @@ export function premiumHomeHtml({weekly=null,rolling=false,disabled=false,member
    '<div class="home-die-platform"><strong class="dice-fallback" '+(rolling?'aria-hidden="true"':'')+'>'+
    (ready?pipFace(weekly.face):'—')+'</strong>'+
    '<canvas class="dice-canvas" width="300" height="300" data-dice-sides="6" '+
-   'data-face="'+(rolling?rollFace:ready?weekly.face:3)+'" data-spinning="'+(rolling?'true':'false')+'" '+
+   'data-face="'+(rolling?rollFace:ready?weekly.face:2)+'" data-spinning="'+(rolling?'true':'false')+'" '+
    'data-dice-markers="pips" '+(!ready&&!rolling?'data-dice-preview="true" ':'')+
    'aria-label="Dé 3D, '+(rolling?'en cours de brassage':ready?'face '+weekly.face:'en attente du tirage')+'"></canvas></div>'+
    '<button type="button" class="home-odds-info" data-home-odds-open aria-label="Voir les probabilités du dé" aria-haspopup="dialog" aria-controls="home-odds-dialog"><span aria-hidden="true">i</span></button></div>'+

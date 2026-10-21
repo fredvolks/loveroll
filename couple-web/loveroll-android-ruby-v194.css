@@ -2,6 +2,8 @@
    Existing tablet/desktop layouts remain owned by their original stylesheets. */
 .home-pedestal{display:none}
 .home-odds-info{display:none}
+main#app.loveroll-real-home .home-die-platform .dice-canvas{pointer-events:auto!important;touch-action:none!important;cursor:grab;}
+main#app.loveroll-real-home .home-die-platform .dice-canvas:active{cursor:grabbing;}
 @media (max-width:767px) {
  main#app:is(.loveroll-real-home,.loveroll-evening-page,.loveroll-eclat-page,.loveroll-surprise-ecrin,.loveroll-advent-letters,.loveroll-settings-page){
   --lr-ruby-glass:radial-gradient(ellipse 50% 50% at 22% -28%,#fff4dbbf,transparent 90%),linear-gradient(180deg,#eb1235 0%,#b0001d 16%,#69000e 56%,#4e0006 77%,#ac0c25 100%);

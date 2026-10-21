@@ -35,12 +35,12 @@ function numberShapes(value,height){
  return path.toShapes();
 }
 
-export function faceMarks(sides,value,pips,neutral){
+export function faceMarks(sides,value,pips,neutral,{pipRadius=.102,pipSpacing=.385}={}){
  if(sides!==6)return numberShapes(value,sides===100?.115:sides===35?.16:.225);
  if(neutral)return [heartShape(0,0,.78)];
  if(pips)return pipLayout[value].map(([x,y])=>{
-  const shape=new THREE.Shape();shape.absarc(x*.385,y*.385,.102,0,Math.PI*2,false);
-  shape.userData={pip:true,x:x*.385,y:y*.385,radius:.102};return shape;
+  const shape=new THREE.Shape();shape.absarc(x*pipSpacing,y*pipSpacing,pipRadius,0,Math.PI*2,false);
+  shape.userData={pip:true,x:x*pipSpacing,y:y*pipSpacing,radius:pipRadius};return shape;
  });
  return pipLayout[value].map(([x,y])=>heartShape(x*.385,y*.385,.235));
 }

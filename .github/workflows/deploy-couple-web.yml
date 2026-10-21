@@ -61,6 +61,7 @@ jobs:
           done
           node couple-web/boot-smoke.cjs
           node couple-web/android-ruby-browser-check.cjs
+          node couple-web/home-ruby-interaction-browser-check.cjs
           node couple-web/checkout-one-screen-browser-check.cjs
           node couple-web/eclat-browser-check.cjs
           node couple-web/eclat-visual-parity-v184.cjs

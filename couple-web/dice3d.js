@@ -179,7 +179,7 @@ function twentyPolygons(geo){
 // Soft studio reflections give transparent glass visible edges on the existing
 // satin photograph. This environment belongs to one renderer and is disposed
 // with it; the photograph, die geometry and official face orientation stay put.
-function glassEnvironment(renderer){
+function glassEnvironment(renderer,referenceRuby=false){
  const studio=new THREE.Scene();studio.background=new THREE.Color(0x24050c);
  const shape=document.createElement('canvas');shape.width=64;shape.height=128;
  const ctx=shape.getContext('2d');
@@ -197,7 +197,18 @@ function glassEnvironment(renderer){
  ctx.fillStyle=ends;ctx.fillRect(0,0,64,128);
  const softbox=new THREE.CanvasTexture(shape);softbox.colorSpace=THREE.SRGBColorSpace;
  const panels=[];
- for(const [color,power,w,h,position] of [
+ const lighting=referenceRuby?[
+  [0xffeee5,8,.3,4,[-3,2,4]],
+  [0xfff0e9,6,.3,4,[3,2,3]],
+  [0xfff7ed,8,4,.2,[0,4,2]],
+  [0xd20b35,.6,4,4,[0,0,-4]],
+  [0xfff3e8,8,3,.22,[0,2,-4]],
+  [0xfff5ec,6,.08,3,[-3,-1.1,1.5]],
+  [0xfff3eb,7,.18,3,[3,-1,-1.4]],
+  [0xffa16d,3,.5,2,[-3,1,-2]],
+  [0xff527a,4,.25,3,[3,0,-2]],
+  [0xffffff,3,1,.2,[-1,3,3]]
+ ]:[
   [0xffeadc,3,.56,3.1,[-2.1,.15,2.8]],
   [0xffe6df,4,.62,3.1,[2.3,.45,2.4]],
   [0xfff6ed,2,1.4,.48,[0,2.35,2.6]],
@@ -208,7 +219,8 @@ function glassEnvironment(renderer){
   [0xffe5d3,.45,2.4,4,[3,.2,-1.6]],
   [0xffd9c3,5,3,.9,[0,-2,-1.1]],
   [0x8d1c35,1.5,4,4,[0,.5,-4]]
- ]){
+ ];
+ for(const [color,power,w,h,position] of lighting){
   const material=new THREE.MeshBasicMaterial({map:softbox,
    color:new THREE.Color(color).multiplyScalar(power),side:THREE.DoubleSide,
    transparent:true,depthWrite:false});
@@ -274,17 +286,21 @@ function engravedCube(surface){
  original.dispose();
  for(const [value,axis] of cubeFaces){
   const normal=new THREE.Vector3(...axis),rotation=new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,1),normal);
-  const corners=[[-.6,-.6],[.6,-.6],[.6,.6],[-.6,.6]].map(([x,y])=>new THREE.Vector3(x,y,.9).applyQuaternion(rotation));
+  // RoundedBoxGeometry's planar boundary is half-size minus bevel radius.
+  // Meet that boundary exactly; an inset face leaves open seams at the bevel.
+  const flat=.9-.18;
+  const corners=[[-flat,-flat],[flat,-flat],[flat,flat],[-flat,flat]].map(([x,y])=>new THREE.Vector3(x,y,.9).applyQuaternion(rotation));
   const carved=surface(corners,normal,value);positions.push(...carved.glassPositions);normals.push(...carved.glassNormals);
  }
  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geo.setAttribute('normal',new THREE.Float32BufferAttribute(normals,3));geo.computeBoundingSphere();return geo;
 }
 
-function geometry(sides,pips=false,neutral=false){
+function geometry(sides,pips=false,neutral=false,referenceRuby=false){
  const group=new THREE.Group(),normals=new Map();
  const inkPositions=[],inkNormals=[],engravings=[];
  const surface=(corners,normal,value)=>{
-  const carved=engravedFace(corners,normal,faceMarks(sides,value,pips,neutral));
+  const marks=referenceRuby?faceMarks(sides,value,pips,neutral,{pipRadius:.16,pipSpacing:.40}):faceMarks(sides,value,pips,neutral);
+  const carved=engravedFace(corners,normal,marks);
   inkPositions.push(...carved.inkPositions);inkNormals.push(...carved.inkNormals);
   engravings.push({face:value,depth:carved.depth,marks:carved.marks,clearance:carved.clearance});return carved;
  };
@@ -302,9 +318,24 @@ function geometry(sides,pips=false,neutral=false){
   attenuationColor:0xc41439,attenuationDistance:4.2,envMapIntensity:1.12,
   side:THREE.FrontSide,flatShading:false,transparent:false,opacity:1,depthWrite:true
  });
+ if(referenceRuby){
+  mat.color.setHex(0xffffff);mat.roughness=.025;
+  mat.clearcoatRoughness=.015;mat.transmission=1;
+  mat.thickness=1.8;mat.attenuationColor.setHex(0xdc123a);
+  mat.attenuationDistance=3.2;mat.envMapIntensity=1.1;
+  mat.emissive.setHex(0x6d0012);mat.emissiveIntensity=.035;
+  mat.onBeforeCompile=shader=>{
+   shader.vertexShader='varying vec3 vPolishBend;\n'+shader.vertexShader;
+   shader.vertexShader=shader.vertexShader.replace('#include <beginnormal_vertex>',`#include <beginnormal_vertex>
+vPolishBend=normalMatrix*(position-normal*dot(position,normal));`);
+   shader.fragmentShader='varying vec3 vPolishBend;\n'+shader.fragmentShader;
+   shader.fragmentShader=shader.fragmentShader.replace('#include <normal_fragment_maps>',`#include <normal_fragment_maps>
+normal=normalize(normal+vPolishBend*.10);`);
+  };
+ }
  // Clear rose crystal: the photograph is refracted by the real face normals,
  // with ruby absorption and warm polished edges matching the loading heart.
- mat.onBeforeCompile=shader=>{
+ if(!referenceRuby)mat.onBeforeCompile=shader=>{
   shader.vertexShader='varying vec3 vPolishBend;\n'+shader.vertexShader;
   shader.vertexShader=shader.vertexShader.replace('#include <beginnormal_vertex>',`#include <beginnormal_vertex>
 vPolishBend = normalMatrix * (position - normal * dot(position,normal));`);
@@ -319,8 +350,15 @@ outgoingLight += vec3(0.06,0.0005,0.005) * pow(crystalFacing,2.0);
 #include <opaque_fragment>
 `);
  };
- mat.customProgramCacheKey=()=> 'loveroll-heart-crystal-engraved';
+ mat.customProgramCacheKey=()=>referenceRuby?'loveroll-ruby-reference-205':'loveroll-heart-crystal-engraved';
  group.add(new THREE.Mesh(geo,mat));
+ if(referenceRuby){
+  // Ruby facets inside the clear outer volume reproduce the reference's
+  // deep red internal reflections. They rotate with the same solid die.
+  const interior=new THREE.Mesh(new THREE.OctahedronGeometry(.79,0),
+   new THREE.MeshStandardMaterial({color:0x9b0627,metalness:.72,roughness:.11,envMapIntensity:1.1}));
+  interior.rotation.set(.32,.43,.19);interior.position.set(0,.1,.05);group.add(interior);
+ }
  // A continuous optical back wall gives the volume a clean internal rim.
  // Refracting through the reverse of engraved text would make ghost digits.
  const backGeometry=polygons?roundedPolyhedron(polygons,{bevel:sides===20?.13:.095,shrink:sides===20?.095:.07,steps:8}):new RoundedBoxGeometry(1.8,1.8,1.8,9,.18);
@@ -328,7 +366,8 @@ outgoingLight += vec3(0.06,0.0005,0.005) * pow(crystalFacing,2.0);
  backMaterial.onBeforeCompile=mat.onBeforeCompile;backMaterial.customProgramCacheKey=mat.customProgramCacheKey;
  const opticalBack=new THREE.Mesh(backGeometry,backMaterial);opticalBack.renderOrder=-1;
  opticalBack.onBeforeRender=renderer=>{const refraction=renderer.getRenderTarget()!==null;backMaterial.colorWrite=refraction;backMaterial.depthWrite=refraction;backGeometry.setDrawRange(0,refraction?Infinity:0);};
- group.add(opticalBack);
+ if(!referenceRuby)group.add(opticalBack);
+ else{backGeometry.dispose();backMaterial.dispose();}
  // No wireframe: smooth bevel geometry and PBR specular highlights are the
  // only visible transitions between the glass faces on D6, D20 and D100.
  const layout=sides===6?cubeFaces:null;
@@ -340,7 +379,7 @@ outgoingLight += vec3(0.06,0.0005,0.005) * pow(crystalFacing,2.0);
   normals.set(value,normal);
  }
  const inkGeometry=new THREE.BufferGeometry();inkGeometry.setAttribute('position',new THREE.Float32BufferAttribute(inkPositions,3));inkGeometry.setAttribute('normal',new THREE.Float32BufferAttribute(inkNormals,3));
- const ink=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.32,metalness:0,emissive:0xffffff,emissiveIntensity:.4,envMapIntensity:.8,transparent:false,opacity:1,side:THREE.FrontSide});
+ const ink=new THREE.MeshStandardMaterial({color:referenceRuby?0xfff8ee:0xffffff,roughness:referenceRuby?.23:.32,metalness:0,emissive:0xffffff,emissiveIntensity:referenceRuby?.25:.4,envMapIntensity:.8,transparent:false,opacity:1,side:THREE.FrontSide});
  const inlay=new THREE.Mesh(inkGeometry,ink);
  // Foreground inlays cannot be fed back into the glass refraction buffer:
  // doing so would duplicate their silhouettes in neighbouring faces.
@@ -349,6 +388,7 @@ outgoingLight += vec3(0.06,0.0005,0.005) * pow(crystalFacing,2.0);
  return {group,normals,engravings,material:mat,ink};
 }
 export function dieOn(canvas,sides,value,rolling){
+ const flatHome=sides===6&&!!canvas.closest('.home-die-platform');
  let renderer;try{renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});canvas.dataset.webglReady='true';canvas.closest('.home-die-platform, .love3d-stage')?.classList.add('webgl-ready');}catch{return ()=>{};}
  renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
  const layoutSize=()=>{
@@ -362,6 +402,7 @@ export function dieOn(canvas,sides,value,rolling){
  renderer.toneMapping=THREE.ACESFilmicToneMapping;
  renderer.toneMappingExposure=1.25;
  const scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(42,1,.1,15);camera.position.z=(sides===6?5.25:4.15)/Math.min(1.4,Math.max(.8,Number(canvas.dataset.diceZoom)||1));
+ if(flatHome){camera.position.y=2.45;camera.lookAt(0,0,0);}
  camera.aspect=initialSize.width/initialSize.height;camera.updateProjectionMatrix();
  let previousWidth=initialSize.width,previousHeight=initialSize.height;
  const resizeDie=()=>{
@@ -378,34 +419,41 @@ export function dieOn(canvas,sides,value,rolling){
  resizeObserver?.observe(canvas);
  const podiumObserver=typeof ResizeObserver==='function'?new ResizeObserver(()=>{alignPodium();request();}):null;
  window.addEventListener('resize',resizeDie);
- const glass=glassEnvironment(renderer);scene.environment=glass.texture;
+ const glass=glassEnvironment(renderer,flatHome);scene.environment=glass.texture;
  const backdrop=crystalBackdrop(renderer,scene,canvas,()=>request());
  scene.add(new THREE.AmbientLight(0xffe1eb,.12));
- const key=new THREE.PointLight(0xffe7ef,2,12);key.position.set(-2,3.2,3.3);scene.add(key);
- const rim=new THREE.PointLight(0xffb3d0,1.5,9);rim.position.set(3,-1,1.9);scene.add(rim);
- const white=new THREE.DirectionalLight(0xfff0fa,.25);white.position.set(1.3,3,4);scene.add(white);
+ const key=new THREE.PointLight(0xffe7ef,flatHome?45:2,12);key.position.set(-2,3.2,3.3);scene.add(key);
+ const rim=new THREE.PointLight(0xffb3d0,flatHome?22:1.5,9);rim.position.set(3,-1,1.9);scene.add(rim);
+ const white=new THREE.DirectionalLight(0xfff0fa,flatHome?1.2:.25);white.position.set(1.3,3,4);scene.add(white);
  const neutral=canvas.dataset.diceUnrolled==='true'&&sides===6;
  let preview=canvas.dataset.dicePreview==='true'&&sides===6;
- const built=geometry(sides,canvas.dataset.diceMarkers==='pips',neutral);scene.add(built.group);
- if(canvas.closest('.home-die-platform')){
-  built.material.emissive.setHex(0x730012);built.material.emissiveIntensity=.14;
-  renderer.toneMappingExposure=1.4;
- }
+ const built=geometry(sides,canvas.dataset.diceMarkers==='pips',neutral,flatHome);scene.add(built.group);
+ if(flatHome)renderer.toneMappingExposure=1.2;
  // A soft contact shadow stays on the stage while the die rises and settles.
  const shadow=new THREE.Mesh(new THREE.CircleGeometry(1.08,40),
   new THREE.MeshBasicMaterial({color:0x08030b,transparent:true,opacity:.28,depthWrite:false}));
  shadow.position.set(0,-1.16,-.68);shadow.scale.set(1,.25,1);
+ if(flatHome){
+  const image=document.createElement('canvas');image.width=image.height=128;
+  const context=image.getContext('2d'),gradient=context.createRadialGradient(64,64,0,64,64,64);
+  gradient.addColorStop(0,'rgba(8,0,3,.85)');gradient.addColorStop(.45,'rgba(8,0,3,.55)');gradient.addColorStop(1,'rgba(8,0,3,0)');
+  context.fillStyle=gradient;context.fillRect(0,0,128,128);
+  shadow.material.map=new THREE.CanvasTexture(image);shadow.material.needsUpdate=true;
+  shadow.rotation.x=-Math.PI/2;shadow.position.set(0,-.901,0);shadow.scale.set(1.15,1.15,1);
+ }
  scene.add(shadow);
  // A server-confirmed face owns the final quaternion. Do not ever restore
  // the initial mesh rotation after a live D100 throw.
  const tilt=new THREE.Quaternion().setFromEuler(sides===6?
-  (canvas.closest('.home-die-platform')?new THREE.Euler(.36,-.50,0):new THREE.Euler(.16,-.18,-.02)):new THREE.Euler(.075,-.09,0));
+  (flatHome?new THREE.Euler(0,-.58,0):new THREE.Euler(.16,-.18,-.02)):new THREE.Euler(.075,-.09,0));
  const podiumSelector='.home-die-theater,.surprise-main-die-scene,.evening-user-die>.love3d,.evening-die-row,.evening-finale-hero';
  let podium=canvas.closest(podiumSelector);
  const orientationFor=face=>{
   const normal=built.normals.get(Number(face));
-  return normal?new THREE.Quaternion().setFromUnitVectors(normal,
-   new THREE.Vector3(0,0,1)).premultiply(tilt):null;
+  if(!normal)return null;
+  const orientation=new THREE.Quaternion().setFromUnitVectors(normal,new THREE.Vector3(0,0,1));
+  if(flatHome&&Number(face)===2)orientation.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),Math.PI));
+  return orientation.premultiply(tilt);
  };
  let target=orientationFor(value)||orientationFor(1);
  built.group.quaternion.copy(target);
@@ -423,6 +471,12 @@ export function dieOn(canvas,sides,value,rolling){
    }
   });
   return {left,right,top,bottom};
+ }
+ function projectedSupport(){
+  camera.updateMatrixWorld(true);
+  const point=new THREE.Vector3(built.group.position.x,-.9,built.group.position.z).project(camera);
+  const rect=canvas.getBoundingClientRect();
+  return {x:rect.left+(point.x+1)*rect.width/2,y:rect.top+(1-point.y)*rect.height/2};
  }
  function alignPodium(){
   // UI refreshes retain this canvas but replace its surrounding DOM.
@@ -450,7 +504,8 @@ export function dieOn(canvas,sides,value,rolling){
    sceneRect.top+(sceneRect.height-1024*scale)*percent+678*scale;
   let bounds=projectedBounds();
   // Keep the entire real mesh above the marble, including short phone scenes.
-  camera.zoom=Math.min(1,(contact-sceneRect.top-headroom)/((bounds.bottom-bounds.top)*rect.height),
+  const anchor=bounds.bottom;
+  camera.zoom=Math.min(1,(contact-sceneRect.top-headroom)/((anchor-bounds.top)*rect.height),
    (sceneRect.width-12)/((bounds.right-bounds.left)*rect.width),
    markerVisible?(sceneRect.width*.53)/((bounds.right-bounds.left)*rect.width):1);
   camera.updateProjectionMatrix();bounds=projectedBounds();
@@ -460,6 +515,8 @@ export function dieOn(canvas,sides,value,rolling){
   canvas.dataset.podiumContact=String(contact-sceneRect.top);
  }
  let frame=0,drag=false,x=0,y=0,vx=0,vy=0,shown=true,lastFrame=0,renderedFrames=0;
+ const yawAxis=new THREE.Vector3(0,1,0),yawTurn=new THREE.Quaternion();
+ const turnFlat=angle=>built.group.quaternion.premultiply(yawTurn.setFromAxisAngle(yawAxis,angle));
  let returnStart=null,returnTime=0;
  const reduceMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches===true;
  let duration=rolling&&!reduceMotion?ROLL_TOTAL_MS:0,start=performance.now();
@@ -504,19 +561,21 @@ export function dieOn(canvas,sides,value,rolling){
    // Keep the official 3D face locked after its last animation frame.
    built.group.quaternion.copy(target);built.group.position.set(0,0,0);
    canvas.dataset.spinning='false';
+   duration=0;
   }else if(!drag&&returnStart){
    const tReturn=reduceMotion?1:Math.min(1,(now-returnTime)/480);
    built.group.quaternion.slerpQuaternions(returnStart,target,1-Math.pow(1-tReturn,3));
    if(tReturn>=1){built.group.quaternion.copy(target);returnStart=null;}
   }else if(!drag){
    // Previews stay fixed. Only a confirmed roll or an explicit drag moves a die.
-   built.group.rotateY(vx);built.group.rotateX(vy);
+   if(flatHome)turnFlat(vx*dt*60);
+   else{built.group.rotateY(vx);built.group.rotateX(vy);}
    const dragFactor=Math.exp(-5*dt);vx*=dragFactor;vy*=dragFactor;
   }
   const elevation=built.group.position.y;
   shadow.material.opacity=.32/(1+elevation*4);
   shadow.scale.x=1+elevation*.9;
-  shadow.scale.y=.25+elevation*.14;
+  shadow.scale.y=flatHome?1+elevation*.9:.25+elevation*.14;
   shadow.position.x=built.group.position.x;
   backdrop.sync();renderer.render(scene,camera);
   renderedFrames++;
@@ -539,26 +598,44 @@ export function dieOn(canvas,sides,value,rolling){
  };
  // Allow LoveRoll to launch the next server-confirmed throw on the SAME
  // WebGL canvas, without teardown, blank frame, or replaying the idle face.
+ const settleTo=face=>{
+  const selected=orientationFor(face);if(!selected)return false;
+  target=selected;preview=false;duration=0;returnStart=null;vx=vy=0;
+  delete canvas.dataset.dicePreview;canvas.dataset.face=String(face);canvas.dataset.spinning='false';
+  built.group.quaternion.copy(target);built.group.position.set(0,0,0);
+  alignPodium();request();return true;
+ };
  canvas.loveRollDie={rollTo,readState:()=>{
   // Read-only geometry diagnostics: verify the actual model, never a text overlay.
-  let frontFace=null,best=-Infinity;
+  let frontFace=null,best=-Infinity,upFace=null,upNormal=null,bestUp=-Infinity;
   for(const [face,normal] of built.normals){
-   const facing=normal.clone().applyQuaternion(built.group.quaternion).z;
+   const transformed=normal.clone().applyQuaternion(built.group.quaternion),facing=transformed.z;
    if(facing>best){best=facing;frontFace=face;}
+   if(transformed.y>bestUp){bestUp=transformed.y;upFace=face;upNormal=transformed;}
   }
   return {face:Number(canvas.dataset.face),frontFace,quaternion:built.group.quaternion.toArray(),renderedFrames,
+   modelId:built.group.uuid,model:flatHome?'ruby-reference-205':'rose-crystal',
+   support:flatHome?projectedSupport():null,
+   restingUp:flatHome?upNormal.toArray():null,upFace,
    spinning:canvas.dataset.spinning==='true',optics:{...backdrop.state(),transmission:built.material.transmission,roughness:built.material.roughness,inkOpacity:built.ink.opacity,inkTransparent:built.ink.transparent,engravings:built.engravings}};
- },projectedBounds,refresh:()=>{resizeDie();alignPodium();backdrop.sync();renderer.render(scene,camera);renderedFrames++;request();}};
+ },settleTo,projectedBounds,refresh:()=>{resizeDie();alignPodium();backdrop.sync();renderer.render(scene,camera);renderedFrames++;request();}};
  const down=e=>{
+  if(e.isPrimary===false||e.button>0)return;
   if(duration&&performance.now()-start<duration)return;
   drag=true;returnStart=null;x=e.clientX;y=e.clientY;vx=vy=0;
+  if(flatHome)e.preventDefault();
   canvas.setPointerCapture(e.pointerId);request();
  };
  const move=e=>{if(!drag)return;const dx=e.clientX-x,dy=e.clientY-y;x=e.clientX;y=e.clientY;
-  vx=dx*.013;vy=dy*.013;built.group.rotateY(vx);built.group.rotateX(vy);request();};
+  vx=dx*.013;vy=flatHome?0:dy*.013;
+  if(flatHome){e.preventDefault();turnFlat(vx);}
+  else{built.group.rotateY(vx);built.group.rotateX(vy);}
+  request();};
  const up=()=>{
   if(!drag)return;
-  drag=false;vx=vy=0;
+  drag=false;
+  if(flatHome){vx=reduceMotion?0:Math.max(-.08,Math.min(.08,vx));vy=0;request();return;}
+  vx=vy=0;
   // Manual inspection never changes the server's official value: return the
   // displayed face to its known resting orientation.
   returnStart=built.group.quaternion.clone();returnTime=performance.now();
@@ -566,6 +643,7 @@ export function dieOn(canvas,sides,value,rolling){
  };
  canvas.addEventListener('pointerdown',down);canvas.addEventListener('pointermove',move);
  canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',up);
+ canvas.addEventListener('lostpointercapture',up);
  const obs=new IntersectionObserver(entries=>{const old=shown;
   shown=entries[0]?.isIntersecting!==false;if(shown&&!old){lastFrame=0;request();}
  });
@@ -578,12 +656,14 @@ export function dieOn(canvas,sides,value,rolling){
   document.removeEventListener('visibilitychange',onVisible);
   canvas.removeEventListener('pointerdown',down);canvas.removeEventListener('pointermove',move);
   canvas.removeEventListener('pointerup',up);canvas.removeEventListener('pointercancel',up);
+  canvas.removeEventListener('lostpointercapture',up);
   built.group.traverse(obj=>{obj.geometry?.dispose();if(obj.material){
     for(const mat of Array.isArray(obj.material)?obj.material:[obj.material]){
      mat.map?.dispose();mat.dispose();
     }
   }});
   backdrop.dispose();scene.environment=null;glass.dispose();renderer.dispose();pool.delete(clean);
+  shadow.geometry.dispose();shadow.material.map?.dispose();shadow.material.dispose();scene.remove(shadow);
  };
  pool.add(clean);return clean;
 }

@@ -7,7 +7,7 @@ import {createCoupleLiveSync} from './couple-live-sync.mjs?v=20261017-advent119'
 import {playableSessionForWeekly} from './couple-reset-view.mjs';
 import {eveningDailyAccess} from './evening-daily-policy.mjs?v=20261016-daily100';
 import {ownEveningChallenges,queuePosition,queueLabel,hasTurnToDraw} from './evening-private-queue.mjs';
-import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261021-home204';
+import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261021-home205';
 import {eclatHtml} from './eclat-ui.mjs?v=20261020-cinema183';
 import {previewMode,previewCanEdit,previewEclatStatus} from './account-preview-mode.mjs?v=20261020-test180';
 import {eclatStage} from './eclat-catalog.mjs?v=20261019-eclat174';
@@ -49,7 +49,7 @@ import {invitationStatus,coupleStats,formatCoupleDate,invitationEmailText,invita
 import {premiumConfirm,premiumCopyLink,focusInlineLoveDialog} from './premium-dialogs.mjs?v=20261017-complete127';
 
 
-const WEB_RELEASE='2026-10-21.204';
+const WEB_RELEASE='2026-10-21.205';
 const root=document.querySelector('#app');
 const enc=new TextEncoder(),dec=new TextDecoder();
 let diceCleanup=[],renderToken=0;
@@ -292,12 +292,19 @@ function frame(body,title='LOVEROLL',subtitle='Un jeu intime, juste pour vous de
   oldD100.closest('.love3d-stage'):null;
  const savedDispose=savedStage?oldD100.loveRollCleanup:null;
  if(savedStage)savedStage.remove();
+ // Home keeps one actual model from finger inspection through the official
+ // throw, including the pending server request and the final text refresh.
+ const oldHome=realHome?root.querySelector('.home-die-platform canvas'):null;
+ const homeStage=oldHome?.loveRollDie&&oldHome?.loveRollCleanup?oldHome.closest('.home-die-platform'):null;
+ const homeDispose=homeStage?oldHome.loveRollCleanup:null;
+ if(homeStage)homeStage.remove();
  // Keep settled WebGL canvases when this view only refreshes text/data.
  // Signature includes all visual inputs; a new roll or changed result remounts.
  const dieSignature=c=>['diceSides','face','diceUnrolled','diceMarkers','diceZoom','dicePreview'].map(k=>c.dataset[k]||'').join('|');
  const settled=diceView===state.tab?[...root.querySelectorAll('canvas[data-dice-sides]')].map((canvas,index)=>({canvas,index,signature:dieSignature(canvas)})).filter(({canvas})=>canvas.loveRollDie&&canvas.loveRollCleanup&&canvas.dataset.spinning!=='true'):[];
  const kept=new Set(settled.map(({canvas})=>canvas.loveRollCleanup));
  if(savedDispose)kept.add(savedDispose);
+ if(homeDispose)kept.add(homeDispose);
  for(const dispose of diceCleanup)if(!kept.has(dispose))dispose();
  diceCleanup=[...kept];diceView=state.tab;
  const token=++renderToken;
@@ -327,6 +334,17 @@ function frame(body,title='LOVEROLL',subtitle='Un jeu intime, juste pour vous de
    partnerName:other()?.name?.split(' ')[0]||'votre partenaire'
   }):'';
  root.innerHTML=(realHome||realEvening||realSurprise||realEclat||realSettings||realEditor||eveningArchive||(isCouple&&state.tab==='advent')?'':usualHeader)+body+(connected?nav():'')+installation+reviewPanel+cyclePanel;
+ if(homeStage){
+  const fresh=root.querySelector('.home-die-platform canvas'),replacement=fresh?.closest('.home-die-platform');
+  if(replacement){
+   const face=Number(fresh.dataset.face),spinning=fresh.dataset.spinning==='true',isPreview=fresh.dataset.dicePreview==='true';
+   replacement.replaceWith(homeStage);
+   if(spinning&&(oldHome.dataset.dicePreview==='true'||Number(oldHome.dataset.face)!==face))oldHome.loveRollDie.rollTo(face);
+   else if(!spinning&&!isPreview&&(oldHome.dataset.dicePreview==='true'||Number(oldHome.dataset.face)!==face))oldHome.loveRollDie.settleTo(face);
+   else if(isPreview)oldHome.dataset.dicePreview='true';
+   oldHome.loveRollDie.refresh();
+  }else{homeDispose();diceCleanup=diceCleanup.filter(dispose=>dispose!==homeDispose);}
+ }
  if(savedStage){
   const freshD100=root.querySelector('.evening-step.two .evening-d35-col canvas[data-dice-sides="100"]');
   const freshStage=freshD100?.closest('.love3d-stage');
@@ -357,7 +375,7 @@ function frame(body,title='LOVEROLL',subtitle='Un jeu intime, juste pour vous de
  // never a fabricated pip result. Actual face comes from Supabase after rolling.
  const canvases=[...root.querySelectorAll('canvas[data-dice-sides]')];
  if(canvases.length){
-  import('./dice3d.js?v=20261021-home204').then(({dieOn})=>{
+  import('./dice3d.js?v=20261021-home205').then(({dieOn})=>{
    if(token!==renderToken)return;
    for(const canvas of canvases){
     if(!canvas.isConnected||canvas.loveRollDie)continue;
@@ -4062,6 +4080,6 @@ start().catch(error=>{fail(error);window.LoveRollBoot?.showFailure();});
 
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   window.addEventListener('load', () =>
-    navigator.serviceWorker.register('./service-worker.js?v=20261021-home204',
+    navigator.serviceWorker.register('./service-worker.js?v=20261021-home205',
      {scope:'./',updateViaCache:'none'}).then(reg=>reg.update()).catch(console.warn));
 }
