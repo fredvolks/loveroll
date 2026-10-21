@@ -56,7 +56,9 @@ test('Monthly Surprise remains unchanged before drawing and Eclat appears after 
  assert.match(normal,/Brasser notre surprise/);
  assert.match(played,/data-action="tab:eclat"/);
  assert.match(played,/Ouvrir nos coffrets/);
- assert.doesNotMatch(played,/data-action="tab:special"/);
+ const primary=played.match(/<button class="home-next-month[^"]*"[\s\S]*?<\/button>/)?.[0];
+ assert.ok(primary);assert.doesNotMatch(primary,/data-action="tab:special"/);
+ assert.match(played,/<button class="home-monthly-recap"[^>]*data-action="tab:special"/);
 });
 test('Eclat is separate from old official dice and protected by Supabase',()=>{
  const app=read('./app.js');
