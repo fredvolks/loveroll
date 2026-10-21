@@ -395,7 +395,7 @@ outgoingLight += vec3(0.06,0.0005,0.005) * pow(crystalFacing,2.0);
 }
 export function dieOn(canvas,sides,value,rolling){
  const flatHome=sides===6&&!!canvas.closest('.home-die-platform');
- const photoSoiree=sides===100&&!!canvas.closest('.evening-premium-view.is-inactive');
+ const photoSoiree=sides===100&&!!canvas.closest('.evening-premium-view.has-home-soiree-template');
  const photoStage=flatHome||photoSoiree;
  const referenceRuby=flatHome||(sides===100&&!!canvas.closest('.loveroll-evening-page'));
  let renderer;try{renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});canvas.dataset.webglReady='true';canvas.closest('.home-die-platform, .love3d-stage')?.classList.add('webgl-ready');}catch{return ()=>{};}

@@ -5,6 +5,7 @@ export function fitSoireeHomeTemplate(root){
  observer?.disconnect();observer=null;
  const view=root.querySelector('.evening-premium-view.is-inactive');
  if(!view||!matchMedia('(max-width:767px)').matches)return;
+ view.classList.add('has-home-soiree-template');
  const care=view.querySelector('.evening-aftercare'),actions=care.querySelector('.evening-finale-actions');
  if(!care.querySelector('.evening-summary-shell')){
   const card=document.createElement('div');card.className='evening-summary-shell lr-surface';
