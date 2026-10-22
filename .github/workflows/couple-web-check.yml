@@ -363,7 +363,7 @@ jobs:
                 visible:!!node.getBoundingClientRect().width,enabled:!node.disabled};
               });
               const btn=app.querySelector('.home-roll-button');
-              btn.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,button:0}));
+              btn.dispatchEvent(new PointerEvent('pointerdown',{bubbles:true,button:0,isPrimary:true}));
               const pressed=btn.classList.contains('lr-pressed');
               const transform=getComputedStyle(btn).transform;
               btn.dispatchEvent(new PointerEvent('pointerup',{bubbles:true,button:0}));
