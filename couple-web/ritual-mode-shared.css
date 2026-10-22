@@ -1,0 +1,14 @@
+/* One measured selector for Soirée and Éclat, including its nested labels. */
+@layer loveroll-shared-mode {
+ @media(max-width:767px){
+  #app:is(.has-night-gallery,.loveroll-evening-page:has(.has-home-soiree-template)) .ritual-mode-switcher{height:43px!important;min-height:43px!important;padding:3px!important;gap:5px!important;border-radius:18px!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+  #app:is(.has-night-gallery,.loveroll-evening-page:has(.has-home-soiree-template)) .ritual-mode-tab{height:35px!important;min-height:0!important;gap:8px!important;padding:1px 4px!important;border-radius:14px!important;font:400 16px/1 Georgia,serif!important;letter-spacing:normal!important;}
+  #app:is(.has-night-gallery,.loveroll-evening-page:has(.has-home-soiree-template)) .ritual-mode-name{font:italic 400 16px/1 Georgia,serif!important;color:#fff0f6!important;}
+  #app:is(.has-night-gallery,.loveroll-evening-page:has(.has-home-soiree-template)) .ritual-mode-icon{font:400 22px/1 Georgia,serif!important;}
+  #app:is(.has-night-gallery,.loveroll-evening-page:has(.has-home-soiree-template)) .ritual-premium-copy{gap:1px!important;}
+  #app:is(.has-night-gallery,.loveroll-evening-page:has(.has-home-soiree-template)) .ritual-premium-copy strong{display:flex!important;align-items:center!important;gap:5px!important;font:italic 400 18px/18px Georgia,serif!important;color:#483408!important;}
+  #app:is(.has-night-gallery,.loveroll-evening-page:has(.has-home-soiree-template)) .ritual-premium-copy small{font:700 8px/9px Arial,sans-serif!important;letter-spacing:1px!important;color:#483408!important;}
+  #app:is(.has-night-gallery,.loveroll-evening-page:has(.has-home-soiree-template)) .ritual-crown{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:13px!important;height:14px!important;flex:none!important;color:#483408!important;opacity:1!important;filter:none!important;}
+  #app .ritual-crown svg{display:block!important;width:13px!important;height:14px!important;fill:none!important;stroke:currentColor!important;}
+ }
+}

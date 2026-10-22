@@ -12,11 +12,12 @@
   display:flex!important;flex-direction:column!important;gap:0!important;padding:0!important;margin:0 auto!important;
   overflow:hidden!important;color:#fff1e4!important;
  }
+ #app.has-night-gallery .eclat-shell{background:none!important;box-shadow:none!important;}
  #app.has-night-gallery .eclat-shell::before{display:none!important;}
  #app.has-night-gallery .eclat-top{height:80px!important;min-height:80px!important;max-height:80px!important;flex:none!important;margin:0!important;padding:0!important;}
  #app.has-night-gallery .eclat-top>.ritual-heading{height:80px!important;gap:0!important;margin:0!important;padding:0!important;}
  #app.has-night-gallery .ritual-brand{height:58px!important;min-height:58px!important;gap:0!important;margin:0!important;padding:0!important;justify-content:center!important;}
- #app.has-night-gallery .ritual-brand i{font:28px/28px Georgia,serif!important;color:#eaa0af!important;}
+ #app.has-night-gallery .ritual-brand i{font:28px/28px Georgia,serif!important;width:28px!important;color:transparent!important;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23eaa0af' stroke-width='1.3' stroke-linejoin='round'%3E%3Cpath d='M20.8 4.6a5.5 5.5 0 0 0-8.8 1.6 5.5 5.5 0 0 0-8.8-1.6C-.9 8.8 4.3 15 12 20.2c7.7-5.2 12.9-11.4 8.8-15.6Z'/%3E%3C/svg%3E") center/22px 22px no-repeat!important;}
  #app.has-night-gallery .ritual-brand b{font:italic 30px/34.5px Georgia,serif!important;letter-spacing:-.75px!important;color:#fff5e9!important;}
  #app.has-night-gallery .ritual-kicker{font:550 10px/12px system-ui,sans-serif!important;letter-spacing:2.9px!important;height:13px!important;margin:5px 0 0!important;color:#f4c4d0!important;}
  #app.has-night-gallery .eclat-page-title{height:var(--ritual-title-height)!important;min-height:var(--ritual-title-height)!important;flex:none!important;margin:8px 0!important;display:block!important;}
@@ -28,7 +29,7 @@
  #app.has-night-gallery .ritual-mode-premium::before{border-color:#fff8c2!important;}
  #app.has-night-gallery .ritual-premium-copy strong{font:italic 500 21px/18px 'LoveRoll Cormorant',Georgia,serif!important;}
  #app.has-night-gallery .ritual-premium-copy small{font:700 8px/10px Arial,sans-serif!important;letter-spacing:1px!important;}
- #app.has-night-gallery .eclat-library{display:flex!important;flex-direction:column!important;gap:0!important;flex:1!important;min-height:0!important;overflow:hidden!important;padding:0!important;}
+ #app.has-night-gallery .eclat-library{display:flex!important;flex-direction:column!important;gap:0!important;flex:1!important;min-height:0!important;overflow:hidden!important;padding:0!important;background:none!important;border:0!important;box-shadow:none!important;}
  #app.has-night-gallery .eclat-photo-grid{display:grid!important;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:none!important;grid-auto-rows:clamp(166px,23dvh,210px)!important;gap:10px!important;flex:1!important;min-height:0!important;padding:1px 2px 8px!important;overflow-y:auto!important;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#b18a4d #240006;align-content:start!important;}
  #app.has-night-gallery .eclat-photo-grid button.eclat-tile{display:block!important;position:relative!important;min-height:0!important;padding:0!important;margin:0!important;border:1px solid #bc965c!important;border-radius:18px!important;background:#240006!important;box-shadow:inset 0 1px 1px #ffdfab38!important;overflow:hidden!important;text-align:left!important;}
  #app.has-night-gallery :is(.eclat-photo-grid .eclat-tile-photo,.eclat-detail-hero .eclat-detail-hero-photo){background-image:url('./assets/eclat-night-atlas-v218.webp')!important;background-size:300% 400%!important;background-position:var(--atlas-x) var(--atlas-y)!important;filter:none!important;opacity:1!important;transform:scale(1.08)!important;}
@@ -44,15 +45,17 @@
  #app.has-night-gallery .eclat-memo-durations>span.is-done{color:#ffe398!important;border-color:#e8c66a!important;}
  #app.has-night-gallery .eclat-resume{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;min-height:44px!important;flex:none!important;padding:5px 12px!important;margin:0 2px 8px!important;border:1px solid #e3bf73!important;border-radius:14px!important;background:#3d0010!important;color:#ffe5b0!important;font:500 17px/1 'LoveRoll Cormorant',Georgia,serif!important;}
  #app.has-night-gallery .eclat-history-notice{margin:0 0 6px!important;font:11px/1.3 Arial!important;color:#ead3bb!important;text-align:center!important;}
- #app.has-night-gallery .eclat-detail{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:flex-start!important;gap:10px!important;overflow-y:auto!important;overscroll-behavior:contain;flex:1!important;min-height:0!important;border:1px solid #bd925d!important;border-radius:18px!important;background:linear-gradient(160deg,#39000bdd,#1b0005f2)!important;padding:0 12px 14px!important;}
+ #app.has-night-gallery .eclat-detail{display:grid!important;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:minmax(58px,22%) repeat(8,auto)!important;align-content:space-between!important;align-items:center!important;justify-content:stretch!important;gap:5px!important;overflow:hidden!important;flex:1!important;min-height:0!important;border:1px solid #bd925d!important;border-radius:18px!important;background:linear-gradient(160deg,#39000bdd,#1b0005f2)!important;padding:0 12px 10px!important;}
  #app.has-night-gallery .eclat-detail>*{flex-shrink:0!important;}
- #app.has-night-gallery .eclat-detail-hero{width:calc(100% + 24px)!important;min-height:150px!important;height:22dvh!important;max-height:215px!important;border:0!important;border-radius:17px 17px 0 0!important;margin:0 -12px 3px!important;}
+ #app.has-night-gallery .eclat-detail-hero{width:calc(100% + 24px)!important;min-height:0!important;height:100%!important;max-height:none!important;border:0!important;border-radius:17px 17px 0 0!important;margin:0 -12px!important;}
  #app.has-night-gallery .eclat-detail>small{font:10px/1.2 Arial,sans-serif!important;letter-spacing:2px!important;color:#e5c28a!important;}
- #app.has-night-gallery .eclat-detail h2{font:italic 500 30px/1 'LoveRoll Cormorant',Georgia,serif!important;color:#fff0de!important;}
+ #app.has-night-gallery .eclat-detail h2{font:italic 500 clamp(24px,6.5vw,28px)/1 'LoveRoll Cormorant',Georgia,serif!important;color:#fff0de!important;}
  #app.has-night-gallery .eclat-detail>p{font:13px/1.35 Arial,sans-serif!important;color:#e3c8c2!important;max-width:470px!important;}
  #app.has-night-gallery .eclat-detail>.eclat-memo{align-items:center!important;}
- #app.has-night-gallery .eclat-descriptor{width:100%!important;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:0!important;margin:5px 0!important;}
- #app.has-night-gallery .eclat-descriptor>span{border:0!important;border-radius:0!important;background:none!important;padding:9px 4px!important;font:11px/1.3 Arial,sans-serif!important;color:#ffe3ad!important;}
+ #app.has-night-gallery .eclat-descriptor{width:100%!important;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:0!important;margin:0!important;}
+ #app.has-night-gallery .eclat-descriptor>span{border:0!important;border-radius:0!important;background:none!important;padding:5px 2px!important;font:10px/1.3 Arial,sans-serif!important;color:#ffe3ad!important;}
+ #app.has-night-gallery .eclat-detail-copy{display:grid!important;gap:3px!important;font:11px/1.3 Arial,sans-serif!important;text-align:left!important;justify-self:center!important;}
+ #app.has-night-gallery .eclat-active-note{font-size:11px!important;line-height:1.2!important;}
  #app.has-night-gallery .eclat-descriptor>span+span{border-left:1px solid #a37b4d60!important;}
  #app.has-night-gallery .eclat-duration{width:100%!important;max-width:none!important;margin:4px 0!important;gap:7px!important;}
  #app.has-night-gallery .eclat-duration>span{font:11px/1.2 Arial,sans-serif!important;color:#ddc2b9!important;}

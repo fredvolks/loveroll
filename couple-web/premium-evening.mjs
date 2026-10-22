@@ -1,6 +1,6 @@
 // LoveRoll connected couple — production UI, not a demo. All results are provided by Supabase.
 import {ritualHeadingHtml} from './brand.mjs?v=20261017-ritual130';
-import {eveningEclatSwitcher} from './evening-eclat-switcher.mjs';
+import {eveningEclatSwitcher} from './evening-eclat-switcher.mjs?v=20261021-home219';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','"':'&quot;',"'":'&#39;'}[c]));
 const bt=(action,text,cls='',disabled=false)=>'<button type="button" class="'+cls+'" data-action="'+esc(action)+'"'+
  (action.startsWith('category:')?' aria-pressed="'+(cls.includes('selected')?'true':'false')+'"':'')+

@@ -1,9 +1,9 @@
 
 import {ECLAT_COFFRETS,eclatCoffret,eclatStage,ECLAT_MOODS} from './eclat-catalog.mjs';
 import {ritualHeadingHtml} from './brand.mjs?v=20261017-ritual130';
-import {eveningEclatSwitcher} from './evening-eclat-switcher.mjs';
-import {coffretMemo} from './eclat-history.mjs?v=20261021-home218';
-import {goldArrowHtml} from './gold-arrows.mjs?v=20261021-home218';
+import {eveningEclatSwitcher} from './evening-eclat-switcher.mjs?v=20261021-home219';
+import {coffretMemo} from './eclat-history.mjs?v=20261021-home219';
+import {goldArrowHtml} from './gold-arrows.mjs?v=20261021-home219';
 const esc=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const atlasPosition=id=>'--atlas-x:'+((Number(id)-1)%3*50)+'%;--atlas-y:'+(Math.floor((Number(id)-1)/3)*100/3).toFixed(5)+'%;';
 const fmt=cents=>((Number(cents)||0)/100).toLocaleString('fr-CA',{minimumFractionDigits:2,maximumFractionDigits:2})+' $';
@@ -87,9 +87,9 @@ export function eclatHtml({status=null,selected=1,minutes=60,details=false,membe
   body='<section class="eclat-detail" data-coffret-id="'+c.id+'">'+
    '<div class="eclat-detail-hero'+(Number(c.id)===1?' is-secret':'')+'" role="img" aria-label="Décor du coffret '+esc(c.title)+'"><span class="eclat-detail-hero-photo" style="'+atlasPosition(c.id)+'--photo-y:'+(100*(Number(c.id)-1)/11).toFixed(5)+'%"></span></div>'+
    '<small>COFFRET '+String(c.id).padStart(2,'0')+' / 12</small><h2>'+esc(c.title)+'</h2>'+
-   '<p>'+esc(c.subtitle)+'</p><div class="eclat-descriptor"><span>8 chapitres</span><span>4 variantes chacun</span><span>Deux téléphones</span></div>'+
+   '<p>'+esc(c.subtitle)+'</p><div class="eclat-descriptor"><span>'+({30:4,60:6,90:8}[minutes]||6)+' étapes</span><span>Environ '+minutes+' min</span><span>Deux téléphones</span></div>'+
    memoHtml(history,c.id,status,true,historyError)+
-   '<p class="eclat-detail-copy">Une expérience scénarisée à vivre à votre rythme. Chaque partenaire reçoit des instructions différentes; vos choix transforment les chapitres suivants.</p>'+
+   '<p class="eclat-detail-copy"><span>1. Lisez la consigne et votre rôle privé.</span><span>2. Vivez ce moment ensemble.</span><span>3. Choisissez chacun pour découvrir la suite.</span></p>'+
    '<div class="eclat-duration"><span>Durée de votre expérience</span><div>'+
     [30,60,90].map(n=>btn('eclat:minutes:'+n,n+' min','eclat-duration-choice'+(minutes===n?' is-selected':''))).join('')+
    '</div></div>'+

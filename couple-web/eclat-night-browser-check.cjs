@@ -11,11 +11,14 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   const {page,context,errors}=await setupEditorial(browser,world,{width,height,query:'open=home'});
   await page.waitForSelector('.home-dashboard');
   await page.locator('[data-action="tab:session"]').click();await page.waitForSelector('.has-home-soiree-template');
-  const metrics=()=>page.evaluate(()=>{const rect=n=>{const r=n.getBoundingClientRect();return [r.x,r.y,r.width,r.height]};return {nav:rect(document.querySelector('.nav')),brand:rect(document.querySelector('.ritual-brand')),kicker:rect(document.querySelector('.ritual-kicker')),title:rect(document.querySelector('.ritual-page-title')),gold:getComputedStyle(document.querySelector('.ritual-mode-premium')).backgroundImage};});
+  const metrics=()=>page.evaluate(()=>{const rect=n=>{const r=n.getBoundingClientRect();return [r.x,r.y,r.width,r.height]};return {nav:rect(document.querySelector('.nav')),brand:rect(document.querySelector('.ritual-brand')),kicker:rect(document.querySelector('.ritual-kicker')),title:rect(document.querySelector('.ritual-page-title')),gold:getComputedStyle(document.querySelector('.ritual-mode-premium')).backgroundImage,labels:['.ritual-mode-name','.ritual-premium-copy strong','.ritual-premium-copy small','.ritual-crown'].map(s=>{const n=document.querySelector(s),c=getComputedStyle(n);return {rect:rect(n),font:c.font,color:c.color,gap:c.gap};})};});
   const before=await metrics();
   await page.locator('[data-action="tab:eclat"]').click();await page.waitForSelector('.has-night-gallery .eclat-tile');await page.evaluate(()=>document.fonts.ready);
   const after=await metrics();console.log('ECLAT_HEADER',width,{before,after});
   assert.deepEqual(after.nav,before.nav);assert.deepEqual(after.brand,before.brand);assert.deepEqual(after.kicker,before.kicker);assert.deepEqual(after.title,before.title);assert.equal(after.gold,before.gold);
+  assert.deepEqual(after.labels.map(n=>({...n,rect:[n.rect[0],n.rect[2],n.rect[3]]})),before.labels.map(n=>({...n,rect:[n.rect[0],n.rect[2],n.rect[3]]})),'Mode labels use identical fonts, sizes, colors and horizontal positions');
+  assert.equal(await page.locator('.ritual-crown svg').count(),1);
+  assert.equal(await page.locator('.eclat-library').evaluate(n=>getComputedStyle(n).boxShadow),'none');
   assert.equal(await page.locator('.eclat-tile').count(),12);
   const photos=await page.locator('.eclat-tile-photo').evaluateAll(nodes=>nodes.map(n=>({image:getComputedStyle(n).backgroundImage,position:getComputedStyle(n).backgroundPosition})));
   assert.equal(new Set(photos.map(n=>n.position)).size,12);assert.ok(photos.every(n=>n.image.includes('eclat-night-atlas-v218.webp')));
@@ -29,6 +32,13 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   await page.locator('[data-action="eclat:detail:9"]').scrollIntoViewIfNeeded();await page.locator('[data-action="eclat:detail:9"]').click();
   assert.equal(await page.locator('.eclat-detail .is-done').count(),2);
   await page.locator('[data-action="eclat:minutes:90"]').click();
+  const fits=()=>page.locator('.eclat-detail').evaluate(n=>{const b=n.getBoundingClientRect();return n.scrollHeight<=n.clientHeight+1&&[...n.children].filter(x=>getComputedStyle(x).display!=='none').every(x=>{const r=x.getBoundingClientRect();return r.top>=b.top-1&&r.bottom<=b.bottom+1;});});
+  assert.equal(await fits(),true,'Whole explanation, duration choices and open button fit on one page');
+  if(width===360){for(let id=1;id<=12;id++){
+   await page.locator('.eclat-return').click();await page.locator('[data-action="eclat:detail:'+id+'"]').scrollIntoViewIfNeeded();await page.locator('[data-action="eclat:detail:'+id+'"]').click();
+   for(const duration of [30,60,90]){await page.locator('[data-action="eclat:minutes:'+duration+'"]').click();assert.equal(await fits(),true,'Coffret '+id+', '+duration+' min fits completely');}
+  }
+  await page.locator('.eclat-return').click();await page.locator('[data-action="eclat:detail:9"]').scrollIntoViewIfNeeded();await page.locator('[data-action="eclat:detail:9"]').click();}
   if(process.env.LOVEROLL_CAPTURE_DIR)await page.screenshot({path:path.join(process.env.LOVEROLL_CAPTURE_DIR,`eclat-detail-${width}.png`)});
   await page.locator('[data-action="eclat:start:9"]').click();await page.waitForSelector('.eclat-play');
   assert.equal(world.eclat.minutes,90);assert.equal(world.calls.filter(x=>x.name==='love_eclat_start').length,1);
