@@ -42,7 +42,7 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   if(process.env.LOVEROLL_CAPTURE_DIR)await page.screenshot({path:path.join(process.env.LOVEROLL_CAPTURE_DIR,`eclat-detail-${width}.png`)});
   await page.locator('[data-action="eclat:start:9"]').click();await page.waitForSelector('.eclat-play');
   assert.equal(world.eclat.minutes,90);assert.equal(world.calls.filter(x=>x.name==='love_eclat_start').length,1);
-  await page.locator('[data-action="eclat:library"]').click();await page.waitForSelector('.eclat-photo-grid');
+  await page.getByRole('button',{name:'Retour aux coffrets',exact:true}).click();await page.waitForSelector('.eclat-photo-grid');
   assert.match(await page.locator('[data-action="eclat:detail:9"]').innerText(),/En cours · 90 min · étape 1/);
   await page.locator('[data-action="eclat:detail:1"]').scrollIntoViewIfNeeded();await page.locator('[data-action="eclat:detail:1"]').click();assert.equal(await page.locator('[data-action^="eclat:start:"]').count(),0);
   await page.locator('[data-action="eclat:resume"]').click();await page.waitForSelector('.eclat-play');
