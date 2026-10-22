@@ -2,7 +2,7 @@
 @layer loveroll-evening-d6{
  @media(max-width:767px){
   #app.has-evening-d6-template .evening-premium-view.has-evening-d6-template{
-   display:grid!important;grid-template-rows:80px auto minmax(0,1fr) 38px 55px 34px 22px!important;gap:8px!important;
+   display:grid!important;grid-template-rows:80px auto minmax(0,1fr) 38px 55px 34px!important;gap:8px!important;
   }
   #app.has-evening-d6-template .evening-step.one{grid-row:3!important;display:block!important;position:relative!important;min-height:0!important;height:100%!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;overflow:visible!important;}
   #app.has-evening-d6-template :is(.evening-step.two,.evening-gift,.evening-step.one::before,.evening-step.one::after){display:none!important;}
@@ -25,7 +25,7 @@
   #app.has-evening-d6-template .evening-d6-next{grid-row:6!important;position:relative!important;display:grid!important;grid-template-columns:90px 1fr!important;align-items:center!important;text-align:center!important;padding:4px 8px!important;gap:8px!important;--lr-surface-radius:20px;}
   #app.has-evening-d6-template .evening-d6-next strong{font:600 11px/1.2 Arial,sans-serif!important;color:#fff0e5!important;}
   #app.has-evening-d6-template .evening-d6-next span{font:11px/1.2 Arial,sans-serif!important;color:#e9cbd0!important;border-left:1px solid #b3677855!important;padding-left:8px!important;}
-  #app.has-evening-d6-template .evening-d6-tools{grid-row:7!important;display:flex!important;align-items:center!important;justify-content:space-between!important;}
-  #app.has-evening-d6-template .evening-d6-tools button{min-height:22px!important;margin:0!important;padding:2px 6px!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;color:#efd6cc!important;font:11px/1 Arial,sans-serif!important;}
+  #app.has-evening-d6-template .evening-d6-tools{display:grid!important;grid-template-columns:1fr!important;gap:10px!important;margin-top:16px!important;}
+  #app.has-evening-d6-template .evening-d6-tools button{min-height:44px!important;margin:0!important;padding:10px 14px!important;border:1px solid #bd7688!important;border-radius:18px!important;background:linear-gradient(170deg,#720d29,#30030e)!important;box-shadow:inset 0 1px 2px #ffd5e340!important;color:#ffe9df!important;font:600 20px/1.15 Georgia,serif!important;}
  }
 }

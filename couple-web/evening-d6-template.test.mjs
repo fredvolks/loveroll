@@ -6,6 +6,9 @@ test('Evening info uses evening defaults, custom weights, or uniform odds withou
  const defaults=eveningOddsHtml();
  assert.match(defaults,/30 %/);assert.match(defaults,/20 %/);assert.doesNotMatch(defaults,/50 %|soirées cette semaine|1x|2x/);
  assert.match(defaults,/nombre de défis pour cette soirée/);
+ assert.match(defaults,/<nav[^>]+aria-label="Options de la soirée"/);
+ assert.match(defaults,/data-action="evening-calendar">Calendrier/);
+ assert.match(defaults,/data-action="evening-close-request">Clore la soirée/);
  assert.equal((eveningOddsHtml([0,0,0,0,0,100]).match(/100 %/g)||[]).length,1);
  assert.equal((eveningOddsHtml([0,0,0,0,0,100],false).match(/16,7 %/g)||[]).length,6);
 });
