@@ -32,7 +32,7 @@ const rect=r=>({x:r.left,y:r.top,w:r.width,h:r.height,right:r.right,bottom:r.bot
      const number=tile.querySelector('.eclat-tile-number'),title=tile.querySelector('strong'),arrow=tile.querySelector('.eclat-tile-arrow'),photo=tile.querySelector('.eclat-tile-photo');
      const style=getComputedStyle(tile);
      return {index:index+1,card:R(tile),num:R(number),title:R(title),arrow:R(arrow),photo:R(photo),
-      label:title.textContent,arrowText:arrow.textContent.trim(),arrowSvgs:arrow.querySelectorAll('svg').length,arrowCircles:arrow.querySelectorAll('svg circle').length,arrowPaths:arrow.querySelectorAll('svg path').length,numberText:number.textContent.trim(),
+      label:title.textContent,arrowText:arrow.textContent.trim(),arrowSvgs:arrow.querySelectorAll('svg').length,arrowCircles:arrow.querySelectorAll('svg circle').length,arrowPaths:arrow.querySelectorAll('svg path').length,arrowShape:arrow.querySelector('svg path')?.getAttribute('d'),arrowFill:getComputedStyle(arrow.querySelector('svg')).fill,numberText:number.textContent.trim(),
       photoBg:getComputedStyle(photo).backgroundImage,position:getComputedStyle(title).position,
       border:style.borderTopColor};
     });
@@ -62,7 +62,7 @@ const rect=r=>({x:r.left,y:r.top,w:r.width,h:r.height,right:r.right,bottom:r.bot
     if(a.y>b.y+Math.max(14,b.h*.22)||a.y<b.y-2)err('ARROW_NOT_TOP');
     if(!c.photoBg.includes('eclat-photo-strip-v183.webp')||c.photo.h<30)err('PHOTO_MISSING');
     if(c.position!=='absolute')err('TITLE_POSITION_NOT_PINNED');
-    if(c.arrowText||c.arrowSvgs!==1||c.arrowCircles!==1||c.arrowPaths!==1)err('GOLD_ARROW_NOT_SINGLE');
+    if(c.arrowText||c.arrowSvgs!==1||c.arrowCircles!==0||c.arrowPaths!==1||!c.arrowShape?.endsWith('Z')||c.arrowFill==='none')err('GOLD_TRIANGLE_NOT_SINGLE');
     if(c.numberText!==String(c.index).padStart(2,'0')+' / 12')err('CARD_NUMBER_MISMATCH');
    }
    assert.deepEqual(errors,[]);
