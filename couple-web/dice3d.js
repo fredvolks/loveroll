@@ -2,7 +2,7 @@ import * as THREE from 'https://esm.sh/three@0.167.1';
 import {ROLL_TOTAL_MS,makeForwardRoll,rollAngles,rollProgress,rollOffset} from './dice-roll-motion.mjs';
 import {RoundedBoxGeometry} from 'https://esm.sh/three@0.167.1/examples/jsm/geometries/RoundedBoxGeometry.js';
 import {ConvexGeometry} from 'https://esm.sh/three@0.167.1/examples/jsm/geometries/ConvexGeometry.js';
-import {faceMarks,engravedFace} from './dice-engraving.mjs';
+import {faceMarks,engravedFace} from './dice-engraving.mjs?v=20261021-home216';
 /** Safari/Chrome WebGL die. Values come from the shared server, never from animation. */
 const pool=new Set();
 // A genuine convex 35-faced die. The polar dual of a 35-vertex convex hull
@@ -535,7 +535,7 @@ export function dieOn(canvas,sides,value,rolling){
    markerVisible?(sceneRect.width*(photoStage ? .56 : .53))/((bounds.right-bounds.left)*rect.width):1);
   // Scale the fitted Home die uniformly; preserve the floor angle and re-anchor below.
   if(photoStage)camera.zoom*=.85;
-  if(photoSoiree)camera.zoom*=1.375;
+  if(photoSoiree)camera.zoom*=1.65;
   camera.updateProjectionMatrix();bounds=projectedBounds();
   built.group.quaternion.copy(pose);built.group.position.copy(position);built.group.updateMatrixWorld(true);
   const delta=contact-(rect.top+bounds.bottom*rect.height);

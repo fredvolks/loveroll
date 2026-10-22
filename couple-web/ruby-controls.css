@@ -163,3 +163,20 @@
   .lr-ruby-control,.lr-ruby-nav .lr-ruby-tab{transition:none!important;}
  }
 }
+/* One complete navigation template, including pages with older calendar CSS. */
+@layer loveroll-ruby-controls{
+ @media(max-width:767px){
+  .lr-ruby-nav{padding:2px 3px 3px!important;box-sizing:border-box!important;}
+  .lr-ruby-nav>.nav-inner{
+   display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr))!important;
+   width:100%!important;height:100%!important;min-height:0!important;max-width:none!important;
+   gap:3px!important;margin:0!important;padding:0!important;align-items:stretch!important;
+  }
+  .lr-ruby-nav>.nav-inner>.lr-ruby-tab{
+   display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;
+   width:100%!important;height:100%!important;min-height:0!important;min-width:0!important;
+   margin:0!important;padding:1px!important;font:500 10px/1.1 Arial,sans-serif!important;
+   gap:3px!important;letter-spacing:normal!important;text-transform:none!important;
+  }
+ }
+}

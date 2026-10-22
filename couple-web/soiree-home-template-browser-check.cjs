@@ -21,13 +21,31 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
    const measure=()=>page.evaluate(()=>{
     const box=s=>{const n=document.querySelector(s),r=n.getBoundingClientRect(),c=getComputedStyle(n);return {top:r.top,width:r.width,height:r.height,font:c.font,letterSpacing:c.letterSpacing}};
     const n=document.querySelector('.nav').getBoundingClientRect();
-    return {nav:{x:n.x,y:n.y,width:n.width,height:n.height},heart:box('.ritual-brand i'),brand:box('.ritual-brand b'),kicker:box('.ritual-kicker'),title:box('.ritual-page-title'),imageHeight:getComputedStyle(document.querySelector('#app')).getPropertyValue('--home-scene-top-image-height')};
+    const tabs=[...document.querySelectorAll('.lr-ruby-tab')].map(button=>{
+     const r=button.getBoundingClientRect(),s=getComputedStyle(button),svg=button.querySelector('svg').getBoundingClientRect();
+     const text=[...button.childNodes].find(n=>n.nodeType===Node.TEXT_NODE&&n.textContent.trim());
+     const range=document.createRange();range.selectNodeContents(text);const t=range.getBoundingClientRect();
+     return {x:r.x,y:r.y,width:r.width,height:r.height,font:s.font,padding:s.padding,gap:s.gap,icon:[svg.x,svg.y,svg.width,svg.height],label:[t.x,t.y,t.width,t.height]};
+    });
+    return {tabs,nav:{x:n.x,y:n.y,width:n.width,height:n.height},heart:box('.ritual-brand i'),brand:box('.ritual-brand b'),kicker:box('.ritual-kicker'),title:box('.ritual-page-title'),imageHeight:getComputedStyle(document.querySelector('#app')).getPropertyValue('--home-scene-top-image-height')};
    });
    const home=await measure();
    await page.locator('[data-action="tab:session"]').click();
    await page.waitForFunction(()=>document.querySelector('.evening-finale-dice canvas')?.loveRollDie?.readState().optics.loaded);
    await page.evaluate(()=>document.fonts.ready);await page.waitForTimeout(250);
-   const evening=await measure();for(const key of ['heart','brand','kicker','title'])assert.deepEqual(evening[key],home[key],key+' must match Home exactly');
+   if(width===360){
+    const defects=await page.evaluate(async()=>{
+     const {faceMarks}=await import('./dice-engraving.mjs?v=20261021-home216');
+     const holes={'0':1,'4':1,'6':1,'8':2,'9':1};const errors=[];
+     for(let value=1;value<=100;value++){
+      const shapes=faceMarks(100,value,false,false),expected=[...String(value)].reduce((n,d)=>n+(holes[d]||0),0);
+      const actual=shapes.reduce((n,s)=>n+s.holes.length,0);
+      const points=shapes.flatMap(s=>s.getPoints(32));
+      if(actual!==expected||shapes.length!==String(value).length||points.some(p=>!Number.isFinite(p.x)||!Number.isFinite(p.y)))errors.push({value,actual,expected});
+     }return errors;
+    });assert.deepEqual(defects,[],'All 100 numeral outlines have intact counters and finite geometry');
+   }
+   const evening=await measure();assert.deepEqual(evening.tabs,home.tabs,'All navigation buttons and text match Home');for(const key of ['heart','brand','kicker','title'])assert.deepEqual(evening[key],home[key],key+' must match Home exactly');
    assert.equal(evening.imageHeight,home.imageHeight,'Same photographed pedestal size');
    const layout=await page.evaluate(()=>{
     const r=s=>document.querySelector(s).getBoundingClientRect(),canvas=document.querySelector('.evening-finale-dice canvas'),c=canvas.getBoundingClientRect(),b=canvas.loveRollDie.projectedBounds();
@@ -73,6 +91,7 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
    await page.locator('[data-action="evening-calendar"]').click();await page.waitForSelector('.has-ruby-calendar .evening-cal-grid');
    const calendar=await measure();for(const key of ['heart','brand','kicker'])assert.deepEqual(calendar[key],home[key],key+' calendar matches Home');
    assert.deepEqual(calendar.nav,home.nav,'Calendar navigation must match Home and Soirée');
+   assert.deepEqual(calendar.tabs,home.tabs,'Calendar tab labels, icons, font and spacing match Soirée');
    assert.equal(calendar.title.top,home.title.top);assert.equal(calendar.title.font,home.title.font);
    const calLayout=await page.evaluate(()=>({scroll:document.documentElement.scrollHeight-innerHeight,horizontal:document.documentElement.scrollWidth-innerWidth,
     bottom:document.querySelector('.evening-cal-history').getBoundingClientRect().bottom,nav:document.querySelector('.nav').getBoundingClientRect().top}));

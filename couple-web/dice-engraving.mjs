@@ -20,8 +20,10 @@ function heartShape(x,y,size){
 
 function numberShapes(value,height){
  const text=String(value),total=[...text].reduce((sum,ch)=>sum+numeralOutlines[ch].advance,0);
- const scale=height/1550,path=new THREE.ShapePath();let cursor=-total/2;
+ const scale=height/1550,shapes=[];let cursor=-total/2;
  for(const ch of text){
+  // Resolve counters per glyph so 0/4/6/8/9 never attach to a neighbouring digit.
+  const path=new THREE.ShapePath();
   for(const [op,...v] of numeralOutlines[ch].path){
    const points=[];for(let i=0;i<v.length;i+=2)points.push((v[i]+cursor)*scale,(v[i+1]-750)*scale);
    if(op==='m')path.moveTo(...points);
@@ -30,9 +32,22 @@ function numberShapes(value,height){
    else if(op==='c')path.bezierCurveTo(...points);
    else path.currentPath.closePath();
   }
+  // Each decimal digit is one connected outline. Assign its enclosed
+  // contours explicitly: ShapePath's ordering heuristic loses the upper 8 counter.
+  const contours=path.subPaths.map(p=>p.getPoints(32)).sort((a,b)=>Math.abs(THREE.ShapeUtils.area(b))-Math.abs(THREE.ShapeUtils.area(a)));
+  const glyph=new THREE.Shape(contours[0]);
+  glyph.holes=contours.slice(1).map(points=>new THREE.Path(points));
+  shapes.push(glyph);
   cursor+=numeralOutlines[ch].advance;
  }
- return path.toShapes();
+ const points=shapes.flatMap(shape=>shape.getPoints(32));
+ const cx=(Math.min(...points.map(p=>p.x))+Math.max(...points.map(p=>p.x)))/2;
+ const cy=(Math.min(...points.map(p=>p.y))+Math.max(...points.map(p=>p.y)))/2;
+ return shapes.map(original=>{
+  const shape=new THREE.Shape(original.getPoints(32).map(p=>p.sub(new THREE.Vector2(cx,cy))));
+  shape.holes=original.holes.map(h=>new THREE.Path(h.getPoints(32).map(p=>p.sub(new THREE.Vector2(cx,cy)))));
+  return shape;
+ });
 }
 
 export function faceMarks(sides,value,pips,neutral,{pipRadius=.102,pipSpacing=.385}={}){
