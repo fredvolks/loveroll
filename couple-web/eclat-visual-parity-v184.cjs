@@ -9,11 +9,18 @@ const viewports=[{width:360,height:700},{width:393,height:780},{width:412,height
  {width:820,height:1180},{width:1180,height:820}];
 const rect=r=>({x:r.left,y:r.top,w:r.width,h:r.height,right:r.right,bottom:r.bottom});
 (async()=>{
- const browser=await chromium.launch({headless:true});
+ const browser=await chromium.launch({executablePath:process.env.LOVEROLL_CHROMIUM_PATH||undefined,headless:true});
  fs.mkdirSync('design-captures',{recursive:true});
  try{
   for(const viewport of viewports){
    const page=await browser.newPage({viewport,deviceScaleFactor:1,reducedMotion:'reduce'});
+   if(process.env.LOVEROLL_LOCAL_FILES)await page.route('http://127.0.0.1:8765/**',async route=>{
+    const name=new URL(route.request().url()).pathname;
+    const file=path.join(process.cwd(),'couple-web',name);
+    if(!fs.existsSync(file))return route.fulfill({status:404,body:''});
+    const types={'.html':'text/html','.css':'text/css','.js':'application/javascript','.mjs':'application/javascript','.json':'application/json','.svg':'image/svg+xml','.webp':'image/webp','.png':'image/png'};
+    return route.fulfill({contentType:types[path.extname(file)]||'application/octet-stream',body:fs.readFileSync(file)});
+   });
    const errors=[];page.on('pageerror',e=>errors.push(e.message));
    await page.goto('http://127.0.0.1:8765/__eclat-production-v184.html',{waitUntil:'load'});
    await page.waitForFunction(()=>window.__fixtureReady===true);
@@ -25,7 +32,7 @@ const rect=r=>({x:r.left,y:r.top,w:r.width,h:r.height,right:r.right,bottom:r.bot
      const number=tile.querySelector('.eclat-tile-number'),title=tile.querySelector('strong'),arrow=tile.querySelector('.eclat-tile-arrow'),photo=tile.querySelector('.eclat-tile-photo');
      const style=getComputedStyle(tile);
      return {index:index+1,card:R(tile),num:R(number),title:R(title),arrow:R(arrow),photo:R(photo),
-      label:title.textContent,arrowText:arrow.textContent.trim(),numberText:number.textContent.trim(),
+      label:title.textContent,arrowText:arrow.textContent.trim(),arrowSvgs:arrow.querySelectorAll('svg').length,arrowCircles:arrow.querySelectorAll('svg circle').length,arrowPaths:arrow.querySelectorAll('svg path').length,numberText:number.textContent.trim(),
       photoBg:getComputedStyle(photo).backgroundImage,position:getComputedStyle(title).position,
       border:style.borderTopColor};
     });
@@ -55,8 +62,8 @@ const rect=r=>({x:r.left,y:r.top,w:r.width,h:r.height,right:r.right,bottom:r.bot
     if(a.y>b.y+Math.max(14,b.h*.22)||a.y<b.y-2)err('ARROW_NOT_TOP');
     if(!c.photoBg.includes('eclat-photo-strip-v183.webp')||c.photo.h<30)err('PHOTO_MISSING');
     if(c.position!=='absolute')err('TITLE_POSITION_NOT_PINNED');
-    if(c.arrowText!=='›')err('ARROW_NOT_SINGLE');
-    if(c.numberText!==String(c.index).padStart(2,'0'))err('CARD_NUMBER_MISMATCH');
+    if(c.arrowText||c.arrowSvgs!==1||c.arrowCircles!==1||c.arrowPaths!==1)err('GOLD_ARROW_NOT_SINGLE');
+    if(c.numberText!==String(c.index).padStart(2,'0')+' / 12')err('CARD_NUMBER_MISMATCH');
    }
    assert.deepEqual(errors,[]);
    const screenshot=path.join('design-captures','coffrets-v184-'+viewport.width+'x'+viewport.height+'.png');
