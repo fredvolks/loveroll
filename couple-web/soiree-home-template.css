@@ -2,20 +2,20 @@
    footprint as Home. Shared lr-surface owns the bubble material. */
 @layer loveroll-soiree-template{
  @media(max-width:767px){
-  main#app.loveroll-evening-page:has(.evening-premium-view.is-inactive.has-home-soiree-template){
+  main#app:is(.has-ruby-calendar,.loveroll-evening-page:has(.evening-premium-view.is-inactive.has-home-soiree-template)){
    padding:9px 14px calc(65px + env(safe-area-inset-bottom,0px))!important;
    height:100dvh!important;min-height:0!important;overflow:hidden!important;
    --home-scene-split:calc(100dvh - 337px);
    --home-scene-top-image-height:calc((100dvh - 337px)/.438);
    --home-scene-bottom-image-height:600px;
   }
-  main#app.loveroll-evening-page:has(.evening-premium-view.is-inactive.has-home-soiree-template)::before{
+  main#app:is(.has-ruby-calendar,.loveroll-evening-page:has(.evening-premium-view.is-inactive.has-home-soiree-template))::before{
    content:''!important;position:fixed!important;inset:0 0 auto!important;
    height:var(--home-scene-split)!important;z-index:-1!important;
    background:url('./assets/loveroll-home-portrait-v202.webp') center top / 100% var(--home-scene-top-image-height) no-repeat!important;
    opacity:1!important;filter:none!important;pointer-events:none!important;
   }
-  main#app.loveroll-evening-page:has(.evening-premium-view.is-inactive.has-home-soiree-template)::after{
+  main#app:is(.has-ruby-calendar,.loveroll-evening-page:has(.evening-premium-view.is-inactive.has-home-soiree-template))::after{
    content:''!important;display:block!important;position:fixed!important;
    inset:var(--home-scene-split) 0 0!important;z-index:-1!important;
    background:url('./assets/loveroll-home-portrait-v202.webp') center bottom / 100% var(--home-scene-bottom-image-height) no-repeat!important;

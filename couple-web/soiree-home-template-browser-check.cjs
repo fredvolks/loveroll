@@ -27,7 +27,8 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
      const range=document.createRange();range.selectNodeContents(text);const t=range.getBoundingClientRect();
      return {x:r.x,y:r.y,width:r.width,height:r.height,font:s.font,padding:s.padding,gap:s.gap,icon:[svg.x,svg.y,svg.width,svg.height],label:[t.x,t.y,t.width,t.height]};
     });
-    return {tabs,nav:{x:n.x,y:n.y,width:n.width,height:n.height},heart:box('.ritual-brand i'),brand:box('.ritual-brand b'),kicker:box('.ritual-kicker'),title:box('.ritual-page-title'),imageHeight:getComputedStyle(document.querySelector('#app')).getPropertyValue('--home-scene-top-image-height')};
+    const scene=['::before','::after'].map(p=>{const s=getComputedStyle(document.querySelector('#app'),p);return {background:s.background,inset:s.inset,height:s.height,opacity:s.opacity,filter:s.filter};});
+    return {scene,tabs,nav:{x:n.x,y:n.y,width:n.width,height:n.height},heart:box('.ritual-brand i'),brand:box('.ritual-brand b'),kicker:box('.ritual-kicker'),title:box('.ritual-page-title'),imageHeight:getComputedStyle(document.querySelector('#app')).getPropertyValue('--home-scene-top-image-height')};
    });
    const home=await measure();
    await page.locator('[data-action="tab:session"]').click();
@@ -35,7 +36,7 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
    await page.evaluate(()=>document.fonts.ready);await page.waitForTimeout(250);
    if(width===360){
     const defects=await page.evaluate(async()=>{
-     const {faceMarks}=await import('./dice-engraving.mjs?v=20261021-home216');
+     const {faceMarks}=await import('./dice-engraving.mjs?v=20261021-home217');
      const holes={'0':1,'4':1,'6':1,'8':2,'9':1};const errors=[];
      for(let value=1;value<=100;value++){
       const shapes=faceMarks(100,value,false,false),expected=[...String(value)].reduce((n,d)=>n+(holes[d]||0),0);
@@ -89,7 +90,7 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
     if(process.env.LOVEROLL_CAPTURE_DIR)await page.screenshot({path:path.join(process.env.LOVEROLL_CAPTURE_DIR,'soiree-aftercare.png')});
    }
    await page.locator('[data-action="evening-calendar"]').click();await page.waitForSelector('.has-ruby-calendar .evening-cal-grid');
-   const calendar=await measure();for(const key of ['heart','brand','kicker'])assert.deepEqual(calendar[key],home[key],key+' calendar matches Home');
+   const calendar=await measure();assert.deepEqual(calendar.scene,evening.scene,'Calendar background crop, scale and position match Soirée exactly');for(const key of ['heart','brand','kicker'])assert.deepEqual(calendar[key],home[key],key+' calendar matches Home');
    assert.deepEqual(calendar.nav,home.nav,'Calendar navigation must match Home and Soirée');
    assert.deepEqual(calendar.tabs,home.tabs,'Calendar tab labels, icons, font and spacing match Soirée');
    assert.equal(calendar.title.top,home.title.top);assert.equal(calendar.title.font,home.title.font);
