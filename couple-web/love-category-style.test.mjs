@@ -41,8 +41,13 @@ test('New numeric chance changes just one percent in the SAME Soirée visual',()
  assert.match(customMarkup,/65 % de chances/);
  assert.match(uniform,/50 % de chances/);
  assert.doesNotMatch(customMarkup,/88 % de chances/);
- assert.equal(customMarkup.replace('65 % de chances','X % de chances'),
-  defaultMarkup.replace('88 % de chances','X % de chances'));
+ assert.match(defaultMarkup,/data-category-percent="88"/);
+ assert.match(customMarkup,/data-category-percent="65"/);
+ assert.match(uniform,/data-category-percent="50"/);
+ const normalizeOdds=html=>html.replace(/data-category-percent="\d+"/,'data-category-percent="X"')
+  .replace(/\d+ % de chances/g,'X % de chances');
+ assert.equal(normalizeOdds(customMarkup),normalizeOdds(defaultMarkup));
+ assert.equal(normalizeOdds(uniform),normalizeOdds(defaultMarkup));
  assert.doesNotMatch(premiumEveningHtml({...template,category:'HASARD',categoryOdds:65}),
   /65 % de chances/);
  assert.match(app,/categoryOdds:state\.couple\?\.category_weights_enabled===false\?50/);
