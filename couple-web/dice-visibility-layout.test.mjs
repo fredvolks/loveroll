@@ -25,8 +25,10 @@ test('Before any evening D6 roll only our die is rendered; partner has a status 
  const start=html.indexOf('class="evening-d6-grid"'),end=html.indexOf('class="evening-ready ',start);
  assert.ok(start>=0&&end>start);
  const step=html.slice(start,end);
- assert.equal((step.match(/data-dice-unrolled="true"/g)||[]).length,1);
- assert.equal((step.match(/data-dice-markers="hearts"/g)||[]).length,1);
+ assert.equal((step.match(/data-dice-preview="true"/g)||[]).length,1);
+ assert.equal((step.match(/data-dice-markers="pips"/g)||[]).length,1);
+ assert.doesNotMatch(step,/data-dice-markers="hearts"/);
+ assert.match(step,/evening-face-result is-empty/);
  assert.match(step,/evening-partner-card is-pending/);
  assert.ok(step.indexOf('canvas class="dice-canvas"')<step.indexOf('data-action="my-d6"'));
  assert.match(step,/data-action="my-d6"/);
