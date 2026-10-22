@@ -46,8 +46,8 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   if(partnerFirst){
    await page.waitForSelector('.evening-premium-view.is-ready',{timeout:16000});
    assert.equal(world.calls.filter(c=>c.name==='roll_my_evening_d6').length,1);
-   assert.equal(await page.locator('.evening-my-die canvas').getAttribute('data-face'),'2');
-   assert.equal(await page.locator('.evening-partner-card canvas').getAttribute('data-face'),'4');
+   assert.equal(await page.locator('.evening-progress>span').nth(0).locator('small').innerText(),'Dé personnel : 2');
+   assert.equal(await page.locator('.evening-progress>span').nth(1).locator('small').innerText(),'Dé personnel : 4');
    assert.deepEqual(errors,[]);await context.close();console.log('EVENING_D6_TEMPLATE_OK',width,height,'partner first');continue;
   }
   await page.waitForFunction(()=>document.querySelector('[data-action="my-d6"]')?.textContent==='Lancer enregistré');
@@ -72,8 +72,8 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   assert.match(await page.locator('.evening-own-capsule').innerText(),/Fred.*2/s);
   world.personalRolls.push({id:'d6-b',session_id:'evening-test',user_id:'b',face:4});
   await page.waitForSelector('.evening-premium-view.is-ready',{timeout:16000});
-  assert.equal(await page.locator('.evening-my-die canvas').getAttribute('data-face'),'2');
-  assert.equal(await page.locator('.evening-partner-card canvas').getAttribute('data-face'),'4');
+  assert.equal(await page.locator('.evening-progress>span').nth(0).locator('small').innerText(),'Dé personnel : 2');
+  assert.equal(await page.locator('.evening-progress>span').nth(1).locator('small').innerText(),'Dé personnel : 4');
   assert.equal(await page.locator('.has-evening-d6-template').count(),0);
   assert.deepEqual(errors,[]);await context.close();console.log('EVENING_D6_TEMPLATE_OK',width,height);
  }}finally{await browser.close();}
