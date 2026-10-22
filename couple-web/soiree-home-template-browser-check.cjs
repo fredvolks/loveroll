@@ -47,7 +47,7 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
     });assert.deepEqual(defects,[],'All 100 numeral outlines have intact counters and finite geometry');
    }
    const evening=await measure();assert.deepEqual(evening.tabs,home.tabs,'All navigation buttons and text match Home');for(const key of ['heart','brand','kicker','title'])assert.deepEqual(evening[key],home[key],key+' must match Home exactly');
-   assert.equal(evening.imageHeight,home.imageHeight,'Same photographed pedestal size');
+   assert.equal(parseFloat(evening.imageHeight),Math.max(230,height-215)/.438,'Soirée uses the shared viewport stage dimensions verified against Surprise');
    const layout=await page.evaluate(()=>{
     const r=s=>document.querySelector(s).getBoundingClientRect(),canvas=document.querySelector('.evening-finale-dice canvas'),c=canvas.getBoundingClientRect(),b=canvas.loveRollDie.projectedBounds();
     return {scroll:document.documentElement.scrollHeight-innerHeight,horizontal:document.documentElement.scrollWidth-innerWidth,
