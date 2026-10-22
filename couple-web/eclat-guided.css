@@ -42,4 +42,10 @@
  #app .eclat-guided .eclat-clue-field summary{min-height:20px!important;font-size:11px!important;}
  #app .eclat-guided[data-eclat-phase="prepare"] .eclat-together{padding:10px 12px!important;}
  #app .eclat-guided[data-eclat-phase="prepare"] .eclat-together h3{font-size:22px!important;margin:5px 0!important;}
+ /* Android's resizes-content keyboard leaves a short viewport. Keep the
+    writing area usable; ordinary portrait layout returns when it closes.
+    focus-within also covers the save button, avoiding a moving click target. */
+ @media(max-height:620px){
+  #app.has-night-gallery:has(.eclat-guided:focus-within) .eclat-shell>:is(.eclat-top,.eclat-page-title,.ritual-mode-switcher){display:none!important;}
+ }
 }

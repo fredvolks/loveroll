@@ -15,6 +15,14 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   await fits();
   if(process.env.LOVEROLL_CAPTURE_DIR)await page.screenshot({path:path.join(process.env.LOVEROLL_CAPTURE_DIR,`eclat-prepare-${width}-${height}.png`)});
   await page.locator('[data-eclat-field="note"]').fill('Notre souvenir privé de test');
+  // Approximate Android's resizes-content keyboard without faking an IME.
+  await page.setViewportSize({width,height:480});
+  await page.locator('[data-eclat-field="note"]').focus();
+  await page.locator('[data-eclat-field="note"]').scrollIntoViewIfNeeded();
+  const writing=await page.evaluate(()=>{const p=document.querySelector('.eclat-guided-content').getBoundingClientRect(),f=document.querySelector('[data-eclat-field="note"]').getBoundingClientRect();return {pane:p.height,inside:f.top>=p.top-1&&f.bottom<=p.bottom+1};});
+  assert.ok(writing.pane>=80&&writing.inside,'Whole text field remains visible in the keyboard-height viewport');
+  assert.equal(await page.locator('[data-eclat-field="note"]').inputValue(),'Notre souvenir privé de test');
+  await page.setViewportSize({width,height});
   await page.locator('.eclat-clue-field summary').click();
   await page.locator('[data-eclat-field="clue"]').fill('Un indice de test');
   world.noteSaveError=true;
