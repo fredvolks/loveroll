@@ -1,4 +1,5 @@
-import {goldArrowHtml} from './gold-arrows.mjs?v=20261022-home225';
+import {fitSharedStage} from './shared-stage.mjs?v=20261022-home226';
+import {goldArrowHtml} from './gold-arrows.mjs?v=20261022-home226';
 let observer,eventsOpen=false,infoOpen=false;
 export function fitSurpriseMinimal(root){
  observer?.disconnect();observer=null;
@@ -52,11 +53,7 @@ export function fitSurpriseMinimal(root){
  if(infoOpen&&!view.querySelector('.surprise-modal'))info.showModal();
  const fit=()=>{
   if(!view.isConnected){fitObserver.disconnect();return;}
-  const split=mainButton.getBoundingClientRect().top;
-  root.style.setProperty('--home-scene-split',split+'px');
-  root.style.setProperty('--home-scene-top-image-height',split/.438+'px');
-  root.style.setProperty('--home-scene-bottom-image-height',(innerHeight-split)/.562+'px');
-  root.style.setProperty('--home-scene-contact',split*.323/.438+'px');
+  fitSharedStage(root);
  };
  const fitObserver=new ResizeObserver(fit);observer=fitObserver;fitObserver.observe(root);fit();
  hero.querySelector('canvas')?.loveRollDie?.refresh?.();document.fonts.ready.then(fit);

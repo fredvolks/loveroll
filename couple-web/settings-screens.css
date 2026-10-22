@@ -1,0 +1,36 @@
+@layer loveroll-settings-screens {
+/* Fixed screens, Home's ruby surfaces, and a persistent page navigator. */
+#app.loveroll-settings-page{height:100dvh!important;min-height:0!important;overflow:hidden!important;padding:9px 14px calc(72px + env(safe-area-inset-bottom,0px))!important;}
+#app.loveroll-settings-page .settings-editorial{height:100%!important;min-height:0!important;grid-template-rows:80px minmax(0,1fr)!important;gap:8px!important;}
+#app.loveroll-settings-page .settings-editorial-content{display:flex!important;flex-direction:column!important;gap:10px!important;min-height:0!important;overflow:hidden!important;}
+#app.loveroll-settings-page .editorial-title{flex:none;text-align:center;}
+#app.loveroll-settings-page h1{font:600 clamp(27px,7vw,36px)/1.08 var(--lr-control-font,Georgia,serif)!important;margin:3px 0 8px!important;}
+#app.loveroll-settings-page .settings-detail-body{flex:1!important;display:block!important;min-height:0!important;height:0!important;overflow:hidden!important;padding:14px!important;border:1px solid #b66579!important;border-radius:20px!important;background:linear-gradient(145deg,#510014ed,#210008f5)!important;}
+#app.loveroll-settings-page [data-screen-hidden]{display:none!important;}
+#app.loveroll-settings-page .settings-detail-body>*{margin-bottom:10px;}
+#app.loveroll-settings-page :is(.settings-account-form,.settings-premium-glass-group){gap:10px!important;}
+#app.loveroll-settings-page .settings-premium-section-head{padding:0!important;}
+#app.loveroll-settings-page .settings-premium-section-head h2{font:600 25px/1.1 var(--lr-control-font,Georgia,serif)!important;margin:5px 0!important;}
+#app.loveroll-settings-page :is(p,small){line-height:1.35!important;}
+#app.loveroll-settings-page .settings-screen-pager{display:flex;align-items:center;justify-content:space-between;gap:8px;flex:none;min-height:44px;}
+#app.loveroll-settings-page .settings-screen-pager[hidden]{display:none;}
+#app.loveroll-settings-page .settings-screen-pager button{min-height:44px;padding:8px 14px;border-radius:18px;border:1px solid #d56a7c;color:#fff8ed;background:var(--lr-surface-fill);box-shadow:var(--lr-surface-shadow);font:600 18px/1.1 var(--lr-control-font,Georgia,serif);}
+#app.loveroll-settings-page .settings-screen-pager span{font:13px/1 system-ui;color:#dfb9c1;}
+#app.loveroll-settings-menu .settings-sections{grid-template-rows:none!important;grid-auto-rows:minmax(0,1fr)!important;max-height:none!important;gap:7px!important;}
+#app.loveroll-settings-menu :is(.settings-section-row,.settings-profile-row){min-height:0!important;padding:8px 12px!important;}
+#app.loveroll-settings-menu .settings-profile-row{flex:none;min-height:58px!important;}
+#app.loveroll-settings-menu .settings-initial{width:38px;height:38px;font-size:24px;}
+@media(max-height:720px){#app.loveroll-settings-menu .settings-section-row small{display:none;}#app.loveroll-settings-page .settings-editorial{grid-template-rows:65px minmax(0,1fr)!important;}#app.loveroll-settings-page .settings-detail-body{padding:10px!important;}}
+
+#app.loveroll-settings-page{background:linear-gradient(#210007db,#210007ed),url('./assets/loveroll-home-portrait-v202.webp') center/cover fixed!important;color:#fff8ed!important;}
+#app.loveroll-settings-page .editorial-title h1{text-align:center!important;width:100%!important;}
+#app.loveroll-settings-page .settings-page-header .ritual-brand b{font:italic 30px/1.15 var(--lr-control-font,Georgia,serif)!important;color:#fff5e9!important;}
+#app.loveroll-settings-page .settings-page-header .ritual-brand i{font:28px/1 Georgia,serif!important;color:#eaa0af!important;}
+#app.loveroll-settings-page .settings-back{color:#efbec8!important;}
+#app.loveroll-settings-page .settings-back .lr-gold-arrow{color:#efbec8!important;}
+#app.loveroll-settings-page :is(.settings-premium-glass-group,.settings-premium-section-head,.settings-duo-card,.push-status){background:var(--lr-surface-fill)!important;border:1px solid #b66579!important;box-shadow:var(--lr-surface-shadow)!important;border-radius:18px!important;}
+#app.loveroll-settings-page .settings-premium-section-head{padding:12px!important;background-image:var(--lr-surface-fill)!important;}
+#app.loveroll-settings-page .settings-premium-section-head::after{display:none!important;}
+
+#app.loveroll-settings-page .editorial-card-list{max-height:none!important;height:auto!important;overflow:visible!important;}
+}

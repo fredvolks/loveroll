@@ -1,9 +1,10 @@
-import {showEveningCategoryReminder} from './evening-d100-template.mjs?v=20261022-home225';
-import {fitSurpriseMinimal} from './surprise-minimal.mjs?v=20261022-home225';
-import {eclatNoteKey,loadEclatNote,saveEclatNote} from './eclat-guidance.mjs?v=20261022-home225';
-import {loadEclatHistory} from './eclat-history.mjs?v=20261022-home225';
-import {enhanceGoldBacks} from './gold-arrows.mjs?v=20261022-home225';
-import {fitSoireeHomeTemplate,fitRubyCalendar} from './soiree-home-template.mjs?v=20261022-home225';
+import {fitSettingsScreens} from './settings-screens.mjs?v=20261022-home226';
+import {showEveningCategoryReminder} from './evening-d100-template.mjs?v=20261022-home226';
+import {fitSurpriseMinimal} from './surprise-minimal.mjs?v=20261022-home226';
+import {eclatNoteKey,loadEclatNote,saveEclatNote} from './eclat-guidance.mjs?v=20261022-home226';
+import {loadEclatHistory} from './eclat-history.mjs?v=20261022-home226';
+import {enhanceGoldBacks} from './gold-arrows.mjs?v=20261022-home226';
+import {fitSoireeHomeTemplate,fitRubyCalendar} from './soiree-home-template.mjs?v=20261022-home226';
 import { marketingHtml,authHtml,profileHtml,inviteProfileHtml,emailConfirmationHtml,profileGenderSelect,profilePlayStyleSelect,matchHtml,parseMonthDay,monthDayInputs } from './onboarding.mjs?v=20261018-style148';
 import {editorialHeader,editorialRow,editorialIcon} from './editorial-ui.mjs?v=20261017-ritual130';
 import {cardLibraryHtml,monthlyEditorHtml,adventEditorHtml,specialEditorHtml,importEditorHtml} from './editorial-editors.mjs?v=20261017-ritual130';
@@ -13,18 +14,18 @@ import {createCoupleLiveSync} from './couple-live-sync.mjs?v=20261017-advent119'
 import {playableSessionForWeekly} from './couple-reset-view.mjs';
 import {eveningDailyAccess} from './evening-daily-policy.mjs?v=20261016-daily100';
 import {ownEveningChallenges,queuePosition,queueLabel,hasTurnToDraw} from './evening-private-queue.mjs';
-import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261022-home225';
-import {eclatHtml} from './eclat-ui.mjs?v=20261022-home225';
+import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261022-home226';
+import {eclatHtml} from './eclat-ui.mjs?v=20261022-home226';
 import {previewMode,previewCanEdit,previewEclatStatus} from './account-preview-mode.mjs?v=20261020-test180';
 import {eclatStage} from './eclat-catalog.mjs?v=20261019-eclat174';
 import {createEclatAudio} from './eclat-audio.mjs?v=20261019-eclat174';
 import {futureCoupleStyleMix,playStyleLabel} from './play-style.mjs?v=20261018-styles149';
 import {cycleIntensityQuestionnaireHtml} from './cycle-questionnaire.mjs?v=20261018-cycle149';
 import {DICE_WEIGHT_CONFIG,configuredDiceWeights,parseDiceWeightInputs} from './dice-weighting.mjs?v=20261018-weights146';
-import {premiumEveningHtml,updateEveningCategoryUi} from './premium-evening.mjs?v=20261022-home225';
-import {eveningHistoryMarkup,eveningLocalDay} from './evening-calendar.mjs?v=20261022-home225';
+import {premiumEveningHtml,updateEveningCategoryUi} from './premium-evening.mjs?v=20261022-home226';
+import {eveningHistoryMarkup,eveningLocalDay} from './evening-calendar.mjs?v=20261022-home226';
 import {eveningReviewModal,validEveningReview} from './evening-review.mjs?v=20261016-person-review97';
-import {premiumSurpriseHtml,sixSpecialEvents} from './premium-surprise.mjs?v=20261022-home225';
+import {premiumSurpriseHtml,sixSpecialEvents} from './premium-surprise.mjs?v=20261022-home226';
 import {surpriseSlot,surpriseCustom,surpriseTitle,formatSurpriseDateInput,parseSurpriseDateInput} from './surprise-event-config.mjs?v=20261016-surprise109';
 import {loginEmail,loginCode,emailAuthMessage,requireLovePassword,passwordQuality,verifiedLoveEmail,passwordAuthMessage,invitationAuthMessage} from './email-auth.mjs';
 import {demoCoupleHtml,DEMO_TABS} from './demo-couple.mjs';
@@ -55,7 +56,7 @@ import {invitationStatus,coupleStats,formatCoupleDate,invitationEmailText,invita
 import {premiumConfirm,premiumCopyLink,focusInlineLoveDialog} from './premium-dialogs.mjs?v=20261017-complete127';
 
 
-const WEB_RELEASE='2026-10-22.225';
+const WEB_RELEASE='2026-10-22.226';
 const root=document.querySelector('#app');
 const enc=new TextEncoder(),dec=new TextDecoder();
 let diceCleanup=[],renderToken=0;
@@ -385,6 +386,7 @@ function frame(body,title='LOVEROLL',subtitle='Un jeu intime, juste pour vous de
  fitRubyCalendar(root);
  fitSurpriseMinimal(root);
  enhanceGoldBacks(root);
+ fitSettingsScreens(root);
  const newGallery=root.querySelector('.eclat-photo-grid');if(newGallery)newGallery.scrollTop=state.eclatGalleryScroll;
  const newDetail=root.querySelector('.eclat-detail');if(newDetail&&detailScroll?.id===newDetail.dataset.coffretId)newDetail.scrollTop=detailScroll.top;
  bindActions();
@@ -393,7 +395,7 @@ function frame(body,title='LOVEROLL',subtitle='Un jeu intime, juste pour vous de
  // never a fabricated pip result. Actual face comes from Supabase after rolling.
  const canvases=[...root.querySelectorAll('canvas[data-dice-sides]')];
  if(canvases.length){
-  import('./dice3d.js?v=20261022-home225').then(({dieOn})=>{
+  import('./dice3d.js?v=20261022-home226').then(({dieOn})=>{
    if(token!==renderToken)return;
    for(const canvas of canvases){
     if(!canvas.isConnected||canvas.loveRollDie)continue;
@@ -2183,9 +2185,10 @@ function renderSettings(){
  if(!pages[settingsOpenSection])settingsOpenSection='';
  const name=state.profile.display_name||'Mon profil',initial=Array.from(name)[0]||'♡';
  const items=[['couple',worldText('duoLabel'),hasPartner?state.members.map(m=>m.name).join(' & '):linked?'Invitation en attente':'Inviter mon partenaire'],
-  ['notifications',worldText('notificationsLabel'),worldText('notificationsDetail')],['jeu',worldText('cardsLabel'),worldText('gameDetail')],
-  ['confidentialite',worldText('privacyLabel'),worldText('privacyDetail')],
+  ['jeu',worldText('cardsLabel'),worldText('gameDetail')],
+  ['notifications',worldText('notificationsLabel'),worldText('notificationsDetail')],
   ['monde',worldText('menu'),worldText('menuDesc')],
+  ['confidentialite',worldText('privacyLabel'),worldText('privacyDetail')],
   ...(state.referral?.enabled===true?[['parrainage','Parrainage','Inviter des couples · Gagner des crédits']]:[]),
   ['application',worldText('applicationLabel'),worldText('applicationDetail')]];
  const menu='<button class="settings-profile-row" data-action="settings-page:compte"><span class="settings-initial" aria-hidden="true">'+safe(initial)+'</span><span><strong>'+safe(name)+'</strong><small>'+safe(worldText('myAccount'))+'</small></span><b aria-hidden="true">›</b></button>'+
@@ -4163,6 +4166,6 @@ start().catch(error=>{fail(error);window.LoveRollBoot?.showFailure();});
 
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   window.addEventListener('load', () =>
-    navigator.serviceWorker.register('./service-worker.js?v=20261022-home225',
+    navigator.serviceWorker.register('./service-worker.js?v=20261022-home226',
      {scope:'./',updateViaCache:'none'}).then(reg=>reg.update()).catch(console.warn));
 }

@@ -1,4 +1,5 @@
-import {pipFace} from './premium-home.mjs?v=20261022-home225';
+import {fitSharedStage} from './shared-stage.mjs?v=20261022-home226';
+import {pipFace} from './premium-home.mjs?v=20261022-home226';
 import {EVENING_DEFAULT_WEIGHTS,effectiveDicePercentages,displayedDicePercent} from './dice-weighting.mjs';
 
 export function eveningOddsHtml(weights,enabled=true){
@@ -57,11 +58,7 @@ export function fitEveningD6(root){
  dialog.addEventListener('close',()=>info.focus({preventScroll:true}));
  const fit=()=>{
   if(!view.isConnected){fitObserver.disconnect();return;}
-  const split=pills.getBoundingClientRect().top-7;
-  root.style.setProperty('--home-scene-split',split+'px');
-  root.style.setProperty('--home-scene-top-image-height',split/.438+'px');
-  root.style.setProperty('--home-scene-bottom-image-height',(innerHeight-split)/.562+'px');
-  root.style.setProperty('--home-scene-contact',split*.342/.438+'px');
+  fitSharedStage(root);
  };
  const fitObserver=new ResizeObserver(fit);observer=fitObserver;fitObserver.observe(root);fit();canvas.loveRollDie?.refresh?.();document.fonts.ready.then(fit);
  return true;
