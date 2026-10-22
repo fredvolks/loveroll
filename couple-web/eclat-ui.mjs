@@ -1,9 +1,10 @@
+import {eclatGuidedPlay} from './eclat-guided-ui.mjs?v=20261022-home220';
 
 import {ECLAT_COFFRETS,eclatCoffret,eclatStage,ECLAT_MOODS} from './eclat-catalog.mjs';
 import {ritualHeadingHtml} from './brand.mjs?v=20261017-ritual130';
-import {eveningEclatSwitcher} from './evening-eclat-switcher.mjs?v=20261021-home219';
-import {coffretMemo} from './eclat-history.mjs?v=20261021-home219';
-import {goldArrowHtml} from './gold-arrows.mjs?v=20261021-home219';
+import {eveningEclatSwitcher} from './evening-eclat-switcher.mjs?v=20261022-home220';
+import {coffretMemo} from './eclat-history.mjs?v=20261022-home220';
+import {goldArrowHtml} from './gold-arrows.mjs?v=20261022-home220';
 const esc=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const atlasPosition=id=>'--atlas-x:'+((Number(id)-1)%3*50)+'%;--atlas-y:'+(Math.floor((Number(id)-1)/3)*100/3).toFixed(5)+'%;';
 const fmt=cents=>((Number(cents)||0)/100).toLocaleString('fr-CA',{minimumFractionDigits:2,maximumFractionDigits:2})+' $';
@@ -18,7 +19,7 @@ function memoHtml(history,id,status,full=false,unavailable=false){
  return '<span class="eclat-memo'+(m.active?' is-running':'')+'" aria-label="Progression du coffret"><span>'+label+'</span>'+
   ((m.started||full)?'<span class="eclat-memo-durations">'+[30,60,90].map(n=>'<span class="'+(m.completed.includes(n)?'is-done':'')+'">'+n+' min'+(m.completed.includes(n)?' ✓':'')+'</span>').join('')+'</span>':'')+'</span>';
 }
-export function eclatHtml({status=null,selected=1,minutes=60,details=false,members=[],userId=null,music=false,finished=null,history=[],historyError=false,browse=false}={}){
+export function eclatHtml({status=null,selected=1,minutes=60,details=false,members=[],userId=null,music=false,finished=null,history=[],historyError=false,browse=false,noteState={}}={}){
  const access=status?.access===true,active=status?.active===true;
  const c=eclatCoffret(active&&!browse?status.coffret_id:selected)||ECLAT_COFFRETS[0];
  const heading='<header class="eclat-top"><button type="button" class="eclat-return" data-action="'+(details?'eclat:library':'tab:session')+'" aria-label="'+(details?'Retour aux coffrets':'Retour à notre soirée')+'">‹</button>'+
@@ -32,44 +33,7 @@ export function eclatHtml({status=null,selected=1,minutes=60,details=false,membe
  if(active&&!browse){
   const stage=eclatStage(c.id,status.chapter_number,status.variant_number);
   if(!stage)return '<section class="eclat-shell">'+heading+'<p>Étape indisponible. Réessayez dans un instant.</p></section>';
-  const ordered=members.map(m=>m.user_id);
-  const isFirst=ordered[0]===userId;
-  const hasSwap=stage.variantNumber%2===1;
-  const roleIdx=(isFirst?0:1)^(hasSwap?1:0);
-  const myChoice=status.my_choice;
-  const chosen=myChoice!==null&&myChoice!==undefined;
-  const revealed=status.both_chosen===true;
-  const ready=status.my_ready===true;
-  const isFinal=Number(status.chapter_index)===Number(status.chapter_total);
-  const outcome=Number(status.outcome||1);
-  const scenes=[
-   'Douceur : accordez-vous un moment calme, et poursuivez seulement ce qui vous convient.',
-   'Complicité : transformez cette découverte en un jeu spontané, à votre façon.',
-   'Mystère : inventez ensemble une petite surprise inspirée de ce chapitre.'
-  ];
-  const finale=c.finales[Math.min(2,Math.max(0,outcome-1))];
-  body='<section class="eclat-play"><div class="eclat-progress">'+
-   '<small>COFFRET '+String(c.id).padStart(2,'0')+' · '+esc(c.title)+'</small>'+
-   '<span>ÉTAPE '+status.chapter_index+'/'+status.chapter_total+'</span></div>'+
-   '<div class="eclat-progress-track"><span style="width:'+(100*Number(status.chapter_index)/Number(status.chapter_total))+'%"></span></div>'+
-   '<div class="eclat-story">'+
-   '<span class="eclat-chapter-symbol">'+(moods[stage.mood]||'♡')+'</span>'+
-   '<small>'+esc(ECLAT_MOODS[stage.mood]||stage.mood)+' · '+esc(status.minutes)+' min au total</small>'+
-   '<h2>'+esc(stage.title)+'</h2>'+
-   '<p class="eclat-story-main">'+esc(stage.story)+'</p>'+
-   '<div class="eclat-private"><small>♡ TON RÔLE SECRET</small><p>'+esc(stage.roles[roleIdx])+'</p></div>'+
-   '</div>'+
-   (revealed?
-    '<div class="eclat-reveal" role="status"><small>♡ VOTRE RÉVÉLATION COMMUNE</small><p>'+esc(isFinal?finale:scenes[outcome-1])+'</p></div>':
-    chosen?'<div class="eclat-wait" role="status"><span class="eclat-spinner"></span> Ton choix est enregistré. On attend ton partenaire…</div>':
-    '<div class="eclat-choices" aria-label="Choix privé pour cette étape">'+
-      c.choices.map((label,i)=>btn('eclat:choose:'+(i+1),esc(label),'eclat-choice')).join('')+
-      btn('eclat:choose:0','Passer cette étape','eclat-skip')+'</div>')+
-   '<footer class="eclat-play-footer">'+
-    (revealed?btn('eclat:next',ready?'En attente de l’autre…':isFinal?'♡ Terminer ensemble':'♡ Continuer ensemble','eclat-primary',ready):'')+
-    '<div class="eclat-play-bottom">'+
-     '<span>'+(revealed?ready?'Tu as confirmé · attente de l’autre':'Choisissez tous les deux pour avancer':chosen?'Ton partenaire choisit…':'Ton choix reste privé jusqu’à la révélation')+'</span>'+
-     btn('eclat:library','Voir les 12 coffrets','eclat-link')+btn('eclat:end','Quitter le coffret','eclat-link')+'</div></footer></section>';
+  body=eclatGuidedPlay({stage,status,members,userId,noteState});
  }else if(!access){
   // The catalogue is private to Éclat members. Billing is not enabled yet.
   body='<section class="eclat-offer" aria-label="Découvrir l’abonnement Éclat">'+
@@ -89,7 +53,7 @@ export function eclatHtml({status=null,selected=1,minutes=60,details=false,membe
    '<small>COFFRET '+String(c.id).padStart(2,'0')+' / 12</small><h2>'+esc(c.title)+'</h2>'+
    '<p>'+esc(c.subtitle)+'</p><div class="eclat-descriptor"><span>'+({30:4,60:6,90:8}[minutes]||6)+' étapes</span><span>Environ '+minutes+' min</span><span>Deux téléphones</span></div>'+
    memoHtml(history,c.id,status,true,historyError)+
-   '<p class="eclat-detail-copy"><span>1. Lisez la consigne et votre rôle privé.</span><span>2. Vivez ce moment ensemble.</span><span>3. Choisissez chacun pour découvrir la suite.</span></p>'+
+   '<p class="eclat-detail-copy"><span>1. Lisez la consigne et préparez le moment.</span><span>2. Vivez le moment à votre rythme.</span><span>3. Choisissez l’ambiance, puis confirmez à deux.</span></p>'+
    '<div class="eclat-duration"><span>Durée de votre expérience</span><div>'+
     [30,60,90].map(n=>btn('eclat:minutes:'+n,n+' min','eclat-duration-choice'+(minutes===n?' is-selected':''))).join('')+
    '</div></div>'+

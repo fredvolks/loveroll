@@ -37,16 +37,19 @@ test('Both partners have private, distinct roles and choices are not leaked',()=
   both_chosen:false,my_ready:false};
  const first=eclatHtml({status:active,userId:'a',members:people});
  const second=eclatHtml({status:active,userId:'b',members:people});
- assert.match(first,/eclat:choose:1/);
+ assert.doesNotMatch(first,/eclat:choose:1/);
+ assert.match(first,/Choisir un souvenir/);
+ const choices=eclatHtml({status:active,userId:'a',members:people,noteState:{moment_done:true}});
+ assert.match(choices,/eclat:choose:1/);
  assert.match(first,/eclat:choose:0/);
- assert.match(first,/TON RÔLE SECRET/);
+ assert.match(first,/POUR TOI SEULEMENT/);
  assert.notEqual(first,second);
- assert.doesNotMatch(first,/VOTRE RÉVÉLATION COMMUNE/);
+ assert.doesNotMatch(first,/VOTRE SUITE COMMUNE/);
  const waiting=eclatHtml({status:{...active,my_choice:2},userId:'a',members:people});
  assert.match(waiting,/On attend ton partenaire/);
  assert.doesNotMatch(waiting,/eclat:choose:1/);
  const revealed=eclatHtml({status:{...active,my_choice:2,both_chosen:true,outcome:2},userId:'a',members:people});
- assert.match(revealed,/VOTRE RÉVÉLATION COMMUNE/);
+ assert.match(revealed,/VOTRE SUITE COMMUNE/);
  assert.match(revealed,/eclat:next/);
 });
 test('Monthly Surprise keeps one entry before and after drawing',()=>{

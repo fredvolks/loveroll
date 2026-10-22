@@ -1,6 +1,7 @@
-import {loadEclatHistory} from './eclat-history.mjs?v=20261021-home219';
-import {enhanceGoldBacks} from './gold-arrows.mjs?v=20261021-home219';
-import {fitSoireeHomeTemplate,fitRubyCalendar} from './soiree-home-template.mjs?v=20261021-home219';
+import {eclatNoteKey,loadEclatNote,saveEclatNote} from './eclat-guidance.mjs?v=20261022-home220';
+import {loadEclatHistory} from './eclat-history.mjs?v=20261022-home220';
+import {enhanceGoldBacks} from './gold-arrows.mjs?v=20261022-home220';
+import {fitSoireeHomeTemplate,fitRubyCalendar} from './soiree-home-template.mjs?v=20261022-home220';
 import { marketingHtml,authHtml,profileHtml,inviteProfileHtml,emailConfirmationHtml,profileGenderSelect,profilePlayStyleSelect,matchHtml,parseMonthDay,monthDayInputs } from './onboarding.mjs?v=20261018-style148';
 import {editorialHeader,editorialRow,editorialIcon} from './editorial-ui.mjs?v=20261017-ritual130';
 import {cardLibraryHtml,monthlyEditorHtml,adventEditorHtml,specialEditorHtml,importEditorHtml} from './editorial-editors.mjs?v=20261017-ritual130';
@@ -10,18 +11,18 @@ import {createCoupleLiveSync} from './couple-live-sync.mjs?v=20261017-advent119'
 import {playableSessionForWeekly} from './couple-reset-view.mjs';
 import {eveningDailyAccess} from './evening-daily-policy.mjs?v=20261016-daily100';
 import {ownEveningChallenges,queuePosition,queueLabel,hasTurnToDraw} from './evening-private-queue.mjs';
-import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261021-home219';
-import {eclatHtml} from './eclat-ui.mjs?v=20261021-home219';
+import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261022-home220';
+import {eclatHtml} from './eclat-ui.mjs?v=20261022-home220';
 import {previewMode,previewCanEdit,previewEclatStatus} from './account-preview-mode.mjs?v=20261020-test180';
 import {eclatStage} from './eclat-catalog.mjs?v=20261019-eclat174';
 import {createEclatAudio} from './eclat-audio.mjs?v=20261019-eclat174';
 import {futureCoupleStyleMix,playStyleLabel} from './play-style.mjs?v=20261018-styles149';
 import {cycleIntensityQuestionnaireHtml} from './cycle-questionnaire.mjs?v=20261018-cycle149';
 import {DICE_WEIGHT_CONFIG,configuredDiceWeights,parseDiceWeightInputs} from './dice-weighting.mjs?v=20261018-weights146';
-import {premiumEveningHtml,updateEveningCategoryUi} from './premium-evening.mjs?v=20261021-home219';
-import {eveningHistoryMarkup,eveningLocalDay} from './evening-calendar.mjs?v=20261021-home219';
+import {premiumEveningHtml,updateEveningCategoryUi} from './premium-evening.mjs?v=20261022-home220';
+import {eveningHistoryMarkup,eveningLocalDay} from './evening-calendar.mjs?v=20261022-home220';
 import {eveningReviewModal,validEveningReview} from './evening-review.mjs?v=20261016-person-review97';
-import {premiumSurpriseHtml,sixSpecialEvents} from './premium-surprise.mjs?v=20261021-home219';
+import {premiumSurpriseHtml,sixSpecialEvents} from './premium-surprise.mjs?v=20261022-home220';
 import {surpriseSlot,surpriseCustom,surpriseTitle,formatSurpriseDateInput,parseSurpriseDateInput} from './surprise-event-config.mjs?v=20261016-surprise109';
 import {loginEmail,loginCode,emailAuthMessage,requireLovePassword,passwordQuality,verifiedLoveEmail,passwordAuthMessage,invitationAuthMessage} from './email-auth.mjs';
 import {demoCoupleHtml,DEMO_TABS} from './demo-couple.mjs';
@@ -52,7 +53,7 @@ import {invitationStatus,coupleStats,formatCoupleDate,invitationEmailText,invita
 import {premiumConfirm,premiumCopyLink,focusInlineLoveDialog} from './premium-dialogs.mjs?v=20261017-complete127';
 
 
-const WEB_RELEASE='2026-10-21.219';
+const WEB_RELEASE='2026-10-22.220';
 const root=document.querySelector('#app');
 const enc=new TextEncoder(),dec=new TextDecoder();
 let diceCleanup=[],renderToken=0;
@@ -206,7 +207,7 @@ function snapshotDraft(){
  }));
 }
 function formRouteKey(){return [state.tab,settingsOpenSection,state.libraryScreen,state.libraryImportKind,state.customCategory,state.customSlot,state.monthlySlot,state.adventEditorDay,state.specialEditorKey,state.specialEditorStage,state.specialEditorFace].join('|');}
-function hasUnsavedForm(){return snapshotDraft().length>0;}
+function hasUnsavedForm(){return snapshotDraft().length>0||[...eclatNoteDrafts.values()].some(d=>!d.saved&&(!!d.note||!!d.clue));}
 function restoreDraft(draft){
  for(const field of draft||[]){
   const el=document.getElementById(field.id);
@@ -389,7 +390,7 @@ function frame(body,title='LOVEROLL',subtitle='Un jeu intime, juste pour vous de
  // never a fabricated pip result. Actual face comes from Supabase after rolling.
  const canvases=[...root.querySelectorAll('canvas[data-dice-sides]')];
  if(canvases.length){
-  import('./dice3d.js?v=20261021-home219').then(({dieOn})=>{
+  import('./dice3d.js?v=20261022-home220').then(({dieOn})=>{
    if(token!==renderToken)return;
    for(const canvas of canvases){
     if(!canvas.isConnected||canvas.loveRollDie)continue;
@@ -419,6 +420,13 @@ function nav(){
  '</span>'+safe(label)+'</button>').join('')+'</div></nav>';
 }
 function bindActions(){
+ root.querySelectorAll('[data-eclat-field]').forEach(field=>field.addEventListener('input',()=>{
+  const draft=eclatNoteDrafts.get(eclatNoteKey(state.eclat,state.user?.id));
+  if(!draft)return;
+  draft[field.dataset.eclatField]=field.value;draft.saved=false;
+  const label=root.querySelector('[data-eclat-note-status]');
+  if(label)label.textContent='Modifications non enregistrées';
+ }));
  const librarySearch=root.querySelector('#custom-card-search');
  const libraryFilter=root.querySelector('#custom-card-filter');
  const updateLibraryFilter=()=>{
@@ -1144,6 +1152,38 @@ function renderWaitingPartner(){
   '</div></details></article></div></section>','Mon espace','');
  root.classList.add('loveroll-settings-page');
 }
+// One private draft per account/session/step. No browser storage or text logs.
+const eclatNoteDrafts=new Map();
+function eclatNoteState(){
+ const key=eclatNoteKey(state.eclat,state.user?.id);
+ if(!key)return {};
+ if(!eclatNoteDrafts.has(key)){
+  const draft={note:'',clue:'',moment_done:false,loading:true};
+  eclatNoteDrafts.set(key,draft);
+  const status={...state.eclat},userId=state.user.id;
+  loadEclatNote(client,status,userId).then(value=>Object.assign(draft,value,{saved:!!value.note||!!value.clue,error:false}))
+   .catch(()=>{draft.error=true;})
+   .finally(()=>{draft.loading=false;if(state.tab==='eclat'&&!state.eclatBrowse&&eclatNoteKey(state.eclat,state.user?.id)===key)render();});
+ }
+ return eclatNoteDrafts.get(key);
+}
+async function saveCurrentEclatNote(momentDone){
+ const key=eclatNoteKey(state.eclat,state.user?.id),draft=eclatNoteDrafts.get(key);
+ if(!draft||draft.loading||draft.error)throw Error('Attends le chargement de ta note ou appuie sur Réessayer.');
+ if(draft.saving)throw Error('Enregistrement en cours…');
+ const snapshot={note:draft.note,clue:draft.clue,moment_done:momentDone??draft.moment_done};
+ draft.saving=true;
+ try{
+  await saveEclatNote(client,{...state.eclat},state.user.id,snapshot);
+  draft.moment_done=snapshot.moment_done;
+  draft.saved=draft.note===snapshot.note&&draft.clue===snapshot.clue;
+ }catch(error){
+  const label=root.querySelector('[data-eclat-note-status]');
+  if(label)label.textContent='Non enregistré. Ton texte est conservé ici; réessaie.';
+  throw error;
+ }finally{draft.saving=false;}
+ return key;
+}
 async function refreshEclatHistory(){
  const coupleId=state.coupleId;
  if(!coupleId||!state.user)return;
@@ -1168,7 +1208,7 @@ function renderEclat(){
  }else if(state.eclatMusic){eclatAudio.stop();state.eclatMusic=false;}
  frame(eclatHtml({status:e,selected:state.eclatSelection,minutes:state.eclatMinutes,
   details:state.eclatDetails,members:state.members,userId:state.user?.id,
-  music:state.eclatMusic,finished:state.eclatFinished,browse:state.eclatBrowse,history:state.eclatHistoryCouple===state.coupleId?state.eclatHistory:[],historyError:state.eclatHistoryError}), 'Éclat','Notre expérience à deux');
+  music:state.eclatMusic,finished:state.eclatFinished,browse:state.eclatBrowse,noteState:e?.active&&!state.eclatBrowse?eclatNoteState():{},history:state.eclatHistoryCouple===state.coupleId?state.eclatHistory:[],historyError:state.eclatHistoryError}), 'Éclat','Notre expérience à deux');
 }
 function renderHome(){
  const members=state.members||[];
@@ -2279,10 +2319,18 @@ async function handle(action,element){
   eclatAudio.stop();state.eclatMusic=false;
   render();return;
  }
- if(verb==='eclat')
  if(verb==='eclat'){
   if(!isSharedCoupleReady(state.coupleId,state.members))throw Error('Éclat nécessite deux partenaires associés.');
   const kind=parts[0],num=Number(parts[1]);
+  if(kind.startsWith('note-')){
+   if(!state.eclat?.active)throw Error('Aucun coffret actif');
+   const key=eclatNoteKey(state.eclat,state.user?.id);
+   if(kind==='note-retry'){eclatNoteDrafts.delete(key);render();return;}
+   const savedKey=await saveCurrentEclatNote(kind==='note-done'?true:kind==='note-edit'?false:undefined);
+   if(savedKey!==eclatNoteKey(state.eclat,state.user?.id))return;
+   if(kind==='note-play'||kind==='note-edit')eclatNoteDrafts.get(key).playing=true;
+   render();return;
+  }
   if(kind==='back'){await handle('tab:session',element);return;}
   if(kind==='music'){
    if(!state.eclat?.active){eclatAudio.stop();state.eclatMusic=false;return;}
@@ -2314,6 +2362,9 @@ async function handle(action,element){
   if(kind==='choose'){
    if(!state.eclat?.active)throw Error('Aucun coffret actif');
    if(!Number.isInteger(num)||num<0||num>3)throw Error('Choix invalide');
+   const draft=eclatNoteDrafts.get(eclatNoteKey(state.eclat,state.user?.id));
+   if(num>0&&!draft?.moment_done)throw Error('Vivez d’abord le moment ensemble, puis confirme que tu as terminé.');
+   if(draft&&!draft.loading&&!draft.error)await saveCurrentEclatNote();
    state.eclat=await rpc('love_eclat_choose',{p_choice:num});render();return;
   }
   if(kind==='next'){
@@ -3978,7 +4029,7 @@ async function start(){
     state.passwordRecovery=true;state.showAuth=true;
     state.user=session?.user||state.user;render();
    }
-   if(event==='SIGNED_OUT'){state.user=null;state.profile=null;state.coupleId=null;state.wellbeing=null;state.personalPass=null;state.personalJournal=[];state.emailVerificationPending=false;render();}
+   if(event==='SIGNED_OUT'){eclatNoteDrafts.clear();state.user=null;state.profile=null;state.coupleId=null;state.wellbeing=null;state.personalPass=null;state.personalJournal=[];state.emailVerificationPending=false;render();}
  });
 }
 // Version probe bypasses WebView/Chrome and service worker HTTP cache.
@@ -4107,6 +4158,6 @@ start().catch(error=>{fail(error);window.LoveRollBoot?.showFailure();});
 
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   window.addEventListener('load', () =>
-    navigator.serviceWorker.register('./service-worker.js?v=20261021-home219',
+    navigator.serviceWorker.register('./service-worker.js?v=20261022-home220',
      {scope:'./',updateViaCache:'none'}).then(reg=>reg.update()).catch(console.warn));
 }

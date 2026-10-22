@@ -42,17 +42,32 @@ async function setupEditorial(browser,world,{width=412,height=824,actor='a',quer
    if(method==='updateUser')data={user:world.users[uid]};
    if(method==='resend'||method==='resetPasswordForEmail')data={};
    if(method==='signInWithOAuth')data={url:'https://example.invalid/oauth-test-only'};
+  }else if(req.write==='love_eclat_private_notes'){
+   if(world.noteSaveError)error={message:'Synthetic note save failure'};
+   else if(req.args.user_id!==uid)error={message:'Private author required'};
+   else{world.eclatNotes=(world.eclatNotes||[]).filter(n=>n.user_id!==uid||n.session_id!==req.args.session_id||n.chapter_index!==req.args.chapter_index).concat({...req.args});data=true;}
   }else if(req.table){
    const tables={couple_profiles:world.profiles,love_wellbeing:[],couple_members:world.profiles.filter(p=>['a','b'].includes(p.id)).map((p,i)=>({user_id:p.id,couple_id:'c',joined_at:'2026-10-0'+(i+1)})),couples:[world.couple],love_push_preferences:[world.prefs],couple_occasion_settings:[world.settings],love_custom_challenges:uid==='a'?world.customCards:[],love_monthly_activity_overrides:uid==='a'?world.monthly:[],love_advent_2026_config:uid==='a'?[{...world.calendar,couple_id:'c'}]:[],love_advent_2026_days:uid==='a'?world.calendar.days.map(d=>({...d,couple_id:'c'})):[],love_special_event_catalogue:uid==='a'?[{couple_id:'c',events:world.special}]:[],couple_rolls:world.rolls};
    const homeRecords={couple_sessions:world.eveningSessions,couple_challenges:world.challenges,couple_personal_rolls:world.personalRolls,love_eclat_sessions:world.eclatSessions};
-   data=homeRecords[req.table]||tables[req.table]||[];for(const [k,v] of req.filters)data=data.filter(r=>r[k]===v);
+   data=req.table==='love_eclat_private_notes'?(world.eclatNotes||[]).filter(n=>n.user_id===uid):homeRecords[req.table]||tables[req.table]||[];for(const [k,v] of req.filters)data=data.filter(r=>r[k]===v);
    if(req.range)data=data.slice(req.range[0],req.range[1]+1);
   }else{
    world.calls.push({uid,name,args});
    const ownerOnly=['save_love_card_with_roles','import_love_evening_library','import_love_monthly_library','import_love_advent_2026','import_love_special_events','reset_love_all_dice_admin'];
    if(ownerOnly.includes(name)&&uid!=='a')error={message:'Créateur requis'};
    else{
-    if(name==='love_eclat_status')data=world.eclat||{access:false,active:false};
+    if(name==='love_eclat_status')data=world.eclat?{...world.eclat,my_choice:world.eclatChoices?.[uid]??world.eclat.my_choice??null,my_ready:!!world.eclatReady?.[uid]}:{access:false,active:false};
+    if(name==='love_eclat_choose'){
+     world.eclatChoices={...world.eclatChoices,[uid]:args.p_choice};
+     world.eclat.both_chosen=Object.keys(world.eclatChoices).length===2;
+     if(world.eclat.both_chosen)world.eclat.outcome=1;
+     data={...world.eclat,my_choice:args.p_choice};
+    }
+    if(name==='love_eclat_next'){
+     world.eclatReady={...world.eclatReady,[uid]:true};
+     if(Object.keys(world.eclatReady).length===2){world.eclat={...world.eclat,chapter_index:world.eclat.chapter_index+1,chapter_number:2,both_chosen:false,outcome:null,my_choice:null};world.eclatReady={};world.eclatChoices={};}
+     data={...world.eclat,my_choice:world.eclatChoices?.[uid]??null,my_ready:!!world.eclatReady?.[uid]};
+    }
     if(name==='love_eclat_start'&&world.eclat){
      data=world.eclat={...world.eclat,active:true,coffret_id:args.p_coffret,minutes:args.p_minutes,chapter_index:1,chapter_number:1,chapter_total:6,variant_number:0,session_id:'synthetic-eclat',my_choice:null};
      world.eclatSessions=[...(world.eclatSessions||[]),{id:'synthetic-eclat',couple_id:'c',coffret_id:args.p_coffret,minutes:args.p_minutes,chapter_index:1,started_at:'2026-10-22T01:00:00Z',ended_at:null,cancelled:false}];

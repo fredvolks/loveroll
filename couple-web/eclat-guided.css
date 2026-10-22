@@ -1,0 +1,45 @@
+/* The selected “À deux, puis à toi” play template. Header/nav remain shared. */
+@layer loveroll-guided-play {
+ #app.loveroll-eclat-page .eclat-guided{display:flex!important;flex:1!important;min-height:0!important;overflow:hidden!important;gap:8px!important;padding:0!important;background:none!important;border:0!important;box-shadow:none!important;}
+ #app .eclat-guided-heading{display:grid!important;gap:4px!important;text-align:center!important;flex:none!important;}
+ #app .eclat-guided-heading strong{font:500 22px/1.1 'LoveRoll Cormorant',Georgia,serif!important;color:#fff0db!important;}
+ #app .eclat-guided-heading span{font:11px/1.3 system-ui,sans-serif!important;color:#d7b98e!important;}
+ #app .eclat-guided .eclat-progress-track{height:2px!important;background:#76533260!important;}
+ #app .eclat-guided .eclat-progress-track span{background:#e6c98b!important;}
+ #app .eclat-guided-content{flex:1!important;min-height:0!important;overflow:auto!important;overscroll-behavior:contain;display:flex!important;flex-direction:column!important;gap:10px!important;padding:1px 2px 5px!important;scrollbar-width:thin;scrollbar-color:#a47c4e #250008;}
+ #app .eclat-guided-content section,#app .eclat-guided-content details.eclat-personal{flex:none!important;border:1px solid #aa785e99!important;border-radius:18px!important;background:linear-gradient(150deg,#57071cdd,#290009ed)!important;padding:13px!important;text-align:center!important;box-shadow:inset 0 1px 1px #ffe2b025!important;}
+ #app .eclat-guided-content small{display:block!important;font:600 10px/1.4 system-ui,sans-serif!important;letter-spacing:1.6px!important;color:#e5c894!important;}
+ #app .eclat-guided-content h3{font:500 24px/1.1 'LoveRoll Cormorant',Georgia,serif!important;color:#fff1df!important;margin:7px 0!important;}
+ #app .eclat-guided-content p{font:14px/1.45 system-ui,sans-serif!important;color:#f1dbd4!important;margin:7px 0 0!important;}
+ #app .eclat-guided-content p.eclat-turn{font-size:11px!important;color:#dfc18b!important;border-top:1px solid #ba975d44!important;padding-top:8px!important;}
+ #app .eclat-guided .eclat-personal label{display:block!important;margin:10px 0 6px!important;text-align:left!important;font:600 13px/1.3 system-ui,sans-serif!important;color:#ffeddf!important;}
+ #app .eclat-guided .eclat-personal label span{font:10px/1.3 system-ui,sans-serif!important;color:#cca8a0!important;}
+ #app .eclat-guided textarea{display:block!important;width:100%!important;box-sizing:border-box!important;min-height:65px!important;resize:vertical!important;padding:10px!important;background:#1e0008!important;border:1px solid #a468778c!important;border-radius:11px!important;color:#fff1e7!important;font:16px/1.4 system-ui,sans-serif!important;text-align:left!important;box-shadow:inset 0 2px 7px #100004aa!important;}
+ #app .eclat-guided textarea::placeholder{color:#c69fa7!important;opacity:1!important;}
+ #app .eclat-guided textarea:focus{outline:2px solid #efcc87!important;outline-offset:2px!important;}
+ #app .eclat-note-controls{display:flex!important;align-items:center!important;gap:9px!important;margin-top:7px!important;}
+ #app .eclat-note-controls>span{font:10px/1.3 system-ui,sans-serif!important;color:#dfbfac!important;text-align:left!important;}
+ #app .eclat-guided button.eclat-note-save{font:11px/1.3 system-ui,sans-serif!important;padding:8px!important;min-height:36px!important;border:1px solid #bb965d!important;border-radius:12px!important;background:#4c0316!important;color:#ffe3aa!important;box-shadow:inset 0 1px 1px #ffdb9c30!important;}
+ #app .eclat-guided p.eclat-note-privacy{font-size:10px!important;line-height:1.4!important;color:#cdaaab!important;text-align:left!important;}
+ #app .eclat-guided summary{font:12px/1.4 system-ui,sans-serif!important;color:#e2c38e!important;cursor:pointer;min-height:28px!important;}
+ #app .eclat-guided ol{margin:9px 0 0!important;padding-left:20px!important;text-align:left!important;}
+ #app .eclat-guided li{padding:0 0 10px 3px!important;font:13px/1.5 system-ui,sans-serif!important;color:#f1d8cf!important;}
+ #app .eclat-rules{flex:none!important;padding:2px 7px!important;}
+ #app .eclat-rules p{font-size:11px!important;}
+ #app .eclat-guided-actions{display:grid!important;gap:4px!important;flex:none!important;}
+ #app .eclat-guided button.eclat-primary{min-height:46px!important;font-size:22px!important;}
+ #app .eclat-guided .eclat-choices{grid-template-columns:repeat(3,minmax(0,1fr))!important;margin:0!important;}
+ #app .eclat-guided button.eclat-choice{font:500 12px/1.25 system-ui,sans-serif!important;min-height:54px!important;border-radius:14px!important;background:linear-gradient(165deg,#bd1740,#650019 63%,#910326)!important;border:1px solid #db8294!important;box-shadow:inset 0 1px 2px #ffd2db70,0 2px 4px #120004!important;color:#fff1e6!important;}
+ #app .eclat-guided button:is(.eclat-choice,.eclat-primary,.eclat-note-save):active{transform:translateY(2px)!important;box-shadow:inset 0 3px 9px #160006!important;}
+ #app .eclat-guided .eclat-play-footer{display:grid!important;flex:none!important;gap:2px!important;margin:0!important;}
+ #app .eclat-guided .eclat-play-footer small{font:10px/1.3 system-ui,sans-serif!important;color:#c7a8a8!important;text-align:center!important;}
+ #app .eclat-guided .eclat-play-footer>div{display:flex!important;width:100%!important;justify-content:space-between!important;}
+ #app .eclat-guided :is(.eclat-wait,.eclat-reveal){flex:none!important;margin:auto 0!important;background:#420315!important;border:1px solid #bc965b!important;padding:18px!important;}
+ #app .eclat-guided[data-eclat-phase="prepare"] .eclat-personal{padding:10px 12px!important;}
+ #app .eclat-guided[data-eclat-phase="prepare"] .eclat-personal label{margin:6px 0 5px!important;}
+ #app .eclat-guided[data-eclat-phase="prepare"] textarea{min-height:58px!important;padding:7px 9px!important;}
+ #app .eclat-guided .eclat-clue-field{padding-top:7px!important;text-align:left!important;}
+ #app .eclat-guided .eclat-clue-field summary{min-height:20px!important;font-size:11px!important;}
+ #app .eclat-guided[data-eclat-phase="prepare"] .eclat-together{padding:10px 12px!important;}
+ #app .eclat-guided[data-eclat-phase="prepare"] .eclat-together h3{font-size:22px!important;margin:5px 0!important;}
+}
