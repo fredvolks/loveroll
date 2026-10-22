@@ -1,0 +1,31 @@
+/* Concept 5: native Home D6 and shared Soirée controls, compact duo capsules. */
+@layer loveroll-evening-d6{
+ @media(max-width:767px){
+  #app.has-evening-d6-template .evening-premium-view.has-evening-d6-template{
+   display:grid!important;grid-template-rows:80px auto minmax(0,1fr) 38px 55px 34px 22px!important;gap:8px!important;
+  }
+  #app.has-evening-d6-template .evening-step.one{grid-row:3!important;display:block!important;position:relative!important;min-height:0!important;height:100%!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;overflow:visible!important;}
+  #app.has-evening-d6-template :is(.evening-step.two,.evening-gift,.evening-step.one::before,.evening-step.one::after){display:none!important;}
+  #app.has-evening-d6-template .evening-d6-theater{display:grid!important;grid-template-columns:minmax(0,1fr)!important;place-items:center!important;position:relative!important;width:100%!important;height:100%!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;background:none!important;box-shadow:none!important;overflow:visible!important;--dice-headroom:5px;}
+  #app.has-evening-d6-template .home-die-platform{position:relative!important;display:block!important;width:min(100vw,420px)!important;height:min(100vw,420px)!important;max-height:none!important;aspect-ratio:1!important;overflow:visible!important;}
+  #app.has-evening-d6-template .dice-fallback{display:none!important;}
+  #app.has-evening-d6-template .dice-canvas{width:100%!important;height:100%!important;filter:none!important;}
+  #app.has-evening-d6-template .home-pedestal{position:fixed!important;inset:var(--home-scene-contact) auto auto 50%!important;display:block!important;width:0!important;height:0!important;pointer-events:none!important;background:none!important;border:0!important;box-shadow:none!important;}
+  #app.has-evening-d6-template .home-pedestal-contact{position:absolute!important;inset:0!important;width:0!important;height:0!important;}
+  #app.has-evening-d6-template .evening-toolbar{position:relative!important;}
+  #app.has-evening-d6-template .evening-back{position:absolute!important;top:20px!important;left:0!important;z-index:5!important;}
+  #app.has-evening-d6-template .evening-duo-capsules{grid-row:4!important;display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important;min-width:0!important;}
+  #app.has-evening-d6-template :is(.evening-own-capsule,.evening-partner-card){position:relative!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:4px!important;padding:5px 8px!important;margin:0!important;min-width:0!important;min-height:0!important;height:38px!important;text-align:center!important;--lr-surface-radius:20px;}
+  #app.has-evening-d6-template :is(.evening-capsule-name,.evening-partner-mobile-status){display:block!important;font:12px/1.2 Arial,sans-serif!important;color:#ffe9df!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;}
+  #app.has-evening-d6-template .evening-face-result{display:flex!important;visibility:visible!important;align-items:center!important;min-height:0!important;height:auto!important;gap:0!important;padding:0!important;margin:0!important;}
+  #app.has-evening-d6-template .evening-face-result strong{font:600 16px/1 Georgia,serif!important;color:#fff0e5!important;}
+  #app.has-evening-d6-template .evening-face-result.is-empty::after{content:'—';font:16px Georgia,serif;color:#ffe9df;}
+  #app.has-evening-d6-template .evening-face-result :is(small,.evening-original-d6){display:none!important;}
+  #app.has-evening-d6-template .evening-small-roll{grid-row:5!important;position:relative!important;display:flex!important;align-items:center!important;justify-content:center!important;width:100%!important;min-height:0!important;height:55px!important;margin:0!important;padding:0 12px!important;font:600 clamp(23px,6.4vw,28px)/1 'LoveRoll Cormorant',Georgia,serif!important;text-transform:none!important;}
+  #app.has-evening-d6-template .evening-d6-next{grid-row:6!important;position:relative!important;display:grid!important;grid-template-columns:90px 1fr!important;align-items:center!important;text-align:center!important;padding:4px 8px!important;gap:8px!important;--lr-surface-radius:20px;}
+  #app.has-evening-d6-template .evening-d6-next strong{font:600 11px/1.2 Arial,sans-serif!important;color:#fff0e5!important;}
+  #app.has-evening-d6-template .evening-d6-next span{font:11px/1.2 Arial,sans-serif!important;color:#e9cbd0!important;border-left:1px solid #b3677855!important;padding-left:8px!important;}
+  #app.has-evening-d6-template .evening-d6-tools{grid-row:7!important;display:flex!important;align-items:center!important;justify-content:space-between!important;}
+  #app.has-evening-d6-template .evening-d6-tools button{min-height:22px!important;margin:0!important;padding:2px 6px!important;border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;color:#efd6cc!important;font:11px/1 Arial,sans-serif!important;}
+ }
+}

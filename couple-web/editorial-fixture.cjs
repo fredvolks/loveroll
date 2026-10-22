@@ -76,6 +76,8 @@ async function setupEditorial(browser,world,{width=412,height=824,actor='a',quer
     if(name==='love_advent_server_date')data='2026-10-17';
     if(name==='love_evening_reviews_for_couple')data=world.reviews||[];
     if(name==='love_evening_calendar_challenges')data=world.calendarChallenges||[];
+    if(name==='my_love_roll_status'&&world.enableEveningD6){const own=(world.personalRolls||[]).some(r=>r.user_id===uid&&r.session_id===args.p_session),partner=(world.personalRolls||[]).some(r=>r.user_id!==uid&&r.session_id===args.p_session);data=[{my_rolled:own,partner_rolled:partner,both_ready:own&&partner}];}
+    if(name==='roll_my_evening_d6'&&world.enableEveningD6){const prior=(world.personalRolls||[]).find(r=>r.user_id===uid&&r.session_id===args.p_session);if(prior)data={face:prior.face};else{const face=uid==='a'?2:4;world.personalRolls=[...(world.personalRolls||[]),{id:'d6-'+uid,session_id:args.p_session,user_id:uid,face}];data={face};}}
     if(name==='my_love_evening_board'&&world.board)data=world.board;
     if(name==='save_love_card_with_roles'){world.customCards=world.customCards.filter(c=>c.category!==args.p_category||c.card_id!==args.p_card_id);world.customCards.push({couple_id:'c',category:args.p_category,card_id:args.p_card_id,title:args.p_title,description:args.p_description,timer_minutes:args.p_timer_minutes,drawer_role:args.p_drawer_role,recipient_role:args.p_recipient_role});data=true;}
     if(name==='import_love_evening_library'){world.customCards=world.customCards.filter(c=>c.category!==args.p_library.category).concat(args.p_library.cards.map(c=>({...c,category:args.p_library.category,couple_id:'c'})));data=true;}

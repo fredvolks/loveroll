@@ -1,6 +1,7 @@
+import {eveningOddsHtml} from './evening-d6-template.mjs?v=20261022-home221';
 // LoveRoll connected couple — production UI, not a demo. All results are provided by Supabase.
 import {ritualHeadingHtml} from './brand.mjs?v=20261017-ritual130';
-import {eveningEclatSwitcher} from './evening-eclat-switcher.mjs?v=20261022-home220';
+import {eveningEclatSwitcher} from './evening-eclat-switcher.mjs?v=20261022-home221';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','"':'&quot;',"'":'&#39;'}[c]));
 const bt=(action,text,cls='',disabled=false)=>'<button type="button" class="'+cls+'" data-action="'+esc(action)+'"'+
  (action.startsWith('category:')?' aria-pressed="'+(cls.includes('selected')?'true':'false')+'"':'')+
@@ -30,7 +31,7 @@ export function premiumPolyDie(sides,face=null,caption='',spinning=false,preview
    'data-face="1" data-dice-unrolled="true" data-dice-markers="hearts" '+
    'data-spinning="false" aria-label="Dé 3D décoratif avec des cœurs, en attente du résultat officiel"></canvas></div></div>';
  }
- const target=valid?face:1;
+ const target=valid?face:sides===6&&preview?2:1;
  return '<div class="love3d love3d-'+sides+'" role="group" aria-label="'+esc(caption)+'">'+
   '<div class="love3d-stage '+(spinning?'is-rolling':'')+'">'+
    '<strong class="dice-fallback"'+(spinning?' aria-hidden="true"':'')+'>'+'♡'+'</strong>'+
@@ -87,8 +88,10 @@ const d6=(m,roll,localUser,canRoll,ready,rolling,rollFace,effectiveTarget=null)=
  const adjusted=reveal&&effectiveTarget!=null&&Number.isInteger(officialTarget)&&
   officialTarget>=0&&officialTarget!==roll.face;
  const displayCount=adjusted?officialTarget:reveal?roll.face:null;
- return '<article class="evening-user-die evening-my-die" aria-label="Mon dé personnel">'+
-  premiumPolyDie(6,rolling&&localUser?rollFace:has?roll.face:null,'Mon dé',rolling&&localUser&&Number.isInteger(rollFace))+
+ const die=premiumPolyDie(6,rolling&&localUser?rollFace:has?roll.face:null,'Mon dé',rolling&&localUser&&Number.isInteger(rollFace),!has&&(!rolling||!Number.isInteger(rollFace)));
+ const nativeDie=ready?die:die.replace('class="love3d-stage ','class="home-die-platform love3d-stage ');
+ return '<article class="evening-user-die evening-my-die" data-player-name="'+esc(m.name||'Moi')+'" aria-label="Mon dé personnel">'+
+  nativeDie+
   (reveal?'<div class="evening-face-result" aria-label="Total actuel '+displayCount+' défis; dé initial '+roll.face+'"><strong>'+esc(displayCount)+'</strong>'+
    '<small>défi'+(displayCount>1?'s':'')+' ce soir</small>'+
    (adjusted?'<span class="evening-original-d6">Dé initial : '+esc(roll.face)+'</span>':'')+'</div>':
@@ -103,7 +106,7 @@ const partnerStatusCard=(partner,roll)=>{
  const statusText=confirmed?
   name+' a obtenu '+esc(face)+' défi'+(face===1?'':'s'):
   'En attente du lancer de '+name;
- return '<aside class="evening-partner-card '+(confirmed?'is-confirmed':'is-pending')+'" aria-live="polite" aria-label="Dé de '+name+'">'+
+ return '<aside class="evening-partner-card '+(confirmed?'is-confirmed':'is-pending')+'" data-player-name="'+esc(partner?.name||'Partenaire')+'" aria-live="polite" aria-label="Dé de '+name+'">'+
    '<span class="evening-partner-mobile-status">'+statusText+'</span>'+
    '<span class="evening-partner-caption">'+name+'</span>'+
    (confirmed?'<div class="evening-partner-die">'+premiumPolyDie(6,face,'Dé confirmé de '+name)+'</div>'+
@@ -126,7 +129,7 @@ export function premiumEveningHtml({
  challengeOverlay='',showMore=false,confirmCancel=false,rollFace=null,rollingKind=null,
  lastEvening=null,lastD35Face=null,playable=null,ownChallengeCount=0,canStartEvening=true,
  weeklyReady=true,weeklyCount=0,weeklyLimit=1,dailyLocked=false,
- showSensuel=true,showSexuel=true,categoryOdds=88,challengeHistory=[]
+ showSensuel=true,showSexuel=true,categoryOdds=88,challengeHistory=[],eveningWeights,eveningWeightsEnabled=true
 }={}){
  const mine=members.find(m=>m.user_id===me)||members[0]||{},
  partner=members.find(m=>m.user_id!==me)||members[1]||{},
@@ -242,11 +245,12 @@ export function premiumEveningHtml({
   '</div></section>')+
  (showMore&&session?'<aside class="evening-more-menu" aria-label="Options de la soirée">'+
   bt('evening-close-request','♡ Clore la soirée','evening-menu-close',!session)+
-  bt('evening-calendar','▦ Calendrier','evening-menu-calendar')+bt('tab:eclat','✦ Découvrir Éclat · 12 coffrets','evening-menu-eclat')+'</aside>':'')+
+  bt('evening-calendar','▦ Calendrier','evening-menu-calendar')+'</aside>':'')+
  (confirmCancel&&session?'<aside class="evening-confirm" role="dialog" aria-modal="true" aria-label="Clore la soirée ?">'+
   '<h3>Clore la soirée ?</h3><p>Les défis réalisés et non réalisés seront conservés dans le calendrier et les statistiques du couple. Aucun résultat ne sera effacé.</p>'+
   bt('evening-close-confirm','♡ Clore et conserver','evening-primary')+
   bt('dismiss-cancel','Continuer la soirée','subtle')+'</aside>':'')+
+ (session&&!ready?eveningOddsHtml(eveningWeights,eveningWeightsEnabled):'')+
  (session?challengeOverlay:'')+
  '</div>';
 }

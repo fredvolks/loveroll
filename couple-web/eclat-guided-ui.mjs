@@ -1,4 +1,4 @@
-import {eclatGuide} from './eclat-guidance.mjs?v=20261022-home220';
+import {eclatGuide} from './eclat-guidance.mjs?v=20261022-home221';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const button=(action,label,cls='',disabled=false)=>'<button type="button" data-action="eclat:'+action+'" class="'+cls+'"'+(disabled?' disabled':'')+'>'+label+'</button>';
 

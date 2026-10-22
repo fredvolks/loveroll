@@ -2,111 +2,111 @@
    footprint as Home. Shared lr-surface owns the bubble material. */
 @layer loveroll-soiree-template{
  @media(max-width:767px){
-  main#app:is(.has-ruby-calendar,.loveroll-evening-page:has(.evening-premium-view.is-inactive.has-home-soiree-template)){
+  main#app:is(.has-ruby-calendar,.loveroll-evening-page:has(.evening-premium-view.has-home-soiree-template)){
    padding:9px 14px calc(65px + env(safe-area-inset-bottom,0px))!important;
    height:100dvh!important;min-height:0!important;overflow:hidden!important;
    --home-scene-split:calc(100dvh - 337px);
    --home-scene-top-image-height:calc((100dvh - 337px)/.438);
    --home-scene-bottom-image-height:600px;
   }
-  main#app:is(.has-ruby-calendar,.loveroll-evening-page:has(.evening-premium-view.is-inactive.has-home-soiree-template))::before{
+  main#app:is(.has-ruby-calendar,.loveroll-evening-page:has(.evening-premium-view.has-home-soiree-template))::before{
    content:''!important;position:fixed!important;inset:0 0 auto!important;
    height:var(--home-scene-split)!important;z-index:-1!important;
    background:url('./assets/loveroll-home-portrait-v202.webp') center top / 100% var(--home-scene-top-image-height) no-repeat!important;
    opacity:1!important;filter:none!important;pointer-events:none!important;
   }
-  main#app:is(.has-ruby-calendar,.loveroll-evening-page:has(.evening-premium-view.is-inactive.has-home-soiree-template))::after{
+  main#app:is(.has-ruby-calendar,.loveroll-evening-page:has(.evening-premium-view.has-home-soiree-template))::after{
    content:''!important;display:block!important;position:fixed!important;
    inset:var(--home-scene-split) 0 0!important;z-index:-1!important;
    background:url('./assets/loveroll-home-portrait-v202.webp') center bottom / 100% var(--home-scene-bottom-image-height) no-repeat!important;
    opacity:1!important;filter:none!important;pointer-events:none!important;
   }
-  .evening-premium-view.is-inactive.has-home-soiree-template{
+  .evening-premium-view.has-home-soiree-template{
    display:grid!important;grid-template-columns:minmax(0,1fr)!important;
    grid-template-rows:80px auto minmax(0,1fr)!important;gap:8px!important;
    width:100%!important;height:100%!important;max-width:none!important;min-height:0!important;
   }
-  .evening-premium-view.is-inactive.has-home-soiree-template .evening-toolbar{
+  .evening-premium-view.has-home-soiree-template .evening-toolbar{
    display:block!important;height:80px!important;min-height:0!important;margin:0!important;padding:0!important;
   }
-  .evening-premium-view.is-inactive.has-home-soiree-template .evening-toolbar>span{display:none!important;}
-  .evening-premium-view.is-inactive.has-home-soiree-template .ritual-heading{
+  .evening-premium-view.has-home-soiree-template .evening-toolbar>span{display:none!important;}
+  .evening-premium-view.has-home-soiree-template .ritual-heading{
    height:80px!important;margin:0!important;padding:0!important;gap:0!important;
   }
-  .evening-premium-view.is-inactive.has-home-soiree-template .ritual-brand{
+  .evening-premium-view.has-home-soiree-template .ritual-brand{
    margin:0!important;padding:0!important;filter:none!important;text-shadow:none!important;
   }
-  .evening-premium-view.is-inactive.has-home-soiree-template .ritual-brand i{font:28px/1 Georgia,serif!important;color:#eaa0af!important;}
-  .evening-premium-view.is-inactive.has-home-soiree-template .ritual-brand b{font:italic 30px/1.15 Georgia,serif!important;color:#fff5e9!important;letter-spacing:-.025em!important;}
-  .evening-premium-view.is-inactive.has-home-soiree-template .ritual-kicker{
+  .evening-premium-view.has-home-soiree-template .ritual-brand i{font:28px/1 Georgia,serif!important;color:#eaa0af!important;}
+  .evening-premium-view.has-home-soiree-template .ritual-brand b{font:italic 30px/1.15 Georgia,serif!important;color:#fff5e9!important;letter-spacing:-.025em!important;}
+  .evening-premium-view.has-home-soiree-template .ritual-kicker{
    font:550 10px/1.2 Arial,sans-serif!important;letter-spacing:.29em!important;
    color:#f4c4d0!important;margin-top:6px!important;text-align:center!important;
   }
-  .evening-premium-view.is-inactive.has-home-soiree-template .evening-intro{
+  .evening-premium-view.has-home-soiree-template .evening-intro{
    display:flex!important;flex-direction:column!important;gap:8px!important;
    margin:0!important;padding:0!important;min-height:0!important;
   }
-  .evening-premium-view.is-inactive.has-home-soiree-template .evening-intro>.ritual-page-title{
+  .evening-premium-view.has-home-soiree-template .evening-intro>.ritual-page-title{
    font:bold 28px/1.1 Georgia,serif!important;letter-spacing:-.7px!important;
    height:auto!important;margin:0!important;padding:0!important;color:#fff9f4!important;
    text-align:center!important;white-space:nowrap!important;text-shadow:0 1px 2px #1b0009a0!important;
   }
-  .evening-premium-view.is-inactive.has-home-soiree-template .ritual-mode-switcher{
+  .evening-premium-view.has-home-soiree-template .ritual-mode-switcher{
    height:43px!important;width:100%!important;margin:0!important;padding:3px!important;
    grid-template-columns:1fr 1fr!important;gap:5px!important;flex:none!important;
   }
-  .evening-premium-view.is-inactive.has-home-soiree-template .ritual-mode-tab{
+  .evening-premium-view.has-home-soiree-template .ritual-mode-tab{
    border-radius:14px!important;font-size:16px!important;min-height:0!important;
   }
-  .evening-premium-view.is-inactive.has-home-soiree-template .ritual-mode-tab.is-active{
+  .evening-premium-view.has-home-soiree-template .ritual-mode-tab.is-active{
    background:linear-gradient(155deg,#bd133b,#6b001c 65%,#8c092a)!important;
    border:1px solid #e9859b!important;box-shadow:inset 0 1px 2px #ffe7df80!important;
   }
   /* Champagne-gold material, rather than a gold outline on burgundy. */
-  .evening-premium-view.is-inactive.has-home-soiree-template .ritual-mode-premium{
+  .evening-premium-view.has-home-soiree-template .ritual-mode-premium{
    border:1px solid #fff0b9!important;background:linear-gradient(165deg,#fff0be,#e7c16a 27%,#b27b2d 74%,#e7bd68)!important;
    box-shadow:inset 0 1px 2px #fffbed,inset 0 -1px 2px #77501980,0 1px 4px #1f0800!important;
    color:#40210d!important;text-shadow:0 1px #fff2c980!important;
   }
-  .evening-premium-view.is-inactive.has-home-soiree-template .ritual-mode-premium :is(strong,small,.ritual-mode-icon,.ritual-crown){color:#40210d!important;}
-  .evening-premium-view.is-inactive.has-home-soiree-template .ritual-mode-premium strong{font-size:18px!important;}
-  .evening-premium-view.is-inactive.has-home-soiree-template .ritual-mode-premium small{font-size:8px!important;}
-  .evening-premium-view.is-inactive.has-home-soiree-template .ritual-mode-tab:active{transform:translateY(2px) scale(.985)!important;box-shadow:inset 0 4px 8px #381006b3!important;}
-  .evening-premium-view.is-inactive.has-home-soiree-template .evening-empty{
+  .evening-premium-view.has-home-soiree-template .ritual-mode-premium :is(strong,small,.ritual-mode-icon,.ritual-crown){color:#40210d!important;}
+  .evening-premium-view.has-home-soiree-template .ritual-mode-premium strong{font-size:18px!important;}
+  .evening-premium-view.has-home-soiree-template .ritual-mode-premium small{font-size:8px!important;}
+  .evening-premium-view.has-home-soiree-template .ritual-mode-tab:active{transform:translateY(2px) scale(.985)!important;box-shadow:inset 0 4px 8px #381006b3!important;}
+  .evening-premium-view.has-home-soiree-template .evening-empty{
    display:grid!important;grid-template-columns:minmax(0,1fr)!important;
    grid-template-rows:minmax(0,1fr) 272px!important;gap:8px!important;
    height:100%!important;min-height:0!important;padding:0!important;margin:0!important;
    border:0!important;background:none!important;box-shadow:none!important;overflow:visible!important;
   }
-  .evening-premium-view.is-inactive.has-home-soiree-template .evening-finale-hero{
+  .evening-premium-view.has-home-soiree-template .evening-finale-hero{
    display:grid!important;place-items:center!important;min-height:0!important;
    width:100%!important;height:100%!important;margin:0!important;padding:0!important;
    border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;
    overflow:hidden!important;--dice-headroom:5px;
   }
-  .evening-premium-view.is-inactive.has-home-soiree-template .evening-finale-hero::before,
-  .evening-premium-view.is-inactive.has-home-soiree-template .evening-finale-hero::after,
-  .evening-premium-view.is-inactive.has-home-soiree-template .evening-finale-velvet{display:none!important;}
-  .evening-premium-view.is-inactive.has-home-soiree-template .evening-finale-dice{
+  .evening-premium-view.has-home-soiree-template .evening-finale-hero::before,
+  .evening-premium-view.has-home-soiree-template .evening-finale-hero::after,
+  .evening-premium-view.has-home-soiree-template .evening-finale-velvet{display:none!important;}
+  .evening-premium-view.has-home-soiree-template .evening-finale-dice{
    display:grid!important;place-items:center!important;position:relative!important;
    inset:auto!important;transform:none!important;width:100%!important;height:100%!important;min-height:0!important;
   }
-  .evening-premium-view.is-inactive.has-home-soiree-template .evening-finale-dice>.love3d{
+  .evening-premium-view.has-home-soiree-template .evening-finale-dice>.love3d{
    display:grid!important;place-items:center!important;width:100%!important;height:100%!important;min-height:0!important;
   }
-  .evening-premium-view.is-inactive.has-home-soiree-template .evening-finale-dice .love3d-stage{
+  .evening-premium-view.has-home-soiree-template .evening-finale-dice .love3d-stage{
    width:min(100vw,420px)!important;height:min(100vw,420px)!important;
    max-height:none!important;aspect-ratio:1!important;flex:none!important;margin:0!important;
   }
-  .evening-premium-view.is-inactive.has-home-soiree-template .dice-canvas{width:100%!important;height:100%!important;filter:none!important;}
+  .evening-premium-view.has-home-soiree-template .dice-canvas{width:100%!important;height:100%!important;filter:none!important;}
   .soiree-pedestal-marker{display:block!important;position:fixed!important;left:12%;width:76%;height:1px;top:var(--home-scene-contact);pointer-events:none;}
   .soiree-pedestal-marker>.home-pedestal-contact{position:absolute;left:50%;top:0;width:0;height:0;}
-  .evening-premium-view.is-inactive.has-home-soiree-template .evening-aftercare{display:contents!important;}
-  .evening-premium-view.is-inactive.has-home-soiree-template .evening-finale-actions{
+  .evening-premium-view.has-home-soiree-template .evening-aftercare{display:contents!important;}
+  .evening-premium-view.has-home-soiree-template .evening-finale-actions{
    display:grid!important;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:55px 209px!important;
    gap:8px!important;padding:0!important;margin:0!important;min-height:0!important;
   }
-  .evening-premium-view.is-inactive.has-home-soiree-template .evening-finale-start{
+  .evening-premium-view.has-home-soiree-template .evening-finale-start{
    height:55px!important;min-height:0!important;width:100%!important;margin:0!important;
    padding:0 10px!important;font:600 clamp(23px,6.4vw,28px)/1 'LoveRoll Cormorant',Georgia,serif!important;
    text-transform:none!important;white-space:nowrap!important;
@@ -151,24 +151,24 @@
 }
 @layer loveroll-soiree-template{
  @media(max-width:767px){
-  .evening-premium-view.is-inactive.has-home-soiree-template .ritual-heading{gap:5px!important;}
-  .evening-premium-view.is-inactive.has-home-soiree-template .ritual-brand{height:58px!important;min-height:58px!important;gap:0!important;}
-  .evening-premium-view.is-inactive.has-home-soiree-template .ritual-kicker{font-family:system-ui,sans-serif!important;height:13px!important;margin:0!important;}
-  .evening-premium-view.is-inactive.has-home-soiree-template .evening-intro>.ritual-page-title{height:var(--ritual-title-height)!important;}
-  .evening-premium-view.is-inactive.has-home-soiree-template :is(.evening-finale-hero,.evening-finale-dice,.evening-finale-dice>.love3d){grid-template-columns:minmax(0,1fr)!important;}
+  .evening-premium-view.has-home-soiree-template .ritual-heading{gap:5px!important;}
+  .evening-premium-view.has-home-soiree-template .ritual-brand{height:58px!important;min-height:58px!important;gap:0!important;}
+  .evening-premium-view.has-home-soiree-template .ritual-kicker{font-family:system-ui,sans-serif!important;height:13px!important;margin:0!important;}
+  .evening-premium-view.has-home-soiree-template .evening-intro>.ritual-page-title{height:var(--ritual-title-height)!important;}
+  .evening-premium-view.has-home-soiree-template :is(.evening-finale-hero,.evening-finale-dice,.evening-finale-dice>.love3d){grid-template-columns:minmax(0,1fr)!important;}
  }
 }
 @layer loveroll-soiree-template{
  @media(max-width:767px){
-  main#app.loveroll-evening-page:has(.evening-premium-view.is-inactive.has-home-soiree-template){position:relative!important;isolation:isolate!important;}
-  .evening-premium-view.is-inactive.has-home-soiree-template{border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;}
-  .evening-premium-view.is-inactive.has-home-soiree-template::before,.evening-premium-view.is-inactive.has-home-soiree-template::after{display:none!important;}
+  main#app.loveroll-evening-page:has(.evening-premium-view.has-home-soiree-template){position:relative!important;isolation:isolate!important;}
+  .evening-premium-view.has-home-soiree-template{border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;}
+  .evening-premium-view.has-home-soiree-template::before,.evening-premium-view.has-home-soiree-template::after{display:none!important;}
  }
 }
 @layer loveroll-soiree-template{
  @media(max-width:767px){
-  main#app.loveroll-evening-page:has(.evening-premium-view.is-inactive.has-home-soiree-template)::before,
-  main#app.loveroll-evening-page:has(.evening-premium-view.is-inactive.has-home-soiree-template)::after{
+  main#app.loveroll-evening-page:has(.evening-premium-view.has-home-soiree-template)::before,
+  main#app.loveroll-evening-page:has(.evening-premium-view.has-home-soiree-template)::after{
    width:100%!important;max-width:none!important;margin:0!important;padding:0!important;
    border:0!important;border-radius:0!important;box-shadow:none!important;transform:none!important;
   }
@@ -176,33 +176,33 @@
 }
 @layer loveroll-soiree-template{
  @media(max-width:767px){
-  .evening-premium-view.is-inactive.has-home-soiree-template :is(.evening-toolbar,.evening-intro,.evening-aftercare,.evening-finale-actions){border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;outline:0!important;}
+  .evening-premium-view.has-home-soiree-template :is(.evening-toolbar,.evening-intro,.evening-aftercare,.evening-finale-actions){border:0!important;border-radius:0!important;background:none!important;box-shadow:none!important;outline:0!important;}
  }
 }
 @layer loveroll-soiree-template{
  @media(max-width:767px){
-  .evening-premium-view.is-inactive.has-home-soiree-template .evening-intro>.ritual-page-title{font-size:clamp(23px,6.8vw,28px)!important;}
-  .evening-premium-view.is-inactive.has-home-soiree-template .evening-empty::before,
-  .evening-premium-view.is-inactive.has-home-soiree-template .evening-empty::after,
-  .evening-premium-view.is-inactive.has-home-soiree-template .evening-aftercare::before,
-  .evening-premium-view.is-inactive.has-home-soiree-template .evening-aftercare::after{display:none!important;content:none!important;}
+  .evening-premium-view.has-home-soiree-template .evening-intro>.ritual-page-title{font-size:clamp(23px,6.8vw,28px)!important;}
+  .evening-premium-view.has-home-soiree-template .evening-empty::before,
+  .evening-premium-view.has-home-soiree-template .evening-empty::after,
+  .evening-premium-view.has-home-soiree-template .evening-aftercare::before,
+  .evening-premium-view.has-home-soiree-template .evening-aftercare::after{display:none!important;content:none!important;}
  }
 }
 @layer loveroll-soiree-template{
  @media(max-width:767px){
-  .evening-premium-view.is-inactive.has-home-soiree-template :is(.ritual-mode-switcher,.evening-summary-shell){position:relative!important;}
+  .evening-premium-view.has-home-soiree-template :is(.ritual-mode-switcher,.evening-summary-shell){position:relative!important;}
  }
 }
 @layer loveroll-soiree-template{
  @media(max-width:767px){
-  .evening-premium-view.is-inactive.has-home-soiree-template .evening-finale-hero{overflow:visible!important;position:relative!important;z-index:1!important;}
-  .evening-premium-view.is-inactive.has-home-soiree-template .evening-intro{position:relative!important;z-index:3!important;}
-  .evening-premium-view.is-inactive.has-home-soiree-template .ritual-mode-premium{
+  .evening-premium-view.has-home-soiree-template .evening-finale-hero{overflow:visible!important;position:relative!important;z-index:1!important;}
+  .evening-premium-view.has-home-soiree-template .evening-intro{position:relative!important;z-index:3!important;}
+  .evening-premium-view.has-home-soiree-template .ritual-mode-premium{
    background:linear-gradient(165deg,#fff9ce 0%,#ffe786 22%,#ebc242 48%,#ffde70 74%,#fff1ae 100%)!important;
    border-color:#fff4b0!important;box-shadow:inset 0 1px 2px #fffde7,inset 0 -1px 2px #c49d32,0 0 6px #ffe48550!important;
    color:#483408!important;text-shadow:0 1px #fff8d9!important;
   }
-  .evening-premium-view.is-inactive.has-home-soiree-template .ritual-mode-premium :is(strong,small,.ritual-mode-icon,.ritual-crown){color:#483408!important;}
+  .evening-premium-view.has-home-soiree-template .ritual-mode-premium :is(strong,small,.ritual-mode-icon,.ritual-crown){color:#483408!important;}
   .evening-start-reminder{position:relative;min-width:0;height:55px;cursor:pointer;}
   .evening-start-reminder .evening-finale-start{pointer-events:none!important;}
   .evening-start-reminder:focus-visible{outline:2px solid #fff4dc;outline-offset:3px;border-radius:18px;}
@@ -216,6 +216,6 @@
 }
 @layer loveroll-soiree-template{
  @media(max-width:767px){
-  .evening-premium-view.is-inactive.has-home-soiree-template .evening-finale-actions{position:relative!important;z-index:2!important;}
+  .evening-premium-view.has-home-soiree-template .evening-finale-actions{position:relative!important;z-index:2!important;}
  }
 }

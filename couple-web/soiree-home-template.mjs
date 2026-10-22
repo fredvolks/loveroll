@@ -1,8 +1,10 @@
+import {fitEveningD6} from './evening-d6-template.mjs?v=20261022-home221';
 // Apply the selected Home-based Soirée presentation without changing actions,
 // account state, official dice values, weekly access or aftercare information.
 let observer;
 export function fitSoireeHomeTemplate(root){
  observer?.disconnect();observer=null;
+ if(fitEveningD6(root))return;
  const view=root.querySelector('.evening-premium-view.is-inactive');
  if(!view||!matchMedia('(max-width:767px)').matches)return;
  view.classList.add('has-home-soiree-template');
