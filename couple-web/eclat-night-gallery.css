@@ -1,0 +1,69 @@
+/* Concept 5: a scrolling photographic gallery beneath the shared Soirée header.
+   Opt in only on the real app, keeping legacy diagnostic fixtures intact. */
+@layer loveroll-night-gallery {
+ #app.has-night-gallery{
+  height:100dvh!important;min-height:0!important;max-height:100dvh!important;overflow:hidden!important;
+  padding:9px 14px calc(65px + env(safe-area-inset-bottom,0px))!important;
+  background:radial-gradient(ellipse at 50% 3%,#500a15 0%,#200004 52%,#130002 100%)!important;
+ }
+ #app.has-night-gallery::before,#app.has-night-gallery::after{display:none!important;}
+ #app.has-night-gallery .eclat-shell{
+  width:min(100%,680px)!important;height:100%!important;min-height:0!important;
+  display:flex!important;flex-direction:column!important;gap:0!important;padding:0!important;margin:0 auto!important;
+  overflow:hidden!important;color:#fff1e4!important;
+ }
+ #app.has-night-gallery .eclat-shell::before{display:none!important;}
+ #app.has-night-gallery .eclat-top{height:80px!important;min-height:80px!important;max-height:80px!important;flex:none!important;margin:0!important;padding:0!important;}
+ #app.has-night-gallery .eclat-top>.ritual-heading{height:80px!important;gap:0!important;margin:0!important;padding:0!important;}
+ #app.has-night-gallery .ritual-brand{height:58px!important;min-height:58px!important;gap:0!important;margin:0!important;padding:0!important;justify-content:center!important;}
+ #app.has-night-gallery .ritual-brand i{font:28px/28px Georgia,serif!important;color:#eaa0af!important;}
+ #app.has-night-gallery .ritual-brand b{font:italic 30px/34.5px Georgia,serif!important;letter-spacing:-.75px!important;color:#fff5e9!important;}
+ #app.has-night-gallery .ritual-kicker{font:550 10px/12px system-ui,sans-serif!important;letter-spacing:2.9px!important;height:13px!important;margin:5px 0 0!important;color:#f4c4d0!important;}
+ #app.has-night-gallery .eclat-page-title{height:var(--ritual-title-height)!important;min-height:var(--ritual-title-height)!important;flex:none!important;margin:8px 0!important;display:block!important;}
+ #app.has-night-gallery .eclat-page-title .ritual-page-title{height:var(--ritual-title-height)!important;font:bold clamp(23px,6.8vw,28px)/1.1 Georgia,serif!important;letter-spacing:-.7px!important;color:#fff9f4!important;}
+ #app.has-night-gallery .eclat-shell>.ritual-mode-switcher{height:44px!important;min-height:44px!important;flex:none!important;margin:0 0 10px!important;gap:4px!important;padding:3px!important;border:1px solid #db8595!important;border-radius:18px!important;background:#39000e!important;box-shadow:inset 0 1px 2px #ffe3c94d!important;}
+ #app.has-night-gallery .ritual-mode-tab{min-height:0!important;height:36px!important;padding:1px 4px!important;border-radius:14px!important;background:linear-gradient(155deg,#bd133b,#6b001c 65%,#8c092a)!important;color:#fff0e5!important;border:1px solid #ed8caa!important;font:italic 500 20px/1 'LoveRoll Cormorant',Georgia,serif!important;}
+ #app.has-night-gallery .ritual-mode-premium{background:linear-gradient(165deg,#fff9ce 0%,#ffe786 22%,#ebc242 48%,#ffde70 74%,#fff1ae 100%)!important;border:1px solid #fff0b9!important;color:#482307!important;box-shadow:inset 0 1px 2px #fffbd2,0 0 8px #e4b93844!important;}
+ #app.has-night-gallery .ritual-mode-premium :is(.ritual-mode-icon,.ritual-premium-copy strong,.ritual-premium-copy small){color:#482307!important;text-shadow:0 1px 1px #fff3b982!important;}
+ #app.has-night-gallery .ritual-mode-premium::before{border-color:#fff8c2!important;}
+ #app.has-night-gallery .ritual-premium-copy strong{font:italic 500 21px/18px 'LoveRoll Cormorant',Georgia,serif!important;}
+ #app.has-night-gallery .ritual-premium-copy small{font:700 8px/10px Arial,sans-serif!important;letter-spacing:1px!important;}
+ #app.has-night-gallery .eclat-library{display:flex!important;flex-direction:column!important;gap:0!important;flex:1!important;min-height:0!important;overflow:hidden!important;padding:0!important;}
+ #app.has-night-gallery .eclat-photo-grid{display:grid!important;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:none!important;grid-auto-rows:clamp(166px,23dvh,210px)!important;gap:10px!important;flex:1!important;min-height:0!important;padding:1px 2px 8px!important;overflow-y:auto!important;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#b18a4d #240006;align-content:start!important;}
+ #app.has-night-gallery .eclat-photo-grid button.eclat-tile{display:block!important;position:relative!important;min-height:0!important;padding:0!important;margin:0!important;border:1px solid #bc965c!important;border-radius:18px!important;background:#240006!important;box-shadow:inset 0 1px 1px #ffdfab38!important;overflow:hidden!important;text-align:left!important;}
+ #app.has-night-gallery :is(.eclat-photo-grid .eclat-tile-photo,.eclat-detail-hero .eclat-detail-hero-photo){background-image:url('./assets/eclat-night-atlas-v218.webp')!important;background-size:300% 400%!important;background-position:var(--atlas-x) var(--atlas-y)!important;filter:none!important;opacity:1!important;transform:scale(1.08)!important;}
+ #app.has-night-gallery .eclat-photo-grid .eclat-tile::after{background:linear-gradient(90deg,#1c0007f5 0%,#250008c9 28%,#1a000342 65%,#16000410 100%)!important;}
+ #app.has-night-gallery .eclat-photo-grid .eclat-tile-number{inset:17px auto auto 16px!important;font:400 10px/1.2 Arial,sans-serif!important;letter-spacing:1.6px!important;color:#f1d7ac!important;}
+ #app.has-night-gallery .eclat-photo-grid .eclat-tile strong{inset:43px auto auto 16px!important;max-width:57%!important;font:500 clamp(23px,6vw,29px)/.98 'LoveRoll Cormorant',Georgia,serif!important;letter-spacing:-.2px!important;color:#fff1df!important;}
+ #app.has-night-gallery .eclat-photo-grid .eclat-tile-arrow{inset:auto 13px 15px auto!important;width:36px!important;height:36px!important;display:block!important;}
+ #app.has-night-gallery .eclat-tile>.eclat-memo{position:absolute!important;left:16px!important;bottom:14px!important;max-width:calc(100% - 78px)!important;text-align:left!important;}
+ #app.has-night-gallery .eclat-memo{display:flex!important;flex-direction:column!important;gap:4px!important;color:#f4dac0!important;font:400 10px/1.2 Arial,sans-serif!important;}
+ #app.has-night-gallery .eclat-memo.is-running{color:#fff3b6!important;}
+ #app.has-night-gallery .eclat-memo-durations{display:flex!important;justify-content:inherit!important;gap:5px!important;}
+ #app.has-night-gallery .eclat-memo-durations>span{color:#d8bbb5!important;font:400 9px/1.2 Arial,sans-serif!important;border-bottom:1px solid #9c77565c!important;padding-bottom:2px!important;}
+ #app.has-night-gallery .eclat-memo-durations>span.is-done{color:#ffe398!important;border-color:#e8c66a!important;}
+ #app.has-night-gallery .eclat-resume{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;min-height:44px!important;flex:none!important;padding:5px 12px!important;margin:0 2px 8px!important;border:1px solid #e3bf73!important;border-radius:14px!important;background:#3d0010!important;color:#ffe5b0!important;font:500 17px/1 'LoveRoll Cormorant',Georgia,serif!important;}
+ #app.has-night-gallery .eclat-history-notice{margin:0 0 6px!important;font:11px/1.3 Arial!important;color:#ead3bb!important;text-align:center!important;}
+ #app.has-night-gallery .eclat-detail{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:flex-start!important;gap:10px!important;overflow-y:auto!important;overscroll-behavior:contain;flex:1!important;min-height:0!important;border:1px solid #bd925d!important;border-radius:18px!important;background:linear-gradient(160deg,#39000bdd,#1b0005f2)!important;padding:0 12px 14px!important;}
+ #app.has-night-gallery .eclat-detail>*{flex-shrink:0!important;}
+ #app.has-night-gallery .eclat-detail-hero{width:calc(100% + 24px)!important;min-height:150px!important;height:22dvh!important;max-height:215px!important;border:0!important;border-radius:17px 17px 0 0!important;margin:0 -12px 3px!important;}
+ #app.has-night-gallery .eclat-detail>small{font:10px/1.2 Arial,sans-serif!important;letter-spacing:2px!important;color:#e5c28a!important;}
+ #app.has-night-gallery .eclat-detail h2{font:italic 500 30px/1 'LoveRoll Cormorant',Georgia,serif!important;color:#fff0de!important;}
+ #app.has-night-gallery .eclat-detail>p{font:13px/1.35 Arial,sans-serif!important;color:#e3c8c2!important;max-width:470px!important;}
+ #app.has-night-gallery .eclat-detail>.eclat-memo{align-items:center!important;}
+ #app.has-night-gallery .eclat-descriptor{width:100%!important;display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:0!important;margin:5px 0!important;}
+ #app.has-night-gallery .eclat-descriptor>span{border:0!important;border-radius:0!important;background:none!important;padding:9px 4px!important;font:11px/1.3 Arial,sans-serif!important;color:#ffe3ad!important;}
+ #app.has-night-gallery .eclat-descriptor>span+span{border-left:1px solid #a37b4d60!important;}
+ #app.has-night-gallery .eclat-duration{width:100%!important;max-width:none!important;margin:4px 0!important;gap:7px!important;}
+ #app.has-night-gallery .eclat-duration>span{font:11px/1.2 Arial,sans-serif!important;color:#ddc2b9!important;}
+ #app.has-night-gallery .eclat-duration>div{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:5px!important;}
+ #app.has-night-gallery .eclat-duration-choice{min-height:39px!important;padding:4px!important;font:500 16px/1 'LoveRoll Cormorant',Georgia,serif!important;background:#300009!important;color:#f5dfcc!important;border:1px solid #987249!important;border-radius:20px!important;box-shadow:none!important;}
+ #app.has-night-gallery .eclat-duration-choice.is-selected{background:linear-gradient(150deg,#fff0b4,#d6ab45 75%,#f5d67b)!important;color:#3b200b!important;border-color:#ffecad!important;box-shadow:inset 0 1px 2px #fff4d8!important;}
+ #app.has-night-gallery .eclat-primary{display:flex!important;align-items:center!important;justify-content:center!important;gap:12px!important;width:100%!important;min-height:48px!important;border:1px solid #e4c27b!important;border-radius:26px!important;padding:5px 10px!important;background:linear-gradient(155deg,#70001a,#2c0008 75%,#500012)!important;box-shadow:inset 0 1px 2px #f6dda260,0 0 8px #c69b3320!important;font:500 23px/1 'LoveRoll Cormorant',Georgia,serif!important;color:#ffedcc!important;}
+ #app.has-night-gallery .eclat-link{min-height:36px!important;padding:5px!important;font:12px/1.3 Arial,sans-serif!important;color:#e7c88f!important;}
+ #app.has-night-gallery .eclat-top>.eclat-return{top:22px!important;left:0!important;}
+ #app.has-night-gallery>.lr-ruby-nav{position:fixed!important;left:12px!important;right:12px!important;bottom:env(safe-area-inset-bottom,0px)!important;width:auto!important;height:56px!important;min-height:56px!important;max-height:56px!important;}
+ #app.has-night-gallery button:focus-visible{outline:2px solid #ffe3a1!important;outline-offset:2px!important;}
+ #app.has-night-gallery :is(.eclat-tile,.eclat-primary,.eclat-duration-choice):active{transform:translateY(1.5px)!important;box-shadow:inset 0 3px 10px #100005!important;}
+ @media(min-width:768px){#app.has-night-gallery .eclat-photo-grid{grid-auto-rows:210px!important;}}
+}

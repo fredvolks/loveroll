@@ -1,4 +1,6 @@
-import {fitSoireeHomeTemplate,fitRubyCalendar} from './soiree-home-template.mjs?v=20261021-home217';
+import {loadEclatHistory} from './eclat-history.mjs?v=20261021-home218';
+import {enhanceGoldBacks} from './gold-arrows.mjs?v=20261021-home218';
+import {fitSoireeHomeTemplate,fitRubyCalendar} from './soiree-home-template.mjs?v=20261021-home218';
 import { marketingHtml,authHtml,profileHtml,inviteProfileHtml,emailConfirmationHtml,profileGenderSelect,profilePlayStyleSelect,matchHtml,parseMonthDay,monthDayInputs } from './onboarding.mjs?v=20261018-style148';
 import {editorialHeader,editorialRow,editorialIcon} from './editorial-ui.mjs?v=20261017-ritual130';
 import {cardLibraryHtml,monthlyEditorHtml,adventEditorHtml,specialEditorHtml,importEditorHtml} from './editorial-editors.mjs?v=20261017-ritual130';
@@ -8,8 +10,8 @@ import {createCoupleLiveSync} from './couple-live-sync.mjs?v=20261017-advent119'
 import {playableSessionForWeekly} from './couple-reset-view.mjs';
 import {eveningDailyAccess} from './evening-daily-policy.mjs?v=20261016-daily100';
 import {ownEveningChallenges,queuePosition,queueLabel,hasTurnToDraw} from './evening-private-queue.mjs';
-import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261021-home217';
-import {eclatHtml} from './eclat-ui.mjs?v=20261020-cinema183';
+import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261021-home218';
+import {eclatHtml} from './eclat-ui.mjs?v=20261021-home218';
 import {previewMode,previewCanEdit,previewEclatStatus} from './account-preview-mode.mjs?v=20261020-test180';
 import {eclatStage} from './eclat-catalog.mjs?v=20261019-eclat174';
 import {createEclatAudio} from './eclat-audio.mjs?v=20261019-eclat174';
@@ -17,9 +19,9 @@ import {futureCoupleStyleMix,playStyleLabel} from './play-style.mjs?v=20261018-s
 import {cycleIntensityQuestionnaireHtml} from './cycle-questionnaire.mjs?v=20261018-cycle149';
 import {DICE_WEIGHT_CONFIG,configuredDiceWeights,parseDiceWeightInputs} from './dice-weighting.mjs?v=20261018-weights146';
 import {premiumEveningHtml,updateEveningCategoryUi} from './premium-evening.mjs?v=20261020-switch178';
-import {eveningHistoryMarkup,eveningLocalDay} from './evening-calendar.mjs?v=20261021-home217';
+import {eveningHistoryMarkup,eveningLocalDay} from './evening-calendar.mjs?v=20261021-home218';
 import {eveningReviewModal,validEveningReview} from './evening-review.mjs?v=20261016-person-review97';
-import {premiumSurpriseHtml,sixSpecialEvents} from './premium-surprise.mjs?v=20261021-home217';
+import {premiumSurpriseHtml,sixSpecialEvents} from './premium-surprise.mjs?v=20261021-home218';
 import {surpriseSlot,surpriseCustom,surpriseTitle,formatSurpriseDateInput,parseSurpriseDateInput} from './surprise-event-config.mjs?v=20261016-surprise109';
 import {loginEmail,loginCode,emailAuthMessage,requireLovePassword,passwordQuality,verifiedLoveEmail,passwordAuthMessage,invitationAuthMessage} from './email-auth.mjs';
 import {demoCoupleHtml,DEMO_TABS} from './demo-couple.mjs';
@@ -50,7 +52,7 @@ import {invitationStatus,coupleStats,formatCoupleDate,invitationEmailText,invita
 import {premiumConfirm,premiumCopyLink,focusInlineLoveDialog} from './premium-dialogs.mjs?v=20261017-complete127';
 
 
-const WEB_RELEASE='2026-10-21.217';
+const WEB_RELEASE='2026-10-21.218';
 const root=document.querySelector('#app');
 const enc=new TextEncoder(),dec=new TextDecoder();
 let diceCleanup=[],renderToken=0;
@@ -87,7 +89,7 @@ const worldText=key=>worldT(worldLocale(),key);
 const state={user:null,profile:null,members:[],coupleId:null,couple:null,
  tab:launchParams.has('settings')?'settings':(['home','session','special','advent'].includes(launchParams.get('open'))?launchParams.get('open'):'home'),weekly:null,monthly:{},session:null,personal:[],challenges:[],gifts:[],rollStatus:null,customCards:[],customCategory:'SENSUEL',customSlot:1,customSearch:'',customFilter:'all',monthlyActivities:[],monthlySlot:1,libraryScreen:'list',libraryImportKind:null,specialEditorKey:null,specialEditorStage:'D6_activite',specialEditorFace:1,adventEditorDay:1,pushDevice:null,
  events:[],journal:[],advent:[],advent2026Config:null,advent2026Days:[],selectedDay:1,adventYear:null,adventSelected:null,adventHistory:false,adventOpening:null,adventRevealing:false,adventServerDate:null,unlockKey:null,channel:null,
- occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],calendarPassMonth:null,cycleStatus:null,cycleDeferred:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoBookingEdit:false,referral:null,eclat:null,eclatSelection:1,eclatMinutes:60,eclatDetails:false,eclatMusic:false,eclatFinished:null,testModeEligible:false,testMode:'real'};
+ occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],calendarPassMonth:null,cycleStatus:null,cycleDeferred:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoBookingEdit:false,referral:null,eclat:null,eclatGalleryScroll:0,eclatHistory:[],eclatHistoryCouple:null,eclatBrowse:false,eclatHistoryError:false,eclatSelection:1,eclatMinutes:60,eclatDetails:false,eclatMusic:false,eclatFinished:null,testModeEligible:false,testMode:'real'};
 const names={SENSUEL:'Sensuel',COQUIN:'Coquin',SEXUEL:'Sexuel'};
 function isSharedCoupleReady(coupleId,members){
  return !!coupleId&&Array.isArray(members)&&members.length===2;
@@ -281,6 +283,7 @@ function frame(body,title='LOVEROLL',subtitle='Un jeu intime, juste pour vous de
  root.classList.remove('has-ruby-calendar');
  root.classList.toggle('loveroll-surprise-page',realSurprise);
  root.classList.toggle('loveroll-eclat-page',realEclat);
+ root.classList.toggle('has-night-gallery',realEclat);
  root.classList.toggle('loveroll-surprise-ecrin',realSurprise);
  root.classList.toggle('loveroll-settings-menu',realSettings&&!settingsOpenSection);
  root.classList.toggle('loveroll-settings-detail',realSettings&&!!settingsOpenSection);
@@ -335,6 +338,10 @@ function frame(body,title='LOVEROLL',subtitle='Un jeu intime, juste pour vous de
    status:state.cycleStatus,style:state.profile?.play_style,
    partnerName:other()?.name?.split(' ')[0]||'votre partenaire'
   }):'';
+ const oldGallery=root.querySelector('.eclat-photo-grid');
+ if(oldGallery)state.eclatGalleryScroll=oldGallery.scrollTop;
+ const oldDetail=root.querySelector('.eclat-detail');
+ const detailScroll=oldDetail?{id:oldDetail.dataset.coffretId,top:oldDetail.scrollTop}:null;
  root.innerHTML=(realHome||realEvening||realSurprise||realEclat||realSettings||realEditor||eveningArchive||(isCouple&&state.tab==='advent')?'':usualHeader)+body+(connected?nav():'')+installation+reviewPanel+cyclePanel;
  if(homeStage){
   const fresh=root.querySelector('.home-die-platform canvas'),replacement=fresh?.closest('.home-die-platform');
@@ -373,13 +380,16 @@ function frame(body,title='LOVEROLL',subtitle='Un jeu intime, juste pour vous de
  fitHomeLayout(root);
  fitSoireeHomeTemplate(root);
  fitRubyCalendar(root);
+ enhanceGoldBacks(root);
+ const newGallery=root.querySelector('.eclat-photo-grid');if(newGallery)newGallery.scrollTop=state.eclatGalleryScroll;
+ const newDetail=root.querySelector('.eclat-detail');if(newDetail&&detailScroll?.id===newDetail.dataset.coffretId)newDetail.scrollTop=detailScroll.top;
  bindActions();
  focusInlineLoveDialog(root,openerAction);
  // Render idle evening D6 in WebGL too: each side is a neutral heart,
  // never a fabricated pip result. Actual face comes from Supabase after rolling.
  const canvases=[...root.querySelectorAll('canvas[data-dice-sides]')];
  if(canvases.length){
-  import('./dice3d.js?v=20261021-home217').then(({dieOn})=>{
+  import('./dice3d.js?v=20261021-home218').then(({dieOn})=>{
    if(token!==renderToken)return;
    for(const canvas of canvases){
     if(!canvas.isConnected||canvas.loveRollDie)continue;
@@ -1134,10 +1144,20 @@ function renderWaitingPartner(){
   '</div></details></article></div></section>','Mon espace','');
  root.classList.add('loveroll-settings-page');
 }
+async function refreshEclatHistory(){
+ const coupleId=state.coupleId;
+ if(!coupleId||!state.user)return;
+ if(state.eclatHistoryCouple!==coupleId){state.eclatHistory=[];state.eclatHistoryCouple=coupleId;state.eclatGalleryScroll=0;}
+ try{
+  const rows=await loadEclatHistory(client,coupleId);
+  if(state.coupleId===coupleId){state.eclatHistory=rows;state.eclatHistoryError=false;}
+ }catch(error){if(state.coupleId===coupleId)state.eclatHistoryError=true;console.warn('Historique Éclat indisponible',error?.code||'');}
+}
 async function refreshEclatStatus(){
  if(!state.user||!isSharedCoupleReady(state.coupleId,state.members))return null;
  const value=await rpc('love_eclat_status');
  if(value&&state.coupleId)state.eclat=value;
+ await refreshEclatHistory();
  return value;
 }
 function renderEclat(){
@@ -1148,7 +1168,7 @@ function renderEclat(){
  }else if(state.eclatMusic){eclatAudio.stop();state.eclatMusic=false;}
  frame(eclatHtml({status:e,selected:state.eclatSelection,minutes:state.eclatMinutes,
   details:state.eclatDetails,members:state.members,userId:state.user?.id,
-  music:state.eclatMusic,finished:state.eclatFinished}), 'Éclat','Notre expérience à deux');
+  music:state.eclatMusic,finished:state.eclatFinished,browse:state.eclatBrowse,history:state.eclatHistoryCouple===state.coupleId?state.eclatHistory:[],historyError:state.eclatHistoryError}), 'Éclat','Notre expérience à deux');
 }
 function renderHome(){
  const members=state.members||[];
@@ -2275,10 +2295,11 @@ async function handle(action,element){
    }
    render();return;
   }
-  if(kind==='library'){state.eclatDetails=false;state.eclatFinished=null;render();return;}
+  if(kind==='resume'){state.eclatBrowse=false;state.eclatDetails=false;render();return;}
+  if(kind==='library'){state.eclatBrowse=true;state.eclatDetails=false;state.eclatFinished=null;render();return;}
   if(kind==='detail'){
    if(!Number.isInteger(num)||num<1||num>12)throw Error('Coffret inconnu');
-   state.eclatSelection=num;state.eclatDetails=true;state.eclatFinished=null;render();return;
+   state.eclatBrowse=true;state.eclatSelection=num;state.eclatDetails=true;state.eclatFinished=null;render();return;
   }
   if(kind==='minutes'){
    if(![30,60,90].includes(num))throw Error('Durée invalide');
@@ -2288,7 +2309,7 @@ async function handle(action,element){
    if(!Number.isInteger(num)||num<1||num>12)throw Error('Coffret inconnu');
    if(!previewEclatStatus(state.eclat,state.testMode,state.testModeEligible)?.access)throw Error('Ce coffret nécessite le forfait Éclat.');
    state.eclat=await rpc('love_eclat_start',{p_coffret:num,p_minutes:state.eclatMinutes});
-   state.eclatDetails=false;state.eclatFinished=null;render();return;
+   state.eclatBrowse=false;state.eclatDetails=false;state.eclatFinished=null;await refreshEclatHistory();render();return;
   }
   if(kind==='choose'){
    if(!state.eclat?.active)throw Error('Aucun coffret actif');
@@ -2300,7 +2321,7 @@ async function handle(action,element){
    const last=state.eclat.chapter_index===state.eclat.chapter_total;
    const title=last?eclatStage(state.eclat.coffret_id,8,0)?.coffret?.title:null;
    state.eclat=await rpc('love_eclat_next');
-   if(last&&!state.eclat?.active){state.eclatFinished=title||'Expérience terminée';state.eclatDetails=false;eclatAudio.stop();state.eclatMusic=false;}
+   if(last&&!state.eclat?.active){await refreshEclatHistory();state.eclatFinished=title||'Expérience terminée';state.eclatDetails=false;eclatAudio.stop();state.eclatMusic=false;}
    render();return;
   }
   if(kind==='end'){
@@ -2309,7 +2330,7 @@ async function handle(action,element){
     kind:'library',title:'Quitter Éclat ?',accept:'Quitter',cancel:'Continuer'
    });
    if(!yes)return;
-   state.eclat=await rpc('love_eclat_end');state.eclatDetails=false;state.eclatFinished=null;eclatAudio.stop();state.eclatMusic=false;render();return;
+   state.eclat=await rpc('love_eclat_end');await refreshEclatHistory();state.eclatDetails=false;state.eclatFinished=null;eclatAudio.stop();state.eclatMusic=false;render();return;
   }
   throw Error('Commande Éclat inconnue');
  }
@@ -3531,7 +3552,7 @@ async function handle(action,element){
   if(state.tab!==parts[0]){state.libraryImportKind=null;state.libraryScreen='list';state.specialEditorKey=null;state.jsonPending=null;lastFormTab=null;}
   allowBackExit=false;state.tab=parts[0];state.confirmCancel=false;
   if(state.tab!=='eclat'){eclatAudio.stop();state.eclatMusic=false;}
-  else{state.eclatDetails=false;await refreshEclatStatus();}
+  else{state.eclatBrowse=false;state.eclatDetails=false;await refreshEclatStatus();}
   if(state.tab!=='occasions')state.specialFocus=null;
   if(state.tab!=='session'){state.showEveningChallenge=false;state.showEveningChallenges=false;state.selectedEveningChallengeId=null;state.eveningMore=false;}
   if(state.tab!=='special'){state.showSurpriseActivity=false;state.surpriseEditSlot=null;}
@@ -4079,13 +4100,13 @@ setInterval(async()=>{
  try{
   const prior=JSON.stringify(state.eclat);
   const value=await rpc('love_eclat_status');
-  if(state.tab==='eclat'&&JSON.stringify(value)!==prior){state.eclat=value;render();}
+  if(state.tab==='eclat'&&JSON.stringify(value)!==prior){state.eclat=value;await refreshEclatHistory();render();}
  }catch(error){console.warn('Synchronisation Éclat',error?.code||'');}
 },4500);
 start().catch(error=>{fail(error);window.LoveRollBoot?.showFailure();});
 
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   window.addEventListener('load', () =>
-    navigator.serviceWorker.register('./service-worker.js?v=20261021-home217',
+    navigator.serviceWorker.register('./service-worker.js?v=20261021-home218',
      {scope:'./',updateViaCache:'none'}).then(reg=>reg.update()).catch(console.warn));
 }

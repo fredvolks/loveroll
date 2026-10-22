@@ -7,7 +7,7 @@ const fixtureClient=`export function createClient(){
  return {auth:{getUser:()=>auth('getUser'),onAuthStateChange:cb=>{window.__authChange=cb;return {data:{subscription:{unsubscribe(){}}}}},
  signUp:args=>auth('signUp',args),signInWithPassword:args=>auth('signInWithPassword',args),signInWithOAuth:args=>auth('signInWithOAuth',args),signInWithIdToken:args=>auth('signInWithIdToken',args),
  resetPasswordForEmail:(email,args)=>auth('resetPasswordForEmail',{email,...args}),resend:args=>auth('resend',args),updateUser:args=>auth('updateUser',args),signOut:()=>auth('signOut')},
- from(table){const filters=[];return {select(){return this},eq(k,v){filters.push([k,v]);return this},order(){return this},limit(){return this},then(ok,fail){return call({table,filters}).then(ok,fail)},upsert:args=>call({write:table,args}),delete(){return this}}},
+ from(table){const filters=[];let range=null;return {select(){return this},eq(k,v){filters.push([k,v]);return this},order(){return this},limit(){return this},range(from,to){range=[from,to];return this},then(ok,fail){return call({table,filters,range}).then(ok,fail)},upsert:args=>call({write:table,args}),delete(){return this}}},
  rpc:(name,args)=>call({name,args}),channel(){return {on(){return this},subscribe(){return this}}},removeChannel:async()=>{}};
 }`;
 function createWorld(){
@@ -44,13 +44,19 @@ async function setupEditorial(browser,world,{width=412,height=824,actor='a',quer
    if(method==='signInWithOAuth')data={url:'https://example.invalid/oauth-test-only'};
   }else if(req.table){
    const tables={couple_profiles:world.profiles,love_wellbeing:[],couple_members:world.profiles.filter(p=>['a','b'].includes(p.id)).map((p,i)=>({user_id:p.id,couple_id:'c',joined_at:'2026-10-0'+(i+1)})),couples:[world.couple],love_push_preferences:[world.prefs],couple_occasion_settings:[world.settings],love_custom_challenges:uid==='a'?world.customCards:[],love_monthly_activity_overrides:uid==='a'?world.monthly:[],love_advent_2026_config:uid==='a'?[{...world.calendar,couple_id:'c'}]:[],love_advent_2026_days:uid==='a'?world.calendar.days.map(d=>({...d,couple_id:'c'})):[],love_special_event_catalogue:uid==='a'?[{couple_id:'c',events:world.special}]:[],couple_rolls:world.rolls};
-   const homeRecords={couple_sessions:world.eveningSessions,couple_challenges:world.challenges,couple_personal_rolls:world.personalRolls};
+   const homeRecords={couple_sessions:world.eveningSessions,couple_challenges:world.challenges,couple_personal_rolls:world.personalRolls,love_eclat_sessions:world.eclatSessions};
    data=homeRecords[req.table]||tables[req.table]||[];for(const [k,v] of req.filters)data=data.filter(r=>r[k]===v);
+   if(req.range)data=data.slice(req.range[0],req.range[1]+1);
   }else{
    world.calls.push({uid,name,args});
    const ownerOnly=['save_love_card_with_roles','import_love_evening_library','import_love_monthly_library','import_love_advent_2026','import_love_special_events','reset_love_all_dice_admin'];
    if(ownerOnly.includes(name)&&uid!=='a')error={message:'Créateur requis'};
    else{
+    if(name==='love_eclat_status')data=world.eclat||{access:false,active:false};
+    if(name==='love_eclat_start'&&world.eclat){
+     data=world.eclat={...world.eclat,active:true,coffret_id:args.p_coffret,minutes:args.p_minutes,chapter_index:1,chapter_number:1,chapter_total:6,variant_number:0,session_id:'synthetic-eclat',my_choice:null};
+     world.eclatSessions=[...(world.eclatSessions||[]),{id:'synthetic-eclat',couple_id:'c',coffret_id:args.p_coffret,minutes:args.p_minutes,chapter_index:1,started_at:'2026-10-22T01:00:00Z',ended_at:null,cancelled:false}];
+    }
     if(name==='my_love_evening_card_totals')data=[{sensual:25,sexual:25,total:50}];
     if(name==='love_advent_server_date')data='2026-10-17';
     if(name==='love_evening_reviews_for_couple')data=world.reviews||[];

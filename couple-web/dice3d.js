@@ -2,7 +2,7 @@ import * as THREE from 'https://esm.sh/three@0.167.1';
 import {ROLL_TOTAL_MS,makeForwardRoll,rollAngles,rollProgress,rollOffset} from './dice-roll-motion.mjs';
 import {RoundedBoxGeometry} from 'https://esm.sh/three@0.167.1/examples/jsm/geometries/RoundedBoxGeometry.js';
 import {ConvexGeometry} from 'https://esm.sh/three@0.167.1/examples/jsm/geometries/ConvexGeometry.js';
-import {faceMarks,engravedFace} from './dice-engraving.mjs?v=20261021-home217';
+import {faceMarks,engravedFace} from './dice-engraving.mjs?v=20261021-home218';
 /** Safari/Chrome WebGL die. Values come from the shared server, never from animation. */
 const pool=new Set();
 // A genuine convex 35-faced die. The polar dual of a 35-vertex convex hull

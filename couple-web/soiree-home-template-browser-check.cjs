@@ -36,7 +36,7 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
    await page.evaluate(()=>document.fonts.ready);await page.waitForTimeout(250);
    if(width===360){
     const defects=await page.evaluate(async()=>{
-     const {faceMarks}=await import('./dice-engraving.mjs?v=20261021-home217');
+     const {faceMarks}=await import('./dice-engraving.mjs?v=20261021-home218');
      const holes={'0':1,'4':1,'6':1,'8':2,'9':1};const errors=[];
      for(let value=1;value<=100;value++){
       const shapes=faceMarks(100,value,false,false),expected=[...String(value)].reduce((n,d)=>n+(holes[d]||0),0);
