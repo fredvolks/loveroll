@@ -187,22 +187,26 @@ export function createClient(){
   if(name==='step1-partner-pending'||name==='step1-partner-result'){
    await selectTab(page,'session');
    await page.locator('.evening-step.one.is-incomplete').waitFor({timeout:10000});
+   await page.waitForFunction(()=>document.querySelector('.evening-d6-theater canvas')?.loveRollDie,{timeout:15000});
    const layout=await page.evaluate(()=>{
-    const own=document.querySelector('.evening-step.one.is-incomplete .evening-user-die');
-    const partner=document.querySelector('.evening-step.one.is-incomplete .evening-partner-card');
-    const die=own?.querySelector('.love3d');
+    const own=document.querySelector('.evening-own-capsule');
+    const partner=document.querySelector('.evening-duo-capsules .evening-partner-card');
+    const die=document.querySelector('.evening-d6-theater .home-die-platform');
+    const hero=document.querySelector('.evening-d6-theater')?.getBoundingClientRect();
     const status=partner?.querySelector('.evening-partner-mobile-status');
     const a=own?.getBoundingClientRect(),b=partner?.getBoundingClientRect();
-    return {ownWidth:a?.width,partnerWidth:b?.width,partnerBelow:!!(a&&b&&b.top>=a.bottom-2),
-     dieWidth:die?.getBoundingClientRect().width,
-     status:status?.textContent.trim(),
-     statusVisible:status?getComputedStyle(status).display!=='none':false};
+    return {ownWidth:a?.width,partnerWidth:b?.width,capsulesAligned:!!(a&&b&&Math.abs(a.top-b.top)<1),
+     capsulesBelowDie:!!(a&&hero&&a.top>=hero.bottom-2),dieWidth:die?.getBoundingClientRect().width,
+     status:partner?.getAttribute('aria-label'),visibleStatus:status?.textContent.trim(),
+     statusVisible:!!status&&getComputedStyle(status).display!=='none',
+     infoButtons:document.querySelectorAll('.evening-d6-theater .home-odds-info').length,
+     scroll:document.documentElement.scrollHeight-innerHeight};
    });
    const expected=name==='step1-partner-pending'?'En attente du lancer de Test':'Test a obtenu 4 défis';
-   if(layout.status!==expected||!layout.statusVisible||!layout.partnerBelow||
-     (layout.ownWidth||0)<290||Math.abs(layout.ownWidth-layout.partnerWidth)>4||
-     (layout.dieWidth||0)<170||errors.length)
-    throw Error('S25 STEP1_LARGE_DIE_STATUS regression '+name+' '+JSON.stringify({layout,errors}));
+   if(layout.status!==expected||!layout.statusVisible||!layout.capsulesAligned||!layout.capsulesBelowDie||
+     (layout.ownWidth||0)<140||Math.abs(layout.ownWidth-layout.partnerWidth)>4||
+     (layout.dieWidth||0)<170||layout.infoButtons!==1||layout.scroll>1||errors.length)
+    throw Error('S25 STEP1_DUO_TEMPLATE regression '+name+' '+JSON.stringify({layout,errors}));
    console.log('SOIREE_STEP1_MOBILE_OK',name,JSON.stringify(layout));
   }
   if(name==='active-evening'){
