@@ -1,5 +1,5 @@
-import {fitEveningD100} from './evening-d100-template.mjs?v=20261022-home224';
-import {fitEveningD6} from './evening-d6-template.mjs?v=20261022-home224';
+import {fitEveningD100} from './evening-d100-template.mjs?v=20261022-home225';
+import {fitEveningD6} from './evening-d6-template.mjs?v=20261022-home225';
 // Apply the selected Home-based Soirée presentation without changing actions,
 // account state, official dice values, weekly access or aftercare information.
 let observer;

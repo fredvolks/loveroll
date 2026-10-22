@@ -1,4 +1,4 @@
-import {eclatGuide} from './eclat-guidance.mjs?v=20261022-home224';
+import {eclatGuide} from './eclat-guidance.mjs?v=20261022-home225';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const button=(action,label,cls='',disabled=false)=>'<button type="button" data-action="eclat:'+action+'" class="'+cls+'"'+(disabled?' disabled':'')+'>'+label+'</button>';
 
@@ -42,7 +42,7 @@ export function eclatGuidedPlay({stage,status,members,userId,noteState={}}){
   content=common+'<div class="eclat-reveal" role="status"><small>VOTRE SUITE COMMUNE</small><p>'+esc(outcomeCopy)+'</p></div>';
   actions=button('next',ready?'En attente de l’autre…':final?'Terminer ensemble':'Continuer ensemble','eclat-primary',ready);
  }
- return '<section class="eclat-play eclat-guided" data-eclat-phase="'+phase+'">'+
+ return '<section class="eclat-play eclat-guided" data-eclat-coffret="'+esc(c.id)+'" data-eclat-phase="'+phase+'">'+
   '<div class="eclat-guided-heading"><strong>'+esc(c.title)+'</strong><span>Étape '+status.chapter_index+' / '+status.chapter_total+' · Environ '+status.minutes+' min</span></div>'+
   '<div class="eclat-progress-track"><span style="width:'+(100*Number(status.chapter_index)/Number(status.chapter_total))+'%"></span></div>'+
   '<div class="eclat-guided-content">'+content+'</div><div class="eclat-guided-actions">'+actions+'</div>'+

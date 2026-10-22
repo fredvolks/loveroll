@@ -1,4 +1,4 @@
-import {goldArrowHtml} from './gold-arrows.mjs?v=20261022-home224';
+import {goldArrowHtml} from './gold-arrows.mjs?v=20261022-home225';
 let observer,eventsOpen=false,infoOpen=false;
 export function fitSurpriseMinimal(root){
  observer?.disconnect();observer=null;

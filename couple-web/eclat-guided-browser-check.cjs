@@ -13,6 +13,7 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   const nav=await page.locator('.nav').boundingBox();
   const fits=async()=>{const b=await page.locator('.eclat-guided-actions').boundingBox();assert.ok(b.y+b.height<=nav.y,'Actions stay above the common bottom nav');assert.equal(await page.evaluate(()=>document.documentElement.scrollHeight>innerHeight+1),false);};
   await fits();
+  assert.equal(await page.locator('.eclat-guided-content').evaluate(e=>e.scrollHeight>e.clientHeight+1),false,'The full initial moment, private note and help fit without scrolling');
   if(process.env.LOVEROLL_CAPTURE_DIR)await page.screenshot({path:path.join(process.env.LOVEROLL_CAPTURE_DIR,`eclat-prepare-${width}-${height}.png`)});
   await page.locator('[data-eclat-field="note"]').fill('Notre souvenir privé de test');
   // Approximate Android's resizes-content keyboard without faking an IME.

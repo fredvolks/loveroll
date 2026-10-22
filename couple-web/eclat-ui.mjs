@@ -1,10 +1,10 @@
-import {eclatGuidedPlay} from './eclat-guided-ui.mjs?v=20261022-home224';
+import {eclatGuidedPlay} from './eclat-guided-ui.mjs?v=20261022-home225';
 
 import {ECLAT_COFFRETS,eclatCoffret,eclatStage,ECLAT_MOODS} from './eclat-catalog.mjs';
 import {ritualHeadingHtml} from './brand.mjs?v=20261017-ritual130';
-import {eveningEclatSwitcher} from './evening-eclat-switcher.mjs?v=20261022-home224';
-import {coffretMemo} from './eclat-history.mjs?v=20261022-home224';
-import {goldArrowHtml} from './gold-arrows.mjs?v=20261022-home224';
+import {eveningEclatSwitcher} from './evening-eclat-switcher.mjs?v=20261022-home225';
+import {coffretMemo} from './eclat-history.mjs?v=20261022-home225';
+import {goldArrowHtml} from './gold-arrows.mjs?v=20261022-home225';
 const esc=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const atlasPosition=id=>'--atlas-x:'+((Number(id)-1)%3*50)+'%;--atlas-y:'+(Math.floor((Number(id)-1)/3)*100/3).toFixed(5)+'%;';
 const fmt=cents=>((Number(cents)||0)/100).toLocaleString('fr-CA',{minimumFractionDigits:2,maximumFractionDigits:2})+' $';
@@ -22,10 +22,11 @@ function memoHtml(history,id,status,full=false,unavailable=false){
 export function eclatHtml({status=null,selected=1,minutes=60,details=false,members=[],userId=null,music=false,finished=null,history=[],historyError=false,browse=false,noteState={}}={}){
  const access=status?.access===true,active=status?.active===true;
  const c=eclatCoffret(active&&!browse?status.coffret_id:selected)||ECLAT_COFFRETS[0];
- const heading='<header class="eclat-top"><button type="button" class="eclat-return" data-action="'+(details?'eclat:library':'tab:session')+'" aria-label="'+(details?'Retour aux coffrets':'Retour à notre soirée')+'">‹</button>'+
+ const heading='<header class="eclat-top">'+
+  (details||active&&!browse?'<button type="button" class="eclat-return" data-action="eclat:library" aria-label="Retour aux coffrets">‹</button>':'<span class="eclat-header-balance" aria-hidden="true"></span>')+
   ritualHeadingHtml('NOTRE RITUEL DE LA SOIRÉE')+
   (active?btn('eclat:music',headphones+'<span>'+(music?'Couper le son':'Musique')+'</span>','eclat-audio-toggle'+(music?' is-on':'')):'<span class="eclat-header-balance" aria-hidden="true"></span>')+'</header>'+
-  '<div class="eclat-page-title"><h2 class="ritual-page-title">Nos 12 coffrets à deux</h2></div>'+
+  '<div class="eclat-page-title"><h2 class="ritual-page-title">'+esc(active&&!browse?c.title:'Nos 12 coffrets à deux')+'</h2></div>'+
   eveningEclatSwitcher('eclat');
  const lead=finished?'<div class="eclat-complete" role="status">♡ Coffret terminé ensemble · '+esc(finished)+'</div>':'';
  const premiumNote='<p class="eclat-disclaimer">Vos 200 défis et les 100 activités Surprise restent indépendants. Aucun achat n’est effectué depuis cet écran.</p>';
