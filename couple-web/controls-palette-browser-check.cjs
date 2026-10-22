@@ -11,7 +11,7 @@ const click=async(p,name)=>{const b=p.locator('[data-action="'+name+'"]');await 
   const {page:auth}=await open(createWorld(),{actor:'guest',query:'auth=signup'});
   const reference=await auth.locator('.entry-auth-submit').evaluate(appearance);
   const selected=await auth.locator('.entry-auth-segments .is-active').evaluate(appearance);
-  assert.match(reference.background,/235, 18, 53/,'Account reference uses the approved vivid ruby glass theme');
+  assert.match(reference.background,/101, 0, 22/,'Account reference uses the shared Home ruby surface');
   for(const [width,height] of [[360,640],[412,824],[820,1180]]){
    // Android has its new ruby material; tablet keeps its existing palette.
    // Compare each page to the account CTA in the SAME viewport.

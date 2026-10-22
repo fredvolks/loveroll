@@ -209,5 +209,6 @@ main#app.loveroll-editorial{--nav-space:66px;box-sizing:border-box;width:100%;ma
 }
 @media(max-width:767px) and (max-height:660px){
  #app.loveroll-editorial>.nav button{min-height:45px;}
+ main#app.loveroll-evening-page .evening-premium-view.is-finale .evening-aftercare:has(.evening-finale-status){padding:4px!important;gap:3px!important;}
 }
 @media(prefers-reduced-motion:reduce){#app.loveroll-editorial *,#app.loveroll-editorial *::before{animation:none;scroll-behavior:auto;transition:none;}}

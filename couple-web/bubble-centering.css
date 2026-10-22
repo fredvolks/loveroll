@@ -202,7 +202,7 @@ main#app.loveroll-advent-letters .advent-state-label{
  display:grid!important;place-items:center!important;
  text-align:center!important;margin:0!important;
 }
-@media(max-width:767px) and (max-height:760px){
+@media(max-width:767px) and (max-height:820px){
  main#app.loveroll-advent-letters .advent-box-number{
   left:4px!important;top:3px!important;
   font-size:clamp(11px,3vw,15px)!important;

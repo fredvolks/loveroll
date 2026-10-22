@@ -1,6 +1,12 @@
 /* First important layer: every submenu uses the same Home surface tokens.
    The page underneath, dice renderers and navigation retain their own layout. */
 @layer loveroll-uniform-submenus {
+ #app :is(.entry-auth-submit,.home-roll-button,.evening-finale-start,.surprise-primary,.advent-primary,.settings-primary),.lr-dialog-accept {
+  background:var(--lr-surface-fill)!important;border-color:#d56a7c!important;color:var(--lr-menu-ink)!important;box-shadow:var(--lr-surface-shadow)!important;
+ }
+ #app input[type=checkbox]:checked {background-image:var(--lr-surface-fill)!important;}
+ #app :is(.entry-auth-submit,.home-roll-button,.evening-finale-start,.surprise-primary,.advent-primary,.settings-primary):disabled {box-shadow:none!important;opacity:.55!important;}
+ .lr-dialog-cancel {background:none!important;box-shadow:none!important;}
  :root {--lr-surface-fill:radial-gradient(ellipse 3% 10% at 96% 3%,#fff0dc99,transparent),radial-gradient(ellipse 70% 18% at 35% 0%,#ed375447,transparent),linear-gradient(155deg,#650016ed,#310009f2 68%,#550011ed);--lr-surface-shadow:inset 0 1px 2px #ffe4d680,inset 0 -1px 3px #e3274b66,0 3px 7px #16000480;--lr-menu-ink:#fff8ed;--lr-menu-muted:#dfb9c1;}
  :is(dialog.home-odds-dialog>section,dialog.surprise-minimal-dialog,dialog.evening-play-dialog,dialog.evening-category-reminder,.lr-dialog-card,.surprise-modal-content,.advent-dialog,.lr-review-modal,.install-modal,.evening-confirm,.evening-more-menu) {
   position:relative!important;box-sizing:border-box!important;
@@ -16,7 +22,7 @@
  }
  :is(dialog,.lr-dialog-card,.surprise-modal-content,.advent-dialog,.lr-review-modal,.install-modal,.evening-confirm,.evening-more-menu) h2 {font-size:clamp(26px,6.8vw,34px)!important;line-height:1.08!important;font-weight:600!important;margin:8px 20px 16px!important;}
  :is(dialog,.lr-dialog-card,.surprise-modal-content,.advent-dialog,.lr-review-modal,.install-modal,.evening-confirm,.evening-more-menu) p {color:var(--lr-menu-muted)!important;font:14px/1.45 system-ui,sans-serif!important;}
- :is(dialog,.lr-dialog-card,.surprise-modal-content,.advent-dialog,.lr-review-modal,.install-modal,.evening-confirm,.evening-more-menu) button:not([aria-label^="Fermer"]):not(.lr-dialog-close):not(.surprise-minimal-close):not(.home-odds-close):not(.evening-play-close),
+ :is(dialog,.lr-dialog-card,.surprise-modal-content,.advent-dialog,.lr-review-modal,.install-modal,.evening-confirm,.evening-more-menu) button:not(.lr-dialog-cancel):not([aria-label^="Fermer"]):not(.lr-dialog-close):not(.surprise-minimal-close):not(.home-odds-close):not(.evening-play-close),
  #app .eclat-guided button:not(.eclat-link):not(.eclat-skip),#app .eclat-duration-choice {
   position:relative!important;box-sizing:border-box!important;border-radius:18px!important;border:1px solid #d56a7c!important;
   color:var(--lr-menu-ink)!important;background:var(--lr-surface-fill,linear-gradient(155deg,#650016ed,#310009f2 68%,#550011ed))!important;
