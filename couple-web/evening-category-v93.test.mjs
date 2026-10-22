@@ -19,7 +19,8 @@ test('The weekly wording is replaced only for Soirée and all 3 category choices
  assert.match(html,/Au hasard/);
  assert.doesNotMatch(html,/NOTRE RITUEL À DEUX/);
  assert.equal((html.match(/data-dice-sides="100"/g)||[]).length,1);
- assert.match(html,/data-action="new-challenge"[^>]*disabled/);
+ assert.doesNotMatch(html,/data-action="new-challenge"[^>]*disabled/);
+ assert.equal((html.match(/aria-pressed="false"/g)||[]).length,3);
  assert.doesNotMatch(html,/88 %|evening-probability/);
 });
 test('Only a selected Sensuel or Sexuel button displays 88%, never in random mode',()=>{

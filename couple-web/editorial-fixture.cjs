@@ -79,6 +79,12 @@ async function setupEditorial(browser,world,{width=412,height=824,actor='a',quer
     if(name==='my_love_roll_status'&&world.enableEveningD6){const own=(world.personalRolls||[]).some(r=>r.user_id===uid&&r.session_id===args.p_session),partner=(world.personalRolls||[]).some(r=>r.user_id!==uid&&r.session_id===args.p_session);data=[{my_rolled:own,partner_rolled:partner,both_ready:own&&partner}];}
     if(name==='roll_my_evening_d6'&&world.enableEveningD6){const prior=(world.personalRolls||[]).find(r=>r.user_id===uid&&r.session_id===args.p_session);if(prior)data={face:prior.face};else{const face=uid==='a'?2:4;world.personalRolls=[...(world.personalRolls||[]),{id:'d6-'+uid,session_id:args.p_session,user_id:uid,face}];data={face};}}
     if(name==='my_love_evening_board'&&world.board)data=world.board;
+    if(['draw_for_partner','draw_for_partner_random'].includes(name)&&world.enableEveningDraw){
+     const challenge={id:'synthetic-draw-'+(world.challenges?.length||0),couple_id:'c',session_id:args.p_session,recipient:uid,offered_by:uid,category:name==='draw_for_partner_random'?'SEXUEL':args.p_preference,face:17,status:'proposed',created_at:new Date().toISOString()};
+     world.challenges=[...(world.challenges||[]),challenge];
+     world.board={...world.board,next:uid==='a'?'b':'a',remaining:{...world.board.remaining,[uid]:world.board.remaining[uid]-1}};
+     data=challenge;
+    }
     if(name==='save_love_card_with_roles'){world.customCards=world.customCards.filter(c=>c.category!==args.p_category||c.card_id!==args.p_card_id);world.customCards.push({couple_id:'c',category:args.p_category,card_id:args.p_card_id,title:args.p_title,description:args.p_description,timer_minutes:args.p_timer_minutes,drawer_role:args.p_drawer_role,recipient_role:args.p_recipient_role});data=true;}
     if(name==='import_love_evening_library'){world.customCards=world.customCards.filter(c=>c.category!==args.p_library.category).concat(args.p_library.cards.map(c=>({...c,category:args.p_library.category,couple_id:'c'})));data=true;}
     if(name==='set_love_draw_rule'){world.couple.no_repeat_challenges=args.p_no_repeat;data=true;}

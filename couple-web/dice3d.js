@@ -395,8 +395,8 @@ outgoingLight += vec3(0.06,0.0005,0.005) * pow(crystalFacing,2.0);
 }
 export function dieOn(canvas,sides,value,rolling){
  const flatHome=sides===6&&!!canvas.closest('.home-die-platform');
- const photoSurprise=sides===100&&!!canvas.closest('.surprise-minimal');
- const photoSoiree=photoSurprise||(sides===100&&!!canvas.closest('.evening-premium-view.has-home-soiree-template'));
+ const centeredPhoto=sides===100&&!!canvas.closest('.surprise-minimal,.has-evening-d100-template');
+ const photoSoiree=centeredPhoto||(sides===100&&!!canvas.closest('.evening-premium-view.has-home-soiree-template'));
  const photoStage=flatHome||photoSoiree;
  const referenceRuby=flatHome||(sides===100&&!!canvas.closest('.loveroll-evening-page,.has-surprise-minimal'));
  let renderer;try{renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});canvas.dataset.webglReady='true';canvas.closest('.home-die-platform, .love3d-stage')?.classList.add('webgl-ready');}catch{return ()=>{};}
@@ -514,7 +514,7 @@ export function dieOn(canvas,sides,value,rolling){
    const ratio=Number.isFinite(photoHeight)&&photoWidth>0?
     (120*photoHeight/1672)/(739*photoWidth/941):.196;
    const elevation=Math.asin(Math.min(.4,Math.max(.08,ratio)));
-   const lookY=photoSurprise?0:-.9;
+   const lookY=centeredPhoto?0:-.9;
    camera.position.y=lookY+camera.position.z*Math.tan(elevation);
    camera.lookAt(0,lookY,0);camera.updateMatrixWorld(true);
    canvas.dataset.podiumElevation=String(elevation*180/Math.PI);
@@ -539,7 +539,7 @@ export function dieOn(canvas,sides,value,rolling){
   if(photoStage)camera.zoom*=.85;
   if(photoSoiree)camera.zoom*=1.65;
   camera.updateProjectionMatrix();
-  if(photoSurprise){
+  if(centeredPhoto){
    const fitBounds=projectedBounds();
    // A tall Surprise stage must still fit the entire ruby mesh inside its canvas.
    camera.zoom*=Math.min(1,(contact-sceneRect.top-headroom)/((fitBounds.bottom-fitBounds.top)*rect.height),.49/(.5-fitBounds.top),.49/(fitBounds.bottom-.5),.49/(.5-fitBounds.left),.49/(fitBounds.right-.5));

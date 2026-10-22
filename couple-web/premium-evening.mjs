@@ -1,7 +1,7 @@
-import {eveningOddsHtml} from './evening-d6-template.mjs?v=20261022-home223';
+import {eveningOddsHtml} from './evening-d6-template.mjs?v=20261022-home224';
 // LoveRoll connected couple — production UI, not a demo. All results are provided by Supabase.
 import {ritualHeadingHtml} from './brand.mjs?v=20261017-ritual130';
-import {eveningEclatSwitcher} from './evening-eclat-switcher.mjs?v=20261022-home223';
+import {eveningEclatSwitcher} from './evening-eclat-switcher.mjs?v=20261022-home224';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','"':'&quot;',"'":'&#39;'}[c]));
 const bt=(action,text,cls='',disabled=false)=>'<button type="button" class="'+cls+'" data-action="'+esc(action)+'"'+
  (action.startsWith('category:')?' aria-pressed="'+(cls.includes('selected')?'true':'false')+'"':'')+
@@ -154,7 +154,7 @@ export function premiumEveningHtml({
  // Keep the official face on the 3D die and show a separate readable
  // result BELOW it, never painted over the 3D face or used as a placeholder.
  const count=(uid)=>esc((done[uid]||0)+' / '+(totals[uid]??'—'));
- return '<div class="evening-premium-view '+(session?(ready?'is-ready':'is-waiting'):'is-inactive is-finale')+'">'+
+ return '<div class="evening-premium-view '+(session?(ready?'is-ready':'is-waiting'):'is-inactive is-finale')+'" data-category-percent="'+esc(categoryOdds)+'">'+
  '<div class="evening-toolbar">'+
   (session?'<button type="button" class="evening-back" data-action="tab:home" aria-label="Retour à l’accueil">‹</button>':'<span></span>')+
   ritualHeadingHtml(session?(ready?'ÉTAPE 2 · DÉFI DU SOIR':'ÉTAPE 1 · NOMBRE DE DÉFIS'):'NOTRE RITUEL DE LA SOIRÉE')+
@@ -194,7 +194,7 @@ export function premiumEveningHtml({
     '<div class="evening-roll-actions">'+
       (turn.finished?bt('finish-session','✓ Terminer la soirée','evening-primary'):
        turn.drawsFinished?'<p class="evening-draw-done">✓ Tous les tirages sont prêts !</p>':
-        bt('new-challenge','🎲 Brasser le dé','evening-primary',!canDraw||!category||rolling))+
+        bt('new-challenge','🎲 Brasser le dé','evening-primary',!canDraw||rolling))+
       bt('evening-list','♡ Voir mes défis ('+ownChallengeCount+')','evening-queue-open-btn')+
     '</div>'+
   '</div></section>'+
