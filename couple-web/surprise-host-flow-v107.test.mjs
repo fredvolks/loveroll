@@ -100,7 +100,7 @@ test('Surprise one-screen CSS keeps the same generous stage on phone and desktop
  assert.match(css,/@media\(max-width:767px\)/);
  assert.match(css,/@media\(min-width:768px\)/);
  const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
- assert.match(app,/premium-surprise\.mjs\?v=20261022-home222/);
+ assert.match(app,/premium-surprise\.mjs\?v=20261022-home223/);
  assert.match(app,/if\(kind==='monthly_activity'\)state\.showSurpriseActivity=!!state\.monthly\?\.monthly_activity/);
  const html=readFileSync(new URL('./index.html',import.meta.url),'utf8');
  const sw=readFileSync(new URL('./service-worker.js',import.meta.url),'utf8');

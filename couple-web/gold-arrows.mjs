@@ -1,4 +1,5 @@
 export function goldArrowHtml(back=false){
+ if(!back)return '<span class="lr-gold-arrow is-next" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="m12 8 11 8-11 8Z"/></svg></span>';
  return '<span class="lr-gold-arrow'+(back?' is-back':'')+'" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="14.5"/><path d="M9 16h14m-6-6 6 6-6 6"/></svg></span>';
 }
 export function enhanceGoldBacks(root){

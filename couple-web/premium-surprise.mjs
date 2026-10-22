@@ -46,6 +46,11 @@ export function sixSpecialEvents(now,settings={},members=[]){
    date:selected?.date||null,daysLeft:days,year:selected?.year||null,availability};
  });
 }
+// Available events first, then upcoming dates; unconfigured dates stay last.
+// Stable ties preserve identity and never change the event owner or stored date.
+export function upcomingSpecialEvents(events){
+ return [...events].sort((a,b)=>(a.daysLeft===null?Infinity:Math.max(0,a.daysLeft))-(b.daysLeft===null?Infinity:Math.max(0,b.daysLeft)));
+}
 export function premiumSurpriseHtml({
  monthly={},members=[],settings={},now=new Date(),activity=null,
  rolling=false,rollingKind=null,rollFace=1,settlingHost=false,showActivity=false,timerHtml='',editSlot=null,season=null,
@@ -60,7 +65,7 @@ export function premiumSurpriseHtml({
  const needsHost=!!a&&!showActivity&&(!h||settlingHost);
  const hostFaceVisible=rollingHost||settlingHost;
  const invitation=monthlyInvitation(monthly,members),host=invitation?.host||null;
- const cards=sixSpecialEvents(now,settings,members);
+ const cards=upcomingSpecialEvents(sixSpecialEvents(now,settings,members));
  const editEvent=cards.find(e=>e.slot===editSlot)||null;
  const names=partnerNames(members),partner=i=>esc(names[i]);
  const activityTitle=esc(activity?.title||'Notre rendez-vous');
@@ -105,7 +110,7 @@ export function premiumSurpriseHtml({
       '<span class="surprise-event-days">'+
        (e.daysLeft===null?'Choisir la date':e.availability?'Disponible':e.daysLeft+' jours')+
       '</span></span>',
-     'surprise-event-card '+(i===0?'couple':'')+(e.daysLeft===null?' no-date':''),rolling)).join('')+
+     'surprise-event-card '+(e.key==='anniversary'?'couple':'')+(e.daysLeft===null?' no-date':''),rolling)).join('')+
    '</div></section></div></div>'+
   (editEvent?
    '<div class="surprise-modal surprise-edit-modal" role="dialog" aria-modal="true" aria-label="Modifier un événement spécial">'+
