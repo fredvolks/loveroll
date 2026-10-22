@@ -1,5 +1,5 @@
-import {fitSharedStage} from './shared-stage.mjs?v=20261022-home227';
-import {goldArrowHtml} from './gold-arrows.mjs?v=20261022-home227';
+import {fitSharedStage} from './shared-stage.mjs?v=20261022-home228';
+import {goldArrowHtml} from './gold-arrows.mjs?v=20261022-home228';
 let observer,eventsOpen=false,infoOpen=false;
 export function fitSurpriseMinimal(root){
  observer?.disconnect();observer=null;

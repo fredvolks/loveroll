@@ -1,4 +1,4 @@
-import {fitSharedStage} from './shared-stage.mjs?v=20261022-home227';
+import {fitSharedStage} from './shared-stage.mjs?v=20261022-home228';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export function eveningPlayInfoHtml(percent=88){
  const preferred=Math.min(100,Math.max(0,Number(percent)||0));

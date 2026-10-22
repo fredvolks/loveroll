@@ -59,4 +59,67 @@
 #app.loveroll-settings-page .settings-menu-source [data-menu-hidden][data-menu-hidden]{display:none!important;}
 #app.loveroll-settings-page:is(.loveroll-settings-menu,.loveroll-settings-detail,.loveroll-library-page),#app.loveroll-settings-page .settings-editorial{border:0!important;border-radius:0!important;box-shadow:none!important;}
 #app.loveroll-settings-page .settings-detail-body.has-settings-menus{border:0!important;box-shadow:none!important;background:none!important;padding:4px 0!important;}
+
+/* One account form, with every field and action visible together. */
+#app.loveroll-settings-page .settings-account-overview .settings-account-form{height:100%!important;display:flex!important;flex-direction:column!important;gap:8px!important;margin:0!important;}
+#app.loveroll-settings-page .settings-account-overview .settings-premium-section-head{display:none!important;}
+#app.loveroll-settings-page .settings-account-overview .settings-premium-glass-group{display:grid!important;grid-template-columns:1fr 1fr!important;align-content:start!important;gap:8px 12px!important;padding:12px!important;margin:0!important;}
+#app.loveroll-settings-page .settings-account-overview .settings-premium-glass-group>h3{grid-column:1/-1;font-size:20px!important;margin:0!important;}
+#app.loveroll-settings-page .settings-account-overview label{display:flex!important;flex-direction:column!important;gap:4px!important;font-size:13px!important;min-width:0!important;margin:0!important;}
+#app.loveroll-settings-page .settings-account-overview :is(input,select){width:100%!important;min-width:0!important;min-height:40px!important;height:40px!important;padding:6px 9px!important;font-size:15px!important;}
+#app.loveroll-settings-page .settings-account-overview .loveroll-style-select{grid-column:1/-1;}
+#app.loveroll-settings-page .settings-account-overview .loveroll-style-select small{font-size:11px!important;line-height:1.2!important;}
+#app.loveroll-settings-page .settings-account-overview :is(.settings-birthday-edit,label:has(input[readonly]),.account-test-modes,[data-action="profile"]){grid-column:1/-1;}
+#app.loveroll-settings-page .settings-account-overview .settings-birthday-edit{margin:0!important;font-size:13px!important;}
+#app.loveroll-settings-page .settings-account-overview .settings-birthday-edit>div{margin-top:4px!important;}
+#app.loveroll-settings-page .settings-account-overview .account-test-modes{padding:8px!important;margin:0!important;}
+#app.loveroll-settings-page .settings-account-overview .account-test-modes h3{font-size:16px!important;margin:0 0 4px!important;}
+#app.loveroll-settings-page .settings-account-overview .account-test-modes :is(p,small){font-size:10px!important;line-height:1.2!important;margin:3px 0!important;}
+#app.loveroll-settings-page .settings-account-overview .account-test-options{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:4px!important;}
+#app.loveroll-settings-page .settings-account-overview .account-test-option{padding:5px 2px!important;min-height:36px!important;font-size:12px!important;}
+#app.loveroll-settings-page .settings-account-overview :is(.settings-primary,.settings-signout){min-height:40px!important;padding:8px!important;margin:0!important;}
+#app.loveroll-settings-page .settings-account-overview .settings-danger-zone{margin:0!important;padding:0!important;}
+@media(max-height:720px){
+ #app.loveroll-settings-page .settings-account-overview .settings-premium-glass-group{gap:5px 10px!important;padding:8px!important;}
+ #app.loveroll-settings-page .settings-account-overview .account-test-modes :is(p,small){font-size:9px!important;}
+ #app.loveroll-settings-page .settings-account-overview :is(input,select){height:36px!important;min-height:36px!important;}
+}
+
+#app.settings-account-full .settings-account-overview.settings-account-overview .settings-premium-glass-group{gap:8px 10px!important;}
+#app.settings-account-full .settings-account-overview.settings-account-overview .settings-premium-glass-group>h3{display:none!important;}
+#app.settings-account-full .settings-account-overview.settings-account-overview :is(label,.settings-birthday-edit){font-size:12px!important;line-height:1.2!important;gap:3px!important;}
+#app.settings-account-full .settings-account-overview.settings-account-overview :is(input,select,.lr-premium-picker-trigger){min-height:38px!important;height:38px!important;padding:6px 8px!important;font:14px/1.2 system-ui!important;}
+#app.settings-account-full .settings-account-overview.settings-account-overview .loveroll-style-select{grid-column:auto!important;}
+#app.settings-account-full .settings-account-overview.settings-account-overview .settings-birthday-edit{grid-column:auto!important;padding:0!important;background:none!important;border:0!important;box-shadow:none!important;}
+#app.settings-account-full .settings-account-overview.settings-account-overview .date-fields{display:grid!important;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr)!important;gap:4px!important;margin:0!important;}
+#app.settings-account-full .settings-account-overview.settings-account-overview .date-fields label{font-size:10px!important;}
+#app.settings-account-full .settings-account-overview.settings-account-overview :is(.account-test-modes p,.account-test-modes small){display:block!important;font:11px/1.2 system-ui!important;margin:3px 0!important;}
+#app.settings-account-full .settings-account-overview.settings-account-overview .account-test-option{height:36px!important;min-height:36px!important;font:12px/1.1 system-ui!important;}
+#app.settings-account-full .settings-account-overview.settings-account-overview :is([data-action="profile"],[data-action="signout"]){grid-column:auto!important;min-height:40px!important;height:auto!important;padding:7px!important;font:14px/1.15 system-ui!important;}
+#app.settings-account-full .settings-account-overview.settings-account-overview .settings-danger-zone{display:none!important;}
+@media(max-height:720px){
+ #app.settings-account-full .editorial-title h1{margin-bottom:0!important;font-size:26px!important;}
+ #app.settings-account-full .settings-editorial-content{gap:0!important;}
+ #app.settings-account-full .settings-account-overview.settings-account-overview{padding:8px!important;}
+ #app.settings-account-full .settings-account-overview.settings-account-overview .settings-premium-glass-group{padding:8px!important;gap:5px 8px!important;}
+ #app.settings-account-full .settings-account-overview.settings-account-overview :is(.account-test-modes p,.account-test-modes small){font-size:10px!important;}
+ #app.settings-account-full .settings-account-overview.settings-account-overview .account-test-modes{padding:6px!important;}
+}
+
+#app.settings-account-full .settings-account-overview.settings-account-overview .settings-premium-glass-group{align-items:start!important;}
+#app.settings-account-full .settings-account-overview.settings-account-overview .settings-account-style-note{grid-column:1/-1!important;display:block!important;font:11px/1.2 system-ui!important;margin:0!important;}
+#app.settings-account-full .settings-account-overview.settings-account-overview .settings-birthday-edit{display:flex!important;flex-direction:column!important;gap:3px!important;align-self:start!important;}
+#app.settings-account-full .settings-account-overview.settings-account-overview .date-fields label{height:auto!important;min-height:0!important;}
+#app.settings-account-full .settings-account-overview.settings-account-overview .account-test-modes{display:block!important;min-height:0!important;}
+#app.settings-account-full .settings-account-overview.settings-account-overview .account-test-modes :is(p,small){padding:0!important;min-height:0!important;}
+#app.settings-account-full .settings-account-overview.settings-account-overview :is([data-action="profile"],[data-action="signout"]){line-height:16px!important;font-size:13px!important;height:40px!important;}
+
+@media(max-height:720px){
+ #app.settings-account-full .settings-account-overview.settings-account-overview{padding:4px!important;}
+ #app.settings-account-full .settings-account-overview.settings-account-overview .settings-premium-glass-group{gap:3px 8px!important;padding:6px!important;}
+ #app.settings-account-full .settings-account-overview.settings-account-overview :is(input,select,.lr-premium-picker-trigger){height:36px!important;min-height:36px!important;}
+}
+
+#app.settings-account-full .settings-account-overview .date-fields .lr-premium-picker-trigger{gap:2px!important;padding:6px!important;}
+#app.settings-account-full .settings-account-overview .date-fields .lr-premium-picker-chevron{font-size:16px!important;flex:none!important;}
 }

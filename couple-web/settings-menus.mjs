@@ -5,6 +5,7 @@ const q=(root,selector)=>[...root.querySelectorAll(selector)];
 const field=(root,id)=>root.querySelector('#'+id)?.closest('label');
 const nodes=(...values)=>values.flat(Infinity).filter(Boolean);
 export function organizeSettingsMenus(root){
+ if(!root.querySelector('.settings-account-overview'))root.classList.remove('settings-account-full');
  const body=root.querySelector('.settings-detail-body,.editorial-workspace .editorial-content');
  if(!root.classList.contains('loveroll-settings-page')||!body){previousRoute='';previousPath=[];return;}
  if(body.dataset.menusReady)return;
@@ -15,14 +16,19 @@ export function organizeSettingsMenus(root){
  const link=(selector)=>{const node=body.querySelector(selector);return node?{key:'',label:node.innerText,node}:null;};
  const direct=selector=>find(selector).map(node=>({key:'',label:node.innerText,node}));
  let tree=[];
- if(route==='compte')tree=[
-  entry('informations','Mes informations',[f('profile-name'),f('profile-gender'),a('profile')]),
-  entry('style','Mon style de jeu',[f('profile-play-style'),find('.loveroll-style-note'),a('profile')]),
-  entry('anniversaire','Mon anniversaire',[find('.settings-birthday-edit'),a('profile')]),
-  entry('connexion','Compte et connexion',[find('input[readonly]').map(el=>el.closest('label')),find('.settings-danger-zone')]),
-  entry('apercu','Aperçu de mon compte',find('.account-test-modes'))
- ];
- else if(route==='couple'&&body.querySelector('.settings-duo-card'))tree=[
+ if(route==='compte'){
+  // The entire account is one editable view; retain the original save handlers.
+  body.classList.add('settings-account-overview');
+  root.classList.add('settings-account-full');
+  const group=body.querySelector('.settings-premium-glass-group');
+  const signout=body.querySelector('[data-action="signout"]');
+  if(group&&signout)group.append(signout);
+  const note=body.querySelector('.loveroll-style-select small');
+  if(note){note.classList.add('settings-account-style-note');body.querySelector('.settings-birthday-edit')?.after(note);}
+  previousRoute=route;previousPath=[];root._settingsMenuBack=()=>false;
+  return;
+ }
+ if(route==='couple'&&body.querySelector('.settings-duo-card'))tree=[
   entry('duo','Notre duo',[find('.settings-duo-card'),find(':scope>.tiny-note'),a('cycle-reopen')]),
   entry('date','Notre anniversaire',[find('.settings-date-outer'),a('save-couple-date')]),
   entry('association','Gérer notre association',find('.settings-danger-zone'))
