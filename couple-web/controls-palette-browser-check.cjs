@@ -1,8 +1,9 @@
+const {revealSetting}=require('./settings-test-navigation.cjs');
 /* Actual production components with synthetic accounts; never contacts users. */
 const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=require('node:fs');
 const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
 const appearance=el=>{const s=getComputedStyle(el);return {background:s.backgroundImage,border:s.borderTopColor,text:s.color,shadow:s.boxShadow};};
-const click=async(p,name)=>{const b=p.locator('[data-action="'+name+'"]');await b.last().scrollIntoViewIfNeeded();await b.last().click();};
+const click=async(p,name)=>{await revealSetting(p,'[data-action="'+name+'"]');const b=p.locator('[data-action="'+name+'"]');await b.last().scrollIntoViewIfNeeded();await b.last().click();};
 (async()=>{
  const browser=await chromium.launch({headless:true}),contexts=[];let count=0;
  fs.mkdirSync('design-captures',{recursive:true});
@@ -20,7 +21,7 @@ const click=async(p,name)=>{const b=p.locator('[data-action="'+name+'"]');await 
    const selected=await viewportAuth.locator('.entry-auth-segments .is-active').evaluate(appearance);
    const world=createWorld(),{page:p,errors}=await open(world,{width,height,query:''});
    const primary=async selector=>{
-    const b=p.locator(selector).first();await b.waitFor();
+    await revealSetting(p,selector);const b=p.locator(selector).first();await b.waitFor();
     assert.deepEqual(await b.evaluate(appearance),reference,selector+' must match the account CTA');count++;
    };
    await primary('.home-roll-button');
@@ -33,7 +34,7 @@ const click=async(p,name)=>{const b=p.locator('[data-action="'+name+'"]');await 
    await click(p,'tab:settings');await click(p,'settings-page:jeu');
    await primary('.settings-category-options>.settings-primary');
    for(const id of ['show-sensuel-button','show-sexuel-button']){
-    const toggle=p.locator('#'+id);await toggle.scrollIntoViewIfNeeded();
+    await revealSetting(p,'#'+id);const toggle=p.locator('#'+id);await toggle.scrollIntoViewIfNeeded();
     const geometry=await toggle.evaluate(el=>{const row=el.closest('label'),label=row.querySelector('span'),t=el.getBoundingClientRect(),l=label.getBoundingClientRect(),r=row.getBoundingClientRect(),s=getComputedStyle(el);return {gap:t.left-l.right,right:r.right-t.right,width:t.width,background:s.backgroundImage};});
     assert.ok(geometry.gap>=10,id+' must not cover its label: '+JSON.stringify(geometry));
     assert.ok(geometry.right<=2,id+' must align to the row right edge');
