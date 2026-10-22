@@ -1,3 +1,4 @@
+const {revealSetting}=require('./settings-test-navigation.cjs');
 // The real app.js as an ESM module, real HTML/CSS/JS assets, Chromium parser
 // and safe synthetic Supabase responses. No live users, quotas or DB writes.
 const {chromium}=require('playwright');
@@ -291,6 +292,7 @@ export function createClient(){
   if(await page.locator('.advent-box').count()!==25)throw Error('Advent tiles missing '+v.name);
   await inspect('settings','.settings-sections');
   await page.locator('.settings-profile-row').click();
+  await revealSetting(page,'#profile-name');
   await page.locator('#profile-name').waitFor();
   if(errors.length)throw Error('Browser console errors '+v.name+' '+JSON.stringify(errors));
   console.log('RESPONSIVE_NAV_OK',v.name,JSON.stringify({homeWidth:initial.width,events:cards,tabs:5}));
