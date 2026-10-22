@@ -36,7 +36,7 @@ export function fitSoireeHomeTemplate(root){
   root.style.setProperty('--home-scene-split',split+'px');
   root.style.setProperty('--home-scene-top-image-height',split/.438+'px');
   root.style.setProperty('--home-scene-bottom-image-height',(innerHeight-split)/.562+'px');
-  root.style.setProperty('--home-scene-contact',split*.342/.438+'px');
+  root.style.setProperty('--home-scene-contact',split*.323/.438+'px');
  };
  observer=new ResizeObserver(fit);observer.observe(root);fit();document.fonts.ready.then(fit);
 }
@@ -52,5 +52,6 @@ export function fitRubyCalendar(root){
   groups[0].before(summary);for(const group of groups)summary.append(group);
  }
  for(const selector of ['.evening-cal-month','.evening-cal-history','.evening-cal-return'])shell.querySelector(selector)?.classList.add('lr-surface');
- shell.querySelector('.evening-cal-return')?.classList.add('lr-ruby-control','lr-ruby-action');
+ const back=shell.querySelector('.evening-cal-return');
+ if(back){back.className='calendar-back-arrow';back.textContent='‹';back.setAttribute('aria-label','Retour à Soirée');shell.querySelector('.evening-cal-head').prepend(back);}
 }

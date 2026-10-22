@@ -329,7 +329,7 @@ function geometry(sides,pips=false,neutral=false,referenceRuby=false){
   mat.thickness=1.8;mat.attenuationColor.setHex(0xdc123a);
   mat.attenuationDistance=3.2;mat.envMapIntensity=1.1;
   mat.emissive.setHex(0x6d0012);mat.emissiveIntensity=.035;
-  if(sides===100){mat.roughness=.012;mat.clearcoatRoughness=.008;mat.attenuationDistance=2.7;mat.envMapIntensity=1.5;}
+  if(sides===100){mat.roughness=.012;mat.clearcoatRoughness=.008;mat.attenuationDistance=5.2;mat.thickness=.65;mat.envMapIntensity=2.1;mat.ior=1.8;}
   mat.onBeforeCompile=shader=>{
    shader.vertexShader='varying vec3 vPolishBend;\n'+shader.vertexShader;
    shader.vertexShader=shader.vertexShader.replace('#include <beginnormal_vertex>',`#include <beginnormal_vertex>
@@ -361,8 +361,8 @@ outgoingLight += vec3(0.06,0.0005,0.005) * pow(crystalFacing,2.0);
  if(referenceRuby){
   // Ruby facets inside the clear outer volume reproduce the reference's
   // deep red internal reflections. They rotate with the same solid die.
-  const interior=new THREE.Mesh(new THREE.OctahedronGeometry(.79,0),
-   new THREE.MeshStandardMaterial({color:0x9b0627,metalness:.72,roughness:.11,envMapIntensity:1.1}));
+  const interior=new THREE.Mesh(sides===100?new THREE.IcosahedronGeometry(.9,0):new THREE.OctahedronGeometry(.79,0),
+   new THREE.MeshStandardMaterial({color:0x9b0627,metalness:.72,roughness:sides===100?.025:.11,envMapIntensity:sides===100?2.5:1.1}));
   interior.rotation.set(.32,.43,.19);interior.position.set(0,.1,.05);group.add(interior);
  }
  // A continuous optical back wall gives the volume a clean internal rim.
@@ -535,7 +535,7 @@ export function dieOn(canvas,sides,value,rolling){
    markerVisible?(sceneRect.width*(photoStage ? .56 : .53))/((bounds.right-bounds.left)*rect.width):1);
   // Scale the fitted Home die uniformly; preserve the floor angle and re-anchor below.
   if(photoStage)camera.zoom*=.85;
-  if(photoSoiree)camera.zoom*=1.25;
+  if(photoSoiree)camera.zoom*=1.375;
   camera.updateProjectionMatrix();bounds=projectedBounds();
   built.group.quaternion.copy(pose);built.group.position.copy(position);built.group.updateMatrixWorld(true);
   const delta=contact-(rect.top+bounds.bottom*rect.height);
@@ -651,17 +651,18 @@ export function dieOn(canvas,sides,value,rolling){
   if(e.isPrimary===false||e.button>0)return;
   if(duration&&performance.now()-start<duration)return;
   drag=true;returnStart=null;x=e.clientX;y=e.clientY;vx=vy=0;
-  if(flatHome)e.preventDefault();
+  if(photoStage)e.preventDefault();
   canvas.setPointerCapture(e.pointerId);request();
  };
  const move=e=>{if(!drag)return;const dx=e.clientX-x,dy=e.clientY-y;x=e.clientX;y=e.clientY;
-  vx=dx*.013;vy=flatHome?0:dy*.013;
-  if(flatHome){e.preventDefault();turnFlat(vx);}
+  vx=dx*.013;vy=photoStage?0:dy*.013;
+  if(photoStage){e.preventDefault();turnFlat(vx);}
   else{built.group.rotateY(vx);built.group.rotateX(vy);}
   request();};
  const up=()=>{
   if(!drag)return;
   drag=false;
+  if(photoSoiree){vx=vy=0;returnStart=null;request();return;}
   if(flatHome){vx=reduceMotion?0:Math.max(-.08,Math.min(.08,vx));vy=0;request();return;}
   vx=vy=0;
   // Manual inspection never changes the server's official value: return the
