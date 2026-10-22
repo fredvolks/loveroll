@@ -1,21 +1,17 @@
-@layer loveroll-settings-screens {
-/* Fixed screens, Home's ruby surfaces, and a persistent page navigator. */
+@layer loveroll-settings-menus {
+/* Home's ruby surfaces and named settings destinations. */
 #app.loveroll-settings-page:is(.loveroll-settings-menu,.loveroll-settings-detail,.loveroll-library-page){height:100dvh!important;min-height:0!important;overflow:hidden!important;padding:9px 14px calc(72px + env(safe-area-inset-bottom,0px))!important;}
 #app.loveroll-settings-page:is(.loveroll-settings-menu,.loveroll-settings-detail,.loveroll-library-page) .settings-editorial{height:100%!important;min-height:0!important;grid-template-rows:80px minmax(0,1fr)!important;gap:8px!important;}
 #app.loveroll-settings-page:is(.loveroll-settings-menu,.loveroll-settings-detail,.loveroll-library-page) .settings-editorial-content{display:flex!important;flex-direction:column!important;gap:10px!important;min-height:0!important;overflow:hidden!important;}
 #app.loveroll-settings-page:is(.loveroll-settings-menu,.loveroll-settings-detail,.loveroll-library-page) .editorial-title{flex:none;text-align:center;}
 #app.loveroll-settings-page:is(.loveroll-settings-menu,.loveroll-settings-detail,.loveroll-library-page) h1{font:600 clamp(27px,7vw,36px)/1.08 var(--lr-control-font,Georgia,serif)!important;margin:3px 0 8px!important;}
 #app.loveroll-settings-page:is(.loveroll-settings-menu,.loveroll-settings-detail,.loveroll-library-page) .settings-detail-body{flex:1!important;display:block!important;min-height:0!important;height:0!important;overflow:hidden!important;padding:14px!important;border:1px solid #b66579!important;border-radius:20px!important;background:linear-gradient(145deg,#510014ed,#210008f5)!important;}
-#app.loveroll-settings-page:is(.loveroll-settings-menu,.loveroll-settings-detail,.loveroll-library-page) [data-screen-hidden]{display:none!important;}
+#app.loveroll-settings-page:is(.loveroll-settings-menu,.loveroll-settings-detail,.loveroll-library-page) [data-menu-hidden]{display:none!important;}
 #app.loveroll-settings-page:is(.loveroll-settings-menu,.loveroll-settings-detail,.loveroll-library-page) .settings-detail-body>*{margin-bottom:10px;}
 #app.loveroll-settings-page:is(.loveroll-settings-menu,.loveroll-settings-detail,.loveroll-library-page) :is(.settings-account-form,.settings-premium-glass-group){gap:10px!important;}
 #app.loveroll-settings-page:is(.loveroll-settings-menu,.loveroll-settings-detail,.loveroll-library-page) .settings-premium-section-head{padding:0!important;}
 #app.loveroll-settings-page:is(.loveroll-settings-menu,.loveroll-settings-detail,.loveroll-library-page) .settings-premium-section-head h2{font:600 25px/1.1 var(--lr-control-font,Georgia,serif)!important;margin:5px 0!important;}
 #app.loveroll-settings-page:is(.loveroll-settings-menu,.loveroll-settings-detail,.loveroll-library-page) :is(p,small){line-height:1.35!important;}
-#app.loveroll-settings-page:is(.loveroll-settings-menu,.loveroll-settings-detail,.loveroll-library-page) .settings-screen-pager{display:flex;align-items:center;justify-content:space-between;gap:8px;flex:none;min-height:44px;}
-#app.loveroll-settings-page:is(.loveroll-settings-menu,.loveroll-settings-detail,.loveroll-library-page) .settings-screen-pager[hidden]{display:none;}
-#app.loveroll-settings-page:is(.loveroll-settings-menu,.loveroll-settings-detail,.loveroll-library-page) .settings-screen-pager button{min-height:44px;padding:8px 14px;border-radius:18px;border:1px solid #d56a7c;color:#fff8ed;background:var(--lr-surface-fill);box-shadow:var(--lr-surface-shadow);font:600 18px/1.1 var(--lr-control-font,Georgia,serif);}
-#app.loveroll-settings-page:is(.loveroll-settings-menu,.loveroll-settings-detail,.loveroll-library-page) .settings-screen-pager span{font:13px/1 system-ui;color:#dfb9c1;}
 #app.loveroll-settings-menu .settings-sections{grid-template-rows:none!important;grid-auto-rows:minmax(0,1fr)!important;max-height:none!important;gap:7px!important;}
 #app.loveroll-settings-menu :is(.settings-section-row,.settings-profile-row){min-height:0!important;padding:8px 12px!important;}
 #app.loveroll-settings-menu .settings-profile-row{flex:none;min-height:58px!important;}
@@ -33,4 +29,34 @@
 #app.loveroll-settings-page:is(.loveroll-settings-menu,.loveroll-settings-detail,.loveroll-library-page) .settings-premium-section-head::after{display:none!important;}
 
 #app.loveroll-settings-page:is(.loveroll-settings-menu,.loveroll-settings-detail,.loveroll-library-page) .editorial-card-list{max-height:none!important;height:auto!important;overflow:visible!important;}
+#app.loveroll-settings-page .settings-menu-source [data-menu-hidden][data-menu-hidden]{display:none!important;}
+#app.loveroll-settings-page .settings-menu-source[hidden],#app.loveroll-settings-page .settings-submenu-list[hidden]{display:none!important;}
+#app.loveroll-settings-page .settings-submenu-list{display:grid!important;gap:8px!important;align-content:start!important;}
+#app.loveroll-settings-page .settings-submenu-list :is(button,.settings-link-row){display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;min-height:49px!important;width:100%!important;margin:0!important;padding:10px 14px!important;border-radius:18px!important;border:1px solid #d56a7c!important;background:var(--lr-surface-fill)!important;box-shadow:var(--lr-surface-shadow)!important;color:#fff8ed!important;text-align:left!important;font:600 23px/1.05 var(--lr-control-font,Georgia,serif)!important;}
+#app.loveroll-settings-page .settings-submenu-list .settings-link-row small{display:none!important;}
+#app.loveroll-settings-page .settings-submenu-list .settings-link-affordance{font-size:0!important;}
+#app.loveroll-settings-page .settings-submenu-list b{font:26px/1 Georgia,serif!important;color:#efbec8!important;}
+#app.loveroll-settings-page .settings-menu-source{display:block!important;}
+#app.loveroll-settings-page .settings-menu-source :is(.settings-account-form,.editorial-form,.settings-premium-glass-group,.world-prefs,.world-prefs-card,.notification-settings){display:grid!important;gap:10px!important;min-height:0!important;margin:0!important;}
+#app.loveroll-settings-page .settings-menu-source .settings-premium-glass-group{padding:12px!important;}
+#app.loveroll-settings-page .settings-menu-source h3{margin:0 0 8px!important;font:600 25px/1.1 var(--lr-control-font,Georgia,serif)!important;}
+#app.loveroll-settings-page .settings-menu-source :is(.settings-primary,.settings-secondary){min-height:46px!important;width:100%!important;margin:6px 0 0!important;}
+#app.loveroll-settings-page .settings-menu-source textarea{height:110px!important;min-height:80px!important;resize:none!important;}
+#app.loveroll-settings-page .settings-menu-source p{margin:4px 0!important;font-size:13px!important;line-height:1.35!important;}
+#app.loveroll-settings-page .settings-menu-source :is(.editorial-status-list,.notification-options){display:grid!important;gap:4px!important;}
+#app.loveroll-settings-page .settings-menu-source .editorial-row{min-height:43px!important;padding:8px 2px!important;}
+#app.loveroll-settings-page .settings-menu-source .notification-option{min-height:58px!important;padding:8px!important;}
+#app.loveroll-settings-page .settings-menu-source .notification-section-heading{margin:0 0 8px!important;}
+#app.loveroll-settings-page .settings-menu-source .admin-dice-weight-editor{gap:6px!important;padding:0!important;}
+#app.loveroll-settings-page .settings-menu-source .admin-dice-weight-editor .push-option{min-height:48px!important;}
+#app.loveroll-settings-page .settings-menu-source .admin-dice-weight-grid{gap:6px!important;}
+#app.loveroll-settings-page .settings-menu-source .admin-dice-weight-face{gap:3px!important;}
+#app.loveroll-settings-page .settings-menu-source .admin-dice-weight-input input{min-height:40px!important;padding:6px 24px 6px 6px!important;}
+#app.loveroll-settings-page .settings-menu-source .editorial-event-list .editorial-row{min-height:45px!important;}
+#app.loveroll-settings-page .settings-menu-source .settings-duo-card{padding:14px!important;}
+#app.loveroll-settings-page .settings-menu-source .json-preview{padding:12px!important;}
+@media(max-height:720px){#app.loveroll-settings-page .settings-submenu-list :is(button,.settings-link-row){min-height:46px!important;font-size:21px!important;}#app.loveroll-settings-page .settings-menu-source :is(input:not([type=checkbox]):not([type=radio]),select){min-height:42px!important;padding:8px 10px!important;}#app.loveroll-settings-page .settings-menu-source textarea{height:96px!important;}#app.loveroll-settings-page .settings-menu-source .admin-dice-weight-editor p{font-size:11px!important;}#app.loveroll-settings-page .settings-menu-source .admin-dice-weight-editor .push-option small{display:none!important;}}
+#app.loveroll-settings-page .settings-menu-source [data-menu-hidden][data-menu-hidden]{display:none!important;}
+#app.loveroll-settings-page:is(.loveroll-settings-menu,.loveroll-settings-detail,.loveroll-library-page),#app.loveroll-settings-page .settings-editorial{border:0!important;border-radius:0!important;box-shadow:none!important;}
+#app.loveroll-settings-page .settings-detail-body.has-settings-menus{border:0!important;box-shadow:none!important;background:none!important;padding:4px 0!important;}
 }

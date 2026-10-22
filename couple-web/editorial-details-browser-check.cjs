@@ -2,7 +2,7 @@ const {revealSetting}=require('./settings-test-navigation.cjs');
 const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=require('node:fs');
 const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
 const action=(p,name)=>p.locator('[data-action="'+name+'"]');
-const click=async(p,name)=>{await revealSetting(p,'[data-action="'+name+'"]');await action(p,name).scrollIntoViewIfNeeded();await action(p,name).click();};
+const click=async(p,name)=>{if(name.startsWith('custom-slot:')){await revealSetting(p,'#settings-card-choice');await p.locator('#settings-card-choice').selectOption(name.split(':')[1]);return;}await revealSetting(p,'[data-action="'+name+'"]');if(await action(p,name).evaluate(el=>el.classList.contains('settings-back'))){while(await p.locator('.settings-detail-body').first().getAttribute('data-settings-location'))await p.locator('.settings-back').click();}await action(p,name).scrollIntoViewIfNeeded();await action(p,name).click();};
 const confirm=async(p,accept=true)=>{await p.locator(accept?'.lr-dialog-accept':'.lr-dialog-cancel').click();};
 async function settings(p,key){await click(p,'tab:settings');await click(p,'settings-page:'+key);}
 async function editor(p,tab){await settings(p,'jeu');await click(p,'tab:'+tab);}
@@ -45,7 +45,7 @@ async function editor(p,tab){await settings(p,'jeu');await click(p,'tab:'+tab);}
   }
   const {page:p,errors}=await open({});
   await editor(p,'library');assert.equal(await p.locator('.editorial-card-list [data-card-id]').count(),100);
-  await revealSetting(p,'#custom-card-search');await p.locator('#custom-card-search').fill('100');await p.locator('.editorial-card-list button:visible').waitFor();assert.equal(await p.locator('.editorial-card-list button:visible').count(),1);await revealSetting(p,'#custom-card-search');await p.locator('#custom-card-search').fill('');
+  await revealSetting(p,'#custom-card-search');await p.locator('#custom-card-search').fill('100');await p.waitForFunction(()=>document.querySelectorAll('#settings-card-choice option:not([hidden]):not([value=""])').length===1);assert.equal(await p.locator('#settings-card-choice option:not([hidden]):not([value=""])').count(),1);await revealSetting(p,'#custom-card-search');await p.locator('#custom-card-search').fill('');
   await click(p,'custom-slot:1');await revealSetting(p,'#custom-title');await p.locator('#custom-title').fill('Notre carte modifiée');await click(p,'editor-back');await confirm(p,false);assert.equal(await p.locator('#custom-title').inputValue(),'Notre carte modifiée');
   await revealSetting(p,'#custom-drawer-her');await p.locator('#custom-drawer-her').check();await revealSetting(p,'#custom-recipient-him');await p.locator('#custom-recipient-him').check();await revealSetting(p,'#custom-timer-enabled');await p.locator('#custom-timer-enabled').uncheck();await click(p,'save-custom-card');await p.waitForFunction(()=>document.querySelector('#custom-title')?.defaultValue==='Notre carte modifiée');
   const saved=world.calls.findLast(c=>c.name==='save_love_card_with_roles');assert.equal(saved.args.p_drawer_role,'her');assert.equal(saved.args.p_recipient_role,'him');assert.equal(saved.args.p_timer_minutes,null);

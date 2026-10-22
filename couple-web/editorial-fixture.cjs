@@ -56,6 +56,7 @@ async function setupEditorial(browser,world,{width=412,height=824,actor='a',quer
    const ownerOnly=['save_love_card_with_roles','import_love_evening_library','import_love_monthly_library','import_love_advent_2026','import_love_special_events','reset_love_all_dice_admin'];
    if(ownerOnly.includes(name)&&uid!=='a')error={message:'Créateur requis'};
    else{
+    if(name==='love_my_referral')data=world.referral||null;
     if(name==='love_eclat_status')data=world.eclat?{...world.eclat,my_choice:world.eclatChoices?.[uid]??world.eclat.my_choice??null,my_ready:!!world.eclatReady?.[uid]}:{access:false,active:false};
     if(name==='love_eclat_choose'){
      world.eclatChoices={...world.eclatChoices,[uid]:args.p_choice};

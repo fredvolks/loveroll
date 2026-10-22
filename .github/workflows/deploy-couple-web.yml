@@ -75,7 +75,7 @@ jobs:
           node couple-web/eclat-visual-parity-v184.cjs
           python3 -m pip install --quiet 'Pillow>=10,<13'
           python3 couple-web/eclat-pixel-reference-v184.py
-          node couple-web/settings-screens-browser-check.cjs
+          node couple-web/settings-menus-browser-check.cjs
           node couple-web/shared-stage-browser-check.cjs
           node couple-web/settings-picker-browser-check.cjs
           node couple-web/eclat-parity-browser-check.cjs

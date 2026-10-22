@@ -437,7 +437,7 @@ jobs:
       - name: Verify five Settings routes and saved forms on phone tablet and PC
         run: |
           node couple-web/premium-settings-visual-check.cjs
-          node couple-web/settings-screens-browser-check.cjs
+          node couple-web/settings-menus-browser-check.cjs
           node couple-web/shared-stage-browser-check.cjs
 
       - name: Verify invitation and account pages on Galaxy S25 Ultra
