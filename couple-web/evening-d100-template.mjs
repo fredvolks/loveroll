@@ -1,3 +1,4 @@
+import {fitSharedStage} from './shared-stage.mjs?v=20261022-home226';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export function eveningPlayInfoHtml(percent=88){
  const preferred=Math.min(100,Math.max(0,Number(percent)||0));
@@ -62,11 +63,7 @@ export function fitEveningD100(root){
  dialog.addEventListener('close',()=>info.focus({preventScroll:true}));
  const fit=()=>{
   if(!view.isConnected){fitObserver.disconnect();return;}
-  const split=roll.getBoundingClientRect().top;
-  root.style.setProperty('--home-scene-split',split+'px');
-  root.style.setProperty('--home-scene-top-image-height',split/.438+'px');
-  root.style.setProperty('--home-scene-bottom-image-height',(innerHeight-split)/.562+'px');
-  root.style.setProperty('--home-scene-contact',split*.323/.438+'px');
+  fitSharedStage(root);
  };
  const fitObserver=new ResizeObserver(fit);observer=fitObserver;fitObserver.observe(root);fit();
  hero.querySelector('canvas')?.loveRollDie?.refresh?.();document.fonts.ready.then(fit);

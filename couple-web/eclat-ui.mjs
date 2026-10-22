@@ -1,10 +1,10 @@
-import {eclatGuidedPlay} from './eclat-guided-ui.mjs?v=20261022-home225';
+import {eclatGuidedPlay} from './eclat-guided-ui.mjs?v=20261022-home226';
 
 import {ECLAT_COFFRETS,eclatCoffret,eclatStage,ECLAT_MOODS} from './eclat-catalog.mjs';
 import {ritualHeadingHtml} from './brand.mjs?v=20261017-ritual130';
-import {eveningEclatSwitcher} from './evening-eclat-switcher.mjs?v=20261022-home225';
-import {coffretMemo} from './eclat-history.mjs?v=20261022-home225';
-import {goldArrowHtml} from './gold-arrows.mjs?v=20261022-home225';
+import {eveningEclatSwitcher} from './evening-eclat-switcher.mjs?v=20261022-home226';
+import {coffretMemo} from './eclat-history.mjs?v=20261022-home226';
+import {goldArrowHtml} from './gold-arrows.mjs?v=20261022-home226';
 const esc=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const atlasPosition=id=>'--atlas-x:'+((Number(id)-1)%3*50)+'%;--atlas-y:'+(Math.floor((Number(id)-1)/3)*100/3).toFixed(5)+'%;';
 const fmt=cents=>((Number(cents)||0)/100).toLocaleString('fr-CA',{minimumFractionDigits:2,maximumFractionDigits:2})+' $';

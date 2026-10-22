@@ -1,5 +1,13 @@
 // Real production application, safe synthetic API, no live account writes.
 const {chromium}=require('playwright'),assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path');
+async function revealSetting(page,selector){
+ const target=page.locator(selector);
+ for(let i=0;i<30&&!await target.isVisible();i++){
+  const next=page.getByRole('button',{name:'Suivant ▶',exact:true});
+  if(!await next.isVisible()||!await next.isEnabled())throw Error('Setting unreachable: '+selector);
+  await next.click();
+ }
+}
 const client=`export function createClient(){
  const uid=new URL(location.href).searchParams.get('actor')||'a',user={id:uid,email:uid+'@test.invalid',email_confirmed_at:'2026-01-01T00:00:00Z'};
  const call=async(body)=>{const r=await fetch('/__romantic-fixture',{method:'POST',body:JSON.stringify({...body,uid})});return r.json()};
@@ -111,14 +119,14 @@ const client=`export function createClient(){
   }
   await a.locator('.nav [data-action="tab:settings"]').click();
   await a.locator('[data-action="settings-page:compte"]').click();assert.equal(await a.locator('#profile-gender').inputValue(),'him');assert.equal(await a.locator('input[readonly]').inputValue(),'a@test.invalid');
-  await a.locator('#profile-name').fill('Camille André');await a.locator('#profile-gender').selectOption('her');await a.locator('[data-action="profile"]').click();
+  await a.locator('#profile-name').fill('Camille André');await a.locator('#profile-gender').selectOption('her');await revealSetting(a,'[data-action="profile"]');await a.locator('[data-action="profile"]').click();
   await a.waitForFunction(()=>document.querySelector('#profile-name')?.defaultValue==='Camille André');
   assert.ok(!world.calls.some(c=>c.name==='save_my_wellbeing'));
   await a.locator('[data-action="settings-page:"]').click();await a.locator('[data-action="settings-page:jeu"]').click();
   assert.equal(await a.locator('.settings-link-row[data-action^="tab:"]').count(),4);
-  await a.locator('#show-sensuel-button').uncheck();await a.locator('#show-sexuel-button').uncheck();await a.locator('[data-action="save-evening-buttons"]').click();
+  await revealSetting(a,'#show-sensuel-button');await a.locator('#show-sensuel-button').uncheck();await a.locator('#show-sexuel-button').uncheck();await a.locator('[data-action="save-evening-buttons"]').click();
   await a.waitForFunction(()=>document.querySelector('#show-sensuel-button')?.defaultChecked===false);
-  assert.equal(world.couple.show_sexuel_button,false);await a.locator('[data-action="settings-page:admin"]').click();assert.equal(await a.locator('[data-action="admin-reset-all-dice"]').count(),1);
+  assert.equal(world.couple.show_sexuel_button,false);await revealSetting(a,'[data-action="settings-page:admin"]');await a.locator('[data-action="settings-page:admin"]').click();assert.equal(await a.locator('[data-action="admin-reset-all-dice"]').count(),1);
   await a.locator('[data-action="settings-page:jeu"]').click();await a.locator('[data-action="settings-page:"]').click();
   for(const key of ['couple','notifications','confidentialite','application']){
    await a.locator('[data-action="settings-page:'+key+'"]').click();assert.equal(await a.locator('.nav button.active').innerText(),'Réglages');
