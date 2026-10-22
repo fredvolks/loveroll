@@ -28,7 +28,7 @@ const {chromium}=require('playwright');
     noScroll:document.documentElement.scrollHeight<=innerHeight+2 && main.scrollHeight<=innerHeight+2,
     dice:canvases.map(x=>({face:x.dataset.face,sides:x.dataset.diceSides,
       webgl:x.dataset.webglReady,height:Math.round(x.getBoundingClientRect().height)})),
-    neutralDice:[...panel.querySelectorAll('canvas[data-dice-unrolled="true"]')].map(el=>({
+    neutralDice:[...panel.querySelectorAll('canvas[data-dice-preview="true"]')].map(el=>({
       visible:getComputedStyle(el).visibility==='visible',
       hasWebGL:el.dataset.webglReady==='true',
       markers:el.dataset.diceMarkers,
@@ -75,7 +75,7 @@ const {chromium}=require('playwright');
       (pageName==='evening-idle'&&result.partnerCard<85)||
       (pageName==='evening-idle'&&result.dice.filter(d=>d.height>=45).length!==1)))||
      (pageName==='evening-idle'&&(result.neutralDice.length!==1||
-      result.neutralDice.some(d=>!d.visible||!d.hasWebGL||d.markers!=='hearts'||d.top>=d.buttonTop)))||
+      result.neutralDice.some(d=>!d.visible||!d.hasWebGL||d.markers!=='pips'||d.top>=d.buttonTop)))||
      (pageName.startsWith('surprise')&&(
       result.dice.length!==1||
       result.eventCount!==6||!result.eventVisible||result.eventColumns!==3||
