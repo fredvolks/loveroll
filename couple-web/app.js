@@ -1282,11 +1282,17 @@ function showTimerFinished(){
 function endSignal(){
  if(challengeTimer.notified)return;
  challengeTimer.notified=true;
- if(challengeTimer.mode==='vibrate'){
-  if(typeof navigator.vibrate==='function')navigator.vibrate([190,90,190,90,360]);
- }else if(soundEnabled()){
-  if(!playLoveRollSound('timer:'+challengeTimer.id,{force:true})&&
-   typeof navigator.vibrate==='function')navigator.vibrate([180,80,180]);
+ // Android: add a discreet vibration EVEN in "Son doux" mode, so a
+ // phone with its ringer muted does not rely on audio alone. The browser
+ // cannot read silent/vibrate mode; OS settings may suppress haptics.
+ // Safari iPhone generally has no usable navigator.vibrate().
+ if(typeof navigator.vibrate==='function'){
+  try{navigator.vibrate([220,110,220,110,360]);}catch(error){
+   console.warn('Vibration du minuteur indisponible',error);
+  }
+ }
+ if(challengeTimer.mode==='sound'&&soundEnabled()){
+  playLoveRollSound('timer:'+challengeTimer.id,{force:true});
  }
  showTimerFinished();
  notify('♡ Minuteur terminé. À vous de décider si le défi continue.');
