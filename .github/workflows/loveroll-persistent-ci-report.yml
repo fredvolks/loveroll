@@ -33,6 +33,20 @@ jobs:
               owner, repo, state: 'open', per_page: 100
             });
             const incident = openIssues.find(issue => !issue.pull_request && issue.title === title);
+            // Workflow completions can arrive out of order. A stale success
+            // must never close the incident for a newer failed run, and a
+            // stale failure must not reopen a recovered incident.
+            const listing = await github.rest.actions.listWorkflowRuns({
+              owner, repo, workflow_id: run.workflow_id, branch: 'main', per_page: 30
+            });
+            const completed = listing.data.workflow_runs.filter(item =>
+              item.event === 'push' && item.status === 'completed' &&
+              item.conclusion !== 'cancelled' && item.conclusion !== 'skipped'
+            );
+            if (!completed.length || completed[0].id !== run.id) {
+              core.info('Ignoring out-of-order completion for run ' + run.id);
+              return;
+            }
             if (run.conclusion === 'success') {
               if (incident) {
                 await github.rest.issues.createComment({
@@ -51,13 +65,6 @@ jobs:
 
             // Require two consecutive completed push failures of THIS workflow.
             // Avoid opening an issue after a single transient or a cancelled run.
-            const listing = await github.rest.actions.listWorkflowRuns({
-              owner, repo, workflow_id: run.workflow_id, branch: 'main', per_page: 30
-            });
-            const completed = listing.data.workflow_runs.filter(item =>
-              item.event === 'push' && item.status === 'completed' &&
-              item.conclusion !== 'cancelled' && item.conclusion !== 'skipped'
-            );
             const position = completed.findIndex(item => item.id === run.id);
             const prior = position >= 0 ? completed[position + 1] : null;
             if (!prior || prior.conclusion !== 'failure') {
