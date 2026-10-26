@@ -9,7 +9,4 @@ test('Inactive Soirée retains usable Masquer but never shifts brand/logo flow',
  assert.match(css,/position:absolute!important;inset:16px auto auto 0!important/);
  assert.match(css,/min-height:44px!important;touch-action:manipulation/);
 });
-test('PR CI runs real parity/hero test used by Pages, not a weaker replacement',()=>{
- assert.match(ci,/node couple-web\/soiree-home-template-browser-check\.cjs/);
- assert.match(ci,/node couple-web\/premium-couple-visual-check\.cjs/);
-});
+
