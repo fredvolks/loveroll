@@ -198,6 +198,7 @@ test('LR-015 phase 2: private per-couple current-cycle exclusion registry and sa
  const migration=read('migrations/20261026_lr015_cycle_exclusion_registry.sql');
  assert.match(migration,/PRIMARY KEY\(couple_id,cycle_number,category,card_id\)/);
  assert.match(migration,/REFERENCES public\.couples\(id\) ON DELETE CASCADE/);
+ assert.match(migration,/excluded_by uuid REFERENCES auth\.users\(id\) ON DELETE SET NULL/);
  assert.match(migration,/ENABLE ROW LEVEL SECURITY/);
  assert.match(migration,/REVOKE ALL ON TABLE public\.love_cycle_excluded_cards FROM PUBLIC,anon,authenticated/);
  assert.match(migration,/CREATE OR REPLACE FUNCTION public\.my_love_cycle_exclusions\(p_couple uuid\)/);
