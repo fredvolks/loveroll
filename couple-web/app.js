@@ -3826,6 +3826,7 @@ async function handle(action,element){
    state.monthlyPassQuota=await rpc('my_love_monthly_pass_quota',{p_couple:state.coupleId});
    if(!state.monthlyPassQuota.can_pass)throw Error('Limite mensuelle de passes atteinte.');
   }
+  if(parts[1]==='passed'&&state.session?.id!==eveningId)throw Error('La soirée a changé, veuillez réessayer.');
   await rpc('answer_challenge',{p_id:parts[0],p_status:parts[1]});
   if(parts[1]==='passed'&&state.monthlyPassQuota){
    const used=Number(state.monthlyPassQuota.used)+1;
