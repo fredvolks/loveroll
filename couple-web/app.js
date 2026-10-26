@@ -929,6 +929,8 @@ async function refreshShared(){
  if(state.redrawReady){try{const list=await rpc('my_love_cycle_exclusions',{p_couple:c});state.loveExcludedCards=Array.isArray(list)?list:[];}catch{state.loveExcludedCards=[];}}else state.loveExcludedCards=[];
  // LR-019 is gated by the genuine server RPC: never show an inert heart.
  try{
+  const capabilities=await rpc('love_favorites_capabilities',{p_couple:c});
+  if(capabilities!==true)throw Error('Companion favorites engine unavailable');
   const hearts=await rpc('my_love_couple_favorites',{p_couple:c});
   if(!Array.isArray(hearts))throw Error('Invalid favorites response');
   state.loveFavorites=hearts;state.loveFavoritesReady=true;
