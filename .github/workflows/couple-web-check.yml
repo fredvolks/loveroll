@@ -11,6 +11,7 @@ concurrency:
 jobs:
   web-tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -414,6 +415,7 @@ jobs:
             design-captures/coffrets-v184-*.png
             design-captures/coffrets-v184-*.json
           if-no-files-found: warn
+          retention-days: 14
       - name: Verify REAL public discover and invitation on Android / iPhone responsive widths
         run: node couple-web/actual-discover-visual-check.cjs
 
@@ -461,3 +463,4 @@ jobs:
           name: LoveRoll-landing-captures
           path: landing-captures/*.png
           if-no-files-found: warn
+          retention-days: 14
