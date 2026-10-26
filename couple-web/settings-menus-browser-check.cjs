@@ -9,11 +9,12 @@ for(const route of ['compte','couple','jeu','notifications','monde','confidentia
   const glass=await page.locator('.settings-submenu-list button.lr-surface').first().evaluate(el=>{
    const style=getComputedStyle(el),root=getComputedStyle(document.documentElement);
    return {fill:root.getPropertyValue('--lr-surface-fill').trim(),
-    background:style.backgroundImage,shadow:style.boxShadow};
+    background:style.backgroundImage,shadow:style.boxShadow,font:style.fontFamily};
   });
   assert.match(glass.fill,/gradient/,'The shared ruby material must exist beyond mobile');
   assert.match(glass.background,/gradient/,'Desktop settings must visibly reuse Home ruby surfaces');
   assert.notEqual(glass.shadow,'none','Desktop settings must retain Home-like glass depth');
+  assert.match(glass.font,/LoveRoll Cormorant/,'Desktop Settings must share Home typography');
  }
  async function walk(path=[]){
   await page.waitForTimeout(40);
