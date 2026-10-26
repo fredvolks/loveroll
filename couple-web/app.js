@@ -913,6 +913,7 @@ async function refreshShared(){
  rpc('love_evening_calendar_challenges',{p_couple:c}),
  rpc('love_evening_reviews_for_couple',{p_couple:c}),
  rpc('love_calendar_pass_quota',{p_couple:c,p_month:state.eveningCalendarMonth||month()}),
+ rpc('my_love_monthly_pass_quota',{p_couple:c}),
  rpc('love_cycle_status',{p_couple:c})
  ]);
  state.cycleStatus=cycleInfo;
