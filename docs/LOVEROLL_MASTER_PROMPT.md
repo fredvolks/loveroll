@@ -534,3 +534,78 @@ Tester : avant/après D6 hebdomadaire; quota partiel/épuisé; verrou journalier
 Vérifier qu'un raccourci ne produit aucune mutation métier; le jeu est effectué dans Soirée. Valider les compteurs avec la logique partagée.
 Captures avant/après sur S25 Ultra, petit Android, Safari iPhone/PWA, tablette portrait/paysage et PC. Aucune coupe du dé, aucun flottement du socle, texte lisible et contrôles accessibles. Pas de défilement inutile en format cible; accessibilité et gros caractères restent prioritaires (LR-020).
 Mettre à jour le suivi avec code, tests et preuves de publication; ne pas déclarer ce parcours livré après la seule mise à jour du prompt.
+
+
+## LR-JEU-001 — Fiabiliser les défis existants sans modifier leurs textes
+**Demande approuvée le 26 octobre 2026 — spécification, à implémenter et vérifier.** Complète LR-015 à LR-019, LR-026, LR-ACCUEIL-001 et LR-SURPRISE-001, sans redéfinir silencieusement leurs règles.
+
+### Verrou de contenu — règle prioritaire
+Conserver exactement les titres et les consignes de toutes les cartes existantes, y compris les cartes sexuelles personnelles/importées et les modèles standard. Ne pas les réécrire, édulcorer, remplacer ni supprimer. Conserver les minuteries configurées et les instantanés historiques. L'autorisation de ce lot porte sur le fonctionnement, l'attribution et les métadonnées techniques ajoutées séparément. Une incohérence éditoriale se signale au propriétaire, sans modification automatique du texte.
+Avant toute mutation, établir un inventaire avec identifiants stables, version et empreinte des textes. Après changement, comparer les empreintes afin de prouver que titres/consignes sont inchangés. Ne pas publier les cartes privées dans le dépôt, les logs, les rapports ou les fixtures.
+
+### 1. Attribution et disponibilité des cartes
+Auditer les règles réellement actives en base et le parcours self_draws. Distinguer clairement : personne qui touche le dé, personne qui propose/offre, personne qui accomplit et personne qui reçoit l'attention.
+Corriger les associations drawer_role / recipient_role / offered_by / recipient pour que les cartes compatibles avec les deux personnes ne soient plus exclues parce que le mode « piger pour soi » vérifie deux rôles différents contre la même personne.
+L'audit en lecture seule a trouvé 43 cartes à rôles croisés sur le modèle MEDIUM de 100 cartes; c'est un constat du 26 octobre, à revérifier avant correction. L'attribution doit aussi correspondre aux verbes de la consigne existante : ne pas modifier ces verbes pour contourner un filtre.
+Préserver confidentialité des listes individuelles, règles de tours/dons, choix de catégorie, probabilités et contrôles serveur. Appliquer les corrections aux nouveaux tirages; ne pas réassigner rétroactivement les défis historiques ou actifs sans traitement explicite et vérifié.
+
+### 2. Progression, favoris et clôture
+Utiliser l'identifiant stable de la carte et sa catégorie/version pour les cartes uniques, jamais la face aléatoire du D100. Distinguer réalisations totales, cartes uniques découvertes/réalisées et favoris rejoués. Avant de modifier le compteur officiel du cycle de 200, réconcilier les règles existantes et LR-019, documenter la définition retenue et préserver les acquis; aucune remise à zéro opportuniste.
+Terminer les parcours LR-015/016 : 3 passes/mois/personne par défaut, paramétrables par l'admin; Refuser toujours libre; remplacement atomique et exclusions volontaires prioritaires. Aucune passe de soirée consommée pour adapter un lieu Surprise.
+Une soirée interrompue conserve les réalisations dans son historique; distinguer clairement son statut et ce qui est crédité au cycle ou au quota. Ne pas falsifier les soirées antérieures.
+Livrer les coups de cœur LR-019, l'adaptation LR-017 et les métadonnées LR-026 en conservant les textes originaux. Toute adaptation proposée par le couple reste une occurrence séparée, consentie et traçable.
+
+### 3. Sélection utile et gestion du contenu
+Ajouter séparément des métadonnées utiles (préparation, matériel, durée indicative, thème, effort, ambiance musicale) sans faire passer leur classification pour une nouvelle consigne. Préserver les réglages et probabilités approuvés; rendre visibles les filtres réellement appliqués. Ne pas utiliser une requête IA externe payante pour transmettre ou classer des cartes privées sans autorisation spécifique.
+Permettre un import avec prévisualisation : validation de structure, identifiants, doublons, attribution et minuteries; traiter les conflits sans écraser les textes ou archives. L'utilisateur reste maître du contenu sexuel.
+Le présent lot ne promet pas de production régulière de nouvelles cartes sexuelles. Les nouveaux contenus romantiques/non explicites et les expériences Éclat peuvent être enrichis indépendamment, en conservant les cartes existantes.
+La séparation Accueil/Soirée, le parcours Surprise/Geoapify et les tarifs restent ceux déjà approuvés. Un éventuel mode libre en plus du quota officiel reste une proposition à valider séparément.
+
+### Validation
+Comparer avant/après : textes et durées inchangés; cartes à rôles croisés admissibles aux bons utilisateurs; confidentialité; catégories et probabilités; double tirage; même carte avec deux faces D100 et deux cartes avec la même face; favoris; refus après épuisement des passes; arrêt/reprise/clôture; import et échec transactionnel. Tester les vrais RPC et les deux comptes, en plus des tests frontend.
+Mettre à jour le suivi avec preuves, sans annoncer l'implémentation sur la foi de ce prompt.
+
+## LR-MUSIQUE-001 — Ambiance musicale facultative par carte, liée au minuteur
+**Demande approuvée le 26 octobre 2026 — spécification, à implémenter et vérifier.** Ajouter une ambiance adaptée aux défis sans modifier leurs textes, leurs durées ou leur attribution métier.
+
+### Expérience et classification des cartes
+- Examiner les bibliothèques réellement utilisées : standard, styles, cartes personnelles/importées et cartes personnalisées. Ne pas se limiter aux 25 cartes de secours du fichier JS.
+- Ajouter à chaque définition de carte une métadonnée musicale séparée : aucune, douce/romantique, détente, sensuelle instrumentale, ludique ou rythmée, selon le contexte réel. Ne pas déduire l'ambiance du seul mot « Sexuel » ou du seul niveau d'intensité.
+- « Aucune » est une valeur valide et recommandée lorsque musique, dialogue ou écoute d'une autre chanson risquent de se gêner, ou lorsque la classification n'est pas fiable. Ne pas fabriquer de paroles ou de nouvelles consignes sexuelles.
+- Préserver les choix de musique du couple lors d'une mise à jour des métadonnées; permettre une modification simple de l'ambiance de la carte sans toucher au texte.
+- Sur chaque carte, afficher un petit contrôle accessible « ♫ Ambiance : [nom] », « Activer / Couper la musique » et un volume discret. L'interface garde la priorité au défi et au minuteur. Même pour une carte sans ambiance, indiquer « Sans musique » et permettre un choix manuel facultatif.
+- L'ambiance est désactivée par défaut avant un premier accord volontaire. Mémoriser ensuite la préférence par utilisateur/appareil, avec possibilité de couper à tout moment. Choisir une ambiance ne démarre pas la lecture.
+
+### Synchronisation avec le minuteur
+1. **Démarrer** : si musique activée et ambiance disponible, démarrer l'audio sur le geste qui lance le minuteur. Précharger raisonnablement; si le média n'est pas prêt, le minuteur démarre quand même et l'écran reste utilisable.
+2. **Pause** : mettre l'audio en pause avec le minuteur; **Reprendre** reprend les deux. Aucune deuxième piste superposée après plusieurs appuis.
+3. **00:00** : arrêter l'ambiance à l'échéance du minuteur, avec une très courte sortie douce sans queue sonore prolongée. Ensuite, la sonnerie éventuelle suit son réglage distinct.
+4. **Recommencer** : arrêter/remettre l'audio au début, réinitialiser le minuteur et attendre le prochain appui sur Démarrer.
+5. **Couper la musique / volume zéro** : agir uniquement sur l'ambiance; le minuteur continue. Réactiver pendant le compte à rebours ne redémarre pas sa durée. Ne jamais réactiver une musique dont le minuteur est terminé.
+6. **Défi réalisé manuellement, passé, refusé, annulé, clôture de soirée ou déconnexion** : arrêter immédiatement l'ambiance liée à ce défi. Un changement de carte ou de compte ne laisse pas une piste orpheline; il ne valide ni n'annule le défi par simple navigation.
+7. **Carte sans minuteur** : conserver « Sans minuteur ». Musique manuelle facultative, avec arrêt explicite et nettoyage à la sortie; ne pas inventer une durée pour déclencher une complétion.
+8. **Actualisation/suspension/reprise** : réconcilier avec l'échéance existante. À échéance dépassée, aucune musique ne repart. Respecter le geste nécessaire pour réautoriser le son. Ne pas stocker de secrets ni de consignes privées dans les paramètres audio.
+9. La musique ne devient jamais une preuve de réalisation. Conserver la transition métier idempotente LR-002, les exceptions pause/annulation/refus et les permissions. Un événement audio ended/error ne valide pas un défi.
+
+### Sonnerie, appareils et discrétion
+- Séparer clairement **musique pendant le défi** et **sonnerie à la fin**; mettre la musique en sourdine ne modifie pas implicitement la sonnerie, et inversement. Tout réglage général explicitement silencieux reste respecté.
+- Utiliser la même source temporelle que le minuteur, sans créer un deuxième compte à rebours audio indépendant. Réutiliser/améliorer les modules existants plutôt qu'ajouter un moteur concurrent.
+- Prévenir les lectures simultanées non voulues : l'audio est local au téléphone volontairement choisi; aucune lecture distante déclenchée chez le partenaire. Désigner un seul appareil d'ambiance pour la soirée lorsque nécessaire. Tester deux comptes/deux appareils/deux onglets.
+- Une seule ambiance active sur un appareil; arrêter proprement ou effectuer une transition contrôlée entre défi et Éclat. Libérer ressources, écouteurs et pistes au changement de contexte.
+- Mode discrétion LR-025 : arrêter ou rendre silencieuse l'ambiance immédiatement sur l'appareil masqué, sans relancer le son à la sortie du masque sans action volontaire.
+- iPhone Safari/PWA, Android WebView/PWA et PC : gérer lecture bloquée, appel téléphonique, interruption audio, écouteurs/Bluetooth, veille et écran verrouillé. Ne pas promettre musique continue ni arrêt programmé garanti en arrière-plan lorsque la plateforme suspend la page. Au retour, l'état audio doit correspondre au minuteur.
+- Si la musique échoue, le défi, la minuterie et la progression fonctionnent toujours. Message discret, aucune boucle de notifications.
+
+### Catalogue audio et qualité
+Utiliser des compositions originales ou des pistes disposant de droits explicites compatibles avec une application commerciale, documentés par asset. Vérifier les licences et les éventuelles obligations d'attribution. Ne pas engager de dépense ou souscrire de service sans autorisation.
+Prévoir un petit catalogue de qualité, partagé entre cartes (plusieurs variantes d'ambiances), instrumental par défaut, volume initial bas, transitions douces et boucles sans coupure audible. Vérifier à l'écoute sur téléphone et écouteurs; une simple correspondance de tags ne prouve pas la qualité musicale.
+Limiter poids, consommation réseau/batterie et préchargement; versionner les assets. L'absence de réseau ne doit pas bloquer le jeu. Ne pas transmettre les contenus des cartes à un tiers pour choisir une piste.
+Aucun abonnement musical externe requis pour jouer. Ne pas présenter le générateur d'ambiance Éclat actuel comme un catalogue musical nouveau tant que sa qualité et sa variété n'ont pas été vérifiées.
+
+### Tests et livraison
+- Start/pause/reprise/reset, échéance à zéro, fin manuelle, passer/refuser/annuler, changement de carte, changement de compte, clôture, discrétion, double-tap et deux appareils.
+- Couper/remettre la musique pendant le compte à rebours sans modifier le temps, ni déclencher une complétion ou une sonnerie supplémentaire.
+- Carte sans minuteur, ambiance aucune, média court/long/en boucle, échec réseau/décodage, lecture bloquée, retour après échéance et préférence conservée.
+- Tests d'intégration sur les vrais contrôles et tests d'écoute documentés; distinguer émulation et appareils physiques réellement testés.
+- Contrôle d'intégrité des titres, consignes, minuteries configurées et instantanés des cartes avant/après.
+- Livrer par lots compatibles avec suivi CI jusqu'à son état final; renseigner les preuves dans LOVEROLL_SUIVI.md et vérifier le parcours publié. Cette addition documentaire ne vaut ni musique intégrée ni fonctionnalité déployée.
