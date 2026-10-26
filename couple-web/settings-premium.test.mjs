@@ -69,3 +69,12 @@ test('Couple menu removes fictional preview and directs the invitation CTA to th
  assert.match(action,/state\.tab='invitation'/);
  assert.match(action,/await reload\(\)/);
 });
+
+test('LR-015: both partners may browse and restore couple-scoped excluded cards',()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ assert.match(app,/rpc\('my_love_cycle_exclusions'/);
+ assert.match(app,/settings-page:excluded-cards/);
+ assert.match(app,/Réintégrer/);
+ assert.match(app,/restore_love_cycle_exclusion/);
+ assert.match(app,/p_category:category,p_card_id:cardId/);
+});

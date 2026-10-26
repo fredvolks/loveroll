@@ -81,3 +81,14 @@ test('LR-015 queue labels an explicitly refused card without exposing partner da
  assert.equal(queueLabel('passed'),'Passé');
  assert.equal(queueLabel('completed'),'Terminé');
 });
+
+test('LR-015: active cards expose three explicit refusal choices and one atomic replacement',()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ assert.equal(queueLabel('refused'),'Refusé');
+ assert.match(app,/evening-refuse-choice:/);
+ assert.match(app,/Oui, retirer du lot/);
+ assert.match(app,/Non, le garder dans le lot/);
+ assert.match(app,/rpc\('love_respond_and_redraw'/);
+ assert.match(app,/challengeTimer\.decisionPending=true/);
+ assert.match(app,/challengeTimer\.autoCompletePending=false/);
+});
