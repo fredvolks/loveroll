@@ -88,3 +88,16 @@ test('LR-015: excluded cards submenu is reachable only after server feature gati
  assert.match(source,/settings-page:excluded-cards/);
  assert.match(source,/restore_love_cycle_exclusion/);
 });
+
+test('LR-015: Settings menu exposes excluded cards as a navigable leaf rather than hiding its source row',()=>{
+ const menu=readFileSync(new URL('./settings-menus.mjs',import.meta.url),'utf8');
+ const start=menu.indexOf("else if(route==='jeu')");
+ const end=menu.indexOf("else if(route==='notifications')",start);
+ assert.ok(start>0&&end>start);
+ const jeu=menu.slice(start,end);
+ assert.match(jeu,/link\('\.settings-advanced \[data-action="settings-page:excluded-cards"\]'\)/);
+ assert.match(jeu,/link\('\.settings-advanced \[data-action="settings-page:admin"\]'\)/);
+ assert.match(menu,/source\.append\(\.\.\.body\.childNodes\)/,
+  'The menu still moves source controls out of the visible panel');
+ assert.match(menu,/menu\.append/,'Selected leaves must be composed in the live menu');
+});
