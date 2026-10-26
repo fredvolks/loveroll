@@ -62,3 +62,13 @@ test('Soirée requires category and timer rings at 00:00 without challenge-recei
  assert.match(audio,/Son à la fin des minuteurs/);
  assert.match(read('index.html'),/ios-install-tour\.mjs/);
 });
+
+test('timer vibrates on Android in sound mode too, and never duplicates expiry',()=>{
+ const app=read('app.js'),start=app.indexOf('function endSignal(){'),end=app.indexOf('function updateChallengeClock(){',start);
+ assert.ok(start>=0&&end>start);
+ const expiry=app.slice(start,end);
+ assert.match(expiry,/if\(challengeTimer\.notified\)return/);
+ assert.match(expiry,/navigator\.vibrate\(\[220,110,220,110,360\]\)/);
+ assert.ok(expiry.indexOf('navigator.vibrate')<expiry.indexOf("challengeTimer.mode==='sound'"));
+ assert.match(expiry,/showTimerFinished\(\)/);
+});
