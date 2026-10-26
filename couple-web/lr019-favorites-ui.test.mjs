@@ -19,7 +19,8 @@ test('LR-019 hearts remain per-partner, keep challenge content and protect priva
  assert.match(app,/f\.marked_by===state\.user\.id/);
  assert.match(app,/item\.recipient===state\.user\?\.id/);
  assert.match(app,/mine\?\.card_title\|\|\('Carte '\+cardId\)/);
- assert.match(app,/if\(!present&&!owned\)throw Error/);
+ assert.match(app,/if\(!present&&!owned&&!archived\)throw Error/);
+ assert.match(app,/const closedIds=new Set/);
  assert.match(app,/safe\(resolvedCard\(view\)\.description\)/);
  assert.match(app,/state\.loveFavoritesReady\?settingRow\('Nos coups de cœur'/);
  assert.match(app,/\['admin','excluded-cards','favorites'\]\.includes\(settingsOpenSection\)\?'jeu'/);
