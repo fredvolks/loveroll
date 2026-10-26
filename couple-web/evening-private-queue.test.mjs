@@ -75,3 +75,9 @@ test('Only completed challenge cards are greyed but stay clickable for history',
  assert.doesNotMatch(app,/data-action="evening-open:.*disabled/);
  assert.match(queueCss,/\.evening-queue-item\.is-completed:focus-visible/);
 });
+
+test('LR-015 queue labels an explicitly refused card without exposing partner data',()=>{
+ assert.equal(queueLabel('refused'),'Refusé');
+ assert.equal(queueLabel('passed'),'Passé');
+ assert.equal(queueLabel('completed'),'Terminé');
+});

@@ -52,7 +52,7 @@ export function monthlyChallengeSuccess({
   // A completed or passed card is reportable immediately; unresolved cards become
   // final non-completions only when that evening is actually closed.
   const reportable=received.filter(c=>!!sessionsById.get(c.session_id)?.finished_at||
-    c.status==='completed'||c.status==='passed');
+    c.status==='completed'||c.status==='passed'||c.status==='refused');
   const complete=reportable.filter(c=>c.status==='completed').length;
   // Free passes never penalize a monthly completion rate.
   const free=reportable.filter(c=>c.status==='passed'&&freePasses.has(c.id)).length;
