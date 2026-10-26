@@ -1,8 +1,19 @@
 # LoveRoll — PROMPT MAÎTRE OFFICIEL
 > Version documentaire 2026-10-26 · Dépôt officiel : [fredvolks/loveroll](https://github.com/fredvolks/loveroll) · Statut initial : **demandé / à auditer**, pas « terminé ».
 
+
+## Guide de lecture et règles de coordination — consolidation du 26 octobre 2026
+- **Demandes et critères :** ce prompt. **Avancement courant et preuves :** [suivi officiel](./LOVEROLL_SUIVI.md). **Entrées non triées :** [nouvelles demandes](./LOVEROLL_NOUVELLES_DEMANDES.md). Les notes de PR ci-dessous sont des instantanés datés; vérifier le dernier état GitHub avant toute décision.
+- **Accueil :** vue d'ensemble, D6 hebdomadaire et raccourcis (LR-ACCUEIL-001). **Soirée :** déroulement du jeu, dés individuels, défis et minuteries (LR-014 à LR-028). **Surprise :** rendez-vous mensuel, lieux et planification (LR-SURPRISE-001). **Éclat :** expérience/coffrets existants, avec leurs droits actuels.
+- **Demandes approuvées :** les sections identifiées de ce document, y compris LR-017 à LR-019, LR-025 à LR-028, LR-SURPRISE-001 et LR-ACCUEIL-001. Les autres suggestions d'un rapport restent des propositions. LR-033 n'impose pas de redemander l'autorisation pour une exigence déjà approuvée ici.
+- **Conflits :** appliquer les précisions explicites des nouvelles sections uniquement à leur périmètre. LR-019 précise l'exception des favoris à LR-015; les exclusions volontaires restent prioritaires. LR-SURPRISE-001 autorise budget/km null sans préférence luxe. LR-ACCUEIL-001 précise le rôle fonctionnel de l'Accueil tout en conservant sa référence graphique.
+- **Un seul ordre d'exécution courant :** (1) récupérer l'état réel de main/branches/PR/CI et préserver les travaux; (2) finaliser les correctifs P0 LR-001 à LR-004 et les erreurs de fiabilité Geoapify documentées sous LR-SURPRISE-001; (3) intégrer les lots déjà ouverts compatibles, puis LR-015/016 ensemble pour le parcours et les quotas; (4) LR-018, LR-019, LR-017, LR-025, LR-026/027/028 selon leurs dépendances; (5) LR-ACCUEIL-001 puis la suite du parcours LR-SURPRISE-001; (6) compléter harmonisation et audit. Responsive, sécurité, tests et preuves s'appliquent à chaque lot, pas seulement à la fin. Les anciens ordres plus bas servent de contexte historique.
+- **Exécution continue pendant la session :** enchaîner les lots autorisés sans réclamer « continue ». Après un push, identifier les workflows, les suivre jusqu'à leur état final, analyser les journaux en cas d'échec et corriger. Un test lancé n'est pas une livraison. Déployer les lots compatibles et validés dans le périmètre autorisé; vérifier la version et le parcours publiés. Un blocage d'appareil physique se note explicitement et n'empêche pas les autres travaux indépendants. Ne pas prétendre poursuivre après la fin de session.
+- **États distincts :** spécifié / implémenté / testé (automatique, émulation, appareil réel) / fusionné / déployé et vérifié. Une fusion ou une CI verte ne vaut pas validation physique. Ne pas inventer de progression à partir du nombre de commits.
+- **Repères :** [P0](#p0--correctifs-fonctionnels), [Accueil](#lr-accueil-001--accueil-vue-densemble-et-raccourcis-soirée-parcours-de-jeu), [Surprise](#lr-surprise-001--rendez-vous-surprise-premium-d100-et-geoapify), [suivi](./LOVEROLL_SUIVI.md).
+
 ## Comment utiliser ce document
-Ce document est la **source de vérité des demandes** concernant le correctif du D100, les minuteries, la cohérence graphique et le responsive. Il ne signifie **pas** que ces exigences sont implémentées. Chaque exigence possède un identifiant LR-xxx repris dans [LOVEROLL_SUIVI.md](./LOVEROLL_SUIVI.md).
+Ce document est la **source de vérité des demandes** LoveRoll : jeu, Accueil, Soirée, Surprise/Geoapify, minuteries, confidentialité, cohérence graphique et responsive. Il ne signifie **pas** que ces exigences sont implémentées. Chaque exigence possède un identifiant LR-xxx repris dans [LOVEROLL_SUIVI.md](./LOVEROLL_SUIVI.md).
 
 - Ajouter des demandes dans [LOVEROLL_NOUVELLES_DEMANDES.md](./LOVEROLL_NOUVELLES_DEMANDES.md) ou ouvrir une **Issue** GitHub ; ne pas effacer les demandes anciennes.
 - Lors du prochain développement, lire ce document, le suivi, les nouvelles demandes, le README et le code réel avant de modifier quoi que ce soit.
@@ -10,7 +21,7 @@ Ce document est la **source de vérité des demandes** concernant le correctif d
 - Ne pas modifier silencieusement les règles commerciales, les abonnements, la progression ou le contenu des défis.
 
 ## Identité et périmètre
-**Produit :** LoveRoll, expérience romantique à deux sur Android et PWA (Safari iPhone/iPad, navigateurs PC/tablettes). **Dépôt :** fredvolks/loveroll, et non le dépôt historique Mon Wallet. **Code :** PWA dans `couple-web/`, Android dans `app/`. La page **Accueil actuelle** est la **référence graphique et fonctionnelle** : rubis, bordeaux, rose et doré, rideaux, chandelles, roses, marbre, logo LoveRoll, effets de verre et boutons Premium.
+**Produit :** LoveRoll, expérience romantique à deux sur Android et PWA (Safari iPhone/iPad, navigateurs PC/tablettes). **Dépôt :** fredvolks/loveroll, et non le dépôt historique Mon Wallet. **Code :** PWA dans `couple-web/`, Android dans `app/`. La page **Accueil actuelle** est la **référence graphique** (les responsabilités fonctionnelles sont précisées sous LR-ACCUEIL-001) : rubis, bordeaux, rose et doré, rideaux, chandelles, roses, marbre, logo LoveRoll, effets de verre et boutons Premium.
 
 ### Rôles attendus de l'agent exécutant
 Travailler simultanément comme développeur senior Web/Android/PWA/WebGL, directeur artistique haut de gamme, expert UX/UI/accessibilité, testeur QA multiplateforme et **couple utilisateur** (un partenaire expérimenté et un peu moins technophile). Identifier les vrais irritants d'usage, pas uniquement les anomalies CSS. Faire des propositions vérifiables, avec priorité et raison, en conservant l'ambiance romantique.
@@ -113,7 +124,7 @@ En l'absence de catégorie pour le défi/D100, la zone doit suggérer **visuelle
 9. Double-clic/double-tap, lenteur réseau, états de tour/quota refusés → pas de tirage doublé.
 10. Captures et tests navigation/safe areas Android, iPhone, iPad et PC.
 
-**Statut de cette demande :** **À faire — ajout au cahier des charges uniquement**, aucune fonction n'est déclarée implémentée par la mise à jour documentaire. Conserver LR-013 et toutes les règles de catégorie existantes.
+**Statut documentaire LR-014 :** spécification approuvée, travail partiel référencé plus haut. Consulter le suivi et GitHub pour l'avancement courant; ni cette spécification ni une PR ne prouvent une livraison. Conserver LR-013 et toutes les règles de catégorie existantes.
 
 
 ### LR-015 — Défis : « Passer », « Refuser », exclusion volontaire et retour dans la pige (nouvelle demande du 26 octobre 2026)
@@ -267,7 +278,9 @@ En l'absence de catégorie pour le défi/D100, la zone doit suggérer **visuelle
 - Synchronisation : préférence de présentation **locale à l'appareil**, sans masquer de force l'écran du partenaire.
 - Tests : retour, verrouillage, actualisation, changement d'onglet, Android/iOS/PC, accessibilité.
 
-**Avancement LR-025 :** [PR #44](https://github.com/fredvolks/loveroll/pull/44), mode masqué local, boutons dans Soirée et cartes, tests Node/Chromium. Encore en brouillon, CI et confidentialité Push/audio/tests physiques à confirmer ; **pas de publication confirmée**.\n\n### LR-026 — Variété intelligente sans répétitions de défis semblables (idée no 7)
+**Avancement LR-025 :** [PR #44](https://github.com/fredvolks/loveroll/pull/44), mode masqué local, boutons dans Soirée et cartes, tests Node/Chromium. Encore en brouillon, CI et confidentialité Push/audio/tests physiques à confirmer ; **pas de publication confirmée**.
+
+### LR-026 — Variété intelligente sans répétitions de défis semblables (idée no 7)
 - Empêcher autant que possible de proposer deux fois de suite, dans une **même soirée**, des cartes quasiment identiques en activité ou instructions.
 - Mettre en place des **tags structurés explicites** (thème, durée, type d'activité, intensité, matériel si requis) ou déduire une similarité locale maîtrisée ; ne pas baser la sécurité métier sur une requête IA probabiliste payante non prévue.
 - Construire le filtrage à partir des **cartes admissibles** uniquement ; respecter **catégorie tirée, droits, préférences, rôles, règles de non-répétition et exclusions** ainsi que les mécanismes de hasard D100 existants.
@@ -362,7 +375,7 @@ Respecter authentification, compte couple, autorisations Premium, synchronisatio
 
 ## Audit en cours
 
-Une [revue rapide de code avec 7 propositions d'amélioration à valider](./LOVEROLL_PROPOSITIONS_AMELIORATIONS_20261026.md) complète la présente spécification LR-016. **Ces propositions ne sont pas encore des exigences approuvées** et ne doivent pas être codées automatiquement.
+Une [revue rapide de code](./LOVEROLL_PROPOSITIONS_AMELIORATIONS_20261026.md) complète cette spécification. Ses idées 3 à 8 ont été approuvées et détaillées sous LR-017 à LR-019 et LR-025 à LR-027; l'invitation est approuvée sous LR-028. Les autres propositions restent à valider, sauf exigence explicite ultérieure de ce document.
 
 Le [rapport UX/UI du 26 octobre 2026](./LOVEROLL_AUDIT_UX_UI_20261026.md) est un constat technique **provisoire** (designer + couple). Il complète ce prompt sans changer ses exigences. Les nouvelles demandes à traiter dans [LOVEROLL_NOUVELLES_DEMANDES.md](./LOVEROLL_NOUVELLES_DEMANDES.md) restent prioritaires lors des revues futures.
 
@@ -400,7 +413,7 @@ Le [rapport UX/UI du 26 octobre 2026](./LOVEROLL_AUDIT_UX_UI_20261026.md) est un
 | LR-025 | [PR #44](https://github.com/fredvolks/loveroll/pull/44), écran neutre local et boutons Masquer, CI réussi | Vérification physique iOS/Android, confidentialité des notifications/audio, fusion/déploiement |
 | LR-026–028 | Spécifications approuvées | Variété de pige, hiérarchie d'action, invitation Oui/Non/Peut-être avec stockage privé et Push facultatif |
 
-**Ordre de continuation à appliquer :**
+**Ordre de continuation historique (consulter le guide de coordination pour l'ordre courant) :**
 1. Résoudre les conflits et valider les PR P0/P1 déjà ouvertes, sans fusionner à l'aveugle. Conserver les tests visuels du D100 et de l'Accueil.
 2. Terminer LR-015 côté SQL/RPC avant d'exposer des boutons Passer/Refuser : aucun nouveau défi fantôme, pas de dépassement de quota, un seul tour, exclusion par couple et conservation de l'historique.
 3. Intégrer LR-016 côté UI et tests de concurrence, en conservant Refuser illimité même après 3 passes ; déployer la migration seulement avec une version client compatible.
@@ -410,7 +423,7 @@ Le [rapport UX/UI du 26 octobre 2026](./LOVEROLL_AUDIT_UX_UI_20261026.md) est un
 
 **Contraintes permanentes :** le bouton Passer consomme un quota mensuel propre au destinataire, Refuser reste libre ; les favoris ne deviennent éligibles qu'à partir d'une prochaine soirée et ne contournent jamais les exclusions ; l'invitation Oui n'exécute pas le D6 à la place du partenaire ; masquer le jeu ne modifie pas ses données. Conserver les tarifs, abonnements, comptes, thèmes, dés 3D et le visuel Accueil sans modification hors demande explicite.
 
-## Ordre d'exécution souhaité
+## Ordre d'exécution initial — historique, complété par le guide de coordination
 1. Identifier code réel et branches, établir captures initiales, figer les régressions.
 2. **P0 : LR-001 à LR-004** (D100, timers, calendrier, audio) avec tests.
 3. **P1 : LR-010 à LR-013** (harmonisation et cartes) sur la base Accueil.
@@ -480,3 +493,44 @@ Améliorer le parcours Surprise existant pour fournir au couple une sortie perti
 Tester au minimum : deux champs vides, chaque champ vide séparément, budget 0, budget 300, distance plafonnée, valeurs invalides, sauvegarde/rechargement des null, prix inconnu, variété avec filtres vides, absence de trajet, panne puis reprise, double ouverture, aucun lieu, adaptation sans nouveau tirage, date/rappel modifiés et synchronisation entre partenaires.
 Vérifier visuellement sur Android S25 Ultra, iPhone, tablette et PC : D100 complet sur socle, lisibilité, formulaire utilisable, boutons accessibles et absence de débordement.
 Livrer par lots vérifiés dans le dépôt existant, suivre les tests GitHub jusqu'au résultat final et mettre à jour le suivi avec preuves. Distinguer documentation ajoutée, code implémenté, tests réussis et déploiement réellement vérifié. Ne pas cocher cette exigence comme réalisée après le seul ajout de ce prompt.
+
+
+## LR-ACCUEIL-001 — Accueil : vue d'ensemble et raccourcis; Soirée : parcours de jeu
+**Demande approuvée le 26 octobre 2026 — spécification à implémenter et vérifier.** Cette section retient la proposition simplifiée finale et remplace toute proposition antérieure faisant de l'Accueil un deuxième écran de jeu.
+
+### But et séparation des responsabilités
+L'Accueil permet de comprendre où en est le couple et d'accéder à la prochaine étape. L'onglet Soirée reste le lieu où l'on joue.
+- Conserver sur Accueil : D6 hebdomadaire partagé, résultat officiel, quota hebdomadaire restant, statut compact de la soirée, carte Surprise/Éclat et petit bilan mensuel.
+- Conserver dans Soirée : création/démarrage de soirée, invitation LR-028 et ses réponses, D6 personnels, D100 des défis, choix/confirmation de catégorie, listes privées, cartes, adaptation, passer/refuser, favoris, minuteries, complétion et clôture.
+- Les raccourcis d'Accueil ouvrent la bonne étape de Soirée sans lancer un dé, créer une session, envoyer une invitation ou changer un état métier automatiquement.
+- Réutiliser les sources serveur et règles existantes; ne pas créer un deuxième moteur d'état ou des compteurs concurrents.
+
+### Écran et action principale
+Préserver décor rouge, logo, typographie, boutons rubis, vrai D6 3D, socle/tissu, navigation et ambiance actuelle. Conserver les probabilités et les règles de tirage. Aucun remplacement par une image plate.
+1. Avant tirage officiel : « Cette semaine, on joue ? » et « Brasser notre dé ». Un tirage commun par semaine, protections serveur et double-tap existantes.
+2. Après tirage : résultat toujours visible et progression lisible, par exemple « 3 soirées cette semaine · 2 disponibles ». Calculer le disponible selon les quotas officiels, y compris sessions actives et règle journalière; ne pas confondre disponible cette semaine et démarrable aujourd'hui.
+3. Remplacer le gros bouton inerte « Déjà brassé cette semaine, revenez la semaine prochaine » par un raccourci « Aller à notre soirée »; si une soirée est ouverte, « Reprendre notre soirée »; si le quota est épuisé, « Voir nos soirées » ouvre l'historique. Mentionner sobrement la prochaine disponibilité lorsque pertinente, sans promettre une nouvelle soirée le même jour.
+4. Un retour dans Soirée retrouve l'état officiel, même si le partenaire a avancé ou clôturé depuis un autre appareil; aucun nouveau tirage ou quota consommé par navigation.
+5. Le D6 montré avant tirage reste clairement une prévisualisation, jamais un résultat acquis.
+
+### Carte compacte « Ce soir »
+- Remplacer le tableau détaillé par partenaire et les tirets « — / Restants : — » par un statut clair et un accès à Soirée.
+- Exemples selon état réel : « Aucune soirée commencée », « Une invitation vous attend », « En attente du partenaire », « Soirée en cours », « Notre soirée est terminée ♥ ».
+- Distinguer chargement, absence de soirée et problème réseau. Un chargement ne doit pas apparaître comme zéro activité.
+- Ne pas montrer ici les consignes, cartes, catégories intimes ou résultats individuels encore secrets; les détails de progression par joueur restent dans Soirée.
+- Ne pas dire « Ce soir » pour une session ancienne laissée ouverte : proposer la reprise avec un libellé honnête.
+- Le refus et le consentement ne sont jamais assimilés à une faute ou à une perte de points par cette synthèse.
+
+### Carte mensuelle et bilan
+- Faire évoluer la carte Surprise selon l'état LR-SURPRISE-001 : à découvrir, choisir qui invite, à planifier, date prévue, réalisé. Ne plus garder systématiquement « Surprise du mois disponible » après réalisation.
+- Après réalisation explicite du rendez-vous (pas après le seul tirage), cette place peut présenter Éclat conformément à la demande existante; Surprise reste accessible par son onglet et les droits Éclat existants s'appliquent. Aucun changement tarifaire.
+- Bilan mensuel discret, collectif et cliquable : défis réalisés ensemble et soirées partagées; exemple uniquement illustratif, aucune valeur codée en dur. Le détail conserve les informations existantes via une vue de bilan/calendrier.
+- Si la série actuelle est affichée, la nommer « Semaines consécutives »; ne pas la présenter comme le total des semaines actives du mois.
+- Vérifier et documenter la date métier servant au classement mensuel des défis réalisés, notamment les sessions qui traversent minuit ou un changement de mois. Ne pas réécrire l'historique ni inventer une date de complétion absente.
+- Préserver distinction réalisations totales/défis uniques du cycle, favoris LR-019 et confidentialité LR-025.
+
+### Acceptation et livraison
+Tester : avant/après D6 hebdomadaire; quota partiel/épuisé; verrou journalier; invitation en attente; un seul D6 personnel lancé (pas de révélation); deux D6 lancés; session ouverte/ancienne/clôturée ailleurs; retour/rechargement/deux comptes; offline/chargement; changement de semaine/mois America/Toronto; Surprise à chaque étape; droits Éclat.
+Vérifier qu'un raccourci ne produit aucune mutation métier; le jeu est effectué dans Soirée. Valider les compteurs avec la logique partagée.
+Captures avant/après sur S25 Ultra, petit Android, Safari iPhone/PWA, tablette portrait/paysage et PC. Aucune coupe du dé, aucun flottement du socle, texte lisible et contrôles accessibles. Pas de défilement inutile en format cible; accessibilité et gros caractères restent prioritaires (LR-020).
+Mettre à jour le suivi avec code, tests et preuves de publication; ne pas déclarer ce parcours livré après la seule mise à jour du prompt.
