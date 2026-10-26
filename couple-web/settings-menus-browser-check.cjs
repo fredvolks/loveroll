@@ -2,8 +2,8 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),{cre
 (async()=>{const browser=await chromium.launch({headless:true});try{for(const [width,height] of [[360,640],[412,824],[393,852],[820,1180],[1366,768]]){
 const world=createWorld();world.testModeEligible=true;world.referral={enabled:true,couple_ready:true,code:'0123456789abcdef01234567',available_cad_cents:1500,annual_renewal_cad_cents:4999};
 const {page,context,errors}=await setupEditorial(browser,world,{width,height});
-for(const route of ['compte','couple','jeu','notifications','monde','confidentialite','application','admin','aide-des','parrainage']){
- await page.locator('.nav [data-action="tab:settings"]').click();if(route==='admin'||route.startsWith('aide')){await page.locator('[data-action="settings-page:'+(route==='admin'?'jeu':'application')+'"]').click();await require('./settings-test-navigation.cjs').revealSetting(page,'[data-action="settings-page:'+route+'"]');}await page.locator('[data-action="settings-page:'+route+'"]').click();
+for(const route of ['compte','couple','jeu','notifications','sonneries','monde','confidentialite','application','admin','aide-des','parrainage']){
+ await page.locator('.nav [data-action="tab:settings"]').click();if(route==='sonneries')await page.locator('[data-action="settings-page:notifications"]').click();if(route==='admin'||route.startsWith('aide')){await page.locator('[data-action="settings-page:'+(route==='admin'?'jeu':'application')+'"]').click();await require('./settings-test-navigation.cjs').revealSetting(page,'[data-action="settings-page:'+route+'"]');}await page.locator('[data-action="settings-page:'+route+'"]').click();
  assert.equal(await page.locator('.settings-screen-pager').count(),0);
  async function walk(path=[]){
   await page.waitForTimeout(40);
@@ -14,7 +14,12 @@ for(const route of ['compte','couple','jeu','notifications','monde','confidentia
   const keys=await page.locator('.settings-submenu-list:visible [data-settings-open]').evaluateAll(els=>els.map(el=>el.dataset.settingsOpen));
   for(const key of keys){await page.locator('[data-settings-open="'+key+'"]').click();await walk([...path,key]);await page.locator('.settings-back').click();}
  }
- if(route==='compte'){
+ if(route==='sonneries'){
+ assert.equal(await page.locator('[data-action="sound-test"]').count(),1,'Timer test button available');
+ assert.equal(await page.locator('[data-action="sound-toggle"]').count(),1,'Timer volume option available');
+ assert.match(await page.locator('.settings-detail-body').innerText(),/fin des minuteurs/i);
+}
+if(route==='compte'){
   for(const selector of ['#profile-name','#profile-gender','#profile-play-style','.settings-birthday-edit','input[readonly]','.account-test-modes','[data-action="profile"]','[data-action="signout"]']){
    assert.ok(await page.locator(selector).isVisible(),selector+' should be directly visible');
    const box=await page.locator(selector).boundingBox();
