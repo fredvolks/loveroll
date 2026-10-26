@@ -252,6 +252,9 @@ jobs:
           EOF
           node verify-ipad.cjs
           node --test couple-web/editorial-details.test.mjs
+      - name: Diagnose D100 compact header geometry early (no skipped validations)
+        run: LOVEROLL_D100_HEADER_PROBE=1 node couple-web/evening-d100-template-browser-check.cjs
+
       - name: Capture actual premium invitation and account pages on S25 / iPhone
         run: |
           python3 -m http.server 8765 -d couple-web >/tmp/love-invite58-http.log 2>&1 &
