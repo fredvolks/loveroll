@@ -897,7 +897,7 @@ async function reload(){
 }
 async function refreshShared(){
  const c=state.coupleId;
- const [rolls,sessions,advents,events,diary,occasionSettings,occasionRolls,keys,challengeHistory,gifts,adventServerDate,eveningStats,calendarChallenges,eveningReviews,calendarPasses,cycleInfo]=await Promise.all([
+ const [rolls,sessions,advents,events,diary,occasionSettings,occasionRolls,keys,challengeHistory,gifts,adventServerDate,eveningStats,calendarChallenges,eveningReviews,calendarPasses,monthlyPassQuota,cycleInfo]=await Promise.all([
  query('couple_rolls',{eq:{couple_id:c}}),
  query('couple_sessions',{eq:{couple_id:c},order:'started_at'}),
  query('couple_advent',{eq:{couple_id:c}}),
@@ -913,6 +913,7 @@ async function refreshShared(){
  rpc('love_evening_calendar_challenges',{p_couple:c}),
  rpc('love_evening_reviews_for_couple',{p_couple:c}),
  rpc('love_calendar_pass_quota',{p_couple:c,p_month:state.eveningCalendarMonth||month()}),
+ rpc('my_love_monthly_pass_quota',{p_couple:c}),
  rpc('love_cycle_status',{p_couple:c})
  ]);
  state.cycleStatus=cycleInfo;
@@ -920,6 +921,7 @@ async function refreshShared(){
  state.eveningHistoryStats=Array.isArray(eveningStats)?eveningStats:[];
  state.eveningCalendarChallenges=Array.isArray(calendarChallenges)?calendarChallenges:[];
  state.calendarPassQuota=Array.isArray(calendarPasses)?calendarPasses:[];
+ state.monthlyPassQuota=monthlyPassQuota;
  state.calendarPassMonth=state.eveningCalendarMonth||month();
  state.eveningReviews=Array.isArray(eveningReviews)?eveningReviews:[];
  state.gifts=gifts;
