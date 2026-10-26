@@ -64,6 +64,24 @@ export function fitEveningD100(root){
  const fit=()=>{
   if(!view.isConnected){fitObserver.disconnect();return;}
   fitSharedStage(root);
+  // LR-001: use the same D100 size reference as Surprise but respect the
+  // actual, height-constrained Soirée theater (including safe-area/nav).
+  const bounds=hero.getBoundingClientRect();
+  if(bounds.width>0&&bounds.height>0){
+   const size=Math.floor(Math.max(1,Math.min(
+    window.innerWidth*.82,window.innerHeight*.41,390,
+    bounds.width*.96,
+    // Never clamp to the stage's OWN computed height: the grid stage
+    // follows the canvas and the feedback loop shrank a small phone to 53px.
+    Math.max(bounds.height*.94,window.innerHeight*.24)
+   )));
+   const previous=hero.style.getPropertyValue('--evening-d100-stage-size');
+   const next=size+'px';
+   if(previous!==next){
+    hero.style.setProperty('--evening-d100-stage-size',next);
+    hero.querySelector('canvas')?.loveRollDie?.refresh?.();
+   }
+  }
  };
  const fitObserver=new ResizeObserver(fit);observer=fitObserver;fitObserver.observe(root);fit();
  hero.querySelector('canvas')?.loveRollDie?.refresh?.();document.fonts.ready.then(fit);

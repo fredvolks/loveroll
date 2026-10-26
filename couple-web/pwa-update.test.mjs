@@ -25,7 +25,7 @@ test('LoveRoll build versions agree between endpoint, app, HTML and imported mod
  assert.ok(html.includes('ritual-titles.css?v=20261020-switch178'));
  assert.ok(sw.includes('./ritual-titles.css'));
  assert.ok(app.includes('premium-advent.mjs?v=20261019-bubble175'));
- assert.ok(app.includes('evening-calendar.mjs?v=20261022-home228'));
+ assert.ok(app.includes('evening-calendar.mjs?v='+appTag));
  assert.ok(app.includes('play-style.mjs?v=20261018-styles149'));
  assert.ok(sw.includes('./calendar-success-stats.mjs'));
  assert.ok(sw.includes('./play-style.mjs'));
