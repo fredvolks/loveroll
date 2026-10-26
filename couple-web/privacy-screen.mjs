@@ -8,6 +8,7 @@ export function startLoveRollPrivacy({doc=globalThis.document,storage=globalThis
  if(!doc?.body)return ()=>{};
  const html=doc.documentElement;
  const app=doc.getElementById('app');
+ const initialAriaHidden=app?.getAttribute('aria-hidden');
  if(doc.querySelector('[data-lr-privacy-screen]'))return ()=>{};
  const shield=doc.createElement('section');
  shield.className='lr-privacy-screen';
@@ -34,7 +35,7 @@ export function startLoveRollPrivacy({doc=globalThis.document,storage=globalThis
    reveal.focus({preventScroll:true});
   }else{
    shield.setAttribute('aria-hidden','true');
-   if(app){app.inert=originalInert;app.removeAttribute('aria-hidden');}
+   if(app){app.inert=originalInert;initialAriaHidden===null?app.removeAttribute('aria-hidden'):app.setAttribute('aria-hidden',initialAriaHidden);}
    doc.title=previousTitle;
    const target=opener?.isConnected?opener:app?.querySelector?.('[data-lr-privacy-hide]');
    if(target?.focus)target.focus({preventScroll:true});
