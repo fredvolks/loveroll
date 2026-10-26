@@ -340,3 +340,11 @@ test('LR-015 replacement ancestry and official D6 totals remain partner-checked 
  assert.match(app,/replaces_challenge_id:byReplacement\.get\(challenge\.id\)\|\|null/);
  assert.match(read('qa/lr015-db-contract.sql'),/Cross-couple replacement ancestry exposed/);
 });
+
+test('LR-015 rejects stale accepted, completed and passed updates after evening closure',()=>{
+ const sql=read('migrations/20261026_lr015_z_atomic_respond_redraw.sql');
+ const legacy=sql.slice(sql.lastIndexOf('CREATE OR REPLACE FUNCTION public.answer_challenge('));
+ assert.match(legacy,/FROM public\.couple_sessions closed_session[\s\S]*closed_session\.finished_at IS NULL FOR UPDATE/);
+ assert.match(legacy,/IF NOT FOUND THEN RAISE EXCEPTION 'Cette soirée est clôturée'/);
+ assert.match(read('qa/lr015-closed-evening.sql'),/A stale client completed a closed-night challenge/);
+});

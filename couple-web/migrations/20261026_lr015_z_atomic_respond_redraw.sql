@@ -539,6 +539,13 @@ BEGIN
    OR c.recipient IS DISTINCT FROM (select auth.uid()) THEN
   RAISE EXCEPTION 'Seul le destinataire peut répondre';
  END IF;
+ -- A late timer callback or cached client must not rewrite the outcome
+ -- of an evening once it is closed. Same couple -> challenge -> session
+ -- lock order as love_respond_and_redraw, preventing cross-device races.
+ PERFORM 1 FROM public.couple_sessions closed_session
+ WHERE closed_session.id=c.session_id AND closed_session.couple_id=v_couple
+   AND closed_session.finished_at IS NULL FOR UPDATE;
+ IF NOT FOUND THEN RAISE EXCEPTION 'Cette soirée est clôturée'; END IF;
  IF p_status='completed' AND c.status<>'accepted' THEN
   RAISE EXCEPTION 'Acceptez d’abord le défi';
  END IF;
