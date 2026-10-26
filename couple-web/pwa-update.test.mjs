@@ -54,7 +54,10 @@ test('LoveRoll build versions agree between endpoint, app, HTML and imported mod
  assert.ok(!html.includes('restore-categories-v113.css'));
  assert.ok(!html.includes('evening-step1-mobile-v101.css'));
  assert.ok(!html.includes('evening-queue-fixed-v102.css'));
- assert.ok(!html.includes('evening-private-queue.css'));
+ assert.ok(html.includes('evening-private-queue.css?v=20261026-lr015-queue'),
+  'the actual Passer/Refuser dialog stylesheet must be loaded');
+ assert.ok(sw.includes('./evening-private-queue.css'),
+  'pass/refusal controls must remain styled while the PWA is offline');
  assert.ok(html.includes('surprise-refined-v104.css?v=20261017-ritual130'));
  assert.match(app,/surprise-event-config\.mjs\?v=20261016-surprise109/);
 });
