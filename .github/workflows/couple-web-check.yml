@@ -441,6 +441,7 @@ jobs:
         run: |
           node couple-web/premium-settings-visual-check.cjs
           node couple-web/settings-menus-browser-check.cjs
+          node couple-web/settings-short-height-browser-check.cjs
           node couple-web/shared-stage-browser-check.cjs
 
       - name: Verify invitation and account pages on Galaxy S25 Ultra
