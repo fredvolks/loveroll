@@ -3132,6 +3132,15 @@ async function handle(action,element){
   await rpc('reset_love_monthly_activity',{p_couple:state.coupleId,p_face:state.monthlySlot});
   await reload();notify('Activité d’origine restaurée.');return;
  }
+ if(verb==='save-monthly-pass-limit'){
+  if(!isLoveAdmin())throw Error('Réglage réservé à l’administrateur.');
+  const raw=id('monthly-pass-limit')?.value?.trim();
+  const limit=Number(raw);
+  if(!raw||!Number.isInteger(limit)||limit<0||limit>30)throw Error('Choisissez un entier entre 0 et 30.');
+  await rpc('save_couple_monthly_pass_limit',{p_couple:state.coupleId,p_limit:limit});
+  if(state.couple)state.couple.monthly_pass_limit=limit;
+  notify('Limite mensuelle enregistrée.');render();return;
+ }
  if(verb==='save-evening-buttons'){
   if(!isLoveAdmin())throw Error('Réglage réservé à l’administrateur.');
   const sensuel=!!id('show-sensuel-button')?.checked;
