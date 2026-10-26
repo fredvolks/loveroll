@@ -86,6 +86,17 @@
      There is no image replacement or hidden dice geometry. */
  }
  @media (max-width:767px) and (max-height:700px){
+  /* Keep the LoveRoll wordmark at the same top offset as Accueil.
+     The 58px logo + its 13px kicker fit in the existing 80px row;
+     previously the inherited centering placed the logo at y=43px
+     and it overlapped the 24px title at y=93px on 320x568. */
+  #app.has-evening-d100-template .evening-toolbar .ritual-heading{
+   display:flex!important;flex-direction:column!important;
+   align-items:center!important;justify-content:flex-start!important;
+  }
+  #app.has-evening-d100-template .evening-toolbar .ritual-brand{
+   flex:0 0 58px!important;align-self:center!important;
+  }
   #app.has-evening-d100-template .evening-premium-view.has-evening-d100-template{
    grid-template-rows:80px auto 44px minmax(0,1fr) 22px 30px 48px 44px 10px!important;
    gap:4px!important;
