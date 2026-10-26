@@ -255,6 +255,21 @@ jobs:
           EOF
           node verify-ipad.cjs
           node --test couple-web/editorial-details.test.mjs
+      - name: Verify Soirée/Home parity in Chromium (same test as Pages)
+        timeout-minutes: 12
+        run: |
+          set -euo pipefail
+          if ! curl -fsS http://127.0.0.1:8765/ >/dev/null 2>&1; then
+            python3 -m http.server 8765 -d couple-web >/tmp/loveroll-parity-http.log 2>&1 &
+            webserver=$!
+            trap 'kill "$webserver" || true' EXIT
+            for retry in $(seq 1 30); do
+              if curl -fsS http://127.0.0.1:8765/ >/dev/null; then break; fi
+              sleep 1
+            done
+          fi
+          node couple-web/soiree-home-template-browser-check.cjs
+
       - name: Capture actual premium invitation and account pages on S25 / iPhone
         run: |
           python3 -m http.server 8765 -d couple-web >/tmp/love-invite58-http.log 2>&1 &
