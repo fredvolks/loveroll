@@ -137,3 +137,12 @@ Ouvrir le dépôt et fournir l'instruction suivante à Work :
 
 ## Important
 Pour suivre le travail en temps réel, utiliser aussi les **GitHub Issues et les Pull Requests** associées aux lots. Un fichier Markdown seul n'est pas actualisé automatiquement par le code ou CI. Ne jamais prétendre qu'une case cochée prouve un déploiement sans vérification du site publié.
+
+
+## Surprise premium — demande approuvée du 26 octobre 2026
+
+| Exigence | État | Preuve / prochaine étape |
+|---|---|---|
+| LR-SURPRISE-001 — D100, Geoapify, parcours premium et filtres facultatifs | À implémenter — documentation ajoutée uniquement | [Prompt officiel](./LOVEROLL_MASTER_PROMPT.md#lr-surprise-001--rendez-vous-surprise-premium-d100-et-geoapify). Budget et km vides = tous les budgets et toutes les distances, sans préférence luxe : mini-putt autant que sortie à 300 $. Corriger d'abord les trajets null, les pannes terminales et les états pending; puis livrer préférences, adaptation et planification avec tests et preuves visuelles. |
+
+Aucun changement de tarifs ni déploiement applicatif n'est réalisé par cet ajout documentaire.
