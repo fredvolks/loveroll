@@ -295,6 +295,7 @@ export function createClient(){
     const calls=await page.evaluate(()=>window.__redrawCalls);
     if(calls.length!==1||calls[0].args.p_action!=='pass'||calls[0].args.p_exclude!==false)
      throw Error('Pass must produce exactly one quota-limited replacement '+JSON.stringify(calls));
+    await page.locator('[data-action="evening-list"]').first().click();
     if(await page.locator('.evening-queue-item').count()!==1)
      throw Error('Pass must keep one visible D6 queue slot');
     console.log('LR015_REAL_BROWSER_PASS_OK','one replacement, original excluded from visible queue');
@@ -321,9 +322,11 @@ export function createClient(){
     if(calls.length!==1||calls[0].args.p_challenge!=='redraw-original'||
      calls[0].args.p_action!=='refuse'||calls[0].args.p_exclude!==exclude)
      throw Error('Atomic refusal payload mismatch '+JSON.stringify(calls));
+    await page.locator('[data-action="evening-list"]').first().click();
     if(await page.locator('.evening-queue-item').count()!==1)
      throw Error('Refusal must keep one visible D6 queue slot');
     if(exclude){
+     await page.locator('[data-action="evening-close"]').first().click();
      await selectTab(page,'settings');
      await page.locator('[data-action="settings-page:jeu"]').first().click();
      await page.locator('[data-action="settings-page:excluded-cards"]').first().click();
