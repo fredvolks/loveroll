@@ -1,0 +1,24 @@
+/* Preserve single-screen mobile composition on Safari and Android. */
+html,body{max-width:100%;overscroll-behavior-x:none}
+@media (max-width:767px) and (pointer:coarse){
+ html,body{width:100%;height:100%;overflow-x:hidden}
+ body:has(#app.loveroll-real-home),body:has(#app.loveroll-evening-page),body:has(#app.loveroll-surprise-page),body:has(#app.loveroll-advent-page),body:has(#app.loveroll-settings-page){overflow-y:hidden}
+ #app:is(.loveroll-real-home,.loveroll-evening-page,.loveroll-surprise-page,.loveroll-advent-page,.loveroll-settings-page){box-sizing:border-box;max-width:100%;min-height:0;height:100dvh;max-height:100dvh;overflow:hidden}
+ #app .nav{bottom:0;max-width:100%;padding-bottom:calc(4px + env(safe-area-inset-bottom,0px))}
+ #app .nav button{min-width:0}
+ #app .lr-category-hint{grid-column:1/-1;margin:0;display:grid;place-items:center;text-align:center;min-height:17px;font:700 clamp(10px,2.8vw,12px)/1.05 Arial,sans-serif;letter-spacing:.01em;color:#ffe6b9;text-shadow:0 0 10px #e65582}
+ #app .evening-choice.lr-choose-category{grid-template-rows:17px minmax(33px,1fr);align-content:center;row-gap:3px}
+ #app .evening-choice.lr-choose-category>.evening-choice-option{grid-row:2;min-width:0}
+ #app .evening-choice.lr-choose-category button:not(.selected):not(:disabled){animation:lr-category-glow 2.8s ease-in-out infinite alternate}
+ #app .evening-choice.lr-choose-category>.evening-choice-option:nth-of-type(2) button{animation-delay:.4s}
+ #app .evening-choice.lr-choose-category>.evening-choice-option:nth-of-type(3) button{animation-delay:.8s}
+}
+@keyframes lr-category-glow{from{box-shadow:0 0 1px #dfb68066}to{box-shadow:0 0 12px #edc289aa,inset 0 0 6px #a9186544}}
+@media(prefers-reduced-motion:reduce){#app .evening-choice.lr-choose-category button{animation:none!important}}
+.lr-sound-settings{display:grid;gap:9px;padding:10px 2px}
+.lr-sound-settings-row{display:flex;align-items:center;justify-content:space-between;gap:12px;color:#ffece2}
+.lr-sound-settings-row>div{display:grid;gap:4px;min-width:0}
+.lr-sound-settings-row small{font-size:12px;color:#efd0cd}
+.lr-sound-switch{min-width:90px;min-height:43px;border-radius:100px;background:#74314c;color:#fff8ee;border:1px solid #d4aa83}
+.lr-sound-settings>.settings-primary{min-height:44px}
+.lr-incoming-sound-notice{position:fixed;z-index:9000;top:calc(env(safe-area-inset-top,0px) + 14px);left:12px;right:12px;max-width:420px;margin:auto;padding:12px 14px;border-radius:14px;border:1px solid #dda87d;background:#421325;color:#ffe8d7;text-align:center;font:600 14px/1.3 Arial,sans-serif}

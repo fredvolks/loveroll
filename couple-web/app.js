@@ -1,5 +1,6 @@
 import {organizeSettingsMenus} from './settings-menus.mjs?v=20261022-home228';
 import {showEveningCategoryReminder} from './evening-d100-template.mjs?v=20261022-home228';
+import {soundEnabled,setSoundEnabled,unlockLoveRollSounds,playLoveRollSound,soundSettingsHtml} from './loveroll-sounds.mjs?v=20261025-web229';
 import {fitSurpriseMinimal} from './surprise-minimal.mjs?v=20261022-home228';
 import {eclatNoteKey,loadEclatNote,saveEclatNote} from './eclat-guidance.mjs?v=20261022-home228';
 import {loadEclatHistory} from './eclat-history.mjs?v=20261022-home228';
@@ -56,7 +57,7 @@ import {invitationStatus,coupleStats,formatCoupleDate,invitationEmailText,invita
 import {premiumConfirm,premiumCopyLink,focusInlineLoveDialog} from './premium-dialogs.mjs?v=20261017-complete127';
 
 
-const WEB_RELEASE='2026-10-22.228';
+const WEB_RELEASE='2026-10-25.229';
 const root=document.querySelector('#app');
 const enc=new TextEncoder(),dec=new TextDecoder();
 let diceCleanup=[],renderToken=0;
@@ -1024,6 +1025,15 @@ function subscribe(){
    filter:'couple_id=eq.'+state.coupleId},async payload=>{
     if(payload.new?.actor_id&&payload.new.actor_id!==state.user.id)
      notify(person(payload.new.actor_id)+' a effectué une action dans votre jeu');
+    if(table==='couple_challenges'&&payload.eventType==='INSERT'&&payload.new?.recipient===state.user?.id&&payload.new?.actor_id!==state.user?.id){
+     const played=playLoveRollSound('challenge:'+payload.new.id);
+     if(!played&&soundEnabled()){
+      const notice=document.createElement('div');notice.className='lr-incoming-sound-notice';
+      notice.textContent='♡ Nouveau défi reçu ! Ouvre LoveRoll pour le découvrir.';
+      document.querySelector('.lr-incoming-sound-notice')?.remove();document.body.append(notice);
+      setTimeout(()=>notice.remove(),4000);
+     }
+    }
     liveSync.request(200);
    });
  channel=channel.on('postgres_changes',{event:'INSERT',schema:'public',
@@ -2138,7 +2148,7 @@ function renderSettings(){
   (sexualMode==='custom'?editorialRow('Modifier mes 100 SEXUEL','Copie personnelle préremplie avec MEDIUM','open-personal-sexual-cards','dice'):'')+
   button('save-sexual-mode','Appliquer ce mode','class="settings-primary"')+
   '</section>':'';
- const notifications=notificationSettingsMarkup(state.pushPrefs||{},state.pushDevice);
+ const notifications=notificationSettingsMarkup(state.pushPrefs||{},state.pushDevice)+soundSettingsHtml();
  const nativeApp=typeof window!=='undefined'&&!!window.LoveRollNativeAuth;
  const nativeVersion=nativeApp&&typeof window.LoveRollNativeAuth.appVersion==='function'?
   window.LoveRollNativeAuth.appVersion():'';
@@ -2837,6 +2847,14 @@ async function handle(action,element){
   if(!state.demoMode)return;
   state.demoChallengeComplete=!state.demoChallengeComplete;render();return;
  }
+ if(verb==='sound-toggle'){
+  setSoundEnabled(!soundEnabled());render();setNotificationFeedback(soundEnabled()?'Son des défis activé.':'Son des défis désactivé.');return;
+ }
+ if(verb==='sound-test'){
+  unlockLoveRollSounds();
+  const played=playLoveRollSound('test',{force:true});
+  setNotificationFeedback(played?'Sonnerie jouée.':'Son bloqué par le navigateur : touche le bouton de nouveau après avoir activé le son du téléphone.',played?'status':'error');return;
+ }
  if(verb==='push-enable'){
   await enablePush(client,state.user.id);
   state.pushPrefs={...(state.pushPrefs||{}),enabled:true};state.pushDevice=await currentPushDevice(client,state.user?.id);
@@ -2974,8 +2992,8 @@ async function handle(action,element){
   window.LoveRollNativeAuth.openLegacyOffline();return;
  }
  if(verb==='show-install-guide'){
-  state.installModalOpen=false;state.showInstallSteps=true;state.forceInstallGuide=true;
-  render();return;
+  state.installModalOpen=false;state.showInstallSteps=!isIos();state.forceInstallGuide=!isIos();
+  render();if(isIos())window.dispatchEvent(new Event('loveroll:ios-install-guide'));return;
  }
  if(verb==='install-home'){
   const result=await requestInstall();
@@ -2984,9 +3002,9 @@ async function handle(action,element){
    state.installModalOpen=false;state.showInstallSteps=false;state.forceInstallGuide=false;
    if(result.accepted)notify('LoveRoll a été ajouté à votre écran d’accueil ♡');
   }else{
-   state.installModalOpen=false;state.showInstallSteps=true;state.forceInstallGuide=true;
+   state.installModalOpen=false;state.showInstallSteps=!isIos();state.forceInstallGuide=!isIos();
   }
-  render();return;
+  render();if(!result.prompted&&isIos())window.dispatchEvent(new Event('loveroll:ios-install-guide'));return;
  }
  if(verb==='install-copy-url'){
   const link=new URL(CONFIG.siteUrl||location.origin+location.pathname);
@@ -4167,6 +4185,6 @@ start().catch(error=>{fail(error);window.LoveRollBoot?.showFailure();});
 
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   window.addEventListener('load', () =>
-    navigator.serviceWorker.register('./service-worker.js?v=20261022-home228',
+    navigator.serviceWorker.register('./service-worker.js?v=20261025-web229',
      {scope:'./',updateViaCache:'none'}).then(reg=>reg.update()).catch(console.warn));
 }

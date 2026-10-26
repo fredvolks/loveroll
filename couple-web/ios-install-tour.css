@@ -1,0 +1,23 @@
+/* Four-step, no-scroll Safari install coach. Existing ruby visuals stay untouched. */
+.lr-ios-tour{position:fixed;inset:0;z-index:2147483000;display:grid;place-items:center;padding:max(16px,env(safe-area-inset-top)) 14px max(16px,env(safe-area-inset-bottom));background:#11030be8;box-sizing:border-box;overflow:hidden}
+.lr-ios-tour *{box-sizing:border-box}
+.lr-ios-tour-card{position:relative;display:grid;grid-template-rows:auto minmax(90px,1fr) auto auto auto;align-items:center;justify-items:center;gap:clamp(6px,1.3dvh,13px);width:min(100%,420px);max-height:100%;padding:clamp(16px,3dvh,26px) clamp(16px,5vw,26px);border:1px solid #dcb178b0;border-radius:24px;text-align:center;color:#fff4ec;background:linear-gradient(155deg,#511528,#250710 65%,#17030b);box-shadow:0 25px 65px #050005a9,inset 0 1px #ffe3cc35;font-family:Georgia,serif;overflow:hidden}
+.lr-ios-tour-close{position:absolute;right:10px;top:7px;width:42px;height:42px;border:0;background:none;color:#ffe4d3;font:30px/1 Arial,sans-serif;cursor:pointer}
+.lr-ios-tour-kicker{margin:0;color:#e9bc85;letter-spacing:.13em;font:700 10px/1.1 Arial,sans-serif}
+.lr-ios-tour-illustration{height:min(24dvh,195px);min-height:85px;max-width:100%;display:grid;place-items:center}
+.lr-ios-tour-phone{height:100%;aspect-ratio:9/17;border:3px solid #e5bc84;border-radius:20px;display:grid;grid-template-rows:12px 1fr 10px;place-items:center;background:linear-gradient(160deg,#301017,#9a3055,#1a080f);box-shadow:0 5px 30px #de9b8a29}
+.lr-ios-tour-phone-top{width:40%;height:5px;background:#16050b;border-radius:20px}
+.lr-ios-tour-phone-bottom{width:35%;height:3px;border-radius:10px;background:#ebc6ac}
+.lr-ios-tour-symbol{font:clamp(35px,9dvh,68px)/1 Arial,sans-serif;color:#f7d7a5;filter:drop-shadow(0 0 15px #ffe0a180)}
+.lr-ios-tour h2{font:italic 600 clamp(22px,5.8vw,30px)/1.04 Georgia,serif;margin:0;color:#fff7ec}
+.lr-ios-tour p#lr-ios-tour-desc{margin:0;min-height:3.9em;font:clamp(12px,3.4vw,15px)/1.3 Arial,sans-serif;color:#ffe8dd}
+.lr-ios-tour-dots{display:flex;gap:7px;justify-content:center;height:7px}
+.lr-ios-tour-dots span{height:6px;width:6px;border-radius:99px;background:#a7757c}
+.lr-ios-tour-dots .active{width:21px;background:#f3c685}
+.lr-ios-tour-actions{display:flex;width:100%;gap:9px}
+.lr-ios-tour-actions button{min-width:0;flex:1;min-height:45px;border-radius:14px;font:700 clamp(12px,3.4vw,15px)/1.15 Arial,sans-serif;cursor:pointer}
+.lr-ios-tour-secondary{background:#3f1525;color:#f5d8d8;border:1px solid #bb8390}
+.lr-ios-tour-primary{color:#34121a;background:linear-gradient(#ffe5b8,#c99a65);border:1px solid #ffe0b6}
+.lr-ios-tour button:focus-visible{outline:3px solid #fff;outline-offset:2px}
+@media(max-height:610px){.lr-ios-tour-card{gap:5px;padding:12px 14px}.lr-ios-tour-illustration{height:18dvh;min-height:70px}.lr-ios-tour p#lr-ios-tour-desc{min-height:0;font-size:12px}.lr-ios-tour-actions button{min-height:40px}}
+@media(prefers-reduced-motion:no-preference){.lr-ios-tour-symbol{animation:lr-tour-glow 2.4s ease-in-out infinite alternate}@keyframes lr-tour-glow{to{filter:drop-shadow(0 0 7px #ffe3b3);transform:scale(1.05)}}}
