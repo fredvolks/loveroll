@@ -1241,22 +1241,32 @@ function renderHome(){
  }),'LOVEROLL','La complicité se joue à deux');
 }
 
+// Timeouts must survive a full browser/PWA restart, not only a tab reload.
+// Keep sessionStorage fallback to preserve already-running timers from Web 229.
+function readSavedChallengeTimer(key){
+ try{
+  const persistent=localStorage.getItem(key);
+  if(persistent)return JSON.parse(persistent);
+ }catch{}
+ try{return JSON.parse(sessionStorage.getItem(key)||'null');}catch{return null;}
+}
+function writeSavedChallengeTimer(key,value){
+ const json=JSON.stringify(value);
+ try{localStorage.setItem(key,json);}catch{}
+ try{sessionStorage.setItem(key,json);}catch{}
+}
 function saveChallengeTimer(){
  if(!challengeTimer.id||!state.user)return;
- try{sessionStorage.setItem('loveroll-challenge-clock:'+state.user.id+':'+challengeTimer.id,
-  JSON.stringify({durationMs:challengeTimer.durationMs,remainingMs:clockMs(),
+ writeSavedChallengeTimer('loveroll-challenge-clock:'+state.user.id+':'+challengeTimer.id,
+  {durationMs:challengeTimer.durationMs,remainingMs:clockMs(),
    deadline:challengeTimer.deadline,running:challengeTimer.running,notified:challengeTimer.notified,
-   autoCompletePending:challengeTimer.autoCompletePending}));
- }catch{}
+   autoCompletePending:challengeTimer.autoCompletePending});
 }
 function activeTimer(challenge,minutes){
  const millis=minutes*60000;
  if(challengeTimer.id!==challenge.id){
   saveChallengeTimer();
-  let stored=null;
-  try{
-   stored=JSON.parse(sessionStorage.getItem('loveroll-challenge-clock:'+state.user.id+':'+challenge.id)||'null');
-  }catch{}
+  const stored=readSavedChallengeTimer('loveroll-challenge-clock:'+state.user.id+':'+challenge.id);
   challengeTimer.id=challenge.id;
   challengeTimer.durationMs=millis;
   challengeTimer.remainingMs=stored?.durationMs===millis&&Number.isFinite(stored.remainingMs)?
@@ -1327,26 +1337,25 @@ async function reconcileSavedEveningTimers(){
  savedTimerScanAfter=now+4000;
  for(const item of state.challenges||[]){
   const key='loveroll-challenge-clock:'+state.user.id+':'+item.id;
-  let saved;
-  try{saved=JSON.parse(sessionStorage.getItem(key)||'null');}catch{continue;}
+  const saved=readSavedChallengeTimer(key);
   if(!saved||!Number.isFinite(saved.durationMs)||saved.durationMs<=0)continue;
   const due=!!saved.autoCompletePending||
    (saved.running&&Number.isFinite(saved.deadline)&&saved.deadline>0&&saved.deadline<=now);
   if(!due)continue;
   if(item.status==='completed'||item.status==='passed'){
-   try{sessionStorage.setItem(key,JSON.stringify({...saved,running:false,
-    remainingMs:0,autoCompletePending:false}));}catch{}
+   writeSavedChallengeTimer(key,{...saved,running:false,
+    remainingMs:0,autoCompletePending:false});
    continue;
   }
   if(!isAcceptedTimedEveningChallenge(item,state.user.id,state.session.id))continue;
   const userId=state.user.id,sessionId=state.session.id;
   savedTimerSyncInFlight=true;timerCompletionInFlight=item.id;
   const expired={...saved,running:false,remainingMs:0,notified:true,autoCompletePending:true};
-  try{sessionStorage.setItem(key,JSON.stringify(expired));}catch{}
+  writeSavedChallengeTimer(key,expired);
   try{
    const result=await completeTimedEveningChallenge({challenge:item,userId,sessionId,rpc,query});
    if(result.outcome==='ineligible')return;
-   try{sessionStorage.setItem(key,JSON.stringify({...expired,autoCompletePending:false}));}catch{}
+   writeSavedChallengeTimer(key,{...expired,autoCompletePending:false});
    if(challengeTimer.id===item.id){
     challengeTimer.running=false;challengeTimer.remainingMs=0;
     challengeTimer.autoCompletePending=false;saveChallengeTimer();
