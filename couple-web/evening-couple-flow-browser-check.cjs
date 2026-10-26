@@ -95,7 +95,10 @@ const client=`export function createClient(){
   await session(a);assert.equal(world.rolls.length,2);
   for(let i=0;i<3;i++){
    await a.locator('[data-action="give-challenge"]').click();await a.locator('.lr-dialog-accept').click();
-   await a.waitForFunction(count=>document.querySelector('.evening-gift p')?.textContent.includes(count+'/3'),i+1);
+   await a.waitForFunction(count=>{
+    const actual=document.querySelector('.evening-d100-quota,.evening-gift p')?.textContent||'';
+    return actual.includes(count+'/3');
+   },i+1,{timeout:15000});
   }
   assert.equal(world.gifts.length,3);assert.ok(await a.locator('[data-action="give-challenge"]').isDisabled());
   fs.mkdirSync('design-captures',{recursive:true});await a.screenshot({path:'design-captures/S25-editorial-step2.png'});
