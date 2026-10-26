@@ -46,7 +46,18 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
      }return errors;
     });assert.deepEqual(defects,[],'All 100 numeral outlines have intact counters and finite geometry');
    }
-   const evening=await measure();assert.deepEqual(evening.tabs,home.tabs,'All navigation buttons and text match Home');for(const key of ['heart','brand','kicker','title'])assert.deepEqual(evening[key],home[key],key+' must match Home exactly');
+   const evening=await measure();
+   if(evening.heart.top!==home.heart.top){
+    const boxes=await page.evaluate(()=>{
+     const selectors=['main#app','.evening-premium-view','.evening-toolbar','.ritual-heading','.ritual-brand','.ritual-brand i','.ritual-kicker'];
+     return Object.fromEntries(selectors.map(selector=>{
+      const el=document.querySelector(selector),r=el?.getBoundingClientRect(),css=el&&getComputedStyle(el);
+      return [selector,r?{top:r.top,height:r.height,bottom:r.bottom,margin:css.margin,padding:css.padding,display:css.display,alignItems:css.alignItems,justifyContent:css.justifyContent,transform:css.transform}:null];
+     }));
+    });
+    console.error('SOIREE_BRAND_PARITY_DIAGNOSTIC',JSON.stringify({width,height,home:home.heart,evening:evening.heart,boxes}));
+   }
+   assert.deepEqual(evening.tabs,home.tabs,'All navigation buttons and text match Home');for(const key of ['heart','brand','kicker','title'])assert.deepEqual(evening[key],home[key],key+' must match Home exactly');
    assert.equal(parseFloat(evening.imageHeight),Math.max(230,height-215)/.438,'Soirée uses the shared viewport stage dimensions verified against Surprise');
    const layout=await page.evaluate(()=>{
     const r=s=>document.querySelector(s).getBoundingClientRect(),canvas=document.querySelector('.evening-finale-dice canvas'),c=canvas.getBoundingClientRect(),b=canvas.loveRollDie.projectedBounds();
