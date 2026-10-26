@@ -86,7 +86,7 @@ L'[audit officiel](./LOVEROLL_AUDIT_UX_UI_20261026.md) est maintenant décompos�
 **Publication du système documentaire :** [PR #10 fusionnée](https://github.com/fredvolks/loveroll/pull/10). Les Issues sont ouvertes et les corrections applicatives restent à vérifier/implémenter.
 
 ## Tableau de bord
-- **35 exigences identifiées** : les 31 LR numériques existantes, LR-SURPRISE-001, LR-ACCUEIL-001, LR-JEU-001 et LR-MUSIQUE-001. Ce total ne mesure pas la proportion de code livrée.
+- **36 exigences identifiées** : les 31 LR numériques existantes, LR-SURPRISE-001, LR-ACCUEIL-001, LR-JEU-001, LR-MUSIQUE-001 et LR-PIGE-001. Ce total ne mesure pas la proportion de code livrée.
 - **Bilan historique initial : 0/31 cochées intégralement.** Ne pas employer ce chiffre comme avancement actuel; consulter les lignes de statut et les preuves. Les deux nouvelles exigences sont spécifiées, sans livraison applicative déclarée.
 - Ces nombres décrivent le **statut documentaire initial**, **pas** un diagnostic que toute l'application est défectueuse.
 - Les développeurs doivent vérifier l'existant et marquer « Déjà présent, vérifié » avec preuves si un point est déjà satisfait.
@@ -185,3 +185,8 @@ Ajout documentaire uniquement : aucune carte ni donnée utilisateur modifiée.
 
 ### Précision LR-019 — retrait directement dans la notification
 Demande approuvée : au sixième ajout, la notification interactive présente immédiatement les 5 favoris, titre/catégorie et un bouton « Retirer et ajouter le nouveau » sur chaque carte. Le remplacement atomique se fait depuis cette fenêtre sans passage par Réglages ni seconde confirmation obligatoire. Fermeture/Annuler conserve la liste. Inclure tests mobile, concurrence et erreurs réseau. **Spécification uniquement, pas encore implémentée.**
+
+
+## LR-PIGE-001 — Cartes disponibles par catégorie dans Soirée
+**État : spécifié, à implémenter et vérifier.** [Prompt officiel](./LOVEROLL_MASTER_PROMPT.md#lr-pige-001--soirée--cartes-encore-disponibles-par-catégorie).
+Afficher près des catégories les cartes distinctes encore admissibles à la prochaine pige du joueur, calculées par le moteur serveur (rôles, bibliothèque, exclusions, favoris, cycle, mode). Actualiser avec les mutations et la synchronisation; distinguer chargement/erreur de zéro. Aucun changement de textes, probabilités, quotas ou historique. Tester les deux joueurs, concurrence, reprises et matrice responsive. Ajout documentaire uniquement.
