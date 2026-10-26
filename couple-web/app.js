@@ -2103,7 +2103,7 @@ function renderSettings(){
   '<p class="tiny-note">Aléatoire reste disponible.</p>'+
   (canEdit?button('save-evening-buttons','Enregistrer','class="settings-primary"'):'<p>Seul le créateur peut modifier ces choix.</p>')+'</div>';
  const passLimit=Number(state.monthlyPassQuota?.limit??state.couple?.monthly_pass_limit??3);
- const passQuotaSettings='<div class="settings-category-options"><h3>Passes mensuelles</h3><p class="tiny-note">Maximum par partenaire : '+passLimit+'. Refuser reste illimité.</p></div>';
+ const passQuotaSettings='<div class="settings-category-options"><h3>Passes mensuelles</h3><p class="tiny-note">Maximum par partenaire : '+passLimit+'. '+(state.monthlyPassQuota?'Utilisées : '+state.monthlyPassQuota.used+' · Restantes : '+state.monthlyPassQuota.remaining+'. ':'')+'Refuser reste illimité.</p></div>';
  const passQuotaControl=canEdit?'<label>Maximum mensuel par personne<input id="monthly-pass-limit" type="number" min="0" max="30" step="1" value="'+passLimit+'"></label>'+button('save-monthly-pass-limit','Enregistrer la limite','class="settings-primary"'):'<p class="tiny-note">Seul le créateur peut changer cette limite.</p>';
  const game=(canEdit?
   (state.couple?.sexual_card_mode==='automatic'?
