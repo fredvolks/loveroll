@@ -42,7 +42,7 @@ jobs:
           node --check couple-web/evening-calendar.mjs
           node --check couple-web/evening-review.mjs
           node --check couple-web/evening-private-queue.mjs
-          node --test couple-web/evening-private-queue.test.mjs couple-web/evening-redesign.test.mjs couple-web/evening-calendar.test.mjs couple-web/evening-category-v93.test.mjs couple-web/evening-review.test.mjs
+          node --test couple-web/evening-private-queue.test.mjs couple-web/evening-redesign.test.mjs couple-web/evening-calendar.test.mjs couple-web/evening-category-v93.test.mjs couple-web/evening-d100-template.test.mjs couple-web/evening-review.test.mjs
           node --test couple-web/soiree-surprise-recovery.test.mjs
           node --check couple-web/premium-surprise.mjs
           node --check couple-web/premium-advent.mjs
@@ -441,6 +441,7 @@ jobs:
         run: |
           node couple-web/premium-settings-visual-check.cjs
           node couple-web/settings-menus-browser-check.cjs
+          node couple-web/settings-short-height-browser-check.cjs
           node couple-web/shared-stage-browser-check.cjs
 
       - name: Verify invitation and account pages on Galaxy S25 Ultra
