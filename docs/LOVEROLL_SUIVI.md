@@ -137,3 +137,8 @@ Ouvrir le dépôt et fournir l'instruction suivante à Work :
 
 ## Important
 Pour suivre le travail en temps réel, utiliser aussi les **GitHub Issues et les Pull Requests** associées aux lots. Un fichier Markdown seul n'est pas actualisé automatiquement par le code ou CI. Ne jamais prétendre qu'une case cochée prouve un déploiement sans vérification du site publié.
+
+## LR-045 — Soirée Extra
+
+| [ ] | LR-045 | Soirées Extra **illimitées** quand les dés hebdomadaires sont épuisés : même bouton Brasser le dé ; proposition Accepter/Refuser ; D6 de chaque partenaire pour le nombre de défis, puis D100 ; toutes les cartes éligibles remises dans la pige de **chaque Extra** sans toucher au cycle normal ; option ON/OFF réservée à l'admin du couple ; historique et synchro intacts | **Spécification approuvée seulement — code, tests et déploiement non réalisés** | [Exigence LR-045](./LOVEROLL_MASTER_PROMPT.md#lr-045--soirée-extra-illimitée-après-épuisement-des-dés-hebdomadaires-demande-approuvée-le-26-octobre-2026) |
+
