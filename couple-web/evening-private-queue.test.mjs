@@ -126,3 +126,12 @@ test('LR-016 quota UX states used/limit, explains next month, never disables unl
  assert.match(source,/state\.redrawBusy\|\|state\.monthlyPassQuota\?\.can_pass===false\?'disabled'/);
  assert.match(source,/state\.redrawBusy\?'disabled'/);
 });
+
+test('LR-015 browser loads actual queue stylesheet with tactile pass/refuse and separate quota row',()=>{
+ const html=readFileSync(new URL('./index.html',import.meta.url),'utf8');
+ const css=readFileSync(new URL('./evening-private-queue.css',import.meta.url),'utf8');
+ assert.match(html,/href="\.\/evening-private-queue\.css\?v=20261026-lr015-queue"/);
+ assert.match(css,/\.lr-redraw-actions\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+ assert.match(css,/\.lr-redraw-actions>small\{grid-column:1\/-1;display:block/);
+ assert.match(css,/@media\(max-width:360px\)\{\.lr-redraw-actions\{grid-template-columns:minmax\(0,1fr\)/);
+});
