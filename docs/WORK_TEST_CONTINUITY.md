@@ -27,10 +27,17 @@ Ne pas fusionner, déployer ni appliquer de migration de production sans autoris
 - Aucune validation sur de vrais téléphones Android/iOS; Chromium est une émulation.
 - Nombre de tentatives : plusieurs itérations; dernier cycle de code validé avec les deux workflows réussis.
 
+## Validation additionnelle — concurrence (PR #60)
+- Run PostgreSQL **40412698032** sur SHA `3db1fc7578c36a270967a0c8e471804d2330e795` : **completed/success**.
+- Test réel de deux connexions `psql` parallèles demandant une dernière place : exactement **un** ajout accepté, total final **5**. Aucun test affaibli ni base réelle touchée.
+- Run Chromium **40412561733** sur `d35e375...` (dernier code UI inchangé depuis `82b27dc...`) : **completed/success**.
+- Master prompt LR-019 documenté : cinq favoris par membre, fenêtre avec liste et retrait, cœurs sur les cartes du partenaire après clôture.
+- Après les commits documentaires, vérifier chaque nouveau SHA et la conclusion des runs; ne pas transformer un état `in_progress` en succès.
+
 ## Blocages/risques connus
 
 - PR #60 est encore en brouillon, et ses dépendances #54, #56, #57 et #58 ne sont pas livrées à `main`.
-- GitHub Pages sur `main` : run **40410344904** `completed/failure` sur `5fe2fdd...`; analyser le journal et les permissions avant de proposer un correctif. Ne pas confondre les validations des branches avec le site public.
+- GitHub Pages sur `main` : run **40410344904** `completed/failure` sur `5fe2fdd...` (écart visuel de 34 px entre le cœur Soirée et Accueil). Correctif CSS sur main SHA `9c75b1a...`, nouveau run Pages **40411130259** encore `in_progress` lors du contrôle, donc **déploiement non confirmé**. Ne pas confondre les validations des branches avec le site public.
 - L'interface de capacité `love_favorites_capabilities` n'est active qu'après l'ensemble des migrations sur une base approuvée.
 - Lors d'un changement de favori depuis la fenêtre : retrait puis ajout séparés; si l'ajout échoue, la place demeure libre et le joueur peut réessayer. Ne pas prétendre à une transaction atomique côté interface.
 
@@ -38,7 +45,7 @@ Ne pas fusionner, déployer ni appliquer de migration de production sans autoris
 
 1. Confirmer la tête de #60 et sa base : comparer à ce SHA.
 2. Relire les nouveaux runs PostgreSQL/Chromium, diagnostiquer tout échec sur le SHA qui l'a généré.
-3. Examiner le **Pages failure** run 40410344904; diagnostiquer uniquement, corriger sur PR isolée si nécessaire sans fusion `main`.
+3. Vérifier la conclusion du nouveau Pages **40411130259** et les logs de l'ancien échec 40410344904; proposer un correctif sur PR isolée si le nouveau run échoue, sans fusion non autorisée.
 4. Lire `docs/LOVEROLL_MASTER_PROMPT.md`, `docs/LOVEROLL_SUIVI.md`, `docs/LOVEROLL_NOUVELLES_DEMANDES.md` et relancer le prochain lot prioritaire.
 5. Tester encore le fonctionnement iPhone Safari et Android réels; surveiller que les changements LR-019 n'altèrent ni la confidentialité ni les horaires/quotas du jeu.
 
