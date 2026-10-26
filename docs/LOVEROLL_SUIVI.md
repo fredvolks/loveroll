@@ -15,7 +15,7 @@
 |---|---|---|---|---|
 | [ ] | LR-001 | D100 Soirée **entier**, proportionné comme Surprise, posé sur le socle, durant toutes les animations | À faire | [capture D100 coupé](./LOVEROLL_PREUVES_VISUELLES.md#lr-001--d100-trop-gros-et-coupé) |
 | [ ] | LR-002 | À 00:00, défi avec minuterie **réalisé automatiquement une seule fois** ; annulation/pause/saut exclus | À faire | — |
-| [ ] | LR-003 | Calendrier et compteurs cohérents : en cours ≠ non réalisé définitif ; cycle/partenaires corrects | ◐ En cours — libellés en cours corrigés dans la branche ; compteurs/statistiques à auditer avant validation totale | [capture calendrier](./LOVEROLL_PREUVES_VISUELLES.md#lr-003--calendrier-et-statuts) · [PR de correctif](https://github.com/fredvolks/loveroll/pulls?q=is%3Apr+head%3Afix%2Flr003-calendar-active-status-20261026) · `evening-calendar.test.mjs` (CI à vérifier) |
+| [ ] | LR-003 | Calendrier et compteurs cohérents : en cours ≠ non réalisé définitif ; cycle/partenaires corrects | ◐ En cours — affichage corrigé et PR nº 20 fusionnée ; nouveau correctif des taux mensuels en attente de CI ; cycle 200 à auditer | [PR nº 20](https://github.com/fredvolks/loveroll/pull/20) · [correctif mensuel](https://github.com/fredvolks/loveroll/pulls?q=is%3Apr+head%3Afix%2Flr003-monthly-active-statistics-20261026) · `evening-calendar.test.mjs` · `calendar-success-stats.test.mjs` |
 | [ ] | LR-004 | Sonnerie des minuteries testée sur PWA Safari/iOS et Android, avec limites OS expliquées | À faire | — |
 
 ## P1 — Design de référence Accueil
@@ -81,6 +81,8 @@ Chaque Issue contient les sous-tâches et permet les commentaires/captures. Les 
 |---|---|---|
 | 2026-10-26 | Initialisation du suivi D100, minuterie, harmonisation, audit UX/UI et responsive PC/tablette/mobile | Prompt maître |
 | 2026-10-26 | LR-003 : code audité, correctif de libellés ouvert/clôturé et tests unitaires ajoutés, sans modification de données. À vérifier en CI/visuel. | `fix/lr003-calendar-active-status-20261026` |
+
+| 2026-10-26 | LR-003 : nouveaux écarts observés dans le calcul du taux mensuel : défi en cours compté prématurément dans le dénominateur, défi passé potentiellement compté une seconde fois comme « non pigé ». Correction de calcul sans SQL, tests ajoutés ; validation CI requise. | `fix/lr003-monthly-active-statistics-20261026` |
 
 ## Comment travailler avec ChatGPT Work
 Ouvrir le dépôt et fournir l'instruction suivante à Work :
