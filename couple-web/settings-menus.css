@@ -123,3 +123,30 @@
 #app.settings-account-full .settings-account-overview .date-fields .lr-premium-picker-trigger{gap:2px!important;padding:6px!important;}
 #app.settings-account-full .settings-account-overview .date-fields .lr-premium-picker-chevron{font-size:16px!important;flex:none!important;}
 }
+
+/* LR-020/LR-023: accessibility escape hatch for a keyboard-open, landscape
+   or heavily zoomed handset. The ordinary 640px+ one-screen layout stays as is.
+   All settings actions remain in the real DOM, reachable above the fixed tabs. */
+@layer loveroll-settings-menus {
+ @media (max-width:767px) and (max-height:560px) and (pointer:coarse) {
+  body:has(#app.loveroll-settings-page:is(.loveroll-settings-menu,.loveroll-settings-detail,.loveroll-library-page)){
+   overflow-y:auto!important;
+   -webkit-overflow-scrolling:touch;
+  }
+  #app.loveroll-settings-page:is(.loveroll-settings-menu,.loveroll-settings-detail,.loveroll-library-page){
+   height:auto!important;min-height:100dvh!important;max-height:none!important;
+   overflow-x:hidden!important;overflow-y:visible!important;
+   padding-bottom:calc(90px + env(safe-area-inset-bottom,0px))!important;
+  }
+  #app.loveroll-settings-page:is(.loveroll-settings-menu,.loveroll-settings-detail,.loveroll-library-page) .settings-editorial{
+   height:auto!important;min-height:0!important;
+   grid-template-rows:auto auto!important;
+  }
+  #app.loveroll-settings-page:is(.loveroll-settings-menu,.loveroll-settings-detail,.loveroll-library-page) .settings-editorial-content{
+   overflow:visible!important;min-height:0!important;
+  }
+  #app.loveroll-settings-page:is(.loveroll-settings-menu,.loveroll-settings-detail,.loveroll-library-page) .settings-detail-body{
+   flex:none!important;height:auto!important;overflow:visible!important;
+  }
+ }
+}
