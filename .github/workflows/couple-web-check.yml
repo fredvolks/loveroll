@@ -419,6 +419,9 @@ jobs:
         run: |
           node couple-web/premium-couple-visual-check.cjs
 
+      - name: Verify live D100 Soirée size and marble contact across seven mobile viewports
+        run: node couple-web/evening-d100-template-browser-check.cjs
+
       - name: Verify Soirée responsive Step 1 and unchanged D35 on phones and tablets
         run: node couple-web/evening-redesign-browser-check.cjs
 
