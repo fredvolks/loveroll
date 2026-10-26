@@ -1,6 +1,6 @@
 import {organizeSettingsMenus} from './settings-menus.mjs?v=20261022-home228';
 import {showEveningCategoryReminder} from './evening-d100-template.mjs?v=20261022-home228';
-import {soundEnabled,setSoundEnabled,unlockLoveRollSounds,playLoveRollSound,soundSettingsHtml} from './loveroll-sounds.mjs?v=20261025-web229';
+import {soundEnabled,setSoundEnabled,setLoveRollSoundUser,unlockLoveRollSounds,playLoveRollSound,soundSettingsHtml} from './loveroll-sounds.mjs?v=20261025-web229';
 import {fitSurpriseMinimal} from './surprise-minimal.mjs?v=20261022-home228';
 import {eclatNoteKey,loadEclatNote,saveEclatNote} from './eclat-guidance.mjs?v=20261022-home228';
 import {loadEclatHistory} from './eclat-history.mjs?v=20261022-home228';
@@ -268,6 +268,7 @@ document.addEventListener('keydown',event=>{
 
 let diceView=null;
 function frame(body,title='LOVEROLL',subtitle='Un jeu intime, juste pour vous deux'){
+ setLoveRollSoundUser(state.user?.id);
  const openerAction=document.activeElement?.dataset?.action||null;
  const draft=lastFormTab===formRouteKey()?snapshotDraft():[];
  lastFormTab=formRouteKey();
@@ -2858,7 +2859,7 @@ async function handle(action,element){
   setSoundEnabled(!soundEnabled());render();setNotificationFeedback(soundEnabled()?'Son des défis activé.':'Son des défis désactivé.');return;
  }
  if(verb==='sound-test'){
-  unlockLoveRollSounds();
+  await unlockLoveRollSounds();
   const played=playLoveRollSound('test',{force:true});
   setNotificationFeedback(played?'Sonnerie jouée.':'Son bloqué par le navigateur : touche le bouton de nouveau après avoir activé le son du téléphone.',played?'status':'error');return;
  }
