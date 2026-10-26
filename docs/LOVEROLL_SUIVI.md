@@ -29,6 +29,13 @@
 | [ ] | LR-014 | Soirée : confirmation de catégorie Sensuel/Sexuel/Au hasard avant lancer D100, option « Ne plus afficher », réactivation en Réglages par profil | À faire — spécification seulement | [Prompt maître LR-014](./LOVEROLL_MASTER_PROMPT.md#lr-014--confirmation-du-choix-de-catégorie-avant-de-brasser-le-d100-nouvelle-demande-du-26-octobre-2026) · [Issue #27](https://github.com/fredvolks/loveroll/issues/27) · tests à réaliser |
 | [ ] | LR-015 | Défis : Passer, Refuser avec choix de retrait du lot, repige, retour des défis non terminés à la clôture, historique conservé | À faire — spécification seulement | [Exigence LR-015](./LOVEROLL_MASTER_PROMPT.md#lr-015--défis--passer-refuser-exclusion-volontaire-et-retour-dans-la-pige-nouvelle-demande-du-26-octobre-2026) · [Issue #29](https://github.com/fredvolks/loveroll/issues/29) |
 | [ ] | LR-016 | Passes mensuelles : **3 par partenaire** par défaut, limite modifiable par l'admin du couple, blocage serveur à la limite, compteur visible ; refus toujours libre | À faire — spécification seulement | [Prompt LR-016](./LOVEROLL_MASTER_PROMPT.md) · [Issue #32](https://github.com/fredvolks/loveroll/issues/32) |
+| [ ] | LR-017 | Adapter ce défi avec accord des deux, sans passer/refuser ni modifier les cartes globales | À faire — spécification approuvée, aucun code livré | [Prompt LR-017](./LOVEROLL_MASTER_PROMPT.md) · Issue à créer |
+| [ ] | LR-018 | Reprendre une soirée sur appareil mobile/tablette/PC, étapes et minuterie persistantes | À faire — spécification approuvée, aucun code livré | [Prompt LR-018](./LOVEROLL_MASTER_PROMPT.md) · Issue à créer |
+| [ ] | LR-019 | ♥ Coups de cœur : favoris accessibles et remis dans la pige d'une prochaine soirée même réalisés, jamais immédiatement | À faire — spécification approuvée, aucun code livré | [Prompt LR-019](./LOVEROLL_MASTER_PROMPT.md) · Issue à créer |
+| [ ] | LR-025 | Mode discrétion pour masquer les défis rapidement sans modifier leur état | À faire — spécification approuvée, aucun code livré | [Prompt LR-025](./LOVEROLL_MASTER_PROMPT.md) · Issue à créer |
+| [ ] | LR-026 | Variété intelligente : limiter les défis ressemblants dans la même soirée | À faire — spécification approuvée, aucun code livré | [Prompt LR-026](./LOVEROLL_MASTER_PROMPT.md) · Issue à créer |
+| [ ] | LR-027 | Une seule action principale par étape, tous les boutons secondaires restent accessibles | À faire — spécification approuvée, aucun code livré | [Prompt LR-027](./LOVEROLL_MASTER_PROMPT.md) · Issue à créer |
+| [ ] | LR-028 | « As-tu envie de jouer ce soir ? » : invitation Push/in-app Oui/Non/Peut-être avant les deux D6 | À faire — spécification approuvée, aucun code livré | [Prompt LR-028](./LOVEROLL_MASTER_PROMPT.md) · Issue à créer |
 
 ## P1 — Responsive universel
 
@@ -79,8 +86,8 @@ L'[audit officiel](./LOVEROLL_AUDIT_UX_UI_20261026.md) est maintenant décompos�
 **Publication du système documentaire :** [PR #10 fusionnée](https://github.com/fredvolks/loveroll/pull/10). Les Issues sont ouvertes et les corrections applicatives restent à vérifier/implémenter.
 
 ## Tableau de bord
-- **24 exigences** dans cette version (4 P0 + 20 P1).
-- **0/24 cochées intégralement** : plusieurs corrections vérifiées partiellement, mais les critères complets restent ouverts (voir chaque PR et tests).
+- **31 exigences** dans cette version (4 P0 + 27 P1).
+- **0/31 cochées intégralement** : plusieurs corrections vérifiées partiellement, mais les critères complets restent ouverts (voir chaque PR et tests).
 - Ces nombres décrivent le **statut documentaire initial**, **pas** un diagnostic que toute l'application est défectueuse.
 - Les développeurs doivent vérifier l'existant et marquer « Déjà présent, vérifié » avec preuves si un point est déjà satisfait.
 
@@ -104,9 +111,11 @@ L'[audit officiel](./LOVEROLL_AUDIT_UX_UI_20261026.md) est maintenant décompos�
 
 | 2026-10-26 | LR-016 : demander 3 défis passés / mois / membre du couple, avec plafond modifiable par admin, refus illimité ; migration du quota « 3 passes gratuites » existant à auditer. Documentation seulement. | [Prompt LR-016](./LOVEROLL_MASTER_PROMPT.md) |
 
-## Propositions UX/UI à valider
+## Propositions UX/UI
 
-[Revue rapide de code et 7 pistes d'amélioration](./LOVEROLL_PROPOSITIONS_AMELIORATIONS_20261026.md) : propositions **non approuvées** et **non comptabilisées dans les 24 exigences** tant qu'une décision n'a pas été prise.
+La [revue rapide de code](./LOVEROLL_PROPOSITIONS_AMELIORATIONS_20261026.md) reste disponible ; les idées 3 à 8 du dernier échange et l'invitation à jouer sont maintenant **approuvées sous LR-017 à LR-019, LR-025 à LR-028**. Les autres idées demeurent des propositions non approuvées.
+
+| 2026-10-26 | Ajout approuvé LR-017 à LR-019 et LR-025 à LR-028 : Adapter, Reprendre, Coups de cœur retournant à la pige, Discrétion, Variété, Action principale, invitation Oui/Non/Peut-être au D6. Documentation seulement. | [Prompt maître](./LOVEROLL_MASTER_PROMPT.md) |
 
 ## Comment travailler avec ChatGPT Work
 Ouvrir le dépôt et fournir l'instruction suivante à Work :
