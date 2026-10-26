@@ -145,6 +145,38 @@ BEGIN
   RAISE EXCEPTION 'An incomplete evening was improperly counted';END IF;
 END
 $test$;
+
+-- Previously completed cards of the active 200-card cycle stay excluded even
+-- if a later, duplicate occurrence is refused without exclusion.
+INSERT INTO public.couple_sessions(id,couple_id,opened_by,starting_user_id)
+VALUES('91919191-9191-4191-8191-919191919191',
+ 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+ '11111111-1111-4111-8111-111111111111',
+ '11111111-1111-4111-8111-111111111111');
+INSERT INTO public.couple_challenges
+(id,session_id,couple_id,offered_by,recipient,category,face,card_id,status)
+VALUES('92929292-9292-4292-8292-929292929292',
+ '91919191-9191-4191-8191-919191919191',
+ 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+ '22222222-2222-4222-8222-222222222222',
+ '11111111-1111-4111-8111-111111111111',
+ 'SENSUEL',82,15,'proposed');
+SELECT set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',false);
+DO $test$
+BEGIN
+ PERFORM public.love_respond_and_redraw('92929292-9292-4292-8292-929292929292','refuse',false);
+ IF NOT EXISTS (
+  SELECT 1 FROM public.love_card_draw_history h
+  WHERE h.couple_id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+    AND h.recipient_user_id='11111111-1111-4111-8111-111111111111'
+    AND h.category='SENSUEL' AND h.card_id=15
+ ) THEN
+  RAISE EXCEPTION 'Refusing a duplicate released a previously completed card';
+ END IF;
+END
+$test$;
+SELECT 'LR015_COMPLETED_CARD_PROTECTED' AS result;
+
 SELECT 'LR015_POSTGRES_ISOLATED_SUCCESS' AS result;
 
 -- Verify members see replacement links only within their own couple and

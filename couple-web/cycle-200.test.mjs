@@ -348,3 +348,15 @@ test('LR-015 rejects stale accepted, completed and passed updates after evening 
  assert.match(legacy,/IF NOT FOUND THEN RAISE EXCEPTION 'Cette soirée est clôturée'/);
  assert.match(read('qa/lr015-closed-evening.sql'),/A stale client completed a closed-night challenge/);
 });
+
+test('LR-015: refusing a duplicate occurrence cannot restore a previously completed cycle card',()=>{
+ const sql=read('migrations/20261026_lr015_z_atomic_respond_redraw.sql');
+ const begin=sql.indexOf('DELETE FROM public.love_card_draw_history h');
+ const end=sql.indexOf('-- New challenge MUST stay',begin);
+ assert.ok(begin>0&&end>begin);
+ const deletion=sql.slice(begin,end);
+ assert.match(deletion,/completed\.status='completed'/);
+ assert.match(deletion,/completed_session\.started_at>=active_cycle\.challenge_cycle_started_at/);
+ const fixture=read('qa/lr015-db-contract.sql');
+ assert.match(fixture,/Refusing a duplicate released a previously completed card/);
+});

@@ -109,7 +109,21 @@ BEGIN
   -- Keep this historical occurrence, but permit the card in a later night.
   DELETE FROM public.love_card_draw_history h
   WHERE h.couple_id=v_couple AND h.recipient_user_id=v_old.recipient
-   AND h.category=v_old.category AND h.card_id=v_old.card_id;
+   AND h.category=v_old.category AND h.card_id=v_old.card_id
+   -- A repeated occurrence can be refused, but this must never unlock a card
+   -- already completed earlier in the active 200-challenge cycle.
+   AND NOT EXISTS (
+    SELECT 1 FROM public.couple_challenges completed
+    JOIN public.couple_sessions completed_session
+      ON completed_session.id=completed.session_id
+    JOIN public.couples active_cycle ON active_cycle.id=completed.couple_id
+    WHERE completed.couple_id=v_couple
+      AND completed.recipient=v_old.recipient
+      AND completed.category=v_old.category
+      AND completed.card_id=v_old.card_id
+      AND completed.status='completed'
+      AND completed_session.started_at>=active_cycle.challenge_cycle_started_at
+   );
  END IF;
 
  -- New challenge MUST stay in the original category and recipient's turn.
