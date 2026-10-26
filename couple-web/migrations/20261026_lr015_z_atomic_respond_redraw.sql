@@ -495,4 +495,74 @@ REVOKE ALL ON FUNCTION public.my_love_evening_board(uuid)
  FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.my_love_evening_board(uuid) TO authenticated;
 
+
+-- LR-015: stop older cached PWA clients from bypassing the replacement flow.
+-- 'accepted' and 'completed' retain the existing, previously secured behavior.
+CREATE OR REPLACE FUNCTION public.answer_challenge(p_id uuid,p_status text)
+RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $answer$
+DECLARE
+ c public.couple_challenges%rowtype;
+ v_couple uuid;
+ v_limit integer;
+ v_used integer;
+ v_month text:=to_char(now() AT TIME ZONE 'America/Toronto','YYYY-MM');
+BEGIN
+ PERFORM public.love_require_verified_identity();
+ IF (select auth.uid()) IS NULL THEN RAISE EXCEPTION 'Connexion requise'; END IF;
+ IF p_status NOT IN ('accepted','passed','completed') THEN
+  RAISE EXCEPTION 'Statut invalide';
+ END IF;
+ -- Compatibility for already installed PWAs: passing MUST use the very same
+ -- atomic replacement, monthly quota and idempotency as the new client.
+ -- Reuse its own couple-first locks; do not take a challenge lock here.
+ IF p_status='passed' THEN
+  PERFORM public.love_respond_and_redraw(p_id,'pass',false);
+  RETURN;
+ END IF;
+ SELECT couple_id INTO v_couple FROM public.couple_challenges WHERE id=p_id;
+ IF NOT FOUND OR v_couple IS NULL OR NOT couple_private.is_member(v_couple) THEN
+  RAISE EXCEPTION 'Défi inaccessible';
+ END IF;
+ SELECT monthly_pass_limit INTO v_limit
+ FROM public.couples WHERE id=v_couple FOR UPDATE;
+ IF NOT FOUND THEN RAISE EXCEPTION 'Duo introuvable'; END IF;
+ SELECT * INTO c FROM public.couple_challenges
+  WHERE id=p_id FOR UPDATE;
+ IF NOT FOUND OR c.couple_id IS DISTINCT FROM v_couple
+   OR c.recipient IS DISTINCT FROM (select auth.uid()) THEN
+  RAISE EXCEPTION 'Seul le destinataire peut répondre';
+ END IF;
+ IF p_status='completed' AND c.status<>'accepted' THEN
+  RAISE EXCEPTION 'Acceptez d’abord le défi';
+ END IF;
+ IF c.status NOT IN ('proposed','accepted') THEN
+  RAISE EXCEPTION 'Défi déjà terminé';
+ END IF;
+ IF p_status='passed' THEN
+  SELECT count(*)::integer INTO v_used
+  FROM public.couple_challenges q
+  WHERE q.couple_id=v_couple AND q.recipient=c.recipient
+    AND q.status='passed' AND q.passed_at IS NOT NULL
+    AND to_char(q.passed_at AT TIME ZONE 'America/Toronto','YYYY-MM')=v_month;
+  IF v_used>=v_limit THEN
+   RAISE EXCEPTION 'Limite mensuelle de passes atteinte (% / %)',v_used,v_limit;
+  END IF;
+ END IF;
+ -- Existing BEFORE UPDATE trigger stamps passed_at exactly on this transition.
+ UPDATE public.couple_challenges SET status=p_status WHERE id=p_id;
+ IF p_status='passed' THEN
+  -- Preserve existing bag recycling until LR-015 replaces its turn logic
+  -- with an atomic, idempotent replacement draw.
+  DELETE FROM public.love_card_draw_history h
+  WHERE h.couple_id=c.couple_id AND h.recipient_user_id=c.recipient
+    AND h.category=c.category AND h.card_id=c.card_id;
+ END IF;
+END
+$answer$;
+REVOKE ALL ON FUNCTION public.answer_challenge(uuid,text)
+ FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.answer_challenge(uuid,text)
+ TO authenticated;
+
 COMMIT;

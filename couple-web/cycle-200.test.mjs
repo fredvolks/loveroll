@@ -292,3 +292,15 @@ test('LR-015 phase 1b: passed cards do not create phantom draw capacity in the s
  assert.match(func,/for update/,'Couple/session serialization remains');
  assert.match(migration,/DELETE FROM public\.love_card_draw_history h/);
 });
+
+test('LR-015 cached web clients cannot bypass atomic replacement via old pass endpoint',()=>{
+ const sql=read('migrations/20261026_lr015_z_atomic_respond_redraw.sql');
+ const legacy=sql.slice(sql.lastIndexOf('CREATE OR REPLACE FUNCTION public.answer_challenge('));
+ assert.match(legacy,/IF p_status='passed' THEN\s+PERFORM public\.love_respond_and_redraw\(p_id,'pass',false\);\s+RETURN;/);
+ assert.match(legacy,/IF p_status NOT IN \('accepted','passed','completed'\)/);
+ assert.match(legacy,/REVOKE ALL ON FUNCTION public\.answer_challenge\(uuid,text\)/);
+ const check=read('qa/lr015-legacy-pass.sql');
+ assert.match(check,/public\.answer_challenge\(/);
+ assert.match(check,/Legacy Pass bypassed atomic replacement/);
+ assert.match(check,/Old client bypassed shared 2\/2 quota/);
+});
