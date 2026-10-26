@@ -386,6 +386,30 @@ Le [rapport UX/UI du 26 octobre 2026](./LOVEROLL_AUDIT_UX_UI_20261026.md) est un
 
 **Gestion des branches :** la PR #23 a été fusionnée dans `main` après succès des tests GitHub. Les PR #9 et #21 restent distinctes et leurs états actuels de fusion/CI doivent être vérifiés avant une publication. La PR #24 est un lot isolé de mise en page et d'accessibilité, ouvert en brouillon ; ses tests et captures demeurent à vérifier.
 
+## Reprise intégrée — 26 octobre 2026 : nouvelles demandes et état des PR
+
+**Ne pas recommencer le projet.** Le prompt maître reste la source officielle ; cette section complète l'ordre d'exécution initial en tenant compte des exigences approuvées LR-014 à LR-019 et LR-025 à LR-028. Aucune PR ouverte n'est une preuve de déploiement en production.
+
+| Exigence | Travail présent | Validation restante |
+| --- | --- | --- |
+| LR-012 | [PR #31](https://github.com/fredvolks/loveroll/pull/31), lecture des consignes longues dans le CSS actif, CI réussi | Conflit de fusion à résoudre, QA appareils, fusion/déploiement |
+| LR-014 | [PR #34](https://github.com/fredvolks/loveroll/pull/34), confirmation de catégorie D100, CI réussi | Conflit de fusion à résoudre, QA multi-profils, fusion/déploiement |
+| LR-015 | Spécification approuvée | RPC atomique Passer/Refuser/repige, exclusion et réintégration des non réalisés, tests concurrence |
+| LR-016 | [PR #43](https://github.com/fredvolks/loveroll/pull/43), plafond serveur 3/mois/personne configurable 0–30, CI réussi | Intégration Réglages, compteurs, cohérence LR-015, validation DB, déploiement SQL |
+| LR-017–019 | Spécifications approuvées | Adapter par consentement, reprise serveur, favoris rééligibles aux soirées futures |
+| LR-025 | [PR #44](https://github.com/fredvolks/loveroll/pull/44), écran neutre local et boutons Masquer, CI réussi | Vérification physique iOS/Android, confidentialité des notifications/audio, fusion/déploiement |
+| LR-026–028 | Spécifications approuvées | Variété de pige, hiérarchie d'action, invitation Oui/Non/Peut-être avec stockage privé et Push facultatif |
+
+**Ordre de continuation à appliquer :**
+1. Résoudre les conflits et valider les PR P0/P1 déjà ouvertes, sans fusionner à l'aveugle. Conserver les tests visuels du D100 et de l'Accueil.
+2. Terminer LR-015 côté SQL/RPC avant d'exposer des boutons Passer/Refuser : aucun nouveau défi fantôme, pas de dépassement de quota, un seul tour, exclusion par couple et conservation de l'historique.
+3. Intégrer LR-016 côté UI et tests de concurrence, en conservant Refuser illimité même après 3 passes ; déployer la migration seulement avec une version client compatible.
+4. Livrer LR-018 (reprise fidèle), puis LR-019 (coups de cœur rejouables, sans doublons du cycle de 200), puis LR-017 (adaptations avec consentement).
+5. Livrer LR-025 après vérification réelle, puis LR-026/027 et LR-028 (invitation à jouer) avec contrôle serveur et confidentialité.
+6. Mettre à jour `docs/LOVEROLL_SUIVI.md` et les captures après chaque lot ; marquer terminé uniquement si le scénario réel est démontré.
+
+**Contraintes permanentes :** le bouton Passer consomme un quota mensuel propre au destinataire, Refuser reste libre ; les favoris ne deviennent éligibles qu'à partir d'une prochaine soirée et ne contournent jamais les exclusions ; l'invitation Oui n'exécute pas le D6 à la place du partenaire ; masquer le jeu ne modifie pas ses données. Conserver les tarifs, abonnements, comptes, thèmes, dés 3D et le visuel Accueil sans modification hors demande explicite.
+
 ## Ordre d'exécution souhaité
 1. Identifier code réel et branches, établir captures initiales, figer les régressions.
 2. **P0 : LR-001 à LR-004** (D100, timers, calendrier, audio) avec tests.
