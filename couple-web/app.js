@@ -921,6 +921,7 @@ async function refreshShared(){
  state.eveningHistoryStats=Array.isArray(eveningStats)?eveningStats:[];
  state.eveningCalendarChallenges=Array.isArray(calendarChallenges)?calendarChallenges:[];
  state.calendarPassQuota=Array.isArray(calendarPasses)?calendarPasses:[];
+ state.monthlyPassQuota=monthlyPassQuota;
  state.calendarPassMonth=state.eveningCalendarMonth||month();
  state.eveningReviews=Array.isArray(eveningReviews)?eveningReviews:[];
  state.gifts=gifts;
