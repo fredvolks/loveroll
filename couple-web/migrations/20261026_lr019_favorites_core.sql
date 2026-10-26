@@ -88,4 +88,33 @@ REVOKE ALL ON FUNCTION public.my_love_couple_favorites(uuid)
  FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.my_love_couple_favorites(uuid)
  TO authenticated;
+
+-- Eligibility guard only: the D100 engine must still enforce role, exclusions,
+-- category distribution, 200-card statistics and same-session uniqueness.
+CREATE OR REPLACE FUNCTION public.love_favorite_from_prior_evening(
+ p_couple uuid,p_session uuid,p_category text,p_card_id integer
+) RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=''
+AS $prior$
+DECLARE v_started timestamptz;
+BEGIN
+ PERFORM public.love_require_verified_identity();
+ IF (SELECT auth.uid()) IS NULL OR p_couple IS NULL
+    OR NOT couple_private.is_member(p_couple) THEN
+  RAISE EXCEPTION 'Accès au duo refusé';
+ END IF;
+ SELECT s.started_at INTO v_started FROM public.couple_sessions s
+ WHERE s.id=p_session AND s.couple_id=p_couple AND s.finished_at IS NULL;
+ IF NOT FOUND THEN RAISE EXCEPTION 'Soirée active introuvable'; END IF;
+ RETURN EXISTS (
+  SELECT 1 FROM public.love_couple_favorites f
+  WHERE f.couple_id=p_couple AND f.category=p_category AND f.card_id=p_card_id
+    AND f.marked_at<v_started
+ );
+END;
+$prior$;
+REVOKE ALL ON FUNCTION public.love_favorite_from_prior_evening(uuid,uuid,text,integer)
+ FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.love_favorite_from_prior_evening(uuid,uuid,text,integer)
+ TO authenticated;
+
 COMMIT;

@@ -8,6 +8,8 @@
 - Une carte de l'historique peut conserver son cœur même si elle n'est plus dans le catalogue actif; cela ne la rend pas tirable.
 - Fixture PostgreSQL isolée vérifiant les accès entre couples, l'archivage, la lecture des deux membres, les validations et les doubles appuis.
 
+- Prédicat de réadmissibilité temporelle : une carte marquée pendant une soirée ne revient pas dans cette même soirée. Une autre soirée active du couple peut consulter la règle, après sa date de début. Ce prédicat n'effectue aucun tirage.
+
 ## Exclu volontairement de cette tranche
 - **Aucun changement au tirage D100**, à LR-015 (Passer/Refuser), au cycle de 200, aux pourcentages, à la confidentialité ou aux cartes.
 - Aucun bouton UI exposé. Aucune migration Supabase exécutée; aucune carte utilisateur ni donnée de production touchée.
@@ -22,3 +24,6 @@ Résultats exacts : première tentative PostgreSQL [40397251196](https://github.
 Dernière modification : ce suivi documentaire produit un **nouveau SHA** ; consulter le prochain run Web sur cette nouvelle tête et ne pas extrapoler la réussite du SHA précédent.
 Prochaine action : identifier le run exact et son SHA, analyser tout échec, corriger la branche, vérifier `completed/success`. Puis intégrer séparément le moteur et les composants UI sur une base compatible avec LR-015.
 Prompt maître : LR-001..004 en PR, LR-015 #54 en cours, LR-019 première tranche seulement. Le registre central `docs/WORK_TEST_CONTINUITY.md` est en PR #47, non présent sur le `main` actuel.
+
+## Étape suivante
+- Vérifier le run PostgreSQL et Web du présent changement, avec tests même soirée / soirée future / session extérieure. Ne pas présenter le prédicat comme le moteur de pige intégré.

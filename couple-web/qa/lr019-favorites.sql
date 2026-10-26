@@ -6,6 +6,7 @@ CREATE SCHEMA auth;
 CREATE SCHEMA couple_private;
 CREATE TABLE auth.users(id uuid PRIMARY KEY);
 CREATE TABLE public.couples(id uuid PRIMARY KEY);
+CREATE TABLE public.couple_sessions(id uuid PRIMARY KEY,couple_id uuid NOT NULL,started_at timestamptz NOT NULL,finished_at timestamptz);
 CREATE TABLE public.couple_members(couple_id uuid NOT NULL,user_id uuid NOT NULL,PRIMARY KEY(couple_id,user_id));
 CREATE TABLE public.love_base_challenges(category text NOT NULL,card_id integer NOT NULL,PRIMARY KEY(category,card_id));
 CREATE TABLE public.love_custom_challenges(couple_id uuid NOT NULL,category text NOT NULL,card_id integer NOT NULL);
@@ -33,6 +34,10 @@ INSERT INTO public.couple_members VALUES
  ('dddddddd-dddd-4ddd-8ddd-dddddddddddd','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'),
  ('dddddddd-dddd-4ddd-8ddd-dddddddddddd','bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'),
  ('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee','cccccccc-cccc-4ccc-8ccc-cccccccccccc');
+INSERT INTO public.couple_sessions VALUES
+ ('11111111-1111-4111-8111-111111111111','dddddddd-dddd-4ddd-8ddd-dddddddddddd',now()-interval '1 hour',NULL),
+ ('22222222-2222-4222-8222-222222222222','dddddddd-dddd-4ddd-8ddd-dddddddddddd',now()+interval '1 hour',NULL),
+ ('33333333-3333-4333-8333-333333333333','eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',now()-interval '1 hour',NULL);
 INSERT INTO public.love_base_challenges VALUES ('SENSUEL',1);
 INSERT INTO public.love_custom_challenges VALUES ('dddddddd-dddd-4ddd-8ddd-dddddddddddd','SEXUEL',41);
 INSERT INTO public.couple_challenges VALUES ('dddddddd-dddd-4ddd-8ddd-dddddddddddd','SEXUEL',97);
@@ -52,6 +57,10 @@ DO $test$
 DECLARE p uuid:='dddddddd-dddd-4ddd-8ddd-dddddddddddd'; n integer;
 BEGIN
  IF NOT public.set_love_couple_favorite(p,'SENSUEL',1,true) THEN RAISE EXCEPTION 'mark failed'; END IF;
+ IF public.love_favorite_from_prior_evening(p,'11111111-1111-4111-8111-111111111111','SENSUEL',1) THEN
+  RAISE EXCEPTION 'same-night favorite incorrectly unlocked'; END IF;
+ IF NOT public.love_favorite_from_prior_evening(p,'22222222-2222-4222-8222-222222222222','SENSUEL',1) THEN
+  RAISE EXCEPTION 'future-night favorite incorrectly blocked'; END IF;
  IF NOT public.set_love_couple_favorite(p,'SENSUEL',1,true) THEN RAISE EXCEPTION 'idempotence failed'; END IF;
  SELECT count(*) INTO n FROM public.my_love_couple_favorites(p);
  IF n<>1 THEN RAISE EXCEPTION 'duplicate favorite row: %',n; END IF;
@@ -104,6 +113,12 @@ BEGIN
   RAISE EXCEPTION 'cross-couple write accepted';
  EXCEPTION WHEN OTHERS THEN
   IF SQLERRM='cross-couple write accepted' THEN RAISE; END IF;
+ END;
+ BEGIN
+  PERFORM public.love_favorite_from_prior_evening(p,'33333333-3333-4333-8333-333333333333','SENSUEL',1);
+  RAISE EXCEPTION 'cross-couple session accepted';
+ EXCEPTION WHEN OTHERS THEN
+  IF SQLERRM='cross-couple session accepted' THEN RAISE; END IF;
  END;
 END $test$;
 ROLLBACK;
