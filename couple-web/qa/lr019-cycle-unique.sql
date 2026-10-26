@@ -7,6 +7,18 @@ CREATE TABLE IF NOT EXISTS public.love_cycle_responses (
  choice text NOT NULL
 );
 SELECT set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',false);
+DO $cap$
+DECLARE denied boolean:=false;
+BEGIN
+ IF public.love_favorites_capabilities('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa') IS DISTINCT FROM true THEN
+  RAISE EXCEPTION 'LR-019 server capability not active after full stack';
+ END IF;
+ BEGIN
+  PERFORM public.love_favorites_capabilities('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee');
+ EXCEPTION WHEN others THEN denied:=true;
+ END;
+ IF NOT denied THEN RAISE EXCEPTION 'Capability leaked to foreign couple'; END IF;
+END $cap$;
 UPDATE public.couples SET challenge_cycle_target=2,challenge_cycle_pending=false
 WHERE id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 INSERT INTO public.couple_sessions(id,couple_id,opened_by,starting_user_id,self_draws,paired_turns,started_at)
