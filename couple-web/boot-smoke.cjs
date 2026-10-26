@@ -1,4 +1,5 @@
 const {revealSetting}=require('./settings-test-navigation.cjs');
+const {mkdirSync}=require('node:fs');
 // The real app.js as an ESM module, real HTML/CSS/JS assets, Chromium parser
 // and safe synthetic Supabase responses. No live users, quotas or DB writes.
 const {chromium}=require('playwright');
@@ -129,10 +130,11 @@ export function createClient(){
   ['existing-paired','?boot_case=paired','.loveroll-real-home'],
   ['active-evening','?boot_case=paired-active','.loveroll-real-home'],
   ['redraw-flow','?boot_case=paired-redraw','.loveroll-real-home'],
+  ['redraw-iphone','?boot_case=paired-redraw','.loveroll-real-home'],
   ['step1-partner-pending','?boot_case=paired-pending','.loveroll-real-home'],
   ['step1-partner-result','?boot_case=paired-partner-result','.loveroll-real-home']
  ]){
-  const page=await browser.newPage({viewport:{width:412,height:824},serviceWorkers:'block'});
+  const page=await browser.newPage({viewport:name==='redraw-iphone'?{width:393,height:852}:{width:412,height:824},serviceWorkers:'block'});
   const errors=[];
   page.on('pageerror',err=>errors.push(err.message));
   page.on('console',msg=>{if(msg.type()==='error')errors.push('console: '+msg.text().slice(0,250));});
@@ -269,7 +271,7 @@ export function createClient(){
    if(errors.length)throw Error('Returning from Surprise to Soirée caused exception '+JSON.stringify(errors));
    console.log('SOIREE_ACTIVE_ACCESS_OK','two confirmed dice, shared live board, queue button, tab revisit');
   }
-  if(name==='redraw-flow'){
+  if(name==='redraw-flow'||name==='redraw-iphone'){
    await selectTab(page,'session');
    await page.locator('.evening-premium-view').waitFor({timeout:10000});
    await page.locator('[data-action="evening-list"]').first().click();
@@ -279,6 +281,9 @@ export function createClient(){
    await refuse.click();
    const dialog=page.locator('.lr-refusal-dialog[role="alertdialog"]');
    await dialog.waitFor({state:'visible'});
+   mkdirSync('lr015-captures',{recursive:true});
+   await dialog.scrollIntoViewIfNeeded();
+   await page.screenshot({path:'lr015-captures/'+name+'-refus.png',fullPage:true});
    for(const label of ['Oui, retirer du lot','Non, le garder dans le lot','Annuler'])
     if(!(await dialog.innerText()).includes(label))throw Error('Missing refusal choice '+label);
    await page.locator('[data-action="evening-refuse-cancel"]').click();
@@ -287,6 +292,7 @@ export function createClient(){
    await refuse.click();
    await page.locator('[data-action="evening-refuse-choice:redraw-original:no"]').click();
    await page.locator('.evening-queue-detail h2').filter({hasText:'Remplacement du défi'}).waitFor({timeout:10000});
+   await page.screenshot({path:'lr015-captures/'+name+'-remplacement.png',fullPage:true});
    const calls=await page.evaluate(()=>window.__redrawCalls);
    if(calls.length!==1||calls[0].args.p_challenge!=='redraw-original'||
     calls[0].args.p_action!=='refuse'||calls[0].args.p_exclude!==false)

@@ -393,6 +393,13 @@ jobs:
 
       - name: Real app boot in Chromium (anonymous, Google callback, existing session)
         run: node couple-web/boot-smoke.cjs
+      - name: Archiver les captures Refuser et repiger de LoveRoll
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LoveRoll-LR015-Soiree-${{ github.run_number }}
+          path: lr015-captures/*.png
+          if-no-files-found: warn
 
       - name: Verify REAL account and invite behaviors against mocked Supabase API
         run: node couple-web/auth-behavior-v58.cjs
