@@ -1,31 +1,34 @@
 // Gesture-unlocked local sound for incoming challenges; system push remains OS-controlled.
 const KEY='loveroll-challenge-sounds-v229';
 let context=null,unlocked=false;
+let activeUserId='anonymous';
+export function setLoveRollSoundUser(userId){activeUserId=String(userId||'anonymous');}
+const scopedKey=()=>KEY+':'+activeUserId;
 const recent=new Set();
 export function soundEnabled(store=globalThis.localStorage){
- try{return store?.getItem(KEY)!=='off';}catch{return true;}
+ try{return store?.getItem(scopedKey())!=='off';}catch{return true;}
 }
 export function setSoundEnabled(enabled,store=globalThis.localStorage){
- try{store?.setItem(KEY,enabled?'on':'off');}catch{}
+ try{store?.setItem(scopedKey(),enabled?'on':'off');}catch{}
  return !!enabled;
 }
-export function unlockLoveRollSounds(){
+export async function unlockLoveRollSounds(){
  if(typeof window==='undefined')return false;
  const Ctor=window.AudioContext||window.webkitAudioContext;
  if(!Ctor)return false;
  try{
   context??=new Ctor();
-  context.resume?.().then(()=>{unlocked=context.state==='running';}).catch(()=>{});
+  await context.resume?.();
   unlocked=context.state==='running';
   return unlocked;
  }catch{return false;}
 }
 export function armLoveRollSounds(){
  if(typeof document==='undefined')return;
- const unlock=()=>{unlockLoveRollSounds();if(unlocked){
+ const unlock=()=>{unlockLoveRollSounds().then(ready=>{if(ready){
   document.removeEventListener('pointerdown',unlock,true);
   document.removeEventListener('keydown',unlock,true);
- }};
+ }}).catch(()=>{});};
  document.addEventListener('pointerdown',unlock,true);
  document.addEventListener('keydown',unlock,true);
 }
