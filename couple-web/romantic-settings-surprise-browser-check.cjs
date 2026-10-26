@@ -122,6 +122,12 @@ const client=`export function createClient(){
   assert.equal(world.couple.show_sexuel_button,false);await revealSetting(a,'[data-action="settings-page:admin"]');await a.locator('[data-action="settings-page:admin"]').click();assert.equal(await a.locator('[data-action="admin-reset-all-dice"]').count(),1);
   await a.locator('[data-action="settings-page:jeu"]').click();await a.locator('.nav [data-action="tab:settings"]').click();
   for(const key of ['couple','notifications','confidentialite','application']){
+   // LR-044 preserves notifications/privacy, but nests them in Mes préférences.
+   if(['notifications','confidentialite'].includes(key)){
+    await a.locator('[data-action="settings-page:preferences"]').click();
+    assert.equal(await a.locator('.settings-detail-body [data-action="settings-page:'+key+'"]').count(),1,
+     'La préférence secondaire doit être accessible depuis Mes préférences');
+   }
    await a.locator('[data-action="settings-page:'+key+'"]').click();assert.equal(await a.locator('.nav button.active').innerText(),'Réglages');
    assert.doesNotMatch(await a.locator('.settings-detail-body').innerText(),/Mon ressenti|Comment va votre sexualité|Comment vivez-vous votre relation/);
    if(key==='notifications')assert.equal(await a.locator('.push-option').count(),4);
