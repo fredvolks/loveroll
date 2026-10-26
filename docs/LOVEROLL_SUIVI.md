@@ -29,13 +29,13 @@
 | [ ] | LR-014 | Soirée : confirmation de catégorie Sensuel/Sexuel/Au hasard avant lancer D100, option « Ne plus afficher », réactivation en Réglages par profil | À faire — spécification seulement | [Prompt maître LR-014](./LOVEROLL_MASTER_PROMPT.md#lr-014--confirmation-du-choix-de-catégorie-avant-de-brasser-le-d100-nouvelle-demande-du-26-octobre-2026) · [Issue #27](https://github.com/fredvolks/loveroll/issues/27) · tests à réaliser |
 | [ ] | LR-015 | Défis : Passer, Refuser avec choix de retrait du lot, repige, retour des défis non terminés à la clôture, historique conservé | À faire — spécification seulement | [Exigence LR-015](./LOVEROLL_MASTER_PROMPT.md#lr-015--défis--passer-refuser-exclusion-volontaire-et-retour-dans-la-pige-nouvelle-demande-du-26-octobre-2026) · [Issue #29](https://github.com/fredvolks/loveroll/issues/29) |
 | [ ] | LR-016 | Passes mensuelles : **3 par partenaire** par défaut, limite modifiable par l'admin du couple, blocage serveur à la limite, compteur visible ; refus toujours libre | À faire — spécification seulement | [Prompt LR-016](./LOVEROLL_MASTER_PROMPT.md) · [Issue #32](https://github.com/fredvolks/loveroll/issues/32) |
-| [ ] | LR-017 | Adapter ce défi avec accord des deux, sans passer/refuser ni modifier les cartes globales | À faire — spécification approuvée, aucun code livré | [Prompt LR-017](./LOVEROLL_MASTER_PROMPT.md) · Issue à créer |
-| [ ] | LR-018 | Reprendre une soirée sur appareil mobile/tablette/PC, étapes et minuterie persistantes | À faire — spécification approuvée, aucun code livré | [Prompt LR-018](./LOVEROLL_MASTER_PROMPT.md) · Issue à créer |
-| [ ] | LR-019 | ♥ Coups de cœur : favoris accessibles et remis dans la pige d'une prochaine soirée même réalisés, jamais immédiatement | À faire — spécification approuvée, aucun code livré | [Prompt LR-019](./LOVEROLL_MASTER_PROMPT.md) · Issue à créer |
-| [ ] | LR-025 | Mode discrétion pour masquer les défis rapidement sans modifier leur état | À faire — spécification approuvée, aucun code livré | [Prompt LR-025](./LOVEROLL_MASTER_PROMPT.md) · Issue à créer |
-| [ ] | LR-026 | Variété intelligente : limiter les défis ressemblants dans la même soirée | À faire — spécification approuvée, aucun code livré | [Prompt LR-026](./LOVEROLL_MASTER_PROMPT.md) · Issue à créer |
-| [ ] | LR-027 | Une seule action principale par étape, tous les boutons secondaires restent accessibles | À faire — spécification approuvée, aucun code livré | [Prompt LR-027](./LOVEROLL_MASTER_PROMPT.md) · Issue à créer |
-| [ ] | LR-028 | « As-tu envie de jouer ce soir ? » : invitation Push/in-app Oui/Non/Peut-être avant les deux D6 | À faire — spécification approuvée, aucun code livré | [Prompt LR-028](./LOVEROLL_MASTER_PROMPT.md) · Issue à créer |
+| [ ] | LR-017 | Adapter ce défi avec accord des deux, sans passer/refuser ni modifier les cartes globales | À faire — spécification approuvée, aucun code livré | [Prompt LR-017](./LOVEROLL_MASTER_PROMPT.md) · [Issue #35](https://github.com/fredvolks/loveroll/issues/35) |
+| [ ] | LR-018 | Reprendre une soirée sur appareil mobile/tablette/PC, étapes et minuterie persistantes | À faire — spécification approuvée, aucun code livré | [Prompt LR-018](./LOVEROLL_MASTER_PROMPT.md) · [Issue #36](https://github.com/fredvolks/loveroll/issues/36) |
+| [ ] | LR-019 | ♥ Coups de cœur : favoris accessibles et remis dans la pige d'une prochaine soirée même réalisés, jamais immédiatement | À faire — spécification approuvée, aucun code livré | [Prompt LR-019](./LOVEROLL_MASTER_PROMPT.md) · [Issue #37](https://github.com/fredvolks/loveroll/issues/37) |
+| [ ] | LR-025 | Mode discrétion pour masquer les défis rapidement sans modifier leur état | À faire — spécification approuvée, aucun code livré | [Prompt LR-025](./LOVEROLL_MASTER_PROMPT.md) · [Issue #38](https://github.com/fredvolks/loveroll/issues/38) |
+| [ ] | LR-026 | Variété intelligente : limiter les défis ressemblants dans la même soirée | À faire — spécification approuvée, aucun code livré | [Prompt LR-026](./LOVEROLL_MASTER_PROMPT.md) · [Issue #39](https://github.com/fredvolks/loveroll/issues/39) |
+| [ ] | LR-027 | Une seule action principale par étape, tous les boutons secondaires restent accessibles | À faire — spécification approuvée, aucun code livré | [Prompt LR-027](./LOVEROLL_MASTER_PROMPT.md) · [Issue #40](https://github.com/fredvolks/loveroll/issues/40) |
+| [ ] | LR-028 | « As-tu envie de jouer ce soir ? » : invitation Push/in-app Oui/Non/Peut-être avant les deux D6 | À faire — spécification approuvée, aucun code livré | [Prompt LR-028](./LOVEROLL_MASTER_PROMPT.md) · [Issue #41](https://github.com/fredvolks/loveroll/issues/41) |
 
 ## P1 — Responsive universel
 
@@ -110,6 +110,18 @@ L'[audit officiel](./LOVEROLL_AUDIT_UX_UI_20261026.md) est maintenant décompos�
 | 2026-10-26 | Nouvelle demande LR-015 : Passer / Refuser un défi, choix de l'exclure du lot courant, repige et restitution des non réalisés à la fin de la soirée, historique et cycle de 200 préservés. **Demande non codée.** | [Prompt LR-015](./LOVEROLL_MASTER_PROMPT.md) |
 
 | 2026-10-26 | LR-016 : demander 3 défis passés / mois / membre du couple, avec plafond modifiable par admin, refus illimité ; migration du quota « 3 passes gratuites » existant à auditer. Documentation seulement. | [Prompt LR-016](./LOVEROLL_MASTER_PROMPT.md) |
+
+## Issues de développement — nouveautés approuvées
+
+| Exigence | Issue |
+|---|---|
+| LR-017 — Adapter | [#35](https://github.com/fredvolks/loveroll/issues/35) |
+| LR-018 — Reprendre | [#36](https://github.com/fredvolks/loveroll/issues/36) |
+| LR-019 — Coups de cœur | [#37](https://github.com/fredvolks/loveroll/issues/37) |
+| LR-025 — Discrétion | [#38](https://github.com/fredvolks/loveroll/issues/38) |
+| LR-026 — Variété | [#39](https://github.com/fredvolks/loveroll/issues/39) |
+| LR-027 — Action principale | [#40](https://github.com/fredvolks/loveroll/issues/40) |
+| LR-028 — Invitation à jouer | [#41](https://github.com/fredvolks/loveroll/issues/41) |
 
 ## Propositions UX/UI
 
