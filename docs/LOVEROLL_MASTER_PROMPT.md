@@ -270,6 +270,46 @@ En l'absence de catégorie pour le défi/D100, la zone doit suggérer **visuelle
 
 **Remise en pige exceptionnelle déjà effectuée séparément pour le couple demandeur (26 octobre 2026) :** les entrées de blocage des cartes précédemment tirées ont été réinitialisées de façon ciblée, sans altérer les défis archivés, les comptes ni la soirée active. Cette opération **ne marque pas les cartes en favoris**. Il ne faut **pas la répéter** ni l'appliquer à d'autres couples. Les informations de compte et de base personnelle doivent rester hors de ce dépôt public ; conserver le détail uniquement dans les résultats de la session d'administration autorisée.
 
+
+#### Précision approuvée — maximum 5 favoris communs, remplacement et calendrier (26 octobre 2026)
+
+Cette précision complète LR-019 et prévaut sur toute formulation antérieure suggérant une liste de favoris illimitée.
+
+**Liste commune et plafond**
+- Le couple dispose d'une seule liste de **5 défis favoris maximum, toutes catégories confondues** (Sensuel + Sexuel, sans multiplier le plafond par catégorie, partenaire, appareil ou soirée). Conserver la portée commune du favori déjà définie dans LR-019.
+- Chacun des deux partenaires peut ajouter, retirer ou remplacer un favori, dans Réglages ou depuis une carte accessible. Ce droit n'est pas réservé à l'admin. Enregistrer qui a ajouté la carte sans en faire une réservation pour cette personne.
+- Compter des définitions de cartes distinctes par identifiant stable/catégorie/version pertinente, jamais les faces aléatoires du D100 ou les occurrences du calendrier. La même carte favorite dans plusieurs soirées n'occupe qu'une place.
+- Afficher un compteur « Nos coups de cœur · 3/5 ». Un cœur déjà présent permet de retirer le favori, sans doublon.
+
+**Ajout après une soirée et depuis le calendrier**
+- Après une soirée clôturée, chacun peut consulter les défis historiques de soi ou du partenaire déjà autorisés dans le calendrier commun et les ajouter aux favoris. « Défis passés » signifie ici anciens défis; ne pas limiter cette fonction au statut « Passé ».
+- Depuis Calendrier → soirée clôturée → défis de [partenaire], proposer « ♡ Ajouter aux favoris » / « ♥ Retirer des favoris ». Même possibilité sur ses propres cartes et dans le bilan de fin de soirée.
+- Respecter les droits de lecture historiques existants : aucune révélation de la liste privée, des cartes encore secrètes ou des résultats d'une soirée ouverte pour permettre cet ajout. Les notes privées demeurent privées.
+- Conserver titre, consigne, attribution et historique; l'ajout d'un cœur ne marque jamais un défi réalisé et ne consomme aucune passe, aucun défi ni aucune soirée.
+- Si une carte historique n'existe plus dans le catalogue actif, expliquer qu'elle est indisponible; ne pas recréer ou publier automatiquement son texte privé, ni promettre sa repige.
+
+**Quand les 5 places sont occupées**
+- Au sixième ajout, ne rien écraser ni supprimer automatiquement. Afficher une notification dans l'app, par exemple :
+  « Vous avez déjà 5 défis en favoris. Retirez-en un de votre liste pour ajouter celui-ci. »
+- Actions : **« Choisir un favori à remplacer »**, **« Voir nos favoris »**, **« Annuler »**.
+- Dans le remplacement, montrer les 5 favoris actuels et la nouvelle carte, laisser choisir celui à retirer puis confirmer « Remplacer ce favori ». Annuler ne change rien.
+- Effectuer retrait + ajout dans une seule transaction serveur : si la nouvelle carte n'est plus admissible, si le réseau coupe ou si le remplacement échoue, conserver l'ancien favori. Le choix du favori à retirer reste volontaire.
+- Un partenaire peut aussi retirer une carte dans Réglages puis ajouter celle souhaitée. Synchroniser compteur et cœurs sur les deux comptes.
+- Une notification locale de quota suffit; ne pas envoyer de Push sensible ni de message externe pour un simple sixième ajout.
+
+**Réglages et tirage**
+- Ajouter **Réglages → Jeu → Nos coups de cœur** (ou emplacement équivalent dans l'arborescence officielle), avec les 5 cartes, leur catégorie, le compteur et les commandes de retrait/remplacement.
+- Texte explicatif : « Un favori peut revenir dans une prochaine pige. Il ne garantit pas qui le pigera, qui fera le défi ou qui le recevra. Les règles d'attribution restent applicables. »
+- Conserver les règles LR-019 : retour possible dès une prochaine soirée même après réalisation, aucune garantie de sortie ni pondération supérieure, pas de repige dans la soirée courante, exclusions volontaires prioritaires et absence de double crédit de carte unique.
+- Conserver en particulier les restrictions femme → homme / homme → femme et les autres rôles configurés. Un cœur ajouté sur la carte du partenaire ne transfère pas ses rôles à la personne qui l'a marqué.
+- Retirer le favori rend à la carte son régime normal; cela n'efface pas les réalisations, ne réinitialise pas le cycle et ne garantit pas qu'elle pourra ressortir.
+
+**Contrôles et migration**
+- Imposer le plafond côté serveur, avec contrôle d'appartenance au couple, unicité et verrou transactionnel. Deux ajouts simultanés à 4/5 ne doivent jamais produire 6 favoris. Double-clic et nouvelle tentative sont idempotents.
+- Si une liste existante dépasse déjà 5, conserver ses données et demander aux membres de choisir les 5 à garder; bloquer les nouveaux ajouts tant que la sélection n'est pas régularisée. Ne pas supprimer arbitrairement des favoris historiques.
+- Tester 0→5, sixième ajout, retrait, remplacement/annulation/échec, doublon de carte historique, mélange des catégories, deux membres/deux appareils, cartes des deux partenaires dans le calendrier après clôture, refus d'accès à un autre couple, restrictions d'attribution et non-révélation d'une soirée ouverte.
+- Inscrire preuves et état réel au suivi. Cette précision est une spécification, pas une fonctionnalité déjà livrée.
+
 ### LR-025 — Mode discrétion / cacher le jeu (idée no 6)
 - Dans les fiches de défis/Soirée, proposer un bouton discret **« Masquer »** et éventuellement un raccourci tactile pour masquer immédiatement l'activité affichée.
 - L'écran de confidentialité doit cacher **titres, catégories sensibles, consignes, progression intime et éventuellement noms de cartes**. Afficher à la place un écran neutre LoveRoll (logo et bouton **« Revenir au jeu »**) sans notifications ou previews explicites.
