@@ -54,3 +54,12 @@ test('LR-016 explicitly does not claim atomic replacement drawing (still LR-015)
  assert.doesNotMatch(sql,/CREATE OR REPLACE FUNCTION public\.draw_for_partner/);
  assert.match(sql,/REVOKE ALL ON FUNCTION public\.answer_challenge\(uuid,text\)/);
 });
+
+test('LR-016 client reads authoritative quota and validates owner input',()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ assert.match(app,/rpc\('my_love_monthly_pass_quota',\{p_couple:c\}\)/);
+ assert.match(app,/state\.monthlyPassQuota=monthlyPassQuota/);
+ assert.match(app,/state\.monthlyPassQuota\.remaining/);
+ assert.match(app,/rpc\('save_couple_monthly_pass_limit',\{p_couple:state\.coupleId,p_limit:limit\}\)/);
+ assert.match(app,/Number\.isInteger\(limit\)/);
+});
