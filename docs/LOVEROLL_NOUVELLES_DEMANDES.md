@@ -27,7 +27,7 @@
 
 | Date | Demande originale | ID attribué | PR / lien |
 |---|---|---|---|
-| 2026-10-26 | D100 trop gros ; timers à zéro ; harmonisation avec Accueil ; UX/UI comme designer et couple ; responsive mobile/tablette/PC | LR-001…LR-043 (21 ID listés, voir suivi) | PR documentaire en cours |
+| 2026-10-26 | D100 trop gros ; timers à zéro ; harmonisation avec Accueil ; UX/UI comme designer et couple ; responsive mobile/tablette/PC | LR-001…LR-043 (21 ID listés, voir suivi) | [PR #10 — fusionnée](https://github.com/fredvolks/loveroll/pull/10) |
 
 ## Lire et modifier depuis un téléphone
 1. Ouvre ce document sur GitHub en étant connecté.
