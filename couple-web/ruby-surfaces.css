@@ -1,12 +1,13 @@
 /* Shared outer bubble template. Opt in with lr-surface; keep content/layout
    in each component. This first important layer owns the common glass finish. */
 @layer loveroll-surfaces{
- @media(max-width:767px){
-  :root{
+ /* Accueil: same glass material on mobile, iPad and desktop. */
+ :root{
    --lr-surface-radius:18px;
    --lr-surface-fill:radial-gradient(ellipse 3% 10% at 96% 3%,#fff0dc99,transparent),radial-gradient(ellipse 70% 18% at 35% 0%,#ed375447,transparent),linear-gradient(155deg,#650016ed,#310009f2 68%,#550011ed);
    --lr-surface-shadow:inset 0 1px 2px #ffe4d680,inset 0 -1px 3px #e3274b66,0 3px 7px #16000480;
   }
+ @media(max-width:767px){
   .lr-surface{
    isolation:isolate!important;box-sizing:border-box!important;
    border:1px solid #d56a7c!important;border-radius:var(--lr-surface-radius)!important;
