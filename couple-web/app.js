@@ -3821,6 +3821,7 @@ async function handle(action,element){
   const item=ownEveningChallenges(state.challenges,state.user.id,state.session?.id).find(c=>c.id===parts[0]);
   if(!item)throw Error('Ce défi n’est pas dans ta liste personnelle.');
   const eveningId=state.session.id;
+  if(parts[1]==='passed'&&state.monthlyPassQuota?.can_pass===false)throw Error('Limite mensuelle de passes atteinte.');
   await rpc('answer_challenge',{p_id:parts[0],p_status:parts[1]});
   if(parts[1]==='completed'){
    // Last completed challenge closes the shared night automatically.
