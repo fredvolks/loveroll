@@ -249,3 +249,43 @@ test('LR-015 phase 3: atomic refusal/pass and same-category replacement contract
  assert.match(draw,/ex\.category=v_cat\s+and\s+ex\.card_id=card/i);
  assert.doesNotMatch(draw,/status<>'passed'/);
 });
+
+
+
+test('LR-015 phase 1: closing an incomplete evening restores only eligible bag marks once',()=>{
+ const migration=read('migrations/20261026_lr015_recycle_incomplete_on_close.sql');
+ assert.match(migration,/CREATE OR REPLACE FUNCTION public\.close_love_evening_preserve\(p_session uuid\)/);
+ assert.match(migration,/PERFORM public\.love_require_verified_identity\(\)/);
+ assert.match(migration,/couple_private\.is_member\(v_couple\)/);
+ const coupleLock=migration.indexOf('FROM public.couples WHERE id=v_couple FOR UPDATE');
+ const sessionLock=migration.indexOf('FROM public.couple_sessions s\n WHERE s.id=p_session AND s.couple_id=v_couple FOR UPDATE');
+ assert.ok(coupleLock>=0&&sessionLock>coupleLock,'Couple lock precedes session lock');
+ assert.match(migration,/IF v_closed THEN RETURN; END IF;/);
+ assert.match(migration,/DELETE FROM public\.love_card_draw_history h\s+USING public\.couple_challenges q/);
+ assert.match(migration,/q\.session_id=p_session AND q\.couple_id=v_couple/);
+ assert.match(migration,/q\.status<>'completed'/);
+ assert.match(migration,/done\.status='completed'/);
+ assert.match(migration,/h\.recipient_user_id=q\.recipient/);
+ assert.match(migration,/h\.category=q\.category AND h\.card_id=q\.card_id/);
+ assert.match(migration,/UPDATE public\.couple_sessions SET finished_at=now\(\), counted=true/);
+ assert.doesNotMatch(migration,/DELETE FROM public\.couple_challenges|TRUNCATE|UPDATE public\.couple_challenges/i);
+ assert.match(migration,/REVOKE ALL ON FUNCTION public\.close_love_evening_preserve/);
+ assert.match(migration,/GRANT EXECUTE ON FUNCTION public\.close_love_evening_preserve\(uuid\)/);
+});
+
+test('LR-015 phase 1b: passed cards do not create phantom draw capacity in the same evening',()=>{
+ const migration=read('migrations/20261026_lr015_recycle_incomplete_on_close.sql');
+ const func=migration.slice(migration.indexOf('CREATE OR REPLACE FUNCTION public.draw_for_partner'));
+ const cap=func.slice(func.indexOf('select count(*) into capacity'),func.indexOf('if capacity>0'));
+ const pick=func.slice(func.indexOf('select card into cid'),func.indexOf('if cid is null'));
+ for(const part of [cap,pick]){
+  assert.match(part,/used\.session_id=p_session and used\.recipient=target/);
+  assert.match(part,/used\.category=v_cat and used\.card_id=card/);
+  assert.doesNotMatch(part,/used\.status<>'passed'/);
+ }
+ assert.match(func,/select count\(\*\) into first_done/);
+ assert.match(func,/status<>'passed'/,
+  'Passed turns stay excluded from already-filled target counts');
+ assert.match(func,/for update/,'Couple/session serialization remains');
+ assert.match(migration,/DELETE FROM public\.love_card_draw_history h/);
+});
