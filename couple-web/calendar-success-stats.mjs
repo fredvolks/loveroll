@@ -48,19 +48,25 @@ export function monthlyChallengeSuccess({
  const freePasses=new Set((passQuota||[]).filter(p=>p.free_pass===true).map(p=>p.challenge_id));
  const byUser=(members||[]).map(m=>{
   const received=(historyChallenges||[]).filter(c=>sessionsById.has(c.session_id)&&c.recipient===m.user_id);
-  const complete=received.filter(c=>c.status==='completed').length;
-  // A used free pass is never a failed challenge, even if it was re-drawn.
-  const free=received.filter(c=>c.status==='passed'&&freePasses.has(c.id)).length;
-  const penalized=received.filter(c=>c.status==='passed'&&!freePasses.has(c.id)).length;
+  // LR-003: while the evening is open, pending or accepted cards are NOT failed.
+  // A completed or passed card is reportable immediately; unresolved cards become
+  // final non-completions only when that evening is actually closed.
+  const reportable=received.filter(c=>!!sessionsById.get(c.session_id)?.finished_at||
+    c.status==='completed'||c.status==='passed');
+  const complete=reportable.filter(c=>c.status==='completed').length;
+  // Free passes never penalize a monthly completion rate.
+  const free=reportable.filter(c=>c.status==='passed'&&freePasses.has(c.id)).length;
+  const penalized=reportable.filter(c=>c.status==='passed'&&!freePasses.has(c.id)).length;
   // Missing challenge slots become non-realized only after the night is closed.
   const undrawn=(sessionStats||[]).filter(row=>row.user_id===m.user_id&&
    sessionsById.get(row.session_id)?.finished_at).reduce((acc,row)=>{
     if(row.target==null)return acc;
-    const nonPassed=(historyChallenges||[]).filter(c=>c.session_id===row.session_id&&
-     c.recipient===m.user_id&&c.status!=='passed').length;
-    return acc+Math.max(0,Number(row.target)-nonPassed);
+    // Count every assigned challenge, INCLUDING a pass, so it cannot count
+   // again as a fictitious unpicked challenge.
+   const assigned=received.filter(c=>c.session_id===row.session_id).length;
+   return acc+Math.max(0,Number(row.target)-assigned);
    },0);
-  const denominator=received.length-free+undrawn;
+  const denominator=reportable.length-free+undrawn;
   const done=complete;
   const success=denominator>0?Math.round(100*done/denominator):null;
   const monthlyPasses=(passQuota||[]).filter(p=>p.recipient===m.user_id);
