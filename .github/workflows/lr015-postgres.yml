@@ -1,0 +1,44 @@
+name: LR-015 PostgreSQL transaction checks
+on:
+  pull_request:
+    paths:
+      - "couple-web/migrations/20261026_lr015_*.sql"
+      - "couple-web/qa/lr015-*.sql"
+      - ".github/workflows/lr015-postgres.yml"
+  workflow_dispatch:
+jobs:
+  isolated-postgres:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: local-test-only
+          POSTGRES_DB: loveroll_lr015_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGDATABASE: loveroll_lr015_test
+      PGUSER: postgres
+      PGPASSWORD: local-test-only
+    steps:
+      - uses: actions/checkout@v4
+      - name: PostgreSQL 17 local fixture (no real Supabase)
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/qa/lr015-db-fixture.sql
+      - name: Apply LR-015 migrations to isolated PostgreSQL
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/migrations/20261026_lr015_cycle_exclusion_registry.sql
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/migrations/20261026_lr015_recycle_incomplete_on_close.sql
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/migrations/20261026_lr015_z_atomic_respond_redraw.sql
+      - name: Execute real PostgreSQL refusal quota privacy and closure scenarios
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/qa/lr015-db-contract.sql
