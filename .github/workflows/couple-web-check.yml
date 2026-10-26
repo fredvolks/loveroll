@@ -42,6 +42,7 @@ jobs:
           node --check couple-web/evening-calendar.mjs
           node --check couple-web/evening-review.mjs
           node --check couple-web/evening-private-queue.mjs
+          node --test couple-web/evening-instructions.test.mjs
           node --test couple-web/evening-private-queue.test.mjs couple-web/evening-redesign.test.mjs couple-web/evening-calendar.test.mjs couple-web/evening-category-v93.test.mjs couple-web/evening-review.test.mjs
           node --test couple-web/soiree-surprise-recovery.test.mjs
           node --check couple-web/premium-surprise.mjs
@@ -421,6 +422,9 @@ jobs:
 
       - name: Verify Soirée responsive Step 1 and unchanged D35 on phones and tablets
         run: node couple-web/evening-redesign-browser-check.cjs
+
+      - name: Verify full challenge instructions remain readable on mobile
+        run: node couple-web/evening-instructions-browser-check.cjs
 
       - name: Verify category switches never remount live WebGL dice
         run: node couple-web/evening-category-no-flicker-browser-check.cjs
