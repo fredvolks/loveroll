@@ -220,7 +220,7 @@ test('Countdown uses a monotonic wall deadline, pause reset and optional signals
  assert.match(app,/timer-reset/);
  assert.match(app,/timer-toggle/);
  assert.match(app,/navigator\.vibrate/);
- assert.match(app,/AudioContext/);
+ assert.match(readFileSync(new URL('./loveroll-sounds.mjs',import.meta.url),'utf8'),/AudioContext/);
  assert.match(app,/Le minuteur n’oblige jamais/);
 });
 
