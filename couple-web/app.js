@@ -3141,6 +3141,7 @@ async function handle(action,element){
   if(!raw||!Number.isInteger(limit)||limit<0||limit>30)throw Error('Choisissez un entier entre 0 et 30.');
   await rpc('save_couple_monthly_pass_limit',{p_couple:state.coupleId,p_limit:limit});
   if(state.couple)state.couple.monthly_pass_limit=limit;
+  if(state.monthlyPassQuota)state.monthlyPassQuota={...state.monthlyPassQuota,limit,remaining:Math.max(0,limit-state.monthlyPassQuota.used),can_pass:state.monthlyPassQuota.used<limit};
   notify('Limite mensuelle enregistrée.');render();return;
  }
  if(verb==='save-evening-buttons'){
