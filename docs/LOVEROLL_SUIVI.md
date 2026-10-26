@@ -190,3 +190,16 @@ Demande approuvée : au sixième ajout, la notification interactive présente im
 ## LR-PIGE-001 — Cartes disponibles par catégorie dans Soirée
 **État : spécifié, à implémenter et vérifier.** [Prompt officiel](./LOVEROLL_MASTER_PROMPT.md#lr-pige-001--soirée--cartes-encore-disponibles-par-catégorie).
 Afficher près des catégories les cartes distinctes encore admissibles à la prochaine pige du joueur, calculées par le moteur serveur (rôles, bibliothèque, exclusions, favoris, cycle, mode). Actualiser avec les mutations et la synchronisation; distinguer chargement/erreur de zéro. Aucun changement de textes, probabilités, quotas ou historique. Tester les deux joueurs, concurrence, reprises et matrice responsive. Ajout documentaire uniquement.
+
+## Journal de reprise autonome — 26 octobre 2026, cycle LR-003/LR-004/LR-015
+
+| Exigence | Avancement prouvé (branche uniquement) | Restant / blocage |
+|---|---|---|
+| LR-001 | PR [#21](https://github.com/fredvolks/loveroll/pull/21), run [40336399686](https://github.com/fredvolks/loveroll/actions/runs/40336399686), SHA `b91a7ccf`, **success** | Fusion et contrôle production/appareils ; ne pas cocher |
+| LR-002 | PR [#50](https://github.com/fredvolks/loveroll/pull/50), run [40337241207](https://github.com/fredvolks/loveroll/actions/runs/40337241207), SHA `aac3639d`, **success** | Fusion, vérification minuteur réel et migration de compatibilité ; ne pas cocher |
+| LR-003 | PR [#51](https://github.com/fredvolks/loveroll/pull/51), run [40346544556](https://github.com/fredvolks/loveroll/actions/runs/40346544556), SHA `01266ab2`, **success** | Audit cycle/200 et test appareil, fusion ; ne pas cocher |
+| LR-004 | PR [#52](https://github.com/fredvolks/loveroll/pull/52), run [40352112006](https://github.com/fredvolks/loveroll/actions/runs/40352112006), SHA `2cd20541`, **success** ; reprise du son après suspension audio | Tests Safari iPhone/PWA installée et Android physiques, limites OS ; ne pas cocher |
+| LR-015 | PR [#53](https://github.com/fredvolks/loveroll/pull/53), run [40352784694](https://github.com/fredvolks/loveroll/actions/runs/40352784694), SHA `dcc6b97c`, **success** phase 1 | Nouveau commit `4e1c4e94` (capacité de pige/carte passée) en validation run [40354801803](https://github.com/fredvolks/loveroll/actions/runs/40354801803). RPC refus/exclusions/repige, tests PostgreSQL et UI encore à faire ; ne pas cocher |
+| Continuité | PR [#47](https://github.com/fredvolks/loveroll/pull/47), run [40353308001](https://github.com/fredvolks/loveroll/actions/runs/40353308001), SHA `3d46ed19`, **success** | Ce journal produit un nouveau SHA CI ; automatisme `workflow_run` non actif sur main avant fusion autorisée |
+
+**La réussite CI ne prouve ni le déploiement ni un test physique.** Le dernier déploiement Pages `main` confirmé reste en échec ([40316957313](https://github.com/fredvolks/loveroll/actions/runs/40316957313)). Aucun secret, authentification ou donnée personnelle modifiés. Suivre strictement la nouvelle tête de branche et les SHA lors de la reprise.
