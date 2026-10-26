@@ -70,6 +70,11 @@ export function startLoveRollPrivacy({doc=globalThis.document,storage=globalThis
  return ()=>{
   doc.removeEventListener('click',onClick,true);
   doc.removeEventListener('keydown',onKey,true);
+  if(html.classList.contains('lr-privacy-active')){
+   html.classList.remove('lr-privacy-active');
+   if(app){app.inert=originalInert;if(initialAriaHidden===null)app.removeAttribute('aria-hidden');else app.setAttribute('aria-hidden',initialAriaHidden);}
+   doc.title=previousTitle;
+  }
   shield.remove();
  };
 }
