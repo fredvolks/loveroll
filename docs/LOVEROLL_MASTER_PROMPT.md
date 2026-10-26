@@ -172,6 +172,47 @@ En l'absence de catégorie pour le défi/D100, la zone doit suggérer **visuelle
 
 **État documentaire : À FAIRE — le présent prompt ne constitue pas du code livré.** Commencer par auditer les statuts/tables/RPC existants et modifier de façon rétrocompatible pour conserver les données et l'historique.
 
+
+### LR-016 — Limite mensuelle configurable de défis « Passer » (nouvelle demande du 26 octobre 2026)
+
+**Demande officielle :** chaque partenaire peut utiliser **« Passer ce défi » au maximum 3 fois par mois**, par défaut. **L'admin du couple** (propriétaire du duo / permission administrateur déjà existante) peut modifier ce maximum dans ses Réglages, et la règle s'applique aux deux partenaires. Préserver les libertés et mécanismes **LR-015** pour les défis refusés et non terminés.
+
+**Audit du code existant (à revalider au moment de coder) :** `migrations/20261018_play_style_and_pass_quota.sql` calcule déjà **3 passes « gratuites » par personne/mois** via `love_calendar_pass_quota`, mais les passes suivantes deviennent **« pénalisées » dans les statistiques** et ne sont pas bloquées ; `calendar-success-stats.mjs` utilise `free_pass` pour exclure les trois premières du dénominateur de réussite ; `app.js` expose « Passer ce défi » dans les cartes et émet `answer_challenge(...,'passed')` sans plafond visible. Ne pas dupliquer ce quota avec un compteur local : **faire évoluer la source de vérité serveur existante**, préserver son historique, ses valeurs et les statistiques passées.
+
+#### Règle de quota
+1. **Valeur par défaut : 3 passes / mois / partenaire** — et non 3 pour les deux réunis, ni 3 par soirée ni 3 par défi. Les **dons de défis** (3 par mois actuellement) sont une fonctionnalité distincte ; ne pas les toucher.
+2. Une passe est consommée **une seule fois lorsqu'un défi est effectivement marqué « Passé » et que la repige/remplacement associé est accepté** par la transaction serveur. Ni ouverture du dialogue, ni annulation, ni échec de réseau, ni double-tap ne doivent consommer une passe.
+3. Compteur de la période : mois calendrier du **1er à 00:00 au dernier jour à 23:59:59**, sur le fuseau horaire déjà utilisé pour le duo (`America/Toronto` dans la logique actuelle). Remise à zéro automatique au début du mois suivant ; mois historique conservés. Aucun reset par fermeture de soirée ou reconnexion.
+4. **Admin du couple uniquement** : dans **Réglages → Jeu → Défis → Limite mensuelle de passes**, ajouter un contrôle numérique validé **0 à 30**, valeur initiale 3, accompagné de « par partenaire et par mois » et d'un aperçu clair (ex. « 3 passes permises par personne chaque mois »). La limite 0 désactive **Passer** mais pas **Refuser**. L'autre partenaire voit la limite mais ne peut pas la modifier.
+5. Les changements de limite sont **immédiats** et synchronisés : si l'admin passe de 3 à 5 avec 3 passes utilisées, il reste 2 ; s'il passe à 1 avec 2 passes déjà utilisées, il reste 0, **sans retirer rétroactivement les deux passes ni falsifier les statistiques historiques**. Une modification ultérieure ne restaure pas artificiellement des passes déjà consommées.
+6. Afficher près du bouton **« Passer ce défi »** un compteur fidèle à la source serveur, par partenaire : **« Passes ce mois : 1 / 3 »**, puis **« Limite atteinte : 3 / 3 »**. Le compteur doit être rafraîchi après action, changement de limite, première ouverture de session et synchronisation de l'autre appareil.
+7. Lorsque le plafond est atteint, **désactiver « Passer »** et expliquer le motif (« Tu as utilisé tes 3 passes pour ce mois. Tu pourras de nouveau passer le 1er du mois prochain, ou choisir de refuser ce défi. »). Ne pas cacher la carte, ne pas supprimer la possibilité de **Refuser** et ne jamais présenter une réalisation comme obligatoire.
+8. **Refuser** un défi est toujours possible, **sans limite mensuelle**, pour préserver le consentement et le confort des partenaires. La repige d'un refus (avec ou sans exclusion de la banque) suit **LR-015** et **ne consomme pas** de passe. Afficher des libellés clairs pour qu'il soit évident que « Passer » (quota d'usage) est distinct de « Refuser » (libre choix). Ne jamais inciter l'utilisateur à accepter un défi qui le met mal à l'aise, et ne pas imposer de justification.
+9. La repige suite à une passe, lorsqu'elle est autorisée, conserve **la même place dans le quota D6 de la soirée** ; elle ne crée pas une soirée ou un défi réalisé supplémentaire. Respecter tours, catégorie, attribution des partenaires, probabilités, exclus LR-015, historique et cycle 200.
+10. Les défis **non terminés** à la clôture retournent à la pige selon LR-015, **sans être comptés comme une passe** ; terminer normalement une carte ou faire arriver sa minuterie à zéro n'en consomme aucune. Les anciens défis « Passé » continuent d'apparaître dans le calendrier et de revenir en pige suivant LR-015.
+
+#### Technique, migration et sécurité
+- Respecter **l'identifiant du couple, celui du partenaire, le mois et l'identifiant de défi**. Vérifier côté Supabase, sous transaction/verrouillage approprié, **le nombre de passes effectivement consommées avant de changer un état en « passed »**. Ne pas faire confiance à un bouton désactivé, au seul stockage local ou à une valeur de quota envoyée par le client.
+- Si besoin, ajouter un journal transactionnel append-only, idempotent et unique par action, pour distinguer clairement **passé / refusé / annulé / réalisé / restitué** sans perdre les passages passés lors des réintroductions dans le lot. Éviter de recalculer à partir d'un statut courant devenu différent.
+- Remplacer la notion statistique existante de « 3 gratuites puis pénalisées » par la nouvelle **limite bloquante paramétrable pour les nouvelles actions**, sans réécrire les historiques ni modifier arbitrairement les taux déjà publiés. Documenter la transition pour les mois en cours (historique existant reconnu ; pas de remise à zéro opportuniste).
+- Autoriser la modification du paramètre **uniquement au compte admin** sur le serveur (pas seulement un champ masqué). Utiliser les permissions existantes `owner_user_id` et la synchronisation temps réel si elle est disponible.
+- Reprendre la logique métier commune à toutes les vues de carte et les parcours d'administration : pas de contournement entre écran Soirée, liste personnelle, reprise après fermeture, plusieurs appareils ou endpoint RPC direct.
+- Aucun impact sur la limite **des dons**, sur les droits Premium, sur la logique des catégories et sur les règles de confidentialité des défis du couple.
+
+#### Tests d'acceptation
+1. Défaut 3 : 0/3, 1/3, 2/3, 3/3 ; **quatrième Passe refusé sans mutation**.
+2. Chaque partenaire a un compteur distinct, pour un seul paramètre de plafond partagé au couple.
+3. Refus avec exclusion et sans exclusion : **toujours possible**, même à 3/3 ; repige LR-015 ; aucune passe débitée.
+4. Modification admin 3→5 et 3→1 prend effet immédiatement ; modification par partenaire non admin **refusée côté serveur** ; historique intact.
+5. **0** passe configurée interdit seulement Passer ; **30** passe configurées admises au maximum, validation des valeurs négatives, non numériques ou hors limites.
+6. Transition au 1er du mois **America/Toronto** (incluant DST et changement d'année) : compteur remis à zéro, anciens mois conservés.
+7. Double-tap simultané, deux appareils, rafraîchissement et latence réseau → comptabilisation atomique et unique.
+8. Échec de repige/transaction → aucune passe perdue ni défi échangé partiellement ; reprise fiable.
+9. Cycle 200, passage sans complétion, clôture, minuterie finie à zéro, calendrier et statistiques : aucune incohérence.
+10. Captures et tests accessibilité responsive Android, Safari iPhone, tablette portrait/paysage, PC, avec les vrais boutons du design Accueil.
+
+**État : À faire — spécification uniquement.** Cette mise à jour du prompt n'implémente pas la fonctionnalité.
+
 ## P1 — Responsive **mobile + tablette + PC**
 
 ### LR-020 — Téléphones Android / iPhone
@@ -230,6 +271,9 @@ Pour chaque exigence LR-xxx, garder le statut dans [LOVEROLL_SUIVI.md](./LOVEROL
 Respecter authentification, compte couple, autorisations Premium, synchronisation, données des utilisateurs et abonnements. Ne pas écraser de données de production, ni exposer les secrets Android/Supabase. La publication GitHub Pages/Android est **distincte** d'un changement documentaire ; ne pas publier une application non testée.
 
 ## Audit en cours
+
+Une [revue rapide de code avec 7 propositions d'amélioration à valider](./LOVEROLL_PROPOSITIONS_AMELIORATIONS_20261026.md) complète la présente spécification LR-016. **Ces propositions ne sont pas encore des exigences approuvées** et ne doivent pas être codées automatiquement.
+
 Le [rapport UX/UI du 26 octobre 2026](./LOVEROLL_AUDIT_UX_UI_20261026.md) est un constat technique **provisoire** (designer + couple). Il complète ce prompt sans changer ses exigences. Les nouvelles demandes à traiter dans [LOVEROLL_NOUVELLES_DEMANDES.md](./LOVEROLL_NOUVELLES_DEMANDES.md) restent prioritaires lors des revues futures.
 
 ## Exécution des corrections de l'audit du 26 octobre 2026

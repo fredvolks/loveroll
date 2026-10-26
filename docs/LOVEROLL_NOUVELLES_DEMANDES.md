@@ -33,6 +33,8 @@
 
 | 2026-10-26 | Soirée : pouvoir passer ou refuser un défi, demander lors du refus s'il faut l'exclure de la pige pour le cycle, retourner les défis non terminés à la pige après la soirée et permettre la repige | **LR-015** (à implémenter) | [Prompt LR-015](./LOVEROLL_MASTER_PROMPT.md) · [Suivi LR-015](./LOVEROLL_SUIVI.md) |
 
+| 2026-10-26 | Limiter « Passer un défi » à 3 fois/mois/par partenaire, permettre à l'admin du couple d'ajuster le plafond, afficher passes restantes, conserver Refuser possible | **LR-016** (à implémenter) | [Prompt LR-016](./LOVEROLL_MASTER_PROMPT.md) · [Suivi LR-016](./LOVEROLL_SUIVI.md) |
+
 ## Lire et modifier depuis un téléphone
 1. Ouvre ce document sur GitHub en étant connecté.
 2. Appuie sur le **crayon / Edit** (parfois dans le menu « … »).
