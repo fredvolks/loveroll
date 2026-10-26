@@ -81,7 +81,9 @@ const client=`export function createClient(){
   assert.ok(await a.locator('[data-action="new-challenge"]').isDisabled());
   await a.locator('[data-action="my-d6"]').click();await a.locator('.evening-face-result strong').waitFor();
   assert.equal(await a.locator('.evening-face-result strong').textContent(),'4');
-  await session(b);assert.ok((await b.locator('.evening-partner-mobile-status').textContent()).includes('Camille a obtenu 4 défis'));
+  await session(b);
+  // Wait for cross-device synchronization; a failed sync still fails the test.
+  await b.waitForFunction(()=>document.querySelector('.evening-partner-mobile-status')?.textContent.includes('Camille a obtenu 4 défis'),null,{timeout:12000});
   await b.locator('[data-action="my-d6"]').click();await b.locator('.evening-premium-view.is-ready').waitFor();
   await session(a);assert.equal(world.rolls.length,2);
   for(let i=0;i<3;i++){
