@@ -1,6 +1,11 @@
 # LoveRoll — Continuité Work / GitHub Actions
 > Actualisé le 2026-10-26 (America/Toronto). Les états ci-dessous sont une photographie, pas une garantie de réussite future.
 
+## Consigne courante de livraison — 26 octobre 2026
+L'utilisateur a demandé de résoudre le blocage de publication. La section « Priorité immédiate — rétablir la publication Web et terminer les lots » du maître autorise la fusion et le déploiement des lots approuvés et validés. Les anciennes mentions « ne pas fusionner sans autorisation » plus bas sont historiques et ne constituent pas une demande de redemander cette autorisation pour le même périmètre.
+PR #47 fusionnée dans main : `5fe2fddf95b78e9bcb7dc65dcf82917760fcec99`, après CI du HEAD `ce43bb3` réussie (run 40408561449), tests locaux de finale 3/3 et syntaxe de 223 scripts validée. Premier déploiement lancé : [40410344904](https://github.com/fredvolks/loveroll/actions/runs/40410344904), résultat final à recontrôler.
+La livraison Web 232 harmonise endpoint, app, HTML et cache. 21 tests locaux ciblés passent (version/cache, finale, sonneries/iPhone). Le présent commit doit encore réussir ses propres workflows et la vérification du site public. Aucun favori/refus en PR non fusionnée n'est déclaré livré.
+
 ## Reprise immédiate
 1. Lire ce fichier, puis `LOVEROLL_MASTER_PROMPT.md`, `LOVEROLL_SUIVI.md`, `LOVEROLL_NOUVELLES_DEMANDES.md` et `README.md`.
 2. Consulter la tête courante de **main** et de la branche de travail, les PR ouvertes et les derniers runs GitHub Actions. Vérifier chaque `head_sha` : un workflow réussi sur un ancien SHA ne valide pas la branche actuelle.

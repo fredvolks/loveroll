@@ -203,3 +203,10 @@ Afficher près des catégories les cartes distinctes encore admissibles à la pr
 | Continuité | PR [#47](https://github.com/fredvolks/loveroll/pull/47), run [40353308001](https://github.com/fredvolks/loveroll/actions/runs/40353308001), SHA `3d46ed19`, **success** | Ce journal produit un nouveau SHA CI ; automatisme `workflow_run` non actif sur main avant fusion autorisée |
 
 **La réussite CI ne prouve ni le déploiement ni un test physique.** Le dernier déploiement Pages `main` confirmé reste en échec ([40316957313](https://github.com/fredvolks/loveroll/actions/runs/40316957313)). Aucun secret, authentification ou donnée personnelle modifiés. Suivre strictement la nouvelle tête de branche et les SHA lors de la reprise.
+
+
+## Publication Web — reprise du 26 octobre 2026
+- PR [#47](https://github.com/fredvolks/loveroll/pull/47) fusionnée : `5fe2fddf95b78e9bcb7dc65dcf82917760fcec99`; corrige le faux échec 5 boutons / 4 et aligne le test des PR avec Pages.
+- Contrôles préalables : CI sur tête `ce43bb3` réussie, 3 tests locaux de finale et syntaxe de 223 scripts réussis.
+- Version Web 232 : repères endpoint/app/HTML/service-worker harmonisés; tests des versions fondés sur leur cohérence plutôt que l'ancien numéro 229 figé. 21 tests locaux ciblés réussis.
+- **Publication/recette publique de Web 232 à confirmer après le présent commit.** Consulter les runs du SHA réel. Les autres PR fonctionnelles restent distinctes; aucune n'est déclarée publiée par ce lot.
