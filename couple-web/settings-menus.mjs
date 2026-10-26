@@ -44,6 +44,7 @@ export function organizeSettingsMenus(root){
   link('.settings-advanced [data-action="settings-page:admin"]')
  ];
  else if(route==='notifications')tree=[
+  link('[data-action="settings-page:sonneries"]'),
   entry('appareil','Sur cet appareil',[find('.notification-summary,.notification-actions,.notification-feedback,.notification-privacy')]),
   entry('alertes','Choisir mes alertes',find('.notification-choices,.notification-feedback')),
   entry('rappel','Rappel du lundi',find('.notification-local'))

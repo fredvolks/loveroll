@@ -38,6 +38,7 @@ jobs:
           node --check couple-web/ios-install-tour.mjs
           node --check couple-web/loveroll-sounds.mjs
           node --test couple-web/ios-install-sound-v229.test.mjs
+          node --test couple-web/timed-evening-completion.test.mjs
           node --check couple-web/premium-evening.mjs
           node --check couple-web/evening-calendar.mjs
           node --check couple-web/evening-review.mjs
@@ -415,9 +416,15 @@ jobs:
       - name: Verify REAL public discover and invitation on Android / iPhone responsive widths
         run: node couple-web/actual-discover-visual-check.cjs
 
+      - name: Verify first-visit Safari install tutorial is fully visible
+        run: node couple-web/ios-install-guide-browser-check.cjs
+
       - name: Verify real couple Evening and Surprise in WebGL at S25 sizes
         run: |
           node couple-web/premium-couple-visual-check.cjs
+
+      - name: Verify real 00:00 timed Soirée challenge completion in browser
+        run: node couple-web/evening-couple-flow-browser-check.cjs
 
       - name: Verify Soirée responsive Step 1 and unchanged D35 on phones and tablets
         run: node couple-web/evening-redesign-browser-check.cjs

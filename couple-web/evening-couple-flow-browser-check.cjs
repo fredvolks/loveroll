@@ -81,12 +81,26 @@ const client=`export function createClient(){
   assert.ok(await a.locator('[data-action="new-challenge"]').isDisabled());
   await a.locator('[data-action="my-d6"]').click();await a.locator('.evening-face-result strong').waitFor();
   assert.equal(await a.locator('.evening-face-result strong').textContent(),'4');
-  await session(b);assert.ok((await b.locator('.evening-partner-mobile-status').textContent()).includes('Camille a obtenu 4 défis'));
+  await session(b);
+  // The approved compact D6 mobile design shows "Camille · 4" on screen,
+  // while preserving the fully spoken status in the capsule aria-label.
+  // Wait for genuine server-fed partner D6 state; no artificial result.
+  await b.waitForFunction(()=>{
+   const capsule=document.querySelector('.evening-partner-card'),
+    display=capsule?.querySelector('.evening-partner-mobile-status')?.textContent||'',
+    spoken=capsule?.getAttribute('aria-label')||'';
+   return display.includes('Camille · 4')&&spoken.includes('Camille a obtenu 4 défis');
+  },null,{timeout:12000});
   await b.locator('[data-action="my-d6"]').click();await b.locator('.evening-premium-view.is-ready').waitFor();
   await session(a);assert.equal(world.rolls.length,2);
   for(let i=0;i<3;i++){
    await a.locator('[data-action="give-challenge"]').click();await a.locator('.lr-dialog-accept').click();
-   await a.waitForFunction(count=>document.querySelector('.evening-gift p')?.textContent.includes(count+'/3'),i+1);
+   await a.waitForFunction(count=>{
+    // fitEveningD100 transfers the ORIGINAL gift quota text into .evening-d100-quota
+    // and removes .evening-gift; use the currently mounted element.
+    const actual=document.querySelector('.evening-d100-quota,.evening-gift p')?.textContent||'';
+    return actual.includes(count+'/3');
+   },i+1,{timeout:15000});
   }
   assert.equal(world.gifts.length,3);assert.ok(await a.locator('[data-action="give-challenge"]').isDisabled());
   fs.mkdirSync('design-captures',{recursive:true});await a.screenshot({path:'design-captures/S25-editorial-step2.png'});
@@ -104,6 +118,7 @@ const client=`export function createClient(){
   assert.equal(world.cards.length,5);assert.equal(world.calls.filter(c=>['draw_for_partner','draw_for_partner_random'].includes(c.name)).length,5,'Double server draw');
   await session(a);await a.locator('[data-action="evening-list"]').click();assert.equal(await a.locator('.evening-queue-item').count(),1);await a.locator('[data-action="evening-close"]').click();
   await session(b);await b.locator('[data-action="evening-list"]').click();assert.equal(await b.locator('.evening-queue-item').count(),4);await b.locator('[data-action="evening-close"]').click();
+  let countdownAutoCompleted=false;
   for(const uid of ['a','b']){
    const page=uid==='a'?a:b;await session(page);
    for(const c of world.cards.filter(c=>c.recipient===uid)){
@@ -115,8 +130,25 @@ const client=`export function createClient(){
     await page.locator('#challenge-timer-toggle').click();
     await page.waitForFunction(()=>document.querySelector('#challenge-timer-status')?.textContent.includes('En cours'));
     await page.screenshot({path:'design-captures/S25-editorial-challenge-'+uid+'.png'});
-    await page.locator('[data-action="answer:'+c.id+':completed"]').click();
-    await page.locator('[data-action="answer:'+c.id+':completed"]').waitFor({state:'hidden'});
+    if(!countdownAutoCompleted){
+     // Real app integration: a server-accepted Soirée card MUST be completed
+     // when the timer deadline passes, with no manual "Terminer" click.
+     countdownAutoCompleted=true;
+     await page.evaluate(()=>{
+      window.__lrOriginalNow=Date.now;
+      Date.now=()=>window.__lrOriginalNow()+65000;
+     });
+     for(let wait=0;wait<100&&c.status!=='completed';wait++)
+      await page.waitForTimeout(100);
+     await page.evaluate(()=>{Date.now=window.__lrOriginalNow;delete window.__lrOriginalNow;});
+     assert.equal(c.status,'completed','00:00 must persist a completed challenge through the server');
+     const completions=world.calls.filter(req=>req.name==='answer_challenge'&&
+       req.args.p_id===c.id&&req.args.p_status==='completed');
+     assert.equal(completions.length,1,'A timed challenge cannot complete twice');
+    }else{
+     await page.locator('[data-action="answer:'+c.id+':completed"]').click();
+     await page.locator('[data-action="answer:'+c.id+':completed"]').waitFor({state:'hidden'});
+    }
     if(!world.sessions[0].finished_at)await page.locator('[data-action="evening-close"]').click();
    }
   }
