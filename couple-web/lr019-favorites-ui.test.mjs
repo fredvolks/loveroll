@@ -4,6 +4,8 @@ import {readFileSync} from 'node:fs';
 const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
 import {eveningHistoryMarkup} from './evening-calendar.mjs';
 test('LR-019 heart button uses real RPC with idempotent refresh and a server capability gate',()=>{
+ assert.match(app,/rpc\('love_favorites_capabilities',\{p_couple:c\}\)/);
+ assert.match(app,/if\(capabilities!==true\)throw Error/);
  assert.match(app,/rpc\('my_love_couple_favorites',\{p_couple:c\}\)/);
  assert.match(app,/state\.loveFavoritesReady=true/);
  assert.match(app,/catch\{state\.loveFavorites=\[\];state\.loveFavoritesReady=false;\}/);
