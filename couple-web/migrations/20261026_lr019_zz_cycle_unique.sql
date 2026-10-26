@@ -84,12 +84,11 @@ BEGIN
 end; $function$;
 
 
--- Advertise complete LR-019 availability only after the favorite registry,
--- LR-015 compatible D100/redraw engine AND corrected 200-unique cycle are
--- installed. The mobile UI must not show a functional-looking inert heart.
+-- Published only with the complete LR-019 engine AND distinct-cycle update.
+-- A registry-only deployment never activates the frontend heart controls.
 CREATE OR REPLACE FUNCTION public.love_favorites_capabilities(p_couple uuid)
 RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=''
-AS $ready$
+AS $favorite_capability$
 BEGIN
  PERFORM public.love_require_verified_identity();
  IF (SELECT auth.uid()) IS NULL OR p_couple IS NULL
@@ -98,7 +97,7 @@ BEGIN
  END IF;
  RETURN true;
 END;
-$ready$;
+$favorite_capability$;
 REVOKE ALL ON FUNCTION public.love_favorites_capabilities(uuid)
  FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.love_favorites_capabilities(uuid)

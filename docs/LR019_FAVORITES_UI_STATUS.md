@@ -46,3 +46,8 @@ Prochaine action : identifier le nouveau run, diagnostiquer les erreurs, corrige
 - Le workflow autonome `lr019-favorites-ui.yml` exécute désormais **deux jobs** quand le code UI ou les migrations changent : navigateur Chromium et vraie base PostgreSQL 17 jetable.
 - Nécessaire pour couvrir `love_favorites_capabilities` avec une exécution déclenchée sur la branche empilée : le workflow SQL précédent n'était pas déclenché sur cette PR.
 - Prochaine action : vérifier les **deux conclusions finales** et les journaux d'erreur sur le SHA exact. Ne pas considérer une simple exécution en cours comme un succès.
+
+## Réconciliation des dépendances SQL — 26 octobre 2026
+- Branche de base PR #57 fusionnée **dans cette branche seulement** au SHA `c05f0752ba0cfb90fa628449726553fde3e25ba3`, aucune fusion dans main.
+- Conserver une seule définition de `love_favorites_capabilities` du moteur #57, tout en gardant le test d'accès renforcé de cette PR UI.
+- Préserver les deux jobs UI Chromium et PostgreSQL du workflow courant; recontrôler les nouveaux runs sur le SHA de merge.

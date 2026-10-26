@@ -27,3 +27,8 @@ Identifier le run, le SHA et les jobs. Lire les journaux des échecs, reproduire
 - Test PostgreSQL isolé à cible réduite 2 : deux réalisations de la même carte = 1 carte unique; une nouvelle carte distincte ouvre le bilan.
 - Compatible seulement après revue des autres définitions de RPC, statut/refus LR-015 et confidentialité ; aucun déploiement.
 - Nouveau commit et runs à contrôler sur le SHA exact. Les validations précédentes ne couvrent pas ce changement.
+
+## Résultats validés de cette branche
+- SHA fonctionnel `fb8d40a8f751796c3ac30e790bc7ff4130aadb72`, workflow PostgreSQL [#40407237367](https://github.com/fredvolks/loveroll/actions/runs/40407237367) **completed/success**.
+- Régressions corrigées : fixture avec couple absent au premier run, ajout du couple fictif; priorité d'exclusion testée; compteurs cycle basés sur cartes distinctes même si un cœur revient.
+- Le présent ajout modifie le SHA et nécessite une nouvelle exécution SQL. Dépendance sur #54/#56 toujours obligatoire, aucun merge/migration production.
