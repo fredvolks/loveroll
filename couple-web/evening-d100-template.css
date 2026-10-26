@@ -53,7 +53,7 @@
      theater at 320x568. Reallocate space instead of shrinking the die
      to a tiny icon or clipping the WebGL mesh. Keep real controls. */
   #app.has-evening-d100-template .evening-premium-view.has-evening-d100-template{
-   grid-template-rows:64px auto 40px minmax(0,1fr) 23px 28px 44px 44px 10px!important;
+   grid-template-rows:80px auto 40px minmax(0,1fr) 23px 28px 44px 44px 10px!important;
    gap:3px!important;
   }
   #app.has-evening-d100-template .evening-choice{
@@ -87,7 +87,7 @@
  }
  @media (max-width:767px) and (max-height:700px){
   #app.has-evening-d100-template .evening-premium-view.has-evening-d100-template{
-   grid-template-rows:55px auto 44px minmax(0,1fr) 22px 30px 48px 44px 10px!important;
+   grid-template-rows:80px auto 44px minmax(0,1fr) 22px 30px 48px 44px 10px!important;
    gap:4px!important;
   }
   #app.has-evening-d100-template .evening-choice{
