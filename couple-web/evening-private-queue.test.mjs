@@ -114,3 +114,15 @@ test('LR-015 replacements preserve their original D6 slot through repeated refus
  assert.deepEqual(visibleEveningQueue(full).map(x=>x.id),['slot-1c','slot-2']);
  assert.equal(full.length,4,'all historical occurrences retained');
 });
+
+test('LR-016 quota UX states used/limit, explains next month, never disables unlimited refusal',()=>{
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ assert.match(source,/Limite atteinte : /);
+ assert.match(source,/Passes ce mois : /);
+ assert.match(source,/state\.monthlyPassQuota\?\.used/);
+ assert.match(source,/state\.monthlyPassQuota\?\.limit/);
+ assert.match(source,/Tu pourras passer à nouveau le 1er du mois prochain, ou choisir Refuser/);
+ assert.match(source,/Refuser reste permis, sans limite/);
+ assert.match(source,/state\.redrawBusy\|\|state\.monthlyPassQuota\?\.can_pass===false\?'disabled'/);
+ assert.match(source,/state\.redrawBusy\?'disabled'/);
+});

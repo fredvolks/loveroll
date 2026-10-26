@@ -1618,8 +1618,13 @@ function renderSession(){
       '<div class="lr-redraw-actions" aria-label="Autres choix pour ce défi">'+
        button('evening-pass:'+view.id,'Passer ce défi','class="subtle" '+(state.redrawBusy||state.monthlyPassQuota?.can_pass===false?'disabled':''))+
        button('evening-refuse:'+view.id,'Refuser ce défi','class="subtle" '+(state.redrawBusy?'disabled':''))+
-       '<small>Passes restantes : '+safe(state.monthlyPassQuota?.remaining??'—')+
-       '. Refuser reste permis, sans pénalité.</small></div>':'')+
+       '<small>'+(state.monthlyPassQuota?.can_pass===false?
+        'Limite atteinte : '+safe(state.monthlyPassQuota?.used??'—')+
+        ' / '+safe(state.monthlyPassQuota?.limit??'—')+
+        '. Tu pourras passer à nouveau le 1er du mois prochain, ou choisir Refuser.':
+        'Passes ce mois : '+safe(state.monthlyPassQuota?.used??'—')+
+        ' / '+safe(state.monthlyPassQuota?.limit??'—')+
+        '. Refuser reste permis, sans limite.')+'</small></div>':'')+
      (view&&state.eveningRefusalId===view.id?
       '<div class="lr-refusal-dialog" role="alertdialog" aria-modal="true" aria-labelledby="lr-refusal-title" aria-describedby="lr-refusal-description">'+
        '<h3 id="lr-refusal-title">Tu préfères un autre défi ?</h3>'+
