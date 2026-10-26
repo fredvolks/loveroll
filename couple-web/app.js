@@ -323,7 +323,7 @@ function frame(body,title='LOVEROLL',subtitle='Un jeu intime, juste pour vous de
  // Offer only after completing a NEW account. Never interrupt ordinary logins.
  if(connected&&state.installAfterSignup){
   state.installAfterSignup=false;
-  if(shouldOfferInstall(state.user?.id)){
+  if(shouldOfferInstall(state.user?.id)&&!isIos()){
    state.installModalOpen=true;
    markInstallOffered(state.user?.id);
   }
