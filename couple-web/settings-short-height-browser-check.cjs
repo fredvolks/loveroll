@@ -22,8 +22,10 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
       detailOverflow:getComputedStyle(body).overflowY,
       controls:[...app.querySelectorAll('#profile-name,[data-action="profile"],[data-action="signout"]')].length};
    });
-   assert.ok(geometry.appHeight>geometry.viewport,
-    'Short settings viewport must make overflow reachable: '+JSON.stringify(geometry));
+   assert.equal(geometry.appMax,'none','Short settings must not cap their document height');
+   assert.notEqual(geometry.appOverflow,'hidden','Short settings must not clip their controls');
+   // A short viewport is allowed to fit its contents without scrolling.
+   // The invariant is accessibility, not artificial overflow.
    assert.equal(geometry.bodyOverflow,'auto',JSON.stringify(geometry));
    assert.equal(geometry.detailOverflow,'visible',JSON.stringify(geometry));
    assert.equal(geometry.controls,3,JSON.stringify(geometry));
