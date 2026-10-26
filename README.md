@@ -1,5 +1,15 @@
 # LoveRoll
 
+## 🗂️ Pilotage du développement LoveRoll (prompt maître)
+
+- **[Prompt maître officiel](docs/LOVEROLL_MASTER_PROMPT.md)** — toutes les exigences (D100, minuteurs, harmonisation, responsive téléphone/tablette/PC et audit UX/UI).
+- **[Suivi des tâches](docs/LOVEROLL_SUIVI.md)** — priorités et états réellement vérifiés.
+- **[Ajouter une idée / signaler un bug](docs/LOVEROLL_NOUVELLES_DEMANDES.md)** — fichier modifiable directement sur GitHub.
+- **[Captures de bugs et preuves visuelles](docs/LOVEROLL_PREUVES_VISUELLES.md)** — référence D100 coupé et calendrier.
+
+> Le suivi est **documentaire** : une tâche n'est pas « terminée » avant correction, test et preuve associée. Une PR de documentation ne déploie pas de nouveau code d'application.
+
+
 Application de couple LoveRoll — Android et PWA. Dépôt indépendant de **Mon Wallet**.
 
 ## Production
