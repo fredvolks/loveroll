@@ -285,8 +285,17 @@ export function createClient(){
   if(['redraw-flow','redraw-iphone','redraw-pass'].includes(name)){
    await selectTab(page,'session');
    await page.locator('.evening-premium-view').waitFor({timeout:10000});
-   await page.locator('[data-action="evening-list"]').first().click();
-   await page.locator('.evening-queue-item').first().click();
+   // The app intentionally auto-opens a newly assigned challenge. Do not
+   // click the button behind that modal: follow whichever live route is shown.
+   const detail=page.locator('.evening-queue-modal.is-detail');
+   if(!await detail.isVisible()){
+    const queue=page.locator('.evening-queue-modal');
+    if(!await queue.isVisible())
+     await page.locator('.evening-premium-view [data-action="evening-list"]').first().click();
+    if(!await detail.isVisible())
+     await page.locator('.evening-queue-item').first().click();
+   }
+   await detail.waitFor({state:'visible',timeout:10000});
    mkdirSync('lr015-captures',{recursive:true});
    if(name==='redraw-pass'){
     await page.locator('[data-action="evening-pass:redraw-original"]').click();
