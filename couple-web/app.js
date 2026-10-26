@@ -1379,8 +1379,8 @@ function endSignal(){
  if(challengeTimer.notified)return;
  challengeTimer.notified=true;
  const item=timedEveningItem(challengeTimer.id);
- if(isAcceptedTimedEveningChallenge(item,state.user?.id,state.session?.id))
-  challengeTimer.autoCompletePending=true;
+ const autoComplete=isAcceptedTimedEveningChallenge(item,state.user?.id,state.session?.id);
+ if(autoComplete)challengeTimer.autoCompletePending=true;
  // Android: add a discreet vibration EVEN in "Son doux" mode, so a
  // phone with its ringer muted does not rely on audio alone. The browser
  // cannot read silent/vibrate mode; OS settings may suppress haptics.
@@ -1394,7 +1394,7 @@ function endSignal(){
   playLoveRollSound('timer:'+challengeTimer.id,{force:true});
  }
  showTimerFinished();
- notify('♡ Minuteur terminé. À vous de décider si le défi continue.');
+ notify(autoComplete?'♡ Minuteur terminé. Validation automatique du défi en cours.':'♡ Minuteur terminé.');
 }
 function updateChallengeClock(){
  void reconcileSavedEveningTimers();
@@ -3852,6 +3852,10 @@ async function handle(action,element){
    return;
  }
  if(verb==='timer-reset'){
+   // Reject a reset after the real deadline, even between two clock ticks.
+   if(challengeTimer.running&&challengeTimer.deadline>0&&Date.now()>=challengeTimer.deadline){
+    challengeTimer.running=false;challengeTimer.remainingMs=0;endSignal();saveChallengeTimer();
+   }
    if(challengeTimer.autoCompletePending){notify('Le minuteur a atteint zéro : ce défi doit d’abord être validé.');return;}
    challengeTimer.running=false;
    challengeTimer.deadline=0;
