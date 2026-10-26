@@ -36,7 +36,8 @@ export function startLoveRollPrivacy({doc=globalThis.document,storage=globalThis
    shield.setAttribute('aria-hidden','true');
    if(app){app.inert=originalInert;app.removeAttribute('aria-hidden');}
    doc.title=previousTitle;
-   if(opener?.isConnected)opener.focus({preventScroll:true});
+   const target=opener?.isConnected?opener:app?.querySelector?.('[data-lr-privacy-hide]');
+   if(target?.focus)target.focus({preventScroll:true});
   }
  };
  const onClick=event=>{
@@ -57,7 +58,9 @@ export function startLoveRollPrivacy({doc=globalThis.document,storage=globalThis
  const onKey=event=>{
   if(!html.classList.contains('lr-privacy-active'))return;
   if(event.key==='Tab'){event.preventDefault();reveal.focus({preventScroll:true});}
-  // Deliberately do not reveal on Escape or browser Back.
+  if(event.key==='Escape'||event.key==='Backspace')event.preventDefault();
+  // Never let Escape close an underlying challenge while visually masked.
+  event.stopImmediatePropagation();
  };
  doc.addEventListener('click',onClick,true);
  doc.addEventListener('keydown',onKey,true);
