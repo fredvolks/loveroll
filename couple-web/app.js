@@ -94,7 +94,7 @@ const worldText=key=>worldT(worldLocale(),key);
 const state={user:null,profile:null,members:[],coupleId:null,couple:null,
  tab:launchParams.has('settings')?'settings':(['home','session','special','advent'].includes(launchParams.get('open'))?launchParams.get('open'):'home'),weekly:null,monthly:{},session:null,personal:[],challenges:[],gifts:[],rollStatus:null,customCards:[],customCategory:'SENSUEL',customSlot:1,customSearch:'',customFilter:'all',monthlyActivities:[],monthlySlot:1,libraryScreen:'list',libraryImportKind:null,specialEditorKey:null,specialEditorStage:'D6_activite',specialEditorFace:1,adventEditorDay:1,pushDevice:null,
  events:[],journal:[],advent:[],advent2026Config:null,advent2026Days:[],selectedDay:1,adventYear:null,adventSelected:null,adventHistory:false,adventOpening:null,adventRevealing:false,adventServerDate:null,unlockKey:null,channel:null,
- occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],calendarPassMonth:null,cycleStatus:null,cycleDeferred:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoBookingEdit:false,referral:null,eclat:null,eclatGalleryScroll:0,eclatHistory:[],eclatHistoryCouple:null,eclatBrowse:false,eclatHistoryError:false,eclatSelection:1,eclatMinutes:60,eclatDetails:false,eclatMusic:false,eclatFinished:null,testModeEligible:false,testMode:'real'};
+ occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],monthlyPassQuota:null,calendarPassMonth:null,cycleStatus:null,cycleDeferred:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoBookingEdit:false,referral:null,eclat:null,eclatGalleryScroll:0,eclatHistory:[],eclatHistoryCouple:null,eclatBrowse:false,eclatHistoryError:false,eclatSelection:1,eclatMinutes:60,eclatDetails:false,eclatMusic:false,eclatFinished:null,testModeEligible:false,testMode:'real'};
 const names={SENSUEL:'Sensuel',COQUIN:'Coquin',SEXUEL:'Sexuel'};
 function isSharedCoupleReady(coupleId,members){
  return !!coupleId&&Array.isArray(members)&&members.length===2;
@@ -820,7 +820,7 @@ async function reload(){
  if(!state.coupleId){
   if(state.channel){await client.removeChannel(state.channel);state.channel=null;}
   state.couple=null;state.members=[];state.weekly=null;state.monthly={};state.customCards=[];state.monthlyActivities=[];state.rollStatus=null;state.gifts=[];
-  state.session=null;state.sessions=[];state.events=[];state.journal=[];state.eveningHistoryStats=[];state.eveningCalendarChallenges=[];state.weeklyRollHistory=[];state.calendarPassQuota=[];state.calendarPassMonth=null;state.cycleStatus=null;state.cycleDeferred=null;state.eveningReviews=[];state.reviewModalSessionId=null;
+  state.session=null;state.sessions=[];state.events=[];state.journal=[];state.eveningHistoryStats=[];state.eveningCalendarChallenges=[];state.weeklyRollHistory=[];state.calendarPassQuota=[];state.monthlyPassQuota=null;state.calendarPassMonth=null;state.cycleStatus=null;state.cycleDeferred=null;state.eveningReviews=[];state.reviewModalSessionId=null;
   state.advent=[];state.adventYear=null;state.adventSelected=null;state.adventServerDate=null;state.advent2026Config=null;state.advent2026Days=[];state.specialEventsConfig=null;state.specialEventKeys=[];state.unlockKey=null;
   state.invitations=[];state.inviteDraft=null;state.challengesHistory=[];state.eveningHistoryStats=[];state.eveningCalendarChallenges=[];state.eveningReviews=[];state.reviewModalSessionId=null;state.reviewDraft={};
   state.tab=['settings','personal-journal'].includes(state.tab)?state.tab:'home';
@@ -897,7 +897,7 @@ async function reload(){
 }
 async function refreshShared(){
  const c=state.coupleId;
- const [rolls,sessions,advents,events,diary,occasionSettings,occasionRolls,keys,challengeHistory,gifts,adventServerDate,eveningStats,calendarChallenges,eveningReviews,calendarPasses,cycleInfo]=await Promise.all([
+ const [rolls,sessions,advents,events,diary,occasionSettings,occasionRolls,keys,challengeHistory,gifts,adventServerDate,eveningStats,calendarChallenges,eveningReviews,calendarPasses,monthlyPassQuota,cycleInfo]=await Promise.all([
  query('couple_rolls',{eq:{couple_id:c}}),
  query('couple_sessions',{eq:{couple_id:c},order:'started_at'}),
  query('couple_advent',{eq:{couple_id:c}}),
@@ -913,6 +913,7 @@ async function refreshShared(){
  rpc('love_evening_calendar_challenges',{p_couple:c}),
  rpc('love_evening_reviews_for_couple',{p_couple:c}),
  rpc('love_calendar_pass_quota',{p_couple:c,p_month:state.eveningCalendarMonth||month()}),
+ rpc('my_love_monthly_pass_quota',{p_couple:c}),
  rpc('love_cycle_status',{p_couple:c})
  ]);
  state.cycleStatus=cycleInfo;
@@ -920,6 +921,7 @@ async function refreshShared(){
  state.eveningHistoryStats=Array.isArray(eveningStats)?eveningStats:[];
  state.eveningCalendarChallenges=Array.isArray(calendarChallenges)?calendarChallenges:[];
  state.calendarPassQuota=Array.isArray(calendarPasses)?calendarPasses:[];
+ state.monthlyPassQuota=monthlyPassQuota;
  state.calendarPassMonth=state.eveningCalendarMonth||month();
  state.eveningReviews=Array.isArray(eveningReviews)?eveningReviews:[];
  state.gifts=gifts;
@@ -1395,7 +1397,7 @@ function renderLegacySession(){
      '<div class="actions">'+
      (active.status==='proposed'?button('answer:'+active.id+':accepted','Accepter'):'')+
      (active.status==='accepted'?button('answer:'+active.id+':completed','Terminé'):'')+
-     button('answer:'+active.id+':passed','Passer')+'</div></div>';
+     button('answer:'+active.id+':passed',state.monthlyPassQuota?'Passer ('+state.monthlyPassQuota.remaining+' restant'+(state.monthlyPassQuota.remaining>1?'s':'')+')':'Passer',state.monthlyPassQuota?.can_pass===false?'disabled aria-disabled="true"':'')+'</div></div>';
    }else if(completed<mine.face)body+='<p>Votre partenaire prépare le prochain défi surprise à vous offrir.</p>';
    const otherActive=state.challenges.filter(x=>x.recipient===p.user_id&&['proposed','accepted'].includes(x.status)).at(-1);
    const otherCompleted=state.challenges.filter(x=>x.recipient===p.user_id&&x.status==='completed').length;
@@ -2100,6 +2102,9 @@ function renderSettings(){
    (state.couple?.show_sexuel_button!==false?' checked':'')+(!canEdit?' disabled':'')+'></label>'+
   '<p class="tiny-note">Aléatoire reste disponible.</p>'+
   (canEdit?button('save-evening-buttons','Enregistrer','class="settings-primary"'):'<p>Seul le créateur peut modifier ces choix.</p>')+'</div>';
+ const passLimit=Number(state.monthlyPassQuota?.limit??state.couple?.monthly_pass_limit??3);
+ const passQuotaSettings='<div class="settings-category-options"><h3>Passes mensuelles</h3><p class="tiny-note">Maximum par partenaire : '+passLimit+'. '+(state.monthlyPassQuota?'Utilisées : '+state.monthlyPassQuota.used+' · Restantes : '+state.monthlyPassQuota.remaining+'. ':'')+'Refuser reste illimité.</p></div>';
+ const passQuotaControl=canEdit?'<label>Maximum mensuel par personne<input id="monthly-pass-limit" type="number" min="0" max="30" step="1" value="'+passLimit+'"></label>'+button('save-monthly-pass-limit','Enregistrer la limite','class="settings-primary"'):'<p class="tiny-note">Seul le créateur peut changer cette limite.</p>';
  const game=(canEdit?
   (state.couple?.sexual_card_mode==='automatic'?
    '<p class="tiny-note">100 défis SENSUEL communs · 100 défis SEXUEL choisis secrètement selon vos deux styles. Pour changer de mode : Options avancées.</p>':
@@ -2107,7 +2112,7 @@ function renderSettings(){
   settingRow('Activités du mois','20 activités','tab:monthly-library','')+
   settingRow('Calendrier de l’Avent','25 surprises','tab:advent-editor','')+
   settingRow('Événements spéciaux','Événements, activités et variantes','tab:special-editor',''):
-  '<p>Les éditeurs sont réservés au créateur du couple.</p>')+eveningButtons+
+  '<p>Les éditeurs sont réservés au créateur du couple.</p>')+eveningButtons+passQuotaSettings+passQuotaControl+
   (canEdit?'<div class="settings-advanced">'+settingRow('Options avancées','Créateur','settings-page:admin','')+'</div>':'');
  const resetYear=Number(today().slice(0,4));
  const currentOccasionRolls=(state.occasionRolls||[]).filter(r=>Number(r.event_year)>=resetYear&&Number(r.event_year)<=resetYear+1);
@@ -3129,6 +3134,16 @@ async function handle(action,element){
   await rpc('reset_love_monthly_activity',{p_couple:state.coupleId,p_face:state.monthlySlot});
   await reload();notify('Activité d’origine restaurée.');return;
  }
+ if(verb==='save-monthly-pass-limit'){
+  if(!isLoveAdmin())throw Error('Réglage réservé à l’administrateur.');
+  const raw=id('monthly-pass-limit')?.value?.trim();
+  const limit=Number(raw);
+  if(!raw||!Number.isInteger(limit)||limit<0||limit>30)throw Error('Choisissez un entier entre 0 et 30.');
+  await rpc('save_couple_monthly_pass_limit',{p_couple:state.coupleId,p_limit:limit});
+  if(state.couple)state.couple.monthly_pass_limit=limit;
+  if(state.monthlyPassQuota)state.monthlyPassQuota={...state.monthlyPassQuota,limit,remaining:Math.max(0,limit-state.monthlyPassQuota.used),can_pass:state.monthlyPassQuota.used<limit};
+  notify('Limite mensuelle enregistrée.');render();return;
+ }
  if(verb==='save-evening-buttons'){
   if(!isLoveAdmin())throw Error('Réglage réservé à l’administrateur.');
   const sensuel=!!id('show-sensuel-button')?.checked;
@@ -3806,7 +3821,17 @@ async function handle(action,element){
   const item=ownEveningChallenges(state.challenges,state.user.id,state.session?.id).find(c=>c.id===parts[0]);
   if(!item)throw Error('Ce défi n’est pas dans ta liste personnelle.');
   const eveningId=state.session.id;
+  if(parts[1]==='passed'&&state.monthlyPassQuota?.can_pass===false)throw Error('Limite mensuelle de passes atteinte.');
+  if(parts[1]==='passed'&&state.monthlyPassQuota==null){
+   state.monthlyPassQuota=await rpc('my_love_monthly_pass_quota',{p_couple:state.coupleId});
+   if(!state.monthlyPassQuota.can_pass)throw Error('Limite mensuelle de passes atteinte.');
+  }
   await rpc('answer_challenge',{p_id:parts[0],p_status:parts[1]});
+  if(parts[1]==='passed'&&state.monthlyPassQuota){
+   const used=Number(state.monthlyPassQuota.used)+1;
+   const limit=Number(state.monthlyPassQuota.limit);
+   state.monthlyPassQuota={...state.monthlyPassQuota,used,remaining:Math.max(0,limit-used),can_pass:used<limit};
+  }
   if(parts[1]==='completed'){
    // Last completed challenge closes the shared night automatically.
    // The official server function checks BOTH adjusted D6 quotas atomically.
