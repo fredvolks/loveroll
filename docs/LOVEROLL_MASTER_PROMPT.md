@@ -129,6 +129,9 @@ Pour chaque exigence LR-xxx, garder le statut dans [LOVEROLL_SUIVI.md](./LOVEROL
 ### LR-043 — Sécurité, données, déploiement
 Respecter authentification, compte couple, autorisations Premium, synchronisation, données des utilisateurs et abonnements. Ne pas écraser de données de production, ni exposer les secrets Android/Supabase. La publication GitHub Pages/Android est **distincte** d'un changement documentaire ; ne pas publier une application non testée.
 
+## Audit en cours
+Le [rapport UX/UI du 26 octobre 2026](./LOVEROLL_AUDIT_UX_UI_20261026.md) est un constat technique **provisoire** (designer + couple). Il complète ce prompt sans changer ses exigences. Les nouvelles demandes à traiter dans [LOVEROLL_NOUVELLES_DEMANDES.md](./LOVEROLL_NOUVELLES_DEMANDES.md) restent prioritaires lors des revues futures.
+
 ## Ordre d'exécution souhaité
 1. Identifier code réel et branches, établir captures initiales, figer les régressions.
 2. **P0 : LR-001 à LR-004** (D100, timers, calendrier, audio) avec tests.
