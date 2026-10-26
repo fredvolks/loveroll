@@ -213,6 +213,94 @@ En l'absence de catégorie pour le défi/D100, la zone doit suggérer **visuelle
 
 **État : À faire — spécification uniquement.** Cette mise à jour du prompt n'implémente pas la fonctionnalité.
 
+
+## Améliorations approuvées — idées 3 à 8 + « As-tu envie de jouer ce soir ? » (26 octobre 2026)
+
+**Périmètre :** ces exigences remplacent le statut « propositions à valider » des idées **3 à 8** du dernier audit, mais **pas** les idées 1 et 2. En plus, l'invitation à jouer est approuvée. Ne pas supprimer les exigences préexistantes LR-001 à LR-016, LR-020 à LR-024, LR-030 à LR-043. Les changements ci-dessous constituent un **cahier des charges, pas du code déjà livré**. Page **Accueil = référence graphique**.
+
+### LR-017 — Adapter ce défi (idée no 3)
+**Parcours :** Soirée → carte du défi → bouton secondaire **« Adapter ce défi »**. Il ouvre une bulle LoveRoll avec consigne d'origine, proposition facultative d'ajustement (texte ou durée) et boutons **« Proposer l'adaptation »**, **« Accepter »**, **« Garder le défi original »** ou **« Annuler »**. L'autre partenaire doit pouvoir approuver librement avant toute substitution.
+
+**Règles :**
+- Modification **pour l'occurrence actuelle et ce couple seulement** ; jamais de changement des 100/200 cartes de bibliothèque, de l'algorithme ou du contenu d'autres couples.
+- Une adaptation ne consomme **aucune passe mensuelle** (LR-016), n'est ni un refus (LR-015), ni une nouvelle pige, ni une complétion.
+- Conserver la carte originale et le titre/catégorie D100 d'origine dans l'historique. Ne pas exposer des propositions privées hors du couple. L'un ou l'autre peut refuser l'adaptation sans pression ou conséquence.
+- Si la minuterie doit changer, l'accord précède sa nouvelle configuration ; aucune validation de carte ne peut être provoquée par un ancien compte à rebours.
+- UI mobile/tablette/PC accessible ; testé avec accord, refus, annulation, reconnexion et deux appareils.
+
+### LR-018 — Reprendre notre soirée (idée no 4)
+**Parcours :** lorsqu'une soirée est **ouverte** sur le serveur, proposer sur Accueil/Soirée un accès **« Reprendre notre soirée »**. Le bouton ramène exactement au stade en cours sans créer une seconde soirée.
+
+**Règles :**
+- Restaurer les D6 déjà lancés, la progression, les D100, l'état des cartes et le tour actuel depuis **la source officielle serveur** ; préserver la confidentialité de la liste individuelle de défis.
+- Restaurer la sélection de défi locale si elle est toujours valide, sinon montrer la liste du joueur. Ne pas refaire un tirage ni changer les quotas.
+- Minuteur persisté : conserver démarrage, pause, durée restante et échéance quand ces données existent. En cas de fin naturelle à 00:00 pendant absence, effectuer une seule complétion LR-002 au retour ; jamais après annulation/refus/passe.
+- Gérer perte du réseau, reconnexion, fermeture forcée, PWA installée, un partenaire qui a clôturé la soirée depuis un autre appareil ; montrer l'état de synchronisation.
+- Ne pas promettre de notification ou sonnerie garantie en arrière-plan iPhone Safari.
+
+### LR-019 — Coups de cœur : un favori RETOURNE DANS LA PIGE (idée no 5)
+**Règle non négociable : lorsqu'un défi est ajouté aux coups de cœur, il doit pouvoir ressortir dans une pige future, MÊME S'IL A DÉJÀ ÉTÉ RÉALISÉ.** Il ne doit pas rester bloqué jusqu'à la fin des 200 défis comme une carte ordinaire.
+
+**UI :**
+- Chaque carte de défi, et les cartes conservées dans l'historique, offrent un bouton réel **« ♡ Coup de cœur » / « ♥ Retirer des coups de cœur »**.
+- Créer un accès facile **« Nos coups de cœur »** avec liste par catégorie (Sensuel/Sexuel), nom du défi, dernière réalisation et possibilité de le retirer. Le favori est rattaché au **couple**, avec attribution de qui l'a marqué ; visible aux deux membres du couple uniquement, jamais aux autres couples.
+- Un appui n'enregistre aucun nouveau défi « Réalisé », n'ouvre pas une nouvelle soirée, ne consomme pas de passe, ne remet pas automatiquement la carte sur l'écran actif.
+
+**Moteur de pige :**
+1. Marquer un favori rend cette carte **éligible dès une prochaine soirée**, et non dans la soirée où elle a été pigée ou mise en favori. Éviter qu'elle ressorte immédiatement après un passage/refus/adaptation.
+2. Les favoris participent à la **pige aléatoire officielle D100** sous leurs catégories et probabilités existantes, **pas uniquement dans un tirage spécial**. Ne pas garantir qu'un favori ressortira à la prochaine soirée, ni augmenter sa pondération sans consentement ultérieur.
+3. Un favori demeure admissible à nouveau après chacune de ses futures réalisations tant qu'il conserve son cœur et qu'il n'est pas autrement bloqué par une exclusion explicite. Le retrait du cœur lui rend le régime habituel des cartes non favorites.
+4. **Ne pas compter deux fois la même carte comme « nouvel élément unique du cycle de 200 »** seulement parce qu'on rejoue un coup de cœur déjà terminé ; distinguer « réalisations totales » et « défis uniques du cycle » dans les statistiques. Auditer la définition métier actuelle du cycle de 200 avant de modifier ses compteurs ; préserver la progression acquise et les règles des cycles.
+5. Les exclusions volontaires de LR-015 **prévalent** sur le cœur : un défi explicitement exclu du lot ne revient pas dans la pige à cause d'un ancien favori. Ajouter éventuellement « Réintégrer ce défi » par geste explicite de l'admin/couple.
+6. Conserver les archives et l'historique de chaque réalisation, la confidentialité par couple et les données des deux partenaires. SQL/RPC idempotents, anti-doublons et anti-repige le même soir.
+7. Tester **favori avant réalisation**, **favori après réalisation**, **favori déjà vu**, retrait, exclusions, catégorie, probabilités, cycles, deux membres et reprise; comparer base et comportement D100.
+
+**Opération exceptionnelle demandée et effectuée le 26 octobre 2026 :** le couple **Fred + Émilie**, identifié spécifiquement et vérifié dans le projet Supabase « Dés à Deux », avait 4 cartes enregistrées comme déjà pigées, aucune marquée « réalisée ». Les **4 entrées correspondantes ont été retirées uniquement de son historique technique anti-répétition** \`love_card_draw_history\`, afin de les rendre admissibles à une prochaine soirée, **sans supprimer** les 4 lignes \`couple_challenges\`, sans réinitialiser le cycle ni clôturer sa soirée active. Contrôle SQL de lecture après : **0 entrée anti-répétition restante, 4 défis historiques conservés, 1 soirée active**. Cette opération ne marque PAS automatiquement ces cartes en favoris. **NE PAS REFAIRE CETTE PURGE**, ne pas l'appliquer à d'autres couples, ne pas développer un reset global et ne pas interpréter « déjà réalisé » comme remis à zéro. Au besoin, vérifier l'état vivant avant toute autre action.
+
+### LR-025 — Mode discrétion / cacher le jeu (idée no 6)
+- Dans les fiches de défis/Soirée, proposer un bouton discret **« Masquer »** et éventuellement un raccourci tactile pour masquer immédiatement l'activité affichée.
+- L'écran de confidentialité doit cacher **titres, catégories sensibles, consignes, progression intime et éventuellement noms de cartes**. Afficher à la place un écran neutre LoveRoll (logo et bouton **« Revenir au jeu »**) sans notifications ou previews explicites.
+- Le mode doit préserver l'état courant : ne pas effacer, valider, passer ou refuser un défi, ni déclencher ou relancer un minuteur ; documenter la gestion visible de celui déjà lancé.
+- Supprimer les extraits de défis des notifications Push, titres d'onglets, widgets et aperçus d'application sensibles **lorsque l'API/plateforme le permet**, ne pas promettre une capture d'écran ou multitâche protégée si le navigateur ne permet pas cela.
+- Synchronisation : préférence de présentation **locale à l'appareil**, sans masquer de force l'écran du partenaire.
+- Tests : retour, verrouillage, actualisation, changement d'onglet, Android/iOS/PC, accessibilité.
+
+### LR-026 — Variété intelligente sans répétitions de défis semblables (idée no 7)
+- Empêcher autant que possible de proposer deux fois de suite, dans une **même soirée**, des cartes quasiment identiques en activité ou instructions.
+- Mettre en place des **tags structurés explicites** (thème, durée, type d'activité, intensité, matériel si requis) ou déduire une similarité locale maîtrisée ; ne pas baser la sécurité métier sur une requête IA probabiliste payante non prévue.
+- Construire le filtrage à partir des **cartes admissibles** uniquement ; respecter **catégorie tirée, droits, préférences, rôles, règles de non-répétition et exclusions** ainsi que les mécanismes de hasard D100 existants.
+- Si les candidats admissibles sont rares, utiliser un repli transparent pour éviter de bloquer la soirée ou de biaiser secrètement les probabilités.
+- Ne jamais éliminer définitivement une carte de la bibliothèque sur simple ressemblance ; les favoris LR-019 restent dans la pige future.
+- Tester doublons exacts, quasi-similaires, catégories mixtes, lots épuisés, favoris, custom cards et stabilité multi-appareils.
+
+### LR-027 — Un seul bouton principal par étape (idée no 8)
+- Harmoniser la hiérarchie de l'onglet Soirée en n'affichant **qu'une action visuellement dominante** correspondant à l'état réel : **« Brasser mon D6 »**, **« En attente de ton partenaire »** (état, non bouton trompeur), **« Brasser le D100 »**, **« Voir mon défi »**, **« Commencer »**, **« Terminer le défi »** ou **« Reprendre notre soirée »** selon étape.
+- Les actions secondaires **« Adapter »**, **« Passer »**, **« Refuser »**, **« Coup de cœur »**, **« Masquer »** restent présentes et faciles à utiliser (pas cachées dans un menu inaccessible).
+- Synchroniser le libellé et son état avec le serveur. Ne jamais afficher « Terminer » pour un défi déjà réalisé, ni masquer « Refuser » en raison du plafond de Passer LR-016.
+- Design calqué sur l'Accueil : vrais boutons rubis/dorés réactifs, alignements, même typographie, pas de faux boutons en image. Responsive S25 Ultra, petit Android, iPhone, iPad portrait/paysage, PC et clavier.
+- Préserver le bouton de confirmation de catégorie LR-014 lors de « Brasser le D100 ».
+
+### LR-028 — Invitation à deux « As-tu envie de jouer ce soir ? » (nouvelle idée)
+**Placement :** dans **Soirée**, tant que les **deux partenaires n'ont pas encore lancé leur D6 personnel** pour déterminer le nombre de défis, afficher à celui qui souhaite jouer un bouton **« As-tu envie de jouer ce soir ? ♥ »**. Ne l'afficher que si le couple est associé et que l'autre partenaire est réellement éligible à lancer son D6 pour la soirée. Ne pas changer le nombre de soirées permis ou les règles de fermeture.
+
+**Parcours de l'invitation :**
+1. Un partenaire touche le bouton ; le serveur crée une invitation **dans le couple exact** et cible **l'autre membre exclusivement**.
+2. Envoyer une **notification Push** via le système existant si ce partenaire a activé les notifications et possède un appareil compatible ; garder **en toute circonstance** une invitation visible **dans l'application** en cas de Push refusé, désactivé, retardé ou indisponible. Ne pas promettre de livraison système Push universelle, surtout sur Safari non installé.
+3. Texte de notification discret (pas de titres de défis) : **« ♥ Une invitation LoveRoll t'attend »**. Dans l'application : **« [Prénom] a envie de jouer ce soir. Et toi ? »** avec trois vraies actions **« Oui ♥ » / « Non, pas ce soir » / « Peut-être plus tard »**.
+4. **Oui :** enregistrer la réponse et ouvrir **directement l'onglet Soirée à l'étape D6**. Le partenaire invité peut **lancer lui-même son D6 immédiatement** si ses vérifications d'accès et de tour l'autorisent. **Ne jamais lancer le D6 à sa place, sans son toucher** et ne pas créer un nouveau résultat ou contourner les protections serveur.
+5. **Non :** répondre poliment à l'autre partenaire (**« Pas ce soir ♥ »**), sans lancer de dé, sans pénalité, sans créer une soirée ni supprimer ses activités. Fermer l'invitation.
+6. **Peut-être :** notifier sobrement **« Peut-être plus tard »**, maintenir l'invitation en attente ou la reporter avec une expiration raisonnable ; aucune relance automatique insistante, ni deuxième notification sans une nouvelle action volontaire.
+7. Si l'invitant a déjà lancé son D6, l'invité doit encore lancer **son propre D6** ; si l'invitant ne l'a pas lancé, chacun le fait à son tour selon les règles existantes. Aucune révélation anticipée de résultats secrets.
+8. Une seule invitation active pour ce **couple + soirée/jour**, dédoublonnage des clics, prévention de spam, statut visible à l'expéditeur (envoyée, oui, non, peut-être, expirée). Si tous les D6 sont déjà lancés, si la soirée est terminée ou si l'invitation devient obsolète, le système doit afficher le bon état sans relancer de dé.
+9. Ne pas rendre la réponse « Oui » obligatoire pour accéder normalement à la soirée : le partenaire peut toujours lancer son dé via le parcours de base. Le consentement et la disponibilité de chacun priment ; possibilité d'ignorer ou d'archiver l'invitation.
+10. Enregistrer demandes/réponses de manière privée, avec contrôles serveur sur le couple et le destinataire, mécanisme de synchronisation et permissions Push déjà existants ; aucune information intime dans la notification.
+11. Tests : oui/non/peut-être, Push activé/désactivé, PWA Safari, Android, invité déjà lancé, invitant déjà lancé, lien profond vers Soirée, double invitation et deux appareils, expiration, non-affichage après les deux D6, respect des quotas.
+
+### Règles transversales et livraison LR-017 à LR-019 / LR-025 à LR-028
+- Conserver **LR-015** (refus toujours libre, exclusions) et **LR-016** (3 passes par mois personnalisables), statistiques exactes, cycle 200, règles de confidentialité, sélection de catégorie/confirmation LR-014 et tirages officiels serveur.
+- Conserver la page Accueil comme design system unique ; animations sobres, vraie accessibilité clavier/tactile, PWA/Safari/iOS/Android/tablette/PC.
+- Travailler par PR ; tests serveur et front, captures avant/après ; tenir **LOVEROLL_SUIVI.md** à jour et ne rien marquer ✅ sans preuve. Ne pas déclarer la nouvelle fonctionnalité implémentée simplement parce qu'elle figure dans ce document.
+
 ## P1 — Responsive **mobile + tablette + PC**
 
 ### LR-020 — Téléphones Android / iPhone
