@@ -8,7 +8,7 @@ test('ruby material is shipped as the last stylesheet with fixed control sizes',
  assert.match(html,/loveroll-ruby-buttons-v182\.css\?v=20261020-ruby182/);
  assert.ok(html.indexOf('loveroll-nav-home-v181.css')<html.indexOf('loveroll-ruby-buttons-v182.css'));
  const expectedCacheVersion=JSON.parse(read('web-version.json')).build.split('.').at(-1);
- assert.match(expectedCacheVersion,/^\\d+$/,'release build must end with a numeric cache revision');
+ assert.match(expectedCacheVersion,/^\d+$/,'release build must end with a numeric cache revision');
  assert.ok(sw.includes("const CACHE='loveroll-static-v"+expectedCacheVersion+"'"),'offline cache must match published build revision');
  assert.ok(sw.includes('./loveroll-ruby-buttons-v182.css'));
  assert.match(css,/--control-primary:linear-gradient/);
