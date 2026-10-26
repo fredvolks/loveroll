@@ -15,7 +15,8 @@ test('LR-025 only stores a local visual masking preference',()=>{
  bag.set(PRIVACY_STORAGE_KEY,'0');
  assert.equal(shouldRestorePrivacy(storage),false);
  assert.equal(shouldRestorePrivacy({getItem(){throw Error('blocked');}}),false);
- assert.match(code,/doc\.documentElement\.classList/);
+ assert.match(code,/const html=doc\.documentElement/);
+ assert.match(code,/html\.classList\.toggle\('lr-privacy-active',masked\)/);
  assert.match(code,/app\.inert=true/);
  assert.doesNotMatch(code,/\brpc\s*\(|answer_challenge|finish_couple_session|timer\.start/i);
 });
