@@ -11,6 +11,7 @@ concurrency:
 jobs:
   web-tests:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -44,6 +45,7 @@ jobs:
           node --check couple-web/evening-private-queue.mjs
           node --test couple-web/evening-private-queue.test.mjs couple-web/evening-redesign.test.mjs couple-web/evening-calendar.test.mjs couple-web/evening-category-v93.test.mjs couple-web/evening-review.test.mjs
           node --test couple-web/privacy-screen.test.mjs
+          node --test couple-web/settings-ux-lr044.test.mjs
           node --test couple-web/monthly-pass-limit-sql.test.mjs
           node --test couple-web/soiree-surprise-recovery.test.mjs
           node --check couple-web/premium-surprise.mjs
@@ -414,6 +416,7 @@ jobs:
             design-captures/coffrets-v184-*.png
             design-captures/coffrets-v184-*.json
           if-no-files-found: warn
+          retention-days: 14
       - name: Verify REAL public discover and invitation on Android / iPhone responsive widths
         run: node couple-web/actual-discover-visual-check.cjs
 
@@ -461,3 +464,4 @@ jobs:
           name: LoveRoll-landing-captures
           path: landing-captures/*.png
           if-no-files-found: warn
+          retention-days: 14

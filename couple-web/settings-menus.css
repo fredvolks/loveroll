@@ -123,3 +123,18 @@
 #app.settings-account-full .settings-account-overview .date-fields .lr-premium-picker-trigger{gap:2px!important;padding:6px!important;}
 #app.settings-account-full .settings-account-overview .date-fields .lr-premium-picker-chevron{font-size:16px!important;flex:none!important;}
 }
+
+/* LR-044: legible, touch-friendly settings. Overrides forced viewport clipping. */
+@layer loveroll-settings-menus {
+ #app.loveroll-settings-page:is(.loveroll-settings-menu,.loveroll-settings-detail,.loveroll-library-page){height:auto!important;min-height:100dvh!important;overflow-x:clip!important;overflow-y:auto!important;}
+ #app.loveroll-settings-page:is(.loveroll-settings-menu,.loveroll-settings-detail,.loveroll-library-page) .settings-editorial{height:auto!important;min-height:0!important;grid-template-rows:auto minmax(0,1fr)!important;}
+ #app.loveroll-settings-page:is(.loveroll-settings-menu,.loveroll-settings-detail,.loveroll-library-page) .settings-editorial-content{height:auto!important;overflow:visible!important;min-height:0!important;}
+ #app.loveroll-settings-page:is(.loveroll-settings-menu,.loveroll-settings-detail,.loveroll-library-page) .settings-detail-body{height:auto!important;max-height:none!important;min-height:0!important;overflow:visible!important;}
+ #app.loveroll-settings-page .settings-section-row,#app.loveroll-settings-page .settings-profile-row,#app.loveroll-settings-page .settings-link-row,#app.loveroll-settings-page .settings-back{min-height:44px!important;touch-action:manipulation;}
+ #app.loveroll-settings-page .settings-section-row{width:100%;text-align:left;min-width:0;}
+ #app.loveroll-settings-page .settings-section-row strong,#app.loveroll-settings-page .settings-section-row small{white-space:normal!important;overflow-wrap:anywhere;}
+ #app.loveroll-settings-page :is(input,textarea,select){max-width:100%;box-sizing:border-box;}
+ #app.loveroll-settings-page :is(button,input,select,textarea):focus-visible{outline:2px solid #f2c878!important;outline-offset:3px;}
+ @media(max-width:420px){#app.loveroll-settings-page .settings-editorial-content{gap:8px!important;}#app.loveroll-settings-page .settings-section-row{padding-block:10px!important;}}
+ @media(prefers-reduced-motion:reduce){#app.loveroll-settings-page *{scroll-behavior:auto!important;transition-duration:.01ms!important;animation-duration:.01ms!important;}}
+}

@@ -427,3 +427,15 @@ Le [rapport UX/UI du 26 octobre 2026](./LOVEROLL_AUDIT_UX_UI_20261026.md) est un
 - risques résiduels et prochaine action.
 
 > **Directives impératives :** pas de refonte totale ; ne pas demander « continue » après chaque bloc ; ne pas interrompre sans nécessité ; conserver l'identité LoveRoll et les règles du jeu ; Accueil = source visuelle ; un dé rendu complet et posé sur son socle ; une minuterie qui arrive à 00:00 valide **une seule fois** le défi associé.
+
+## LR-044 — Refonte UX/UI des Réglages (26 octobre 2026)
+**Statut : demandé, implémentation partielle à valider par tests et captures.** Référence visuelle : Accueil LoveRoll, rubis/bordeaux/or, bulles de verre, vraies commandes.
+
+- Carte de profil et **cinq destinations** : Notre duo, Jeu et défis, Mes préférences, Abonnement et avantages, Aide et application. Aucun réglage existant supprimé : conserver les routes, actions, identifiants et permissions existants.
+- Notre duo : association, partenaire, date, invitation, dissociation confirmée. Jeu : style individuel distinct des catégories D100, cartes, activités, cycles et gestion du jeu réservée au créateur.
+- Mes préférences : notifications, sonneries, langue/devise, localisation, confidentialité ; distinguer individuel/partagé. Abonnement : forfait réel, parrainage seulement activé, jamais inventer de facturation. Aide : installation, connexion, synchronisation, version, mises à jour et FAQ.
+- Parcours courant en 1–2 touches ; navigation accessible, sous-titres utiles, états visibles, champs conservés lors de navigation, avertissement des modifications non enregistrées, double-envoi évité.
+- Mobile d'abord, cibles tactiles ≥44 px, safe areas, pas de débordement horizontal, formulaires longs défilables ; auditer 100dvh, overflow:hidden, hauteurs fixes. Tester Galaxy S25 Ultra, petits Android, iPhone Safari/PWA, iPad, Android tablette et desktop ; captures avant/après et tests physiques explicitement distingués des simulations.
+- Respect des rôles et contrôles serveur, des traductions, des exigences LR-014/015/016/017/019/025, de la confidentialité et des règles commerciales. Aucun historique effacé, aucune migration de données silencieuse.
+- Travailler en branche/PR ; tests de navigation, rôles, persistance, invitations, parrainage, responsive et non-régression. Ne marquer terminé qu'après preuves.
+

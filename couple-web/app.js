@@ -1948,6 +1948,8 @@ function settingsIcon(key){
  const strokes={
   compte:'<circle cx="12" cy="7.5" r="3.5"/><path d="M5 21v-2c0-4 3-6 7-6s7 2 7 6v2"/>',
   couple:'<path d="M12 21s-8-5.2-8-11a4.5 4.5 0 0 1 8-2.8A4.5 4.5 0 0 1 20 10c0 5.8-8 11-8 11Z"/>',
+  preferences:'<path d="M4 7h16M4 12h16M4 17h16"/><circle cx="9" cy="7" r="2" fill="currentColor"/><circle cx="15" cy="12" r="2" fill="currentColor"/><circle cx="10" cy="17" r="2" fill="currentColor"/>',
+  avantages:'<rect x="3" y="8" width="18" height="13" rx="2"/><path d="M12 8v13M3 12h18M12 8c-7-1-7-7-3-7 2 0 3 3 3 7ZM12 8c7-1 7-7 3-7-2 0-3 3-3 7Z"/>',
   notifications:'<path d="M18 8a6 6 0 0 0-12 0c0 7-3 8-3 10h18c0-2-3-3-3-10ZM10 21h4"/>',
   jeu:'<rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8" cy="8" r=".8" fill="currentColor"/><circle cx="16" cy="16" r=".8" fill="currentColor"/><circle cx="12" cy="12" r=".8" fill="currentColor"/>',
   monde:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c-3 3-4 6-4 9s1 6 4 9M12 3c3 3 4 6 4 9s-1 6-4 9"/>',
@@ -2029,7 +2031,7 @@ function adminCategoryWeightEditor(){
   '</div></details>';
 }
 function openSettingsPage(section=''){
- const allowed=['','compte','couple','notifications','sonneries','jeu','confidentialite','application','monde','parrainage','aide','aide-connexion','aide-des','aide-sync','admin'];
+ const allowed=['','compte','couple','notifications','sonneries','jeu','preferences','avantages','confidentialite','application','monde','parrainage','aide','aide-connexion','aide-des','aide-sync','admin'];
  if(!allowed.includes(section))return;
  if(section==='admin'&&!isLoveAdmin())throw Error('Options réservées au créateur du couple.');
  if(section==='parrainage'&&state.referral?.enabled!==true)return;
@@ -2184,6 +2186,8 @@ function renderSettings(){
  const world=worldwideSettingsHtml({locale:worldLocale(),currency:currencyOrDefault(state.profile?.preferred_currency),couple:state.couple||{}});
  const pages={compte:{title:worldText('myAccount'),body:account},couple:{title:worldText('duoLabel'),body:partner},
   ...(state.referral?.enabled===true?{parrainage:{title:'Parrainage',body:referralSettingsHtml(state.referral)}}:{}),
+  preferences:{title:'Mes préférences',body:'<p class="tiny-note">Personnel : chaque personne choisit ses préférences. Les paramètres de région sont communs au couple.</p>'+settingRow('Notifications et alertes','Personnel · Alertes et rappels','settings-page:notifications')+settingRow('Sonneries et sons','Personnel · Minuteurs','settings-page:sonneries')+settingRow('Langue, devise et région','Personnel et commun au couple','settings-page:monde')+settingRow('Confidentialité','Personnel · Discrétion et sécurité','settings-page:confidentialite')},
+  avantages:{title:'Abonnement et avantages',body:settingRow('Mon abonnement','Forfait et options actuellement disponibles','settings-page:application')+(state.referral?.enabled===true?settingRow('Parrainage et crédits','Lien personnel et progression','settings-page:parrainage'):'')},
   notifications:{title:worldText('notificationsLabel'),body:notifications},sonneries:{title:'Sonneries des minuteurs',body:soundSettingsHtml()+'<p id="notification-feedback" class="notification-feedback" role="status" aria-live="polite" hidden></p>'},jeu:{title:worldText('cardsLabel'),body:game},
   confidentialite:{title:worldText('privacyLabel'),body:privacy},
   application:{title:worldText('applicationLabel'),body:appSettings},
@@ -2197,18 +2201,18 @@ function renderSettings(){
  if(settingsOpenSection==='admin'&&!canEdit)settingsOpenSection='jeu';
  if(!pages[settingsOpenSection])settingsOpenSection='';
  const name=state.profile.display_name||'Mon profil',initial=Array.from(name)[0]||'♡';
- const items=[['couple',worldText('duoLabel'),hasPartner?state.members.map(m=>m.name).join(' & '):linked?'Invitation en attente':'Inviter mon partenaire'],
-  ['jeu',worldText('cardsLabel'),worldText('gameDetail')],
-  ['notifications',worldText('notificationsLabel'),worldText('notificationsDetail')],
-  ['monde',worldText('menu'),worldText('menuDesc')],
-  ['confidentialite',worldText('privacyLabel'),worldText('privacyDetail')],
-  ...(state.referral?.enabled===true?[['parrainage','Parrainage','Inviter des couples · Gagner des crédits']]:[]),
-  ['application',worldText('applicationLabel'),worldText('applicationDetail')]];
+ const items=[
+  ['couple','Notre duo',hasPartner?state.members.map(m=>m.name).join(' & '):linked?'Invitation en attente':'Inviter mon partenaire'],
+  ['jeu','Jeu et défis',worldText('gameDetail')],
+  ['preferences','Mes préférences','Alertes, sons, langue et confidentialité'],
+  ['avantages','Abonnement et avantages',state.referral?.enabled===true?'Forfait, parrainage et crédits':'Forfait et options'],
+  ['application','Aide et application','Guides, installation et mises à jour']
+ ];
  const menu='<button class="settings-profile-row" data-action="settings-page:compte"><span class="settings-initial" aria-hidden="true">'+safe(initial)+'</span><span><strong>'+safe(name)+'</strong><small>'+safe(worldText('myAccount'))+'</small></span><b aria-hidden="true">›</b></button>'+
   '<nav class="settings-sections" data-referral-active="'+(state.referral?.enabled===true?'true':'false')+'" aria-label="Rubriques des réglages">'+items.map(([key,label,detail])=>
    '<button data-action="settings-page:'+key+'" class="settings-section-row"><span class="settings-row-icon">'+settingsIcon(key)+'</span><span><strong>'+label+'</strong><small>'+safe(detail)+'</small></span><b aria-hidden="true">›</b></button>').join('')+'</nav>';
  const page=pages[settingsOpenSection];
- const parent=settingsOpenSection==='admin'?'jeu':settingsOpenSection==='sonneries'?'notifications':settingsOpenSection.startsWith('aide')?'application':'';
+ const parent=settingsOpenSection==='admin'?'jeu':['sonneries','notifications','monde','confidentialite'].includes(settingsOpenSection)?'preferences':settingsOpenSection==='parrainage'?'avantages':settingsOpenSection.startsWith('aide')?'application':'';
  const heading=editorialHeader(page?'settings-page:'+parent:'',parent==='jeu'?'Cartes et activités':parent==='application'?'Application et aide':'Réglages');
  frame('<section class="settings-editorial">'+heading+'<div class="settings-editorial-content">'+
   '<div class="editorial-title"><h1'+(page?'':' class="ritual-page-title"')+'>'+safe(page?.title||'Réglages')+'</h1>'+(settingsOpenSection==='admin'?'<small class="editorial-badge">Créateur</small>':'')+'</div>'+
