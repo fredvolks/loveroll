@@ -132,7 +132,7 @@ test('LR-015 keeps old queue CSS disabled and loads targeted mobile decision sty
  const css=readFileSync(new URL('./evening-editorial.css',import.meta.url),'utf8');
  assert.ok(!html.includes('evening-private-queue.css'),'The deprecated queue stylesheet must stay disabled');
  assert.ok(html.includes('evening-editorial.css?v='),'The approved stylesheet must actually be loaded');
- assert.ok(css.includes('#app .lr-redraw-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}'));
+ assert.ok(css.includes('#app .lr-redraw-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));'));
  assert.ok(css.includes('#app .lr-redraw-actions>small{grid-column:1/-1;display:block'));
  assert.ok(css.includes('@media(max-width:360px)'));
  assert.ok(css.includes('#app .lr-refusal-dialog{position:relative;display:block'));
