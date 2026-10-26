@@ -1,5 +1,6 @@
 import {organizeSettingsMenus} from './settings-menus.mjs?v=20261022-home228';
 import {showEveningCategoryReminder} from './evening-d100-template.mjs?v=20261022-home228';
+import {askEveningCategoryConfirmation,categoryConfirmEnabled,saveCategoryConfirmLocal} from './evening-category-confirm.mjs?v=20261026-lr014';
 import {soundEnabled,setSoundEnabled,setLoveRollSoundUser,unlockLoveRollSounds,playLoveRollSound,soundSettingsHtml} from './loveroll-sounds.mjs?v=20261025-web229';
 import {fitSurpriseMinimal} from './surprise-minimal.mjs?v=20261022-home228';
 import {eclatNoteKey,loadEclatNote,saveEclatNote} from './eclat-guidance.mjs?v=20261022-home228';
@@ -220,6 +221,8 @@ function restoreDraft(draft){
  }
 }
 function backFromLoveRoll(){
+ const categoryDialog=document.querySelector('dialog.lr-evening-category-dialog[open]');
+ if(categoryDialog){categoryDialog.close();return true;}
  if(!document.querySelector('dialog[open],.lr-dialog-overlay')&&root._settingsMenuBack?.())return true;
  if(document.querySelector('.lr-dialog-overlay')){
   document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
@@ -260,7 +263,8 @@ function backFromLoveRoll(){
 }
 window.loveRollHandleBack=backFromLoveRoll;
 document.addEventListener('keydown',event=>{
- if(event.key==='Escape'&&!document.querySelector('.lr-dialog-overlay')){
+ if(event.key==='Escape'&&!document.querySelector('.lr-dialog-overlay')&&
+    !document.querySelector('dialog.lr-evening-category-dialog[open]')){
   if(backFromLoveRoll())event.preventDefault();
  }
 });
@@ -434,6 +438,8 @@ function bindActions(){
   const label=root.querySelector('[data-eclat-note-status]');
   if(label)label.textContent='Modifications non enregistrées';
  }));
+ const categoryPref=root.querySelector('#evening-category-confirm-pref');
+ categoryPref?.addEventListener('change',()=>handle('evening-confirm-pref-toggle').catch(fail));
  const librarySearch=root.querySelector('#custom-card-search');
  const libraryFilter=root.querySelector('#custom-card-filter');
  const updateLibraryFilter=()=>{
@@ -2036,6 +2042,17 @@ function openSettingsPage(section=''){
  window.scrollTo({top:0,behavior:'instant'});
  if(section==='notifications')currentPushDevice(client,state.user?.id).then(device=>{state.pushDevice=device;if(state.tab==='settings'&&settingsOpenSection==='notifications')render();}).catch(()=>{});
 }
+async function persistEveningCategoryConfirmPref(enabled){
+ if(!state.user?.id||!state.profile)throw Error('Compte requis.');
+ // After the additive SQL migration, Supabase is the cross-device source of truth.
+ if(typeof state.profile.confirm_evening_category==='boolean'){
+  const {error}=await client.from('couple_profiles').update({confirm_evening_category:!!enabled}).eq('id',state.user.id);
+  if(error)throw error;
+  state.profile={...state.profile,confirm_evening_category:!!enabled};
+ }else if(!saveCategoryConfirmLocal(state.user.id,enabled,localStorage)){
+  throw Error('Stockage de la préférence indisponible.');
+ }
+}
 function renderSettings(){
  const linked=!!state.coupleId,hasPartner=linked&&state.members.length===2;
  const futureMix=hasPartner?futureCoupleStyleMix(...state.members.map(m=>m.playStyle)):
@@ -2100,7 +2117,14 @@ function renderSettings(){
    (state.couple?.show_sexuel_button!==false?' checked':'')+(!canEdit?' disabled':'')+'></label>'+
   '<p class="tiny-note">Aléatoire reste disponible.</p>'+
   (canEdit?button('save-evening-buttons','Enregistrer','class="settings-primary"'):'<p>Seul le créateur peut modifier ces choix.</p>')+'</div>';
- const game=(canEdit?
+ const categoryConfirmPref=categoryConfirmEnabled(state.profile,state.user?.id,localStorage);
+ const game='<section class="settings-premium-glass-group lr-category-confirm-setting">'+
+  '<h3>Préférences de jeu personnelles</h3>'+
+  '<label class="lr-category-confirm-setting-label">'+
+  '<input type="checkbox" id="evening-category-confirm-pref"'+(categoryConfirmPref?' checked':'')+'>'+ 
+  ' Confirmer ma catégorie avant le lancer du D100</label>'+
+  '<p class="tiny-note">Ce choix ne concerne que ton compte. Il ne change jamais les tirages de ton partenaire.</p></section>'+
+  (canEdit?
   (state.couple?.sexual_card_mode==='automatic'?
    '<p class="tiny-note">100 défis SENSUEL communs · 100 défis SEXUEL choisis secrètement selon vos deux styles. Pour changer de mode : Options avancées.</p>':
    settingRow('Mes cartes','100 Sensuel · 100 Sexuel','tab:library',''))+
@@ -3774,6 +3798,14 @@ async function handle(action,element){
   notify('♥ Défi transféré ! '+otherPerson.name+' choisira la catégorie de son prochain défi.');
   return;
  }
+ if(verb==='evening-confirm-pref-toggle'){
+  if(!state.user||!state.profile)throw Error('Compte requis.');
+  const chosen=id('evening-category-confirm-pref')?.checked;
+  if(typeof chosen!=='boolean')throw Error('Préférence introuvable.');
+  await persistEveningCategoryConfirmPref(chosen);
+  render();notify(chosen?'Confirmation avant lancer activée.':'Confirmation avant lancer désactivée.');
+  return;
+ }
  if(verb==='new-challenge'){
   if(!state.session)throw Error('Aucune soirée active.');
   if(!EVENING_CATEGORIES.includes(state.category)&&state.category!=='HASARD'){
@@ -3784,6 +3816,16 @@ async function handle(action,element){
   // Never fabricate a provisional category or bypass the existing turn/anti-repeat rules.
   const selectedCategory=state.category;
   const sessionId=state.session.id;
+  let disableReminder=false;
+  if(categoryConfirmEnabled(state.profile,state.user?.id,localStorage)){
+   const answer=await askEveningCategoryConfirmation({category:selectedCategory,
+    percentage:state.couple?.category_weights_enabled===false?50:
+     state.couple?.category_preference_percent??88});
+   if(!answer.confirmed)return; // No canvas movement, no server call, no quota consumed.
+   if(state.category!==selectedCategory||state.session?.id!==sessionId||state.tab!=='session')
+    throw Error('La soirée ou la catégorie a changé. Confirme ton nouveau choix.');
+   disableReminder=answer.neverShow;
+  }
   const drawn=await animateRoll(()=>
    selectedCategory==='HASARD'?
     rpc('draw_for_partner_random',{p_session:sessionId}):
@@ -3796,6 +3838,10 @@ async function handle(action,element){
        state.tab==='session'&&state.session?.id===sessionId){
    state.selectedEveningChallengeId=drawn.id;
    state.showEveningChallenges=true;
+  }
+  if(disableReminder){
+   try{await persistEveningCategoryConfirmPref(false);}
+   catch(error){console.warn('Préférence du D100 non enregistrée',error);notify('Le lancer a réussi, mais la préférence n’a pas été enregistrée.');}
   }
   try{sessionStorage.removeItem('loveroll-category-'+state.session.id);}catch{}
   state.category=null; // Choix renouvelé à chaque défi.
