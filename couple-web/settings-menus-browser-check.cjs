@@ -5,6 +5,16 @@ const {page,context,errors}=await setupEditorial(browser,world,{width,height});
 for(const route of ['compte','couple','jeu','notifications','monde','confidentialite','application','admin','aide-des','parrainage']){
  await page.locator('.nav [data-action="tab:settings"]').click();if(route==='admin'||route.startsWith('aide')){await page.locator('[data-action="settings-page:'+(route==='admin'?'jeu':'application')+'"]').click();await require('./settings-test-navigation.cjs').revealSetting(page,'[data-action="settings-page:'+route+'"]');}await page.locator('[data-action="settings-page:'+route+'"]').click();
  assert.equal(await page.locator('.settings-screen-pager').count(),0);
+ if(width>=768&&route==='notifications'){
+  const glass=await page.locator('.settings-submenu-list button.lr-surface').first().evaluate(el=>{
+   const style=getComputedStyle(el),root=getComputedStyle(document.documentElement);
+   return {fill:root.getPropertyValue('--lr-surface-fill').trim(),
+    background:style.backgroundImage,shadow:style.boxShadow};
+  });
+  assert.match(glass.fill,/gradient/,'The shared ruby material must exist beyond mobile');
+  assert.match(glass.background,/gradient/,'Desktop settings must visibly reuse Home ruby surfaces');
+  assert.notEqual(glass.shadow,'none','Desktop settings must retain Home-like glass depth');
+ }
  async function walk(path=[]){
   await page.waitForTimeout(40);
   const g=await page.locator('.settings-detail-body').evaluate(el=>({overflow:el.scrollHeight-el.clientHeight,document:document.documentElement.scrollHeight-innerHeight,title:document.querySelector('.editorial-title h1').textContent,visible:el.innerText}));
