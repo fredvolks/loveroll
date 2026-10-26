@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
 const css=readFileSync(new URL('./settings-menus.css',import.meta.url),'utf8');
 const menus=readFileSync(new URL('./settings-menus.mjs',import.meta.url),'utf8');
-const block=app.slice(app.indexOf(' const items=[[',app.indexOf('function renderSettings()')),app.indexOf(' const menu=',app.indexOf('function renderSettings()')));
+const block=app.slice(app.indexOf(' const items=[',app.indexOf('function renderSettings()')),app.indexOf(' const menu=',app.indexOf('function renderSettings()')));
 test('LR-044 shows exactly five primary destinations while keeping the profile entry',()=>{
  assert.equal((block.match(/^  \['/gm)||[]).length,5);
  for(const key of ['couple','jeu','preferences','avantages','application'])assert.match(block,new RegExp("\\['"+key+"'"));
