@@ -8,7 +8,8 @@ CREATE TABLE IF NOT EXISTS public.love_cycle_excluded_cards (
  cycle_number integer NOT NULL CHECK(cycle_number>=1),
  category text NOT NULL CHECK(category IN ('SENSUEL','SEXUEL')),
  card_id integer NOT NULL CHECK(card_id BETWEEN 1 AND 100),
- excluded_by uuid NOT NULL REFERENCES auth.users(id),
+ -- User deletion must not be blocked by historical excluded-card metadata.
+ excluded_by uuid REFERENCES auth.users(id) ON DELETE SET NULL,
  excluded_at timestamptz NOT NULL DEFAULT now(),
  PRIMARY KEY(couple_id,cycle_number,category,card_id)
 );
