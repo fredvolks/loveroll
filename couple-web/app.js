@@ -1397,7 +1397,7 @@ function renderLegacySession(){
      '<div class="actions">'+
      (active.status==='proposed'?button('answer:'+active.id+':accepted','Accepter'):'')+
      (active.status==='accepted'?button('answer:'+active.id+':completed','Terminé'):'')+
-     button('answer:'+active.id+':passed','Passer')+'</div></div>';
+     button('answer:'+active.id+':passed',state.monthlyPassQuota?'Passer ('+state.monthlyPassQuota.remaining+' restant'+(state.monthlyPassQuota.remaining>1?'s':'')+')':'Passer',state.monthlyPassQuota?.can_pass===false?'disabled aria-disabled="true"':'')+'</div></div>';
    }else if(completed<mine.face)body+='<p>Votre partenaire prépare le prochain défi surprise à vous offrir.</p>';
    const otherActive=state.challenges.filter(x=>x.recipient===p.user_id&&['proposed','accepted'].includes(x.status)).at(-1);
    const otherCompleted=state.challenges.filter(x=>x.recipient===p.user_id&&x.status==='completed').length;
