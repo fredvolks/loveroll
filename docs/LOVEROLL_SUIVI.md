@@ -15,7 +15,7 @@
 |---|---|---|---|---|
 | [ ] | LR-001 | D100 Soirée **entier**, proportionné comme Surprise, posé sur le socle, durant toutes les animations | ◐ En cours — taille basée sur Surprise + hauteur réelle disponible ; tests CI et comparaison visuelle nécessaires | [capture initiale](./LOVEROLL_PREUVES_VISUELLES.md#lr-001--d100-trop-gros-et-coupé) · branche `fix/lr001-evening-d100-fit-20261026` · `evening-d100-template-browser-check.cjs` |
 | [ ] | LR-002 | À 00:00, défi avec minuterie **réalisé automatiquement une seule fois** ; annulation/pause/saut exclus | À faire | — |
-| [ ] | LR-003 | Calendrier et compteurs cohérents : en cours ≠ non réalisé définitif ; cycle/partenaires corrects | ◐ En cours — libellés en cours corrigés dans la branche ; compteurs/statistiques à auditer avant validation totale | [capture calendrier](./LOVEROLL_PREUVES_VISUELLES.md#lr-003--calendrier-et-statuts) · [PR de correctif](https://github.com/fredvolks/loveroll/pulls?q=is%3Apr+head%3Afix%2Flr003-calendar-active-status-20261026) · `evening-calendar.test.mjs` (CI réussie sur [PR nº 20](https://github.com/fredvolks/loveroll/pull/20), audit des compteurs restant) |
+| [ ] | LR-003 | Calendrier et compteurs cohérents : en cours ≠ non réalisé définitif ; cycle/partenaires corrects | ◐ En cours — libellés en cours corrigés dans la branche ; compteurs/statistiques à auditer avant validation totale | [capture calendrier](./LOVEROLL_PREUVES_VISUELLES.md#lr-003--calendrier-et-statuts) · [PR de correctif](https://github.com/fredvolks/loveroll/pulls?q=is%3Apr+head%3Afix%2Flr003-calendar-active-status-20261026) · `evening-calendar.test.mjs` (CI à vérifier) |
 | [ ] | LR-004 | Sonnerie des minuteries testée sur PWA Safari/iOS et Android, avec limites OS expliquées | À faire | — |
 
 ## P1 — Design de référence Accueil
@@ -41,9 +41,9 @@
 
 | OK | ID | Demande | Statut | PR / preuve |
 |---|---|---|---|---|
-| [ ] | LR-030 | Audit de **chaque page et état** (Accueil, Soirée, Défis, Éclat, Surprise, Avent, calendrier, réglages, admin, connexion) | À faire | — |
-| [ ] | LR-031 | Rapport direction artistique : constat, impact, correction, priorité, effort, captures | À faire | — |
-| [ ] | LR-032 | Rapport « couple » : clarté, enchaînement, ambiance, incompréhensions, clics | À faire | — |
+| [ ] | LR-030 | Audit de **chaque page et état** (Accueil, Soirée, Défis, Éclat, Surprise, Avent, calendrier, réglages, admin, connexion) | ◐ En cours — audit initial fondé sur le code ; captures/tests réels manquants | [rapport préliminaire](./LOVEROLL_AUDIT_UX_UI_20261026.md) |
+| [ ] | LR-031 | Rapport direction artistique : constat, impact, correction, priorité, effort, captures | ◐ En cours — audit initial fondé sur le code ; captures/tests réels manquants | [rapport préliminaire](./LOVEROLL_AUDIT_UX_UI_20261026.md) |
+| [ ] | LR-032 | Rapport « couple » : clarté, enchaînement, ambiance, incompréhensions, clics | ◐ En cours — audit initial fondé sur le code ; captures/tests réels manquants | [rapport préliminaire](./LOVEROLL_AUDIT_UX_UI_20261026.md) |
 | [ ] | LR-033 | Suggestions majeures proposées avant refonte du parcours / règles de jeu | À faire | — |
 
 ## P1 — Validation et livraison
@@ -81,6 +81,8 @@ Chaque Issue contient les sous-tâches et permet les commentaires/captures. Les 
 |---|---|---|
 | 2026-10-26 | Initialisation du suivi D100, minuterie, harmonisation, audit UX/UI et responsive PC/tablette/mobile | Prompt maître |
 | 2026-10-26 | LR-003 : code audité, correctif de libellés ouvert/clôturé et tests unitaires ajoutés, sans modification de données. À vérifier en CI/visuel. | `fix/lr003-calendar-active-status-20261026` |
+
+| 2026-10-26 | Premier audit professionnel « designer + couple » sur le code et les preuves : constats vs risques séparés, priorités et propositions à valider. Non terminé sans matrice visuelle complète. | [audit initial](./LOVEROLL_AUDIT_UX_UI_20261026.md) |
 
 | 2026-10-26 | LR-001 : comparaison code Surprise/Soirée, ajustement réel de la taille canvas D100 (largeur ET hauteur disponible) et extension des tests jusqu'aux petits iPhone. Aucune validation visuelle réelle revendiquée. | `fix/lr001-evening-d100-fit-20261026` |
 
