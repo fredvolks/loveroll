@@ -86,8 +86,8 @@ L'[audit officiel](./LOVEROLL_AUDIT_UX_UI_20261026.md) est maintenant décompos�
 **Publication du système documentaire :** [PR #10 fusionnée](https://github.com/fredvolks/loveroll/pull/10). Les Issues sont ouvertes et les corrections applicatives restent à vérifier/implémenter.
 
 ## Tableau de bord
-- **31 exigences** dans cette version (4 P0 + 27 P1).
-- **0/31 cochées intégralement** : plusieurs corrections vérifiées partiellement, mais les critères complets restent ouverts (voir chaque PR et tests).
+- **33 exigences identifiées** : les 31 LR numériques existantes, LR-SURPRISE-001 et LR-ACCUEIL-001. Ce total ne mesure pas la proportion de code livrée.
+- **Bilan historique initial : 0/31 cochées intégralement.** Ne pas employer ce chiffre comme avancement actuel; consulter les lignes de statut et les preuves. Les deux nouvelles exigences sont spécifiées, sans livraison applicative déclarée.
 - Ces nombres décrivent le **statut documentaire initial**, **pas** un diagnostic que toute l'application est défectueuse.
 - Les développeurs doivent vérifier l'existant et marquer « Déjà présent, vérifié » avec preuves si un point est déjà satisfait.
 
@@ -146,3 +146,18 @@ Pour suivre le travail en temps réel, utiliser aussi les **GitHub Issues et les
 | LR-SURPRISE-001 — D100, Geoapify, parcours premium et filtres facultatifs | À implémenter — documentation ajoutée uniquement | [Prompt officiel](./LOVEROLL_MASTER_PROMPT.md#lr-surprise-001--rendez-vous-surprise-premium-d100-et-geoapify). Budget et km vides = tous les budgets et toutes les distances, sans préférence luxe : mini-putt autant que sortie à 300 $. Corriger d'abord les trajets null, les pannes terminales et les états pending; puis livrer préférences, adaptation et planification avec tests et preuves visuelles. |
 
 Aucun changement de tarifs ni déploiement applicatif n'est réalisé par cet ajout documentaire.
+
+
+## Accueil / Soirée — demande approuvée du 26 octobre 2026
+
+| Exigence | État | Preuve / prochaine étape |
+|---|---|---|
+| LR-ACCUEIL-001 — Accueil synthétique, Soirée pour jouer | Spécifié — à implémenter et vérifier | [Prompt officiel](./LOVEROLL_MASTER_PROMPT.md#lr-accueil-001--accueil-vue-densemble-et-raccourcis-soirée-parcours-de-jeu). Conserver D6 hebdomadaire/décor, afficher le quota réel et un raccourci vers Soirée; statut compact au lieu du tableau détaillé; carte Surprise/Éclat et bilan collectif. Aucune création de session ou lancer par simple navigation. |
+
+### Revue de structure du prompt maître — 26 octobre 2026
+- Ajout d'un guide en tête : rôle des documents, périmètre des onglets, ordre courant unique et suivi CI jusqu'à résultat final.
+- Clarification des propositions déjà approuvées, du statut documentaire LR-014 et du statut historique des notes de PR.
+- Les anciens ordres restent conservés comme contexte historique; le guide donne l'ordre courant.
+- Les 31 exigences initiales sont conservées, avec les deux ajouts Accueil et Surprise. Le compteur initial 0/31 n'est plus présenté comme un avancement en temps réel.
+- Audit documentaire uniquement : aucun état actuel de PR, CI, base ou déploiement n'a été certifié par cette revue.
+
