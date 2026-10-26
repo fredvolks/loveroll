@@ -60,7 +60,7 @@ test('LoveRoll build versions agree between endpoint, app, HTML and imported mod
 });
 test('PWA bypasses stale Android network caches while preserving offline fallback',()=>{
  const expectedCacheVersion=JSON.parse(read('web-version.json')).build.split('.').at(-1);
- assert.match(expectedCacheVersion,/^\\d+$/,'release build must end with a numeric cache revision');
+ assert.match(expectedCacheVersion,/^\d+$/,'release build must end with a numeric cache revision');
  assert.ok(sw.includes("const CACHE='loveroll-static-v"+expectedCacheVersion+"'"),'offline cache must match published build revision');
  assert.match(sw,/fetch\(req,\{cache:'no-store'\}\)/);
  assert.match(sw,/cache\.match\(fallback\.href\)/);
