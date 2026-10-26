@@ -27,11 +27,13 @@ export function startLoveRollPrivacy({doc=globalThis.document,storage=globalThis
   if(save){try{storage?.setItem(PRIVACY_STORAGE_KEY,masked?'1':'0');}catch{}}
   html.classList.toggle('lr-privacy-active',masked);
   if(masked){
+   shield.removeAttribute('aria-hidden');
    previousTitle=doc.title==='LoveRoll'?previousTitle:doc.title;
    doc.title='LoveRoll';
    if(app){app.inert=true;app.setAttribute('aria-hidden','true');}
    reveal.focus({preventScroll:true});
   }else{
+   shield.setAttribute('aria-hidden','true');
    if(app){app.inert=originalInert;app.removeAttribute('aria-hidden');}
    doc.title=previousTitle;
    if(opener?.isConnected)opener.focus({preventScroll:true});
