@@ -81,7 +81,47 @@
  .evening-play-controls .evening-queue-open-btn{min-height:49px;font-size:1rem}
 }
 
-/* The global D6/D100 render stages are owned by their scene templates.\n   Do not override or clip WebGL when enabling challenge-queue CSS. */\n\n/* v103: finished cards remain readable and openable for review, but no longer
+/* IMPORTANT: the earlier dice-no-overlay sheet switched WebGL canvases to
+   position:relative. On narrow Samsung screens this pushed the dice outside
+   their card and overlaid the roll button. Keep each renderer CONTAINED. */
+main#app.loveroll-evening-page .evening-user-die{
+ min-width:0;min-height:0;overflow:hidden;
+}
+main#app.loveroll-evening-page .evening-user-die .love3d,
+main#app.loveroll-evening-page .evening-user-die .love3d-stage{
+ position:relative;min-width:0;min-height:0;overflow:hidden;
+ width:100%;height:100%;box-sizing:border-box;
+}
+main#app.loveroll-evening-page .evening-user-die .love3d-stage .dice-canvas,
+main#app.loveroll-evening-page .evening-d35-col .love3d-stage .dice-canvas{
+ position:absolute!important;inset:0!important;
+ display:block!important;width:100%!important;height:100%!important;
+ max-width:100%;max-height:100%;object-fit:contain;z-index:2;
+}
+main#app.loveroll-evening-page .evening-d35-col .love3d,
+main#app.loveroll-evening-page .evening-d35-col .love3d-stage{
+ min-width:0;min-height:0;max-width:100%;overflow:hidden;position:relative;
+}
+main#app.loveroll-evening-page .evening-small-roll{
+ position:relative;z-index:5;grid-row:3;grid-column:1/-1;
+ min-height:46px!important;
+}
+@media(max-width:580px){
+ main#app.loveroll-evening-page .evening-user-die{
+  grid-template-columns:minmax(0,1fr) minmax(63px,.78fr);
+  grid-template-rows:20px minmax(80px,1fr) minmax(46px,auto);
+  isolation:isolate;
+ }
+ main#app.loveroll-evening-page .evening-d6-grid{gap:6px}
+ main#app.loveroll-evening-page .evening-play-controls{
+  min-width:0;overflow-wrap:anywhere;
+ }
+ main#app.loveroll-evening-page .evening-play-controls .evening-queue-open-btn{
+  flex:none;min-height:42px;
+ }
+}
+
+/* v103: finished cards remain readable and openable for review, but no longer
    look like actionable hot-pink challenges. Only status=completed is muted. */
 main#app.loveroll-evening-page .evening-queue-list
  button.evening-queue-item.is-completed,
