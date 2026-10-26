@@ -35,5 +35,5 @@ test('LR-010 Home Cormorant typography and control tokens are available to iPad 
  for(const token of ['--lr-control-font','--lr-control-ink','--lr-control-glass'])
   assert.ok(theme.includes(token+':'),token+' should be global');
  assert.match(theme,/LoveRoll Cormorant/);
- assert.match(controls.slice(mobile),/\\.lr-ruby-control\\{/);
+ assert.match(controls.slice(mobile),/\.lr-ruby-control\{/);
 });
