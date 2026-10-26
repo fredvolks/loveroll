@@ -55,9 +55,9 @@ const origin='http://127.0.0.1:8765/';
     return {viewport:innerWidth,scrollWidth:document.documentElement.scrollWidth,
      shellLeft:shell.left,shellRight:shell.right,
      hearts:[...document.querySelectorAll('.evening-cal-favorite')].map(e=>{
-      const b=e.getBoundingClientRect();return {left:b.left,right:b.right,height:b.height};
+      const b=e.getBoundingClientRect(),s=getComputedStyle(e);return {left:b.left,right:b.right,height:b.height,minHeight:s.minHeight,padding:s.padding,display:s.display,boxSizing:s.boxSizing};
      }),
-     inBounds:rows.every(x=>x.left>=-1&&x.right<=innerWidth+2)};
+     inBounds:rows.every(x=>x.left>=-1&&x.right<=innerWidth+2),styleSheets:[...document.styleSheets].map(x=>x.href).filter(Boolean).filter(x=>x.includes('evening-calendar'))};
    });
    assert.ok(fit.scrollWidth<=fit.viewport+3&&fit.shellLeft>=-1&&fit.shellRight<=width+2&&fit.inBounds&&
     fit.hearts.every(h=>h.left>=-1&&h.right<=width+2&&h.height>=35),
