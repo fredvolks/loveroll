@@ -34,6 +34,12 @@
   .evening-premium-view.has-home-soiree-template .evening-toolbar>.lr-privacy-quick-button{
    position:absolute!important;top:20px!important;left:0!important;z-index:5!important;
   }
+  /* Keep privacy control accessible without shifting the Soirée logo. */
+  .evening-premium-view.has-home-soiree-template .evening-toolbar{position:relative!important;}
+  .evening-premium-view.has-home-soiree-template .evening-toolbar [data-lr-privacy-hide]{
+    position:absolute!important;inset:16px auto auto 0!important;
+    z-index:6!important;min-height:44px!important;touch-action:manipulation;
+  }
   .evening-premium-view.has-home-soiree-template .evening-toolbar>span{display:none!important;}
   :is(.evening-premium-view.has-home-soiree-template,.surprise-minimal) .ritual-heading{
    height:80px!important;margin:0!important;padding:0!important;gap:0!important;
