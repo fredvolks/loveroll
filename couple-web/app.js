@@ -2112,7 +2112,7 @@ function renderSettings(){
   settingRow('Activités du mois','20 activités','tab:monthly-library','')+
   settingRow('Calendrier de l’Avent','25 surprises','tab:advent-editor','')+
   settingRow('Événements spéciaux','Événements, activités et variantes','tab:special-editor',''):
-  '<p>Les éditeurs sont réservés au créateur du couple.</p>')+eveningButtons+
+  '<p>Les éditeurs sont réservés au créateur du couple.</p>')+eveningButtons+passQuotaSettings+passQuotaControl+
   (canEdit?'<div class="settings-advanced">'+settingRow('Options avancées','Créateur','settings-page:admin','')+'</div>':'');
  const resetYear=Number(today().slice(0,4));
  const currentOccasionRolls=(state.occasionRolls||[]).filter(r=>Number(r.event_year)>=resetYear&&Number(r.event_year)<=resetYear+1);
