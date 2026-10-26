@@ -138,3 +138,28 @@ test('LR-015 refusal is explicit in the calendar before and after evening closur
  assert.match(html,/◇ Refusé/);
  assert.match(html,/Ancien défi refusé/);
 });
+
+test('LR-003 calendar without a month uses the current Toronto month, never fixed October 2026',()=>{
+ const html=eveningHistoryMarkup();
+ const expected=eveningLocalDay(new Date().toISOString()).slice(0,7);
+ assert.match(html,new RegExp('data-action="evening-date:'+expected+'-01"'));
+ assert.match(html,new RegExp(expected+'-01 · Historique'));
+ const source=files('./evening-calendar.mjs');
+ assert.doesNotMatch(source,/isoMonth\(month\)\|\|'2026-10'/);
+});
+test('LR-003 calendar rejects stale, malformed and impossible selected dates',()=>{
+ const previous=['2026-09-30','2026-11-01','2026-10-32','2026-10-00',
+  '2026-10-31x','2026-10-99','2026-02-31'];
+ for(const selectedDate of previous){
+  const html=eveningHistoryMarkup({month:'2026-10',selectedDate});
+  assert.match(html,/2026-10-01 · Historique/);
+  assert.match(html,/data-action="evening-date:2026-10-01"[^>]*aria-pressed="true"/);
+ }
+ const valid=eveningHistoryMarkup({month:'2026-10',selectedDate:'2026-10-31'});
+ assert.match(valid,/2026-10-31 · Historique/);
+ assert.match(valid,/data-action="evening-date:2026-10-31"[^>]*aria-pressed="true"/);
+ const leap=eveningHistoryMarkup({month:'2028-02',selectedDate:'2028-02-29'});
+ assert.match(leap,/2028-02-29 · Historique/);
+ const notLeap=eveningHistoryMarkup({month:'2027-02',selectedDate:'2027-02-29'});
+ assert.match(notLeap,/2027-02-01 · Historique/);
+});

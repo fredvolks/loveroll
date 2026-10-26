@@ -26,9 +26,16 @@ const monthLabel=mo=>new Intl.DateTimeFormat('fr-CA',{month:'long',year:'numeric
  .format(new Date(mo+'-15T12:00:00Z'));
 export function eveningHistoryMarkup({sessions=[],members=[],stats=[],historyChallenges=[],reviews=[],me,month,selectedDate,
  weeklyRolls=[],passQuota=[],backAction='tab:session',backLabel='Retour à Soirée'}={}){
- const current=isoMonth(month)||'2026-10';
+ // The calendar's fallback month follows the couple's Toronto timezone.
+ // Previously it was frozen to October 2026, including in future years.
+ const current=isoMonth(month)||eveningLocalDay(new Date().toISOString()).slice(0,7);
  const [year,m]=current.split('-').map(Number);
- const validDate=selectedDate&&/^\d{4}-\d\d-\d\d$/.test(selectedDate)?selectedDate:current+'-01';
+ // A stale selection from a different month (or an impossible local date)
+ // must never leave the calendar showing one month and another day's history.
+ const candidate=selectedDate&&/^\d{4}-\d{2}-\d{2}$/.test(selectedDate)?selectedDate:null;
+ const [cy,cm,cd]=(candidate||'').split('-').map(Number);
+ const validDate=candidate&&candidate.startsWith(current+'-')&&
+  cd>=1&&cd<=new Date(Date.UTC(cy,cm,0)).getUTCDate()?candidate:current+'-01';
  const firstDay=new Date(Date.UTC(year,m-1,1)).getUTCDay(),padding=(firstDay+6)%7;
  const days=new Date(Date.UTC(year,m,0)).getUTCDate();
  const archives=(sessions||[]).filter(s=>!!s.started_at).map(s=>({...s,localDay:eveningLocalDay(s.started_at)}));
