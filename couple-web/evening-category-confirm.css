@@ -1,0 +1,63 @@
+/* LR-014: real HTML dialog, Ruby/velvet visual language; WebGL remains mounted. */
+.lr-evening-category-dialog{
+ position:fixed;inset:0;margin:auto;padding:14px;border:1px solid #dba7a0;
+ border-radius:25px;background:linear-gradient(145deg,#550d28,#26091b 78%);
+ box-shadow:0 28px 90px #10050bec,0 0 28px #d45a7777;
+ color:#fff2f4;width:min(94vw,490px);max-width:490px;
+ max-height:calc(100dvh - 36px);overflow-y:auto;
+ overscroll-behavior:contain;box-sizing:border-box;
+}
+.lr-evening-category-dialog::backdrop{
+ background:#12030bc9;backdrop-filter:blur(8px);
+}
+.lr-evening-confirm-card{
+ position:relative;display:flex;flex-direction:column;align-items:stretch;
+ gap:12px;text-align:center;padding:22px clamp(6px,3vw,17px) 12px;
+ font-family:inherit;
+}
+.lr-evening-confirm-eyebrow{
+ letter-spacing:.15em;font-size:.77rem;color:#eeb2c2;margin:0!important;
+}
+.lr-evening-confirm-card h2{
+ font:600 clamp(1.65rem,6vw,2.1rem)/1.1 var(--lr-control-font,Georgia,serif);
+ margin:0;color:#fff0e8;
+}
+.lr-evening-confirm-card>p{margin:0;line-height:1.4}
+.lr-evening-confirm-choice{
+ border-radius:18px;padding:15px 12px;
+ background:linear-gradient(125deg,#923c5b77,#51203b88);
+ border:1px solid #e6aab0;box-shadow:inset 0 1px 0 #ffffff30;
+ font-size:1.1rem;
+}
+.lr-evening-confirm-choice strong{color:#fff2bd;font-size:1.3rem}
+.lr-evening-confirm-odds{color:#f6d3dc;font-size:.9rem}
+.lr-evening-confirm-optout{
+ display:flex;align-items:center;justify-content:center;gap:9px;
+ text-align:left;font-size:.93rem;min-height:44px;cursor:pointer;
+}
+.lr-evening-confirm-optout input{width:19px;height:19px;accent-color:#b86684;flex:none}
+.lr-evening-confirm-go,.lr-evening-confirm-change{
+ min-height:48px;border-radius:15px;padding:10px 15px;font-weight:750;
+ cursor:pointer;font-size:1rem;
+}
+.lr-evening-confirm-go{
+ background:linear-gradient(135deg,#a54567,#681b42);color:#fff7f8;
+ border:1px solid #fac0cf;box-shadow:0 4px 15px #0006;
+}
+.lr-evening-confirm-change{
+ background:linear-gradient(135deg,#40152b,#290c1f);
+ border:1px solid #a97286;color:#ffdfed;
+}
+.lr-evening-confirm-close{
+ position:absolute;top:-3px;right:-3px;
+ display:grid;place-items:center;width:44px;height:44px;
+ border:0;background:transparent;color:#ffe5ef;font-size:1.2rem;cursor:pointer;
+}
+.lr-evening-category-dialog button:focus-visible,.lr-evening-category-dialog input:focus-visible{
+ outline:3px solid #ffe0a5;outline-offset:3px;
+}
+@media(max-height:540px){
+ .lr-evening-category-dialog{max-height:calc(100dvh - 12px);padding:6px}
+ .lr-evening-confirm-card{gap:6px;padding-top:17px}
+ .lr-evening-confirm-choice{padding:9px}
+}
