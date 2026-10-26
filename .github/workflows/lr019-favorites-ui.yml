@@ -32,4 +32,15 @@ jobs:
         run: |
           npm install --no-save playwright@1.56.0
           npx playwright install chromium
+          # Calendar browser smoke expects the same local static server as the main CI.
+          # Without it, stylesheet requests fail silently and layout assertions
+          # measure an unstyled fallback instead of the actual LoveRoll page.
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory couple-web > /tmp/loveroll-lr019-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:8765/ >/dev/null; then break; fi
+            sleep 0.25
+          done
+          curl -fsS http://127.0.0.1:8765/evening-calendar.css > /dev/null
           node couple-web/evening-calendar-browser-check.cjs

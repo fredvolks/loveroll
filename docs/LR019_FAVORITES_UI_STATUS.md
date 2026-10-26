@@ -30,3 +30,8 @@ Prochaine action : identifier le nouveau run, diagnostiquer les erreurs, corrige
 - Vérifie les cœurs activés/désactivés, l'absence de bouton sur la carte d'un autre destinataire, l'accessibilité au clic et l'absence de débordement horizontal.
 - Il s'agit d'un navigateur **émulé**, pas d'un test sur appareils physiques ni d'un parcours Auth Supabase complet.
 - Contrôler le résultat du nouveau workflow sur le SHA exact.
+
+## Diagnostic du premier test Chromium
+- Run #40408795077 SHA `15a6306` **completed/failure** : les feuilles CSS demandaient `http://127.0.0.1:8765/`, mais ce nouveau workflow autonome ne démarrait aucun serveur HTTP. Un bouton mesurait donc 21 px sans la règle CSS de 36 px.
+- Correction : démarrer et vérifier un serveur de fichiers statiques temporaire dans le workflow avant Playwright, puis le fermer à la fin. Les assertions de taille et de débordement restent inchangées.
+- Contrôler le prochain run et son SHA, ainsi que les styles réellement chargés. Il ne s'agit pas d'un échec des RPC.
