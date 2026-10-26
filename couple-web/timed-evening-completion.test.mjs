@@ -58,3 +58,16 @@ test('The real app retains an expiry retry and no double-validation on reload',(
  assert.match(source,/timerCompletionRetryAt=Date\.now\(\)\+15000/);
  assert.match(source,/p_status:'accepted'/);
 });
+
+
+test('LR-002 reload restoration scans saved challenge timers without opening the card',()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ assert.match(app,/function reconcileSavedEveningTimers\(\)/);
+ assert.match(app,/sessionStorage\.getItem\(key\)/);
+ assert.match(app,/saved\.deadline<=now/);
+ assert.match(app,/saved\.autoCompletePending/);
+ assert.match(app,/isAcceptedTimedEveningChallenge\(item,state\.user\.id,state\.session\.id\)/);
+ assert.match(app,/completeTimedEveningChallenge\(\{challenge:item,userId,sessionId,rpc,query\}\)/);
+ assert.match(app,/void reconcileSavedEveningTimers\(\)/);
+ assert.match(app,/savedTimerScanAfter=Date\.now\(\)\+15000/);
+});
