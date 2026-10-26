@@ -61,7 +61,7 @@ jobs:
             '11111111-1111-4111-8111-111111111111',
             'SENSUEL',17,17,'proposed');
           SQL
-          query="SELECT set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111'); SELECT public.love_respond_and_redraw('cdcdcdcd-cdcd-4dcd-8dcd-cdcdcdcdcdcd','refuse',false)->>'replacement_id';"
+          query="SELECT set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',false); SELECT public.love_respond_and_redraw('cdcdcdcd-cdcd-4dcd-8dcd-cdcdcdcdcdcd','refuse',false)->>'replacement_id';"
           psql -X -qAt -v ON_ERROR_STOP=1 -c "$query" >/tmp/lr015-first.txt 2>/tmp/lr015-first.err &
           first=$!
           psql -X -qAt -v ON_ERROR_STOP=1 -c "$query" >/tmp/lr015-second.txt 2>/tmp/lr015-second.err &
