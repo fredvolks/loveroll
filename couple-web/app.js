@@ -2775,6 +2775,7 @@ async function handle(action,element){
   state.redrawBusy=true;
   if(challengeTimer.id===challengeId)challengeTimer.decisionPending=true;
   render();
+  let redrawFeedback=null;
   try{
    const outcome=await rpc('love_respond_and_redraw',{
     p_challenge:challengeId,p_action:refuse?'refuse':'pass',p_exclude:exclude});
@@ -2789,10 +2790,10 @@ async function handle(action,element){
    state.selectedEveningChallengeId=outcome?.replacement_id||null;
    if(state.session?.id===sessionId)state.showEveningChallenges=true;
    await refreshAndShow();
-   notify(outcome?.replacement_unavailable?
+   redrawFeedback=outcome?.replacement_unavailable?
     'Aucun autre défi admissible dans cette catégorie pour ce soir. Tu peux réintégrer un défi retiré ou revenir plus tard.':
     (refuse?(exclude?'Défi retiré du lot pour ce cycle.':'Défi conservé dans la pige.'):
-      'Défi passé — il pourra revenir plus tard.'));
+      'Défi passé — il pourra revenir plus tard.');
   }catch(error){
    if(challengeTimer.id===challengeId&&challengeTimer.decisionPending){
     challengeTimer.decisionPending=false;
@@ -2802,7 +2803,13 @@ async function handle(action,element){
     }
    }
    throw error;
-  }finally{state.redrawBusy=false;}
+  }finally{
+   state.redrawBusy=false;
+   // Re-render after both success and failure; a rejected RPC must never
+   // leave its on-screen buttons permanently disabled.
+   render();
+  }
+  if(redrawFeedback)notify(redrawFeedback);
   return;
  }
  if(verb==='evening-start'){
