@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {eveningHistoryMarkup,eveningLocalDay} from './evening-calendar.mjs';
+import {eveningHistoryMarkup,eveningLocalDay,eveningChallengeStatusLabel} from './evening-calendar.mjs';
 const files=p=>readFileSync(new URL(p,import.meta.url),'utf8');
 const sessions=[
  {id:'s1',started_at:'2026-10-16T01:00:00Z',finished_at:'2026-10-16T02:00:00Z',counted:true},
@@ -43,14 +43,16 @@ test('Two member rows are independent expandable lists on each evening',()=>{
  assert.match(html,/Défi fait par Noémie/);
  assert.match(html,/Défi passé par Noémie/);
  assert.match(html,/✓ Réalisé/);
- assert.match(html,/À faire, non réalisé/);
+ assert.match(html,/Non réalisé \(non commencé\)/);
  assert.match(html,/Passé, non réalisé/);
  assert.match(html,/2<\/b> réalisés/);
  assert.match(html,/3<\/b> non réalisés/);
  assert.match(html,/1<\/b> réalisé/);
  assert.match(html,/2<\/b> non réalisés/);
  assert.match(html,/2 défis non pigés : aucune carte attribuée/);
- assert.match(html,/4 défis non pigés : aucune carte attribuée/);
+ assert.match(html,/4 défis à piger : aucune carte attribuée/);
+ assert.match(html,/<b>4<\/b> à faire/);
+ assert.doesNotMatch(html,/<b>4<\/b> non réalisés/);
  assert.doesNotMatch(html,/Les cartes de ton partenaire restent privées/);
  assert.match(html,/data-action="evening-date:2026-10-15"/);
  assert.match(html,/data-action="evening-month-prev"/);
@@ -94,4 +96,30 @@ test('App uses member-only challenge history without weakening the real game RLS
  const css=files('./evening-calendar.css');
  assert.match(css,/grid-template-columns:minmax\(0,1fr\)!important/);
  assert.doesNotMatch(css,/scroll-snap|overflow-x:auto/i);
+});
+
+test('An ongoing evening has pending/accepted cards without a false non-realized verdict',()=>{
+ const html=eveningHistoryMarkup({
+  sessions:[{id:'active',started_at:'2026-10-15T16:00:00Z',finished_at:null,counted:false}],
+  members,stats:[{session_id:'active',user_id:'a',target:4,drawn:2,completed:0},
+   {session_id:'active',user_id:'b',target:2,drawn:0,completed:0}],
+  historyChallenges:[
+   {id:'pending',session_id:'active',recipient:'a',category:'SENSUEL',status:'proposed',card_title:'A venir'},
+   {id:'begun',session_id:'active',recipient:'a',category:'SENSUEL',status:'accepted',card_title:'En chemin'}
+  ],me:'a',month:'2026-10',selectedDate:'2026-10-15'
+ });
+ assert.match(html,/<b>4<\/b> à faire/);
+ assert.match(html,/<b>2<\/b> à faire/);
+ assert.match(html,/○ À faire/);
+ assert.match(html,/◷ En cours/);
+ assert.match(html,/2 défis à piger/);
+ assert.doesNotMatch(html,/<b>4<\/b> non réalisés/);
+ assert.doesNotMatch(html,/Commencé, non réalisé/);
+});
+test('Only closure makes a proposed or accepted card definitively non-realized',()=>{
+ assert.equal(eveningChallengeStatusLabel('proposed',false),'○ À faire');
+ assert.equal(eveningChallengeStatusLabel('accepted',false),'◷ En cours');
+ assert.equal(eveningChallengeStatusLabel('proposed',true),'○ Non réalisé (non commencé)');
+ assert.equal(eveningChallengeStatusLabel('accepted',true),'◷ Non réalisé après début');
+ assert.equal(eveningChallengeStatusLabel('completed',false),'✓ Réalisé');
 });
