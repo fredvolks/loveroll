@@ -92,3 +92,6 @@ jobs:
           $test$;
           SQL
           echo "LR015_PARALLEL_POSTGRES_OK"
+      - name: Exhausted category rolls back pass refusal and redraw as one transaction
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/qa/lr015-exhausted-pool.sql

@@ -304,3 +304,15 @@ test('LR-015 cached web clients cannot bypass atomic replacement via old pass en
  assert.match(check,/Legacy Pass bypassed atomic replacement/);
  assert.match(check,/Old client bypassed shared 2\/2 quota/);
 });
+
+test('LR-015: an exhausted category cannot debit a pass or strand an unfilled slot',()=>{
+ const sql=read('migrations/20261026_lr015_z_atomic_respond_redraw.sql');
+ const branch=sql.indexOf('IF v_card IS NULL THEN');
+ const ledger=sql.indexOf('INSERT INTO public.love_challenge_redraws');
+ assert.ok(branch>0&&ledger>branch,'Guard executes before committing redraw ledger');
+ assert.match(sql.slice(branch,branch+180),/RAISE EXCEPTION 'Aucun autre défi admissible/);
+ const fixture=read('qa/lr015-exhausted-pool.sql');
+ assert.match(fixture,/Exhausted pool debited a pass/);
+ assert.match(fixture,/Exhausted pool mutated original challenge/);
+ assert.match(fixture,/ROLLBACK;/);
+});

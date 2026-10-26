@@ -142,6 +142,12 @@ BEGIN
    AND seen.category=v_old.category AND seen.card_id=candidate.card)
  ORDER BY random() LIMIT 1;
 
+ -- An exhausted lot cannot consume a pass or a refusal: the raised
+ -- exception rolls back the status, pass stamp, exclusions and history.
+ -- The client can offer to restore a deliberately excluded card.
+ IF v_card IS NULL THEN
+  RAISE EXCEPTION 'Aucun autre défi admissible dans cette catégorie pour ce soir';
+ END IF;
  IF v_card IS NOT NULL THEN
   -- Avoid a duplicate official D100 face in the same person's category/night.
   SELECT possible.face INTO v_face
