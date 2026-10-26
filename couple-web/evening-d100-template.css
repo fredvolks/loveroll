@@ -48,4 +48,39 @@
   #app.has-evening-d100-template .evening-play-menu{display:grid!important;gap:8px!important;}
   #app.has-evening-d100-template .evening-play-menu button{position:relative!important;min-height:44px!important;margin:0!important;padding:8px 12px!important;color:#fff0e5!important;font:600 22px/1 Georgia,serif!important;}
  }
+ @media (max-width:767px) and (max-height:650px){
+  /* The default nine-row 80px header + roomy gaps left a 57px D100
+     theater at 320x568. Reallocate space instead of shrinking the die
+     to a tiny icon or clipping the WebGL mesh. Keep real controls. */
+  #app.has-evening-d100-template .evening-premium-view.has-evening-d100-template{
+   grid-template-rows:64px auto 40px minmax(0,1fr) 23px 28px 44px 44px 10px!important;
+   gap:3px!important;
+  }
+  #app.has-evening-d100-template .evening-choice{
+   grid-template-rows:30px 10px!important;
+  }
+  #app.has-evening-d100-template .evening-choice-btn{
+   height:30px!important;font-size:13px!important;
+  }
+  #app.has-evening-d100-template .evening-choice-odds{
+   height:10px!important;font-size:9px!important;
+  }
+  #app.has-evening-d100-template .evening-play-state{
+   height:23px!important;font-size:14px!important;
+  }
+  #app.has-evening-d100-template .evening-progress,
+  #app.has-evening-d100-template .evening-progress>span{
+   height:28px!important;font-size:11px!important;
+  }
+  #app.has-evening-d100-template .evening-d100-roll{
+   height:44px!important;font-size:clamp(21px,5.6vw,25px)!important;
+  }
+  #app.has-evening-d100-template .evening-d100-utilities,
+  #app.has-evening-d100-template .evening-d100-utilities button{
+   height:44px!important;
+  }
+  #app.has-evening-d100-template .evening-d100-quota{
+   height:10px!important;font-size:9px!important;
+  }
+ }
 }
