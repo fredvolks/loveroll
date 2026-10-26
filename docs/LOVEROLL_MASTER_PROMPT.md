@@ -113,6 +113,65 @@ En l'absence de catégorie pour le défi/D100, la zone doit suggérer **visuelle
 
 **Statut de cette demande :** **À faire — ajout au cahier des charges uniquement**, aucune fonction n'est déclarée implémentée par la mise à jour documentaire. Conserver LR-013 et toutes les règles de catégorie existantes.
 
+
+### LR-015 — Défis : « Passer », « Refuser », exclusion volontaire et retour dans la pige (nouvelle demande du 26 octobre 2026)
+
+**Objectif utilisateur :** pendant **Soirée**, chaque partenaire peut librement **passer** ou **refuser** un défi. En cas de refus, LoveRoll demande **s'il faut retirer ce défi du lot des prochains tirages** ; chaque défi **non complété à la fin de la soirée** redevient éligible à la pige, sauf exclusion explicitement choisie. Aucun défi n'est jamais imposé.
+
+#### Les trois actions sur une carte
+- **« Défi réalisé »** : conserver la validation existante et les compteurs. Un défi réellement accompli ne retourne **pas** immédiatement dans la pige du cycle ; il suit les règles déjà approuvées du cycle de 200 défis.
+- **« Passer ce défi »** : action sans culpabilisation ni justification. Le défi n'est **pas réalisé** et ne crédite **aucune** progression ; proposer de repiger un défi de remplacement dans le même emplacement/turn, en respectant les permissions et les mécanismes existants. Le défi passé **reste dans le lot admissible** pour plus tard (ne pas le repiger immédiatement pendant la même soirée si cela produit un retour en boucle), et retrouve l'éligibilité après la soirée s'il n'est pas complété.
+- **« Refuser ce défi »** : afficher une boîte de confirmation distincte, sobre et non culpabilisante :
+  - Titre : **« Tu préfères un autre défi ? »**
+  - Texte : **« Veux-tu retirer ce défi des prochaines piges pour le cycle en cours ? »**
+  - Choix explicites : **« Oui, retirer du lot »** ou **« Non, le garder dans le lot »** ; bouton **« Annuler »**.
+  - Dans les deux cas confirmés, marquer cette occurrence comme **refusée / non réalisée**, autoriser **une repige de remplacement** sans créditer un défi accompli. Si **Oui**, marquer la carte exclue des futurs tirages pour le **cycle actuel du couple** ; si **Non**, elle retourne au lot admissible ultérieurement, comme un défi passé. **Annuler** ne change rien et ne consomme aucune tentative.
+
+**Portée de l'exclusion :** par défaut, elle concerne **le couple et le cycle de 200 défis en cours**, pas la banque de défis partagée entre utilisateurs LoveRoll, pas les autres couples, et pas une suppression permanente de contenu. Prévoir dans **Réglages → Options avancées → Défis retirés** un écran permettant au couple de consulter et **réintégrer** les défis exclus ; conserver le motif d'action « refusé » sans demander de justification personnelle. Lors d'une remise à zéro explicite du cycle de 200, les exclusions temporaires sont levées pour le nouveau cycle, sauf si une autre règle déjà validée dans le code est plus restrictive : en cas de conflit, ne pas changer silencieusement la règle existante, le signaler dans l'audit et la PR.
+
+#### À la fermeture de la soirée : remettre les défis non réalisés dans la pige
+- Quand la soirée est **clôturée**, chaque carte **attribuée, commencée, passée ou refusée sans exclusion** qui n'a **pas** été validée « Réalisée » redevient éligible au tirage d'une soirée ultérieure **dans son même lot et sa même catégorie**.
+- Un défi **refusé avec « Oui, retirer du lot »** demeure exclu jusqu'à réintégration explicite ou réinitialisation de cycle. Un défi **réalisé** demeure compté une seule fois, sans réintroduction avant les règles de renouvellement du cycle.
+- Lorsqu'une carte n'est **pas encore terminée alors que la soirée est ouverte**, elle reste « À faire / En cours », **pas** définitivement « Non réalisée » ; ne pas repiger une carte active dans la même soirée.
+- À la clôture, conserver **l'historique immuable** de ce qui a été attribué, passé, refusé, non terminé, réalisé ou exclu : **remettre dans la pige ne doit jamais effacer l'événement passé dans le calendrier**.
+- Si l'application ferme ou le réseau coupe avant la clôture, préserver l'état de soirée en cours ; appliquer la restitution à la vraie clôture métier, avec reprise fiable, et **une seule fois** (idempotence).
+- Garder le nombre de défis **alloués** à chaque partenaire constant lorsqu'un défi est remplacé : une repige ne doit pas consommer **une soirée supplémentaire**, ni inventer des défis accomplis. Respecter les règles d'attribution, de tour, de catégorie et les quotas déjà prévus.
+- Les défis personnels et personnalisés restent **privés au couple** et exclus du pool global. Ne jamais modifier le contenu original d'un défi ni propager son exclusion à d'autres couples.
+
+#### Cas de contrôle et d'épuisement des lots
+- Ne **jamais** repiger automatiquement la carte qui vient d'être passée/refusée au cours de **la même soirée** ; utiliser la liste des cartes disponibles, et tenir compte des catégories tirées, des préférences déjà configurées et des règles de non-répétition.
+- Si plus aucun défi admissible n'est disponible dans le lot/catégorie, présenter un message clair et les possibilités déjà autorisées (« Réintégrer un défi retiré » ou revenir plus tard), sans boucle infinie, exception silencieuse, ni validation forcée d'un défi.
+- Ne jamais changer l'équilibre existant des catégories Sensuel / Sexuel / Au hasard ni les proportions de tirage, sans instruction supplémentaire.
+- Les deux partenaires doivent voir le **même état officiel** après synchronisation. Empêcher la double repige, le double enregistrement, les réponses concurrentes et les incohérences de calendrier lorsque chacun utilise son appareil.
+
+#### UX/UI — aligné sur l'Accueil
+- Sur chaque carte du défi, placer clairement **« Réalisé »**, **« Passer »** et **« Refuser »** ; les actions secondaires restent sobres, sans mettre les partenaires sous pression.
+- Dialogues et boutons **réels** dans les bulles rubis/verre et les typographies de l'Accueil, et non de fausses images de boutons.
+- Messages après action : **« Défi passé — il pourra revenir plus tard »**, **« Défi retiré du lot pour ce cycle »**, **« Défi conservé dans la pige »**, suivant le vrai choix.
+- Confirmation de refus accessible au tactile et au clavier, gestion correcte du retour/fermeture et du focus ; aucun bouton masqué sur Samsung S25 Ultra, iPhone, iPad/tablette portrait/paysage ou PC.
+
+#### Interactions avec les exigences existantes
+- **LR-002 :** un minuteur qui atteint naturellement **00:00** valide le défi comme réalisé. Si le partenaire **passe/refuse/annule** le défi d'abord, arrêter/désactiver son minuteur et empêcher que sa fin tardive ne valide le défi.
+- **LR-003 :** calendrier et statistiques distinguent **passé**, **refusé**, **exclu**, **non terminé**, **réalisé**, **soirée en cours/clôturée**. Seuls les défis **réalisés** augmentent la progression du cycle de 200.
+- **LR-012 :** intégrer les actions sans surcharger les écrans ni dégrader la lisibilité et l'ambiance.
+- **LR-014 :** le dialogue de refus est **indépendant** de la confirmation de catégorie avant le D100. Lors d'une repige, conserver la catégorie et les mécanismes de choix déjà valides ; ne pas introduire un second tirage aléatoire concurrent au serveur.
+- Conserver tous les autres mécanismes déjà présents (défis par partenaire, intensités, tirages serveur, permissions, transfert, historique, paiements, reset du cycle).
+
+#### Tests d'acceptation indispensables
+1. **Passer** une carte : pas de crédit, remplacement dans le même emplacement, pas de re-sortie immédiate ; carte redevient admissible à une soirée ultérieure.
+2. **Refuser → Oui** : carte exclue du cycle du couple, remplacement autorisé, toujours absente des futures piges du cycle ; réintégration manuelle possible.
+3. **Refuser → Non** : remplacement autorisé, carte garde sa place dans le lot éligible après la soirée.
+4. **Refuser → Annuler** : aucune mutation ni repige.
+5. **Clore** avec des cartes encore à faire/en cours : toutes les **non réalisées non exclues** redeviennent éligibles ; événements historiques toujours visibles.
+6. **Réalisé / minuteur arrivé à zéro** : pas de restitution dans la pige avant renouvellement de cycle ; compteur incrémenté une seule fois.
+7. **Minuteur en cours puis Passer/Refuser** : callback tardif de fin de minuteur **sans** validation fantôme.
+8. **Deux partenaires** : indépendance des événements de carte, cohérence des quotas, concurrence maîtrisée, synchronisation.
+9. **Double clic / reconnexion / fermeture et réouverture** : idempotence et aucune duplication.
+10. **Cycle renouvelé, défis personnalisés, lot épuisé** : protections et comportements explicites.
+11. **Captures avant/après** et vérification responsive/accessibilité sur mobile, tablette, PC.
+
+**État documentaire : À FAIRE — le présent prompt ne constitue pas du code livré.** Commencer par auditer les statuts/tables/RPC existants et modifier de façon rétrocompatible pour conserver les données et l'historique.
+
 ## P1 — Responsive **mobile + tablette + PC**
 
 ### LR-020 — Téléphones Android / iPhone
