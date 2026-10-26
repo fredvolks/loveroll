@@ -31,6 +31,8 @@
 
 | 2026-10-26 | Soirée : confirmation de catégorie Sensuel/Sexuel/Au hasard au clic « Brasser le dé », possibilité « Ne plus afficher ce message », réactivation via réglages individuels | **LR-014** (à implémenter) | [Prompt LR-014](./LOVEROLL_MASTER_PROMPT.md) · [Suivi LR-014](./LOVEROLL_SUIVI.md) |
 
+| 2026-10-26 | Soirée : pouvoir passer ou refuser un défi, demander lors du refus s'il faut l'exclure de la pige pour le cycle, retourner les défis non terminés à la pige après la soirée et permettre la repige | **LR-015** (à implémenter) | [Prompt LR-015](./LOVEROLL_MASTER_PROMPT.md) · [Suivi LR-015](./LOVEROLL_SUIVI.md) |
+
 ## Lire et modifier depuis un téléphone
 1. Ouvre ce document sur GitHub en étant connecté.
 2. Appuie sur le **crayon / Edit** (parfois dans le menu « … »).
