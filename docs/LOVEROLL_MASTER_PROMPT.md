@@ -288,14 +288,16 @@ Cette précision complète LR-019 et prévaut sur toute formulation antérieure 
 - Conserver titre, consigne, attribution et historique; l'ajout d'un cœur ne marque jamais un défi réalisé et ne consomme aucune passe, aucun défi ni aucune soirée.
 - Si une carte historique n'existe plus dans le catalogue actif, expliquer qu'elle est indisponible; ne pas recréer ou publier automatiquement son texte privé, ni promettre sa repige.
 
-**Quand les 5 places sont occupées**
-- Au sixième ajout, ne rien écraser ni supprimer automatiquement. Afficher une notification dans l'app, par exemple :
-  « Vous avez déjà 5 défis en favoris. Retirez-en un de votre liste pour ajouter celui-ci. »
-- Actions : **« Choisir un favori à remplacer »**, **« Voir nos favoris »**, **« Annuler »**.
-- Dans le remplacement, montrer les 5 favoris actuels et la nouvelle carte, laisser choisir celui à retirer puis confirmer « Remplacer ce favori ». Annuler ne change rien.
-- Effectuer retrait + ajout dans une seule transaction serveur : si la nouvelle carte n'est plus admissible, si le réseau coupe ou si le remplacement échoue, conserver l'ancien favori. Le choix du favori à retirer reste volontaire.
-- Un partenaire peut aussi retirer une carte dans Réglages puis ajouter celle souhaitée. Synchroniser compteur et cœurs sur les deux comptes.
-- Une notification locale de quota suffit; ne pas envoyer de Push sensible ni de message externe pour un simple sixième ajout.
+**Quand les 5 places sont occupées — notification interactive avec retrait direct**
+- Au sixième ajout, ouvrir **directement une fenêtre de notification dans l'app** : « Vous avez déjà 5 défis en favoris. Lequel voulez-vous retirer pour ajouter ce nouveau défi ? ».
+- **Afficher immédiatement les 5 favoris dans cette même notification**, chacun avec son titre, sa catégorie, un accès à sa consigne et un bouton de retrait visible sur sa propre ligne. Afficher aussi le titre de la nouvelle carte à ajouter et le compteur 5/5.
+- Le couple ne doit pas avoir à toucher « Voir nos favoris », ouvrir une deuxième fenêtre, aller dans Réglages ou rechercher lui-même la carte à retirer.
+- Bouton de chaque carte : **« Retirer et ajouter le nouveau »**, avec un nom accessible qui précise la carte retirée et celle ajoutée. Un seul appui volontaire effectue le remplacement directement depuis la notification; aucune seconde confirmation obligatoire.
+- Effectuer retrait + ajout dans une seule transaction serveur : si la nouvelle carte n'est plus admissible ou si le remplacement échoue, conserver l'ancien favori. Afficher un état de chargement contre le double appui puis la liste officielle actualisée et une confirmation sobre de réussite; gérer une réponse perdue par relecture serveur plutôt que répéter aveuglément.
+- Bouton **« Annuler »** ou fermeture sans choix : aucune carte supprimée et aucun ajout. Aucun retrait automatique ou préselectionné.
+- Si le partenaire modifie la liste pendant l'affichage, actualiser les 5 cartes depuis l'état officiel. Ne jamais retirer une carte différente de celle explicitement sélectionnée. Si une place s'est libérée, proposer « Ajouter ce défi ».
+- L'interface est une notification interactive / modale LoveRoll, pas un toast éphémère ni une notification système Push. Sur petit écran, la liste peut défiler dans la fenêtre tout en gardant les commandes accessibles; les 5 favoris sont présents dans la fenêtre dès son ouverture.
+- La gestion depuis Réglages reste disponible en complément. Synchroniser compteur et cœurs sur les deux comptes. Aucun Push sensible ni message externe pour ce quota.
 
 **Réglages et tirage**
 - Ajouter **Réglages → Jeu → Nos coups de cœur** (ou emplacement équivalent dans l'arborescence officielle), avec les 5 cartes, leur catégorie, le compteur et les commandes de retrait/remplacement.
