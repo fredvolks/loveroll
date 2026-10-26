@@ -139,3 +139,22 @@ test('Aftercare selects newest counted evening even when backend returns oldest 
  assert.equal(latestCountedSession(history.slice().reverse())?.id,'two');
  assert.equal(latestCountedSession([{id:'open',finished_at:null,counted:true}]),null);
 });
+
+test('LR-015 refused and passed occurrences never consume another D6 slot in offline fallback',()=>{
+ const duo=[{user_id:'person-a'},{user_id:'person-b'}];
+ const session={id:'night-1',starting_user_id:'person-a',opened_by:'person-a',self_draws:true};
+ const rolls=[{user_id:'person-a',face:2},{user_id:'person-b',face:1}];
+ const cards=[
+  {id:'historic-refusal',session_id:'night-1',recipient:'person-a',status:'refused'},
+  {id:'historic-pass',session_id:'night-1',recipient:'person-a',status:'passed'},
+  {id:'replacement',session_id:'night-1',recipient:'person-a',status:'proposed'},
+  {id:'partner-card',session_id:'night-1',recipient:'person-b',status:'completed'}
+ ];
+ const state=sharedEveningTurns(session,duo,rolls,cards);
+ assert.equal(state.drawn['person-a'],1);
+ assert.equal(state.remaining['person-a'],1);
+ assert.equal(state.drawn['person-b'],1);
+ assert.equal(state.remaining['person-b'],0);
+ assert.equal(state.next,'person-a');
+ assert.equal(state.drawsFinished,false);
+});
