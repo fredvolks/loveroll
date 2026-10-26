@@ -214,3 +214,20 @@ test('LR-015 phase 1: closing an incomplete evening restores only eligible bag m
  assert.match(migration,/REVOKE ALL ON FUNCTION public\.close_love_evening_preserve/);
  assert.match(migration,/GRANT EXECUTE ON FUNCTION public\.close_love_evening_preserve\(uuid\)/);
 });
+
+test('LR-015 phase 1b: passed cards do not create phantom draw capacity in the same evening',()=>{
+ const migration=read('migrations/20261026_lr015_recycle_incomplete_on_close.sql');
+ const func=migration.slice(migration.indexOf('CREATE OR REPLACE FUNCTION public.draw_for_partner'));
+ const cap=func.slice(func.indexOf('select count(*) into capacity'),func.indexOf('if capacity>0'));
+ const pick=func.slice(func.indexOf('select card into cid'),func.indexOf('if cid is null'));
+ for(const part of [cap,pick]){
+  assert.match(part,/used\.session_id=p_session and used\.recipient=target/);
+  assert.match(part,/used\.category=v_cat and used\.card_id=card/);
+  assert.doesNotMatch(part,/used\.status<>'passed'/);
+ }
+ assert.match(func,/select count\(\*\) into first_done/);
+ assert.match(func,/status<>'passed'/,
+  'Passed turns stay excluded from already-filled target counts');
+ assert.match(func,/for update/,'Couple/session serialization remains');
+ assert.match(migration,/DELETE FROM public\.love_card_draw_history h/);
+});
