@@ -6,12 +6,13 @@ const workflow = readFileSync('.github/workflows/loveroll-persistent-ci-report.y
 assert.match(workflow, /^  actions: read$/m);
 assert.match(workflow, /^  contents: read$/m);
 assert.match(workflow, /^  issues: write$/m);
-assert.match(workflow, /^  pull-requests: write$/m, 'PR comments require explicit write scope');
+assert.match(workflow, /^  pull-requests: write$/m, 'request alternate PR comment write scope');
 assert.match(workflow, /workflow_run:/);
 assert.match(workflow, /types: \[completed\]/);
 assert.match(workflow, /run\.head_sha/);
 assert.match(workflow, /pr\.head\.sha !== run\.head_sha/, 'do not comment about stale PR commits');
 assert.match(workflow, /run\.workflow_id/, 'prevent cross-workflow incident reporting');
+assert.match(workflow, /core\.summary\.addHeading/, 'a denied comment needs an Actions job summary');
 assert.match(workflow, /throw error;/, 'failed PR posting must not be disguised as a success');
 assert.doesNotMatch(workflow, /uses:\s*actions\/checkout@/, 'privileged workflow_run must not check out PR code');
 
