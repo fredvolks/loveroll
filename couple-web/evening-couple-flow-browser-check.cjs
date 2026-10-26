@@ -104,6 +104,7 @@ const client=`export function createClient(){
   assert.equal(world.cards.length,5);assert.equal(world.calls.filter(c=>['draw_for_partner','draw_for_partner_random'].includes(c.name)).length,5,'Double server draw');
   await session(a);await a.locator('[data-action="evening-list"]').click();assert.equal(await a.locator('.evening-queue-item').count(),1);await a.locator('[data-action="evening-close"]').click();
   await session(b);await b.locator('[data-action="evening-list"]').click();assert.equal(await b.locator('.evening-queue-item').count(),4);await b.locator('[data-action="evening-close"]').click();
+  let countdownAutoCompleted=false;
   for(const uid of ['a','b']){
    const page=uid==='a'?a:b;await session(page);
    for(const c of world.cards.filter(c=>c.recipient===uid)){
@@ -115,8 +116,25 @@ const client=`export function createClient(){
     await page.locator('#challenge-timer-toggle').click();
     await page.waitForFunction(()=>document.querySelector('#challenge-timer-status')?.textContent.includes('En cours'));
     await page.screenshot({path:'design-captures/S25-editorial-challenge-'+uid+'.png'});
-    await page.locator('[data-action="answer:'+c.id+':completed"]').click();
-    await page.locator('[data-action="answer:'+c.id+':completed"]').waitFor({state:'hidden'});
+    if(!countdownAutoCompleted){
+     // Real app integration: a server-accepted Soirée card MUST be completed
+     // when the timer deadline passes, with no manual "Terminer" click.
+     countdownAutoCompleted=true;
+     await page.evaluate(()=>{
+      window.__lrOriginalNow=Date.now;
+      Date.now=()=>window.__lrOriginalNow()+65000;
+     });
+     for(let wait=0;wait<100&&c.status!=='completed';wait++)
+      await page.waitForTimeout(100);
+     await page.evaluate(()=>{Date.now=window.__lrOriginalNow;delete window.__lrOriginalNow;});
+     assert.equal(c.status,'completed','00:00 must persist a completed challenge through the server');
+     const completions=world.calls.filter(req=>req.name==='answer_challenge'&&
+       req.args.p_id===c.id&&req.args.p_status==='completed');
+     assert.equal(completions.length,1,'A timed challenge cannot complete twice');
+    }else{
+     await page.locator('[data-action="answer:'+c.id+':completed"]').click();
+     await page.locator('[data-action="answer:'+c.id+':completed"]').waitFor({state:'hidden'});
+    }
     if(!world.sessions[0].finished_at)await page.locator('[data-action="evening-close"]').click();
    }
   }
