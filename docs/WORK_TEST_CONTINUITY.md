@@ -85,3 +85,15 @@
 2. Sur LR-001, confirmer les 7 tailles d'écran, le logo sans chevauchement, le dé WebGL entièrement visible et posé sur le marbre pendant l'animation ; ne pas cocher après un simple test de syntaxe.
 3. Garder `main` inchangé : correction du déploiement Pages seulement après autorisation de fusion et un run Pages `completed/success` du nouveau SHA déployé.
 4. Reprendre LR-003 (calendrier/cycle de 200), LR-004 (sonneries Android/iOS) puis les tâches encore ouvertes du prompt maître et actualiser le suivi à chaque validation.
+
+
+## Rapport automatisé sur les PR — 26 octobre 2026
+
+- Branche : fix/ci-continuity-pages-20261026, PR [#47](https://github.com/fredvolks/loveroll/pull/47). Commit additionnel [0e2aa3d](https://github.com/fredvolks/loveroll/commit/0e2aa3d69dba28db3069f5b7193f38ce6f108099).
+- Workflow .github/workflows/loveroll-persistent-ci-report.yml : les incidents main persistent. Nouveau job report-pr à la conclusion des tests Web des PR vers main : un commentaire GitHub mis à jour avec conclusion, run ID, tentative, SHA exact, étapes en échec. Ne pas publier un ancien succès pour une nouvelle tête.
+- Sécurité : métadonnées GitHub uniquement, aucun checkout de code PR, aucun secret, aucun commit ou déploiement. Refus des PR de fork, non reliées ou modifiées depuis le SHA testé. Cette automation workflow_run **ne sera active qu'après fusion autorisée dans main**.
+- Vérification statique : garde du SHA, provenance du run, identité du dépôt, aucun déclencheur de boucle, et conservation des protections des événements hors ordre constatés dans le fichier. La validation CI du présent nouveau SHA reste nécessaire.
+- Résultats confirmés avant ce commit : CI [40334479277](https://github.com/fredvolks/loveroll/actions/runs/40334479277), SHA 92921859, **success** ; LR-044 [40334333357](https://github.com/fredvolks/loveroll/actions/runs/40334333357), SHA 02d2b76e, **success** ; LR-002 [40334012020](https://github.com/fredvolks/loveroll/actions/runs/40334012020), SHA 63de498c, **success** ; LR-045 [40333808240](https://github.com/fredvolks/loveroll/actions/runs/40333808240), SHA cbc3701d, **success**. Les nouveaux SHA nécessitent leurs propres validations.
+- LR-001 [40334243077](https://github.com/fredvolks/loveroll/actions/runs/40334243077), SHA 9d8c6107, **failure**, étape evening-d100-template-browser-check.cjs:36 : logo Soirée y=43 contre Accueil y=9 à 320×568. Nouveau correctif b91a7ccf : run [40336399686](https://github.com/fredvolks/loveroll/actions/runs/40336399686) encore à vérifier.
+- Run de la branche CI [40337106978](https://github.com/fredvolks/loveroll/actions/runs/40337106978) sur 0e2aa3d : conclusion à vérifier, ainsi que le run déclenché par cette mise à jour documentaire.
+- **Prochaine action exacte :** consulter les conclusions 40337106978, 40336399686, 40336289359 et du nouveau run du présent commit. Lire les jobs et journaux des failures ; corriger chaque branche sans diminuer les tests ; valider tout nouveau SHA. Ensuite poursuivre LR-003 et LR-004. Ne pas fusionner dans main sans autorisation.
