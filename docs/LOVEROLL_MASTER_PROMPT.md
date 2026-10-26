@@ -72,6 +72,47 @@ Rendre en un regard : catégorie, partenaire désigné, texte du défi, minuteri
 ### LR-013 — Catégorie non sélectionnée
 En l'absence de catégorie pour le défi/D100, la zone doit suggérer **visuellement qu'il faut choisir**, et un appui sur « Brasser le dé » doit afficher une instruction **claire** : choisir d'abord la catégorie. Aucune catégorie pré-cochée si la mécanique actuelle prévoit un choix explicite. Ne pas déclencher le hasard avant sélection.
 
+
+### LR-014 — Confirmation du choix de catégorie avant de brasser le D100 (nouvelle demande du 26 octobre 2026)
+
+**But produit :** dans l'onglet **Soirée**, lorsque l'utilisateur a choisi une catégorie et touche **« Brasser le dé »**, afficher d'abord une **étape de confirmation élégante** afin d'éviter un tirage dans la mauvaise catégorie. Permettre au joueur de ne plus revoir cette confirmation.
+
+**Contexte réel :** les trois choix actuels sont **Sensuel**, **Sexuel** et **Au hasard**. « Sensuel » ou « Sexuel » utilise les pourcentages configurés de la catégorie choisie et de l'autre catégorie ; « Au hasard » utilise une répartition égale entre les deux, selon la logique métier en place. **Ne jamais confondre ces catégories avec les intensités personnelles Soft/Medium/Intense.**
+
+**Parcours obligatoire :**
+
+1. Aucun choix de catégorie : maintenir **LR-013** : expliquer « Choisis une catégorie avant de brasser le dé. ». Ne pas ouvrir l'écran de confirmation et ne réaliser aucun tirage.
+2. Catégorie sélectionnée, avertissement activé : au toucher de « Brasser le dé », **ne pas lancer immédiatement le dé** ni appeler le tirage serveur. Afficher un **écran de confirmation de catégorie** dans Soirée (modal plein écran adaptée aux téléphones, dialogue centré ou panneau élégant sur tablette/PC, sans perdre la soirée en cours).
+3. Exemple de microtexte : titre **« Confirmer notre choix »** ; question **« Tu veux brasser le dé dans cette catégorie ? »** ; carte centrale **« Catégorie : Sensuel »**, **« Catégorie : Sexuel »** ou **« Catégorie : Au hasard »** selon le choix réel. Montrer un résumé court et exact des probabilités applicables, lu depuis la configuration active plutôt qu'inscrit en dur (notamment 50/50 pour « Au hasard »).
+4. Actions : bouton principal **« Confirmer et brasser »** (rubis LoveRoll) ; bouton secondaire **« Modifier la catégorie »** qui ferme la confirmation, revient au sélecteur et permet de changer de catégorie **sans aucun tirage**. La fermeture via retour, Échap ou croix est équivalente à une annulation, sans consommer de tirage.
+5. Option de préférence : **case à cocher, non cochée par défaut, « Ne plus afficher ce message »**. La cocher ne doit enregistrer le choix de ne plus afficher **qu'après** un appui réussi sur **« Confirmer et brasser »**, jamais après une annulation.
+6. Si la préférence est activée, les prochains appuis sur « Brasser le dé » passent directement à la **même procédure de tirage existante**, mais **exigent toujours une catégorie sélectionnée** et respectent toutes les autres protections d'accès, de tour, de quota et d'état du jeu.
+7. Ajouter dans **Réglages → Préférences de jeu** (ou section équivalente déjà existante) une option explicite **« Confirmer ma catégorie avant le lancer du D100 »** pour réactiver/désactiver cette étape à tout moment, sans toucher aux choix de catégories ni aux tirages.
+8. Enregistrer la préférence **par profil/compte utilisateur**, **pas pour tout le couple**. La conserver après actualisation, fermeture/reconnexion et, si le stockage de profil existant le permet, la synchroniser entre les appareils connectés de cet utilisateur. Employer la couche de stockage préférences existante plutôt qu'une nouvelle architecture parallèle ; ne pas écrire de données sensibles côté client.
+
+**Anti-régression / qualité :**
+- Aucun dé ne tourne, résultat ne s'affiche, défi ne se consomme et aucun appel de tirage ne part **avant confirmation** (quand l'étape est active).
+- Après validation, le D100 3D existant brasse normalement : **un seul lancer officiel**, mêmes probabilités, mêmes attributions et même historique. Protéger contre double appui, latence réseau et concurrence de partenaires, en réutilisant les protections serveur existantes.
+- Si la catégorie change pendant la confirmation (mise à jour externe / autre action), ne pas valider une catégorie devenue obsolète : afficher la valeur courante ou demander une nouvelle confirmation.
+- La confirmation **n'est pas** un nouvel écran de choix d'intensité ou un second système de tirage.
+- Design **strictement calqué sur l'Accueil** : velours rubis, bulles de verre raffinées, dorure discrète, typographie LoveRoll, boutons réellement interactifs, alignements impeccables. Ne pas copier une image de bouton ni ajouter une page sans rapport avec l'univers.
+- Responsive Samsung S25 Ultra, petit Android, Safari iPhone/PWA, iPad/tablette portrait/paysage, PC/Mac ; aucun texte/bouton coupé, focus et navigation clavier accessibles, retour propre au déclencheur, pas de défilement inutile dans le parcours principal.
+- La nouvelle étape s'applique **uniquement** au lancer de catégorie de l'onglet **Soirée** ; ne pas ajouter de confirmation aux autres dés/Surprise/Accueil sans demande explicite.
+
+**Tests d'acceptation à automatiser et visualiser :**
+1. Pas de catégorie → message de sélection sans confirmation ni lancer.
+2. Chacun des trois choix → texte et probabilités exacts ; confirmation puis **un** lancer.
+3. Annulation / retour / modifier → zéro lancer, catégorie modifiable.
+4. « Ne plus afficher » décoché → confirmation à chaque nouveau lancer autorisé.
+5. « Ne plus afficher » coché puis **confirmé** → futurs lancers autorisés sans fenêtre, mais toujours avec catégorie.
+6. Case cochée puis annulation → préférence inchangée.
+7. Réactivation dans Réglages → confirmation réapparaît au prochain lancer.
+8. Préférence isolée entre Fred et Émilie, persistante entre sessions ; vérifier multi-appareils selon le stockage disponible.
+9. Double-clic/double-tap, lenteur réseau, états de tour/quota refusés → pas de tirage doublé.
+10. Captures et tests navigation/safe areas Android, iPhone, iPad et PC.
+
+**Statut de cette demande :** **À faire — ajout au cahier des charges uniquement**, aucune fonction n'est déclarée implémentée par la mise à jour documentaire. Conserver LR-013 et toutes les règles de catégorie existantes.
+
 ## P1 — Responsive **mobile + tablette + PC**
 
 ### LR-020 — Téléphones Android / iPhone
