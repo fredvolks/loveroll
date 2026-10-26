@@ -16,6 +16,9 @@ test('Native press animation keeps live data untouched',()=>{
  const js=read('loveroll-home-touch-v193.js'),sw=read('service-worker.js');
  assert.match(js,/pointerdown/);assert.match(js,/lr-pressed/);
  assert.doesNotMatch(js,/rpc\(|localStorage\.clear|sessionStorage\.clear/);
- assert.match(sw,/loveroll-static-v229/);
+ const release=JSON.parse(read('web-version.json'));
+ assert.match(release.build,/^\d{4}-\d{2}-\d{2}\.\d+$/);
+ assert.ok(sw.includes("const CACHE='loveroll-static-v"+release.build.split('.')[1]+"'"),
+  'Offline cache must match the current Web release, not an old hardcoded cache');
  assert.ok(sw.includes('./loveroll-home-native-v193.css'));
 });
