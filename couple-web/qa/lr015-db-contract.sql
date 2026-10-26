@@ -121,4 +121,28 @@ BEGIN
   RAISE EXCEPTION 'Closure changed immutable challenge occurrence';END IF;
 END
 $test$;
+-- A verified member may stop a night without weekly credit. A second
+-- call is idempotent, and normal finish_couple_session remains authoritative.
+INSERT INTO public.couple_sessions(id,couple_id,opened_by,started_at)
+VALUES('77777777-7777-4777-8777-777777777777',
+'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+'11111111-1111-4111-8111-111111111111',now());
+SELECT set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',false);
+DO $test$
+DECLARE before_events integer;after_events integer;
+BEGIN
+ SELECT count(*) INTO before_events FROM public.couple_events
+ WHERE couple_id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' AND event_type='session';
+ PERFORM public.close_love_evening_preserve('77777777-7777-4777-8777-777777777777');
+ PERFORM public.close_love_evening_preserve('77777777-7777-4777-8777-777777777777');
+ SELECT count(*) INTO after_events FROM public.couple_events
+ WHERE couple_id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa' AND event_type='session';
+ IF after_events<>before_events+1 THEN
+  RAISE EXCEPTION 'Double close created duplicate event';END IF;
+ IF (SELECT count(*) FROM public.couple_sessions
+     WHERE id='77777777-7777-4777-8777-777777777777'
+       AND finished_at IS NOT NULL AND counted=false)<>1 THEN
+  RAISE EXCEPTION 'An incomplete evening was improperly counted';END IF;
+END
+$test$;
 SELECT 'LR015_POSTGRES_ISOLATED_SUCCESS' AS result;

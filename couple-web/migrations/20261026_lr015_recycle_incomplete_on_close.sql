@@ -28,24 +28,11 @@ BEGIN
  -- idempotent: no second history recycle and no duplicate event.
  IF v_closed THEN RETURN; END IF;
 
- UPDATE public.couple_sessions SET finished_at=now(), counted=true
- WHERE id=p_session AND couple_id=v_couple AND finished_at IS NULL;
-
- -- Every route that sets finished_at fires the same AFTER UPDATE trigger,
- -- including this early close and finish_couple_session(p_count=false). No
- -- duplicate deletion, and completed cards of this cycle stay in the bag.
- -- A partially completed but counted night may still finish the 200-card
- -- cycle; preserve the same pending questionnaire logic as normal closure.
- UPDATE public.couples c SET challenge_cycle_pending=true
- WHERE c.id=v_couple
-   AND (SELECT count(*) FROM public.couple_challenges done
-    JOIN public.couple_sessions ds ON ds.id=done.session_id
-    WHERE done.couple_id=v_couple AND done.status='completed'
-      AND ds.counted=true AND ds.started_at>=c.challenge_cycle_started_at)
-       >=c.challenge_cycle_target;
-
- INSERT INTO public.couple_events(couple_id,event_type,actor_id,title)
- VALUES(v_couple,'session',auth.uid(),'Soirée clôturée · résultats conservés');
+ -- An incomplete evening must not be counted toward the weekly quota.
+ -- Delegate to the EXISTING authorized p_count=false workflow, which also
+ -- publishes a single event. Coupled with the locks and v_closed check,
+ -- repeated close requests remain idempotent and recycle cards once.
+ PERFORM public.finish_couple_session(p_session,false);
 END;
 $close$;
 

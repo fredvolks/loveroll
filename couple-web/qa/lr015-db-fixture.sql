@@ -112,3 +112,59 @@ CREATE TABLE public.couple_events(
  event_type text NOT NULL,actor_id uuid NOT NULL,
  title text NOT NULL DEFAULT ''
 );
+
+-- Canonical closure function from 20261018 migrations, installed only in the
+-- CI's disposable database so the wrapper test invokes real business logic.
+CREATE OR REPLACE FUNCTION public.finish_couple_session(p_session uuid, p_count boolean DEFAULT true)
+ RETURNS void
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare c uuid; member uuid; target int; done int; paired boolean;
+ cycle_start timestamptz; cycle_goal integer; cycle_completed integer;
+BEGIN
+ PERFORM public.love_require_verified_identity();
+ select couple_id into c from public.couple_sessions
+  where id=p_session and finished_at is null;
+ if c is null or not couple_private.is_member(c) then
+  raise exception 'Soirée inaccessible'; end if;
+ -- Use the same couple-first lock order as card draws and admin resets.
+ select challenge_cycle_started_at,challenge_cycle_target
+ into cycle_start,cycle_goal from public.couples where id=c for update;
+ perform 1 from public.couple_sessions
+  where id=p_session and finished_at is null for update;
+ if not found then raise exception 'Soirée déjà clôturée'; end if;
+ select paired_turns into paired from public.couple_sessions where id=p_session;
+ if p_count then
+  if (select count(*) from public.couple_members where couple_id=c)<>2 then
+   raise exception 'Votre partenaire doit être connecté'; end if;
+  for member in select user_id from public.couple_members where couple_id=c loop
+   select pr.face
+      + (select count(*) from public.couple_challenge_gifts g where g.session_id=p_session and g.receiver_user_id=member)
+      - (select count(*) from public.couple_challenge_gifts g where g.session_id=p_session and g.donor_user_id=member)
+    into target from public.couple_personal_rolls pr
+    where pr.session_id=p_session and pr.user_id=member and
+     (paired is true or pr.user_id=member);
+   if target is null then raise exception 'Les deux D6 sont nécessaires';end if;
+   select count(*) into done from public.couple_challenges
+    where session_id=p_session and status='completed'
+      and (case when paired and (select self_draws from public.couple_sessions where id=p_session) then recipient=member when paired then offered_by=member else recipient=member end);
+   if done<target then raise exception 'Il reste des défis à terminer';end if;
+  end loop;
+ end if;
+ update public.couple_sessions set finished_at=now(), counted=p_count where id=p_session;
+ if p_count then
+  select count(*) into cycle_completed
+  from public.couple_challenges cc
+  join public.couple_sessions ss on ss.id=cc.session_id
+  where cc.couple_id=c and cc.status='completed' and ss.counted=true
+    and ss.started_at>=cycle_start;
+  if cycle_completed>=cycle_goal then
+   update public.couples set challenge_cycle_pending=true where id=c;
+  end if;
+ end if;
+ insert into public.couple_events(couple_id,event_type,actor_id,title)
+ values(c,'session',auth.uid(),
+   case when p_count then 'Soirée terminée et comptée' else 'Soirée arrêtée sans la compter' end);
+end; $function$;

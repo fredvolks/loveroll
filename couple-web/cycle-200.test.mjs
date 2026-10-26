@@ -261,8 +261,8 @@ test('LR-015 all session close paths recycle incomplete cards but preserve compl
  const sessionLock=migration.indexOf('FROM public.couple_sessions s\n WHERE s.id=p_session AND s.couple_id=v_couple FOR UPDATE');
  assert.ok(coupleLock>=0&&sessionLock>coupleLock);
  assert.match(migration,/IF v_closed THEN RETURN; END IF;/);
- assert.match(migration,/UPDATE public\.couple_sessions SET finished_at=now\(\), counted=true/);
- assert.match(migration,/UPDATE public\.couples c SET challenge_cycle_pending=true/);
+ assert.match(migration,/PERFORM public\.finish_couple_session\(p_session,false\);/);
+ assert.doesNotMatch(migration,/UPDATE public\.couple_sessions SET finished_at=now\(\), counted=true/);
  assert.match(migration,/CREATE TRIGGER love_recycle_incomplete_close/);
  assert.match(migration,/AFTER UPDATE OF finished_at ON public\.couple_sessions/);
  assert.match(migration,/WHEN \(OLD\.finished_at IS NULL AND NEW\.finished_at IS NOT NULL\)/);
