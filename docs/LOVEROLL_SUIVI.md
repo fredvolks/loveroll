@@ -9,6 +9,10 @@
 - Lors d'une correction : renseigner **PR / commit / test / capture** et date. Ne jamais cocher sans preuve.
 - Le présent fichier est éditable directement dans GitHub ; ses mises à jour doivent demeurer versionnées.
 
+## Refonte UX Réglages
+
+| [ ] | LR-044 | Refonte Réglages : profil + cinq destinations, regroupements, accessibilité mobile, aucune fonctionnalité perdue | ◐ En cours — branche dédiée, tests/captures requis ; pas déployé | [Branche feat/lr044-settings-ux-20261026](https://github.com/fredvolks/loveroll/tree/feat/lr044-settings-ux-20261026) |
+
 ## P0 — Bugs prioritaires
 
 | OK | ID | Demande / preuve d'acceptation | Statut | PR / preuve |
