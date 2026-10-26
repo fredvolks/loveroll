@@ -95,6 +95,7 @@ L'[audit officiel](./LOVEROLL_AUDIT_UX_UI_20261026.md) est maintenant décompos�
 
 | Date | Changement | Référence |
 |---|---|---|
+| 2026-10-26 | Prompt maître consolidé : reprise LR-014 à LR-019 et LR-025 à LR-028, ordre d'exécution et PR #31/#34/#43/#44 avec CI validés ; déploiements et validations physiques non déclarés terminés. | [Commit 6ba26bc](https://github.com/fredvolks/loveroll/commit/6ba26bc3c4811ae0bb008ad7f124f383b44ee9d8) |
 | 2026-10-26 | Initialisation du suivi D100, minuterie, harmonisation, audit UX/UI et responsive PC/tablette/mobile | Prompt maître |
 | 2026-10-26 | LR-003 : code audité, correctif de libellés ouvert/clôturé et tests unitaires ajoutés, sans modification de données. À vérifier en CI/visuel. | `fix/lr003-calendar-active-status-20261026` |
 
