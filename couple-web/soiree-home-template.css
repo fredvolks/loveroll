@@ -230,3 +230,27 @@
   .evening-premium-view.has-home-soiree-template .evening-finale-actions{position:relative!important;z-index:2!important;}
  }
 }
+
+/* LR-012 — This is an ACTIVE Soirée stylesheet. The old queue-v102 files
+   remain deliberately unlinked to preserve D100/WebGL layout. */
+@layer loveroll-soiree-readability {
+ #app.loveroll-evening-page .evening-queue-modal.is-detail{
+  overflow-y:auto!important;overscroll-behavior:contain;
+ }
+ #app.loveroll-evening-page .evening-queue-modal.is-detail .evening-queue-content.is-detail{
+  box-sizing:border-box!important;
+  max-height:calc(100dvh - 24px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))!important;
+  overflow-x:hidden!important;overflow-y:auto!important;
+  overscroll-behavior:contain;scrollbar-width:thin;
+ }
+ #app.loveroll-evening-page .evening-queue-modal.is-detail .evening-queue-detail>.evening-challenge-instructions{
+  display:block;flex:0 1 auto;
+  min-height:3em;max-height:min(32dvh,240px)!important;
+  overflow-x:hidden!important;overflow-y:auto!important;
+  overflow-wrap:anywhere;overscroll-behavior:contain;
+  padding-inline-end:5px;scrollbar-width:thin;
+ }
+ #app.loveroll-evening-page .evening-queue-modal.is-detail .evening-challenge-instructions:focus-visible{
+  outline:2px solid #ffe2b1!important;outline-offset:2px!important;
+ }
+}
