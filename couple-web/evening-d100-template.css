@@ -8,6 +8,12 @@
   #app.has-evening-d100-template .evening-premium-view.has-evening-d100-template{display:grid!important;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:80px auto 48px minmax(0,1fr) 25px 34px 55px 44px 12px!important;gap:8px!important;}
   #app.has-evening-d100-template .evening-step.two{display:contents!important;}
   #app.has-evening-d100-template .evening-toolbar{position:relative!important;}
+  /* The real privacy button is the first child of the toolbar. Keep it in
+     the left control slot instead of letting it push the 80px logo downward. */
+  #app.has-evening-d100-template .evening-toolbar [data-lr-privacy-hide]{
+   position:absolute!important;inset:16px auto auto 0!important;
+   z-index:6!important;min-height:44px!important;touch-action:manipulation;
+  }
   #app.has-evening-d100-template :is(.evening-intro,.evening-choice){position:relative!important;z-index:3!important;}
   #app.has-evening-d100-template :is(.evening-play-state,.evening-progress,.evening-d100-roll,.evening-d100-utilities){position:relative!important;z-index:2!important;}
   #app.has-evening-d100-template .evening-d100-theater{z-index:1!important;}
@@ -99,7 +105,7 @@
   }
   #app.has-evening-d100-template .evening-premium-view.has-evening-d100-template{
    grid-template-rows:80px auto 44px minmax(0,1fr) 22px 30px 48px 44px 10px!important;
-   gap:4px!important;
+   gap:3px!important;
   }
   #app.has-evening-d100-template .evening-choice{
    grid-template-rows:31px 13px!important;
