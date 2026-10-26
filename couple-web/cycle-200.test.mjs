@@ -360,3 +360,14 @@ test('LR-015: refusing a duplicate occurrence cannot restore a previously comple
  const fixture=read('qa/lr015-db-contract.sql');
  assert.match(fixture,/Refusing a duplicate released a previously completed card/);
 });
+
+test('LR-015 private RPCs and direct tables enforce real database role permissions',()=>{
+ const flow=read('../.github/workflows/lr015-postgres.yml');
+ const fixture=read('qa/lr015-role-grants.sql');
+ assert.match(flow,/lr015-role-grants\.sql/);
+ assert.match(fixture,/SET ROLE authenticated/);
+ assert.match(fixture,/SET ROLE anon/);
+ assert.match(fixture,/Authenticated client accessed private exclusion table directly/);
+ assert.match(fixture,/Unrelated user could list a couple exclusion/);
+ assert.match(fixture,/Anonymous user can execute redraw capability RPC/);
+});

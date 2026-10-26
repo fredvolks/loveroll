@@ -101,3 +101,6 @@ jobs:
       - name: Reject stale timer completion or pass after the evening closes
         run: |
           psql -X -v ON_ERROR_STOP=1 -f couple-web/qa/lr015-closed-evening.sql
+      - name: Enforce authenticated and anonymous grants with actual database roles
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/qa/lr015-role-grants.sql
