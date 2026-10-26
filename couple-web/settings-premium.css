@@ -445,3 +445,26 @@ main#app.loveroll-settings-page .lr-premium-picker-trigger{
  main#app.loveroll-settings-page .settings-premium-section-head{padding:15px 13px}
  main#app.loveroll-settings-page .settings-premium-section-head:before{width:74px}
 }
+
+/* LR-019: five-favorites replacement dialog. */
+main#app .lr-favorite-cap-shade{
+ position:fixed;inset:0;z-index:20020;display:grid;place-items:center;
+ background:rgba(20,5,20,.87);padding:12px;box-sizing:border-box;
+}
+main#app .lr-favorite-cap-dialog{
+ width:100%;max-width:480px;max-height:calc(100dvh - 24px);min-width:0;
+ padding:clamp(16px,4vw,24px);box-sizing:border-box;overflow-y:auto;
+ background:linear-gradient(135deg,#591e42,#2c1229);color:#ffedf5;
+ border:1px solid #e88ebc;border-radius:22px;box-shadow:0 25px 55px #160513b0;
+}
+main#app .lr-favorite-cap-dialog h2{font:800 1.25rem Georgia,serif;margin:0 0 9px}
+main#app .lr-favorite-cap-dialog p{font-size:.86rem;line-height:1.4}
+main#app .lr-favorite-cap-new{font-weight:750;color:#ffc2e0}
+main#app .lr-favorite-cap-list{list-style:none;padding:0;margin:10px 0;display:grid;gap:6px}
+main#app .lr-favorite-cap-list li{display:flex;gap:9px;align-items:center;justify-content:space-between;min-width:0;padding:8px;border:1px solid #ad7a9b;border-radius:12px}
+main#app .lr-favorite-cap-list li span{min-width:0;display:grid;gap:3px}
+main#app .lr-favorite-cap-list li strong{font-size:.82rem;overflow-wrap:anywhere}
+main#app .lr-favorite-cap-list li small{font-size:.72rem;color:#e2afcf}
+main#app .lr-favorite-cap-list button{flex-shrink:0;min-height:42px!important}
+main#app .lr-favorite-cap-actions{display:grid;gap:8px}
+main#app .lr-favorite-cap-actions button{min-height:44px!important}
