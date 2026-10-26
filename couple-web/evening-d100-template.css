@@ -1,4 +1,28 @@
 @layer loveroll-evening-d100{
+ /* LR-013: the category prompt occupies the second selector row, not one of
+    the three category button cells. No WebGL or turn ownership changes. */
+ #app.loveroll-evening-page .evening-choice.lr-choose-category .lr-category-hint{
+  box-sizing:border-box!important;grid-row:2!important;grid-column:1/-1!important;
+  position:relative!important;display:flex!important;align-items:center!important;
+  justify-content:center!important;justify-self:stretch!important;
+  width:100%!important;height:100%!important;min-height:16px!important;
+  margin:0!important;padding:0 2px!important;border:0!important;
+  color:#f9d6dc!important;background:none!important;text-align:center!important;
+  font:600 clamp(10px,2.5vw,12px)/1.15 Arial,sans-serif!important;
+  letter-spacing:0!important;white-space:normal!important;pointer-events:none!important;
+ }
+ #app.loveroll-evening-page .evening-choice-btn:focus-visible{
+  outline:2px solid #ffe1b2!important;outline-offset:2px!important;
+ }
+ @media(min-width:768px){
+  #app.loveroll-evening-page .evening-step.two .evening-choice.lr-choose-category{
+   grid-template-rows:minmax(42px,auto) minmax(22px,auto)!important;
+   row-gap:4px!important;
+  }
+  #app.loveroll-evening-page .evening-step.two .evening-choice.lr-choose-category>.evening-choice-option{
+   grid-row:1!important;
+  }
+ }
  dialog.evening-category-reminder{position:fixed!important;inset:0!important;margin:auto!important;max-width:390px;width:calc(100% - 40px);padding:26px 20px;color:#fff0e5;text-align:center;border:1px solid #d56a7c;border-radius:18px;background:#39000ef5;}
  dialog.evening-category-reminder::backdrop{background:#100006b8;backdrop-filter:blur(5px);}
  .evening-category-reminder h2{font:500 28px/1.1 Georgia,serif;margin:0 0 16px;}
