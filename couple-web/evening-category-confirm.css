@@ -61,3 +61,22 @@
  .lr-evening-confirm-card{gap:6px;padding-top:17px}
  .lr-evening-confirm-choice{padding:9px}
 }
+
+/* Settings → Cartes et activités → personal confirmation option. */
+#app.loveroll-settings-page .lr-category-confirm-setting{
+ display:flex;flex-direction:column;gap:8px;padding:12px 14px;
+}
+#app.loveroll-settings-page .lr-category-confirm-setting h3{
+ font:600 clamp(1.13rem,3.8vw,1.45rem)/1.2 var(--lr-control-font,Georgia,serif);
+ margin:0;color:#fff3ef;
+}
+#app.loveroll-settings-page .lr-category-confirm-setting-label{
+ display:flex;align-items:center;gap:11px;
+ min-height:45px;color:#ffe8ee;line-height:1.35;
+}
+#app.loveroll-settings-page .lr-category-confirm-setting-label input{
+ width:21px;height:21px;flex:none;accent-color:#a75b79;
+}
+#app.loveroll-settings-page .lr-category-confirm-setting-label input:focus-visible{
+ outline:3px solid #ffe0a5;outline-offset:3px;
+}
