@@ -1,7 +1,7 @@
 name: LR-019 D100 favorites integration PostgreSQL
 on:
   pull_request:
-    branches: [feat/lr015-cycle-exclusions-20261026]
+    branches: [feat/lr015-cycle-exclusions-20261026, feat/lr019-favorites-draw-lr015-20261026]
     paths:
       - "couple-web/migrations/20261026_lr019_*.sql"
       - "couple-web/qa/lr019-*.sql"

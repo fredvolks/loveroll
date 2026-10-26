@@ -83,4 +83,25 @@ BEGIN
    case when p_count then 'Soirée terminée et comptée' else 'Soirée arrêtée sans la compter' end);
 end; $function$;
 
+
+-- Advertise complete LR-019 availability only after the favorite registry,
+-- LR-015 compatible D100/redraw engine AND corrected 200-unique cycle are
+-- installed. The mobile UI must not show a functional-looking inert heart.
+CREATE OR REPLACE FUNCTION public.love_favorites_capabilities(p_couple uuid)
+RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=''
+AS $ready$
+BEGIN
+ PERFORM public.love_require_verified_identity();
+ IF (SELECT auth.uid()) IS NULL OR p_couple IS NULL
+    OR NOT couple_private.is_member(p_couple) THEN
+  RAISE EXCEPTION 'Accès au duo refusé';
+ END IF;
+ RETURN true;
+END;
+$ready$;
+REVOKE ALL ON FUNCTION public.love_favorites_capabilities(uuid)
+ FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.love_favorites_capabilities(uuid)
+ TO authenticated;
+
 COMMIT;

@@ -73,3 +73,29 @@ BEGIN
  END IF;
 END $distinct$;
 SELECT 'LR019_200_UNIQUE_CYCLE_POSTGRES_OK' AS result;
+
+-- Capability is activated only by the final migration, after the draw and
+-- unique-cycle definitions. Verified members get true, strangers are denied.
+SELECT set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',false);
+DO $ready_test$
+DECLARE blocked boolean:=false;
+BEGIN
+ IF public.love_favorites_capabilities('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa') IS DISTINCT FROM true THEN
+  RAISE EXCEPTION 'LR-019 favorite UI capability not enabled after full migration';
+ END IF;
+ IF has_function_privilege('anon','public.love_favorites_capabilities(uuid)','EXECUTE') THEN
+  RAISE EXCEPTION 'Anonymous role can invoke private favorite capability';
+ END IF;
+ IF NOT has_function_privilege('authenticated','public.love_favorites_capabilities(uuid)','EXECUTE') THEN
+  RAISE EXCEPTION 'Authenticated members cannot invoke favorite capability';
+ END IF;
+ BEGIN
+  PERFORM public.love_favorites_capabilities('eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee');
+ EXCEPTION WHEN others THEN blocked:=true;
+ END;
+ IF NOT blocked THEN
+  RAISE EXCEPTION 'Private favorite capability revealed to external couple';
+ END IF;
+END;
+$ready_test$;
+SELECT 'LR019_FULL_SERVER_CAPABILITY_OK' AS result;

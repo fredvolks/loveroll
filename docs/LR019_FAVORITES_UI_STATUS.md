@@ -35,3 +35,9 @@ Prochaine action : identifier le nouveau run, diagnostiquer les erreurs, corrige
 - Run #40408795077 SHA `15a6306` **completed/failure** : les feuilles CSS demandaient `http://127.0.0.1:8765/`, mais ce nouveau workflow autonome ne démarrait aucun serveur HTTP. Un bouton mesurait donc 21 px sans la règle CSS de 36 px.
 - Correction : démarrer et vérifier un serveur de fichiers statiques temporaire dans le workflow avant Playwright, puis le fermer à la fin. Les assertions de taille et de débordement restent inchangées.
 - Contrôler le prochain run et son SHA, ainsi que les styles réellement chargés. Il ne s'agit pas d'un échec des RPC.
+
+## Dernière activation du backend
+- **Bug corrigé :** la vue attendait `love_favorites_capabilities(p_couple)` avant d'afficher un cœur, mais la fonction n'était pas fournie. Elle est maintenant créée et limitée aux membres vérifiés dans la migration finale `20261026_lr019_zz_cycle_unique.sql`, après l'intégration LR-015, la table sécurisée et le compteur des 200 défis.
+- Test PostgreSQL de retour `true`, protection entre couples, rôles `anon/authenticated` et absence de fuite. Workflow PostgreSQL élargi pour la PR #58.
+- Il faut toujours appliquer les migrations dans l'ordre contrôlé et obtenir l'autorisation avant d'activer quoi que ce soit en production.
+- Validation Chromium précédente : run 40409005291 `completed/success` SHA `77eb0d8`. Validation de ce changement serveur à confirmer sur son SHA exact.
