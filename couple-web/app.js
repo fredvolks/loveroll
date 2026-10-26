@@ -2146,9 +2146,10 @@ function adminCategoryWeightEditor(){
   '</div></details>';
 }
 function openSettingsPage(section=''){
- const allowed=['','compte','couple','notifications','sonneries','jeu','confidentialite','application','monde','parrainage','aide','aide-connexion','aide-des','aide-sync','admin'];
+ const allowed=['','compte','couple','notifications','sonneries','jeu','excluded-cards','confidentialite','application','monde','parrainage','aide','aide-connexion','aide-des','aide-sync','admin'];
  if(!allowed.includes(section))return;
  if(section==='admin'&&!isLoveAdmin())throw Error('Options réservées au créateur du couple.');
+ if(section==='excluded-cards'&&!state.redrawReady)return;
  if(section==='parrainage'&&state.referral?.enabled!==true)return;
  if(section!==settingsOpenSection||state.tab!=='settings')notificationFeedback=null;
  settingsOpenSection=section;state.tab='settings';render();

@@ -78,3 +78,13 @@ test('LR-015: both partners may browse and restore couple-scoped excluded cards'
  assert.match(app,/restore_love_cycle_exclusion/);
  assert.match(app,/p_category:category,p_card_id:cardId/);
 });
+
+test('LR-015: excluded cards submenu is reachable only after server feature gating',()=>{
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const start=source.indexOf("function openSettingsPage(section='')");
+ const route=source.slice(start,start+650);
+ assert.match(route,/'excluded-cards'/);
+ assert.match(route,/if\(section==='excluded-cards'&&!state\.redrawReady\)return/);
+ assert.match(source,/settings-page:excluded-cards/);
+ assert.match(source,/restore_love_cycle_exclusion/);
+});
