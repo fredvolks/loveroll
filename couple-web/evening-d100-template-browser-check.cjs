@@ -3,7 +3,7 @@ const {chromium}=require('playwright');
 const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
 (async()=>{
  const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
- try{for(const [width,height] of [[360,740],[412,824],[412,915]]){
+ try{for(const [width,height] of [[320,568],[360,640],[360,740],[393,852],[412,824],[412,915],[430,932]]){
   const world=createWorld();world.enableEveningD6=world.enableEveningDraw=true;
   world.profiles[0].display_name='Fred';world.profiles[1].display_name='Émilie';
   world.couple.category_preference_percent=height===824?74:88;
@@ -20,8 +20,11 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   await page.evaluate(()=>document.fonts.ready);
   const evening=await metrics();console.log('D100_METRICS',width,{home,evening});
   assert.deepEqual(evening.brand,home.brand);assert.deepEqual(evening.nav,home.nav);assert.equal(evening.title.font,home.title.font);assert.equal(evening.title.y,home.title.y);assert.equal(evening.info.w,home.info.w);assert.equal(evening.info.h,home.info.h);
-  const layout=await page.evaluate(()=>{const c=document.querySelector('.evening-d35-col canvas'),r=c.getBoundingClientRect(),b=c.loveRollDie.projectedBounds();const bounds=s=>document.querySelector(s).getBoundingClientRect();return {scroll:document.documentElement.scrollHeight-innerHeight,horizontal:document.documentElement.scrollWidth-innerWidth,contact:bounds('.home-pedestal-contact').top,bottom:r.top+b.bottom*r.height,center:r.left+(b.left+b.right)*r.width/2,mesh:b,meshTop:r.top+b.top*r.height,heroTop:bounds('.evening-d100-theater').top,quotaBottom:bounds('.evening-d100-quota').bottom,navTop:bounds('.nav').top};});console.log('D100_LAYOUT',width,layout);
+  const layout=await page.evaluate(()=>{const c=document.querySelector('.evening-d35-col canvas'),r=c.getBoundingClientRect(),b=c.loveRollDie.projectedBounds();const bounds=s=>document.querySelector(s).getBoundingClientRect();return {scroll:document.documentElement.scrollHeight-innerHeight,horizontal:document.documentElement.scrollWidth-innerWidth,contact:bounds('.home-pedestal-contact').top,bottom:r.top+b.bottom*r.height,center:r.left+(b.left+b.right)*r.width/2,mesh:b,meshTop:r.top+b.top*r.height,stageSize:bounds('.love3d-stage').width,
+   heroHeight:bounds('.evening-d100-theater').height,heroTop:bounds('.evening-d100-theater').top,quotaBottom:bounds('.evening-d100-quota').bottom,navTop:bounds('.nav').top};});console.log('D100_LAYOUT',width,layout);
   assert.equal(layout.scroll,0);assert.equal(layout.horizontal,0);assert.ok(layout.quotaBottom<layout.navTop);assert.ok(Math.abs(layout.bottom-layout.contact)<2);assert.ok(Math.abs(layout.center-width/2)<3);assert.ok(layout.mesh.top>=0&&layout.mesh.bottom<=1);assert.ok(layout.meshTop>=layout.heroTop+3);
+  assert.ok(layout.stageSize<=Math.min(width*.82,height*.41,390,layout.heroHeight*.94)+1,
+   'Soirée D100 exceeds Surprise size / available hero height: '+JSON.stringify({width,height,layout}));
   const capture=async name=>{if(process.env.LOVEROLL_CAPTURE_DIR)await page.screenshot({path:path.join(process.env.LOVEROLL_CAPTURE_DIR,`evening-d100-${name}-${width}-${height}.png`)});};
   assert.equal(await page.locator('.evening-choice [aria-pressed=true]').count(),0);assert.equal(await page.locator('.evening-choice-odds').count(),0);
   assert.equal(await page.locator('[data-action="new-challenge"]').isDisabled(),false);await capture('initial');

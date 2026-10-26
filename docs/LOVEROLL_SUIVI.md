@@ -13,7 +13,7 @@
 
 | OK | ID | Demande / preuve d'acceptation | Statut | PR / preuve |
 |---|---|---|---|---|
-| [ ] | LR-001 | D100 Soirée **entier**, proportionné comme Surprise, posé sur le socle, durant toutes les animations | À faire | [capture D100 coupé](./LOVEROLL_PREUVES_VISUELLES.md#lr-001--d100-trop-gros-et-coupé) |
+| [ ] | LR-001 | D100 Soirée **entier**, proportionné comme Surprise, posé sur le socle, durant toutes les animations | ◐ En cours — taille basée sur Surprise + hauteur réelle disponible ; tests CI et comparaison visuelle nécessaires | [capture initiale](./LOVEROLL_PREUVES_VISUELLES.md#lr-001--d100-trop-gros-et-coupé) · branche `fix/lr001-evening-d100-fit-20261026` · `evening-d100-template-browser-check.cjs` |
 | [ ] | LR-002 | À 00:00, défi avec minuterie **réalisé automatiquement une seule fois** ; annulation/pause/saut exclus | À faire | — |
 | [ ] | LR-003 | Calendrier et compteurs cohérents : en cours ≠ non réalisé définitif ; cycle/partenaires corrects | À faire | [capture calendrier](./LOVEROLL_PREUVES_VISUELLES.md#lr-003--calendrier-et-statuts) |
 | [ ] | LR-004 | Sonnerie des minuteries testée sur PWA Safari/iOS et Android, avec limites OS expliquées | À faire | — |
@@ -80,6 +80,7 @@ Chaque Issue contient les sous-tâches et permet les commentaires/captures. Les 
 | Date | Changement | Référence |
 |---|---|---|
 | 2026-10-26 | Initialisation du suivi D100, minuterie, harmonisation, audit UX/UI et responsive PC/tablette/mobile | Prompt maître |
+| 2026-10-26 | LR-001 : comparaison code Surprise/Soirée, ajustement réel de la taille canvas D100 (largeur ET hauteur disponible) et extension des tests jusqu'aux petits iPhone. Aucune validation visuelle réelle revendiquée. | `fix/lr001-evening-d100-fit-20261026` |
 
 ## Comment travailler avec ChatGPT Work
 Ouvrir le dépôt et fournir l'instruction suivante à Work :
