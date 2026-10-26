@@ -42,5 +42,8 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f couple-web/migrations/20261026_lr015_z_atomic_respond_redraw.sql
           psql -X -v ON_ERROR_STOP=1 -f couple-web/migrations/20261026_lr019_favorites_core.sql
           psql -X -v ON_ERROR_STOP=1 -f couple-web/migrations/20261026_lr019_z_draw_favorites.sql
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/migrations/20261026_lr019_zz_cycle_unique.sql
       - name: Replay favorite through the actual official D100 draw
         run: psql -X -v ON_ERROR_STOP=1 -f couple-web/qa/lr019-draw-integration.sql
+      - name: Duplicate favorite completion must not advance 200-unique cycle
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/qa/lr019-cycle-unique.sql

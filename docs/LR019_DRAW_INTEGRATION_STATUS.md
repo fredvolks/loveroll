@@ -21,3 +21,9 @@ Dépendance obligatoire : PR #54 / branche `feat/lr015-cycle-exclusions-20261026
 
 ## Prochaine action exacte
 Identifier le run, le SHA et les jobs. Lire les journaux des échecs, reproduire/corriger et pousser sans attendre. Ne pas modifier `main`. Ensuite auditer le compteur unique des 200 défis et les interactions LR-015 sous deux sessions réelles.
+
+## Compteur unique du cycle LR-019
+- Correctif SQL : `love_cycle_status` et `finish_couple_session` comptent les paires distinctes `(category,card_id)` du cycle, et non les réalisations répétées.
+- Test PostgreSQL isolé à cible réduite 2 : deux réalisations de la même carte = 1 carte unique; une nouvelle carte distincte ouvre le bilan.
+- Compatible seulement après revue des autres définitions de RPC, statut/refus LR-015 et confidentialité ; aucun déploiement.
+- Nouveau commit et runs à contrôler sur le SHA exact. Les validations précédentes ne couvrent pas ce changement.
