@@ -17,6 +17,7 @@ export function eveningLocalDay(iso){
 export function eveningChallengeStatusLabel(status,closed=false){
  if(status==='completed')return '✓ Réalisé';
  if(status==='passed')return closed?'↷ Passé, non réalisé':'↷ Passé';
+ if(status==='refused')return closed?'◇ Refusé, non réalisé':'◇ Refusé';
  if(status==='accepted')return closed?'◷ Non réalisé après début':'◷ En cours';
  if(status==='proposed')return closed?'○ Non réalisé (non commencé)':'○ À faire';
  return closed?'○ Non réalisé':'○ À confirmer';

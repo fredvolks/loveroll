@@ -123,3 +123,18 @@ test('Only closure makes a proposed or accepted card definitively non-realized',
  assert.equal(eveningChallengeStatusLabel('accepted',true),'◷ Non réalisé après début');
  assert.equal(eveningChallengeStatusLabel('completed',false),'✓ Réalisé');
 });
+
+test('LR-015 refusal is explicit in the calendar before and after evening closure',()=>{
+ assert.equal(eveningChallengeStatusLabel('refused',false),'◇ Refusé');
+ assert.equal(eveningChallengeStatusLabel('refused',true),'◇ Refusé, non réalisé');
+ const html=eveningHistoryMarkup({
+  month:'2026-10',selectedDate:'2026-10-15',
+  sessions:[{id:'refusal',started_at:'2026-10-15T16:00:00Z',finished_at:null}],
+  members:[{user_id:'a',name:'Partenaire'}],me:'a',
+  stats:[{session_id:'refusal',user_id:'a',target:1,completed:0,drawn:1}],
+  historyChallenges:[{id:'r1',session_id:'refusal',recipient:'a',status:'refused',
+   category:'SENSUEL',card_title:'Ancien défi refusé'}]
+ });
+ assert.match(html,/◇ Refusé/);
+ assert.match(html,/Ancien défi refusé/);
+});
