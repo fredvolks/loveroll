@@ -3,7 +3,15 @@ const {chromium}=require('playwright'),assert=require('node:assert/strict'),{cre
 const world=createWorld();world.testModeEligible=true;world.referral={enabled:true,couple_ready:true,code:'0123456789abcdef01234567',available_cad_cents:1500,annual_renewal_cad_cents:4999};
 const {page,context,errors}=await setupEditorial(browser,world,{width,height});
 for(const route of ['compte','couple','jeu','notifications','monde','confidentialite','application','admin','aide-des','parrainage']){
- await page.locator('.nav [data-action="tab:settings"]').click();if(route==='admin'||route.startsWith('aide')){await page.locator('[data-action="settings-page:'+(route==='admin'?'jeu':'application')+'"]').click();await require('./settings-test-navigation.cjs').revealSetting(page,'[data-action="settings-page:'+route+'"]');}await page.locator('[data-action="settings-page:'+route+'"]').click();
+ await page.locator('.nav [data-action="tab:settings"]').click();
+ const parent=route==='admin'?'jeu':route.startsWith('aide')?'application':
+  ['notifications','monde','confidentialite'].includes(route)?'preferences':
+  route==='parrainage'?'avantages':null;
+ if(parent){
+  await page.locator('[data-action="settings-page:'+parent+'"]').click();
+  await require('./settings-test-navigation.cjs').revealSetting(page,'[data-action="settings-page:'+route+'"]');
+ }
+ await page.locator('[data-action="settings-page:'+route+'"]').click();
  assert.equal(await page.locator('.settings-screen-pager').count(),0);
  async function walk(path=[]){
   await page.waitForTimeout(40);
