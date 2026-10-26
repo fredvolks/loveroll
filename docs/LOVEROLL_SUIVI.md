@@ -210,3 +210,8 @@ Afficher près des catégories les cartes distinctes encore admissibles à la pr
 - Contrôles préalables : CI sur tête `ce43bb3` réussie, 3 tests locaux de finale et syntaxe de 223 scripts réussis.
 - Version Web 232 : repères endpoint/app/HTML/service-worker harmonisés; tests des versions fondés sur leur cohérence plutôt que l'ancien numéro 229 figé. 21 tests locaux ciblés réussis.
 - **Publication/recette publique de Web 232 à confirmer après le présent commit.** Consulter les runs du SHA réel. Les autres PR fonctionnelles restent distinctes; aucune n'est déclarée publiée par ce lot.
+
+## LR-045 — Soirée Extra
+
+| [ ] | LR-045 | Soirées Extra **illimitées** quand les dés hebdomadaires sont épuisés : même bouton Brasser le dé ; proposition Accepter/Refuser ; D6 de chaque partenaire pour le nombre de défis, puis D100 ; toutes les cartes éligibles remises dans la pige de **chaque Extra** sans toucher au cycle normal ; option ON/OFF réservée à l'admin du couple ; historique et synchro intacts | **Spécification approuvée seulement — code, tests et déploiement non réalisés** | [Exigence LR-045](./LOVEROLL_MASTER_PROMPT.md#lr-045--soirée-extra-illimitée-après-épuisement-des-dés-hebdomadaires-demande-approuvée-le-26-octobre-2026) |
+
