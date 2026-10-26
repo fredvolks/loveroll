@@ -25,7 +25,7 @@ test('LR-019 hearts remain per-partner, keep challenge content and protect priva
  assert.match(app,/\['admin','excluded-cards','favorites'\]\.includes\(settingsOpenSection\)\?'jeu'/);
 });
 
-test('History hearts only appear for recipient and are disabled without server or during mutation',()=>{
+test('History hearts are available for both partners after closure and obey capability/busy gating',()=>{
  const params={
   month:'2026-10',selectedDate:'2026-10-25',me:'person-one',favoriteControlsEnabled:true,
   favorites:[{category:'SENSUEL',card_id:4,marked_by:'person-one'}],
@@ -39,9 +39,11 @@ test('History hearts only appear for recipient and are disabled without server o
  const html=eveningHistoryMarkup(params);
  assert.match(html,/data-action="favorite-toggle:SENSUEL:4"/);
  assert.match(html,/aria-pressed="true"/);
- assert.doesNotMatch(html,/data-action="favorite-toggle:SEXUEL:9"/);
- assert.equal((html.match(/class="evening-cal-favorite"/g)||[]).length,1);
+ assert.match(html,/data-action="favorite-toggle:SEXUEL:9"/);
+ assert.equal((html.match(/class="evening-cal-favorite"/g)||[]).length,2);
  const busy=eveningHistoryMarkup({...params,favoriteControlsBusy:true});
  assert.match(busy,/data-action="favorite-toggle:SENSUEL:4"[^>]+ disabled/);
  assert.doesNotMatch(eveningHistoryMarkup({...params,favoriteControlsEnabled:false}),/data-action="favorite-toggle:/);
+ const openNight=eveningHistoryMarkup({...params,sessions:[{...params.sessions[0],finished_at:null}]});
+ assert.doesNotMatch(openNight,/data-action="favorite-toggle:/);
 });
