@@ -95,7 +95,7 @@ const worldText=key=>worldT(worldLocale(),key);
 const state={user:null,profile:null,members:[],coupleId:null,couple:null,
  tab:launchParams.has('settings')?'settings':(['home','session','special','advent'].includes(launchParams.get('open'))?launchParams.get('open'):'home'),weekly:null,monthly:{},session:null,personal:[],challenges:[],gifts:[],rollStatus:null,customCards:[],customCategory:'SENSUEL',customSlot:1,customSearch:'',customFilter:'all',monthlyActivities:[],monthlySlot:1,libraryScreen:'list',libraryImportKind:null,specialEditorKey:null,specialEditorStage:'D6_activite',specialEditorFace:1,adventEditorDay:1,pushDevice:null,
  events:[],journal:[],advent:[],advent2026Config:null,advent2026Days:[],selectedDay:1,adventYear:null,adventSelected:null,adventHistory:false,adventOpening:null,adventRevealing:false,adventServerDate:null,unlockKey:null,channel:null,
- occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningRefusalId:null,redrawReady:false,redrawBusy:false,loveExcludedCards:[],loveFavorites:[],loveFavoritesReady:false,loveFavoritesBusy:false,eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],monthlyPassQuota:null,calendarPassMonth:null,cycleStatus:null,cycleDeferred:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoBookingEdit:false,referral:null,eclat:null,eclatGalleryScroll:0,eclatHistory:[],eclatHistoryCouple:null,eclatBrowse:false,eclatHistoryError:false,eclatSelection:1,eclatMinutes:60,eclatDetails:false,eclatMusic:false,eclatFinished:null,testModeEligible:false,testMode:'real'};
+ occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningRefusalId:null,redrawReady:false,redrawBusy:false,loveExcludedCards:[],loveFavorites:[],loveFavoritesReady:false,loveFavoritesBusy:false,favoriteLimitPending:null,eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],monthlyPassQuota:null,calendarPassMonth:null,cycleStatus:null,cycleDeferred:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoBookingEdit:false,referral:null,eclat:null,eclatGalleryScroll:0,eclatHistory:[],eclatHistoryCouple:null,eclatBrowse:false,eclatHistoryError:false,eclatSelection:1,eclatMinutes:60,eclatDetails:false,eclatMusic:false,eclatFinished:null,testModeEligible:false,testMode:'real'};
 const names={SENSUEL:'Sensuel',COQUIN:'Coquin',SEXUEL:'Sexuel'};
 function isSharedCoupleReady(coupleId,members){
  return !!coupleId&&Array.isArray(members)&&members.length===2;
@@ -269,6 +269,34 @@ document.addEventListener('keydown',event=>{
 });
 
 let diceView=null;
+function favoriteLimitDialogHtml(){
+ const pending=state.favoriteLimitPending;
+ if(!pending||!state.loveFavoritesReady)return '';
+ const own=(state.loveFavorites||[]).filter(f=>f.marked_by===state.user?.id)
+  .sort((a,b)=>(a.category+String(a.card_id).padStart(3,'0')).localeCompare(
+   b.category+String(b.card_id).padStart(3,'0'),'fr-CA'));
+ const full=own.length>=5;
+ const cards=own.map(heart=>{
+  const category=heart.category,cardId=Number(heart.card_id);
+  const history=[...(state.challenges||[]),...(state.challengesHistory||[])]
+   .filter(x=>x.recipient===state.user?.id&&x.category===category&&Number(x.card_id)===cardId).at(-1);
+  return '<li><span><strong>'+safe(history?.card_title||('Carte '+cardId))+'</strong>'+
+   '<small>'+safe(category==='SEXUEL'?'Sexuel':'Sensuel')+' · n° '+cardId+'</small></span>'+
+   button('favorite-limit-remove:'+category+':'+cardId,'Retirer',
+    'class="subtle" '+(state.loveFavoritesBusy?'disabled':''))+'</li>';
+ }).join('');
+ return '<div class="lr-favorite-cap-shade"><section class="lr-favorite-cap-dialog" role="dialog" aria-modal="true" aria-labelledby="lr-favorite-cap-title">'+
+  '<h2 id="lr-favorite-cap-title">'+(full?'Vous avez déjà 5 coups de cœur':'Une place est disponible')+'</h2>'+
+  '<p>'+(full?'Retirez une carte directement ici pour libérer une place.':
+   'Vous pouvez maintenant ajouter votre nouveau défi.')+'</p>'+
+  '<p class="lr-favorite-cap-new">À ajouter : '+safe(pending.category==='SEXUEL'?'Sexuel':'Sensuel')+
+   ' · carte '+Number(pending.cardId)+'</p>'+
+  '<ul class="lr-favorite-cap-list">'+cards+'</ul><div class="lr-favorite-cap-actions">'+
+  (!full?button('favorite-limit-add','♡ Ajouter mon nouveau coup de cœur',
+   'class="evening-primary" '+(state.loveFavoritesBusy?'disabled':'')):'')+
+  button('favorite-limit-close','Fermer','class="subtle" '+(state.loveFavoritesBusy?'disabled':''))+
+  '</div></section></div>';
+}
 function frame(body,title='LOVEROLL',subtitle='Un jeu intime, juste pour vous deux'){
  setLoveRollSoundUser(state.user?.id);
  const openerAction=document.activeElement?.dataset?.action||null;
@@ -351,7 +379,7 @@ function frame(body,title='LOVEROLL',subtitle='Un jeu intime, juste pour vous de
  if(oldGallery)state.eclatGalleryScroll=oldGallery.scrollTop;
  const oldDetail=root.querySelector('.eclat-detail');
  const detailScroll=oldDetail?{id:oldDetail.dataset.coffretId,top:oldDetail.scrollTop}:null;
- root.innerHTML=(realHome||realEvening||realSurprise||realEclat||realSettings||realEditor||eveningArchive||(isCouple&&state.tab==='advent')?'':usualHeader)+body+(connected?nav():'')+installation+reviewPanel+cyclePanel;
+ root.innerHTML=(realHome||realEvening||realSurprise||realEclat||realSettings||realEditor||eveningArchive||(isCouple&&state.tab==='advent')?'':usualHeader)+body+(connected?nav():'')+installation+reviewPanel+cyclePanel+favoriteLimitDialogHtml();
  if(homeStage){
   const fresh=root.querySelector('.home-die-platform canvas'),replacement=fresh?.closest('.home-die-platform');
   if(replacement){
@@ -3389,6 +3417,34 @@ async function handle(action,element){
   await rpc('reset_love_monthly_activity',{p_couple:state.coupleId,p_face:state.monthlySlot});
   await reload();notify('Activité d’origine restaurée.');return;
  }
+ if(verb==='favorite-limit-close'){
+  if(state.loveFavoritesBusy)return;
+  state.favoriteLimitPending=null;render();return;
+ }
+ if(verb==='favorite-limit-remove'){
+  if(!state.favoriteLimitPending||!state.loveFavoritesReady||state.loveFavoritesBusy)return;
+  const category=parts[0],cardId=Number(parts[1]);
+  if(!['SENSUEL','SEXUEL'].includes(category)||!Number.isInteger(cardId)||cardId<1||cardId>100)
+   throw Error('Favori invalide.');
+  if(!(state.loveFavorites||[]).some(f=>f.marked_by===state.user?.id&&
+     f.category===category&&Number(f.card_id)===cardId))throw Error('Ce cœur ne vous appartient plus.');
+  state.loveFavoritesBusy=true;render();
+  try{
+   await rpc('set_love_couple_favorite',{p_couple:state.coupleId,p_category:category,p_card_id:cardId,p_enabled:false});
+   await refreshShared();notify('Coup de cœur retiré, une place est disponible.');
+  }finally{state.loveFavoritesBusy=false;render();}
+  return;
+ }
+ if(verb==='favorite-limit-add'){
+  const pending=state.favoriteLimitPending;
+  if(!pending||state.loveFavoritesBusy)return;
+  if((state.loveFavorites||[]).filter(f=>f.marked_by===state.user?.id).length>=5)
+   throw Error('Retirez d’abord une carte de cette liste.');
+  state.favoriteLimitPending=null;
+  try{await handle('favorite-toggle:'+pending.category+':'+pending.cardId,element);}
+  catch(error){state.favoriteLimitPending=pending;render();throw error;}
+  return;
+ }
  if(verb==='favorite-toggle'){
   if(!state.loveFavoritesReady||!state.coupleId)throw Error('Les coups de cœur ne sont pas disponibles sur ce serveur.');
   if(state.loveFavoritesBusy)return;
@@ -3398,13 +3454,25 @@ async function handle(action,element){
   const present=(state.loveFavorites||[]).some(f=>f.category===category&&Number(f.card_id)===cardId);
   const owned=[...(state.challenges||[]),...(state.challengesHistory||[])].some(c=>
    c.recipient===state.user.id&&c.category===category&&Number(c.card_id)===cardId);
-  if(!present&&!owned)throw Error('Cette carte n’est pas accessible depuis votre historique.');
+  // Both partners may favorite archived challenges after the evening closes.
+  // Active challenges belonging to the other partner are never exposed.
+  const closedIds=new Set((state.sessions||[]).filter(s=>s.finished_at).map(s=>s.id));
+  const archived=(state.eveningCalendarChallenges||[]).some(c=>
+    closedIds.has(c.session_id)&&c.category===category&&Number(c.card_id)===cardId);
+  if(!present&&!owned&&!archived)throw Error('Cette carte n’est pas accessible depuis votre historique.');
   const mine=(state.loveFavorites||[]).some(f=>f.category===category&&Number(f.card_id)===cardId&&f.marked_by===state.user.id);
+  if(!mine&&(state.loveFavorites||[]).filter(f=>f.marked_by===state.user?.id).length>=5){
+   state.favoriteLimitPending={category,cardId};render();return;
+  }
   state.loveFavoritesBusy=true;render();
   try{
    await rpc('set_love_couple_favorite',{p_couple:state.coupleId,p_category:category,p_card_id:cardId,p_enabled:!mine});
    await refreshShared();
    notify(mine?'Mon coup de cœur a été retiré.':'Coup de cœur enregistré pour une prochaine soirée.');
+  }catch(error){
+   if(!mine&&String(error?.message||'').includes('Maximum de 5 coups de cœur')){
+    state.favoriteLimitPending={category,cardId};await refreshShared();
+   }else throw error;
   }finally{state.loveFavoritesBusy=false;render();}
   return;
  }

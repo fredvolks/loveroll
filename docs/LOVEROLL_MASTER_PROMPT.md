@@ -243,6 +243,13 @@ En l'absence de catégorie pour le défi/D100, la zone doit suggérer **visuelle
 ### LR-019 — Coups de cœur : un favori RETOURNE DANS LA PIGE (idée no 5)
 **Règle non négociable : lorsqu'un défi est ajouté aux coups de cœur, il doit pouvoir ressortir dans une pige future, MÊME S'IL A DÉJÀ ÉTÉ RÉALISÉ.** Il ne doit pas rester bloqué jusqu'à la fin des 200 défis comme une carte ordinaire.
 
+**Règles complémentaires approuvées — plafond et calendrier :**
+- Chaque personne peut conserver **au maximum 5 défis en coups de cœur**, toutes catégories confondues. Les 5 places sont personnelles, et un cœur du partenaire n'occupe pas la place de l'autre. Le serveur doit appliquer cette limite sous verrou, même pour deux appareils simultanés.
+- On peut remplacer librement un coup de cœur : dans la notification de limite atteinte, afficher **les cinq cartes actuellement en favoris**, chacune avec son bouton réel **« Retirer »**, sans obliger à ouvrir Réglages. Après le retrait, permettre d'ajouter le nouveau défi. Garder la notification lisible et défilable sur Android/iPhone.
+- Dans **le calendrier des soirées terminées**, chacun peut ajouter ou enlever son propre cœur sur une ancienne carte **de soi ou de son partenaire**. Cette option ne doit pas dévoiler les cartes en cours du partenaire, modifier les consignes, ou changer l'état « Réalisé ».
+- Les cinq favoris sont aussi accessibles dans **Réglages > Jeu > Nos coups de cœur**, avec retrait direct. L'ajout d'un favori augmente seulement son admissibilité future à la pige normale, sans en garantir la sortie.
+- Tester en PostgreSQL le sixième refusé, les deux quotas indépendants, les échanges entre catégories, les appuis simultanés et l'anti-fraude; tester en Chromium les cinq cartes de la notification, les cœurs historiques des deux membres et l'absence de fuite avant clôture.
+
 **UI :**
 - Chaque carte de défi, et les cartes conservées dans l'historique, offrent un bouton réel **« ♡ Coup de cœur » / « ♥ Retirer des coups de cœur »**.
 - Créer un accès facile **« Nos coups de cœur »** avec liste par catégorie (Sensuel/Sexuel), nom du défi, dernière réalisation et possibilité de le retirer. Le favori est rattaché au **couple**, avec attribution de qui l'a marqué ; visible aux deux membres du couple uniquement, jamais aux autres couples.

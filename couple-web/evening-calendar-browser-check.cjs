@@ -40,11 +40,12 @@ const origin='http://127.0.0.1:8765/';
    assert.ok(await page.getByText('Son massage',{exact:true}).isVisible());
    assert.ok(await page.getByText('Son défi non réalisé',{exact:true}).isVisible());
    // Browser-level proof: actual styled archive has accessible real buttons,
-   // only for the current card recipient. Partner's card is read-only here.
+   // for both recipients, but only after the evening was closed.
    const ownHearts=page.locator('details[data-person-id="me"] .evening-cal-favorite');
    assert.equal(await ownHearts.count(),2,'both own historical cards support hearts');
-   assert.equal(await page.locator('details[data-person-id="partner"] .evening-cal-favorite').count(),0,
-    'never offer a toggle on partner private cards');
+   const partnerHearts=page.locator('details[data-person-id="partner"] .evening-cal-favorite');
+   assert.equal(await partnerHearts.count(),2,'partner archive supports my heart after closure');
+   assert.equal(await partnerHearts.first().getAttribute('aria-pressed'),'false');
    assert.equal(await ownHearts.first().getAttribute('aria-pressed'),'true');
    assert.equal(await ownHearts.nth(1).getAttribute('aria-pressed'),'false');
    await ownHearts.first().click();
