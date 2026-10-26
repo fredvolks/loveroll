@@ -157,7 +157,7 @@ export function premiumEveningHtml({
  const count=(uid)=>esc((done[uid]||0)+' / '+(totals[uid]??'—'));
  return '<div class="evening-premium-view '+(session?(ready?'is-ready':'is-waiting'):'is-inactive is-finale')+'" data-category-percent="'+esc(categoryOdds)+'">'+
  '<div class="evening-toolbar">'+
-  '<span class="evening-header-balance" aria-hidden="true"></span>'+
+  '<button type="button" class="evening-header-balance lr-privacy-quick-button" data-lr-privacy-hide aria-label="Masquer temporairement le jeu">Masquer</button>'+
   ritualHeadingHtml(session?(ready?'ÉTAPE 2 · DÉFI DU SOIR':'ÉTAPE 1 · NOMBRE DE DÉFIS'):'NOTRE RITUEL DE LA SOIRÉE')+
   (session?'<button type="button" class="evening-manage" data-action="evening-more" aria-label="Gérer notre soirée">⋯</button>':'<span aria-hidden="true"></span>')+'</div>'+
  '<div class="evening-intro">'+
