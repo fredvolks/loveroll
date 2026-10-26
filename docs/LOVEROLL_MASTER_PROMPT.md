@@ -213,7 +213,7 @@ En l'absence de catégorie pour le défi/D100, la zone doit suggérer **visuelle
 9. Cycle 200, passage sans complétion, clôture, minuterie finie à zéro, calendrier et statistiques : aucune incohérence.
 10. Captures et tests accessibilité responsive Android, Safari iPhone, tablette portrait/paysage, PC, avec les vrais boutons du design Accueil.
 
-**État : À faire — spécification uniquement.** Cette mise à jour du prompt n'implémente pas la fonctionnalité.
+**État : En cours — [PR #43](https://github.com/fredvolks/loveroll/pull/43) (migration serveur proposée, CI réussie).** Déploiement SQL, Réglages UI, compteurs visibles, refus/repige LR-015 et validation PostgreSQL transactionnelle encore manquants. **Ne pas déployer cette tranche seule ni déclarer LR-016 terminée.**
 
 
 ## Améliorations approuvées — idées 3 à 8 + « As-tu envie de jouer ce soir ? » (26 octobre 2026)
@@ -267,7 +267,7 @@ En l'absence de catégorie pour le défi/D100, la zone doit suggérer **visuelle
 - Synchronisation : préférence de présentation **locale à l'appareil**, sans masquer de force l'écran du partenaire.
 - Tests : retour, verrouillage, actualisation, changement d'onglet, Android/iOS/PC, accessibilité.
 
-### LR-026 — Variété intelligente sans répétitions de défis semblables (idée no 7)
+**Avancement LR-025 :** [PR #44](https://github.com/fredvolks/loveroll/pull/44), mode masqué local, boutons dans Soirée et cartes, tests Node/Chromium. Encore en brouillon, CI et confidentialité Push/audio/tests physiques à confirmer ; **pas de publication confirmée**.\n\n### LR-026 — Variété intelligente sans répétitions de défis semblables (idée no 7)
 - Empêcher autant que possible de proposer deux fois de suite, dans une **même soirée**, des cartes quasiment identiques en activité ou instructions.
 - Mettre en place des **tags structurés explicites** (thème, durée, type d'activité, intensité, matériel si requis) ou déduire une similarité locale maîtrisée ; ne pas baser la sécurité métier sur une requête IA probabiliste payante non prévue.
 - Construire le filtrage à partir des **cartes admissibles** uniquement ; respecter **catégorie tirée, droits, préférences, rôles, règles de non-répétition et exclusions** ainsi que les mécanismes de hasard D100 existants.
