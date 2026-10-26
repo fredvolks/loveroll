@@ -82,8 +82,15 @@ const client=`export function createClient(){
   await a.locator('[data-action="my-d6"]').click();await a.locator('.evening-face-result strong').waitFor();
   assert.equal(await a.locator('.evening-face-result strong').textContent(),'4');
   await session(b);
-  // Wait for cross-device synchronization; a failed sync still fails the test.
-  await b.waitForFunction(()=>document.querySelector('.evening-partner-mobile-status')?.textContent.includes('Camille a obtenu 4 défis'),null,{timeout:12000});
+  // The approved compact D6 mobile design shows "Camille · 4" on screen,
+  // while preserving the fully spoken status in the capsule aria-label.
+  // Wait for genuine server-fed partner D6 state; no artificial result.
+  await b.waitForFunction(()=>{
+   const capsule=document.querySelector('.evening-partner-card'),
+    display=capsule?.querySelector('.evening-partner-mobile-status')?.textContent||'',
+    spoken=capsule?.getAttribute('aria-label')||'';
+   return /Camille\\s*·\\s*4/.test(display)&&spoken.includes('Camille a obtenu 4 défis');
+  },null,{timeout:12000});
   await b.locator('[data-action="my-d6"]').click();await b.locator('.evening-premium-view.is-ready').waitFor();
   await session(a);assert.equal(world.rolls.length,2);
   for(let i=0;i<3;i++){
