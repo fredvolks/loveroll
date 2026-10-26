@@ -12,7 +12,7 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   world.eveningSessions=[{id:'test-evening',couple_id:'c',started_at:new Date(Date.now()-60000).toISOString(),finished_at:null,paired_turns:true,self_draws:true,starting_user_id:'a'}];
   world.personalRolls=[{id:'d6-a',session_id:'test-evening',user_id:'a',face:2},{id:'d6-b',session_id:'test-evening',user_id:'b',face:3}];
   world.board={ready:true,next:'a',first:'a',remaining:{a:2,b:3},targets:{a:2,b:3},completed:{a:0,b:0},drawn:{a:0,b:0},drawsFinished:false,finished:false};
-  const {page,context,errors}=await setupEditorial(browser,world,{width,height,query:'open=home'});
+  const {page,context,errors}=await setupEditorial(browser,world,{width,height,query:'open=home',motion:'no-preference'});
   await page.waitForFunction(()=>document.querySelector('.home-die-platform canvas')?.loveRollDie?.readState().optics.loaded);
   const metrics=()=>page.evaluate(()=>{const b=s=>{const n=document.querySelector(s),r=n.getBoundingClientRect(),c=getComputedStyle(n);return {x:r.x,y:r.y,w:r.width,h:r.height,font:c.font};};return {brand:b('.ritual-brand'),title:b('.ritual-page-title'),nav:b('.nav'),info:b('.home-odds-info')};});
   const home=await metrics();await page.locator('.nav [data-action="tab:session"]').click();
@@ -23,6 +23,7 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   const layout=await page.evaluate(()=>{const c=document.querySelector('.evening-d35-col canvas'),r=c.getBoundingClientRect(),b=c.loveRollDie.projectedBounds();const bounds=s=>document.querySelector(s).getBoundingClientRect();return {scroll:document.documentElement.scrollHeight-innerHeight,horizontal:document.documentElement.scrollWidth-innerWidth,contact:bounds('.home-pedestal-contact').top,bottom:r.top+b.bottom*r.height,center:r.left+(b.left+b.right)*r.width/2,mesh:b,meshTop:r.top+b.top*r.height,stageSize:bounds('.love3d-stage').width,
    heroHeight:bounds('.evening-d100-theater').height,heroTop:bounds('.evening-d100-theater').top,quotaBottom:bounds('.evening-d100-quota').bottom,navTop:bounds('.nav').top};});console.log('D100_LAYOUT',width,layout);
   assert.equal(layout.scroll,0);assert.equal(layout.horizontal,0);assert.ok(layout.quotaBottom<layout.navTop);assert.ok(Math.abs(layout.bottom-layout.contact)<2);assert.ok(Math.abs(layout.center-width/2)<3);assert.ok(layout.mesh.top>=0&&layout.mesh.bottom<=1);assert.ok(layout.meshTop>=layout.heroTop+3);
+  assert.ok(layout.stageSize>=110,'LR-001: D100 rendered too tiny on a short phone: '+JSON.stringify({width,height,layout}));
   assert.ok(layout.stageSize<=Math.min(width*.82,height*.41,390,layout.heroHeight*.94)+1,
    'Soirée D100 exceeds Surprise size / available hero height: '+JSON.stringify({width,height,layout}));
   const capture=async name=>{if(process.env.LOVEROLL_CAPTURE_DIR)await page.screenshot({path:path.join(process.env.LOVEROLL_CAPTURE_DIR,`evening-d100-${name}-${width}-${height}.png`)});};
