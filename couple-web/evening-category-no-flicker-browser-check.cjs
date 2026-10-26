@@ -8,12 +8,14 @@ const origin='http://127.0.0.1:8765';
  const css=[...fs.readFileSync('couple-web/index.html','utf8').matchAll(/<link rel="stylesheet" href="\.\/([^"]+)"/g)]
    .map(x=>'<link rel="stylesheet" href="'+origin+'/'+x[1]+'">').join('');
  const users=[{user_id:'one',name:'Fred'},{user_id:'two',name:'Partenaire'}];
- const html=premiumEveningHtml({session:{id:'one'},members:users,me:'one',
+ const state={session:{id:'one'},members:users,me:'one',
   rolls:[{user_id:'one',face:2},{user_id:'two',face:5}],
   status:{my_rolled:true,partner_rolled:true,both_ready:true},
   turn:{ready:true,next:'one',remaining:{one:2,two:5},
    completed:{one:0,two:0},targets:{one:2,two:5}},
-  category:'SENSUEL'});
+ };
+ const html=premiumEveningHtml({...state,category:'SENSUEL'});
+ const noCategoryHtml=premiumEveningHtml({...state,category:null});
  const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  try{
   for(const [width,height] of [[360,640],[393,852],[820,1180],[1180,820],[1440,900]]){
@@ -55,6 +57,22 @@ const origin='http://127.0.0.1:8765';
    assert.ok(result.valid&&result.removals===0&&result.canvasStillMounted&&result.hasLiveRendererMark,
     'Category switching remounted 3D dice '+JSON.stringify({width,height,result}));
    console.log('CATEGORY_DICE_PERSIST_OK',width,height);
+   // LR-013: the unselected state uses all three true buttons; the hint must
+   // occupy the row beneath them, not become a fourth button/column.
+   await page.evaluate(markup=>{document.querySelector('#app').innerHTML=markup;},noCategoryHtml);
+   const guidance=await page.evaluate(()=>{
+    const group=document.querySelector('.evening-choice'),hint=group?.querySelector('.lr-category-hint');
+    const buttons=[...(group?.querySelectorAll('.evening-choice-btn')||[])];
+    const rect=hint?.getBoundingClientRect(),style=hint&&getComputedStyle(hint);
+    return {hintVisible:!!rect&&rect.height>0&&rect.width>0,gridRow:style?.gridRowStart,
+     buttons:buttons.length,selected:buttons.filter(b=>b.getAttribute('aria-pressed')==='true').length,
+     described:group?.getAttribute('aria-describedby')===hint?.id,
+     rollEnabled:!document.querySelector('[data-action="new-challenge"]')?.disabled};
+   });
+   assert.deepEqual(guidance,{hintVisible:true,gridRow:'2',buttons:3,selected:0,described:true,rollEnabled:true},
+    'Category guidance must stay in its own row '+JSON.stringify({width,height,guidance}));
+   console.log('CATEGORY_GUIDANCE_OK',width,height);
+
    await page.close();
   }
  }finally{await browser.close();}
