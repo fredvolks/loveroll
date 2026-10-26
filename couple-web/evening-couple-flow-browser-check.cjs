@@ -96,7 +96,9 @@ const client=`export function createClient(){
   for(let i=0;i<3;i++){
    await a.locator('[data-action="give-challenge"]').click();await a.locator('.lr-dialog-accept').click();
    await a.waitForFunction(count=>{
-    const actual=document.querySelector('.evening-gift p')?.textContent||'';
+    // fitEveningD100 transfers the ORIGINAL gift quota text into .evening-d100-quota
+    // and removes .evening-gift; use the currently mounted element.
+    const actual=document.querySelector('.evening-d100-quota,.evening-gift p')?.textContent||'';
     return actual.includes(count+'/3');
    },i+1,{timeout:15000});
   }
