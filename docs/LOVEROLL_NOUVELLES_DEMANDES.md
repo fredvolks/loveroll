@@ -29,6 +29,8 @@
 |---|---|---|---|
 | 2026-10-26 | D100 trop gros ; timers à zéro ; harmonisation avec Accueil ; UX/UI comme designer et couple ; responsive mobile/tablette/PC | LR-001…LR-043 (21 ID listés, voir suivi) | [PR #10 — fusionnée](https://github.com/fredvolks/loveroll/pull/10) |
 
+| 2026-10-26 | Soirée : confirmation de catégorie Sensuel/Sexuel/Au hasard au clic « Brasser le dé », possibilité « Ne plus afficher ce message », réactivation via réglages individuels | **LR-014** (à implémenter) | [Prompt LR-014](./LOVEROLL_MASTER_PROMPT.md) · [Suivi LR-014](./LOVEROLL_SUIVI.md) |
+
 ## Lire et modifier depuis un téléphone
 1. Ouvre ce document sur GitHub en étant connecté.
 2. Appuie sur le **crayon / Edit** (parfois dans le menu « … »).
