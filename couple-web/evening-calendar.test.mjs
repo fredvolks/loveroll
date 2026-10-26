@@ -123,3 +123,12 @@ test('Only closure makes a proposed or accepted card definitively non-realized',
  assert.equal(eveningChallengeStatusLabel('accepted',true),'◷ Non réalisé après début');
  assert.equal(eveningChallengeStatusLabel('completed',false),'✓ Réalisé');
 });
+
+test('LR-003: default calendar month tracks the current America/Toronto date, never a fixed 2026 month',()=>{
+ const today=eveningLocalDay(new Date().toISOString());
+ const expectedMonth=today.slice(0,7);
+ const html=eveningHistoryMarkup({members:[],sessions:[],stats:[]});
+ assert.ok(html.includes('data-action="evening-date:'+expectedMonth+'-01"'),
+  'Unspecified month must open the real Quebec month: '+expectedMonth);
+ assert.doesNotMatch(files('./evening-calendar.mjs'),/isoMonth\(month\)\|\|'2026-10'/);
+});

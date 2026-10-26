@@ -25,7 +25,9 @@ const monthLabel=mo=>new Intl.DateTimeFormat('fr-CA',{month:'long',year:'numeric
  .format(new Date(mo+'-15T12:00:00Z'));
 export function eveningHistoryMarkup({sessions=[],members=[],stats=[],historyChallenges=[],reviews=[],me,month,selectedDate,
  weeklyRolls=[],passQuota=[],backAction='tab:session',backLabel='Retour à Soirée'}={}){
- const current=isoMonth(month)||'2026-10';
+ // Default to the real Quebec calendar month; a fixed 2026-10 fallback
+ // would show a stale calendar for all unparameterized views after October 2026.
+ const current=isoMonth(month)||eveningLocalDay(new Date().toISOString()).slice(0,7);
  const [year,m]=current.split('-').map(Number);
  const validDate=selectedDate&&/^\d{4}-\d\d-\d\d$/.test(selectedDate)?selectedDate:current+'-01';
  const firstDay=new Date(Date.UTC(year,m-1,1)).getUTCDay(),padding=(firstDay+6)%7;
