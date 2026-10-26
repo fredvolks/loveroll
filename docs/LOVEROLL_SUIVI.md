@@ -86,7 +86,7 @@ L'[audit officiel](./LOVEROLL_AUDIT_UX_UI_20261026.md) est maintenant décompos�
 **Publication du système documentaire :** [PR #10 fusionnée](https://github.com/fredvolks/loveroll/pull/10). Les Issues sont ouvertes et les corrections applicatives restent à vérifier/implémenter.
 
 ## Tableau de bord
-- **33 exigences identifiées** : les 31 LR numériques existantes, LR-SURPRISE-001 et LR-ACCUEIL-001. Ce total ne mesure pas la proportion de code livrée.
+- **35 exigences identifiées** : les 31 LR numériques existantes, LR-SURPRISE-001, LR-ACCUEIL-001, LR-JEU-001 et LR-MUSIQUE-001. Ce total ne mesure pas la proportion de code livrée.
 - **Bilan historique initial : 0/31 cochées intégralement.** Ne pas employer ce chiffre comme avancement actuel; consulter les lignes de statut et les preuves. Les deux nouvelles exigences sont spécifiées, sans livraison applicative déclarée.
 - Ces nombres décrivent le **statut documentaire initial**, **pas** un diagnostic que toute l'application est défectueuse.
 - Les développeurs doivent vérifier l'existant et marquer « Déjà présent, vérifié » avec preuves si un point est déjà satisfait.
@@ -161,3 +161,13 @@ Aucun changement de tarifs ni déploiement applicatif n'est réalisé par cet aj
 - Les 31 exigences initiales sont conservées, avec les deux ajouts Accueil et Surprise. Le compteur initial 0/31 n'est plus présenté comme un avancement en temps réel.
 - Audit documentaire uniquement : aucun état actuel de PR, CI, base ou déploiement n'a été certifié par cette revue.
 
+
+
+## Défis existants et ambiance musicale — 26 octobre 2026
+
+| Exigence | État | Prochaine étape |
+|---|---|---|
+| LR-JEU-001 — Préserver les textes, corriger attribution/progression et fiabiliser le jeu | Spécifié — à implémenter et vérifier | Inventaire/empreintes des textes et durées; correction des rôles self_draws; identité de carte distincte du D100; terminer refus/passes/favoris et import sans écrasement. [Prompt](./LOVEROLL_MASTER_PROMPT.md#lr-jeu-001--fiabiliser-les-défis-existants-sans-modifier-leurs-textes) |
+| LR-MUSIQUE-001 — Musique facultative adaptée à chaque carte et au minuteur | Spécifié — à implémenter et vérifier | Métadonnées par carte, pistes originales/licenciées, démarrer/pause/reprise/reset, mute et volume indépendants du temps. Fondu des 5 dernières secondes jusqu'au silence à zéro : la musique remplace alors la sonnerie, sans double signal. Sans musique, sonnerie facultative; aucun son de remplacement après mute volontaire. [Prompt](./LOVEROLL_MASTER_PROMPT.md#lr-musique-001--ambiance-musicale-facultative-par-carte-liée-au-minuteur) |
+
+**Verrou utilisateur :** titres, consignes et minuteries configurées des cartes conservés; l'attribution peut être corrigée. L'ajout des prompts ne constitue ni une modification des cartes ni un déploiement musical.
