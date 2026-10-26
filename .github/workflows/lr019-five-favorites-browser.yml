@@ -9,6 +9,7 @@ on:
       - 'couple-web/lr019-favorites-ui.test.mjs'
       - 'couple-web/settings-premium.css'
       - 'couple-web/lr019-five-favorites-browser-check.cjs'
+      - 'couple-web/lr019-favorites-couple-browser-check.cjs'
       - '.github/workflows/lr019-five-favorites-browser.yml'
   workflow_dispatch:
 permissions:
@@ -41,4 +42,5 @@ jobs:
           done
           curl -fsS http://127.0.0.1:8765/settings-premium.css >/dev/null
           node couple-web/lr019-five-favorites-browser-check.cjs
+          node couple-web/lr019-favorites-couple-browser-check.cjs
           node couple-web/evening-calendar-browser-check.cjs
