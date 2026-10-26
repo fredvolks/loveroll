@@ -84,3 +84,16 @@ test('LR-002 a reset after the real deadline cannot cancel automatic completion'
  assert.doesNotMatch(source,/À vous de décider si le défi continue/);
 });
 
+
+
+test('LR-002 handles pause immediately after expiry before changing running state',()=>{
+ const src=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const start=src.indexOf("if(verb==='timer-toggle')");
+ const finish=src.indexOf("if(verb==='give-challenge')",start);
+ assert.ok(start>=0&&finish>start);
+ const block=src.slice(start,finish);
+ assert.ok(block.indexOf('updateChallengeClock();')<block.indexOf('if(challengeTimer.running)'));
+ assert.ok(block.indexOf('if(challengeTimer.autoCompletePending)')<block.indexOf('if(challengeTimer.running)'));
+ assert.match(block,/validation automatique en cours/);
+});
+

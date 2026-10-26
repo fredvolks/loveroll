@@ -3864,6 +3864,12 @@ async function handle(action,element){
  }
  if(verb==='timer-toggle'){
    if(!challengeTimer.id)throw Error('Aucun défi avec minuteur');
+   // Observe an already-expired deadline before a pause tap can zero out
+   // the running state (timer ticks are only scheduled every 500ms).
+   updateChallengeClock();
+   if(challengeTimer.autoCompletePending){
+    notify('Le minuteur est terminé : validation automatique en cours.');return;
+   }
    if(challengeTimer.running){
     challengeTimer.remainingMs=Math.max(0,challengeTimer.deadline-Date.now());
     challengeTimer.running=false;
