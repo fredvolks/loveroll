@@ -1,0 +1,88 @@
+name: LR-019 favorite UI static checks
+on:
+  pull_request:
+    branches: [feat/lr019-favorites-draw-lr015-20261026]
+    paths:
+      - 'couple-web/app.js'
+      - 'couple-web/evening-calendar.mjs'
+      - 'couple-web/evening-calendar.css'
+      - 'couple-web/evening-calendar-browser-check.cjs'
+      - 'couple-web/lr019-favorites-couple-browser-check.cjs'
+      - 'couple-web/migrations/20261026_lr019_*.sql'
+      - 'couple-web/qa/lr019-*.sql'
+      - 'couple-web/lr019-favorites-ui.test.mjs'
+      - '.github/workflows/lr019-favorites-ui.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  favorite-ui-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify app syntax and controlled heart flows
+        run: |
+          node --check couple-web/app.js
+          node --check couple-web/evening-calendar.mjs
+          node --test couple-web/lr019-favorites-ui.test.mjs
+          node --test couple-web/evening-private-queue.test.mjs couple-web/evening-turns.test.mjs
+
+      - name: Browser verification of archive hearts on Android iPhone tablet and desktop
+        run: |
+          npm install --no-save playwright@1.56.0
+          npx playwright install chromium
+          # Calendar browser smoke expects the same local static server as the main CI.
+          # Without it, stylesheet requests fail silently and layout assertions
+          # measure an unstyled fallback instead of the actual LoveRoll page.
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory couple-web > /tmp/loveroll-lr019-server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:8765/ >/dev/null; then break; fi
+            sleep 0.25
+          done
+          curl -fsS http://127.0.0.1:8765/evening-calendar.css > /dev/null
+          node couple-web/evening-calendar-browser-check.cjs
+          node couple-web/lr019-favorites-couple-browser-check.cjs
+
+  favorites-postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: local-test-only
+          POSTGRES_DB: loveroll_lr019_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGDATABASE: loveroll_lr019_test
+      PGUSER: postgres
+      PGPASSWORD: local-test-only
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply isolated LR-015 and LR-019 migrations
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/qa/lr015-db-fixture.sql
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/migrations/20261026_lr015_cycle_exclusion_registry.sql
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/migrations/20261026_lr015_recycle_incomplete_on_close.sql
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/migrations/20261026_lr015_z_atomic_respond_redraw.sql
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/migrations/20261026_lr019_favorites_core.sql
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/migrations/20261026_lr019_z_draw_favorites.sql
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/migrations/20261026_lr019_zz_cycle_unique.sql
+      - name: Exercise real D100 replay and exclusion precedence
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/qa/lr019-draw-integration.sql
+      - name: Check 200 unique cards and final server capability authorization
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/qa/lr019-cycle-unique.sql
