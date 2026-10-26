@@ -38,3 +38,20 @@ test('premium category invitation and native 3D engine retained',()=>{
  assert.match(read('index.html'),/ios-install-tour\.mjs/);
  assert.match(read('manifest.webmanifest'),/\"standalone\"/);
 });
+
+test('New challenges notify only the recipient with generic text',()=>{
+ const sql=read('migrations/20261025_love_challenge_notifications.sql');
+ const edge=read('functions/love-push-dispatch/index.ts');
+ const sw=read('service-worker.js');
+ const native=read('../app/src/main/java/ca/desadeux/jeu/LoveRollFcmService.java');
+ const settings=read('push-notifications.mjs');
+ assert.match(sql,/new\.recipient is distinct from new\.offered_by/);
+ assert.match(sql,/new\.id::text/);
+ assert.doesNotMatch(sql,/new\.card_title|new\.card_description/);
+ assert.match(edge,/special,challenge/);
+ assert.match(edge,/fredvolks\.github\.io\/loveroll/);
+ assert.doesNotMatch(edge,/mon-wallet-android/);
+ assert.match(sw,/kind==='challenge'/);
+ assert.match(native,/case "challenge"/);
+ assert.match(settings,/Nouveaux défis/);
+});

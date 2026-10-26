@@ -95,7 +95,7 @@ export async function disablePush(client,userId){
  return true;
 }
 export async function updatePushPreference(client,userId,current,kind,enabled){
- if(!['weekly','invitation','monthly','special'].includes(kind))throw Error('Notification inconnue.');
+ if(!['weekly','invitation','monthly','special','challenge'].includes(kind))throw Error('Notification inconnue.');
  const {error}=await client.from('love_push_preferences').upsert({
   user_id:userId,enabled:current.enabled===true,[kind]:enabled
  },{onConflict:'user_id'});
@@ -125,7 +125,7 @@ export async function currentPushDevice(client=null,userId=null){
 export function notificationSettingsMarkup(prefs={},device=null){
  const e=pushEnvironment(),enabled=!!prefs.enabled;
  const active=enabled&&device?.registered===true&&(e.native?safeNativePushConfigured()&&!!safeNativePushToken():e.permission==='granted');
- const categories=[['weekly','Dé hebdomadaire','Quand le dé est prêt','dice'],['invitation','Invitation acceptée','Votre partenaire vous rejoint','heart'],['monthly','Activité du mois','Au début du mois','star'],['special','Événements spéciaux','À l’approche de vos dates','calendar']];
+ const categories=[['challenge','Nouveaux défis','Quand ton partenaire t’envoie un défi','heart'],['weekly','Dé hebdomadaire','Quand le dé est prêt','dice'],['invitation','Invitation acceptée','Votre partenaire vous rejoint','heart'],['monthly','Activité du mois','Au début du mois','star'],['special','Événements spéciaux','À l’approche de vos dates','calendar']];
  const action=(key,label,secondary=false)=>'<button type="button" class="'+(secondary?'settings-signout':'settings-primary')+' notification-action" data-action="'+key+'">'+label+'</button>';
  let status='',detail='',actions='',localReminder='',state='inactive',statusIcon='bell';
  if(e.native){

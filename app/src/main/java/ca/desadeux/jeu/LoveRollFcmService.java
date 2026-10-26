@@ -20,11 +20,12 @@ public final class LoveRollFcmService extends FirebaseMessagingService {
  @Override public void onMessageReceived(RemoteMessage remote){
   Map<String,String> data=remote.getData();
   String kind=data.get("kind");
-  if(kind==null||!kind.matches("weekly|invitation|monthly|special"))return;
+  if(kind==null||!kind.matches("weekly|invitation|monthly|special|challenge"))return;
   if(Build.VERSION.SDK_INT>=33&&checkSelfPermission(
     "android.permission.POST_NOTIFICATIONS")!=android.content.pm.PackageManager.PERMISSION_GRANTED)return;
   String title,body;
   switch(kind){
+   case "challenge":title="♡ Un nouveau défi vous attend";body="Ouvrez LoveRoll pour découvrir votre défi.";break;
    case "weekly":title="🎲 Votre dé LoveRoll est prêt !";body="Une nouvelle semaine de surprises vous attend ♡";break;
    case "invitation":title="♥ Votre partenaire vous a rejoint !";body="Votre univers à deux est maintenant prêt.";break;
    case "monthly":title="✦ Une nouvelle surprise vous attend !";body="Découvrez votre prochain rendez-vous à deux.";break;
@@ -33,7 +34,7 @@ public final class LoveRollFcmService extends FirebaseMessagingService {
   NotificationManager manager=getSystemService(NotificationManager.class);
   if(Build.VERSION.SDK_INT>=26)manager.createNotificationChannel(new NotificationChannel(CHANNEL,"LoveRoll — rappels",NotificationManager.IMPORTANCE_DEFAULT));
   String screen="home";
-  if(kind.equals("weekly"))screen="session";
+  if(kind.equals("weekly")||kind.equals("challenge"))screen="session";
   if(kind.equals("monthly")||kind.equals("special"))screen="special";
   Intent open=new Intent(this,ConnectedLoveRollActivity.class)
     .setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_SINGLE_TOP)

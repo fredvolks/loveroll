@@ -786,7 +786,7 @@ async function reload(){
   query('love_personal_intimacy',{eq:{user_id:state.user.id}}),
   query('love_push_preferences',{eq:{user_id:state.user.id}})
  ]);
- state.pushPrefs=pushSettings[0]||{enabled:false,weekly:true,invitation:true,monthly:true,special:true};
+ state.pushPrefs=pushSettings[0]||{enabled:false,weekly:true,invitation:true,monthly:true,special:true,challenge:true};
  const nativeToken=safeNativePushToken();
  if(state.pushPrefs.enabled&&nativeToken){
   const {error}=await client.rpc('love_claim_native_push_token',{p_token:nativeToken});
@@ -1026,7 +1026,7 @@ function subscribe(){
    filter:'couple_id=eq.'+state.coupleId},async payload=>{
     if(payload.new?.actor_id&&payload.new.actor_id!==state.user.id)
      notify(person(payload.new.actor_id)+' a effectué une action dans votre jeu');
-    if(table==='couple_challenges'&&payload.eventType==='INSERT'&&payload.new?.recipient===state.user?.id&&payload.new?.actor_id!==state.user?.id){
+    if(table==='couple_challenges'&&payload.eventType==='INSERT'&&payload.new?.recipient===state.user?.id&&payload.new?.offered_by!==state.user?.id){
      const played=playLoveRollSound('challenge:'+payload.new.id);
      if(!played&&soundEnabled()){
       const notice=document.createElement('div');notice.className='lr-incoming-sound-notice';
