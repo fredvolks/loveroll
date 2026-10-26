@@ -49,6 +49,19 @@ BEGIN
                       AND h.card_id=p_card_id) THEN
    RAISE EXCEPTION 'Ce défi ne figure pas dans la bibliothèque ou les archives du duo';
   END IF;
+  -- Couple-first FOR UPDATE above serializes both partners' concurrent taps.
+  -- The five-heart allowance belongs to the actor, across both categories.
+  -- Re-adding a heart already owned by this actor stays idempotent.
+  IF NOT EXISTS(
+    SELECT 1 FROM public.love_couple_favorites f
+    WHERE f.couple_id=p_couple AND f.category=p_category
+      AND f.card_id=p_card_id AND f.marked_by=v_actor
+  ) AND (
+    SELECT count(*) FROM public.love_couple_favorites f
+    WHERE f.couple_id=p_couple AND f.marked_by=v_actor
+  )>=5 THEN
+    RAISE EXCEPTION 'Maximum de 5 coups de cœur atteint. Retirez un favori pour en ajouter un nouveau.';
+  END IF;
   INSERT INTO public.love_couple_favorites(couple_id,category,card_id,marked_by)
   VALUES(p_couple,p_category,p_card_id,v_actor)
   ON CONFLICT(couple_id,category,card_id,marked_by) DO NOTHING;
