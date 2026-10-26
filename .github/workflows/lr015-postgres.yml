@@ -42,6 +42,9 @@ jobs:
       - name: Execute real PostgreSQL refusal quota privacy and closure scenarios
         run: |
           psql -X -v ON_ERROR_STOP=1 -f couple-web/qa/lr015-db-contract.sql
+      - name: Restoring exclusions also restores eligible shuffle-bag cards
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/qa/lr015-restore-exclusion.sql
       - name: Legacy answer_challenge passes through the same atomic server path
         run: |
           psql -X -v ON_ERROR_STOP=1 -f couple-web/qa/lr015-legacy-pass.sql

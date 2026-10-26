@@ -67,6 +67,23 @@ BEGIN
  WHERE e.couple_id=p_couple AND e.cycle_number=v_cycle
    AND e.category=p_category AND e.card_id=p_card_id;
  GET DIAGNOSTICS v_deleted=ROW_COUNT;
+ IF v_deleted>0 THEN
+  -- Remove the shuffle-bag marker as well; otherwise the UI says a card
+  -- was restored but the default no-repeat setting still blocks it.
+  -- Completed occurrences are immutable for this cycle and remain protected.
+  DELETE FROM public.love_card_draw_history h
+  USING public.couples c
+  WHERE c.id=p_couple AND h.couple_id=p_couple
+    AND h.category=p_category AND h.card_id=p_card_id
+    AND NOT EXISTS(
+     SELECT 1 FROM public.couple_challenges done
+     JOIN public.couple_sessions s ON s.id=done.session_id
+     WHERE done.couple_id=p_couple AND done.recipient=h.recipient_user_id
+       AND done.category=p_category AND done.card_id=p_card_id
+       AND done.status='completed'
+       AND s.started_at>=c.challenge_cycle_started_at
+    );
+ END IF;
  RETURN v_deleted>0;
 END;
 $restore$;

@@ -316,3 +316,14 @@ test('LR-015: an exhausted category cannot debit a pass or strand an unfilled sl
  assert.match(fixture,/Exhausted pool mutated original challenge/);
  assert.match(fixture,/ROLLBACK;/);
 });
+
+test('LR-015: re-integrated exclusions remove stale bag marks but never completed cycle cards',()=>{
+ const migration=read('migrations/20261026_lr015_cycle_exclusion_registry.sql');
+ const restore=migration.slice(migration.indexOf('CREATE OR REPLACE FUNCTION public.restore_love_cycle_exclusion'));
+ assert.match(restore,/IF v_deleted>0 THEN[\s\S]*DELETE FROM public\.love_card_draw_history h/);
+ assert.match(restore,/done\.status='completed'/);
+ assert.match(restore,/s\.started_at>=c\.challenge_cycle_started_at/);
+ const tests=read('qa/lr015-restore-exclusion.sql');
+ assert.match(tests,/Restored card remains blocked in shuffle bag/);
+ assert.match(tests,/Restoration reintroduced a completed card/);
+});
