@@ -47,7 +47,13 @@
  main#app.loveroll-evening-page .evening-queue-content.is-detail .evening-queue-detail>p{
   flex:0 1 auto!important;min-height:0!important;margin:0!important;
   font-size:clamp(.8rem,2.95vw,1rem)!important;line-height:1.23!important;
-  overflow:hidden!important;
+  /* LR-012: keep every word reachable in the compact, non-scrolling dialog. */
+  overflow-x:hidden!important;overflow-y:auto!important;
+  overscroll-behavior:contain;scrollbar-width:thin;
+  padding-inline-end:4px!important;overflow-wrap:anywhere;
+ }
+ main#app.loveroll-evening-page .evening-queue-content.is-detail .evening-challenge-instructions:focus-visible{
+  outline:2px solid #ffe2b1!important;outline-offset:2px!important;
  }
  main#app.loveroll-evening-page .evening-queue-content.is-detail .timer-panel{
   flex:0 1 auto!important;min-height:0!important;margin:0!important;
