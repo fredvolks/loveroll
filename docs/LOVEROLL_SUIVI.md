@@ -55,6 +55,20 @@
 | [ ] | LR-042 | Compte rendu réel, tests exécutés, traçabilité par LR-xxx, recommandations | À faire | — |
 | [ ] | LR-043 | Pas de perte de données, de secrets ou de régression Premium ; déploiement contrôlé | À faire | — |
 
+## Issues GitHub de réalisation
+Chaque Issue contient les sous-tâches et permet les commentaires/captures. Les cases de ce fichier sont mises à jour **seulement avec preuves** :
+
+| Lot | Issue | IDs |
+|---|---|---|
+| D100 de Soirée | [#11](https://github.com/fredvolks/loveroll/issues/11) | LR-001 |
+| Minuteries et calendrier | [#12](https://github.com/fredvolks/loveroll/issues/12) | LR-002, LR-003 |
+| Sons des minuteries | [#13](https://github.com/fredvolks/loveroll/issues/13) | LR-004 |
+| Harmonie avec l'Accueil | [#14](https://github.com/fredvolks/loveroll/issues/14) | LR-010 à LR-013 |
+| Responsive mobile, tablette, PC | [#15](https://github.com/fredvolks/loveroll/issues/15) | LR-020 à LR-024 |
+| Audit et qualité | [#16](https://github.com/fredvolks/loveroll/issues/16) | LR-030 à LR-043 |
+
+**Publication du système documentaire :** [PR #10 fusionnée](https://github.com/fredvolks/loveroll/pull/10). Les Issues sont ouvertes et les corrections applicatives restent à vérifier/implémenter.
+
 ## Tableau de bord
 - **21 exigences** dans cette version (4 P0 + 17 P1).
 - **0/21 démontrées comme terminées dans le cadre de ce suivi initial.**
