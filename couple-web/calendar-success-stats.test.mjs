@@ -106,3 +106,50 @@ test('Profile style mixing is prepared for 200x3 future cards, without touching 
  assert.match(app,/futureCoupleStyleMix/);
  assert.doesNotMatch(engine,/play_style|futureCoupleStyleMix/);
 });
+
+
+test('LR-003: proposed/accepted cards never lower the rate while a night is open',()=>{
+ const open={id:'open',started_at:'2026-10-23T18:00:00Z',finished_at:null,counted:false};
+ const cards=[
+  {id:'done',session_id:'open',recipient:'a',status:'completed'},
+  {id:'pending',session_id:'open',recipient:'a',status:'proposed'},
+  {id:'started',session_id:'open',recipient:'a',status:'accepted'}
+ ];
+ const stats=[{session_id:'open',user_id:'a',target:4,drawn:3,completed:1}];
+ const active=monthlyChallengeSuccess({month:'2026-10',members,sessions:[open],
+  historyChallenges:cards,sessionStats:stats});
+ assert.equal(active[0].done,1);
+ assert.equal(active[0].denominator,1);
+ assert.equal(active[0].percent,100);
+ assert.equal(active[0].unpicked,0);
+ const onlyPending=monthlyChallengeSuccess({month:'2026-10',members,sessions:[open],
+  historyChallenges:cards.filter(c=>c.status!=='completed'),sessionStats:stats});
+ assert.equal(onlyPending[0].percent,null);
+ const closed=monthlyChallengeSuccess({month:'2026-10',members,
+  sessions:[{...open,finished_at:'2026-10-23T23:00:00Z',counted:true}],
+  historyChallenges:cards,sessionStats:stats});
+ assert.equal(closed[0].denominator,4);
+ assert.equal(closed[0].unpicked,1);
+ assert.equal(closed[0].percent,25);
+});
+test('LR-003: a passed challenge is not counted again as an unpicked slot',()=>{
+ const night={id:'closed',started_at:'2026-10-24T19:00:00Z',
+  finished_at:'2026-10-24T21:00:00Z',counted:true};
+ const cards=[
+  {id:'done',session_id:'closed',recipient:'a',status:'completed'},
+  {id:'pass',session_id:'closed',recipient:'a',status:'passed'},
+  {id:'pending',session_id:'closed',recipient:'a',status:'proposed'}
+ ];
+ const base={month:'2026-10',members,sessions:[night],historyChallenges:cards,
+  sessionStats:[{session_id:'closed',user_id:'a',target:5,drawn:3,completed:1}],
+  passQuota:[{challenge_id:'pass',recipient:'a',free_pass:false}]};
+ const charged=monthlyChallengeSuccess(base)[0];
+ assert.equal(charged.unpicked,2);
+ assert.equal(charged.penalizedPasses,1);
+ assert.equal(charged.denominator,5,'3 assigned + 2 unpicked; do not double count a pass');
+ assert.equal(charged.percent,20);
+ const free=monthlyChallengeSuccess({...base,
+  passQuota:[{challenge_id:'pass',recipient:'a',free_pass:true}]} )[0];
+ assert.equal(free.denominator,4);
+ assert.equal(free.percent,25);
+});

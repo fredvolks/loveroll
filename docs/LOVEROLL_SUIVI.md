@@ -22,18 +22,26 @@
 
 | OK | ID | Demande | Statut | PR / preuve |
 |---|---|---|---|---|
-| [ ] | LR-010 | Harmonisation couleurs/boutons/bulles/typographies/logo/navigation de toutes les pages avec Accueil | ◐ En cours — jetons verre rubis rendus disponibles sur tablette/PC; harmonisation complète et captures manquantes | [PR #26](https://github.com/fredvolks/loveroll/pull/26) · `ruby-surfaces-responsive.test.mjs` · `settings-menus-browser-check.cjs` |
+| [ ] | LR-010 | Harmonisation couleurs/boutons/bulles/typographies/logo/navigation de toutes les pages avec Accueil | ◐ En cours — contrôles CI de la PR #26 réussis; jetons verre rubis tablette/PC corrigés, comparaison physique et harmonisation intégrale manquantes | [PR #26](https://github.com/fredvolks/loveroll/pull/26) · `ruby-surfaces-responsive.test.mjs` · `settings-menus-browser-check.cjs` |
 | [ ] | LR-011 | Réglage des alignements, titres, cartes statistiques, calendrier, décor et socles | À faire | — |
-| [ ] | LR-012 | Cartes de défis : catégorie, personne, consigne, minuterie et actions claires pour un couple | À faire | — |
-| [ ] | LR-013 | Catégorie non sélectionnée : incitation visuelle + instruction claire avant de brasser | ◐ En cours — consigne repositionnée et associée au sélecteur, CI et vérification visuelle à effectuer | [PR #24](https://github.com/fredvolks/loveroll/pull/24) · `evening-d100-template.test.mjs` |
-| [ ] | LR-014 | Soirée : confirmation de catégorie Sensuel/Sexuel/Au hasard avant lancer D100, option « Ne plus afficher », réactivation en Réglages par profil | À faire — spécification seulement | [Prompt maître LR-014](./LOVEROLL_MASTER_PROMPT.md#lr-014--confirmation-du-choix-de-catégorie-avant-de-brasser-le-d100-nouvelle-demande-du-26-octobre-2026) · [Issue #27](https://github.com/fredvolks/loveroll/issues/27) · tests à réaliser |
+| [ ] | LR-012 | Cartes de défis : catégorie, personne, consigne, minuterie et actions claires pour un couple | ◐ En cours — consignes longues rendues défilables dans la fiche mobile et accessibles au clavier; autres états et tests physiques restent à valider | [PR #31](https://github.com/fredvolks/loveroll/pull/31) · `evening-instructions.test.mjs` · `evening-instructions-browser-check.cjs` |
+| [ ] | LR-013 | Catégorie non sélectionnée : incitation visuelle + instruction claire avant de brasser | ◐ En cours — contrôles CI de la PR #24 réussis; consigne liée au sélecteur, validation physique encore nécessaire | [PR #24](https://github.com/fredvolks/loveroll/pull/24) · `evening-d100-template.test.mjs` |
+| [ ] | LR-014 | Soirée : confirmation de catégorie Sensuel/Sexuel/Au hasard avant lancer D100, option « Ne plus afficher », réactivation en Réglages par profil | ◐ En cours — dialogue natif, probabilités actives, blocage avant RPC, préférence utilisateur et tests ajoutés ; migration Supabase, CI final et appareils réels non validés | [PR #34](https://github.com/fredvolks/loveroll/pull/34) · [Issue #27](https://github.com/fredvolks/loveroll/issues/27) · `evening-category-confirm.test.mjs` · `evening-category-confirm-browser-check.cjs` |
 | [ ] | LR-015 | Défis : Passer, Refuser avec choix de retrait du lot, repige, retour des défis non terminés à la clôture, historique conservé | À faire — spécification seulement | [Exigence LR-015](./LOVEROLL_MASTER_PROMPT.md#lr-015--défis--passer-refuser-exclusion-volontaire-et-retour-dans-la-pige-nouvelle-demande-du-26-octobre-2026) · [Issue #29](https://github.com/fredvolks/loveroll/issues/29) |
+| [ ] | LR-016 | Passes mensuelles : **3 par partenaire** par défaut, limite modifiable par l'admin du couple, blocage serveur à la limite, compteur visible ; refus toujours libre | ◐ En cours — migration Supabase proposée pour plafond atomique, lecture RPC du mois et modification réservée au propriétaire; déploiement SQL, écran Réglages, refus/repige LR-015 et tests DB/physiques restent à faire | [PR #43](https://github.com/fredvolks/loveroll/pull/43) · `monthly-pass-limit-sql.test.mjs` · [Issue #32](https://github.com/fredvolks/loveroll/issues/32) |
+| [ ] | LR-017 | Adapter ce défi avec accord des deux, sans passer/refuser ni modifier les cartes globales | À faire — spécification approuvée, aucun code livré | [Prompt LR-017](./LOVEROLL_MASTER_PROMPT.md) · [Issue #35](https://github.com/fredvolks/loveroll/issues/35) |
+| [ ] | LR-018 | Reprendre une soirée sur appareil mobile/tablette/PC, étapes et minuterie persistantes | À faire — spécification approuvée, aucun code livré | [Prompt LR-018](./LOVEROLL_MASTER_PROMPT.md) · [Issue #36](https://github.com/fredvolks/loveroll/issues/36) |
+| [ ] | LR-019 | ♥ Coups de cœur : favoris accessibles et remis dans la pige d'une prochaine soirée même réalisés, jamais immédiatement | À faire — spécification approuvée, aucun code livré | [Prompt LR-019](./LOVEROLL_MASTER_PROMPT.md) · [Issue #37](https://github.com/fredvolks/loveroll/issues/37) |
+| [ ] | LR-025 | Mode discrétion pour masquer les défis rapidement sans modifier leur état | ◐ En cours — masquage visuel local avec bouton dans Soirée et cartes privées, restauration après rechargement et blocage du clavier derrière le masque ; CI/visuels appareils et confidentialité Push/audio restent à valider | [PR #44](https://github.com/fredvolks/loveroll/pull/44) · `privacy-screen.test.mjs` · `privacy-screen-browser-check.cjs` · [Issue #38](https://github.com/fredvolks/loveroll/issues/38) |
+| [ ] | LR-026 | Variété intelligente : limiter les défis ressemblants dans la même soirée | À faire — spécification approuvée, aucun code livré | [Prompt LR-026](./LOVEROLL_MASTER_PROMPT.md) · [Issue #39](https://github.com/fredvolks/loveroll/issues/39) |
+| [ ] | LR-027 | Une seule action principale par étape, tous les boutons secondaires restent accessibles | À faire — spécification approuvée, aucun code livré | [Prompt LR-027](./LOVEROLL_MASTER_PROMPT.md) · [Issue #40](https://github.com/fredvolks/loveroll/issues/40) |
+| [ ] | LR-028 | « As-tu envie de jouer ce soir ? » : invitation Push/in-app Oui/Non/Peut-être avant les deux D6 | À faire — spécification approuvée, aucun code livré | [Prompt LR-028](./LOVEROLL_MASTER_PROMPT.md) · [Issue #41](https://github.com/fredvolks/loveroll/issues/41) |
 
 ## P1 — Responsive universel
 
 | OK | ID | Demande | Statut | PR / preuve |
 |---|---|---|---|---|
-| [ ] | LR-020 | Android/S25 Ultra, petit Android, Safari iPhone et PWA : safe areas, pas de débordement | ◐ En cours — calendrier petit écran/zoom et Réglages à hauteur réduite; autres pages et appareils réels non vérifiés | [PR #24](https://github.com/fredvolks/loveroll/pull/24) · `settings-short-height-browser-check.cjs` · `evening-d100-template.test.mjs` |
+| [ ] | LR-020 | Android/S25 Ultra, petit Android, Safari iPhone et PWA : safe areas, pas de débordement | ◐ En cours — CI PR #24 réussie pour calendrier/hauteur Réglages; autres pages et appareils réels non vérifiés | [PR #24](https://github.com/fredvolks/loveroll/pull/24) · `settings-short-height-browser-check.cjs` · `evening-d100-template.test.mjs` |
 | [ ] | LR-021 | iPad et tablette Android : portrait/paysage, grilles, calendrier, D100 au socle | À faire | — |
 | [ ] | LR-022 | PC/Mac : Chrome, Edge, Firefox, Safari ; 1280 à 2560 px et fenêtrage | À faire | — |
 | [ ] | LR-023 | Breakpoints et hauteur utile, accessibilité/zoom, taille/caméra des dés 3D | ◐ En cours — correctif calendrier petite hauteur PR #24, D100 PR #21 ; matrice complète non vérifiée | [PR #24](https://github.com/fredvolks/loveroll/pull/24) · [PR #21](https://github.com/fredvolks/loveroll/pull/21) |
@@ -68,6 +76,7 @@ Chaque Issue contient les sous-tâches et permet les commentaires/captures. Les 
 | Harmonie avec l'Accueil | [#14](https://github.com/fredvolks/loveroll/issues/14) | LR-010 à LR-013 |
 | Confirmation de la catégorie D100 | [#27](https://github.com/fredvolks/loveroll/issues/27) | LR-014 |
 | Passer / Refuser / repige des défis | [#29](https://github.com/fredvolks/loveroll/issues/29) | LR-015 |
+| Plafond mensuel Passer configurable | [#32](https://github.com/fredvolks/loveroll/issues/32) | LR-016 |
 | Responsive mobile, tablette, PC | [#15](https://github.com/fredvolks/loveroll/issues/15) | LR-020 à LR-024 |
 | Audit et qualité | [#16](https://github.com/fredvolks/loveroll/issues/16) | LR-030 à LR-043 |
 
@@ -77,8 +86,8 @@ L'[audit officiel](./LOVEROLL_AUDIT_UX_UI_20261026.md) est maintenant décompos�
 **Publication du système documentaire :** [PR #10 fusionnée](https://github.com/fredvolks/loveroll/pull/10). Les Issues sont ouvertes et les corrections applicatives restent à vérifier/implémenter.
 
 ## Tableau de bord
-- **23 exigences** dans cette version (4 P0 + 19 P1).
-- **0/23 cochées intégralement** : plusieurs corrections vérifiées partiellement, mais les critères complets restent ouverts (voir chaque PR et tests).
+- **31 exigences** dans cette version (4 P0 + 27 P1).
+- **0/31 cochées intégralement** : plusieurs corrections vérifiées partiellement, mais les critères complets restent ouverts (voir chaque PR et tests).
 - Ces nombres décrivent le **statut documentaire initial**, **pas** un diagnostic que toute l'application est défectueuse.
 - Les développeurs doivent vérifier l'existant et marquer « Déjà présent, vérifié » avec preuves si un point est déjà satisfait.
 
@@ -86,6 +95,7 @@ L'[audit officiel](./LOVEROLL_AUDIT_UX_UI_20261026.md) est maintenant décompos�
 
 | Date | Changement | Référence |
 |---|---|---|
+| 2026-10-26 | Prompt maître consolidé : reprise LR-014 à LR-019 et LR-025 à LR-028, ordre d'exécution et PR #31/#34/#43/#44 avec CI validés ; déploiements et validations physiques non déclarés terminés. | [Commit 6ba26bc](https://github.com/fredvolks/loveroll/commit/6ba26bc3c4811ae0bb008ad7f124f383b44ee9d8) |
 | 2026-10-26 | Initialisation du suivi D100, minuterie, harmonisation, audit UX/UI et responsive PC/tablette/mobile | Prompt maître |
 | 2026-10-26 | LR-003 : code audité, correctif de libellés ouvert/clôturé et tests unitaires ajoutés, sans modification de données. À vérifier en CI/visuel. | `fix/lr003-calendar-active-status-20261026` |
 
@@ -99,6 +109,26 @@ L'[audit officiel](./LOVEROLL_AUDIT_UX_UI_20261026.md) est maintenant décompos�
 | 2026-10-26 | Nouvelle demande LR-014 : confirmer Sensuel/Sexuel/Au hasard avant de brasser le D100, « Ne plus afficher » par profil, réactivation Réglages. Spécification seulement, **non développée**. | [Prompt LR-014](./LOVEROLL_MASTER_PROMPT.md) |
 
 | 2026-10-26 | Nouvelle demande LR-015 : Passer / Refuser un défi, choix de l'exclure du lot courant, repige et restitution des non réalisés à la fin de la soirée, historique et cycle de 200 préservés. **Demande non codée.** | [Prompt LR-015](./LOVEROLL_MASTER_PROMPT.md) |
+
+| 2026-10-26 | LR-016 : plafond mensuel sécurisé en migration SQL dans PR #43 (non déployée), lecture RPC personnelle et réglage RPC admin ; UI/refus/repige et tests PostgreSQL simultanés manquants. | [PR #43](https://github.com/fredvolks/loveroll/pull/43) · [Prompt LR-016](./LOVEROLL_MASTER_PROMPT.md) |
+
+## Issues de développement — nouveautés approuvées
+
+| Exigence | Issue |
+|---|---|
+| LR-017 — Adapter | [#35](https://github.com/fredvolks/loveroll/issues/35) |
+| LR-018 — Reprendre | [#36](https://github.com/fredvolks/loveroll/issues/36) |
+| LR-019 — Coups de cœur | [#37](https://github.com/fredvolks/loveroll/issues/37) |
+| LR-025 — Discrétion | [#38](https://github.com/fredvolks/loveroll/issues/38) |
+| LR-026 — Variété | [#39](https://github.com/fredvolks/loveroll/issues/39) |
+| LR-027 — Action principale | [#40](https://github.com/fredvolks/loveroll/issues/40) |
+| LR-028 — Invitation à jouer | [#41](https://github.com/fredvolks/loveroll/issues/41) |
+
+## Propositions UX/UI
+
+La [revue rapide de code](./LOVEROLL_PROPOSITIONS_AMELIORATIONS_20261026.md) reste disponible ; les idées 3 à 8 du dernier échange et l'invitation à jouer sont maintenant **approuvées sous LR-017 à LR-019, LR-025 à LR-028**. Les autres idées demeurent des propositions non approuvées.
+
+| 2026-10-26 | Ajout approuvé LR-017 à LR-019 et LR-025 à LR-028 : Adapter, Reprendre, Coups de cœur retournant à la pige, Discrétion, Variété, Action principale, invitation Oui/Non/Peut-être au D6. Documentation seulement. | [Prompt maître](./LOVEROLL_MASTER_PROMPT.md) |
 
 ## Comment travailler avec ChatGPT Work
 Ouvrir le dépôt et fournir l'instruction suivante à Work :

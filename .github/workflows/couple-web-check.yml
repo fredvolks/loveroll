@@ -43,6 +43,8 @@ jobs:
           node --check couple-web/evening-review.mjs
           node --check couple-web/evening-private-queue.mjs
           node --test couple-web/evening-private-queue.test.mjs couple-web/evening-redesign.test.mjs couple-web/evening-calendar.test.mjs couple-web/evening-category-v93.test.mjs couple-web/evening-review.test.mjs
+          node --test couple-web/privacy-screen.test.mjs
+          node --test couple-web/monthly-pass-limit-sql.test.mjs
           node --test couple-web/soiree-surprise-recovery.test.mjs
           node --check couple-web/premium-surprise.mjs
           node --check couple-web/premium-advent.mjs
@@ -430,6 +432,9 @@ jobs:
 
       - name: Verify end-of-evening 5-heart review on phone tablet and desktop
         run: node couple-web/evening-review-browser-check.cjs
+
+      - name: Verify local privacy mask survives reload and never exposes the game
+        run: node couple-web/privacy-screen-browser-check.cjs
 
       - name: Verify shared calendar expanding both partners on phone, tablet and PC
         run: node couple-web/evening-calendar-browser-check.cjs
