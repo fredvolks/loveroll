@@ -26,6 +26,7 @@
 | [ ] | LR-011 | Réglage des alignements, titres, cartes statistiques, calendrier, décor et socles | À faire | — |
 | [ ] | LR-012 | Cartes de défis : catégorie, personne, consigne, minuterie et actions claires pour un couple | À faire | — |
 | [ ] | LR-013 | Catégorie non sélectionnée : incitation visuelle + instruction claire avant de brasser | ◐ En cours — consigne repositionnée et associée au sélecteur, CI et vérification visuelle à effectuer | [PR #24](https://github.com/fredvolks/loveroll/pull/24) · `evening-d100-template.test.mjs` |
+| [ ] | LR-014 | Soirée : confirmation de catégorie Sensuel/Sexuel/Au hasard avant lancer D100, option « Ne plus afficher », réactivation en Réglages par profil | À faire — spécification seulement | [Prompt maître LR-014](./LOVEROLL_MASTER_PROMPT.md#lr-014--confirmation-du-choix-de-catégorie-avant-de-brasser-le-d100-nouvelle-demande-du-26-octobre-2026) · Issue à créer · tests à réaliser |
 
 ## P1 — Responsive universel
 
@@ -73,8 +74,8 @@ L'[audit officiel](./LOVEROLL_AUDIT_UX_UI_20261026.md) est maintenant décompos�
 **Publication du système documentaire :** [PR #10 fusionnée](https://github.com/fredvolks/loveroll/pull/10). Les Issues sont ouvertes et les corrections applicatives restent à vérifier/implémenter.
 
 ## Tableau de bord
-- **21 exigences** dans cette version (4 P0 + 17 P1).
-- **0/21 cochées intégralement** : plusieurs corrections vérifiées partiellement, mais les critères complets restent ouverts (voir chaque PR et tests).
+- **22 exigences** dans cette version (4 P0 + 18 P1).
+- **0/22 cochées intégralement** : plusieurs corrections vérifiées partiellement, mais les critères complets restent ouverts (voir chaque PR et tests).
 - Ces nombres décrivent le **statut documentaire initial**, **pas** un diagnostic que toute l'application est défectueuse.
 - Les développeurs doivent vérifier l'existant et marquer « Déjà présent, vérifié » avec preuves si un point est déjà satisfait.
 
@@ -90,6 +91,8 @@ L'[audit officiel](./LOVEROLL_AUDIT_UX_UI_20261026.md) est maintenant décompos�
 | 2026-10-26 | Synchronisation P0 du suivi officiel : LR-001 D100 PR 21, LR-002 timer PR 9, LR-003 calendrier PR 20 fusionnée et statistiques PR 23 en CI, LR-004 sonneries Web 229 livrées mais tests physiques non faits. Aucune tâche P0 cochée prématurément. | [PR nº 9](https://github.com/fredvolks/loveroll/pull/9) · [PR nº 20](https://github.com/fredvolks/loveroll/pull/20) · [PR nº 21](https://github.com/fredvolks/loveroll/pull/21) · [PR nº 23](https://github.com/fredvolks/loveroll/pull/23) |
 
 | 2026-10-26 | Intégration des corrections de l'audit au maître ; PR #24 ouverte pour LR-013 et LR-020/023. Tests Node inscrits au CI, captures réelles manquantes ; zéro exigence déclarée terminée. | [PR #24](https://github.com/fredvolks/loveroll/pull/24) · [audit](./LOVEROLL_AUDIT_UX_UI_20261026.md) |
+
+| 2026-10-26 | Nouvelle demande LR-014 : confirmer Sensuel/Sexuel/Au hasard avant de brasser le D100, « Ne plus afficher » par profil, réactivation Réglages. Spécification seulement, **non développée**. | [Prompt LR-014](./LOVEROLL_MASTER_PROMPT.md) |
 
 ## Comment travailler avec ChatGPT Work
 Ouvrir le dépôt et fournir l'instruction suivante à Work :
