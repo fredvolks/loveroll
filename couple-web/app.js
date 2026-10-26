@@ -3823,6 +3823,11 @@ async function handle(action,element){
   const eveningId=state.session.id;
   if(parts[1]==='passed'&&state.monthlyPassQuota?.can_pass===false)throw Error('Limite mensuelle de passes atteinte.');
   await rpc('answer_challenge',{p_id:parts[0],p_status:parts[1]});
+  if(parts[1]==='passed'&&state.monthlyPassQuota){
+   const used=Number(state.monthlyPassQuota.used)+1;
+   const limit=Number(state.monthlyPassQuota.limit);
+   state.monthlyPassQuota={...state.monthlyPassQuota,used,remaining:Math.max(0,limit-used),can_pass:used<limit};
+  }
   if(parts[1]==='completed'){
    // Last completed challenge closes the shared night automatically.
    // The official server function checks BOTH adjusted D6 quotas atomically.
