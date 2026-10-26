@@ -579,7 +579,7 @@ Mettre à jour le suivi avec preuves, sans annoncer l'implémentation sur la foi
 ### Synchronisation avec le minuteur
 1. **Démarrer** : si musique activée et ambiance disponible, démarrer l'audio sur le geste qui lance le minuteur. Précharger raisonnablement; si le média n'est pas prêt, le minuteur démarre quand même et l'écran reste utilisable.
 2. **Pause** : mettre l'audio en pause avec le minuteur; **Reprendre** reprend les deux. Aucune deuxième piste superposée après plusieurs appuis.
-3. **00:00** : arrêter l'ambiance à l'échéance du minuteur, avec une très courte sortie douce sans queue sonore prolongée. Ensuite, la sonnerie éventuelle suit son réglage distinct.
+3. **Fin musicale progressive** : lorsque l'ambiance est utilisée, sa disparition remplace la sonnerie de fin par défaut. Baisser progressivement son volume pendant les 5 dernières secondes (ou le temps restant s'il est inférieur), jusqu'au silence à 00:00. Ne pas ajouter de mélodie d'alarme par-dessus ni repartir sur une nouvelle boucle. Le signal visuel de fin reste présent; les vibrations respectent leurs préférences existantes.
 4. **Recommencer** : arrêter/remettre l'audio au début, réinitialiser le minuteur et attendre le prochain appui sur Démarrer.
 5. **Couper la musique / volume zéro** : agir uniquement sur l'ambiance; le minuteur continue. Réactiver pendant le compte à rebours ne redémarre pas sa durée. Ne jamais réactiver une musique dont le minuteur est terminé.
 6. **Défi réalisé manuellement, passé, refusé, annulé, clôture de soirée ou déconnexion** : arrêter immédiatement l'ambiance liée à ce défi. Un changement de carte ou de compte ne laisse pas une piste orpheline; il ne valide ni n'annule le défi par simple navigation.
@@ -588,8 +588,8 @@ Mettre à jour le suivi avec preuves, sans annoncer l'implémentation sur la foi
 9. La musique ne devient jamais une preuve de réalisation. Conserver la transition métier idempotente LR-002, les exceptions pause/annulation/refus et les permissions. Un événement audio ended/error ne valide pas un défi.
 
 ### Sonnerie, appareils et discrétion
-- Séparer clairement **musique pendant le défi** et **sonnerie à la fin**; mettre la musique en sourdine ne modifie pas implicitement la sonnerie, et inversement. Tout réglage général explicitement silencieux reste respecté.
-- Utiliser la même source temporelle que le minuteur, sans créer un deuxième compte à rebours audio indépendant. Réutiliser/améliorer les modules existants plutôt qu'ajouter un moteur concurrent.
+- **Règle approuvée : musique utilisée = signal de fin musical**, par fondu progressif jusqu'au silence; aucune sonnerie supplémentaire par défaut. Sans musique utilisée, conserver la sonnerie habituelle facultative selon le réglage existant. Si l'utilisateur coupe la musique pendant le défi, ne pas faire surgir une sonnerie de remplacement à zéro. Si la lecture n'a jamais pu commencer, le repli éventuel vers la sonnerie doit respecter le choix explicite de l'utilisateur; aucun son forcé. Une option avancée de sonnerie supplémentaire reste désactivée par défaut et exige une activation volontaire. Tout réglage général silencieux reste respecté.
+- Utiliser la même source temporelle que le minuteur, sans créer un deuxième compte à rebours audio indépendant. Programmer le fondu à partir de son échéance, pas de la fin naturelle du fichier. Pause : suspendre le fondu et mémoriser le volume choisi; reprise : recalculer le fondu selon le temps restant; reset : annuler l'ancien fondu. Une modification du volume dans les dernières secondes doit conserver la descente vers zéro. Réutiliser/améliorer les modules existants plutôt qu'ajouter un moteur concurrent.
 - Prévenir les lectures simultanées non voulues : l'audio est local au téléphone volontairement choisi; aucune lecture distante déclenchée chez le partenaire. Désigner un seul appareil d'ambiance pour la soirée lorsque nécessaire. Tester deux comptes/deux appareils/deux onglets.
 - Une seule ambiance active sur un appareil; arrêter proprement ou effectuer une transition contrôlée entre défi et Éclat. Libérer ressources, écouteurs et pistes au changement de contexte.
 - Mode discrétion LR-025 : arrêter ou rendre silencieuse l'ambiance immédiatement sur l'appareil masqué, sans relancer le son à la sortie du masque sans action volontaire.
@@ -604,7 +604,7 @@ Aucun abonnement musical externe requis pour jouer. Ne pas présenter le génér
 
 ### Tests et livraison
 - Start/pause/reprise/reset, échéance à zéro, fin manuelle, passer/refuser/annuler, changement de carte, changement de compte, clôture, discrétion, double-tap et deux appareils.
-- Couper/remettre la musique pendant le compte à rebours sans modifier le temps, ni déclencher une complétion ou une sonnerie supplémentaire.
+- Couper/remettre la musique pendant le compte à rebours sans modifier le temps, ni déclencher une complétion ou une sonnerie supplémentaire. Vérifier le fondu des 5 dernières secondes, pause/reprise pendant le fondu, reset, changement de volume, silence à zéro et absence de double signal; sans musique, vérifier la sonnerie facultative. Un mute volontaire ne déclenche jamais une alarme de remplacement.
 - Carte sans minuteur, ambiance aucune, média court/long/en boucle, échec réseau/décodage, lecture bloquée, retour après échéance et préférence conservée.
 - Tests d'intégration sur les vrais contrôles et tests d'écoute documentés; distinguer émulation et appareils physiques réellement testés.
 - Contrôle d'intégrité des titres, consignes, minuteries configurées et instantanés des cartes avant/après.
