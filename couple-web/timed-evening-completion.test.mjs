@@ -64,6 +64,9 @@ test('LR-002 reload restoration scans saved challenge timers without opening the
  const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
  assert.match(app,/function reconcileSavedEveningTimers\(\)/);
  assert.match(app,/sessionStorage\.getItem\(key\)/);
+ assert.match(app,/localStorage\.getItem\(key\)/);
+ assert.match(app,/localStorage\.setItem\(key,json\)/);
+ assert.match(app,/writeSavedChallengeTimer\(key,expired\)/);
  assert.match(app,/saved\.deadline<=now/);
  assert.match(app,/saved\.autoCompletePending/);
  assert.match(app,/isAcceptedTimedEveningChallenge\(item,state\.user\.id,state\.session\.id\)/);
