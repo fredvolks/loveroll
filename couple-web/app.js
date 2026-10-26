@@ -167,7 +167,7 @@ function fail(error){
  const msg=String(error?.message||'Une erreur est survenue');
  if(isNotificationPage())setNotificationFeedback(msg,'error');else showInlineError(msg);
 }
-function isNotificationPage(){return state.tab==='settings'&&settingsOpenSection==='notifications';}
+function isNotificationPage(){return state.tab==='settings'&&['notifications','sonneries'].includes(settingsOpenSection);}
 function setNotificationFeedback(message,tone='status'){
  notificationFeedback={message:String(message||''),tone};
  const note=root.querySelector('#notification-feedback');
@@ -2037,7 +2037,7 @@ function adminCategoryWeightEditor(){
   '</div></details>';
 }
 function openSettingsPage(section=''){
- const allowed=['','compte','couple','notifications','jeu','confidentialite','application','monde','parrainage','aide','aide-connexion','aide-des','aide-sync','admin'];
+ const allowed=['','compte','couple','notifications','sonneries','jeu','confidentialite','application','monde','parrainage','aide','aide-connexion','aide-des','aide-sync','admin'];
  if(!allowed.includes(section))return;
  if(section==='admin'&&!isLoveAdmin())throw Error('Options réservées au créateur du couple.');
  if(section==='parrainage'&&state.referral?.enabled!==true)return;
@@ -2155,7 +2155,7 @@ function renderSettings(){
   (sexualMode==='custom'?editorialRow('Modifier mes 100 SEXUEL','Copie personnelle préremplie avec MEDIUM','open-personal-sexual-cards','dice'):'')+
   button('save-sexual-mode','Appliquer ce mode','class="settings-primary"')+
   '</section>':'';
- const notifications=notificationSettingsMarkup(state.pushPrefs||{},state.pushDevice)+soundSettingsHtml();
+ const notifications=editorialRow('Sonneries des défis','Tester le son ou le désactiver','settings-page:sonneries','notifications')+notificationSettingsMarkup(state.pushPrefs||{},state.pushDevice);
  const nativeApp=typeof window!=='undefined'&&!!window.LoveRollNativeAuth;
  const nativeVersion=nativeApp&&typeof window.LoveRollNativeAuth.appVersion==='function'?
   window.LoveRollNativeAuth.appVersion():'';
@@ -2189,7 +2189,7 @@ function renderSettings(){
  const world=worldwideSettingsHtml({locale:worldLocale(),currency:currencyOrDefault(state.profile?.preferred_currency),couple:state.couple||{}});
  const pages={compte:{title:worldText('myAccount'),body:account},couple:{title:worldText('duoLabel'),body:partner},
   ...(state.referral?.enabled===true?{parrainage:{title:'Parrainage',body:referralSettingsHtml(state.referral)}}:{}),
-  notifications:{title:worldText('notificationsLabel'),body:notifications},jeu:{title:worldText('cardsLabel'),body:game},
+  notifications:{title:worldText('notificationsLabel'),body:notifications},sonneries:{title:'Sonneries des défis',body:soundSettingsHtml()+'<p id="notification-feedback" class="notification-feedback" role="status" aria-live="polite" hidden></p>'},jeu:{title:worldText('cardsLabel'),body:game},
   confidentialite:{title:worldText('privacyLabel'),body:privacy},
   application:{title:worldText('applicationLabel'),body:appSettings},
   monde:{title:worldText('title'),body:world},
@@ -2213,13 +2213,13 @@ function renderSettings(){
   '<nav class="settings-sections" data-referral-active="'+(state.referral?.enabled===true?'true':'false')+'" aria-label="Rubriques des réglages">'+items.map(([key,label,detail])=>
    '<button data-action="settings-page:'+key+'" class="settings-section-row"><span class="settings-row-icon">'+settingsIcon(key)+'</span><span><strong>'+label+'</strong><small>'+safe(detail)+'</small></span><b aria-hidden="true">›</b></button>').join('')+'</nav>';
  const page=pages[settingsOpenSection];
- const parent=settingsOpenSection==='admin'?'jeu':settingsOpenSection.startsWith('aide')?'application':'';
+ const parent=settingsOpenSection==='admin'?'jeu':settingsOpenSection==='sonneries'?'notifications':settingsOpenSection.startsWith('aide')?'application':'';
  const heading=editorialHeader(page?'settings-page:'+parent:'',parent==='jeu'?'Cartes et activités':parent==='application'?'Application et aide':'Réglages');
  frame('<section class="settings-editorial">'+heading+'<div class="settings-editorial-content">'+
   '<div class="editorial-title"><h1'+(page?'':' class="ritual-page-title"')+'>'+safe(page?.title||'Réglages')+'</h1>'+(settingsOpenSection==='admin'?'<small class="editorial-badge">Créateur</small>':'')+'</div>'+
   (page?'<article class="settings-detail-body" data-settings-page="'+settingsOpenSection+'">'+page.body+'</article>':menu)+
   '</div></section>','Réglages','');
- if(settingsOpenSection==='notifications'&&notificationFeedback)setNotificationFeedback(notificationFeedback.message,notificationFeedback.tone);
+ if(isNotificationPage()&&notificationFeedback)setNotificationFeedback(notificationFeedback.message,notificationFeedback.tone);
 }
 
 async function refreshAndShow(){await refreshShared();render();}
