@@ -171,3 +171,13 @@ Aucun changement de tarifs ni déploiement applicatif n'est réalisé par cet aj
 | LR-MUSIQUE-001 — Musique facultative adaptée à chaque carte et au minuteur | Spécifié — à implémenter et vérifier | Métadonnées par carte, pistes originales/licenciées, démarrer/pause/reprise/reset, mute et volume indépendants du temps. Fondu des 5 dernières secondes jusqu'au silence à zéro : la musique remplace alors la sonnerie, sans double signal. Sans musique, sonnerie facultative; aucun son de remplacement après mute volontaire. [Prompt](./LOVEROLL_MASTER_PROMPT.md#lr-musique-001--ambiance-musicale-facultative-par-carte-liée-au-minuteur) |
 
 **Verrou utilisateur :** titres, consignes et minuteries configurées des cartes conservés; l'attribution peut être corrigée. L'ajout des prompts ne constitue ni une modification des cartes ni un déploiement musical.
+
+
+## Précision LR-019 — cinq favoris communs maximum (26 octobre 2026)
+**État : spécification approuvée, à implémenter et vérifier.** [Prompt LR-019](./LOVEROLL_MASTER_PROMPT.md#lr-019--coups-de-cœur--un-favori-retourne-dans-la-pige-idée-no-5).
+- Une liste commune de 5 cartes distinctes toutes catégories confondues; gestion par chacun des partenaires dans Réglages → Jeu → Nos coups de cœur.
+- Ajout depuis ses anciens défis et ceux du partenaire, après clôture via le calendrier; aucune ouverture des cartes encore privées d'une soirée active.
+- Au sixième ajout : notification dans l'app, choix du favori à retirer/remplacer, confirmation; remplacement atomique, compteur synchronisé et plafond serveur.
+- Aucun favori ne garantit la pige, la personne qui accomplit ou reçoit le défi; probabilités, rôles femme/homme, exclusions et cycle conservés.
+- Vérifier concurrence, doublons, remplacement/annulation/échec et listes existantes de plus de 5 sans suppression arbitraire.
+Ajout documentaire uniquement : aucune carte ni donnée utilisateur modifiée.
