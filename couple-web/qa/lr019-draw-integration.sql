@@ -1,6 +1,15 @@
 \set ON_ERROR_STOP on
 -- Runs after LR-015 fixture/migrations, LR-019 core and draw compatibility.
 -- Validates a real server draw with every normal shuffle marker present.
+INSERT INTO auth.users(id) VALUES
+ ('11111111-1111-4111-8111-111111111111'),
+ ('22222222-2222-4222-8222-222222222222');
+INSERT INTO public.couples(id,owner_user_id,monthly_pass_limit)
+VALUES('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+ '11111111-1111-4111-8111-111111111111',3);
+INSERT INTO public.couple_members(couple_id,user_id) VALUES
+ ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','11111111-1111-4111-8111-111111111111'),
+ ('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa','22222222-2222-4222-8222-222222222222');
 SELECT set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',false);
 INSERT INTO public.couple_sessions(id,couple_id,opened_by,starting_user_id,self_draws,paired_turns,started_at)
 VALUES('81818181-8181-4181-8181-818181818181',
