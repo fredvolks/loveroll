@@ -36,3 +36,12 @@ Dans Settings → Secrets and variables → Actions, recopier **de façon sécur
 Le workflow vérifie que le nouveau APK a le même certificat que l'ancienne version. Les variables publiques `LOVEROLL_FIREBASE_*` peuvent également être nécessaires pour les notifications. **Ne placer aucune clé privée dans le code, les commits ou les journaux.**
 
 L'import du paquet signé 0.13.13 dans ce dépôt est tracé dans `.github/workflows/publish-migration-apk.yml`.
+
+## Prompt maître & suivi des demandes LoveRoll
+
+- [**Prompt maître officiel**](docs/LOVEROLL_MASTER_PROMPT.md) — exigences D100, minuteries, UX/UI et responsive mobile, tablette et PC.
+- [**Tableau de suivi**](docs/LOVEROLL_SUIVI.md) — cases LR-xxx, état, PR et preuves de validation.
+- [**Ajouter une nouvelle demande**](docs/LOVEROLL_NOUVELLES_DEMANDES.md) — modifier ce fichier directement sur GitHub.
+- [**Ouvrir une Issue LoveRoll**](https://github.com/fredvolks/loveroll/issues/new/choose) — signaler un bug / idée avec capture d'écran.
+
+**Important :** ces documents permettent de prioriser et suivre le travail, mais ne prétendent pas que les correctifs sont déjà déployés. Utiliser des PR distinctes pour les modifications techniques ; cocher « terminé » uniquement après tests.
