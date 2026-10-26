@@ -337,9 +337,26 @@ export function createClient(){
     if(exclude){
      await page.locator('[data-action="evening-close"]').first().click();
      await selectTab(page,'settings');
-     await page.locator('[data-action="settings-page:jeu"]').first().click();
-     await page.locator('[data-action="settings-page:excluded-cards"]').first().click();
-     const restore=page.locator('[data-action="restore-love-exclusion:SENSUEL:1"]');
+     await page.locator('.settings-sections [data-action="settings-page:jeu"]').waitFor({state:'visible',timeout:10000});
+     await page.locator('.settings-sections [data-action="settings-page:jeu"]').click();
+     const game=page.locator('.settings-detail-body[data-settings-page="jeu"]');
+     await game.waitFor({state:'visible',timeout:10000});
+     const manage=game.locator('[data-action="settings-page:excluded-cards"]');
+     if(!await manage.isVisible()){
+      const diagnostic=await page.evaluate(()=>({
+       tab:document.querySelector('.nav .active')?.dataset.action,
+       current:document.querySelector('.settings-detail-body')?.dataset.settingsPage,
+       manage:[...document.querySelectorAll('[data-action="settings-page:excluded-cards"]')].map(el=>({
+        visible:!!(el.offsetWidth||el.offsetHeight||el.getClientRects().length),
+        ancestor:el.parentElement?.className
+       }))
+      }));
+      throw Error('Excluded cards game-link is hidden '+JSON.stringify(diagnostic));
+     }
+     await manage.click();
+     const excludedPage=page.locator('.settings-detail-body[data-settings-page="excluded-cards"]');
+     await excludedPage.waitFor({state:'visible',timeout:10000});
+     const restore=excludedPage.locator('[data-action="restore-love-exclusion:SENSUEL:1"]');
      await restore.waitFor({state:'visible',timeout:10000});
      await page.screenshot({path:'lr015-captures/'+name+'-exclusion.png',fullPage:true});
      await restore.click();
