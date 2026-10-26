@@ -31,9 +31,9 @@
 | [40316957313](https://github.com/fredvolks/loveroll/actions/runs/40316957313) | Pages #408 | `43373582…` | Échec | Correction sur cette branche, confirmer la prochaine exécution main |
 | [40316956813](https://github.com/fredvolks/loveroll/actions/runs/40316956813) | Web checks #618 | `43373582…` | Réussi | Ne couvre pas les changements de cette branche |
 | [40314967708](https://github.com/fredvolks/loveroll/actions/runs/40314967708) | Web checks PR #617 | `31cb5ec3…` | Échec | Branche `feat/lr044-settings-ux-20261026` ; analyser son échec séparément, ne pas confondre avec le déploiement main |
-- Tentatives de correction de la présente branche : **1 correction du test**, **0 relance** au moment de la création de ce fichier.
+- Tentatives de correction de la présente branche : **1 correction du test**, **1 premier run PR réussi**, **0 relance d'échec**.
 - Tests locaux : non lancés (le conteneur local ne peut pas résoudre le domaine GitHub pour cloner le dépôt). Exécuter les vrais tests Node via GitHub Actions sur la PR ; ne pas prétendre qu'ils sont déjà verts.
-- Runs nouveaux de la branche : **à découvrir après création de la PR**, noter les identifiants, SHA et conclusions ici avant de valider.
+- PR brouillon [#47](https://github.com/fredvolks/loveroll/pull/47), run [40325396667](https://github.com/fredvolks/loveroll/actions/runs/40325396667), numéro **619** : **completed / success** confirmé sur SHA `74aabbd9e639169126b7387f88c4d6c2630d42c9`. Toutes les étapes, dont tests de fin de soirée, WebGL, coffrets, responsive et Réglages, ont réussi. Toute modification ultérieure nécessite une nouvelle validation SHA.
 
 ## Automatisation indépendante de Work
 - `couple-web-check.yml` : exécution sur `push main` et PR visant main ; comprend maintenant la régression de fin de soirée.
@@ -49,7 +49,12 @@
 5. **P1 LR-010–014, LR-015–019, LR-020–028 et LR-030–043** — plusieurs PR partielles ouvertes ; voir le suivi maître pour le détail. **LR-044** : refonte mobile Réglages, PR #46 en échec CI lors de la première vérification ; ne pas déclarer terminée.
 
 ## Prochaine action exacte
-1. Ouvrir une **PR brouillon** de `fix/ci-continuity-pages-20261026` vers `main`.
-2. Identifier les nouveaux runs sur son `head_sha` (les runs PR de GitHub peuvent aussi référencer un SHA de merge synthétique). Suivre les jobs, télécharger les journaux en cas d'échec, réparer et relancer.
-3. Après un CI vert sur le code courant, ne pas fusionner sans autorisation ; laisser les liens de validation dans la PR et ce document.
-4. Diagnostiquer séparément la PR Réglages #46, puis revenir aux P0 du prompt maître. Lorsqu'une session s'arrête, **reprendre par ce fichier et les runs en cours**, sans demander « continue » pour la même étape.
+1. PR #47 **ouverte et tests verts** pour son ancien SHA `74aabbd9...` ; le présent changement documentaire déclenche un **nouveau** SHA, vérifier la nouvelle exécution jusqu'à `completed / success` avant toute déclaration de validation.
+2. **Ne pas fusionner dans main sans autorisation** ; l'échec Pages [#40316957313](https://github.com/fredvolks/loveroll/actions/runs/40316957313) reste non résolu en production. Incident [#48](https://github.com/fredvolks/loveroll/issues/48) créé pour conserver le suivi.
+3. Diagnostiquer la PR Réglages #46 séparément : dernier échec confirmé `romantic-settings-surprise-browser-check.cjs:79`, `5 !== 6` sur l'attente des sections Réglages ; son SHA récent `51ade4ea...` n'avait pas de run concluant lors de l'analyse. Ne pas modifier un test sans vérifier si la navigation prévue a changé.
+4. Revenir aux P0 du prompt maître. Lorsqu'une session s'arrête, **reprendre par ce fichier et les runs en cours**, sans demander « continue » pour la même étape.
+
+## Journal de validation — 2026-10-26
+- CI PR #47 / workflow #619, run 40325396667 : **réussite finale confirmée** (completed/success) ; HEAD exact `74aabbd9e639169126b7387f88c4d6c2630d42c9`. Contrôle du dernier test de fin de soirée inclus. Aucune fusion ni publication de production.
+- Incident de déploiement documenté dans l'[Issue #48](https://github.com/fredvolks/loveroll/issues/48).
+- Modification du seul suivi ci-dessous : impose de **recontrôler le nouveau SHA** après cette mise à jour documentaire.
