@@ -19,7 +19,15 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   await page.waitForFunction(()=>document.querySelector('.has-evening-d100-template canvas')?.loveRollDie?.readState().optics.loaded);
   await page.evaluate(()=>document.fonts.ready);
   const evening=await metrics();console.log('D100_METRICS',width,{home,evening});
-  assert.deepEqual(evening.brand,home.brand);assert.deepEqual(evening.nav,home.nav);assert.equal(evening.title.font,home.title.font);assert.equal(evening.title.y,home.title.y);assert.equal(evening.info.w,home.info.w);assert.equal(evening.info.h,home.info.h);
+  assert.deepEqual(evening.brand,home.brand);assert.deepEqual(evening.nav,home.nav);assert.equal(evening.title.font,home.title.font);
+  // Compact short-screen Soirée intentionally raises the heading to create
+  // space for D100. Match Accueil typography/width, NOT its absolute y.
+  assert.equal(evening.title.x,home.title.x);assert.equal(evening.title.w,home.title.w);
+  assert.ok(evening.title.y>=evening.brand.y+evening.brand.h-1,
+   'Soirée heading overlaps the shared LoveRoll logo');
+  assert.ok(evening.title.y+evening.title.h<=evening.nav.y,
+   'Soirée heading leaves the visible screen');
+  assert.equal(evening.info.w,home.info.w);assert.equal(evening.info.h,home.info.h);
   const layout=await page.evaluate(()=>{const c=document.querySelector('.evening-d35-col canvas'),r=c.getBoundingClientRect(),b=c.loveRollDie.projectedBounds();const bounds=s=>document.querySelector(s).getBoundingClientRect();return {scroll:document.documentElement.scrollHeight-innerHeight,horizontal:document.documentElement.scrollWidth-innerWidth,contact:bounds('.home-pedestal-contact').top,bottom:r.top+b.bottom*r.height,center:r.left+(b.left+b.right)*r.width/2,mesh:b,meshTop:r.top+b.top*r.height,stageSize:bounds('.love3d-stage').width,
    heroHeight:bounds('.evening-d100-theater').height,heroTop:bounds('.evening-d100-theater').top,statusTop:bounds('.evening-play-state').top,quotaBottom:bounds('.evening-d100-quota').bottom,navTop:bounds('.nav').top};});console.log('D100_LAYOUT',width,layout);
   assert.equal(layout.scroll,0);assert.equal(layout.horizontal,0);assert.ok(layout.quotaBottom<layout.navTop);assert.ok(Math.abs(layout.bottom-layout.contact)<2);assert.ok(Math.abs(layout.center-width/2)<3);assert.ok(layout.mesh.top>=0&&layout.mesh.bottom<=1);assert.ok(layout.meshTop>=layout.heroTop+3);assert.ok(layout.bottom<=layout.statusTop-2,'Dice must not overlap the status and action controls');
