@@ -67,8 +67,19 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   await page.waitForFunction(()=>document.querySelector('.home-die-platform canvas')?.dataset.spinning==='true');
   const rolling=await read();
   assert.equal(rolling.modelId,initial.modelId,'The throw must animate the inspected model');
-  await page.waitForTimeout(400);
-  assert.ok(changed(rolling,await read()),'The same geometry must visibly tumble during the throw');
+  // A single frame at 400ms can coincide with a near-identical quaternion
+  // during multiple simultaneous full turns. Check real rendered motion over
+  // several samples instead; a genuinely frozen mesh still fails.
+  let moved=false,advancedFrames=false;
+  for(let sample=0;sample<12;sample++){
+   await page.waitForTimeout(130);
+   const current=await read();
+   assert.equal(current.modelId,initial.modelId,'The animation must retain the same WebGL mesh');
+   if(changed(rolling,current))moved=true;
+   if(current.renderedFrames>rolling.renderedFrames+1)advancedFrames=true;
+  }
+  assert.ok(advancedFrames,'The official roll must render new WebGL frames');
+  assert.ok(moved,'The same geometry must visibly tumble during the throw');
   if(process.env.LOVEROLL_CAPTURE_DIR)await page.screenshot({path:path.join(process.env.LOVEROLL_CAPTURE_DIR,'ruby-throw.png')});
   await page.waitForSelector('.home-roll-button.is-used',{timeout:12000});
   await page.waitForFunction(()=>document.querySelector('.home-die-platform canvas')?.dataset.spinning==='false');
