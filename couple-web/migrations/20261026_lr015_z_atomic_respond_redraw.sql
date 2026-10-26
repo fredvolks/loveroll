@@ -417,4 +417,79 @@ BEGIN
  return rowout;
 end;$function$;
 
+-- Readiness feature gate: the client must never display refusal controls
+-- before the atomic transaction RPC exists and the owning migrations are live.
+CREATE OR REPLACE FUNCTION public.love_redraw_capabilities(p_couple uuid)
+RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=''
+AS $ready$
+BEGIN
+ PERFORM public.love_require_verified_identity();
+ IF (select auth.uid()) IS NULL OR p_couple IS NULL
+   OR NOT couple_private.is_member(p_couple) THEN
+  RAISE EXCEPTION 'Accès au duo refusé';
+ END IF;
+ RETURN true;
+END;
+$ready$;
+REVOKE ALL ON FUNCTION public.love_redraw_capabilities(uuid) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.love_redraw_capabilities(uuid) TO authenticated;
+
+-- Shared queue counts must exclude BOTH passed and refused occurrences.
+-- Otherwise partners could see different numbers of remaining D6 draws.
+CREATE OR REPLACE FUNCTION public.my_love_evening_board(p_session uuid)
+RETURNS jsonb LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=''
+AS $board$
+DECLARE s public.couple_sessions%rowtype;
+ a uuid;b uuid; target_a int;target_b int;draw_a int;draw_b int;
+ done_a int;done_b int;turn_uid uuid;
+BEGIN
+ PERFORM public.love_require_verified_identity();
+ SELECT * INTO s FROM public.couple_sessions WHERE id=p_session;
+ IF NOT FOUND OR NOT couple_private.is_member(s.couple_id) THEN
+  RAISE EXCEPTION 'Accès refusé';END IF;
+ a:=coalesce(s.starting_user_id,s.opened_by);
+ SELECT m.user_id INTO b FROM public.couple_members m
+ WHERE m.couple_id=s.couple_id AND m.user_id<>a LIMIT 1;
+ IF b IS NULL THEN RETURN jsonb_build_object('ready',false);END IF;
+ SELECT pr.face+(SELECT count(*) FROM public.couple_challenge_gifts g
+   WHERE g.session_id=p_session AND g.receiver_user_id=a)
+   -(SELECT count(*) FROM public.couple_challenge_gifts g
+   WHERE g.session_id=p_session AND g.donor_user_id=a)
+ INTO target_a FROM public.couple_personal_rolls pr
+ WHERE pr.session_id=p_session AND pr.user_id=a;
+ SELECT pr.face+(SELECT count(*) FROM public.couple_challenge_gifts g
+   WHERE g.session_id=p_session AND g.receiver_user_id=b)
+   -(SELECT count(*) FROM public.couple_challenge_gifts g
+   WHERE g.session_id=p_session AND g.donor_user_id=b)
+ INTO target_b FROM public.couple_personal_rolls pr
+ WHERE pr.session_id=p_session AND pr.user_id=b;
+ IF target_a IS NULL OR target_b IS NULL THEN
+  RETURN jsonb_build_object('ready',false,'first',a,'next',null,
+   'targets','{}'::jsonb,'completed','{}'::jsonb,'drawn','{}'::jsonb);
+ END IF;
+ SELECT count(*) FILTER (WHERE recipient=a AND status NOT IN ('passed','refused')),
+  count(*) FILTER (WHERE recipient=b AND status NOT IN ('passed','refused')),
+  count(*) FILTER (WHERE recipient=a AND status='completed'),
+  count(*) FILTER (WHERE recipient=b AND status='completed')
+ INTO draw_a,draw_b,done_a,done_b
+ FROM public.couple_challenges WHERE session_id=p_session;
+ IF draw_a>=target_a AND draw_b>=target_b THEN turn_uid:=null;
+ ELSIF draw_a>=target_a THEN turn_uid:=b;
+ ELSIF draw_b>=target_b THEN turn_uid:=a;
+ ELSIF draw_a<=draw_b THEN turn_uid:=a;
+ ELSE turn_uid:=b;END IF;
+ RETURN jsonb_build_object('ready',true,'first',a,'next',turn_uid,
+  'finished',done_a>=target_a AND done_b>=target_b,
+  'drawsFinished',draw_a>=target_a AND draw_b>=target_b,
+  'targets',jsonb_build_object(a::text,target_a,b::text,target_b),
+  'drawn',jsonb_build_object(a::text,draw_a,b::text,draw_b),
+  'completed',jsonb_build_object(a::text,done_a,b::text,done_b),
+  'remaining',jsonb_build_object(a::text,greatest(0,target_a-draw_a),
+    b::text,greatest(0,target_b-draw_b)));
+END;
+$board$;
+REVOKE ALL ON FUNCTION public.my_love_evening_board(uuid)
+ FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.my_love_evening_board(uuid) TO authenticated;
+
 COMMIT;

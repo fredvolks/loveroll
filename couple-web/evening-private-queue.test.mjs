@@ -75,3 +75,27 @@ test('Only completed challenge cards are greyed but stay clickable for history',
  assert.doesNotMatch(app,/data-action="evening-open:.*disabled/);
  assert.match(queueCss,/\.evening-queue-item\.is-completed:focus-visible/);
 });
+
+test('LR-015 integrated client: consent dialog, server-gated, idempotent replacement and private queue',()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const sql=readFileSync(new URL('./migrations/20261026_lr015_z_atomic_respond_redraw.sql',import.meta.url),'utf8');
+ const css=readFileSync(new URL('./evening-private-queue.css',import.meta.url),'utf8');
+ assert.equal(queueLabel('refused'),'Refusé');
+ assert.match(app,/state\.redrawReady=\(await rpc\('love_redraw_capabilities'/);
+ assert.match(app,/state\.redrawReady\?/);
+ assert.match(app,/evening-refuse-choice:/);
+ assert.match(app,/Oui, retirer du lot/);
+ assert.match(app,/Non, le garder dans le lot/);
+ assert.match(app,/Annuler/);
+ assert.match(app,/if\(state\.redrawBusy\)return;/);
+ assert.match(app,/rpc\('love_respond_and_redraw'/);
+ assert.match(app,/p_action:refuse\?'refuse':'pass'/);
+ assert.match(app,/challengeTimer\.running=false;challengeTimer\.deadline=0/);
+ assert.match(app,/outcome\?\.replacement_id/);
+ assert.match(sql,/FUNCTION public\.love_redraw_capabilities\(p_couple uuid\)/);
+ assert.match(sql,/FUNCTION public\.my_love_evening_board\(p_session uuid\)/);
+ assert.match(sql,/status NOT IN \('passed','refused'\)/);
+ assert.match(css,/\.lr-refusal-buttons\{display:flex/);
+ assert.match(css,/\.lr-refusal-buttons button:focus-visible/);
+ assert.doesNotMatch(app,/data-action="evening-refuse-choice:[^"]+"\s*onclick=/);
+});

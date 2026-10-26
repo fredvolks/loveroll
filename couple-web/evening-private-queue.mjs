@@ -9,7 +9,7 @@ export function queuePosition(cards=[],id){
  return cards.findIndex(c=>c.id===id);
 }
 export function queueLabel(status){
- return ({proposed:'À commencer',accepted:'En cours',completed:'Terminé',passed:'Passé'})[status]||'À faire';
+ return ({proposed:'À commencer',accepted:'En cours',completed:'Terminé',passed:'Passé',refused:'Refusé'})[status]||'À faire';
 }
 export function hasTurnToDraw(board,userId){
  return !!(board?.ready&&!board?.drawsFinished&&board?.next===userId&&

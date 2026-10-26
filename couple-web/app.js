@@ -94,7 +94,7 @@ const worldText=key=>worldT(worldLocale(),key);
 const state={user:null,profile:null,members:[],coupleId:null,couple:null,
  tab:launchParams.has('settings')?'settings':(['home','session','special','advent'].includes(launchParams.get('open'))?launchParams.get('open'):'home'),weekly:null,monthly:{},session:null,personal:[],challenges:[],gifts:[],rollStatus:null,customCards:[],customCategory:'SENSUEL',customSlot:1,customSearch:'',customFilter:'all',monthlyActivities:[],monthlySlot:1,libraryScreen:'list',libraryImportKind:null,specialEditorKey:null,specialEditorStage:'D6_activite',specialEditorFace:1,adventEditorDay:1,pushDevice:null,
  events:[],journal:[],advent:[],advent2026Config:null,advent2026Days:[],selectedDay:1,adventYear:null,adventSelected:null,adventHistory:false,adventOpening:null,adventRevealing:false,adventServerDate:null,unlockKey:null,channel:null,
- occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],monthlyPassQuota:null,calendarPassMonth:null,cycleStatus:null,cycleDeferred:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoBookingEdit:false,referral:null,eclat:null,eclatGalleryScroll:0,eclatHistory:[],eclatHistoryCouple:null,eclatBrowse:false,eclatHistoryError:false,eclatSelection:1,eclatMinutes:60,eclatDetails:false,eclatMusic:false,eclatFinished:null,testModeEligible:false,testMode:'real'};
+ occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningRefusalId:null,redrawReady:false,redrawBusy:false,eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],monthlyPassQuota:null,calendarPassMonth:null,cycleStatus:null,cycleDeferred:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoBookingEdit:false,referral:null,eclat:null,eclatGalleryScroll:0,eclatHistory:[],eclatHistoryCouple:null,eclatBrowse:false,eclatHistoryError:false,eclatSelection:1,eclatMinutes:60,eclatDetails:false,eclatMusic:false,eclatFinished:null,testModeEligible:false,testMode:'real'};
 const names={SENSUEL:'Sensuel',COQUIN:'Coquin',SEXUEL:'Sexuel'};
 function isSharedCoupleReady(coupleId,members){
  return !!coupleId&&Array.isArray(members)&&members.length===2;
@@ -225,6 +225,7 @@ function backFromLoveRoll(){
   document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
   return true;
  }
+ if(state.eveningRefusalId){state.eveningRefusalId=null;render();return true;}
  if(state.installModalOpen||state.forceInstallGuide){handle('install-later').catch(fail);return true;}
  if(state.reviewModalSessionId){state.reviewDismissedSessionId=state.reviewModalSessionId;state.reviewModalSessionId=null;state.reviewDraft={};render();return true;}
  if(allowBackExit){allowBackExit=false;return false;}
@@ -922,6 +923,10 @@ async function refreshShared(){
  state.eveningCalendarChallenges=Array.isArray(calendarChallenges)?calendarChallenges:[];
  state.calendarPassQuota=Array.isArray(calendarPasses)?calendarPasses:[];
  state.monthlyPassQuota=monthlyPassQuota;
+ // Hide Passer/Refuser until ALL server migrations are installed. A missing
+ // optional RPC must not prevent an existing duo from loading the game.
+ try{state.redrawReady=(await rpc('love_redraw_capabilities',{p_couple:c}))===true;}
+ catch{state.redrawReady=false;}
  state.calendarPassMonth=state.eveningCalendarMonth||month();
  state.eveningReviews=Array.isArray(eveningReviews)?eveningReviews:[];
  state.gifts=gifts;
@@ -1494,13 +1499,28 @@ function renderSession(){
      '<h2>'+safe(resolvedCard(view).title)+'</h2>'+
      '<div class="evening-challenge-scene" aria-hidden="true"></div>'+
      '<p>'+safe(resolvedCard(view).description)+'</p>'+
-     timerWidget(view,resolvedCard(view).minutes)+
+     (['proposed','accepted'].includes(view.status)?
+       timerWidget(view,resolvedCard(view).minutes):
+       '<p class="tiny-note">Ce défi est archivé dans votre historique.</p>')+
      (view.status==='proposed'?
        button('evening-start:'+view.id,'▶ Commencer ce défi','class="evening-primary"'):'')+
      (view.status==='accepted'?
        button('answer:'+view.id+':completed','✓ Défi réalisé','class="evening-primary"'):'')+
-     (['proposed','accepted'].includes(view.status)?
-       button('answer:'+view.id+':passed','Passer ce défi','class="subtle"'):'')+
+     (['proposed','accepted'].includes(view.status)&&state.redrawReady?
+      '<div class="lr-redraw-actions" aria-label="Autres choix pour ce défi">'+
+       button('evening-pass:'+view.id,'Passer ce défi','class="subtle" '+(state.redrawBusy||state.monthlyPassQuota?.can_pass===false?'disabled':''))+
+       button('evening-refuse:'+view.id,'Refuser ce défi','class="subtle" '+(state.redrawBusy?'disabled':''))+
+       '<small>Passes restantes : '+safe(state.monthlyPassQuota?.remaining??'—')+
+       '. Refuser reste permis, sans pénalité.</small></div>':'')+
+     (view&&state.eveningRefusalId===view.id?
+      '<div class="lr-refusal-dialog" role="alertdialog" aria-modal="true" aria-labelledby="lr-refusal-title" aria-describedby="lr-refusal-description">'+
+       '<h3 id="lr-refusal-title">Tu préfères un autre défi ?</h3>'+
+       '<p id="lr-refusal-description">Veux-tu retirer ce défi des prochaines piges pour le cycle en cours ?</p>'+
+       '<div class="lr-refusal-buttons">'+
+        button('evening-refuse-choice:'+view.id+':yes','Oui, retirer du lot','class="evening-primary" '+(state.redrawBusy?'disabled':''))+
+        button('evening-refuse-choice:'+view.id+':no','Non, le garder dans le lot','class="subtle" '+(state.redrawBusy?'disabled':''))+
+        button('evening-refuse-cancel','Annuler','class="subtle" '+(state.redrawBusy?'disabled':''))+
+       '</div></div>':'')+
      '<div class="evening-queue-nav">'+
        (idx>0?button('evening-open:'+mineCards[idx-1].id,'← Précédent','class="subtle"'):'<span></span>')+
        (idx<mineCards.length-1?button('evening-open:'+mineCards[idx+1].id,'Suivant →','class="subtle"'):'<span></span>')+
@@ -2616,6 +2636,52 @@ async function handle(action,element){
   if(!ownEveningChallenges(state.challenges,state.user?.id,state.session?.id).some(x=>x.id===parts[0]))
    throw Error('Ce défi ne fait pas partie de ta liste personnelle.');
   state.selectedEveningChallengeId=parts[0];state.showEveningChallenges=true;render();return;
+ }
+ if(verb==='evening-refuse'){
+  if(!state.redrawReady)throw Error('La repige sécurisée n’est pas encore disponible sur ce serveur.');
+  const item=ownEveningChallenges(state.challenges,state.user?.id,state.session?.id).find(x=>x.id===parts[0]);
+  if(!item||!['proposed','accepted'].includes(item.status))throw Error('Ce défi ne peut pas être refusé.');
+  state.eveningRefusalId=item.id;render();
+  root.querySelector('[data-action="evening-refuse-choice:'+item.id+':yes"]')?.focus();
+  return;
+ }
+ if(verb==='evening-refuse-cancel'){
+  const target=state.eveningRefusalId;
+  if(!state.redrawBusy){state.eveningRefusalId=null;render();
+   root.querySelector('[data-action="evening-refuse:'+target+'"]')?.focus();}
+  return;
+ }
+ if(verb==='evening-pass'||verb==='evening-refuse-choice'){
+  if(!state.redrawReady)throw Error('La repige sécurisée n’est pas encore disponible sur ce serveur.');
+  if(state.redrawBusy)return;
+  const refuse=verb==='evening-refuse-choice',challengeId=parts[0];
+  if(refuse&&state.eveningRefusalId!==challengeId)throw Error('Confirme ton choix pour ce défi.');
+  if(refuse&&!['yes','no'].includes(parts[1]))throw Error('Choix de refus non reconnu.');
+  const item=ownEveningChallenges(state.challenges,state.user?.id,state.session?.id).find(x=>x.id===challengeId);
+  if(!item||!['proposed','accepted'].includes(item.status))throw Error('Défi déjà répondu ou inaccessible.');
+  if(!refuse&&state.monthlyPassQuota?.can_pass===false)
+   throw Error('Limite mensuelle de passages atteinte. Tu peux toujours refuser un défi.');
+  const sessionId=state.session.id,exclude=refuse&&parts[1]==='yes';
+  state.redrawBusy=true;render();
+  try{
+   const outcome=await rpc('love_respond_and_redraw',{
+    p_challenge:challengeId,p_action:refuse?'refuse':'pass',p_exclude:exclude});
+   // Clear only the timer for the responded challenge. A late callback from
+   // this local device must not mark a passed/refused card as completed.
+   if(challengeTimer.id===challengeId){
+    challengeTimer.running=false;challengeTimer.deadline=0;challengeTimer.remainingMs=0;
+    challengeTimer.notified=true;saveChallengeTimer();
+   }
+   state.eveningRefusalId=null;
+   state.selectedEveningChallengeId=outcome?.replacement_id||null;
+   if(state.session?.id===sessionId)state.showEveningChallenges=true;
+   await refreshAndShow();
+   notify(outcome?.replacement_unavailable?
+    'Aucun autre défi admissible dans cette catégorie pour ce soir. Tu peux réintégrer un défi retiré ou revenir plus tard.':
+    (refuse?(exclude?'Défi retiré du lot pour ce cycle.':'Défi conservé dans la pige.'):
+      'Défi passé — il pourra revenir plus tard.'));
+  }finally{state.redrawBusy=false;}
+  return;
  }
  if(verb==='evening-start'){
   // Prime WebAudio immediately during the user's tap, before awaiting the server.
