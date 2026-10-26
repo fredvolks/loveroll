@@ -43,10 +43,10 @@ const user={id:'test-user-1',email:'example1@test.invalid',email_confirmed_at:'2
 const second={id:'test-user-2',email:'example2@test.invalid',email_confirmed_at:'2026-10-12T14:00:00Z'};
 export function createClient(){
  const mode=new URL(location.href).searchParams.get('boot_case')||'anonymous';
- window.__loveOauthArgs=null;
+ window.__loveOauthArgs=null;window.__redrawCalls=[];
  const authenticated=mode!=='anonymous';
- const paired=['paired','paired-active','paired-pending','paired-partner-result'].includes(mode);
- const active=['paired-active','paired-pending','paired-partner-result'].includes(mode);
+ const paired=['paired','paired-active','paired-pending','paired-partner-result','paired-redraw'].includes(mode);
+ const active=['paired-active','paired-pending','paired-partner-result','paired-redraw'].includes(mode);
  const localDay=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Toronto',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
  const monday=new Date(localDay+'T12:00:00Z');
  monday.setUTCDate(monday.getUTCDate()-((monday.getUTCDay()+6)%7));
@@ -68,7 +68,13 @@ export function createClient(){
    mode==='paired-partner-result'?
     [{id:'d6-partner',session_id:'active-session-synthetic',user_id:second.id,face:4}]:
    active?[{id:'d6-user',session_id:'active-session-synthetic',user_id:user.id,face:2},
-    {id:'d6-second',session_id:'active-session-synthetic',user_id:second.id,face:3}]:[]
+    {id:'d6-second',session_id:'active-session-synthetic',user_id:second.id,face:3}]:[],
+  couple_challenges:mode==='paired-redraw'?[{
+   id:'redraw-original',couple_id:'couple-test',session_id:'active-session-synthetic',
+   recipient:user.id,offered_by:second.id,category:'SENSUEL',card_id:1,face:12,
+   status:'accepted',card_title:'Défi original',card_description:'Activité synthétique',
+   card_timer_minutes:0,created_at:earlier
+  }]:[]
  };
  return {
   auth:{
@@ -81,11 +87,26 @@ export function createClient(){
     then(ok,fail){return Promise.resolve({data:rows[table]||[],error:null}).then(ok,fail)}};
    return query;
   },
-  rpc:async(name)=>({data:name==='get_love_guidance'?'gentle':
+  rpc:async(name,args)=>{
+   if(mode==='paired-redraw'&&name==='love_redraw_capabilities')return {data:true,error:null};
+   if(mode==='paired-redraw'&&name==='my_love_cycle_exclusions')return {data:[],error:null};
+   if(mode==='paired-redraw'&&name==='my_love_monthly_pass_quota')
+    return {data:{used:0,limit:3,remaining:3,can_pass:true},error:null};
+   if(mode==='paired-redraw'&&name==='love_respond_and_redraw'){
+    window.__redrawCalls.push({name,args});
+    const original=rows.couple_challenges[0];
+    original.status=args.p_action==='refuse'?'refused':'passed';
+    if(!rows.couple_challenges.some(c=>c.id==='redraw-replacement'))
+     rows.couple_challenges.push({...original,id:'redraw-replacement',status:'proposed',
+      card_id:2,face:13,card_title:'Remplacement du défi',created_at:new Date().toISOString()});
+    return {data:{original_id:original.id,replacement_id:'redraw-replacement',
+      excluded:args.p_exclude,already_processed:false},error:null};
+   }
+   return {data:name==='get_love_guidance'?'gentle':
    name==='love_advent_server_date'?'2026-10-15':
    name==='my_love_evening_card_totals'?[{sensual:35,sexual:35,total:70}]:
-   name==='my_love_roll_status'&&active?[{my_rolled:mode==='paired-active',
-    partner_rolled:mode!=='paired-pending',both_ready:mode==='paired-active'}]:
+   name==='my_love_roll_status'&&active?[{my_rolled:mode==='paired-active'||mode==='paired-redraw',
+    partner_rolled:mode!=='paired-pending',both_ready:mode==='paired-active'||mode==='paired-redraw'}]:
    name==='my_love_evening_board'&&active?{
     ready:true,first:user.id,next:user.id,
     targets:{[user.id]:2,[second.id]:3},remaining:{[user.id]:2,[second.id]:3},
@@ -93,7 +114,8 @@ export function createClient(){
     completed:{[user.id]:0,[second.id]:0},
     drawsFinished:false,finished:false
    }:
-   [],error:null}),
+   [],error:null};
+  },
   channel(){return {on(){return this},subscribe(){return this}}},
   removeChannel:async()=>{}
  };
@@ -106,6 +128,7 @@ export function createClient(){
   ['google-return','?boot_case=existing&code=simulated-oauth-code','.partner-create-page'],
   ['existing-paired','?boot_case=paired','.loveroll-real-home'],
   ['active-evening','?boot_case=paired-active','.loveroll-real-home'],
+  ['redraw-flow','?boot_case=paired-redraw','.loveroll-real-home'],
   ['step1-partner-pending','?boot_case=paired-pending','.loveroll-real-home'],
   ['step1-partner-result','?boot_case=paired-partner-result','.loveroll-real-home']
  ]){
@@ -245,6 +268,31 @@ export function createClient(){
    await page.locator('.evening-premium-view').waitFor({timeout:10000});
    if(errors.length)throw Error('Returning from Surprise to Soirée caused exception '+JSON.stringify(errors));
    console.log('SOIREE_ACTIVE_ACCESS_OK','two confirmed dice, shared live board, queue button, tab revisit');
+  }
+  if(name==='redraw-flow'){
+   await selectTab(page,'session');
+   await page.locator('.evening-premium-view').waitFor({timeout:10000});
+   await page.locator('[data-action="evening-list"]').first().click();
+   await page.locator('.evening-queue-item').first().click();
+   const refuse=page.locator('[data-action="evening-refuse:redraw-original"]');
+   await refuse.waitFor({state:'visible'});
+   await refuse.click();
+   const dialog=page.locator('.lr-refusal-dialog[role="alertdialog"]');
+   await dialog.waitFor({state:'visible'});
+   for(const label of ['Oui, retirer du lot','Non, le garder dans le lot','Annuler'])
+    if(!(await dialog.innerText()).includes(label))throw Error('Missing refusal choice '+label);
+   await page.locator('[data-action="evening-refuse-cancel"]').click();
+   if((await page.evaluate(()=>window.__redrawCalls.length))!==0)
+    throw Error('Cancel must not consume a redraw or mutate a card');
+   await refuse.click();
+   await page.locator('[data-action="evening-refuse-choice:redraw-original:no"]').click();
+   await page.locator('.evening-queue-detail h2').filter({hasText:'Remplacement du défi'}).waitFor({timeout:10000});
+   const calls=await page.evaluate(()=>window.__redrawCalls);
+   if(calls.length!==1||calls[0].args.p_challenge!=='redraw-original'||
+    calls[0].args.p_action!=='refuse'||calls[0].args.p_exclude!==false)
+    throw Error('Atomic refusal payload mismatch '+JSON.stringify(calls));
+   if(errors.length)throw Error('Refusal JavaScript errors '+JSON.stringify(errors));
+   console.log('LR015_REAL_BROWSER_REFUSAL_OK','cancel untouched, one refusal and same-category replacement');
   }
   console.log('BOOT_OK',name,text.slice(0,180).replace(/\\s+/g,' '));
   await page.close();
