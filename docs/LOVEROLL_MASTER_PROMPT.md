@@ -427,3 +427,56 @@ Le [rapport UX/UI du 26 octobre 2026](./LOVEROLL_AUDIT_UX_UI_20261026.md) est un
 - risques résiduels et prochaine action.
 
 > **Directives impératives :** pas de refonte totale ; ne pas demander « continue » après chaque bloc ; ne pas interrompre sans nécessité ; conserver l'identité LoveRoll et les règles du jeu ; Accueil = source visuelle ; un dé rendu complet et posé sur son socle ; une minuterie qui arrive à 00:00 valide **une seule fois** le défi associé.
+
+
+## LR-SURPRISE-001 — Rendez-vous surprise premium, D100 et Geoapify
+**Demande approuvée le 26 octobre 2026 — à implémenter et vérifier. Cette section précise les règles antérieures incompatibles concernant les filtres de distance et de budget.**
+
+### Mission et périmètre
+Améliorer le parcours Surprise existant pour fournir au couple une sortie pertinente, facile à adapter et à planifier. Conserver Geoapify pour les lieux réels, le D100 mensuel, le D6 qui désigne qui invite/organise, les événements spéciaux, les tirages officiels et leur historique. Ne pas recommencer le module. Donner une expérience premium à cet onglet sans modifier les tarifs, Stripe ou les droits des abonnements existants dans ce lot. Les 20 $/mois évoqués servent de niveau d'exigence produit, pas d'instruction de changement de prix.
+
+### 1. Budget et kilomètres entièrement facultatifs — règle ferme
+- Les champs « Budget maximal pour deux » et « Distance maximale aller simple (km) » peuvent rester vides, indépendamment.
+- Vide signifie **aucun plafond choisi par le couple** pour ce critère. Stocker null, le transmettre comme null et le préserver après sauvegarde/rechargement. Ne jamais remplacer silencieusement par 125 km, 100 $, zéro ou une autre valeur par défaut.
+- Les deux champs vides signifient **toutes les possibilités**, pas « All in », pas une préférence luxe, coûteuse ou lointaine. Une promenade, un café, un mini-putt et une sortie à 300 $ restent tous admissibles; les sorties modestes et proches ne doivent pas être éliminées ou déclassées parce que les champs sont vides.
+- Affichage : « Toutes les distances » et « Tous les budgets ». Aucun libellé « All in », « sans limite de dépenses » ou promotion automatique vers le haut de gamme.
+- Un montant rempli est un plafond pour deux, dans la devise affichée; 0 $ signifie activité gratuite et reste distinct de null. Préciser les frais inclus ou inconnus; ne pas garantir une gratuité totale si transport, stationnement ou autres frais sont inconnus.
+- Une distance remplie est un plafond de trajet routier aller simple, et non la distance à vol d'oiseau. Refuser les valeurs invalides avec un message clair.
+- Aucun tarif absent ne doit devenir 0 $. Si le budget est plafonné et le coût inconnu, ne pas présenter le lieu comme respectant ce plafond : chercher une option documentée ou demander explicitement si le couple accepte une proposition au prix à vérifier.
+- Lever les plafonds métier existants incompatibles dans le formulaire, la normalisation, le RPC, le schéma et la fonction Geoapify. Conserver séparément les limites techniques de requêtes et les protections de coûts.
+- Sans plafond de distance, utiliser une recherche progressive bornée techniquement, sans balayage mondial ni appels sans limite. Présenter honnêtement la portée réellement explorée; ne pas la faire passer pour un choix du couple ou une recherche exhaustive. Le point de départ reste nécessaire pour une recherche géographique.
+- Aucune réservation ni dépense automatique.
+
+### 2. Écran Surprise et parcours du couple
+- Conserver le décor rouge, le socle, l'identité visuelle, les dés 3D et la navigation existante.
+- Avant tirage : titre « Notre rendez-vous du mois », mois et état « À découvrir », grand D100 complet posé sur son socle, bouton « Brasser notre surprise ».
+- Ajouter une ligne compacte des préférences avec « Modifier » : point de départ, distance ou « Toutes les distances », budget ou « Tous les budgets ». Aucun questionnaire obligatoire chaque mois.
+- Après tirage : faire du rendez-vous l'information principale; réduire le dé sans supprimer le résultat officiel. États partagés : à planifier, prévu, réalisé, avec règles serveur et historique.
+- Carte : titre concret, lieu réellement trouvé, distance vérifiée, durée de trajet si disponible, description courte et prochaine action « Choisir notre date ».
+- Fiche : adresse, GPS, site officiel, réservation externe si disponible, préparation utile, informations de prix/horaires/disponibilités explicitement à vérifier lorsqu'elles ne sont pas confirmées. Ne pas inventer de photo, service, tarif ou lien.
+- Conserver « Nos événements » et le D6 « Qui organise notre rendez-vous ? ».
+- La personne qui invite propose une date; son partenaire peut accepter ou proposer une autre date. Distinguer accord du couple et réservation externe déclarée confirmée. Les permissions de réservation restent celles de l'hôte.
+- Ajouter « On l'a fait ♥ », appréciation et souvenir/photo facultatifs avec confidentialité du duo.
+- Après découverte, une carte secondaire « Un moment à deux cette semaine » peut fournir une idée simple complémentaire, sans nouveau D100 officiel ni modification de ses quotas. Elle ne doit pas surcharger l'écran.
+
+### 3. Qualité des idées et adaptation
+- Simplifier les titres du catalogue et créer une variété réelle; ne pas compter un simple changement de titre comme une nouvelle expérience.
+- Le lieu final doit correspondre à l'activité annoncée. « Mini-golf » ne peut pas aboutir à un centre sportif générique ou des quilles sans adaptation explicite. Vérifier les catégories; si le service précis reste inconnu, employer un titre honnête.
+- Geoapify fournit les lieux; LoveRoll compose le rendez-vous et peut ajouter une petite mission complice facultative, sans prétendre que l'établissement la fournit.
+- « Adapter la sortie » : autre lieu, déjà visité, fermé, trop loin, trop cher, variante adaptée. Préserver le D100, l'hôte et l'historique; ne pas consommer les passes des défis de soirée.
+- Enregistrer les appréciations et éviter les répétitions de lieux; conserver la diversité des catégories et des coûts sans favoriser les activités chères.
+- Une modification des préférences ne remplace jamais silencieusement un rendez-vous déjà réservé.
+
+### 4. Correctifs de fiabilité prioritaires
+- Rejeter les distances null/absentes/non numériques de la matrice Geoapify avant conversion : un trajet absent n'est jamais 0 km.
+- Séparer panne temporaire, recherche en cours et aucun résultat. Une panne ne doit plus rendre le mois définitivement indisponible.
+- Relances bornées avec attente, cache et verrou serveur; ne pas multiplier les appels payants si les deux partenaires ouvrent simultanément.
+- Rafraîchir les états pending jusqu'au résultat ou à une erreur récupérable, avec arrêt du suivi à la fermeture/changement de compte.
+- Préremplir la date locale existante lors de la modification d'une réservation.
+- Annoncer un rappel uniquement selon son état réellement programmé et les préférences de notifications. Une simple planification ne doit pas promettre un rappel réservé aux réservations confirmées.
+- Conserver les clés côté serveur, l'isolation par couple et les contrôles de l'hôte.
+
+### 5. Critères de validation et livraison
+Tester au minimum : deux champs vides, chaque champ vide séparément, budget 0, budget 300, distance plafonnée, valeurs invalides, sauvegarde/rechargement des null, prix inconnu, variété avec filtres vides, absence de trajet, panne puis reprise, double ouverture, aucun lieu, adaptation sans nouveau tirage, date/rappel modifiés et synchronisation entre partenaires.
+Vérifier visuellement sur Android S25 Ultra, iPhone, tablette et PC : D100 complet sur socle, lisibilité, formulaire utilisable, boutons accessibles et absence de débordement.
+Livrer par lots vérifiés dans le dépôt existant, suivre les tests GitHub jusqu'au résultat final et mettre à jour le suivi avec preuves. Distinguer documentation ajoutée, code implémenté, tests réussis et déploiement réellement vérifié. Ne pas cocher cette exigence comme réalisée après le seul ajout de ce prompt.
