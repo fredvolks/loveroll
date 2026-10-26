@@ -217,7 +217,7 @@ test('LR-015 phase 2: private per-couple current-cycle exclusion registry and sa
 
 
 test('LR-015 phase 3: atomic refusal/pass and same-category replacement contracts',()=>{
- const m=read('migrations/20261026_lr015_atomic_respond_redraw.sql');
+ const m=read('migrations/20261026_lr015_z_atomic_respond_redraw.sql');
  const fn=m.slice(m.indexOf('CREATE OR REPLACE FUNCTION public.love_respond_and_redraw('),
   m.indexOf('REVOKE ALL ON FUNCTION public.love_respond_and_redraw'));
  assert.match(m,/status IN \('proposed','accepted','passed','refused','completed'\)/);
@@ -245,7 +245,7 @@ test('LR-015 phase 3: atomic refusal/pass and same-category replacement contract
  const draw=m.slice(m.indexOf('CREATE OR REPLACE FUNCTION public.draw_for_partner'));
  assert.match(draw,/status NOT IN \('passed','refused'\)/);
  assert.match(draw,/ex\.cycle_number=v_cycle/);
- assert.match(draw,/ex\.category=cats\.category AND ex\.card_id=candidate\.card/);
- assert.match(draw,/ex\.category=v_cat AND ex\.card_id=card/);
+ assert.match(draw,/ex\.category=cats\.category\s+and\s+ex\.card_id=candidate\.card/i);
+ assert.match(draw,/ex\.category=v_cat\s+and\s+ex\.card_id=card/i);
  assert.doesNotMatch(draw,/status<>'passed'/);
 });
