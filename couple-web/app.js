@@ -2027,7 +2027,7 @@ function adminCategoryWeightEditor(){
   '</div></details>';
 }
 function openSettingsPage(section=''){
- const allowed=['','compte','couple','notifications','sonneries','jeu','confidentialite','application','monde','parrainage','aide','aide-connexion','aide-des','aide-sync','admin'];
+ const allowed=['','compte','couple','notifications','sonneries','jeu','preferences','avantages','confidentialite','application','monde','parrainage','aide','aide-connexion','aide-des','aide-sync','admin'];
  if(!allowed.includes(section))return;
  if(section==='admin'&&!isLoveAdmin())throw Error('Options réservées au créateur du couple.');
  if(section==='parrainage'&&state.referral?.enabled!==true)return;
@@ -2179,6 +2179,8 @@ function renderSettings(){
  const world=worldwideSettingsHtml({locale:worldLocale(),currency:currencyOrDefault(state.profile?.preferred_currency),couple:state.couple||{}});
  const pages={compte:{title:worldText('myAccount'),body:account},couple:{title:worldText('duoLabel'),body:partner},
   ...(state.referral?.enabled===true?{parrainage:{title:'Parrainage',body:referralSettingsHtml(state.referral)}}:{}),
+  preferences:{title:'Mes préférences',body:'<p class="tiny-note">Personnel : chaque personne choisit ses préférences. Les paramètres de région sont communs au couple.</p>'+settingRow('Notifications et alertes','Personnel · Alertes et rappels','settings-page:notifications')+settingRow('Sonneries et sons','Personnel · Minuteurs','settings-page:sonneries')+settingRow('Langue, devise et région','Personnel et commun au couple','settings-page:monde')+settingRow('Confidentialité','Personnel · Discrétion et sécurité','settings-page:confidentialite')},
+  avantages:{title:'Abonnement et avantages',body:settingRow('Mon abonnement','Forfait et options actuellement disponibles','settings-page:application')+(state.referral?.enabled===true?settingRow('Parrainage et crédits','Lien personnel et progression','settings-page:parrainage'):'')},
   notifications:{title:worldText('notificationsLabel'),body:notifications},sonneries:{title:'Sonneries des minuteurs',body:soundSettingsHtml()+'<p id="notification-feedback" class="notification-feedback" role="status" aria-live="polite" hidden></p>'},jeu:{title:worldText('cardsLabel'),body:game},
   confidentialite:{title:worldText('privacyLabel'),body:privacy},
   application:{title:worldText('applicationLabel'),body:appSettings},
@@ -2192,18 +2194,18 @@ function renderSettings(){
  if(settingsOpenSection==='admin'&&!canEdit)settingsOpenSection='jeu';
  if(!pages[settingsOpenSection])settingsOpenSection='';
  const name=state.profile.display_name||'Mon profil',initial=Array.from(name)[0]||'♡';
- const items=[['couple',worldText('duoLabel'),hasPartner?state.members.map(m=>m.name).join(' & '):linked?'Invitation en attente':'Inviter mon partenaire'],
-  ['jeu',worldText('cardsLabel'),worldText('gameDetail')],
-  ['notifications',worldText('notificationsLabel'),worldText('notificationsDetail')],
-  ['monde',worldText('menu'),worldText('menuDesc')],
-  ['confidentialite',worldText('privacyLabel'),worldText('privacyDetail')],
-  ...(state.referral?.enabled===true?[['parrainage','Parrainage','Inviter des couples · Gagner des crédits']]:[]),
-  ['application',worldText('applicationLabel'),worldText('applicationDetail')]];
+ const items=[
+  ['couple','Notre duo',hasPartner?state.members.map(m=>m.name).join(' & '):linked?'Invitation en attente':'Inviter mon partenaire'],
+  ['jeu','Jeu et défis',worldText('gameDetail')],
+  ['preferences','Mes préférences','Alertes, sons, langue et confidentialité'],
+  ['avantages','Abonnement et avantages',state.referral?.enabled===true?'Forfait, parrainage et crédits':'Forfait et options'],
+  ['application','Aide et application','Guides, installation et mises à jour']
+ ];
  const menu='<button class="settings-profile-row" data-action="settings-page:compte"><span class="settings-initial" aria-hidden="true">'+safe(initial)+'</span><span><strong>'+safe(name)+'</strong><small>'+safe(worldText('myAccount'))+'</small></span><b aria-hidden="true">›</b></button>'+
   '<nav class="settings-sections" data-referral-active="'+(state.referral?.enabled===true?'true':'false')+'" aria-label="Rubriques des réglages">'+items.map(([key,label,detail])=>
    '<button data-action="settings-page:'+key+'" class="settings-section-row"><span class="settings-row-icon">'+settingsIcon(key)+'</span><span><strong>'+label+'</strong><small>'+safe(detail)+'</small></span><b aria-hidden="true">›</b></button>').join('')+'</nav>';
  const page=pages[settingsOpenSection];
- const parent=settingsOpenSection==='admin'?'jeu':settingsOpenSection==='sonneries'?'notifications':settingsOpenSection.startsWith('aide')?'application':'';
+ const parent=settingsOpenSection==='admin'?'jeu':['sonneries','notifications','monde','confidentialite'].includes(settingsOpenSection)?'preferences':settingsOpenSection==='parrainage'?'avantages':settingsOpenSection.startsWith('aide')?'application':'';
  const heading=editorialHeader(page?'settings-page:'+parent:'',parent==='jeu'?'Cartes et activités':parent==='application'?'Application et aide':'Réglages');
  frame('<section class="settings-editorial">'+heading+'<div class="settings-editorial-content">'+
   '<div class="editorial-title"><h1'+(page?'':' class="ritual-page-title"')+'>'+safe(page?.title||'Réglages')+'</h1>'+(settingsOpenSection==='admin'?'<small class="editorial-badge">Créateur</small>':'')+'</div>'+
