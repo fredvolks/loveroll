@@ -89,7 +89,7 @@ const client=`export function createClient(){
    const capsule=document.querySelector('.evening-partner-card'),
     display=capsule?.querySelector('.evening-partner-mobile-status')?.textContent||'',
     spoken=capsule?.getAttribute('aria-label')||'';
-   return /Camille\\s*·\\s*4/.test(display)&&spoken.includes('Camille a obtenu 4 défis');
+   return display.includes('Camille · 4')&&spoken.includes('Camille a obtenu 4 défis');
   },null,{timeout:12000});
   await b.locator('[data-action="my-d6"]').click();await b.locator('.evening-premium-view.is-ready').waitFor();
   await session(a);assert.equal(world.rolls.length,2);
