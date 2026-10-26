@@ -3454,7 +3454,12 @@ async function handle(action,element){
   const present=(state.loveFavorites||[]).some(f=>f.category===category&&Number(f.card_id)===cardId);
   const owned=[...(state.challenges||[]),...(state.challengesHistory||[])].some(c=>
    c.recipient===state.user.id&&c.category===category&&Number(c.card_id)===cardId);
-  if(!present&&!owned)throw Error('Cette carte n’est pas accessible depuis votre historique.');
+  // Both partners may favorite archived challenges after the evening closes.
+  // Active challenges belonging to the other partner are never exposed.
+  const closedIds=new Set((state.sessions||[]).filter(s=>s.finished_at).map(s=>s.id));
+  const archived=(state.eveningCalendarChallenges||[]).some(c=>
+    closedIds.has(c.session_id)&&c.category===category&&Number(c.card_id)===cardId);
+  if(!present&&!owned&&!archived)throw Error('Cette carte n’est pas accessible depuis votre historique.');
   const mine=(state.loveFavorites||[]).some(f=>f.category===category&&Number(f.card_id)===cardId&&f.marked_by===state.user.id);
   if(!mine&&(state.loveFavorites||[]).filter(f=>f.marked_by===state.user?.id).length>=5){
    state.favoriteLimitPending={category,cardId};render();return;
