@@ -39,8 +39,12 @@ INSERT INTO public.couple_challenges VALUES ('dddddddd-dddd-4ddd-8ddd-dddddddddd
 \ir ../migrations/20261026_lr019_favorites_core.sql
 -- Idempotent deployment on already migrated databases.
 \ir ../migrations/20261026_lr019_favorites_core.sql
-SELECT CASE WHEN has_table_privilege('authenticated','public.love_couple_favorites','SELECT')
- THEN 1/0 ELSE 1 END AS no_direct_table_read;
+DO $acl$
+BEGIN
+ IF has_table_privilege('authenticated','public.love_couple_favorites','SELECT') THEN
+  RAISE EXCEPTION 'Direct favorite table SELECT must remain revoked';
+ END IF;
+END $acl$;
 BEGIN;
 SET ROLE authenticated;
 SELECT set_config('request.jwt.claim.sub','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',false);
