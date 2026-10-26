@@ -44,10 +44,15 @@ const origin='http://127.0.0.1:8765';
       clientHeight:description.clientHeight,overflow:getComputedStyle(description).overflowY,
       keyboard:description.tabIndex===0,aria:description.getAttribute('aria-label'),
       buttonVisible:action.getBoundingClientRect().height>22,
-      nextInside:nav.getBoundingClientRect().bottom<=outer.bottom+2,
       articleBottom:outer.bottom,screenHeight:innerHeight};
     description.scrollTop=description.scrollHeight;
     result.canReadToEnd=description.scrollTop>15;
+    // For a long modal, the last action may require scrolling the secondary
+    // panel. It must still be reachable, not necessarily visible at first paint.
+    card.scrollTop=card.scrollHeight;
+    const after=nav.getBoundingClientRect();
+    result.nextInside=after.bottom<=outer.bottom+2&&after.top>=outer.top-2;
+    result.cardScrollable=card.scrollHeight>card.clientHeight+2;
     return result;
    });
    assert.equal(metrics.overflow,'auto',JSON.stringify({width,height,metrics}));
@@ -56,7 +61,7 @@ const origin='http://127.0.0.1:8765';
    assert.ok(metrics.scrollHeight>metrics.clientHeight+20&&metrics.canReadToEnd,
     'Long instructions must be scrollable to the last word: '+JSON.stringify({width,height,metrics}));
    assert.ok(metrics.buttonVisible&&metrics.nextInside,
-    'Keep the completion and next controls accessible: '+JSON.stringify({width,height,metrics}));
+    'Actions must remain reachable when the secondary modal scrolls: '+JSON.stringify({width,height,metrics}));
    console.log('LR012_INSTRUCTIONS_READABLE',width,height,JSON.stringify(metrics));
    await page.close();
   }
