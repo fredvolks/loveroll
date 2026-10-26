@@ -1,0 +1,48 @@
+name: LR-019 five favorites PostgreSQL checks
+on:
+  pull_request:
+    branches: [feat/lr019-favorites-ui-20261026]
+    paths:
+      - "couple-web/migrations/20261026_lr019_favorites_core.sql"
+      - "couple-web/qa/lr019-five-favorites.sql"
+      - ".github/workflows/lr019-five-favorites.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  five-favorites:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: local-test-only
+          POSTGRES_DB: loveroll_lr019_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGDATABASE: loveroll_lr019_test
+      PGUSER: postgres
+      PGPASSWORD: local-test-only
+    steps:
+      - uses: actions/checkout@v4
+      - name: Load disposable schema and server engine
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/qa/lr015-db-fixture.sql
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/migrations/20261026_lr015_cycle_exclusion_registry.sql
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/migrations/20261026_lr015_recycle_incomplete_on_close.sql
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/migrations/20261026_lr015_z_atomic_respond_redraw.sql
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/migrations/20261026_lr019_favorites_core.sql
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/migrations/20261026_lr019_z_draw_favorites.sql
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/migrations/20261026_lr019_zz_cycle_unique.sql
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/qa/lr019-draw-integration.sql
+      - name: Reject sixth favorite and verify replacement across categories
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/qa/lr019-five-favorites.sql
