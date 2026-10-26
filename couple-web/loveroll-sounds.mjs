@@ -28,12 +28,11 @@ export async function unlockLoveRollSounds(){
 export function armLoveRollSounds(){
  if(typeof document==='undefined')return;
  const unlock=()=>{
-  void unlockLoveRollSounds().then(ready=>{
-   if(!ready)return;
-   document.removeEventListener('pointerdown',unlock,true);
-   document.removeEventListener('touchend',unlock,true);
-   document.removeEventListener('keydown',unlock,true);
-  });
+  // Safari / installed iOS PWA can suspend an already unlocked context after
+  // backgrounding or locking. Keep gesture listeners active: a later user
+  // interaction must be able to resume it before the next timer expires.
+  // No resume() call is made for an already-running context.
+  if(!context||context.state!=='running')void unlockLoveRollSounds();
  };
  document.addEventListener('pointerdown',unlock,true);
  document.addEventListener('touchend',unlock,true);

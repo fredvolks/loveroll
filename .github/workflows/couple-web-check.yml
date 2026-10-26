@@ -38,6 +38,7 @@ jobs:
           node --check couple-web/ios-install-tour.mjs
           node --check couple-web/loveroll-sounds.mjs
           node --test couple-web/ios-install-sound-v229.test.mjs
+          node --test couple-web/timed-evening-completion.test.mjs
           node --check couple-web/premium-evening.mjs
           node --check couple-web/evening-calendar.mjs
           node --check couple-web/evening-review.mjs
@@ -255,6 +256,9 @@ jobs:
           EOF
           node verify-ipad.cjs
           node --test couple-web/editorial-details.test.mjs
+      - name: Diagnose D100 compact header geometry early (no skipped validations)
+        run: LOVEROLL_D100_HEADER_PROBE=1 node couple-web/evening-d100-template-browser-check.cjs
+
       - name: Capture actual premium invitation and account pages on S25 / iPhone
         run: |
           python3 -m http.server 8765 -d couple-web >/tmp/love-invite58-http.log 2>&1 &
@@ -423,6 +427,9 @@ jobs:
       - name: Verify real couple Evening and Surprise in WebGL at S25 sizes
         run: |
           node couple-web/premium-couple-visual-check.cjs
+
+      - name: Verify live D100 Soirée size and marble contact across seven mobile viewports
+        run: node couple-web/evening-d100-template-browser-check.cjs
 
       - name: Verify Soirée responsive Step 1 and unchanged D35 on phones and tablets
         run: node couple-web/evening-redesign-browser-check.cjs

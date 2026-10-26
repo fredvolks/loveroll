@@ -72,3 +72,41 @@ test('timer vibrates on Android in sound mode too, and never duplicates expiry',
  assert.ok(expiry.indexOf('navigator.vibrate')<expiry.indexOf("challengeTimer.mode==='sound'"));
  assert.match(expiry,/showTimerFinished\(\)/);
 });
+
+test('LR-004: a new gesture resumes the timer melody after an iOS-style audio suspension',async()=>{
+ const originalWindow=globalThis.window,originalDocument=globalThis.document;
+ const events=new Map();let ctx,resumes=0,notes=0;
+ class PausableAudioContext{
+  state='suspended';currentTime=1;destination={};
+  constructor(){ctx=this;}
+  resume(){resumes++;this.state='running';return Promise.resolve();}
+  createOscillator(){return {frequency:{value:0},connect(){},start(){notes++;},stop(){}};}
+  createGain(){return {gain:{setValueAtTime(){},exponentialRampToValueAtTime(){}},connect(){}};}
+ }
+ globalThis.document={
+  addEventListener:(name,fn)=>events.set(name,fn)
+ };
+ globalThis.window={AudioContext:PausableAudioContext};
+ try{
+  // Fresh import avoids sharing WebAudio state with the preceding unit test.
+  const audio=await import('./loveroll-sounds.mjs?test-lr004-rearm');
+  assert.equal(events.has('pointerdown'),true);
+  events.get('pointerdown')();
+  await Promise.resolve();
+  assert.equal(resumes,1);
+  assert.equal(audio.playLoveRollSound('timer:first',{force:true}),true);
+  ctx.state='suspended'; // OS background/lock suspends audio while app survives
+  assert.equal(audio.playLoveRollSound('timer:while-suspended',{force:true}),false);
+  events.get('pointerdown')();
+  await Promise.resolve();
+  assert.equal(resumes,2,'Second gesture must reactivate suspended WebAudio');
+  assert.equal(audio.playLoveRollSound('timer:after-resume',{force:true}),true);
+  events.get('pointerdown')();
+  await Promise.resolve();
+  assert.equal(resumes,2,'Already-running audio must not resume redundantly');
+  assert.equal(notes,12);
+ }finally{
+  if(originalWindow===undefined)delete globalThis.window;else globalThis.window=originalWindow;
+  if(originalDocument===undefined)delete globalThis.document;else globalThis.document=originalDocument;
+ }
+});

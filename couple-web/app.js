@@ -1,11 +1,12 @@
 import {organizeSettingsMenus} from './settings-menus.mjs?v=20261022-home228';
-import {showEveningCategoryReminder} from './evening-d100-template.mjs?v=20261022-home228';
-import {soundEnabled,setSoundEnabled,setLoveRollSoundUser,unlockLoveRollSounds,playLoveRollSound,soundSettingsHtml} from './loveroll-sounds.mjs?v=20261026-web232';
+import {showEveningCategoryReminder} from './evening-d100-template.mjs?v=20261026-web233';
+import {soundEnabled,setSoundEnabled,setLoveRollSoundUser,unlockLoveRollSounds,playLoveRollSound,soundSettingsHtml} from './loveroll-sounds.mjs?v=20261026-web233';
+import {isAcceptedTimedEveningChallenge,completeTimedEveningChallenge} from './timed-evening-completion.mjs?v=20261026-web233';
 import {fitSurpriseMinimal} from './surprise-minimal.mjs?v=20261022-home228';
 import {eclatNoteKey,loadEclatNote,saveEclatNote} from './eclat-guidance.mjs?v=20261022-home228';
 import {loadEclatHistory} from './eclat-history.mjs?v=20261022-home228';
 import {enhanceGoldBacks} from './gold-arrows.mjs?v=20261022-home228';
-import {fitSoireeHomeTemplate,fitRubyCalendar} from './soiree-home-template.mjs?v=20261022-home228';
+import {fitSoireeHomeTemplate,fitRubyCalendar} from './soiree-home-template.mjs?v=20261026-web233';
 import { marketingHtml,authHtml,profileHtml,inviteProfileHtml,emailConfirmationHtml,profileGenderSelect,profilePlayStyleSelect,matchHtml,parseMonthDay,monthDayInputs } from './onboarding.mjs?v=20261018-style148';
 import {editorialHeader,editorialRow,editorialIcon} from './editorial-ui.mjs?v=20261017-ritual130';
 import {cardLibraryHtml,monthlyEditorHtml,adventEditorHtml,specialEditorHtml,importEditorHtml} from './editorial-editors.mjs?v=20261017-ritual130';
@@ -24,7 +25,7 @@ import {futureCoupleStyleMix,playStyleLabel} from './play-style.mjs?v=20261018-s
 import {cycleIntensityQuestionnaireHtml} from './cycle-questionnaire.mjs?v=20261018-cycle149';
 import {DICE_WEIGHT_CONFIG,configuredDiceWeights,parseDiceWeightInputs} from './dice-weighting.mjs?v=20261018-weights146';
 import {premiumEveningHtml,updateEveningCategoryUi} from './premium-evening.mjs?v=20261022-home228';
-import {eveningHistoryMarkup,eveningLocalDay} from './evening-calendar.mjs?v=20261022-home228';
+import {eveningHistoryMarkup,eveningLocalDay} from './evening-calendar.mjs?v=20261026-web233';
 import {eveningReviewModal,validEveningReview} from './evening-review.mjs?v=20261016-person-review97';
 import {premiumSurpriseHtml,sixSpecialEvents} from './premium-surprise.mjs?v=20261022-home228';
 import {surpriseSlot,surpriseCustom,surpriseTitle,formatSurpriseDateInput,parseSurpriseDateInput} from './surprise-event-config.mjs?v=20261016-surprise109';
@@ -57,7 +58,7 @@ import {invitationStatus,coupleStats,formatCoupleDate,invitationEmailText,invita
 import {premiumConfirm,premiumCopyLink,focusInlineLoveDialog} from './premium-dialogs.mjs?v=20261017-complete127';
 
 
-const WEB_RELEASE='2026-10-26.232';
+const WEB_RELEASE='2026-10-26.233';
 const root=document.querySelector('#app');
 const enc=new TextEncoder(),dec=new TextDecoder();
 let diceCleanup=[],renderToken=0;
@@ -99,7 +100,8 @@ const names={SENSUEL:'Sensuel',COQUIN:'Coquin',SEXUEL:'Sexuel'};
 function isSharedCoupleReady(coupleId,members){
  return !!coupleId&&Array.isArray(members)&&members.length===2;
 }
-const challengeTimer={id:null,durationMs:0,remainingMs:0,deadline:0,running:false,notified:false,mode:'sound'};
+const challengeTimer={id:null,durationMs:0,remainingMs:0,deadline:0,running:false,notified:false,autoCompletePending:false,mode:'sound'};
+let timerCompletionInFlight=null,timerCompletionRetryAt=0;
 try{const saved=localStorage.getItem('loveroll-timer-mode');if(saved==='vibrate'||saved==='sound')challengeTimer.mode=saved;}catch(e){}
 
 const kinds={weekly:'Rituel de la semaine',monthly_activity:'Sortie du mois',
@@ -1241,21 +1243,32 @@ function renderHome(){
  }),'LOVEROLL','La complicité se joue à deux');
 }
 
+// Timeouts must survive a full browser/PWA restart, not only a tab reload.
+// Keep sessionStorage fallback to preserve already-running timers from Web 229.
+function readSavedChallengeTimer(key){
+ try{
+  const persistent=localStorage.getItem(key);
+  if(persistent)return JSON.parse(persistent);
+ }catch{}
+ try{return JSON.parse(sessionStorage.getItem(key)||'null');}catch{return null;}
+}
+function writeSavedChallengeTimer(key,value){
+ const json=JSON.stringify(value);
+ try{localStorage.setItem(key,json);}catch{}
+ try{sessionStorage.setItem(key,json);}catch{}
+}
 function saveChallengeTimer(){
  if(!challengeTimer.id||!state.user)return;
- try{sessionStorage.setItem('loveroll-challenge-clock:'+state.user.id+':'+challengeTimer.id,
-  JSON.stringify({durationMs:challengeTimer.durationMs,remainingMs:clockMs(),
-   deadline:challengeTimer.deadline,running:challengeTimer.running,notified:challengeTimer.notified}));
- }catch{}
+ writeSavedChallengeTimer('loveroll-challenge-clock:'+state.user.id+':'+challengeTimer.id,
+  {durationMs:challengeTimer.durationMs,remainingMs:clockMs(),
+   deadline:challengeTimer.deadline,running:challengeTimer.running,notified:challengeTimer.notified,
+   autoCompletePending:challengeTimer.autoCompletePending});
 }
 function activeTimer(challenge,minutes){
  const millis=minutes*60000;
  if(challengeTimer.id!==challenge.id){
   saveChallengeTimer();
-  let stored=null;
-  try{
-   stored=JSON.parse(sessionStorage.getItem('loveroll-challenge-clock:'+state.user.id+':'+challenge.id)||'null');
-  }catch{}
+  const stored=readSavedChallengeTimer('loveroll-challenge-clock:'+state.user.id+':'+challenge.id);
   challengeTimer.id=challenge.id;
   challengeTimer.durationMs=millis;
   challengeTimer.remainingMs=stored?.durationMs===millis&&Number.isFinite(stored.remainingMs)?
@@ -1264,6 +1277,7 @@ function activeTimer(challenge,minutes){
    stored.deadline:0;
   challengeTimer.running=!!(stored?.running&&challengeTimer.deadline>0);
   challengeTimer.notified=!!stored?.notified;
+  challengeTimer.autoCompletePending=!!stored?.autoCompletePending;
  }
 }
 function clockMs(){
@@ -1281,9 +1295,92 @@ function showTimerFinished(){
  document.body.append(notice);
  setTimeout(()=>notice.remove(),6500);
 }
+function timedEveningItem(timerId){
+ if(!state.user||!state.session||!timerId)return null;
+ return ownEveningChallenges(state.challenges,state.user.id,state.session.id)
+  .find(item=>item.id===timerId)||null;
+}
+async function retryExpiredTimedEvening(){
+ if(!challengeTimer.autoCompletePending||timerCompletionInFlight||
+    Date.now()<timerCompletionRetryAt||!state.user||!state.session)return;
+ const id=challengeTimer.id,item=timedEveningItem(id);
+ if(!item)return; // Keep pending until the corresponding session is loaded again.
+ if(item.status==='completed'||item.status==='passed'){
+  challengeTimer.autoCompletePending=false;saveChallengeTimer();return;
+ }
+ if(!isAcceptedTimedEveningChallenge(item,state.user.id,state.session.id))return;
+ const sessionId=state.session.id,userId=state.user.id;
+ timerCompletionInFlight=id;
+ try{
+  const result=await completeTimedEveningChallenge({challenge:item,userId,sessionId,rpc,query});
+  if(result.outcome==='ineligible')return;
+  timerCompletionRetryAt=0;
+  if(challengeTimer.id===id){
+   challengeTimer.autoCompletePending=false;saveChallengeTimer();
+  }
+  if(state.user?.id===userId&&state.session?.id===sessionId){
+   if(result.finished){state.showEveningChallenges=false;state.selectedEveningChallengeId=null;}
+   notify('♡ Défi réalisé : le minuteur est arrivé à zéro.');
+   await refreshAndShow();
+  }
+ }catch(error){
+  timerCompletionRetryAt=Date.now()+15000;
+  console.warn('Défi terminé : validation serveur en attente',error);
+  if(!document.hidden)notify('Le minuteur est terminé. Validation du défi en attente de connexion.');
+ }finally{timerCompletionInFlight=null;}
+}
+// LR-002: recover ALL due challenge timers from per-account session storage
+// after Safari/Android reload or suspension; do not require opening the card.
+let savedTimerScanAfter=0,savedTimerSyncInFlight=false;
+async function reconcileSavedEveningTimers(){
+ const now=Date.now();
+ if(!state.user||!state.session||savedTimerSyncInFlight||timerCompletionInFlight||
+    now<savedTimerScanAfter)return;
+ savedTimerScanAfter=now+4000;
+ for(const item of state.challenges||[]){
+  const key='loveroll-challenge-clock:'+state.user.id+':'+item.id;
+  const saved=readSavedChallengeTimer(key);
+  if(!saved||!Number.isFinite(saved.durationMs)||saved.durationMs<=0)continue;
+  const due=!!saved.autoCompletePending||
+   (saved.running&&Number.isFinite(saved.deadline)&&saved.deadline>0&&saved.deadline<=now);
+  if(!due)continue;
+  if(item.status==='completed'||item.status==='passed'){
+   writeSavedChallengeTimer(key,{...saved,running:false,
+    remainingMs:0,autoCompletePending:false});
+   continue;
+  }
+  if(!isAcceptedTimedEveningChallenge(item,state.user.id,state.session.id))continue;
+  const userId=state.user.id,sessionId=state.session.id;
+  savedTimerSyncInFlight=true;timerCompletionInFlight=item.id;
+  const expired={...saved,running:false,remainingMs:0,notified:true,autoCompletePending:true};
+  writeSavedChallengeTimer(key,expired);
+  try{
+   const result=await completeTimedEveningChallenge({challenge:item,userId,sessionId,rpc,query});
+   if(result.outcome==='ineligible')return;
+   writeSavedChallengeTimer(key,{...expired,autoCompletePending:false});
+   if(challengeTimer.id===item.id){
+    challengeTimer.running=false;challengeTimer.remainingMs=0;
+    challengeTimer.autoCompletePending=false;saveChallengeTimer();
+   }
+   if(state.user?.id===userId&&state.session?.id===sessionId){
+    if(result.finished){state.showEveningChallenges=false;state.selectedEveningChallengeId=null;}
+    notify('♡ Défi accompli ♥');
+    await refreshAndShow();
+   }
+  }catch(error){
+   savedTimerScanAfter=Date.now()+15000;
+   console.warn('Minuteur expiré : validation à reprendre après reconnexion',error);
+   if(!document.hidden)notify('Le minuteur est terminé. Validation du défi en attente de connexion.');
+  }finally{timerCompletionInFlight=null;savedTimerSyncInFlight=false;}
+  return;
+ }
+}
 function endSignal(){
  if(challengeTimer.notified)return;
  challengeTimer.notified=true;
+ const item=timedEveningItem(challengeTimer.id);
+ const autoComplete=isAcceptedTimedEveningChallenge(item,state.user?.id,state.session?.id);
+ if(autoComplete)challengeTimer.autoCompletePending=true;
  // Android: add a discreet vibration EVEN in "Son doux" mode, so a
  // phone with its ringer muted does not rely on audio alone. The browser
  // cannot read silent/vibrate mode; OS settings may suppress haptics.
@@ -1297,13 +1394,15 @@ function endSignal(){
   playLoveRollSound('timer:'+challengeTimer.id,{force:true});
  }
  showTimerFinished();
- notify('♡ Minuteur terminé. À vous de décider si le défi continue.');
+ notify(autoComplete?'♡ Minuteur terminé. Validation automatique du défi en cours.':'♡ Minuteur terminé.');
 }
 function updateChallengeClock(){
+ void reconcileSavedEveningTimers();
  if(!challengeTimer.id)return;
  if(challengeTimer.running&&Date.now()>=challengeTimer.deadline){
   challengeTimer.running=false;challengeTimer.remainingMs=0;endSignal();saveChallengeTimer();
  }
+ if(challengeTimer.autoCompletePending)void retryExpiredTimedEvening();
  const clock=document.getElementById('challenge-timer-clock');
  if(clock)clock.textContent=formatCountdown(clockMs());
  const button=document.getElementById('challenge-timer-toggle');
@@ -1334,7 +1433,7 @@ function timerWidget(challenge,minutes){
  activeTimer(challenge,minutes);
  return '<div class="timer-panel"><div class="eyebrow">⏱ Minuteur du défi · '+minutes+' min</div>'+
    '<div id="challenge-timer-clock" class="timer-clock">'+formatCountdown(clockMs())+'</div>'+
-   '<p id="challenge-timer-status">'+(challengeTimer.running?'En cours':'À votre rythme')+'</p>'+
+   '<p id="challenge-timer-status">'+(challengeTimer.running?'En cours':challengeTimer.remainingMs===0?'Terminé':'À votre rythme')+'</p>'+
    '<div class="actions"><button id="challenge-timer-toggle" data-action="timer-toggle">'+
     (challengeTimer.running?'Ⅱ Pause':'▶ Démarrer')+'</button>'+
    button('timer-reset','↻ Recommencer','class="subtle"')+'</div>'+
@@ -3753,6 +3852,11 @@ async function handle(action,element){
    return;
  }
  if(verb==='timer-reset'){
+   // Reject a reset after the real deadline, even between two clock ticks.
+   if(challengeTimer.running&&challengeTimer.deadline>0&&Date.now()>=challengeTimer.deadline){
+    challengeTimer.running=false;challengeTimer.remainingMs=0;endSignal();saveChallengeTimer();
+   }
+   if(challengeTimer.autoCompletePending){notify('Le minuteur a atteint zéro : ce défi doit d’abord être validé.');return;}
    challengeTimer.running=false;
    challengeTimer.deadline=0;
    challengeTimer.remainingMs=challengeTimer.durationMs;
@@ -3760,10 +3864,24 @@ async function handle(action,element){
  }
  if(verb==='timer-toggle'){
    if(!challengeTimer.id)throw Error('Aucun défi avec minuteur');
+   // Observe an already-expired deadline before a pause tap can zero out
+   // the running state (timer ticks are only scheduled every 500ms).
+   updateChallengeClock();
+   if(challengeTimer.autoCompletePending){
+    notify('Le minuteur est terminé : validation automatique en cours.');return;
+   }
    if(challengeTimer.running){
     challengeTimer.remainingMs=Math.max(0,challengeTimer.deadline-Date.now());
     challengeTimer.running=false;
    }else if(challengeTimer.remainingMs>0){
+    // The countdown can be launched without pressing « Commencer » first.
+    // Ensure the official card becomes accepted before the timer begins.
+    const current=timedEveningItem(challengeTimer.id);
+    if(current?.status==='proposed'){
+     if(challengeTimer.mode==='sound')void unlockLoveRollSounds();
+     await rpc('answer_challenge',{p_id:current.id,p_status:'accepted'});
+     current.status='accepted';
+    }
     if(challengeTimer.mode==='sound'&&!await unlockLoveRollSounds())
      notify('Son non autorisé. Utilise le bouton ♫ Tester pour le débloquer.');
     challengeTimer.deadline=Date.now()+challengeTimer.remainingMs;
@@ -3828,6 +3946,10 @@ async function handle(action,element){
   }
   if(parts[1]==='passed'&&state.session?.id!==eveningId)throw Error('La soirée a changé, veuillez réessayer.');
   await rpc('answer_challenge',{p_id:parts[0],p_status:parts[1]});
+  if(challengeTimer.id===parts[0]&&['completed','passed'].includes(parts[1])){
+   challengeTimer.running=false;challengeTimer.remainingMs=0;
+   challengeTimer.autoCompletePending=false;saveChallengeTimer();
+  }
   if(parts[1]==='passed'&&state.monthlyPassQuota){
    const used=Number(state.monthlyPassQuota.used)+1;
    const limit=Number(state.monthlyPassQuota.limit);
@@ -4166,6 +4288,8 @@ setInterval(async()=>{
  // Messenger, iPadOS, or after background suspension. No manual refresh.
 setInterval(()=>{liveSync.probe().catch(console.warn);},1500);
 window.addEventListener('online',()=>{
+ timerCompletionRetryAt=0;savedTimerScanAfter=0;
+ void retryExpiredTimedEvening();void reconcileSavedEveningTimers();
  liveSync.probe(true).catch(console.warn);
  liveSync.request(350);
 });
@@ -4219,6 +4343,6 @@ start().catch(error=>{fail(error);window.LoveRollBoot?.showFailure();});
 
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   window.addEventListener('load', () =>
-    navigator.serviceWorker.register('./service-worker.js?v=20261026-web232',
+    navigator.serviceWorker.register('./service-worker.js?v=20261026-web233',
      {scope:'./',updateViaCache:'none'}).then(reg=>reg.update()).catch(console.warn));
 }
