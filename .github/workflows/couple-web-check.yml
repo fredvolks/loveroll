@@ -415,6 +415,9 @@ jobs:
       - name: Verify REAL public discover and invitation on Android / iPhone responsive widths
         run: node couple-web/actual-discover-visual-check.cjs
 
+      - name: Verify real ruby die rotation across frames before releasing Web changes
+        run: node couple-web/home-ruby-interaction-browser-check.cjs
+
       - name: Verify real couple Evening and Surprise in WebGL at S25 sizes
         run: |
           node couple-web/premium-couple-visual-check.cjs
