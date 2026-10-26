@@ -192,3 +192,24 @@ test('Private MEDIUM copy is seeded once per duo, editable without changing comm
   personal.indexOf('revoke all on function public.save_love_personal_sexual_card'));
  assert.doesNotMatch(saver,/update public\.love_future_style_cards|delete from public\.love_custom_challenges|truncate/i);
 });
+
+
+test('LR-015 phase 2: private per-couple current-cycle exclusion registry and safe restore',()=>{
+ const migration=read('migrations/20261026_lr015_cycle_exclusion_registry.sql');
+ assert.match(migration,/PRIMARY KEY\(couple_id,cycle_number,category,card_id\)/);
+ assert.match(migration,/REFERENCES public\.couples\(id\) ON DELETE CASCADE/);
+ assert.match(migration,/ENABLE ROW LEVEL SECURITY/);
+ assert.match(migration,/REVOKE ALL ON TABLE public\.love_cycle_excluded_cards FROM PUBLIC,anon,authenticated/);
+ assert.match(migration,/CREATE OR REPLACE FUNCTION public\.my_love_cycle_exclusions\(p_couple uuid\)/);
+ assert.match(migration,/CREATE OR REPLACE FUNCTION public\.restore_love_cycle_exclusion\(/);
+ assert.equal((migration.match(/love_require_verified_identity\(\)/g)||[]).length,2);
+ assert.equal((migration.match(/couple_private\.is_member\(p_couple\)/g)||[]).length,2);
+ assert.match(migration,/e\.cycle_number=c\.challenge_cycle_number/);
+ assert.match(migration,/e\.cycle_number=v_cycle/);
+ assert.match(migration,/WHERE c\.id=p_couple FOR UPDATE/);
+ assert.match(migration,/GET DIAGNOSTICS v_deleted=ROW_COUNT/);
+ assert.doesNotMatch(migration,/GRANT (?:ALL|INSERT|UPDATE|DELETE|SELECT) ON (?:TABLE )?public\.love_cycle_excluded_cards/i);
+ assert.doesNotMatch(migration,/DROP TABLE|TRUNCATE|DELETE FROM public\.couple_challenges/i);
+ assert.match(migration,/GRANT EXECUTE ON FUNCTION public\.my_love_cycle_exclusions\(uuid\)/);
+ assert.match(migration,/GRANT EXECUTE ON FUNCTION public\.restore_love_cycle_exclusion\(uuid,text,integer\)/);
+});
