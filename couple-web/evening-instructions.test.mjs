@@ -2,28 +2,25 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 
-const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
-const style=readFileSync(new URL('./evening-queue-fixed-v102.css',import.meta.url),'utf8');
-const productionPage=readFileSync(new URL('./index.html',import.meta.url),'utf8');
+const read=path=>readFileSync(new URL(path,import.meta.url),'utf8');
+const source=read('./app.js'),style=read('./soiree-home-template.css');
+const html=read('./index.html');
 
-test('LR-012: actual recipient instructions remain complete and keyboard reachable',()=>{
+test('LR-012: recipient instructions stay escaped and keyboard reachable',()=>{
  assert.match(source,/<p class="evening-challenge-instructions" role="region" aria-label="Consigne du défi" tabindex="0">/);
  assert.match(source,/safe\(resolvedCard\(view\)\.description\)/);
- const rule=style.match(/\.evening-queue-content\.is-detail \.evening-queue-detail>p\{[\s\S]*?\n \}/)?.[0];
- assert.ok(rule,'Actual challenge-description CSS must exist');
- assert.match(rule,/overflow-y:auto!important/);
- assert.doesNotMatch(rule,/overflow:hidden!important/);
+ assert.match(style,/\.evening-queue-modal\.is-detail \.evening-queue-detail>\.evening-challenge-instructions\{/);
+ assert.match(style,/max-height:min\(32dvh,240px\)!important/);
+ assert.match(style,/overflow-x:hidden!important;overflow-y:auto!important/);
  assert.match(style,/\.evening-challenge-instructions:focus-visible/);
 });
-
-test('LR-012: completion and pass buttons remain true interactive actions',()=>{
+test('LR-012: old queue skin stays intentionally absent and D100 unclipped',()=>{
+ assert.match(html,/soiree-home-template\.css\?v=/);
+ assert.doesNotMatch(html,/evening-queue-fixed-v102\.css|evening-private-queue\.css/);
+ assert.match(style,/old queue-v102 files/);
+});
+test('LR-012: genuine completion, pass and next actions remain intact',()=>{
  assert.match(source,/button\('answer:'\+view\.id\+':completed','✓ Défi réalisé'/);
  assert.match(source,/button\('answer:'\+view\.id\+':passed','Passer ce défi'/);
  assert.match(source,/button\('evening-open:'\+mineCards\[idx\+1\]\.id,'Suivant →'/);
-});
-
-test('LR-012: real production page loads both challenge queue styles in order',()=>{
- const base=productionPage.indexOf('evening-private-queue.css?v=20261026-lr012');
- const detail=productionPage.indexOf('evening-queue-fixed-v102.css?v=20261026-lr012');
- assert.ok(base>0&&detail>base,'Queue and long-text CSS must actually be loaded');
 });
