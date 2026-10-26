@@ -1,4 +1,4 @@
-import {organizeSettingsMenus} from './settings-menus.mjs?v=20261022-home228';
+import {organizeSettingsMenus} from './settings-menus.mjs?v=20261026-menu230';
 import {showEveningCategoryReminder} from './evening-d100-template.mjs?v=20261022-home228';
 import {soundEnabled,setSoundEnabled,setLoveRollSoundUser,unlockLoveRollSounds,playLoveRollSound,soundSettingsHtml} from './loveroll-sounds.mjs?v=20261025-web229';
 import {fitSurpriseMinimal} from './surprise-minimal.mjs?v=20261022-home228';
@@ -57,7 +57,7 @@ import {invitationStatus,coupleStats,formatCoupleDate,invitationEmailText,invita
 import {premiumConfirm,premiumCopyLink,focusInlineLoveDialog} from './premium-dialogs.mjs?v=20261017-complete127';
 
 
-const WEB_RELEASE='2026-10-25.229';
+const WEB_RELEASE='2026-10-26.230';
 const root=document.querySelector('#app');
 const enc=new TextEncoder(),dec=new TextDecoder();
 let diceCleanup=[],renderToken=0;
