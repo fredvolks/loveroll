@@ -7,6 +7,8 @@ on:
       - 'couple-web/evening-calendar.mjs'
       - 'couple-web/evening-calendar.css'
       - 'couple-web/evening-calendar-browser-check.cjs'
+      - 'couple-web/migrations/20261026_lr019_*.sql'
+      - 'couple-web/qa/lr019-*.sql'
       - 'couple-web/lr019-favorites-ui.test.mjs'
       - '.github/workflows/lr019-favorites-ui.yml'
   workflow_dispatch:
@@ -44,3 +46,41 @@ jobs:
           done
           curl -fsS http://127.0.0.1:8765/evening-calendar.css > /dev/null
           node couple-web/evening-calendar-browser-check.cjs
+
+  favorites-postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: local-test-only
+          POSTGRES_DB: loveroll_lr019_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 12
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGDATABASE: loveroll_lr019_test
+      PGUSER: postgres
+      PGPASSWORD: local-test-only
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply isolated LR-015 and LR-019 migrations
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/qa/lr015-db-fixture.sql
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/migrations/20261026_lr015_cycle_exclusion_registry.sql
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/migrations/20261026_lr015_recycle_incomplete_on_close.sql
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/migrations/20261026_lr015_z_atomic_respond_redraw.sql
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/migrations/20261026_lr019_favorites_core.sql
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/migrations/20261026_lr019_z_draw_favorites.sql
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/migrations/20261026_lr019_zz_cycle_unique.sql
+      - name: Exercise real D100 replay and exclusion precedence
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/qa/lr019-draw-integration.sql
+      - name: Check 200 unique cards and final server capability authorization
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/qa/lr019-cycle-unique.sql

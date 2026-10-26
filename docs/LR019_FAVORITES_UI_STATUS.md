@@ -41,3 +41,8 @@ Prochaine action : identifier le nouveau run, diagnostiquer les erreurs, corrige
 - Test PostgreSQL de retour `true`, protection entre couples, rôles `anon/authenticated` et absence de fuite. Workflow PostgreSQL élargi pour la PR #58.
 - Il faut toujours appliquer les migrations dans l'ordre contrôlé et obtenir l'autorisation avant d'activer quoi que ce soit en production.
 - Validation Chromium précédente : run 40409005291 `completed/success` SHA `77eb0d8`. Validation de ce changement serveur à confirmer sur son SHA exact.
+
+## Validation finale sur la PR UI
+- Le workflow autonome `lr019-favorites-ui.yml` exécute désormais **deux jobs** quand le code UI ou les migrations changent : navigateur Chromium et vraie base PostgreSQL 17 jetable.
+- Nécessaire pour couvrir `love_favorites_capabilities` avec une exécution déclenchée sur la branche empilée : le workflow SQL précédent n'était pas déclenché sur cette PR.
+- Prochaine action : vérifier les **deux conclusions finales** et les journaux d'erreur sur le SHA exact. Ne pas considérer une simple exécution en cours comme un succès.
