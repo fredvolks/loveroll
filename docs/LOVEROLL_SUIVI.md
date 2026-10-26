@@ -28,6 +28,7 @@
 | [ ] | LR-013 | Catégorie non sélectionnée : incitation visuelle + instruction claire avant de brasser | ◐ En cours — consigne repositionnée et associée au sélecteur, CI et vérification visuelle à effectuer | [PR #24](https://github.com/fredvolks/loveroll/pull/24) · `evening-d100-template.test.mjs` |
 | [ ] | LR-014 | Soirée : confirmation de catégorie Sensuel/Sexuel/Au hasard avant lancer D100, option « Ne plus afficher », réactivation en Réglages par profil | À faire — spécification seulement | [Prompt maître LR-014](./LOVEROLL_MASTER_PROMPT.md#lr-014--confirmation-du-choix-de-catégorie-avant-de-brasser-le-d100-nouvelle-demande-du-26-octobre-2026) · [Issue #27](https://github.com/fredvolks/loveroll/issues/27) · tests à réaliser |
 | [ ] | LR-015 | Défis : Passer, Refuser avec choix de retrait du lot, repige, retour des défis non terminés à la clôture, historique conservé | À faire — spécification seulement | [Exigence LR-015](./LOVEROLL_MASTER_PROMPT.md#lr-015--défis--passer-refuser-exclusion-volontaire-et-retour-dans-la-pige-nouvelle-demande-du-26-octobre-2026) · [Issue #29](https://github.com/fredvolks/loveroll/issues/29) |
+| [ ] | LR-016 | Passes mensuelles : **3 par partenaire** par défaut, limite modifiable par l'admin du couple, blocage serveur à la limite, compteur visible ; refus toujours libre | À faire — spécification seulement | [Prompt LR-016](./LOVEROLL_MASTER_PROMPT.md) · Issue à créer |
 
 ## P1 — Responsive universel
 
@@ -77,8 +78,8 @@ L'[audit officiel](./LOVEROLL_AUDIT_UX_UI_20261026.md) est maintenant décompos�
 **Publication du système documentaire :** [PR #10 fusionnée](https://github.com/fredvolks/loveroll/pull/10). Les Issues sont ouvertes et les corrections applicatives restent à vérifier/implémenter.
 
 ## Tableau de bord
-- **23 exigences** dans cette version (4 P0 + 19 P1).
-- **0/23 cochées intégralement** : plusieurs corrections vérifiées partiellement, mais les critères complets restent ouverts (voir chaque PR et tests).
+- **24 exigences** dans cette version (4 P0 + 20 P1).
+- **0/24 cochées intégralement** : plusieurs corrections vérifiées partiellement, mais les critères complets restent ouverts (voir chaque PR et tests).
 - Ces nombres décrivent le **statut documentaire initial**, **pas** un diagnostic que toute l'application est défectueuse.
 - Les développeurs doivent vérifier l'existant et marquer « Déjà présent, vérifié » avec preuves si un point est déjà satisfait.
 
@@ -99,6 +100,8 @@ L'[audit officiel](./LOVEROLL_AUDIT_UX_UI_20261026.md) est maintenant décompos�
 | 2026-10-26 | Nouvelle demande LR-014 : confirmer Sensuel/Sexuel/Au hasard avant de brasser le D100, « Ne plus afficher » par profil, réactivation Réglages. Spécification seulement, **non développée**. | [Prompt LR-014](./LOVEROLL_MASTER_PROMPT.md) |
 
 | 2026-10-26 | Nouvelle demande LR-015 : Passer / Refuser un défi, choix de l'exclure du lot courant, repige et restitution des non réalisés à la fin de la soirée, historique et cycle de 200 préservés. **Demande non codée.** | [Prompt LR-015](./LOVEROLL_MASTER_PROMPT.md) |
+
+| 2026-10-26 | LR-016 : demander 3 défis passés / mois / membre du couple, avec plafond modifiable par admin, refus illimité ; migration du quota « 3 passes gratuites » existant à auditer. Documentation seulement. | [Prompt LR-016](./LOVEROLL_MASTER_PROMPT.md) |
 
 ## Comment travailler avec ChatGPT Work
 Ouvrir le dépôt et fournir l'instruction suivante à Work :
