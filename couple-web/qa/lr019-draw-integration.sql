@@ -49,3 +49,38 @@ BEGIN
  END IF;
 END $check$;
 SELECT 'LR019_FAVORITE_D100_POSTGRES_OK' AS result;
+
+-- Prior-evening favorite MUST NOT bypass an explicit LR-015 cycle exclusion.
+-- The no-repeat history may reset if the normal 200-card bag is exhausted;
+-- exclusion must remain effective regardless of that reset.
+INSERT INTO public.love_cycle_excluded_cards(
+ couple_id,cycle_number,category,card_id,excluded_by
+) VALUES(
+ 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',1,'SENSUEL',1,
+ '11111111-1111-4111-8111-111111111111'
+);
+INSERT INTO public.couple_sessions(id,couple_id,opened_by,starting_user_id,self_draws,paired_turns,started_at)
+VALUES('82828282-8282-4282-8282-828282828282',
+ 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+ '11111111-1111-4111-8111-111111111111',
+ '11111111-1111-4111-8111-111111111111',
+ true,true,now());
+INSERT INTO public.couple_personal_rolls(session_id,user_id,face)
+VALUES
+ ('82828282-8282-4282-8282-828282828282','11111111-1111-4111-8111-111111111111',1),
+ ('82828282-8282-4282-8282-828282828282','22222222-2222-4222-8222-222222222222',1);
+DO $excluded$
+DECLARE result public.couple_challenges;
+BEGIN
+ result:=public.draw_for_partner('82828282-8282-4282-8282-828282828282','SENSUEL',false);
+ IF result.category='SENSUEL' AND result.card_id=1 THEN
+  RAISE EXCEPTION 'LR-015 cycle exclusion was bypassed by a favorite';
+ END IF;
+ IF (SELECT count(*) FROM public.love_cycle_excluded_cards
+   WHERE couple_id='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+     AND category='SENSUEL' AND card_id=1)<>1 THEN
+  RAISE EXCEPTION 'Normal pool reset discarded the voluntary exclusion';
+ END IF;
+END $excluded$;
+SELECT 'LR019_EXCLUSION_OVER_FAVORITE_OK' AS result;
+
