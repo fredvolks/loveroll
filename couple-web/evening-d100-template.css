@@ -96,12 +96,20 @@
      The 58px logo + its 13px kicker fit in the existing 80px row;
      previously the inherited centering placed the logo at y=43px
      and it overlapped the 24px title at y=93px on 320x568. */
+  /* The 80px first grid row owns the heading position. Make the
+     decorative heading independent of the sibling privacy/manage controls,
+     which otherwise create an implicit grid row and push the logo to y=43. */
   #app.has-evening-d100-template .evening-toolbar .ritual-heading{
+   position:absolute!important;top:0!important;left:0!important;right:0!important;
    display:flex!important;flex-direction:column!important;
    align-items:center!important;justify-content:flex-start!important;
+   width:100%!important;height:80px!important;pointer-events:none!important;
   }
   #app.has-evening-d100-template .evening-toolbar .ritual-brand{
    flex:0 0 58px!important;align-self:center!important;
+  }
+  #app.has-evening-d100-template .evening-toolbar .evening-manage{
+   position:absolute!important;top:16px!important;right:0!important;z-index:6!important;
   }
   #app.has-evening-d100-template .evening-premium-view.has-evening-d100-template{
    grid-template-rows:80px auto 44px minmax(0,1fr) 22px 30px 48px 44px 10px!important;
