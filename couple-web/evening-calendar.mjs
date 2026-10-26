@@ -91,7 +91,7 @@ export function eveningHistoryMarkup({sessions=[],members=[],stats=[],historyCha
     :'<span>Bilan indisponible</span>';
    const picked=cards.map(c=>{
     const card=resolvedCard(c),cardId=Number(c.card_id);
-    const canHeart=favoriteControlsEnabled&&m.user_id===me&&
+    const canHeart=favoriteControlsEnabled&&closed&&
      ['SENSUEL','SEXUEL'].includes(c.category)&&Number.isInteger(cardId)&&cardId>=1&&cardId<=100;
     const mineHeart=canHeart&&favorites.some(f=>
       f.category===c.category&&Number(f.card_id)===cardId&&f.marked_by===me);
