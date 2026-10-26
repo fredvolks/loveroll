@@ -2100,6 +2100,8 @@ function renderSettings(){
    (state.couple?.show_sexuel_button!==false?' checked':'')+(!canEdit?' disabled':'')+'></label>'+
   '<p class="tiny-note">Aléatoire reste disponible.</p>'+
   (canEdit?button('save-evening-buttons','Enregistrer','class="settings-primary"'):'<p>Seul le créateur peut modifier ces choix.</p>')+'</div>';
+ const passLimit=Number(state.couple?.monthly_pass_limit??3);
+ const passQuotaSettings='<div class="settings-category-options"><h3>Passes mensuelles</h3><p class="tiny-note">Maximum par partenaire : '+passLimit+'. Refuser reste illimité.</p></div>';
  const game=(canEdit?
   (state.couple?.sexual_card_mode==='automatic'?
    '<p class="tiny-note">100 défis SENSUEL communs · 100 défis SEXUEL choisis secrètement selon vos deux styles. Pour changer de mode : Options avancées.</p>':
