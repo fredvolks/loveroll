@@ -2,7 +2,7 @@
 
 Dernière mise à jour : 26 octobre 2026 (heure du Québec).
 Branche active : `feat/lr019-five-favorites-20261026-v2`
-**Dernier SHA de code validé :** `82b27dc187b414c236593bb8ae2a3c39c52fbfe0`
+**Dernier SHA de code/CI validé :** `3db1fc7578c36a270967a0c8e471804d2330e795`
 PR active : https://github.com/fredvolks/loveroll/pull/60 (brouillon, base PR #58).
 Dépendances de la pile : #60 → #58 → #57 → #54 ; registre SQL #56 copié dans la branche #57.
 Ne pas fusionner, déployer ni appliquer de migration de production sans autorisation.
@@ -16,6 +16,9 @@ Ne pas fusionner, déployer ni appliquer de migration de production sans autoris
 - Les favoris marqués avant une soirée future peuvent revenir au D100; les refus/exclusions LR-015 priment; le cycle compte des cartes distinctes et non les réalisations répétées.
 
 ## Vérifications GitHub sur le SHA exact
+
+- **Dernier code** `3db1fc7578c36a270967a0c8e471804d2330e795` : PostgreSQL 17 **40412698032** et tests Node + Chromium **40412698027**, tous deux **completed/success**, aucun job échoué; inclut le scénario SQL de concurrence entre deux appareils.
+- Code `2dd174debd82c22949eb872c45184aa7f8861156` : PostgreSQL **40412425562** et Chromium **40412425585**, tous deux **completed/success**, incluant le test des deux comptes.
 
 - PostgreSQL 17, run **40412091362**, SHA `82b27dc187b414c236593bb8ae2a3c39c52fbfe0` : **completed/success**.
 - Chromium et tests Node, run **40412091335**, même SHA : **completed/success**.
@@ -40,3 +43,8 @@ Ne pas fusionner, déployer ni appliquer de migration de production sans autoris
 5. Tester encore le fonctionnement iPhone Safari et Android réels; surveiller que les changements LR-019 n'altèrent ni la confidentialité ni les horaires/quotas du jeu.
 
 **État du prompt maître :** LR-019 partiellement réalisé sur PR empilées, tests isolés réussis, déploiement et recette réelle en attente; autres exigences P0 et priorités restent distinctes.
+
+## Vérification Pages séparée
+
+- Déploiements `main` précédents **40410344904** et **40410706170** : `completed/failure`. Le premier a échoué à une assertion visuelle sur la position du cœur Soirée versus Accueil; le second sur une vérification PWA/visuelle. Le run Pages **40411130259** sur `9c75b1...` était encore `in_progress` lors du dernier contrôle : **ne pas annoncer de livraison**.
+- La dernière modification de ce fichier est documentaire, et son SHA de commit ne doit pas remplacer artificiellement le SHA de code validé.
