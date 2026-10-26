@@ -7,7 +7,11 @@ const base={session:null,lastEvening:{id:'s1',completed:0,responses:1,myResponse
 test('Finished evening has exactly two real buttons, dark start when weekly quota full',()=>{
  const html=premiumEveningHtml({...base,canStartEvening:false});
  assert.match(html,/evening-premium-view is-inactive is-finale/);
- assert.equal((html.match(/<button /g)||[]).length,4);
+ const finaleActions=html.match(/<div class="evening-finale-actions">([\s\S]*?)<\/div>/)?.[1];
+ assert.ok(finaleActions,'Le panneau de fin de soirée doit être présent');
+ assert.equal((finaleActions.match(/<button\b/g)||[]).length,2,
+  'La fin de soirée doit conserver exactement deux actions principales');
+ assert.match(html,/data-lr-privacy-hide/, 'Le bouton de discrétion reste accessible');
  assert.match(html,/Notre soirée est terminée/);
  assert.match(html,/1 \/ 2 bilans déposés/);
  assert.match(html,/class="evening-finale-start" data-action="new-session" disabled/);
