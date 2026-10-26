@@ -127,13 +127,13 @@ test('LR-016 quota UX states used/limit, explains next month, never disables unl
  assert.match(source,/state\.redrawBusy\?'disabled'/);
 });
 
-test('LR-015 keeps old queue CSS disabled and loads the targeted mobile decision styling',()=>{
+test('LR-015 keeps old queue CSS disabled and loads targeted mobile decision styling',()=>{
  const html=readFileSync(new URL('./index.html',import.meta.url),'utf8');
  const css=readFileSync(new URL('./evening-editorial.css',import.meta.url),'utf8');
- assert.doesNotMatch(html,/evening-private-queue\\.css/,'Do not bring back obsolete queue restyling');
- assert.match(html,/evening-editorial\\.css\\?v=/,'The approved stylesheet is actually loaded');
- assert.match(css,/#app \\.lr-redraw-actions\\{display:grid;grid-template-columns:repeat\\(2,minmax\\(0,1fr\\)\\)/);
- assert.match(css,/#app \\.lr-redraw-actions>small\\{grid-column:1\\/-1;display:block/);
- assert.match(css,/@media\\(max-width:360px\\)/);
- assert.match(css,/#app \\.lr-refusal-dialog\\{position:relative;display:block/);
+ assert.ok(!html.includes('evening-private-queue.css'),'The deprecated queue stylesheet must stay disabled');
+ assert.ok(html.includes('evening-editorial.css?v='),'The approved stylesheet must actually be loaded');
+ assert.ok(css.includes('#app .lr-redraw-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}'));
+ assert.ok(css.includes('#app .lr-redraw-actions>small{grid-column:1/-1;display:block'));
+ assert.ok(css.includes('@media(max-width:360px)'));
+ assert.ok(css.includes('#app .lr-refusal-dialog{position:relative;display:block'));
 });
