@@ -19,6 +19,20 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   await page.waitForFunction(()=>document.querySelector('.has-evening-d100-template canvas')?.loveRollDie?.readState().optics.loaded);
   await page.evaluate(()=>document.fonts.ready);
   const evening=await metrics();console.log('D100_METRICS',width,{home,evening});
+  if(process.env.LOVEROLL_D100_HEADER_PROBE){
+   const debug=await page.evaluate(()=>{
+    const selectors=['main#app','.evening-premium-view','.evening-toolbar','.ritual-heading','.ritual-brand','.ritual-kicker','.evening-intro','.ritual-page-title','.evening-d100-theater'];
+    return selectors.map(selector=>{
+     const node=document.querySelector(selector);
+     if(!node)return {selector,missing:true};
+     const r=node.getBoundingClientRect(),s=getComputedStyle(node);
+     return {selector,top:r.top,bottom:r.bottom,height:r.height,left:r.left,display:s.display,position:s.position,transform:s.transform,marginTop:s.marginTop,paddingTop:s.paddingTop,gridRows:s.gridTemplateRows,alignItems:s.alignItems,justifyContent:s.justifyContent};
+    });
+   });
+   console.log('D100_HEADER_DEBUG',width,JSON.stringify(debug));
+   await context.close();
+   break;
+  }
   assert.deepEqual(evening.brand,home.brand);assert.deepEqual(evening.nav,home.nav);assert.equal(evening.title.font,home.title.font);
   // Compact short-screen Soirée intentionally raises the heading to create
   // space for D100. Match Accueil typography/width, NOT its absolute y.
