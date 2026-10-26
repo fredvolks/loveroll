@@ -2,6 +2,19 @@
 > Version documentaire 2026-10-26 · Dépôt officiel : [fredvolks/loveroll](https://github.com/fredvolks/loveroll) · Statut initial : **demandé / à auditer**, pas « terminé ».
 
 
+
+## Priorité immédiate — rétablir la publication Web et terminer les lots (26 octobre 2026)
+
+**Instruction de livraison approuvée :** dans le périmètre des exigences déjà approuvées, l'agent peut sortir les PR de brouillon, intégrer les dépendances compatibles, résoudre les conflits, fusionner après les validations requises et publier les lots fonctionnels sans redemander « continue » ou une autorisation de fusion déjà couverte par cette instruction. Les protections GitHub et les contrôles de sécurité continuent de s'appliquer. Aucun contournement de contrôle requis, changement de prix ou opération destructive n'est autorisé par ce paragraphe.
+
+1. **Priorité P0 de livraison :** réparer le pipeline Pages avant d'accumuler d'autres fonctionnalités. La PR #47 corrige le décompte obsolète des boutons de fin de soirée; vérifier sa tête, son diff, les tests et ses dépendances, intégrer la correction puis suivre le vrai déploiement main jusqu'à sa conclusion. Son numéro est un repère historique : revalider son état réel.
+2. **Un lot validé va jusqu'à la livraison :** recontrôler la compatibilité serveur/client, les migrations et les droits; sortir de brouillon lorsque prêt; fusionner; suivre les workflows; vérifier le site publié. Ne pas garder un lot prêt en brouillon pour la seule raison qu'aucune seconde permission n'a été demandée.
+3. **Ne pas tout fusionner ensemble :** conserver les travaux ouverts, ordonner les PR empilées, publier des lots complets et indépendants. Une dépendance manquante ou un vrai risque est documenté précisément; poursuivre les lots indépendants.
+4. **Tests proportionnés :** exécuter les vérifications utiles au changement et tous les contrôles requis. Réutiliser les résultats du même code lorsqu'ils restent valides; ne pas recommencer un audit global ni relancer une suite identique sans changement pertinent, échec ou doute concret. Ne pas désactiver un test pour publier.
+5. **Versions honnêtes :** pour une livraison applicative, harmoniser le numéro Web affiché, le manifeste de version et les clés de cache pertinentes selon la convention du projet. Ne pas incrémenter une version pour masquer un déploiement absent. Vérifier les assets et le comportement servis, pas seulement le JSON.
+6. **Compte rendu :** fournir version réellement servie, commit publié, workflow final, parcours accessibles et limites restantes. Une CI de PR verte ou une modification documentaire n'est pas un déploiement.
+7. **Notes historiques :** les anciennes mentions « garder main inchangé », « ne pas fusionner sans autorisation » ou « attendre une autorisation » dans les passations décrivent leur contexte initial. Cette instruction constitue l'autorisation pour les lots approuvés et validés de son périmètre; elle ne remplace pas une protection GitHub, un blocage technique ou une demande d'approbation réellement nouvelle.
+
 ## Guide de lecture et règles de coordination — consolidation du 26 octobre 2026
 - **Demandes et critères :** ce prompt. **Avancement courant et preuves :** [suivi officiel](./LOVEROLL_SUIVI.md). **Entrées non triées :** [nouvelles demandes](./LOVEROLL_NOUVELLES_DEMANDES.md). Les notes de PR ci-dessous sont des instantanés datés; vérifier le dernier état GitHub avant toute décision.
 - **Accueil :** vue d'ensemble, D6 hebdomadaire et raccourcis (LR-ACCUEIL-001). **Soirée :** déroulement du jeu, dés individuels, défis et minuteries (LR-014 à LR-028). **Surprise :** rendez-vous mensuel, lieux et planification (LR-SURPRISE-001). **Éclat :** expérience/coffrets existants, avec leurs droits actuels.
