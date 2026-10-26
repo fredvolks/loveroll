@@ -427,3 +427,34 @@ Le [rapport UX/UI du 26 octobre 2026](./LOVEROLL_AUDIT_UX_UI_20261026.md) est un
 - risques résiduels et prochaine action.
 
 > **Directives impératives :** pas de refonte totale ; ne pas demander « continue » après chaque bloc ; ne pas interrompre sans nécessité ; conserver l'identité LoveRoll et les règles du jeu ; Accueil = source visuelle ; un dé rendu complet et posé sur son socle ; une minuterie qui arrive à 00:00 valide **une seule fois** le défi associé.
+
+## LR-045 — Soirée Extra illimitée après épuisement des dés hebdomadaires (demande approuvée le 26 octobre 2026)
+
+**Statut : spécification approuvée, non implémentée.** Ajouter à l'application existante sans supprimer ni remplacer les soirées normales, leur D6, leur calendrier, leur historique, le cycle habituel de cartes ni les contrôles de rôles.
+
+### Parcours utilisateur obligatoire
+1. Le couple conserve **le même bouton « Brasser le dé » de la section Soirée**. Ne pas ajouter de deuxième bouton d'entrée « Extra » sur l'accueil. Tant que les dés de la semaine sont disponibles, le parcours normal demeure inchangé.
+2. **Seulement lorsque le nombre de dés/soirées hebdomadaires disponibles est épuisé**, si l'option « Autoriser les Soirées Extra » est activée par l'administrateur du couple, le clic sur ce bouton présente une fenêtre de confirmation claire :
+   - « Vous avez utilisé tous vos dés de la semaine. Voulez-vous jouer une Soirée Extra ? Pour cette soirée, toutes les cartes redeviennent disponibles dans la pige. »
+   - Deux vrais boutons accessibles : **« Refuser »** et **« Accepter »**.
+3. **Refuser** ferme la fenêtre sans créer de soirée, sans brasser de dé, sans consommer de quota, sans effacer de données et sans modifier le tour en cours.
+4. **Accepter** démarre une **nouvelle Soirée Extra distincte**. **On recommence d'abord par piger le nombre de défis avec les D6 des deux partenaires**, puis on pige effectivement les défis avec le D100 et suit le jeu ordinaire (catégories, tours, confirmations, chronomètres, validation, etc.). Aucun défi ne doit être automatiquement pré-pigé à l'acceptation.
+5. **Toutes les cartes éligibles de la bibliothèque du jeu sont remises dans la pige pour chaque Soirée Extra**, y compris celles pigées ou terminées auparavant. Cela signifie **une pige indépendante propre à la Soirée Extra**, et NON un effacement, une remise à zéro ou une modification du cycle normal de 200 cartes, de la progression, des favoris, des défis précédents ou des statistiques historiques. Les règles existantes de sécurité, catégories, consentement et indisponibilité restent applicables. Chaque soirée Extra repart avec sa propre pige fraîche.
+6. **Nombre de Soirées Extra : illimité**, sans limite quotidienne, hebdomadaire ou mensuelle ajoutée. Après une soirée Extra terminée, un nouveau clic sur le **même bouton** lorsque le quota normal est toujours épuisé repropose une nouvelle Soirée Extra, avec ses D6 pour déterminer les nouveaux nombres de défis puis une nouvelle pige de toutes les cartes éligibles.
+7. Les défis, dates, partenaires, catégories et résultats de chaque Soirée Extra sont enregistrés et synchronisés comme les soirées normales, avec un indicateur distinct **« Soirée Extra »** dans les vues d'historique/calendrier et statistiques. Les soirées Extra **ne dépensent pas** de dés hebdomadaires, **ne recréditent pas** ceux de la semaine et ne transforment pas les autres soirées en Extra.
+8. **Réglage admin du couple** : interrupteur explicite « Autoriser les Soirées Extra » dans les Réglages du jeu, modifiable uniquement par l'administrateur/créateur du couple (contrôle serveur, non uniquement visuel). Si désactivé, aucune proposition ni création de Soirée Extra ; l'épuisement hebdomadaire conserve le comportement existant. L'état initial de cette nouvelle option doit être **désactivé** pour ne pas activer silencieusement la fonctionnalité chez les couples existants.
+9. Une seule Soirée Extra active par couple à la fois ; une double pression ou des actions simultanées de deux partenaires ne doivent jamais produire deux soirées identiques. Après fermeture/reconnexion, reprendre la soirée Extra active et ses D6/tours sans repiger accidentellement. Si l'admin désactive le mode durant une soirée déjà en cours, ne pas supprimer cette soirée ni ses données ; interdire seulement le lancement de nouvelles extras.
+10. Le jeu et son API doivent distinguer explicitement les modes `normal` et `extra`, appliquer les autorisations côté serveur, utiliser des opérations idempotentes et conserver une piste d'audit. Ne pas contourner le contrôle d'accès par appel RPC direct.
+
+### Tests d'acceptation requis avant de cocher LR-045
+- Avec du quota hebdomadaire restant : clic sur « Brasser le dé » → soirée normale sans confirmation Extra.
+- Quota épuisé et mode OFF : aucune Soirée Extra proposée ou créée, notamment côté API.
+- Quota épuisé et mode ON : fenêtre d'information ; Refuser = aucune écriture ; Accepter = exactement une nouvelle Extra.
+- Après Accepter : **D6 des partenaires avant toute pige D100** ; défi obtenu normalement ; toutes les cartes éligibles de la session Extra y compris celles déjà vues dans la progression normale.
+- Terminer deux Extras successives dans la même journée : fonctionnement illimité et remise à disposition des cartes à chacune ; progression normale et compteurs hebdomadaires intacts.
+- Double clic, deux partenaires simultanés, actualisation, hors ligne/reconnexion : aucun doublon, données synchronisées, reprise correcte.
+- Historique/calendrier et rapports identifient les extras sans effacer/modifier les soirées précédentes ; permissions admin testées ; vieux clients compatibles ou bloqués proprement.
+- Captures responsive Android/iPhone/tablette/PC de la confirmation et des écrans D6/D100 ; tests automatisés et validation réelle GitHub Actions sur le SHA final. Ne marquer « terminé » qu'après code, validations et preuves.
+
+**Implémentation :** auditer d'abord les compteurs hebdomadaires, le serveur Supabase, le D6 des partenaires, le cycle de cartes et l'architecture des Réglages ; ensuite réaliser en PR dédiée avec migration compatible si nécessaire. Cette section exprime la demande produit et n'atteste d'aucun développement livré.
+
