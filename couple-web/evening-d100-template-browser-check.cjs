@@ -48,6 +48,28 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
    await page.locator('[data-action="category:HASARD"]').click();assert.equal(await page.locator('.evening-choice-odds').count(),0);
   }
   await page.locator('[data-action="new-challenge"]').click();
+  // LR-001: verify the projected *real WebGL mesh*, not just its canvas,
+  // at several angles during the throw. No visual masking is permitted.
+  let animatedSamples=0;
+  for(let sample=0;sample<8;sample++){
+   await page.waitForTimeout(130);
+   const scene=await page.evaluate(()=>{
+    const c=document.querySelector('.evening-d35-col canvas');
+    if(!c?.loveRollDie)return null;
+    const r=c.getBoundingClientRect(),hero=document.querySelector('.evening-d100-theater').getBoundingClientRect();
+    const b=c.loveRollDie.projectedBounds();
+    return {spinning:c.loveRollDie.readState().spinning,
+     top:r.top+b.top*r.height,bottom:r.top+b.bottom*r.height,
+     left:r.left+b.left*r.width,right:r.left+b.right*r.width,
+     hero:{top:hero.top,bottom:hero.bottom,left:hero.left,right:hero.right}};
+   });
+   if(!scene?.spinning)continue;
+   animatedSamples++;
+   assert.ok(scene.top>=scene.hero.top-2&&scene.bottom<=scene.hero.bottom+2&&
+    scene.left>=scene.hero.left-2&&scene.right<=scene.hero.right+2,
+    'LR-001: animated D100 geometry exits its theater: '+JSON.stringify({width,height,scene}));
+  }
+  assert.ok(animatedSamples>0,'LR-001: animation stage was never sampled');
   await page.waitForFunction(()=>document.querySelector('.evening-d100-result')?.textContent==='Résultat : 17',{timeout:16000});
   await page.waitForSelector('[data-action="evening-close"]',{timeout:16000});await page.locator('[data-action="evening-close"]').click();
   assert.equal(world.calls.filter(c=>c.name?.startsWith('draw_for_partner')).length,1);
