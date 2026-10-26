@@ -423,6 +423,9 @@ jobs:
         run: |
           node couple-web/premium-couple-visual-check.cjs
 
+      - name: Verify real 00:00 timed Soirée challenge completion in browser
+        run: node couple-web/evening-couple-flow-browser-check.cjs
+
       - name: Verify Soirée responsive Step 1 and unchanged D35 on phones and tablets
         run: node couple-web/evening-redesign-browser-check.cjs
 
