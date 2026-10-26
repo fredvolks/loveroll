@@ -64,3 +64,27 @@
   main#app.has-ruby-calendar>.lr-ruby-nav{left:12px!important;right:12px!important;bottom:env(safe-area-inset-bottom,0px)!important;width:auto!important;height:56px!important;min-height:56px!important;max-height:56px!important;padding:2px 3px 3px!important;}
  }
 }
+
+/* LR-020/023: short CSS viewports and text zoom must not trap the date
+   grid or history underneath fixed navigation. Normal mobile is unchanged. */
+@layer loveroll-calendar-template{
+ @media(max-width:767px) and (max-height:650px){
+  main#app.has-ruby-calendar{
+   overflow-x:hidden!important;overflow-y:auto!important;
+   overscroll-behavior-y:contain!important;
+   -webkit-overflow-scrolling:touch;
+  }
+  .has-ruby-calendar .evening-calendar-shell{
+   height:auto!important;min-height:calc(100dvh - 140px)!important;
+   grid-template-rows:118px 100px minmax(235px,auto) minmax(145px,auto) 44px!important;
+   overflow:visible!important;
+  }
+  .has-ruby-calendar .evening-cal-month{
+   min-height:235px!important;overflow:visible!important;
+  }
+  .has-ruby-calendar .evening-cal-history{
+   min-height:145px!important;max-height:35dvh!important;
+   overflow-y:auto!important;
+  }
+ }
+}
