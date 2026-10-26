@@ -35,6 +35,9 @@
 
 | 2026-10-26 | Limiter « Passer un défi » à 3 fois/mois/par partenaire, permettre à l'admin du couple d'ajuster le plafond, afficher passes restantes, conserver Refuser possible | **LR-016** (à implémenter) | [Prompt LR-016](./LOVEROLL_MASTER_PROMPT.md) · [Suivi LR-016](./LOVEROLL_SUIVI.md) |
 
+| 2026-10-26 | Idées 3 à 8 approuvées : Adapter un défi, Reprendre notre soirée, Coups de cœur rejouables, Mode discrétion, Variété intelligente, Action principale unique | **LR-017, LR-018, LR-019, LR-025, LR-026, LR-027** (à coder) | [Prompt](./LOVEROLL_MASTER_PROMPT.md) · [Suivi](./LOVEROLL_SUIVI.md) |
+| 2026-10-26 | Soirée avant le lancer des deux D6 : « As-tu envie de jouer ce soir ? », invitation à l'autre membre, notification et réponse Oui / Non / Peut-être, Oui ouvre Soirée pour brasser son propre D6 | **LR-028** (à coder) | [Prompt](./LOVEROLL_MASTER_PROMPT.md) · [Suivi](./LOVEROLL_SUIVI.md) |
+
 ## Lire et modifier depuis un téléphone
 1. Ouvre ce document sur GitHub en étant connecté.
 2. Appuie sur le **crayon / Edit** (parfois dans le menu « … »).
