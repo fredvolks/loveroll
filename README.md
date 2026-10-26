@@ -1,5 +1,15 @@
 # LoveRoll
 
+## Suivi LoveRoll — prompt maître et nouvelles idées
+
+- [Prompt maître](docs/LOVEROLL_MASTER_PROMPT.md) — cahier des charges priorisé.
+- [Tableau de suivi](docs/LOVEROLL_SUIVI.md) — exigences LR-xxx et avancement vérifié.
+- [Ajouter de nouvelles demandes](docs/LOVEROLL_NOUVELLES_DEMANDES.md) — éditable depuis le téléphone.
+- [Captures des bugs](docs/LOVEROLL_PREUVES_VISUELLES.md) — D100 coupé et calendrier.
+
+> Ces documents n'appliquent pas automatiquement les corrections : les Issues et PR recensent les changements réellement testés.
+
+
 Application de couple LoveRoll — Android et PWA. Dépôt indépendant de **Mon Wallet**.
 
 ## Production
