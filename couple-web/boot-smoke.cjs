@@ -98,7 +98,7 @@ export function createClient(){
     original.status=args.p_action==='refuse'?'refused':'passed';
     if(!rows.couple_challenges.some(c=>c.id==='redraw-replacement'))
      rows.couple_challenges.push({...original,id:'redraw-replacement',status:'proposed',
-      card_id:2,face:13,card_title:'Remplacement du défi',created_at:new Date().toISOString()});
+      card_id:2,face:13,replaces_challenge_id:original.id,card_title:'Remplacement du défi',created_at:new Date().toISOString()});
     return {data:{original_id:original.id,replacement_id:'redraw-replacement',
       excluded:args.p_exclude,already_processed:false},error:null};
    }

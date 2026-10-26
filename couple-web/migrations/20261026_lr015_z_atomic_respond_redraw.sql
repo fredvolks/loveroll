@@ -11,6 +11,9 @@ ALTER TABLE public.couple_challenges
  CHECK (status IN ('proposed','accepted','passed','refused','completed'));
 ALTER TABLE public.couple_challenges
  ADD COLUMN IF NOT EXISTS refused_at timestamptz;
+ALTER TABLE public.couple_challenges
+ ADD COLUMN IF NOT EXISTS replaces_challenge_id uuid
+ REFERENCES public.couple_challenges(id) ON DELETE SET NULL;
 
 -- One replacement outcome per challenge. An unavailable pool stores NULL,
 -- ensuring a retry after a network error does not create a second challenge.
@@ -160,7 +163,7 @@ BEGIN
   END IF;
   INSERT INTO public.couple_challenges(
    session_id,couple_id,offered_by,recipient,category,face,card_id,
-   card_title,card_description,card_timer_minutes,is_gifted
+   card_title,card_description,card_timer_minutes,is_gifted,replaces_challenge_id
   ) VALUES(
    v_old.session_id,v_couple,v_old.offered_by,v_old.recipient,
    v_old.category,v_face,v_card,
@@ -168,7 +171,7 @@ BEGIN
    coalesce(chosen.description,original.description),
    CASE WHEN chosen.card_id IS NOT NULL THEN chosen.timer_minutes
         ELSE original.timer_minutes END,
-   coalesce(v_old.is_gifted,false)
+   coalesce(v_old.is_gifted,false),p_challenge
   ) RETURNING id INTO v_new_id;
   IF v_no_repeat THEN
    INSERT INTO public.love_card_draw_history(couple_id,recipient_user_id,category,card_id)

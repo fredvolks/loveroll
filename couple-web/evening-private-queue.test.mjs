@@ -104,3 +104,13 @@ test('LR-015 replacement occupies one visible D6 slot while history remains immu
  assert.match(readFileSync(new URL('./app.js',import.meta.url),'utf8'),
   /const mineCards=session\?visibleEveningQueue\(ownEveningChallenges\(state\.challenges,uid,session\.id\)\):\[\];/);
 });
+
+test('LR-015 replacements preserve their original D6 slot through repeated refusal',()=>{
+ const first={...a,id:'slot-1',status:'refused',created_at:'2026-10-15T19:00:00Z'};
+ const other={...a,id:'slot-2',status:'completed',card_id:2,created_at:'2026-10-15T19:01:00Z'};
+ const earlierReplacement={...a,id:'slot-1b',status:'refused',replaces_challenge_id:'slot-1',created_at:'2026-10-15T19:02:00Z'};
+ const latest={...a,id:'slot-1c',status:'proposed',replaces_challenge_id:'slot-1b',created_at:'2026-10-15T19:03:00Z'};
+ const full=ownEveningChallenges([other,latest,first,earlierReplacement],'fred','s1');
+ assert.deepEqual(visibleEveningQueue(full).map(x=>x.id),['slot-1c','slot-2']);
+ assert.equal(full.length,4,'all historical occurrences retained');
+});

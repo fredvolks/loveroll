@@ -40,6 +40,9 @@ BEGIN
   RAISE EXCEPTION 'Refusal did not create replacement: %',first; END IF;
  new_card:=(first->>'replacement_id')::uuid;
  IF (SELECT count(*) FROM public.couple_challenges WHERE id=new_card
+      AND replaces_challenge_id='cccccccc-cccc-4ccc-8ccc-cccccccccccc')<>1 THEN
+  RAISE EXCEPTION 'Replacement lost original D6 slot'; END IF;
+ IF (SELECT count(*) FROM public.couple_challenges WHERE id=new_card
      AND recipient='11111111-1111-4111-8111-111111111111'
      AND category='SENSUEL' AND card_id<>1)<>1 THEN
   RAISE EXCEPTION 'Replacement changed recipient/category or repeated card'; END IF;
