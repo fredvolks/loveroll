@@ -214,3 +214,38 @@ test('LR-015 phase 2: private per-couple current-cycle exclusion registry and sa
  assert.match(migration,/GRANT EXECUTE ON FUNCTION public\.my_love_cycle_exclusions\(uuid\)/);
  assert.match(migration,/GRANT EXECUTE ON FUNCTION public\.restore_love_cycle_exclusion\(uuid,text,integer\)/);
 });
+
+
+test('LR-015 phase 3: atomic refusal/pass and same-category replacement contracts',()=>{
+ const m=read('migrations/20261026_lr015_atomic_respond_redraw.sql');
+ const fn=m.slice(m.indexOf('CREATE OR REPLACE FUNCTION public.love_respond_and_redraw('),
+  m.indexOf('REVOKE ALL ON FUNCTION public.love_respond_and_redraw'));
+ assert.match(m,/status IN \('proposed','accepted','passed','refused','completed'\)/);
+ assert.match(m,/CREATE TABLE IF NOT EXISTS public\.love_challenge_redraws/);
+ assert.match(m,/PRIMARY KEY REFERENCES public\.couple_challenges\(id\) ON DELETE CASCADE/);
+ assert.match(m,/ENABLE ROW LEVEL SECURITY/);
+ assert.match(m,/REVOKE ALL ON TABLE public\.love_challenge_redraws/);
+ assert.match(fn,/p_action='pass' AND p_exclude IS TRUE/);
+ assert.match(fn,/v_old\.recipient IS DISTINCT FROM \(select auth\.uid\(\)\)/);
+ assert.match(fn,/FROM public\.couples c WHERE c\.id=v_couple FOR UPDATE/);
+ assert.match(fn,/FROM public\.couple_sessions s[\s\S]*FOR UPDATE/);
+ assert.match(fn,/v_prior\.replacement_id/);
+ assert.match(fn,/v_used>=v_limit/);
+ assert.match(fn,/q\.status='passed' AND q\.passed_at IS NOT NULL/);
+ assert.match(fn,/CASE WHEN p_action='pass' THEN 'passed' ELSE 'refused'/);
+ assert.match(fn,/love_cycle_excluded_cards/);
+ assert.match(fn,/cc\.drawer_role,v_old\.offered_by,v_owner/);
+ assert.match(fn,/cc\.recipient_role,v_old\.recipient,v_owner/);
+ assert.match(fn,/seen\.session_id=v_old\.session_id/);
+ assert.match(fn,/seen\.category=v_old\.category AND seen\.card_id=candidate\.card/);
+ assert.match(fn,/RETURNING id INTO v_new_id/);
+ assert.match(fn,/replacement_unavailable/);
+ assert.match(fn,/INSERT INTO public\.love_challenge_redraws/);
+ assert.match(m,/GRANT EXECUTE ON FUNCTION public\.love_respond_and_redraw\(uuid,text,boolean\)/);
+ const draw=m.slice(m.indexOf('CREATE OR REPLACE FUNCTION public.draw_for_partner'));
+ assert.match(draw,/status NOT IN \('passed','refused'\)/);
+ assert.match(draw,/ex\.cycle_number=v_cycle/);
+ assert.match(draw,/ex\.category=cats\.category AND ex\.card_id=candidate\.card/);
+ assert.match(draw,/ex\.category=v_cat AND ex\.card_id=card/);
+ assert.doesNotMatch(draw,/status<>'passed'/);
+});
