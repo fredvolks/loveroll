@@ -49,7 +49,7 @@ export function updateEveningCategoryUi(root,category,percent=88){
  const group=root?.querySelector('.evening-step.two .evening-choice');
  const buttons=[...(group?.querySelectorAll('button[data-action^="category:"]')||[])];
  if(!buttons.length||buttons.every(button=>button.disabled)||!buttons.some(b=>b.dataset.action==='category:'+category))return false;
- group.classList.remove('lr-choose-category');group.querySelector('.lr-category-hint')?.remove();
+ group.classList.remove('lr-choose-category');group.removeAttribute('aria-describedby');group.querySelector('.lr-category-hint')?.remove();
  const names={SENSUEL:'Sensuel',HASARD:'Au hasard',SEXUEL:'Sexuel'};
  for(const button of buttons){
   const type=button.dataset.action?.slice('category:'.length);
@@ -177,7 +177,7 @@ export function premiumEveningHtml({
   '<div class="evening-progress" aria-label="Progression de nos défis"><span title="'+esc(mine.name||'Moi')+'">'+esc(mine.name||'Moi')+'<b>'+count(me)+'</b><small>Dé personnel : '+esc(myRoll?.face??'—')+'</small></span>'+
   '<span title="'+esc(partner.name||'Partenaire')+'">'+esc(partner.name||'Partenaire')+'<b>'+count(partner.user_id)+'</b><small>Dé personnel : '+esc(theirRoll?.face??'—')+'</small></span></div>'+
   '<div class="evening-play">'+
-    '<div class="evening-choice'+(!category&&canDraw?' lr-choose-category':'')+'" role="group" aria-label="Choisir la catégorie de ce défi">'+
+    '<div class="evening-choice'+(!category&&canDraw?' lr-choose-category':'')+'" role="group" aria-label="Choisir la catégorie de ce défi"'+(!category&&canDraw?' aria-describedby="lr-evening-category-hint"':'')+'>'+
        (!category&&canDraw?'<p id="lr-evening-category-hint" class="lr-category-hint" aria-live="polite">✨ Choisis ta catégorie pour lancer le dé</p>':'')+
        (showSensuel?'<div class="evening-choice-option">'+
          bt('category:SENSUEL',(category==='SENSUEL'?'✓ ':'♡ ')+'Sensuel','evening-choice-btn '+(category==='SENSUEL'?'selected':''),!canDraw)+
