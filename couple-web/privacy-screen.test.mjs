@@ -18,6 +18,8 @@ test('LR-025 only stores a local visual masking preference',()=>{
  assert.match(code,/const html=doc\.documentElement/);
  assert.match(code,/html\.classList\.toggle\('lr-privacy-active',masked\)/);
  assert.match(code,/app\.inert=true/);
+ assert.match(code,/if\(html\.classList\.contains\('lr-privacy-active'\)\)\{/);
+ assert.match(code,/html\.classList\.remove\('lr-privacy-active'\)/);
  assert.match(code,/const initialAriaHidden=app\?\.getAttribute\('aria-hidden'\)/);
  assert.match(code,/initialAriaHidden===null\?app\.removeAttribute\('aria-hidden'\):app\.setAttribute\('aria-hidden',initialAriaHidden\)/);
  assert.doesNotMatch(code,/\brpc\s*\(|answer_challenge|finish_couple_session|timer\.start/i);
