@@ -30,6 +30,14 @@ Lecture du README, du prompt maître, des nouvelles demandes et des captures de 
 - **Calendrier tablette/PC :** vue en deux colonnes « dates à gauche / détails à droite », sans changer les statistiques. **Aucune refonte appliquée**.
 - **Accessibilité « grand texte » :** autoriser le défilement limité dans les panneaux secondaires quand nécessaire plutôt que forcer un contenu coupé. Proposition compatible avec le prompt, **à tester**.
 
+## Suite de l'audit — exécution du 26 octobre
+
+- **Documentation :** les recommandations de chaque ligne ont été reprises dans le [plan d'exécution du prompt maître](./LOVEROLL_MASTER_PROMPT.md#exécution-des-corrections-de-laudit-du-26-octobre-2026). Aucun ancien objectif n'a été remplacé.
+- **Guidage D100 (LR-013) :** [PR #24](https://github.com/fredvolks/loveroll/pull/24) ouverte en brouillon. La consigne visible occupe la rangée sous les trois vrais boutons, dispose d'une description accessible et disparaît au choix. Le tirage serveur et le WebGL sont inchangés. Tests Node ajoutés au CI ; état de validation encore partiel.
+- **Calendrier petit écran (LR-020/023) :** même [PR #24](https://github.com/fredvolks/loveroll/pull/24) ; sur une hauteur CSS inférieure ou égale à 650 px, l'écran permet de défiler pour préserver l'accès aux commandes et à l'historique. Affichage normal conservé. Tests visuels petits téléphones et zoom encore nécessaires.
+- **P0 existants :** [PR #9](https://github.com/fredvolks/loveroll/pull/9), [#21](https://github.com/fredvolks/loveroll/pull/21) et [#23](https://github.com/fredvolks/loveroll/pull/23) conservées. Leurs conflits de suivi documentaire ont été levés le 26 octobre en resynchronisant avec `main`, **sans fusion ni publication**. Vérifications GitHub réexécutées ; se référer à chaque PR pour le résultat.
+- **Non encore appliqués/validés :** harmonisation graphique complète LR-010 à 012, vérifications réelles Safari/Android, matrice tablette/PC, navigation grand écran et calendrier à deux colonnes, captures avant/après de tous les états. Une analyse sur code ou une PR ouverte ne vaut pas succès sur appareil.
+
 ## Matrice de tests / prochaines preuves
 | Test | Preuve nécessaire | État |
 |---|---|---|
