@@ -132,3 +132,13 @@ test('LR-003: default calendar month tracks the current America/Toronto date, ne
   'Unspecified month must open the real Quebec month: '+expectedMonth);
  assert.doesNotMatch(files('./evening-calendar.mjs'),/isoMonth\(month\)\|\|'2026-10'/);
 });
+
+test('LR-003: stale or impossible selected days never escape the displayed calendar month',()=>{
+ for(const date of ['2026-09-30','2026-10-32','2026-10-00','2026-10-31x','2026-10-99']){
+  const html=eveningHistoryMarkup({month:'2026-10',selectedDate:date});
+  assert.match(html,/data-action="evening-date:2026-10-01" aria-label="2026-10-01 : aucune soirée" aria-pressed="true"/);
+  assert.match(html,/2026-10-01 · Historique/);
+ }
+ const valid=eveningHistoryMarkup({month:'2026-10',selectedDate:'2026-10-31'});
+ assert.match(valid,/data-action="evening-date:2026-10-31" aria-label="2026-10-31 : aucune soirée" aria-pressed="true"/);
+});
