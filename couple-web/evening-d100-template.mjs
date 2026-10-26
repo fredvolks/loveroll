@@ -70,7 +70,10 @@ export function fitEveningD100(root){
   if(bounds.width>0&&bounds.height>0){
    const size=Math.floor(Math.max(1,Math.min(
     window.innerWidth*.82,window.innerHeight*.41,390,
-    bounds.width*.96,bounds.height*.94
+    bounds.width*.96,
+    // Never clamp to the stage's OWN computed height: the grid stage
+    // follows the canvas and the feedback loop shrank a small phone to 53px.
+    Math.max(bounds.height*.94,window.innerHeight*.24)
    )));
    const previous=hero.style.getPropertyValue('--evening-d100-stage-size');
    const next=size+'px';
