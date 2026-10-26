@@ -86,8 +86,8 @@ L'[audit officiel](./LOVEROLL_AUDIT_UX_UI_20261026.md) est maintenant décompos�
 **Publication du système documentaire :** [PR #10 fusionnée](https://github.com/fredvolks/loveroll/pull/10). Les Issues sont ouvertes et les corrections applicatives restent à vérifier/implémenter.
 
 ## Tableau de bord
-- **31 exigences** dans cette version (4 P0 + 27 P1).
-- **0/31 cochées intégralement** : plusieurs corrections vérifiées partiellement, mais les critères complets restent ouverts (voir chaque PR et tests).
+- **36 exigences identifiées** : les 31 LR numériques existantes, LR-SURPRISE-001, LR-ACCUEIL-001, LR-JEU-001, LR-MUSIQUE-001 et LR-PIGE-001. Ce total ne mesure pas la proportion de code livrée.
+- **Bilan historique initial : 0/31 cochées intégralement.** Ne pas employer ce chiffre comme avancement actuel; consulter les lignes de statut et les preuves. Les deux nouvelles exigences sont spécifiées, sans livraison applicative déclarée.
 - Ces nombres décrivent le **statut documentaire initial**, **pas** un diagnostic que toute l'application est défectueuse.
 - Les développeurs doivent vérifier l'existant et marquer « Déjà présent, vérifié » avec preuves si un point est déjà satisfait.
 
@@ -137,6 +137,59 @@ Ouvrir le dépôt et fournir l'instruction suivante à Work :
 
 ## Important
 Pour suivre le travail en temps réel, utiliser aussi les **GitHub Issues et les Pull Requests** associées aux lots. Un fichier Markdown seul n'est pas actualisé automatiquement par le code ou CI. Ne jamais prétendre qu'une case cochée prouve un déploiement sans vérification du site publié.
+
+
+## Surprise premium — demande approuvée du 26 octobre 2026
+
+| Exigence | État | Preuve / prochaine étape |
+|---|---|---|
+| LR-SURPRISE-001 — D100, Geoapify, parcours premium et filtres facultatifs | À implémenter — documentation ajoutée uniquement | [Prompt officiel](./LOVEROLL_MASTER_PROMPT.md#lr-surprise-001--rendez-vous-surprise-premium-d100-et-geoapify). Budget et km vides = tous les budgets et toutes les distances, sans préférence luxe : mini-putt autant que sortie à 300 $. Corriger d'abord les trajets null, les pannes terminales et les états pending; puis livrer préférences, adaptation et planification avec tests et preuves visuelles. |
+
+Aucun changement de tarifs ni déploiement applicatif n'est réalisé par cet ajout documentaire.
+
+
+## Accueil / Soirée — demande approuvée du 26 octobre 2026
+
+| Exigence | État | Preuve / prochaine étape |
+|---|---|---|
+| LR-ACCUEIL-001 — Accueil synthétique, Soirée pour jouer | Spécifié — à implémenter et vérifier | [Prompt officiel](./LOVEROLL_MASTER_PROMPT.md#lr-accueil-001--accueil-vue-densemble-et-raccourcis-soirée-parcours-de-jeu). Conserver D6 hebdomadaire/décor, afficher le quota réel et un raccourci vers Soirée; statut compact au lieu du tableau détaillé; carte Surprise/Éclat et bilan collectif. Aucune création de session ou lancer par simple navigation. |
+
+### Revue de structure du prompt maître — 26 octobre 2026
+- Ajout d'un guide en tête : rôle des documents, périmètre des onglets, ordre courant unique et suivi CI jusqu'à résultat final.
+- Clarification des propositions déjà approuvées, du statut documentaire LR-014 et du statut historique des notes de PR.
+- Les anciens ordres restent conservés comme contexte historique; le guide donne l'ordre courant.
+- Les 31 exigences initiales sont conservées, avec les deux ajouts Accueil et Surprise. Le compteur initial 0/31 n'est plus présenté comme un avancement en temps réel.
+- Audit documentaire uniquement : aucun état actuel de PR, CI, base ou déploiement n'a été certifié par cette revue.
+
+
+
+## Défis existants et ambiance musicale — 26 octobre 2026
+
+| Exigence | État | Prochaine étape |
+|---|---|---|
+| LR-JEU-001 — Préserver les textes, corriger attribution/progression et fiabiliser le jeu | Spécifié — à implémenter et vérifier | Inventaire/empreintes des textes et durées; correction des rôles self_draws; identité de carte distincte du D100; terminer refus/passes/favoris et import sans écrasement. [Prompt](./LOVEROLL_MASTER_PROMPT.md#lr-jeu-001--fiabiliser-les-défis-existants-sans-modifier-leurs-textes) |
+| LR-MUSIQUE-001 — Musique facultative adaptée à chaque carte et au minuteur | Spécifié — à implémenter et vérifier | Métadonnées par carte, pistes originales/licenciées, démarrer/pause/reprise/reset, mute et volume indépendants du temps. Fondu des 5 dernières secondes jusqu'au silence à zéro : la musique remplace alors la sonnerie, sans double signal. Sans musique, sonnerie facultative; aucun son de remplacement après mute volontaire. [Prompt](./LOVEROLL_MASTER_PROMPT.md#lr-musique-001--ambiance-musicale-facultative-par-carte-liée-au-minuteur) |
+
+**Verrou utilisateur :** titres, consignes et minuteries configurées des cartes conservés; l'attribution peut être corrigée. L'ajout des prompts ne constitue ni une modification des cartes ni un déploiement musical.
+
+
+## Précision LR-019 — cinq favoris communs maximum (26 octobre 2026)
+**État : spécification approuvée, à implémenter et vérifier.** [Prompt LR-019](./LOVEROLL_MASTER_PROMPT.md#lr-019--coups-de-cœur--un-favori-retourne-dans-la-pige-idée-no-5).
+- Une liste commune de 5 cartes distinctes toutes catégories confondues; gestion par chacun des partenaires dans Réglages → Jeu → Nos coups de cœur.
+- Ajout depuis ses anciens défis et ceux du partenaire, après clôture via le calendrier; aucune ouverture des cartes encore privées d'une soirée active.
+- Au sixième ajout : notification dans l'app, choix du favori à retirer/remplacer, confirmation; remplacement atomique, compteur synchronisé et plafond serveur.
+- Aucun favori ne garantit la pige, la personne qui accomplit ou reçoit le défi; probabilités, rôles femme/homme, exclusions et cycle conservés.
+- Vérifier concurrence, doublons, remplacement/annulation/échec et listes existantes de plus de 5 sans suppression arbitraire.
+Ajout documentaire uniquement : aucune carte ni donnée utilisateur modifiée.
+
+
+### Précision LR-019 — retrait directement dans la notification
+Demande approuvée : au sixième ajout, la notification interactive présente immédiatement les 5 favoris, titre/catégorie et un bouton « Retirer et ajouter le nouveau » sur chaque carte. Le remplacement atomique se fait depuis cette fenêtre sans passage par Réglages ni seconde confirmation obligatoire. Fermeture/Annuler conserve la liste. Inclure tests mobile, concurrence et erreurs réseau. **Spécification uniquement, pas encore implémentée.**
+
+
+## LR-PIGE-001 — Cartes disponibles par catégorie dans Soirée
+**État : spécifié, à implémenter et vérifier.** [Prompt officiel](./LOVEROLL_MASTER_PROMPT.md#lr-pige-001--soirée--cartes-encore-disponibles-par-catégorie).
+Afficher près des catégories les cartes distinctes encore admissibles à la prochaine pige du joueur, calculées par le moteur serveur (rôles, bibliothèque, exclusions, favoris, cycle, mode). Actualiser avec les mutations et la synchronisation; distinguer chargement/erreur de zéro. Aucun changement de textes, probabilités, quotas ou historique. Tester les deux joueurs, concurrence, reprises et matrice responsive. Ajout documentaire uniquement.
 
 ## Journal de reprise autonome — 26 octobre 2026, cycle LR-003/LR-004/LR-015
 
