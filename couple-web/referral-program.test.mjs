@@ -44,7 +44,8 @@ test('Account Settings and secure signup wiring keep referral separate from invi
  assert.ok(app.includes('referralSettingsHtml(state.referral)'));
  // A separate conditional Settings route; no referral card embedded in Profile.
  assert.match(app,/parrainage:\{title:'Parrainage',body:referralSettingsHtml\(state.referral\)/);
- assert.match(app,/state.referral\?\.enabled===true\?\[\['parrainage','Parrainage'/);
+ assert.match(app,/state\.referral\?\.enabled===true\?settingRow\('Parrainage et crédits'/);
+ assert.match(app,/\['avantages','Abonnement et avantages'/);
  assert.match(app,/data-referral-active/);
  assert.match(app,/if\(section==='parrainage'&&state.referral\?\.enabled!==true\)return/);
  const account=app.slice(app.indexOf("const account='<div class"),app.indexOf("let partner='"));
