@@ -651,3 +651,36 @@ Aucun abonnement musical externe requis pour jouer. Ne pas présenter le génér
 - Tests d'intégration sur les vrais contrôles et tests d'écoute documentés; distinguer émulation et appareils physiques réellement testés.
 - Contrôle d'intégrité des titres, consignes, minuteries configurées et instantanés des cartes avant/après.
 - Livrer par lots compatibles avec suivi CI jusqu'à son état final; renseigner les preuves dans LOVEROLL_SUIVI.md et vérifier le parcours publié. Cette addition documentaire ne vaut ni musique intégrée ni fonctionnalité déployée.
+
+
+## LR-PIGE-001 — Soirée : cartes encore disponibles par catégorie
+**Demande approuvée le 26 octobre 2026 — spécification à implémenter et vérifier.**
+
+### Placement et affichage
+Dans l'onglet **Soirée**, à l'étape des défis / du D100, afficher en permanence un petit compteur près de chaque choix de catégorie :
+- **Sensuel · 42 cartes disponibles**
+- **Sexuel · 28 cartes disponibles**
+Ces chiffres sont illustratifs, jamais codés en dur. Employer une formulation claire comme « Disponibles pour ta prochaine pige » pour distinguer ces nombres du quota de défis personnels restant à jouer, du résultat D100 et de la progression des 200.
+Garder le compteur visible avant et après chaque tirage sans ouvrir Réglages. Ne pas encombrer la fiche ni déplacer le dé hors du socle. Si « Au hasard » affiche un total, utiliser la somme exacte des cartes admissibles des deux catégories, sans transformer ce total en probabilité.
+
+### Sens du compteur et règles de calcul
+- Compter les **cartes distinctes réellement admissibles** au prochain tirage de la personne concernée, dans le couple, cycle, bibliothèque et mode de soirée actifs. Les nombres peuvent être différents sur les deux comptes en raison des rôles et historiques; ne pas imposer un faux compteur commun.
+- Réutiliser le même calcul serveur que le moteur de pige : catégories et styles actifs, cartes personnalisées remplies, attribution/rôles (dont femme → homme et homme → femme), permissions, règles de non-répétition, exclusions volontaires, tirages déjà réservés/attribués dans la soirée et règles de favoris LR-019.
+- Une carte retirée volontairement du lot n'est pas comptée. Un favori ne compte qu'une fois et n'est compté que lorsqu'il est effectivement rééligible; le cœur ne contourne pas l'exclusion ni l'interdiction de repige dans la même soirée.
+- Le retour dans la pige des cartes passées/refusées/non terminées suit LR-015 et le mode de soirée actif. Ne pas annoncer une carte disponible avant que le moteur ne l'autorise réellement. Distinguer un tirage spécial offert si ses règles d'admissibilité diffèrent.
+- Compter par identifiant stable de carte et catégorie, jamais par face D100, nombre total d'emplacements éditables ou nombre d'occurrences historiques.
+- Ce compteur décrit le bassin; si ce n'est pas le tour du joueur ou si son quota est atteint, conserver le vrai état d'accès. Un bassin non vide n'autorise pas un tirage interdit.
+- Si une bibliothèque s'épuise, ne pas la réinitialiser pour simplement afficher un compteur. Respecter les conditions de renouvellement officielles et expliquer honnêtement l'état « Aucune carte disponible » / « Renouvellement du lot prévu », selon le moteur réel.
+- Ne pas changer les probabilités approuvées pour les faire correspondre aux quantités affichées. La proportion de cartes n'est pas nécessairement la probabilité de catégorie.
+
+### Actualisation, confidentialité et erreurs
+Mettre à jour après tirage, remplacement, clôture/retour en pige, modification d'exclusion, favoris, rôles ou bibliothèque et changement de cycle, ainsi qu'après une action du partenaire qui affecte le bassin. Réconcilier après reconnexion et retour dans la page.
+Une lecture de compteur ne lance pas de dé, ne consomme rien et ne modifie ni historique ni progression. Retourner des agrégats autorisés côté serveur, sans exposer les textes ou identités de cartes privées du partenaire, ni les futurs résultats.
+Chargement : « … »; erreur : « Indisponible » avec réessai discret. Ne pas afficher 0 ou une ancienne valeur comme un nombre confirmé si la lecture échoue. Empêcher les réponses tardives d'un autre couple/joueur/cycle de remplacer le compteur courant.
+Limiter les requêtes en réutilisant la synchronisation et les réponses de jeu existantes; éviter un appel à chaque image de l'animation ou seconde du minuteur.
+
+### Tests et acceptation
+Comparer compteurs et véritables bassins du moteur : deux catégories, rôles croisés, deux partenaires, cartes personnalisées, exclusions, favori réalisé rééligible à une prochaine soirée, non-répétition dans la soirée, passage/refus/remplacement, clôture, bibliothèque épuisée, changement de cycle et mode normal/extra si ce mode existe.
+Tester deux appareils, concurrence, reconnexion, chargement/erreur et réponses réseau obsolètes. Vérifier absence de mutation à la lecture et maintien des probabilités/quotas.
+Captures Android S25 Ultra, iPhone/PWA, tablette et PC : compteurs lisibles, pluriel/singulier corrects, aucun dé coupé et aucun débordement.
+Inscrire preuves et avancement dans le suivi; cette demande documentaire n'est pas une fonctionnalité déjà déployée.
