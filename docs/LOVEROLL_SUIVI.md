@@ -181,3 +181,7 @@ Aucun changement de tarifs ni déploiement applicatif n'est réalisé par cet aj
 - Aucun favori ne garantit la pige, la personne qui accomplit ou reçoit le défi; probabilités, rôles femme/homme, exclusions et cycle conservés.
 - Vérifier concurrence, doublons, remplacement/annulation/échec et listes existantes de plus de 5 sans suppression arbitraire.
 Ajout documentaire uniquement : aucune carte ni donnée utilisateur modifiée.
+
+
+### Précision LR-019 — retrait directement dans la notification
+Demande approuvée : au sixième ajout, la notification interactive présente immédiatement les 5 favoris, titre/catégorie et un bouton « Retirer et ajouter le nouveau » sur chaque carte. Le remplacement atomique se fait depuis cette fenêtre sans passage par Réglages ni seconde confirmation obligatoire. Fermeture/Annuler conserve la liste. Inclure tests mobile, concurrence et erreurs réseau. **Spécification uniquement, pas encore implémentée.**
