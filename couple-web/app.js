@@ -1282,7 +1282,14 @@ function endSignal(){
  if(challengeTimer.mode==='vibrate'){
   if(typeof navigator.vibrate==='function')navigator.vibrate([190,90,190,90,360]);
   else notify("Le minuteur est terminé. La vibration n'est pas offerte sur cet iPhone : utilisez Son.");
- }else{
+ }else if(!playLoveRollSound('timer:'+challengeTimer.id,{force:true})){
+  // Best-effort fallback when Web Audio was not yet unlocked by a user gesture.
+  // Safari can still block the fallback AudioContext; retain a visible reminder.
+  const notice=document.createElement('div');
+  notice.className='lr-incoming-sound-notice';
+  notice.textContent='♡ Le minuteur est terminé !';
+  document.querySelector('.lr-incoming-sound-notice')?.remove();document.body.append(notice);
+  setTimeout(()=>notice.remove(),5000);
   try{
    const context=timerCtx||new (window.AudioContext||window.webkitAudioContext)();
    timerCtx=context;
