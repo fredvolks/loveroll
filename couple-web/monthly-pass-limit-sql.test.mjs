@@ -63,3 +63,9 @@ test('LR-016 client reads authoritative quota and validates owner input',()=>{
  assert.match(app,/rpc\('save_couple_monthly_pass_limit',\{p_couple:state\.coupleId,p_limit:limit\}\)/);
  assert.match(app,/Number\.isInteger\(limit\)/);
 });
+
+test('LR-016 evening pass action respects the exhausted quota',()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ assert.match(app,/Limite mensuelle de passes atteinte/);
+ assert.match(app,/state\.monthlyPassQuota\?\.can_pass===false/);
+});
