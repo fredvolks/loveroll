@@ -14,7 +14,7 @@ const origin='http://127.0.0.1:8765';
      '<main id="app"><h1>Défi privé : contenu confidentiel</h1>'+
      '<button type="button" data-lr-privacy-hide>Masquer</button>'+
      '<button type="button" data-unsafe-action>Action du jeu</button></main>'+
-     '<script type="module" src="'+origin+'/privacy-screen.mjs"></script></body></html>'
+     '<script>document.addEventListener("keydown",e=>{if(e.key==="Escape")document.body.dataset.gameBack="yes"})</script>'+'<script type="module" src="'+origin+'/privacy-screen.mjs"></script></body></html>'
    }));
    await page.goto(origin+'/__lr025_privacy.html',{waitUntil:'load'});
    await page.locator('[data-lr-privacy-hide]').click();
@@ -36,6 +36,8 @@ const origin='http://127.0.0.1:8765';
    await page.keyboard.press('Escape');
    assert.equal(await page.evaluate(()=>document.documentElement.classList.contains('lr-privacy-active')),true,
     'Escape must never reveal private content unexpectedly');
+   assert.equal(await page.evaluate(()=>document.body.dataset.gameBack),undefined,
+    'Escape may not reach the underlying app while masked');
    await page.reload({waitUntil:'load'});
    assert.equal(await page.evaluate(()=>document.documentElement.classList.contains('lr-privacy-active')),true,
     'Mask must survive page reload on the same device');
