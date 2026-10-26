@@ -6,6 +6,7 @@ on:
       - 'couple-web/app.js'
       - 'couple-web/evening-calendar.mjs'
       - 'couple-web/evening-calendar.css'
+      - 'couple-web/evening-calendar-browser-check.cjs'
       - 'couple-web/lr019-favorites-ui.test.mjs'
       - '.github/workflows/lr019-favorites-ui.yml'
   workflow_dispatch:
@@ -26,3 +27,9 @@ jobs:
           node --check couple-web/evening-calendar.mjs
           node --test couple-web/lr019-favorites-ui.test.mjs
           node --test couple-web/evening-private-queue.test.mjs couple-web/evening-turns.test.mjs
+
+      - name: Browser verification of archive hearts on Android iPhone tablet and desktop
+        run: |
+          npm install --no-save playwright@1.56.0
+          npx playwright install chromium
+          node couple-web/evening-calendar-browser-check.cjs

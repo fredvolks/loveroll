@@ -24,3 +24,9 @@ Prochaine action : identifier le nouveau run, diagnostiquer les erreurs, corrige
 - Les anciennes descriptions et titres ne sont pas modifiés, et le bouton reste masqué sans RPC de favoris opérationnelle.
 - `aria-pressed` et `disabled` reflètent l'état individuel et l'opération en cours ; styles mobiles et test Node ajoutés.
 - Revalider le dernier SHA GitHub avant toute déclaration de succès. Non déployé.
+
+## Contrôle visuel Chromium
+- Ajout d'un test Playwright fondé sur le composant réel `eveningHistoryMarkup`, ses feuilles CSS et six formats d'écran 360/393/412/820/1180/1440 px.
+- Vérifie les cœurs activés/désactivés, l'absence de bouton sur la carte d'un autre destinataire, l'accessibilité au clic et l'absence de débordement horizontal.
+- Il s'agit d'un navigateur **émulé**, pas d'un test sur appareils physiques ni d'un parcours Auth Supabase complet.
+- Contrôler le résultat du nouveau workflow sur le SHA exact.
