@@ -75,6 +75,8 @@ En l'absence de catégorie pour le défi/D100, la zone doit suggérer **visuelle
 
 ### LR-014 — Confirmation du choix de catégorie avant de brasser le D100 (nouvelle demande du 26 octobre 2026)
 
+**Suivi du développement (26 octobre 2026) :** [PR #34](https://github.com/fredvolks/loveroll/pull/34), branche `feat/lr014-confirm-evening-category-20261026`. Modal HTML réelle, pourcentages calculés selon la catégorie, annulation sans RPC, rappel réactivable par compte, tests Node/Chromium et migration additive `couple-web/migrations/20261026_evening_category_confirmation.sql`. **Statut : en cours**, CI finale, migration appliquée au bon projet Supabase et vérification physique non confirmées. Après migration, la préférence est enregistrée dans `couple_profiles` sous RLS; avant migration, seule la persistance locale par utilisateur est active.
+
 **But produit :** dans l'onglet **Soirée**, lorsque l'utilisateur a choisi une catégorie et touche **« Brasser le dé »**, afficher d'abord une **étape de confirmation élégante** afin d'éviter un tirage dans la mauvaise catégorie. Permettre au joueur de ne plus revoir cette confirmation.
 
 **Contexte réel :** les trois choix actuels sont **Sensuel**, **Sexuel** et **Au hasard**. « Sensuel » ou « Sexuel » utilise les pourcentages configurés de la catégorie choisie et de l'autre catégorie ; « Au hasard » utilise une répartition égale entre les deux, selon la logique métier en place. **Ne jamais confondre ces catégories avec les intensités personnelles Soft/Medium/Intense.**
