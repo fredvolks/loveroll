@@ -191,7 +191,7 @@ Le [rapport UX/UI du 26 octobre 2026](./LOVEROLL_AUDIT_UX_UI_20261026.md) est un
 | Écrans iPad et PC étirés / navigation, calendrier à clarifier | LR-021, LR-022, LR-024, LR-033 | Vérifier les largeurs max, cartes, boutons, dés et focus clavier ; garder les fonctions prévisibles. La navigation latérale et le calendrier en deux colonnes restent des changements de parcours à valider visuellement avant publication. |
 | Audit sur code seulement, preuves physiques incomplètes | LR-030 à LR-043 | Captures comparatives Accueil, Soirée, Défi, Surprise, Calendrier ; préciser viewport/émulation/appareil, résultats CI, commit et risques. **Ne cocher aucun LR-xxx entier sans acceptation complète.** |
 
-**Gestion des branches :** les PR #9, #21 et #23 sont distinctes. Leurs conflits documentaires avec `main` ont été résolus le 26 octobre par synchronisation du suivi ; les validations GitHub sont toujours requises avant toute fusion. La PR #24 est un lot isolé de mise en page et d'accessibilité, ouvert en brouillon ; ses tests et captures demeurent à vérifier.
+**Gestion des branches :** la PR #23 a été fusionnée dans `main` après succès des tests GitHub. Les PR #9 et #21 restent distinctes et leurs états actuels de fusion/CI doivent être vérifiés avant une publication. La PR #24 est un lot isolé de mise en page et d'accessibilité, ouvert en brouillon ; ses tests et captures demeurent à vérifier.
 
 ## Ordre d'exécution souhaité
 1. Identifier code réel et branches, établir captures initiales, figer les régressions.
