@@ -29,6 +29,13 @@
   .evening-premium-view.has-home-soiree-template .evening-toolbar{
    display:block!important;height:80px!important;min-height:0!important;margin:0!important;padding:0!important;
   }
+  /* Keep the real privacy control usable without shifting Home-matched
+     branding down by a button's natural-flow height. */
+  .evening-premium-view.has-home-soiree-template .evening-toolbar{position:relative!important;}
+  .evening-premium-view.has-home-soiree-template .evening-toolbar [data-lr-privacy-hide]{
+   position:absolute!important;inset:16px auto auto 0!important;
+   z-index:6!important;min-height:44px!important;touch-action:manipulation;
+  }
   .evening-premium-view.has-home-soiree-template .evening-toolbar>span{display:none!important;}
   :is(.evening-premium-view.has-home-soiree-template,.surprise-minimal) .ritual-heading{
    height:80px!important;margin:0!important;padding:0!important;gap:0!important;
