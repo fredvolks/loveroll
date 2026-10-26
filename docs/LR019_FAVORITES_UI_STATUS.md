@@ -18,3 +18,9 @@ Prochaine action : identifier le nouveau run, diagnostiquer les erreurs, corrige
 - PR #58 SHA `94467b75e9c694f34a86c52009427f2e631ca5da` : [workflow Node #40407796829](https://github.com/fredvolks/loveroll/actions/runs/40407796829) **completed/success** ; aucune étape échouée.
 - Limites inchangées : comportement réel Chromium/iPhone/Android, onglet historique, synchronisation à deux utilisateurs et Supabase de production **non validés**.
 - Toute nouvelle mise à jour documentaire produit un autre SHA et déclenche une nouvelle validation.
+
+## Extension à l'historique — nouveau lot
+- Le calendrier montre un vrai bouton de cœur sur les défis archivés reçus par le membre connecté, jamais dans les sections d'un autre destinataire.
+- Les anciennes descriptions et titres ne sont pas modifiés, et le bouton reste masqué sans RPC de favoris opérationnelle.
+- `aria-pressed` et `disabled` reflètent l'état individuel et l'opération en cours ; styles mobiles et test Node ajoutés.
+- Revalider le dernier SHA GitHub avant toute déclaration de succès. Non déployé.

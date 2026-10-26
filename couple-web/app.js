@@ -1696,6 +1696,8 @@ function renderEveningCalendar(){
   stats:state.eveningHistoryStats||[],historyChallenges:state.eveningCalendarChallenges||[],
   weeklyRolls:state.weeklyRollHistory||[],passQuota:state.calendarPassMonth===mo?state.calendarPassQuota:[],
   reviews:state.eveningReviews||[],
+  favoriteControlsEnabled:state.loveFavoritesReady,favorites:state.loveFavorites||[],
+  favoriteControlsBusy:state.loveFavoritesBusy,
   me:state.user?.id,month:mo,selectedDate:date,
   backAction:eveningCalendarReturn(),backLabel:eveningCalendarReturn().startsWith('settings-page:')?'Retour à la confidentialité':'Retour à Soirée'
  }), 'CALENDRIER DES SOIRÉES', 'Un souvenir de chaque moment à deux');

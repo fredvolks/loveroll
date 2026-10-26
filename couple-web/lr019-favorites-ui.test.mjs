@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+import {eveningHistoryMarkup} from './evening-calendar.mjs';
 test('LR-019 heart button uses real RPC with idempotent refresh and a server capability gate',()=>{
  assert.match(app,/rpc\('my_love_couple_favorites',\{p_couple:c\}\)/);
  assert.match(app,/state\.loveFavoritesReady=true/);
@@ -20,4 +21,25 @@ test('LR-019 hearts remain per-partner, keep challenge content and protect priva
  assert.match(app,/safe\(resolvedCard\(view\)\.description\)/);
  assert.match(app,/state\.loveFavoritesReady\?settingRow\('Nos coups de cœur'/);
  assert.match(app,/\['admin','excluded-cards','favorites'\]\.includes\(settingsOpenSection\)\?'jeu'/);
+});
+
+test('History hearts only appear for recipient and are disabled without server or during mutation',()=>{
+ const params={
+  month:'2026-10',selectedDate:'2026-10-25',me:'person-one',favoriteControlsEnabled:true,
+  favorites:[{category:'SENSUEL',card_id:4,marked_by:'person-one'}],
+  sessions:[{id:'night-1',started_at:'2026-10-25T20:00:00Z',finished_at:'2026-10-25T23:00:00Z',counted:true}],
+  members:[{user_id:'person-one',name:'Personne A'},{user_id:'person-two',name:'Personne B'}],
+  historyChallenges:[
+   {id:'a',session_id:'night-1',recipient:'person-one',category:'SENSUEL',card_id:4,card_title:'Carte connue',status:'completed',created_at:'2026-10-25T20:10:00Z'},
+   {id:'b',session_id:'night-1',recipient:'person-two',category:'SEXUEL',card_id:9,card_title:'Carte privée partenaire',status:'completed',created_at:'2026-10-25T20:12:00Z'}
+  ]
+ };
+ const html=eveningHistoryMarkup(params);
+ assert.match(html,/data-action="favorite-toggle:SENSUEL:4"/);
+ assert.match(html,/aria-pressed="true"/);
+ assert.doesNotMatch(html,/data-action="favorite-toggle:SEXUEL:9"/);
+ assert.equal((html.match(/class="evening-cal-favorite"/g)||[]).length,1);
+ const busy=eveningHistoryMarkup({...params,favoriteControlsBusy:true});
+ assert.match(busy,/data-action="favorite-toggle:SENSUEL:4"[^>]+ disabled/);
+ assert.doesNotMatch(eveningHistoryMarkup({...params,favoriteControlsEnabled:false}),/data-action="favorite-toggle:/);
 });

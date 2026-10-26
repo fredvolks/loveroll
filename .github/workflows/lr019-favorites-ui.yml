@@ -4,6 +4,8 @@ on:
     branches: [feat/lr019-favorites-draw-lr015-20261026]
     paths:
       - 'couple-web/app.js'
+      - 'couple-web/evening-calendar.mjs'
+      - 'couple-web/evening-calendar.css'
       - 'couple-web/lr019-favorites-ui.test.mjs'
       - '.github/workflows/lr019-favorites-ui.yml'
   workflow_dispatch:
@@ -21,5 +23,6 @@ jobs:
       - name: Verify app syntax and controlled heart flows
         run: |
           node --check couple-web/app.js
+          node --check couple-web/evening-calendar.mjs
           node --test couple-web/lr019-favorites-ui.test.mjs
           node --test couple-web/evening-private-queue.test.mjs couple-web/evening-turns.test.mjs
