@@ -132,6 +132,26 @@ Respecter authentification, compte couple, autorisations Premium, synchronisatio
 ## Audit en cours
 Le [rapport UX/UI du 26 octobre 2026](./LOVEROLL_AUDIT_UX_UI_20261026.md) est un constat technique **provisoire** (designer + couple). Il complète ce prompt sans changer ses exigences. Les nouvelles demandes à traiter dans [LOVEROLL_NOUVELLES_DEMANDES.md](./LOVEROLL_NOUVELLES_DEMANDES.md) restent prioritaires lors des revues futures.
 
+## Exécution des corrections de l'audit du 26 octobre 2026
+
+**Instruction additionnelle reçue le 26 octobre :** appliquer les corrections recommandées par l'[audit UX/UI](./LOVEROLL_AUDIT_UX_UI_20261026.md), **sans effacer les exigences existantes**. Une correction en PR, même avec tests automatiques, n'est pas équivalente à une validation physique ou à un déploiement.
+
+| Constats / recommandations audit | Exigences existantes | Exécution et contrôle exigés |
+|---|---|---|
+| D100 Soirée trop grand et coupé | LR-001, LR-023, LR-041 | Finaliser [PR #21](https://github.com/fredvolks/loveroll/pull/21), recaler canvas et caméra, comparer Surprise, vérifier rotation et contact socle sur chaque format. |
+| Minuterie Soirée terminée mais défi pas crédité | LR-002, LR-040, LR-043 | Finaliser [PR #9](https://github.com/fredvolks/loveroll/pull/9), transitions serveur idempotentes, reprise après suspension et deux partenaires ; aucune validation pour pause, saut ou annulation. |
+| Calendrier en cours « non réalisés », taux mensuels ambigus | LR-003, LR-040 | Conserver la correction de libellés déjà fusionnée en [PR #20](https://github.com/fredvolks/loveroll/pull/20) ; finaliser [PR #23](https://github.com/fredvolks/loveroll/pull/23), tester ouverts/clôturés, sans modifier le plafonnement hebdomadaire D6. |
+| Minuteries et réglages de son peu découvrables | LR-004, LR-010, LR-030 | Conserver le menu « Notifications → Sonneries des minuteurs », essai sonore après geste utilisateur, confirmation visuelle ; tests réels Safari/Android et limites OS affichées. |
+| Catégorie D100 pas assez explicite | LR-013, LR-012 | [PR #24](https://github.com/fredvolks/loveroll/pull/24) : consigne dans la seconde rangée sans déplacer trois boutons, liaison accessible, suppression au choix ; non-présélection et interdiction du tirage serveur avant choix restent obligatoires. |
+| CSS empilé / cohérence imparfaite potentielle entre pages | LR-010, LR-011, LR-030 | Inventorier les couleurs, titres, cartes, boutons et états dans Accueil ; créer des jetons et composants partagés, remplacer progressivement les divergences **réellement observées**, sans refaire l'Accueil et sans faux boutons-images. |
+| Défis trop denses ou actions ambiguës | LR-012, LR-032 | Vérifier sur chaque état la catégorie, le destinataire, le texte, le timer, « Réalisé », « Sauter », « Suivant », ainsi que l'état de synchronisation ; réduire les clics sans changer l'attribution serveur. |
+| Très petit écran / fort zoom : contenu piégé | LR-020, LR-023 | [PR #24](https://github.com/fredvolks/loveroll/pull/24) : calendrier défilable uniquement sous 650 px de hauteur CSS ; étendre les vérifications clavier, grand texte et safe areas aux autres pages, sans imposer le défilement partout. |
+| Installation Safari iPhone non évidente | LR-020, LR-030 | Conserver un guide natif « Partager → Sur l'écran d'accueil » lisible sans défilement obligatoire ; ne pas promettre d'installation automatique ou de sonnerie en arrière-plan. |
+| Écrans iPad et PC étirés / navigation, calendrier à clarifier | LR-021, LR-022, LR-024, LR-033 | Vérifier les largeurs max, cartes, boutons, dés et focus clavier ; garder les fonctions prévisibles. La navigation latérale et le calendrier en deux colonnes restent des changements de parcours à valider visuellement avant publication. |
+| Audit sur code seulement, preuves physiques incomplètes | LR-030 à LR-043 | Captures comparatives Accueil, Soirée, Défi, Surprise, Calendrier ; préciser viewport/émulation/appareil, résultats CI, commit et risques. **Ne cocher aucun LR-xxx entier sans acceptation complète.** |
+
+**Gestion des branches :** les PR #9, #21 et #23 sont distinctes et signalées en conflit avec `main` au dernier contrôle. Les résoudre puis rejouer les tests avant toute fusion. La PR #24 est un lot isolé de mise en page et d'accessibilité, ouvert en brouillon ; ses tests et captures demeurent à vérifier.
+
 ## Ordre d'exécution souhaité
 1. Identifier code réel et branches, établir captures initiales, figer les régressions.
 2. **P0 : LR-001 à LR-004** (D100, timers, calendrier, audio) avec tests.
