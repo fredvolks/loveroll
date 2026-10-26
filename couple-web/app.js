@@ -99,7 +99,6 @@ const names={SENSUEL:'Sensuel',COQUIN:'Coquin',SEXUEL:'Sexuel'};
 function isSharedCoupleReady(coupleId,members){
  return !!coupleId&&Array.isArray(members)&&members.length===2;
 }
-let timerCtx=null;
 const challengeTimer={id:null,durationMs:0,remainingMs:0,deadline:0,running:false,notified:false,mode:'sound'};
 try{const saved=localStorage.getItem('loveroll-timer-mode');if(saved==='vibrate'||saved==='sound')challengeTimer.mode=saved;}catch(e){}
 
@@ -786,7 +785,7 @@ async function reload(){
   query('love_personal_intimacy',{eq:{user_id:state.user.id}}),
   query('love_push_preferences',{eq:{user_id:state.user.id}})
  ]);
- state.pushPrefs=pushSettings[0]||{enabled:false,weekly:true,invitation:true,monthly:true,special:true,challenge:true};
+ state.pushPrefs=pushSettings[0]||{enabled:false,weekly:true,invitation:true,monthly:true,special:true};
  const nativeToken=safeNativePushToken();
  if(state.pushPrefs.enabled&&nativeToken){
   const {error}=await client.rpc('love_claim_native_push_token',{p_token:nativeToken});
@@ -1026,15 +1025,6 @@ function subscribe(){
    filter:'couple_id=eq.'+state.coupleId},async payload=>{
     if(payload.new?.actor_id&&payload.new.actor_id!==state.user.id)
      notify(person(payload.new.actor_id)+' a effectué une action dans votre jeu');
-    if(table==='couple_challenges'&&payload.eventType==='INSERT'&&payload.new?.recipient===state.user?.id&&payload.new?.offered_by!==state.user?.id){
-     const played=playLoveRollSound('challenge:'+payload.new.id);
-     if(!played&&soundEnabled()){
-      const notice=document.createElement('div');notice.className='lr-incoming-sound-notice';
-      notice.textContent='♡ Nouveau défi reçu ! Ouvre LoveRoll pour le découvrir.';
-      document.querySelector('.lr-incoming-sound-notice')?.remove();document.body.append(notice);
-      setTimeout(()=>notice.remove(),4000);
-     }
-    }
     liveSync.request(200);
    });
  channel=channel.on('postgres_changes',{event:'INSERT',schema:'public',
@@ -1277,36 +1267,28 @@ function activeTimer(challenge,minutes){
 function clockMs(){
  return challengeTimer.running?Math.max(0,challengeTimer.deadline-Date.now()):challengeTimer.remainingMs;
 }
+function showTimerFinished(){
+ const status=document.querySelector('#challenge-timer-status');
+ if(status){status.textContent='♡ Minuteur terminé !';status.setAttribute('role','alert');}
+ const existing=document.querySelector('.lr-timer-finished-notice');
+ if(existing)return;
+ const notice=document.createElement('div');
+ notice.className='lr-incoming-sound-notice lr-timer-finished-notice';
+ notice.textContent='♡ Le minuteur du défi est terminé !';
+ notice.setAttribute('role','alert');
+ document.body.append(notice);
+ setTimeout(()=>notice.remove(),6500);
+}
 function endSignal(){
  if(challengeTimer.notified)return;
  challengeTimer.notified=true;
  if(challengeTimer.mode==='vibrate'){
   if(typeof navigator.vibrate==='function')navigator.vibrate([190,90,190,90,360]);
-  else notify("Le minuteur est terminé. La vibration n'est pas offerte sur cet iPhone : utilisez Son.");
- }else if(!playLoveRollSound('timer:'+challengeTimer.id,{force:true})){
-  // Best-effort fallback when Web Audio was not yet unlocked by a user gesture.
-  // Safari can still block the fallback AudioContext; retain a visible reminder.
-  const notice=document.createElement('div');
-  notice.className='lr-incoming-sound-notice';
-  notice.textContent='♡ Le minuteur est terminé !';
-  document.querySelector('.lr-incoming-sound-notice')?.remove();document.body.append(notice);
-  setTimeout(()=>notice.remove(),5000);
-  try{
-   const context=timerCtx||new (window.AudioContext||window.webkitAudioContext)();
-   timerCtx=context;
-   context.resume().catch(()=>{});
-   for(const [idx,pitch] of [392,494,587].entries()){
-    const osc=context.createOscillator(),gain=context.createGain();
-    osc.type='sine';osc.frequency.value=pitch;
-    osc.connect(gain);gain.connect(context.destination);
-    const when=context.currentTime+idx*.25;
-    gain.gain.setValueAtTime(.0001,when);
-    gain.gain.exponentialRampToValueAtTime(.13,when+.035);
-    gain.gain.exponentialRampToValueAtTime(.0001,when+.6);
-    osc.start(when);osc.stop(when+.61);
-   }
-  }catch(e){console.warn('Son indisponible',e);}
+ }else if(soundEnabled()){
+  if(!playLoveRollSound('timer:'+challengeTimer.id,{force:true})&&
+   typeof navigator.vibrate==='function')navigator.vibrate([180,80,180]);
  }
+ showTimerFinished();
  notify('♡ Minuteur terminé. À vous de décider si le défi continue.');
 }
 function updateChallengeClock(){
@@ -1350,7 +1332,8 @@ function timerWidget(challenge,minutes){
    button('timer-reset','↻ Recommencer','class="subtle"')+'</div>'+
    '<div class="chipline" style="margin-top:9px">'+
    '<button class="pill '+(challengeTimer.mode==='sound'?'selected':'')+'" data-action="timer-mode:sound">♫ Son doux</button>'+
-   '<button class="pill '+(challengeTimer.mode==='vibrate'?'selected':'')+'" data-action="timer-mode:vibrate">〰 Vibration</button></div>'+
+   '<button class="pill '+(challengeTimer.mode==='vibrate'?'selected':'')+'" data-action="timer-mode:vibrate">〰 Vibration</button>'+
+   '<button class="pill" data-action="timer-sound-test">♫ Tester</button></div>'+
    '<small>Sonnerie discrète en fin de compte à rebours; sur iPhone, la vibration peut être indisponible. Le minuteur n’oblige jamais à poursuivre.</small></div>';
 }
 function renderLegacySession(){
@@ -2156,7 +2139,7 @@ function renderSettings(){
   (sexualMode==='custom'?editorialRow('Modifier mes 100 SEXUEL','Copie personnelle préremplie avec MEDIUM','open-personal-sexual-cards','dice'):'')+
   button('save-sexual-mode','Appliquer ce mode','class="settings-primary"')+
   '</section>':'';
- const notifications=editorialRow('Sonneries des défis','Tester le son ou le désactiver','settings-page:sonneries','notifications')+notificationSettingsMarkup(state.pushPrefs||{},state.pushDevice);
+ const notifications=editorialRow('Sonneries des minuteurs','Tester le son ou le désactiver','settings-page:sonneries','notifications')+notificationSettingsMarkup(state.pushPrefs||{},state.pushDevice);
  const nativeApp=typeof window!=='undefined'&&!!window.LoveRollNativeAuth;
  const nativeVersion=nativeApp&&typeof window.LoveRollNativeAuth.appVersion==='function'?
   window.LoveRollNativeAuth.appVersion():'';
@@ -2190,7 +2173,7 @@ function renderSettings(){
  const world=worldwideSettingsHtml({locale:worldLocale(),currency:currencyOrDefault(state.profile?.preferred_currency),couple:state.couple||{}});
  const pages={compte:{title:worldText('myAccount'),body:account},couple:{title:worldText('duoLabel'),body:partner},
   ...(state.referral?.enabled===true?{parrainage:{title:'Parrainage',body:referralSettingsHtml(state.referral)}}:{}),
-  notifications:{title:worldText('notificationsLabel'),body:notifications},sonneries:{title:'Sonneries des défis',body:soundSettingsHtml()+'<p id="notification-feedback" class="notification-feedback" role="status" aria-live="polite" hidden></p>'},jeu:{title:worldText('cardsLabel'),body:game},
+  notifications:{title:worldText('notificationsLabel'),body:notifications},sonneries:{title:'Sonneries des minuteurs',body:soundSettingsHtml()+'<p id="notification-feedback" class="notification-feedback" role="status" aria-live="polite" hidden></p>'},jeu:{title:worldText('cardsLabel'),body:game},
   confidentialite:{title:worldText('privacyLabel'),body:privacy},
   application:{title:worldText('applicationLabel'),body:appSettings},
   monde:{title:worldText('title'),body:world},
@@ -2624,6 +2607,8 @@ async function handle(action,element){
   state.selectedEveningChallengeId=parts[0];state.showEveningChallenges=true;render();return;
  }
  if(verb==='evening-start'){
+  // Prime WebAudio immediately during the user's tap, before awaiting the server.
+  if(challengeTimer.mode==='sound')void unlockLoveRollSounds();
   const picked=ownEveningChallenges(state.challenges,state.user?.id,state.session?.id).find(x=>x.id===parts[0]);
   if(!picked||!['proposed','accepted'].includes(picked.status))throw Error('Ce défi ne peut pas être commencé.');
   if(picked.status==='proposed')
@@ -2859,9 +2844,9 @@ async function handle(action,element){
   setSoundEnabled(!soundEnabled());render();setNotificationFeedback(soundEnabled()?'Son des défis activé.':'Son des défis désactivé.');return;
  }
  if(verb==='sound-test'){
-  await unlockLoveRollSounds();
-  const played=playLoveRollSound('test',{force:true});
-  setNotificationFeedback(played?'Sonnerie jouée.':'Son bloqué par le navigateur : touche le bouton de nouveau après avoir activé le son du téléphone.',played?'status':'error');return;
+  const ready=await unlockLoveRollSounds();
+  const played=ready&&playLoveRollSound('timer-preview',{force:true});
+  setNotificationFeedback(played?'Son de fin de minuteur joué.':'Son bloqué par le navigateur : touche le bouton de nouveau après avoir activé le son du téléphone.',played?'status':'error');return;
  }
  if(verb==='push-enable'){
   await enablePush(client,state.user.id);
@@ -3730,10 +3715,21 @@ async function handle(action,element){
  }
   if(verb==='timer-mode'){
    if(parts[0]!=='vibrate'&&parts[0]!=='sound')throw Error('Signal inconnu');
-   challengeTimer.mode=parts[0];localStorage.setItem('loveroll-timer-mode',parts[0]);
-   if(parts[0]==='vibrate'&&typeof navigator.vibrate!=='function')
-     notify('La vibration n’est pas disponible ici. Choisis Son doux pour une alerte audible.');
+   if(parts[0]==='vibrate'&&typeof navigator.vibrate!=='function'){
+    notify('Vibration indisponible sur cet appareil. Utilise le son du minuteur.');
+    return;
+   }
+   if(parts[0]==='sound'&&!await unlockLoveRollSounds())
+    notify('Autorise le son du navigateur avec un toucher, puis utilise Tester.');
+   challengeTimer.mode=parts[0];
+   localStorage.setItem('loveroll-timer-mode',parts[0]);
    render();return;
+ }
+ if(verb==='timer-sound-test'){
+   const ready=await unlockLoveRollSounds();
+   const played=ready&&playLoveRollSound('timer-preview',{force:true});
+   notify(played?'♫ Voici le son de fin du minuteur.':'Son bloqué : vérifie le volume du téléphone, puis retouche Tester.');
+   return;
  }
  if(verb==='timer-reset'){
    challengeTimer.running=false;
@@ -3747,12 +3743,8 @@ async function handle(action,element){
     challengeTimer.remainingMs=Math.max(0,challengeTimer.deadline-Date.now());
     challengeTimer.running=false;
    }else if(challengeTimer.remainingMs>0){
-    if(challengeTimer.mode==='sound'){
-      try{
-       timerCtx=timerCtx||new (window.AudioContext||window.webkitAudioContext)();
-       await timerCtx.resume();
-      }catch(e){notify('Le navigateur ne permet pas encore la sonnerie.');}
-    }
+    if(challengeTimer.mode==='sound'&&!await unlockLoveRollSounds())
+     notify('Son non autorisé. Utilise le bouton ♫ Tester pour le débloquer.');
     challengeTimer.deadline=Date.now()+challengeTimer.remainingMs;
     challengeTimer.running=true;
     challengeTimer.notified=false;
@@ -4146,6 +4138,7 @@ window.addEventListener('online',()=>{
  liveSync.request(350);
 });
 window.addEventListener('focus',()=>{
+ updateChallengeClock();
  refreshNativeNotificationSettings();
  if(state.user)liveSync.probe(true).catch(console.warn);
 });
@@ -4155,6 +4148,7 @@ window.addEventListener('loveroll-native-notification-state',event=>{
  setNotificationFeedback(event.detail?.message||(event.detail?.weeklyEnabled?'Rappel hebdomadaire activé.':'Rappel hebdomadaire désactivé.'));
 });
 document.addEventListener('visibilitychange',()=>{
+ if(!document.hidden)updateChallengeClock();
  if(!document.hidden&&state.user){
   reload().then(()=>liveSync.probe(true)).catch(fail);
   reloadWebAssets().catch(console.warn);

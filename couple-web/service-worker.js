@@ -33,8 +33,8 @@ self.addEventListener('push',event=>{
   message.title:'LoveRoll ❤️';
  const body=typeof message.body==='string'&&message.body.length<300?
   message.body:'Votre espace à deux vous attend.';
- const kind=['weekly','invitation','monthly','special','challenge'].includes(message.tag)?message.tag:'home';
- const tab=kind==='weekly'||kind==='challenge'?'session':kind==='monthly'||kind==='special'?'special':'home';
+ const kind=['weekly','invitation','monthly','special'].includes(message.tag)?message.tag:'home';
+ const tab=kind==='weekly'?'session':kind==='monthly'||kind==='special'?'special':'home';
  const url=new URL('./?open='+tab,self.registration.scope).href;
  event.waitUntil(self.registration.showNotification(title,{
   body,tag:String(message.tag||'loveroll').slice(0,60),

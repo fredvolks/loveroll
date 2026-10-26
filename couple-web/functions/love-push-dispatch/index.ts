@@ -62,7 +62,7 @@ Deno.serve(async req=>{
   let sent=0,failed=0;
   for(const alert of queued||[]){
    const {data:pref}=await admin.from('love_push_preferences')
-    .select('enabled,weekly,invitation,monthly,special,challenge').eq('user_id',alert.user_id).maybeSingle();
+    .select('enabled,weekly,invitation,monthly,special').eq('user_id',alert.user_id).maybeSingle();
    if(!pref?.enabled||pref[alert.kind]!==true){
     await admin.from('love_push_outbox').update({sent_at:new Date().toISOString()}).eq('id',alert.id);
     continue;

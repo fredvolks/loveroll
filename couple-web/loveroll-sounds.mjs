@@ -1,63 +1,79 @@
-// Gesture-unlocked local sound for incoming challenges; system push remains OS-controlled.
-const KEY='loveroll-challenge-sounds-v229';
-let context=null,unlocked=false;
-let activeUserId='anonymous';
-export function setLoveRollSoundUser(userId){activeUserId=String(userId||'anonymous');}
-const scopedKey=()=>KEY+':'+activeUserId;
+// LoveRoll challenge *timer* sound. Never notify merely because a partner sends a card.
+// iOS Safari requires a user gesture to unlock its audio engine before the countdown ends.
+const KEY='loveroll-timer-sound-v229';
+let context=null;
+let currentUser='anonymous';
 const recent=new Set();
+export const setLoveRollSoundUser=id=>{currentUser=String(id||'anonymous');};
+const key=()=>KEY+':'+currentUser;
 export function soundEnabled(store=globalThis.localStorage){
- try{return store?.getItem(scopedKey())!=='off';}catch{return true;}
+ try{return store?.getItem(key())!=='off';}catch{return true;}
 }
 export function setSoundEnabled(enabled,store=globalThis.localStorage){
- try{store?.setItem(scopedKey(),enabled?'on':'off');}catch{}
+ try{store?.setItem(key(),enabled?'on':'off');}catch{}
  return !!enabled;
 }
 export async function unlockLoveRollSounds(){
- if(typeof window==='undefined')return false;
- const Ctor=window.AudioContext||window.webkitAudioContext;
- if(!Ctor)return false;
+ const target=globalThis.window;
+ const Audio=target?.AudioContext||target?.webkitAudioContext;
+ if(!Audio)return false;
  try{
-  context??=new Ctor();
-  await context.resume?.();
-  unlocked=context.state==='running';
-  return unlocked;
+  if(!context||context.state==='closed')context=new Audio();
+  // resume() is called synchronously, while this is still inside a click/touch.
+  // Waiting until the 00:00 callback to construct AudioContext fails on Safari.
+  if(context.state!=='running')await context.resume();
+  return context.state==='running';
  }catch{return false;}
 }
 export function armLoveRollSounds(){
  if(typeof document==='undefined')return;
- const unlock=()=>{unlockLoveRollSounds().then(ready=>{if(ready){
-  document.removeEventListener('pointerdown',unlock,true);
-  document.removeEventListener('keydown',unlock,true);
- }}).catch(()=>{});};
+ const unlock=()=>{
+  void unlockLoveRollSounds().then(ready=>{
+   if(!ready)return;
+   document.removeEventListener('pointerdown',unlock,true);
+   document.removeEventListener('touchend',unlock,true);
+   document.removeEventListener('keydown',unlock,true);
+  });
+ };
  document.addEventListener('pointerdown',unlock,true);
+ document.addEventListener('touchend',unlock,true);
  document.addEventListener('keydown',unlock,true);
 }
-export function playLoveRollSound(eventId='test',{force=false}={}){
+export function playLoveRollSound(eventId='timer-preview',{force=false}={}){
  if(!force&&!soundEnabled())return false;
  if(!context||context.state!=='running')return false;
  const id=String(eventId);
  if(!force&&recent.has(id))return false;
- if(!force){recent.add(id);if(recent.size>80)recent.delete(recent.values().next().value);}
  try{
-  const t=context.currentTime+.02;
-  [659.25,783.99,987.77].forEach((frequency,index)=>{
-   const oscillator=context.createOscillator(),volume=context.createGain();
-   oscillator.type='sine';oscillator.frequency.value=frequency;
-   const at=t+index*.115;
-   volume.gain.setValueAtTime(.0001,at);
-   volume.gain.exponentialRampToValueAtTime(.055,at+.025);
-   volume.gain.exponentialRampToValueAtTime(.0001,at+.25);
-   oscillator.connect(volume);volume.connect(context.destination);
-   oscillator.start(at);oscillator.stop(at+.27);
-  });
+  // Two warm, easily audible melodic phrases, ~1.8 seconds, no external audio files.
+  const start=context.currentTime+.015;
+  const melody=[659.25,783.99,987.77,783.99,659.25,880];
+  for(let index=0;index<melody.length;index++){
+   const at=start+index*.255;
+   const oscillator=context.createOscillator(),gain=context.createGain();
+   oscillator.type='sine';
+   oscillator.frequency.value=melody[index];
+   gain.gain.setValueAtTime(.0001,at);
+   gain.gain.exponentialRampToValueAtTime(.115,at+.025);
+   gain.gain.exponentialRampToValueAtTime(.0001,at+.235);
+   oscillator.connect(gain);gain.connect(context.destination);
+   oscillator.start(at);oscillator.stop(at+.245);
+  }
+  if(!force){
+   recent.add(id);
+   if(recent.size>100)recent.delete(recent.values().next().value);
+  }
   return true;
- }catch{return false;}
+ }catch(error){console.warn('Son du minuteur LoveRoll indisponible',error);return false;}
 }
 export function soundSettingsHtml(){
- return '<section class="lr-sound-settings" aria-label="Sonneries des défis">'+
- '<div class="lr-sound-settings-row"><div><strong>Son des nouveaux défis</strong><small>Une courte mélodie lorsque LoveRoll est ouvert</small></div>'+
- '<button type="button" role="switch" aria-checked="'+soundEnabled()+'" data-action="sound-toggle" class="lr-sound-switch">'+(soundEnabled()?'Activé':'Désactivé')+'</button></div>'+
- '<button type="button" class="settings-primary" data-action="sound-test">♫ Tester la sonnerie</button>'+
- '<p class="tiny-note">Sur iPhone, touche d’abord un bouton pour autoriser le son. Écran verrouillé : iOS contrôle la sonnerie des notifications.</p></section>';
+ return '<section class="lr-sound-settings" aria-label="Sonneries de fin des minuteurs">'+
+ '<div class="lr-sound-settings-row"><div><strong>Son à la fin des minuteurs</strong>'+
+ '<small>Une mélodie quand le compte à rebours atteint 00:00</small></div>'+
+ '<button type="button" role="switch" aria-checked="'+soundEnabled()+
+ '" data-action="sound-toggle" class="lr-sound-switch">'+(soundEnabled()?'Activé':'Désactivé')+'</button></div>'+
+ '<button type="button" class="settings-primary" data-action="sound-test">♫ Tester la sonnerie du minuteur</button>'+
+ '<p class="tiny-note">Sur iPhone Safari, laisse LoveRoll ouvert et audible pendant le minuteur. '+
+ 'En arrière-plan ou écran verrouillé, iOS ne garantit pas qu’une page Web puisse jouer un son programmé.</p></section>';
 }
 armLoveRollSounds();
