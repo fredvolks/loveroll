@@ -49,6 +49,8 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
    await page.locator('[data-action="category:HASARD"]').click();assert.equal(await page.locator('.evening-choice-odds').count(),0);
   }
   await page.locator('[data-action="new-challenge"]').click();
+  // Server draw confirmation is asynchronous: sample only after the real mesh starts spinning.
+  await page.waitForFunction(()=>document.querySelector('.evening-d35-col canvas')?.loveRollDie?.readState()?.spinning===true,null,{timeout:15000,polling:'raf'});
   // LR-001: verify the projected *real WebGL mesh*, not just its canvas,
   // at several angles during the throw. No visual masking is permitted.
   let animatedSamples=0;
