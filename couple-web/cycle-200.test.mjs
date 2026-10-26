@@ -327,3 +327,16 @@ test('LR-015: re-integrated exclusions remove stale bag marks but never complete
  assert.match(tests,/Restored card remains blocked in shuffle bag/);
  assert.match(tests,/Restoration reintroduced a completed card/);
 });
+
+test('LR-015 replacement ancestry and official D6 totals remain partner-checked and do not erase history',()=>{
+ const m=read('migrations/20261026_lr015_z_atomic_respond_redraw.sql');
+ assert.match(m,/FUNCTION public\.love_evening_replacement_links\(p_couple uuid\)/);
+ assert.match(m,/couple_private\.is_member\(p_couple\)/);
+ assert.match(m,/r\.replacement_id IS NOT NULL/);
+ assert.match(m,/FUNCTION public\.love_evening_session_stats\(p_couple uuid\)/);
+ assert.match(m,/q\.status NOT IN \('passed','refused'\)/);
+ const app=read('app.js');
+ assert.match(app,/rpc\('love_evening_replacement_links',\{p_couple:c\}\)/);
+ assert.match(app,/replaces_challenge_id:byReplacement\.get\(challenge\.id\)\|\|null/);
+ assert.match(read('qa/lr015-db-contract.sql'),/Cross-couple replacement ancestry exposed/);
+});

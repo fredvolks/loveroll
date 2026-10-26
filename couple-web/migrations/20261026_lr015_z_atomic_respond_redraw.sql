@@ -571,4 +571,73 @@ REVOKE ALL ON FUNCTION public.answer_challenge(uuid,text)
 GRANT EXECUTE ON FUNCTION public.answer_challenge(uuid,text)
  TO authenticated;
 
+-- LR-015: enrich the member-checked calendar with links only; no challenge
+-- titles or private user content are exposed beyond existing calendar rights.
+CREATE OR REPLACE FUNCTION public.love_evening_replacement_links(p_couple uuid)
+RETURNS TABLE(origin_id uuid,replacement_id uuid)
+LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=''
+AS $links$
+BEGIN
+ PERFORM public.love_require_verified_identity();
+ IF p_couple IS NULL OR (SELECT auth.uid()) IS NULL
+   OR NOT couple_private.is_member(p_couple) THEN
+  RAISE EXCEPTION 'Accès au duo refusé';
+ END IF;
+ RETURN QUERY
+ SELECT r.origin_id,r.replacement_id FROM public.love_challenge_redraws r
+ WHERE r.couple_id=p_couple AND r.replacement_id IS NOT NULL
+ ORDER BY r.created_at,r.origin_id;
+END;
+$links$;
+REVOKE ALL ON FUNCTION public.love_evening_replacement_links(uuid)
+ FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.love_evening_replacement_links(uuid)
+ TO authenticated;
+
+-- Existing calendar RPC signature is preserved. Only the meaning of "drawn"
+-- changes to official occupied D6 slots; all historic occurrences remain in
+-- the separate, append-only challenge history and passed count.
+CREATE OR REPLACE FUNCTION public.love_evening_session_stats(p_couple uuid)
+RETURNS TABLE(session_id uuid,user_id uuid,target integer,drawn integer,
+ completed integer,incomplete integer,passed integer)
+LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=''
+AS $stats$
+BEGIN
+ PERFORM public.love_require_verified_identity();
+ IF p_couple IS NULL OR NOT couple_private.is_member(p_couple) THEN
+  RAISE EXCEPTION 'Accès refusé';
+ END IF;
+ RETURN QUERY
+ SELECT s.id,m.user_id,
+  CASE WHEN r.face IS NULL THEN NULL::integer
+   ELSE greatest(0,r.face::integer+
+    (SELECT count(*)::integer FROM public.couple_challenge_gifts g
+     WHERE g.session_id=s.id AND g.receiver_user_id=m.user_id)-
+    (SELECT count(*)::integer FROM public.couple_challenge_gifts g
+     WHERE g.session_id=s.id AND g.donor_user_id=m.user_id))
+  END AS target,
+  (SELECT count(*)::integer FROM public.couple_challenges q
+   WHERE q.session_id=s.id AND q.recipient=m.user_id
+    AND q.status NOT IN ('passed','refused')) AS drawn,
+  (SELECT count(*)::integer FROM public.couple_challenges q
+   WHERE q.session_id=s.id AND q.recipient=m.user_id
+    AND q.status='completed') AS completed,
+  (SELECT count(*)::integer FROM public.couple_challenges q
+   WHERE q.session_id=s.id AND q.recipient=m.user_id
+    AND q.status IN ('proposed','accepted')) AS incomplete,
+  (SELECT count(*)::integer FROM public.couple_challenges q
+   WHERE q.session_id=s.id AND q.recipient=m.user_id
+    AND q.status='passed') AS passed
+ FROM public.couple_sessions s
+ JOIN public.couple_members m ON m.couple_id=s.couple_id
+ LEFT JOIN public.couple_personal_rolls r ON r.session_id=s.id AND r.user_id=m.user_id
+ WHERE s.couple_id=p_couple
+ ORDER BY s.started_at DESC,m.user_id;
+END;
+$stats$;
+REVOKE ALL ON FUNCTION public.love_evening_session_stats(uuid)
+ FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.love_evening_session_stats(uuid)
+ TO authenticated;
+
 COMMIT;

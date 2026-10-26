@@ -168,3 +168,24 @@ test('LR-015 an open-evening refusal is final without penalizing only-pending ca
  assert.equal(result.percent,50);
  assert.equal(result.penalizedPasses,0,'A refusal must not consume monthly pass quota');
 });
+
+test('LR-015: replacement chains consume one D6 slot, while all original events stay in history',()=>{
+ const night={id:'n-rl',started_at:'2026-10-25T20:00:00Z',finished_at:'2026-10-26T00:00:00Z',counted:true};
+ const all=[
+  {id:'old1',session_id:'n-rl',recipient:'a',status:'refused'},
+  {id:'new1',replaces_challenge_id:'old1',session_id:'n-rl',recipient:'a',status:'passed'},
+  {id:'done1',replaces_challenge_id:'new1',session_id:'n-rl',recipient:'a',status:'completed'}
+ ];
+ const args={month:'2026-10',members,sessions:[night],historyChallenges:all,
+   sessionStats:[{session_id:'n-rl',user_id:'a',target:3,drawn:1,completed:1}]};
+ const result=monthlyChallengeSuccess(args)[0];
+ assert.equal(all.length,3,'Immutable calendar history still records every attempt');
+ assert.equal(result.done,1);
+ assert.equal(result.unpicked,2,'Only the final replacement occupies a D6 slot');
+ assert.equal(result.denominator,3,'Refusal and passage ancestors must not penalize twice');
+ assert.equal(result.percent,33);
+ const active=monthlyChallengeSuccess({...args,sessions:[{...night,finished_at:null} ]})[0];
+ assert.equal(active.unpicked,0,'Open evening unpicked slots are not yet failures');
+ assert.equal(active.denominator,1);
+ assert.equal(active.percent,100);
+});

@@ -146,3 +146,37 @@ BEGIN
 END
 $test$;
 SELECT 'LR015_POSTGRES_ISOLATED_SUCCESS' AS result;
+
+-- Verify members see replacement links only within their own couple and
+-- D6 counts ignore previous passed/refused occurrences.
+SELECT set_config('request.jwt.claim.sub','11111111-1111-4111-8111-111111111111',false);
+DO $test$
+DECLARE n integer; expected integer; actual integer;
+BEGIN
+ SELECT count(*) INTO n
+ FROM public.love_evening_replacement_links('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+ IF n<2 THEN RAISE EXCEPTION 'Replacement ancestry missing from calendar'; END IF;
+ SELECT count(*) INTO expected
+ FROM public.couple_challenges
+ WHERE session_id='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
+  AND recipient='11111111-1111-4111-8111-111111111111'
+  AND status NOT IN ('passed','refused');
+ SELECT drawn INTO actual FROM public.love_evening_session_stats('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa')
+ WHERE session_id='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
+  AND user_id='11111111-1111-4111-8111-111111111111';
+ IF actual<>expected THEN
+  RAISE EXCEPTION 'D6 count % != active allocated slots %',actual,expected;
+ END IF;
+END
+$test$;
+SELECT set_config('request.jwt.claim.sub','33333333-3333-4333-8333-333333333333',false);
+DO $test$
+DECLARE blocked boolean:=false;
+BEGIN
+ BEGIN
+  PERFORM 1 FROM public.love_evening_replacement_links('aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa');
+ EXCEPTION WHEN others THEN blocked:=true;
+ END;
+ IF NOT blocked THEN RAISE EXCEPTION 'Cross-couple replacement ancestry exposed'; END IF;
+END
+$test$;

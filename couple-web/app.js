@@ -927,6 +927,17 @@ async function refreshShared(){
  state.monthlyPassQuota=monthlyPassQuota;
  try{state.redrawReady=(await rpc('love_redraw_capabilities',{p_couple:c}))===true;}catch{state.redrawReady=false;}
  if(state.redrawReady){try{const list=await rpc('my_love_cycle_exclusions',{p_couple:c});state.loveExcludedCards=Array.isArray(list)?list:[];}catch{state.loveExcludedCards=[];}}else state.loveExcludedCards=[];
+ if(state.redrawReady){
+  try{
+   const links=await rpc('love_evening_replacement_links',{p_couple:c});
+   const byReplacement=new Map((Array.isArray(links)?links:[])
+    .filter(link=>link?.replacement_id&&link?.origin_id)
+    .map(link=>[link.replacement_id,link.origin_id]));
+   state.eveningCalendarChallenges=state.eveningCalendarChallenges.map(challenge=>({
+    ...challenge,replaces_challenge_id:byReplacement.get(challenge.id)||null
+   }));
+  }catch(error){console.warn('Liens de repige du calendrier indisponibles',error?.code||'');}
+ }
  state.calendarPassMonth=state.eveningCalendarMonth||month();
  state.eveningReviews=Array.isArray(eveningReviews)?eveningReviews:[];
  state.gifts=gifts;
