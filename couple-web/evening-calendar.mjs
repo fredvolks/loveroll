@@ -13,10 +13,14 @@ export function eveningLocalDay(iso){
  const get=t=>parts.find(p=>p.type===t)?.value;
  return get('year')+'-'+get('month')+'-'+get('day');
 }
-const statusLabel=s=>({
- completed:'✓ Réalisé',accepted:'◷ Commencé, non réalisé',
- proposed:'○ À faire, non réalisé',passed:'↷ Passé, non réalisé'
-})[s]||'○ Non réalisé';
+// Unfinished cards are not failures until their evening is closed.
+export function eveningChallengeStatusLabel(status,closed=false){
+ if(status==='completed')return '✓ Réalisé';
+ if(status==='passed')return closed?'↷ Passé, non réalisé':'↷ Passé';
+ if(status==='accepted')return closed?'◷ Non réalisé après début':'◷ En cours';
+ if(status==='proposed')return closed?'○ Non réalisé (non commencé)':'○ À faire';
+ return closed?'○ Non réalisé':'○ À confirmer';
+}
 const monthLabel=mo=>new Intl.DateTimeFormat('fr-CA',{month:'long',year:'numeric',timeZone:'UTC'})
  .format(new Date(mo+'-15T12:00:00Z'));
 export function eveningHistoryMarkup({sessions=[],members=[],stats=[],historyChallenges=[],reviews=[],me,month,selectedDate,
@@ -66,26 +70,28 @@ export function eveningHistoryMarkup({sessions=[],members=[],stats=[],historyCha
     .sort((a,b)=>Date.parse(a.created_at||'')-Date.parse(b.created_at||''));
    const countDone=Number(row?.completed)||0;
    const countOutstanding=row?.target==null
-    ?Number(row?.incomplete)||0
+    ?Math.max(0,Number(row?.incomplete)||0)
     :Math.max(0,Number(row.target)-countDone);
+   const closed=!!s.finished_at;
    const name=String(m.name||'Partenaire').trim();
    const role=m.user_id===me?' (moi)':' (partenaire)';
    const statusSummary=row
     ?'<span><b>'+countDone+'</b> réalisé'+(countDone>1?'s':'')+
-     ' · <b>'+countOutstanding+'</b> non réalisé'+(countOutstanding>1?'s':'')+'</span>'
+     ' · <b>'+countOutstanding+'</b> '+(closed?'non réalisé':'à faire')+
+     (closed&&countOutstanding>1?'s':'')+'</span>'
     :'<span>Bilan indisponible</span>';
    const picked=cards.map(c=>{
     const card=resolvedCard(c);
     return '<li class="evening-cal-challenge '+(c.status==='completed'?'is-done':'is-open')+'">'+
       '<span>'+safe(c.status==='passed'?
        (freeByChallenge.has(c.id)?'↷ Passé sans pénalité':
-        chargedByChallenge.has(c.id)?'↷ Passé, comptabilisé':statusLabel(c.status)):
-       statusLabel(c.status))+'</span><strong>'+safe(card.title)+'</strong>'+
+        chargedByChallenge.has(c.id)?'↷ Passé, comptabilisé':eveningChallengeStatusLabel(c.status,closed)):
+       eveningChallengeStatusLabel(c.status,closed))+'</span><strong>'+safe(card.title)+'</strong>'+
       '<small>'+safe(c.category==='SEXUEL'?'Sexuel':'Sensuel')+'</small></li>';
    }).join('');
    const unpicked=row?.target==null?0:Math.max(0,Number(row.target)-Number(row.drawn||cards.length));
    const extras=unpicked?'<p class="evening-cal-unpicked">♡ '+unpicked+
-      ' défi'+(unpicked>1?'s':'')+' non pigé'+(unpicked>1?'s':'')+
+      ' défi'+(unpicked>1?'s':'')+(closed?' non pigé':' à piger')+(closed&&unpicked>1?'s':'')+
       ' : aucune carte attribuée.</p>':'';
    return '<details class="evening-cal-person-group" data-person-id="'+safe(m.user_id)+
       '" data-session-id="'+safe(s.id)+'">'+
@@ -104,7 +110,7 @@ export function eveningHistoryMarkup({sessions=[],members=[],stats=[],historyCha
  }).join(''):'<p class="evening-cal-empty">Aucune soirée enregistrée pour cette journée.</p>';
  return '<div class="evening-calendar-shell">'+
   '<div class="evening-cal-head">'+ritualHeadingHtml('NOS SOIRÉES À DEUX')+'<h2>Notre calendrier</h2>'+
-   '<p>Toutes les soirées, avec les défis réalisés et non réalisés.</p></div>'+
+   '<p>En cours : défis à faire. Clôturées : bilan définitif.</p></div>'+
   '<div class="evening-cal-stats"><span><strong>'+history+'</strong> soirées clôturées</span>'+
    '<span><strong>'+done+'</strong> défis réalisés</span>'+
    '<span><strong>'+incomplete+'</strong> non réalisés</span></div>'+
