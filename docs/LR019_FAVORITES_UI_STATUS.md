@@ -51,3 +51,7 @@ Prochaine action : identifier le nouveau run, diagnostiquer les erreurs, corrige
 - Branche de base PR #57 fusionnée **dans cette branche seulement** au SHA `c05f0752ba0cfb90fa628449726553fde3e25ba3`, aucune fusion dans main.
 - Conserver une seule définition de `love_favorites_capabilities` du moteur #57, tout en gardant le test d'accès renforcé de cette PR UI.
 - Préserver les deux jobs UI Chromium et PostgreSQL du workflow courant; recontrôler les nouveaux runs sur le SHA de merge.
+
+## Parcours intercompte en navigateur réel avec API fictive
+- Nouveau script Chromium `lr019-favorites-couple-browser-check.cjs` : deux comptes du même duo, lecture et retrait de leurs cœurs, titre historique limité au destinataire, masquage si backend indisponible, contrôles de débordement.
+- Aucun compte réel, donnée de production ou migration Supabase. Vérifier le run GitHub Actions sur son nouveau SHA jusqu'à conclusion; un test Chromium n'est pas un essai physique.

@@ -7,6 +7,7 @@ on:
       - 'couple-web/evening-calendar.mjs'
       - 'couple-web/evening-calendar.css'
       - 'couple-web/evening-calendar-browser-check.cjs'
+      - 'couple-web/lr019-favorites-couple-browser-check.cjs'
       - 'couple-web/migrations/20261026_lr019_*.sql'
       - 'couple-web/qa/lr019-*.sql'
       - 'couple-web/lr019-favorites-ui.test.mjs'
@@ -46,6 +47,7 @@ jobs:
           done
           curl -fsS http://127.0.0.1:8765/evening-calendar.css > /dev/null
           node couple-web/evening-calendar-browser-check.cjs
+          node couple-web/lr019-favorites-couple-browser-check.cjs
 
   favorites-postgres:
     runs-on: ubuntu-latest
