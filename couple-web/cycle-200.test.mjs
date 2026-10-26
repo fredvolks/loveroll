@@ -252,22 +252,25 @@ test('LR-015 phase 3: atomic refusal/pass and same-category replacement contract
 
 
 
-test('LR-015 phase 1: closing an incomplete evening restores only eligible bag marks once',()=>{
+test('LR-015 all session close paths recycle incomplete cards but preserve completed cards of cycle',()=>{
  const migration=read('migrations/20261026_lr015_recycle_incomplete_on_close.sql');
  assert.match(migration,/CREATE OR REPLACE FUNCTION public\.close_love_evening_preserve\(p_session uuid\)/);
  assert.match(migration,/PERFORM public\.love_require_verified_identity\(\)/);
  assert.match(migration,/couple_private\.is_member\(v_couple\)/);
  const coupleLock=migration.indexOf('FROM public.couples WHERE id=v_couple FOR UPDATE');
  const sessionLock=migration.indexOf('FROM public.couple_sessions s\n WHERE s.id=p_session AND s.couple_id=v_couple FOR UPDATE');
- assert.ok(coupleLock>=0&&sessionLock>coupleLock,'Couple lock precedes session lock');
+ assert.ok(coupleLock>=0&&sessionLock>coupleLock);
  assert.match(migration,/IF v_closed THEN RETURN; END IF;/);
- assert.match(migration,/DELETE FROM public\.love_card_draw_history h\s+USING public\.couple_challenges q/);
- assert.match(migration,/q\.session_id=p_session AND q\.couple_id=v_couple/);
+ assert.match(migration,/UPDATE public\.couple_sessions SET finished_at=now\(\), counted=true/);
+ assert.match(migration,/UPDATE public\.couples c SET challenge_cycle_pending=true/);
+ assert.match(migration,/CREATE TRIGGER love_recycle_incomplete_close/);
+ assert.match(migration,/AFTER UPDATE OF finished_at ON public\.couple_sessions/);
+ assert.match(migration,/WHEN \(OLD\.finished_at IS NULL AND NEW\.finished_at IS NOT NULL\)/);
+ assert.match(migration,/DELETE FROM public\.love_card_draw_history h\s+USING public\.couple_challenges q, public\.couples c/);
  assert.match(migration,/q\.status<>'completed'/);
  assert.match(migration,/done\.status='completed'/);
- assert.match(migration,/h\.recipient_user_id=q\.recipient/);
- assert.match(migration,/h\.category=q\.category AND h\.card_id=q\.card_id/);
- assert.match(migration,/UPDATE public\.couple_sessions SET finished_at=now\(\), counted=true/);
+ assert.match(migration,/completed_session\.started_at>=c\.challenge_cycle_started_at/);
+ assert.match(migration,/RETURN NEW;/);
  assert.doesNotMatch(migration,/DELETE FROM public\.couple_challenges|TRUNCATE|UPDATE public\.couple_challenges/i);
  assert.match(migration,/REVOKE ALL ON FUNCTION public\.close_love_evening_preserve/);
  assert.match(migration,/GRANT EXECUTE ON FUNCTION public\.close_love_evening_preserve\(uuid\)/);

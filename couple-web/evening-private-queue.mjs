@@ -5,6 +5,12 @@ export function ownEveningChallenges(rows=[],userId,sessionId){
   .sort((a,b)=>Date.parse(a.created_at||'')-Date.parse(b.created_at||'')||
    String(a.id).localeCompare(String(b.id)));
 }
+// LR-015: a replacement occupies the SAME D6 slot. Finished cards remain
+// visible, but passed/refused occurrences belong to history, not the live queue.
+// No source rows are deleted; the calendar still reads all occurrences.
+export function visibleEveningQueue(cards=[]){
+ return (cards||[]).filter(c=>!['passed','refused'].includes(c?.status));
+}
 export function queuePosition(cards=[],id){
  return cards.findIndex(c=>c.id===id);
 }

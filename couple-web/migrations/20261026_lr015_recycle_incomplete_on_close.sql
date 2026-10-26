@@ -31,22 +31,18 @@ BEGIN
  UPDATE public.couple_sessions SET finished_at=now(), counted=true
  WHERE id=p_session AND couple_id=v_couple AND finished_at IS NULL;
 
- -- Only the draw-bag marks are removed. Never remove/overwrite the
- -- original challenge, its result, passed_at, per-person stats or D6 rolls.
- -- Do NOT restore completed cards within this session.
- DELETE FROM public.love_card_draw_history h
- USING public.couple_challenges q
- WHERE q.session_id=p_session AND q.couple_id=v_couple
-   AND q.status<>'completed'
-   AND h.couple_id=v_couple
-   AND h.recipient_user_id=q.recipient
-   AND h.category=q.category AND h.card_id=q.card_id
-   AND NOT EXISTS(
-    SELECT 1 FROM public.couple_challenges done
-    WHERE done.session_id=p_session AND done.couple_id=v_couple
-      AND done.recipient=q.recipient AND done.category=q.category
-      AND done.card_id=q.card_id AND done.status='completed'
-   );
+ -- Every route that sets finished_at fires the same AFTER UPDATE trigger,
+ -- including this early close and finish_couple_session(p_count=false). No
+ -- duplicate deletion, and completed cards of this cycle stay in the bag.
+ -- A partially completed but counted night may still finish the 200-card
+ -- cycle; preserve the same pending questionnaire logic as normal closure.
+ UPDATE public.couples c SET challenge_cycle_pending=true
+ WHERE c.id=v_couple
+   AND (SELECT count(*) FROM public.couple_challenges done
+    JOIN public.couple_sessions ds ON ds.id=done.session_id
+    WHERE done.couple_id=v_couple AND done.status='completed'
+      AND ds.counted=true AND ds.started_at>=c.challenge_cycle_started_at)
+       >=c.challenge_cycle_target;
 
  INSERT INTO public.couple_events(couple_id,event_type,actor_id,title)
  VALUES(v_couple,'session',auth.uid(),'Soirée clôturée · résultats conservés');
@@ -57,6 +53,48 @@ REVOKE ALL ON FUNCTION public.close_love_evening_preserve(uuid)
  FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.close_love_evening_preserve(uuid)
  TO authenticated;
+
+-- All closure paths, not only the new button, must recycle incomplete
+-- cards exactly once when a session FIRST transitions from open to closed.
+-- Existing finish_couple_session remains unchanged (including weekly limits).
+CREATE OR REPLACE FUNCTION public.love_recycle_incomplete_after_close()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=''
+AS $recycle$
+BEGIN
+ IF OLD.finished_at IS NOT NULL OR NEW.finished_at IS NULL THEN RETURN NEW; END IF;
+ -- Leave every challenge occurrence and calendar event untouched.
+ -- Never release a card already completed at any time in the CURRENT
+ -- 200-card cycle, even when the recent unfinished occurrence is abandoned.
+ DELETE FROM public.love_card_draw_history h
+ USING public.couple_challenges q, public.couples c
+ WHERE q.session_id=NEW.id AND q.couple_id=NEW.couple_id
+   AND q.status<>'completed'
+   AND c.id=NEW.couple_id
+   AND h.couple_id=NEW.couple_id
+   AND h.recipient_user_id=q.recipient
+   AND h.category=q.category AND h.card_id=q.card_id
+   AND NOT EXISTS (
+    SELECT 1 FROM public.couple_challenges done
+    JOIN public.couple_sessions completed_session
+      ON completed_session.id=done.session_id
+    WHERE done.couple_id=NEW.couple_id
+      AND done.recipient=q.recipient
+      AND done.category=q.category AND done.card_id=q.card_id
+      AND done.status='completed'
+      AND completed_session.started_at>=c.challenge_cycle_started_at
+   );
+ RETURN NEW;
+END;
+$recycle$;
+REVOKE ALL ON FUNCTION public.love_recycle_incomplete_after_close()
+ FROM PUBLIC,anon,authenticated;
+
+DROP TRIGGER IF EXISTS love_recycle_incomplete_close ON public.couple_sessions;
+CREATE TRIGGER love_recycle_incomplete_close
+AFTER UPDATE OF finished_at ON public.couple_sessions
+FOR EACH ROW
+WHEN (OLD.finished_at IS NULL AND NEW.finished_at IS NOT NULL)
+EXECUTE FUNCTION public.love_recycle_incomplete_after_close();
 
 -- LR-015 phase 1b: capacity and the final candidate query must agree.
 -- A passed card must NOT be offered again in the same open evening. Prior

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {ownEveningChallenges,queuePosition,queueLabel,hasTurnToDraw} from './evening-private-queue.mjs';
+import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw} from './evening-private-queue.mjs';
 import {premiumEveningHtml} from './premium-evening.mjs';
 const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
 const migration=readFileSync(new URL('./migrations/20261015_evening_private_challenge_queue.sql',import.meta.url),'utf8');
@@ -91,4 +91,16 @@ test('LR-015: active cards expose three explicit refusal choices and one atomic 
  assert.match(app,/rpc\('love_respond_and_redraw'/);
  assert.match(app,/challengeTimer\.decisionPending=true/);
  assert.match(app,/challengeTimer\.autoCompletePending=false/);
+});
+
+test('LR-015 replacement occupies one visible D6 slot while history remains immutable',()=>{
+ const original={...a,id:'past-refusal',status:'refused'};
+ const passed={...c,id:'past-pass',status:'passed'};
+ const replacement={...a,id:'replacement',status:'proposed',created_at:'2026-10-15T19:10:00Z'};
+ const all=ownEveningChallenges([original,passed,replacement,b],'fred','s1');
+ assert.equal(all.length,3,'history retains every occurrence');
+ assert.deepEqual(visibleEveningQueue(all).map(row=>row.id),['replacement']);
+ assert.deepEqual(visibleEveningQueue([{...a,status:'completed'},replacement]).map(row=>row.id),['challenge-a','replacement']);
+ assert.match(readFileSync(new URL('./app.js',import.meta.url),'utf8'),
+  /const mineCards=session\?visibleEveningQueue\(ownEveningChallenges\(state\.challenges,uid,session\.id\)\):\[\];/);
 });

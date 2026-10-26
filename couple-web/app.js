@@ -15,7 +15,7 @@ import {ROLL_TOTAL_MS} from './dice-roll-motion.mjs';
 import {createCoupleLiveSync} from './couple-live-sync.mjs?v=20261017-advent119';
 import {playableSessionForWeekly} from './couple-reset-view.mjs';
 import {eveningDailyAccess} from './evening-daily-policy.mjs?v=20261016-daily100';
-import {ownEveningChallenges,queuePosition,queueLabel,hasTurnToDraw} from './evening-private-queue.mjs';
+import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw} from './evening-private-queue.mjs';
 import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261022-home228';
 import {eclatHtml} from './eclat-ui.mjs?v=20261022-home228';
 import {previewMode,previewCanEdit,previewEclatStatus} from './account-preview-mode.mjs?v=20261020-test180';
@@ -1561,7 +1561,7 @@ function renderSession(){
   state.category=null;
  if(session&&(!session.paired_turns||!session.self_draws))return renderLegacySession();
  const turn=session?(state.eveningBoard||sharedEveningTurns(session,state.members,state.personal,state.challenges,state.gifts)):{};
- const mineCards=session?ownEveningChallenges(state.challenges,uid,session.id):[];
+ const mineCards=session?visibleEveningQueue(ownEveningChallenges(state.challenges,uid,session.id)):[];
  const daily=eveningDailyAccess({sessions:state.sessions,weekly:state.weekly});
  const last=daily.closedToday;
  const recentReviews=last?(state.eveningReviews||[]).filter(x=>x.session_id===last.id):[];
