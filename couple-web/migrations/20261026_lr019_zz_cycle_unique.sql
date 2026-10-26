@@ -83,4 +83,24 @@ BEGIN
    case when p_count then 'Soirée terminée et comptée' else 'Soirée arrêtée sans la compter' end);
 end; $function$;
 
+
+-- Published only with the complete LR-019 engine AND distinct-cycle update.
+-- A registry-only deployment never activates the frontend heart controls.
+CREATE OR REPLACE FUNCTION public.love_favorites_capabilities(p_couple uuid)
+RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path=''
+AS $favorite_capability$
+BEGIN
+ PERFORM public.love_require_verified_identity();
+ IF (SELECT auth.uid()) IS NULL OR p_couple IS NULL
+    OR NOT couple_private.is_member(p_couple) THEN
+  RAISE EXCEPTION 'Accès au duo refusé';
+ END IF;
+ RETURN true;
+END;
+$favorite_capability$;
+REVOKE ALL ON FUNCTION public.love_favorites_capabilities(uuid)
+ FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.love_favorites_capabilities(uuid)
+ TO authenticated;
+
 COMMIT;
