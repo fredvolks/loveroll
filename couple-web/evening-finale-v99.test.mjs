@@ -11,7 +11,7 @@ test('Finished evening has exactly two real buttons, dark start when weekly quot
  assert.ok(finaleActions,'Le panneau de fin de soirée doit être présent');
  assert.equal((finaleActions.match(/<button\b/g)||[]).length,2,
   'La fin de soirée doit conserver exactement deux actions principales');
- assert.match(html,/data-lr-privacy-hide/, 'Le bouton de discrétion reste accessible');
+ assert.doesNotMatch(html,/data-lr-privacy-hide/, 'Aucun bouton Masquer flottant sur la première page Soirée');
  assert.match(html,/Notre soirée est terminée/);
  assert.match(html,/1 \/ 2 bilans déposés/);
  assert.match(html,/class="evening-finale-start" data-action="new-session" disabled/);
