@@ -70,3 +70,15 @@
  #app.has-night-gallery :is(.eclat-tile,.eclat-primary,.eclat-duration-choice):active{transform:translateY(1.5px)!important;box-shadow:inset 0 3px 10px #100005!important;}
  @media(min-width:768px){#app.has-night-gallery .eclat-photo-grid{grid-auto-rows:210px!important;}}
 }
+
+/* LR-ECLAT-001: premium ruby discovery, without oversized gold panels. */
+#app.loveroll-eclat-page .eclat-intents{display:flex;gap:6px;flex:none;min-height:45px;align-items:center;overflow-x:auto;scrollbar-width:thin;scrollbar-color:#8d5364 transparent;padding:3px 2px 6px;overscroll-behavior-x:contain;}
+#app.loveroll-eclat-page button.eclat-intent{flex:0 0 auto;min-height:40px;padding:8px 11px!important;border:1px solid #965c70!important;border-radius:999px!important;background:#3b0b1a!important;color:#f1ced9!important;box-shadow:none!important;font:500 12px/1.2 system-ui,sans-serif!important;white-space:nowrap;}
+#app.loveroll-eclat-page button.eclat-intent.is-selected{background:#751a36!important;border-color:#db9dad!important;color:#fff1ee!important;box-shadow:inset 0 1px #f5bec12e!important;}
+#app.loveroll-eclat-page button.eclat-intent:focus-visible,#app.loveroll-eclat-page button.eclat-recommendation:focus-visible{outline:2px solid #ffe0e9!important;outline-offset:2px!important;}
+#app.loveroll-eclat-page button.eclat-recommendation{display:flex;align-items:center;justify-content:space-between;flex:none;text-align:left;gap:12px;width:100%;min-height:64px;padding:10px 14px!important;margin:0 0 5px!important;border:1px solid #a66a80!important;border-radius:15px!important;background:linear-gradient(115deg,#62172f,#350c1b)!important;color:#fff0e6!important;box-shadow:inset 0 1px #ffdcc32b!important;}
+#app.loveroll-eclat-page .eclat-recommendation>span:first-child{display:grid;gap:3px;min-width:0;}
+#app.loveroll-eclat-page .eclat-recommendation small{font:500 10px/1.3 system-ui,sans-serif;letter-spacing:.02em;color:#e3afbd;}
+#app.loveroll-eclat-page .eclat-recommendation strong{font:500 19px/1.1 'LoveRoll Cormorant',Georgia,serif;color:#fff1e7;}
+#app.loveroll-eclat-page .eclat-recommendation>span:last-child{flex:none;font:500 11px/1.2 system-ui,sans-serif;color:#f2c8a7;}
+@media (max-height:700px){#app.loveroll-eclat-page button.eclat-recommendation{min-height:54px;padding:7px 10px!important;}#app.loveroll-eclat-page .eclat-intents{min-height:40px;}#app.loveroll-eclat-page button.eclat-intent{min-height:35px;}}

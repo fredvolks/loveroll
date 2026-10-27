@@ -136,3 +136,20 @@ test('Account preview helper never grants Eclat or admin server permissions',asy
  assert.match(app,/previewEclatStatus\(state\.eclat/);
  assert.match(app,/account-test:/);
 });
+
+test('Éclat approved intents and history suggestion work without sharing private choices',()=>{
+ const status={access:true,active:false},html=eclatHtml({status});
+ for(const k of ['together','reconnect','closer','all'])assert.match(html,new RegExp('data-action="eclat:intent:'+k+'"'));
+ assert.equal((html.match(/class="eclat-tile"/g)||[]).length,12);
+ assert.match(html,/Voir notre suggestion : Les cinq secrets/);
+ const get=(intent,n)=>{const v=eclatHtml({status,intent});assert.equal((v.match(/class="eclat-tile"/g)||[]).length,n);return v;};
+ assert.match(get('together',7),/Ouvrir le coffret 02/);
+ assert.doesNotMatch(get('together',7),/Ouvrir le coffret 03/);
+ assert.match(get('reconnect',3),/Ouvrir le coffret 08/);
+ assert.match(get('closer',3),/Ouvrir le coffret 11/);
+ assert.match(eclatHtml({status,history:[{coffret_id:1,started_at:'2026-10-20T12:00:00Z'}]}),/Voir notre suggestion : Le double jeu/);
+ const allStarted=Array.from({length:12},(_,i)=>({coffret_id:i+1,started_at:new Date(Date.UTC(2026,9,1+i)).toISOString()}));
+ assert.match(eclatHtml({status,history:allStarted}),/À retrouver/);
+ assert.match(eclatHtml({status,history:allStarted}),/Voir notre suggestion : Les cinq secrets/);
+ assert.doesNotMatch(eclatHtml({status,historyError:true}),/eclat-recommendation/);
+});
