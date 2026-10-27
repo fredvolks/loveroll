@@ -273,7 +273,12 @@ function crystalBackdrop(renderer,scene,canvas,onLoad){
    parseFloat(getComputedStyle(target).getPropertyValue('--home-scene-top-image-height')):0;
   const width=stageHeight?r.width:iw*scale,height=stageHeight||ih*scale;
   const px=(parseFloat(style?.backgroundPositionX)||50)/100,py=(parseFloat(style?.backgroundPositionY)||62)/100;
-  const left=r.left+(r.width-width)*px,top=stageHeight?0:r.top+(r.height-height)*py;
+  // The iPad displays the SAME portrait photo at its natural aspect ratio,
+  // shifted vertically to keep its embedded marble under the die. Reflect
+  // that exact offset inside the refractive backdrop (no duplicate framing).
+  const photoOffset=stageHeight?
+   (parseFloat(getComputedStyle(target).getPropertyValue('--lr-ipad-scene-offset'))||0):0;
+  const left=r.left+(r.width-width)*px,top=stageHeight?photoOffset:r.top+(r.height-height)*py;
   material.uniforms.crop.value.set(c.width/width,c.height/height,(c.left-left)/width,1-(c.top+c.height-top)/height);
  };
  return {sync,state:()=>({loaded,source}),dispose:()=>{disposed=true;scene.remove(proxy);proxy.geometry.dispose();material.dispose();texture?.dispose();pixel.dispose();}};
@@ -443,6 +448,14 @@ export function dieOn(canvas,sides,value,rolling){
  let preview=canvas.dataset.dicePreview==='true'&&sides===6;
  const built=geometry(sides,canvas.dataset.diceMarkers==='pips',neutral,referenceRuby);scene.add(built.group);
  if(referenceRuby)renderer.toneMappingExposure=1.2;
+ // Reduce the overexposed plastic highlights on the larger iPad D6 only.
+ // Android keeps its existing approved ruby material and lighting.
+ if(flatHome&&window.matchMedia?.('(min-width:768px)').matches){
+  built.material.roughness=.075;
+  built.material.clearcoatRoughness=.085;
+  built.material.needsUpdate=true;
+  renderer.toneMappingExposure=1.03;
+ }
  // A soft contact shadow stays on the stage while the die rises and settles.
  const shadow=new THREE.Mesh(new THREE.CircleGeometry(1.08,40),
   new THREE.MeshBasicMaterial({color:0x08030b,transparent:true,opacity:.28,depthWrite:false}));
