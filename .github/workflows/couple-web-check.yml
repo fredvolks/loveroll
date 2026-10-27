@@ -430,6 +430,9 @@ jobs:
         run: |
           node couple-web/premium-couple-visual-check.cjs
 
+      - name: Validate every real D6 face and representative D100 engravings on phone, tablet and desktop
+        run: node couple-web/dice-face-readability-browser-check.cjs
+
       - name: Verify live D100 Soirée size and marble contact across seven mobile viewports
         run: node couple-web/evening-d100-template-browser-check.cjs
 
@@ -468,6 +471,14 @@ jobs:
 
       - name: Verify premium gift/couple dialogs and safe notifications on S25 Ultra
         run: node couple-web/premium-dialogs-visual-check.cjs
+
+      - name: Archive actual WebGL winning-face screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LoveRoll-D6-D100-face-readability-${{ github.run_number }}
+          path: design-captures/face-readability-after-*.png
+          if-no-files-found: warn
 
       - name: Publier les captures comparatives
         if: always()

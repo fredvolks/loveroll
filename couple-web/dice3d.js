@@ -458,16 +458,27 @@ export function dieOn(canvas,sides,value,rolling){
  scene.add(shadow);
  // A server-confirmed face owns the final quaternion. Do not ever restore
  // the initial mesh rotation after a live D100 throw.
- const tilt=new THREE.Quaternion().setFromEuler(sides===6?
-  (flatHome?new THREE.Euler(0,-.58,0):new THREE.Euler(.16,-.18,-.02)):new THREE.Euler(.075,-.09,0));
+ // Presentation only: retain the official face, geometry, optics and timing.
+ // Photo stages use an elevated camera. Keep a narrow side and a glimpse of
+ // the top while bringing the winning engraved face toward the viewer.
+ // D20 and D35 retain their existing poses.
+ const restEuler=sides===6?
+  (photoStage?new THREE.Euler(-.055,-.21,0):new THREE.Euler(.11,-.21,0)):
+  sides===100?
+  (photoStage?new THREE.Euler(-.12,-.055,0):new THREE.Euler(.015,-.055,0)):
+  new THREE.Euler(.075,-.09,0);
+ const tilt=new THREE.Quaternion().setFromEuler(restEuler);
  const podiumSelector='.home-die-theater,.surprise-main-die-scene,.evening-user-die>.love3d,.evening-die-row,.evening-finale-hero';
  let podium=canvas.closest(podiumSelector);
  const orientationFor=face=>{
   const normal=built.normals.get(Number(face));
   if(!normal)return null;
-  const orientation=new THREE.Quaternion().setFromUnitVectors(normal,new THREE.Vector3(0,0,1));
-  if(flatHome&&Number(face)===2)orientation.premultiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,0,1),Math.PI));
-  return orientation.premultiply(tilt);
+  // engravedFace constructs every pip/number in the +Z-to-face frame.
+  // Inverting that very frame keeps its glyphs upright on ALL physical
+  // faces. Never add face-specific rotations (including result 2).
+  const engravedFrame=new THREE.Quaternion().setFromUnitVectors(
+   new THREE.Vector3(0,0,1),normal);
+  return tilt.clone().multiply(engravedFrame.invert());
  };
  let target=orientationFor(value)||orientationFor(1);
  built.group.quaternion.copy(target);
@@ -650,7 +661,18 @@ export function dieOn(canvas,sides,value,rolling){
    if(facing>best){best=facing;frontFace=face;}
    if(transformed.y>bestUp){bestUp=transformed.y;upFace=face;upNormal=transformed;}
   }
-  return {face:Number(canvas.dataset.face),frontFace,quaternion:built.group.quaternion.toArray(),renderedFrames,
+  // Geometry and camera diagnostics, not an artificial result overlay.
+  const winningNormal=built.normals.get(Number(canvas.dataset.face));
+  const eye=new THREE.Vector3().subVectors(camera.position,built.group.position).normalize();
+  const faceFacing=winningNormal?
+   winningNormal.clone().applyQuaternion(built.group.quaternion).dot(eye):null;
+  const engravedUp=winningNormal?new THREE.Vector3(0,1,0).applyQuaternion(
+   new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0,0,1),winningNormal)
+  ).applyQuaternion(built.group.quaternion):null;
+  const cameraUp=new THREE.Vector3(0,1,0).applyQuaternion(camera.quaternion);
+  const engravingUpright=engravedUp?engravedUp.dot(cameraUp):null;
+  return {face:Number(canvas.dataset.face),frontFace,faceFacing,engravingUpright,
+   quaternion:built.group.quaternion.toArray(),renderedFrames,
    modelId:built.group.uuid,model:flatHome?'ruby-reference-205':'rose-crystal',
    support:flatHome?projectedSupport():null,
    restingUp:flatHome?upNormal.toArray():null,upFace,
