@@ -69,6 +69,7 @@ jobs:
           node couple-web/soiree-home-template-browser-check.cjs
           node couple-web/evening-d6-template-browser-check.cjs
           node couple-web/evening-d100-template-browser-check.cjs
+          node couple-web/ipad-romance-scene-browser-check.cjs
           node couple-web/surprise-minimal-browser-check.cjs
           node couple-web/eclat-night-browser-check.cjs
           node couple-web/eclat-guided-browser-check.cjs
