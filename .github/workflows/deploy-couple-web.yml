@@ -15,14 +15,13 @@ concurrency:
   group: loveroll-pages-main
   cancel-in-progress: true
 jobs:
-  deploy:
-    if: github.ref == 'refs/heads/main'
+  static-tests:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
       - name: Valider la PWA, l'authentification et l'adaptation mobile
         run: |
           set -euo pipefail
@@ -47,51 +46,100 @@ jobs:
           node --test couple-web/evening-d100-template.test.mjs couple-web/surprise-minimal.test.mjs couple-web/evening-d6-template.test.mjs couple-web/eclat-guidance.test.mjs couple-web/monthly-invitation.test.mjs couple-web/signup-routing.test.mjs couple-web/stale-invitation-safari.test.mjs couple-web/dice-weighting.test.mjs couple-web/cycle-200.test.mjs couple-web/calendar-success-stats.test.mjs couple-web/love-category-style.test.mjs couple-web/dissociation-solo-admin.test.mjs couple-web/mobile-entry-screen.test.mjs couple-web/loveroll-splash.test.mjs couple-web/pwa-update.test.mjs couple-web/eclat.test.mjs couple-web/evening-finale-v99.test.mjs couple-web/premium-couple-pages.test.mjs couple-web/evening-redesign.test.mjs couple-web/surprise-v86.test.mjs couple-web/surprise-d100-budget.test.mjs couple-web/eclat-history.test.mjs couple-web/evening-queue-fixed-v102.test.mjs
       - name: Vérifier TOUS les scripts JavaScript livrés
         run: node couple-web/check-shipped-js.cjs
-      - name: Tester le vrai démarrage dans Chromium avant publication
-        timeout-minutes: 40
+  browser-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [entry, evening, experience]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Cache npm downloads and pinned Chromium
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            ~/.cache/ms-playwright
+          key: ${{ runner.os }}-loveroll-playwright-1.56.0-v1
+      - name: Prepare Chromium and local server
         run: |
           set -euo pipefail
-          npm install --no-save playwright@1.56.0
+          npm install --no-save --no-audit --no-fund playwright@1.56.0
           npx playwright install chromium
-          python3 -m http.server 8765 -d couple-web >/tmp/loveroll-boot-http.log 2>&1 &
-          webserver=$!
-          trap 'kill "$webserver" || true' EXIT
-          for retry in $(seq 1 30); do
-            if curl -fsS http://127.0.0.1:8765/ >/dev/null; then break; fi
+          python3 -m pip install --quiet 'Pillow>=10,<13'
+          python3 -m http.server 8765 -d couple-web >/tmp/loveroll-pages-http.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8765/ >/dev/null; then exit 0; fi
             sleep 1
           done
+          cat /tmp/loveroll-pages-http.log
+          exit 1
+      - name: Validate entry before publication
+        if: matrix.group == 'entry'
+        run: |
+          set -euo pipefail
           node couple-web/boot-smoke.cjs
           node couple-web/android-ruby-browser-check.cjs
           node couple-web/home-ruby-interaction-browser-check.cjs
           node couple-web/ruby-controls-browser-check.cjs
           node couple-web/home-duo-browser-check.cjs
           node couple-web/soiree-home-template-browser-check.cjs
-          node couple-web/evening-d6-template-browser-check.cjs
-          node couple-web/evening-d100-template-browser-check.cjs
           node couple-web/surprise-minimal-browser-check.cjs
-          node couple-web/eclat-night-browser-check.cjs
-          node couple-web/eclat-guided-browser-check.cjs
           node couple-web/checkout-one-screen-browser-check.cjs
-          node couple-web/eclat-browser-check.cjs
-          node couple-web/eclat-visual-parity-v184.cjs
-          python3 -m pip install --quiet 'Pillow>=10,<13'
-          python3 couple-web/eclat-pixel-reference-v184.py
-          node couple-web/settings-menus-browser-check.cjs
-          node couple-web/shared-stage-browser-check.cjs
-          node couple-web/settings-picker-browser-check.cjs
-          node couple-web/eclat-parity-browser-check.cjs
-          node couple-web/nav-home-parity-browser-check.cjs
-          node couple-web/bubble-alignment-browser-check.cjs
           node couple-web/loveroll-splash-browser-check.cjs
-          node couple-web/evening-redesign-browser-check.cjs
-          node couple-web/evening-queue-fixed-v102-browser-check.cjs
-          node couple-web/evening-queue-completed-v103-browser-check.cjs
           node couple-web/surprise-desktop-v86-check.cjs
           # Always publish a healthy application: a *layout diagnostic* must not
           # strand browsers on the previous release. Report any visual regression.
           if ! node couple-web/mobile-entry-visual-check.cjs; then
             echo '::warning::Responsive visual check needs follow-up; publishing current authenticated PWA instead of leaving stale web version.'
           fi
+      - name: Validate evening before publication
+        if: matrix.group == 'evening'
+        run: |
+          set -euo pipefail
+          node couple-web/evening-d6-template-browser-check.cjs
+          node couple-web/evening-d100-template-browser-check.cjs
+          node couple-web/shared-stage-browser-check.cjs
+          node couple-web/evening-redesign-browser-check.cjs
+          node couple-web/evening-queue-fixed-v102-browser-check.cjs
+          node couple-web/evening-queue-completed-v103-browser-check.cjs
+      - name: Validate experience before publication
+        if: matrix.group == 'experience'
+        run: |
+          set -euo pipefail
+          node couple-web/eclat-night-browser-check.cjs
+          node couple-web/eclat-guided-browser-check.cjs
+          node couple-web/eclat-browser-check.cjs
+          node couple-web/eclat-visual-parity-v184.cjs
+          python3 couple-web/eclat-pixel-reference-v184.py
+          node couple-web/settings-menus-browser-check.cjs
+          node couple-web/settings-picker-browser-check.cjs
+          node couple-web/eclat-parity-browser-check.cjs
+          node couple-web/nav-home-parity-browser-check.cjs
+          node couple-web/bubble-alignment-browser-check.cjs
+  deploy:
+    needs: [static-tests, browser-tests]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Cache npm downloads and pinned Chromium
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            ~/.cache/ms-playwright
+          key: ${{ runner.os }}-loveroll-playwright-1.56.0-v1
       - name: Activer Pages et préparer le site
         uses: actions/configure-pages@v5
         with:
@@ -127,6 +175,8 @@ jobs:
         timeout-minutes: 6
         run: |
           set -euo pipefail
+          npm install --no-save --no-audit --no-fund playwright@1.56.0
+          npx playwright install chromium
           for attempt in 1 2 3 4; do
             echo "Validation production - tentative $attempt"
             if LOVEROLL_DIAGNOSTIC_URL=https://fredvolks.github.io/loveroll/ LOVEROLL_REQUIRE_HEALTHY=1 node couple-web/boot-diagnostic.cjs; then
