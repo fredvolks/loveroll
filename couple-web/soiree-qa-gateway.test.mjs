@@ -22,7 +22,8 @@ function clientFor(userId=idA,override={}){
   draw_for_partner:{id:challenge,face:83},
   draw_for_partner_random:{id:challenge,face:42},
   answer_challenge:null,love_respond_and_redraw:{replacement_id:challenge},finish_couple_session:null,
-  my_love_evening_board:{ready:true}};
+  my_love_evening_board:{ready:true},
+  my_love_monthly_pass_quota:{can_pass:true,remaining:2,used:1,limit:3}};
  const client={
   auth:{async getUser(){return {data:{user:{id:override.actualUser||userId}}}}},
   async rpc(name,args){calls.push({name,args});
@@ -77,6 +78,8 @@ test('reads only its own challenge cards, never a partner private challenge',asy
  assert.equal(snap.mine[0].recipient,idA);
  assert.deepEqual(snap.weekly.map(x=>x.key),['2026-10-26','2025-10-20']);
  assert.ok(calls.some(x=>x.name==='my_love_evening_board'));
+ assert.deepEqual(snap.passQuota,{can_pass:true,remaining:2,used:1,limit:3});
+ assert.ok(calls.some(x=>x.name==='my_love_monthly_pass_quota'));
 });
 test('identity refresh rejects reused sessions or wrong account',async()=>{
  const {api}=clientFor(idA,{actualUser:idB});

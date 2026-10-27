@@ -6,7 +6,9 @@ const b='22222222-2222-4222-8222-222222222222';
 const couple='33333333-3333-4333-8333-333333333333';
 const session='44444444-4444-4444-8444-444444444444';
 const challenge='55555555-5555-4555-8555-555555555555';
-const base={userId:a,coupleId:couple,weekly:[{face:4,key:'2026-10-26'}],
+const base={userId:a,coupleId:couple,
+ passQuota:{can_pass:true,remaining:2,used:1,limit:3},
+ weekly:[{face:4,key:'2026-10-26'}],
  session:{id:session},personal:[{user_id:a,face:5},{user_id:b,face:3}],
  mine:[{id:challenge,recipient:a,face:47,category:'MIXTE',status:'proposed',
   card_title:'Défi <privé>',card_description:'Juste pour toi & personne d’autre',card_id:47}]};
@@ -75,4 +77,15 @@ test('Toronto week starts on Monday across DST boundary',async()=>{
  assert.equal(currentTorontoWeekKey(new Date('2026-10-27T23:30:00Z')),'2026-10-26');
  assert.equal(currentTorontoWeekKey(new Date('2026-11-02T04:45:00Z')),'2026-10-26');
  assert.equal(currentTorontoWeekKey(new Date('2026-11-02T05:30:00Z')),'2026-11-02');
+});
+
+test('QA Passer disabled at actual monthly quota; Refuser remains accessible',()=>{
+ const screen=renderSoireeQaScreen({role:'A',snapshot:{
+  ...base,passQuota:{can_pass:false,remaining:0,used:3,limit:3}
+ },partnerId:b});
+ assert.match(screen,/data-soiree-qa-action="redraw:55555555-5555-4555-8555-555555555555:pass:no" disabled/);
+ assert.match(screen,/data-soiree-qa-action="redraw:55555555-5555-4555-8555-555555555555:refuse:no"/);
+ assert.doesNotMatch(screen,/data-soiree-qa-action="redraw:55555555-5555-4555-8555-555555555555:refuse:no" disabled/);
+ const unavailable=renderSoireeQaScreen({role:'A',snapshot:{...base,passQuota:null},partnerId:b});
+ assert.match(unavailable,/Passer — quota indisponible/);
 });

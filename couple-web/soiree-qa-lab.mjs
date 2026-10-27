@@ -69,11 +69,19 @@ export function renderSoireeQaScreen({role,snapshot,partnerId,weekKey=currentTor
      escapeHtml(item.face)+' · '+escapeHtml(item.status)+'</p>'+
     die(role,item.face,100,'challenge-'+item.id,item.id===selectedChallenge?.id)+
     (item.status==='proposed'?btn(role,'answer:'+item.id+':accepted','Accepter')+
-      btn(role,'redraw:'+item.id+':pass:no','Passer + repiger (quota serveur)')+
+      btn(role,'redraw:'+item.id+':pass:no',
+       snapshot.passQuota?.can_pass===true?
+        'Passer + repiger ('+snapshot.passQuota.remaining+' restant(s))':
+        'Passer — quota indisponible/épuisé',
+       snapshot.passQuota?.can_pass!==true)+
       btn(role,'redraw:'+item.id+':refuse:no','Refuser et repiger')+
       btn(role,'redraw:'+item.id+':refuse:yes','Refuser et exclure du cycle'):'')+
     (item.status==='accepted'?btn(role,'answer:'+item.id+':completed','Terminer')+
-      btn(role,'redraw:'+item.id+':pass:no','Passer + repiger (quota serveur)')+
+      btn(role,'redraw:'+item.id+':pass:no',
+       snapshot.passQuota?.can_pass===true?
+        'Passer + repiger ('+snapshot.passQuota.remaining+' restant(s))':
+        'Passer — quota indisponible/épuisé',
+       snapshot.passQuota?.can_pass!==true)+
       btn(role,'redraw:'+item.id+':refuse:no','Refuser et repiger')+
       btn(role,'redraw:'+item.id+':refuse:yes','Refuser et exclure du cycle'):'')+
     '</article>';

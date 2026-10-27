@@ -40,22 +40,25 @@ export function createSoireeQaGateway({client,expectedUserId}){
  }
  async function snapshot(){
   const who=await identity();
-  const [week,session]=await Promise.all([
+  const [week,session,passQuota]=await Promise.all([
    rows('couple_rolls',[['couple_id',who.coupleId],['kind','weekly']],
     {fields:'id,face,kind,key,created_at',order:{field:'key',ascending:false},limit:20}),
    rows('couple_sessions',[['couple_id',who.coupleId]],
-    {fields:'id,started_at,finished_at,counted',isNull:'finished_at',limit:2})
+    {fields:'id,started_at,finished_at,counted',isNull:'finished_at',limit:2}),
+   // Same per-person monthly pass rule as the public LoveRoll app. A missing
+   // QA migration means an unknown quota, never permission to bypass it.
+   rpc('my_love_monthly_pass_quota',{p_couple:who.coupleId}).catch(()=>null)
   ]);
   if(session.length>1)throw new Error('Deux soirées actives : état serveur incohérent');
   const active=session[0]||null;
-  if(!active)return {...who,weekly:week,session:null,personal:[],mine:[],board:null};
+  if(!active)return {...who,weekly:week,passQuota,session:null,personal:[],mine:[],board:null};
   const [personal,mine,board]=await Promise.all([
    rows('couple_personal_rolls',[['session_id',active.id]],{fields:'user_id,face'}),
    rows('couple_challenges',[['session_id',active.id],['recipient',who.userId]],
     {fields:'id,recipient,offered_by,category,face,card_id,card_title,card_description,card_timer_minutes,status,created_at',order:{field:'created_at',ascending:true}}),
    rpc('my_love_evening_board',{p_session:active.id})
   ]);
-  return {...who,weekly:week,session:active,personal,
+  return {...who,weekly:week,passQuota,session:active,personal,
     mine:mine.filter(x=>x.recipient===who.userId),board};
  }
  async function weekly(){
