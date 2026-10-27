@@ -5,6 +5,15 @@ export function isAcceptedTimedEveningChallenge(challenge,userId,sessionId){
   challenge.recipient===userId&&challenge.session_id===sessionId&&
   challenge.status==='accepted');
 }
+// Do not interpret a denied RPC as an idempotent success just because
+// a different account/session has a completed card. Re-check the identity
+// of the server record after concurrent completion.
+export function isSameCompletedEveningChallenge(challenge,current,userId,sessionId){
+ return !!(challenge?.id&&userId&&sessionId&&
+  challenge.recipient===userId&&challenge.session_id===sessionId&&
+  current?.id===challenge.id&&current?.recipient===userId&&
+  current?.session_id===sessionId&&current?.status==='completed');
+}
 export async function completeTimedEveningChallenge({challenge,userId,sessionId,rpc,query}){
  if(!isAcceptedTimedEveningChallenge(challenge,userId,sessionId))
   return {outcome:'ineligible',finished:false};
@@ -13,7 +22,7 @@ export async function completeTimedEveningChallenge({challenge,userId,sessionId,
  catch(error){
   // Another device may have completed the exact same card first.
   const current=(await query('couple_challenges',{eq:{id:challenge.id}}))?.[0];
-  if(current?.status!=='completed')throw error;
+  if(!isSameCompletedEveningChallenge(challenge,current,userId,sessionId))throw error;
   outcome='already-completed';
  }
  const board=await rpc('my_love_evening_board',{p_session:sessionId});

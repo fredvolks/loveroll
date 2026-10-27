@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {isAcceptedTimedEveningChallenge,completeTimedEveningChallenge} from './timed-evening-completion.mjs';
+import {isAcceptedTimedEveningChallenge,isSameCompletedEveningChallenge,completeTimedEveningChallenge} from './timed-evening-completion.mjs';
 const card={id:'card-a',recipient:'alice',session_id:'session-a',status:'accepted'};
 test('Only accepted, recipient-owned Soirée cards qualify; unrelated timers never count',()=>{
  assert.equal(isAcceptedTimedEveningChallenge(card,'alice','session-a'),true);
@@ -38,7 +38,7 @@ test('Concurrent device completion is idempotent; passed challenge is not silent
   if(name==='answer_challenge')throw Error('Défi déjà terminé');
   if(name==='my_love_evening_board')return {finished:false};
  };
- const check=async name=>name==='couple_challenges'?[{status:'completed'}]:[];
+ const check=async name=>name==='couple_challenges'?[{...card,status:'completed'}]:[];
  const result=await completeTimedEveningChallenge({challenge:card,userId:'alice',
   sessionId:'session-a',rpc,query:check});
  assert.equal(result.outcome,'already-completed');
@@ -99,3 +99,25 @@ test('LR-002 handles pause immediately after expiry before changing running stat
  assert.match(block,/validation automatique en cours/);
 });
 
+
+
+test('LR-002 rejects false idempotency across different sessions or partners',async()=>{
+ const completed={...card,status:'completed'};
+ assert.equal(isSameCompletedEveningChallenge(card,completed,'alice','session-a'),true);
+ for(const wrong of [
+  {...completed,recipient:'bob'},
+  {...completed,session_id:'session-b'},
+  {...completed,id:'card-b'},
+  {...completed,status:'passed'},
+  {...completed,status:'refused'},
+  {status:'completed'},
+  null
+ ]){
+  assert.equal(isSameCompletedEveningChallenge(card,wrong,'alice','session-a'),false);
+  const calls=[];
+  await assert.rejects(completeTimedEveningChallenge({challenge:card,userId:'alice',
+   sessionId:'session-a',rpc:async name=>{calls.push(name);throw Error('Accès refusé');},
+   query:async name=>name==='couple_challenges'?[wrong]:[]}),/Accès refusé/);
+  assert.deepEqual(calls,['answer_challenge'],'A rejected completion must not close a different soirée');
+ }
+});
