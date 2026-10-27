@@ -1,6 +1,6 @@
 /* Concept 5: native Home D6 and shared Soirée controls, compact duo capsules. */
 @layer loveroll-evening-d6{
- @media(max-width:767px){
+ @media(max-width:1199px), (pointer:coarse) and (min-width:768px){
   #app.has-evening-d6-template .evening-premium-view.has-evening-d6-template{
    display:grid!important;grid-template-rows:80px auto minmax(0,1fr) 38px 55px 34px!important;gap:8px!important;
   }
