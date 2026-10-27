@@ -120,3 +120,21 @@ test('Saved answers may be changed and previous Q2 uses its own answer labels af
  assert.match(clue,/DOSSIER A/);
  assert.doesNotMatch(clue,/près d’un banc/);
 });
+
+test('06 puzzle requires server verification or voluntary second-level hint before continue',()=>{
+ const s=status(6,0,30,3,{puzzle_solved:false,puzzle_hint_level:0});
+ const p=renderEclatV2PlayA({status:s,viewerId:aid});
+ assert.match(p,/data-eclat-v2-action="puzzle-place:Verrière"/);
+ assert.match(p,/data-eclat-v2-action="puzzle-time:21 h 30"/);
+ assert.match(p,/data-eclat-v2-action="puzzle-help"/);
+ assert.doesNotMatch(p,/data-eclat-v2-action="act:continue"/);
+ assert.doesNotMatch(p,/Solution révélée/);
+ const ready=renderEclatV2PlayA({status:s,viewerId:aid,
+  puzzleDraft:{place:'Verrière',time:'21 h 30',code:null}});
+ assert.match(ready,/data-eclat-v2-action="puzzle-submit"/);
+ const h=renderEclatV2PlayA({status:{...s,puzzle_hint_level:2},viewerId:aid});
+ assert.match(h,/Solution révélée/);
+ assert.match(h,/data-eclat-v2-action="act:continue"/);
+ const c=renderEclatV2PlayA({status:status(6,1,30,6,{puzzle_solved:false,puzzle_hint_level:0}),viewerId:aid});
+ assert.match(c,/data-eclat-v2-action="puzzle-code:562"/);
+});

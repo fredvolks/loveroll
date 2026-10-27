@@ -7,7 +7,7 @@ const esc =value=>String(value??'').replace(/[&<>"']/g,ch=>
  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const btn=(action,label,style='')=>'<button type="button" class="eclat-v2-btn '+style+'" data-eclat-v2-action="'+esc(action)+'">'+esc(label)+'</button>';
 const paragraph=s=>'<p>'+esc(s)+'</p>';
-function mainContent(view,status,predictionDraft={}){
+function mainContent(view,status,predictionDraft={},puzzleDraft={},puzzleAttempt=null){
  let html='<h2>'+esc(view.title)+'</h2>'+
   '<p class="eclat-v2-instruction">'+esc(view.instruction)+'</p>';
  if(view.substepTotal)html+='<p class="eclat-v2-muted">'+(view.coffretId===1?'Enveloppe':view.coffretId===5?'Tour':'Partie')+
@@ -45,14 +45,33 @@ function mainContent(view,status,predictionDraft={}){
    '<details><summary>Voir la solution (sur demande)</summary>'+paragraph(view.bonus.solution)+'</details></section>';
  }
  if(view.puzzle){
-  const opt=view.puzzle.kind==='place-time'?
-   'Lieux : '+view.puzzle.places.join(' · ')+' ; heures : '+view.puzzle.times.join(' · '):
-   'Codes : '+view.puzzle.codes.join(' · ');
-  html+='<section class="eclat-v2-task"><strong>Votre enquête</strong>'+paragraph(opt)+
-   '<p>Comparez vos dossiers et choisissez ensemble votre réponse. Vous pouvez demander une aide, réessayer ou passer.</p>'+
-   '<details><summary>Aide niveau 1</summary>'+paragraph(view.puzzle.firstHelp)+
-    '<details><summary>Révéler la solution (niveau 2)</summary>'+
-     paragraph(Object.values(view.puzzle.solution).join(' · '))+'</details></details></section>';
+  html+='<section class="eclat-v2-task"><strong>Votre enquête</strong>'+
+   '<p>Choisissez ensemble. Aucun score ni limite d’essais.</p>';
+  if(view.puzzle.kind==='place-time')
+   html+='<fieldset class="eclat-v2-door"><legend>Quel lieu ?</legend>'+
+    view.puzzle.places.map(p=>btn('puzzle-place:'+p,(puzzleDraft.place===p?'✓ ':'')+p)).join('')+
+    '</fieldset><fieldset class="eclat-v2-door"><legend>À quelle heure ?</legend>'+
+    view.puzzle.times.map(t=>btn('puzzle-time:'+t,(puzzleDraft.time===t?'✓ ':'')+t)).join('')+
+    '</fieldset>';
+  else html+='<fieldset class="eclat-v2-door"><legend>Quel code ?</legend>'+
+    view.puzzle.codes.map(c=>btn('puzzle-code:'+c,(puzzleDraft.code===c?'✓ ':'')+c)).join('')+'</fieldset>';
+  if(!status.puzzle_solved&&status.puzzle_hint_level!==2&&
+     (view.puzzle.kind==='code'?puzzleDraft.code:
+      puzzleDraft.place&&puzzleDraft.time))
+    html+=btn('puzzle-submit','Vérifier notre réponse','primary');
+  if(status.puzzle_solved)html+='<p role="status">La réponse correspond aux deux dossiers.</p>';
+  else if(puzzleAttempt===false)html+='<p role="status">'+
+   (view.puzzle.kind==='code'?
+    'Ce code ne respecte pas les deux indices. Vous pouvez réessayer ou demander une aide.':
+    'Réessayez ou demandez une aide.')+'</p>';
+  if(status.puzzle_hint_level>=1)html+=paragraph(view.puzzle.firstHelp);
+  if(status.puzzle_hint_level>=2)
+   html+='<p role="status"><strong>Solution révélée :</strong> '+
+      esc(Object.values(view.puzzle.solution).join(' · '))+'</p>';
+  if(!status.puzzle_solved&&status.puzzle_hint_level<2)
+   html+=btn('puzzle-help',status.puzzle_hint_level===0?'Demander un indice':
+     'Afficher la solution (niveau 2)');
+  html+='</section>';
  }
  if(view.investigationFinal){
   const f=view.investigationFinal;
@@ -171,7 +190,8 @@ function actions(view,status,seenRoles){
  }
  const pendingDoor=view.coffretId===4&&[1,5].includes(view.sceneNumber)&&!status.door_confirmed;
  const secretLocked=view.type==='Secret'&&!status.revealed;
- if(!secretLocked&&!pendingDoor&&!view.awaitBranch){
+ const puzzleLocked=!!view.puzzle&&!status.puzzle_solved&&status.puzzle_hint_level<2;
+ if(!secretLocked&&!pendingDoor&&!view.awaitBranch&&!puzzleLocked){
   if(view.role==='A')rows+=btn('act:continue',view.type==='Finale'?
    'Terminer ensemble après notre accord':'Continuer ensemble après notre accord','primary');
   else rows+='<span role="status">Après votre accord oral, A pourra continuer cette scène commune.</span>';
@@ -181,7 +201,7 @@ function actions(view,status,seenRoles){
  rows+=btn('act:stop','Arrêter cette séance');
  return rows;
 }
-export function renderEclatV2PlayA({status,viewerId,localRole=null,seenRoles=[],predictionDraft={}}){
+export function renderEclatV2PlayA({status,viewerId,localRole=null,seenRoles=[],predictionDraft={},puzzleDraft={},puzzleAttempt=null}){
  if(!status?.access)return '<section class="eclat-v2-stage"><p>Accès Éclat requis.</p></section>';
  if(!status.active)return '<section class="eclat-v2-stage"><p>Aucune séance Éclat V2 en cours.</p></section>';
  if(status.content_version!==2)throw Error('L’interface Éclat V2 refuse les séances V1');
@@ -199,7 +219,7 @@ export function renderEclatV2PlayA({status,viewerId,localRole=null,seenRoles=[],
   ' · '+view.variantName+'</small><p>Étape '+view.number+' sur '+view.total+
   ' · '+view.budgetMinutes+' min indicatives</p></header>'+
   (status.device_mode==='one'?'<nav class="eclat-v2-handover-link">'+btn('hide-role','Masquer et passer le téléphone')+'</nav>':'')+
-  '<div class="eclat-v2-content">'+mainContent(view,status,predictionDraft)+'</div>'+
+  '<div class="eclat-v2-content">'+mainContent(view,status,predictionDraft,puzzleDraft,puzzleAttempt)+'</div>'+
   '<footer class="eclat-v2-actions">'+actions(view,status,seenRoles)+'</footer>'+
   '<p class="eclat-v2-muted">Toutes les activités sont facultatives. Aucun score. Aucun contact sans accord explicite.</p>'+
   '</section>';

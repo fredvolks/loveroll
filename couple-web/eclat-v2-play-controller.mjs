@@ -7,16 +7,16 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
  if(!root||typeof root.addEventListener!=='function'||!api||!viewerId||!initialStatus)
   throw new TypeError('Conteneur, client, compte et séance requis');
  let status=initialStatus,role=null,seen=new Set(),busy=false,disposed=false;
- let predictionDraft={answer:null,prediction:null};
+ let predictionDraft={answer:null,prediction:null},puzzleDraft={place:null,time:null,code:null},puzzleAttempt=null;
  const paint=()=>{if(!disposed)root.innerHTML=renderEclatV2PlayA({
-  status,viewerId,localRole:role,seenRoles:[...seen],predictionDraft});};
+  status,viewerId,localRole:role,seenRoles:[...seen],predictionDraft,puzzleDraft,puzzleAttempt});};
  async function refresh(){
   if(disposed)return;
   const updated=await api.status(status.session_id);
   if(updated.session_id!==status.session_id)throw Error('Séance Éclat remplacée');
   const changed=updated.chapter_index!==status.chapter_index||updated.substep_index!==status.substep_index;
   status=updated;
-  if(changed){role=null;seen=new Set();predictionDraft={answer:null,prediction:null};}
+  if(changed){role=null;seen=new Set();predictionDraft={answer:null,prediction:null};puzzleDraft={place:null,time:null,code:null};puzzleAttempt=null;}
   paint();
  }
  async function click(event){
@@ -25,6 +25,12 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
   const command=button.getAttribute('data-eclat-v2-action');
   if(!command)return;
   if(command==='hide-role'){role=null;paint();return;}
+  if(command.startsWith('puzzle-place:')||command.startsWith('puzzle-time:')||command.startsWith('puzzle-code:')){
+   if(status.coffret_id!==6||status.state!=='active'||status.puzzle_solved)return;
+   const [kind,...parts]=command.split(':'),value=parts.join(':');
+   const key=kind==='puzzle-place'?'place':kind==='puzzle-time'?'time':'code';
+   puzzleDraft={...puzzleDraft,[key]:value};puzzleAttempt=null;paint();return;
+  }
   if(command.startsWith('answer:')||command.startsWith('prediction:')){
    if(status.coffret_id!==7||status.device_mode!=='two'||status.state!=='active'||status.revealed)return;
    const [key,index]=command.split(':'),value=Number(index);
@@ -44,7 +50,13 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
   try{
    const sid=status.session_id,idx=status.chapter_index;
    let next;
-   if(command==='save-prediction'){
+   if(command==='puzzle-help'){
+    next=await api.puzzleHelp({sessionId:sid,expectedStep:idx});puzzleAttempt=null;
+   }else if(command==='puzzle-submit'){
+    if(status.coffret_id!==6)return;
+    next=await api.puzzle({sessionId:sid,expectedStep:idx,...puzzleDraft});
+    puzzleAttempt=next.correct===true;
+   }else if(command==='save-prediction'){
     if(![0,1,2].includes(predictionDraft.answer)||![0,1,2].includes(predictionDraft.prediction))return;
     next=await api.predict({sessionId:sid,expectedStep:idx,
       answer:predictionDraft.answer,prediction:predictionDraft.prediction});
@@ -67,6 +79,7 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
    if(next.session_id!==sid)throw Error('Réponse d’une séance différente');
    if(next.chapter_index!==idx||next.substep_index!==status.substep_index){
     role=null;seen=new Set();predictionDraft={answer:null,prediction:null};
+    puzzleDraft={place:null,time:null,code:null};puzzleAttempt=null;
    }
    if(next.revealed && status.device_mode==='one')role=null;
    status=next;paint();

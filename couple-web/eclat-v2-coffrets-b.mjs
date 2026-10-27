@@ -113,7 +113,7 @@ export function eclatV2SceneB({session,viewerId,localDisplayRole=null}){
     solution:{code:dossier.solution.code}};
   if(n===8){
    out.investigationFinal={...dossier.solution,letter:dossier.letter,
-    assistance:Array.isArray(session.skipped_scenes)&&session.skipped_scenes.some(x=>[2,3,5,6].includes(x))};
+    assistance:session.puzzle_helped===true||(Array.isArray(session.skipped_scenes)&&session.skipped_scenes.some(x=>[2,3,5,6].includes(x)))};
   }
  }
  if(id===7){
