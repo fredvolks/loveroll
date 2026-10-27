@@ -38,6 +38,11 @@ create table public.love_eclat_v2_sessions (
  playlist_shared jsonb,
  shared_cards smallint[],
  selected_card smallint check(selected_card between 1 and 12),
+ wish_scene5 text check(wish_scene5 in ('now','later','pass')),
+ wish_scene6 text check(wish_scene6 in ('participate','without-contact','with-contact','pass')),
+ wish_scene8 text check(wish_scene8 in ('keep','finish')),
+ wish_invitation_card smallint check(wish_invitation_card between 1 and 12),
+ wish_contact_shared boolean not null default false,
  revealed_step smallint check (revealed_step between 1 and 8),
  started_at timestamptz not null default now(),
  updated_at timestamptz not null default now(),
@@ -174,6 +179,23 @@ create table public.love_eclat_v2_card_votes (
  updated_at timestamptz not null default now(),
  primary key(session_id,step_index,user_id)
 );
+-- Scene-specific mutual decisions and revocable contact approvals; no refusal profile.
+create table public.love_eclat_v2_wish_votes (
+ session_id uuid not null references public.love_eclat_v2_sessions(id) on delete cascade,
+ scene smallint not null check(scene in (5,6,8)),
+ user_id uuid not null references auth.users(id),
+ choice text not null check(choice in ('now','later','pass','participate','without-contact','with-contact','keep','finish')),
+ primary key(session_id,scene,user_id)
+);
+create table public.love_eclat_v2_wish_contact (
+ session_id uuid not null references public.love_eclat_v2_sessions(id) on delete cascade,
+ user_id uuid not null references auth.users(id),
+ primary key(session_id,user_id)
+);
+alter table public.love_eclat_v2_wish_votes enable row level security;
+alter table public.love_eclat_v2_wish_contact enable row level security;
+revoke all on public.love_eclat_v2_wish_votes from public,anon,authenticated;
+revoke all on public.love_eclat_v2_wish_contact from public,anon,authenticated;
 alter table public.love_eclat_v2_card_choices enable row level security;
 alter table public.love_eclat_v2_card_votes enable row level security;
 revoke all on public.love_eclat_v2_card_choices from public,anon,authenticated;
@@ -243,6 +265,7 @@ declare
  v_music_note jsonb;v_revealed_music jsonb;v_theme integer;
  v_my_playlist smallint[];
  v_story_vote text;v_story_history jsonb;v_my_cards smallint[];v_my_card_ready boolean;
+ v_my_wish_vote text;v_my_wish_contact boolean;v_wish_yes integer;
  v_timer_vote text;v_timer_remaining integer;
 begin
  perform public.love_require_verified_identity();
@@ -291,6 +314,12 @@ begin
     order by theme,user_id),'[]'::jsonb) into v_revealed_music
    from public.love_eclat_v2_music_notes where session_id=v_s.id and revealed=true;
  end if;
+ select choice into v_my_wish_vote from public.love_eclat_v2_wish_votes
+  where session_id=v_s.id and scene=v_s.chapter_plan[v_s.chapter_index] and user_id=v_actor;
+ select exists(select 1 from public.love_eclat_v2_wish_contact
+  where session_id=v_s.id and user_id=v_actor) into v_my_wish_contact;
+ select count(*) into v_wish_yes from public.love_eclat_v2_wish_contact
+  where session_id=v_s.id and user_id in(v_s.role_a,v_s.role_b);
  select slots into v_my_playlist from public.love_eclat_v2_playlist_votes
   where session_id=v_s.id and user_id=v_actor;
  select action into v_story_vote from public.love_eclat_v2_story_votes
@@ -330,6 +359,11 @@ begin
  ) || jsonb_build_object(
   'revealed_music',v_revealed_music,
   'my_playlist_slots',v_my_playlist,'playlist_shared',v_s.playlist_shared,
+  'wish_scene5',v_s.wish_scene5,'wish_scene6',v_s.wish_scene6,
+  'wish_scene8',v_s.wish_scene8,'wish_invitation_card',v_s.wish_invitation_card,
+  'my_wish_vote',v_my_wish_vote,'my_wish_contact',v_my_wish_contact,
+  'wish_contact_approved',case when v_s.device_mode='one' then v_s.wish_contact_shared
+    else v_wish_yes=2 end,
   'timer_mode',v_s.timer_mode,'my_timer_vote',v_timer_vote,
   'timer_running',v_s.timer_deadline is not null,
   'timer_remaining_seconds',v_timer_remaining,
@@ -1223,6 +1257,127 @@ begin
 end;
 $$;
 
+-- A3 contact permission for coffret 09 cards 7/8 only: independently
+-- granted and independently revocable, never implied by selecting a card.
+create function public.love_eclat_v2_wish_contact_answer(
+ p_session uuid,p_expected_step integer,p_yes boolean,p_joint_oral boolean default false
+) returns jsonb language plpgsql security definer set search_path='' as $$
+declare v_actor uuid:=auth.uid();v_couple uuid;v_s public.love_eclat_v2_sessions%rowtype;
+begin
+ perform public.love_require_verified_identity();
+ if p_yes is null then raise exception 'Réponse de contact requise';end if;
+ select * into v_s from public.love_eclat_v2_sessions where id=p_session for update;
+ if not found then raise exception 'Séance inconnue';end if;
+ select couple_id into v_couple from public.couple_members where user_id=v_actor;
+ if v_couple is distinct from v_s.couple_id or v_actor not in(v_s.role_a,v_s.role_b)
+  or not public.love_eclat_has_access(v_s.couple_id) then
+  raise exception 'Accès interdit' using errcode='42501';end if;
+ if p_expected_step is distinct from v_s.chapter_index then return public.love_eclat_v2_status(p_session);end if;
+ if v_s.coffret_id<>9 or v_s.state<>'active' or v_s.chapter_plan[v_s.chapter_index]<>6
+  or v_s.selected_card not in(7,8) then raise exception 'Contact non proposé ici';end if;
+ if v_s.device_mode='one' then
+  if v_actor<>v_s.role_a or (p_yes and p_joint_oral is distinct from true) then
+   raise exception 'Accord oral commun explicite requis';end if;
+  update public.love_eclat_v2_sessions set wish_contact_shared=p_yes,
+   wish_scene6=case when not p_yes and wish_scene6='with-contact' then null else wish_scene6 end,
+   updated_at=now() where id=p_session;
+ elsif p_yes then
+  insert into public.love_eclat_v2_wish_contact(session_id,user_id)
+   values(p_session,v_actor) on conflict do nothing;
+ else
+  delete from public.love_eclat_v2_wish_contact
+   where session_id=p_session and user_id=v_actor;
+  update public.love_eclat_v2_sessions
+    set wish_scene6=case when wish_scene6='with-contact' then null else wish_scene6 end,
+    updated_at=now() where id=p_session;
+ end if;
+ if not p_yes then
+  delete from public.love_eclat_v2_wish_votes
+   where session_id=p_session and scene=6 and choice='with-contact';
+ end if;
+ return public.love_eclat_v2_status(p_session);
+end;
+$$;
+-- Only matching votes by two *separate* authorized accounts commit the
+-- optional activity. One shared phone requires an explicit oral agreement.
+create function public.love_eclat_v2_wish_vote(
+ p_session uuid,p_expected_step integer,p_choice text,p_joint_oral boolean default false
+) returns jsonb language plpgsql security definer set search_path='' as $$
+declare v_actor uuid:=auth.uid();v_couple uuid;v_s public.love_eclat_v2_sessions%rowtype;
+ v_scene integer;v_votes integer;v_distinct integer;v_contact integer;v_agreed boolean:=false;
+begin
+ perform public.love_require_verified_identity();
+ if p_choice is null then raise exception 'Choix du coffre requis';end if;
+ select * into v_s from public.love_eclat_v2_sessions where id=p_session for update;
+ if not found then raise exception 'Séance inconnue';end if;
+ select couple_id into v_couple from public.couple_members where user_id=v_actor;
+ if v_couple is distinct from v_s.couple_id or v_actor not in(v_s.role_a,v_s.role_b)
+   or not public.love_eclat_has_access(v_s.couple_id) then
+  raise exception 'Accès interdit' using errcode='42501';end if;
+ if p_expected_step is distinct from v_s.chapter_index then return public.love_eclat_v2_status(p_session);end if;
+ v_scene:=v_s.chapter_plan[v_s.chapter_index];
+ if v_s.coffret_id<>9 or v_s.state<>'active' or v_scene not in(5,6,8) then
+  raise exception 'Choix du coffre indisponible';end if;
+ if v_scene=5 then
+  if v_s.selected_card is null or p_choice not in('now','later','pass')
+   then raise exception 'Choix maintenant / plus tard / passer requis';end if;
+  if v_s.wish_scene5 is not null then return public.love_eclat_v2_status(p_session);end if;
+ elsif v_scene=6 then
+  if v_s.selected_card is null or (v_s.wish_scene5 is not null and v_s.wish_scene5<>'now')
+   or (v_s.selected_card in(7,8) and p_choice not in('with-contact','without-contact','pass'))
+   or (v_s.selected_card not in(7,8) and p_choice not in('participate','pass')) then
+   raise exception 'Participation non proposée ou invalide';end if;
+  if v_s.wish_scene6 is not null then return public.love_eclat_v2_status(p_session);end if;
+  if p_choice='with-contact' then
+   if v_s.device_mode='one' then
+    if not v_s.wish_contact_shared then raise exception 'Deux Oui de contact nécessaires';end if;
+   else
+    select count(*) into v_contact from public.love_eclat_v2_wish_contact
+     where session_id=p_session and user_id in(v_s.role_a,v_s.role_b);
+    if v_contact<>2 then raise exception 'Deux Oui de contact nécessaires';end if;
+   end if;
+  end if;
+ else
+  if p_choice not in('keep','finish') then raise exception 'Choix final inconnu';end if;
+  if p_choice='keep' and (v_s.selected_card is null or
+    not (v_s.wish_scene5='later' or
+       v_s.wish_scene6 in('participate','without-contact','with-contact'))) then
+   raise exception 'Aucune invitation commune approuvée';end if;
+  if v_s.wish_scene8 is not null then return public.love_eclat_v2_status(p_session);end if;
+ end if;
+ if v_s.device_mode='one' then
+  if v_actor<>v_s.role_a or p_joint_oral is distinct from true then
+   raise exception 'Accord oral commun explicite requis';end if;
+  v_agreed:=true;
+ else
+  insert into public.love_eclat_v2_wish_votes(session_id,scene,user_id,choice)
+   values(p_session,v_scene,v_actor,p_choice)
+   on conflict(session_id,scene,user_id) do update set choice=excluded.choice;
+  select count(*),count(distinct choice) into v_votes,v_distinct
+   from public.love_eclat_v2_wish_votes
+   where session_id=p_session and scene=v_scene and user_id in(v_s.role_a,v_s.role_b);
+  v_agreed:=v_votes=2 and v_distinct=1;
+ end if;
+ if v_agreed then
+  if v_scene=5 then
+   update public.love_eclat_v2_sessions
+    set wish_scene5=p_choice,updated_at=now() where id=p_session;
+  elsif v_scene=6 then
+   update public.love_eclat_v2_sessions
+    set wish_scene6=p_choice,updated_at=now() where id=p_session;
+  else
+   update public.love_eclat_v2_sessions
+    set wish_scene8=p_choice,wish_invitation_card=
+      case when p_choice='keep' then selected_card else null end,
+      updated_at=now() where id=p_session;
+  end if;
+  delete from public.love_eclat_v2_wish_votes
+    where session_id=p_session and scene=v_scene;
+ end if;
+ return public.love_eclat_v2_status(p_session);
+end;
+$$;
+
 -- All state transitions are serializable per session lock and guarded by an
 -- expected step token. Retrying a stale next/pass NEVER advances the next scene.
 create function public.love_eclat_v2_act(
@@ -1255,6 +1410,8 @@ begin
  elsif p_action='stop' then
   delete from public.love_eclat_v2_card_choices where session_id=p_session;
   delete from public.love_eclat_v2_card_votes where session_id=p_session;
+  delete from public.love_eclat_v2_wish_votes where session_id=p_session;
+  delete from public.love_eclat_v2_wish_contact where session_id=p_session;
   delete from public.love_eclat_v2_playlist_votes where session_id=p_session;
   delete from public.love_eclat_v2_music_notes where session_id=p_session;
   update public.love_eclat_v2_sessions set state='interrupted',ended_at=now(),updated_at=now()
@@ -1269,6 +1426,15 @@ begin
   if p_action in ('continue','pass') and v_s.coffret_id=10 and
     v_s.chapter_plan[v_s.chapter_index]=1 and v_s.timer_mode is null then
    raise exception 'Choisir avec ou sans minuteur ensemble';end if;
+  if p_action='continue' and v_s.coffret_id=9 and
+    v_s.chapter_plan[v_s.chapter_index]=5 and
+    v_s.selected_card is not null and v_s.wish_scene5 is null then
+   raise exception 'Décidez ensemble maintenant, plus tard ou passer';end if;
+  if p_action='continue' and v_s.coffret_id=9 and
+    v_s.chapter_plan[v_s.chapter_index]=6 and
+    v_s.selected_card is not null and
+    (v_s.wish_scene5='now' or v_s.wish_scene5 is null) and v_s.wish_scene6 is null then
+   raise exception 'Accord de participation distinct requis';end if;
   if p_action='continue' and v_s.coffret_id=9 and
     v_s.chapter_plan[v_s.chapter_index]=1 and v_s.shared_cards is null then
    raise exception 'Attendre les deux validations privées';end if;
@@ -1330,7 +1496,16 @@ begin
   if p_action='pass' and v_s.coffret_id=6 and v_s.chapter_plan[v_s.chapter_index] in (2,3,5,6) then
    update public.love_eclat_v2_sessions set puzzle_helped=true where id=p_session;
   end if;
+  if v_s.coffret_id=9 and v_s.chapter_plan[v_s.chapter_index]=6 then
+   delete from public.love_eclat_v2_wish_contact where session_id=p_session;
+   update public.love_eclat_v2_sessions
+    set wish_contact_shared=false where id=p_session;
+  end if;
   v_finished:=v_s.chapter_index=cardinality(v_s.chapter_plan);
+  if v_finished and v_s.coffret_id=9 then
+   delete from public.love_eclat_v2_wish_votes where session_id=p_session;
+   delete from public.love_eclat_v2_wish_contact where session_id=p_session;
+  end if;
   if v_finished and v_s.coffret_id=8 then
    -- Only the consensually saved list remains; never retain unrevealed notes.
    delete from public.love_eclat_v2_playlist_votes where session_id=p_session;
@@ -1375,6 +1550,10 @@ revoke all on function public.love_eclat_v2_card_vote(uuid,integer,integer,boole
 grant execute on function public.love_eclat_v2_card_vote(uuid,integer,integer,boolean) to authenticated;
 revoke all on function public.love_eclat_v2_story_vote(uuid,integer,text,integer,boolean) from public,anon;
 grant execute on function public.love_eclat_v2_story_vote(uuid,integer,text,integer,boolean) to authenticated;
+revoke all on function public.love_eclat_v2_wish_contact_answer(uuid,integer,boolean,boolean) from public,anon;
+grant execute on function public.love_eclat_v2_wish_contact_answer(uuid,integer,boolean,boolean) to authenticated;
+revoke all on function public.love_eclat_v2_wish_vote(uuid,integer,text,boolean) from public,anon;
+grant execute on function public.love_eclat_v2_wish_vote(uuid,integer,text,boolean) to authenticated;
 revoke all on function public.love_eclat_v2_playlist_vote(uuid,integer,smallint[]) from public,anon;
 grant execute on function public.love_eclat_v2_playlist_vote(uuid,integer,smallint[]) to authenticated;
 revoke all on function public.love_eclat_v2_playlist_shared_phone(uuid,integer,jsonb,boolean) from public,anon;

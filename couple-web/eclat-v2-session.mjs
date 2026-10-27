@@ -92,6 +92,18 @@ export function createEclatV2SessionApi(client){
     p_expected_step:step(expectedStep),p_action:action,
     p_expected_rerolls:expectedRerolls,p_joint_oral:jointOral});
   },
+  wishVote:({sessionId:sid,expectedStep,choice,jointOral=false})=>{
+   if(!['now','later','pass','participate','without-contact','with-contact','keep','finish'].includes(choice)||
+      typeof jointOral!=='boolean')throw new RangeError('Choix du coffre inconnu');
+   return rpc('love_eclat_v2_wish_vote',{p_session:sessionId(sid),
+     p_expected_step:step(expectedStep),p_choice:choice,p_joint_oral:jointOral});
+  },
+  wishContact:({sessionId:sid,expectedStep,yes,jointOral=false})=>{
+   if(typeof yes!=='boolean'||typeof jointOral!=='boolean')
+    throw new RangeError('Consentement de contact invalide');
+   return rpc('love_eclat_v2_wish_contact_answer',{p_session:sessionId(sid),
+     p_expected_step:step(expectedStep),p_yes:yes,p_joint_oral:jointOral});
+  },
   playlistVote:({sessionId:sid,expectedStep,slots})=>{
    if(!Array.isArray(slots)||slots.length<1||slots.length>5||
      new Set(slots).size!==slots.length||
