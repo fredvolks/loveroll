@@ -29,6 +29,7 @@ create table public.love_eclat_v2_sessions (
  story_roles smallint check(story_roles between 1 and 6),
  story_constraint smallint check(story_constraint between 1 and 6),
  story_constraint_enabled boolean not null default true,
+ story_decision_scene smallint check(story_decision_scene in (1,6)),
  story_rerolls integer not null default 0 check(story_rerolls>=0),
  revealed_step smallint check (revealed_step between 1 and 8),
  started_at timestamptz not null default now(),
@@ -264,6 +265,7 @@ begin
     'decor',v_s.story_decor,'roles',v_s.story_roles,'constraint',v_s.story_constraint) else null end,
   'constraint_rerolls',v_s.story_rerolls,
   'constraint_enabled',v_s.story_constraint_enabled,
+  'story_decision_confirmed',coalesce(v_s.story_decision_scene=v_s.chapter_plan[v_s.chapter_index],false),
   'my_story_vote',v_story_vote,'story_reroll_history',v_story_history,
   'music_theme',v_theme,'my_music_note',v_music_note,
   'revealed_music',v_revealed_music,
@@ -825,13 +827,13 @@ begin
    v_new:=public.love_eclat_v2_die_d6();
    update public.love_eclat_v2_sessions
     set story_constraint=v_new,story_rerolls=story_rerolls+1,
-       story_constraint_enabled=true,updated_at=now() where id=p_session;
+       story_constraint_enabled=true,story_decision_scene=v_scene,updated_at=now() where id=p_session;
    insert into public.love_eclat_v2_story_history
     (session_id,sequence,scene_number,previous_face,next_face)
    values(p_session,v_s.story_rerolls+1,v_scene,v_s.story_constraint,v_new);
   else
    update public.love_eclat_v2_sessions
-    set story_constraint_enabled=p_action='keep',updated_at=now() where id=p_session;
+    set story_constraint_enabled=p_action='keep',story_decision_scene=v_scene,updated_at=now() where id=p_session;
   end if;
   delete from public.love_eclat_v2_story_votes
     where session_id=p_session and scene_number=v_scene;
@@ -875,6 +877,10 @@ begin
   if p_action='continue' and v_actor<>v_s.role_a then
    raise exception 'Seul le contrôleur de séance peut avancer';end if;
   v_type:=public.love_eclat_v2_scene_type(v_s.coffret_id,v_s.chapter_plan[v_s.chapter_index]);
+  if p_action='continue' and v_s.coffret_id=12 and
+    v_s.chapter_plan[v_s.chapter_index] in (1,6) and
+    v_s.story_decision_scene is distinct from v_s.chapter_plan[v_s.chapter_index] then
+   raise exception 'Attendre un choix commun de la contrainte';end if;
   if p_action='continue' and v_s.coffret_id=5 and v_s.chapter_plan[v_s.chapter_index]=6
    and not exists(select 1 from public.love_eclat_v2_attentions
     where session_id=p_session and step_index=v_s.chapter_index

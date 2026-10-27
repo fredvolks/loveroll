@@ -15,6 +15,12 @@ begin
  then raise exception 'Initial D6 values out of range';end if;
  if public.love_eclat_v2_status(sid)->'story_dice'<>d
  then raise exception 'Reconnection rerolled story dice';end if;
+ begin
+  perform public.love_eclat_v2_act(sid,1,'continue');
+  raise exception 'Advanced without joint story decision';
+ exception when raise_exception then
+  if sqlerrm<>'Attendre un choix commun de la contrainte' then raise;end if;
+ end;
  s:=public.love_eclat_v2_story_vote(sid,1,'reroll',0);
  if s->>'constraint_rerolls'<>'0' then raise exception 'Single vote rerolled';end if;
  if s->>'my_story_vote'<>'reroll' then raise exception 'Own vote unavailable';end if;
@@ -27,7 +33,7 @@ begin
  s:=public.love_eclat_v2_story_vote(sid,1,'keep',0);
  if s->>'constraint_rerolls'<>'0' then raise exception 'Disagreement forced roll';end if;
  s:=public.love_eclat_v2_story_vote(sid,1,'reroll',0);
- if s->>'constraint_rerolls'<>'1' or jsonb_array_length(s->'story_reroll_history')<>1
+ if s->>'constraint_rerolls'<>'1' or s->>'story_decision_confirmed'<>'true' or jsonb_array_length(s->'story_reroll_history')<>1
  then raise exception 'Two distinct voters failed reroll';end if;
 end $$;
 set request.jwt.claim.sub='00000000-0000-0000-0000-000000000001';
