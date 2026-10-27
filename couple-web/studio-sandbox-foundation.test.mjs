@@ -30,6 +30,12 @@ test('only registered test couples and identities are eligible for deletion',()=
  assert.match(schema,/public\.love_studio_test_seats/);
  assert.match(schema,/auth\.role\(\) IS DISTINCT FROM 'service_role'/);
  assert.match(schema,/Membre réel détecté/);
+ assert.match(schema,/public\.love_user_library_backup/);
+ assert.match(schema,/Lien vers un utilisateur ou un couple réel/);
+ assert.match(schema,/x\.source_couple_id=v_pool\.couple_id/);
+ assert.match(schema,/s\.admin_id=p_admin AND s\.user_id=x\.user_id/);
+ assert.match(schema,/x\.referrer_couple_id IS NOT NULL/);
+
  assert.match(schema,/GRANT EXECUTE ON FUNCTION public\.love_studio_purge_test_couple/);
  assert.match(source,/service\.rpc\('love_studio_purge_test_couple'/);
  assert.match(source,/service\.auth\.admin\.deleteUser/);

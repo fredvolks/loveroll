@@ -42,6 +42,60 @@ BEGIN
         WHERE s.admin_id=p_admin AND s.user_id=cm.user_id
       )
     ) THEN RAISE EXCEPTION 'Membre réel détecté : suppression bloquée'; END IF;
+    -- A Studio test must never delete, detach or alter a real user's
+    -- records merely because a corrupted row points to the synthetic pair.
+    -- If an external user/couple was ever linked, ABORT the entire transaction.
+    IF EXISTS (
+      SELECT 1 FROM public.love_user_library_backup x
+      WHERE x.source_couple_id=v_pool.couple_id AND NOT EXISTS (
+        SELECT 1 FROM public.love_studio_test_seats s
+        WHERE s.admin_id=p_admin AND s.user_id=x.user_id
+      )
+    ) OR EXISTS (
+      SELECT 1 FROM public.love_trial_identity_claims x
+      WHERE x.first_trial_couple_id=v_pool.couple_id AND NOT EXISTS (
+        SELECT 1 FROM public.love_studio_test_seats s
+        WHERE s.admin_id=p_admin AND s.user_id=x.user_id
+      )
+    ) OR EXISTS (
+      SELECT 1 FROM public.love_referral_links x
+      WHERE x.couple_id=v_pool.couple_id AND NOT EXISTS (
+        SELECT 1 FROM public.love_studio_test_seats s
+        WHERE s.admin_id=p_admin AND s.user_id=x.user_id
+      )
+    ) OR EXISTS (
+      SELECT 1 FROM public.love_referral_credit_ledger x
+      WHERE x.beneficiary_couple_id=v_pool.couple_id AND (
+        (x.claim_couple_id IS NOT NULL AND x.claim_couple_id<>v_pool.couple_id)
+        OR (x.beneficiary_user_id IS NOT NULL AND NOT EXISTS (
+          SELECT 1 FROM public.love_studio_test_seats s
+          WHERE s.admin_id=p_admin AND s.user_id=x.beneficiary_user_id
+        ))
+      )
+    ) OR EXISTS (
+      SELECT 1 FROM public.love_referral_claims x
+      WHERE (x.referrer_couple_id=v_pool.couple_id OR x.referred_couple_id=v_pool.couple_id)
+        AND (
+          (x.referrer_couple_id IS NOT NULL AND x.referrer_couple_id<>v_pool.couple_id)
+          OR (x.referred_couple_id IS NOT NULL AND x.referred_couple_id<>v_pool.couple_id)
+          OR (x.referrer_user_id IS NOT NULL AND NOT EXISTS (
+            SELECT 1 FROM public.love_studio_test_seats s
+            WHERE s.admin_id=p_admin AND s.user_id=x.referrer_user_id
+          ))
+          OR (x.referred_owner_id IS NOT NULL AND NOT EXISTS (
+            SELECT 1 FROM public.love_studio_test_seats s
+            WHERE s.admin_id=p_admin AND s.user_id=x.referred_owner_id
+          ))
+        )
+    ) THEN
+      RAISE EXCEPTION 'Lien vers un utilisateur ou un couple réel : suppression du banc bloquée';
+    END IF;
+    -- This NO ACTION FK must be cleared ONLY for registered synthetic users.
+    DELETE FROM public.love_user_library_backup x
+    WHERE x.source_couple_id=v_pool.couple_id AND EXISTS (
+      SELECT 1 FROM public.love_studio_test_seats s
+      WHERE s.admin_id=p_admin AND s.user_id=x.user_id
+    );
     -- Restrict/NO ACTION references must be removed before deleting the couple.
     DELETE FROM public.love_couple_free_trials
     WHERE couple_id=v_pool.couple_id;
