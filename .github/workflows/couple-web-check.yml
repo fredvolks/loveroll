@@ -430,6 +430,8 @@ jobs:
       - name: Verify REAL public discover and invitation on Android / iPhone responsive widths
         run: node couple-web/actual-discover-visual-check.cjs
 
+      - name: Confirm Soirée category dialog without remounting the real D100 on phone/iPad
+        run: node couple-web/evening-category-confirm-browser-check.cjs
       - name: Verify real couple Evening and Surprise in WebGL at S25 sizes
         run: |
           node couple-web/premium-couple-visual-check.cjs
