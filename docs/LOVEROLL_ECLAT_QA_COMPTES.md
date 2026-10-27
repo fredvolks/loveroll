@@ -16,7 +16,8 @@ La commande de provisionnement n'est **pas** activée dans la version publique.
 
 - Le nettoyage traverse Auth et plusieurs tables Postgres : **ce n'est pas une transaction atomique**. En cas d'échec, la paire passe à `failed` et un nouvel appel `delete` est nécessaire. Auditer les éventuels fichiers Storage et références non cascades dans le vrai schéma QA avant tout premier déploiement.
 - La révocation d'un utilisateur invalide ses refresh tokens mais le JWT déjà émis peut rester valide jusqu'à expiration. Garder une TTL courte dans QA et ne jamais connecter les comptes à la production.
-- Les contrôles du front Super Admin pour piloter `create/list/delete` restent à raccorder; la fonction n'est pas une preuve de provisionnement opérationnel.
-- Ne pas annoncer QA prêt, ne pas fusionner ni publier cette PR sur la seule base des tests Node/PG jetables.
+- **Le panneau Super Admin est maintenant raccordé en branche** : connexion avec un troisième compte opérateur QA indépendant, création, liste, nettoyage manuel des expirations et suppression d'une paire spécifique (après déconnexion des joueurs). Les mots de passe générés sont affichés une seule fois et effacés à la déconnexion. Cette interface ne prouve pas que le serveur est déployé ou que le duo possède un abonnement QA.
+- Le code de gardes serveur vit dans `supabase/functions/_shared/loveroll-qa-guards.mjs`; l'Edge Function utilise ce module partagé, pas une importation hors de son arborescence de déploiement.
+- **Pas encore testé en vrai** : démarrage Edge sur un Supabase QA désigné, droits Premium du duo, tables et Storage non cascades, extinction des sessions actives, tests iPad/Android, suppression complète d'une paire. Les actions CRUD Auth n'ont pas été invoquées contre une base Supabase dans ce lot. Ne pas fusionner ni publier cette PR sur les seuls tests Node/PG jetables.
 
 Référence officielle : Supabase Auth Admin API : création/suppression uniquement depuis un serveur approuvé. 
