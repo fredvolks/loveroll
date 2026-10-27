@@ -11,17 +11,7 @@ export function fitSoireeHomeTemplate(root){
  if(playing||waiting)return;
  const view=root.querySelector('.evening-premium-view.is-inactive');
  if(!view)return;
- if(matchMedia('(min-width:768px)').matches){
-  // One transparent WebGL die over the shared Android v202 photograph:
-  // the zero-size marker aligns it to the pedestal ALREADY in the image.
-  const hero=view.querySelector('.evening-finale-hero');
-  if(hero&&!hero.querySelector('.soiree-pedestal-marker'))
-   hero.insertAdjacentHTML('beforeend','<div class="soiree-pedestal-marker" aria-hidden="true"><span class="home-pedestal-contact"></span></div>');
-  const fit=()=>{if(view.isConnected)fitTabletRomanceStage(root);};
-  observer=new ResizeObserver(fit);observer.observe(root);fit();
-  return;
- }
- if(!matchMedia('(max-width:767px)').matches)return;
+ if(!matchMedia('(max-width:1199px), (pointer:coarse) and (min-width:768px)').matches)return;
  view.classList.add('has-home-soiree-template');
  const care=view.querySelector('.evening-aftercare'),actions=care.querySelector('.evening-finale-actions');
  if(!care.querySelector('.evening-summary-shell')){
@@ -49,7 +39,8 @@ export function fitSoireeHomeTemplate(root){
  }
  const fit=()=>{
   if(!view.isConnected){observer?.disconnect();return;}
-  fitSharedStage(root);
+  if(matchMedia('(min-width:768px)').matches)fitTabletRomanceStage(root);
+  else fitSharedStage(root);
  };
  observer=new ResizeObserver(fit);observer.observe(root);fit();document.fonts.ready.then(fit);
 }
