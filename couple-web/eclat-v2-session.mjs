@@ -53,6 +53,17 @@ export function createEclatV2SessionApi(client){
    return rpc('love_eclat_v2_choose_door',{p_session:sessionId(sid),p_expected_step:step(expectedStep),
     p_door:door,p_joint_oral:jointOral});
   },
+  timerMode:({sessionId:sid,expectedStep,mode,jointOral=false})=>{
+   if(!['with','without'].includes(mode)||typeof jointOral!=='boolean')
+    throw new RangeError('Mode minuteur invalide');
+   return rpc('love_eclat_v2_timer_mode',{p_session:sessionId(sid),
+      p_expected_step:step(expectedStep),p_mode:mode,p_joint_oral:jointOral});
+  },
+  timerAction:({sessionId:sid,expectedStep,action})=>{
+   if(!['start','pause','resume','extend'].includes(action))throw new RangeError('Action minuteur inconnue');
+   return rpc('love_eclat_v2_timer_action',{p_session:sessionId(sid),
+      p_expected_step:step(expectedStep),p_action:action});
+  },
   cardsSubmit:({sessionId:sid,expectedStep,cards})=>{
    if(!Array.isArray(cards)||cards.length>3||new Set(cards).size!==cards.length||
        cards.some(n=>!Number.isInteger(n)||n<1||n>12))
