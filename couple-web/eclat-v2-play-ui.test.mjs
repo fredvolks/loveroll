@@ -277,3 +277,26 @@ test('09 shared phone requires two ephemeral choices before joint submission',()
   sharedCardDraft:picks,sharedCardConfirmed:['A','B']});
  assert.match(both,/data-eclat-v2-action="wish-reveal-joint"/);
 });
+
+test('10 clock never auto-finishes and offers explicit timed or untimed rounds',()=>{
+ const base=status(10,0,30,1,{timer_mode:null,timer_remaining_seconds:null});
+ const choose=renderEclatV2PlayA({status:base,viewerId:aid});
+ assert.match(choose,/data-eclat-v2-action="timer-mode:with"/);
+ assert.match(choose,/data-eclat-v2-action="timer-mode:without"/);
+ assert.doesNotMatch(choose,/data-eclat-v2-action="act:continue"/);
+ const starting=renderEclatV2PlayA({status:{...base,timer_mode:'with'},viewerId:aid});
+ assert.match(starting,/01:30/);
+ assert.match(starting,/data-eclat-v2-action="timer-action:start"/);
+ const running=renderEclatV2PlayA({status:{...base,timer_mode:'with',timer_running:true,timer_remaining_seconds:63},viewerId:aid});
+ assert.match(running,/01:03/);
+ assert.match(running,/data-eclat-v2-action="timer-action:pause"/);
+ const paused=renderEclatV2PlayA({status:{...base,timer_mode:'with',timer_running:false,timer_remaining_seconds:61},viewerId:aid});
+ assert.match(paused,/data-eclat-v2-action="timer-action:resume"/);
+ const elapsed=renderEclatV2PlayA({status:{...base,timer_mode:'with',timer_running:true,timer_remaining_seconds:0},viewerId:aid});
+ assert.match(elapsed,/Le temps indicatif est écoulé/);
+ assert.match(elapsed,/data-eclat-v2-action="timer-action:extend"/);
+ const without=renderEclatV2PlayA({status:{...base,timer_mode:'without'},viewerId:aid});
+ assert.doesNotMatch(without,/timer-action:start/);
+ const two=renderEclatV2PlayA({status:status(10,1,90,4,{timer_mode:'with'}),viewerId:aid});
+ assert.match(two,/03:00/);
+});

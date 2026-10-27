@@ -13,6 +13,34 @@ function mainContent(view,status,predictionDraft={},puzzleDraft={},puzzleAttempt
   '<p class="eclat-v2-instruction">'+esc(view.instruction)+'</p>';
  if(view.substepTotal)html+='<p class="eclat-v2-muted">'+(view.coffretId===1?'Enveloppe':view.coffretId===5?'Tour':'Partie')+
   ' '+view.substepIndex+' sur '+view.substepTotal+' de ce moment</p>';
+ if(view.coffretId===10){
+  html+='<section class="eclat-v2-task" aria-label="Minuteur facultatif">';
+  if(view.sceneNumber===1&&!status.timer_mode){
+   html+='<h3>Avec ou sans minuteur ?</h3>'+
+    '<p>Chacun choisit; le mode ne sera fixé qu’après un accord des deux.</p>'+
+    btn('timer-mode:with','Avec minuteur')+btn('timer-mode:without','Sans minuteur');
+   if(status.my_timer_vote)html+='<p role="status">Choix transmis. Votre partenaire doit confirmer le même mode.</p>';
+  }else if(status.timer_mode==='without'){
+   html+='<p>Sans minuteur : prenez le temps qui vous convient.</p>';
+  }else if(view.timerSeconds){
+   const seconds=status.timer_remaining_seconds??view.timerSeconds;
+   const clock=String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0');
+   html+='<h3>Manche · '+view.timerSeconds+' secondes indicatives</h3>'+
+    '<p class="eclat-v2-timer" role="timer" aria-live="off">'+clock+'</p>';
+   if(status.timer_remaining_seconds===null||status.timer_remaining_seconds===undefined)
+    html+=btn('timer-action:start','Démarrer le minuteur','primary');
+   else if(seconds===0){
+    html+='<p role="status">Le temps indicatif est écoulé. Rien ne se termine automatiquement.</p>'+
+     btn('timer-action:extend','Prolonger 1 minute','primary');
+   }else if(status.timer_running)
+    html+=btn('timer-action:pause','Mettre le minuteur en pause');
+   else html+=btn('timer-action:resume','Reprendre le minuteur','primary');
+   if(view.perPerson)html+='<p>90 secondes par partenaire.</p>';
+   if(view.oralFinaleUntimed)html+='<p>Terminez cette scène oralement, sans minuterie.</p>';
+  }
+  if(view.fallback)html+='<p>'+esc(view.fallback)+'</p>';
+  html+='</section>';
+ }
  if(view.coffretId===9&&view.cards?.length){
   const selected=status.device_mode==='one'?(sharedCardDraft[view.role]||[]):cardDraft,
     validated=status.device_mode==='one'?sharedCardConfirmed.includes(view.role):
@@ -329,9 +357,10 @@ function actions(view,status,seenRoles,sharedConfirmed=[]){
  const wishLocked=view.coffretId===9&&
   ((view.sceneNumber===1&&status.common_cards===null)||
    (view.sceneNumber===3&&view.commonCards?.length>0&&!view.selectedCard));
+ const timerLocked=view.coffretId===10&&view.sceneNumber===1&&!status.timer_mode;
  const storyLocked=view.coffretId===12&&!!view.rerollConstraintOnly&&
   (!status.story_decision_confirmed||view.dicePending);
- if(!secretLocked&&!pendingDoor&&!view.awaitBranch&&!puzzleLocked&&!attentionLocked&&!storyLocked&&!wishLocked){
+ if(!secretLocked&&!pendingDoor&&!view.awaitBranch&&!puzzleLocked&&!attentionLocked&&!storyLocked&&!wishLocked&&!timerLocked){
   if(view.role==='A')rows+=btn('act:continue',view.type==='Finale'?
    'Terminer ensemble après notre accord':'Continuer ensemble après notre accord','primary');
   else rows+='<span role="status">Après votre accord oral, A pourra continuer cette scène commune.</span>';

@@ -98,3 +98,13 @@ test('09 card gateway carries only own picks or explicit common intersection',as
  assert.ok(calls.every(x=>!JSON.stringify(x[1]).includes('user_id')));
  assert.throws(()=>api.cardsSubmit({sessionId:sid,expectedStep:1,cards:[1,1]}),RangeError);
 });
+
+test('10 timer gateway authorizes only mode choice and four actions',async()=>{
+ const calls=[],api=createEclatV2SessionApi({async rpc(name,args){calls.push([name,args]);return {data:status};}});
+ await api.timerMode({sessionId:sid,expectedStep:1,mode:'with'});
+ await api.timerAction({sessionId:sid,expectedStep:1,action:'pause'});
+ assert.deepEqual(calls.map(x=>x[0]),['love_eclat_v2_timer_mode','love_eclat_v2_timer_action']);
+ assert.equal(calls[0][1].p_joint_oral,false);
+ assert.throws(()=>api.timerMode({sessionId:sid,expectedStep:1,mode:'superfast'}),RangeError);
+ assert.throws(()=>api.timerAction({sessionId:sid,expectedStep:1,action:'autofinish'}),RangeError);
+});

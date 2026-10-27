@@ -14,8 +14,16 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
  let musicDraft={title:null,artist:null},sharedMusicNotes={},sharedRevealedMusic=[];
  let cardDraft=initialStatus.my_cards||[];
  let sharedCardDraft={A:[],B:[]},sharedCardConfirmed=new Set();
+ let timerAnchorMs=Date.now();
+ const timedStatus=()=>{
+  if(status.coffret_id!==10||!status.timer_running||
+     !Number.isInteger(status.timer_remaining_seconds))return status;
+  const left=Math.max(0,status.timer_remaining_seconds-
+     Math.floor((Date.now()-timerAnchorMs)/1000));
+  return {...status,timer_remaining_seconds:left,timer_expired:left===0};
+ };
  const paint=()=>{if(!disposed)root.innerHTML=renderEclatV2PlayA({
-  status,viewerId,localRole:role,seenRoles:[...seen],predictionDraft,puzzleDraft,puzzleAttempt,
+  status:timedStatus(),viewerId,localRole:role,seenRoles:[...seen],predictionDraft,puzzleDraft,puzzleAttempt,
   sharedAnswers,sharedConfirmed:[...sharedConfirmed],sharedReveal,
   musicDraft,sharedMusicNotes,sharedRevealedMusic,
   cardDraft,sharedCardDraft,sharedCardConfirmed:[...sharedCardConfirmed]});};
@@ -24,7 +32,7 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
   const updated=await api.status(status.session_id);
   if(updated.session_id!==status.session_id)throw Error('Séance Éclat remplacée');
   const changed=updated.chapter_index!==status.chapter_index||updated.substep_index!==status.substep_index;
-  status=updated;
+  status=updated;timerAnchorMs=Date.now();
   if(changed){
    musicDraft={title:null,artist:null};
    role=null;seen=new Set();predictionDraft={answer:null,prediction:null};
@@ -131,6 +139,15 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
       !Number.isInteger(card)||card<1||card>12)return;
     next=await api.cardVote({sessionId:sid,expectedStep:idx,card,
      jointOral:status.device_mode==='one'});
+   }else if(command.startsWith('timer-mode:')){
+    const mode=command.slice('timer-mode:'.length);
+    if(status.coffret_id!==10||!['with','without'].includes(mode))return;
+    next=await api.timerMode({sessionId:sid,expectedStep:idx,mode,
+      jointOral:status.device_mode==='one'});
+   }else if(command.startsWith('timer-action:')){
+    const action=command.slice('timer-action:'.length);
+    if(status.coffret_id!==10||!['start','pause','resume','extend'].includes(action))return;
+    next=await api.timerAction({sessionId:sid,expectedStep:idx,action});
    }else if(command.startsWith('story-vote:')){
     const action=command.slice('story-vote:'.length);
     if(status.coffret_id!==12||!['keep','reroll','off'].includes(action))return;
@@ -202,7 +219,7 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
     cardDraft=next.my_cards||[];sharedCardDraft={A:[],B:[]};sharedCardConfirmed.clear();
    }
    if(next.revealed && status.device_mode==='one')role=null;
-   status=next;paint();
+   status=next;timerAnchorMs=Date.now();paint();
   }catch(err){onError(err);}finally{busy=false;}
  }
  function input(event){
@@ -214,11 +231,17 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
   musicDraft={...musicDraft,[k==='music-title'?'title':'artist']:String(element.value).slice(0,120)};
   // Do not repaint on each keystroke: cursor/IME must remain stable.
  }
+ const ticker=status.coffret_id===10?globalThis.setInterval?.(()=>{
+  if(!disposed&&status.timer_running&&status.state==='active')paint();
+ },1000):null;
+ ticker?.unref?.();
  root.addEventListener('input',input);
  root.addEventListener('click',click);
  paint();
  return Object.freeze({refresh,destroy(){
-  disposed=true;root.removeEventListener('click',click);root.removeEventListener('input',input);
+  disposed=true;
+  if(ticker!==null&&ticker!==undefined)globalThis.clearInterval?.(ticker);
+  root.removeEventListener('click',click);root.removeEventListener('input',input);
   sharedAnswers=emptyShared();sharedConfirmed.clear();sharedReveal=null;
   musicDraft={title:null,artist:null};sharedMusicNotes={};sharedRevealedMusic=[];
   cardDraft=[];sharedCardDraft={A:[],B:[]};sharedCardConfirmed.clear();
