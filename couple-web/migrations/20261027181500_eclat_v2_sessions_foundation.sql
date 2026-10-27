@@ -42,6 +42,7 @@ create table public.love_eclat_v2_sessions (
  wish_scene6 text check(wish_scene6 in ('participate','without-contact','with-contact','pass')),
  wish_scene8 text check(wish_scene8 in ('keep','finish')),
  wish_invitation_card smallint check(wish_invitation_card between 1 and 12),
+ wish_invitation_text text check(wish_invitation_text is null or char_length(wish_invitation_text) between 1 and 240),
  wish_contact_shared boolean not null default false,
  revealed_step smallint check (revealed_step between 1 and 8),
  started_at timestamptz not null default now(),
@@ -192,6 +193,14 @@ create table public.love_eclat_v2_wish_contact (
  user_id uuid not null references auth.users(id),
  primary key(session_id,user_id)
 );
+create table public.love_eclat_v2_wish_phrase_votes (
+ session_id uuid not null references public.love_eclat_v2_sessions(id) on delete cascade,
+ user_id uuid not null references auth.users(id),
+ phrase text not null check(char_length(phrase) between 1 and 240),
+ primary key(session_id,user_id)
+);
+alter table public.love_eclat_v2_wish_phrase_votes enable row level security;
+revoke all on public.love_eclat_v2_wish_phrase_votes from public,anon,authenticated;
 alter table public.love_eclat_v2_wish_votes enable row level security;
 alter table public.love_eclat_v2_wish_contact enable row level security;
 revoke all on public.love_eclat_v2_wish_votes from public,anon,authenticated;
@@ -265,7 +274,7 @@ declare
  v_music_note jsonb;v_revealed_music jsonb;v_theme integer;
  v_my_playlist smallint[];
  v_story_vote text;v_story_history jsonb;v_my_cards smallint[];v_my_card_ready boolean;
- v_my_wish_vote text;v_my_wish_contact boolean;v_wish_yes integer;
+ v_my_wish_vote text;v_my_wish_contact boolean;v_wish_yes integer;v_my_wish_phrase text;
  v_timer_vote text;v_timer_remaining integer;
 begin
  perform public.love_require_verified_identity();
@@ -314,6 +323,8 @@ begin
     order by theme,user_id),'[]'::jsonb) into v_revealed_music
    from public.love_eclat_v2_music_notes where session_id=v_s.id and revealed=true;
  end if;
+ select phrase into v_my_wish_phrase from public.love_eclat_v2_wish_phrase_votes
+   where session_id=v_s.id and user_id=v_actor;
  select choice into v_my_wish_vote from public.love_eclat_v2_wish_votes
   where session_id=v_s.id and scene=v_s.chapter_plan[v_s.chapter_index] and user_id=v_actor;
  select exists(select 1 from public.love_eclat_v2_wish_contact
@@ -361,6 +372,7 @@ begin
   'my_playlist_slots',v_my_playlist,'playlist_shared',v_s.playlist_shared,
   'wish_scene5',v_s.wish_scene5,'wish_scene6',v_s.wish_scene6,
   'wish_scene8',v_s.wish_scene8,'wish_invitation_card',v_s.wish_invitation_card,
+  'wish_invitation_text',v_s.wish_invitation_text,'my_wish_phrase',v_my_wish_phrase,
   'my_wish_vote',v_my_wish_vote,'my_wish_contact',v_my_wish_contact,
   'wish_contact_approved',case when v_s.device_mode='one' then v_s.wish_contact_shared
     else v_wish_yes=2 end,
@@ -1378,6 +1390,51 @@ begin
 end;
 $$;
 
+-- Optional common invitation phrase. Pending text is never readable by
+-- the other user, and the public phrase requires two identical approvals.
+create function public.love_eclat_v2_wish_phrase(
+ p_session uuid,p_expected_step integer,p_phrase text,p_joint_oral boolean default false
+) returns jsonb language plpgsql security definer set search_path='' as $$
+declare v_actor uuid:=auth.uid();v_couple uuid;v_s public.love_eclat_v2_sessions%rowtype;
+ v_count integer;v_different integer;v_text text;
+begin
+ perform public.love_require_verified_identity();
+ if p_phrase is null or char_length(btrim(p_phrase)) not between 1 and 240 then
+  raise exception 'Phrase commune invalide';end if;
+ v_text:=btrim(p_phrase);
+ select * into v_s from public.love_eclat_v2_sessions where id=p_session for update;
+ if not found then raise exception 'Séance inconnue';end if;
+ select couple_id into v_couple from public.couple_members where user_id=v_actor;
+ if v_couple is distinct from v_s.couple_id or v_actor not in(v_s.role_a,v_s.role_b)
+   or not public.love_eclat_has_access(v_s.couple_id) then
+  raise exception 'Accès interdit' using errcode='42501';end if;
+ if p_expected_step is distinct from v_s.chapter_index then return public.love_eclat_v2_status(p_session);end if;
+ if v_s.coffret_id<>9 or v_s.state<>'active' or v_s.chapter_plan[v_s.chapter_index]<>8 or
+   v_s.wish_scene8<>'keep' or v_s.wish_invitation_card is null then
+  raise exception 'Invitation commune non confirmée';end if;
+ if v_s.wish_invitation_text is not null then return public.love_eclat_v2_status(p_session);end if;
+ if v_s.device_mode='one' then
+  if v_actor<>v_s.role_a or p_joint_oral is distinct from true then
+   raise exception 'Accord oral commun explicite requis';end if;
+  update public.love_eclat_v2_sessions set wish_invitation_text=v_text,updated_at=now()
+   where id=p_session;
+ else
+  insert into public.love_eclat_v2_wish_phrase_votes(session_id,user_id,phrase)
+   values(p_session,v_actor,v_text)
+   on conflict(session_id,user_id) do update set phrase=excluded.phrase;
+  select count(*),count(distinct phrase) into v_count,v_different
+   from public.love_eclat_v2_wish_phrase_votes
+   where session_id=p_session and user_id in(v_s.role_a,v_s.role_b);
+  if v_count=2 and v_different=1 then
+   update public.love_eclat_v2_sessions set wish_invitation_text=v_text,updated_at=now()
+    where id=p_session;
+   delete from public.love_eclat_v2_wish_phrase_votes where session_id=p_session;
+  end if;
+ end if;
+ return public.love_eclat_v2_status(p_session);
+end;
+$$;
+
 -- All state transitions are serializable per session lock and guarded by an
 -- expected step token. Retrying a stale next/pass NEVER advances the next scene.
 create function public.love_eclat_v2_act(
@@ -1410,11 +1467,12 @@ begin
  elsif p_action='stop' then
   delete from public.love_eclat_v2_card_choices where session_id=p_session;
   delete from public.love_eclat_v2_card_votes where session_id=p_session;
+  delete from public.love_eclat_v2_wish_phrase_votes where session_id=p_session;
   delete from public.love_eclat_v2_wish_votes where session_id=p_session;
   delete from public.love_eclat_v2_wish_contact where session_id=p_session;
   update public.love_eclat_v2_sessions set
     wish_scene5=null,wish_scene6=null,wish_scene8=null,
-    wish_invitation_card=null,wish_contact_shared=false where id=p_session;
+    wish_invitation_card=null,wish_invitation_text=null,wish_contact_shared=false where id=p_session;
   delete from public.love_eclat_v2_playlist_votes where session_id=p_session;
   delete from public.love_eclat_v2_music_notes where session_id=p_session;
   update public.love_eclat_v2_sessions set state='interrupted',ended_at=now(),updated_at=now()
@@ -1506,6 +1564,7 @@ begin
   end if;
   v_finished:=v_s.chapter_index=cardinality(v_s.chapter_plan);
   if v_finished and v_s.coffret_id=9 then
+   delete from public.love_eclat_v2_wish_phrase_votes where session_id=p_session;
    delete from public.love_eclat_v2_wish_votes where session_id=p_session;
    delete from public.love_eclat_v2_wish_contact where session_id=p_session;
    -- Refusals and intermediate choices must never become lasting preferences.
@@ -1558,6 +1617,8 @@ revoke all on function public.love_eclat_v2_card_vote(uuid,integer,integer,boole
 grant execute on function public.love_eclat_v2_card_vote(uuid,integer,integer,boolean) to authenticated;
 revoke all on function public.love_eclat_v2_story_vote(uuid,integer,text,integer,boolean) from public,anon;
 grant execute on function public.love_eclat_v2_story_vote(uuid,integer,text,integer,boolean) to authenticated;
+revoke all on function public.love_eclat_v2_wish_phrase(uuid,integer,text,boolean) from public,anon;
+grant execute on function public.love_eclat_v2_wish_phrase(uuid,integer,text,boolean) to authenticated;
 revoke all on function public.love_eclat_v2_wish_contact_answer(uuid,integer,boolean,boolean) from public,anon;
 grant execute on function public.love_eclat_v2_wish_contact_answer(uuid,integer,boolean,boolean) to authenticated;
 revoke all on function public.love_eclat_v2_wish_vote(uuid,integer,text,boolean) from public,anon;

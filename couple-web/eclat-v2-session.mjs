@@ -92,6 +92,12 @@ export function createEclatV2SessionApi(client){
     p_expected_step:step(expectedStep),p_action:action,
     p_expected_rerolls:expectedRerolls,p_joint_oral:jointOral});
   },
+  wishPhrase:({sessionId:sid,expectedStep,phrase,jointOral=false})=>{
+   if(typeof phrase!=='string'||!phrase.trim()||phrase.trim().length>240||
+     typeof jointOral!=='boolean')throw new RangeError('Phrase commune invalide');
+   return rpc('love_eclat_v2_wish_phrase',{p_session:sessionId(sid),
+     p_expected_step:step(expectedStep),p_phrase:phrase.trim(),p_joint_oral:jointOral});
+  },
   wishVote:({sessionId:sid,expectedStep,choice,jointOral=false})=>{
    if(!['now','later','pass','participate','without-contact','with-contact','keep','finish'].includes(choice)||
       typeof jointOral!=='boolean')throw new RangeError('Choix du coffre inconnu');
