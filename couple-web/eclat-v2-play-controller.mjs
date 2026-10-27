@@ -16,6 +16,7 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
  let sharedCardDraft={A:[],B:[]},sharedCardConfirmed=new Set();
  let playlistDraft=Array.isArray(initialStatus.my_playlist_slots)?
   [...initialStatus.my_playlist_slots]:[];
+ let wishPhraseDraft=null;
  let timerAnchorMs=Date.now();
  const timedStatus=()=>{
   if(status.coffret_id!==10||!status.timer_running||
@@ -28,17 +29,19 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
   status:timedStatus(),viewerId,localRole:role,seenRoles:[...seen],predictionDraft,puzzleDraft,puzzleAttempt,
   sharedAnswers,sharedConfirmed:[...sharedConfirmed],sharedReveal,
   musicDraft,sharedMusicNotes,sharedRevealedMusic,
-  cardDraft,sharedCardDraft,sharedCardConfirmed:[...sharedCardConfirmed],playlistDraft});};
+  cardDraft,sharedCardDraft,sharedCardConfirmed:[...sharedCardConfirmed],playlistDraft,wishPhraseDraft});};
  async function refresh(){
   if(disposed)return;
   const updated=await api.status(status.session_id);
   if(updated.session_id!==status.session_id)throw Error('Séance Éclat remplacée');
   const changed=updated.chapter_index!==status.chapter_index||updated.substep_index!==status.substep_index;
   status=updated;timerAnchorMs=Date.now();
+  if(updated.wish_invitation_text)wishPhraseDraft=null;
   if(updated.playlist_shared)playlistDraft=[];
   else if(updated.chapter_number===8&&Array.isArray(updated.my_playlist_slots))
    playlistDraft=[...updated.my_playlist_slots];
   if(changed){
+   wishPhraseDraft=null;
    musicDraft={title:null,artist:null};
    role=null;seen=new Set();predictionDraft={answer:null,prediction:null};
    puzzleDraft={place:null,time:null,code:null};puzzleAttempt=null;
@@ -154,7 +157,16 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
   try{
    const sid=status.session_id,idx=status.chapter_index;
    let next;
-   if(command.startsWith('wish-choice:')){
+   if(command==='wish-phrase-save'){
+    if(status.coffret_id!==9||status.chapter_number!==8||
+      !status.wish_invitation_card||status.wish_invitation_text||
+      status.device_mode==='one'&&role!=='A')return;
+    const phrase=(wishPhraseDraft??status.my_wish_phrase??'').trim();
+    if(!phrase||phrase.length>240)return;
+    next=await api.wishPhrase({sessionId:sid,expectedStep:idx,phrase,
+      jointOral:status.device_mode==='one'});
+    wishPhraseDraft=null;
+   }else if(command.startsWith('wish-choice:')){
     const choice=command.slice('wish-choice:'.length);
     if(status.coffret_id!==9||
       !['now','later','pass','participate','without-contact','with-contact','keep','finish'].includes(choice))return;
@@ -277,11 +289,13 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
    }
    if(next.revealed && status.device_mode==='one')role=null;
    status=next;timerAnchorMs=Date.now();
+   if(next.wish_invitation_text)wishPhraseDraft=null;
    if(next.playlist_shared){
     playlistDraft=[];
     if(status.device_mode==='one'){sharedMusicNotes={};sharedRevealedMusic=[];musicDraft={title:null,artist:null};}
    }
    if(!next.active){
+    wishPhraseDraft=null;
     sharedMusicNotes={};sharedRevealedMusic=[];musicDraft={title:null,artist:null};
     sharedAnswers=emptyShared();sharedConfirmed.clear();sharedReveal=null;
     sharedCardDraft={A:[],B:[]};sharedCardConfirmed.clear();playlistDraft=[];
@@ -291,9 +305,14 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
  }
  function input(event){
   const element=event.target;
-  if(disposed||status.coffret_id!==8||status.state!=='active'||!element?.getAttribute)return;
+  if(disposed||status.state!=='active'||!element?.getAttribute)return;
   const k=element.getAttribute('data-eclat-v2-input');
-  if(k!=='music-title'&&k!=='music-artist')return;
+  if(k==='wish-phrase'&&status.coffret_id===9&&status.chapter_number===8){
+   if(status.device_mode==='one'&&role!=='A')return;
+   wishPhraseDraft=String(element.value).slice(0,240);
+   return;
+  }
+  if(status.coffret_id!==8||k!=='music-title'&&k!=='music-artist')return;
   if(status.device_mode==='one'&&!['A','B'].includes(role))return;
   musicDraft={...musicDraft,[k==='music-title'?'title':'artist']:String(element.value).slice(0,120)};
   // Do not repaint on each keystroke: cursor/IME must remain stable.
@@ -312,7 +331,7 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
   sharedAnswers=emptyShared();sharedConfirmed.clear();sharedReveal=null;
   musicDraft={title:null,artist:null};sharedMusicNotes={};sharedRevealedMusic=[];
   cardDraft=[];sharedCardDraft={A:[],B:[]};sharedCardConfirmed.clear();
-  playlistDraft=[];
+  playlistDraft=[];wishPhraseDraft=null;
   root.innerHTML='';
  },getStatus(){return status;}});
 }

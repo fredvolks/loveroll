@@ -430,3 +430,21 @@ test('09 completed play shows only approved invitation, never intermediate refus
  assert.match(declined,/sans invitation à conserver/);
  assert.doesNotMatch(declined,/Votre invitation commune/);
 });
+
+test('09 optional phrase only displays once both approve, never exposes one private draft',()=>{
+ const s=status(9,0,60,8,{selected_card:7,common_cards:[7],
+  wish_invitation_card:7,wish_scene8:'keep',wish_invitation_text:null});
+ const a=renderEclatV2PlayA({status:{...s,my_wish_phrase:'Une belle idée'},viewerId:aid});
+ assert.match(a,/data-eclat-v2-input="wish-phrase"/);
+ assert.match(a,/Une belle idée/);
+ assert.match(a,/wish-phrase-save/);
+ const b=renderEclatV2PlayA({status:{...s,my_wish_phrase:null},viewerId:bid});
+ assert.doesNotMatch(b,/Une belle idée/);
+ const agreed=renderEclatV2PlayA({status:{...s,wish_invitation_text:'Notre <surprise> & demain'},viewerId:aid});
+ assert.match(agreed,/Notre &lt;surprise&gt; &amp; demain/);
+ assert.doesNotMatch(agreed,/wish-phrase-save/);
+ const end=renderEclatV2PlayA({status:{...s,active:false,state:'finished',
+    wish_invitation_text:'Notre <surprise> & demain'},viewerId:bid});
+ assert.match(end,/Notre &lt;surprise&gt; &amp; demain/);
+ assert.doesNotMatch(end,/my_wish_phrase/);
+});

@@ -9,7 +9,7 @@ const esc =value=>String(value??'').replace(/[&<>"']/g,ch=>
  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const btn=(action,label,style='')=>'<button type="button" class="eclat-v2-btn '+style+'" data-eclat-v2-action="'+esc(action)+'">'+esc(label)+'</button>';
 const paragraph=s=>'<p>'+esc(s)+'</p>';
-function mainContent(view,status,predictionDraft={},puzzleDraft={},puzzleAttempt=null,sharedAnswers={},sharedConfirmed=[],sharedReveal=null,musicDraft={},sharedMusicNotes={},sharedRevealedMusic=[],cardDraft=[],sharedCardDraft={},sharedCardConfirmed=[],playlistDraft=[]){
+function mainContent(view,status,predictionDraft={},puzzleDraft={},puzzleAttempt=null,sharedAnswers={},sharedConfirmed=[],sharedReveal=null,musicDraft={},sharedMusicNotes={},sharedRevealedMusic=[],cardDraft=[],sharedCardDraft={},sharedCardConfirmed=[],playlistDraft=[],wishPhraseDraft=null){
  let html='<h2>'+esc(view.title)+'</h2>'+
   '<p class="eclat-v2-instruction">'+esc(view.instruction)+'</p>';
  if(view.substepTotal)html+='<p class="eclat-v2-muted">'+(view.coffretId===1?'Enveloppe':view.coffretId===5?'Tour':'Partie')+
@@ -158,9 +158,23 @@ function mainContent(view,status,predictionDraft={},puzzleDraft={},puzzleAttempt
     html+=btn('wish-contact:no','Retirer immédiatement mon Oui au contact');
   }else{
    html+='<h3>Garder une invitation commune ?</h3>';
-   if(status.wish_invitation_card&&card)
+   if(status.wish_invitation_card&&card){
     html+='<p role="status">Votre invitation commune : '+esc(card.title)+
      '. Aucune réservation, aucun achat ni rappel automatique.</p>';
+    if(status.wish_invitation_text)
+     html+='<blockquote class="eclat-v2-phrase">'+paragraph(status.wish_invitation_text)+'</blockquote>';
+    else{
+     html+='<p>Une petite phrase commune est facultative : terminer sans l’écrire reste une vraie finale.</p>';
+     if(roleCanAct){
+      const value=wishPhraseDraft??status.my_wish_phrase??'';
+      html+='<label for="eclat-v2-wish-phrase">Notre phrase commune (facultative)</label>'+
+       '<textarea id="eclat-v2-wish-phrase" data-eclat-v2-input="wish-phrase" maxlength="240" rows="3" autocomplete="off">'+esc(value)+'</textarea>';
+      if(value.trim())html+=btn('wish-phrase-save','Proposer cette phrase pour approbation','primary');
+      if(status.my_wish_phrase)
+       html+='<p role="status">Votre phrase a été enregistrée en privé; l’autre partenaire doit proposer exactement la même pour la partager.</p>';
+     }
+    }
+   }
    else if(s8==='finish')html+='<p>Vous terminez sans souvenir sauvegardé.</p>';
    else{
     const eligible=card&&(s5==='later'||['participate','without-contact','with-contact'].includes(s6));
@@ -506,7 +520,7 @@ function actions(view,status,seenRoles,sharedConfirmed=[]){
  rows+=btn('act:stop','Arrêter cette séance');
  return rows;
 }
-export function renderEclatV2PlayA({status,viewerId,localRole=null,seenRoles=[],predictionDraft={},puzzleDraft={},puzzleAttempt=null,sharedAnswers={},sharedConfirmed=[],sharedReveal=null,musicDraft={},sharedMusicNotes={},sharedRevealedMusic=[],cardDraft=[],sharedCardDraft={},sharedCardConfirmed=[],playlistDraft=[]}){
+export function renderEclatV2PlayA({status,viewerId,localRole=null,seenRoles=[],predictionDraft={},puzzleDraft={},puzzleAttempt=null,sharedAnswers={},sharedConfirmed=[],sharedReveal=null,musicDraft={},sharedMusicNotes={},sharedRevealedMusic=[],cardDraft=[],sharedCardDraft={},sharedCardConfirmed=[],playlistDraft=[],wishPhraseDraft=null}){
  if(!status?.access)return '<section class="eclat-v2-stage"><p>Accès Éclat requis.</p></section>';
  if(!status.active){
   if(status.coffret_id===8&&status.state==='finished'&&Array.isArray(status.playlist_shared)){
@@ -527,6 +541,7 @@ export function renderEclatV2PlayA({status,viewerId,localRole=null,seenRoles=[],
    return '<section class="eclat-v2-stage" aria-label="Finale du coffre des envies">'+
     '<h2>Le coffre des envies</h2>'+
     (title?'<p>Votre invitation commune : <strong>'+esc(title)+'</strong></p>'+
+       (status.wish_invitation_text?'<blockquote class="eclat-v2-phrase">'+paragraph(status.wish_invitation_text)+'</blockquote>':'')+
        '<p>Cette invitation ne déclenche aucun achat, réservation ou rappel.</p>':
        '<p>Ce coffre est terminé sans invitation à conserver. Vos choix personnels ne sont pas révélés.</p>')+
     '</section>';
@@ -550,7 +565,7 @@ export function renderEclatV2PlayA({status,viewerId,localRole=null,seenRoles=[],
   ' · '+view.variantName+'</small><p>Étape '+view.number+' sur '+view.total+
   ' · '+view.budgetMinutes+' min indicatives</p></header>'+
   (status.device_mode==='one'?'<nav class="eclat-v2-handover-link">'+btn('hide-role','Masquer et passer le téléphone')+'</nav>':'')+
-  '<div class="eclat-v2-content">'+mainContent(view,status,predictionDraft,puzzleDraft,puzzleAttempt,sharedAnswers,sharedConfirmed,sharedReveal,musicDraft,sharedMusicNotes,sharedRevealedMusic,cardDraft,sharedCardDraft,sharedCardConfirmed,playlistDraft)+'</div>'+
+  '<div class="eclat-v2-content">'+mainContent(view,status,predictionDraft,puzzleDraft,puzzleAttempt,sharedAnswers,sharedConfirmed,sharedReveal,musicDraft,sharedMusicNotes,sharedRevealedMusic,cardDraft,sharedCardDraft,sharedCardConfirmed,playlistDraft,wishPhraseDraft)+'</div>'+
   '<footer class="eclat-v2-actions">'+actions(view,status,seenRoles,sharedConfirmed)+'</footer>'+
   '<p class="eclat-v2-muted">Toutes les activités sont facultatives. Aucun score. Aucun contact sans accord explicite.</p>'+
   '</section>';
