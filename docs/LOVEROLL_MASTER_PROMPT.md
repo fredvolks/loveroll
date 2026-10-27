@@ -728,3 +728,12 @@ Inscrire preuves et avancement dans le suivi; cette demande documentaire n'est p
 
 **Implémentation :** auditer d'abord les compteurs hebdomadaires, le serveur Supabase, le D6 des partenaires, le cycle de cartes et l'architecture des Réglages ; ensuite réaliser en PR dédiée avec migration compatible si nécessaire. Cette section exprime la demande produit et n'atteste d'aucun développement livré.
 
+
+
+## LR-046 — Résultats D6 et D100 immédiatement lisibles sur les vrais dés WebGL (26 octobre 2026)
+
+- Après tout tirage officiel, présenter la face gagnante comme surface visuelle principale, presque face caméra; conserver un angle modéré montrant le dessus et un côté (volume naturel). Le D6 ne doit plus montrer deux faces avec une importance comparable. Le D100 doit exposer ses chiffres gravés à l'endroit et faciles à reconnaître, y compris les valeurs à deux et trois chiffres.
+- Calculer la pose d'arrivée à partir de la **normale géométrique de chaque face** et du repère utilisé pour graver ses points/chiffres; pas de traitement propre au seul résultat 2. La caméra sur photographie a une élévation différente de celle d'une scène ordinaire.
+- Utiliser comme cible de la décélération existante le quaternion définitif; ne jamais corriger la face par un saut de rotation après le freinage. Verrouiller cette pose durant l'affichage, les rafraîchissements UI, la restauration d'une valeur officielle et le rechargement.
+- Ne **jamais** modifier la valeur officielle Supabase, les probabilités, la correspondance des faces, les tirages, les modèles, les matériaux rubis, les gravures, la dimension, le centrage ni le contact avec le marbre. Pas d'overlay de résultat servant à masquer un défaut WebGL.
+- Acceptation : D6 1–6 et plusieurs faces D100 (dont 1, 2, 9, 10, 47, 99, 100) testés sur téléphone, tablette et PC; le résultat officiel est bien la face physique dominante, inscriptions droites; captures réelles avant/après et preuve d'absence de régression du socle, de l'animation et de la persistance. Livrer sur main selon les autorisations en vigueur après CI et confirmer la version effectivement publiée.
