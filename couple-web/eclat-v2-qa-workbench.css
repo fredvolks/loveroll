@@ -1,0 +1,35 @@
+/* Éclat QA in protected owner Studio: iPad/desktop split-screen, narrow single column. */
+.eclat-qa-panel{color:#f9e8ef;display:grid;gap:18px}
+.eclat-qa-panel[hidden],.eclat-qa-panel [hidden]{display:none!important}
+.eclat-qa-intro{background:linear-gradient(125deg,#57203c,#2d1127);border:1px solid #96536d;
+ border-radius:19px;padding:clamp(16px,3vw,28px)}
+.eclat-qa-intro span{letter-spacing:.14em;font-size:.75rem;font-weight:800;color:#ffbfdd}
+.eclat-qa-intro h2{color:#fff;font-size:clamp(1.4rem,2.8vw,2rem);margin:8px 0}
+.eclat-qa-intro p{max-width:70ch;line-height:1.55}
+.eclat-qa-warning,.eclat-qa-hint{background:#381c30;border:1px solid #855369;
+ border-radius:13px;padding:13px 15px;color:#f5dee9;line-height:1.5}
+.eclat-qa-config,.eclat-qa-people form,.eclat-qa-toolbar{background:#311727;
+ border:1px solid #875069;border-radius:15px;padding:17px}
+.eclat-qa-config,.eclat-qa-people form{display:grid;gap:12px}
+.eclat-qa-panel label{display:grid;gap:6px;color:#f7e5ec;font-size:.95rem}
+.eclat-qa-panel input,.eclat-qa-panel select{width:100%;box-sizing:border-box;min-height:46px;
+ border:1px solid #ab7189;border-radius:10px;background:#281421;color:#fff;
+ font:inherit;padding:10px}
+.eclat-qa-panel button{min-height:46px;cursor:pointer}
+.eclat-qa-people{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;margin-bottom:12px}
+.eclat-qa-people h3{margin:0;color:#fff}
+.eclat-qa-toolbar{display:flex;flex-wrap:wrap;align-items:end;gap:10px}
+.eclat-qa-toolbar label{flex:1 1 140px}
+.eclat-qa-toolbar button{flex:1 1 190px}
+.eclat-qa-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.eclat-qa-player{min-width:0;padding:10px;border-radius:17px;background:#230f20;border:1px solid #91506b}
+.eclat-qa-player>h3{margin:0 0 12px;color:#fff}
+.eclat-qa-player .eclat-v2-stage{max-width:none;min-height:450px;padding:clamp(12px,2vw,22px)}
+.eclat-qa-status{margin:0;padding:13px;border-radius:11px;background:#44243a;color:#fff;
+ overflow-wrap:anywhere}
+.eclat-qa-status[data-error="true"]{border:1px solid #f5a3a3;color:#ffe5e5}
+@media(max-width:1280px){.eclat-qa-grid{grid-template-columns:1fr}}
+@media(max-width:720px){.eclat-qa-people{grid-template-columns:1fr}
+ .eclat-qa-toolbar button{flex-basis:100%}
+ .eclat-qa-player{padding:5px}
+ .eclat-qa-config,.eclat-qa-toolbar,.eclat-qa-people form{padding:12px}}
