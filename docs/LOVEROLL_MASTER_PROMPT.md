@@ -1,8 +1,32 @@
 # LoveRoll — PROMPT MAÎTRE OFFICIEL
 > Version documentaire 2026-10-26 · Dépôt officiel : [fredvolks/loveroll](https://github.com/fredvolks/loveroll) · Statut initial : **demandé / à auditer**, pas « terminé ».
 
+
+
+## Priorité immédiate — rétablir la publication Web et terminer les lots (26 octobre 2026)
+
+**Instruction de livraison approuvée :** dans le périmètre des exigences déjà approuvées, l'agent peut sortir les PR de brouillon, intégrer les dépendances compatibles, résoudre les conflits, fusionner après les validations requises et publier les lots fonctionnels sans redemander « continue » ou une autorisation de fusion déjà couverte par cette instruction. Les protections GitHub et les contrôles de sécurité continuent de s'appliquer. Aucun contournement de contrôle requis, changement de prix ou opération destructive n'est autorisé par ce paragraphe.
+
+1. **Priorité P0 de livraison :** réparer le pipeline Pages avant d'accumuler d'autres fonctionnalités. La PR #47 corrige le décompte obsolète des boutons de fin de soirée; vérifier sa tête, son diff, les tests et ses dépendances, intégrer la correction puis suivre le vrai déploiement main jusqu'à sa conclusion. Son numéro est un repère historique : revalider son état réel.
+2. **Un lot validé va jusqu'à la livraison :** recontrôler la compatibilité serveur/client, les migrations et les droits; sortir de brouillon lorsque prêt; fusionner; suivre les workflows; vérifier le site publié. Ne pas garder un lot prêt en brouillon pour la seule raison qu'aucune seconde permission n'a été demandée.
+3. **Ne pas tout fusionner ensemble :** conserver les travaux ouverts, ordonner les PR empilées, publier des lots complets et indépendants. Une dépendance manquante ou un vrai risque est documenté précisément; poursuivre les lots indépendants.
+4. **Tests proportionnés :** exécuter les vérifications utiles au changement et tous les contrôles requis. Réutiliser les résultats du même code lorsqu'ils restent valides; ne pas recommencer un audit global ni relancer une suite identique sans changement pertinent, échec ou doute concret. Ne pas désactiver un test pour publier.
+5. **Versions honnêtes :** pour une livraison applicative, harmoniser le numéro Web affiché, le manifeste de version et les clés de cache pertinentes selon la convention du projet. Ne pas incrémenter une version pour masquer un déploiement absent. Vérifier les assets et le comportement servis, pas seulement le JSON.
+6. **Compte rendu :** fournir version réellement servie, commit publié, workflow final, parcours accessibles et limites restantes. Une CI de PR verte ou une modification documentaire n'est pas un déploiement.
+7. **Notes historiques :** les anciennes mentions « garder main inchangé », « ne pas fusionner sans autorisation » ou « attendre une autorisation » dans les passations décrivent leur contexte initial. Cette instruction constitue l'autorisation pour les lots approuvés et validés de son périmètre; elle ne remplace pas une protection GitHub, un blocage technique ou une demande d'approbation réellement nouvelle.
+
+## Guide de lecture et règles de coordination — consolidation du 26 octobre 2026
+- **Demandes et critères :** ce prompt. **Avancement courant et preuves :** [suivi officiel](./LOVEROLL_SUIVI.md). **Entrées non triées :** [nouvelles demandes](./LOVEROLL_NOUVELLES_DEMANDES.md). Les notes de PR ci-dessous sont des instantanés datés; vérifier le dernier état GitHub avant toute décision.
+- **Accueil :** vue d'ensemble, D6 hebdomadaire et raccourcis (LR-ACCUEIL-001). **Soirée :** déroulement du jeu, dés individuels, défis et minuteries (LR-014 à LR-028). **Surprise :** rendez-vous mensuel, lieux et planification (LR-SURPRISE-001). **Éclat :** expérience/coffrets existants, avec leurs droits actuels.
+- **Demandes approuvées :** les sections identifiées de ce document, y compris LR-017 à LR-019, LR-025 à LR-028, LR-SURPRISE-001 et LR-ACCUEIL-001. Les autres suggestions d'un rapport restent des propositions. LR-033 n'impose pas de redemander l'autorisation pour une exigence déjà approuvée ici.
+- **Conflits :** appliquer les précisions explicites des nouvelles sections uniquement à leur périmètre. LR-019 précise l'exception des favoris à LR-015; les exclusions volontaires restent prioritaires. LR-SURPRISE-001 autorise budget/km null sans préférence luxe. LR-ACCUEIL-001 précise le rôle fonctionnel de l'Accueil tout en conservant sa référence graphique.
+- **Un seul ordre d'exécution courant :** (1) récupérer l'état réel de main/branches/PR/CI et préserver les travaux; (2) finaliser les correctifs P0 LR-001 à LR-004 et les erreurs de fiabilité Geoapify documentées sous LR-SURPRISE-001; (3) intégrer les lots déjà ouverts compatibles, puis LR-015/016 ensemble pour le parcours et les quotas; (4) LR-018, LR-019, LR-017, LR-025, LR-026/027/028 selon leurs dépendances; (5) LR-ACCUEIL-001 puis la suite du parcours LR-SURPRISE-001; (6) compléter harmonisation et audit. Responsive, sécurité, tests et preuves s'appliquent à chaque lot, pas seulement à la fin. Les anciens ordres plus bas servent de contexte historique.
+- **Exécution continue pendant la session :** enchaîner les lots autorisés sans réclamer « continue ». Après un push, identifier les workflows, les suivre jusqu'à leur état final, analyser les journaux en cas d'échec et corriger. Un test lancé n'est pas une livraison. Déployer les lots compatibles et validés dans le périmètre autorisé; vérifier la version et le parcours publiés. Un blocage d'appareil physique se note explicitement et n'empêche pas les autres travaux indépendants. Ne pas prétendre poursuivre après la fin de session.
+- **États distincts :** spécifié / implémenté / testé (automatique, émulation, appareil réel) / fusionné / déployé et vérifié. Une fusion ou une CI verte ne vaut pas validation physique. Ne pas inventer de progression à partir du nombre de commits.
+- **Repères :** [P0](#p0--correctifs-fonctionnels), [Accueil](#lr-accueil-001--accueil-vue-densemble-et-raccourcis-soirée-parcours-de-jeu), [Surprise](#lr-surprise-001--rendez-vous-surprise-premium-d100-et-geoapify), [suivi](./LOVEROLL_SUIVI.md).
+
 ## Comment utiliser ce document
-Ce document est la **source de vérité des demandes** concernant le correctif du D100, les minuteries, la cohérence graphique et le responsive. Il ne signifie **pas** que ces exigences sont implémentées. Chaque exigence possède un identifiant LR-xxx repris dans [LOVEROLL_SUIVI.md](./LOVEROLL_SUIVI.md).
+Ce document est la **source de vérité des demandes** LoveRoll : jeu, Accueil, Soirée, Surprise/Geoapify, minuteries, confidentialité, cohérence graphique et responsive. Il ne signifie **pas** que ces exigences sont implémentées. Chaque exigence possède un identifiant LR-xxx repris dans [LOVEROLL_SUIVI.md](./LOVEROLL_SUIVI.md).
 
 - Ajouter des demandes dans [LOVEROLL_NOUVELLES_DEMANDES.md](./LOVEROLL_NOUVELLES_DEMANDES.md) ou ouvrir une **Issue** GitHub ; ne pas effacer les demandes anciennes.
 - Lors du prochain développement, lire ce document, le suivi, les nouvelles demandes, le README et le code réel avant de modifier quoi que ce soit.
@@ -10,7 +34,7 @@ Ce document est la **source de vérité des demandes** concernant le correctif d
 - Ne pas modifier silencieusement les règles commerciales, les abonnements, la progression ou le contenu des défis.
 
 ## Identité et périmètre
-**Produit :** LoveRoll, expérience romantique à deux sur Android et PWA (Safari iPhone/iPad, navigateurs PC/tablettes). **Dépôt :** fredvolks/loveroll, et non le dépôt historique Mon Wallet. **Code :** PWA dans `couple-web/`, Android dans `app/`. La page **Accueil actuelle** est la **référence graphique et fonctionnelle** : rubis, bordeaux, rose et doré, rideaux, chandelles, roses, marbre, logo LoveRoll, effets de verre et boutons Premium.
+**Produit :** LoveRoll, expérience romantique à deux sur Android et PWA (Safari iPhone/iPad, navigateurs PC/tablettes). **Dépôt :** fredvolks/loveroll, et non le dépôt historique Mon Wallet. **Code :** PWA dans `couple-web/`, Android dans `app/`. La page **Accueil actuelle** est la **référence graphique** (les responsabilités fonctionnelles sont précisées sous LR-ACCUEIL-001) : rubis, bordeaux, rose et doré, rideaux, chandelles, roses, marbre, logo LoveRoll, effets de verre et boutons Premium.
 
 ### Rôles attendus de l'agent exécutant
 Travailler simultanément comme développeur senior Web/Android/PWA/WebGL, directeur artistique haut de gamme, expert UX/UI/accessibilité, testeur QA multiplateforme et **couple utilisateur** (un partenaire expérimenté et un peu moins technophile). Identifier les vrais irritants d'usage, pas uniquement les anomalies CSS. Faire des propositions vérifiables, avec priorité et raison, en conservant l'ambiance romantique.
@@ -113,7 +137,7 @@ En l'absence de catégorie pour le défi/D100, la zone doit suggérer **visuelle
 9. Double-clic/double-tap, lenteur réseau, états de tour/quota refusés → pas de tirage doublé.
 10. Captures et tests navigation/safe areas Android, iPhone, iPad et PC.
 
-**Statut de cette demande :** **À faire — ajout au cahier des charges uniquement**, aucune fonction n'est déclarée implémentée par la mise à jour documentaire. Conserver LR-013 et toutes les règles de catégorie existantes.
+**Statut documentaire LR-014 :** spécification approuvée, travail partiel référencé plus haut. Consulter le suivi et GitHub pour l'avancement courant; ni cette spécification ni une PR ne prouvent une livraison. Conserver LR-013 et toutes les règles de catégorie existantes.
 
 
 ### LR-015 — Défis : « Passer », « Refuser », exclusion volontaire et retour dans la pige (nouvelle demande du 26 octobre 2026)
@@ -259,6 +283,48 @@ En l'absence de catégorie pour le défi/D100, la zone doit suggérer **visuelle
 
 **Remise en pige exceptionnelle déjà effectuée séparément pour le couple demandeur (26 octobre 2026) :** les entrées de blocage des cartes précédemment tirées ont été réinitialisées de façon ciblée, sans altérer les défis archivés, les comptes ni la soirée active. Cette opération **ne marque pas les cartes en favoris**. Il ne faut **pas la répéter** ni l'appliquer à d'autres couples. Les informations de compte et de base personnelle doivent rester hors de ce dépôt public ; conserver le détail uniquement dans les résultats de la session d'administration autorisée.
 
+
+#### Précision approuvée — maximum 5 favoris communs, remplacement et calendrier (26 octobre 2026)
+
+Cette précision complète LR-019 et prévaut sur toute formulation antérieure suggérant une liste de favoris illimitée.
+
+**Liste commune et plafond**
+- Le couple dispose d'une seule liste de **5 défis favoris maximum, toutes catégories confondues** (Sensuel + Sexuel, sans multiplier le plafond par catégorie, partenaire, appareil ou soirée). Conserver la portée commune du favori déjà définie dans LR-019.
+- Chacun des deux partenaires peut ajouter, retirer ou remplacer un favori, dans Réglages ou depuis une carte accessible. Ce droit n'est pas réservé à l'admin. Enregistrer qui a ajouté la carte sans en faire une réservation pour cette personne.
+- Compter des définitions de cartes distinctes par identifiant stable/catégorie/version pertinente, jamais les faces aléatoires du D100 ou les occurrences du calendrier. La même carte favorite dans plusieurs soirées n'occupe qu'une place.
+- Afficher un compteur « Nos coups de cœur · 3/5 ». Un cœur déjà présent permet de retirer le favori, sans doublon.
+
+**Ajout après une soirée et depuis le calendrier**
+- Après une soirée clôturée, chacun peut consulter les défis historiques de soi ou du partenaire déjà autorisés dans le calendrier commun et les ajouter aux favoris. « Défis passés » signifie ici anciens défis; ne pas limiter cette fonction au statut « Passé ».
+- Depuis Calendrier → soirée clôturée → défis de [partenaire], proposer « ♡ Ajouter aux favoris » / « ♥ Retirer des favoris ». Même possibilité sur ses propres cartes et dans le bilan de fin de soirée.
+- Respecter les droits de lecture historiques existants : aucune révélation de la liste privée, des cartes encore secrètes ou des résultats d'une soirée ouverte pour permettre cet ajout. Les notes privées demeurent privées.
+- Conserver titre, consigne, attribution et historique; l'ajout d'un cœur ne marque jamais un défi réalisé et ne consomme aucune passe, aucun défi ni aucune soirée.
+- Si une carte historique n'existe plus dans le catalogue actif, expliquer qu'elle est indisponible; ne pas recréer ou publier automatiquement son texte privé, ni promettre sa repige.
+
+**Quand les 5 places sont occupées — notification interactive avec retrait direct**
+- Au sixième ajout, ouvrir **directement une fenêtre de notification dans l'app** : « Vous avez déjà 5 défis en favoris. Lequel voulez-vous retirer pour ajouter ce nouveau défi ? ».
+- **Afficher immédiatement les 5 favoris dans cette même notification**, chacun avec son titre, sa catégorie, un accès à sa consigne et un bouton de retrait visible sur sa propre ligne. Afficher aussi le titre de la nouvelle carte à ajouter et le compteur 5/5.
+- Le couple ne doit pas avoir à toucher « Voir nos favoris », ouvrir une deuxième fenêtre, aller dans Réglages ou rechercher lui-même la carte à retirer.
+- Bouton de chaque carte : **« Retirer et ajouter le nouveau »**, avec un nom accessible qui précise la carte retirée et celle ajoutée. Un seul appui volontaire effectue le remplacement directement depuis la notification; aucune seconde confirmation obligatoire.
+- Effectuer retrait + ajout dans une seule transaction serveur : si la nouvelle carte n'est plus admissible ou si le remplacement échoue, conserver l'ancien favori. Afficher un état de chargement contre le double appui puis la liste officielle actualisée et une confirmation sobre de réussite; gérer une réponse perdue par relecture serveur plutôt que répéter aveuglément.
+- Bouton **« Annuler »** ou fermeture sans choix : aucune carte supprimée et aucun ajout. Aucun retrait automatique ou préselectionné.
+- Si le partenaire modifie la liste pendant l'affichage, actualiser les 5 cartes depuis l'état officiel. Ne jamais retirer une carte différente de celle explicitement sélectionnée. Si une place s'est libérée, proposer « Ajouter ce défi ».
+- L'interface est une notification interactive / modale LoveRoll, pas un toast éphémère ni une notification système Push. Sur petit écran, la liste peut défiler dans la fenêtre tout en gardant les commandes accessibles; les 5 favoris sont présents dans la fenêtre dès son ouverture.
+- La gestion depuis Réglages reste disponible en complément. Synchroniser compteur et cœurs sur les deux comptes. Aucun Push sensible ni message externe pour ce quota.
+
+**Réglages et tirage**
+- Ajouter **Réglages → Jeu → Nos coups de cœur** (ou emplacement équivalent dans l'arborescence officielle), avec les 5 cartes, leur catégorie, le compteur et les commandes de retrait/remplacement.
+- Texte explicatif : « Un favori peut revenir dans une prochaine pige. Il ne garantit pas qui le pigera, qui fera le défi ou qui le recevra. Les règles d'attribution restent applicables. »
+- Conserver les règles LR-019 : retour possible dès une prochaine soirée même après réalisation, aucune garantie de sortie ni pondération supérieure, pas de repige dans la soirée courante, exclusions volontaires prioritaires et absence de double crédit de carte unique.
+- Conserver en particulier les restrictions femme → homme / homme → femme et les autres rôles configurés. Un cœur ajouté sur la carte du partenaire ne transfère pas ses rôles à la personne qui l'a marqué.
+- Retirer le favori rend à la carte son régime normal; cela n'efface pas les réalisations, ne réinitialise pas le cycle et ne garantit pas qu'elle pourra ressortir.
+
+**Contrôles et migration**
+- Imposer le plafond côté serveur, avec contrôle d'appartenance au couple, unicité et verrou transactionnel. Deux ajouts simultanés à 4/5 ne doivent jamais produire 6 favoris. Double-clic et nouvelle tentative sont idempotents.
+- Si une liste existante dépasse déjà 5, conserver ses données et demander aux membres de choisir les 5 à garder; bloquer les nouveaux ajouts tant que la sélection n'est pas régularisée. Ne pas supprimer arbitrairement des favoris historiques.
+- Tester 0→5, sixième ajout, retrait, remplacement/annulation/échec, doublon de carte historique, mélange des catégories, deux membres/deux appareils, cartes des deux partenaires dans le calendrier après clôture, refus d'accès à un autre couple, restrictions d'attribution et non-révélation d'une soirée ouverte.
+- Inscrire preuves et état réel au suivi. Cette précision est une spécification, pas une fonctionnalité déjà livrée.
+
 ### LR-025 — Mode discrétion / cacher le jeu (idée no 6)
 - Dans les fiches de défis/Soirée, proposer un bouton discret **« Masquer »** et éventuellement un raccourci tactile pour masquer immédiatement l'activité affichée.
 - L'écran de confidentialité doit cacher **titres, catégories sensibles, consignes, progression intime et éventuellement noms de cartes**. Afficher à la place un écran neutre LoveRoll (logo et bouton **« Revenir au jeu »**) sans notifications ou previews explicites.
@@ -267,7 +333,9 @@ En l'absence de catégorie pour le défi/D100, la zone doit suggérer **visuelle
 - Synchronisation : préférence de présentation **locale à l'appareil**, sans masquer de force l'écran du partenaire.
 - Tests : retour, verrouillage, actualisation, changement d'onglet, Android/iOS/PC, accessibilité.
 
-**Avancement LR-025 :** [PR #44](https://github.com/fredvolks/loveroll/pull/44), mode masqué local, boutons dans Soirée et cartes, tests Node/Chromium. Encore en brouillon, CI et confidentialité Push/audio/tests physiques à confirmer ; **pas de publication confirmée**.\n\n### LR-026 — Variété intelligente sans répétitions de défis semblables (idée no 7)
+**Avancement LR-025 :** [PR #44](https://github.com/fredvolks/loveroll/pull/44), mode masqué local, boutons dans Soirée et cartes, tests Node/Chromium. Encore en brouillon, CI et confidentialité Push/audio/tests physiques à confirmer ; **pas de publication confirmée**.
+
+### LR-026 — Variété intelligente sans répétitions de défis semblables (idée no 7)
 - Empêcher autant que possible de proposer deux fois de suite, dans une **même soirée**, des cartes quasiment identiques en activité ou instructions.
 - Mettre en place des **tags structurés explicites** (thème, durée, type d'activité, intensité, matériel si requis) ou déduire une similarité locale maîtrisée ; ne pas baser la sécurité métier sur une requête IA probabiliste payante non prévue.
 - Construire le filtrage à partir des **cartes admissibles** uniquement ; respecter **catégorie tirée, droits, préférences, rôles, règles de non-répétition et exclusions** ainsi que les mécanismes de hasard D100 existants.
@@ -362,7 +430,7 @@ Respecter authentification, compte couple, autorisations Premium, synchronisatio
 
 ## Audit en cours
 
-Une [revue rapide de code avec 7 propositions d'amélioration à valider](./LOVEROLL_PROPOSITIONS_AMELIORATIONS_20261026.md) complète la présente spécification LR-016. **Ces propositions ne sont pas encore des exigences approuvées** et ne doivent pas être codées automatiquement.
+Une [revue rapide de code](./LOVEROLL_PROPOSITIONS_AMELIORATIONS_20261026.md) complète cette spécification. Ses idées 3 à 8 ont été approuvées et détaillées sous LR-017 à LR-019 et LR-025 à LR-027; l'invitation est approuvée sous LR-028. Les autres propositions restent à valider, sauf exigence explicite ultérieure de ce document.
 
 Le [rapport UX/UI du 26 octobre 2026](./LOVEROLL_AUDIT_UX_UI_20261026.md) est un constat technique **provisoire** (designer + couple). Il complète ce prompt sans changer ses exigences. Les nouvelles demandes à traiter dans [LOVEROLL_NOUVELLES_DEMANDES.md](./LOVEROLL_NOUVELLES_DEMANDES.md) restent prioritaires lors des revues futures.
 
@@ -400,7 +468,7 @@ Le [rapport UX/UI du 26 octobre 2026](./LOVEROLL_AUDIT_UX_UI_20261026.md) est un
 | LR-025 | [PR #44](https://github.com/fredvolks/loveroll/pull/44), écran neutre local et boutons Masquer, CI réussi | Vérification physique iOS/Android, confidentialité des notifications/audio, fusion/déploiement |
 | LR-026–028 | Spécifications approuvées | Variété de pige, hiérarchie d'action, invitation Oui/Non/Peut-être avec stockage privé et Push facultatif |
 
-**Ordre de continuation à appliquer :**
+**Ordre de continuation historique (consulter le guide de coordination pour l'ordre courant) :**
 1. Résoudre les conflits et valider les PR P0/P1 déjà ouvertes, sans fusionner à l'aveugle. Conserver les tests visuels du D100 et de l'Accueil.
 2. Terminer LR-015 côté SQL/RPC avant d'exposer des boutons Passer/Refuser : aucun nouveau défi fantôme, pas de dépassement de quota, un seul tour, exclusion par couple et conservation de l'historique.
 3. Intégrer LR-016 côté UI et tests de concurrence, en conservant Refuser illimité même après 3 passes ; déployer la migration seulement avec une version client compatible.
@@ -410,7 +478,7 @@ Le [rapport UX/UI du 26 octobre 2026](./LOVEROLL_AUDIT_UX_UI_20261026.md) est un
 
 **Contraintes permanentes :** le bouton Passer consomme un quota mensuel propre au destinataire, Refuser reste libre ; les favoris ne deviennent éligibles qu'à partir d'une prochaine soirée et ne contournent jamais les exclusions ; l'invitation Oui n'exécute pas le D6 à la place du partenaire ; masquer le jeu ne modifie pas ses données. Conserver les tarifs, abonnements, comptes, thèmes, dés 3D et le visuel Accueil sans modification hors demande explicite.
 
-## Ordre d'exécution souhaité
+## Ordre d'exécution initial — historique, complété par le guide de coordination
 1. Identifier code réel et branches, établir captures initiales, figer les régressions.
 2. **P0 : LR-001 à LR-004** (D100, timers, calendrier, audio) avec tests.
 3. **P1 : LR-010 à LR-013** (harmonisation et cartes) sur la base Accueil.
@@ -427,3 +495,236 @@ Le [rapport UX/UI du 26 octobre 2026](./LOVEROLL_AUDIT_UX_UI_20261026.md) est un
 - risques résiduels et prochaine action.
 
 > **Directives impératives :** pas de refonte totale ; ne pas demander « continue » après chaque bloc ; ne pas interrompre sans nécessité ; conserver l'identité LoveRoll et les règles du jeu ; Accueil = source visuelle ; un dé rendu complet et posé sur son socle ; une minuterie qui arrive à 00:00 valide **une seule fois** le défi associé.
+
+
+## LR-SURPRISE-001 — Rendez-vous surprise premium, D100 et Geoapify
+**Demande approuvée le 26 octobre 2026 — à implémenter et vérifier. Cette section précise les règles antérieures incompatibles concernant les filtres de distance et de budget.**
+
+### Mission et périmètre
+Améliorer le parcours Surprise existant pour fournir au couple une sortie pertinente, facile à adapter et à planifier. Conserver Geoapify pour les lieux réels, le D100 mensuel, le D6 qui désigne qui invite/organise, les événements spéciaux, les tirages officiels et leur historique. Ne pas recommencer le module. Donner une expérience premium à cet onglet sans modifier les tarifs, Stripe ou les droits des abonnements existants dans ce lot. Les 20 $/mois évoqués servent de niveau d'exigence produit, pas d'instruction de changement de prix.
+
+### 1. Budget et kilomètres entièrement facultatifs — règle ferme
+- Les champs « Budget maximal pour deux » et « Distance maximale aller simple (km) » peuvent rester vides, indépendamment.
+- Vide signifie **aucun plafond choisi par le couple** pour ce critère. Stocker null, le transmettre comme null et le préserver après sauvegarde/rechargement. Ne jamais remplacer silencieusement par 125 km, 100 $, zéro ou une autre valeur par défaut.
+- Les deux champs vides signifient **toutes les possibilités**, pas « All in », pas une préférence luxe, coûteuse ou lointaine. Une promenade, un café, un mini-putt et une sortie à 300 $ restent tous admissibles; les sorties modestes et proches ne doivent pas être éliminées ou déclassées parce que les champs sont vides.
+- Affichage : « Toutes les distances » et « Tous les budgets ». Aucun libellé « All in », « sans limite de dépenses » ou promotion automatique vers le haut de gamme.
+- Un montant rempli est un plafond pour deux, dans la devise affichée; 0 $ signifie activité gratuite et reste distinct de null. Préciser les frais inclus ou inconnus; ne pas garantir une gratuité totale si transport, stationnement ou autres frais sont inconnus.
+- Une distance remplie est un plafond de trajet routier aller simple, et non la distance à vol d'oiseau. Refuser les valeurs invalides avec un message clair.
+- Aucun tarif absent ne doit devenir 0 $. Si le budget est plafonné et le coût inconnu, ne pas présenter le lieu comme respectant ce plafond : chercher une option documentée ou demander explicitement si le couple accepte une proposition au prix à vérifier.
+- Lever les plafonds métier existants incompatibles dans le formulaire, la normalisation, le RPC, le schéma et la fonction Geoapify. Conserver séparément les limites techniques de requêtes et les protections de coûts.
+- Sans plafond de distance, utiliser une recherche progressive bornée techniquement, sans balayage mondial ni appels sans limite. Présenter honnêtement la portée réellement explorée; ne pas la faire passer pour un choix du couple ou une recherche exhaustive. Le point de départ reste nécessaire pour une recherche géographique.
+- Aucune réservation ni dépense automatique.
+
+### 2. Écran Surprise et parcours du couple
+- Conserver le décor rouge, le socle, l'identité visuelle, les dés 3D et la navigation existante.
+- Avant tirage : titre « Notre rendez-vous du mois », mois et état « À découvrir », grand D100 complet posé sur son socle, bouton « Brasser notre surprise ».
+- Ajouter une ligne compacte des préférences avec « Modifier » : point de départ, distance ou « Toutes les distances », budget ou « Tous les budgets ». Aucun questionnaire obligatoire chaque mois.
+- Après tirage : faire du rendez-vous l'information principale; réduire le dé sans supprimer le résultat officiel. États partagés : à planifier, prévu, réalisé, avec règles serveur et historique.
+- Carte : titre concret, lieu réellement trouvé, distance vérifiée, durée de trajet si disponible, description courte et prochaine action « Choisir notre date ».
+- Fiche : adresse, GPS, site officiel, réservation externe si disponible, préparation utile, informations de prix/horaires/disponibilités explicitement à vérifier lorsqu'elles ne sont pas confirmées. Ne pas inventer de photo, service, tarif ou lien.
+- Conserver « Nos événements » et le D6 « Qui organise notre rendez-vous ? ».
+- La personne qui invite propose une date; son partenaire peut accepter ou proposer une autre date. Distinguer accord du couple et réservation externe déclarée confirmée. Les permissions de réservation restent celles de l'hôte.
+- Ajouter « On l'a fait ♥ », appréciation et souvenir/photo facultatifs avec confidentialité du duo.
+- Après découverte, une carte secondaire « Un moment à deux cette semaine » peut fournir une idée simple complémentaire, sans nouveau D100 officiel ni modification de ses quotas. Elle ne doit pas surcharger l'écran.
+
+### 3. Qualité des idées et adaptation
+- Simplifier les titres du catalogue et créer une variété réelle; ne pas compter un simple changement de titre comme une nouvelle expérience.
+- Le lieu final doit correspondre à l'activité annoncée. « Mini-golf » ne peut pas aboutir à un centre sportif générique ou des quilles sans adaptation explicite. Vérifier les catégories; si le service précis reste inconnu, employer un titre honnête.
+- Geoapify fournit les lieux; LoveRoll compose le rendez-vous et peut ajouter une petite mission complice facultative, sans prétendre que l'établissement la fournit.
+- « Adapter la sortie » : autre lieu, déjà visité, fermé, trop loin, trop cher, variante adaptée. Préserver le D100, l'hôte et l'historique; ne pas consommer les passes des défis de soirée.
+- Enregistrer les appréciations et éviter les répétitions de lieux; conserver la diversité des catégories et des coûts sans favoriser les activités chères.
+- Une modification des préférences ne remplace jamais silencieusement un rendez-vous déjà réservé.
+
+### 4. Correctifs de fiabilité prioritaires
+- Rejeter les distances null/absentes/non numériques de la matrice Geoapify avant conversion : un trajet absent n'est jamais 0 km.
+- Séparer panne temporaire, recherche en cours et aucun résultat. Une panne ne doit plus rendre le mois définitivement indisponible.
+- Relances bornées avec attente, cache et verrou serveur; ne pas multiplier les appels payants si les deux partenaires ouvrent simultanément.
+- Rafraîchir les états pending jusqu'au résultat ou à une erreur récupérable, avec arrêt du suivi à la fermeture/changement de compte.
+- Préremplir la date locale existante lors de la modification d'une réservation.
+- Annoncer un rappel uniquement selon son état réellement programmé et les préférences de notifications. Une simple planification ne doit pas promettre un rappel réservé aux réservations confirmées.
+- Conserver les clés côté serveur, l'isolation par couple et les contrôles de l'hôte.
+
+### 5. Critères de validation et livraison
+Tester au minimum : deux champs vides, chaque champ vide séparément, budget 0, budget 300, distance plafonnée, valeurs invalides, sauvegarde/rechargement des null, prix inconnu, variété avec filtres vides, absence de trajet, panne puis reprise, double ouverture, aucun lieu, adaptation sans nouveau tirage, date/rappel modifiés et synchronisation entre partenaires.
+Vérifier visuellement sur Android S25 Ultra, iPhone, tablette et PC : D100 complet sur socle, lisibilité, formulaire utilisable, boutons accessibles et absence de débordement.
+Livrer par lots vérifiés dans le dépôt existant, suivre les tests GitHub jusqu'au résultat final et mettre à jour le suivi avec preuves. Distinguer documentation ajoutée, code implémenté, tests réussis et déploiement réellement vérifié. Ne pas cocher cette exigence comme réalisée après le seul ajout de ce prompt.
+
+
+## LR-ACCUEIL-001 — Accueil : vue d'ensemble et raccourcis; Soirée : parcours de jeu
+**Demande approuvée le 26 octobre 2026 — spécification à implémenter et vérifier.** Cette section retient la proposition simplifiée finale et remplace toute proposition antérieure faisant de l'Accueil un deuxième écran de jeu.
+
+### But et séparation des responsabilités
+L'Accueil permet de comprendre où en est le couple et d'accéder à la prochaine étape. L'onglet Soirée reste le lieu où l'on joue.
+- Conserver sur Accueil : D6 hebdomadaire partagé, résultat officiel, quota hebdomadaire restant, statut compact de la soirée, carte Surprise/Éclat et petit bilan mensuel.
+- Conserver dans Soirée : création/démarrage de soirée, invitation LR-028 et ses réponses, D6 personnels, D100 des défis, choix/confirmation de catégorie, listes privées, cartes, adaptation, passer/refuser, favoris, minuteries, complétion et clôture.
+- Les raccourcis d'Accueil ouvrent la bonne étape de Soirée sans lancer un dé, créer une session, envoyer une invitation ou changer un état métier automatiquement.
+- Réutiliser les sources serveur et règles existantes; ne pas créer un deuxième moteur d'état ou des compteurs concurrents.
+
+### Écran et action principale
+Préserver décor rouge, logo, typographie, boutons rubis, vrai D6 3D, socle/tissu, navigation et ambiance actuelle. Conserver les probabilités et les règles de tirage. Aucun remplacement par une image plate.
+1. Avant tirage officiel : « Cette semaine, on joue ? » et « Brasser notre dé ». Un tirage commun par semaine, protections serveur et double-tap existantes.
+2. Après tirage : résultat toujours visible et progression lisible, par exemple « 3 soirées cette semaine · 2 disponibles ». Calculer le disponible selon les quotas officiels, y compris sessions actives et règle journalière; ne pas confondre disponible cette semaine et démarrable aujourd'hui.
+3. Remplacer le gros bouton inerte « Déjà brassé cette semaine, revenez la semaine prochaine » par un raccourci « Aller à notre soirée »; si une soirée est ouverte, « Reprendre notre soirée »; si le quota est épuisé, « Voir nos soirées » ouvre l'historique. Mentionner sobrement la prochaine disponibilité lorsque pertinente, sans promettre une nouvelle soirée le même jour.
+4. Un retour dans Soirée retrouve l'état officiel, même si le partenaire a avancé ou clôturé depuis un autre appareil; aucun nouveau tirage ou quota consommé par navigation.
+5. Le D6 montré avant tirage reste clairement une prévisualisation, jamais un résultat acquis.
+
+### Carte compacte « Ce soir »
+- Remplacer le tableau détaillé par partenaire et les tirets « — / Restants : — » par un statut clair et un accès à Soirée.
+- Exemples selon état réel : « Aucune soirée commencée », « Une invitation vous attend », « En attente du partenaire », « Soirée en cours », « Notre soirée est terminée ♥ ».
+- Distinguer chargement, absence de soirée et problème réseau. Un chargement ne doit pas apparaître comme zéro activité.
+- Ne pas montrer ici les consignes, cartes, catégories intimes ou résultats individuels encore secrets; les détails de progression par joueur restent dans Soirée.
+- Ne pas dire « Ce soir » pour une session ancienne laissée ouverte : proposer la reprise avec un libellé honnête.
+- Le refus et le consentement ne sont jamais assimilés à une faute ou à une perte de points par cette synthèse.
+
+### Carte mensuelle et bilan
+- Faire évoluer la carte Surprise selon l'état LR-SURPRISE-001 : à découvrir, choisir qui invite, à planifier, date prévue, réalisé. Ne plus garder systématiquement « Surprise du mois disponible » après réalisation.
+- Après réalisation explicite du rendez-vous (pas après le seul tirage), cette place peut présenter Éclat conformément à la demande existante; Surprise reste accessible par son onglet et les droits Éclat existants s'appliquent. Aucun changement tarifaire.
+- Bilan mensuel discret, collectif et cliquable : défis réalisés ensemble et soirées partagées; exemple uniquement illustratif, aucune valeur codée en dur. Le détail conserve les informations existantes via une vue de bilan/calendrier.
+- Si la série actuelle est affichée, la nommer « Semaines consécutives »; ne pas la présenter comme le total des semaines actives du mois.
+- Vérifier et documenter la date métier servant au classement mensuel des défis réalisés, notamment les sessions qui traversent minuit ou un changement de mois. Ne pas réécrire l'historique ni inventer une date de complétion absente.
+- Préserver distinction réalisations totales/défis uniques du cycle, favoris LR-019 et confidentialité LR-025.
+
+### Acceptation et livraison
+Tester : avant/après D6 hebdomadaire; quota partiel/épuisé; verrou journalier; invitation en attente; un seul D6 personnel lancé (pas de révélation); deux D6 lancés; session ouverte/ancienne/clôturée ailleurs; retour/rechargement/deux comptes; offline/chargement; changement de semaine/mois America/Toronto; Surprise à chaque étape; droits Éclat.
+Vérifier qu'un raccourci ne produit aucune mutation métier; le jeu est effectué dans Soirée. Valider les compteurs avec la logique partagée.
+Captures avant/après sur S25 Ultra, petit Android, Safari iPhone/PWA, tablette portrait/paysage et PC. Aucune coupe du dé, aucun flottement du socle, texte lisible et contrôles accessibles. Pas de défilement inutile en format cible; accessibilité et gros caractères restent prioritaires (LR-020).
+Mettre à jour le suivi avec code, tests et preuves de publication; ne pas déclarer ce parcours livré après la seule mise à jour du prompt.
+
+
+## LR-JEU-001 — Fiabiliser les défis existants sans modifier leurs textes
+**Demande approuvée le 26 octobre 2026 — spécification, à implémenter et vérifier.** Complète LR-015 à LR-019, LR-026, LR-ACCUEIL-001 et LR-SURPRISE-001, sans redéfinir silencieusement leurs règles.
+
+### Verrou de contenu — règle prioritaire
+Conserver exactement les titres et les consignes de toutes les cartes existantes, y compris les cartes sexuelles personnelles/importées et les modèles standard. Ne pas les réécrire, édulcorer, remplacer ni supprimer. Conserver les minuteries configurées et les instantanés historiques. L'autorisation de ce lot porte sur le fonctionnement, l'attribution et les métadonnées techniques ajoutées séparément. Une incohérence éditoriale se signale au propriétaire, sans modification automatique du texte.
+Avant toute mutation, établir un inventaire avec identifiants stables, version et empreinte des textes. Après changement, comparer les empreintes afin de prouver que titres/consignes sont inchangés. Ne pas publier les cartes privées dans le dépôt, les logs, les rapports ou les fixtures.
+
+### 1. Attribution et disponibilité des cartes
+Auditer les règles réellement actives en base et le parcours self_draws. Distinguer clairement : personne qui touche le dé, personne qui propose/offre, personne qui accomplit et personne qui reçoit l'attention.
+Corriger les associations drawer_role / recipient_role / offered_by / recipient pour que les cartes compatibles avec les deux personnes ne soient plus exclues parce que le mode « piger pour soi » vérifie deux rôles différents contre la même personne.
+L'audit en lecture seule a trouvé 43 cartes à rôles croisés sur le modèle MEDIUM de 100 cartes; c'est un constat du 26 octobre, à revérifier avant correction. L'attribution doit aussi correspondre aux verbes de la consigne existante : ne pas modifier ces verbes pour contourner un filtre.
+Préserver confidentialité des listes individuelles, règles de tours/dons, choix de catégorie, probabilités et contrôles serveur. Appliquer les corrections aux nouveaux tirages; ne pas réassigner rétroactivement les défis historiques ou actifs sans traitement explicite et vérifié.
+
+### 2. Progression, favoris et clôture
+Utiliser l'identifiant stable de la carte et sa catégorie/version pour les cartes uniques, jamais la face aléatoire du D100. Distinguer réalisations totales, cartes uniques découvertes/réalisées et favoris rejoués. Avant de modifier le compteur officiel du cycle de 200, réconcilier les règles existantes et LR-019, documenter la définition retenue et préserver les acquis; aucune remise à zéro opportuniste.
+Terminer les parcours LR-015/016 : 3 passes/mois/personne par défaut, paramétrables par l'admin; Refuser toujours libre; remplacement atomique et exclusions volontaires prioritaires. Aucune passe de soirée consommée pour adapter un lieu Surprise.
+Une soirée interrompue conserve les réalisations dans son historique; distinguer clairement son statut et ce qui est crédité au cycle ou au quota. Ne pas falsifier les soirées antérieures.
+Livrer les coups de cœur LR-019, l'adaptation LR-017 et les métadonnées LR-026 en conservant les textes originaux. Toute adaptation proposée par le couple reste une occurrence séparée, consentie et traçable.
+
+### 3. Sélection utile et gestion du contenu
+Ajouter séparément des métadonnées utiles (préparation, matériel, durée indicative, thème, effort, ambiance musicale) sans faire passer leur classification pour une nouvelle consigne. Préserver les réglages et probabilités approuvés; rendre visibles les filtres réellement appliqués. Ne pas utiliser une requête IA externe payante pour transmettre ou classer des cartes privées sans autorisation spécifique.
+Permettre un import avec prévisualisation : validation de structure, identifiants, doublons, attribution et minuteries; traiter les conflits sans écraser les textes ou archives. L'utilisateur reste maître du contenu sexuel.
+Le présent lot ne promet pas de production régulière de nouvelles cartes sexuelles. Les nouveaux contenus romantiques/non explicites et les expériences Éclat peuvent être enrichis indépendamment, en conservant les cartes existantes.
+La séparation Accueil/Soirée, le parcours Surprise/Geoapify et les tarifs restent ceux déjà approuvés. Un éventuel mode libre en plus du quota officiel reste une proposition à valider séparément.
+
+### Validation
+Comparer avant/après : textes et durées inchangés; cartes à rôles croisés admissibles aux bons utilisateurs; confidentialité; catégories et probabilités; double tirage; même carte avec deux faces D100 et deux cartes avec la même face; favoris; refus après épuisement des passes; arrêt/reprise/clôture; import et échec transactionnel. Tester les vrais RPC et les deux comptes, en plus des tests frontend.
+Mettre à jour le suivi avec preuves, sans annoncer l'implémentation sur la foi de ce prompt.
+
+## LR-MUSIQUE-001 — Ambiance musicale facultative par carte, liée au minuteur
+**Demande approuvée le 26 octobre 2026 — spécification, à implémenter et vérifier.** Ajouter une ambiance adaptée aux défis sans modifier leurs textes, leurs durées ou leur attribution métier.
+
+### Expérience et classification des cartes
+- Examiner les bibliothèques réellement utilisées : standard, styles, cartes personnelles/importées et cartes personnalisées. Ne pas se limiter aux 25 cartes de secours du fichier JS.
+- Ajouter à chaque définition de carte une métadonnée musicale séparée : aucune, douce/romantique, détente, sensuelle instrumentale, ludique ou rythmée, selon le contexte réel. Ne pas déduire l'ambiance du seul mot « Sexuel » ou du seul niveau d'intensité.
+- « Aucune » est une valeur valide et recommandée lorsque musique, dialogue ou écoute d'une autre chanson risquent de se gêner, ou lorsque la classification n'est pas fiable. Ne pas fabriquer de paroles ou de nouvelles consignes sexuelles.
+- Préserver les choix de musique du couple lors d'une mise à jour des métadonnées; permettre une modification simple de l'ambiance de la carte sans toucher au texte.
+- Sur chaque carte, afficher un petit contrôle accessible « ♫ Ambiance : [nom] », « Activer / Couper la musique » et un volume discret. L'interface garde la priorité au défi et au minuteur. Même pour une carte sans ambiance, indiquer « Sans musique » et permettre un choix manuel facultatif.
+- L'ambiance est désactivée par défaut avant un premier accord volontaire. Mémoriser ensuite la préférence par utilisateur/appareil, avec possibilité de couper à tout moment. Choisir une ambiance ne démarre pas la lecture.
+
+### Synchronisation avec le minuteur
+1. **Démarrer** : si musique activée et ambiance disponible, démarrer l'audio sur le geste qui lance le minuteur. Précharger raisonnablement; si le média n'est pas prêt, le minuteur démarre quand même et l'écran reste utilisable.
+2. **Pause** : mettre l'audio en pause avec le minuteur; **Reprendre** reprend les deux. Aucune deuxième piste superposée après plusieurs appuis.
+3. **Fin musicale progressive** : lorsque l'ambiance est utilisée, sa disparition remplace la sonnerie de fin par défaut. Baisser progressivement son volume pendant les 5 dernières secondes (ou le temps restant s'il est inférieur), jusqu'au silence à 00:00. Ne pas ajouter de mélodie d'alarme par-dessus ni repartir sur une nouvelle boucle. Le signal visuel de fin reste présent; les vibrations respectent leurs préférences existantes.
+4. **Recommencer** : arrêter/remettre l'audio au début, réinitialiser le minuteur et attendre le prochain appui sur Démarrer.
+5. **Couper la musique / volume zéro** : agir uniquement sur l'ambiance; le minuteur continue. Réactiver pendant le compte à rebours ne redémarre pas sa durée. Ne jamais réactiver une musique dont le minuteur est terminé.
+6. **Défi réalisé manuellement, passé, refusé, annulé, clôture de soirée ou déconnexion** : arrêter immédiatement l'ambiance liée à ce défi. Un changement de carte ou de compte ne laisse pas une piste orpheline; il ne valide ni n'annule le défi par simple navigation.
+7. **Carte sans minuteur** : conserver « Sans minuteur ». Musique manuelle facultative, avec arrêt explicite et nettoyage à la sortie; ne pas inventer une durée pour déclencher une complétion.
+8. **Actualisation/suspension/reprise** : réconcilier avec l'échéance existante. À échéance dépassée, aucune musique ne repart. Respecter le geste nécessaire pour réautoriser le son. Ne pas stocker de secrets ni de consignes privées dans les paramètres audio.
+9. La musique ne devient jamais une preuve de réalisation. Conserver la transition métier idempotente LR-002, les exceptions pause/annulation/refus et les permissions. Un événement audio ended/error ne valide pas un défi.
+
+### Sonnerie, appareils et discrétion
+- **Règle approuvée : musique utilisée = signal de fin musical**, par fondu progressif jusqu'au silence; aucune sonnerie supplémentaire par défaut. Sans musique utilisée, conserver la sonnerie habituelle facultative selon le réglage existant. Si l'utilisateur coupe la musique pendant le défi, ne pas faire surgir une sonnerie de remplacement à zéro. Si la lecture n'a jamais pu commencer, le repli éventuel vers la sonnerie doit respecter le choix explicite de l'utilisateur; aucun son forcé. Une option avancée de sonnerie supplémentaire reste désactivée par défaut et exige une activation volontaire. Tout réglage général silencieux reste respecté.
+- Utiliser la même source temporelle que le minuteur, sans créer un deuxième compte à rebours audio indépendant. Programmer le fondu à partir de son échéance, pas de la fin naturelle du fichier. Pause : suspendre le fondu et mémoriser le volume choisi; reprise : recalculer le fondu selon le temps restant; reset : annuler l'ancien fondu. Une modification du volume dans les dernières secondes doit conserver la descente vers zéro. Réutiliser/améliorer les modules existants plutôt qu'ajouter un moteur concurrent.
+- Prévenir les lectures simultanées non voulues : l'audio est local au téléphone volontairement choisi; aucune lecture distante déclenchée chez le partenaire. Désigner un seul appareil d'ambiance pour la soirée lorsque nécessaire. Tester deux comptes/deux appareils/deux onglets.
+- Une seule ambiance active sur un appareil; arrêter proprement ou effectuer une transition contrôlée entre défi et Éclat. Libérer ressources, écouteurs et pistes au changement de contexte.
+- Mode discrétion LR-025 : arrêter ou rendre silencieuse l'ambiance immédiatement sur l'appareil masqué, sans relancer le son à la sortie du masque sans action volontaire.
+- iPhone Safari/PWA, Android WebView/PWA et PC : gérer lecture bloquée, appel téléphonique, interruption audio, écouteurs/Bluetooth, veille et écran verrouillé. Ne pas promettre musique continue ni arrêt programmé garanti en arrière-plan lorsque la plateforme suspend la page. Au retour, l'état audio doit correspondre au minuteur.
+- Si la musique échoue, le défi, la minuterie et la progression fonctionnent toujours. Message discret, aucune boucle de notifications.
+
+### Catalogue audio et qualité
+Utiliser des compositions originales ou des pistes disposant de droits explicites compatibles avec une application commerciale, documentés par asset. Vérifier les licences et les éventuelles obligations d'attribution. Ne pas engager de dépense ou souscrire de service sans autorisation.
+Prévoir un petit catalogue de qualité, partagé entre cartes (plusieurs variantes d'ambiances), instrumental par défaut, volume initial bas, transitions douces et boucles sans coupure audible. Vérifier à l'écoute sur téléphone et écouteurs; une simple correspondance de tags ne prouve pas la qualité musicale.
+Limiter poids, consommation réseau/batterie et préchargement; versionner les assets. L'absence de réseau ne doit pas bloquer le jeu. Ne pas transmettre les contenus des cartes à un tiers pour choisir une piste.
+Aucun abonnement musical externe requis pour jouer. Ne pas présenter le générateur d'ambiance Éclat actuel comme un catalogue musical nouveau tant que sa qualité et sa variété n'ont pas été vérifiées.
+
+### Tests et livraison
+- Start/pause/reprise/reset, échéance à zéro, fin manuelle, passer/refuser/annuler, changement de carte, changement de compte, clôture, discrétion, double-tap et deux appareils.
+- Couper/remettre la musique pendant le compte à rebours sans modifier le temps, ni déclencher une complétion ou une sonnerie supplémentaire. Vérifier le fondu des 5 dernières secondes, pause/reprise pendant le fondu, reset, changement de volume, silence à zéro et absence de double signal; sans musique, vérifier la sonnerie facultative. Un mute volontaire ne déclenche jamais une alarme de remplacement.
+- Carte sans minuteur, ambiance aucune, média court/long/en boucle, échec réseau/décodage, lecture bloquée, retour après échéance et préférence conservée.
+- Tests d'intégration sur les vrais contrôles et tests d'écoute documentés; distinguer émulation et appareils physiques réellement testés.
+- Contrôle d'intégrité des titres, consignes, minuteries configurées et instantanés des cartes avant/après.
+- Livrer par lots compatibles avec suivi CI jusqu'à son état final; renseigner les preuves dans LOVEROLL_SUIVI.md et vérifier le parcours publié. Cette addition documentaire ne vaut ni musique intégrée ni fonctionnalité déployée.
+
+
+## LR-PIGE-001 — Soirée : cartes encore disponibles par catégorie
+**Demande approuvée le 26 octobre 2026 — spécification à implémenter et vérifier.**
+
+### Placement et affichage
+Dans l'onglet **Soirée**, à l'étape des défis / du D100, afficher en permanence un petit compteur près de chaque choix de catégorie :
+- **Sensuel · 42 cartes disponibles**
+- **Sexuel · 28 cartes disponibles**
+Ces chiffres sont illustratifs, jamais codés en dur. Employer une formulation claire comme « Disponibles pour ta prochaine pige » pour distinguer ces nombres du quota de défis personnels restant à jouer, du résultat D100 et de la progression des 200.
+Garder le compteur visible avant et après chaque tirage sans ouvrir Réglages. Ne pas encombrer la fiche ni déplacer le dé hors du socle. Si « Au hasard » affiche un total, utiliser la somme exacte des cartes admissibles des deux catégories, sans transformer ce total en probabilité.
+
+### Sens du compteur et règles de calcul
+- Compter les **cartes distinctes réellement admissibles** au prochain tirage de la personne concernée, dans le couple, cycle, bibliothèque et mode de soirée actifs. Les nombres peuvent être différents sur les deux comptes en raison des rôles et historiques; ne pas imposer un faux compteur commun.
+- Réutiliser le même calcul serveur que le moteur de pige : catégories et styles actifs, cartes personnalisées remplies, attribution/rôles (dont femme → homme et homme → femme), permissions, règles de non-répétition, exclusions volontaires, tirages déjà réservés/attribués dans la soirée et règles de favoris LR-019.
+- Une carte retirée volontairement du lot n'est pas comptée. Un favori ne compte qu'une fois et n'est compté que lorsqu'il est effectivement rééligible; le cœur ne contourne pas l'exclusion ni l'interdiction de repige dans la même soirée.
+- Le retour dans la pige des cartes passées/refusées/non terminées suit LR-015 et le mode de soirée actif. Ne pas annoncer une carte disponible avant que le moteur ne l'autorise réellement. Distinguer un tirage spécial offert si ses règles d'admissibilité diffèrent.
+- Compter par identifiant stable de carte et catégorie, jamais par face D100, nombre total d'emplacements éditables ou nombre d'occurrences historiques.
+- Ce compteur décrit le bassin; si ce n'est pas le tour du joueur ou si son quota est atteint, conserver le vrai état d'accès. Un bassin non vide n'autorise pas un tirage interdit.
+- Si une bibliothèque s'épuise, ne pas la réinitialiser pour simplement afficher un compteur. Respecter les conditions de renouvellement officielles et expliquer honnêtement l'état « Aucune carte disponible » / « Renouvellement du lot prévu », selon le moteur réel.
+- Ne pas changer les probabilités approuvées pour les faire correspondre aux quantités affichées. La proportion de cartes n'est pas nécessairement la probabilité de catégorie.
+
+### Actualisation, confidentialité et erreurs
+Mettre à jour après tirage, remplacement, clôture/retour en pige, modification d'exclusion, favoris, rôles ou bibliothèque et changement de cycle, ainsi qu'après une action du partenaire qui affecte le bassin. Réconcilier après reconnexion et retour dans la page.
+Une lecture de compteur ne lance pas de dé, ne consomme rien et ne modifie ni historique ni progression. Retourner des agrégats autorisés côté serveur, sans exposer les textes ou identités de cartes privées du partenaire, ni les futurs résultats.
+Chargement : « … »; erreur : « Indisponible » avec réessai discret. Ne pas afficher 0 ou une ancienne valeur comme un nombre confirmé si la lecture échoue. Empêcher les réponses tardives d'un autre couple/joueur/cycle de remplacer le compteur courant.
+Limiter les requêtes en réutilisant la synchronisation et les réponses de jeu existantes; éviter un appel à chaque image de l'animation ou seconde du minuteur.
+
+### Tests et acceptation
+Comparer compteurs et véritables bassins du moteur : deux catégories, rôles croisés, deux partenaires, cartes personnalisées, exclusions, favori réalisé rééligible à une prochaine soirée, non-répétition dans la soirée, passage/refus/remplacement, clôture, bibliothèque épuisée, changement de cycle et mode normal/extra si ce mode existe.
+Tester deux appareils, concurrence, reconnexion, chargement/erreur et réponses réseau obsolètes. Vérifier absence de mutation à la lecture et maintien des probabilités/quotas.
+Captures Android S25 Ultra, iPhone/PWA, tablette et PC : compteurs lisibles, pluriel/singulier corrects, aucun dé coupé et aucun débordement.
+Inscrire preuves et avancement dans le suivi; cette demande documentaire n'est pas une fonctionnalité déjà déployée.
+
+## LR-045 — Soirée Extra illimitée après épuisement des dés hebdomadaires (demande approuvée le 26 octobre 2026)
+
+**Statut : spécification approuvée, non implémentée.** Ajouter à l'application existante sans supprimer ni remplacer les soirées normales, leur D6, leur calendrier, leur historique, le cycle habituel de cartes ni les contrôles de rôles.
+
+### Parcours utilisateur obligatoire
+1. Le couple conserve **le même bouton « Brasser le dé » de la section Soirée**. Ne pas ajouter de deuxième bouton d'entrée « Extra » sur l'accueil. Tant que les dés de la semaine sont disponibles, le parcours normal demeure inchangé.
+2. **Seulement lorsque le nombre de dés/soirées hebdomadaires disponibles est épuisé**, si l'option « Autoriser les Soirées Extra » est activée par l'administrateur du couple, le clic sur ce bouton présente une fenêtre de confirmation claire :
+   - « Vous avez utilisé tous vos dés de la semaine. Voulez-vous jouer une Soirée Extra ? Pour cette soirée, toutes les cartes redeviennent disponibles dans la pige. »
+   - Deux vrais boutons accessibles : **« Refuser »** et **« Accepter »**.
+3. **Refuser** ferme la fenêtre sans créer de soirée, sans brasser de dé, sans consommer de quota, sans effacer de données et sans modifier le tour en cours.
+4. **Accepter** démarre une **nouvelle Soirée Extra distincte**. **On recommence d'abord par piger le nombre de défis avec les D6 des deux partenaires**, puis on pige effectivement les défis avec le D100 et suit le jeu ordinaire (catégories, tours, confirmations, chronomètres, validation, etc.). Aucun défi ne doit être automatiquement pré-pigé à l'acceptation.
+5. **Toutes les cartes éligibles de la bibliothèque du jeu sont remises dans la pige pour chaque Soirée Extra**, y compris celles pigées ou terminées auparavant. Cela signifie **une pige indépendante propre à la Soirée Extra**, et NON un effacement, une remise à zéro ou une modification du cycle normal de 200 cartes, de la progression, des favoris, des défis précédents ou des statistiques historiques. Les règles existantes de sécurité, catégories, consentement et indisponibilité restent applicables. Chaque soirée Extra repart avec sa propre pige fraîche.
+6. **Nombre de Soirées Extra : illimité**, sans limite quotidienne, hebdomadaire ou mensuelle ajoutée. Après une soirée Extra terminée, un nouveau clic sur le **même bouton** lorsque le quota normal est toujours épuisé repropose une nouvelle Soirée Extra, avec ses D6 pour déterminer les nouveaux nombres de défis puis une nouvelle pige de toutes les cartes éligibles.
+7. Les défis, dates, partenaires, catégories et résultats de chaque Soirée Extra sont enregistrés et synchronisés comme les soirées normales, avec un indicateur distinct **« Soirée Extra »** dans les vues d'historique/calendrier et statistiques. Les soirées Extra **ne dépensent pas** de dés hebdomadaires, **ne recréditent pas** ceux de la semaine et ne transforment pas les autres soirées en Extra.
+8. **Réglage admin du couple** : interrupteur explicite « Autoriser les Soirées Extra » dans les Réglages du jeu, modifiable uniquement par l'administrateur/créateur du couple (contrôle serveur, non uniquement visuel). Si désactivé, aucune proposition ni création de Soirée Extra ; l'épuisement hebdomadaire conserve le comportement existant. L'état initial de cette nouvelle option doit être **désactivé** pour ne pas activer silencieusement la fonctionnalité chez les couples existants.
+9. Une seule Soirée Extra active par couple à la fois ; une double pression ou des actions simultanées de deux partenaires ne doivent jamais produire deux soirées identiques. Après fermeture/reconnexion, reprendre la soirée Extra active et ses D6/tours sans repiger accidentellement. Si l'admin désactive le mode durant une soirée déjà en cours, ne pas supprimer cette soirée ni ses données ; interdire seulement le lancement de nouvelles extras.
+10. Le jeu et son API doivent distinguer explicitement les modes `normal` et `extra`, appliquer les autorisations côté serveur, utiliser des opérations idempotentes et conserver une piste d'audit. Ne pas contourner le contrôle d'accès par appel RPC direct.
+
+### Tests d'acceptation requis avant de cocher LR-045
+- Avec du quota hebdomadaire restant : clic sur « Brasser le dé » → soirée normale sans confirmation Extra.
+- Quota épuisé et mode OFF : aucune Soirée Extra proposée ou créée, notamment côté API.
+- Quota épuisé et mode ON : fenêtre d'information ; Refuser = aucune écriture ; Accepter = exactement une nouvelle Extra.
+- Après Accepter : **D6 des partenaires avant toute pige D100** ; défi obtenu normalement ; toutes les cartes éligibles de la session Extra y compris celles déjà vues dans la progression normale.
+- Terminer deux Extras successives dans la même journée : fonctionnement illimité et remise à disposition des cartes à chacune ; progression normale et compteurs hebdomadaires intacts.
+- Double clic, deux partenaires simultanés, actualisation, hors ligne/reconnexion : aucun doublon, données synchronisées, reprise correcte.
+- Historique/calendrier et rapports identifient les extras sans effacer/modifier les soirées précédentes ; permissions admin testées ; vieux clients compatibles ou bloqués proprement.
+- Captures responsive Android/iPhone/tablette/PC de la confirmation et des écrans D6/D100 ; tests automatisés et validation réelle GitHub Actions sur le SHA final. Ne marquer « terminé » qu'après code, validations et preuves.
+
+**Implémentation :** auditer d'abord les compteurs hebdomadaires, le serveur Supabase, le D6 des partenaires, le cycle de cartes et l'architecture des Réglages ; ensuite réaliser en PR dédiée avec migration compatible si nécessaire. Cette section exprime la demande produit et n'atteste d'aucun développement livré.
+

@@ -1,0 +1,222 @@
+name: LoveRoll persistent CI failure report
+
+on:
+  workflow_run:
+    workflows:
+      - LoveRoll connected web checks
+      - Déployer LoveRoll Web sur GitHub Pages
+    types: [completed]
+
+
+# Read only run metadata: PR summaries and persistent main failures; no PR code is checked out.
+# This workflow never commits, retries or deploys, preventing action loops.
+permissions:
+  actions: read
+  contents: read
+  issues: write
+  # Request both accepted PR comment scopes: repository policy can still deny writing.
+  pull-requests: write
+
+jobs:
+  report:
+    if: >-
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Report two consecutive failures or close recovered incident
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const run = context.payload.workflow_run;
+            const {owner, repo} = context.repo;
+            const title = '[CI] Échecs persistants — ' + run.name;
+            const openIssues = await github.paginate(github.rest.issues.listForRepo, {
+              owner, repo, state: 'open', per_page: 100
+            });
+            const incident = openIssues.find(issue => !issue.pull_request && issue.title === title);
+            // Workflow completions can arrive out of order. A stale success
+            // must never close the incident for a newer failed run, and a
+            // stale failure must not reopen a recovered incident.
+            const listing = await github.rest.actions.listWorkflowRuns({
+              owner, repo, workflow_id: run.workflow_id, branch: 'main', per_page: 30
+            });
+            const completed = listing.data.workflow_runs.filter(item =>
+              item.event === 'push' && item.status === 'completed' &&
+              item.conclusion !== 'cancelled' && item.conclusion !== 'skipped'
+            );
+            if (!completed.length || completed[0].id !== run.id) {
+              core.info('Ignoring out-of-order completion for run ' + run.id);
+              return;
+            }
+            if (run.conclusion === 'success') {
+              if (incident) {
+                await github.rest.issues.createComment({
+                  owner, repo, issue_number: incident.number,
+                  body: '✅ Rétabli avec le commit ' + run.head_sha +
+                    ' — [exécution #' + run.id + '](' + run.html_url + ').'
+                });
+                await github.rest.issues.update({
+                  owner, repo, issue_number: incident.number,
+                  state: 'closed', state_reason: 'completed'
+                });
+              }
+              return;
+            }
+            if (run.conclusion !== 'failure') return;
+
+            // Require two consecutive completed push failures of THIS workflow.
+            // Avoid opening an issue after a single transient or a cancelled run.
+            const position = completed.findIndex(item => item.id === run.id);
+            const prior = position >= 0 ? completed[position + 1] : null;
+            if (!prior || prior.conclusion !== 'failure') {
+              core.info('No persistent failure yet for this workflow.');
+              return;
+            }
+            const jobs = await github.paginate(github.rest.actions.listJobsForWorkflowRun, {
+              owner, repo, run_id: run.id, per_page: 100
+            });
+            const failedJobs = jobs.filter(job => job.conclusion === 'failure');
+            const failureLines = failedJobs.flatMap(job => {
+              const steps = (job.steps || []).filter(step => step.conclusion === 'failure');
+              return steps.length
+                ? steps.map(step => '- ' + job.name + ' / ' + step.name)
+                : ['- ' + job.name];
+            });
+            const body = [
+              'Échec confirmé sur **deux exécutions consécutives** de ce workflow sur main.',
+              '',
+              '| Champ | Valeur |',
+              '| --- | --- |',
+              '| Workflow | ' + run.name + ' |',
+              '| Branche | main |',
+              '| SHA en échec | ' + run.head_sha + ' |',
+              '| Exécution récente | [#' + run.id + '](' + run.html_url + ') |',
+              '| Exécution précédente | [#' + prior.id + '](' + prior.html_url + ') |',
+              '| Tentative récente | ' + run.run_attempt + ' |',
+              '',
+              '### Étapes en échec',
+              ...(failureLines.length ? failureLines : ['- Consulter les journaux liés.']),
+              '',
+              'Diagnostic : ouvrir la dernière exécution, lire les logs, corriger sur une branche,',
+              'vérifier sur PR, puis fusionner seulement après autorisation.',
+              '',
+              '_Rapport automatique. Aucun secret, commit ou redéploiement automatique._'
+            ].join('\n');
+            if (incident) {
+              // One issue per failing workflow; update rather than flood the tracker.
+              await github.rest.issues.update({
+                owner, repo, issue_number: incident.number, body
+              });
+            } else {
+              await github.rest.issues.create({owner, repo, title, body});
+            }
+
+  report-pr:
+    # The triggering workflow runs untrusted PR code; this reporter never checks it out.
+    # It uses only GitHub's run and job metadata and only comments on same-repo PRs.
+    if: >-
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.name == 'LoveRoll connected web checks'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish SHA-specific check summary on the pull request
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const run = context.payload.workflow_run;
+            if (run.status !== 'completed' ||
+                !['success', 'failure', 'timed_out'].includes(run.conclusion)) return;
+            const {owner, repo} = context.repo;
+            const fullName = owner + '/' + repo;
+            const marker = '<!-- loveroll-ci-run-summary -->';
+            // GitHub may omit associated PRs from workflow_run in certain events.
+            const linked = (run.pull_requests || []).map(pr => pr.number);
+            if (!linked.length) {
+              const found = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+                owner, repo, commit_sha: run.head_sha
+              });
+              linked.push(...found.data.map(pr => pr.number));
+            }
+            const numbers = [...new Set(linked)];
+            if (!numbers.length) { core.info('No linked pull request'); return; }
+            const jobs = await github.paginate(github.rest.actions.listJobsForWorkflowRun, {
+              owner, repo, run_id: run.id, per_page: 100
+            });
+            const failures = jobs.filter(job => job.conclusion !== 'success' &&
+              job.conclusion !== 'skipped').flatMap(job => {
+                const failed = (job.steps || []).filter(step =>
+                  step.conclusion === 'failure' || step.conclusion === 'timed_out');
+                return failed.length
+                  ? failed.map(step => '- ' + job.name + ' / ' + step.name)
+                  : ['- ' + job.name + ' (' + job.conclusion + ')'];
+              });
+            for (const number of numbers) {
+              const response = await github.rest.pulls.get({owner, repo, pull_number: number});
+              const pr = response.data;
+              // No fork permissions, stale commit reporting, or non-main target.
+              if (pr.state !== 'open' || pr.base.ref !== 'main' ||
+                  pr.head.repo?.full_name !== fullName ||
+                  pr.head.sha !== run.head_sha) {
+                core.info('Skip stale, fork or unrelated PR #' + number);
+                continue;
+              }
+              const state = run.conclusion === 'success' ? '✅ Réussi' : '❌ Échec';
+              const body = [
+                marker,
+                '### LoveRoll — GitHub Actions (commit exact)',
+                '',
+                '**État final : ' + state + '**',
+                '',
+                '| Champ | Valeur |',
+                '| --- | --- |',
+                '| Branche | ' + pr.head.ref + ' |',
+                '| Commit SHA | ' + run.head_sha + ' |',
+                '| Run et tentative | [#' + run.id + '](' + run.html_url + ') / ' +
+                  run.run_attempt + ' |',
+                '| Conclusion | ' + run.conclusion + ' |',
+                '',
+                ...(run.conclusion === 'success'
+                  ? ['Toutes les étapes requises du workflow sont réussies.', '']
+                  : ['**Étapes en échec**', '',
+                     ...(failures.length ? failures : ['- Consulter les journaux du run.']),
+                     '']),
+                'Ce bilan porte uniquement sur ce SHA ; un nouveau push nécessite',
+                'une nouvelle exécution. La réussite CI ne confirme pas un déploiement Pages.',
+                '',
+                '_Rapport automatique, sans accès aux secrets ni modification du code._'
+              ].join('\n');
+              const comments = await github.paginate(github.rest.issues.listComments, {
+                owner, repo, issue_number: number, per_page: 100
+              });
+              const existing = comments.find(comment =>
+                comment.user?.type === 'Bot' && comment.body?.includes(marker));
+              try {
+                if (existing) {
+                  await github.rest.issues.updateComment({
+                    owner, repo, comment_id: existing.id, body
+                  });
+                } else {
+                  await github.rest.issues.createComment({
+                    owner, repo, issue_number: number, body
+                  });
+                }
+              } catch (error) {
+                // Preserve failure: CI reporting must not appear green when
+                // GitHub has denied the PR comment. Give the next Work session
+                // a precise permission / policy diagnostic instead of a silent skip.
+                if (error.status === 403) {
+                  const diagnostic = 'GitHub denied PR #' + number + ' CI comment (403). ' +
+                    'Check GITHUB_TOKEN Issues/Pull requests write scopes, repository Actions ' +
+                    'permissions and any policy restricting bot comments.';
+                  core.error(diagnostic);
+                  // A failed write still leaves an accessible job summary with the
+                  // exact run/SHA, while keeping the job FAILED for honest reporting.
+                  await core.summary.addHeading('LoveRoll CI — PR comment denied')
+                    .addRaw(diagnostic + '\\n')
+                    .addRaw('Source: ' + run.html_url + '\\nSHA: ' + run.head_sha)
+                    .write();
+                }
+                throw error;
+              }
+            }

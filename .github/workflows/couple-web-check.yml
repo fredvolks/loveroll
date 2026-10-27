@@ -43,6 +43,7 @@ jobs:
           node --check couple-web/evening-calendar.mjs
           node --check couple-web/evening-review.mjs
           node --check couple-web/evening-private-queue.mjs
+          node --test couple-web/evening-instructions.test.mjs
           node --test couple-web/evening-private-queue.test.mjs couple-web/evening-redesign.test.mjs couple-web/evening-calendar.test.mjs couple-web/evening-category-v93.test.mjs couple-web/evening-review.test.mjs
           node --test couple-web/privacy-screen.test.mjs
           node --test couple-web/monthly-pass-limit-sql.test.mjs
@@ -119,6 +120,9 @@ jobs:
           PY
       - name: Static security and logic contracts
         run: node --test couple-web/reset-ghost-session.test.mjs couple-web/all-dice-reset.test.mjs couple-web/dice-roll-motion.test.mjs couple-web/checks.test.mjs couple-web/couple-dashboard.test.mjs couple-web/json-libraries.test.mjs couple-web/push-and-invite.test.mjs couple-web/evening-turns.test.mjs couple-web/discover-flow.test.mjs couple-web/invite-links.test.mjs couple-web/signup-routing.test.mjs couple-web/stale-invitation-safari.test.mjs couple-web/dice-weighting.test.mjs couple-web/cycle-200.test.mjs couple-web/calendar-success-stats.test.mjs couple-web/love-category-style.test.mjs couple-web/dissociation-solo-admin.test.mjs couple-web/demo-couple.test.mjs couple-web/email-auth.test.mjs couple-web/premium-home.test.mjs couple-web/force-weekly-reset.test.mjs couple-web/pwa-update.test.mjs couple-web/premium-couple-pages.test.mjs couple-web/dice-visibility-layout.test.mjs couple-web/settings-premium.test.mjs couple-web/invite-password-auth.test.mjs couple-web/auth-push-dice.test.mjs couple-web/email-confirm-existing-google.test.mjs couple-web/existing-account-profile.test.mjs couple-web/native-bridge-login-recovery.test.mjs couple-web/android-native-bridge-thread.test.mjs couple-web/premium-advent.test.mjs couple-web/premium-dialogs.test.mjs couple-web/audit-journal-regressions.test.mjs couple-web/boot-hotfix.test.mjs
+
+      - name: Verify evening finale actions and privacy control (deployment parity)
+        run: node --test couple-web/evening-finale-v99.test.mjs
 
       - name: Verify real native premium Home buttons
         run: node --test couple-web/loveroll-home-native-v193.test.mjs
@@ -253,6 +257,9 @@ jobs:
           EOF
           node verify-ipad.cjs
           node --test couple-web/editorial-details.test.mjs
+      - name: Diagnose D100 compact header geometry early (no skipped validations)
+        run: LOVEROLL_D100_HEADER_PROBE=1 node couple-web/evening-d100-template-browser-check.cjs
+
       - name: Capture actual premium invitation and account pages on S25 / iPhone
         run: |
           python3 -m http.server 8765 -d couple-web >/tmp/love-invite58-http.log 2>&1 &
@@ -393,13 +400,6 @@ jobs:
 
       - name: Real app boot in Chromium (anonymous, Google callback, existing session)
         run: node couple-web/boot-smoke.cjs
-      - name: Archiver les captures Refuser et repiger de LoveRoll
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: LoveRoll-LR015-Soiree-${{ github.run_number }}
-          path: lr015-captures/*.png
-          if-no-files-found: warn
 
       - name: Verify REAL account and invite behaviors against mocked Supabase API
         run: node couple-web/auth-behavior-v58.cjs
@@ -429,8 +429,14 @@ jobs:
         run: |
           node couple-web/premium-couple-visual-check.cjs
 
+      - name: Verify live D100 Soirée size and marble contact across seven mobile viewports
+        run: node couple-web/evening-d100-template-browser-check.cjs
+
       - name: Verify Soirée responsive Step 1 and unchanged D35 on phones and tablets
         run: node couple-web/evening-redesign-browser-check.cjs
+
+      - name: Verify full challenge instructions remain readable on mobile
+        run: node couple-web/evening-instructions-browser-check.cjs
 
       - name: Verify category switches never remount live WebGL dice
         run: node couple-web/evening-category-no-flicker-browser-check.cjs
