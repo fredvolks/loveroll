@@ -153,3 +153,39 @@ test('LR-003: a passed challenge is not counted again as an unpicked slot',()=>{
  assert.equal(free.denominator,4);
  assert.equal(free.percent,25);
 });
+
+test('LR-015 an open-evening refusal is final without penalizing only-pending cards',()=>{
+ const open={id:'refused-night',started_at:'2026-10-24T19:00:00Z',finished_at:null};
+ const cards=[
+  {id:'done',session_id:open.id,recipient:'a',status:'completed'},
+  {id:'refuse',session_id:open.id,recipient:'a',status:'refused'},
+  {id:'pending',session_id:open.id,recipient:'a',status:'proposed'}
+ ];
+ const result=monthlyChallengeSuccess({month:'2026-10',members,sessions:[open],
+  historyChallenges:cards,sessionStats:[{session_id:open.id,user_id:'a',target:3}]})[0];
+ assert.equal(result.done,1);
+ assert.equal(result.denominator,2);
+ assert.equal(result.percent,50);
+ assert.equal(result.penalizedPasses,0,'A refusal must not consume monthly pass quota');
+});
+
+test('LR-015: replacement chains consume one D6 slot, while all original events stay in history',()=>{
+ const night={id:'n-rl',started_at:'2026-10-25T20:00:00Z',finished_at:'2026-10-26T00:00:00Z',counted:true};
+ const all=[
+  {id:'old1',session_id:'n-rl',recipient:'a',status:'refused'},
+  {id:'new1',replaces_challenge_id:'old1',session_id:'n-rl',recipient:'a',status:'passed'},
+  {id:'done1',replaces_challenge_id:'new1',session_id:'n-rl',recipient:'a',status:'completed'}
+ ];
+ const args={month:'2026-10',members,sessions:[night],historyChallenges:all,
+   sessionStats:[{session_id:'n-rl',user_id:'a',target:3,drawn:1,completed:1}]};
+ const result=monthlyChallengeSuccess(args)[0];
+ assert.equal(all.length,3,'Immutable calendar history still records every attempt');
+ assert.equal(result.done,1);
+ assert.equal(result.unpicked,2,'Only the final replacement occupies a D6 slot');
+ assert.equal(result.denominator,3,'Refusal and passage ancestors must not penalize twice');
+ assert.equal(result.percent,33);
+ const active=monthlyChallengeSuccess({...args,sessions:[{...night,finished_at:null} ]})[0];
+ assert.equal(active.unpicked,0,'Open evening unpicked slots are not yet failures');
+ assert.equal(active.denominator,1);
+ assert.equal(active.percent,100);
+});

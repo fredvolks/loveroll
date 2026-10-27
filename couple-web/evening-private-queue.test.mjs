@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {ownEveningChallenges,queuePosition,queueLabel,hasTurnToDraw} from './evening-private-queue.mjs';
+import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw} from './evening-private-queue.mjs';
 import {premiumEveningHtml} from './premium-evening.mjs';
 const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
 const migration=readFileSync(new URL('./migrations/20261015_evening_private_challenge_queue.sql',import.meta.url),'utf8');
@@ -74,4 +74,66 @@ test('Only completed challenge cards are greyed but stay clickable for history',
  assert.match(queueCss,/background:linear-gradient\(120deg,#39323b,#211e28\)!important/);
  assert.doesNotMatch(app,/data-action="evening-open:.*disabled/);
  assert.match(queueCss,/\.evening-queue-item\.is-completed:focus-visible/);
+});
+
+test('LR-015 queue labels an explicitly refused card without exposing partner data',()=>{
+ assert.equal(queueLabel('refused'),'Refusé');
+ assert.equal(queueLabel('passed'),'Passé');
+ assert.equal(queueLabel('completed'),'Terminé');
+});
+
+test('LR-015: active cards expose three explicit refusal choices and one atomic replacement',()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ assert.equal(queueLabel('refused'),'Refusé');
+ assert.match(app,/evening-refuse-choice:/);
+ assert.match(app,/Oui, retirer du lot/);
+ assert.match(app,/Non, le garder dans le lot/);
+ assert.match(app,/rpc\('love_respond_and_redraw'/);
+ assert.match(app,/challengeTimer\.decisionPending=true/);
+ assert.match(app,/challengeTimer\.autoCompletePending=false/);
+});
+
+test('LR-015 replacement occupies one visible D6 slot while history remains immutable',()=>{
+ const original={...a,id:'past-refusal',status:'refused'};
+ const passed={...c,id:'past-pass',status:'passed'};
+ const replacement={...a,id:'replacement',status:'proposed',created_at:'2026-10-15T19:10:00Z'};
+ const all=ownEveningChallenges([original,passed,replacement,b],'fred','s1');
+ assert.equal(all.length,3,'history retains every occurrence');
+ assert.deepEqual(visibleEveningQueue(all).map(row=>row.id),['replacement']);
+ assert.deepEqual(visibleEveningQueue([{...a,status:'completed'},replacement]).map(row=>row.id),['challenge-a','replacement']);
+ assert.match(readFileSync(new URL('./app.js',import.meta.url),'utf8'),
+  /const mineCards=session\?visibleEveningQueue\(ownEveningChallenges\(state\.challenges,uid,session\.id\)\):\[\];/);
+});
+
+test('LR-015 replacements preserve their original D6 slot through repeated refusal',()=>{
+ const first={...a,id:'slot-1',status:'refused',created_at:'2026-10-15T19:00:00Z'};
+ const other={...a,id:'slot-2',status:'completed',card_id:2,created_at:'2026-10-15T19:01:00Z'};
+ const earlierReplacement={...a,id:'slot-1b',status:'refused',replaces_challenge_id:'slot-1',created_at:'2026-10-15T19:02:00Z'};
+ const latest={...a,id:'slot-1c',status:'proposed',replaces_challenge_id:'slot-1b',created_at:'2026-10-15T19:03:00Z'};
+ const full=ownEveningChallenges([other,latest,first,earlierReplacement],'fred','s1');
+ assert.deepEqual(visibleEveningQueue(full).map(x=>x.id),['slot-1c','slot-2']);
+ assert.equal(full.length,4,'all historical occurrences retained');
+});
+
+test('LR-016 quota UX states used/limit, explains next month, never disables unlimited refusal',()=>{
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ assert.match(source,/Limite atteinte : /);
+ assert.match(source,/Passes ce mois : /);
+ assert.match(source,/state\.monthlyPassQuota\?\.used/);
+ assert.match(source,/state\.monthlyPassQuota\?\.limit/);
+ assert.match(source,/Tu pourras passer à nouveau le 1er du mois prochain, ou choisir Refuser/);
+ assert.match(source,/Refuser reste permis, sans limite/);
+ assert.match(source,/state\.redrawBusy\|\|state\.monthlyPassQuota\?\.can_pass===false\?'disabled'/);
+ assert.match(source,/state\.redrawBusy\?'disabled'/);
+});
+
+test('LR-015 keeps old queue CSS disabled and loads targeted mobile decision styling',()=>{
+ const html=readFileSync(new URL('./index.html',import.meta.url),'utf8');
+ const css=readFileSync(new URL('./evening-editorial.css',import.meta.url),'utf8');
+ assert.ok(!html.includes('evening-private-queue.css'),'The deprecated queue stylesheet must stay disabled');
+ assert.ok(html.includes('evening-editorial.css?v='),'The approved stylesheet must actually be loaded');
+ assert.ok(css.includes('#app .lr-redraw-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));'));
+ assert.ok(css.includes('#app .lr-redraw-actions>small{grid-column:1/-1;display:block'));
+ assert.ok(css.includes('@media(max-width:360px)'));
+ assert.ok(css.includes('#app .lr-refusal-dialog{position:relative;display:block'));
 });

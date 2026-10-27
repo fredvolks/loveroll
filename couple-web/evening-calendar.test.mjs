@@ -124,21 +124,42 @@ test('Only closure makes a proposed or accepted card definitively non-realized',
  assert.equal(eveningChallengeStatusLabel('completed',false),'✓ Réalisé');
 });
 
-test('LR-003: default calendar month tracks the current America/Toronto date, never a fixed 2026 month',()=>{
- const today=eveningLocalDay(new Date().toISOString());
- const expectedMonth=today.slice(0,7);
- const html=eveningHistoryMarkup({members:[],sessions:[],stats:[]});
- assert.ok(html.includes('data-action="evening-date:'+expectedMonth+'-01"'),
-  'Unspecified month must open the real Quebec month: '+expectedMonth);
- assert.doesNotMatch(files('./evening-calendar.mjs'),/isoMonth\(month\)\|\|'2026-10'/);
+test('LR-015 refusal is explicit in the calendar before and after evening closure',()=>{
+ assert.equal(eveningChallengeStatusLabel('refused',false),'◇ Refusé');
+ assert.equal(eveningChallengeStatusLabel('refused',true),'◇ Refusé, non réalisé');
+ const html=eveningHistoryMarkup({
+  month:'2026-10',selectedDate:'2026-10-15',
+  sessions:[{id:'refusal',started_at:'2026-10-15T16:00:00Z',finished_at:null}],
+  members:[{user_id:'a',name:'Partenaire'}],me:'a',
+  stats:[{session_id:'refusal',user_id:'a',target:1,completed:0,drawn:1}],
+  historyChallenges:[{id:'r1',session_id:'refusal',recipient:'a',status:'refused',
+   category:'SENSUEL',card_title:'Ancien défi refusé'}]
+ });
+ assert.match(html,/◇ Refusé/);
+ assert.match(html,/Ancien défi refusé/);
 });
 
-test('LR-003: stale or impossible selected days never escape the displayed calendar month',()=>{
- for(const date of ['2026-09-30','2026-10-32','2026-10-00','2026-10-31x','2026-10-99']){
-  const html=eveningHistoryMarkup({month:'2026-10',selectedDate:date});
-  assert.match(html,/data-action="evening-date:2026-10-01" aria-label="2026-10-01 : aucune soirée" aria-pressed="true"/);
+test('LR-003 calendar without a month uses the current Toronto month, never fixed October 2026',()=>{
+ const html=eveningHistoryMarkup();
+ const expected=eveningLocalDay(new Date().toISOString()).slice(0,7);
+ assert.match(html,new RegExp('data-action="evening-date:'+expected+'-01"'));
+ assert.match(html,new RegExp(expected+'-01 · Historique'));
+ const source=files('./evening-calendar.mjs');
+ assert.doesNotMatch(source,/isoMonth\(month\)\|\|'2026-10'/);
+});
+test('LR-003 calendar rejects stale, malformed and impossible selected dates',()=>{
+ const previous=['2026-09-30','2026-11-01','2026-10-32','2026-10-00',
+  '2026-10-31x','2026-10-99','2026-02-31'];
+ for(const selectedDate of previous){
+  const html=eveningHistoryMarkup({month:'2026-10',selectedDate});
   assert.match(html,/2026-10-01 · Historique/);
+  assert.match(html,/data-action="evening-date:2026-10-01"[^>]*aria-pressed="true"/);
  }
  const valid=eveningHistoryMarkup({month:'2026-10',selectedDate:'2026-10-31'});
- assert.match(valid,/data-action="evening-date:2026-10-31" aria-label="2026-10-31 : aucune soirée" aria-pressed="true"/);
+ assert.match(valid,/2026-10-31 · Historique/);
+ assert.match(valid,/data-action="evening-date:2026-10-31"[^>]*aria-pressed="true"/);
+ const leap=eveningHistoryMarkup({month:'2028-02',selectedDate:'2028-02-29'});
+ assert.match(leap,/2028-02-29 · Historique/);
+ const notLeap=eveningHistoryMarkup({month:'2027-02',selectedDate:'2027-02-29'});
+ assert.match(notLeap,/2027-02-01 · Historique/);
 });

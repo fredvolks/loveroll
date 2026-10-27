@@ -17,6 +17,7 @@ export function eveningLocalDay(iso){
 export function eveningChallengeStatusLabel(status,closed=false){
  if(status==='completed')return '✓ Réalisé';
  if(status==='passed')return closed?'↷ Passé, non réalisé':'↷ Passé';
+ if(status==='refused')return closed?'◇ Refusé, non réalisé':'◇ Refusé';
  if(status==='accepted')return closed?'◷ Non réalisé après début':'◷ En cours';
  if(status==='proposed')return closed?'○ Non réalisé (non commencé)':'○ À faire';
  return closed?'○ Non réalisé':'○ À confirmer';
@@ -25,11 +26,12 @@ const monthLabel=mo=>new Intl.DateTimeFormat('fr-CA',{month:'long',year:'numeric
  .format(new Date(mo+'-15T12:00:00Z'));
 export function eveningHistoryMarkup({sessions=[],members=[],stats=[],historyChallenges=[],reviews=[],me,month,selectedDate,
  weeklyRolls=[],passQuota=[],backAction='tab:session',backLabel='Retour à Soirée'}={}){
- // Default to the real Quebec calendar month; a fixed 2026-10 fallback
- // would show a stale calendar for all unparameterized views after October 2026.
+ // The calendar's fallback month follows the couple's Toronto timezone.
+ // Previously it was frozen to October 2026, including in future years.
  const current=isoMonth(month)||eveningLocalDay(new Date().toISOString()).slice(0,7);
  const [year,m]=current.split('-').map(Number);
- // A stale or impossible selected day must not point outside the visible month.
+ // A stale selection from a different month (or an impossible local date)
+ // must never leave the calendar showing one month and another day's history.
  const candidate=selectedDate&&/^\d{4}-\d{2}-\d{2}$/.test(selectedDate)?selectedDate:null;
  const [cy,cm,cd]=(candidate||'').split('-').map(Number);
  const validDate=candidate&&candidate.startsWith(current+'-')&&
