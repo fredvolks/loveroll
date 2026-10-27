@@ -127,7 +127,7 @@ begin
   'scene_type',v_type,'state',v_s.state,'skipped_scenes',v_s.skipped_scenes,
   'branch',v_s.branch,'door_confirmed',v_s.door_confirmed_scene=v_s.chapter_plan[v_s.chapter_index],
   'my_door_vote',v_door_vote,
-  'revealed',v_s.revealed_step=v_s.chapter_index,
+  'revealed',coalesce(v_s.revealed_step=v_s.chapter_index,false),
   'ready_count',v_ready,'my_ready',v_mine,
   'can_reveal',case when v_type<>'Secret' then false
    when v_s.device_mode='two' then v_ready=2 else false end,
