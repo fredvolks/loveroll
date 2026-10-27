@@ -347,7 +347,7 @@ begin
           then array_append(skipped_scenes,chapter_plan[chapter_index])
           else skipped_scenes end,
        revealed_step=null,
-       branch=case when p_action='pass' and coffret_id=4 and chapter_plan[chapter_index]=1
+       branch=case when p_action='pass' and coffret_id=4 and chapter_plan[chapter_index]=1 and branch is null
           then 'Jeu' else branch end,
        door_confirmed_scene=case when p_action='pass' and coffret_id=4 and chapter_plan[chapter_index] in (1,5)
           then chapter_plan[chapter_index] else door_confirmed_scene end,

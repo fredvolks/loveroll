@@ -29,3 +29,14 @@ test('Oral agreement never inferred and explicit errors are retained',async()=>{
  const invalid=createEclatV2SessionApi({async rpc(){return {data:{access:true,active:true}};}});
  await assert.rejects(invalid.status(),/incohérente/);
 });
+
+test('Door selection is an explicit dedicated RPC and cannot impersonate B',async()=>{
+ const calls=[];const api=createEclatV2SessionApi({async rpc(name,args){calls.push({name,args});return {data:status};}});
+ await api.door({sessionId:sid,expectedStep:1,door:'Jeu'});
+ await api.door({sessionId:sid,expectedStep:5,door:'Mystère',jointOral:true});
+ assert.deepEqual(calls.map(x=>x.name),['love_eclat_v2_choose_door','love_eclat_v2_choose_door']);
+ assert.equal(calls[0].args.p_joint_oral,false);
+ assert.equal(calls[1].args.p_joint_oral,true);
+ assert.ok(calls.every(x=>!JSON.stringify(x.args).includes('user_id')));
+ assert.throws(()=>api.door({sessionId:sid,expectedStep:1,door:'Hasard'}),RangeError);
+});
