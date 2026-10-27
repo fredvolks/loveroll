@@ -1,4 +1,4 @@
-import {fitSharedStage} from './shared-stage.mjs?v=20261022-home228';
+import {fitSharedStage,fitTabletRomanceStage} from './shared-stage.mjs?v=20261026-web237';
 import {pipFace} from './premium-home.mjs?v=20261022-home228';
 import {EVENING_DEFAULT_WEIGHTS,effectiveDicePercentages,displayedDicePercent} from './dice-weighting.mjs';
 
@@ -16,7 +16,7 @@ let observer;
 export function fitEveningD6(root){
  observer?.disconnect();observer=null;
  const view=root.querySelector('.evening-premium-view.is-waiting');
- root.classList.toggle('has-evening-d6-template',!!view&&matchMedia('(max-width:767px)').matches);
+ root.classList.toggle('has-evening-d6-template',!!view&&matchMedia('(max-width:1199px), (pointer:coarse) and (min-width:768px)').matches);
  if(!root.classList.contains('has-evening-d6-template'))return false;
  view.classList.add('has-home-soiree-template','has-evening-d6-template');
  const own=view.querySelector('.evening-my-die'),canvas=own.querySelector('canvas');
@@ -58,7 +58,8 @@ export function fitEveningD6(root){
  dialog.addEventListener('close',()=>info.focus({preventScroll:true}));
  const fit=()=>{
   if(!view.isConnected){fitObserver.disconnect();return;}
-  fitSharedStage(root);
+  if(matchMedia('(min-width:768px)').matches)fitTabletRomanceStage(root);
+  else fitSharedStage(root);
  };
  const fitObserver=new ResizeObserver(fit);observer=fitObserver;fitObserver.observe(root);fit();canvas.loveRollDie?.refresh?.();document.fonts.ready.then(fit);
  return true;
