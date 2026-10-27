@@ -575,6 +575,9 @@ export function dieOn(canvas,sides,value,rolling){
    const fitBounds=projectedBounds();
    // A tall Surprise stage must still fit the entire ruby mesh inside its canvas.
    camera.zoom*=Math.min(1,(contact-sceneRect.top-headroom)/((fitBounds.bottom-fitBounds.top)*rect.height),.49/(.5-fitBounds.top),.49/(fitBounds.bottom-.5),.49/(.5-fitBounds.left),.49/(fitBounds.right-.5));
+   // On 360x640 the idle Soirée D100 projected 12.4% larger than Surprise.
+   // Match the reference mesh on narrow phones without altering game results.
+   if(idleEveningD100&&window.matchMedia?.('(max-width:767px)').matches)camera.zoom*=.88;
    camera.updateProjectionMatrix();
   }
   bounds=projectedBounds();
