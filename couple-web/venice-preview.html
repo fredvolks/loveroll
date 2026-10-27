@@ -1,0 +1,116 @@
+<!DOCTYPE html><html lang="fr-CA"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><title>LoveRoll | Essai Venice</title>
+<style>
+:root{color-scheme:dark;font-family:system-ui,Segoe UI,sans-serif;background:#1a0b13;color:#fff0f4}
+*{box-sizing:border-box}body{margin:0;min-height:100dvh;padding:clamp(12px,3vw,24px);background:radial-gradient(ellipse at top,#592338 0%,#1a0b13 70%)}
+main{max-width:650px;margin:auto}a{color:#ffd8e4}header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;gap:12px}
+h1{font:normal clamp(31px,7vw,43px)/1.1 Georgia,serif;margin:8px 0 13px}h2{font:normal 27px Georgia,serif;margin:8px 0}
+p{line-height:1.6}.muted{font-size:13px;color:#e2b9c7}.eyebrow{text-transform:uppercase;letter-spacing:.15em;font-size:11px;color:#ffbacf;font-weight:700}
+.panel{padding:clamp(16px,4vw,27px);margin:16px 0;background:linear-gradient(125deg,#5a2239bd,#2b1124e6);border:1px solid #f6bed238;border-radius:21px;box-shadow:0 15px 40px #0004}
+button{font:inherit;cursor:pointer;min-height:44px;color:white;border:1px solid #b56c88;border-radius:12px;padding:11px 13px;background:#51233a;font-weight:600}
+button:disabled{opacity:.52;cursor:not-allowed}button.main{width:100%;background:linear-gradient(120deg,#b73b5f,#852a47)}
+[hidden]{display:none!important}:focus-visible{outline:3px solid #ffc6d9;outline-offset:3px}
+.tabs,.modes,.actions{display:flex;gap:8px;flex-wrap:wrap;margin:15px 0}.tabs button,.modes button{flex:1}
+button[aria-selected=true]{border-color:#ffccda;background:#9e3355}
+.tags{display:flex;gap:8px;flex-wrap:wrap;font-size:12px;color:#ffdce5}.tags span{border-radius:99px;background:#260c1c;padding:6px 9px}
+#cardText{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.65;font-size:16px;margin:18px 0}#permission{border-top:1px solid #ffffff35;padding-top:12px;font-size:13px;color:#f8d5df}
+.actions button{flex:1}
+</style></head>
+<body><main><header><a href="./">← Retour à LoveRoll</a><span class="eyebrow">Atelier privé</span></header>
+<section><span class="eyebrow">Test Venice API</span><h1>Voyons les trois niveaux.</h1><p>Un exemple Soft, un Medium et un Intense, générés réellement par Venice avec des textes concis et détaillés. Aucun défi du jeu ne sera remplacé.</p></section>
+<section class="panel"><strong>État de la connexion</strong><p id="status" role="status" aria-live="polite">Connexion à votre compte LoveRoll…</p>
+<div class="actions"><button id="verify" hidden>Vérifier Venice</button></div>
+<button class="main" id="generate" disabled>Générer les 3 cartes (API Venice)</button>
+<p class="muted">Cette action consomme une petite quantité de crédits Venice; elle est limitée à un essai par couple par jour UTC et ne consomme pas votre régénération de 100 cartes.</p></section>
+<section class="panel" id="preview" hidden><span class="eyebrow">Brouillon sauvegardé · Non publié</span>
+<div id="tabs" class="tabs" aria-label="Niveau"></div><h2 id="title"></h2><div id="metadata" class="tags"></div>
+<div class="modes"><button id="short" aria-selected="false">Concis</button><button id="detailed" aria-selected="true">Détaillé</button></div>
+<p id="cardText"></p><p id="permission"></p><div class="actions"><button id="download">Exporter les 3 en JSON</button></div>
+<p class="muted">Les cartes sont privées et ne changent pas le D100, les minuteries des défis déjà pigés ni vos favoris.</p></section>
+<script type="module">
+import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.57.0';
+const client=createClient('https://ejsrqfpkgwraorrznjpm.supabase.co','sb_publishable_TJVy7n593JmFC_O2nV9vQQ_Nb0GTjJe');
+const el=id=>document.getElementById(id),msg=s=>{el('status').textContent=s};
+const url='https://ejsrqfpkgwraorrznjpm.supabase.co/functions/v1/love-venice-bridge';
+let coupleId=null,cards=[],active=0,detailed=true;
+const names={soft:'Soft',medium:'Medium',intense:'Intense'};
+async function call(action){
+ const {data}=await client.auth.getSession();
+ const token=data?.session?.access_token;
+ if(!token)throw Error('Connecte-toi à LoveRoll sur ce même navigateur avant cet essai.');
+ const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token,
+ apikey:'sb_publishable_TJVy7n593JmFC_O2nV9vQQ_Nb0GTjJe'},body:JSON.stringify({action,couple_id:coupleId})});
+ const value=await r.json();
+ if(!r.ok)throw Error(value?.error||'Échec de l’appel serveur ('+r.status+').');
+ return value;
+}
+function renderCard(){
+ const card=cards[active];
+ if(!card)return;
+ el('preview').hidden=false;
+ el('tabs').replaceChildren();
+ cards.forEach((c,i)=>{
+ const button=document.createElement('button');
+ button.textContent=names[c.style]||c.style;
+ button.setAttribute('aria-selected',String(i===active));
+ button.onclick=()=>{active=i;renderCard()};
+ el('tabs').append(button);
+ });
+ el('title').textContent=card.error?'Carte indisponible':card.title;
+ const meta=el('metadata');meta.replaceChildren();
+ for(const part of card.error?[card.error]:[
+ (card.timer_minutes||'—')+' min',
+ 'Pige : '+({her:'Femme',him:'Homme',both:'Les deux'}[card.drawer_role]||card.drawer_role),
+ card.origin==='venice-api'?'Texte Venice réel':'Source inconnue'
+ ]){
+ const s=document.createElement('span');s.textContent=part;meta.append(s);
+ }
+ el('cardText').textContent=card.error?'':detailed?card.text_detailed:card.text_short;
+ el('permission').textContent=card.error?'':'Accord : '+(card.required_consent||'des deux partenaires');
+ el('short').setAttribute('aria-selected',String(!detailed));
+ el('detailed').setAttribute('aria-selected',String(detailed));
+}
+function show(data){
+ const saved=data?.preview||data;
+ cards=saved?.cards||[];
+ if(cards.length){active=0;renderCard();}
+ if(saved?.status==='running')msg('Un essai est enregistré mais pas encore terminé.');
+ if(cards.length)msg('Brouillon Venice sauvegardé : '+cards.filter(c=>!c.error).length+'/3 cartes disponibles.');
+}
+async function load(){
+ try{
+ const {data:{user}}=await client.auth.getUser();
+ if(!user)throw Error('Ouvre et connecte-toi à LoveRoll, puis reviens ici.');
+ const {data:couples,error}=await client.from('couples').select('id').eq('owner_user_id',user.id).limit(1);
+ if(error)throw Error('Impossible de récupérer ton couple.');
+ if(!couples?.length)throw Error('Seul l’administrateur du couple peut générer ces exemples.');
+ coupleId=couples[0].id;
+ const status=await call('status');msg(status.message||'Connexion inconnue');
+ el('verify').hidden=false;el('generate').disabled=!status.configured;
+ const previous=await call('get_latest_preview');
+ if(previous?.saved)show(previous);
+ }catch(e){msg(e.message||'Erreur de connexion.')}
+}
+el('verify').onclick=async()=>{
+ try{el('verify').disabled=true;msg('Vérification de la clé…');
+ const state=await call('verify_key');msg(state.message||'État inconnu');
+ el('generate').disabled=!state.connected;
+ }catch(e){msg(e.message)}finally{el('verify').disabled=false}
+};
+el('generate').onclick=async()=>{
+ if(!confirm('Générer 3 exemples avec les crédits de ton compte Venice?'))return;
+ el('generate').disabled=true;msg('Venice génère les exemples Soft, Medium et Intense…');
+ try{show(await call('preview_three'))}
+ catch(e){msg(e.message);try{show(await call('get_latest_preview'))}catch{}}
+ finally{el('generate').disabled=false}
+};
+el('short').onclick=()=>{detailed=false;renderCard()};
+el('detailed').onclick=()=>{detailed=true;renderCard()};
+el('download').onclick=()=>{
+ const data=JSON.stringify({format:'loveroll-venice-preview',version:1,cards},null,2);
+ const file=new Blob([data],{type:'application/json;charset=utf-8'});
+ const src=URL.createObjectURL(file),a=document.createElement('a');
+ a.href=src;a.download='loveroll-venice-3-cartes.json';a.click();
+ setTimeout(()=>URL.revokeObjectURL(src),10000);
+};
+load();
+</script></main></body></html>

@@ -1,0 +1,22 @@
+name: LoveRoll Venice bridge checks
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/love-venice-bridge/**'
+      - 'couple-web/venice-bridge-contract.test.mjs'
+      - 'couple-web/venice-three-cards.test.mjs'
+      - 'couple-web/migrations/20261027_venice_three_card_preview.sql'
+      - 'couple-web/venice-preview.html'
+      - '.github/workflows/venice-bridge-check.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  bridge-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --test couple-web/venice-bridge-contract.test.mjs couple-web/venice-three-cards.test.mjs
