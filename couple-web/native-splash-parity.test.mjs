@@ -50,15 +50,13 @@ test('Native document/network failure stops animation and offers retry without d
  assert.match(activity,/request\.isForMainFrame\(\)\)showNativeLoadFailure/);
  assert.match(activity,/retry\.setText\("Réessayer"\)/);
  assert.match(activity,/web\.loadUrl\(retryDestination==null\?SITE:retryDestination\)/);
- assert.doesNotMatch(activity,/removeAllCookies|deleteDatabase|clearData/);
-
+ assert.doesNotMatch(activity,/removeAllCookies|deleteDatabase|clearData/); 
 });
-
 
 test('Android versionCode, versionName and signed release tag stay aligned',()=>{
  const gradle=read('../app/build.gradle');
  const workflow=read('../.github/workflows/android.yml');
- const match=gradle.match(/versionCode (\\d+);\\s*versionName '(\\d+)\\.(\\d+)\\.(\\d+)'/);
+ const match=gradle.match(/versionCode (\d+);\s*versionName '(\d+)\.(\d+)\.(\d+)'/);
  assert.ok(match,'Android must expose a semantic version and an integer versionCode');
  const [major,minor,patch]=match.slice(2).map(Number);
  const version=major+'.'+minor+'.'+patch;
