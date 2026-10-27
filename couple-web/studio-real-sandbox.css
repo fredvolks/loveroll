@@ -34,7 +34,25 @@
 .studio-real-frames{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .studio-real-frame{min-width:0;overflow:hidden;border:1px solid #a16784;background:#1e0c19;
  border-radius:16px;box-shadow:0 10px 25px #0003}
-.studio-real-frame-label{display:block;padding:10px 13px;font-size:12px;font-weight:700;color:#ffd5e6}
+.studio-real-frame-label{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 13px;font-size:12px;font-weight:700;color:#ffd5e6}
+.studio-real-maximize{border:1px solid #b47794;border-radius:9px;color:#fff1f6;background:#502b40;min-height:38px;padding:7px 13px;font:600 13px/1.2 system-ui,sans-serif;cursor:pointer}
+.studio-real-maximize:focus-visible{outline:2px solid #ffe2b1;outline-offset:2px}
+html.studio-real-fullscreen,html.studio-real-fullscreen body{overflow:hidden!important}
+.studio-real-frame.studio-real-maximized{
+ display:flex!important;flex-direction:column!important;
+ position:fixed!important;inset:0!important;
+ box-sizing:border-box!important;width:100vw!important;height:100dvh!important;
+ max-width:none!important;max-height:none!important;z-index:2147483000!important;
+ border:0!important;border-radius:0!important;background:#1e0c19!important;
+ padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px)
+  env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)!important;
+ box-shadow:none!important;
+}
+.studio-real-frame.studio-real-maximized .studio-real-frame-label{flex:0 0 auto;min-height:48px}
+.studio-real-frame.studio-real-maximized iframe{
+ display:block!important;flex:1 1 auto!important;width:100%!important;
+ height:auto!important;min-height:0!important;max-height:none!important;
+}
 .studio-real-frame iframe{display:block;border:0;background:#160813;width:100%;
  height:clamp(560px,74dvh,1080px);min-height:560px}
 .studio-real-game .small-note{line-height:1.55}
