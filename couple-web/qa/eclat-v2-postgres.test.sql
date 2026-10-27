@@ -26,11 +26,13 @@ begin
  if again->>'ready_count'<>'1' or again->>'can_reveal'<>'false' then
   raise exception 'One partner readiness not isolated'; end if;
 end $$;
+select set_config('eclat.test.session',
+ (public.love_eclat_v2_status()->>'session_id'), false);
 set request.jwt.claim.sub='00000000-0000-0000-0000-000000000003';
 do $$
 declare s uuid;
 begin
- select id into s from public.love_eclat_v2_sessions limit 1;
+ s:=current_setting('eclat.test.session')::uuid;
  begin
   perform public.love_eclat_v2_status(s);
   raise exception 'Cross-couple status leaked';

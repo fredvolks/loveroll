@@ -134,8 +134,9 @@ begin
   join public.couple_members m on m.couple_id=c.id
   where m.user_id=v_actor for update of c;
  if v_couple is null then raise exception 'Duo requis' using errcode='42501'; end if;
- select count(*),max(user_id) filter(where user_id<>v_actor)
-  into v_members,v_partner from public.couple_members where couple_id=v_couple;
+ select count(*) into v_members from public.couple_members where couple_id=v_couple;
+ select user_id into v_partner from public.couple_members
+  where couple_id=v_couple and user_id<>v_actor;
  if v_members<>2 or v_partner is null then raise exception 'Deux partenaires requis'; end if;
  if not public.love_eclat_has_access(v_couple) then
   raise exception 'Éclat Premium requis' using errcode='42501';
