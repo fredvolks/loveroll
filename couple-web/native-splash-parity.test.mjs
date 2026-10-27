@@ -51,5 +51,21 @@ test('Native document/network failure stops animation and offers retry without d
  assert.match(activity,/retry\.setText\("Réessayer"\)/);
  assert.match(activity,/web\.loadUrl\(retryDestination==null\?SITE:retryDestination\)/);
  assert.doesNotMatch(activity,/removeAllCookies|deleteDatabase|clearData/);
- assert.match(read('../app/build.gradle'),/versionCode 130013; versionName '0\.13\.13'/);
+
+});
+
+
+test('Android versionCode, versionName and signed release tag stay aligned',()=>{
+ const gradle=read('../app/build.gradle');
+ const workflow=read('../.github/workflows/android.yml');
+ const match=gradle.match(/versionCode (\\d+);\\s*versionName '(\\d+)\\.(\\d+)\\.(\\d+)'/);
+ assert.ok(match,'Android must expose a semantic version and an integer versionCode');
+ const [major,minor,patch]=match.slice(2).map(Number);
+ const version=major+'.'+minor+'.'+patch;
+ assert.equal(Number(match[1]),major*1_000_000+minor*10_000+patch,
+  'versionCode must increase with the corresponding semantic version');
+ assert.ok(workflow.includes('TAG: des-a-deux-v'+version),
+  'Signed release tag must match the installed APK version');
+ assert.ok(workflow.includes('dist/LoveRoll-v'+version+'.apk'),
+  'Release must publish the matching APK asset');
 });
