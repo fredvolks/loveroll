@@ -4,7 +4,7 @@ export function createStudioRealSandbox({client}){
  const uri='love-studio-sandbox';
  const validSeats=['A','B'];
  const frames={A:null,B:null};
- let status=null,tab='A',busy=false,initialized=false,loginInFlight=new Set();
+ let status=null,tab='A',busy=false,initialized=false,loginInFlight=new Set(),expandedSeat=null;
  const label=s=>s==='A'?'Joueur A':'Joueur B';
  const say=(message)=>{const node=$('studio-real-status');if(node)node.textContent=message;};
  async function request(action,seat){
@@ -22,10 +22,41 @@ export function createStudioRealSandbox({client}){
    if(host)host.classList.toggle('studio-real-active',active);
   }
  }
+ // Enlarge the SAME mounted iframe; never destroy or spoof the real game.
+ // CSS fills the available viewport when the Fullscreen API is unavailable
+ // (including some iPad Safari versions).
+ function collapseSeat(){
+  if(!expandedSeat)return;
+  expandedSeat=null;
+  document.documentElement.classList.remove('studio-real-fullscreen');
+  for(const s of validSeats){
+   $('studio-real-frame-'+s)?.classList.remove('studio-real-maximized');
+   const button=$('studio-real-expand-'+s);
+   if(button){button.textContent='Agrandir';button.setAttribute('aria-pressed','false');
+    button.setAttribute('aria-label','Agrandir le vrai jeu du joueur '+s);}
+  }
+ }
+ function toggleExpandedSeat(seat){
+  if(!validSeats.includes(seat)||!frames[seat])return;
+  if(expandedSeat===seat){collapseSeat();return;}
+  collapseSeat();
+  expandedSeat=seat;
+  showSeat(seat);
+  document.documentElement.classList.add('studio-real-fullscreen');
+  $('studio-real-frame-'+seat)?.classList.add('studio-real-maximized');
+  const button=$('studio-real-expand-'+seat);
+  if(button){button.textContent='Réduire';button.setAttribute('aria-pressed','true');
+   button.setAttribute('aria-label','Quitter le plein écran du joueur '+seat);
+   button.focus({preventScroll:true});}
+ }
  function closeFrames(){
-  for(const seat of validSeats){const host=$('studio-real-frame-'+seat);
-   if(host)host.replaceChildren();
+  collapseSeat();
+  for(const seat of validSeats){
+   // Keep the permanent heading and 'Agrandir' control, remove ONLY the
+   // authenticated iframe so Refresh and New Trial remain usable.
+   $('studio-real-frame-'+seat)?.querySelector('iframe')?.remove();
    frames[seat]=null;
+   loginInFlight.delete(seat);
    try{sessionStorage.removeItem('loveroll-studio-auth-v1-'+seat)}catch{}
   }
  }
@@ -95,6 +126,10 @@ export function createStudioRealSandbox({client}){
   if(initialized)return;initialized=true;
   window.addEventListener('message',onChildMessage);
   for(const seat of validSeats)$('studio-show-seat-'+seat).addEventListener('click',()=>showSeat(seat));
+  for(const seat of validSeats)$('studio-real-expand-'+seat).addEventListener('click',()=>toggleExpandedSeat(seat));
+  window.addEventListener('keydown',event=>{
+   if(event.key==='Escape'&&expandedSeat){event.preventDefault();collapseSeat();}
+  });
   $('studio-real-create').addEventListener('click',async()=>{
    if(busy)return;
    if(!confirm('Créer deux VRAIS comptes Supabase techniques, réservés au banc de test ?'))return;
