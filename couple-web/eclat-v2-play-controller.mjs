@@ -69,7 +69,17 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
   try{
    const sid=status.session_id,idx=status.chapter_index;
    let next;
-   if(command==='puzzle-help'){
+   if(command.startsWith('attention-propose:')){
+    const attention=Number(command.slice('attention-propose:'.length));
+    if(status.coffret_id!==5||![0,1,2].includes(attention))return;
+    next=await api.attentionPropose({sessionId:sid,expectedStep:idx,attention,
+       jointOral:status.device_mode==='one'});
+   }else if(command.startsWith('attention-reply:')){
+    const answer=command.slice('attention-reply:'.length);
+    if(status.coffret_id!==5||!['yes','other','pass'].includes(answer))return;
+    next=await api.attentionReply({sessionId:sid,expectedStep:idx,answer,
+       jointOral:status.device_mode==='one'});
+   }else if(command==='puzzle-help'){
     next=await api.puzzleHelp({sessionId:sid,expectedStep:idx});puzzleAttempt=null;
    }else if(command==='puzzle-submit'){
     if(status.coffret_id!==6)return;

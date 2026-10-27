@@ -22,10 +22,28 @@ function mainContent(view,status,predictionDraft={},puzzleDraft={},puzzleAttempt
   html+='<section class="eclat-v2-tasks"><h3>À tour de rôle</h3>'+
    view.questions.map(q=>'<p><strong>'+esc(q.name)+'</strong> · '+esc(q.text)+'</p>').join('')+'</section>';
  if(view.attentions){
-  html+='<section class="eclat-v2-tasks"><h3>Au tour de '+view.turn+' de proposer</h3>'+
-   '<p>Une attention peut rester imaginaire, sans achat ni réservation.</p>'+
-   '<ol>'+view.attentions.map(t=>'<li>'+esc(t)+'</li>').join('')+'</ol>'+
-   '<p>L’autre choisit librement : Oui / Une autre proposition / Passer. Les refus ne sont pas enregistrés comme préférences.</p></section>';
+  const proposer=view.role===view.turn,chosen=status.attention_index,
+   decided=status.attention_response;
+  html+='<section class="eclat-v2-tasks" aria-label="Attention facultative"><h3>Au tour de '+view.turn+' de proposer</h3>'+
+   '<p>Une attention peut rester imaginaire, sans achat ni réservation. Aucun refus ne devient une préférence.</p>';
+  if(chosen===null||chosen===undefined||decided==='other'){
+   if(decided==='other')html+='<p role="status">Une autre proposition a été demandée.</p>';
+   if(proposer)html+='<fieldset class="eclat-v2-door"><legend>Mon attention proposée</legend>'+
+    view.attentions.map((t,i)=>btn('attention-propose:'+i,t)).join('')+'</fieldset>';
+   else html+='<p role="status">En attente de la proposition de '+view.turn+'.</p>';
+  }else{
+   html+='<p role="status"><strong>Proposition :</strong> '+esc(view.attentions[chosen])+'</p>';
+   if(decided==='yes')html+='<p>Oui, cette attention est acceptée pour ce tour.</p>';
+   else if(decided==='pass')html+='<p>Cette attention est passée, sans conséquence.</p>';
+   else if(!proposer){
+    html+='<fieldset class="eclat-v2-door"><legend>Ma réponse libre</legend>'+
+     btn('attention-reply:yes','Oui')+
+     btn('attention-reply:other','Une autre proposition')+
+     btn('attention-reply:pass','Passer')+'</fieldset>';
+   }else html+='<p role="status">En attente de la réponse de '+(view.turn==='A'?'B':'A')+'.</p>';
+  }
+  if(status.device_mode==='one')html+='<p class="eclat-v2-muted">Sur un appareil partagé, chaque touche représente une décision annoncée oralement; aucune session de B n’est simulée.</p>';
+  html+='</section>';
  }
  if(view.endingOptions)html+='<section class="eclat-v2-tasks"><h3>Votre finale facultative</h3>'+
   '<ul>'+view.endingOptions.map(o=>'<li>'+esc(o)+'</li>').join('')+'</ul></section>';
@@ -206,7 +224,8 @@ function actions(view,status,seenRoles,sharedConfirmed=[]){
  const pendingDoor=view.coffretId===4&&[1,5].includes(view.sceneNumber)&&!status.door_confirmed;
  const secretLocked=view.type==='Secret'&&!status.revealed;
  const puzzleLocked=!!view.puzzle&&!status.puzzle_solved&&status.puzzle_hint_level<2;
- if(!secretLocked&&!pendingDoor&&!view.awaitBranch&&!puzzleLocked){
+ const attentionLocked=!!view.attentions&&!['yes','pass'].includes(status.attention_response);
+ if(!secretLocked&&!pendingDoor&&!view.awaitBranch&&!puzzleLocked&&!attentionLocked){
   if(view.role==='A')rows+=btn('act:continue',view.type==='Finale'?
    'Terminer ensemble après notre accord':'Continuer ensemble après notre accord','primary');
   else rows+='<span role="status">Après votre accord oral, A pourra continuer cette scène commune.</span>';

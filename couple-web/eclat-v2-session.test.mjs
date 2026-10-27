@@ -49,3 +49,17 @@ test('Prediction RPC authenticates the writer without accepting an author ID',as
   p_session:sid,p_expected_step:1,p_answer:0,p_prediction:2}]);
  assert.throws(()=>api.predict({sessionId:sid,expectedStep:1,answer:5,prediction:0}),RangeError);
 });
+
+test('Attention actions are role-less requests and reject unapproved responses',async()=>{
+ const calls=[],api=createEclatV2SessionApi({async rpc(name,args){
+  calls.push([name,args]);return {data:status};}});
+ await api.attentionPropose({sessionId:sid,expectedStep:3,attention:1});
+ await api.attentionReply({sessionId:sid,expectedStep:3,answer:'pass',jointOral:true});
+ assert.deepEqual(calls.map(x=>x[0]),[
+  'love_eclat_v2_attention_propose','love_eclat_v2_attention_reply']);
+ assert.equal(calls[0][1].p_joint_oral,false);
+ assert.equal(calls[1][1].p_joint_oral,true);
+ assert.ok(calls.every(x=>!JSON.stringify(x[1]).includes('user_id')));
+ assert.throws(()=>api.attentionReply({sessionId:sid,expectedStep:3,answer:'force'}),RangeError);
+ assert.throws(()=>api.attentionPropose({sessionId:sid,expectedStep:3,attention:3}),RangeError);
+});

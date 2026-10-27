@@ -159,3 +159,34 @@ test('07 shared-phone: both roles choose privately before a joint reveal',()=>{
  assert.match(shown,/Comme tu l’imaginais/);
  assert.match(shown,/Question 1/);
 });
+
+test('05 attention turn: distinct proposal and reply roles and voluntary opt-out',()=>{
+ const s=status(5,0,30,6,{substep_index:1,attention_index:null,attention_response:null});
+ const a=renderEclatV2PlayA({status:s,viewerId:aid});
+ const b=renderEclatV2PlayA({status:s,viewerId:bid});
+ assert.match(a,/data-eclat-v2-action="attention-propose:0"/);
+ assert.doesNotMatch(b,/data-eclat-v2-action="attention-propose:0"/);
+ assert.doesNotMatch(a,/data-eclat-v2-action="act:continue"/);
+ const proposed={...s,attention_index:2,attention_response:null};
+ const toB=renderEclatV2PlayA({status:proposed,viewerId:bid});
+ assert.match(toB,/data-eclat-v2-action="attention-reply:yes"/);
+ assert.match(toB,/data-eclat-v2-action="attention-reply:other"/);
+ assert.match(toB,/data-eclat-v2-action="attention-reply:pass"/);
+ assert.doesNotMatch(toB,/data-eclat-v2-action="act:continue"/);
+ const alternative=renderEclatV2PlayA({status:{...proposed,attention_response:'other'},viewerId:aid});
+ assert.match(alternative,/Une autre proposition a été demandée/);
+ assert.match(alternative,/data-eclat-v2-action="attention-propose:1"/);
+ const passed=renderEclatV2PlayA({status:{...proposed,attention_response:'pass'},viewerId:aid});
+ assert.match(passed,/data-eclat-v2-action="act:continue"/);
+ const second=renderEclatV2PlayA({status:{...s,substep_index:2},viewerId:bid});
+ assert.match(second,/Au tour de B de proposer/);
+ assert.match(second,/data-eclat-v2-action="attention-propose:2"/);
+});
+test('05 shared phone attention uses A/B screens, no fake impersonation',()=>{
+ const s=status(5,1,30,6,{device_mode:'one',attention_index:1});
+ const hidden=renderEclatV2PlayA({status:s,viewerId:aid});
+ assert.doesNotMatch(hidden,/data-eclat-v2-action="attention-reply:yes"/);
+ const b=renderEclatV2PlayA({status:s,viewerId:aid,localRole:'B'});
+ assert.match(b,/data-eclat-v2-action="attention-reply:yes"/);
+ assert.match(b,/aucune session de B n’est simulée/);
+});
