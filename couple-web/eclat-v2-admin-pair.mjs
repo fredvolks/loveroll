@@ -62,7 +62,7 @@ export function createEclatV2AdminPair({clientFactory,gatewayFactory,adminUserId
   return assertSameActive(a,b);
  }
  async function start({coffretId,minutes}){
-  if(!slots.A||!slots.B)throw new Error('Connecter les comptes A et B');
+  if(!slots.A||!slots.B)throw new Error('Connecter les deux comptes A et B');
   if(!Number.isInteger(coffretId)||coffretId<1||coffretId>12||
      ![30,60,90].includes(minutes))throw new RangeError('Coffret ou durée inconnu');
   const prior=await Promise.all([read('A'),read('B')]);
