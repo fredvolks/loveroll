@@ -264,7 +264,15 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
    }
    if(next.revealed && status.device_mode==='one')role=null;
    status=next;timerAnchorMs=Date.now();
-   if(next.playlist_shared)playlistDraft=[];
+   if(next.playlist_shared){
+    playlistDraft=[];
+    if(status.device_mode==='one'){sharedMusicNotes={};sharedRevealedMusic=[];musicDraft={title:null,artist:null};}
+   }
+   if(!next.active){
+    sharedMusicNotes={};sharedRevealedMusic=[];musicDraft={title:null,artist:null};
+    sharedAnswers=emptyShared();sharedConfirmed.clear();sharedReveal=null;
+    sharedCardDraft={A:[],B:[]};sharedCardConfirmed.clear();playlistDraft=[];
+   }
    paint();
   }catch(err){onError(err);}finally{busy=false;}
  }

@@ -434,7 +434,17 @@ function actions(view,status,seenRoles,sharedConfirmed=[]){
 }
 export function renderEclatV2PlayA({status,viewerId,localRole=null,seenRoles=[],predictionDraft={},puzzleDraft={},puzzleAttempt=null,sharedAnswers={},sharedConfirmed=[],sharedReveal=null,musicDraft={},sharedMusicNotes={},sharedRevealedMusic=[],cardDraft=[],sharedCardDraft={},sharedCardConfirmed=[],playlistDraft=[]}){
  if(!status?.access)return '<section class="eclat-v2-stage"><p>Accès Éclat requis.</p></section>';
- if(!status.active)return '<section class="eclat-v2-stage"><p>Aucune séance Éclat V2 en cours.</p></section>';
+ if(!status.active){
+  if(status.coffret_id===8&&status.state==='finished'&&Array.isArray(status.playlist_shared)){
+   return '<section class="eclat-v2-stage" aria-label="Notre bande originale sauvegardée">'+
+    '<h2>Notre bande originale</h2><p>Voici uniquement les titres que vous avez tous les deux approuvés.</p>'+
+    '<ol>'+status.playlist_shared.map(song=>'<li>'+esc(song.title)+
+     (song.artist?' — '+esc(song.artist):'')+'</li>').join('')+'</ol>'+
+    '<p>Vous pouvez retrouver ces titres sur le service de votre choix. Aucun fichier ni lecture automatique.</p>'+
+    '</section>';
+  }
+  return '<section class="eclat-v2-stage"><p>Aucune séance Éclat V2 en cours.</p></section>';
+ }
  if(status.content_version!==2)throw Error('L’interface Éclat V2 refuse les séances V1');
  if(status.device_mode==='one' && localRole===null){
   if(viewerId!==status.role_a)throw Error('Créateur requis en mode partagé');

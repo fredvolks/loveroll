@@ -362,3 +362,20 @@ test('08 shared phone final only saves revealed A/B songs after oral joint appro
    sharedRevealedMusic:songs,playlistDraft:[1,4]});
  assert.doesNotMatch(b,/playlist-share-oral/);
 });
+
+test('08 completed playlist remains readable; no private song nor action visible after game',()=>{
+ const completed=status(8,0,30,8,{
+  active:false,state:'finished',playlist_shared:[
+   {title:'Titre commun <test>',artist:'Artiste A'},
+   {title:'Chanson suivante',artist:null}
+  ],revealed_music:[],
+  my_music_note:{title:'Note privée non révélée',revealed:false}
+ });
+ const page=renderEclatV2PlayA({status:completed,viewerId:aid});
+ assert.match(page,/Notre bande originale sauvegardée/);
+ assert.match(page,/Titre commun &lt;test&gt;/);
+ assert.match(page,/Chanson suivante/);
+ assert.doesNotMatch(page,/Note privée non révélée|<test>|music-reveal|playlist-vote/);
+ const stopped=renderEclatV2PlayA({status:{...completed,state:'interrupted'},viewerId:aid});
+ assert.doesNotMatch(stopped,/Titre commun/);
+});
