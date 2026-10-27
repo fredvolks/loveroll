@@ -91,7 +91,10 @@ export function eclatV2SceneC({session,viewerId,localDisplayRole=null}){
    out.expiryText='Le temps indicatif est écoulé';
    out.afterExpiry=['Prolonger 1 minute','Voir la suite'];
    out.neverAutoComplete=true;
-   if(n===4&&version===1)out.perPerson=true;
+   if(n===4&&version===1){
+    out.perPerson=true;out.totalTimerSeconds=out.timerSeconds;
+    out.timerSeconds=90;out.timerTurn=session.timer_turn??1;
+   }
    if(n===6&&version===1)out.oralFinaleUntimed=true;
   }
   if([2,5,7].includes(n)&&Array.isArray(session.skipped_scenes)&&

@@ -215,7 +215,7 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
       jointOral:status.device_mode==='one'});
    }else if(command.startsWith('timer-action:')){
     const action=command.slice('timer-action:'.length);
-    if(status.coffret_id!==10||!['start','pause','resume','extend'].includes(action))return;
+    if(status.coffret_id!==10||!['start','pause','resume','extend','next-turn'].includes(action))return;
     next=await api.timerAction({sessionId:sid,expectedStep:idx,action});
    }else if(command.startsWith('story-vote:')){
     const action=command.slice('story-vote:'.length);

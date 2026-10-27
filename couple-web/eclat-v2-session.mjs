@@ -60,7 +60,7 @@ export function createEclatV2SessionApi(client){
       p_expected_step:step(expectedStep),p_mode:mode,p_joint_oral:jointOral});
   },
   timerAction:({sessionId:sid,expectedStep,action})=>{
-   if(!['start','pause','resume','extend'].includes(action))throw new RangeError('Action minuteur inconnue');
+   if(!['start','pause','resume','extend','next-turn'].includes(action))throw new RangeError('Action minuteur inconnue');
    return rpc('love_eclat_v2_timer_action',{p_session:sessionId(sid),
       p_expected_step:step(expectedStep),p_action:action});
   },

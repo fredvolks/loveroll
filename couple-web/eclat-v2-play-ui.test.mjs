@@ -299,7 +299,7 @@ test('10 clock never auto-finishes and offers explicit timed or untimed rounds',
  const without=renderEclatV2PlayA({status:{...base,timer_mode:'without'},viewerId:aid});
  assert.doesNotMatch(without,/timer-action:start/);
  const two=renderEclatV2PlayA({status:status(10,1,90,4,{timer_mode:'with'}),viewerId:aid});
- assert.match(two,/03:00/);
+ assert.match(two,/01:30/);
 });
 
 test('11 both distinct partners propose from only three approved cards',()=>{
@@ -447,4 +447,23 @@ test('09 optional phrase only displays once both approve, never exposes one priv
     wish_invitation_text:'Notre <surprise> & demain'},viewerId:bid});
  assert.match(end,/Notre &lt;surprise&gt; &amp; demain/);
  assert.doesNotMatch(end,/my_wish_phrase/);
+});
+
+test('10 V1 scene 4 has separate 90-second A/B turns, with B starting voluntarily',()=>{
+ const s=status(10,3,90,4,{variant:1,timer_mode:'with',timer_turn:1,
+  timer_remaining_seconds:null,timer_running:false});
+ const a=renderEclatV2PlayA({status:s,viewerId:aid});
+ const b=renderEclatV2PlayA({status:s,viewerId:bid});
+ assert.match(a,/Tour de A/);assert.match(a,/01:30/);
+ assert.match(a,/timer-action:next-turn/);
+ assert.match(a,/timer-action:start/);
+ assert.doesNotMatch(b,/timer-action:start|timer-action:next-turn/);
+ const next={...s,timer_turn:2};
+ const wait=renderEclatV2PlayA({status:next,viewerId:aid});
+ const nowB=renderEclatV2PlayA({status:next,viewerId:bid});
+ assert.match(wait,/La personne B décide/);
+ assert.doesNotMatch(wait,/timer-action:start/);
+ assert.match(nowB,/Tour de B/);
+ assert.match(nowB,/timer-action:start/);
+ assert.doesNotMatch(nowB,/timer-action:next-turn/);
 });

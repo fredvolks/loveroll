@@ -41,7 +41,7 @@ test('09 exactly twelve approved cards; never expose non-common selections',()=>
  }
 });
 test('10 timer durations and no forced automatic completion',()=>{
- const expected={1:[90,90],3:[120,120],4:[90,180],6:[180,120],7:[90,90]};
+ const expected={1:[90,90],3:[120,120],4:[90,90],6:[180,120],7:[90,90]};
  for(let n of [1,3,4,6,7])for(let v=0;v<=1;v++){
   const x=get(10,v,90,n);
   assert.equal(x.timerSeconds,expected[n][v]);assert.equal(x.neverAutoComplete,true);
@@ -49,6 +49,8 @@ test('10 timer durations and no forced automatic completion',()=>{
   assert.deepEqual(x.afterExpiry,['Prolonger 1 minute','Voir la suite']);
  }
  assert.equal(get(10,1,90,4).perPerson,true);
+ assert.equal(get(10,1,90,4).totalTimerSeconds,180);
+ assert.equal(get(10,1,90,4,{timer_turn:2}).timerTurn,2);
  assert.equal(get(10,1,30,6).oralFinaleUntimed,true);
  assert.match(get(10,0,90,5,{skipped_scenes:[3]}).fallback,/phrase de départ/);
 });

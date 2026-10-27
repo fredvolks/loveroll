@@ -150,3 +150,10 @@ test('09 optional phrase endpoint authenticates authors without sending B user i
  assert.throws(()=>api.wishPhrase({sessionId:sid,expectedStep:6,phrase:'  '}),RangeError);
  assert.throws(()=>api.wishPhrase({sessionId:sid,expectedStep:6,phrase:'a'.repeat(241)}),RangeError);
 });
+
+test('10 manual handover uses the authenticated server timer RPC',async()=>{
+ const calls=[],api=createEclatV2SessionApi({async rpc(name,args){calls.push([name,args]);return {data:status};}});
+ await api.timerAction({sessionId:sid,expectedStep:4,action:'next-turn'});
+ assert.deepEqual(calls[0],['love_eclat_v2_timer_action',
+  {p_session:sid,p_expected_step:4,p_action:'next-turn'}]);
+});

@@ -42,26 +42,36 @@ function mainContent(view,status,predictionDraft={},puzzleDraft={},puzzleAttempt
   html+='<section class="eclat-v2-task" aria-label="Minuteur facultatif">';
   if(view.sceneNumber===1&&!status.timer_mode){
    html+='<h3>Avec ou sans minuteur ?</h3>'+
-    '<p>Chacun choisit; le mode ne sera fixé qu’après un accord des deux.</p>'+
+    '<p>Chaque partenaire confirme librement la même option.</p>'+
     btn('timer-mode:with','Avec minuteur')+btn('timer-mode:without','Sans minuteur');
-   if(status.my_timer_vote)html+='<p role="status">Choix transmis. Votre partenaire doit confirmer le même mode.</p>';
+   if(status.my_timer_vote)html+='<p role="status">Votre choix attend celui du partenaire.</p>';
   }else if(status.timer_mode==='without'){
-   html+='<p>Sans minuteur : prenez le temps qui vous convient.</p>';
+   html+='<p>Sans minuteur : prenez le temps que vous souhaitez.</p>';
   }else if(view.timerSeconds){
    const seconds=status.timer_remaining_seconds??view.timerSeconds;
    const clock=String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0');
-   html+='<h3>Manche · '+view.timerSeconds+' secondes indicatives</h3>'+
-    '<p class="eclat-v2-timer" role="timer" aria-live="off">'+clock+'</p>';
-   if(status.timer_remaining_seconds===null||status.timer_remaining_seconds===undefined)
-    html+=btn('timer-action:start','Démarrer le minuteur','primary');
-   else if(seconds===0){
-    html+='<p role="status">Le temps indicatif est écoulé. Rien ne se termine automatiquement.</p>'+
-     btn('timer-action:extend','Prolonger 1 minute','primary');
-   }else if(status.timer_running)
-    html+=btn('timer-action:pause','Mettre le minuteur en pause');
-   else html+=btn('timer-action:resume','Reprendre le minuteur','primary');
-   if(view.perPerson)html+='<p>90 secondes par partenaire.</p>';
-   if(view.oralFinaleUntimed)html+='<p>Terminez cette scène oralement, sans minuterie.</p>';
+   const turnRole=status.timer_turn===2?'B':'A';
+   const mayStart=!view.perPerson||status.device_mode==='one'||view.role===turnRole;
+   html+='<h3>'+(view.perPerson?'Tour de '+turnRole+' · ':'Manche · ')+
+      view.timerSeconds+' secondes indicatives</h3>'+
+     '<p class="eclat-v2-timer" role="timer" aria-live="off">'+clock+'</p>';
+   if(status.timer_remaining_seconds===null||status.timer_remaining_seconds===undefined){
+    if(mayStart)html+=btn('timer-action:start','Démarrer mon minuteur','primary');
+    else html+='<p role="status">La personne '+turnRole+' décide quand commencer son tour.</p>';
+   }else if(seconds===0){
+    html+='<p role="status">Le temps indicatif est écoulé. Rien ne se termine automatiquement.</p>';
+    if(mayStart)html+=btn('timer-action:extend','Prolonger mon tour de 1 minute','primary');
+   }else if(status.timer_running){
+    if(mayStart)html+=btn('timer-action:pause','Mettre le minuteur en pause');
+   }else if(mayStart)html+=btn('timer-action:resume','Reprendre mon minuteur','primary');
+   if(view.perPerson){
+    html+='<p>Deux tours indépendants de 90 secondes; B ne démarre jamais automatiquement.</p>';
+    if(status.timer_turn===1&&(status.device_mode==='one'||view.role==='A'))
+     html+=btn('timer-action:next-turn','Terminer le tour de A · proposer le tour de B');
+    if(status.device_mode==='one')
+     html+='<p>Obtenez l’accord oral de B avant de lancer son propre minuteur.</p>';
+   }
+   if(view.oralFinaleUntimed)html+='<p>Terminez oralement, sans minuterie.</p>';
   }
   if(view.fallback)html+='<p>'+esc(view.fallback)+'</p>';
   html+='</section>';

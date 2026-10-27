@@ -32,6 +32,7 @@ create table public.love_eclat_v2_sessions (
  story_decision_scene smallint check(story_decision_scene in (1,6)),
  story_rerolls integer not null default 0 check(story_rerolls>=0),
  timer_mode text check(timer_mode in ('with','without')),
+ timer_turn smallint not null default 1 check(timer_turn in (1,2)),
  timer_remaining integer check(timer_remaining>=0),
  timer_deadline timestamptz,
  timer_extensions integer not null default 0 check(timer_extensions>=0),
@@ -376,7 +377,7 @@ begin
   'my_wish_vote',v_my_wish_vote,'my_wish_contact',v_my_wish_contact,
   'wish_contact_approved',case when v_s.device_mode='one' then v_s.wish_contact_shared
     else v_wish_yes=2 end,
-  'timer_mode',v_s.timer_mode,'my_timer_vote',v_timer_vote,
+  'timer_mode',v_s.timer_mode,'my_timer_vote',v_timer_vote,'timer_turn',v_s.timer_turn,
   'timer_running',v_s.timer_deadline is not null,
   'timer_remaining_seconds',v_timer_remaining,
   'timer_expired',coalesce(v_timer_remaining=0,false),
@@ -1089,7 +1090,7 @@ $$;
 create function public.love_eclat_v2_round_seconds(p_scene integer,p_variant integer)
  returns integer language sql immutable set search_path='' as $$
  select case p_scene when 1 then 90 when 3 then 120
-  when 4 then case when p_variant=1 then 180 else 90 end
+  when 4 then 90 -- For V1, this is per person, with an explicit two-person handover
   when 6 then case when p_variant=1 then 120 else 180 end
   when 7 then 90 else null end
 $$;
@@ -1139,7 +1140,7 @@ declare v_actor uuid:=auth.uid();v_couple uuid;v_s public.love_eclat_v2_sessions
  v_duration integer;v_rem integer;
 begin
  perform public.love_require_verified_identity();
- if p_action is null or p_action not in ('start','pause','resume','extend')
+ if p_action is null or p_action not in ('start','pause','resume','extend','next-turn')
  then raise exception 'Action minuteur invalide';end if;
  select * into v_s from public.love_eclat_v2_sessions where id=p_session for update;
  if not found then raise exception 'Séance inconnue';end if;
@@ -1151,6 +1152,23 @@ begin
  v_duration:=public.love_eclat_v2_round_seconds(v_s.chapter_plan[v_s.chapter_index],v_s.variant);
  if v_s.coffret_id<>10 or v_s.timer_mode<>'with' or v_duration is null or v_s.state<>'active' then
   raise exception 'Manche minutée non disponible';end if;
+ if v_s.chapter_plan[v_s.chapter_index]=4 and v_s.variant=1 then
+  if p_action='next-turn' then
+   if v_s.timer_turn=2 then return public.love_eclat_v2_status(p_session);end if;
+   if v_s.device_mode='two' and v_actor<>v_s.role_a then
+    raise exception 'Seul A peut terminer son propre tour';end if;
+   update public.love_eclat_v2_sessions
+    set timer_turn=2,timer_remaining=null,timer_deadline=null,
+        timer_extensions=0,updated_at=now() where id=p_session;
+   return public.love_eclat_v2_status(p_session);
+  end if;
+  if p_action in ('start','resume','extend') and v_s.device_mode='two' and
+     v_actor is distinct from
+       case when v_s.timer_turn=1 then v_s.role_a else v_s.role_b end then
+   raise exception 'Seul le partenaire du tour peut démarrer le minuteur';end if;
+ elsif p_action='next-turn' then
+  raise exception 'Passage de tour indisponible sur cette manche';
+ end if;
  v_rem:=case when v_s.timer_deadline is null then v_s.timer_remaining
   else greatest(0,ceil(extract(epoch from (v_s.timer_deadline-clock_timestamp())))::integer) end;
  if p_action in ('start','resume') and v_s.timer_deadline is null then
@@ -1487,6 +1505,9 @@ begin
   if p_action in ('continue','pass') and v_s.coffret_id=10 and
     v_s.chapter_plan[v_s.chapter_index]=1 and v_s.timer_mode is null then
    raise exception 'Choisir avec ou sans minuteur ensemble';end if;
+  if p_action='continue' and v_s.coffret_id=10 and v_s.variant=1 and
+    v_s.chapter_plan[v_s.chapter_index]=4 and v_s.timer_mode='with' and v_s.timer_turn=1 then
+   raise exception 'Proposer le second tour de 90 secondes avant de continuer';end if;
   if p_action='continue' and v_s.coffret_id=9 and
     v_s.chapter_plan[v_s.chapter_index]=5 and
     v_s.selected_card is not null and v_s.wish_scene5 is null then
@@ -1587,7 +1608,7 @@ begin
        substep_index=1,
        last_prediction=null,
        puzzle_solved_step=null,puzzle_hint_level=0,
-       timer_remaining=null,timer_deadline=null,timer_extensions=0,
+       timer_turn=1,timer_remaining=null,timer_deadline=null,timer_extensions=0,
        shared_contact_approved=false,
        branch=case when p_action='pass' and coffret_id=4 and chapter_plan[chapter_index]=1 and branch is null
           then 'Jeu' else branch end,
