@@ -462,8 +462,9 @@ export function dieOn(canvas,sides,value,rolling){
  // Photo stages use an elevated camera. Keep a narrow side and a glimpse of
  // the top while bringing the winning engraved face toward the viewer.
  // D20 and D35 retain their existing poses.
+ // The Home D6 must keep its supporting face horizontal during touch inspection.
  const restEuler=sides===6?
-  (photoStage?new THREE.Euler(-.055,-.21,0):new THREE.Euler(.11,-.21,0)):
+  (flatHome?new THREE.Euler(0,-.21,0):photoStage?new THREE.Euler(-.055,-.21,0):new THREE.Euler(.11,-.21,0)):
   sides===100?
   (photoStage?new THREE.Euler(-.12,-.055,0):new THREE.Euler(.015,-.055,0)):
   new THREE.Euler(.075,-.09,0);
