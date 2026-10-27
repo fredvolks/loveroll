@@ -157,6 +157,8 @@ jobs:
       - name: Verify evening finale actions and privacy control (deployment parity)
         run: node --test couple-web/evening-finale-v99.test.mjs
 
+      - name: LR-014 — category confirmation and private setting
+        run: node --test couple-web/evening-category-confirm.test.mjs
       - name: Validate iPad Soirée one-HD-photo contract
         run: node --test couple-web/ipad-soiree-one-photo-v237.test.mjs
       - name: Validate iPad uses exact Android HD v202 scene and one marble pedestal
@@ -504,6 +506,9 @@ jobs:
         if: matrix.group == 'dice'
         run: node couple-web/evening-d100-template-browser-check.cjs
 
+      - name: LR-014 — verify category modal on phone and iPad
+        if: matrix.group == 'dice'
+        run: node couple-web/evening-category-confirm-browser-check.cjs
       - name: Verify real iPad Soirée D6 and D100 on the ONE HD photo (portrait and landscape)
         if: matrix.group == 'dice'
         run: node couple-web/ipad-romance-scene-browser-check.cjs

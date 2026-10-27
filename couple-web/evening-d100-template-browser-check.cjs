@@ -71,6 +71,11 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
    await page.locator('[data-action="category:HASARD"]').click();assert.equal(await page.locator('.evening-choice-odds').count(),0);
   }
   await page.locator('[data-action="new-challenge"]').click();
+  // LR-014: the old browser contract now confirms the selected category first.
+  const categoryDialog=page.locator('dialog.lr-evening-category-dialog[open]');
+  await categoryDialog.waitFor({state:'visible',timeout:10000});
+  assert.equal(world.calls.filter(c=>c.name?.startsWith('draw_for_partner')).length,0);
+  await categoryDialog.locator('[data-confirm-action="yes"]').click();
   // Server draw confirmation is asynchronous: sample only after the real mesh starts spinning.
   await page.waitForFunction(()=>document.querySelector('.evening-d35-col canvas')?.loveRollDie?.readState()?.spinning===true,null,{timeout:15000,polling:'raf'});
   // LR-001: verify the projected *real WebGL mesh*, not just its canvas,

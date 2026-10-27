@@ -96,6 +96,9 @@ const client=`export function createClient(){
    for(const cat of ['SENSUEL','SEXUEL','HASARD'])await page.locator('[data-action="category:'+cat+'"]').click();
    await page.evaluate(()=>window.__beforeDraw=document.querySelector('.evening-d35-col canvas'));
    await page.locator('[data-action="new-challenge"]').click();
+   const categoryDialog=page.locator('dialog.lr-evening-category-dialog[open]');
+   await categoryDialog.waitFor({state:'visible',timeout:10000});
+   await categoryDialog.locator('[data-confirm-action="yes"]').click();
    await page.locator('.evening-queue-detail').waitFor({timeout:20000});
    assert.ok(await page.evaluate(()=>window.__beforeDraw===document.querySelector('.evening-d35-col canvas')),'Draw replaced the live D100 canvas');
    const body=await page.locator('.evening-queue-content').innerText();assert.ok(body.includes('Défi privé '+uid));assert.ok(!body.includes('Défi privé '+(uid==='a'?'b':'a')));
