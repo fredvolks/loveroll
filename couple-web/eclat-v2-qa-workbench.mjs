@@ -70,6 +70,9 @@ export function createEclatV2QaWorkbench({
   if(!sessionId)return;
   ticker=setInterval(()=>{
    if(!active||busy||!players.A.controller||!players.B.controller)return;
+   // Do not erase a live answer, private note, mobile keyboard or IME composition.
+   // The next tick refreshes both as soon as the player leaves the field.
+   if(root.querySelector('input:focus,textarea:focus,select:focus,[contenteditable="true"]:focus'))return;
    Promise.allSettled([players.A.controller.refresh(),players.B.controller.refresh()])
     .then(results=>{
      if(active&&results.every(x=>x.status==='rejected'))
@@ -114,11 +117,12 @@ export function createEclatV2QaWorkbench({
  async function signIn(role,form){
   if(!configured)throw new Error('Branchez d’abord une base de test');
   const email=form.querySelector('[name="email"]')?.value?.trim();
-  const password=form.querySelector('[name="password"]')?.value;
+  const input=form.querySelector('[name="password"]');
+  const password=input?.value;
+  if(input)input.value=''; // Never keep a password through a slow/failed request.
   if(!email||!password)throw new Error('Courriel et mot de passe QA requis');
   const client=players[role].client;
   const {data,error}=await client.auth.signInWithPassword({email,password});
-  form.querySelector('[name="password"]').value='';
   if(error||!data?.user?.id)throw new Error(error?.message||'Connexion refusée');
   const {data:confirmed,error:authError}=await client.auth.getUser();
   if(authError||confirmed?.user?.id!==data.user.id)

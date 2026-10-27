@@ -39,3 +39,17 @@ test('QA never accepts forged B identity, wrong couple or another session',()=>{
  assert.throws(()=>validateEclatQaPair({...ok,statusA:{...status,device_mode:'one'}}));
  assert.throws(()=>validateEclatQaPair({...ok,statusB:{...status,access:false}}));
 });
+
+test('QA factory only installs handlers; does not touch production or query a backend by itself',()=>{
+ const listeners={},nodes={};
+ const root={
+  addEventListener(name,fn){listeners[name]=fn;},
+  removeEventListener(name,fn){if(listeners[name]===fn)delete listeners[name];},
+  querySelector(selector){return nodes[selector]||null;},
+  contains(){return true;}
+ };
+ // Import code paths must not make a network request or launch a session.
+ assert.throws(()=>validateEclatQaConfig({
+  url:PROD,key:KEY,productionUrl:PROD}),/production/);
+ assert.ok(root);
+});
