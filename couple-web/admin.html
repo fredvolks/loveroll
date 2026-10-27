@@ -123,6 +123,19 @@
    <div class="eclat-qa-player"><h3>Écran réel du joueur B</h3><div data-eclat-qa="stage-B" aria-label="Vrai parcours Éclat joueur B"></div></div>
   </div>
  </div>
+ <section data-eclat-qa="soiree" class="soiree-qa-workshop" hidden>
+  <div class="section-head"><span class="eyebrow">SOIRÉE RÉELLE · BASE QA UNIQUEMENT</span>
+   <h3>Tester les vrais D6 et D100</h3>
+   <p>Deux comptes distincts jouent avec le moteur officiel et le rendu WebGL. Les limites,
+   les défis privés et les tirages restent entièrement vérifiés par le serveur.</p></div>
+  <div class="soiree-qa-grid">
+   <div class="soiree-qa-player" data-soiree-qa-screen="A" aria-label="Vrai jeu Soirée du joueur A"></div>
+   <div class="soiree-qa-player" data-soiree-qa-screen="B" aria-label="Vrai jeu Soirée du joueur B"></div>
+  </div>
+  <p data-soiree-qa-message role="status" aria-live="polite"></p>
+  <p class="small-note">Le serveur impose les étapes, les quotas et les consentements :
+   aucun résultat ou défi de production n’est modifié par cet outil QA isolé.</p>
+ </section>
  <p data-eclat-qa="feedback" class="eclat-qa-status" role="status" aria-live="polite">Atelier non connecté.</p>
 </section>
 <form id="settings" autocomplete="off">

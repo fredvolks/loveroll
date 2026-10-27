@@ -45,3 +45,23 @@
  border-radius:11px;overflow-wrap:anywhere;user-select:text}
 .eclat-qa-managed-row{padding:9px;border-bottom:1px solid #88506a}
 @media(max-width:840px){.eclat-qa-operator form{grid-template-columns:1fr}}
+
+.soiree-qa-workshop{border-radius:18px;border:1px solid #99506d;background:#230f20;
+ display:grid;gap:16px;padding:clamp(12px,2vw,21px)}
+.soiree-qa-workshop[hidden]{display:none!important}
+.soiree-qa-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
+.soiree-qa-player{min-width:0;overflow:hidden;background:#381c30;
+ border:1px solid #824865;border-radius:15px;padding:12px}
+.soiree-qa-person h4,.soiree-qa-round h5{color:#fff;margin:8px 0}
+.soiree-qa-round{border-top:1px solid #875069;margin-top:13px;padding-top:10px}
+.soiree-qa-round label{margin:10px 0}
+.soiree-qa-round button{width:100%;margin:5px 0}
+.soiree-qa-die{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+ border-radius:12px;background:#3c2033;margin:8px 0;padding:8px}
+.soiree-qa-die canvas{width:115px;height:115px;max-width:100%;touch-action:pan-y}
+.soiree-qa-die strong{font-size:.92rem;color:#fff}
+.soiree-qa-challenge{padding:12px;margin:12px 0;border:1px solid #9c6980;
+ border-radius:12px;background:#442238;overflow-wrap:anywhere}
+.soiree-qa-challenge h5{font-size:1rem;color:#ffe5ee}
+.soiree-qa-caption{font-size:.82rem;line-height:1.5;color:#e3c3d5}
+@media(max-width:980px){.soiree-qa-grid{grid-template-columns:1fr}}

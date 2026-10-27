@@ -53,7 +53,7 @@ export function createEclatV2QaWorkbench({
  if(!root||typeof root.addEventListener!=='function'||typeof createClient!=='function')
   throw new TypeError('Atelier QA : conteneur et création de clients requis');
  let active=true,configured=false,sessionId=null,ticker=null,busy=false;
- let operatorClient=null,operatorId=null;
+ let operatorClient=null,operatorId=null,soireeBench=null;
  const players={A:{},B:{}};
  const el=id=>root.querySelector('[data-eclat-qa="'+id+'"]');
  const show=(id,value)=>{const target=el(id);if(target)target.hidden=!value;};
@@ -142,6 +142,7 @@ export function createEclatV2QaWorkbench({
   },refreshIntervalMs);
  };
  async function disconnect(){
+  soireeBench?.destroy();soireeBench=null;show('soiree',false);
   stopTicker();dropPlayers();sessionId=null;
   await operatorLogout();operatorClient=null;
   for(const role of ['A','B']){
@@ -204,7 +205,16 @@ export function createEclatV2QaWorkbench({
   players[role].user=data.user;progress(role,'Connecté avec le compte QA');
   if(players.A.user&&players.B.user){
    show('game',true);
-   feedback('Deux vrais comptes QA connectés. Reprenez une séance ou choisissez un coffret.');
+   if(!soireeBench){
+    const {mountSoireeQaBench}=await import('./soiree-qa-lab.mjs');
+    soireeBench=mountSoireeQaBench({
+     root:el('soiree'),clientA:players.A.client,clientB:players.B.client,
+     userA:players.A.user,userB:players.B.user,
+     onError:e=>feedback('Soirée QA : '+(e?.message||'Refus du serveur'),true)
+    });
+   }
+   show('soiree',true);
+   feedback('Deux comptes QA connectés. Éclat V2 et Soirée D6/D100 officiels disponibles.');
   }
  }
  async function attach(a,b){
@@ -324,7 +334,8 @@ export function createEclatV2QaWorkbench({
  root.addEventListener('click',onClick);
  root.addEventListener('submit',onSubmit);
  return Object.freeze({disconnect,destroy(){
-  active=false;stopTicker();dropPlayers();dropPrivate();
+  active=false;soireeBench?.destroy();soireeBench=null;
+  stopTicker();dropPlayers();dropPrivate();
   operatorId=null;operatorClient?.auth?.signOut?.({scope:'local'}).catch(()=>{});
   operatorClient=null;
   root.removeEventListener('click',onClick);root.removeEventListener('submit',onSubmit);
