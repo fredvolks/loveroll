@@ -4,6 +4,12 @@ on:
     paths:
       - "couple-web/eclat-v2-*.mjs"
       - "couple-web/soiree-qa-*.mjs"
+      - "couple-web/admin.html"
+      - "couple-web/eclat-v2-qa-workbench.css"
+      - "couple-web/qa/eclat-v2-qa-managed-pairs.sql"
+      - "supabase/functions/loveroll-qa-accounts/**"
+      - "supabase/functions/_shared/loveroll-qa-guards.mjs"
+      - "docs/LOVEROLL_ECLAT_QA_*.md"
       - "docs/LOVEROLL_ECLAT_12_COFFRETS_SPEC.md"
       - ".github/workflows/eclat-v2-contract.yml"
   workflow_dispatch:
