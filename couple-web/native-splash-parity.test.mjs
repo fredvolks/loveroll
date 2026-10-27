@@ -53,7 +53,7 @@ test('Native document/network failure stops animation and offers retry without d
  assert.doesNotMatch(activity,/removeAllCookies|deleteDatabase|clearData/);
  // Verify the current release instead of pinning the already shipped 0.13.13.
  const gradle=read('../app/build.gradle');
- const version=gradle.match(/versionCode\\s+(\\d+)\\s*;\\s*versionName\\s+'(\\d+)\\.(\\d+)\\.(\\d+)'/);
+ const version=gradle.match(/versionCode\s+(\d+)\s*;\s*versionName\s+'(\d+)\.(\d+)\.(\d+)'/);
  assert.ok(version,'Android must declare an integer versionCode and three-part versionName');
  const [,code,major,minor,patch]=version;
  assert.equal(Number(code),Number(major)*1000000+Number(minor)*10000+Number(patch),
