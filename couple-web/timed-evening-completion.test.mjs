@@ -79,7 +79,9 @@ test('LR-002 reload restoration scans saved challenge timers without opening the
 test('LR-002 a reset after the real deadline cannot cancel automatic completion',()=>{
  const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
  assert.match(source,/if\(challengeTimer\.running&&challengeTimer\.deadline>0&&Date\.now\(\)>=challengeTimer\.deadline\)/);
- assert.match(source,/const autoComplete=isAcceptedTimedEveningChallenge\(item,state\.user\?\.id,state\.session\?\.id\)/);
+ assert.match(source,/const autoComplete=!challengeTimer\.decisionPending&&isAcceptedTimedEveningChallenge\(item,state\.user\?\.id,state\.session\?\.id\)/);
+ assert.match(source,/if\(!challengeTimer\.autoCompletePending\|\|challengeTimer\.decisionPending\|\|timerCompletionInFlight/);
+ assert.match(source,/if\(\['completed','passed','refused'\]\.includes\(item\.status\)\)/);
  assert.match(source,/Validation automatique du défi en cours/);
  assert.doesNotMatch(source,/À vous de décider si le défi continue/);
 });

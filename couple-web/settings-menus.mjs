@@ -41,6 +41,10 @@ export function organizeSettingsMenus(root){
  ];
  else if(route==='jeu')tree=[...direct(':scope>.settings-link-row'),
   entry('categories','Catégories visibles',find('.settings-category-options')),
+  // LR-015: the menu refactor moves original rows to a hidden source.
+  // Register the gated excluded-cards destination as a real visible leaf;
+  // otherwise the button exists in DOM but cannot be tapped on mobile.
+  link('.settings-advanced [data-action="settings-page:excluded-cards"]'),
   link('.settings-advanced [data-action="settings-page:admin"]')
  ];
  else if(route==='notifications')tree=[

@@ -21,6 +21,8 @@ test('LR-012: old queue skin stays intentionally absent and D100 unclipped',()=>
 });
 test('LR-012: genuine completion, pass and next actions remain intact',()=>{
  assert.match(source,/button\('answer:'\+view\.id\+':completed','✓ Défi réalisé'/);
- assert.match(source,/button\('answer:'\+view\.id\+':passed','Passer ce défi'/);
+ assert.match(source,/button\('evening-pass:'\+view\.id,'Passer ce défi'/);
+ assert.match(source,/love_respond_and_redraw/);
+ assert.match(source,/state\.redrawReady/);
  assert.match(source,/button\('evening-open:'\+mineCards\[idx\+1\]\.id,'Suivant →'/);
 });
