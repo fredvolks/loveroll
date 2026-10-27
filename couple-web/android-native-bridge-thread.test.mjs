@@ -22,3 +22,29 @@ test('Google native sign in reports Credential Manager problems and remains retr
  assert.match(gradle,/versionCode 130013/);
  assert.match(gradle,/versionName '0[.]13[.]13'/);
 });
+
+test('Native notification settings use the trusted UI-thread bridge',()=>{
+ const start=native.indexOf('@JavascriptInterface public void openNotificationSettings()');
+ const end=native.indexOf('@JavascriptInterface public boolean nativePushConfigured()',start);
+ assert.ok(start>0&&end>start);
+ const method=native.slice(start,end);
+ for(const required of ['runOnUiThread','!pageReady','isTrusted(Uri.parse(web.getUrl()))',
+  'Settings.ACTION_APP_NOTIFICATION_SETTINGS','Settings.EXTRA_APP_PACKAGE',
+  'Settings.ACTION_APPLICATION_DETAILS_SETTINGS'])assert.ok(method.includes(required),required);
+});
+test('Android notification preferences remain editable without remote push',async()=>{
+ const oldWindow=globalThis.window;
+ try{
+  globalThis.window={LoveRollNativeAuth:{
+   nativePushConfigured:()=>false,nativePushToken:()=>'',weeklyReminderEnabled:()=>false,
+   openNotificationSettings:()=>{}
+  }};
+  const {notificationSettingsMarkup}=await import('./push-notifications.mjs');
+  const html=notificationSettingsMarkup({enabled:false,weekly:false},{registered:false});
+  assert.equal((html.match(/data-push-option="/g)||[]).length,4);
+  assert.doesNotMatch(html,/data-push-option="weekly"[^>]*disabled/);
+  assert.match(html,/data-action="native-notify-system"/);
+  assert.match(html,/envoi inactif/);
+  assert.match(html,/Alertes à distance indisponibles/);
+ }finally{if(oldWindow===undefined)delete globalThis.window;else globalThis.window=oldWindow;}
+});
