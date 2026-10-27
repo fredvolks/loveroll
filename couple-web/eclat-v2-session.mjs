@@ -41,6 +41,12 @@ export function createEclatV2SessionApi(client){
    if(typeof jointOral!=='boolean')throw new TypeError('Accord explicite requis');
    return rpc('love_eclat_v2_reveal',{p_session:sessionId(sid),p_expected_step:step(expectedStep),p_joint_oral:jointOral});
   },
+  contact:({sessionId:sid,expectedStep,proposal='mains',answer,jointOral=false})=>{
+   if(proposal!=='mains'||!['yes','other','pass'].includes(answer)||typeof jointOral!=='boolean')
+    throw new RangeError('Consentement de contact invalide');
+   return rpc('love_eclat_v2_contact_answer',{p_session:sessionId(sid),
+    p_expected_step:step(expectedStep),p_proposal:proposal,p_answer:answer,p_joint_oral:jointOral});
+  },
   door:({sessionId:sid,expectedStep,door,jointOral=false})=>{
    if(!['Tendresse','Jeu','Mystère'].includes(door)||typeof jointOral!=='boolean')
     throw new RangeError('Choix de porte invalide');

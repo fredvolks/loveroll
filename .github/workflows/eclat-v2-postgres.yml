@@ -45,3 +45,5 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-door.test.sql
       - name: Verify serial separate envelope 3 and 4 revelations
         run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-envelopes.test.sql
+      - name: Verify contact consent and withdrawal on two and one phones
+        run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-contact.test.sql

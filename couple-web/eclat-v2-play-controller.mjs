@@ -39,7 +39,12 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
     next=await api.ready({sessionId:sid,expectedStep:idx,ready:command==='ready:true'});
    else if(command==='reveal'||command==='reveal-oral')
     next=await api.reveal({sessionId:sid,expectedStep:idx,jointOral:command==='reveal-oral'});
-   else if(command.startsWith('door:')){
+   else if(command.startsWith('contact:')){
+    const answer=command.slice(8);
+    if(!['yes','other','pass'].includes(answer))return;
+    next=await api.contact({sessionId:sid,expectedStep:idx,proposal:'mains',
+      answer,jointOral:status.device_mode==='one'&&answer==='yes'});
+   }else if(command.startsWith('door:')){
     const door=command.slice(5);
     if(!['Tendresse','Jeu','Mystère'].includes(door))return;
     next=await api.door({sessionId:sid,expectedStep:idx,door,jointOral:status.device_mode==='one'});

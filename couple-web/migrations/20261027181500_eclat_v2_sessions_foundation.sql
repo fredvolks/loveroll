@@ -20,6 +20,7 @@ create table public.love_eclat_v2_sessions (
  substep_index smallint not null default 1 check (substep_index in (1,2)),
  branch text check (branch in ('Tendresse','Jeu','Mystère')),
  door_confirmed_scene smallint check (door_confirmed_scene in (1,5)),
+ shared_contact_approved boolean not null default false,
  revealed_step smallint check (revealed_step between 1 and 8),
  started_at timestamptz not null default now(),
  updated_at timestamptz not null default now(),
@@ -54,6 +55,18 @@ create table public.love_eclat_v2_door_votes (
  updated_at timestamptz not null default now(),
  primary key(session_id,scene_number,user_id)
 );
+-- Contact consent is short lived, proposal-specific and author-only.
+create table public.love_eclat_v2_contact_choices (
+ session_id uuid not null references public.love_eclat_v2_sessions(id) on delete cascade,
+ step_index smallint not null check (step_index between 1 and 8),
+ user_id uuid not null references auth.users(id),
+ proposal text not null check (proposal='mains'),
+ response text not null check (response in ('yes','other','pass')),
+ updated_at timestamptz not null default now(),
+ primary key(session_id,step_index,user_id)
+);
+alter table public.love_eclat_v2_contact_choices enable row level security;
+revoke all on public.love_eclat_v2_contact_choices from public,anon,authenticated;
 alter table public.love_eclat_v2_door_votes enable row level security;
 revoke all on public.love_eclat_v2_door_votes from public,anon,authenticated;
 alter table public.love_eclat_v2_sessions enable row level security;
@@ -94,6 +107,7 @@ create function public.love_eclat_v2_status(p_session uuid default null)
 declare
  v_actor uuid:=auth.uid(); v_couple uuid; v_s public.love_eclat_v2_sessions%rowtype;
  v_ready integer; v_mine boolean; v_type text; v_door_vote text;
+ v_contact_yes integer; v_my_contact text;
 begin
  perform public.love_require_verified_identity();
  select couple_id into v_couple from public.couple_members where user_id=v_actor;
@@ -114,6 +128,9 @@ begin
  v_type:=public.love_eclat_v2_scene_type(v_s.coffret_id,v_s.chapter_plan[v_s.chapter_index]);
  select door into v_door_vote from public.love_eclat_v2_door_votes
   where session_id=v_s.id and scene_number=v_s.chapter_plan[v_s.chapter_index] and user_id=v_actor;
+ select count(*) filter(where response='yes'), max(response) filter(where user_id=v_actor)
+  into v_contact_yes,v_my_contact from public.love_eclat_v2_contact_choices
+  where session_id=v_s.id and step_index=v_s.chapter_index and proposal='mains';
  select count(*),coalesce(bool_or(user_id=v_actor),false) into v_ready,v_mine
  from public.love_eclat_v2_readiness where session_id=v_s.id and step_index=v_s.chapter_index;
  return jsonb_build_object(
@@ -127,6 +144,11 @@ begin
   'scene_type',v_type,'state',v_s.state,'skipped_scenes',v_s.skipped_scenes,
   'branch',v_s.branch,'door_confirmed',v_s.door_confirmed_scene=v_s.chapter_plan[v_s.chapter_index],
   'my_door_vote',v_door_vote,
+  'contact_approved',case when v_s.coffret_id=3 and v_s.chapter_plan[v_s.chapter_index]=6
+    then case when v_s.device_mode='one' then v_s.shared_contact_approved
+              else v_contact_yes=2 end
+    else false end,
+  'my_contact_response',v_my_contact,
   'revealed',coalesce(v_s.revealed_step=v_s.chapter_index,false),
   'ready_count',v_ready,'my_ready',v_mine,
   'can_reveal',case when v_type<>'Secret' then false
@@ -312,6 +334,44 @@ begin
 end;
 $$;
 
+-- Coffret 03 / scene 6: consent is specifically for the proposed massage.
+-- "other" and "pass" are complete alternatives; neither is an approval.
+create function public.love_eclat_v2_contact_answer(
+ p_session uuid,p_expected_step integer,p_proposal text,p_answer text,
+ p_joint_oral boolean default false
+) returns jsonb language plpgsql security definer set search_path='' as $$
+declare v_actor uuid:=auth.uid();v_couple uuid;v_s public.love_eclat_v2_sessions%rowtype;
+begin
+ perform public.love_require_verified_identity();
+ if p_proposal is distinct from 'mains'
+  or p_answer is null or p_answer not in ('yes','other','pass') then
+  raise exception 'Réponse de contact non approuvée';end if;
+ select * into v_s from public.love_eclat_v2_sessions where id=p_session for update;
+ if not found then raise exception 'Séance inconnue';end if;
+ select couple_id into v_couple from public.couple_members where user_id=v_actor;
+ if v_couple is distinct from v_s.couple_id or v_actor not in(v_s.role_a,v_s.role_b)
+  or not public.love_eclat_has_access(v_s.couple_id) then
+  raise exception 'Accès interdit' using errcode='42501';end if;
+ if p_expected_step is distinct from v_s.chapter_index then
+  return public.love_eclat_v2_status(p_session);end if;
+ if v_s.coffret_id<>3 or v_s.chapter_plan[v_s.chapter_index]<>6 or v_s.state<>'active' then
+  raise exception 'Contact non prévu dans cette scène';end if;
+ if v_s.device_mode='one' then
+  if v_actor<>v_s.role_a or (p_answer='yes' and p_joint_oral is distinct from true) then
+   raise exception 'Accord oral des deux requis pour le contact';end if;
+  update public.love_eclat_v2_sessions
+   set shared_contact_approved=(p_answer='yes'),updated_at=now() where id=p_session;
+ else
+  insert into public.love_eclat_v2_contact_choices
+   (session_id,step_index,user_id,proposal,response)
+   values(p_session,v_s.chapter_index,v_actor,p_proposal,p_answer)
+  on conflict(session_id,step_index,user_id)
+  do update set response=excluded.response,updated_at=now();
+ end if;
+ return public.love_eclat_v2_status(p_session);
+end;
+$$;
+
 -- All state transitions are serializable per session lock and guarded by an
 -- expected step token. Retrying a stale next/pass NEVER advances the next scene.
 create function public.love_eclat_v2_act(
@@ -350,6 +410,8 @@ begin
   if p_action='continue' and v_type='Secret' and v_s.revealed_step is distinct from v_s.chapter_index then
    raise exception 'Révélation convenue requise avant de continuer'; end if;
   delete from public.love_eclat_v2_readiness where session_id=p_session and step_index=v_s.chapter_index;
+  delete from public.love_eclat_v2_contact_choices
+   where session_id=p_session and step_index=v_s.chapter_index;
   v_finished:=v_s.chapter_index=cardinality(v_s.chapter_plan);
   update public.love_eclat_v2_sessions
    set chapter_index=case when v_finished then chapter_index else chapter_index+1 end,
@@ -358,6 +420,7 @@ begin
           else skipped_scenes end,
        revealed_step=null,
        substep_index=1,
+       shared_contact_approved=false,
        branch=case when p_action='pass' and coffret_id=4 and chapter_plan[chapter_index]=1 and branch is null
           then 'Jeu' else branch end,
        door_confirmed_scene=case when p_action='pass' and coffret_id=4 and chapter_plan[chapter_index] in (1,5)
@@ -370,6 +433,8 @@ begin
  return public.love_eclat_v2_status(p_session);
 end;
 $$;
+revoke all on function public.love_eclat_v2_contact_answer(uuid,integer,text,text,boolean) from public,anon;
+grant execute on function public.love_eclat_v2_contact_answer(uuid,integer,text,text,boolean) to authenticated;
 revoke all on function public.love_eclat_v2_choose_door(uuid,integer,text,boolean) from public,anon;
 grant execute on function public.love_eclat_v2_choose_door(uuid,integer,text,boolean) to authenticated;
 revoke all on function public.love_eclat_v2_status(uuid) from public,anon;

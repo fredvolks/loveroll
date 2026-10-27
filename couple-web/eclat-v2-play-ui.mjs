@@ -30,6 +30,23 @@ function mainContent(view,status){
     (opt.requiresContact?'<p><strong>Contact seulement après un Oui explicite des deux; arrêt immédiat possible. Sinon, choisissez l’alternative sans contact.</strong></p>':'')+
    '</details>').join('')+'</section>';
  }
+ if(view.coffretId===3&&view.sceneNumber===6){
+  html+='<section class="eclat-v2-contact" aria-label="Consentement au massage des mains">'+
+   '<h3>Massage des mains : proposition facultative</h3>'+
+   '<p>Le massage n’est possible qu’avec deux Oui explicites, chacun pouvant retirer le sien à tout moment. Décrire une texture sans contact reste une activité complète.</p>';
+  if(status.contact_approved){
+   html+='<p role="status"><strong>Accord commun confirmé pour cette proposition seulement.</strong></p>'+
+    btn('contact:pass',status.device_mode==='one'?'Retirer notre Oui':'Retirer mon Oui');
+  }else{
+   html+=btn('contact:yes',status.device_mode==='one'?
+    'Nous disons tous les deux Oui pour ce massage':'Oui, pour ce massage seulement')+
+    btn('contact:other','Une autre proposition sans contact')+
+    btn('contact:pass','Passer cette proposition');
+   if(status.my_contact_response==='yes')
+    html+='<p role="status">Votre Oui est enregistré, l’accord de l’autre reste nécessaire.</p>';
+  }
+  html+='</section>';
+ }
  if(view.doors){
   if(view.branch)html+='<p class="eclat-v2-branch">Votre chemin : '+esc(view.branch)+'</p>';
   if(view.fallback)html+=paragraph(view.fallback);
