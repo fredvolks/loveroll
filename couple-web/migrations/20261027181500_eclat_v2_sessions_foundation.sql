@@ -1163,8 +1163,7 @@ begin
    return public.love_eclat_v2_status(p_session);
   end if;
   if p_action in ('start','resume','extend') and v_s.device_mode='two' and
-     v_actor is distinct from
-       case when v_s.timer_turn=1 then v_s.role_a else v_s.role_b end then
+     v_actor <> (case when v_s.timer_turn=1 then v_s.role_a else v_s.role_b end) then
    raise exception 'Seul le partenaire du tour peut démarrer le minuteur';end if;
  elsif p_action='next-turn' then
   raise exception 'Passage de tour indisponible sur cette manche';
