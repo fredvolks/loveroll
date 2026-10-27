@@ -1,4 +1,4 @@
-import {fitSharedStage} from './shared-stage.mjs?v=20261022-home228';
+import {fitSharedStage,fitTabletRomanceStage} from './shared-stage.mjs?v=20261026-web236';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export function eveningPlayInfoHtml(percent=88){
  const preferred=Math.min(100,Math.max(0,Number(percent)||0));
@@ -29,6 +29,16 @@ export function fitEveningD100(root){
  const view=root.querySelector('.evening-premium-view.is-ready');
  const enabled=!!view&&matchMedia('(max-width:767px)').matches;
  root.classList.toggle('has-evening-d100-template',enabled);
+ if(view&&matchMedia('(min-width:768px)').matches){
+  const hero=view.querySelector('.evening-die-row');
+  if(hero&&!hero.querySelector('.home-pedestal')){
+   hero.classList.add('home-die-theater');
+   hero.insertAdjacentHTML('beforeend','<div class="home-pedestal" aria-hidden="true"><span class="home-pedestal-contact"></span></div>');
+  }
+  const fit=()=>{if(view.isConnected)fitTabletRomanceStage(root);};
+  observer=new ResizeObserver(fit);observer.observe(root);fit();
+  return false;
+ }
  if(!enabled)return false;
  view.classList.add('has-home-soiree-template','has-evening-d100-template');
  view.querySelector('.ritual-kicker').textContent='NOTRE RITUEL DE LA SOIRÉE';
