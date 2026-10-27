@@ -35,3 +35,13 @@
  .eclat-qa-toolbar button{flex-basis:100%}
  .eclat-qa-player{padding:5px}
  .eclat-qa-config,.eclat-qa-toolbar,.eclat-qa-people form{padding:12px}}
+
+.eclat-qa-operator{background:#2d1927;border:1px solid #895d73;
+ border-radius:15px;padding:18px;margin-bottom:16px}
+.eclat-qa-operator form{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}
+.eclat-qa-operator-buttons,.eclat-qa-managed-row{display:flex;gap:9px;flex-wrap:wrap;
+ align-items:center;justify-content:space-between;margin:12px 0}
+.eclat-qa-credentials{padding:12px;border:1px solid #d5acbe;background:#45253a;
+ border-radius:11px;overflow-wrap:anywhere;user-select:text}
+.eclat-qa-managed-row{padding:9px;border-bottom:1px solid #88506a}
+@media(max-width:840px){.eclat-qa-operator form{grid-template-columns:1fr}}

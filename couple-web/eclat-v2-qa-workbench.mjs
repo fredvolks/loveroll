@@ -53,6 +53,7 @@ export function createEclatV2QaWorkbench({
  if(!root||typeof root.addEventListener!=='function'||typeof createClient!=='function')
   throw new TypeError('Atelier QA : conteneur et création de clients requis');
  let active=true,configured=false,sessionId=null,ticker=null,busy=false;
+ let operatorClient=null,operatorId=null;
  const players={A:{},B:{}};
  const el=id=>root.querySelector('[data-eclat-qa="'+id+'"]');
  const show=(id,value)=>{const target=el(id);if(target)target.hidden=!value;};
@@ -63,6 +64,59 @@ export function createEclatV2QaWorkbench({
  const progress=(role,value)=>{
   const target=el('account-'+role);if(target)target.textContent=value;
  };
+ const dropPrivate=()=>{const target=el('one-time-passwords');
+  if(target){target.replaceChildren();target.hidden=true;}};
+ function operatorButtons(){
+  for(const name of ['qa-create','qa-list','qa-expire','qa-operator-logout']){
+   const b=root.querySelector('[data-eclat-qa-action="'+name+'"]');
+   if(b)b.disabled=!operatorId||busy;
+  }
+ }
+ async function callOperator(action,extra={}){
+  if(!operatorClient||!operatorId)throw new Error('Connectez le compte opérateur QA');
+  const {data,error}=await operatorClient.functions.invoke('loveroll-qa-accounts',{
+   body:{action,...extra}
+  });
+  if(error||!data?.ok)throw new Error(data?.error||error?.message||
+   'Fonction QA absente ou accès opérateur refusé');
+  return data;
+ }
+ function paintManaged(pairs){
+  const rootList=el('pairs');if(!rootList)return;
+  rootList.replaceChildren();
+  if(!pairs.length){rootList.textContent='Aucune paire QA créée par cet opérateur.';return;}
+  for(const row of pairs){
+   const line=document.createElement('div');line.className='eclat-qa-managed-row';
+   const label=document.createElement('span');
+   label.textContent='Paire '+String(row.id).slice(0,8)+
+    ' · '+row.state+' · expiration '+new Date(row.expires_at).toLocaleString('fr-CA');
+   const button=document.createElement('button');button.type='button';
+   button.textContent='Supprimer cette paire QA';button.className='secondary';
+   button.dataset.eclatQaAction='qa-delete';
+   button.dataset.pairId=row.id;
+   line.append(label,button);rootList.append(line);
+  }
+ }
+ async function operatorSignIn(form){
+  if(!configured||!operatorClient)throw new Error('Connecter le projet QA d’abord');
+  if(operatorId)throw new Error('Opérateur déjà connecté');
+  const email=form.querySelector('[name="email"]')?.value?.trim();
+  const input=form.querySelector('[name="password"]');
+  const password=input?.value;if(input)input.value='';
+  if(!email||!password)throw new Error('Compte opérateur QA requis');
+  const {data,error}=await operatorClient.auth.signInWithPassword({email,password});
+  if(error||!data?.user?.id)throw error||new Error('Connexion opérateur refusée');
+  const {data:check,error:authError}=await operatorClient.auth.getUser();
+  if(authError||check?.user?.id!==data.user.id)
+   throw new Error('Identité opérateur non vérifiée');
+  operatorId=data.user.id;operatorButtons();
+  feedback('Identité QA validée. La fonction serveur vérifiera séparément le droit de créer ou de supprimer.');
+ }
+ async function operatorLogout(){
+  operatorId=null;dropPrivate();el('pairs')?.replaceChildren();
+  await operatorClient?.auth?.signOut({scope:'local'}).catch(()=>{});
+  operatorButtons();
+ }
  const dropPlayers=()=>{
   for(const role of ['A','B']){
    players[role].controller?.destroy();
@@ -89,6 +143,7 @@ export function createEclatV2QaWorkbench({
  };
  async function disconnect(){
   stopTicker();dropPlayers();sessionId=null;
+  await operatorLogout();operatorClient=null;
   for(const role of ['A','B']){
    const client=players[role].client;players[role]={};
    try{await client?.auth?.signOut?.({scope:'local'});}catch{/* JWT ephemeral */}
@@ -105,6 +160,10 @@ export function createEclatV2QaWorkbench({
   });
   const created={};
   try{
+   operatorClient=createClient(config.url,config.key,{
+    auth:{persistSession:false,autoRefreshToken:true,detectSessionInUrl:false,
+      flowType:'pkce',storageKey:'loveroll-eclat-qa-operator-memory'}
+   });
    for(const role of ['A','B']){
     const client=createClient(config.url,config.key,eclatQaAuthOptions(role));
     if(typeof client?.rpc!=='function'||typeof client?.auth?.signInWithPassword!=='function')
@@ -112,13 +171,15 @@ export function createEclatV2QaWorkbench({
     created[role]={client,api:createApi(client),user:null,controller:null};
    }
   }catch(e){
+   await operatorClient?.auth?.signOut?.({scope:'local'}).catch(()=>{});
+   operatorClient=null;
    for(const p of Object.values(created))
     try{await p.client.auth.signOut({scope:'local'});}catch{/* noop */}
    throw e;
   }
   Object.assign(players.A,created.A);Object.assign(players.B,created.B);
   configured=true;el('url').value='';el('key').value='';
-  show('connection',false);show('accounts',true);
+  show('connection',false);show('accounts',true);operatorButtons();
   feedback('Base QA distincte connectée. Identifiez maintenant les deux comptes test.');
  }
  async function signIn(role,form){
@@ -204,23 +265,68 @@ export function createEclatV2QaWorkbench({
    if(command==='start')await start();
    if(command==='resume')await resume();
    if(command==='refresh')await refresh();
+   if(command==='qa-create'){
+    const result=await callOperator('create');
+    dropPrivate();
+    const area=el('one-time-passwords');area.hidden=false;
+    const title=document.createElement('p');
+    title.textContent='Mots de passe visibles une seule fois. Copiez-les maintenant; ils disparaissent à la déconnexion.';
+    area.append(title);
+    for(const account of result.accounts||[]){
+     const row=document.createElement('p');
+     row.textContent='Compte '+account.role+' · '+account.email+' · '+account.password;
+     area.append(row);
+    }
+    feedback('Paire de test créée uniquement sur QA. Vérifier l’accès Premium QA avant de lancer le jeu.');
+    const list=await callOperator('list');paintManaged(list.pairs||[]);
+   }
+   if(command==='qa-list'){
+    dropPrivate();
+    const list=await callOperator('list');paintManaged(list.pairs||[]);
+    feedback('Inventaire des paires QA appartenant à cet opérateur.');
+   }
+   if(command==='qa-expire'){
+    dropPrivate();
+    const result=await callOperator('expire');
+    const list=await callOperator('list');paintManaged(list.pairs||[]);
+    feedback('Expiration QA demandée : '+(result.results||[]).filter(x=>x.deleted).length+
+     ' paires nettoyées; vérifier les échecs éventuels dans le journal serveur.');
+   }
+   if(command==='qa-operator-logout'){
+    await operatorLogout();feedback('Opérateur QA déconnecté et mots de passe effacés.');
+   }
+   if(command==='qa-delete'){
+    if(players.A.user||players.B.user||sessionId)
+     throw new Error('Déconnectez les joueurs et arrêtez la séance avant de supprimer leur paire');
+    const pairId=target.dataset.pairId;
+    if(typeof pairId!=='string'||!/^[-0-9a-f]{36}$/.test(pairId))return;
+    if(globalThis.confirm?.('Supprimer définitivement uniquement cette paire QA et ses sessions ?')!==true)return;
+    dropPrivate();await callOperator('delete',{pairId});
+    const list=await callOperator('list');paintManaged(list.pairs||[]);
+    feedback('Paire QA supprimée et comptes Auth révoqués côté serveur.');
+   }
   }catch(e){feedback(e?.message||'Opération impossible',true);}
-  finally{busy=false;}
+  finally{busy=false;operatorButtons();}
  }
  async function onSubmit(event){
   const form=event.target,role=form?.getAttribute?.('data-eclat-qa-form');
-  if(!['A','B'].includes(role)||!root.contains(form))return;
+  const operatorForm=form?.hasAttribute?.('data-eclat-qa-operator-form');
+  if(!root.contains(form)||!operatorForm&&!['A','B'].includes(role))return;
   event.preventDefault();
   if(busy||!active)return;
   busy=true;
-  try{await signIn(role,form);}
-  catch(e){feedback('Compte '+role+' : '+(e?.message||'Connexion refusée'),true);}
+  try{if(operatorForm)await operatorSignIn(form);
+   else await signIn(role,form);}
+  catch(e){feedback((operatorForm?'Opérateur QA':'Compte '+role)+
+   ' : '+(e?.message||'Connexion refusée'),true);}
   finally{busy=false;}
  }
  root.addEventListener('click',onClick);
  root.addEventListener('submit',onSubmit);
  return Object.freeze({disconnect,destroy(){
-  active=false;stopTicker();dropPlayers();
+  active=false;stopTicker();dropPlayers();dropPrivate();
+  operatorId=null;operatorClient?.auth?.signOut?.({scope:'local'}).catch(()=>{});
+  operatorClient=null;
   root.removeEventListener('click',onClick);root.removeEventListener('submit',onSubmit);
   // Local scoped logout does NOT sign out the production platform administrator.
   for(const role of ['A','B'])

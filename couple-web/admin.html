@@ -62,13 +62,30 @@
  <div class="eclat-qa-intro"><span>LABORATOIRE ISOLÉ</span>
  <h2>Éclat V2 · Deux vrais joueurs</h2>
  <p>Le véritable écran Éclat des deux partenaires côte à côte. Tirages, défis, votes, secrets et finales proviennent des <strong>vraies fonctions V2 du serveur de test</strong>, jamais d'une simulation simplifiée.</p></div>
- <p class="eclat-qa-warning">Sécurité : exclusivement une <strong>autre base Supabase QA</strong> avec les migrations Éclat V2 et deux comptes de test déjà créés, membres du même duo. Impossible de se connecter à la production LoveRoll. La console ne crée ni ne supprime de comptes, n'efface aucune donnée réelle et n'utilise aucune clé secrète.</p>
+ <p class="eclat-qa-warning">Sécurité : exclusivement un <strong>projet Supabase LoveRoll QA distinct</strong> avec les migrations V2. L'atelier refuse la production et les clés secrètes. La création et la suppression de comptes test nécessitent la fonction serveur QA installée, avec opérateur autorisé. Aucun effacement de compte réel n'est permis.</p>
  <div data-eclat-qa="connection" class="eclat-qa-config">
   <label>Adresse du projet Supabase QA<input data-eclat-qa="url" type="url" spellcheck="false" autocomplete="off" placeholder="https://abcdefghijklmnopqrst.supabase.co"></label>
   <label>Clé publiable du projet QA<input data-eclat-qa="key" type="password" spellcheck="false" autocomplete="off" placeholder="sb_publishable_…"></label>
   <button type="button" data-eclat-qa-action="connect" class="secondary">Connecter uniquement la base QA</button>
  </div>
  <div data-eclat-qa="accounts" hidden>
+<section class="eclat-qa-operator" data-eclat-qa="operator">
+ <h3>Comptes jetables · gestion côté serveur QA</h3>
+ <p class="small-note">Le compte opérateur QA est différent des joueurs et de la connexion Super Admin principale. La fonction `loveroll-qa-accounts` doit être déployée uniquement sur le projet QA désigné. Sans elle, la création et le nettoyage sont refusés.</p>
+ <form data-eclat-qa-operator-form autocomplete="off">
+  <label>Courriel opérateur QA<input name="email" type="email" autocomplete="off" required></label>
+  <label>Mot de passe opérateur QA<input name="password" type="password" autocomplete="off" required></label>
+  <button type="submit" class="secondary">Autoriser mon compte opérateur QA</button>
+ </form>
+ <div class="eclat-qa-operator-buttons">
+  <button type="button" data-eclat-qa-action="qa-create" disabled>Créer deux comptes QA</button>
+  <button type="button" data-eclat-qa-action="qa-list" disabled>Voir les paires QA</button>
+  <button type="button" data-eclat-qa-action="qa-expire" disabled>Nettoyer les comptes expirés</button>
+  <button type="button" data-eclat-qa-action="qa-operator-logout" disabled>Déconnecter l'opérateur</button>
+ </div>
+ <div data-eclat-qa="one-time-passwords" class="eclat-qa-credentials" hidden aria-live="polite"></div>
+ <div data-eclat-qa="pairs" class="eclat-qa-managed-pairs" aria-live="polite"></div>
+</section>
   <div class="eclat-qa-people">
    <form data-eclat-qa="login-A" data-eclat-qa-form="A" autocomplete="off">
     <h3>Joueur A</h3><p data-eclat-qa="account-A">Non connecté</p>

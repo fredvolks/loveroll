@@ -26,5 +26,6 @@ jobs:
           node --check couple-web/eclat-v2-play-ui.mjs
           node --check couple-web/eclat-v2-play-controller.mjs
           node --check couple-web/eclat-v2-qa-workbench.mjs
+          node --check couple-web/eclat-v2-qa-accounts-guards.mjs
           node --check couple-web/platform-admin.js
-          node --test couple-web/eclat-v2-qa-admin-contract.test.mjs couple-web/eclat-v2-admin-pair.test.mjs couple-web/eclat-v2-qa-workbench.test.mjs couple-web/eclat-v2-contract.test.mjs couple-web/eclat-v2-session.test.mjs couple-web/eclat-v2-coffrets-a.test.mjs couple-web/eclat-v2-coffrets-b.test.mjs couple-web/eclat-v2-coffrets-c.test.mjs couple-web/eclat-v2-play-ui.test.mjs
+          node --test couple-web/eclat-v2-qa-accounts-edge.test.mjs couple-web/eclat-v2-qa-accounts-guards.test.mjs couple-web/eclat-v2-qa-admin-contract.test.mjs couple-web/eclat-v2-admin-pair.test.mjs couple-web/eclat-v2-qa-workbench.test.mjs couple-web/eclat-v2-contract.test.mjs couple-web/eclat-v2-session.test.mjs couple-web/eclat-v2-coffrets-a.test.mjs couple-web/eclat-v2-coffrets-b.test.mjs couple-web/eclat-v2-coffrets-c.test.mjs couple-web/eclat-v2-play-ui.test.mjs
