@@ -71,7 +71,7 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
        pedestalMarker:!!marker,pedestalCount:theater.querySelectorAll('.home-pedestal,.soiree-pedestal-marker').length,
        markerWidth:plinth?.getBoundingClientRect().width,markerHeight:plinth?.getBoundingClientRect().height,
        markerVisible:plinth&&getComputedStyle(plinth).display!=='none',
-       contact:markerRect?.top,meshBottom:rect.top+bounds.bottom*rect.height,
+       contact:markerRect?.top,meshTop:rect.top+bounds.top*rect.height,meshBottom:rect.top+bounds.bottom*rect.height,heroTop:theater.getBoundingClientRect().top,
        meshCenter:rect.left+(bounds.left+bounds.right)*rect.width/2,
        appWidth:root.getBoundingClientRect().width,
        scrollX:document.documentElement.scrollWidth-innerWidth,
@@ -90,6 +90,10 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
      assert.equal(scene.markerVisible,true,'Real WebGL must see its marble anchor');
      assert.equal(scene.markerWidth,0,'The marker cannot draw a second podium');
      assert.equal(scene.markerHeight,0,'The marker cannot draw a second podium');
+     assert.ok(scene.meshTop>=Math.max(scene.header+4,scene.heroTop+2),
+      'The complete real D6/D100 must be visible BELOW the header and inside its hero: '+JSON.stringify(scene));
+     assert.ok(scene.meshBottom-scene.meshTop>130,
+      'The photographed D6/D100 cannot be shrunk to a tiny tablet icon: '+JSON.stringify(scene));
      assert.ok(Math.abs(scene.meshBottom-scene.contact)<4,
       'Die must meet original photographed marble plane: '+JSON.stringify(scene));
      assert.ok(Math.abs(scene.meshCenter-width/2)<7,
