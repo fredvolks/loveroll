@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {validateEclatQaConfig,eclatQaAuthOptions,validateEclatQaPair}
+import {validateEclatQaConfig,eclatQaAuthOptions,validateEclatQaPair,validateEclatQaReadyToStart}
  from './eclat-v2-qa-workbench.mjs';
 const PROD='https://ejsrqfpkgwraorrznjpm.supabase.co';
 const QA='https://abcdefghij1234567890.supabase.co';
@@ -52,4 +52,12 @@ test('QA factory only installs handlers; does not touch production or query a ba
  assert.throws(()=>validateEclatQaConfig({
   url:PROD,key:KEY,productionUrl:PROD}),/production/);
  assert.ok(root);
+});
+
+test('cannot start a second real QA game over an already active couple session',()=>{
+ const fresh={access:true,active:false};
+ assert.equal(validateEclatQaReadyToStart(fresh,fresh),true);
+ assert.throws(()=>validateEclatQaReadyToStart({...fresh,active:true},fresh),/Reprendre/);
+ assert.throws(()=>validateEclatQaReadyToStart(fresh,{...fresh,active:true}),/Reprendre/);
+ assert.throws(()=>validateEclatQaReadyToStart(fresh,{access:false,active:false}),/droits Éclat/);
 });

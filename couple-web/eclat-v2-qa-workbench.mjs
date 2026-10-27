@@ -39,6 +39,13 @@ export function validateEclatQaPair({userA,userB,statusA,statusB}){
   throw new Error('Les comptes doivent appartenir au même duo et à la même vraie séance V2');
  return statusA.session_id;
 }
+export function validateEclatQaReadyToStart(statusA,statusB){
+ if(!statusA?.access||!statusB?.access)
+  throw new Error('Les deux comptes doivent posséder les droits Éclat sur QA');
+ if(statusA.active||statusB.active)
+  throw new Error('Une séance est déjà ouverte. Utilisez Reprendre, ou terminez-la d’abord depuis le jeu.');
+ return true;
+}
 export function createEclatV2QaWorkbench({
  root,createClient,productionUrl,createApi=createEclatV2SessionApi,
  createPlayer=createEclatV2PlayController,refreshIntervalMs=6000
@@ -116,6 +123,7 @@ export function createEclatV2QaWorkbench({
  }
  async function signIn(role,form){
   if(!configured)throw new Error('Branchez d’abord une base de test');
+  if(players[role].user)throw new Error('Compte '+role+' déjà connecté : déconnecter la base QA pour changer de joueur');
   const email=form.querySelector('[name="email"]')?.value?.trim();
   const input=form.querySelector('[name="password"]');
   const password=input?.value;
@@ -163,10 +171,22 @@ export function createEclatV2QaWorkbench({
   const coffretId=Number(el('coffret').value),minutes=Number(el('minutes').value);
   if(!Number.isInteger(coffretId)||coffretId<1||coffretId>12||
      ![30,60,90].includes(minutes))throw new RangeError('Coffret ou durée invalide');
+  const prior=await Promise.all([players.A.api.status(),players.B.api.status()]);
+  validateEclatQaReadyToStart(prior[0],prior[1]);
   const a=await players.A.api.start({coffretId,minutes,deviceMode:'two'});
   // B uses a separate authenticated Supabase client. Never act as B using A's JWT.
-  const b=await players.B.api.status(a.session_id);
-  await attach(a,b);
+  // A just-created QA session is stopped if this real partner check fails;
+  // do not leave an orphan QA game that blocks subsequent tests.
+  try{
+   const b=await players.B.api.status(a.session_id);
+   await attach(a,b);
+  }catch(error){
+   if(a?.active&&a.chapter_index&&a.session_id){
+    try{await players.A.api.act({sessionId:a.session_id,
+      expectedStep:a.chapter_index,action:'stop'});}catch{/* report original failure */}
+   }
+   throw error;
+  }
  }
  async function refresh(){
   if(!sessionId)throw new Error('Commencez ou reprenez une séance QA');

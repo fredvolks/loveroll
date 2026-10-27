@@ -28,7 +28,9 @@
 .eclat-qa-status{margin:0;padding:13px;border-radius:11px;background:#44243a;color:#fff;
  overflow-wrap:anywhere}
 .eclat-qa-status[data-error="true"]{border:1px solid #f5a3a3;color:#ffe5e5}
-@media(max-width:1280px){.eclat-qa-grid{grid-template-columns:1fr}}
+/* Keep both real players visible side by side on landscape iPad and desktop.
+   Portrait tablet and emergency mobile collapse naturally to one column. */
+@media(max-width:1020px){.eclat-qa-grid{grid-template-columns:1fr}}
 @media(max-width:720px){.eclat-qa-people{grid-template-columns:1fr}
  .eclat-qa-toolbar button{flex-basis:100%}
  .eclat-qa-player{padding:5px}
