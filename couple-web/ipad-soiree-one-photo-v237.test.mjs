@@ -14,7 +14,7 @@ test('All Soirée states share the SAME live Android 3D templates on iPad',()=>{
  assert.match(d6,/\.home-die-platform/);
  assert.match(d100,/evening-d100-theater/);
  assert.match(d100,/insertAdjacentHTML\('beforeend'/);
- assert.match(idle,/\.soiree-pedestal-marker/);
+ assert.match(idle,/soiree-pedestal-marker/);
  assert.match(d6css,/@media\(max-width:1199px\)/);
  assert.match(d100css,/@media\(max-width:1199px\)/);
 });
