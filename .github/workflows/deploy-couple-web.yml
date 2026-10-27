@@ -30,6 +30,7 @@ jobs:
           node --check couple-web/evening-eclat-switcher.mjs
           test -s couple-web/assets/eclat-photo-strip.webp
           node --check couple-web/eclat-ui.mjs
+          node --test couple-web/ipad-soiree-one-photo-v237.test.mjs
           node --test couple-web/ipad-android-stage-v236.test.mjs
           node --test couple-web/ruby-visual-v182.test.mjs
           node --test couple-web/cinematic-v183.test.mjs
