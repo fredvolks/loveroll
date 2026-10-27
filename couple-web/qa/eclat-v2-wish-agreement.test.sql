@@ -1,0 +1,129 @@
+-- True two-person consent, withdrawal, no inferred approval from card 7.
+set role authenticated;
+set request.jwt.claim.sub='00000000-0000-0000-0000-000000000001';
+do $$
+declare s jsonb;sid uuid;
+begin
+ s:=public.love_eclat_v2_status();
+ if s->>'active'='true' then
+  perform public.love_eclat_v2_act((s->>'session_id')::uuid,(s->>'chapter_index')::integer,'stop');
+ end if;
+ s:=public.love_eclat_v2_start(9,60,'two');sid:=(s->>'session_id')::uuid;
+ perform public.love_eclat_v2_cards_submit(sid,1,array[7]::smallint[]);
+end $$;
+set request.jwt.claim.sub='00000000-0000-0000-0000-000000000002';
+do $$ declare s jsonb;begin
+ s:=public.love_eclat_v2_status();
+ perform public.love_eclat_v2_cards_submit((s->>'session_id')::uuid,1,array[7]::smallint[]);
+end $$;
+set request.jwt.claim.sub='00000000-0000-0000-0000-000000000001';
+do $$
+declare s jsonb;sid uuid;
+begin
+ s:=public.love_eclat_v2_status();sid:=(s->>'session_id')::uuid;
+ perform public.love_eclat_v2_act(sid,1,'continue');
+ perform public.love_eclat_v2_act(sid,2,'continue');
+ perform public.love_eclat_v2_card_vote(sid,3,7);
+end $$;
+set request.jwt.claim.sub='00000000-0000-0000-0000-000000000002';
+do $$ declare s jsonb;begin
+ s:=public.love_eclat_v2_status();
+ perform public.love_eclat_v2_card_vote((s->>'session_id')::uuid,3,7);
+end $$;
+set request.jwt.claim.sub='00000000-0000-0000-0000-000000000001';
+do $$
+declare s jsonb;sid uuid;
+begin
+ s:=public.love_eclat_v2_status();sid:=(s->>'session_id')::uuid;
+ s:=public.love_eclat_v2_act(sid,3,'continue');
+ if s->>'chapter_number'<>'5' then raise exception 'Scene five not reached';end if;
+ begin
+  perform public.love_eclat_v2_act(sid,4,'continue');
+  raise exception 'Passed unapproved scene 5';
+ exception when raise_exception then
+  if sqlerrm<>'Décidez ensemble maintenant, plus tard ou passer' then raise;end if;
+ end;
+ s:=public.love_eclat_v2_wish_vote(sid,4,'now');
+ if s->>'wish_scene5' is not null then raise exception 'One person decided for both';end if;
+end $$;
+set request.jwt.claim.sub='00000000-0000-0000-0000-000000000002';
+do $$
+declare s jsonb;sid uuid;
+begin
+ s:=public.love_eclat_v2_status();sid:=(s->>'session_id')::uuid;
+ s:=public.love_eclat_v2_wish_vote(sid,4,'later');
+ if s->>'wish_scene5' is not null then raise exception 'Disagreement auto-accepted';end if;
+ s:=public.love_eclat_v2_wish_vote(sid,4,'now');
+ if s->>'wish_scene5'<>'now' then raise exception 'Two votes not combined';end if;
+end $$;
+set request.jwt.claim.sub='00000000-0000-0000-0000-000000000001';
+do $$
+declare s jsonb;sid uuid;
+begin
+ s:=public.love_eclat_v2_status();sid:=(s->>'session_id')::uuid;
+ s:=public.love_eclat_v2_act(sid,4,'continue');
+ if s->>'chapter_number'<>'6' then raise exception 'Scene six not reached';end if;
+ begin
+  perform public.love_eclat_v2_wish_vote(sid,5,'with-contact');
+  raise exception 'Contact auto-approved from card';
+ exception when raise_exception then
+  if sqlerrm<>'Deux Oui de contact nécessaires' then raise;end if;
+ end;
+ s:=public.love_eclat_v2_wish_contact_answer(sid,5,true);
+ if s->>'wish_contact_approved'<>'false' then raise exception 'Single contact Yes approved two';end if;
+end $$;
+set request.jwt.claim.sub='00000000-0000-0000-0000-000000000002';
+do $$
+declare s jsonb;sid uuid;
+begin
+ s:=public.love_eclat_v2_status();sid:=(s->>'session_id')::uuid;
+ s:=public.love_eclat_v2_wish_contact_answer(sid,5,true);
+ if s->>'wish_contact_approved'<>'true' then raise exception 'Two contact Yes missing';end if;
+ s:=public.love_eclat_v2_wish_vote(sid,5,'with-contact');
+ if s->>'wish_scene6' is not null then raise exception 'B consented to activity as A';end if;
+end $$;
+set request.jwt.claim.sub='00000000-0000-0000-0000-000000000001';
+do $$
+declare s jsonb;sid uuid;
+begin
+ s:=public.love_eclat_v2_status();sid:=(s->>'session_id')::uuid;
+ s:=public.love_eclat_v2_wish_vote(sid,5,'with-contact');
+ if s->>'wish_scene6'<>'with-contact' then raise exception 'Matching votes not saved';end if;
+ s:=public.love_eclat_v2_wish_contact_answer(sid,5,false);
+ if s->>'wish_scene6' is not null or s->>'wish_contact_approved'<>'false' then
+  raise exception 'Consent withdrawal not honored';end if;
+ begin
+  perform public.love_eclat_v2_act(sid,5,'continue');
+  raise exception 'Activity remained authorized after withdrawal';
+ exception when raise_exception then
+  if sqlerrm<>'Accord de participation distinct requis' then raise;end if;
+ end;
+ s:=public.love_eclat_v2_wish_vote(sid,5,'without-contact');
+ if s->>'wish_scene6' is not null then raise exception 'Only A chose no-contact';end if;
+end $$;
+set request.jwt.claim.sub='00000000-0000-0000-0000-000000000002';
+do $$
+declare s jsonb;begin
+ s:=public.love_eclat_v2_status();
+ s:=public.love_eclat_v2_wish_vote((s->>'session_id')::uuid,5,'without-contact');
+ if s->>'wish_scene6'<>'without-contact' then raise exception 'No-contact alternative not available';end if;
+end $$;
+set request.jwt.claim.sub='00000000-0000-0000-0000-000000000001';
+do $$
+declare s jsonb;sid uuid;
+begin
+ s:=public.love_eclat_v2_status();sid:=(s->>'session_id')::uuid;
+ s:=public.love_eclat_v2_act(sid,5,'continue');
+ if s->>'chapter_number'<>'8' or s->>'wish_contact_approved'<>'false' then
+  raise exception 'Consent carried into final scene';end if;
+ s:=public.love_eclat_v2_wish_vote(sid,6,'keep');
+ if s->>'wish_invitation_card' is not null then raise exception 'Unilateral invitation';end if;
+end $$;
+set request.jwt.claim.sub='00000000-0000-0000-0000-000000000002';
+do $$
+declare s jsonb;begin
+ s:=public.love_eclat_v2_status();
+ s:=public.love_eclat_v2_wish_vote((s->>'session_id')::uuid,6,'keep');
+ if s->>'wish_invitation_card'<>'7' then raise exception 'Common invitation missing';end if;
+end $$;
+reset role;

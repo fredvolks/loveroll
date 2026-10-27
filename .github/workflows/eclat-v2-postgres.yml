@@ -61,6 +61,8 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-story.test.sql
       - name: Validate only shared 09 card intersection, never private refusals
         run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-intersection.test.sql
+      - name: Verify 09 proposals, joint choices and revocable independent contact consent
+        run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-wish-agreement.test.sql
       - name: Validate two-person optional server timers, pause and expiry
         run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-timers.test.sql
       - name: Exercise both voluntary roles and alternative attentions in coffret 11
