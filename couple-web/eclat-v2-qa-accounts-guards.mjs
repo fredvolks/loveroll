@@ -1,7 +1,7 @@
 // Pure fail-closed guards shared by the QA Edge Function and Node regression tests.
 export const LOVEROLL_PRODUCTION_REF='ejsrqfpkgwraorrznjpm';
 const REF=/^[a-z0-9]{20}$/;
-const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export function verifyQaOperator({runtimeUrl,allowedQaRef,operatorId,actorId,productionRef=LOVEROLL_PRODUCTION_REF}){
  if(!REF.test(allowedQaRef||'')||!REF.test(productionRef||'')||
     !UUID.test(operatorId||'')||!UUID.test(actorId||'')||operatorId!==actorId)

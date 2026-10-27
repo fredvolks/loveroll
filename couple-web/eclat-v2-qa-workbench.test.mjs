@@ -95,7 +95,7 @@ test('two actual API clients, never A impersonating B, mount both full play cont
   root,productionUrl:PROD,refreshIntervalMs:1000000,
   createClient(url,key,options){
    assert.equal(url,QA);assert.equal(key,KEY);
-   const role=options.auth.storageKey.endsWith('-A')?'A':'B';
+   const role=options.auth.storageKey.endsWith('-A')?'A':options.auth.storageKey.endsWith('-B')?'B':'OPERATOR';
    const client={role,auth:{
     async signInWithPassword({email,password}){
      assert.match(email,/@qa.example.test/);
@@ -130,7 +130,8 @@ test('two actual API clients, never A impersonating B, mount both full play cont
   };}}});
  }
  await click('connect');
- assert.equal(created.length,2);
+ assert.equal(created.length,3,'operator QA must have its own isolated memory-only client');
+  assert.deepEqual(created.map(x=>x.role),['OPERATOR','A','B']);
  assert.notEqual(created[0],created[1]);
  assert.equal(elements['[data-eclat-qa="key"]'].value,'');
  for(const role of ['A','B'])await listeners.submit({
