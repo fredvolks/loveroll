@@ -52,7 +52,7 @@ Deno.serve(async(req:Request)=>{
     .select('seat,user_id').eq('admin_id',adminId).order('seat');
   if(seatError)throw Error('Profils de test indisponibles');
   return {ready:pool.state==='ready'&&seats?.length===2,state:pool.state,
-    seats:(seats||[]).map(x=>({seat:x.seat,ready:Boolean(x.user_id)})),
+    seats:(seats||[]).map(x=>({seat:x.seat,ready:Boolean(x.user_id),user_id:x.user_id})),
     created_at:pool.created_at};
  }
  if(action==='status'){
@@ -80,7 +80,7 @@ Deno.serve(async(req:Request)=>{
   return response({seat,token_hash:link.properties.hashed_token,user_id:row.user_id});
  }
  if(action==='create'){
-  const {data:reservation,error:reservationError}=await service.from('love_studio_test_pools')
+  const {error:reservationError}=await service.from('love_studio_test_pools')
    .insert({admin_id:adminId,state:'creating'}).select('admin_id').single();
   if(reservationError)return response({error:reservationError.code==='23505'
     ?'Un banc de test existe déjà pour ce Super Admin':'Réservation impossible'},reservationError.code==='23505'?409:503);
@@ -122,10 +122,22 @@ Deno.serve(async(req:Request)=>{
     if(finishError)throw Error('Finalisation du duo test impossible');
     return response({ready:true,state:'ready',seats:[{seat:'A',ready:true},{seat:'B',ready:true}]});
   }catch(err){
-    // Partial failure is left in 'creating' with an explicit recovery path,
-    // instead of deleting arbitrary data using an unsafe generic cleanup.
+    // Recover only IDs produced by this request; a registrable partial failure
+    // remains in "creating" so a privileged retry can clean it safely.
+    try {
+      const purge=await service.rpc('love_studio_purge_test_couple',{p_admin:adminId});
+      if(!purge.error){
+        for(const id of ids){
+          const result=await service.auth.admin.getUserById(id);
+          if(result.data?.user?.app_metadata?.love_studio_test===true &&
+              result.data.user.app_metadata?.love_studio_admin===adminId)
+            await service.auth.admin.deleteUser(id);
+        }
+        await service.from('love_studio_test_pools').delete().eq('admin_id',adminId);
+      }
+    }catch{/* Retain private registry if cleanup fails. */}
     return response({error:err instanceof Error?err.message:'Création incomplète',
-      detail:'Banc de test protégé mais incomplet; suppression sécurisée requise.'},503);
+      detail:'Si le banc reste réservé, demandez sa suppression sécurisée.'},503);
   }
  }
  // DELETE only the registered test couple plus its two technical identities.
