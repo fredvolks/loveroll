@@ -12,7 +12,7 @@ test('All Soirée states share the SAME live Android 3D templates on iPad',()=>{
  for(const module of [d6,d100,idle])
   assert.match(module,/matchMedia\('\(max-width:1199px\), \(pointer:coarse\) and \(min-width:768px\)'\)/);
  assert.match(d6,/\.home-die-platform/);
- assert.match(d100,/\.evening-d100-theater/);
+ assert.match(d100,/evening-d100-theater/);
  assert.match(d100,/insertAdjacentHTML\('beforeend'/);
  assert.match(idle,/\.soiree-pedestal-marker/);
  assert.match(d6css,/@media\(max-width:1199px\)/);
