@@ -242,21 +242,33 @@ Afficher près des catégories les cartes distinctes encore admissibles à la pr
 - **Preuves prévues :** `couple-web/dice-face-readability-browser-check.cjs` (D6 1–6, D100 représentatifs; téléphone 360×700, tablette 820×1180, ordinateur 1366×768), `dice-roll-motion.test.mjs`, captures WebGL `LoveRoll-D6-D100-face-readability-*` de GitHub Actions, comparaison avec la capture initiale. Tests physiques sur les vrais appareils et comparaison avant/après à confirmer; captures CI « après » ne remplacent pas une capture « avant ».
 - **Livraison :** branche `fix/d6-d100-face-readability-20261026` ; PR, CI, version Web, déploiement Pages et comportement public à renseigner après vérification.
 
+## Éclat V2 — état d'implémentation contrôlé (27 octobre 2026)
+
+**PR de préparation :** [#92 — Éclat V2](https://github.com/fredvolks/loveroll/pull/92). **Non fusionnée, aucune migration de production exécutée, Éclat V1 intact.** Les 12 coffrets possèdent une structure éditoriale et des modèles/contrôles de jeu dans la branche; cela **ne constitue pas** une livraison jouable dans l'application publique.
+
+**Contrôles automatisés en branche :** `Éclat V2 editorial & route contract` et `Éclat V2 isolated PostgreSQL security checks` vérifient les vraies migrations V2 en PostgreSQL 17 jetable et les parcours A/B. Le statut exact du dernier commit doit être relu dans la PR avant toute fusion. Aucun test physique iPad/Android ou recette réelle à deux comptes en application publiée n'est encore revendiqué.
+
+**Coffret 08 :** les thèmes T1–T5 et titres privés sont en code; révélation uniquement volontaire. La finale propose jusqu'à cinq titres révélés, ordonnés librement et sauvegardés seulement après deux approbations identiques (ou confirmation orale explicite en mode partagé). Les notes privées et brouillons sont effacés à la fin/à l'arrêt; la liste approuvée, titres et artistes uniquement, peut être relue après la séance. Aucune musique ni lecture automatique.
+
+**Coffret 09 :** les sélections privées (0–3 cartes) sont comparées uniquement pour les cartes communes et les choix non partagés sont détruits. Les étapes 5–8 comportent les choix maintenant/plus tard/passer, la participation facultative et l'invitation finale; tout contact des cartes 7/8 exige deux Oui spécifiques et révocables. La phrase commune est facultative et ne devient publique qu'après deux propositions identiques (ou accord oral sur un téléphone). Refus, votes temporaires et consentements de contact sont purgés; seule l'invitation et sa phrase expressément approuvées peuvent subsister.
+
+**Restant avant de compter les coffrets comme livrés :** branchement dans la vraie navigation, migration coordonnée sécurisée, abonnements/entitlements, QA bout-en-bout de tous les coffrets/variantes sur deux comptes réels, contrôle de la reprise et des échanges A/B, essais physiques iPad/Android, finitions visuelles et accessibilité. Ne pas fusionner ni déployer #92 sans ces contrôles.
+
 ## Refonte Éclat — douze coffrets approuvés le 27 octobre 2026
 
-**LR-ECLAT-001 : spécification de jeu rédigée, développement non commencé dans cette intervention.** [Maître](./LOVEROLL_MASTER_PROMPT.md) · [Contrat de jeu détaillé](./LOVEROLL_ECLAT_12_COFFRETS_SPEC.md). Work implémente les décisions fixées; aucun nouveau gameplay à inventer. Les colonnes designer/client/joueur/codeur exigent des preuves propres au coffret; aucune case de livraison cochée par la seule rédaction de cette spécification.
+**LR-ECLAT-001 : spécification figée; développement en cours dans la PR #92 (brouillon non fusionné, non publié).** [Maître](./LOVEROLL_MASTER_PROMPT.md) · [Contrat de jeu détaillé](./LOVEROLL_ECLAT_12_COFFRETS_SPEC.md). Work implémente les décisions fixées; aucun nouveau gameplay à inventer. Les colonnes designer/client/joueur/codeur exigent des preuves propres au coffret; aucune case de livraison cochée par la seule rédaction de cette spécification.
 
 | ID | Coffret | Spécification | Code / livraison | Recette designer / client / joueur / codeur |
 | --- | --- | --- | --- | --- |
-| LR-ECLAT-01 | Les cinq secrets | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |
-| LR-ECLAT-02 | Le double jeu | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |
-| LR-ECLAT-03 | Le langage des sens | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |
-| LR-ECLAT-04 | Les portes de minuit | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |
-| LR-ECLAT-05 | Comme au premier rendez-vous | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |
-| LR-ECLAT-06 | L’enquête amoureuse | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |
-| LR-ECLAT-07 | À ta place | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |
-| LR-ECLAT-08 | Notre bande originale | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |
-| LR-ECLAT-09 | Le coffre des envies | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |
-| LR-ECLAT-10 | Le compte à rebours | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |
-| LR-ECLAT-11 | L’art de te séduire | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |
-| LR-ECLAT-12 | La nuit du hasard | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |
+| LR-ECLAT-01 | Les cinq secrets | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | En cours — PR #92, non publié | À réaliser et documenter |
+| LR-ECLAT-02 | Le double jeu | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | En cours — PR #92, non publié | À réaliser et documenter |
+| LR-ECLAT-03 | Le langage des sens | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | En cours — PR #92, non publié | À réaliser et documenter |
+| LR-ECLAT-04 | Les portes de minuit | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | En cours — PR #92, non publié | À réaliser et documenter |
+| LR-ECLAT-05 | Comme au premier rendez-vous | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | En cours — PR #92, non publié | À réaliser et documenter |
+| LR-ECLAT-06 | L’enquête amoureuse | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | En cours — PR #92, non publié | À réaliser et documenter |
+| LR-ECLAT-07 | À ta place | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | En cours — PR #92, non publié | À réaliser et documenter |
+| LR-ECLAT-08 | Notre bande originale | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | En cours — PR #92, non publié | À réaliser et documenter |
+| LR-ECLAT-09 | Le coffre des envies | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | En cours — PR #92, non publié | À réaliser et documenter |
+| LR-ECLAT-10 | Le compte à rebours | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | En cours — PR #92, non publié | À réaliser et documenter |
+| LR-ECLAT-11 | L’art de te séduire | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | En cours — PR #92, non publié | À réaliser et documenter |
+| LR-ECLAT-12 | La nuit du hasard | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | En cours — PR #92, non publié | À réaliser et documenter |
