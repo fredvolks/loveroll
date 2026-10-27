@@ -56,6 +56,42 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
      premium:getComputedStyle(document.querySelector('.ritual-mode-premium')).backgroundImage};
    });
    console.log('SOIREE_LAYOUT',width,layout);
+   // LR-001 — check the *projected 3D mesh*, not only equal canvas widths.
+   // Soirée waiting and Surprise show exactly the same D100 model on the
+   // same HD photo, with no excess zoom on Galaxy S25 / short Android.
+   const projected=selector=>page.evaluate(selector=>{
+    const c=document.querySelector(selector+' canvas');
+    const rect=c.getBoundingClientRect(),mesh=c.loveRollDie.projectedBounds();
+    const hero=document.querySelector(selector).getBoundingClientRect();
+    return {sides:c.dataset.diceSides,
+     width:(mesh.right-mesh.left)*rect.width,height:(mesh.bottom-mesh.top)*rect.height,
+     top:rect.top+mesh.top*rect.height,bottom:rect.top+mesh.bottom*rect.height,
+     canvas:{top:mesh.top,bottom:mesh.bottom,left:mesh.left,right:mesh.right},
+     heroTop:hero.top};
+   },selector);
+   const idle=await projected('.evening-finale-hero');
+   assert.equal(idle.sides,'100','Before Commencer notre soirée, keep the true D100');
+   assert.ok(idle.canvas.top>=0&&idle.canvas.bottom<=1&&idle.canvas.left>=0&&idle.canvas.right<=1,
+    'Idle Soirée D100 is cropped within its WebGL canvas: '+JSON.stringify({width,height,idle}));
+   assert.ok(idle.top>=idle.heroTop+2,
+    'Waiting D100 overlaps the Soirée heading: '+JSON.stringify({width,height,idle}));
+   if(process.env.LOVEROLL_CAPTURE_DIR)await page.screenshot({path:path.join(process.env.LOVEROLL_CAPTURE_DIR,
+    'lr001-idle-'+width+'x'+height+'.png')});
+   await page.locator('.nav [data-action="tab:special"]').click();
+   await page.waitForFunction(()=>document.querySelector('.surprise-minimal canvas')?.loveRollDie?.readState()?.optics?.loaded);
+   const reference=await projected('.surprise-main-die-scene');
+   assert.equal(reference.sides,'100');
+   console.log('LR001_WAITING_D100_PARITY',width,height,JSON.stringify({idle,reference,
+    heightRatio:idle.height/reference.height,widthRatio:idle.width/reference.width}));
+   for(const dimension of ['width','height'])
+    assert.ok(idle[dimension]<=reference[dimension]*1.12,
+     'Waiting Soirée D100 must not be bigger than Surprise ('+dimension+'): '+JSON.stringify({width,height,idle,reference}));
+   assert.ok(Math.abs(idle.height/reference.height-1)<.24,
+    'Waiting Soirée D100 should have comparable visual size to Surprise: '+JSON.stringify({width,height,idle,reference}));
+   if(process.env.LOVEROLL_CAPTURE_DIR)await page.screenshot({path:path.join(process.env.LOVEROLL_CAPTURE_DIR,
+    'lr001-surprise-'+width+'x'+height+'.png')});
+   await page.locator('.nav [data-action="tab:session"]').click();
+   await page.waitForFunction(()=>document.querySelector('.evening-finale-dice canvas')?.loveRollDie?.readState()?.optics?.loaded);
    const canvas=page.locator('.evening-finale-dice canvas');
    await page.mouse.move(width/2,layout.contact-40);await page.mouse.down();
    await page.mouse.move(width/2+28,layout.contact-40,{steps:4});await page.mouse.up();
