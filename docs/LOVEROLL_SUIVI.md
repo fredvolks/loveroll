@@ -1,5 +1,14 @@
 # LoveRoll — SUIVI OFFICIEL DU PROMPT MAÎTRE
 
+## LR-001 — Régression : D100 Soirée plus petit que Surprise (27 octobre 2026)
+
+- **État : P0 UX — nouvelle anomalie constatée par captures Android, rectificatif inscrit au prompt maître; code NON corrigé et parité NON validée.**
+- **Constat :** sur l'écran d'entrée « Soirée », le D100 est plus petit que le D100 de « Surprise », malgré la consigne d'identité visuelle. L'ancienne réduction motivée par un dé auparavant trop grand/coupé a laissé une ambiguïté dans l'acceptation UX.
+- **Source normative :** [LR-001 du prompt maître](./LOVEROLL_MASTER_PROMPT.md#lr-001--d100-soirée-coupé-et-disproportionné), rectificatif du 27 octobre 2026. Ne pas réduire le dé de Surprise; reproduire sur Soirée sa taille apparente, le rendu WebGL et la relation au socle à viewport identique (**tolérance maximale ±3 %**).
+- **À faire dans le code :** corriger source d'échelle/caméra/layout du D100 de Soirée, vérifier absence de coupe et de chevauchement; produire captures côte à côte Soirée / Surprise au même viewport/pose; régression visuelle déterministe; contrôler mobile Android, petit écran, iPad portrait/paysage et PC.
+- **Preuves pour fermer :** lien PR/code, capture de chaque écran à dimensions identiques avec mesure, CI et déploiement réellement vérifiés, statut explicite des essais physiques. Un test UX vert sans confrontation des deux rendus ne suffit pas. Aucune de ces preuves n'est fournie par le seul présent ajout documentaire.
+
+
 ## Livraisons vérifiées — parité iPad / confirmation D100 (27 octobre 2026)
 
 - **Web 237 — iPad/Android :** [PR #72 fusionnée](https://github.com/fredvolks/loveroll/pull/72), commit `735f31718d9151785bbf24f6551ef3148ce2db39`; image HD Android `loveroll-home-portrait-v202.webp` commune à Accueil et Soirée iPad, un seul socle photographié, vrais D6/D100 WebGL, tests portrait et paysage et captures Chromium. [GitHub Pages : succès avec contrôle du site réellement publié](https://github.com/fredvolks/loveroll/actions/runs/40495972734). Aucun essai physique iPad n'a été effectué dans cette livraison.
