@@ -7,7 +7,7 @@ const esc =value=>String(value??'').replace(/[&<>"']/g,ch=>
  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const btn=(action,label,style='')=>'<button type="button" class="eclat-v2-btn '+style+'" data-eclat-v2-action="'+esc(action)+'">'+esc(label)+'</button>';
 const paragraph=s=>'<p>'+esc(s)+'</p>';
-function mainContent(view,status,predictionDraft={},puzzleDraft={},puzzleAttempt=null){
+function mainContent(view,status,predictionDraft={},puzzleDraft={},puzzleAttempt=null,sharedAnswers={},sharedConfirmed=[],sharedReveal=null){
  let html='<h2>'+esc(view.title)+'</h2>'+
   '<p class="eclat-v2-instruction">'+esc(view.instruction)+'</p>';
  if(view.substepTotal)html+='<p class="eclat-v2-muted">'+(view.coffretId===1?'Enveloppe':view.coffretId===5?'Tour':'Partie')+
@@ -99,11 +99,22 @@ function mainContent(view,status,predictionDraft={},puzzleDraft={},puzzleAttempt
    if(hasSaved)html+='<p role="status">Tes deux choix sont enregistrés dans ton compte, pas dans celui de ton partenaire.</p>';
    if(changed&&!status.revealed)html+=btn('save-prediction',hasSaved?'Enregistrer mes modifications':
       'Enregistrer mes deux choix','primary');
-  }else html+='<p>En mode téléphone partagé, les réponses restent privées et éphémères; cette sélection numérique n’est pas encore activée.</p>';
+  }else{
+   const values=sharedAnswers[view.role]||{},confirmed=sharedConfirmed.includes(view.role);
+   for(const [key,label] of [['answer','Ma réponse'],['prediction',"Ma prédiction pour l’autre"]]){
+    html+='<fieldset class="eclat-v2-door"><legend>'+label+'</legend>'+
+     q.options.map((item,i)=>btn(key+':'+i,(values[key]===i?'✓ ':'')+item)).join('')+'</fieldset>';
+   }
+   if([0,1,2].includes(values.answer)&&[0,1,2].includes(values.prediction))
+    html+=btn('save-shared-prediction',confirmed?'Confirmer et masquer':'Terminer mon tour et masquer','primary');
+   html+='<p>Ces deux réponses restent éphémères dans le téléphone partagé. Aucun compte de B n’est modifié.</p>';
+  }
   html+='</section>';
-  if(view.revealAnswers?.players){
-   const r=view.revealAnswers.players,approved=view.revealedQuestion;
-   if(r.A&&r.B&&approved&&approved.number===view.revealAnswers.question)
+  const disclosed=view.revealAnswers?.players?view.revealAnswers:sharedReveal;
+  if(disclosed?.players){
+   const r=disclosed.players,approved=view.revealedQuestion||
+     (sharedReveal?{number:sharedReveal.question,options:sharedReveal.options}:null);
+   if(r.A&&r.B&&approved&&approved.number===disclosed.question)
     html+='<section class="eclat-v2-activity"><strong>Découverte de la question '+esc(approved.number)+'</strong>'+
     '<p>A : '+esc(approved.options[r.A.answer])+' — '+(r.A.prediction===r.B.answer?'Comme tu l’imaginais':'Une découverte')+'</p>'+
     '<p>B : '+esc(approved.options[r.B.answer])+' — '+(r.B.prediction===r.A.answer?'Comme tu l’imaginais':'Une découverte')+'</p></section>';
@@ -166,7 +177,7 @@ function mainContent(view,status,predictionDraft={},puzzleDraft={},puzzleAttempt
  if(view.finale)html+='<section class="eclat-v2-activity"><strong>Pour conclure</strong>'+paragraph(view.finale)+'</section>';
  return html;
 }
-function actions(view,status,seenRoles){
+function actions(view,status,seenRoles,sharedConfirmed=[]){
  let rows='';
  if(status.state==='paused'){
   return btn('act:resume','Reprendre notre coffret','primary')+btn('act:stop','Arrêter cette séance');
@@ -182,7 +193,11 @@ function actions(view,status,seenRoles){
    if(status.can_reveal)rows+=btn('reveal','Révéler les missions ensemble','primary');
    else rows+='<span role="status">Révélation après les deux confirmations.</span>';
   }else{
-   if(view.coffretId===7)rows+='<span role="status">La comparaison privée sur un téléphone est encore en développement.</span>';
+   if(view.coffretId===7){
+    if(view.role==='A'&&sharedConfirmed.includes('A')&&sharedConfirmed.includes('B'))
+     rows+=btn('reveal-oral','Nous avons choisi et acceptons tous les deux de révéler','primary');
+    else rows+='<span role="status">Chaque partenaire répond sur son écran, masqué entre les tours.</span>';
+   }
    else if(seenRoles.includes('A')&&seenRoles.includes('B'))
     rows+=btn('reveal-oral','Nous sommes tous les deux d’accord pour révéler','primary');
    else rows+='<span role="status">Chaque personne consulte sa mission après remise du téléphone.</span>';
@@ -201,7 +216,7 @@ function actions(view,status,seenRoles){
  rows+=btn('act:stop','Arrêter cette séance');
  return rows;
 }
-export function renderEclatV2PlayA({status,viewerId,localRole=null,seenRoles=[],predictionDraft={},puzzleDraft={},puzzleAttempt=null}){
+export function renderEclatV2PlayA({status,viewerId,localRole=null,seenRoles=[],predictionDraft={},puzzleDraft={},puzzleAttempt=null,sharedAnswers={},sharedConfirmed=[],sharedReveal=null}){
  if(!status?.access)return '<section class="eclat-v2-stage"><p>Accès Éclat requis.</p></section>';
  if(!status.active)return '<section class="eclat-v2-stage"><p>Aucune séance Éclat V2 en cours.</p></section>';
  if(status.content_version!==2)throw Error('L’interface Éclat V2 refuse les séances V1');
@@ -219,8 +234,8 @@ export function renderEclatV2PlayA({status,viewerId,localRole=null,seenRoles=[],
   ' · '+view.variantName+'</small><p>Étape '+view.number+' sur '+view.total+
   ' · '+view.budgetMinutes+' min indicatives</p></header>'+
   (status.device_mode==='one'?'<nav class="eclat-v2-handover-link">'+btn('hide-role','Masquer et passer le téléphone')+'</nav>':'')+
-  '<div class="eclat-v2-content">'+mainContent(view,status,predictionDraft,puzzleDraft,puzzleAttempt)+'</div>'+
-  '<footer class="eclat-v2-actions">'+actions(view,status,seenRoles)+'</footer>'+
+  '<div class="eclat-v2-content">'+mainContent(view,status,predictionDraft,puzzleDraft,puzzleAttempt,sharedAnswers,sharedConfirmed,sharedReveal)+'</div>'+
+  '<footer class="eclat-v2-actions">'+actions(view,status,seenRoles,sharedConfirmed)+'</footer>'+
   '<p class="eclat-v2-muted">Toutes les activités sont facultatives. Aucun score. Aucun contact sans accord explicite.</p>'+
   '</section>';
 }
