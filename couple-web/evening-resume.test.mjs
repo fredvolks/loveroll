@@ -44,7 +44,8 @@ test('Resume action is read-only, restores server private queue and reconciles t
  assert.doesNotMatch(handler,/rpc\('|animateRoll|new-session|new-challenge|roll_my_evening_d6/);
  assert.match(app,/activeEvening:!!activeEvening/);
  assert.match(app,/saveEveningSelection\(localStorage,state\.user\.id,state\.session\.id,parts\[0\]\)/);
- assert.match(sw,/const CACHE='loveroll-static-v239'/);
+ const build=JSON.parse(read('web-version.json')).build;
+ assert.ok(sw.includes("const CACHE='loveroll-static-v"+build.split('.')[1]+"'"));
  assert.match(sw,/\.\/evening-resume\.mjs/);
- assert.equal(JSON.parse(read('web-version.json')).build,'2026-10-27.239');
+ assert.ok(app.includes("const WEB_RELEASE='"+build+"'"));
 });
