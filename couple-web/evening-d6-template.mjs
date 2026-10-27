@@ -1,4 +1,4 @@
-import {fitSharedStage,fitTabletRomanceStage} from './shared-stage.mjs?v=20261026-web237';
+import {fitSharedStage,fitTabletRomanceStage} from './shared-stage.mjs?v=20261027-web237';
 import {pipFace} from './premium-home.mjs?v=20261022-home228';
 import {EVENING_DEFAULT_WEIGHTS,effectiveDicePercentages,displayedDicePercent} from './dice-weighting.mjs';
 
