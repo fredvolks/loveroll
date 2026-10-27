@@ -432,3 +432,13 @@ main#app.loveroll-real-home .home-action-die circle{fill:#4c0920!important;strok
   padding:1px!important;
  }
 }
+
+/* LR-018: the resumed-evening CTA keeps the previous 96% used-state footprint. */
+main#app.loveroll-real-home .real-home-shell .home-roll-area > button.home-roll-button.home-resume-evening:not(:disabled) {
+  width:96%!important;
+  max-width:96%!important;
+  min-width:0!important;
+  flex:0 0 auto!important;
+  margin-inline:auto!important;
+  box-sizing:border-box!important;
+}

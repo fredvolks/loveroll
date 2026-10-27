@@ -46,7 +46,7 @@ test('LoveRoll build versions agree between endpoint, app, HTML and imported mod
  }
  assert.ok(html.includes('styles.css?v=20261017-glass123'));
  assert.match(html,/premium-home\.css\?v=20261019-ipad155/);
- assert.match(app,/premium-home\.mjs\?v=20261022-home228/);
+ assert.match(app,new RegExp('premium-home\\.mjs\\?v='+appTag));
  assert.match(app,new RegExp("dice3d\\.js\\?v="+diceTag));
  assert.ok(app.includes('premium-evening.mjs?v=20261022-home228'));
  assert.ok(html.includes('evening-editorial.css?v=20261017-ritual130'));

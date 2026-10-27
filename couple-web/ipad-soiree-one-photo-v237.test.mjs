@@ -31,12 +31,12 @@ test('iPad Soirée draws one photographic layer and NO second background or sepa
  assert.doesNotMatch(css,/url\(['"]?\.\/assets\/(?:ritual-satin-v115|loveroll-home-landscape-v199)\.webp/);
  assert.doesNotMatch(css,/<img|<canvas/);
 });
-test('Web 237 ships one photo rule for iPad and updates both versions and offline assets',()=>{
+test('Web 237 one-photo rule remains intact in Web 239 with current offline assets',()=>{
  const html=read('index.html'),app=read('app.js'),sw=read('service-worker.js');
  assert.match(html,/ipad-soiree-one-photo-v237\.css\?v=20261027-web237/);
  assert.match(app,/soiree-home-template\.mjs\?v=20261027-web237/);
- assert.match(app,/const WEB_RELEASE='2026-10-27\.238'/);
- assert.match(sw,/loveroll-static-v238/);
+ assert.match(app,/const WEB_RELEASE='2026-10-27\.239'/);
+ assert.match(sw,/loveroll-static-v239/);
  assert.ok(sw.includes("'./ipad-soiree-one-photo-v237.css'"));
- assert.equal(JSON.parse(read('web-version.json')).build,'2026-10-27.238');
+ assert.equal(JSON.parse(read('web-version.json')).build,'2026-10-27.239');
 });

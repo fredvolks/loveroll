@@ -17,7 +17,8 @@ import {createCoupleLiveSync} from './couple-live-sync.mjs?v=20261017-advent119'
 import {playableSessionForWeekly} from './couple-reset-view.mjs';
 import {eveningDailyAccess} from './evening-daily-policy.mjs?v=20261016-daily100';
 import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw} from './evening-private-queue.mjs';
-import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261022-home228';
+import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261027-web239';
+import {saveEveningSelection,restoreEveningSelection,clearEveningSelection} from './evening-resume.mjs?v=20261027-web239';
 import {eclatHtml} from './eclat-ui.mjs?v=20261022-home228';
 import {previewMode,previewCanEdit,previewEclatStatus} from './account-preview-mode.mjs?v=20261020-test180';
 import {eclatStage} from './eclat-catalog.mjs?v=20261019-eclat174';
@@ -26,7 +27,7 @@ import {futureCoupleStyleMix,playStyleLabel} from './play-style.mjs?v=20261018-s
 import {cycleIntensityQuestionnaireHtml} from './cycle-questionnaire.mjs?v=20261018-cycle149';
 import {DICE_WEIGHT_CONFIG,configuredDiceWeights,parseDiceWeightInputs} from './dice-weighting.mjs?v=20261018-weights146';
 import {premiumEveningHtml,updateEveningCategoryUi} from './premium-evening.mjs?v=20261022-home228';
-import {eveningHistoryMarkup,eveningLocalDay} from './evening-calendar.mjs?v=20261027-web238';
+import {eveningHistoryMarkup,eveningLocalDay} from './evening-calendar.mjs?v=20261027-web239';
 import {eveningReviewModal,validEveningReview} from './evening-review.mjs?v=20261016-person-review97';
 import {premiumSurpriseHtml,sixSpecialEvents} from './premium-surprise.mjs?v=20261022-home228';
 import {surpriseSlot,surpriseCustom,surpriseTitle,formatSurpriseDateInput,parseSurpriseDateInput} from './surprise-event-config.mjs?v=20261016-surprise109';
@@ -59,7 +60,7 @@ import {invitationStatus,coupleStats,formatCoupleDate,invitationEmailText,invita
 import {premiumConfirm,premiumCopyLink,focusInlineLoveDialog} from './premium-dialogs.mjs?v=20261017-complete127';
 
 
-const WEB_RELEASE='2026-10-27.238';
+const WEB_RELEASE='2026-10-27.239';
 const root=document.querySelector('#app');
 const enc=new TextEncoder(),dec=new TextDecoder();
 let diceCleanup=[],renderToken=0;
@@ -1250,6 +1251,7 @@ function renderHome(){
   state.eveningBoard||sharedEveningTurns(activeEvening,members,state.personal,state.challenges,state.gifts):null;
  frame(premiumHomeHtml({
   weekly:state.weekly,
+  activeEvening:!!activeEvening,
   weeklyWeights:state.couple?.weekly_face_weights,
   weeklyWeightsEnabled:state.couple?.weekly_weights_enabled!==false,
   rolling:state.diceStatus==='rolling',
@@ -2779,15 +2781,19 @@ async function handle(action,element){
   state.tab='evening-calendar';await refreshAndShow();return;
  }
  if(verb==='evening-challenge'||verb==='evening-list'){
+  if(state.user?.id&&state.session?.id)clearEveningSelection(localStorage,state.user.id,state.session.id);
   state.showEveningChallenges=true;state.selectedEveningChallengeId=null;render();return;
  }
  if(verb==='evening-close'){
+  if(state.user?.id&&state.session?.id)clearEveningSelection(localStorage,state.user.id,state.session.id);
   state.showEveningChallenges=false;state.selectedEveningChallengeId=null;render();return;
  }
  if(verb==='evening-open'){
   if(!ownEveningChallenges(state.challenges,state.user?.id,state.session?.id).some(x=>x.id===parts[0]))
    throw Error('Ce défi ne fait pas partie de ta liste personnelle.');
-  state.selectedEveningChallengeId=parts[0];state.showEveningChallenges=true;render();return;
+  state.selectedEveningChallengeId=parts[0];state.showEveningChallenges=true;
+  saveEveningSelection(localStorage,state.user.id,state.session.id,parts[0]);
+  render();return;
  }
  if(verb==='evening-refuse'){
   if(!state.redrawReady)throw Error('La repige sécurisée n’est pas encore disponible sur ce serveur.');
@@ -3870,6 +3876,28 @@ async function handle(action,element){
    kind:'library',title:'Quitter sans enregistrer ?',accept:'Quitter',cancel:'Rester'})))return;
   openSettingsPage(parts[0]||'');return;
  }
+ if(verb==='resume-evening'){
+  // LR-018: synchronize from Supabase, never create a session or new D6/D100.
+  if(state.diceStatus)return;
+  if(!isSharedCoupleReady(state.coupleId,state.members))throw Error('Deux partenaires doivent être associés.');
+  await refreshShared();
+  const session=playableSessionForWeekly(state.session,state.weekly);
+  if(!session){
+   state.tab='home';state.showEveningChallenges=false;state.selectedEveningChallengeId=null;
+   render();notify('La soirée est terminée ou indisponible.');
+   return;
+  }
+  const privateCards=visibleEveningQueue(ownEveningChallenges(state.challenges,state.user.id,session.id));
+  const selected=restoreEveningSelection(localStorage,state.user.id,session.id,privateCards);
+  state.tab='session';state.eveningRefusalId=null;state.eveningMore=false;
+  state.selectedEveningChallengeId=selected;
+  state.showEveningChallenges=privateCards.length>0;
+  render();
+  // Recover an expired official timer; refused/passed cards cannot auto-complete.
+  void reconcileSavedEveningTimers().catch(error=>console.warn('Reprise du minuteur',error));
+  notify('♡ Soirée synchronisée.');
+  return;
+ }
  if(verb==='tab'){
   if(state.diceStatus)return;
   const ready=isSharedCoupleReady(state.coupleId,state.members);
@@ -4514,6 +4542,6 @@ start().catch(error=>{fail(error);window.LoveRollBoot?.showFailure();});
 
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   window.addEventListener('load', () =>
-    navigator.serviceWorker.register('./service-worker.js?v=20261027-web238',
+    navigator.serviceWorker.register('./service-worker.js?v=20261027-web239',
      {scope:'./',updateViaCache:'none'}).then(reg=>reg.update()).catch(console.warn));
 }

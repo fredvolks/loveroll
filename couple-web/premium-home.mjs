@@ -153,7 +153,7 @@ const iconSvg=(kind)=>{
 
 export {ritualBrandHtml} from './brand.mjs?v=20261017-ritual130';
 import {ritualHeadingHtml} from './brand.mjs?v=20261017-ritual130';
-export function premiumHomeHtml({weekly=null,rolling=false,disabled=false,members=[],
+export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,disabled=false,members=[],
   turn=null,monthly={},history=[],sessions=[],events=[],rollFace=1,now=new Date(),
   weeklyWeights=WEEKLY_ODDS,weeklyWeightsEnabled=true,monthlyActivity=null}={}){
  const weights=effectiveDicePercentages(weeklyWeights,weeklyWeightsEnabled,WEEKLY_ODDS).map((pct,i)=>
@@ -209,7 +209,9 @@ export function premiumHomeHtml({weekly=null,rolling=false,disabled=false,member
    '</section></dialog>'+
    '<div class="home-roll-area">'+
    (ready?
-    '<button class="home-roll-button is-used lr-ruby-control lr-ruby-action lr-surface" type="button" disabled>Déjà brassé cette semaine, revenez la semaine prochaine</button>':
+    (activeEvening?
+     '<button class="home-roll-button home-resume-evening lr-ruby-control lr-ruby-action lr-surface" type="button" data-action="resume-evening" aria-label="Reprendre notre soirée en cours"><span>♡ Reprendre notre soirée</span></button>':
+     '<button class="home-roll-button is-used lr-ruby-control lr-ruby-action lr-surface" type="button" disabled>Déjà brassé cette semaine, revenez la semaine prochaine</button>'):
     '<button class="home-roll-button lr-ruby-control lr-ruby-action lr-surface" type="button" data-action="roll:weekly" '+(pending?'disabled':'')+'>'+
     (rolling?'Brassage 3D en cours…':disabled?'Préparation du brassage…':'<span class="home-action-die lr-ruby-icon" aria-hidden="true"><svg class="lr-ruby-die-icon" viewBox="0 0 34 38"><path fill="#fffdf5" d="m17 2 13 6-13 7L4 8Z"/><path fill="#f7e9dc" d="m4 8 13 7v20L5 28Q3 27 3 24V11Q3 9 4 8Z"/><path fill="#cdbdb4" d="m17 15 13-7q1 1 1 3v13q0 3-2 4l-12 7Z"/><path fill="none" stroke="#fff8ed" stroke-width=".8" d="m4 8 13 7 13-7M17 15v20"/><ellipse cx="17" cy="8" rx="2.5" ry="1.2" fill="#3d1020"/><g fill="#421521"><ellipse cx="7.6" cy="15" rx="1.5" ry="2.1" transform="rotate(-18 7.6 15)"/><ellipse cx="10.1" cy="21.5" rx="1.5" ry="2.1" transform="rotate(-18 10.1 21.5)"/><ellipse cx="12.7" cy="28" rx="1.5" ry="2.1" transform="rotate(-18 12.7 28)"/><ellipse cx="26.8" cy="15.5" rx="1.5" ry="2.1" transform="rotate(18 26.8 15.5)"/><ellipse cx="21.6" cy="27.3" rx="1.5" ry="2.1" transform="rotate(18 21.6 27.3)"/></g></svg></span><span class="home-action-label lr-ruby-title">Brasser le dé</span>')+'</button>')+
    '</div>'+

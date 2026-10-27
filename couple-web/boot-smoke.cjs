@@ -248,16 +248,18 @@ export function createClient(){
   }
   if(name==='active-evening'){
    const info=await page.evaluate(()=>{
-    const b=document.querySelector('.home-roll-button.is-used');
+    const b=document.querySelector('.home-roll-button.home-resume-evening');
     const rollArea=document.querySelector('.home-roll-area');
     const rect=b?.getBoundingClientRect();
     const parent=rollArea?.getBoundingClientRect();
     return b&&rect&&parent?{text:b.textContent.trim(),disabled:b.disabled,
+     action:b.dataset.action,rollAction:!!document.querySelector('[data-action="roll:weekly"]'),
      widthRatio:rect.width/parent.width,height:rect.height}:null;
    });
-   if(!info||info.text!=='Déjà brassé cette semaine, revenez la semaine prochaine'||
-     !info.disabled||Math.abs(info.widthRatio-.96)>.025||info.height>57)
-    throw Error('Already rolled weekly button is hidden or mislabeled '+JSON.stringify(info));
+   if(!info||!info.text.includes('Reprendre notre soirée')||
+     info.disabled||info.action!=='resume-evening'||info.rollAction||
+     Math.abs(info.widthRatio-.96)>.025||info.height>57)
+    throw Error('Active weekly evening must offer resume without a new roll '+JSON.stringify(info));
    // This is the essential regression: last tests stopped at locked Soirée
    // and never executed renderSession's real 70-card active branch.
    await selectTab(page,'session');
