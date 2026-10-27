@@ -5,11 +5,42 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+permissions:
+  contents: read
 concurrency:
   group: loveroll-web-checks-${{ github.ref }}
   cancel-in-progress: true
 jobs:
-  web-tests:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.scope.outputs.code }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Detect application changes (full validation on uncertainty)
+        id: scope
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          FORCE_FULL: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          set -euo pipefail
+          code=true
+          if [[ "$FORCE_FULL" != "true" && "$BASE_SHA" =~ ^[0-9a-f]{40}$ && "$BASE_SHA" != "0000000000000000000000000000000000000000" ]]; then
+            if git fetch --no-tags --depth=1 origin "$BASE_SHA" && git diff --name-only "$BASE_SHA" HEAD > /tmp/ci-changed-paths; then
+              code=false
+              while IFS= read -r path; do
+                case "$path" in
+                  docs/*.md|README.md) ;;
+                  *) code=true; break ;;
+                esac
+              done < /tmp/ci-changed-paths
+            fi
+          fi
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "Application validation required: $code"
+  static-tests:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -48,6 +79,7 @@ jobs:
           node --test couple-web/evening-private-queue.test.mjs couple-web/evening-redesign.test.mjs couple-web/evening-calendar.test.mjs couple-web/evening-category-v93.test.mjs couple-web/evening-review.test.mjs
           node --test couple-web/privacy-screen.test.mjs
           node --test couple-web/monthly-pass-limit-sql.test.mjs
+          node --test couple-web/extra-evening-eligibility.test.mjs
           node --test couple-web/soiree-surprise-recovery.test.mjs
           node --check couple-web/premium-surprise.mjs
           node --check couple-web/premium-advent.mjs
@@ -135,11 +167,49 @@ jobs:
       - name: Verify Surprise D100, prices and D6 pair/impair flow
         run: node --test couple-web/surprise-v86.test.mjs couple-web/surprise-host-flow-v107.test.mjs couple-web/surprise-date-editor-v109.test.mjs couple-web/surprise-d100-budget.test.mjs
 
-      - name: Capture landing on Galaxy S25 Ultra representative viewport
+      - name: Fail on syntax errors in any shipped JS file
+        run: node couple-web/check-shipped-js.cjs
+
+  browser-tests:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [entry, dice, experience]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Cache npm downloads and pinned Chromium
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.npm
+            ~/.cache/ms-playwright
+          key: ${{ runner.os }}-loveroll-playwright-1.56.0-v1
+      - name: Prepare browser checks
         run: |
           set -euo pipefail
-          npm install --no-save playwright@1.56.0
+          npm install --no-save --no-audit --no-fund playwright@1.56.0
           npx playwright install chromium
+          python3 -m pip install --quiet 'Pillow>=10,<13'
+          python3 couple-web/make-social-preview.py
+          mkdir -p landing-captures design-captures
+          python3 -m http.server 8765 -d couple-web >/tmp/loveroll-ci-http.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8765/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/loveroll-ci-http.log
+          exit 1
+      - name: Capture landing on Galaxy S25 Ultra representative viewport
+        if: matrix.group == 'entry'
+        run: |
+          set -euo pipefail
           cat > couple-web/__landing-test.html <<'EOF'
           <!doctype html><html lang="fr-CA"><head>
           <meta charset="utf-8">
@@ -151,8 +221,6 @@ jobs:
           document.querySelector('#app').innerHTML=marketingHtml();
           </script></body></html>
           EOF
-          python3 -m http.server 8765 -d couple-web > /tmp/love-http.log 2>&1 &
-          echo $! > /tmp/love-http.pid
           mkdir -p landing-captures
           cat > capture-landing.cjs <<'EOF'
           const { chromium } = require('playwright');
@@ -262,16 +330,13 @@ jobs:
           EOF
           node verify-ipad.cjs
           node --test couple-web/editorial-details.test.mjs
-      - name: Diagnose D100 compact header geometry early (no skipped validations)
-        run: LOVEROLL_D100_HEADER_PROBE=1 node couple-web/evening-d100-template-browser-check.cjs
-
       - name: Capture actual premium invitation and account pages on S25 / iPhone
+        if: matrix.group == 'entry'
         run: |
-          python3 -m http.server 8765 -d couple-web >/tmp/love-invite58-http.log 2>&1 &
-          sleep 1
           node couple-web/premium-invite-auth-visual-check.cjs
 
       - name: Verify and capture true premium couple home with WebGL
+        if: matrix.group == 'entry'
         run: |
           set -euo pipefail
           cat > couple-web/__real-home-test.html <<'EOF'
@@ -400,37 +465,73 @@ jobs:
           })().catch(e=>{console.error(e);process.exit(1)});
           EOF
           node verify-real-home.cjs
-      - name: Fail on syntax errors in any shipped JS file
-        run: node couple-web/check-shipped-js.cjs
-
-      - name: Verify real iPad Soirée D6 and D100 on the ONE HD photo (portrait and landscape)
-        run: node couple-web/ipad-romance-scene-browser-check.cjs
-
-      - name: Archive actual iPad Soirée D6 and D100 screenshots for visual review
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: LoveRoll-iPad-Android-photo-parity-${{ github.run_number }}
-          path: design-captures/ipad-romance-*.png
-          if-no-files-found: warn
-
       - name: Real app boot in Chromium (anonymous, Google callback, existing session)
+        if: matrix.group == 'entry'
         run: node couple-web/boot-smoke.cjs
 
       - name: Verify REAL account and invite behaviors against mocked Supabase API
+        if: matrix.group == 'entry'
         run: node couple-web/auth-behavior-v58.cjs
 
       - name: Verify rendez-vous and account fit in Messenger on Android and iPhone
+        if: matrix.group == 'entry'
         run: node couple-web/entry-rendezvous-browser-check.cjs
       - name: Verify shared account palette and unobstructed switches in the real app
+        if: matrix.group == 'entry'
         run: node couple-web/controls-palette-browser-check.cjs
+      - name: Verify REAL public discover and invitation on Android / iPhone responsive widths
+        if: matrix.group == 'entry'
+        run: node couple-web/actual-discover-visual-check.cjs
+
+      - name: Diagnose D100 compact header geometry early (no skipped validations)
+        if: matrix.group == 'dice'
+        run: LOVEROLL_D100_HEADER_PROBE=1 node couple-web/evening-d100-template-browser-check.cjs
+
+      - name: Verify real couple Evening and Surprise in WebGL at S25 sizes
+        if: matrix.group == 'dice'
+        run: |
+          node couple-web/premium-couple-visual-check.cjs
+
+      - name: Verify Home D6 stays flat during touch and official result (Pages gate)
+        if: matrix.group == 'dice'
+        run: node couple-web/home-ruby-interaction-browser-check.cjs
+
+      - name: Validate every real D6 face and representative D100 engravings on phone, tablet and desktop
+        if: matrix.group == 'dice'
+        run: node couple-web/dice-face-readability-browser-check.cjs
+
+      - name: Verify live D100 Soirée size and marble contact across seven mobile viewports
+        if: matrix.group == 'dice'
+        run: node couple-web/evening-d100-template-browser-check.cjs
+
+      - name: Verify real iPad Soirée D6 and D100 on the ONE HD photo (portrait and landscape)
+        if: matrix.group == 'dice'
+        run: node couple-web/ipad-romance-scene-browser-check.cjs
+
+      - name: Verify Soirée responsive Step 1 and unchanged D35 on phones and tablets
+        if: matrix.group == 'dice'
+        run: node couple-web/evening-redesign-browser-check.cjs
+
+      - name: Verify full challenge instructions remain readable on mobile
+        if: matrix.group == 'dice'
+        run: node couple-web/evening-instructions-browser-check.cjs
+
+      - name: Verify category switches never remount live WebGL dice
+        if: matrix.group == 'dice'
+        run: node couple-web/evening-category-no-flicker-browser-check.cjs
+
+      - name: Verify weekly 3D die and photographed marble plinth on iPad
+        if: matrix.group == 'dice'
+        run: LOVE_PAD_ONLY=1 node couple-web/home-podium-browser-check.cjs
+
       - name: Vérifier les 12 coffrets par positions et pixels réels
+        if: matrix.group == 'experience'
         run: |
           node couple-web/eclat-visual-parity-v184.cjs
           python3 -m pip install --quiet 'Pillow>=10,<13'
           python3 couple-web/eclat-pixel-reference-v184.py
       - name: Archiver la comparaison réelle des coffrets
-        if: always()
+        if: always() && matrix.group == 'experience'
         uses: actions/upload-artifact@v4
         with:
           name: LoveRoll-Eclat-approved-v184-${{ github.run_number }}
@@ -438,63 +539,46 @@ jobs:
             design-captures/coffrets-v184-*.png
             design-captures/coffrets-v184-*.json
           if-no-files-found: warn
-      - name: Verify REAL public discover and invitation on Android / iPhone responsive widths
-        run: node couple-web/actual-discover-visual-check.cjs
-
-      - name: Verify real couple Evening and Surprise in WebGL at S25 sizes
-        run: |
-          node couple-web/premium-couple-visual-check.cjs
-
-      - name: Verify Home D6 stays flat during touch and official result (Pages gate)
-        run: node couple-web/home-ruby-interaction-browser-check.cjs
-
-      - name: Validate every real D6 face and representative D100 engravings on phone, tablet and desktop
-        run: node couple-web/dice-face-readability-browser-check.cjs
-
-      - name: Verify live D100 Soirée size and marble contact across seven mobile viewports
-        run: node couple-web/evening-d100-template-browser-check.cjs
-
-      - name: Verify Soirée responsive Step 1 and unchanged D35 on phones and tablets
-        run: node couple-web/evening-redesign-browser-check.cjs
-
-      - name: Verify full challenge instructions remain readable on mobile
-        run: node couple-web/evening-instructions-browser-check.cjs
-
-      - name: Verify category switches never remount live WebGL dice
-        run: node couple-web/evening-category-no-flicker-browser-check.cjs
-
       - name: Verify end-of-evening 5-heart review on phone tablet and desktop
+        if: matrix.group == 'experience'
         run: node couple-web/evening-review-browser-check.cjs
 
       - name: Verify local privacy mask survives reload and never exposes the game
+        if: matrix.group == 'experience'
         run: node couple-web/privacy-screen-browser-check.cjs
 
       - name: Verify shared calendar expanding both partners on phone, tablet and PC
+        if: matrix.group == 'experience'
         run: node couple-web/evening-calendar-browser-check.cjs
 
-      - name: Verify weekly 3D die and photographed marble plinth on iPad
-        run: LOVE_PAD_ONLY=1 node couple-web/home-podium-browser-check.cjs
-
       - name: Verify 25 Advent envelopes on Galaxy S25 and iPad
+        if: matrix.group == 'experience'
         run: node couple-web/premium-advent-visual-check.cjs
 
       - name: Verify five Settings routes and saved forms on phone tablet and PC
+        if: matrix.group == 'experience'
         run: |
           node couple-web/premium-settings-visual-check.cjs
           node couple-web/settings-menus-browser-check.cjs
           node couple-web/shared-stage-browser-check.cjs
 
-      - name: Verify invitation and account pages on Galaxy S25 Ultra
-        run: node couple-web/premium-invite-auth-visual-check.cjs
-
       - name: Verify premium gift/couple dialogs and safe notifications on S25 Ultra
+        if: matrix.group == 'experience'
         run: node couple-web/premium-dialogs-visual-check.cjs
+
+      - name: Archive actual iPad Soirée D6 and D100 screenshots for visual review
+        if: always() && matrix.group == 'dice'
+        uses: actions/upload-artifact@v4
+        with:
+          name: LoveRoll-iPad-Android-photo-parity-${{ github.run_number }}
+          path: design-captures/ipad-romance-*.png
+          if-no-files-found: warn
 
       - name: Archive actual WebGL winning-face screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: LoveRoll-D6-D100-face-readability-${{ github.run_number }}
+          name: LoveRoll-${{ matrix.group }}-D6-D100-face-readability-${{ github.run_number }}
           path: design-captures/face-readability-after-*.png
           if-no-files-found: warn
 
@@ -502,6 +586,28 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: LoveRoll-landing-captures
+          name: LoveRoll-${{ matrix.group }}-landing-captures
           path: landing-captures/*.png
           if-no-files-found: warn
+  # Stable required check: failures/cancellations in any group must block the lot.
+  web-tests:
+    if: always()
+    needs: [changes, static-tests, browser-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require all applicable checks
+        env:
+          SCOPE_RESULT: ${{ needs.changes.result }}
+          CODE_CHANGED: ${{ needs.changes.outputs.code }}
+          STATIC_RESULT: ${{ needs.static-tests.result }}
+          BROWSER_RESULT: ${{ needs.browser-tests.result }}
+        run: |
+          set -euo pipefail
+          test "$SCOPE_RESULT" = success
+          if [[ "$CODE_CHANGED" == false ]]; then
+            echo 'Documentation only: no application code changed.'
+          else
+            test "$CODE_CHANGED" = true
+            test "$STATIC_RESULT" = success
+            test "$BROWSER_RESULT" = success
+          fi

@@ -1,14 +1,30 @@
 # LoveRoll — PROMPT MAÎTRE OFFICIEL
-> Version documentaire 2026-10-26 · Dépôt officiel : [fredvolks/loveroll](https://github.com/fredvolks/loveroll) · Statut initial : **demandé / à auditer**, pas « terminé ».
+> Version documentaire 2026-10-27 · Dépôt officiel : [fredvolks/loveroll](https://github.com/fredvolks/loveroll) · Statut initial : **demandé / à auditer**, pas « terminé ».
 
 
+
+## Mode d'exécution prioritaire — livraisons par lots et vérifications proportionnées (27 octobre 2026)
+
+**Demande approuvée : accélérer les modifications en supprimant les vérifications répétées après chaque micro-ajout.** Cette section remplace les anciennes consignes de cadence, d'audit, de captures et de compte rendu incompatibles, y compris dans les passations. Elle conserve toutes les exigences produit, la confidentialité, les protections GitHub et les contrôles obligatoires.
+
+1. **Démarrage ciblé.** À la reprise, lire les consignes courantes, le dernier état utile du suivi et les sections du maître nécessaires à la demande. Vérifier une fois les branches/PR/CI pertinentes et le code concerné. Ne pas relire l'historique entier ni refaire l'audit de toute l'application avant chaque correction. Les anciens numéros de PR et incidents ne deviennent des priorités que s'ils sont encore actifs.
+2. **Terminer un lot fonctionnel avant la recette.** Regrouper les petites modifications liées au même écran ou parcours dans une branche/PR cohérente : implémenter, ajuster, puis valider le lot. Ne pas créer systématiquement un commit, une PR, un cycle CI, une version et un rapport pour chaque bouton, marge, libellé ou ligne CSS. Garder séparées les modifications indépendantes ou risquées; ne pas accumuler une refonte massive.
+3. **Vérifications locales ciblées.** Pendant l'implémentation, utiliser les contrôles rapides utiles (syntaxe, test de la logique touchée, aperçu). À la fin du lot, tester le parcours modifié et ses dépendances directes. Une correction visuelle ne nécessite pas de refaire les tests de paiement, quotas ou migrations inchangés. Un changement de minuterie, autorisation, tirage, synchronisation ou données exige les scénarios métier et de concurrence concernés. Ne pas créer de tests qui vérifient seulement la présence d'une ligne CSS ou d'un texte source.
+4. **Recette visuelle groupée.** Pour CSS, décor, caméra ou responsive : contrôler les écrans et formats affectés, avec une capture de référence et le rendu final utile. Pour la parité iPad/Android, comparer ces deux formats et les orientations concernées; étendre aux autres formats si un composant partagé change. La matrice complète LR-041 se fait à la livraison d'une modification transversale ou lors d'un audit dédié, jamais après chaque micro-ajustement. Conserver les critères d'acceptation fonctionnels de la demande.
+5. **Une validation finale par lot, sans doublons volontaires.** Avant fusion, laisser terminer tous les contrôles GitHub requis sur la révision attendue par les protections. Réutiliser les résultats locaux encore applicables; ne pas relancer manuellement les mêmes suites déjà réussies sans modification pertinente, échec ou doute précis. Une retouche documentaire seule n'oblige pas à refaire manuellement la recette applicative; elle ne permet pas de présenter une ancienne CI comme exécutée sur le nouveau SHA. Les checks automatiques déclenchés ou requis restent respectés.
+6. **Aucune boucle documentation → CI → documentation.** Mettre à jour le suivi une fois par lot avec résultat, référence du code testé, preuves utiles et limites. Un run sait fournir son statut : ne pas committer une nouvelle note uniquement pour annoncer la réussite du commit documentaire précédent. Ne pas relancer une CI pour produire une preuve identique. Réserver les rapports d'audit complets aux demandes d'audit; restitution ordinaire courte.
+7. **Attendre utilement et livrer.** Après un push du lot, suivre les runs pertinents jusqu'à leur conclusion avec des consultations espacées, sans scruter les mêmes journaux à répétition. Pendant l'attente, avancer un travail indépendant compatible sans modifier la révision en validation. En cas d'échec, lire les étapes fautives, corriger la cause et vérifier la correction; aucun test désactivé ou affaibli pour publier. Puis fusionner et publier selon les autorisations existantes, vérifier le démarrage et le parcours livré, et enchaîner sans demander « continue ». Ne pas annoncer un travail poursuivi après la session.
+8. **Appareils et états honnêtes.** Indiquer ce qui a été testé en émulation et sur appareil réel. L'absence d'un appareil physique ne bloque pas à elle seule un lot vérifié par les moyens disponibles, sauf risque précis dépendant de cet appareil; conserver la validation physique restante au suivi et ne pas déclarer l'exigence entièrement acceptée avant ses critères complets.
+9. **Pipeline : optimisation distincte et mesurée.** Si la CI complète reste lente, relever les durées et les doublons avant de proposer ou réaliser un lot dédié au pipeline : partage des commandes, cache des dépendances, jobs indépendants, sélection de tests selon les dépendances démontrées. Ne pas supprimer une couverture nécessaire, contourner une protection ou transformer un échec bloquant en simple avertissement pour gagner du temps. Cette révision du prompt ne modifie pas les workflows.
+
+**Critère de réussite :** un parcours utilisable livré et vérifié, avec moins de cycles de validation et de documentation redondants. Le nombre de commits, tests, PR ou captures n'est pas une mesure de progression.
 
 ## Priorité immédiate — rétablir la publication Web et terminer les lots (26 octobre 2026)
 
 **Instruction de livraison approuvée :** dans le périmètre des exigences déjà approuvées, l'agent peut sortir les PR de brouillon, intégrer les dépendances compatibles, résoudre les conflits, fusionner après les validations requises et publier les lots fonctionnels sans redemander « continue » ou une autorisation de fusion déjà couverte par cette instruction. Les protections GitHub et les contrôles de sécurité continuent de s'appliquer. Aucun contournement de contrôle requis, changement de prix ou opération destructive n'est autorisé par ce paragraphe.
 
 1. **Priorité P0 de livraison :** réparer le pipeline Pages avant d'accumuler d'autres fonctionnalités. La PR #47 corrige le décompte obsolète des boutons de fin de soirée; vérifier sa tête, son diff, les tests et ses dépendances, intégrer la correction puis suivre le vrai déploiement main jusqu'à sa conclusion. Son numéro est un repère historique : revalider son état réel.
-2. **Un lot validé va jusqu'à la livraison :** recontrôler la compatibilité serveur/client, les migrations et les droits; sortir de brouillon lorsque prêt; fusionner; suivre les workflows; vérifier le site publié. Ne pas garder un lot prêt en brouillon pour la seule raison qu'aucune seconde permission n'a été demandée.
+2. **Un lot validé va jusqu'à la livraison :** contrôler une fois la compatibilité serveur/client, les migrations et les droits concernés par le lot; sortir de brouillon lorsque prêt; fusionner; suivre les workflows; vérifier le site publié. Ne pas garder un lot prêt en brouillon pour la seule raison qu'aucune seconde permission n'a été demandée.
 3. **Ne pas tout fusionner ensemble :** conserver les travaux ouverts, ordonner les PR empilées, publier des lots complets et indépendants. Une dépendance manquante ou un vrai risque est documenté précisément; poursuivre les lots indépendants.
 4. **Tests proportionnés :** exécuter les vérifications utiles au changement et tous les contrôles requis. Réutiliser les résultats du même code lorsqu'ils restent valides; ne pas recommencer un audit global ni relancer une suite identique sans changement pertinent, échec ou doute concret. Ne pas désactiver un test pour publier.
 5. **Versions honnêtes :** pour une livraison applicative, harmoniser le numéro Web affiché, le manifeste de version et les clés de cache pertinentes selon la convention du projet. Ne pas incrémenter une version pour masquer un déploiement absent. Vérifier les assets et le comportement servis, pas seulement le JSON.
@@ -29,8 +45,8 @@
 Ce document est la **source de vérité des demandes** LoveRoll : jeu, Accueil, Soirée, Surprise/Geoapify, minuteries, confidentialité, cohérence graphique et responsive. Il ne signifie **pas** que ces exigences sont implémentées. Chaque exigence possède un identifiant LR-xxx repris dans [LOVEROLL_SUIVI.md](./LOVEROLL_SUIVI.md).
 
 - Ajouter des demandes dans [LOVEROLL_NOUVELLES_DEMANDES.md](./LOVEROLL_NOUVELLES_DEMANDES.md) ou ouvrir une **Issue** GitHub ; ne pas effacer les demandes anciennes.
-- Lors du prochain développement, lire ce document, le suivi, les nouvelles demandes, le README et le code réel avant de modifier quoi que ce soit.
-- Pour chaque demande, documenter fichier, PR, tests et capture **avant** de passer à « Terminé ». Ne pas inventer un état d'avancement.
+- À la reprise, appliquer le démarrage ciblé du mode d'exécution prioritaire; lire les demandes courantes et le code utile au lot, puis conserver ce contexte durant son exécution.
+- Mettre à jour le suivi une fois par lot : demandes couvertes, fichiers/PR, tests réellement exécutés et captures utiles pour les changements visuels. Passer à « Terminé » uniquement avec acceptation complète; ne pas inventer d'avancement.
 - Ne pas modifier silencieusement les règles commerciales, les abonnements, la progression ou le contenu des défis.
 
 ## Identité et périmètre
@@ -395,7 +411,7 @@ Mobile : navigation basse actuelle. Tablettes/PC : proposer (avant refonte impor
 ## P1 — Audit UX/UI complet « designer + couple »
 
 ### LR-030 — Audit écran par écran
-Analyser **tous états et sous-écrans** :
+**Audit dédié ou consolidation de livraison :** analyser les états et sous-écrans ci-dessous progressivement, sans recommencer cet audit global lors d'une correction ciblée :
 - **Accueil :** dé hebdomadaire, chances 1–6, brasser, surprise mensuelle, « Ce soir », statistiques, onglets ;
 - **Soirée :** Notre soirée / Éclat Premium, D100, socle, démarrage, activité, clôture, résultats ;
 - **Défis :** cartes, intensités, partenaire, consignes, timer/son, saut, réalisation, suivant, progression ;
@@ -417,10 +433,10 @@ Suggérer des idées de design et navigation importantes dans le rapport, mais *
 ## P1 — Qualité, tests, livraison
 
 ### LR-040 — Tests fonctionnels réels
-Scénarios au minimum : 6 faces/animations D100 pertinentes, début/milieu/fin animation ; timer zéro, pause, annulation, saut, défi déjà fini ; fermeture/reprise ; changement d'appareil ; synchronisation ; stats, calendrier, cycle 200 ; pas de double incrément ; sonneries iOS/Android ; catégories non sélectionnées ; Premium inchangé.
+Catalogue de régression : exécuter les scénarios concernés par le lot et ses dépendances; réserver la suite complète aux changements transversaux et aux audits dédiés. Scénarios : 6 faces/animations D100 pertinentes, début/milieu/fin animation ; timer zéro, pause, annulation, saut, défi déjà fini ; fermeture/reprise ; changement d'appareil ; synchronisation ; stats, calendrier, cycle 200 ; pas de double incrément ; sonneries iOS/Android ; catégories non sélectionnées ; Premium inchangé.
 
 ### LR-041 — Matrice visuelle multiplateforme
-Captures avant/après des pages Accueil/Soirée/Défi/Calendrier/Surprise sur **Android grand/petit, iPhone Safari/PWA, tablette portrait/paysage, ordinateur 1366×768 et 1920×1080** ; compléter Firefox/Safari/Edge lorsque possible. Les 3D ne doivent jamais être coupées ou flotter. Différencier émulation et test sur vrai appareil ; ne pas prétendre avoir testé un appareil absent.
+Matrice de référence pour une modification transversale ou un audit dédié; pour un lot ciblé, vérifier les pages et formats affectés selon le mode d'exécution prioritaire. Captures avant/après des pages Accueil/Soirée/Défi/Calendrier/Surprise sur **Android grand/petit, iPhone Safari/PWA, tablette portrait/paysage, ordinateur 1366×768 et 1920×1080** ; compléter Firefox/Safari/Edge lorsque possible. Les 3D ne doivent jamais être coupées ou flotter. Différencier émulation et test sur vrai appareil ; ne pas prétendre avoir testé un appareil absent.
 
 ### LR-042 — Traçabilité et rapports
 Pour chaque exigence LR-xxx, garder le statut dans [LOVEROLL_SUIVI.md](./LOVEROLL_SUIVI.md) avec preuve : PR/commit, noms des tests, captures, limites. Rapport d'audit : **Page | Problème observé | Proposition | Priorité | Effort | État**. Pas de statut « terminé » sur la foi d'une compilation seule.
