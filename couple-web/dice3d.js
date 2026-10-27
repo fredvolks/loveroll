@@ -400,7 +400,13 @@ outgoingLight += vec3(0.06,0.0005,0.005) * pow(crystalFacing,2.0);
 }
 export function dieOn(canvas,sides,value,rolling){
  const flatHome=sides===6&&!!canvas.closest('.home-die-platform');
- const centeredPhoto=sides===100&&!!canvas.closest('.surprise-minimal,.has-evening-d100-template');
+ // Decorative Soirée D100 on iPad also needs the centered-photo clipping
+ // guard. Without it, the live mesh projects above its transparent canvas,
+ // leaving only the LOWER HALF of a huge sphere visible on the marble.
+ const tabletIdleD100=sides===100&&window.matchMedia?.('(min-width:768px)').matches&&
+  !!canvas.closest('.evening-premium-view.is-inactive.has-home-soiree-template');
+ const centeredPhoto=sides===100&&
+  (!!canvas.closest('.surprise-minimal,.has-evening-d100-template')||tabletIdleD100);
  const photoSoiree=centeredPhoto||(sides===100&&!!canvas.closest('.evening-premium-view.has-home-soiree-template'))||(sides===100&&!!canvas.closest('.loveroll-evening-page')&&window.matchMedia?.('(min-width:768px)').matches);
  const photoStage=flatHome||photoSoiree;
  const referenceRuby=flatHome||(sides===100&&!!canvas.closest('.loveroll-evening-page,.has-surprise-minimal'));
