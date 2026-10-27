@@ -4,7 +4,24 @@ const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;
 const https=value=>{try{const u=new URL(String(value||''));return u.protocol==='https:'&&!u.username&&!u.password?u.href:null;}catch{return null;}};
 const a=(url,label)=>url?'<a class="surprise-geo-link" href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">'+esc(label)+'</a>':'';
 const humanDate=(timestamp,locale='fr-CA')=>{
+ if(timestamp===null||timestamp===undefined||timestamp==='')return 'Date à vérifier';
  try{return new Intl.DateTimeFormat(locale,{dateStyle:'full',timeStyle:'short'}).format(new Date(timestamp));}catch{return 'Date à vérifier';}
+};
+// datetime-local takes local clock time, not a UTC ISO timestamp.
+export function localBookingDateTime(timestamp){
+ if(timestamp===null||timestamp===undefined||timestamp==='')return '';
+ const d=new Date(timestamp);
+ if(!Number.isFinite(d.getTime()))return '';
+ const pad=n=>String(n).padStart(2,'0');
+ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+
+  'T'+pad(d.getHours())+':'+pad(d.getMinutes());
+}
+const finiteProviderNumber=value=>{
+ if(value===null||value===undefined||typeof value==='boolean')return null;
+ if(typeof value!=='number'&&typeof value!=='string')return null;
+ if(typeof value==='string'&&!value.trim())return null;
+ const number=Number(value);
+ return Number.isFinite(number)?number:null;
 };
 export function geoPhoto(venue){
  const src=https(venue?.photo_url);
@@ -18,11 +35,13 @@ export function monthlyGeoCardHtml({
  if(!enabled)return '';
  let body='';
  if(venue?.state==='ready'&&venue?.place_id&&venue?.name){
-  const lat=Number(venue.latitude),lon=Number(venue.longitude),
-   gps=Number.isFinite(lat)&&Number.isFinite(lon)?'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(lat+','+lon):null;
+  const lat=finiteProviderNumber(venue.latitude),lon=finiteProviderNumber(venue.longitude),
+   gps=lat!==null&&lon!==null&&Math.abs(lat)<=90&&Math.abs(lon)<=180?
+    'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(lat+','+lon):null;
   const site=https(venue.website_url),booking=https(venue.booking_url),menu=https(venue.menu_url);
-  const distance=Number.isFinite(Number(venue.driving_meters))?
-   Math.round(Number(venue.driving_meters)/100)/10:null;
+  const roadMetres=finiteProviderNumber(venue.driving_meters);
+  const distance=roadMetres!==null&&roadMetres>=0?
+   Math.round(roadMetres/100)/10:null;
   body='<div class="surprise-geo-venue">'+geoPhoto(venue)+
     '<div class="surprise-geo-venue-info"><strong>'+esc(venue.name)+'</strong>'+
     (venue.address?'<span>'+esc(venue.address)+'</span>':'')+
@@ -45,7 +64,9 @@ export function monthlyGeoCardHtml({
    (reservation.status==='confirmed'?'♡ Réservation déclarée confirmée':'♡ Projet de sortie')+
    '</strong><span>'+esc(humanDate(reservation.reserved_for,locale))+'</span>'+
    '<small>'+(reservation.paid_by_host?'Paiement déclaré effectué par la personne qui invite':'Paiement non confirmé dans LoveRoll')+
-   '</small><small>Un rappel est prévu 24 h avant la sortie si vos notifications sont activées.</small></div>';
+   '</small><small>'+(reservation.status==='confirmed'?
+    'Les rappels dépendent de leur programmation et de vos notifications.':
+    'Aucun rappel confirmé pour cette sortie en préparation.')+'</small></div>';
  }
  if(canReserve){
   bookingHtml+='<div class="surprise-geo-host-tools">'+
@@ -55,7 +76,7 @@ export function monthlyGeoCardHtml({
    (reservation&&reservation.status!=='cancelled'?'<button type="button" data-action="geo-booking-cancel" class="surprise-geo-text-button">Annuler la réservation dans LoveRoll</button>':'')+
    (editing?'<div class="surprise-geo-booking-form">'+
    '<label for="geo-booking-date">Date et heure de la sortie</label>'+
-   '<input id="geo-booking-date" type="datetime-local" required>'+
+   '<input id="geo-booking-date" type="datetime-local" value="'+esc(localBookingDateTime(reservation?.reserved_for))+'" required>'+
    '<label for="geo-booking-name">Nom de l’établissement</label>'+
    '<input id="geo-booking-name" maxlength="140" value="'+esc(reservation?.venue_name||venue?.name||'')+'" required>'+
    '<label for="geo-booking-address">Adresse (facultative)</label>'+
@@ -63,7 +84,7 @@ export function monthlyGeoCardHtml({
    '<label class="surprise-geo-check"><input id="geo-booking-confirmed" type="checkbox"'+(reservation?.status==='confirmed'?' checked':'')+'> J’ai effectué la réservation auprès de l’établissement</label>'+
    '<label class="surprise-geo-check"><input id="geo-booking-paid" type="checkbox"'+(reservation?.paid_by_host?' checked':'')+'> J’ai payé la réservation</label>'+
    '<p class="surprise-geo-muted">LoveRoll ne réserve ni ne prélève d’argent : confirmez ici votre réservation externe.</p>'+
-   '<button type="button" data-action="geo-booking-save" class="surprise-primary">Enregistrer la date et le rappel</button></div>':'')+
+   '<button type="button" data-action="geo-booking-save" class="surprise-primary">Enregistrer la date</button></div>':'')+
    '</div>';
  }else if(!host){
   bookingHtml+='<p class="surprise-geo-muted">Le D6 choisira qui invite, réserve et paie.</p>';
