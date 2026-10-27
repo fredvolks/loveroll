@@ -26,7 +26,7 @@ import {futureCoupleStyleMix,playStyleLabel} from './play-style.mjs?v=20261018-s
 import {cycleIntensityQuestionnaireHtml} from './cycle-questionnaire.mjs?v=20261018-cycle149';
 import {DICE_WEIGHT_CONFIG,configuredDiceWeights,parseDiceWeightInputs} from './dice-weighting.mjs?v=20261018-weights146';
 import {premiumEveningHtml,updateEveningCategoryUi} from './premium-evening.mjs?v=20261022-home228';
-import {eveningHistoryMarkup,eveningLocalDay} from './evening-calendar.mjs?v=20261027-web237';
+import {eveningHistoryMarkup,eveningLocalDay} from './evening-calendar.mjs?v=20261027-web238';
 import {eveningReviewModal,validEveningReview} from './evening-review.mjs?v=20261016-person-review97';
 import {premiumSurpriseHtml,sixSpecialEvents} from './premium-surprise.mjs?v=20261022-home228';
 import {surpriseSlot,surpriseCustom,surpriseTitle,formatSurpriseDateInput,parseSurpriseDateInput} from './surprise-event-config.mjs?v=20261016-surprise109';
@@ -4101,7 +4101,7 @@ async function handle(action,element){
      notify('Lancer réussi, mais le réglage de confirmation n’a pas pu être enregistré.');}
    }
    try{sessionStorage.removeItem('loveroll-category-'+sessionId);}catch{}
-   state.category=null;
+   state.category=null; // Choix renouvelé à chaque défi.
    render();
    return;
   }finally{eveningCategoryConfirmInFlight=false;}
