@@ -27,11 +27,10 @@ export function fitTabletRomanceStage(root){
  // remains readable (without replacing/scaling the photographic asset).
  const landscape=win.matchMedia('(orientation:landscape)').matches;
  // On landscape inactive Soirée the decorative D100 has a large silhouette.
- // Lower the REAL photographic marble far enough to reveal its top under
- // the headings. This does not create a maroon strip: the landscape source
- // is taller than the viewport and its calculated offset remains negative.
+ // The decorative D100 now uses centered-photo camera fitting, so keep
+ // the photographed marble ABOVE the start/summary controls in landscape.
  const inactiveEvening=isEvening&&!!root.querySelector('.evening-premium-view.is-inactive');
- const contactRatio=landscape?(inactiveEvening?.66:isEvening?.56:.45):.405;
+ const contactRatio=landscape?(inactiveEvening?.49:isEvening?.56:.45):.405;
  const contact=height*contactRatio;
  const offset=contact-photoHeight*.342;
  root.style.setProperty('--home-scene-top-image-height',photoHeight+'px');
