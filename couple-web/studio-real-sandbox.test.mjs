@@ -25,4 +25,7 @@ test('two actual full-app iframes, distinct Auth OTP and no fake server dice',()
  assert.doesNotMatch(src,/Math\.random|randomFace|fakeDie|drawFakeCard/);
  assert.match(src,/request\('create'\)/);
  assert.match(src,/request\('delete'\)/);
+ assert.match(src,/studio-real-reset/);
+ assert.match(src,/await request\('delete'\);[\s\S]*?await request\('create'\);/);
+ assert.match(src,/if\(busy\|\|!status\?\.ready\)return/);
 });
