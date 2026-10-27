@@ -2,7 +2,7 @@
 <html lang="fr-CA"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow,noarchive"><meta name="theme-color" content="#210d18">
 <title>LoveRoll Studio — Administration</title><link rel="icon" href="./assets/loveroll-icon-192.png">
-<link rel="stylesheet" href="./platform-admin.css?v=20261019-center170"><link rel="stylesheet" href="./platform-admin-luxe.css?v=20261019-luxe172"></head>
+<link rel="stylesheet" href="./platform-admin.css?v=20261019-center170"><link rel="stylesheet" href="./platform-admin-luxe.css?v=20261027-studio250"></head>
 <body><div class="studio-app">
 <header class="studio-header"><div class="studio-mark"><span>♡</span><div><strong>LoveRoll</strong><small>STUDIO · ADMINISTRATION</small></div></div>
 <nav class="studio-top-nav"><a href="./">Retour à LoveRoll</a><button id="signout" hidden>Déconnexion</button></nav></header>
@@ -19,6 +19,12 @@
 <p>Configuration globale, catalogue D100, statistiques et préparation de la facturation.</p></div>
 <span id="safety-status" class="status-tag">Paiements non connectés</span></div>
 <div class="stats" id="stats" aria-live="polite"></div>
+<nav class="studio-priority" aria-label="Actions essentielles">
+<button type="button" data-pane="simulator"><span class="studio-priority-mark" aria-hidden="true">🎲</span><span><strong>Simuler une soirée</strong><small>D6, D100 et vrais défis · deux joueurs libres</small></span><b aria-hidden="true">›</b></button>
+<button type="button" data-pane="venice"><span class="studio-priority-mark" aria-hidden="true">✧</span><span><strong>Cartes Venice</strong><small>Générer 3 exemples, examiner et exporter</small></span><b aria-hidden="true">›</b></button>
+<button type="button" data-pane="roadmap"><span class="studio-priority-mark" aria-hidden="true">▤</span><span><strong>Suivi du jeu</strong><small>Fonctions et exigences du prompt maître</small></span><b aria-hidden="true">›</b></button>
+</nav>
+<details class="studio-tools"><summary>Autres réglages de LoveRoll <span aria-hidden="true">⌄</span></summary>
 <nav class="studio-quick-grid" aria-label="Rubriques du centre de commande">
 <button type="button" data-pane="prices" data-studio-tile="prices"><span class="studio-quick-icon" data-studio-icon="tag" aria-hidden="true"></span><strong>Tarifs &amp; forfaits</strong><span class="studio-quick-arrow" aria-hidden="true">›</span></button>
 <button type="button" data-pane="referrals" data-studio-tile="referrals"><span class="studio-quick-icon" data-studio-icon="star" aria-hidden="true"></span><strong>Référencement</strong><span class="studio-quick-arrow" aria-hidden="true">›</span></button>
@@ -29,17 +35,17 @@
 <button type="button" data-pane="audience" data-studio-tile="audience"><span class="studio-quick-icon" data-studio-icon="shield-check" aria-hidden="true"></span><strong>Sécurité</strong><span class="studio-quick-arrow" aria-hidden="true">›</span></button>
 <button type="button" data-pane="catalogue" data-studio-tile="catalogue"><span class="studio-quick-icon" data-studio-icon="book-open" aria-hidden="true"></span><strong>Catalogue D100</strong><span class="studio-quick-arrow" aria-hidden="true">›</span></button>
 <button type="button" data-pane="history" data-studio-tile="history"><span class="studio-quick-icon" data-studio-icon="notebook" aria-hidden="true"></span><strong>Journal</strong><span class="studio-quick-arrow" aria-hidden="true">›</span></button>
-</nav>
+</nav></details>
 <div class="studio-layout">
 <aside class="studio-sidebar" id="tabs" aria-label="Sections administration">
-<button data-pane="prices" class="active">Tarifs et forfaits</button><button data-pane="referrals">Référencement et crédits</button><button data-pane="promos">Codes promotionnels</button><button data-pane="d100">D100 et activités</button>
+<button data-pane="simulator" class="active">Simulation</button><button data-pane="venice">Venice IA</button><button data-pane="roadmap">Suivi produit</button><button data-pane="prices">Tarifs et forfaits</button><button data-pane="referrals">Référencement et crédits</button><button data-pane="promos">Codes promotionnels</button><button data-pane="d100">D100 et activités</button>
 <button data-pane="geo">Géolocalisation</button><button data-pane="notifications">Notifications</button>
 <button data-pane="audience">Utilisateurs et sécurité</button><button data-pane="catalogue">Catalogue des 100</button>
 <button data-pane="history">Journal des modifications</button></aside>
 <div class="studio-mobile-nav">
  <label for="studio-pane-select">Choisir une section de l’administration</label>
  <select id="studio-pane-select" aria-label="Section de LoveRoll Studio">
-  <option value="prices">Tarifs et forfaits</option>
+  <option value="simulator">Simuler une soirée</option><option value="venice">Cartes Venice IA</option><option value="roadmap">Suivi produit</option><option value="prices">Tarifs et forfaits</option>
   <option value="referrals">Référencement et crédits</option>
   <option value="promos">Codes promotionnels</option>
   <option value="d100">D100 et activités</option>
@@ -50,11 +56,82 @@
   <option value="history">Journal des modifications</option>
  </select>
  <div class="studio-mobile-shortcuts" aria-label="Accès rapides">
-  <button type="button" data-pane="promos">Codes promo</button>
-  <button type="button" data-pane="geo">Géolocalisation</button>
+  <button type="button" data-pane="simulator">Simulation</button>
+  <button type="button" data-pane="venice">Venice IA</button>
  </div>
 </div>
-<div class="studio-content"><form id="settings" autocomplete="off">
+<div class="studio-content">
+<section data-panel="simulator" class="studio-virtual" hidden>
+ <div class="section-head"><span class="eyebrow">LABORATOIRE · SANS DONNÉES CLIENT</span>
+ <h2>Jouer une soirée virtuelle</h2><p>Lance les dés comme dans LoveRoll, puis découvre la vraie consigne de chaque défi. Les deux joueurs jouent librement, sans attente ni écriture dans les soirées.</p></div>
+ <div class="studio-sim-toolbar"><div><strong>Deux profils virtuels</strong><small>Modifiables et supprimables · aucun compte Supabase créé</small></div>
+ <button type="button" class="secondary" id="sim-delete">Supprimer l’essai</button></div>
+ <div class="studio-sim-players">
+  <article class="studio-sim-player"><label>Joueur 1 <input id="sim-name-0" maxlength="28" value="Joueur 1" autocomplete="off"></label>
+   <div class="studio-sim-die" id="sim-d6-face-0" aria-label="Résultat D6 joueur 1">?</div>
+   <div class="studio-sim-stat" id="sim-progress-0">Défis : —</div><button type="button" class="primary" data-sim-d6="0">Brasser son D6</button></article>
+  <article class="studio-sim-player"><label>Joueur 2 <input id="sim-name-1" maxlength="28" value="Joueur 2" autocomplete="off"></label>
+   <div class="studio-sim-die" id="sim-d6-face-1" aria-label="Résultat D6 joueur 2">?</div>
+   <div class="studio-sim-stat" id="sim-progress-1">Défis : —</div><button type="button" class="primary" data-sim-d6="1">Brasser son D6</button></article>
+ </div>
+ <div class="studio-sim-play">
+ <div class="studio-sim-row">
+  <label>Qui pige au D100?<select id="sim-drawer"><option value="0">Joueur 1</option><option value="1">Joueur 2</option></select></label>
+  <label>Catégorie demandée<select id="sim-category"><option value="SENSUEL">Sensuel</option><option value="SEXUEL">Sexuel</option><option value="HASARD">Au hasard</option></select></label>
+ </div>
+ <button type="button" class="primary studio-sim-bigbutton" id="sim-d100" disabled>Brasser le D100 et découvrir le défi</button>
+ <p class="small-note">Simulation locale : résultat aléatoire avec préférence de catégorie 88/12, vrais textes du catalogue de base. Les restrictions personnelles, le cycle et les droits de pige réels ne sont pas rejoués par cette simulation.</p>
+ <div id="sim-result" class="studio-sim-result" hidden aria-live="polite">
+  <div class="studio-sim-resulttop"><span id="sim-d100-face">D100 · —</span><span id="sim-card-category">—</span></div>
+  <h3 id="sim-card-title">—</h3><p id="sim-card-description"></p>
+  <div class="studio-sim-cardmeta"><span id="sim-card-timer">Minuteur : —</span><span id="sim-card-drawer">Pigeur : —</span></div>
+  <div id="sim-timer-box" class="studio-sim-timerbox"><strong id="sim-clock">—:—</strong><div class="studio-sim-actions">
+   <button type="button" class="secondary" id="sim-timer-start">Démarrer / Pause</button><button type="button" class="secondary" id="sim-timer-reset">Repartir</button></div></div>
+  <div class="studio-sim-actions"><button type="button" class="primary" id="sim-accept">Défi terminé</button>
+   <button type="button" class="secondary" id="sim-pass">Passer</button><button type="button" class="secondary" id="sim-repick">Repiger</button></div>
+ </div>
+ </div>
+ <div class="studio-sim-history"><h3>Journal de cette simulation</h3><div id="sim-history" role="status">Aucun tirage effectué.</div></div>
+</section>
+<section data-panel="venice" class="studio-venice" hidden>
+ <div class="section-head"><span class="eyebrow">ATELIER DE CARTES · API OFFICIELLE</span><h2>Venice IA</h2>
+ <p>Teste une carte Soft, une Medium et une Intense avant de créer les 300. Résultats enregistrés comme brouillons privés Super Admin.</p></div>
+ <div class="studio-venice-top"><div><strong id="studio-venice-state">État de Venice non vérifié</strong><small id="studio-venice-hint">La clé demeure secrète dans Supabase.</small></div>
+ <button type="button" class="secondary" id="studio-venice-check">Vérifier l’API</button></div>
+ <button type="button" class="primary studio-sim-bigbutton" id="studio-venice-generate" disabled>Générer 3 cartes Venice</button>
+ <p class="small-note">Un lot de 3 par Super Admin et par jour UTC. Cette opération utilise tes crédits Venice, sans toucher au quota client d’une régénération de 100 cartes.</p>
+ <p id="studio-venice-feedback" class="small-note" role="status" aria-live="polite"></p>
+ <div id="studio-venice-preview" class="studio-venice-preview" hidden>
+  <div id="studio-venice-tabs" class="studio-venice-tabs" aria-label="Choisir le niveau"></div>
+  <article class="studio-sim-result"><span class="eyebrow">VERSION BROUILLON · NON PUBLIÉE</span>
+   <h3 id="studio-venice-title"></h3><div id="studio-venice-meta" class="studio-sim-cardmeta"></div>
+   <div class="studio-venice-modes"><button type="button" class="secondary" id="studio-venice-short">Concis</button>
+   <button type="button" class="secondary" id="studio-venice-detailed">Détaillé</button></div>
+   <p id="studio-venice-body" class="studio-venice-body"></p><p id="studio-venice-consent" class="small-note"></p>
+  </article>
+  <button type="button" class="secondary" id="studio-venice-export">Exporter les 3 cartes JSON</button>
+ </div>
+ <div class="studio-next">
+  <h3>Régénération de 100 cartes</h3>
+  <p>Prévue dans le prompt maître : 100 Soft, Medium ou Intense, 1 lot offert par couple tous les 2 mois, puis 4 $ CA par lot supplémentaire.</p>
+  <button type="button" class="secondary" disabled>Régénérer 100 cartes · prochain développement</button>
+  <small>La facturation et l’activation des bibliothèques restent désactivées tant que leur sécurité et leurs tests ne sont pas terminés.</small>
+ </div>
+</section>
+<section data-panel="roadmap" class="studio-roadmap" hidden>
+ <div class="section-head"><span class="eyebrow">PROMPT MAÎTRE · TABLEAU DE PILOTAGE</span>
+ <h2>Les modules de LoveRoll</h2><p>Accès aux fonctions déjà disponibles et suivi des nouveaux projets. Les spécifications ne sont pas présentées comme des fonctionnalités terminées.</p></div>
+ <div class="studio-roadmap-grid">
+ <article><strong>🎲 Soirée & dés</strong><p>D6, D100, défis, minuteurs, tours, calendrier, questionnaire d’intensité.</p><button type="button" class="secondary" data-pane="simulator">Essayer en simulation</button></article>
+ <article><strong>♡ Cartes & favoris</strong><p>100 cartes par niveau Soft / Medium / Intense, 40/40/20, 2–6 minutes, 5 favoris par personne.</p><button type="button" class="secondary" data-pane="venice">Essayer Venice</button></article>
+ <article><strong>✦ Éclat premium</strong><p>12 coffrets, variantes, ambiance, progression, consentement et accès premium.</p><a href="./" class="studio-inline-link">Ouvrir LoveRoll</a></article>
+ <article><strong>🌎 Activités & sorties</strong><p>D100 mondial, recherches Geoapify et rappels de réservation.</p><button type="button" class="secondary" data-pane="geo">Gérer la géolocalisation</button></article>
+ <article><strong>💳 Forfaits & promotions</strong><p>Tarifs, codes promo, parrainage et paiement sécurisé avant tout encaissement.</p><button type="button" class="secondary" data-pane="prices">Gérer les tarifs</button></article>
+ <article><strong>🔐 Accès & qualité</strong><p>Comptes, notifications, confidentialité, déploiement, tests, versionnage et restauration.</p><button type="button" class="secondary" data-pane="audience">Voir la sécurité</button></article>
+ </div>
+ <p class="small-note">Sources officielles : <a href="https://github.com/fredvolks/loveroll/blob/main/docs/LOVEROLL_MASTER_PROMPT.md" target="_blank" rel="noopener noreferrer">Prompt maître</a> · <a href="https://github.com/fredvolks/loveroll/actions" target="_blank" rel="noopener noreferrer">Tests GitHub</a>.</p>
+</section>
+<form id="settings" autocomplete="off">
 <section data-panel="prices" class="studio-pricing-panel">
 <div class="studio-price-heading">
  <div class="studio-price-emblem" data-studio-icon="tag" aria-hidden="true"></div>
@@ -182,4 +259,4 @@
 <div class="savebar"><span id="feedback" role="status" aria-live="polite"></span><button class="primary" id="save-settings" type="submit">Enregistrer les réglages</button></div>
 </form></div></div></section>
 </main><footer>LoveRoll Studio · Accès privé · Aucune facturation effectuée depuis cette console.</footer>
-</div><script type="module" src="./platform-admin.js?v=20261019-luxe172"></script></body></html>
+</div><script type="module" src="./platform-admin.js?v=20261027-studio250"></script></body></html>

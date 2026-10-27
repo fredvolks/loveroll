@@ -4,13 +4,14 @@ import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.57.0';
 import {CONFIG} from './config.js';
 import {createPromoAdmin} from './platform-promos.mjs?v=20261019-promo161';
 import {createGeoUsageAdmin} from './platform-geo-usage.mjs?v=20261019-geo165';
+import {createPlatformStudioSuite} from './platform-studio-suite.mjs?v=20261027-studio250';
 const $=id=>document.getElementById(id);
 const client=createClient(CONFIG.supabaseUrl,CONFIG.supabasePublishableKey,{
  auth:{flowType:'pkce',autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}
 });
-const panes=new Set(['prices','referrals','promos','d100','geo','notifications','audience','catalogue','history']);
+const panes=new Set(['simulator','venice','roadmap','prices','referrals','promos','d100','geo','notifications','audience','catalogue','history']);
 const initialPane=new URLSearchParams(location.search).get('panel');
-let data=null,referralData=null,activeFace=null,pane=panes.has(initialPane)?initialPane:'prices';
+let data=null,referralData=null,activeFace=null,pane=panes.has(initialPane)?initialPane:'simulator';
 let geoSummary=null,promoTotal=null;
 const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const fmt=n=>new Intl.NumberFormat('fr-CA').format(n||0);
@@ -32,6 +33,7 @@ async function rpc(name,args={}){
 }
 const promoAdmin=createPromoAdmin({rpc});
 const geoUsage=createGeoUsageAdmin({rpc});
+const studioSuite=createPlatformStudioSuite({client});
 const gated=()=>{$('gate').hidden=false;$('dashboard').hidden=true;$('signout').hidden=true;};
 async function bootstrap(){
  try{
@@ -41,6 +43,7 @@ async function bootstrap(){
   data=info;referralData=referrals;
   $('gate').hidden=true;$('dashboard').hidden=false;$('signout').hidden=false;
   render();
+  studioSuite.init().catch(()=>{});
   loadDashboardMetrics().catch(()=>{});
  }catch(error){
   console.warn('Admin access denied',error?.message||'authentication required');
@@ -110,7 +113,9 @@ function choosePane(name){
  });
  const mobile=$('studio-pane-select');
  if(mobile)mobile.value=name;
- $('save-settings').hidden=['catalogue','history','referrals','promos'].includes(name);
+ $('save-settings').hidden=['simulator','venice','roadmap','catalogue','history','referrals','promos'].includes(name);
+ const form=$('settings');if(form)form.hidden=['simulator','venice','roadmap'].includes(name);
+ studioSuite.onPane(name);
  if(name==='promos')promoAdmin.refresh(true);
  if(name==='geo')geoUsage.refresh();
  if(name==='geo')loadDashboardMetrics().catch(()=>{});

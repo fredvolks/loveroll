@@ -299,3 +299,110 @@ body{
  .studio-heading::after{opacity:.45}
 }
 @media(prefers-reduced-motion:reduce){.studio-quick-grid button{transition:none}}
+
+
+/* Studio V250: iPad / desktop management first, phone reserved for urgent actions. */
+.studio-heading{min-height:190px;padding-bottom:36px}
+.studio-heading h1{font-size:clamp(31px,4.1vw,53px);margin:6px 0 15px}
+.studio-heading h1::after{display:none}
+.studio-heading p{font-size:14px}
+.studio-priority{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0}
+.studio-priority button{display:flex;align-items:center;gap:14px;width:100%;min-width:0;
+ min-height:102px;text-align:left;border:1px solid #ac6385;border-radius:18px;
+ background:linear-gradient(145deg,#4c2339,#281324);color:#fff2f8;padding:18px;box-shadow:0 8px 22px #0003}
+.studio-priority button:hover,.studio-priority button.active,.studio-priority button:focus-visible{
+ border-color:#ffd0e3;background:linear-gradient(140deg,#6c2c4a,#391a30)}
+.studio-priority button>span:nth-child(2){flex:1;min-width:0}
+.studio-priority-mark{display:grid;place-items:center;min-width:44px;height:44px;border-radius:12px;
+ background:#632a47;color:#ffcae0;font-size:26px}
+.studio-priority strong,.studio-priority small{display:block}
+.studio-priority strong{font-size:15px}.studio-priority small{font-size:12px;color:#e1b9ca;margin-top:5px;line-height:1.45}
+.studio-priority b{font-size:24px;color:#e5a0bd;font-weight:400}
+.studio-tools{margin:0 0 19px;border:1px solid #704059;border-radius:14px;background:#251321}
+.studio-tools summary{padding:13px 17px;cursor:pointer;min-height:48px;font-size:13px;font-weight:650;color:#e4bdcf}
+.studio-tools summary span{float:right}.studio-tools .studio-quick-grid{padding:8px 12px 12px;margin:0}
+.studio-tools .studio-quick-grid button{min-height:72px;padding:11px}
+.studio-tools .studio-quick-grid button strong{font-size:13px}
+.studio-tools .studio-quick-icon{max-width:24px;height:24px}
+@media(min-width:760px){
+ .studio-layout{display:grid!important;grid-template-columns:210px minmax(0,1fr);gap:18px}
+ .studio-sidebar{display:grid!important;position:sticky;top:12px;gap:6px}
+ .studio-sidebar button{padding:12px;font-size:12px;white-space:normal}
+ .studio-mobile-nav{display:none!important}
+ .studio-content{min-height:480px}
+}
+@media(min-width:1200px){.studio-layout{grid-template-columns:230px minmax(0,1fr)}}
+.studio-content>section[hidden],.studio-content>form[hidden]{display:none!important}
+.studio-content>section .section-head{margin-bottom:19px}
+.studio-content>section h2{font:normal clamp(26px,3vw,34px) Georgia,serif}
+.studio-sim-toolbar,.studio-venice-top{display:flex;justify-content:space-between;gap:12px;align-items:center;
+ padding:14px 16px;border:1px solid #85506a;border-radius:15px;background:#371b2d;margin:0 0 15px}
+.studio-sim-toolbar strong,.studio-sim-toolbar small,.studio-venice-top strong,.studio-venice-top small{display:block}
+.studio-sim-toolbar small,.studio-venice-top small{font-size:12px;color:#d9b7c6;margin-top:5px;line-height:1.4}
+.studio-sim-players{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.studio-sim-player{display:grid;justify-items:center;gap:13px;padding:17px;border:1px solid #915475;
+ background:linear-gradient(155deg,#472039,#2b1427);border-radius:18px}
+.studio-sim-player label{width:100%;font-weight:600}
+.studio-sim-die{width:75px;height:75px;display:grid;place-items:center;font:700 40px Georgia,serif;
+ border:2px solid #ffc6db;border-radius:16px;background:linear-gradient(145deg,#9a315b,#4b1d3b);
+ box-shadow:8px 10px 0 #160916aa,0 0 22px #b9437950;transform:rotate(-6deg)}
+.studio-sim-die.rolling{animation:studio-sim-roll .44s ease-in-out}
+@keyframes studio-sim-roll{0%{transform:rotate(-12deg) scale(.91)}50%{transform:rotate(12deg) scale(1.12)}100%{transform:rotate(-6deg)}}
+.studio-sim-stat{font-size:12px;color:#f9d3e3;font-variant-numeric:tabular-nums}
+.studio-sim-player button{width:100%;max-width:290px}
+.studio-sim-play{border:1px solid #8c506a;border-radius:18px;padding:clamp(14px,2vw,24px);margin-top:17px;
+ background:#291421}
+.studio-sim-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:17px}
+.studio-sim-row select{min-height:48px;width:100%;padding:10px;border:1px solid #a56b87;border-radius:12px;
+ color:#fff1f6;background:#3c1c30;font:inherit}
+.studio-sim-bigbutton{width:100%;min-height:55px;font-size:16px}
+.studio-sim-result{border:1px solid #bd7997;padding:clamp(17px,2.2vw,27px);
+ border-radius:18px;margin:20px 0 8px;background:linear-gradient(155deg,#5b2541,#321625)}
+.studio-sim-result h3{font:normal 29px Georgia,serif;margin:10px 0;color:#ffeaf2}
+.studio-sim-result>p{line-height:1.65;font-size:15px;white-space:pre-wrap;overflow-wrap:anywhere}
+.studio-sim-resulttop,.studio-sim-cardmeta,.studio-sim-actions,.studio-venice-tabs,.studio-venice-modes{
+ display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.studio-sim-resulttop,.studio-sim-cardmeta{justify-content:space-between;font-size:12px;color:#fbd3e3}
+.studio-sim-cardmeta{border-top:1px solid #ffffff27;padding-top:13px}
+.studio-sim-actions{margin-top:14px}
+.studio-sim-actions>button,.studio-venice-tabs>button,.studio-venice-modes>button{flex:1;min-height:46px}
+.studio-sim-timerbox{display:flex;align-items:center;gap:16px;justify-content:space-between;margin-top:14px}
+.studio-sim-timerbox strong{font-size:32px;font-variant-numeric:tabular-nums}
+.studio-sim-history{margin:17px 0;padding:15px;border:1px solid #613850;border-radius:14px}
+.studio-sim-history h3{font:normal 21px Georgia,serif;margin:0 0 10px}
+.studio-sim-history ul{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.studio-sim-history li{font-size:12px;line-height:1.4;padding-bottom:7px;border-bottom:1px solid #ffffff1c}
+.studio-venice-preview{margin-top:20px}.studio-venice-tabs{margin:12px 0}
+.studio-venice-tabs button{border:1px solid #a96b85;border-radius:11px;background:#3a1a30;color:#fff;padding:10px}
+.studio-venice-tabs button[aria-selected=true],.studio-venice-modes button[aria-pressed=true]{background:#a84c75;border-color:#ffdaea}
+.studio-venice-modes{margin:16px 0}
+.studio-venice-body{font-size:16px!important;line-height:1.75!important}
+.studio-next{margin-top:25px;padding:17px;border:1px solid #79506a;border-radius:15px;background:#291828}
+.studio-next h3{margin:0 0 7px}.studio-next p{font-size:13px;line-height:1.55;color:#e5c3d0}
+.studio-next small{display:block;margin-top:9px;color:#d2a9bb;font-size:11px}
+.studio-roadmap-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.studio-roadmap-grid article{padding:18px;border:1px solid #754058;border-radius:16px;background:#32192a}
+.studio-roadmap-grid strong{font-size:16px}
+.studio-roadmap-grid p{font-size:12px;color:#e7bdcf;line-height:1.6;min-height:55px}
+.studio-roadmap-grid button,.studio-roadmap-grid .studio-inline-link{display:inline-flex;align-items:center;justify-content:center;min-height:43px;
+ border:1px solid #a76b87;border-radius:11px;padding:9px 13px;color:#ffe3ef;text-decoration:none}
+@media(max-width:759px){
+ .studio-layout{display:block!important}
+ .studio-sidebar,.studio-mobile-nav{display:none!important}
+ .studio-priority{grid-template-columns:1fr;gap:9px;margin:12px 0}
+ .studio-priority button{min-height:76px;padding:13px 15px}
+ .studio-priority-mark{width:40px;min-width:40px;height:40px}
+ .studio-tools{display:none}
+ .studio-heading{min-height:150px}
+ .studio-heading>div{max-width:90%}
+ .studio-heading h1{font-size:clamp(28px,6.5vw,36px)}
+ .studio-sim-players{gap:8px}
+ .studio-sim-player{padding:11px 9px}
+ .studio-sim-die{width:60px;height:60px;font-size:30px}
+ .studio-sim-row,.studio-roadmap-grid{grid-template-columns:1fr}
+ .studio-sim-timerbox{display:block}
+ .studio-sim-toolbar{align-items:flex-start;flex-direction:column}
+ .studio-sim-toolbar button{width:100%}
+ .studio-sim-actions>button{min-width:100px}
+}
+@media(prefers-reduced-motion:reduce){.studio-sim-die.rolling{animation:none}}
