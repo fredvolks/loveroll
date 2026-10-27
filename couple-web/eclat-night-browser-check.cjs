@@ -39,9 +39,15 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
    for(const duration of [30,60,90]){await page.locator('[data-action="eclat:minutes:'+duration+'"]').click();assert.equal(await fits(),true,'Coffret '+id+', '+duration+' min fits completely');}
   }
   await page.locator('.eclat-return').click();await page.locator('[data-action="eclat:detail:9"]').scrollIntoViewIfNeeded();await page.locator('[data-action="eclat:detail:9"]').click();}
+  // Opening a different coffret resets the approved quick-start duration to 30 minutes.
+  // This browser journey deliberately chooses 90 again before starting; do not
+  // confuse a previous coffret's duration selection with the current coffret.
+  if(width===360)assert.equal(await page.locator('[data-action="eclat:minutes:30"].is-selected').count(),1,'Reopened coffret defaults to 30 minutes');
+  await page.locator('[data-action="eclat:minutes:90"]').click();
+  assert.equal(await page.locator('[data-action="eclat:minutes:90"].is-selected').count(),1,'90-minute choice is visually selected');
   if(process.env.LOVEROLL_CAPTURE_DIR)await page.screenshot({path:path.join(process.env.LOVEROLL_CAPTURE_DIR,`eclat-detail-${width}.png`)});
   await page.locator('[data-action="eclat:start:9"]').click();await page.waitForSelector('.eclat-play');
-  assert.equal(world.eclat.minutes,90);assert.equal(world.calls.filter(x=>x.name==='love_eclat_start').length,1);
+  assert.equal(world.eclat.minutes,90,'Explicit 90-minute selection is persisted to the started session');assert.equal(world.calls.filter(x=>x.name==='love_eclat_start').length,1);
   await page.getByRole('button',{name:'Retour aux coffrets',exact:true}).click();await page.waitForSelector('.eclat-photo-grid');
   assert.match(await page.locator('[data-action="eclat:detail:9"]').innerText(),/En cours · 90 min · étape 1/);
   await page.locator('[data-action="eclat:detail:1"]').scrollIntoViewIfNeeded();await page.locator('[data-action="eclat:detail:1"]').click();assert.equal(await page.locator('[data-action^="eclat:start:"]').count(),0);
