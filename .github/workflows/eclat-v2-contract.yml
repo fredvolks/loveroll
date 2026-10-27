@@ -1,0 +1,23 @@
+name: Éclat V2 editorial & route contract
+on:
+  pull_request:
+    paths:
+      - "couple-web/eclat-v2-*.mjs"
+      - "docs/LOVEROLL_ECLAT_12_COFFRETS_SPEC.md"
+      - ".github/workflows/eclat-v2-contract.yml"
+  workflow_dispatch:
+jobs:
+  editorial-contract:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate new Éclat engine without changing production or secrets
+        run: |
+          node --check couple-web/eclat-v2-contract.mjs
+          node --check couple-web/eclat-v2-editorial.mjs
+          node --test couple-web/eclat-v2-contract.test.mjs
