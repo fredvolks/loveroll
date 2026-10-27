@@ -1,6 +1,17 @@
 # LoveRoll — Continuité Work / GitHub Actions
 > Actualisé le 2026-10-26 (America/Toronto). Les états ci-dessous sont une photographie, pas une garantie de réussite future.
 
+## Consigne prioritaire de cadence — 27 octobre 2026
+
+Appliquer d'abord le « Mode d'exécution prioritaire — livraisons par lots et vérifications proportionnées » de [LOVEROLL_MASTER_PROMPT.md](./LOVEROLL_MASTER_PROMPT.md). Les anciennes notes et demandes de revalidation ci-dessous sont historiques; elles ne doivent pas réintroduire les boucles supprimées.
+
+- Au démarrage, retrouver seulement l'état courant utile à la demande, les branches et runs concernés; ne pas suivre tous les anciens incidents et PR du journal.
+- Regrouper les micro-ajouts liés dans un lot fonctionnel. Vérifier localement le code touché, puis faire la recette du lot; pas de suite globale ni de matrice complète après chaque retouche.
+- Attendre les contrôles GitHub requis sur la révision attendue par les protections et corriger leurs échecs. Une CI ancienne n'est pas la CI du nouveau SHA, mais un changement documentaire seul n'exige pas une nouvelle recette applicative manuelle.
+- Mettre à jour la passation une seule fois par lot. **Ne pas faire un nouveau commit uniquement pour enregistrer la réussite du précédent commit documentaire**, puis attendre encore sa CI et recommencer.
+- Conserver la couverture métier nécessaire, les preuves utiles et les limites des appareils non testés. Suivre le déploiement du lot jusqu'à sa conclusion et vérifier le parcours publié.
+- Les autorisations de fusion/livraison déjà inscrites au maître restent valables pour leur périmètre. Enchaîner les lots autorisés sans demander « continue » et sans prétendre travailler après la session.
+
 ## Consigne courante de livraison — 26 octobre 2026
 L'utilisateur a demandé de résoudre le blocage de publication. La section « Priorité immédiate — rétablir la publication Web et terminer les lots » du maître autorise la fusion et le déploiement des lots approuvés et validés. Les anciennes mentions « ne pas fusionner sans autorisation » plus bas sont historiques et ne constituent pas une demande de redemander cette autorisation pour le même périmètre.
 PR #47 fusionnée dans main : `5fe2fddf95b78e9bcb7dc65dcf82917760fcec99`, après CI du HEAD `ce43bb3` réussie (run 40408561449), tests locaux de finale 3/3 et syntaxe de 223 scripts validée. Premier déploiement lancé : [40410344904](https://github.com/fredvolks/loveroll/actions/runs/40410344904), résultat final à recontrôler.
