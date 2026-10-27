@@ -7,7 +7,7 @@ const html=read('index.html'),app=read('app.js'),sw=read('service-worker.js');
 const release=JSON.parse(read('web-version.json'));
 const appTag=release.build.replaceAll('-','').replace('.', '-web');
 test('LoveRoll build versions agree between endpoint, app, HTML and imported modules',()=>{
- const build=release.build,tag='20261015-no-toast87',inviteTag='20261018-safari150',controlsTag='20261017-controls141',diceTag='20261022-home228';
+ const build=release.build,tag='20261015-no-toast87',inviteTag='20261018-safari150',controlsTag='20261017-controls141',diceTag=appTag;
  assert.match(build,/^\d{4}-\d{2}-\d{2}\.\d+$/);
  assert.ok(sw.includes("const CACHE='loveroll-static-v"+build.split('.')[1]+"'"));
  assert.ok(app.includes('invite-links.mjs?v='+inviteTag));
@@ -25,7 +25,7 @@ test('LoveRoll build versions agree between endpoint, app, HTML and imported mod
  assert.ok(html.includes('ritual-titles.css?v=20261020-switch178'));
  assert.ok(sw.includes('./ritual-titles.css'));
  assert.ok(app.includes('premium-advent.mjs?v=20261019-bubble175'));
- assert.ok(app.includes('evening-calendar.mjs?v='+appTag));
+ assert.ok(app.includes('evening-calendar.mjs?v=20261027-web240'));
  assert.ok(app.includes('play-style.mjs?v=20261018-styles149'));
  assert.ok(sw.includes('./calendar-success-stats.mjs'));
  assert.ok(sw.includes('./play-style.mjs'));
@@ -46,7 +46,7 @@ test('LoveRoll build versions agree between endpoint, app, HTML and imported mod
  }
  assert.ok(html.includes('styles.css?v=20261017-glass123'));
  assert.match(html,/premium-home\.css\?v=20261019-ipad155/);
- assert.match(app,new RegExp('premium-home\\.mjs\\?v='+appTag));
+ assert.match(app,/premium-home\.mjs\?v=20261027-web240/);
  assert.match(app,new RegExp("dice3d\\.js\\?v="+diceTag));
  assert.ok(app.includes('premium-evening.mjs?v=20261022-home228'));
  assert.ok(html.includes('evening-editorial.css?v=20261017-ritual130'));

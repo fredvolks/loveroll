@@ -400,13 +400,14 @@ outgoingLight += vec3(0.06,0.0005,0.005) * pow(crystalFacing,2.0);
 }
 export function dieOn(canvas,sides,value,rolling){
  const flatHome=sides===6&&!!canvas.closest('.home-die-platform');
- // Decorative Soirée D100 on iPad also needs the centered-photo clipping
- // guard. Without it, the live mesh projects above its transparent canvas,
- // leaving only the LOWER HALF of a huge sphere visible on the marble.
- const tabletIdleD100=sides===100&&window.matchMedia?.('(min-width:768px)').matches&&
+ // The idle Soirée D100 on phones MUST use the same camera-fit and full
+ // WebGL clipping guard as Surprise. Previously only iPad idle qualified:
+ // Android was enlarged by photoSoiree's 1.65 zoom without the final fit.
+ // Keep this shared across mobile, tablets and responsive desktop layouts.
+ const idleEveningD100=sides===100&&
   !!canvas.closest('.evening-premium-view.is-inactive.has-home-soiree-template');
  const centeredPhoto=sides===100&&
-  (!!canvas.closest('.surprise-minimal,.has-evening-d100-template')||tabletIdleD100);
+  (!!canvas.closest('.surprise-minimal,.has-evening-d100-template')||idleEveningD100);
  const photoSoiree=centeredPhoto||(sides===100&&!!canvas.closest('.evening-premium-view.has-home-soiree-template'))||(sides===100&&!!canvas.closest('.loveroll-evening-page')&&window.matchMedia?.('(min-width:768px)').matches);
  const photoStage=flatHome||photoSoiree;
  const referenceRuby=flatHome||(sides===100&&!!canvas.closest('.loveroll-evening-page,.has-surprise-minimal'));
@@ -574,6 +575,9 @@ export function dieOn(canvas,sides,value,rolling){
    const fitBounds=projectedBounds();
    // A tall Surprise stage must still fit the entire ruby mesh inside its canvas.
    camera.zoom*=Math.min(1,(contact-sceneRect.top-headroom)/((fitBounds.bottom-fitBounds.top)*rect.height),.49/(.5-fitBounds.top),.49/(fitBounds.bottom-.5),.49/(.5-fitBounds.left),.49/(fitBounds.right-.5));
+   // On 360x640 the idle Soirée D100 projected 12.4% larger than Surprise.
+   // Match the reference mesh on narrow phones without altering game results.
+   if(idleEveningD100&&window.matchMedia?.('(max-width:767px)').matches)camera.zoom*=.86;
    camera.updateProjectionMatrix();
   }
   bounds=projectedBounds();

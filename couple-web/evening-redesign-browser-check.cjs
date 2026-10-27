@@ -58,6 +58,36 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
    await page.locator('.evening-premium-view.is-inactive').waitFor();
    assert.equal(await page.locator('.evening-intro h2').innerText(),'200 défis à vivre à deux');
    assert.equal(await page.locator('.evening-finale-tiles>div').nth(1).innerText(),'3 / 200\nDéfis complétés');
+   // LR-001: genuine idle D100 geometry must fit its stage on mobile and
+   // keep Surprise's on-screen proportion (not just its CSS canvas size).
+   await page.waitForFunction(()=>document.querySelector('.evening-finale-dice canvas')?.loveRollDie?.projectedBounds);
+   const projected=selector=>page.evaluate(selector=>{
+    const canvas=document.querySelector(selector+' canvas'),b=canvas.loveRollDie.projectedBounds(),
+     rect=canvas.getBoundingClientRect(),hero=document.querySelector(selector).getBoundingClientRect();
+    return {sides:canvas.dataset.diceSides, width:(b.right-b.left)*rect.width,
+     height:(b.bottom-b.top)*rect.height,top:rect.top+b.top*rect.height,heroTop:hero.top,
+     bounds:{top:b.top,bottom:b.bottom,left:b.left,right:b.right}};
+   },selector);
+   const idle=await projected('.evening-finale-hero');
+   assert.equal(idle.sides,'100');
+   if(width<768){
+    assert.ok(idle.bounds.top>=0&&idle.bounds.bottom<=1&&idle.bounds.left>=0&&idle.bounds.right<=1,
+     'LR-001 mobile idle D100 cropped: '+JSON.stringify({width,height,idle}));
+    assert.ok(idle.top>=idle.heroTop+2,
+     'LR-001 idle D100 collides with Soirée controls: '+JSON.stringify({width,height,idle}));
+    await page.locator('[data-action="tab:special"]').click();
+    await page.waitForFunction(()=>document.querySelector('.surprise-minimal canvas')?.loveRollDie?.readState()?.optics?.loaded);
+    const surprise=await projected('.surprise-main-die-scene');
+    assert.equal(surprise.sides,'100');
+    console.log('LR001_D100_SURPRISE_REFERENCE',width,height,JSON.stringify({idle,surprise,
+     ratio:idle.height/surprise.height}));
+    assert.ok(idle.height<=surprise.height*1.12 && idle.width<=surprise.width*1.12,
+     'LR-001 D100 waiting Soirée exceeds Surprise: '+JSON.stringify({width,height,idle,surprise}));
+    assert.ok(idle.height>=surprise.height*.76,
+     'LR-001 D100 waiting Soirée too small vs Surprise: '+JSON.stringify({width,height,idle,surprise}));
+   }else{
+    console.log('LR001_D100_DESKTOP',width,height,JSON.stringify(idle));
+   }
    assert.deepEqual(errors,[]);
    console.log('EVENING_SHARED_PROGRESS_OK',width,height,actor);
   }finally{await context.close();}
