@@ -12,7 +12,8 @@ test('Bridge is an authenticated, admin-only, non-billable connectivity check', 
   assert.match(edge, /supabase\.auth\.getUser\(match\[1\]\)/);
   assert.match(edge, /\.eq\('owner_user_id', identity\.user\.id\)/);
   assert.match(edge, /'status', 'verify_key'/);
-  assert.doesNotMatch(edge, /\/chat\/completions|\/images\/generations/);
+  assert.match(edge, /\/chat\/completions/);
+  assert.doesNotMatch(edge, /\/images\/generations/);
   assert.doesNotMatch(edge, /console\.log|console\.error|service_role\s*:/);
   assert.match(edge, /configured: Boolean\(veniceKey\)/);
 });
