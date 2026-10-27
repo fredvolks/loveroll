@@ -53,6 +53,12 @@ export function createEclatV2SessionApi(client){
    return rpc('love_eclat_v2_choose_door',{p_session:sessionId(sid),p_expected_step:step(expectedStep),
     p_door:door,p_joint_oral:jointOral});
   },
+  predict:({sessionId:sid,expectedStep,answer,prediction})=>{
+   if(![0,1,2].includes(answer)||![0,1,2].includes(prediction))
+    throw new RangeError('Réponse et prédiction doivent être un des trois choix');
+   return rpc('love_eclat_v2_predict',{p_session:sessionId(sid),
+    p_expected_step:step(expectedStep),p_answer:answer,p_prediction:prediction});
+  },
   act:({sessionId:sid,expectedStep,action})=>{
    if(!['pause','resume','pass','continue','stop'].includes(action))throw new RangeError('Action inconnue');
    return rpc('love_eclat_v2_act',{p_session:sessionId(sid),p_expected_step:step(expectedStep),p_action:action});

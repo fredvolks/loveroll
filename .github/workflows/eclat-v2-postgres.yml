@@ -47,3 +47,5 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-envelopes.test.sql
       - name: Verify contact consent and withdrawal on two and one phones
         run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-contact.test.sql
+      - name: Protect and reveal only two real prediction answers
+        run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-predictions.test.sql

@@ -21,6 +21,7 @@ create table public.love_eclat_v2_sessions (
  branch text check (branch in ('Tendresse','Jeu','Mystère')),
  door_confirmed_scene smallint check (door_confirmed_scene in (1,5)),
  shared_contact_approved boolean not null default false,
+ last_prediction jsonb,
  revealed_step smallint check (revealed_step between 1 and 8),
  started_at timestamptz not null default now(),
  updated_at timestamptz not null default now(),
@@ -69,6 +70,18 @@ alter table public.love_eclat_v2_contact_choices enable row level security;
 revoke all on public.love_eclat_v2_contact_choices from public,anon,authenticated;
 alter table public.love_eclat_v2_door_votes enable row level security;
 revoke all on public.love_eclat_v2_door_votes from public,anon,authenticated;
+-- Private until BOTH members explicitly reveal one question; never direct SELECT.
+create table public.love_eclat_v2_predictions (
+ session_id uuid not null references public.love_eclat_v2_sessions(id) on delete cascade,
+ step_index smallint not null check(step_index between 1 and 8),
+ substep_index smallint not null check(substep_index in (1,2)),
+ user_id uuid not null references auth.users(id),
+ answer smallint not null check(answer between 0 and 2),
+ prediction smallint not null check(prediction between 0 and 2),
+ primary key(session_id,step_index,substep_index,user_id)
+);
+alter table public.love_eclat_v2_predictions enable row level security;
+revoke all on public.love_eclat_v2_predictions from public,anon,authenticated;
 alter table public.love_eclat_v2_sessions enable row level security;
 alter table public.love_eclat_v2_readiness enable row level security;
 -- Fail closed: only authenticated, guarded RPCs can access these tables.
@@ -107,7 +120,7 @@ create function public.love_eclat_v2_status(p_session uuid default null)
 declare
  v_actor uuid:=auth.uid(); v_couple uuid; v_s public.love_eclat_v2_sessions%rowtype;
  v_ready integer; v_mine boolean; v_type text; v_door_vote text;
- v_contact_yes integer; v_my_contact text;
+ v_contact_yes integer; v_my_contact text; v_my_answer integer;v_my_guess integer;
 begin
  perform public.love_require_verified_identity();
  select couple_id into v_couple from public.couple_members where user_id=v_actor;
@@ -131,6 +144,10 @@ begin
  select count(*) filter(where response='yes'), max(response) filter(where user_id=v_actor)
   into v_contact_yes,v_my_contact from public.love_eclat_v2_contact_choices
   where session_id=v_s.id and step_index=v_s.chapter_index and proposal='mains';
+ select answer,prediction into v_my_answer,v_my_guess
+ from public.love_eclat_v2_predictions
+ where session_id=v_s.id and step_index=v_s.chapter_index
+   and substep_index=v_s.substep_index and user_id=v_actor;
  select count(*),coalesce(bool_or(user_id=v_actor),false) into v_ready,v_mine
  from public.love_eclat_v2_readiness where session_id=v_s.id and step_index=v_s.chapter_index;
  return jsonb_build_object(
@@ -139,6 +156,8 @@ begin
   'variant',v_s.variant,'device_mode',v_s.device_mode,'role_a',v_s.role_a,'role_b',v_s.role_b,
   'chapter_index',v_s.chapter_index,'chapter_total',cardinality(v_s.chapter_plan),
   'substep_index',v_s.substep_index,
+  'my_answer',v_my_answer,'my_prediction',v_my_guess,
+  'reveal_answers',v_s.last_prediction,
   'chapter_number',v_s.chapter_plan[v_s.chapter_index],
   'budget_minutes',v_s.budget_plan[v_s.chapter_index],
   'scene_type',v_type,'state',v_s.state,'skipped_scenes',v_s.skipped_scenes,
@@ -213,6 +232,41 @@ begin
 end;
 $$;
 
+-- Private author-only answer+prediction. A different user cannot write for B.
+-- Editing one answer automatically removes ONLY the author's readiness.
+create function public.love_eclat_v2_predict(
+ p_session uuid,p_expected_step integer,p_answer integer,p_prediction integer
+) returns jsonb language plpgsql security definer set search_path='' as $$
+declare
+ v_actor uuid:=auth.uid();v_couple uuid;v_s public.love_eclat_v2_sessions%rowtype;
+begin
+ perform public.love_require_verified_identity();
+ if p_answer is null or p_answer not between 0 and 2 or
+    p_prediction is null or p_prediction not between 0 and 2 then
+  raise exception 'Trois réponses seulement';end if;
+ select * into v_s from public.love_eclat_v2_sessions where id=p_session for update;
+ if not found then raise exception 'Séance inconnue';end if;
+ select couple_id into v_couple from public.couple_members where user_id=v_actor;
+ if v_couple is distinct from v_s.couple_id or v_actor not in (v_s.role_a,v_s.role_b)
+    or not public.love_eclat_has_access(v_s.couple_id) then
+  raise exception 'Accès interdit' using errcode='42501';end if;
+ if p_expected_step is distinct from v_s.chapter_index then
+  return public.love_eclat_v2_status(p_session);end if;
+ if v_s.coffret_id<>7 or v_s.device_mode<>'two' or v_s.state<>'active'
+    or v_s.chapter_plan[v_s.chapter_index] not in (1,3,6)
+    or v_s.revealed_step=v_s.chapter_index then
+  raise exception 'Cette question privée n’est pas active';end if;
+ insert into public.love_eclat_v2_predictions
+  (session_id,step_index,substep_index,user_id,answer,prediction)
+ values(p_session,v_s.chapter_index,v_s.substep_index,v_actor,p_answer,p_prediction)
+ on conflict(session_id,step_index,substep_index,user_id)
+ do update set answer=excluded.answer,prediction=excluded.prediction;
+ delete from public.love_eclat_v2_readiness
+  where session_id=p_session and step_index=v_s.chapter_index and user_id=v_actor;
+ return public.love_eclat_v2_status(p_session);
+end;
+$$;
+
 -- Two phones: each participant submits ONLY their OWN readiness.
 -- These acknowledgements never impersonate the other account.
 create function public.love_eclat_v2_mark_ready(
@@ -235,6 +289,11 @@ begin
   or v_s.revealed_step=v_s.chapter_index then
   raise exception 'Confirmation privée non autorisée à cette étape'; end if;
  if p_ready is null then raise exception 'Confirmation explicite requise'; end if;
+ if p_ready and v_s.coffret_id=7 and
+  not exists(select 1 from public.love_eclat_v2_predictions
+   where session_id=p_session and step_index=v_s.chapter_index
+    and substep_index=v_s.substep_index and user_id=v_actor) then
+  raise exception 'Réponse et prédiction requises avant de confirmer';end if;
  if p_ready then
   insert into public.love_eclat_v2_readiness(session_id,step_index,user_id)
   values(p_session,v_s.chapter_index,v_actor) on conflict do nothing;
@@ -251,7 +310,7 @@ $$;
 create function public.love_eclat_v2_reveal(
  p_session uuid,p_expected_step integer,p_joint_oral boolean default false
 ) returns jsonb language plpgsql security definer set search_path='' as $$
-declare v_actor uuid:=auth.uid(); v_couple uuid; v_s public.love_eclat_v2_sessions%rowtype; v_ready int;
+declare v_actor uuid:=auth.uid(); v_couple uuid; v_s public.love_eclat_v2_sessions%rowtype; v_ready int;v_revealed jsonb;
 begin
  perform public.love_require_verified_identity();
  select * into v_s from public.love_eclat_v2_sessions where id=p_session for update;
@@ -274,15 +333,33 @@ begin
    where session_id=p_session and step_index=v_s.chapter_index and user_id in (v_s.role_a,v_s.role_b);
   if v_ready<>2 then raise exception 'Attendre les deux confirmations distinctes'; end if;
  end if;
- if v_s.coffret_id=1 and v_s.chapter_plan[v_s.chapter_index]=6 and v_s.substep_index=1 then
-  -- Envelope 3 is revealed; move to envelope 4, revoke old readiness.
+ if v_s.coffret_id=7 and v_s.device_mode='two' then
+  select jsonb_object_agg(case when p.user_id=v_s.role_a then 'A' else 'B' end,
+     jsonb_build_object('answer',p.answer,'prediction',p.prediction))
+   into v_revealed from public.love_eclat_v2_predictions p
+   where p.session_id=p_session and p.step_index=v_s.chapter_index
+     and p.substep_index=v_s.substep_index
+     and p.user_id in (v_s.role_a,v_s.role_b);
+  if coalesce((select count(*) from jsonb_object_keys(coalesce(v_revealed,'{}'::jsonb))),0)<>2 then
+   raise exception 'Deux réponses distinctes requises';end if;
+  v_revealed=jsonb_build_object('question',case v_s.chapter_plan[v_s.chapter_index]
+   when 1 then 1 when 3 then v_s.substep_index+1
+   when 6 then v_s.substep_index+3 end,'players',v_revealed);
+  delete from public.love_eclat_v2_predictions
+   where session_id=p_session and step_index=v_s.chapter_index
+     and substep_index=v_s.substep_index;
+ end if;
+ if ((v_s.coffret_id=1 and v_s.chapter_plan[v_s.chapter_index]=6)
+     or (v_s.coffret_id in (7,8) and v_s.chapter_plan[v_s.chapter_index] in (3,6)))
+    and v_s.substep_index=1 then
+  -- Revoke both readiness markers before exposing a *new* private question.
   delete from public.love_eclat_v2_readiness
    where session_id=p_session and step_index=v_s.chapter_index;
   update public.love_eclat_v2_sessions
-   set substep_index=2,updated_at=now() where id=p_session;
+   set substep_index=2,last_prediction=v_revealed,updated_at=now() where id=p_session;
  else
   update public.love_eclat_v2_sessions
-   set revealed_step=chapter_index,updated_at=now() where id=p_session;
+   set revealed_step=chapter_index,last_prediction=v_revealed,updated_at=now() where id=p_session;
  end if;
  return public.love_eclat_v2_status(p_session);
 end;
@@ -416,6 +493,22 @@ begin
   delete from public.love_eclat_v2_readiness where session_id=p_session and step_index=v_s.chapter_index;
   delete from public.love_eclat_v2_contact_choices
    where session_id=p_session and step_index=v_s.chapter_index;
+  delete from public.love_eclat_v2_predictions
+   where session_id=p_session and step_index=v_s.chapter_index;
+  -- Short routes still include each question/theme: passing the first
+  -- private subquestion moves to the second without revealing any answer.
+  if p_action='pass' and v_s.coffret_id in (7,8) and
+     v_s.chapter_plan[v_s.chapter_index] in (3,6) and v_s.substep_index=1 then
+   update public.love_eclat_v2_sessions
+    set substep_index=2,revealed_step=null,last_prediction=null,updated_at=now()
+    where id=p_session;
+   return public.love_eclat_v2_status(p_session);
+  end if;
+  if v_s.coffret_id=5 and v_s.chapter_plan[v_s.chapter_index]=6 and v_s.substep_index=1 then
+   update public.love_eclat_v2_sessions
+    set substep_index=2,updated_at=now() where id=p_session;
+   return public.love_eclat_v2_status(p_session);
+  end if;
   v_finished:=v_s.chapter_index=cardinality(v_s.chapter_plan);
   update public.love_eclat_v2_sessions
    set chapter_index=case when v_finished then chapter_index else chapter_index+1 end,
@@ -424,6 +517,7 @@ begin
           else skipped_scenes end,
        revealed_step=null,
        substep_index=1,
+       last_prediction=null,
        shared_contact_approved=false,
        branch=case when p_action='pass' and coffret_id=4 and chapter_plan[chapter_index]=1 and branch is null
           then 'Jeu' else branch end,
@@ -441,6 +535,8 @@ revoke all on function public.love_eclat_v2_contact_answer(uuid,integer,text,tex
 grant execute on function public.love_eclat_v2_contact_answer(uuid,integer,text,text,boolean) to authenticated;
 revoke all on function public.love_eclat_v2_choose_door(uuid,integer,text,boolean) from public,anon;
 grant execute on function public.love_eclat_v2_choose_door(uuid,integer,text,boolean) to authenticated;
+revoke all on function public.love_eclat_v2_predict(uuid,integer,integer,integer) from public,anon;
+grant execute on function public.love_eclat_v2_predict(uuid,integer,integer,integer) to authenticated;
 revoke all on function public.love_eclat_v2_status(uuid) from public,anon;
 revoke all on function public.love_eclat_v2_start(integer,integer,text,integer) from public,anon;
 revoke all on function public.love_eclat_v2_mark_ready(uuid,integer,boolean) from public,anon;
