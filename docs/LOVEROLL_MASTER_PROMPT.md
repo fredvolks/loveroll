@@ -3,6 +3,16 @@
 
 
 
+## PRIORITÉ ÉCLAT — SUPER ADMIN / VRAIS TESTS À DEUX (27 octobre 2026)
+
+Référence de réalisation : [Atelier QA Éclat V2](./LOVEROLL_ECLAT_QA_WORKBENCH.md) et [PR #92](https://github.com/fredvolks/loveroll/pull/92).
+
+**Décision de produit ferme : le Super Admin doit jouer au vrai LoveRoll, et non à une imitation du jeu.** Réutiliser les écrans officiels, la vraie API, les vrais tirages D6/D100, les cartes, les définitions, les limites, les déblocages et les défis/résultats réellement persistés. Présenter côte à côte deux comptes de test indépendants (iPad/PC), avec chaque rôle capable de tirer son propre dé et d'inspecter toutes les étapes sans devoir attendre une pige de l'autre **en QA uniquement**; les protections du jeu public demeurent inchangées. Prévoir une version mobile limitée aux actions urgentes. Les mêmes mécaniques et les mêmes RPC doivent être utilisées qu'avec un vrai joueur.
+
+La console doit permettre la création de comptes test supprimables, leur attribution à un duo QA et leur nettoyage complet, les tests des 12 coffrets Éclat, la génération et la régénération des trois cartes de démonstration via l'API officielle, et l'inspection des quotas, surplus, paiements et abonnements **dans des environnements de test isolés**. Les résultats doivent être inspectables comme si l'admin jouait réellement. Les secrets admin et Stripe sont uniquement côté serveur; aucune usurpation de partenaire ni contournement de consentement. Work implémente les décisions du jeu définies au maître; il n'improvise pas une mécanique.
+
+**État de réalisation :** une rubrique responsive de Super Admin et un atelier à deux sessions Auth distinctes sont en code de branche PR #92. Les RPC de jeu ne sont pas simulées et la production Supabase est bloquée dans l'atelier. **Restent à coder :** création/destruction sécurisée de comptes QA, environnement QA réellement provisionné, contournement de latence D6/D100 strictement QA, tests des 3 cartes de catégories, parcours de paiements sandbox et recette physique. Rien ici ne constitue une mise en production ni une fonctionnalité achevée.
+
 ## MODE PRIORITAIRE — DÉVELOPPEMENT LOCAL PAR LOTS COHÉRENTS (27 octobre 2026)
 
 **Décision approuvée : accélérer LoveRoll en réalisant le travail dans un espace local avant un push groupé.** Cette méthode prévaut sur les anciennes habitudes de petites PR/commits et de relances CI répétées. Elle ne change **aucune** mécanique approuvée, protection de données, exigence de recette, prix ou autorisation.

@@ -244,6 +244,15 @@ Afficher près des catégories les cartes distinctes encore admissibles à la pr
 
 ## Éclat V2 — état d'implémentation contrôlé (27 octobre 2026)
 
+### Atelier du Super Admin — branche V2
+
+- **Implémenté dans PR #92, brouillon :** rubrique \`Éclat · atelier de test\` dans \`admin.html\` (après authentification propriétaire); accès à deux comptes QA Auth indépendants, interface réelle de jeu pour A/B, choix 12 coffrets/30–60–90 min, démarrage/reprise/actualisation via le vrai backend, disposition iPad/PC et mobile. Blocage explicite du Supabase officiel, des clés privées et des identités identiques.
+- **Vérifié :** tests unitaires de garde de configuration, contrôle de deux identités/d'un seul couple, absence de partage JWT et tests d'enchaînement de deux connexions de jeu; la migration V2 et ses règles passent les tests PostgreSQL de CI sur base jetable.
+- **Non implémenté / non validé :** création/suppression de vrais comptes QA depuis Studio, Supabase QA provisionné, indépendance des dés D6/D100 en mode test, générateur réel de trois cartes, limites/surplus/paiements sandbox, essais physiques iPad/Android ou recette simultanée sur une QA distante. Ne pas présenter l'atelier comme utilisable immédiatement sans cette infrastructure.
+- [Procédure et garde-fous](./LOVEROLL_ECLAT_QA_WORKBENCH.md).
+
+
+
 **PR de préparation :** [#92 — Éclat V2](https://github.com/fredvolks/loveroll/pull/92). **Non fusionnée, aucune migration de production exécutée, Éclat V1 intact.** Les 12 coffrets possèdent une structure éditoriale et des modèles/contrôles de jeu dans la branche; cela **ne constitue pas** une livraison jouable dans l'application publique.
 
 **Contrôles automatisés en branche :** `Éclat V2 editorial & route contract` et `Éclat V2 isolated PostgreSQL security checks` vérifient les vraies migrations V2 en PostgreSQL 17 jetable et les parcours A/B. Le statut exact du dernier commit doit être relu dans la PR avant toute fusion. Aucun test physique iPad/Android ou recette réelle à deux comptes en application publiée n'est encore revendiqué.
