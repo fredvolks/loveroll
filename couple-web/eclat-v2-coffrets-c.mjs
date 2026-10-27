@@ -43,7 +43,7 @@ function safeDice(s){
  return v;
 }
 const timeSeconds={
- 1:[90,90],3:[120,120],4:[90,90],6:[180,120],7:[90,90]
+ 1:[90,90],3:[120,120],4:[90,180],6:[180,120],7:[90,90]
 };
 export function eclatV2SceneC({session,viewerId,localDisplayRole=null}){
  const id=session?.coffret_id,version=session?.variant;
