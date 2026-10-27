@@ -99,6 +99,20 @@ create table public.love_eclat_v2_attentions (
 );
 alter table public.love_eclat_v2_attentions enable row level security;
 revoke all on public.love_eclat_v2_attentions from public,anon,authenticated;
+-- Coffret 08: notes visible only to their author until voluntary reveal.
+-- No audio/media files, lyrics or streaming integrations.
+create table public.love_eclat_v2_music_notes (
+ session_id uuid not null references public.love_eclat_v2_sessions(id) on delete cascade,
+ theme smallint not null check(theme between 1 and 5),
+ user_id uuid not null references auth.users(id),
+ title text not null check(char_length(btrim(title)) between 1 and 120),
+ artist text check(artist is null or char_length(artist)<=120),
+ revealed boolean not null default false,
+ updated_at timestamptz not null default now(),
+ primary key(session_id,theme,user_id)
+);
+alter table public.love_eclat_v2_music_notes enable row level security;
+revoke all on public.love_eclat_v2_music_notes from public,anon,authenticated;
 alter table public.love_eclat_v2_sessions enable row level security;
 alter table public.love_eclat_v2_readiness enable row level security;
 -- Fail closed: only authenticated, guarded RPCs can access these tables.
@@ -139,6 +153,7 @@ declare
  v_ready integer; v_mine boolean; v_type text; v_door_vote text;
  v_contact_yes integer; v_my_contact text; v_my_answer integer;v_my_guess integer;
  v_attention_index integer;v_attention_response text;
+ v_music_note jsonb;v_revealed_music jsonb;v_theme integer;
 begin
  perform public.love_require_verified_identity();
  select couple_id into v_couple from public.couple_members where user_id=v_actor;
@@ -169,6 +184,23 @@ begin
  select attention_index,response into v_attention_index,v_attention_response
  from public.love_eclat_v2_attentions
  where session_id=v_s.id and step_index=v_s.chapter_index and substep_index=v_s.substep_index;
+ v_theme:=case
+   when v_s.coffret_id<>8 then null
+   when v_s.chapter_plan[v_s.chapter_index]=1 then 1
+   when v_s.chapter_plan[v_s.chapter_index]=3 then v_s.substep_index+1
+   when v_s.chapter_plan[v_s.chapter_index]=6 then v_s.substep_index+3
+   else null end;
+ if v_theme is not null then
+  select jsonb_build_object('title',title,'artist',artist,'revealed',revealed)
+   into v_music_note from public.love_eclat_v2_music_notes
+   where session_id=v_s.id and theme=v_theme and user_id=v_actor;
+ end if;
+ if v_s.coffret_id=8 then
+  select coalesce(jsonb_agg(jsonb_build_object(
+    'theme',theme,'owner',user_id,'title',title,'artist',artist)
+    order by theme,user_id),'[]'::jsonb) into v_revealed_music
+   from public.love_eclat_v2_music_notes where session_id=v_s.id and revealed=true;
+ end if;
  select count(*),coalesce(bool_or(user_id=v_actor),false) into v_ready,v_mine
  from public.love_eclat_v2_readiness where session_id=v_s.id and step_index=v_s.chapter_index;
  return jsonb_build_object(
@@ -179,6 +211,8 @@ begin
   'substep_index',v_s.substep_index,
   'my_answer',v_my_answer,'my_prediction',v_my_guess,
   'attention_index',v_attention_index,'attention_response',v_attention_response,
+  'music_theme',v_theme,'my_music_note',v_music_note,
+  'revealed_music',v_revealed_music,
   'puzzle_solved',coalesce(v_s.puzzle_solved_step=v_s.chapter_index,false),
   'puzzle_hint_level',v_s.puzzle_hint_level,'puzzle_helped',v_s.puzzle_helped,
   'reveal_answers',v_s.last_prediction,
@@ -622,6 +656,70 @@ begin
 end;
 $$;
 
+-- Music note: own account only; a shared phone never impersonates B.
+create function public.love_eclat_v2_music_note(
+ p_session uuid,p_expected_step integer,p_title text,p_artist text default null
+) returns jsonb language plpgsql security definer set search_path='' as $$
+declare v_actor uuid:=auth.uid();v_couple uuid;v_s public.love_eclat_v2_sessions%rowtype;
+ v_theme integer;v_was_revealed boolean;
+begin
+ perform public.love_require_verified_identity();
+ if p_title is null or char_length(btrim(p_title)) not between 1 and 120
+  or (p_artist is not null and char_length(p_artist)>120) then
+  raise exception 'Titre ou artiste invalide';end if;
+ select * into v_s from public.love_eclat_v2_sessions where id=p_session for update;
+ if not found then raise exception 'Séance inconnue';end if;
+ select couple_id into v_couple from public.couple_members where user_id=v_actor;
+ if v_couple is distinct from v_s.couple_id or v_actor not in(v_s.role_a,v_s.role_b)
+  or not public.love_eclat_has_access(v_s.couple_id) then
+  raise exception 'Accès interdit' using errcode='42501';end if;
+ if p_expected_step is distinct from v_s.chapter_index then
+  return public.love_eclat_v2_status(p_session);end if;
+ if v_s.coffret_id<>8 or v_s.device_mode<>'two' or v_s.state<>'active'
+  or v_s.chapter_plan[v_s.chapter_index] not in (1,3,6) then
+  raise exception 'Note de musique privée indisponible';end if;
+ v_theme:=case v_s.chapter_plan[v_s.chapter_index]
+  when 1 then 1 when 3 then v_s.substep_index+1
+  when 6 then v_s.substep_index+3 end;
+ select revealed into v_was_revealed from public.love_eclat_v2_music_notes
+ where session_id=p_session and theme=v_theme and user_id=v_actor;
+ if v_was_revealed=true then raise exception 'Titre déjà révélé : note non modifiable';end if;
+ insert into public.love_eclat_v2_music_notes
+ (session_id,theme,user_id,title,artist)
+ values(p_session,v_theme,v_actor,btrim(p_title),nullif(btrim(coalesce(p_artist,'')),''))
+ on conflict(session_id,theme,user_id)
+ do update set title=excluded.title,artist=excluded.artist,updated_at=now();
+ return public.love_eclat_v2_status(p_session);
+end;
+$$;
+create function public.love_eclat_v2_music_reveal(
+ p_session uuid,p_expected_step integer
+) returns jsonb language plpgsql security definer set search_path='' as $$
+declare v_actor uuid:=auth.uid();v_couple uuid;v_s public.love_eclat_v2_sessions%rowtype;v_theme integer;
+begin
+ perform public.love_require_verified_identity();
+ select * into v_s from public.love_eclat_v2_sessions where id=p_session for update;
+ if not found then raise exception 'Séance inconnue';end if;
+ select couple_id into v_couple from public.couple_members where user_id=v_actor;
+ if v_couple is distinct from v_s.couple_id or v_actor not in(v_s.role_a,v_s.role_b)
+   or not public.love_eclat_has_access(v_s.couple_id) then
+  raise exception 'Accès interdit' using errcode='42501';end if;
+ if p_expected_step is distinct from v_s.chapter_index then
+  return public.love_eclat_v2_status(p_session);end if;
+ if v_s.coffret_id<>8 or v_s.device_mode<>'two' or v_s.state<>'active'
+  or v_s.chapter_plan[v_s.chapter_index] not in (1,3,6) then
+  raise exception 'Révélation de musique indisponible';end if;
+ v_theme:=case v_s.chapter_plan[v_s.chapter_index]
+  when 1 then 1 when 3 then v_s.substep_index+1
+  when 6 then v_s.substep_index+3 end;
+ update public.love_eclat_v2_music_notes
+  set revealed=true,updated_at=now()
+  where session_id=p_session and theme=v_theme and user_id=v_actor;
+ if not found then raise exception 'Écrire son titre avant de le révéler';end if;
+ return public.love_eclat_v2_status(p_session);
+end;
+$$;
+
 -- All state transitions are serializable per session lock and guarded by an
 -- expected step token. Retrying a stale next/pass NEVER advances the next scene.
 create function public.love_eclat_v2_act(
@@ -723,6 +821,10 @@ revoke all on function public.love_eclat_v2_contact_answer(uuid,integer,text,tex
 grant execute on function public.love_eclat_v2_contact_answer(uuid,integer,text,text,boolean) to authenticated;
 revoke all on function public.love_eclat_v2_choose_door(uuid,integer,text,boolean) from public,anon;
 grant execute on function public.love_eclat_v2_choose_door(uuid,integer,text,boolean) to authenticated;
+revoke all on function public.love_eclat_v2_music_note(uuid,integer,text,text) from public,anon;
+grant execute on function public.love_eclat_v2_music_note(uuid,integer,text,text) to authenticated;
+revoke all on function public.love_eclat_v2_music_reveal(uuid,integer) from public,anon;
+grant execute on function public.love_eclat_v2_music_reveal(uuid,integer) to authenticated;
 revoke all on function public.love_eclat_v2_attention_propose(uuid,integer,integer,boolean) from public,anon;
 grant execute on function public.love_eclat_v2_attention_propose(uuid,integer,integer,boolean) to authenticated;
 revoke all on function public.love_eclat_v2_attention_reply(uuid,integer,text,boolean) from public,anon;

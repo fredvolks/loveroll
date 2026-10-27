@@ -53,3 +53,5 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-enquete.test.sql
       - name: Verify two-role attention proposals, alternatives, refusals and shared phone
         run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-attentions.test.sql
+      - name: Verify private music notes and explicit per-author reveal
+        run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-music.test.sql
