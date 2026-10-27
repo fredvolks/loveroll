@@ -14,7 +14,13 @@ const {chromium}=require('playwright');
      const rect=shell.getBoundingClientRect();
      const visible=[...root.querySelectorAll('.eclat-tile,.eclat-choice,.eclat-primary,.home-next-month')]
        .filter(el=>!el.hasAttribute('disabled'))
-       .every(el=>{const r=el.getBoundingClientRect();return r.width>0&&r.height>22&&r.left>=-2&&r.right<=innerWidth+2&&r.top>=0&&r.bottom<=last+2;});
+       .every(el=>{const r=el.getBoundingClientRect();
+        // Éclat's approved discovery view scrolls its twelve coffrets inside the gallery.
+        // Offscreen cards must remain correctly sized and horizontally contained;
+        // their actual vertical reachability is checked below by scrolling each one.
+        const grid=mode==='gallery'&&el.matches('.eclat-tile')?el.closest('.eclat-photo-grid'):null;
+        if(grid&&grid.scrollHeight>grid.clientHeight+2){const b=grid.getBoundingClientRect();return r.width>0&&r.height>22&&r.left>=b.left-2&&r.right<=b.right+2;}
+        return r.width>0&&r.height>22&&r.left>=-2&&r.right<=innerWidth+2&&r.top>=0&&r.bottom<=last+2;});
      let centered=null;
      const home=root.querySelector('.home-next-month');
      if(home){
@@ -52,8 +58,21 @@ const {chromium}=require('playwright');
       shellFits:rect.bottom<=last+2,visible,tiles:root.querySelectorAll('.eclat-tile').length,centered,
       storyText:!!root.querySelector('.eclat-story-main'),errors:window.__consoleErrors||[]};
     });
+    // Check every gallery card is genuinely reachable, not merely present in the DOM.
+    // This preserves the full 12-card visual check after the gallery gained internal scrolling.
+    let galleryReachable=true;
+    if(mode==='gallery')galleryReachable=await page.locator('.eclat-photo-grid').evaluate(grid=>{
+     const cards=[...grid.querySelectorAll('.eclat-tile')];
+     if(cards.length!==12)return false;
+     for(const card of cards){
+      card.scrollIntoView({block:'nearest',inline:'nearest'});
+      const r=card.getBoundingClientRect(),b=grid.getBoundingClientRect();
+      if(r.width<=0||r.height<=22||r.top<b.top-2||r.bottom>b.bottom+2||r.left<b.left-2||r.right>b.right+2)return false;
+     }
+     return true;
+    });
     if(!result.noHorizontalScroll||!result.noVerticalScroll||(mode!=='home'&&!result.shellFits)||!result.visible||
-       (mode==='gallery'&&(result.tiles!==12||result.photoGridCols!==2||!result.imageOK))||(mode==='home'&&
+       (mode==='gallery'&&(!galleryReachable||result.tiles!==12||result.photoGridCols!==2||!result.imageOK))||(mode==='home'&&
         Object.values(result.centered||{}).some(x=>x>3)))
       throw Error(JSON.stringify({viewport,mode,...result}));
     console.log('ECLAT_LAYOUT_OK',viewport.width+'x'+viewport.height,mode);
