@@ -365,7 +365,8 @@ function actions(view,status,seenRoles,sharedConfirmed=[]){
    'Terminer ensemble après notre accord':'Continuer ensemble après notre accord','primary');
   else rows+='<span role="status">Après votre accord oral, A pourra continuer cette scène commune.</span>';
  }
- rows+=btn('act:pass','Passer ce moment');
+ if(!(view.coffretId===10&&view.sceneNumber===1&&!status.timer_mode))
+  rows+=btn('act:pass','Passer ce moment');
  rows+=btn('act:pause','Pause');
  rows+=btn('act:stop','Arrêter cette séance');
  return rows;

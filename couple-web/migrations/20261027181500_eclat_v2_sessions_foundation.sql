@@ -1146,7 +1146,7 @@ begin
   if p_action='continue' and v_actor<>v_s.role_a then
    raise exception 'Seul le contrôleur de séance peut avancer';end if;
   v_type:=public.love_eclat_v2_scene_type(v_s.coffret_id,v_s.chapter_plan[v_s.chapter_index]);
-  if p_action='continue' and v_s.coffret_id=10 and
+  if p_action in ('continue','pass') and v_s.coffret_id=10 and
     v_s.chapter_plan[v_s.chapter_index]=1 and v_s.timer_mode is null then
    raise exception 'Choisir avec ou sans minuteur ensemble';end if;
   if p_action='continue' and v_s.coffret_id=9 and

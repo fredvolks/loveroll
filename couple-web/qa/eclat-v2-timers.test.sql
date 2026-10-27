@@ -10,6 +10,12 @@ begin
    (s->>'chapter_index')::integer,'stop');end if;
  s:=public.love_eclat_v2_start(10,30,'two');sid:=(s->>'session_id')::uuid;
  begin
+  perform public.love_eclat_v2_act(sid,1,'pass');
+  raise exception 'Passed initial round without agreeing timer mode';
+ exception when raise_exception then
+  if sqlerrm<>'Choisir avec ou sans minuteur ensemble' then raise;end if;
+ end;
+ begin
   perform public.love_eclat_v2_act(sid,1,'continue');
   raise exception 'Continued without choosing timer mode';
  exception when raise_exception then

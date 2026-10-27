@@ -284,6 +284,7 @@ test('10 clock never auto-finishes and offers explicit timed or untimed rounds',
  assert.match(choose,/data-eclat-v2-action="timer-mode:with"/);
  assert.match(choose,/data-eclat-v2-action="timer-mode:without"/);
  assert.doesNotMatch(choose,/data-eclat-v2-action="act:continue"/);
+ assert.doesNotMatch(choose,/data-eclat-v2-action="act:pass"/);
  const starting=renderEclatV2PlayA({status:{...base,timer_mode:'with'},viewerId:aid});
  assert.match(starting,/01:30/);
  assert.match(starting,/data-eclat-v2-action="timer-action:start"/);
