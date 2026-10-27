@@ -38,7 +38,7 @@ function eclatRecommendation(history){
  const oldOne=[...ECLAT_COFFRETS].sort((a,b)=>lastStart.get(a.id)-lastStart.get(b.id)||a.id-b.id)[0];
  return {coffret:oldOne,reason:'À retrouver · commencé depuis le plus longtemps'};
 }
-export function eclatHtml({status=null,selected=1,minutes=30,intent='all',details=false,members=[],userId=null,music=false,finished=null,history=[],historyError=false,browse=false,noteState={}}={}){
+export function eclatHtml({status=null,selected=1,minutes=30,intent='all',discovery=true,details=false,members=[],userId=null,music=false,finished=null,history=[],historyError=false,browse=false,noteState={}}={}){
  const access=status?.access===true,active=status?.active===true;
  const c=eclatCoffret(active&&!browse?status.coffret_id:selected)||ECLAT_COFFRETS[0];
  const heading='<header class="eclat-top">'+
@@ -84,13 +84,13 @@ export function eclatHtml({status=null,selected=1,minutes=30,intent='all',detail
    btn('eclat:library','← Voir les 12 coffrets','eclat-link')+'</section>';
  }else{
   const group=ECLAT_INTENTIONS.find(item=>item.id===intent)||ECLAT_INTENTIONS[3];
-  const visibleCoffrets=ECLAT_COFFRETS.filter(c=>group.ids.includes(c.id));
-  const suggestion=!active&&!historyError?eclatRecommendation(history):null;
+  const visibleCoffrets=ECLAT_COFFRETS.filter(c=>!discovery||group.ids.includes(c.id));
+  const suggestion=discovery&&!active&&!historyError?eclatRecommendation(history):null;
   body='<section class="eclat-library">'+lead+
    (active?btn('eclat:resume','Reprendre notre coffret en cours '+goldArrowHtml(),'eclat-resume'):'')+
    (historyError?'<p class="eclat-history-notice" role="status">Historique temporairement indisponible.</p>':'')+
-   '<nav class="eclat-intents" aria-label="Explorer les coffrets selon notre envie">'+ECLAT_INTENTIONS.map(item=>btn('eclat:intent:'+item.id,esc(item.label),'eclat-intent'+(group.id===item.id?' is-selected':''))).join('')+'</nav>'+ 
-   (suggestion?'<button type="button" class="eclat-recommendation" data-action="eclat:detail:'+suggestion.coffret.id+'" aria-label="Voir notre suggestion : '+esc(suggestion.coffret.title)+'"><span><small>NOTRE SUGGESTION · '+esc(suggestion.reason)+'</small><strong>'+esc(suggestion.coffret.title)+'</strong></span><span aria-hidden="true">Voir le coffret ›</span></button>':'')+
+   (discovery?'<nav class="eclat-intents" aria-label="Explorer les coffrets selon notre envie">'+ECLAT_INTENTIONS.map(item=>btn('eclat:intent:'+item.id,esc(item.label),'eclat-intent'+(group.id===item.id?' is-selected':''))).join('')+'</nav>':'')+ 
+   (suggestion?'<button type="button" class="eclat-recommendation" data-action="eclat:suggest:'+suggestion.coffret.id+'" aria-label="Voir notre suggestion : '+esc(suggestion.coffret.title)+'"><span><small>NOTRE SUGGESTION · '+esc(suggestion.reason)+'</small><strong>'+esc(suggestion.coffret.title)+'</strong></span><span aria-hidden="true">Voir le coffret ›</span></button>':'')+
    '<h3 class="eclat-gallery-a11y">'+esc(group.label)+' · '+visibleCoffrets.length+' coffrets</h3>'+
    '<div class="eclat-grid eclat-photo-grid" role="list">'+visibleCoffrets.map(coff=>
     '<button role="listitem" type="button" class="eclat-tile" data-action="eclat:detail:'+coff.id+'" aria-label="Ouvrir le coffret '+String(coff.id).padStart(2,'0')+' : '+esc(coff.title)+'">'+
