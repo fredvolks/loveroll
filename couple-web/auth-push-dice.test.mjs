@@ -63,10 +63,13 @@ test('Disabled native Firebase never fakes push availability',()=>{
  globalThis.window={LoveRollNativeAuth:{weeklyReminderEnabled:()=>true,nativePushConfigured:()=>false,nativePushToken:()=>''}};
  Object.defineProperty(globalThis,'navigator',{configurable:true,value:{userAgent:'Android',platform:'Android',maxTouchPoints:1,standalone:false}});
  const html=notificationSettingsMarkup({enabled:false});
- assert.match(html,/Mettez LoveRoll à jour pour recevoir toutes les alertes/);
+ assert.match(html,/Alertes à distance indisponibles/);
+ assert.match(html,/Choix sauvegardés, envoi inactif/);
  assert.doesNotMatch(html,/data-action="push-enable"/);
  assert.match(html,/data-action="native-notify-disable"/);
- assert.match(html,/data-push-option="weekly"[^>]*disabled/);
+ assert.match(html,/data-push-option="weekly"/);
+ assert.doesNotMatch(html,/data-push-option="weekly"[^>]*disabled/);
+ assert.doesNotMatch(html,/data-action="push-test"/);
 });
 test('Push backend stores native token per verified owner and needs server secret',()=>{
  const claim=read('migrations/20261014_claim_native_push_token.sql');
