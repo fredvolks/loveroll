@@ -2540,7 +2540,7 @@ async function handle(action,element){
   if(kind==='library'){state.eclatBrowse=true;state.eclatDetails=false;state.eclatFinished=null;render();return;}
   if(kind==='intent'){
    if(!['all','together','reconnect','closer'].includes(parts[1]))throw Error('Intention Éclat inconnue');
-   state.eclatIntent=parts[1];state.eclatGalleryScroll=0;render();return;
+   state.eclatIntent=parts[1];render();state.eclatGalleryScroll=0;const gallery=root.querySelector('.eclat-photo-grid');if(gallery)gallery.scrollTop=0;return;
   }
   if(kind==='detail'){
    if(!Number.isInteger(num)||num<1||num>12)throw Error('Coffret inconnu');
