@@ -20,13 +20,26 @@ export function activityCategory(activity={}){
  if(/\b(aventure|escalade|tyrolienne|motoneige|kart|velo|ski)\b/.test(source))return 'adventure';
  return 'general';
 }
+// Absent and unrouteable Geoapify matrix entries must never become 0 km.
+export function verifiedRoadMetres(value){
+ if(value===null||value===undefined||typeof value==='boolean')return null;
+ if(typeof value!=='number'&&typeof value!=='string')return null;
+ if(typeof value==='string'&&!value.trim())return null;
+ const metres=Number(value);
+ return Number.isFinite(metres)&&metres>=0?metres:null;
+}
 export function drivingKilometres(route){
- const metres=Number(route?.distance_meters);
- return Number.isFinite(metres)&&metres>=0?Math.round(metres/100)/10:null;
+ const metres=verifiedRoadMetres(route?.distance_meters);
+ return metres===null?null:Math.round(metres/100)/10;
 }
 export function isRouteWithinRadius(route,maxKm){
- const km=drivingKilometres(route);
- return km!==null&&Number.isFinite(Number(maxKm))&&Number(route.distance_meters)<=Number(maxKm)*1000;
+ const metres=verifiedRoadMetres(route?.distance_meters);
+ if(metres===null)return false;
+ if(maxKm===null||maxKm===undefined)return true; // No COUPLE cap, but route is still verified.
+ if(typeof maxKm!=='number'&&typeof maxKm!=='string')return false;
+ if(typeof maxKm==='string'&&!maxKm.trim())return false;
+ const cap=Number(maxKm);
+ return Number.isFinite(cap)&&cap>=0&&metres<=cap*1000;
 }
 export function chooseNearbyVenue(places,roadRoutes,maxKm,{category=null}={}){
  const allowed=Object.values(VENUE_CATEGORIES);
