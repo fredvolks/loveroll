@@ -1,0 +1,50 @@
+name: Visual review
+on:
+  pull_request:
+    branches: [main]
+    paths: ['couple-web/**', '.github/workflows/visual-review.yml', 'visual-baselines/**']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  screenshots:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright@1.56.0
+      - run: npx playwright install --with-deps chromium
+      - run: python3 -m http.server 8765 -d couple-web >/tmp/visual-http.log 2>&1 &
+      - run: node couple-web/design-reference-browser-check.cjs
+      - name: Compare approved reference images if present
+        if: always()
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq imagemagick
+          mkdir -p visual-captures
+          cp design-captures/*.png visual-captures/ 2>/dev/null || true
+          failed=0
+          for img in design-captures/*.png; do
+            [ -f "$img" ] || continue
+            name="$(basename "$img")"
+            base="visual-baselines/$name"
+            if [ ! -f "$base" ]; then
+              echo "$name: awaiting approved reference" >> visual-captures/summary.txt
+              continue
+            fi
+            changed=$(compare -fuzz 10% -metric AE "$base" "$img" "visual-captures/diff-$name" 2>&1 || true)
+            pixels=$(identify -format '%[fx:w*h]' "$base")
+            echo "$name: $changed of $pixels pixels differ" >> visual-captures/summary.txt
+            if ! [[ "$changed" =~ ^[0-9]+$ ]]; then failed=1; continue; fi
+            if awk "BEGIN {exit !($changed > $pixels * 0.05)}"; then failed=1; fi
+          done
+          exit "$failed"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: visual-screenshots
+          path: visual-captures/
+          retention-days: 14
