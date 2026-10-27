@@ -60,9 +60,9 @@ declare s jsonb;sid uuid;
 begin
  s:=public.love_eclat_v2_status();sid:=(s->>'session_id')::uuid;
  perform public.love_eclat_v2_act(sid,1,'pass');
- perform public.love_eclat_v2_act(sid,2,'continue');
- s:=public.love_eclat_v2_act(sid,3,'continue');
- if s->>'chapter_number'<>'6' then raise exception 'Scene 6 was not reached';end if;
+ s:=public.love_eclat_v2_act(sid,2,'continue');
+ if s->>'chapter_number'<>'6' or s->>'chapter_index'<>'3' then
+  raise exception 'Scene 6 was not reached';end if;
  s:=public.love_eclat_v2_story_vote(sid,3,'off',2);
  if s->>'constraint_enabled'<>'true' then
   raise exception 'One role turned off the shared constraint';end if;
