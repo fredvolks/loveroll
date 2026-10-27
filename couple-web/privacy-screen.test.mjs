@@ -24,9 +24,10 @@ test('LR-025 only stores a local visual masking preference',()=>{
  assert.match(code,/initialAriaHidden===null\?app\.removeAttribute\('aria-hidden'\):app\.setAttribute\('aria-hidden',initialAriaHidden\)/);
  assert.doesNotMatch(code,/\brpc\s*\(|answer_challenge|finish_couple_session|timer\.start/i);
 });
-test('LR-025 mask is reachable in Soirée and personal challenge list',()=>{
- assert.match(evening,/data-lr-privacy-hide/);
- assert.match(evening,/Masquer temporairement le jeu/);
+test('LR-025 privacy stays on sensitive cards without a floating entry-header mask',()=>{
+ assert.doesNotMatch(evening,/data-lr-privacy-hide/);
+ assert.doesNotMatch(evening,/Masquer temporairement le jeu/);
+ assert.match(evening,/class="evening-header-balance" aria-hidden="true"/);
  assert.match(app,/class="lr-privacy-challenge-button" data-lr-privacy-hide/);
  assert.match(code,/event\.stopImmediatePropagation\(\)/);
  assert.match(code,/data-lr-privacy-reveal/);

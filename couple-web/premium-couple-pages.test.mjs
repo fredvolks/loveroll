@@ -265,8 +265,8 @@ test('After finishing the evening the official feedback pathway remains availabl
   lastEvening:{id:'past',completed:10,responses:1,myResponse:true,partnerResponse:false}});
  assert.doesNotMatch(html,/review-open:past/);
   assert.match(html,/data-action="evening-calendar"/);
-  assert.equal((html.match(/<button /g)||[]).length,5); // Original four controls + the discreet privacy mask.
-  assert.match(html,/data-lr-privacy-hide/);
+  assert.equal((html.match(/<button /g)||[]).length,4); // Four original controls; no floating privacy mask.
+  assert.doesNotMatch(html,/data-lr-privacy-hide/);
  assert.match(html,/data-action="tab:eclat"/);
  assert.match(html,/Votre partenaire/);
  assert.match(html,/1 \/ 2 bilans déposés/);
