@@ -362,9 +362,10 @@ test('LR-015: refusing a duplicate occurrence cannot restore a previously comple
 });
 
 test('LR-015 private RPCs and direct tables enforce real database role permissions',()=>{
- const flow=read('../.github/workflows/lr015-postgres.yml');
  const fixture=read('qa/lr015-role-grants.sql');
- assert.match(flow,/lr015-role-grants\.sql/);
+ const pgContract=read('qa/lr015-db-contract.sql');
+ assert.match(pgContract,/LR015_POSTGRES_ISOLATED_SUCCESS/);
+ assert.match(fixture,/LR015_REAL_PG_ROLE_PERMISSIONS_OK/);
  assert.match(fixture,/SET ROLE authenticated/);
  assert.match(fixture,/SET ROLE anon/);
  assert.match(fixture,/Authenticated client accessed private exclusion table directly/);
