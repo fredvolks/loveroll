@@ -2542,7 +2542,7 @@ async function handle(action,element){
    if(!['all','together','reconnect','closer'].includes(parts[1]))throw Error('Intention Éclat inconnue');
    state.eclatIntent=parts[1];render();state.eclatGalleryScroll=0;const gallery=root.querySelector('.eclat-photo-grid');if(gallery)gallery.scrollTop=0;return;
   }
-  if(kind==='detail'){
+  if(kind==='detail'||kind==='suggest'){
    if(!Number.isInteger(num)||num<1||num>12)throw Error('Coffret inconnu');
    const previous=state.eclatHistory.find(row=>Number(row.coffret_id)===num);
    state.eclatMinutes=[30,60,90].includes(Number(previous?.minutes))?Number(previous.minutes):30;
