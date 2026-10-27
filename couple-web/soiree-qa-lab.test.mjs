@@ -89,3 +89,70 @@ test('QA Passer disabled at actual monthly quota; Refuser remains accessible',()
  const unavailable=renderSoireeQaScreen({role:'A',snapshot:{...base,passQuota:null},partnerId:b});
  assert.match(unavailable,/Passer — quota indisponible/);
 });
+
+test('actual Soirée QA click router respects independent A/B JWT gateways across branches',async()=>{
+ const screens={A:{innerHTML:'',replaceChildren(){}},B:{innerHTML:'',replaceChildren(){}}};
+ const events={},trace=[],errors=[],message={textContent:''};
+ const root={
+  addEventListener(kind,fn){events[kind]=fn;},
+  removeEventListener(kind){delete events[kind];},
+  contains(){return true;},
+  querySelector(sel){
+   if(sel==='[data-soiree-qa-message]')return message;
+   if(sel.includes('data-soiree-qa-screen="A"'))return screens.A;
+   if(sel.includes('data-soiree-qa-screen="B"'))return screens.B;
+   if(sel.startsWith('[data-soiree-qa-category='))return {value:'MIXTE'};
+   return null;
+  },
+  querySelectorAll(sel){
+   if(sel==='[data-soiree-qa-screen]')return Object.values(screens);
+   return [];
+  }
+ };
+ const sharedChallenge={id:challenge,recipient:b,category:'MIXTE',
+  face:28,card_title:'Invitation B',card_description:'Privée',status:'proposed'};
+ const fakeGateway=({expectedUserId})=>{
+  const role=expectedUserId===a?'A':'B';
+  const call=(action,payload)=>{trace.push({role,action,payload});return true;};
+  return {
+   async snapshot(){return {userId:expectedUserId,coupleId:couple,
+    session:{id:session},weekly:[],personal:[],passQuota:{can_pass:true,remaining:1},
+    mine:role==='B'?[sharedChallenge]:[],board:null};},
+   async weekly(){return call('weekly');},
+   async start(){return call('start');},
+   async d6(id){return call('d6',id);},
+   async d100(id,cat){return call('d100',[id,cat]);},
+   async answer(id,action){return call('answer',[id,action]);},
+   async redraw(id,action,options){return call('redraw',[id,action,options]);},
+   async stop(id){return call('stop',id);}
+  };
+ };
+ const bench=mountSoireeQaBench({root,clientA:{},clientB:{},
+  userA:{id:a},userB:{id:b},gatewayFactory:fakeGateway,
+  loadDice:async()=>({dieOn:()=>()=>{}}),
+  refreshMs:600000,onError:e=>errors.push(e.message)});
+ const settle=async()=>{for(let i=0;i<5;i++)await new Promise(setImmediate);};
+ const click=async(role,action)=>{
+  const button={dataset:{soireeQaRole:role,soireeQaAction:action},disabled:false};
+  events.click({target:{closest:()=>button}});
+  await settle();
+ };
+ await settle();
+ assert.match(screens.A.innerHTML,/Joueur A/);
+ assert.match(screens.B.innerHTML,/Joueur B/);
+ await click('A','weekly');
+ await click('B','personal-d6');
+ await click('A','d100');
+ await click('B','answer:'+challenge+':accepted');
+ await click('B','redraw:'+challenge+':refuse:yes');
+ assert.deepEqual(trace.map(x=>x.role+':'+x.action),
+  ['A:weekly','B:d6','A:d100','B:answer','B:redraw']);
+ assert.deepEqual(trace.at(-1).payload,[challenge,'refuse',{exclude:true}]);
+ // Deliberately try the other partner's challenge: it must not dispatch.
+ await click('A','answer:'+challenge+':accepted');
+ assert.equal(trace.length,5);
+ assert.match(message.textContent,/Défi non destiné/);
+ assert.ok(errors.some(e=>e.includes('Défi non destiné')));
+ bench.destroy();
+ assert.equal(events.click,undefined);
+});
