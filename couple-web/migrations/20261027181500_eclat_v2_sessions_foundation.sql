@@ -31,6 +31,8 @@ create table public.love_eclat_v2_sessions (
  story_constraint_enabled boolean not null default true,
  story_decision_scene smallint check(story_decision_scene in (1,6)),
  story_rerolls integer not null default 0 check(story_rerolls>=0),
+ shared_cards smallint[],
+ selected_card smallint check(selected_card between 1 and 12),
  revealed_step smallint check (revealed_step between 1 and 8),
  started_at timestamptz not null default now(),
  updated_at timestamptz not null default now(),
@@ -141,6 +143,27 @@ alter table public.love_eclat_v2_story_votes enable row level security;
 alter table public.love_eclat_v2_story_history enable row level security;
 revoke all on public.love_eclat_v2_story_votes from public,anon,authenticated;
 revoke all on public.love_eclat_v2_story_history from public,anon,authenticated;
+-- Coffret 09: private until two independent validations, then REMOVE raw picks.
+create table public.love_eclat_v2_card_choices (
+ session_id uuid not null references public.love_eclat_v2_sessions(id) on delete cascade,
+ user_id uuid not null references auth.users(id),
+ selected smallint[] not null,
+ validated_at timestamptz not null default now(),
+ primary key(session_id,user_id),
+ constraint eclat_v2_card_choice_max3 check(cardinality(selected)<=3)
+);
+create table public.love_eclat_v2_card_votes (
+ session_id uuid not null references public.love_eclat_v2_sessions(id) on delete cascade,
+ step_index smallint not null check(step_index between 1 and 8),
+ user_id uuid not null references auth.users(id),
+ card smallint not null check(card between 1 and 12),
+ updated_at timestamptz not null default now(),
+ primary key(session_id,step_index,user_id)
+);
+alter table public.love_eclat_v2_card_choices enable row level security;
+alter table public.love_eclat_v2_card_votes enable row level security;
+revoke all on public.love_eclat_v2_card_choices from public,anon,authenticated;
+revoke all on public.love_eclat_v2_card_votes from public,anon,authenticated;
 alter table public.love_eclat_v2_sessions enable row level security;
 alter table public.love_eclat_v2_readiness enable row level security;
 -- Fail closed: only authenticated, guarded RPCs can access these tables.
@@ -196,7 +219,7 @@ declare
  v_contact_yes integer; v_my_contact text; v_my_answer integer;v_my_guess integer;
  v_attention_index integer;v_attention_response text;
  v_music_note jsonb;v_revealed_music jsonb;v_theme integer;
- v_story_vote text;v_story_history jsonb;
+ v_story_vote text;v_story_history jsonb;v_my_cards smallint[];v_my_card_ready boolean;
 begin
  perform public.love_require_verified_identity();
  select couple_id into v_couple from public.couple_members where user_id=v_actor;
@@ -251,6 +274,9 @@ begin
    'scene',scene_number,'previous',previous_face,'next',next_face) order by sequence),'[]'::jsonb)
   into v_story_history from public.love_eclat_v2_story_history where session_id=v_s.id;
  end if;
+ select selected into v_my_cards from public.love_eclat_v2_card_choices
+ where session_id=v_s.id and user_id=v_actor;
+ v_my_card_ready=v_my_cards is not null or v_s.shared_cards is not null;
  select count(*),coalesce(bool_or(user_id=v_actor),false) into v_ready,v_mine
  from public.love_eclat_v2_readiness where session_id=v_s.id and step_index=v_s.chapter_index;
  return jsonb_build_object(
@@ -261,6 +287,9 @@ begin
   'substep_index',v_s.substep_index,
   'my_answer',v_my_answer,'my_prediction',v_my_guess,
   'attention_index',v_attention_index,'attention_response',v_attention_response,
+  'my_cards',coalesce(v_my_cards,'{}'::smallint[]),
+  'my_cards_ready',v_my_card_ready,
+  'common_cards',v_s.shared_cards,'selected_card',v_s.selected_card,
   'story_dice',case when v_s.coffret_id=12 then jsonb_build_object(
     'decor',v_s.story_decor,'roles',v_s.story_roles,'constraint',v_s.story_constraint) else null end,
   'constraint_rerolls',v_s.story_rerolls,
@@ -842,6 +871,127 @@ begin
 end;
 $$;
 
+-- Validates 0–3 numbered choices without receiving the other partner's picks.
+create function public.love_eclat_v2_cards_submit(
+ p_session uuid,p_expected_step integer,p_cards smallint[]
+) returns jsonb language plpgsql security definer set search_path='' as $$
+declare v_actor uuid:=auth.uid();v_couple uuid;v_s public.love_eclat_v2_sessions%rowtype;
+ v_count int;v_common smallint[];
+begin
+ perform public.love_require_verified_identity();
+ if p_cards is null or cardinality(p_cards)>3 or
+   exists(select 1 from unnest(p_cards) x where x is null or x not between 1 and 12) or
+   (select count(distinct x) from unnest(p_cards) x)<>cardinality(p_cards) then
+  raise exception 'Choisissez de zéro à trois cartes distinctes';end if;
+ select * into v_s from public.love_eclat_v2_sessions where id=p_session for update;
+ if not found then raise exception 'Séance inconnue';end if;
+ select couple_id into v_couple from public.couple_members where user_id=v_actor;
+ if v_couple is distinct from v_s.couple_id or v_actor not in (v_s.role_a,v_s.role_b)
+   or not public.love_eclat_has_access(v_s.couple_id) then
+  raise exception 'Accès interdit' using errcode='42501';end if;
+ if p_expected_step is distinct from v_s.chapter_index then
+  return public.love_eclat_v2_status(p_session);end if;
+ if v_s.coffret_id<>9 or v_s.device_mode<>'two' or v_s.chapter_plan[v_s.chapter_index]<>1
+  or v_s.state<>'active' or v_s.shared_cards is not null then
+  raise exception 'Sélections privées déjà terminées ou non autorisées';end if;
+ insert into public.love_eclat_v2_card_choices(session_id,user_id,selected)
+ values(p_session,v_actor,p_cards)
+ on conflict(session_id,user_id)
+ do update set selected=excluded.selected,validated_at=now();
+ select count(*) into v_count from public.love_eclat_v2_card_choices where session_id=p_session
+  and user_id in (v_s.role_a,v_s.role_b);
+ if v_count=2 then
+  select coalesce(array_agg(x order by x),'{}'::smallint[]) into v_common from (
+   select unnest(selected) as x from public.love_eclat_v2_card_choices
+    where session_id=p_session and user_id=v_s.role_a
+   intersect
+   select unnest(selected) as x from public.love_eclat_v2_card_choices
+    where session_id=p_session and user_id=v_s.role_b
+  ) q;
+  update public.love_eclat_v2_sessions set shared_cards=v_common,
+    revealed_step=chapter_index,updated_at=now() where id=p_session;
+  -- Stronger than retention policy: delete raw selections immediately.
+  delete from public.love_eclat_v2_card_choices where session_id=p_session;
+ end if;
+ return public.love_eclat_v2_status(p_session);
+end;
+$$;
+-- One phone: two personal selections stay local; only a jointly agreed
+-- intersection can ever be saved. No B private answer written using A's identity.
+create function public.love_eclat_v2_cards_shared(
+ p_session uuid,p_expected_step integer,p_common smallint[],
+ p_joint_oral boolean default false
+) returns jsonb language plpgsql security definer set search_path='' as $$
+declare v_actor uuid:=auth.uid();v_couple uuid;v_s public.love_eclat_v2_sessions%rowtype;
+begin
+ perform public.love_require_verified_identity();
+ if p_common is null or cardinality(p_common)>3 or
+   exists(select 1 from unnest(p_common) x where x is null or x not between 1 and 12) or
+   (select count(distinct x) from unnest(p_common) x)<>cardinality(p_common) then
+  raise exception 'Intersection de cartes invalide';end if;
+ select * into v_s from public.love_eclat_v2_sessions where id=p_session for update;
+ if not found then raise exception 'Séance inconnue';end if;
+ select couple_id into v_couple from public.couple_members where user_id=v_actor;
+ if v_couple is distinct from v_s.couple_id or v_actor not in(v_s.role_a,v_s.role_b)
+   or not public.love_eclat_has_access(v_s.couple_id) then
+  raise exception 'Accès interdit' using errcode='42501';end if;
+ if p_expected_step is distinct from v_s.chapter_index then
+  return public.love_eclat_v2_status(p_session);end if;
+ if v_s.coffret_id<>9 or v_s.device_mode<>'one' or v_s.chapter_plan[v_s.chapter_index]<>1
+   or v_s.state<>'active' or v_s.shared_cards is not null or
+   v_actor<>v_s.role_a or p_joint_oral is distinct from true then
+  raise exception 'Accord oral commun explicite requis';end if;
+ update public.love_eclat_v2_sessions set shared_cards=p_common,
+  revealed_step=chapter_index,updated_at=now() where id=p_session;
+ return public.love_eclat_v2_status(p_session);
+end;
+$$;
+-- Scene 3: select only a mutually visible card; never pick a rejected idea.
+create function public.love_eclat_v2_card_vote(
+ p_session uuid,p_expected_step integer,p_card integer,
+ p_joint_oral boolean default false
+) returns jsonb language plpgsql security definer set search_path='' as $$
+declare
+ v_actor uuid:=auth.uid();v_couple uuid;v_s public.love_eclat_v2_sessions%rowtype;
+ v_count int;v_distinct int;
+begin
+ perform public.love_require_verified_identity();
+ if p_card is null or p_card not between 1 and 12 then
+  raise exception 'Carte inconnue';end if;
+ select * into v_s from public.love_eclat_v2_sessions where id=p_session for update;
+ if not found then raise exception 'Séance inconnue';end if;
+ select couple_id into v_couple from public.couple_members where user_id=v_actor;
+ if v_couple is distinct from v_s.couple_id or v_actor not in(v_s.role_a,v_s.role_b)
+   or not public.love_eclat_has_access(v_s.couple_id) then
+  raise exception 'Accès interdit' using errcode='42501';end if;
+ if p_expected_step is distinct from v_s.chapter_index then
+  return public.love_eclat_v2_status(p_session);end if;
+ if v_s.coffret_id<>9 or v_s.chapter_plan[v_s.chapter_index]<>3 or v_s.state<>'active'
+  or v_s.shared_cards is null or not p_card=any(v_s.shared_cards) then
+  raise exception 'Carte non commune ou étape indisponible';end if;
+ if v_s.selected_card is not null then return public.love_eclat_v2_status(p_session);end if;
+ if v_s.device_mode='one' then
+  if v_actor<>v_s.role_a or p_joint_oral is distinct from true then
+   raise exception 'Accord oral commun explicite requis';end if;
+  update public.love_eclat_v2_sessions set selected_card=p_card,updated_at=now() where id=p_session;
+ else
+  insert into public.love_eclat_v2_card_votes(session_id,step_index,user_id,card)
+   values(p_session,v_s.chapter_index,v_actor,p_card)
+   on conflict(session_id,step_index,user_id)
+    do update set card=excluded.card,updated_at=now();
+  select count(*),count(distinct card) into v_count,v_distinct
+   from public.love_eclat_v2_card_votes
+   where session_id=p_session and step_index=v_s.chapter_index
+    and user_id in (v_s.role_a,v_s.role_b);
+  if v_count=2 and v_distinct=1 then
+   update public.love_eclat_v2_sessions set selected_card=p_card,updated_at=now()
+    where id=p_session;
+  end if;
+ end if;
+ return public.love_eclat_v2_status(p_session);
+end;
+$$;
+
 -- All state transitions are serializable per session lock and guarded by an
 -- expected step token. Retrying a stale next/pass NEVER advances the next scene.
 create function public.love_eclat_v2_act(
@@ -877,6 +1027,14 @@ begin
   if p_action='continue' and v_actor<>v_s.role_a then
    raise exception 'Seul le contrôleur de séance peut avancer';end if;
   v_type:=public.love_eclat_v2_scene_type(v_s.coffret_id,v_s.chapter_plan[v_s.chapter_index]);
+  if p_action='continue' and v_s.coffret_id=9 and
+    v_s.chapter_plan[v_s.chapter_index]=1 and v_s.shared_cards is null then
+   raise exception 'Attendre les deux validations privées';end if;
+  if p_action='continue' and v_s.coffret_id=9 and
+    v_s.chapter_plan[v_s.chapter_index]=3 and
+    cardinality(coalesce(v_s.shared_cards,'{}'::smallint[]))>0 and
+    v_s.selected_card is null then
+   raise exception 'Choisir ensemble une carte commune';end if;
   if p_action='continue' and v_s.coffret_id=12 and
     v_s.chapter_plan[v_s.chapter_index] in (1,6) and
     v_s.story_decision_scene is distinct from v_s.chapter_plan[v_s.chapter_index] then
@@ -947,6 +1105,12 @@ revoke all on function public.love_eclat_v2_contact_answer(uuid,integer,text,tex
 grant execute on function public.love_eclat_v2_contact_answer(uuid,integer,text,text,boolean) to authenticated;
 revoke all on function public.love_eclat_v2_choose_door(uuid,integer,text,boolean) from public,anon;
 grant execute on function public.love_eclat_v2_choose_door(uuid,integer,text,boolean) to authenticated;
+revoke all on function public.love_eclat_v2_cards_submit(uuid,integer,smallint[]) from public,anon;
+grant execute on function public.love_eclat_v2_cards_submit(uuid,integer,smallint[]) to authenticated;
+revoke all on function public.love_eclat_v2_cards_shared(uuid,integer,smallint[],boolean) from public,anon;
+grant execute on function public.love_eclat_v2_cards_shared(uuid,integer,smallint[],boolean) to authenticated;
+revoke all on function public.love_eclat_v2_card_vote(uuid,integer,integer,boolean) from public,anon;
+grant execute on function public.love_eclat_v2_card_vote(uuid,integer,integer,boolean) to authenticated;
 revoke all on function public.love_eclat_v2_story_vote(uuid,integer,text,integer,boolean) from public,anon;
 grant execute on function public.love_eclat_v2_story_vote(uuid,integer,text,integer,boolean) to authenticated;
 revoke all on function public.love_eclat_v2_music_note(uuid,integer,text,text) from public,anon;

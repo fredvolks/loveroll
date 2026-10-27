@@ -57,3 +57,5 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-music.test.sql
       - name: Validate persisted cryptographic story dice and consented constraint rerolls
         run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-story.test.sql
+      - name: Validate only shared 09 card intersection, never private refusals
+        run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-intersection.test.sql

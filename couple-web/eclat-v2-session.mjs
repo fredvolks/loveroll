@@ -53,6 +53,26 @@ export function createEclatV2SessionApi(client){
    return rpc('love_eclat_v2_choose_door',{p_session:sessionId(sid),p_expected_step:step(expectedStep),
     p_door:door,p_joint_oral:jointOral});
   },
+  cardsSubmit:({sessionId:sid,expectedStep,cards})=>{
+   if(!Array.isArray(cards)||cards.length>3||new Set(cards).size!==cards.length||
+       cards.some(n=>!Number.isInteger(n)||n<1||n>12))
+    throw new RangeError('Zéro à trois cartes uniques seulement');
+   return rpc('love_eclat_v2_cards_submit',{p_session:sessionId(sid),
+    p_expected_step:step(expectedStep),p_cards:cards});
+  },
+  cardsShared:({sessionId:sid,expectedStep,common,jointOral=false})=>{
+   if(!Array.isArray(common)||common.length>3||new Set(common).size!==common.length||
+       common.some(n=>!Number.isInteger(n)||n<1||n>12)||typeof jointOral!=='boolean')
+    throw new RangeError('Intersection privée invalide');
+   return rpc('love_eclat_v2_cards_shared',{p_session:sessionId(sid),
+    p_expected_step:step(expectedStep),p_common:common,p_joint_oral:jointOral});
+  },
+  cardVote:({sessionId:sid,expectedStep,card,jointOral=false})=>{
+   if(!Number.isInteger(card)||card<1||card>12||typeof jointOral!=='boolean')
+    throw new RangeError('Carte commune invalide');
+   return rpc('love_eclat_v2_card_vote',{p_session:sessionId(sid),
+    p_expected_step:step(expectedStep),p_card:card,p_joint_oral:jointOral});
+  },
   storyVote:({sessionId:sid,expectedStep,action,expectedRerolls,jointOral=false})=>{
    if(!['keep','reroll','off'].includes(action)||!Number.isInteger(expectedRerolls)||
       expectedRerolls<0||typeof jointOral!=='boolean')
