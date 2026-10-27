@@ -406,6 +406,14 @@ jobs:
       - name: Verify real iPad Soirée D6 and D100 on the ONE HD photo (portrait and landscape)
         run: node couple-web/ipad-romance-scene-browser-check.cjs
 
+      - name: Archive actual iPad Soirée D6 and D100 screenshots for visual review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LoveRoll-iPad-Android-photo-parity-${{ github.run_number }}
+          path: design-captures/ipad-romance-*.png
+          if-no-files-found: warn
+
       - name: Real app boot in Chromium (anonymous, Google callback, existing session)
         run: node couple-web/boot-smoke.cjs
 
