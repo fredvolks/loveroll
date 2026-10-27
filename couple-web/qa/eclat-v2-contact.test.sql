@@ -5,7 +5,7 @@ do $$
 declare s jsonb;sid uuid;
 begin
  s:=public.love_eclat_v2_status();sid:=(s->>'session_id')::uuid;
- perform public.love_eclat_v2_act(sid,s->>'chapter_index','stop');
+ perform public.love_eclat_v2_act(sid,(s->>'chapter_index')::integer,'stop');
  s:=public.love_eclat_v2_start(3,30,'two');sid:=(s->>'session_id')::uuid;
  s:=public.love_eclat_v2_act(sid,1,'continue');
  s:=public.love_eclat_v2_act(sid,2,'continue');

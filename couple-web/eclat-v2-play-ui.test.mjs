@@ -64,3 +64,13 @@ test('No contact implied or score in sensory and paused screen',()=>{
  assert.match(paused,/Reprendre notre coffret/);
  assert.doesNotMatch(paused,/data-eclat-v2-action="act:pass"/);
 });
+
+test('Optional massage asks explicit contact consent and supports withdrawal',()=>{
+ const before=renderEclatV2PlayA({status:status(3,0,30,6,{contact_approved:false}),viewerId:aid});
+ assert.match(before,/data-eclat-v2-action="contact:yes"/);
+ assert.match(before,/data-eclat-v2-action="contact:other"/);
+ assert.match(before,/data-eclat-v2-action="contact:pass"/);
+ const agreed=renderEclatV2PlayA({status:status(3,0,30,6,{contact_approved:true}),viewerId:aid});
+ assert.match(agreed,/Retirer mon Oui/);
+ assert.doesNotMatch(agreed,/data-eclat-v2-action="contact:yes"/);
+});
