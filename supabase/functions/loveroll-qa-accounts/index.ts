@@ -3,7 +3,7 @@
 // project is allowed. Admin secret stays within the Edge runtime.
 import {withSupabase} from 'npm:@supabase/server@1';
 import {verifyQaOperator,checkQaManagedUser,validatePairLedger}
- from '../../../couple-web/eclat-v2-qa-accounts-guards.mjs';
+ from '../_shared/loveroll-qa-guards.mjs';
 
 type Admin = {
  auth: {admin:{
