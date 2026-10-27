@@ -7,7 +7,7 @@ const {chromium}=require('playwright');
     const page=await browser.newPage({viewport,deviceScaleFactor:1});
     await page.goto('http://127.0.0.1:8765/__eclat-screen-test.html?mode='+mode,{waitUntil:'load'});
     await page.waitForFunction(()=>window.__fixtureReady===true,{timeout:15000});
-    const result=await page.evaluate(()=>{
+    const result=await page.evaluate((mode)=>{
      const root=document.querySelector('#app'),shell=root.querySelector('.eclat-shell')||root.querySelector('.real-home-shell');
      const nav=document.querySelector('.nav');
      const last=nav.getBoundingClientRect().top;
@@ -57,7 +57,7 @@ const {chromium}=require('playwright');
       noVerticalScroll:document.documentElement.scrollHeight<=innerHeight+2,
       shellFits:rect.bottom<=last+2,visible,tiles:root.querySelectorAll('.eclat-tile').length,centered,
       storyText:!!root.querySelector('.eclat-story-main'),errors:window.__consoleErrors||[]};
-    });
+    },mode);
     // Check every gallery card is genuinely reachable, not merely present in the DOM.
     // This preserves the full 12-card visual check after the gallery gained internal scrolling.
     let galleryReachable=true;
