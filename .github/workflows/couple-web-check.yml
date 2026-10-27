@@ -40,6 +40,7 @@ jobs:
           node --test couple-web/ios-install-sound-v229.test.mjs
           node --test couple-web/ruby-surfaces-responsive.test.mjs
           node --test couple-web/timed-evening-completion.test.mjs
+          node --test couple-web/evening-category-confirm.test.mjs
           node --check couple-web/premium-evening.mjs
           node --check couple-web/evening-calendar.mjs
           node --check couple-web/evening-review.mjs
