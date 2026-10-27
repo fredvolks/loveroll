@@ -1,6 +1,7 @@
 -- Execute after the parallel-start check. Uses a separate couple, never V1 production data.
 set role authenticated;
-set request.jwt.claim.sub='00000000-0000-0000-0000-000000000003';
+select set_config('request.jwt.claim.sub',public.love_eclat_v2_status()->>'role_a',false);
+select set_config('request.jwt.claim.sub',public.love_eclat_v2_status()->>'role_a',false);
 do $$
 declare s jsonb; sid uuid;
 begin
@@ -17,7 +18,7 @@ begin
  if s->>'branch' is not null then raise exception 'One partner chose for both';end if;
  if s->>'my_door_vote'<>'Tendresse' then raise exception 'Own choice not retained';end if;
 end $$;
-set request.jwt.claim.sub='00000000-0000-0000-0000-000000000004';
+select set_config('request.jwt.claim.sub',public.love_eclat_v2_status()->>'role_b',false);
 do $$
 declare s jsonb; sid uuid;
 begin
@@ -50,7 +51,7 @@ begin
  s:=public.love_eclat_v2_choose_door(sid,5,'Mystère');
  if s->>'branch'<>'Jeu' then raise exception 'One vote changed existing branch';end if;
 end $$;
-set request.jwt.claim.sub='00000000-0000-0000-0000-000000000004';
+select set_config('request.jwt.claim.sub',public.love_eclat_v2_status()->>'role_b',false);
 do $$
 declare s jsonb;sid uuid;
 begin
@@ -58,6 +59,14 @@ begin
  s:=public.love_eclat_v2_choose_door(sid,5,'Mystère');
  if s->>'branch'<>'Mystère' or s->>'door_confirmed'<>'true' then
   raise exception 'Scene 5 did not switch branch with two votes';end if;
+
+end $$;
+-- Only the creator/controller may advance the agreed shared scene.
+select set_config('request.jwt.claim.sub',public.love_eclat_v2_status()->>'role_a',false);
+do $$
+declare s jsonb;sid uuid;
+begin
+ s:=public.love_eclat_v2_status();sid:=(s->>'session_id')::uuid;
  s:=public.love_eclat_v2_act(sid,5,'continue');
  if s->>'chapter_number'<>'6' or s->>'branch'<>'Mystère' then
   raise exception 'New branch failed to continue to activity B';end if;
