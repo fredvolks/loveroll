@@ -52,6 +52,11 @@ test('Android notification preferences remain editable without remote push',asyn
 test('Signed Android release is versioned, immutable and references the preceding official APK',()=>{
  const release=readFileSync(new URL('../.github/workflows/android.yml',import.meta.url),'utf8');
  assert.match(release,/TAG: loveroll-newsign-v0[.]13[.]14/);
+ assert.ok(release.includes('secrets.LOVEROLL_ANDROID_SIGNING'));
+ assert.ok(release.includes('base64.b64decode(bundle["KEYSTORE"],validate=True)'));
+ assert.ok(release.includes('Invalid LoveRoll Android signing secret'));
+ assert.ok(release.includes('EXPECTED_SIGNER_SHA256'));
+
  assert.ok(release.includes('EXPECTED_SIGNER_SHA256: be1f51d895a20bb6708919c1b98a044ee7646902d348d4c8d311e19a10728809'));
  assert.doesNotMatch(release,/previous-loveroll[.]apk/);
  assert.match(readFileSync(new URL('../app/src/main/java/ca/desadeux/jeu/UpdateManager.java',import.meta.url),'utf8'),/PREFIX="loveroll-newsign-v"/);

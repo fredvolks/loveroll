@@ -17,6 +17,7 @@ jobs:
       TAG: loveroll-newsign-v0.13.14
       # SHA-256 of the public signing certificate (never the private key).
       EXPECTED_SIGNER_SHA256: be1f51d895a20bb6708919c1b98a044ee7646902d348d4c8d311e19a10728809
+      LOVEROLL_ANDROID_SIGNING: ${{ secrets.LOVEROLL_ANDROID_SIGNING }}
       KEYSTORE_B64: ${{ secrets.KEYSTORE || secrets.ANDROID_KEYSTORE_BASE64 }}
       STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || secrets.ANDROID_STORE_PASSWORD }}
       SIGN_ALIAS: ${{ secrets.KEY_ALIAS || secrets.ANDROID_KEY_ALIAS }}
@@ -151,12 +152,51 @@ jobs:
       - name: Sign and verify APK
         run: |
           set -euo pipefail
-          if [[ -z "$KEYSTORE_B64" || -z "$STORE_PASSWORD" || -z "$SIGN_ALIAS" || -z "$KEY_PASSWORD" ]]; then
-            echo "::error::Signing secrets missing: use existing Android release key."
-            exit 1
+          # Prefer one encrypted-at-rest GitHub Actions secret with the entire
+          # canonical signing bundle; never commit or log its value.
+          # The four historical split secrets remain supported when this is absent.
+          trap 'rm -f "$RUNNER_TEMP/des-a-deux.jks" "$RUNNER_TEMP/.loveroll-store-pass" "$RUNNER_TEMP/.loveroll-key-pass" "$RUNNER_TEMP/.loveroll-alias"' EXIT
+          if [[ -n "${LOVEROLL_ANDROID_SIGNING:-}" ]]; then
+            python3 - <<'PY'
+          import os, json, base64, pathlib, re
+          try:
+              bundle=json.loads(os.environ["LOVEROLL_ANDROID_SIGNING"])
+              fields=("KEYSTORE","KEYSTORE_PASSWORD","KEY_ALIAS","KEY_PASSWORD")
+              if not isinstance(bundle,dict) or any(not isinstance(bundle.get(k),str) for k in fields):
+                  raise ValueError("signing bundle format")
+              alias=bundle["KEY_ALIAS"]
+              if not re.fullmatch(r"[a-zA-Z0-9_.-]{1,60}",alias):
+                  raise ValueError("signing alias")
+              if any(not 12<=len(bundle[k])<=160 for k in ("KEYSTORE_PASSWORD","KEY_PASSWORD")):
+                  raise ValueError("signing password format")
+              key=base64.b64decode(bundle["KEYSTORE"],validate=True)
+              if not 1000<=len(key)<=20000:
+                  raise ValueError("signing store size")
+              folder=pathlib.Path(os.environ["RUNNER_TEMP"])
+              payloads={
+                  "des-a-deux.jks":key,
+                  ".loveroll-store-pass":bundle["KEYSTORE_PASSWORD"].encode(),
+                  ".loveroll-key-pass":bundle["KEY_PASSWORD"].encode(),
+                  ".loveroll-alias":alias.encode(),
+              }
+              for name,value in payloads.items():
+                  path=folder/name
+                  path.write_bytes(value)
+                  path.chmod(0o600)
+          except (KeyError,ValueError,TypeError) as error:
+              raise SystemExit("Invalid LoveRoll Android signing secret; no APK published.")
+          PY
+            STORE_PASSWORD="$(cat "$RUNNER_TEMP/.loveroll-store-pass")"
+            KEY_PASSWORD="$(cat "$RUNNER_TEMP/.loveroll-key-pass")"
+            SIGN_ALIAS="$(cat "$RUNNER_TEMP/.loveroll-alias")"
+          else
+            if [[ -z "$KEYSTORE_B64" || -z "$STORE_PASSWORD" || -z "$SIGN_ALIAS" || -z "$KEY_PASSWORD" ]]; then
+              echo "::error::GitHub Actions signing secret missing: set LOVEROLL_ANDROID_SIGNING."
+              exit 1
+            fi
+            printf '%s' "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/des-a-deux.jks"
+            chmod 600 "$RUNNER_TEMP/des-a-deux.jks"
           fi
-          printf '%s' "$KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/des-a-deux.jks"
-          chmod 600 "$RUNNER_TEMP/des-a-deux.jks"
           keytool -list -keystore "$RUNNER_TEMP/des-a-deux.jks" -storepass "$STORE_PASSWORD" -alias "$SIGN_ALIAS" >/dev/null
           mkdir -p dist
           APK_IN="app/build/outputs/apk/release/app-release-unsigned.apk"
