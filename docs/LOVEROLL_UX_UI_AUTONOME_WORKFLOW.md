@@ -14,6 +14,14 @@
 8. Après intégration dans le vrai code, vérifier les **vrais boutons et branches** dans la portée du lot, les états vides/erreur, le parcours A/B sur comptes de test isolés quand concerné, les animations D6/D100 et les issues des cartes. Capture et tests ciblés, puis CI et vérification du déploiement; ne pas prétendre à un essai Android/iPad physique s'il n'a pas eu lieu.
 9. À chaque lot UX significatif, écrire un rapport concis : **écran / constat observable / impact joueur / correction proposée / priorité-effort / capture avant-après / test exécuté / limite / état déployé**. Un prototype, screenshot, générateur de nombres ou maquette ne vaut jamais vrai jeu testé.
 
+## Boucle de jugement UX — automatique pendant chaque lot Work concerné
+
+- **Déclenchement :** à chaque ajout ou modification d'écran, navigation ou composant visible dans le lot en cours, intégrer la revue UX à la routine Work, sans prompt supplémentaire du propriétaire. Grouper les micro-corrections d'un même parcours pour éviter les audits répétitifs.
+- **Avant :** établir le comportement et la capture de référence réelle lorsque possible, ainsi que l'objectif utilisateur et les critères du prompt maître. **Après :** exécuter le vrai parcours modifié, capturer le rendu final aux formats affectés et confronter à la référence, au comportement attendu, à l'accessibilité et à la charte.
+- **Verdict obligatoire :** `UX OK` si vérification réelle et critères satisfaits; `À CORRIGER` avec problèmes précis et priorités si échec; `NON VÉRIFIÉ` quand les outils, accès ou captures manquent. Une compilation ou une réussite CI seule ne donne jamais `UX OK`.
+- **Boucle corrective :** pour les corrections dans le mandat déjà approuvé, corriger immédiatement, retester et réévaluer **dans la même session active**, en regroupant les modifications. Répéter jusqu'à conformité ou blocage réel documenté; ne pas exiger « continue » entre les vérifications ordinaires.
+- **Limites :** une refonte majeure non approuvée est une proposition, pas un correctif automatique. Ne pas attendre un outil tiers, ne pas suspendre les parcours indépendants et ne pas annoncer un jugement IA qui aurait été fait hors session. GitHub Actions exécute ses tests sur PR/push, mais ne déclenche pas à lui seul un jugement créatif par Work.
+
 ## Protections absolues
 
 - Réutiliser les vrais dés 3D WebGL, leur orientation et leur résultat serveur; ne pas les remplacer par une photo ou un nombre local. Préserver règles de défis, D6/D100, odds, rôles, refus/repige, temps, progression, histoire, catalogue et les 12 coffrets Éclat; le designer ne peut pas les réinventer.
