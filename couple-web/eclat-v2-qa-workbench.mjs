@@ -206,18 +206,17 @@ export function createEclatV2QaWorkbench({
    await client.auth.signOut({scope:'local'});
    throw new Error('Les trois identités QA (opérateur, A et B) doivent être distinctes');
   }
-  try{
-   // Fail early if the real backend has not approved both the duo and
-   // its Éclat entitlement. Never fabricate access in the QA console.
-   const status=await players[role].api.status();
-   if(status?.access!==true)throw new Error('Accès Éclat Premium QA non autorisé');
-  }catch(error){
-   await client.auth.signOut({scope:'local'}).catch(()=>{});
-   throw error;
-  }
-  players[role].user=data.user;progress(role,'Connecté · accès Éclat confirmé');
+  // Base Soirée has its own server rights and must remain testable even
+  // when the QA Premium entitlement or V2 migration is not installed yet.
+  // Never grant premium status in the browser; only the actual V2 RPC may.
+  let premium=false;
+  try{premium=(await players[role].api.status())?.access===true;}
+  catch{/* V2 may not be installed in the QA schema yet; Soirée can still run */}
+  players[role].user=data.user;players[role].eclatAccess=premium;
+  progress(role,premium?'Connecté · Éclat autorisé':'Connecté · Éclat non autorisé');
   if(players.A.user&&players.B.user){
-   show('game',true);
+   const bothPremium=players.A.eclatAccess&&players.B.eclatAccess;
+   show('game',!!bothPremium);
    if(!soireeBench){
     const {mountSoireeQaBench}=await import('./soiree-qa-lab.mjs');
     soireeBench=mountSoireeQaBench({
@@ -227,7 +226,9 @@ export function createEclatV2QaWorkbench({
     });
    }
    show('soiree',true);
-   feedback('Deux comptes QA connectés. Éclat V2 et Soirée D6/D100 officiels disponibles.');
+   feedback(bothPremium?
+    'Deux comptes QA connectés : Éclat V2 et Soirée D6/D100 accessibles selon les règles serveur.':
+    'Deux comptes QA connectés : Soirée disponible selon les droits du serveur. Éclat V2 attend une migration et un abonnement QA valides.');
   }
  }
  async function attach(a,b){
