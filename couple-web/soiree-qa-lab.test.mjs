@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {renderSoireeQaScreen,mountSoireeQaBench} from './soiree-qa-lab.mjs';
+import {renderSoireeQaScreen,mountSoireeQaBench,confirmedDiceAnimations} from './soiree-qa-lab.mjs';
 const a='11111111-1111-4111-8111-111111111111';
 const b='22222222-2222-4222-8222-222222222222';
 const couple='33333333-3333-4333-8333-333333333333';
@@ -227,4 +227,27 @@ test('couple settings hide disabled public categories but always keep Au hasard'
  assert.doesNotMatch(none,/<option value="SENSUEL">/);
  assert.doesNotMatch(none,/<option value="SEXUEL">/);
  assert.match(none,/<option value="HASARD">/);
+});
+
+test('new server-confirmed rolls animate; initial restore and repeat polls never do',()=>{
+ const week='2026-10-26';
+ const initial={A:{...base,weekly:[],personal:[],mine:[]},
+  B:{...base,userId:b,weekly:[],personal:[],mine:[]}};
+ assert.equal(confirmedDiceAnimations(null,initial,week).size,0);
+ const after={A:{...base,weekly:[{id:challenge,key:week,face:4}],
+   personal:[{user_id:a,face:5}],mine:[]},
+  B:{...base,userId:b,weekly:[{id:challenge,key:week,face:4}],
+   personal:[],mine:[{id:challenge,recipient:b,face:47,status:'proposed'}]}};
+ const flags=confirmedDiceAnimations(initial,after,week);
+ assert.equal(flags.has('A:weekly'),true);
+ assert.equal(flags.has('B:weekly'),true);
+ assert.equal(flags.has('A:personal'),true);
+ assert.equal(flags.has('B:challenge-'+challenge),true);
+ assert.equal(flags.has('A:challenge-'+challenge),false);
+ assert.equal(confirmedDiceAnimations(after,structuredClone(after),week).size,0);
+});
+test('saved official rolls are displayed read-only instead of offering a duplicate throw',()=>{
+ const markup=renderSoireeQaScreen({role:'A',snapshot:base,partnerId:b,weekKey:'2026-10-26'});
+ assert.match(markup,/data-soiree-qa-action="weekly" disabled/);
+ assert.match(markup,/data-soiree-qa-action="personal-d6" disabled/);
 });

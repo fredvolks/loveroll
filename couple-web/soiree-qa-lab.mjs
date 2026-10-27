@@ -37,7 +37,7 @@ export function renderSoireeQaScreen({role,snapshot,partnerId,weekKey=currentTor
   '<p>Identité QA : '+escapeHtml(snapshot.userId.slice(0,8))+'</p></div>';
  html+='<div class="soiree-qa-round"><h5>D6 de la semaine</h5>'+
   die(role,latest?.face,6,'weekly',own===null)+
-  btn(role,'weekly','Brasser le vrai D6 hebdomadaire')+
+  btn(role,'weekly',latest?'Résultat D6 hebdomadaire enregistré':'Brasser le vrai D6 hebdomadaire',!!latest)+
   '<p class="soiree-qa-caption">Semaine québécoise du '+escapeHtml(weekKey)+
   '. '+(previous&&!latest?'Résultat précédent : '+previous.face+
     ' (semaine '+escapeHtml(previous.key)+'). Le dé actuel reste à lancer.':'')+
@@ -49,7 +49,7 @@ export function renderSoireeQaScreen({role,snapshot,partnerId,weekKey=currentTor
  }else{
   html+='<p>Séance : '+escapeHtml(snapshot.session.id.slice(0,8))+'</p>'+
    '<h5>Mon D6 personnel</h5>'+die(role,own,6,'personal')+
-   btn(role,'personal-d6',own?'Voir mon résultat sauvegardé':'Brasser mon vrai D6')+
+   btn(role,'personal-d6',own?'Résultat D6 personnel enregistré':'Brasser mon vrai D6',own!==null)+
    '<p>D6 de mon partenaire : '+(theirs??'Pas encore lancé')+'</p>';
   const ready=own!==null&&theirs!==null;
   html+='<h5>D100 · défi réel</h5>'+
@@ -93,6 +93,32 @@ export function renderSoireeQaScreen({role,snapshot,partnerId,weekKey=currentTor
  html+='</div>';return html;
 }
 
+// Animate only AFTER a changed result has been independently confirmed by
+// the real backend. Initial restore and identical polls never fake a throw.
+export function confirmedDiceAnimations(previous,next,weekKey=currentTorontoWeekKey()){
+ const animate=new Set();
+ if(!previous||!next)return animate;
+ for(const role of ['A','B']){
+  const before=previous[role],after=next[role];
+  if(!before||!after||before.userId!==after.userId||before.coupleId!==after.coupleId)continue;
+  const prevWeek=before.weekly?.find(x=>x.key===weekKey);
+  const newWeek=after.weekly?.find(x=>x.key===weekKey);
+  if(newWeek?.id&&newWeek.face>=1&&newWeek.face<=6&&
+     (newWeek.id!==prevWeek?.id||newWeek.face!==prevWeek.face))
+   animate.add(role+':weekly');
+  if(!before.session?.id||before.session.id!==after.session?.id)continue;
+  const oldPersonal=before.personal?.find(x=>x.user_id===after.userId);
+  const newPersonal=after.personal?.find(x=>x.user_id===after.userId);
+  if(Number.isInteger(newPersonal?.face)&&newPersonal.face>=1&&newPersonal.face<=6&&
+     !Number.isInteger(oldPersonal?.face))animate.add(role+':personal');
+  const oldIds=new Set((before.mine||[]).map(x=>x.id));
+  for(const x of after.mine||[]){
+   if(x.id&&!oldIds.has(x.id)&&Number.isInteger(x.face)&&x.face>=1&&x.face<=100)
+    animate.add(role+':challenge-'+x.id);
+  }
+ }
+ return animate;
+}
 export function mountSoireeQaBench({
  root,clientA,clientB,userA,userB,
  gatewayFactory=createSoireeQaGateway,
@@ -118,7 +144,7 @@ export function mountSoireeQaBench({
    button.disabled=busy||button.dataset.qaBaseDisabled==='true';
   });
  };
- async function drawOfficialDice(){
+ async function drawOfficialDice(animations=new Set()){
   if(dead)return;
   let draw;
   try{({dieOn:draw}=await loadDice());}
@@ -136,7 +162,7 @@ export function mountSoireeQaBench({
     face=item?.face??null;sides=100;
    }
    if(Number.isInteger(face)&&face>=1&&face<=sides)
-    disposeDice.push(draw(canvas,sides,face,false));
+    disposeDice.push(draw(canvas,sides,face,animations.has(role+':'+kind)));
   }
  }
  async function refresh(){
@@ -154,6 +180,7 @@ export function mountSoireeQaBench({
    // active session before rendering either player's roll.
    if((a.session?.id||null)!==(b.session?.id||null))
     throw new Error('Soirée A/B désynchronisée : corriger côté serveur');
+   const animations=confirmedDiceAnimations(context,{A:a,B:b});
    context={A:a,B:b};
    // Network polling never recreates WebGL or discards an unchanged selection.
    const key=JSON.stringify([a,b]);
@@ -174,7 +201,7 @@ export function mountSoireeQaBench({
    }
    lastPaintKey=key;
    buttons();
-   void drawOfficialDice();
+   void drawOfficialDice(animations);
   }catch(error){
    if(!dead){onError(error);show(error?.message||'Rafraîchissement QA refusé');}
   }finally{
