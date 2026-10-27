@@ -108,3 +108,20 @@ test('10 timer gateway authorizes only mode choice and four actions',async()=>{
  assert.throws(()=>api.timerMode({sessionId:sid,expectedStep:1,mode:'superfast'}),RangeError);
  assert.throws(()=>api.timerAction({sessionId:sid,expectedStep:1,action:'autofinish'}),RangeError);
 });
+
+test('08 playlist client never sends unauthorized author identity or unapproved songs',async()=>{
+ const requests=[],api=createEclatV2SessionApi({async rpc(name,args){
+  requests.push([name,args]);return {data:status};}});
+ await api.playlistVote({sessionId:sid,expectedStep:4,slots:[2,1]});
+ await api.playlistSharedPhone({sessionId:sid,expectedStep:4,
+  songs:[{title:'Titre A',artist:''}],jointOral:true});
+ assert.deepEqual(requests.map(x=>x[0]),[
+  'love_eclat_v2_playlist_vote','love_eclat_v2_playlist_shared_phone']);
+ assert.deepEqual(requests[0][1].p_slots,[2,1]);
+ assert.equal(requests[1][1].p_songs[0].title,'Titre A');
+ assert.ok(requests.every(x=>!JSON.stringify(x[1]).includes('user_id')));
+ assert.throws(()=>api.playlistVote({sessionId:sid,expectedStep:4,slots:[1,1]}),RangeError);
+ assert.throws(()=>api.playlistVote({sessionId:sid,expectedStep:4,slots:[1,2,3,4,5,6]}),RangeError);
+ assert.throws(()=>api.playlistSharedPhone({sessionId:sid,expectedStep:4,
+  songs:[{title:'Titre A'}]}),RangeError);
+});

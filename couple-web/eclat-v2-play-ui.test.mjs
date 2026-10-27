@@ -320,3 +320,45 @@ test('11 both distinct partners propose from only three approved cards',()=>{
  assert.match(bPropose,/Tour de B/);
  assert.match(bPropose,/data-eclat-v2-action="attention-propose:2"/);
 });
+
+test('08 final playlist: only revealed titles, ordering, dual-approval, no automatic playback',()=>{
+ const start=status(8,0,30,8,{revealed_music:[
+  {theme:1,owner:aid,title:'Titre A',artist:'Artiste A'},
+  {theme:2,owner:bid,title:'Titre B',artist:'Artiste B'}
+ ],my_playlist_slots:null,playlist_shared:null});
+ const blank=renderEclatV2PlayA({status:start,viewerId:aid});
+ assert.match(blank,/playlist-toggle:1/);
+ assert.match(blank,/playlist-toggle:4/);
+ assert.doesNotMatch(blank,/playlist-vote/);
+ const draft=renderEclatV2PlayA({status:start,viewerId:aid,playlistDraft:[4,1]});
+ assert.match(draft,/playlist-vote/);
+ assert.match(draft,/playlist-up:1/);
+ assert.ok(draft.indexOf('<h4>Notre ordre proposé')<draft.lastIndexOf('Titre B'));
+ const waiting=renderEclatV2PlayA({status:{...start,my_playlist_slots:[4,1]},viewerId:aid,playlistDraft:[4,1]});
+ assert.match(waiting,/approbation est enregistrée/);
+ const partner=renderEclatV2PlayA({status:{...start,my_playlist_slots:null},viewerId:bid});
+ assert.doesNotMatch(partner,/approbation est enregistrée/);
+ const done=renderEclatV2PlayA({status:{...start,playlist_shared:[
+  {title:'Titre B',artist:'Artiste B'},{title:'Titre A',artist:'Artiste A'}
+ ]},viewerId:aid});
+ assert.match(done,/Vous avez tous les deux approuvé/);
+ assert.doesNotMatch(done,/playlist-vote/);
+ assert.doesNotMatch(done,/<audio|<iframe/);
+ const none=renderEclatV2PlayA({status:status(8,1,30,8,{revealed_music:[],playlist_shared:null}),viewerId:aid});
+ assert.match(none,/souvenir préféré/);
+ assert.doesNotMatch(none,/playlist-vote/);
+});
+test('08 shared phone final only saves revealed A/B songs after oral joint approval',()=>{
+ const s=status(8,0,30,8,{device_mode:'one',playlist_shared:null});
+ const songs=[{theme:1,owner:'A',title:'Chanson A',artist:''},
+  {theme:2,owner:'B',title:'Chanson B',artist:''}];
+ const masked=renderEclatV2PlayA({status:s,viewerId:aid,
+   sharedRevealedMusic:songs,playlistDraft:[1,4]});
+ assert.doesNotMatch(masked,/Chanson A/);
+ const a=renderEclatV2PlayA({status:s,viewerId:aid,localRole:'A',
+   sharedRevealedMusic:songs,playlistDraft:[1,4]});
+ assert.match(a,/playlist-share-oral/);
+ const b=renderEclatV2PlayA({status:s,viewerId:aid,localRole:'B',
+   sharedRevealedMusic:songs,playlistDraft:[1,4]});
+ assert.doesNotMatch(b,/playlist-share-oral/);
+});

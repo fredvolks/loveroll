@@ -8,7 +8,7 @@ const esc =value=>String(value??'').replace(/[&<>"']/g,ch=>
  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const btn=(action,label,style='')=>'<button type="button" class="eclat-v2-btn '+style+'" data-eclat-v2-action="'+esc(action)+'">'+esc(label)+'</button>';
 const paragraph=s=>'<p>'+esc(s)+'</p>';
-function mainContent(view,status,predictionDraft={},puzzleDraft={},puzzleAttempt=null,sharedAnswers={},sharedConfirmed=[],sharedReveal=null,musicDraft={},sharedMusicNotes={},sharedRevealedMusic=[],cardDraft=[],sharedCardDraft={},sharedCardConfirmed=[]){
+function mainContent(view,status,predictionDraft={},puzzleDraft={},puzzleAttempt=null,sharedAnswers={},sharedConfirmed=[],sharedReveal=null,musicDraft={},sharedMusicNotes={},sharedRevealedMusic=[],cardDraft=[],sharedCardDraft={},sharedCardConfirmed=[],playlistDraft=[]){
  let html='<h2>'+esc(view.title)+'</h2>'+
   '<p class="eclat-v2-instruction">'+esc(view.instruction)+'</p>';
  if(view.substepTotal)html+='<p class="eclat-v2-muted">'+(view.coffretId===1?'Enveloppe':view.coffretId===5?'Tour':'Partie')+
@@ -300,9 +300,45 @@ function mainContent(view,status,predictionDraft={},puzzleDraft={},puzzleAttempt
   html+='<section class="eclat-v2-task"><strong>Choisissez ensemble</strong><ul>'+
    view.listeningChoices.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>'+
    '<p>LoveRoll ne démarre aucune lecture musicale.</p></section>';
- if(view.playlistLimit)
-  html+='<section class="eclat-v2-task"><p>Jusqu’à '+view.playlistLimit+
-   ' titres révélés, uniquement avec l’accord des deux personnes. Aucune chanson ou fichier n’est téléchargé par l’app.</p></section>';
+ if(view.playlistLimit){
+  const sources=status.device_mode==='one'?sharedRevealedMusic:(status.revealed_music||[]);
+  const options=sources.filter(s=>Number.isInteger(s.theme)&&s.theme>=1&&s.theme<=5)
+   .map(s=>{
+    const owner=s.owner==='A'||s.owner===status.role_a?'A':
+     s.owner==='B'||s.owner===status.role_b?'B':null;
+    return owner?{slot:(s.theme-1)*2+(owner==='A'?1:2),
+      title:s.title,artist:s.artist||''}:null;
+   }).filter(Boolean).sort((a,b)=>a.slot-b.slot);
+  const picked=playlistDraft.map(slot=>options.find(s=>s.slot===slot)).filter(Boolean);
+  html+='<section class="eclat-v2-task" aria-label="Notre playlist commune">'+
+   '<h3>Notre bande originale</h3><p>Jusqu’à cinq titres déjà révélés, dans votre ordre. Chaque personne peut refuser de sauvegarder la liste, sans pénalité.</p>';
+  if(Array.isArray(status.playlist_shared)){
+   html+='<p role="status">Vous avez tous les deux approuvé la même liste.</p><ol>'+
+    status.playlist_shared.map(s=>'<li>'+esc(s.title)+(s.artist?' — '+esc(s.artist):'')+'</li>').join('')+'</ol>';
+  }else if(!options.length){
+   html+='<p>Aucun titre n’a été révélé. Racontez plutôt chacun votre souvenir préféré de cette soirée, sans rien enregistrer.</p>';
+  }else{
+   html+='<fieldset class="eclat-v2-door"><legend>Les titres révélés</legend>'+
+    options.map(s=>btn('playlist-toggle:'+s.slot,
+      (playlistDraft.includes(s.slot)?'✓ ':'')+s.title+
+        (s.artist?' — '+s.artist:''))).join('')+'</fieldset>';
+   if(picked.length){
+    html+='<h4>Notre ordre proposé</h4><ol>'+picked.map((s,i)=>'<li>'+esc(s.title)+
+      (s.artist?' — '+esc(s.artist):'')+
+      (i>0?btn('playlist-up:'+s.slot,'Monter '+s.title):'')+
+      (i<picked.length-1?btn('playlist-down:'+s.slot,'Descendre '+s.title):'')+
+      '</li>').join('')+'</ol>';
+    if(status.device_mode==='one'){
+     if(view.role==='A')html+=btn('playlist-share-oral',
+      'Nous approuvons tous les deux cette liste et son ordre','primary');
+     else html+='<p>Vérifiez la liste ensemble; A pourra confirmer après votre accord oral.</p>';
+    }else html+=btn('playlist-vote','Approuver cette liste et cet ordre','primary');
+   }
+   if(status.device_mode==='two'&&Array.isArray(status.my_playlist_slots))
+    html+='<p role="status">Ton approbation est enregistrée. La liste n’est partagée que si les deux approuvent exactement le même ordre. Tu peux encore modifier ta proposition.</p>';
+  }
+  html+='<p class="eclat-v2-muted">La liste ne stocke que les titres et artistes approuvés. Aucun fichier musical, lecture ou service externe n’est lancé.</p></section>';
+ }
  if(view.optionalObjects)html+='<details><summary>Objets possibles, entièrement facultatifs</summary><p>'+
   esc(view.optionalObjects.join(' · '))+'</p></details>';
  if(view.choices?.length && view.coffretId===3){
@@ -396,7 +432,7 @@ function actions(view,status,seenRoles,sharedConfirmed=[]){
  rows+=btn('act:stop','Arrêter cette séance');
  return rows;
 }
-export function renderEclatV2PlayA({status,viewerId,localRole=null,seenRoles=[],predictionDraft={},puzzleDraft={},puzzleAttempt=null,sharedAnswers={},sharedConfirmed=[],sharedReveal=null,musicDraft={},sharedMusicNotes={},sharedRevealedMusic=[],cardDraft=[],sharedCardDraft={},sharedCardConfirmed=[]}){
+export function renderEclatV2PlayA({status,viewerId,localRole=null,seenRoles=[],predictionDraft={},puzzleDraft={},puzzleAttempt=null,sharedAnswers={},sharedConfirmed=[],sharedReveal=null,musicDraft={},sharedMusicNotes={},sharedRevealedMusic=[],cardDraft=[],sharedCardDraft={},sharedCardConfirmed=[],playlistDraft=[]}){
  if(!status?.access)return '<section class="eclat-v2-stage"><p>Accès Éclat requis.</p></section>';
  if(!status.active)return '<section class="eclat-v2-stage"><p>Aucune séance Éclat V2 en cours.</p></section>';
  if(status.content_version!==2)throw Error('L’interface Éclat V2 refuse les séances V1');
@@ -416,7 +452,7 @@ export function renderEclatV2PlayA({status,viewerId,localRole=null,seenRoles=[],
   ' · '+view.variantName+'</small><p>Étape '+view.number+' sur '+view.total+
   ' · '+view.budgetMinutes+' min indicatives</p></header>'+
   (status.device_mode==='one'?'<nav class="eclat-v2-handover-link">'+btn('hide-role','Masquer et passer le téléphone')+'</nav>':'')+
-  '<div class="eclat-v2-content">'+mainContent(view,status,predictionDraft,puzzleDraft,puzzleAttempt,sharedAnswers,sharedConfirmed,sharedReveal,musicDraft,sharedMusicNotes,sharedRevealedMusic,cardDraft,sharedCardDraft,sharedCardConfirmed)+'</div>'+
+  '<div class="eclat-v2-content">'+mainContent(view,status,predictionDraft,puzzleDraft,puzzleAttempt,sharedAnswers,sharedConfirmed,sharedReveal,musicDraft,sharedMusicNotes,sharedRevealedMusic,cardDraft,sharedCardDraft,sharedCardConfirmed,playlistDraft)+'</div>'+
   '<footer class="eclat-v2-actions">'+actions(view,status,seenRoles,sharedConfirmed)+'</footer>'+
   '<p class="eclat-v2-muted">Toutes les activités sont facultatives. Aucun score. Aucun contact sans accord explicite.</p>'+
   '</section>';
