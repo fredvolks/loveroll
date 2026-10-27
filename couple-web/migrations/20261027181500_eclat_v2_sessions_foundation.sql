@@ -1412,6 +1412,9 @@ begin
   delete from public.love_eclat_v2_card_votes where session_id=p_session;
   delete from public.love_eclat_v2_wish_votes where session_id=p_session;
   delete from public.love_eclat_v2_wish_contact where session_id=p_session;
+  update public.love_eclat_v2_sessions set
+    wish_scene5=null,wish_scene6=null,wish_scene8=null,
+    wish_invitation_card=null,wish_contact_shared=false where id=p_session;
   delete from public.love_eclat_v2_playlist_votes where session_id=p_session;
   delete from public.love_eclat_v2_music_notes where session_id=p_session;
   update public.love_eclat_v2_sessions set state='interrupted',ended_at=now(),updated_at=now()
@@ -1505,6 +1508,11 @@ begin
   if v_finished and v_s.coffret_id=9 then
    delete from public.love_eclat_v2_wish_votes where session_id=p_session;
    delete from public.love_eclat_v2_wish_contact where session_id=p_session;
+   -- Refusals and intermediate choices must never become lasting preferences.
+   -- The approved invitation card is the only retained 09 outcome.
+   update public.love_eclat_v2_sessions set
+    wish_scene5=null,wish_scene6=null,wish_scene8=null,
+    wish_contact_shared=false where id=p_session;
   end if;
   if v_finished and v_s.coffret_id=8 then
    -- Only the consensually saved list remains; never retain unrevealed notes.

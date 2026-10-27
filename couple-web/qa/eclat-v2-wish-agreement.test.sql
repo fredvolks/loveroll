@@ -127,3 +127,53 @@ declare s jsonb;begin
  if s->>'wish_invitation_card'<>'7' then raise exception 'Common invitation missing';end if;
 end $$;
 reset role;
+
+set role authenticated;
+set request.jwt.claim.sub='00000000-0000-0000-0000-000000000001';
+do $$
+declare s jsonb;sid uuid;
+begin
+ s:=public.love_eclat_v2_status();sid:=(s->>'session_id')::uuid;
+ s:=public.love_eclat_v2_act(sid,(s->>'chapter_index')::int,'continue');
+ if s->>'state'<>'finished' or s->>'wish_invitation_card'<>'7' or
+    s->>'wish_scene5' is not null or s->>'wish_scene6' is not null then
+  raise exception 'Finished invitation retained rejected choices';end if;
+ s:=public.love_eclat_v2_start(9,30,'one');sid:=(s->>'session_id')::uuid;
+ begin
+  perform public.love_eclat_v2_cards_shared(sid,1,array[7]::smallint[]);
+  raise exception 'One shared device impersonated two before oral approval';
+ exception when raise_exception then
+  if sqlerrm<>'Accord oral commun explicite requis' then raise;end if;
+ end;
+ perform public.love_eclat_v2_cards_shared(sid,1,array[7]::smallint[],true);
+ perform public.love_eclat_v2_act(sid,1,'continue');
+ perform public.love_eclat_v2_card_vote(sid,2,7,true);
+ s:=public.love_eclat_v2_act(sid,2,'continue');
+ if s->>'chapter_number'<>'6' then raise exception 'Shared device missing scene 6';end if;
+ begin
+  perform public.love_eclat_v2_wish_vote(sid,3,'without-contact');
+  raise exception 'One-phone vote silently impersonated B';
+ exception when raise_exception then
+  if sqlerrm<>'Accord oral commun explicite requis' then raise;end if;
+ end;
+ begin
+  perform public.love_eclat_v2_wish_contact_answer(sid,3,true);
+  raise exception 'Contact granted without oral agreement';
+ exception when raise_exception then
+  if sqlerrm<>'Accord oral commun explicite requis' then raise;end if;
+ end;
+ s:=public.love_eclat_v2_wish_vote(sid,3,'without-contact',true);
+ if s->>'wish_scene6'<>'without-contact' then raise exception 'Shared alternative missing';end if;
+ s:=public.love_eclat_v2_act(sid,3,'continue');
+ if s->>'chapter_number'<>'8' then raise exception 'Shared finale not reached';end if;
+ s:=public.love_eclat_v2_wish_vote(sid,4,'keep',true);
+ if s->>'wish_invitation_card'<>'7' then raise exception 'Shared oral invitation not recorded';end if;
+ perform public.love_eclat_v2_act(sid,4,'stop');
+end $$;
+reset role;
+do $$
+begin
+ if (select count(*) from public.love_eclat_v2_wish_votes)<>0 or
+    (select count(*) from public.love_eclat_v2_wish_contact)<>0 then
+  raise exception 'Old refusal or temporary contact permission kept';end if;
+end $$;
