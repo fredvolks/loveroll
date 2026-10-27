@@ -1,6 +1,6 @@
 -- Execute after the parallel-start check. Uses a separate couple, never V1 production data.
 set role authenticated;
-select set_config('request.jwt.claim.sub',public.love_eclat_v2_status()->>'role_a',false);
+set request.jwt.claim.sub='00000000-0000-0000-0000-000000000003';
 select set_config('request.jwt.claim.sub',public.love_eclat_v2_status()->>'role_a',false);
 do $$
 declare s jsonb; sid uuid;
@@ -29,8 +29,8 @@ begin
  if s->>'branch'<>'Tendresse' or s->>'door_confirmed'<>'true' then
   raise exception 'Mutual door vote not persisted';end if;
 end $$;
-set request.jwt.claim.sub='00000000-0000-0000-0000-000000000003';
-do $$
+select set_config('request.jwt.claim.sub',public.love_eclat_v2_status()->>'role_a',false);
+do $
 declare s jsonb; sid uuid;
 begin
  s:=public.love_eclat_v2_status();sid:=(s->>'session_id')::uuid;
