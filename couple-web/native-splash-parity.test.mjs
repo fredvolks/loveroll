@@ -51,5 +51,16 @@ test('Native document/network failure stops animation and offers retry without d
  assert.match(activity,/retry\.setText\("Réessayer"\)/);
  assert.match(activity,/web\.loadUrl\(retryDestination==null\?SITE:retryDestination\)/);
  assert.doesNotMatch(activity,/removeAllCookies|deleteDatabase|clearData/);
- assert.match(read('../app/build.gradle'),/versionCode 130013; versionName '0\.13\.13'/);
+ // Verify the current release instead of pinning the already shipped 0.13.13.
+ const gradle=read('../app/build.gradle');
+ const version=gradle.match(/versionCode\\s+(\\d+)\\s*;\\s*versionName\\s+'(\\d+)\\.(\\d+)\\.(\\d+)'/);
+ assert.ok(version,'Android must declare an integer versionCode and three-part versionName');
+ const [,code,major,minor,patch]=version;
+ assert.equal(Number(code),Number(major)*1000000+Number(minor)*10000+Number(patch),
+  'Android versionCode must match its versionName');
+ assert.ok(Number(code)>130013,'Already distributed release 0.13.13 must not be replaced');
+ const versionName=[major,minor,patch].join('.');
+ const workflow=read('../.github/workflows/android.yml');
+ assert.ok(workflow.includes('TAG: des-a-deux-v'+versionName),'GitHub Release tag must match Gradle');
+ assert.ok(workflow.includes('LoveRoll-v'+versionName+'.apk'),'Signed APK artifact must match Gradle');
 });
