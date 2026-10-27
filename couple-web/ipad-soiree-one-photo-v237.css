@@ -97,6 +97,27 @@
   #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template .evening-finale-start{
    min-height:48px!important;
   }
+  /* The old desktop two-column rules still assign .evening-choice to
+     grid-column:2. On a one-column iPad that creates an implicit second
+     column and collapses the FIRST one to 0px, hiding the real D100.
+     Explicitly place ALL flattened Step 2 children in the single column. */
+  #app.has-evening-d100-template .evening-premium-view.has-evening-d100-template{
+   grid-template-columns:minmax(0,1fr)!important;
+  }
+  #app.has-evening-d100-template .evening-premium-view.has-evening-d100-template :is(
+   .evening-choice,.evening-d100-theater,.evening-play-state,
+   .evening-progress,.evening-d100-roll,.evening-d100-utilities,
+   .evening-d100-quota
+  ){
+   grid-column:1/-1!important;min-width:0!important;
+  }
+  #app.has-evening-d100-template .evening-premium-view.has-evening-d100-template .evening-choice{
+   grid-auto-flow:row!important;
+   grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  }
+  #app.has-evening-d100-template .evening-premium-view.has-evening-d100-template #lr-evening-category-hint{
+   display:none!important;
+  }
   /* WebGL position marker only; the visible marble comes from the HD photo. */
   #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template
   :is(.home-pedestal,.soiree-pedestal-marker){
