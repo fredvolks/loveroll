@@ -10,10 +10,12 @@ function clientFor(userId=idA,override={}){
  const calls=[];
  const db={
   couple_members:[{couple_id:couple,user_id:userId}],
-  couple_rolls:[{id:challenge,couple_id:couple,kind:'weekly',face:3,key:'2026-10-26'}],
+  couple_rolls:[{id:challenge,couple_id:couple,kind:'weekly',face:2,key:'2025-10-20'},
+    {id:challenge,couple_id:couple,kind:'weekly',face:3,key:'2026-10-26'}],
   couple_sessions:[{id:session,couple_id:couple,started_at:'2026-10-27',finished_at:null}],
   couple_personal_rolls:[{session_id:session,user_id:userId,face:4}],
-  couple_challenges:[{id:challenge,session_id:session,recipient:userId,status:'proposed',face:83}]
+  couple_challenges:[{id:challenge,session_id:session,recipient:userId,status:'proposed',
+    face:83,created_at:'2026-10-27T08:00:00Z'}]
  };
  const returns={roll_couple_once:{face:3},
   ensure_couple_session:session,roll_my_evening_d6:{face:4},
@@ -26,14 +28,19 @@ function clientFor(userId=idA,override={}){
   async rpc(name,args){calls.push({name,args});
    return {data:override[name]??returns[name],error:null};},
   from(table){
-   const filters=[];let limit=Infinity,isNull=null;
+   const filters=[];let limit=Infinity,isNull=null,order=null;
    const q={
     select(){return q;},
     eq(k,v){filters.push([k,v]);return q;},
     is(k,v){isNull=[k,v];return q;},
+    order(field,{ascending=true}={}){order={field,ascending};return q;},
     limit(n){limit=n;return q;},
     then(done){let rows=db[table].filter(r=>filters.every(([k,v])=>r[k]===v));
      if(isNull)rows=rows.filter(r=>r[isNull[0]]===null);
+     if(order)rows.sort((a,b)=>{
+      const c=String(a[order.field]||'').localeCompare(String(b[order.field]||''));
+      return order.ascending?c:-c;
+     });
      return Promise.resolve(done({data:rows.slice(0,limit),error:null}));}
    };return q;
   }
@@ -68,6 +75,7 @@ test('reads only its own challenge cards, never a partner private challenge',asy
  assert.equal(snap.session.id,session);
  assert.equal(snap.mine.length,1);
  assert.equal(snap.mine[0].recipient,idA);
+ assert.deepEqual(snap.weekly.map(x=>x.key),['2026-10-26','2025-10-20']);
  assert.ok(calls.some(x=>x.name==='my_love_evening_board'));
 });
 test('identity refresh rejects reused sessions or wrong account',async()=>{

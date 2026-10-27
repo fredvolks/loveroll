@@ -24,6 +24,7 @@ export function createSoireeQaGateway({client,expectedUserId}){
   let q=client.from(table).select(options.fields||'*');
   for(const [key,value] of filters)q=q.eq(key,value);
   if(options.isNull)q=q.is(options.isNull,null);
+  if(options.order)q=q.order(options.order.field,{ascending:options.order.ascending});
   if(options.limit)q=q.limit(options.limit);
   const {data,error}=await q;
   if(error)throw error;return data||[];
@@ -41,7 +42,7 @@ export function createSoireeQaGateway({client,expectedUserId}){
   const who=await identity();
   const [week,session]=await Promise.all([
    rows('couple_rolls',[['couple_id',who.coupleId],['kind','weekly']],
-    {fields:'id,face,kind,key,created_at',limit:20}),
+    {fields:'id,face,kind,key,created_at',order:{field:'key',ascending:false},limit:20}),
    rows('couple_sessions',[['couple_id',who.coupleId]],
     {fields:'id,started_at,finished_at,counted',isNull:'finished_at',limit:2})
   ]);
@@ -51,7 +52,7 @@ export function createSoireeQaGateway({client,expectedUserId}){
   const [personal,mine,board]=await Promise.all([
    rows('couple_personal_rolls',[['session_id',active.id]],{fields:'user_id,face'}),
    rows('couple_challenges',[['session_id',active.id],['recipient',who.userId]],
-    {fields:'id,recipient,offered_by,category,face,card_id,card_title,card_description,card_timer_minutes,status,created_at'}),
+    {fields:'id,recipient,offered_by,category,face,card_id,card_title,card_description,card_timer_minutes,status,created_at',order:{field:'created_at',ascending:true}}),
    rpc('my_love_evening_board',{p_session:active.id})
   ]);
   return {...who,weekly:week,session:active,personal,
