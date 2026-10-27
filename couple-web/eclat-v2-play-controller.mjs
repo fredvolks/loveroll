@@ -12,10 +12,13 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
  const emptyShared=()=>({A:{answer:null,prediction:null},B:{answer:null,prediction:null}});
  let sharedAnswers=emptyShared(),sharedConfirmed=new Set(),sharedReveal=null;
  let musicDraft={title:null,artist:null},sharedMusicNotes={},sharedRevealedMusic=[];
+ let cardDraft=initialStatus.my_cards||[];
+ let sharedCardDraft={A:[],B:[]},sharedCardConfirmed=new Set();
  const paint=()=>{if(!disposed)root.innerHTML=renderEclatV2PlayA({
   status,viewerId,localRole:role,seenRoles:[...seen],predictionDraft,puzzleDraft,puzzleAttempt,
   sharedAnswers,sharedConfirmed:[...sharedConfirmed],sharedReveal,
-  musicDraft,sharedMusicNotes,sharedRevealedMusic});};
+  musicDraft,sharedMusicNotes,sharedRevealedMusic,
+  cardDraft,sharedCardDraft,sharedCardConfirmed:[...sharedCardConfirmed]});};
  async function refresh(){
   if(disposed)return;
   const updated=await api.status(status.session_id);
@@ -27,6 +30,7 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
    role=null;seen=new Set();predictionDraft={answer:null,prediction:null};
    puzzleDraft={place:null,time:null,code:null};puzzleAttempt=null;
    sharedAnswers=emptyShared();sharedConfirmed=new Set();sharedReveal=null;
+   cardDraft=updated.my_cards||[];sharedCardDraft={A:[],B:[]};sharedCardConfirmed=new Set();
   }
   paint();
  }
@@ -36,6 +40,26 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
   const command=button.getAttribute('data-eclat-v2-action');
   if(!command)return;
   if(command==='hide-role'){role=null;musicDraft={title:null,artist:null};paint();return;}
+  if(command.startsWith('wish-toggle:')){
+   if(status.coffret_id!==9||status.chapter_number!==1||status.shared_cards!==null&&status.shared_cards!==undefined)return;
+   const number=Number(command.slice('wish-toggle:'.length));
+   if(!Number.isInteger(number)||number<1||number>12)return;
+   if(status.device_mode==='one'){
+    if(!role||sharedCardConfirmed.has(role))return;
+    const current=sharedCardDraft[role]||[];
+    sharedCardDraft={...sharedCardDraft,[role]:current.includes(number)?
+      current.filter(x=>x!==number):current.length<3?[...current,number]:current};
+   }else{
+    if(status.my_cards_ready)return;
+    cardDraft=cardDraft.includes(number)?cardDraft.filter(x=>x!==number):
+      cardDraft.length<3?[...cardDraft,number]:cardDraft;
+   }
+   paint();return;
+  }
+  if(command==='wish-confirm-local'){
+   if(status.coffret_id!==9||status.device_mode!=='one'||!role||sharedCardConfirmed.has(role))return;
+   sharedCardConfirmed.add(role);role=null;paint();return;
+  }
   if(command==='music-save'&&status.coffret_id===8&&status.device_mode==='one'){
    if(!role)return;
    const key=role+':'+status.music_theme;
@@ -92,7 +116,22 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
   try{
    const sid=status.session_id,idx=status.chapter_index;
    let next;
-   if(command.startsWith('story-vote:')){
+   if(command==='wish-confirm'){
+    if(status.coffret_id!==9||status.device_mode!=='two'||status.chapter_number!==1)return;
+    next=await api.cardsSubmit({sessionId:sid,expectedStep:idx,cards:cardDraft});
+   }else if(command==='wish-reveal-joint'){
+    if(status.coffret_id!==9||status.device_mode!=='one'||role!=='A'||
+      !sharedCardConfirmed.has('A')||!sharedCardConfirmed.has('B'))return;
+    const common=sharedCardDraft.A.filter(n=>sharedCardDraft.B.includes(n)).sort((a,b)=>a-b);
+    next=await api.cardsShared({sessionId:sid,expectedStep:idx,common,jointOral:true});
+    sharedCardDraft={A:[],B:[]};sharedCardConfirmed.clear();role=null;
+   }else if(command.startsWith('wish-vote:')){
+    const card=Number(command.slice('wish-vote:'.length));
+    if(status.coffret_id!==9||status.chapter_number!==3||
+      !Number.isInteger(card)||card<1||card>12)return;
+    next=await api.cardVote({sessionId:sid,expectedStep:idx,card,
+     jointOral:status.device_mode==='one'});
+   }else if(command.startsWith('story-vote:')){
     const action=command.slice('story-vote:'.length);
     if(status.coffret_id!==12||!['keep','reroll','off'].includes(action))return;
     next=await api.storyVote({sessionId:sid,expectedStep:idx,
@@ -160,6 +199,7 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
     puzzleDraft={place:null,time:null,code:null};puzzleAttempt=null;
     sharedAnswers=emptyShared();sharedConfirmed=new Set();
     musicDraft={title:null,artist:null};
+    cardDraft=next.my_cards||[];sharedCardDraft={A:[],B:[]};sharedCardConfirmed.clear();
    }
    if(next.revealed && status.device_mode==='one')role=null;
    status=next;paint();
@@ -181,6 +221,7 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
   disposed=true;root.removeEventListener('click',click);root.removeEventListener('input',input);
   sharedAnswers=emptyShared();sharedConfirmed.clear();sharedReveal=null;
   musicDraft={title:null,artist:null};sharedMusicNotes={};sharedRevealedMusic=[];
+  cardDraft=[];sharedCardDraft={A:[],B:[]};sharedCardConfirmed.clear();
   root.innerHTML='';
  },getStatus(){return status;}});
 }

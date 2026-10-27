@@ -85,3 +85,16 @@ test('12 story vote sends stage and counter, never writes dice faces locally',as
  assert.ok(calls.every(c=>!JSON.stringify(c[1]).includes('story_constraint')));
  assert.throws(()=>api.storyVote({sessionId:sid,expectedStep:1,expectedRerolls:-1,action:'reroll'}),RangeError);
 });
+
+test('09 card gateway carries only own picks or explicit common intersection',async()=>{
+ const calls=[],api=createEclatV2SessionApi({async rpc(name,args){
+  calls.push([name,args]);return {data:status};}});
+ await api.cardsSubmit({sessionId:sid,expectedStep:1,cards:[1,7]});
+ await api.cardsShared({sessionId:sid,expectedStep:1,common:[7],jointOral:true});
+ await api.cardVote({sessionId:sid,expectedStep:2,card:7});
+ assert.deepEqual(calls.map(x=>x[0]),[
+  'love_eclat_v2_cards_submit','love_eclat_v2_cards_shared','love_eclat_v2_card_vote']);
+ assert.equal(calls[1][1].p_joint_oral,true);
+ assert.ok(calls.every(x=>!JSON.stringify(x[1]).includes('user_id')));
+ assert.throws(()=>api.cardsSubmit({sessionId:sid,expectedStep:1,cards:[1,1]}),RangeError);
+});

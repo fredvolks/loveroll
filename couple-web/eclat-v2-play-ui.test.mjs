@@ -243,3 +243,37 @@ test('12 reads persisted server dice and offers consented constraint-only reroll
  const absent=renderEclatV2PlayA({status:status(12,1,30,1),viewerId:aid});
  assert.match(absent,/Aucun résultat local n’est créé/);
 });
+
+test('09 two-phone selections stay private until both confirmed',()=>{
+ const waiting=status(9,0,30,1,{my_cards_ready:false,my_cards:[],common_cards:null});
+ const before=renderEclatV2PlayA({status:waiting,viewerId:aid,cardDraft:[1,7]});
+ assert.match(before,/data-eclat-v2-action="wish-toggle:1"/);
+ assert.match(before,/data-eclat-v2-action="wish-confirm"/);
+ assert.doesNotMatch(before,/data-eclat-v2-action="act:continue"/);
+ const b=renderEclatV2PlayA({status:{...waiting,my_cards:[]},viewerId:bid});
+ assert.doesNotMatch(b,/Sélection validée/);
+ const aReady=renderEclatV2PlayA({status:{...waiting,my_cards:[1,7],my_cards_ready:true},viewerId:aid});
+ assert.match(aReady,/Sélection validée/);
+ assert.doesNotMatch(aReady,/data-eclat-v2-action="wish-toggle:1"/);
+ const joint=renderEclatV2PlayA({status:{...waiting,common_cards:[7],revealed:true},viewerId:aid});
+ assert.match(joint,/data-eclat-v2-action="act:continue"/);
+ const chooser=renderEclatV2PlayA({status:status(9,0,30,3,{common_cards:[7],selected_card:null}),viewerId:aid});
+ assert.match(chooser,/data-eclat-v2-action="wish-vote:7"/);
+ assert.doesNotMatch(chooser,/data-eclat-v2-action="act:continue"/);
+ const selected=renderEclatV2PlayA({status:status(9,0,30,3,{common_cards:[7],selected_card:7}),viewerId:aid});
+ assert.match(selected,/Carte retenue ensemble/);
+ assert.match(selected,/data-eclat-v2-action="act:continue"/);
+});
+test('09 shared phone requires two ephemeral choices before joint submission',()=>{
+ const s=status(9,1,30,1,{device_mode:'one',common_cards:null});
+ const picks={A:[1,4],B:[4]};
+ const hidden=renderEclatV2PlayA({status:s,viewerId:aid,
+  sharedCardDraft:picks,sharedCardConfirmed:['A','B']});
+ assert.doesNotMatch(hidden,/wish-reveal-joint/);
+ const onlyOne=renderEclatV2PlayA({status:s,viewerId:aid,localRole:'A',
+  sharedCardDraft:picks,sharedCardConfirmed:['A']});
+ assert.doesNotMatch(onlyOne,/wish-reveal-joint/);
+ const both=renderEclatV2PlayA({status:s,viewerId:aid,localRole:'A',
+  sharedCardDraft:picks,sharedCardConfirmed:['A','B']});
+ assert.match(both,/data-eclat-v2-action="wish-reveal-joint"/);
+});
