@@ -11,9 +11,11 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
  let predictionDraft={answer:null,prediction:null},puzzleDraft={place:null,time:null,code:null},puzzleAttempt=null;
  const emptyShared=()=>({A:{answer:null,prediction:null},B:{answer:null,prediction:null}});
  let sharedAnswers=emptyShared(),sharedConfirmed=new Set(),sharedReveal=null;
+ let musicDraft={title:null,artist:null},sharedMusicNotes={},sharedRevealedMusic=[];
  const paint=()=>{if(!disposed)root.innerHTML=renderEclatV2PlayA({
   status,viewerId,localRole:role,seenRoles:[...seen],predictionDraft,puzzleDraft,puzzleAttempt,
-  sharedAnswers,sharedConfirmed:[...sharedConfirmed],sharedReveal});};
+  sharedAnswers,sharedConfirmed:[...sharedConfirmed],sharedReveal,
+  musicDraft,sharedMusicNotes,sharedRevealedMusic});};
  async function refresh(){
   if(disposed)return;
   const updated=await api.status(status.session_id);
@@ -21,6 +23,7 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
   const changed=updated.chapter_index!==status.chapter_index||updated.substep_index!==status.substep_index;
   status=updated;
   if(changed){
+   musicDraft={title:null,artist:null};
    role=null;seen=new Set();predictionDraft={answer:null,prediction:null};
    puzzleDraft={place:null,time:null,code:null};puzzleAttempt=null;
    sharedAnswers=emptyShared();sharedConfirmed=new Set();sharedReveal=null;
@@ -32,7 +35,27 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
   if(!button||!root.contains(button)||busy||disposed)return;
   const command=button.getAttribute('data-eclat-v2-action');
   if(!command)return;
-  if(command==='hide-role'){role=null;paint();return;}
+  if(command==='hide-role'){role=null;musicDraft={title:null,artist:null};paint();return;}
+  if(command==='music-save'&&status.coffret_id===8&&status.device_mode==='one'){
+   if(!role)return;
+   const key=role+':'+status.music_theme;
+   const existing=sharedMusicNotes[key]||{};
+   const title=(musicDraft.title??existing.title??'').trim();
+   const artist=(musicDraft.artist??existing.artist??'').trim();
+   if(!title||title.length>120||artist.length>120)return;
+   sharedMusicNotes={...sharedMusicNotes,[key]:{title,artist}};
+   musicDraft={title:null,artist:null};paint();return;
+  }
+  if(command==='music-reveal'&&status.coffret_id===8&&status.device_mode==='one'){
+   if(!role)return;
+   const note=sharedMusicNotes[role+':'+status.music_theme];
+   if(!note||!note.title)return;
+   if(!sharedRevealedMusic.some(x=>x.owner===role&&x.theme===status.music_theme))
+    sharedRevealedMusic=[...sharedRevealedMusic,{
+     theme:status.music_theme,owner:role,title:note.title,artist:note.artist
+    }];
+   paint();return;
+  }
   if(command.startsWith('puzzle-place:')||command.startsWith('puzzle-time:')||command.startsWith('puzzle-code:')){
    if(status.coffret_id!==6||status.state!=='active'||status.puzzle_solved)return;
    const [kind,...parts]=command.split(':'),value=parts.join(':');
@@ -69,7 +92,18 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
   try{
    const sid=status.session_id,idx=status.chapter_index;
    let next;
-   if(command.startsWith('attention-propose:')){
+   if(command==='music-save'){
+    if(status.coffret_id!==8||status.device_mode!=='two')return;
+    const title=(musicDraft.title??status.my_music_note?.title??'').trim();
+    const artist=(musicDraft.artist??status.my_music_note?.artist??'').trim();
+    if(!title||title.length>120||artist.length>120)return;
+    next=await api.musicNote({sessionId:sid,expectedStep:idx,title,artist});
+    musicDraft={title:null,artist:null};
+   }else if(command==='music-reveal'){
+    if(status.coffret_id!==8||status.device_mode!=='two')return;
+    next=await api.musicReveal({sessionId:sid,expectedStep:idx});
+    musicDraft={title:null,artist:null};
+   }else if(command.startsWith('attention-propose:')){
     const attention=Number(command.slice('attention-propose:'.length));
     if(status.coffret_id!==5||![0,1,2].includes(attention))return;
     next=await api.attentionPropose({sessionId:sid,expectedStep:idx,attention,
@@ -119,12 +153,28 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
     role=null;seen=new Set();predictionDraft={answer:null,prediction:null};
     puzzleDraft={place:null,time:null,code:null};puzzleAttempt=null;
     sharedAnswers=emptyShared();sharedConfirmed=new Set();
+    musicDraft={title:null,artist:null};
    }
    if(next.revealed && status.device_mode==='one')role=null;
    status=next;paint();
   }catch(err){onError(err);}finally{busy=false;}
  }
+ function input(event){
+  const element=event.target;
+  if(disposed||status.coffret_id!==8||status.state!=='active'||!element?.getAttribute)return;
+  const k=element.getAttribute('data-eclat-v2-input');
+  if(k!=='music-title'&&k!=='music-artist')return;
+  if(status.device_mode==='one'&&!['A','B'].includes(role))return;
+  musicDraft={...musicDraft,[k==='music-title'?'title':'artist']:String(element.value).slice(0,120)};
+  // Do not repaint on each keystroke: cursor/IME must remain stable.
+ }
+ root.addEventListener('input',input);
  root.addEventListener('click',click);
  paint();
- return Object.freeze({refresh,destroy(){disposed=true;root.removeEventListener('click',click);},getStatus(){return status;}});
+ return Object.freeze({refresh,destroy(){
+  disposed=true;root.removeEventListener('click',click);root.removeEventListener('input',input);
+  sharedAnswers=emptyShared();sharedConfirmed.clear();sharedReveal=null;
+  musicDraft={title:null,artist:null};sharedMusicNotes={};sharedRevealedMusic=[];
+  root.innerHTML='';
+ },getStatus(){return status;}});
 }

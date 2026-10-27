@@ -190,3 +190,32 @@ test('05 shared phone attention uses A/B screens, no fake impersonation',()=>{
  assert.match(b,/data-eclat-v2-action="attention-reply:yes"/);
  assert.match(b,/aucune session de B n’est simulée/);
 });
+
+test('08 note UI is private by default with author-triggered reveal only',()=>{
+ const s=status(8,0,30,1,{my_music_note:{title:'Chanson privée',artist:'',revealed:false},
+   revealed_music:[],music_theme:1});
+ const mine=renderEclatV2PlayA({status:s,viewerId:aid});
+ assert.match(mine,/Chanson privée/);
+ assert.match(mine,/data-eclat-v2-action="music-reveal"/);
+ assert.match(mine,/data-eclat-v2-action="music-save"/);
+ const partner=renderEclatV2PlayA({status:{...s,my_music_note:null},viewerId:bid});
+ assert.doesNotMatch(partner,/Chanson privée/);
+ const revealed=renderEclatV2PlayA({status:{...s,my_music_note:{title:'Chanson privée',revealed:true},
+   revealed_music:[{theme:1,owner:aid,title:'Chanson privée',artist:''}]},viewerId:aid});
+ assert.match(revealed,/Titres déjà révélés/);
+ assert.doesNotMatch(revealed,/data-eclat-v2-action="music-save"/);
+ assert.doesNotMatch(revealed,/<audio|<iframe/);
+});
+test('08 shared phone note is local and never claims to be B auth',()=>{
+ const s=status(8,1,30,1,{device_mode:'one',music_theme:1});
+ const hidden=renderEclatV2PlayA({status:s,viewerId:aid,
+   sharedMusicNotes:{'B:1':{title:'Titre B',artist:''}}});
+ assert.doesNotMatch(hidden,/Titre B/);
+ const a=renderEclatV2PlayA({status:s,viewerId:aid,localRole:'A',
+   sharedMusicNotes:{'B:1':{title:'Titre B',artist:''}}});
+ assert.doesNotMatch(a,/Titre B/);
+ const b=renderEclatV2PlayA({status:s,viewerId:aid,localRole:'B',
+   sharedMusicNotes:{'B:1':{title:'Titre B',artist:''}}});
+ assert.match(b,/Titre B/);
+ assert.match(b,/data-eclat-v2-action="music-reveal"/);
+});

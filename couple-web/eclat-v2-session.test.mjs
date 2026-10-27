@@ -63,3 +63,13 @@ test('Attention actions are role-less requests and reject unapproved responses',
  assert.throws(()=>api.attentionReply({sessionId:sid,expectedStep:3,answer:'force'}),RangeError);
  assert.throws(()=>api.attentionPropose({sessionId:sid,expectedStep:3,attention:3}),RangeError);
 });
+
+test('08 music note and reveal use authenticated RPC without choosing author',async()=>{
+ const calls=[];const api=createEclatV2SessionApi({async rpc(name,args){calls.push([name,args]);return {data:status};}});
+ await api.musicNote({sessionId:sid,expectedStep:1,title:'Titre imaginaire',artist:'Artiste'});
+ await api.musicReveal({sessionId:sid,expectedStep:1});
+ assert.deepEqual(calls.map(x=>x[0]),['love_eclat_v2_music_note','love_eclat_v2_music_reveal']);
+ assert.equal(calls[0][1].p_title,'Titre imaginaire');
+ assert.ok(calls.every(x=>!JSON.stringify(x[1]).includes('user_id')));
+ assert.throws(()=>api.musicNote({sessionId:sid,expectedStep:1,title:' '}),RangeError);
+});

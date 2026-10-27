@@ -34,3 +34,10 @@
  .eclat-v2-actions,.eclat-v2-actions .eclat-v2-btn{width:100%}
  .eclat-v2-handover-link .eclat-v2-btn{width:100%}}
 @media(prefers-reduced-motion:reduce){.eclat-v2-btn:active{transform:none}}
+
+.eclat-v2-stage input[data-eclat-v2-input]{width:100%;min-height:46px;box-sizing:border-box;
+ border:1px solid rgba(255,225,238,.35);background:rgba(12,6,14,.5);
+ border-radius:11px;color:#fff1f6;font-size:1rem;padding:10px 12px;outline-offset:3px}
+.eclat-v2-stage input[data-eclat-v2-input]:focus-visible{outline:3px solid #fff}
+.eclat-v2-stage input[data-eclat-v2-input]:disabled{opacity:.65}
+.eclat-v2-stage label{display:block;margin-top:8px;color:#ffe5ef}
