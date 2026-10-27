@@ -71,6 +71,13 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
    await page.locator('[data-action="category:HASARD"]').click();assert.equal(await page.locator('.evening-choice-odds').count(),0);
   }
   await page.locator('[data-action="new-challenge"]').click();
+  // LR-014: the approved user-visible category confirmation now gates the
+  // OFFICIAL D100. Confirm it in this gameplay test before measuring spin.
+  const categoryDialog=page.locator('dialog.lr-evening-category-dialog[open]');
+  if(await categoryDialog.count()){
+   assert.equal(await categoryDialog.isVisible(),true);
+   await categoryDialog.locator('[data-confirm-action="yes"]').click();
+  }
   // Server draw confirmation is asynchronous: sample only after the real mesh starts spinning.
   await page.waitForFunction(()=>document.querySelector('.evening-d35-col canvas')?.loveRollDie?.readState()?.spinning===true,null,{timeout:15000,polling:'raf'});
   // LR-001: verify the projected *real WebGL mesh*, not just its canvas,
