@@ -403,6 +403,9 @@ jobs:
       - name: Fail on syntax errors in any shipped JS file
         run: node couple-web/check-shipped-js.cjs
 
+      - name: Verify real iPad Soirée D6 and D100 on the ONE HD photo (portrait and landscape)
+        run: node couple-web/ipad-romance-scene-browser-check.cjs
+
       - name: Real app boot in Chromium (anonymous, Google callback, existing session)
         run: node couple-web/boot-smoke.cjs
 
@@ -434,8 +437,6 @@ jobs:
         run: |
           node couple-web/premium-couple-visual-check.cjs
 
-      - name: Verify real iPad Soirée D6 and D100 on the ONE HD photo (portrait and landscape)
-        run: node couple-web/ipad-romance-scene-browser-check.cjs
       - name: Verify Home D6 stays flat during touch and official result (Pages gate)
         run: node couple-web/home-ruby-interaction-browser-check.cjs
 
