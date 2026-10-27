@@ -28,14 +28,14 @@ test('Server protects security-definer game RPCs and 29 RLS tables',()=>{
  assert.match(sql,/open_advent_day/);
  assert.doesNotMatch(sql,/DELETE FROM public\.couples/);
 });
-test('Dice D6, D20, D35 share frame-independent 3D physics and deterministic end result',()=>{
+test('Dice D6, D20, D35 share frame-independent physics and face-aligned results',()=>{
  for(const n of ['6','20','35'])assert.ok(dice.includes('sides==='+n),'geometry '+n);
  assert.match(dice,/let duration=rolling&&!reduceMotion\?ROLL_TOTAL_MS:0/);
  assert.match(dice,/dt=lastFrame\?Math\.min\(\.05/);
  assert.match(dice,/rollAngles\(trajectory,elapsed\)/);
  assert.doesNotMatch(dice,/orientationAtSettle|slerpQuaternions\(orientationAtSettle/);
  assert.match(dice,/const orientationFor=face/);
- assert.match(dice,/new THREE\.Euler\(\.16,-\.18,-\.02\)/);
+ assert.match(dice,/new THREE\.Euler\(\.11,-\.21,0\)/);\n  assert.match(dice,/engravedFrame\.invert\(\)/);
  assert.match(dice,/prefers-reduced-motion: reduce/);
  assert.match(dice,/built\.group\.quaternion\.copy\(target\)/);
  assert.doesNotMatch(dice,/t<\.77/);
