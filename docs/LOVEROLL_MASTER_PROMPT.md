@@ -60,6 +60,9 @@ Travailler simultanément comme développeur senior Web/Android/PWA/WebGL, direc
 ### LR-001 — D100 Soirée coupé et disproportionné
 **Constat photographié :** dans l'onglet Soirée, le D100 déborde en haut, masque son propre sommet et prend trop de place entre « Notre soirée / Éclat Premium » et le socle.
 
+**Précision approuvée le 27 octobre 2026 — première page Soirée :** cette correction vise explicitement **l’écran d’entrée avant « Commencer notre soirée »**, avec « 200 défis à vivre à deux » et le sélecteur Notre soirée / Éclat, illustré par la nouvelle capture Android. Ne pas limiter le correctif au D100 des défis après démarrage. Le dé de présentation y est trop gros et son sommet est coupé : **réduire son emprise visuelle**, retrouver le dé entier avec une marge de respiration et un socle visible, sans qu’il écrase le titre, le sélecteur, le bouton de démarrage ou le bilan/calendrier. Vérifier aussi le rendu après démarrage pour conserver une cohérence des étapes.
+La réduction concerne le cadrage et l’échelle de rendu sur cet écran; conserver le vrai modèle 3D, ses faces/gravures, son comportement et les résultats officiels. Cette précision autorise cet ajustement de taille malgré la consigne de conservation de dimension du lot d’orientation LR-046, dont le périmètre est distinct. Ne pas créer un nouveau tirage en ajustant l’aperçu.
+
 **Exigences :**
 - Utiliser la **taille et le cadrage du D100 de Surprise** comme référence, pas une échelle arbitraire.
 - Garder le D100 entier visible **avant, pendant et après** toutes ses rotations/animations.
@@ -400,7 +403,8 @@ Cette précision complète LR-019 et prévaut sur toute formulation antérieure 
 - Inscrire preuves et état réel au suivi. Cette précision est une spécification, pas une fonctionnalité déjà livrée.
 
 ### LR-025 — Mode discrétion / cacher le jeu (idée no 6)
-- Dans les fiches de défis/Soirée, proposer un bouton discret **« Masquer »** et éventuellement un raccourci tactile pour masquer immédiatement l'activité affichée.
+- **Modification propriétaire approuvée le 27 octobre 2026 : retirer le bouton flottant « Masquer » en haut à gauche**, visible sur la première page Soirée de la capture. Il est jugé inutile à cet emplacement et encombre l’en-tête. Ne pas le remplacer par un autre bouton ou pictogramme flottant au même endroit; le logo, le titre et la navigation retrouvent leur espace.
+- Cette demande concerne le contrôle permanent de l’en-tête, pas la suppression de toute la confidentialité : conserver le mode discrétion et son accès discret dans les fiches sensibles lorsqu’il est pertinent, sans réintroduire le bouton flottant sur les écrans d’entrée. Les anciennes exigences ou tests imposant sa présence en haut à gauche doivent évoluer pour vérifier ce nouveau comportement et le maintien des protections utiles.
 - L'écran de confidentialité doit cacher **titres, catégories sensibles, consignes, progression intime et éventuellement noms de cartes**. Afficher à la place un écran neutre LoveRoll (logo et bouton **« Revenir au jeu »**) sans notifications ou previews explicites.
 - Le mode doit préserver l'état courant : ne pas effacer, valider, passer ou refuser un défi, ni déclencher ou relancer un minuteur ; documenter la gestion visible de celui déjà lancé.
 - Supprimer les extraits de défis des notifications Push, titres d'onglets, widgets et aperçus d'application sensibles **lorsque l'API/plateforme le permet**, ne pas promettre une capture d'écran ou multitâche protégée si le navigateur ne permet pas cela.
@@ -419,7 +423,7 @@ Cette précision complète LR-019 et prévaut sur toute formulation antérieure 
 
 ### LR-027 — Un seul bouton principal par étape (idée no 8)
 - Harmoniser la hiérarchie de l'onglet Soirée en n'affichant **qu'une action visuellement dominante** correspondant à l'état réel : **« Brasser mon D6 »**, **« En attente de ton partenaire »** (état, non bouton trompeur), **« Brasser le D100 »**, **« Voir mon défi »**, **« Commencer »**, **« Terminer le défi »** ou **« Reprendre notre soirée »** selon étape.
-- Les actions secondaires **« Adapter »**, **« Passer »**, **« Refuser »**, **« Coup de cœur »**, **« Masquer »** restent présentes et faciles à utiliser (pas cachées dans un menu inaccessible).
+- Les actions secondaires **« Adapter »**, **« Passer »**, **« Refuser »**, **« Coup de cœur »** et le mode **« Masquer »** lorsqu’il est pertinent sur une fiche sensible restent accessibles; respecter LR-025 : aucun bouton Masquer flottant en haut à gauche des écrans d’entrée.
 - Synchroniser le libellé et son état avec le serveur. Ne jamais afficher « Terminer » pour un défi déjà réalisé, ni masquer « Refuser » en raison du plafond de Passer LR-016.
 - Design calqué sur l'Accueil : vrais boutons rubis/dorés réactifs, alignements, même typographie, pas de faux boutons en image. Responsive S25 Ultra, petit Android, iPhone, iPad portrait/paysage, PC et clavier.
 - Préserver le bouton de confirmation de catégorie LR-014 lors de « Brasser le D100 ».
