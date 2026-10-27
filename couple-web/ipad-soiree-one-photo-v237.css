@@ -71,6 +71,18 @@
    width:100%!important;max-width:520px!important;min-height:43px!important;
    flex:none!important;
   }
+  /* The legacy desktop editorial layout assigns choice to column 2 and the
+     D100 to column 1. Once the Android single-column template is enabled,
+     those assignments create an implicit ZERO-width first column, hiding
+     the real D100 on iPad. Explicitly place all live widgets in column 1. */
+  #app.loveroll-evening-page .evening-premium-view.has-evening-d100-template :is(
+   .evening-toolbar,.evening-intro,.evening-choice,.evening-d100-theater,
+   .evening-play-state,.evening-progress,.evening-d100-roll,
+   .evening-d100-utilities,.evening-d100-quota
+  ){
+   grid-column:1/-1!important;
+   min-width:0!important;
+  }
   #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template .evening-empty{
    grid-column:1!important;grid-row:3!important;
    display:grid!important;grid-template-columns:minmax(0,1fr)!important;
