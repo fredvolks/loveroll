@@ -26,19 +26,19 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   const viewport=await page.evaluate(()=>{const g=document.querySelector('.eclat-photo-grid'),r=g.getBoundingClientRect(),n=document.querySelector('.nav').getBoundingClientRect();return {scroll:g.scrollHeight>g.clientHeight,cols:getComputedStyle(g).gridTemplateColumns.trim().split(/\s+/).length,fit:r.bottom<=n.top-5,overflow:document.documentElement.scrollHeight>innerHeight};});
   assert.deepEqual(viewport,{scroll:true,cols:1,fit:true,overflow:false});
   if(process.env.LOVEROLL_CAPTURE_DIR)await page.screenshot({path:path.join(process.env.LOVEROLL_CAPTURE_DIR,`eclat-gallery-${width}.png`)});
-  await page.locator('[data-action="eclat:detail:12"]').scrollIntoViewIfNeeded();await page.locator('[data-action="eclat:detail:12"]').click();await page.waitForSelector('.eclat-detail[data-coffret-id="12"]');
+  await page.locator('[data-action="eclat:detail:12"]').click();await page.waitForSelector('.eclat-detail[data-coffret-id="12"]');
   assert.equal(await page.locator('.eclat-return[data-action="eclat:library"] .lr-gold-arrow.is-back').count(),1);
   await page.locator('.eclat-return').click();await page.waitForSelector('.eclat-photo-grid');assert.ok(await page.locator('.eclat-photo-grid').evaluate(n=>n.scrollTop)>100);
-  await page.locator('[data-action="eclat:detail:9"]').scrollIntoViewIfNeeded();await page.locator('[data-action="eclat:detail:9"]').click();
+  await page.locator('[data-action="eclat:detail:9"]').click();
   assert.equal(await page.locator('.eclat-detail .is-done').count(),2);
   await page.locator('[data-action="eclat:minutes:90"]').click();
   const fits=()=>page.locator('.eclat-detail').evaluate(n=>{const b=n.getBoundingClientRect();return n.scrollHeight<=n.clientHeight+1&&[...n.children].filter(x=>getComputedStyle(x).display!=='none').every(x=>{const r=x.getBoundingClientRect();return r.top>=b.top-1&&r.bottom<=b.bottom+1;});});
   assert.equal(await fits(),true,'Whole explanation, duration choices and open button fit on one page');
   if(width===360){for(let id=1;id<=12;id++){
-   await page.locator('.eclat-return').click();await page.locator('[data-action="eclat:detail:'+id+'"]').scrollIntoViewIfNeeded();await page.locator('[data-action="eclat:detail:'+id+'"]').click();
+   await page.locator('.eclat-return').click();await page.locator('[data-action="eclat:detail:'+id+'"]').click();
    for(const duration of [30,60,90]){await page.locator('[data-action="eclat:minutes:'+duration+'"]').click();assert.equal(await fits(),true,'Coffret '+id+', '+duration+' min fits completely');}
   }
-  await page.locator('.eclat-return').click();await page.locator('[data-action="eclat:detail:9"]').scrollIntoViewIfNeeded();await page.locator('[data-action="eclat:detail:9"]').click();}
+  await page.locator('.eclat-return').click();await page.locator('[data-action="eclat:detail:9"]').click();}
   // Opening a different coffret resets the approved quick-start duration to 30 minutes.
   // This browser journey deliberately chooses 90 again before starting; do not
   // confuse a previous coffret's duration selection with the current coffret.
@@ -50,7 +50,10 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   assert.equal(world.eclat.minutes,90,'Explicit 90-minute selection is persisted to the started session');assert.equal(world.calls.filter(x=>x.name==='love_eclat_start').length,1);
   await page.getByRole('button',{name:'Retour aux coffrets',exact:true}).click();await page.waitForSelector('.eclat-photo-grid');
   assert.match(await page.locator('[data-action="eclat:detail:9"]').innerText(),/En cours · 90 min · étape 1/);
-  await page.locator('[data-action="eclat:detail:1"]').scrollIntoViewIfNeeded();await page.locator('[data-action="eclat:detail:1"]').click();assert.equal(await page.locator('[data-action^="eclat:start:"]').count(),0);
+  // Locator.click() waits for the currently mounted card and auto-scrolls it;
+  // scrollIntoViewIfNeeded() followed by click() raced against reactive gallery remounts on 412x915.
+  await page.locator('[data-action="eclat:detail:1"]').click();await page.waitForSelector('.eclat-detail[data-coffret-id="1"]');
+  assert.equal(await page.locator('[data-action^="eclat:start:"]').count(),0);
   await page.locator('[data-action="eclat:resume"]').click();await page.waitForSelector('.eclat-play');
   assert.equal(world.calls.filter(x=>x.name==='roll_couple_once').length,0);assert.deepEqual(errors,[]);
   await context.close();console.log('ECLAT_NIGHT_OK',width);
