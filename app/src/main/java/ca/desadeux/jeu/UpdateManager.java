@@ -23,7 +23,9 @@ import java.util.Locale;
 
 public final class UpdateManager {
  private static final String REPO="fredvolks/loveroll";
- private static final String PREFIX="des-a-deux-v";
+ // New certificate cannot update legacy 0.13.13 installations; keep releases
+ // in a separate lineage so old users do not receive an incompatible APK.
+ private static final String PREFIX="loveroll-newsign-v";
  private static final String API="https://api.github.com/repos/"+REPO+"/releases?per_page=50";
  private static boolean working=false;
  public static void check(Activity a,boolean quiet){

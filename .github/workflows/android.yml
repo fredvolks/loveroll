@@ -14,7 +14,9 @@ jobs:
     permissions:
       contents: write
     env:
-      TAG: des-a-deux-v0.13.14
+      TAG: loveroll-newsign-v0.13.14
+      # SHA-256 of the public signing certificate (never the private key).
+      EXPECTED_SIGNER_SHA256: be1f51d895a20bb6708919c1b98a044ee7646902d348d4c8d311e19a10728809
       KEYSTORE_B64: ${{ secrets.KEYSTORE || secrets.ANDROID_KEYSTORE_BASE64 }}
       STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || secrets.ANDROID_STORE_PASSWORD }}
       SIGN_ALIAS: ${{ secrets.KEY_ALIAS || secrets.ANDROID_KEY_ALIAS }}
@@ -167,12 +169,14 @@ jobs:
             --out dist/LoveRoll-v0.13.14.apk "$RUNNER_TEMP/aligned.apk"
           cp dist/LoveRoll-v0.13.14.apk dist/Des-a-Deux-v0.13.14.apk
           "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs dist/LoveRoll-v0.13.14.apk
-          # Confirm this APK can update the installed release without uninstalling.
-          curl -fL --retry 3 'https://github.com/fredvolks/loveroll/releases/download/des-a-deux-v0.13.13/LoveRoll-v0.13.13.apk' -o "$RUNNER_TEMP/previous-loveroll.apk"
-          installed_cert=$("$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "$RUNNER_TEMP/previous-loveroll.apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
-          update_cert=$("$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs dist/LoveRoll-v0.13.14.apk | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
-          test -n "$installed_cert" && test "$installed_cert" = "$update_cert"
-          echo 'APK signing certificate matches the existing LoveRoll release.'
+          # New signing lineage is NOT Android-update-compatible with v0.13.13.
+          # Reject any key other than the new approved certificate.
+          update_cert=$("$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs dist/LoveRoll-v0.13.14.apk | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | tr '[:upper:]' '[:lower:]' | tr -d ':')
+          test -n "$update_cert" && test "$update_cert" = "$EXPECTED_SIGNER_SHA256" || {
+            echo "::error::Signature APK inattendue : nouvelle clé approuvée requise."
+            exit 1
+          }
+          echo 'APK signed with pinned new LoveRoll certificate (clean-install lineage).'
           sha256sum dist/LoveRoll-v0.13.14.apk dist/Des-a-Deux-v0.13.14.apk
           rm -f "$RUNNER_TEMP/des-a-deux.jks"
       - name: Upload installable APK
@@ -192,4 +196,4 @@ jobs:
           fi
           gh release create "$TAG" dist/LoveRoll-v0.13.14.apk dist/Des-a-Deux-v0.13.14.apk \
             --target "$GITHUB_SHA" --title "LoveRoll v0.13.14" \
-            --notes "Réglages des notifications Android : choix enregistrables sans fausse promesse d'envoi, accès direct aux autorisations système, authentification et données conservées. APK signée avec le certificat original, compatible avec la version 0.13.13."
+            --notes "NOUVELLE SIGNATURE ANDROID : installation propre obligatoire pour les appareils ayant la version 0.13.13. Sauvegardez vos données locales avant de désinstaller l'ancienne application, puis réinstallez cette APK. Les futures versions de cette nouvelle lignée pourront être mises à jour avec le même certificat. Notifications Android 0.13.14 : choix enregistrables, accès aux autorisations système, données de compte serveur conservées."
