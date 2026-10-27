@@ -63,12 +63,9 @@ begin
  perform public.love_eclat_v2_act(sid,2,'continue');
  s:=public.love_eclat_v2_act(sid,3,'continue');
  if s->>'chapter_number'<>'6' then raise exception 'Scene 6 was not reached';end if;
- begin
-  perform public.love_eclat_v2_story_vote(sid,3,'off',2);
-  raise exception 'A alone disabled constraint';
- exception when raise_exception then
-  if sqlerrm<>'A alone disabled constraint' then raise;end if;
- end;
+ s:=public.love_eclat_v2_story_vote(sid,3,'off',2);
+ if s->>'constraint_enabled'<>'true' then
+  raise exception 'One role turned off the shared constraint';end if;
 end $$;
 set request.jwt.claim.sub='00000000-0000-0000-0000-000000000002';
 do $$
