@@ -1,5 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
+// Run the Surprise venue/UI regressions in the existing required CI suite.
+import './monthly-geo-ui.test.mjs';
 import {MONTHLY_ACTIVITIES} from './monthly-activities.mjs';
 import {activityCategory,VENUE_CATEGORIES,chooseNearbyVenue,localActivityResult,isRouteWithinRadius,verifiedRoadMetres,drivingKilometres} from './local-outings.mjs';
 test('All 100 monthly activity themes can map to a supported places category',()=>{
