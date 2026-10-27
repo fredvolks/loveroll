@@ -192,3 +192,183 @@ test('Private MEDIUM copy is seeded once per duo, editable without changing comm
   personal.indexOf('revoke all on function public.save_love_personal_sexual_card'));
  assert.doesNotMatch(saver,/update public\.love_future_style_cards|delete from public\.love_custom_challenges|truncate/i);
 });
+
+
+test('LR-015 phase 2: private per-couple current-cycle exclusion registry and safe restore',()=>{
+ const migration=read('migrations/20261026_lr015_cycle_exclusion_registry.sql');
+ assert.match(migration,/PRIMARY KEY\(couple_id,cycle_number,category,card_id\)/);
+ assert.match(migration,/REFERENCES public\.couples\(id\) ON DELETE CASCADE/);
+ assert.match(migration,/excluded_by uuid REFERENCES auth\.users\(id\) ON DELETE SET NULL/);
+ assert.match(migration,/ENABLE ROW LEVEL SECURITY/);
+ assert.match(migration,/REVOKE ALL ON TABLE public\.love_cycle_excluded_cards FROM PUBLIC,anon,authenticated/);
+ assert.match(migration,/CREATE OR REPLACE FUNCTION public\.my_love_cycle_exclusions\(p_couple uuid\)/);
+ assert.match(migration,/CREATE OR REPLACE FUNCTION public\.restore_love_cycle_exclusion\(/);
+ assert.equal((migration.match(/love_require_verified_identity\(\)/g)||[]).length,2);
+ assert.equal((migration.match(/couple_private\.is_member\(p_couple\)/g)||[]).length,2);
+ assert.match(migration,/e\.cycle_number=c\.challenge_cycle_number/);
+ assert.match(migration,/e\.cycle_number=v_cycle/);
+ assert.match(migration,/WHERE c\.id=p_couple FOR UPDATE/);
+ assert.match(migration,/GET DIAGNOSTICS v_deleted=ROW_COUNT/);
+ assert.doesNotMatch(migration,/GRANT (?:ALL|INSERT|UPDATE|DELETE|SELECT) ON (?:TABLE )?public\.love_cycle_excluded_cards/i);
+ assert.doesNotMatch(migration,/DROP TABLE|TRUNCATE|DELETE FROM public\.couple_challenges/i);
+ assert.match(migration,/GRANT EXECUTE ON FUNCTION public\.my_love_cycle_exclusions\(uuid\)/);
+ assert.match(migration,/GRANT EXECUTE ON FUNCTION public\.restore_love_cycle_exclusion\(uuid,text,integer\)/);
+});
+
+
+test('LR-015 phase 3: atomic refusal/pass and same-category replacement contracts',()=>{
+ const m=read('migrations/20261026_lr015_z_atomic_respond_redraw.sql');
+ const fn=m.slice(m.indexOf('CREATE OR REPLACE FUNCTION public.love_respond_and_redraw('),
+  m.indexOf('REVOKE ALL ON FUNCTION public.love_respond_and_redraw'));
+ assert.match(m,/status IN \('proposed','accepted','passed','refused','completed'\)/);
+ assert.match(m,/CREATE TABLE IF NOT EXISTS public\.love_challenge_redraws/);
+ assert.match(m,/PRIMARY KEY REFERENCES public\.couple_challenges\(id\) ON DELETE CASCADE/);
+ assert.match(m,/ENABLE ROW LEVEL SECURITY/);
+ assert.match(m,/REVOKE ALL ON TABLE public\.love_challenge_redraws/);
+ assert.match(fn,/p_action='pass' AND p_exclude IS TRUE/);
+ assert.match(fn,/v_old\.recipient IS DISTINCT FROM \(select auth\.uid\(\)\)/);
+ assert.match(fn,/FROM public\.couples c WHERE c\.id=v_couple FOR UPDATE/);
+ assert.match(fn,/FROM public\.couple_sessions s[\s\S]*FOR UPDATE/);
+ assert.match(fn,/v_prior\.replacement_id/);
+ assert.match(fn,/v_used>=v_limit/);
+ assert.match(fn,/q\.status='passed' AND q\.passed_at IS NOT NULL/);
+ assert.match(fn,/CASE WHEN p_action='pass' THEN 'passed' ELSE 'refused'/);
+ assert.match(fn,/love_cycle_excluded_cards/);
+ assert.match(fn,/cc\.drawer_role,v_old\.offered_by,v_owner/);
+ assert.match(fn,/cc\.recipient_role,v_old\.recipient,v_owner/);
+ assert.match(fn,/seen\.session_id=v_old\.session_id/);
+ assert.match(fn,/seen\.category=v_old\.category AND seen\.card_id=candidate\.card/);
+ assert.match(fn,/RETURNING id INTO v_new_id/);
+ assert.match(fn,/replacement_unavailable/);
+ assert.match(fn,/INSERT INTO public\.love_challenge_redraws/);
+ assert.match(m,/GRANT EXECUTE ON FUNCTION public\.love_respond_and_redraw\(uuid,text,boolean\)/);
+ const draw=m.slice(m.indexOf('CREATE OR REPLACE FUNCTION public.draw_for_partner'));
+ assert.match(draw,/status NOT IN \('passed','refused'\)/);
+ assert.match(draw,/ex\.cycle_number=v_cycle/);
+ assert.match(draw,/ex\.category=cats\.category\s+and\s+ex\.card_id=candidate\.card/i);
+ assert.match(draw,/ex\.category=v_cat\s+and\s+ex\.card_id=card/i);
+ assert.doesNotMatch(draw,/status<>'passed'/);
+});
+
+
+
+test('LR-015 all session close paths recycle incomplete cards but preserve completed cards of cycle',()=>{
+ const migration=read('migrations/20261026_lr015_recycle_incomplete_on_close.sql');
+ assert.match(migration,/CREATE OR REPLACE FUNCTION public\.close_love_evening_preserve\(p_session uuid\)/);
+ assert.match(migration,/PERFORM public\.love_require_verified_identity\(\)/);
+ assert.match(migration,/couple_private\.is_member\(v_couple\)/);
+ const coupleLock=migration.indexOf('FROM public.couples WHERE id=v_couple FOR UPDATE');
+ const sessionLock=migration.indexOf('FROM public.couple_sessions s\n WHERE s.id=p_session AND s.couple_id=v_couple FOR UPDATE');
+ assert.ok(coupleLock>=0&&sessionLock>coupleLock);
+ assert.match(migration,/IF v_closed THEN RETURN; END IF;/);
+ assert.match(migration,/PERFORM public\.finish_couple_session\(p_session,false\);/);
+ assert.doesNotMatch(migration,/UPDATE public\.couple_sessions SET finished_at=now\(\), counted=true/);
+ assert.match(migration,/CREATE TRIGGER love_recycle_incomplete_close/);
+ assert.match(migration,/AFTER UPDATE OF finished_at ON public\.couple_sessions/);
+ assert.match(migration,/WHEN \(OLD\.finished_at IS NULL AND NEW\.finished_at IS NOT NULL\)/);
+ assert.match(migration,/DELETE FROM public\.love_card_draw_history h\s+USING public\.couple_challenges q, public\.couples c/);
+ assert.match(migration,/q\.status<>'completed'/);
+ assert.match(migration,/done\.status='completed'/);
+ assert.match(migration,/completed_session\.started_at>=c\.challenge_cycle_started_at/);
+ assert.match(migration,/RETURN NEW;/);
+ assert.doesNotMatch(migration,/DELETE FROM public\.couple_challenges|TRUNCATE|UPDATE public\.couple_challenges/i);
+ assert.match(migration,/REVOKE ALL ON FUNCTION public\.close_love_evening_preserve/);
+ assert.match(migration,/GRANT EXECUTE ON FUNCTION public\.close_love_evening_preserve\(uuid\)/);
+});
+
+test('LR-015 phase 1b: passed cards do not create phantom draw capacity in the same evening',()=>{
+ const migration=read('migrations/20261026_lr015_recycle_incomplete_on_close.sql');
+ const func=migration.slice(migration.indexOf('CREATE OR REPLACE FUNCTION public.draw_for_partner'));
+ const cap=func.slice(func.indexOf('select count(*) into capacity'),func.indexOf('if capacity>0'));
+ const pick=func.slice(func.indexOf('select card into cid'),func.indexOf('if cid is null'));
+ for(const part of [cap,pick]){
+  assert.match(part,/used\.session_id=p_session and used\.recipient=target/);
+  assert.match(part,/used\.category=v_cat and used\.card_id=card/);
+  assert.doesNotMatch(part,/used\.status<>'passed'/);
+ }
+ assert.match(func,/select count\(\*\) into first_done/);
+ assert.match(func,/status<>'passed'/,
+  'Passed turns stay excluded from already-filled target counts');
+ assert.match(func,/for update/,'Couple/session serialization remains');
+ assert.match(migration,/DELETE FROM public\.love_card_draw_history h/);
+});
+
+test('LR-015 cached web clients cannot bypass atomic replacement via old pass endpoint',()=>{
+ const sql=read('migrations/20261026_lr015_z_atomic_respond_redraw.sql');
+ const legacy=sql.slice(sql.lastIndexOf('CREATE OR REPLACE FUNCTION public.answer_challenge('));
+ assert.match(legacy,/IF p_status='passed' THEN\s+PERFORM public\.love_respond_and_redraw\(p_id,'pass',false\);\s+RETURN;/);
+ assert.match(legacy,/IF p_status NOT IN \('accepted','passed','completed'\)/);
+ assert.match(legacy,/REVOKE ALL ON FUNCTION public\.answer_challenge\(uuid,text\)/);
+ const check=read('qa/lr015-legacy-pass.sql');
+ assert.match(check,/public\.answer_challenge\(/);
+ assert.match(check,/Legacy Pass bypassed atomic replacement/);
+ assert.match(check,/Old client bypassed shared 2\/2 quota/);
+});
+
+test('LR-015: an exhausted category cannot debit a pass or strand an unfilled slot',()=>{
+ const sql=read('migrations/20261026_lr015_z_atomic_respond_redraw.sql');
+ const branch=sql.indexOf('IF v_card IS NULL THEN');
+ const ledger=sql.indexOf('INSERT INTO public.love_challenge_redraws');
+ assert.ok(branch>0&&ledger>branch,'Guard executes before committing redraw ledger');
+ assert.match(sql.slice(branch,branch+180),/RAISE EXCEPTION 'Aucun autre défi admissible/);
+ const fixture=read('qa/lr015-exhausted-pool.sql');
+ assert.match(fixture,/Exhausted pool debited a pass/);
+ assert.match(fixture,/Exhausted pool mutated original challenge/);
+ assert.match(fixture,/ROLLBACK;/);
+});
+
+test('LR-015: re-integrated exclusions remove stale bag marks but never completed cycle cards',()=>{
+ const migration=read('migrations/20261026_lr015_cycle_exclusion_registry.sql');
+ const restore=migration.slice(migration.indexOf('CREATE OR REPLACE FUNCTION public.restore_love_cycle_exclusion'));
+ assert.match(restore,/IF v_deleted>0 THEN[\s\S]*DELETE FROM public\.love_card_draw_history h/);
+ assert.match(restore,/done\.status='completed'/);
+ assert.match(restore,/s\.started_at>=c\.challenge_cycle_started_at/);
+ const tests=read('qa/lr015-restore-exclusion.sql');
+ assert.match(tests,/Restored card remains blocked in shuffle bag/);
+ assert.match(tests,/Restoration reintroduced a completed card/);
+});
+
+test('LR-015 replacement ancestry and official D6 totals remain partner-checked and do not erase history',()=>{
+ const m=read('migrations/20261026_lr015_z_atomic_respond_redraw.sql');
+ assert.match(m,/FUNCTION public\.love_evening_replacement_links\(p_couple uuid\)/);
+ assert.match(m,/couple_private\.is_member\(p_couple\)/);
+ assert.match(m,/r\.replacement_id IS NOT NULL/);
+ assert.match(m,/FUNCTION public\.love_evening_session_stats\(p_couple uuid\)/);
+ assert.match(m,/q\.status NOT IN \('passed','refused'\)/);
+ const app=read('app.js');
+ assert.match(app,/rpc\('love_evening_replacement_links',\{p_couple:c\}\)/);
+ assert.match(app,/replaces_challenge_id:byReplacement\.get\(challenge\.id\)\|\|null/);
+ assert.match(read('qa/lr015-db-contract.sql'),/Cross-couple replacement ancestry exposed/);
+});
+
+test('LR-015 rejects stale accepted, completed and passed updates after evening closure',()=>{
+ const sql=read('migrations/20261026_lr015_z_atomic_respond_redraw.sql');
+ const legacy=sql.slice(sql.lastIndexOf('CREATE OR REPLACE FUNCTION public.answer_challenge('));
+ assert.match(legacy,/FROM public\.couple_sessions closed_session[\s\S]*closed_session\.finished_at IS NULL FOR UPDATE/);
+ assert.match(legacy,/IF NOT FOUND THEN RAISE EXCEPTION 'Cette soirée est clôturée'/);
+ assert.match(read('qa/lr015-closed-evening.sql'),/A stale client completed a closed-night challenge/);
+});
+
+test('LR-015: refusing a duplicate occurrence cannot restore a previously completed cycle card',()=>{
+ const sql=read('migrations/20261026_lr015_z_atomic_respond_redraw.sql');
+ const begin=sql.indexOf('DELETE FROM public.love_card_draw_history h');
+ const end=sql.indexOf('-- New challenge MUST stay',begin);
+ assert.ok(begin>0&&end>begin);
+ const deletion=sql.slice(begin,end);
+ assert.match(deletion,/completed\.status='completed'/);
+ assert.match(deletion,/completed_session\.started_at>=active_cycle\.challenge_cycle_started_at/);
+ const fixture=read('qa/lr015-db-contract.sql');
+ assert.match(fixture,/Refusing a duplicate released a previously completed card/);
+});
+
+test('LR-015 private RPCs and direct tables enforce real database role permissions',()=>{
+ const fixture=read('qa/lr015-role-grants.sql');
+ const pgContract=read('qa/lr015-db-contract.sql');
+ assert.match(pgContract,/LR015_POSTGRES_ISOLATED_SUCCESS/);
+ assert.match(fixture,/LR015_REAL_PG_ROLE_PERMISSIONS_OK/);
+ assert.match(fixture,/SET ROLE authenticated/);
+ assert.match(fixture,/SET ROLE anon/);
+ assert.match(fixture,/Authenticated client accessed private exclusion table directly/);
+ assert.match(fixture,/Unrelated user could list a couple exclusion/);
+ assert.match(fixture,/Anonymous user can execute redraw capability RPC/);
+});

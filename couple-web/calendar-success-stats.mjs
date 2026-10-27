@@ -48,11 +48,16 @@ export function monthlyChallengeSuccess({
  const freePasses=new Set((passQuota||[]).filter(p=>p.free_pass===true).map(p=>p.challenge_id));
  const byUser=(members||[]).map(m=>{
   const received=(historyChallenges||[]).filter(c=>sessionsById.has(c.session_id)&&c.recipient===m.user_id);
+  // A replacement inherits its predecessor's D6 slot. Both occurrences
+  // remain visible in history, but only the last card in a chain counts
+  // toward the allocated slots and monthly success denominator.
+  const replacedIds=new Set(received.map(c=>c.replaces_challenge_id).filter(Boolean));
+  const allocated=received.filter(c=>!replacedIds.has(c.id));
   // LR-003: while the evening is open, pending or accepted cards are NOT failed.
   // A completed or passed card is reportable immediately; unresolved cards become
   // final non-completions only when that evening is actually closed.
-  const reportable=received.filter(c=>!!sessionsById.get(c.session_id)?.finished_at||
-    c.status==='completed'||c.status==='passed');
+  const reportable=allocated.filter(c=>!!sessionsById.get(c.session_id)?.finished_at||
+    c.status==='completed'||c.status==='passed'||c.status==='refused');
   const complete=reportable.filter(c=>c.status==='completed').length;
   // Free passes never penalize a monthly completion rate.
   const free=reportable.filter(c=>c.status==='passed'&&freePasses.has(c.id)).length;
@@ -63,7 +68,7 @@ export function monthlyChallengeSuccess({
     if(row.target==null)return acc;
     // Count every assigned challenge, INCLUDING a pass, so it cannot count
    // again as a fictitious unpicked challenge.
-   const assigned=received.filter(c=>c.session_id===row.session_id).length;
+   const assigned=allocated.filter(c=>c.session_id===row.session_id).length;
    return acc+Math.max(0,Number(row.target)-assigned);
    },0);
   const denominator=reportable.length-free+undrawn;

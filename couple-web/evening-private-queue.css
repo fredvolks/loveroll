@@ -153,3 +153,13 @@ main#app.loveroll-evening-page .evening-queue-list
  .evening-queue-item.is-completed:focus-visible{
  outline:2px solid #ff9acb!important;outline-offset:3px;
 }
+
+/* LR-015 · Mobile-first decision actions, tactile and keyboard accessible. */
+.lr-redraw-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:12px 0}
+.lr-redraw-actions>button{min-height:44px;flex:1 1 130px;cursor:pointer}
+.lr-redraw-actions>small{flex:1 1 100%;line-height:1.5;opacity:.85}
+.lr-redraw-actions button:focus-visible,.lr-refusal-buttons button:focus-visible{outline:3px solid #f3c76d;outline-offset:3px}
+.lr-refusal-dialog{position:relative;display:block;background:rgba(46,12,32,.97);color:#fff1e3;border:1px solid rgba(231,185,113,.7);border-radius:18px;padding:16px;margin:14px 0;box-shadow:0 14px 35px rgba(0,0,0,.35)}
+.lr-refusal-dialog h3{margin:0 0 8px;font-size:1.15rem}.lr-refusal-dialog p{margin:0 0 14px;line-height:1.55}
+.lr-refusal-buttons{display:flex;flex-wrap:wrap;gap:9px}.lr-refusal-buttons>button{flex:1 1 170px;min-height:44px;white-space:normal}
+@media(max-width:390px){.lr-refusal-dialog{padding:12px}.lr-refusal-buttons{display:grid;grid-template-columns:minmax(0,1fr)}.lr-refusal-buttons button{width:100%}}

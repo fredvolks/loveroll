@@ -1,4 +1,5 @@
 const {revealSetting}=require('./settings-test-navigation.cjs');
+const {mkdirSync}=require('node:fs');
 // The real app.js as an ESM module, real HTML/CSS/JS assets, Chromium parser
 // and safe synthetic Supabase responses. No live users, quotas or DB writes.
 const {chromium}=require('playwright');
@@ -43,10 +44,11 @@ const user={id:'test-user-1',email:'example1@test.invalid',email_confirmed_at:'2
 const second={id:'test-user-2',email:'example2@test.invalid',email_confirmed_at:'2026-10-12T14:00:00Z'};
 export function createClient(){
  const mode=new URL(location.href).searchParams.get('boot_case')||'anonymous';
- window.__loveOauthArgs=null;
+ window.__loveOauthArgs=null;window.__redrawCalls=[];window.__fakeExclusions=[];window.__restoreCalls=[];
  const authenticated=mode!=='anonymous';
- const paired=['paired','paired-active','paired-pending','paired-partner-result'].includes(mode);
- const active=['paired-active','paired-pending','paired-partner-result'].includes(mode);
+ const redrawMode=['paired-redraw','paired-redraw-exclude','paired-redraw-pass'].includes(mode);
+ const paired=['paired','paired-active','paired-pending','paired-partner-result'].includes(mode)||redrawMode;
+ const active=['paired-active','paired-pending','paired-partner-result'].includes(mode)||redrawMode;
  const localDay=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Toronto',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
  const monday=new Date(localDay+'T12:00:00Z');
  monday.setUTCDate(monday.getUTCDate()-((monday.getUTCDay()+6)%7));
@@ -68,7 +70,13 @@ export function createClient(){
    mode==='paired-partner-result'?
     [{id:'d6-partner',session_id:'active-session-synthetic',user_id:second.id,face:4}]:
    active?[{id:'d6-user',session_id:'active-session-synthetic',user_id:user.id,face:2},
-    {id:'d6-second',session_id:'active-session-synthetic',user_id:second.id,face:3}]:[]
+    {id:'d6-second',session_id:'active-session-synthetic',user_id:second.id,face:3}]:[],
+  couple_challenges:redrawMode?[{
+   id:'redraw-original',couple_id:'couple-test',session_id:'active-session-synthetic',
+   recipient:user.id,offered_by:second.id,category:'SENSUEL',card_id:1,face:12,
+   status:'accepted',card_title:'Défi original',card_description:'Activité synthétique',
+   card_timer_minutes:0,created_at:earlier
+  }]:[]
  };
  return {
   auth:{
@@ -81,11 +89,35 @@ export function createClient(){
     then(ok,fail){return Promise.resolve({data:rows[table]||[],error:null}).then(ok,fail)}};
    return query;
   },
-  rpc:async(name)=>({data:name==='get_love_guidance'?'gentle':
+  rpc:async(name,args)=>{
+   if(redrawMode&&name==='love_redraw_capabilities')return {data:true,error:null};
+   if(redrawMode&&name==='my_love_cycle_exclusions')return {data:[...window.__fakeExclusions],error:null};
+   if(redrawMode&&name==='restore_love_cycle_exclusion'){
+    window.__restoreCalls.push(args);
+    window.__fakeExclusions=window.__fakeExclusions.filter(card=>
+     card.category!==args.p_category||card.card_id!==args.p_card_id);
+    return {data:true,error:null};
+   }
+   if(redrawMode&&name==='my_love_monthly_pass_quota')
+    return {data:{used:window.__redrawCalls.filter(call=>call.args.p_action==='pass').length,
+     limit:3,remaining:3-window.__redrawCalls.filter(call=>call.args.p_action==='pass').length,
+     can_pass:true},error:null};
+   if(redrawMode&&name==='love_respond_and_redraw'){
+    window.__redrawCalls.push({name,args});
+    if(args.p_exclude)window.__fakeExclusions.push({category:'SENSUEL',card_id:1,excluded_at:new Date().toISOString()});
+    const original=rows.couple_challenges[0];
+    original.status=args.p_action==='refuse'?'refused':'passed';
+    if(!rows.couple_challenges.some(c=>c.id==='redraw-replacement'))
+     rows.couple_challenges.push({...original,id:'redraw-replacement',status:'proposed',
+      card_id:2,face:13,replaces_challenge_id:original.id,card_title:'Remplacement du défi',created_at:new Date().toISOString()});
+    return {data:{original_id:original.id,replacement_id:'redraw-replacement',
+      excluded:args.p_exclude,already_processed:false},error:null};
+   }
+   return {data:name==='get_love_guidance'?'gentle':
    name==='love_advent_server_date'?'2026-10-15':
    name==='my_love_evening_card_totals'?[{sensual:35,sexual:35,total:70}]:
-   name==='my_love_roll_status'&&active?[{my_rolled:mode==='paired-active',
-    partner_rolled:mode!=='paired-pending',both_ready:mode==='paired-active'}]:
+   name==='my_love_roll_status'&&active?[{my_rolled:mode==='paired-active'||redrawMode,
+    partner_rolled:mode!=='paired-pending',both_ready:mode==='paired-active'||redrawMode}]:
    name==='my_love_evening_board'&&active?{
     ready:true,first:user.id,next:user.id,
     targets:{[user.id]:2,[second.id]:3},remaining:{[user.id]:2,[second.id]:3},
@@ -93,7 +125,8 @@ export function createClient(){
     completed:{[user.id]:0,[second.id]:0},
     drawsFinished:false,finished:false
    }:
-   [],error:null}),
+   [],error:null};
+  },
   channel(){return {on(){return this},subscribe(){return this}}},
   removeChannel:async()=>{}
  };
@@ -106,10 +139,13 @@ export function createClient(){
   ['google-return','?boot_case=existing&code=simulated-oauth-code','.partner-create-page'],
   ['existing-paired','?boot_case=paired','.loveroll-real-home'],
   ['active-evening','?boot_case=paired-active','.loveroll-real-home'],
+  ['redraw-flow','?boot_case=paired-redraw','.loveroll-real-home'],
+  ['redraw-iphone','?boot_case=paired-redraw-exclude','.loveroll-real-home'],
+  ['redraw-pass','?boot_case=paired-redraw-pass','.loveroll-real-home'],
   ['step1-partner-pending','?boot_case=paired-pending','.loveroll-real-home'],
   ['step1-partner-result','?boot_case=paired-partner-result','.loveroll-real-home']
  ]){
-  const page=await browser.newPage({viewport:{width:412,height:824},serviceWorkers:'block'});
+  const page=await browser.newPage({viewport:name==='redraw-iphone'?{width:393,height:852}:{width:412,height:824},serviceWorkers:'block'});
   const errors=[];
   page.on('pageerror',err=>errors.push(err.message));
   page.on('console',msg=>{if(msg.type()==='error')errors.push('console: '+msg.text().slice(0,250));});
@@ -245,6 +281,97 @@ export function createClient(){
    await page.locator('.evening-premium-view').waitFor({timeout:10000});
    if(errors.length)throw Error('Returning from Surprise to Soirée caused exception '+JSON.stringify(errors));
    console.log('SOIREE_ACTIVE_ACCESS_OK','two confirmed dice, shared live board, queue button, tab revisit');
+  }
+  if(['redraw-flow','redraw-iphone','redraw-pass'].includes(name)){
+   await selectTab(page,'session');
+   await page.locator('.evening-premium-view').waitFor({timeout:10000});
+   // The app intentionally auto-opens a newly assigned challenge. Do not
+   // click the button behind that modal: follow whichever live route is shown.
+   const detail=page.locator('.evening-queue-modal.is-detail');
+   if(!await detail.isVisible()){
+    const queue=page.locator('.evening-queue-modal');
+    if(!await queue.isVisible())
+     await page.locator('.evening-premium-view [data-action="evening-list"]').first().click();
+    if(!await detail.isVisible())
+     await page.locator('.evening-queue-item').first().click();
+   }
+   await detail.waitFor({state:'visible',timeout:10000});
+   mkdirSync('lr015-captures',{recursive:true});
+   if(name==='redraw-pass'){
+    await page.locator('[data-action="evening-pass:redraw-original"]').click();
+    await page.locator('.evening-queue-detail h2')
+     .filter({hasText:'Remplacement du défi'}).waitFor({timeout:10000});
+    const calls=await page.evaluate(()=>window.__redrawCalls);
+    if(calls.length!==1||calls[0].args.p_action!=='pass'||calls[0].args.p_exclude!==false)
+     throw Error('Pass must produce exactly one quota-limited replacement '+JSON.stringify(calls));
+    await page.locator('.evening-queue-modal [data-action="evening-list"]').click();
+    if(await page.locator('.evening-queue-item').count()!==1)
+     throw Error('Pass must keep one visible D6 queue slot');
+    console.log('LR015_REAL_BROWSER_PASS_OK','one replacement, original excluded from visible queue');
+   }else{
+    const refuse=page.locator('[data-action="evening-refuse:redraw-original"]');
+    await refuse.waitFor({state:'visible'});
+    await refuse.click();
+    const dialog=page.locator('.lr-refusal-dialog[role="alertdialog"]');
+    await dialog.waitFor({state:'visible'});
+    await dialog.scrollIntoViewIfNeeded();
+    await page.screenshot({path:'lr015-captures/'+name+'-refus.png',fullPage:true});
+    for(const label of ['Oui, retirer du lot','Non, le garder dans le lot','Annuler'])
+     if(!(await dialog.innerText()).includes(label))throw Error('Missing refusal choice '+label);
+    await page.locator('[data-action="evening-refuse-cancel"]').click();
+    if((await page.evaluate(()=>window.__redrawCalls.length))!==0)
+     throw Error('Cancel must not consume a redraw or mutate a card');
+    await refuse.click();
+    const exclude=name==='redraw-iphone';
+    await page.locator('[data-action="evening-refuse-choice:redraw-original:'+(exclude?'yes':'no')+'"]').click();
+    await page.locator('.evening-queue-detail h2')
+     .filter({hasText:'Remplacement du défi'}).waitFor({timeout:10000});
+    await page.screenshot({path:'lr015-captures/'+name+'-remplacement.png',fullPage:true});
+    const calls=await page.evaluate(()=>window.__redrawCalls);
+    if(calls.length!==1||calls[0].args.p_challenge!=='redraw-original'||
+     calls[0].args.p_action!=='refuse'||calls[0].args.p_exclude!==exclude)
+     throw Error('Atomic refusal payload mismatch '+JSON.stringify(calls));
+    await page.locator('.evening-queue-modal [data-action="evening-list"]').click();
+    if(await page.locator('.evening-queue-item').count()!==1)
+     throw Error('Refusal must keep one visible D6 queue slot');
+    if(exclude){
+     await page.locator('[data-action="evening-close"]').first().click();
+     await selectTab(page,'settings');
+     await page.locator('.settings-sections [data-action="settings-page:jeu"]').waitFor({state:'visible',timeout:10000});
+     await page.locator('.settings-sections [data-action="settings-page:jeu"]').click();
+     const game=page.locator('.settings-detail-body[data-settings-page="jeu"]');
+     await game.waitFor({state:'visible',timeout:10000});
+     const manage=game.locator('[data-action="settings-page:excluded-cards"]');
+     if(!await manage.isVisible()){
+      const diagnostic=await page.evaluate(()=>({
+       tab:document.querySelector('.nav .active')?.dataset.action,
+       current:document.querySelector('.settings-detail-body')?.dataset.settingsPage,
+       manage:[...document.querySelectorAll('[data-action="settings-page:excluded-cards"]')].map(el=>({
+        visible:!!(el.offsetWidth||el.offsetHeight||el.getClientRects().length),
+        ancestor:el.parentElement?.className
+       }))
+      }));
+      throw Error('Excluded cards game-link is hidden '+JSON.stringify(diagnostic));
+     }
+     await manage.click();
+     const excludedPage=page.locator('.settings-detail-body[data-settings-page="excluded-cards"]');
+     await excludedPage.waitFor({state:'visible',timeout:10000});
+     const restore=excludedPage.locator('[data-action="restore-love-exclusion:SENSUEL:1"]');
+     await restore.waitFor({state:'visible',timeout:10000});
+     await page.screenshot({path:'lr015-captures/'+name+'-exclusion.png',fullPage:true});
+     await restore.click();
+     await page.locator('.lr-excluded-row').waitFor({state:'hidden',timeout:10000});
+     const result=await page.evaluate(()=>({
+      excluded:window.__fakeExclusions.length,restoreCalls:window.__restoreCalls
+     }));
+     if(result.excluded!==0||result.restoreCalls.length!==1||
+      result.restoreCalls[0].p_category!=='SENSUEL'||result.restoreCalls[0].p_card_id!==1)
+      throw Error('Restoring current-cycle exclusion failed '+JSON.stringify(result));
+     console.log('LR015_REAL_BROWSER_RESTORE_OK','excluded card visible and restored via Settings');
+    }
+    console.log('LR015_REAL_BROWSER_REFUSAL_OK','cancel/no/yes tested on mobile');
+   }
+   if(errors.length)throw Error('LR015 browser exception '+JSON.stringify(errors));
   }
   console.log('BOOT_OK',name,text.slice(0,180).replace(/\\s+/g,' '));
   await page.close();

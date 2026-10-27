@@ -69,3 +69,35 @@ test('Couple menu removes fictional preview and directs the invitation CTA to th
  assert.match(action,/state\.tab='invitation'/);
  assert.match(action,/await reload\(\)/);
 });
+
+test('LR-015: both partners may browse and restore couple-scoped excluded cards',()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ assert.match(app,/rpc\('my_love_cycle_exclusions'/);
+ assert.match(app,/settings-page:excluded-cards/);
+ assert.match(app,/Réintégrer/);
+ assert.match(app,/restore_love_cycle_exclusion/);
+ assert.match(app,/p_category:category,p_card_id:cardId/);
+});
+
+test('LR-015: excluded cards submenu is reachable only after server feature gating',()=>{
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const start=source.indexOf("function openSettingsPage(section='')");
+ const route=source.slice(start,start+650);
+ assert.match(route,/'excluded-cards'/);
+ assert.match(route,/if\(section==='excluded-cards'&&!state\.redrawReady\)return/);
+ assert.match(source,/settings-page:excluded-cards/);
+ assert.match(source,/restore_love_cycle_exclusion/);
+});
+
+test('LR-015: Settings menu exposes excluded cards as a navigable leaf rather than hiding its source row',()=>{
+ const menu=readFileSync(new URL('./settings-menus.mjs',import.meta.url),'utf8');
+ const start=menu.indexOf("else if(route==='jeu')");
+ const end=menu.indexOf("else if(route==='notifications')",start);
+ assert.ok(start>0&&end>start);
+ const jeu=menu.slice(start,end);
+ assert.match(jeu,/link\('\.settings-advanced \[data-action="settings-page:excluded-cards"\]'\)/);
+ assert.match(jeu,/link\('\.settings-advanced \[data-action="settings-page:admin"\]'\)/);
+ assert.match(menu,/source\.append\(\.\.\.body\.childNodes\)/,
+  'The menu still moves source controls out of the visible panel');
+ assert.match(menu,/menu\.append/,'Selected leaves must be composed in the live menu');
+});

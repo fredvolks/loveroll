@@ -17,7 +17,7 @@ export function sharedEveningTurns(session,members,rolls,challenges,gifts=[]){
    gifts.filter(g=>g.session_id===session.id&&g.receiver_user_id===m.user_id).length-
    gifts.filter(g=>g.session_id===session.id&&g.donor_user_id===m.user_id).length;
   completed[m.user_id]=challenges.filter(c=>(session.self_draws?c.recipient:c.offered_by)===m.user_id&&c.status==='completed').length;
-  drawn[m.user_id]=challenges.filter(c=>(session.self_draws?c.recipient:c.offered_by)===m.user_id&&c.status!=='passed').length;
+  drawn[m.user_id]=challenges.filter(c=>(session.self_draws?c.recipient:c.offered_by)===m.user_id&&!['passed','refused'].includes(c.status)).length;
  }
  const a=first.user_id,b=second.user_id;
  let next=null;
