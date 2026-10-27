@@ -125,9 +125,9 @@ declare s jsonb;begin
  s:=public.love_eclat_v2_status();
  s:=public.love_eclat_v2_wish_vote((s->>'session_id')::uuid,6,'keep');
  if s->>'wish_invitation_card'<>'7' then raise exception 'Common invitation missing';end if;
-end $;
+end $$;
 set request.jwt.claim.sub='00000000-0000-0000-0000-000000000001';
-do $
+do $$
 declare s jsonb;sid uuid;
 begin
  s:=public.love_eclat_v2_status();sid:=(s->>'session_id')::uuid;
@@ -135,9 +135,9 @@ begin
  if s->>'wish_invitation_text' is not null or
   s->>'my_wish_phrase'<>'Notre petite surprise' then
   raise exception 'Own phrase wrongly shared before partner approval';end if;
-end $;
+end $$;
 set request.jwt.claim.sub='00000000-0000-0000-0000-000000000002';
-do $
+do $$
 declare s jsonb;sid uuid;
 begin
  s:=public.love_eclat_v2_status();sid:=(s->>'session_id')::uuid;
@@ -150,7 +150,7 @@ begin
  s:=public.love_eclat_v2_wish_phrase(sid,6,'Notre petite surprise');
  if s->>'wish_invitation_text'<>'Notre petite surprise' then
   raise exception 'Matching invitation phrase was not approved';end if;
-end $;
+end $$;
 reset role;
 
 set role authenticated;
