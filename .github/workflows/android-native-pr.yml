@@ -36,3 +36,62 @@ jobs:
         run: node --test couple-web/android-native-bridge-thread.test.mjs
       - name: Compile and run Android JUnit tests without release secrets
         run: gradle :app:assembleDebug :app:testDebugUnitTest --no-daemon --stacktrace
+
+  android-signing-preflight:
+    name: Check release signing secret without publishing
+    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Validate private signing material against pinned certificate
+        env:
+          LOVEROLL_ANDROID_SIGNING: ${{ secrets.LOVEROLL_ANDROID_SIGNING }}
+        run: |
+          python3 - <<'PY'
+          import base64, json, os, pathlib, re, subprocess, tempfile, zipfile
+          raw = os.environ.get("LOVEROLL_ANDROID_SIGNING", "")
+          if not raw:
+              raise SystemExit("Android signing secret is not configured or unavailable to this job")
+          try:
+              bundle = json.loads(raw)
+              assert isinstance(bundle, dict)
+              for field in ("KEYSTORE", "KEYSTORE_PASSWORD", "KEY_ALIAS", "KEY_PASSWORD"):
+                  assert isinstance(bundle.get(field), str) and bundle[field]
+              key_data = base64.b64decode(bundle["KEYSTORE"], validate=True)
+              assert len(key_data) > 1000
+              expected = re.search(r'EXPECTED_SIGNER_SHA256:\s*([0-9a-f]{64})', pathlib.Path(".github/workflows/android.yml").read_text()).group(1)
+          except (ValueError, TypeError, AssertionError, AttributeError, KeyError):
+              raise SystemExit("Android signing secret format or pinned certificate is invalid")
+          env = os.environ.copy()
+          env["KS_STORE_PASS"] = bundle["KEYSTORE_PASSWORD"]
+          env["KS_KEY_PASS"] = bundle["KEY_PASSWORD"]
+          with tempfile.TemporaryDirectory(prefix="loveroll-sign-check-") as folder:
+              temp = pathlib.Path(folder)
+              keystore = temp / "key.p12"
+              keystore.write_bytes(key_data)
+              keystore.chmod(0o600)
+              listed = subprocess.run(["keytool", "-list", "-v", "-storetype", "PKCS12", "-keystore", str(keystore), "-storepass:env", "KS_STORE_PASS", "-alias", bundle["KEY_ALIAS"]], env=env, capture_output=True, text=True)
+              if listed.returncode:
+                  raise SystemExit("Android keystore password or alias invalid")
+              match = re.search(r'SHA256:\s*([0-9A-F:]+)', listed.stdout)
+              fingerprint = match.group(1).replace(":", "").lower() if match else ""
+              if fingerprint != expected:
+                  raise SystemExit("Android certificate fingerprint does not match pinned SHA-256")
+              unsigned = temp / "unsigned.jar"
+              with zipfile.ZipFile(unsigned, "w") as archive:
+                  archive.writestr("signing-fixture.txt", "love-roll")
+              signed = temp / "signed.jar"
+              cmd = ["jarsigner", "-keystore", str(keystore), "-storetype", "PKCS12", "-storepass:env", "KS_STORE_PASS", "-keypass:env", "KS_KEY_PASS", "-signedjar", str(signed), str(unsigned), bundle["KEY_ALIAS"]]
+              signed_result = subprocess.run(cmd, env=env, capture_output=True, text=True)
+              if signed_result.returncode:
+                  raise SystemExit("Android private signing key unusable (jarsigner failed)")
+              verified = subprocess.run(["jarsigner", "-verify", str(signed)], env=env, capture_output=True, text=True)
+              if verified.returncode:
+                  raise SystemExit("Android signing fixture verification failed")
+          print("Signing secret present, pinned certificate matched, private key signed fixture successfully.")
+          PY
