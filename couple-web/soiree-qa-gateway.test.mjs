@@ -10,6 +10,7 @@ function clientFor(userId=idA,override={}){
  const calls=[];
  const db={
   couple_members:[{couple_id:couple,user_id:userId}],
+  couples:[{id:couple,category_weights_enabled:true,category_preference_percent:88}],
   couple_rolls:[{id:challenge,couple_id:couple,kind:'weekly',face:2,key:'2025-10-20'},
     {id:challenge,couple_id:couple,kind:'weekly',face:3,key:'2026-10-26'}],
   couple_sessions:[{id:session,couple_id:couple,started_at:'2026-10-27',finished_at:null}],
@@ -53,7 +54,7 @@ test('Soirée QA uses the exact production weekly D6, own D6 and D100 RPCs',asyn
  assert.equal((await api.weekly()).face,3);
  assert.equal(await api.start(),session);
  assert.equal((await api.d6(session)).face,4);
- assert.equal((await api.d100(session,'MIXTE')).face,83);
+ assert.equal((await api.d100(session,'SENSUEL')).face,83);
  assert.equal((await api.d100(session,'HASARD')).face,42);
  await api.answer(challenge,'accepted');
  await api.redraw(challenge,'pass');
@@ -63,7 +64,7 @@ test('Soirée QA uses the exact production weekly D6, own D6 and D100 RPCs',asyn
    'roll_my_evening_d6','draw_for_partner','draw_for_partner_random',
    'answer_challenge','love_respond_and_redraw','love_respond_and_redraw','finish_couple_session']);
  assert.deepEqual(calls[0].args,{p_couple:couple,p_kind:'weekly'});
- assert.deepEqual(calls[3].args,{p_session:session,p_preference:'MIXTE',p_random:false});
+ assert.deepEqual(calls[3].args,{p_session:session,p_preference:'SENSUEL',p_random:false});
  assert.deepEqual(calls[5].args,{p_id:challenge,p_status:'accepted'});
  assert.deepEqual(calls[6].args,{p_challenge:challenge,p_action:'pass',p_exclude:false});
  assert.deepEqual(calls[7].args,{p_challenge:challenge,p_action:'refuse',p_exclude:true});
@@ -79,6 +80,7 @@ test('reads only its own challenge cards, never a partner private challenge',asy
  assert.deepEqual(snap.weekly.map(x=>x.key),['2026-10-26','2025-10-20']);
  assert.ok(calls.some(x=>x.name==='my_love_evening_board'));
  assert.deepEqual(snap.passQuota,{can_pass:true,remaining:2,used:1,limit:3});
+ assert.equal(snap.oddsPercent,88);
  assert.ok(calls.some(x=>x.name==='my_love_monthly_pass_quota'));
 });
 test('identity refresh rejects reused sessions or wrong account',async()=>{
@@ -90,6 +92,7 @@ test('invalid actions and server-made faces never become a fake dice result',asy
  const {api}=clientFor(idA,{draw_for_partner:{face:105,id:challenge}});
  await assert.rejects(()=>api.d100(session,'MIXTE'),/non confirmée/);
  await assert.rejects(()=>api.d100(session,'FORCE'),RangeError);
+ await assert.rejects(()=>api.d100(session,'MIXTE'),RangeError);
  await assert.rejects(()=>api.answer(challenge,'admin-bypass'),RangeError);
  await assert.rejects(()=>api.answer(challenge,'passed'),RangeError);
  await assert.rejects(()=>api.redraw(challenge,'pass',{exclude:true}),RangeError);

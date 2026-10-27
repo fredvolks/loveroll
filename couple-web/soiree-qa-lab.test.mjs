@@ -93,6 +93,8 @@ test('QA Passer disabled at actual monthly quota; Refuser remains accessible',()
 test('actual Soirée QA click router respects independent A/B JWT gateways across branches',async()=>{
  const screens={A:{innerHTML:'',replaceChildren(){}},B:{innerHTML:'',replaceChildren(){}}};
  const events={},trace=[],errors=[],message={textContent:''};
+ let approveCategory=true;
+ const confirmations=[];
  const root={
   addEventListener(kind,fn){events[kind]=fn;},
   removeEventListener(kind){delete events[kind];},
@@ -101,7 +103,7 @@ test('actual Soirée QA click router respects independent A/B JWT gateways acros
    if(sel==='[data-soiree-qa-message]')return message;
    if(sel.includes('data-soiree-qa-screen="A"'))return screens.A;
    if(sel.includes('data-soiree-qa-screen="B"'))return screens.B;
-   if(sel.startsWith('[data-soiree-qa-category='))return {value:'MIXTE'};
+   if(sel.startsWith('[data-soiree-qa-category='))return {value:'SENSUEL'};
    return null;
   },
   querySelectorAll(sel){
@@ -130,6 +132,10 @@ test('actual Soirée QA click router respects independent A/B JWT gateways acros
  const bench=mountSoireeQaBench({root,clientA:{},clientB:{},
   userA:{id:a},userB:{id:b},gatewayFactory:fakeGateway,
   loadDice:async()=>({dieOn:()=>()=>{}}),
+  confirmCategory:async({category,percentage})=>{
+   confirmations.push([category,percentage]);
+   return {confirmed:approveCategory,neverShow:false};
+  },
   refreshMs:600000,onError:e=>errors.push(e.message)});
  const settle=async()=>{for(let i=0;i<5;i++)await new Promise(setImmediate);};
  const click=async(role,action)=>{
@@ -148,6 +154,11 @@ test('actual Soirée QA click router respects independent A/B JWT gateways acros
  assert.deepEqual(trace.map(x=>x.role+':'+x.action),
   ['A:weekly','B:d6','A:d100','B:answer','B:redraw']);
  assert.deepEqual(trace.at(-1).payload,[challenge,'refuse',{exclude:true}]);
+ assert.deepEqual(confirmations,[['SENSUEL',88]]);
+ approveCategory=false;
+ await click('B','d100');
+ assert.equal(trace.length,5,'cancelled confirmation cannot call a real D100');
+ assert.deepEqual(confirmations,[['SENSUEL',88],['SENSUEL',88]]);
  // Deliberately try the other partner's challenge: it must not dispatch.
  await click('A','answer:'+challenge+':accepted');
  assert.equal(trace.length,5);
@@ -155,4 +166,12 @@ test('actual Soirée QA click router respects independent A/B JWT gateways acros
  assert.ok(errors.some(e=>e.includes('Défi non destiné')));
  bench.destroy();
  assert.equal(events.click,undefined);
+});
+
+test('QA Soirée follows official Sensuel/Sexuel/Hasard selection, not internal Mixte',()=>{
+ const markup=renderSoireeQaScreen({role:'A',snapshot:base,partnerId:b});
+ assert.match(markup,/<option value="SENSUEL">Sensuel/);
+ assert.match(markup,/<option value="SEXUEL">Sexuel/);
+ assert.match(markup,/<option value="HASARD">Hasard/);
+ assert.doesNotMatch(markup,/<option value="MIXTE">/);
 });

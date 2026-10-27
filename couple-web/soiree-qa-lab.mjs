@@ -2,6 +2,7 @@
 // A/B have separate auth JWTs. All dice faces come exclusively from server RPCs.
 import {createSoireeQaGateway,validateSoireeQaPair} from './soiree-qa-gateway.mjs';
 import {resolvedCard} from './evening-challenges.mjs';
+import {askEveningCategoryConfirmation} from './evening-category-confirm.mjs';
 
 // Server weekly die keys use Monday in America/Toronto, not the device timezone.
 export function currentTorontoWeekKey(now=new Date()){
@@ -53,7 +54,7 @@ export function renderSoireeQaScreen({role,snapshot,partnerId,weekKey=currentTor
   const ready=own!==null&&theirs!==null;
   html+='<h5>D100 · défi réel</h5>'+
    '<label>Catégorie<select data-soiree-qa-category="'+role+'">'+
-    '<option value="MIXTE">Mixte</option><option value="SENSUEL">Sensuel</option>'+
+    '<option value="SENSUEL">Sensuel</option>'+
     '<option value="SEXUEL">Sexuel</option><option value="HASARD">Hasard</option>'+
    '</select></label>'+btn(role,'d100','Tirer un défi officiel D100',!ready)+
    '<p class="soiree-qa-caption">Les deux D6 sont nécessaires. Toute limite ou condition du serveur reste active.</p>';
@@ -95,6 +96,7 @@ export function mountSoireeQaBench({
  root,clientA,clientB,userA,userB,
  gatewayFactory=createSoireeQaGateway,
  loadDice=()=>import('./dice3d.js'),
+ confirmCategory=askEveningCategoryConfirmation,
  refreshMs=7000,onError=()=>{}
 }){
  if(!root||!clientA||!clientB||!userA?.id||!userB?.id||
@@ -153,7 +155,7 @@ export function mountSoireeQaBench({
    if(key===lastPaintKey)return;
    const previous={};
    for(const role of ['A','B'])previous[role]=
-    root.querySelector('[data-soiree-qa-category="'+role+'"]')?.value||'MIXTE';
+    root.querySelector('[data-soiree-qa-category="'+role+'"]')?.value||'SENSUEL';
    clearDice();
    for(const role of ['A','B']){
     const node=root.querySelector('[data-soiree-qa-screen="'+role+'"]');
@@ -162,7 +164,7 @@ export function mountSoireeQaBench({
    }
    for(const role of ['A','B']){
     const picker=root.querySelector('[data-soiree-qa-category="'+role+'"]');
-    if(picker&&['MIXTE','SENSUEL','SEXUEL','HASARD'].includes(previous[role]))
+    if(picker&&['SENSUEL','SEXUEL','HASARD'].includes(previous[role]))
      picker.value=previous[role];
    }
    lastPaintKey=key;
@@ -191,8 +193,17 @@ export function mountSoireeQaBench({
    }else if(action==='d100'){
     if(!session)throw new Error('Aucune séance QA active');
     const category=root.querySelector('[data-soiree-qa-category="'+role+'"]')?.value;
-    if(!['MIXTE','SENSUEL','SEXUEL','HASARD'].includes(category))
+    if(!['SENSUEL','SEXUEL','HASARD'].includes(category))
      throw new Error('Catégorie de défi inconnue');
+    // The same official LR-014 modal as the public Soirée. Cancel/ESC must
+    // never trigger a draw, spend quota or rotate the displayed D100.
+    const decision=await confirmCategory({
+     category,percentage:status.oddsPercent??88
+    });
+    if(!decision?.confirmed)return;
+    if(context?.[role]?.session?.id!==session||
+       root.querySelector('[data-soiree-qa-category="'+role+'"]')?.value!==category)
+     throw new Error('La soirée ou la catégorie a changé : confirmer à nouveau');
     await api[role].d100(session,category);
    }else if(action.startsWith('answer:')){
     const [,id,answer]=action.split(':');

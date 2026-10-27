@@ -2,7 +2,7 @@
 // No synthetic die results, no bypass of weekly/daily caps or challenge queues.
 // The same RPC names and result columns as the production LoveRoll game.
 const UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const CATEGORIES=new Set(['SENSUEL','SEXUEL','MIXTE','HASARD']);
+const CATEGORIES=new Set(['SENSUEL','SEXUEL','HASARD']);
 function requireUuid(value){
  if(typeof value!=='string'||!UUID.test(value))throw new RangeError('Identifiant de séance invalide');
  return value;
@@ -40,25 +40,33 @@ export function createSoireeQaGateway({client,expectedUserId}){
  }
  async function snapshot(){
   const who=await identity();
-  const [week,session,passQuota]=await Promise.all([
+  const [week,session,passQuota,weights]=await Promise.all([
    rows('couple_rolls',[['couple_id',who.coupleId],['kind','weekly']],
     {fields:'id,face,kind,key,created_at',order:{field:'key',ascending:false},limit:20}),
    rows('couple_sessions',[['couple_id',who.coupleId]],
     {fields:'id,started_at,finished_at,counted',isNull:'finished_at',limit:2}),
    // Same per-person monthly pass rule as the public LoveRoll app. A missing
    // QA migration means an unknown quota, never permission to bypass it.
-   rpc('my_love_monthly_pass_quota',{p_couple:who.coupleId}).catch(()=>null)
+   rpc('my_love_monthly_pass_quota',{p_couple:who.coupleId}).catch(()=>null),
+   // Mirror the same odds shown in production; a partial QA install defaults to
+   // the official 88%, never silently to 0% via Number(null).
+   rows('couples',[['id',who.coupleId]],
+    {fields:'category_weights_enabled,category_preference_percent'}).catch(()=>[])
   ]);
+  const pref=weights[0]?.category_preference_percent;
+  const percent=pref===null||pref===undefined?88:Number(pref);
+  const oddsPercent=weights[0]?.category_weights_enabled===false?50:
+   Number.isFinite(percent)?Math.min(100,Math.max(0,percent)):88;
   if(session.length>1)throw new Error('Deux soirées actives : état serveur incohérent');
   const active=session[0]||null;
-  if(!active)return {...who,weekly:week,passQuota,session:null,personal:[],mine:[],board:null};
+  if(!active)return {...who,weekly:week,passQuota,oddsPercent,session:null,personal:[],mine:[],board:null};
   const [personal,mine,board]=await Promise.all([
    rows('couple_personal_rolls',[['session_id',active.id]],{fields:'user_id,face'}),
    rows('couple_challenges',[['session_id',active.id],['recipient',who.userId]],
     {fields:'id,recipient,offered_by,category,face,card_id,card_title,card_description,card_timer_minutes,status,created_at',order:{field:'created_at',ascending:true}}),
    rpc('my_love_evening_board',{p_session:active.id})
   ]);
-  return {...who,weekly:week,passQuota,session:active,personal,
+  return {...who,weekly:week,passQuota,oddsPercent,session:active,personal,
     mine:mine.filter(x=>x.recipient===who.userId),board};
  }
  async function weekly(){
