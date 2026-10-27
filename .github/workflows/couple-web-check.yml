@@ -125,6 +125,8 @@ jobs:
       - name: Verify evening finale actions and privacy control (deployment parity)
         run: node --test couple-web/evening-finale-v99.test.mjs
 
+      - name: Validate iPad Soirée one-HD-photo contract
+        run: node --test couple-web/ipad-soiree-one-photo-v237.test.mjs
       - name: Validate iPad uses exact Android HD v202 scene and one marble pedestal
         run: node --test couple-web/ipad-android-stage-v236.test.mjs
       - name: Verify real native premium Home buttons
