@@ -35,6 +35,7 @@ create table public.love_eclat_v2_sessions (
  timer_remaining integer check(timer_remaining>=0),
  timer_deadline timestamptz,
  timer_extensions integer not null default 0 check(timer_extensions>=0),
+ playlist_shared jsonb,
  shared_cards smallint[],
  selected_card smallint check(selected_card between 1 and 12),
  revealed_step smallint check (revealed_step between 1 and 8),
@@ -123,6 +124,15 @@ create table public.love_eclat_v2_music_notes (
  updated_at timestamptz not null default now(),
  primary key(session_id,theme,user_id)
 );
+-- Pending playlist drafts are author-only. The partner never reads an unapproved order.
+create table public.love_eclat_v2_playlist_votes (
+ session_id uuid not null references public.love_eclat_v2_sessions(id) on delete cascade,
+ user_id uuid not null references auth.users(id),
+ slots smallint[] not null check(cardinality(slots) between 1 and 5),
+ primary key(session_id,user_id)
+);
+alter table public.love_eclat_v2_playlist_votes enable row level security;
+revoke all on public.love_eclat_v2_playlist_votes from public,anon,authenticated;
 alter table public.love_eclat_v2_music_notes enable row level security;
 revoke all on public.love_eclat_v2_music_notes from public,anon,authenticated;
 -- Story constraint reroll history and independent, one-user-per-vote choices.
@@ -231,6 +241,7 @@ declare
  v_contact_yes integer; v_my_contact text; v_my_answer integer;v_my_guess integer;
  v_attention_index integer;v_attention_response text;
  v_music_note jsonb;v_revealed_music jsonb;v_theme integer;
+ v_my_playlist smallint[];
  v_story_vote text;v_story_history jsonb;v_my_cards smallint[];v_my_card_ready boolean;
  v_timer_vote text;v_timer_remaining integer;
 begin
@@ -280,6 +291,8 @@ begin
     order by theme,user_id),'[]'::jsonb) into v_revealed_music
    from public.love_eclat_v2_music_notes where session_id=v_s.id and revealed=true;
  end if;
+ select slots into v_my_playlist from public.love_eclat_v2_playlist_votes
+  where session_id=v_s.id and user_id=v_actor;
  select action into v_story_vote from public.love_eclat_v2_story_votes
  where session_id=v_s.id and scene_number=v_s.chapter_plan[v_s.chapter_index] and user_id=v_actor;
  if v_s.coffret_id=12 then
@@ -316,6 +329,7 @@ begin
   'music_theme',v_theme,'my_music_note',v_music_note
  ) || jsonb_build_object(
   'revealed_music',v_revealed_music,
+  'my_playlist_slots',v_my_playlist,'playlist_shared',v_s.playlist_shared,
   'timer_mode',v_s.timer_mode,'my_timer_vote',v_timer_vote,
   'timer_running',v_s.timer_deadline is not null,
   'timer_remaining_seconds',v_timer_remaining,
@@ -1111,6 +1125,104 @@ begin
 end;
 $$;
 
+-- Slot 1..10 maps to [T1 A,T1 B,...,T5 A,T5 B]; no title
+-- may be voted unless its author has previously revealed it.
+create function public.love_eclat_v2_playlist_vote(
+ p_session uuid,p_expected_step integer,p_slots smallint[]
+) returns jsonb language plpgsql security definer set search_path='' as $$
+declare
+ v_actor uuid:=auth.uid();v_couple uuid;v_s public.love_eclat_v2_sessions%rowtype;
+ v_allowed integer;v_votes integer;v_distinct integer;v_playlist jsonb;
+begin
+ perform public.love_require_verified_identity();
+ if p_slots is null or cardinality(p_slots) not between 1 and 5 or
+    exists(select 1 from unnest(p_slots) as slot where slot is null or slot not between 1 and 10) or
+    (select count(distinct slot) from unnest(p_slots) as slot)<>cardinality(p_slots) then
+  raise exception 'Choisissez un à cinq titres distincts';end if;
+ select * into v_s from public.love_eclat_v2_sessions where id=p_session for update;
+ if not found then raise exception 'Séance inconnue';end if;
+ select couple_id into v_couple from public.couple_members where user_id=v_actor;
+ if v_couple is distinct from v_s.couple_id or v_actor not in(v_s.role_a,v_s.role_b)
+  or not public.love_eclat_has_access(v_s.couple_id) then
+  raise exception 'Accès interdit' using errcode='42501';end if;
+ if p_expected_step is distinct from v_s.chapter_index then
+  return public.love_eclat_v2_status(p_session);end if;
+ if v_s.coffret_id<>8 or v_s.device_mode<>'two' or v_s.state<>'active'
+  or v_s.chapter_plan[v_s.chapter_index]<>8 then
+  raise exception 'Playlist non disponible sur cette scène';end if;
+ if v_s.playlist_shared is not null then return public.love_eclat_v2_status(p_session);end if;
+ select count(*) into v_allowed from unnest(p_slots) slot
+  join public.love_eclat_v2_music_notes n
+   on n.session_id=p_session and n.revealed=true
+   and n.theme=((slot.slot::integer+1)/2)
+   and n.user_id=case when slot.slot%2=1 then v_s.role_a else v_s.role_b end;
+ if v_allowed<>cardinality(p_slots) then
+  raise exception 'La playlist ne contient que des titres révélés';end if;
+ insert into public.love_eclat_v2_playlist_votes(session_id,user_id,slots)
+  values(p_session,v_actor,p_slots)
+  on conflict(session_id,user_id) do update set slots=excluded.slots;
+ select count(*),count(distinct slots) into v_votes,v_distinct
+  from public.love_eclat_v2_playlist_votes
+   where session_id=p_session and user_id in(v_s.role_a,v_s.role_b);
+ if v_votes=2 and v_distinct=1 then
+  select jsonb_agg(jsonb_build_object('title',n.title,'artist',n.artist)
+      order by slot.ord) into v_playlist
+   from unnest(p_slots) with ordinality slot(num,ord)
+   join public.love_eclat_v2_music_notes n on n.session_id=p_session and n.revealed=true
+    and n.theme=((slot.num::integer+1)/2)
+    and n.user_id=case when slot.num%2=1 then v_s.role_a else v_s.role_b end;
+  update public.love_eclat_v2_sessions
+   set playlist_shared=v_playlist,updated_at=now() where id=p_session;
+  delete from public.love_eclat_v2_playlist_votes where session_id=p_session;
+ end if;
+ return public.love_eclat_v2_status(p_session);
+end;
+$$;
+-- A single-device pair can only commit the titles they have jointly revealed
+-- and approved out loud; it never fabricates B's authenticated RPC submission.
+create function public.love_eclat_v2_playlist_shared_phone(
+ p_session uuid,p_expected_step integer,p_songs jsonb,p_joint_oral boolean default false
+) returns jsonb language plpgsql security definer set search_path='' as $$
+declare
+ v_actor uuid:=auth.uid();v_couple uuid;v_s public.love_eclat_v2_sessions%rowtype;
+ v_song jsonb;v_sanitized jsonb:='[]'::jsonb;v_title text;v_artist text;
+begin
+ perform public.love_require_verified_identity();
+ if p_songs is null or jsonb_typeof(p_songs)<>'array' or
+   jsonb_array_length(p_songs) not between 1 and 5 then
+  raise exception 'Un à cinq titres sont requis';end if;
+ for v_song in select value from jsonb_array_elements(p_songs) loop
+  if jsonb_typeof(v_song)<>'object' or
+    jsonb_typeof(v_song->'title') is distinct from 'string' or
+    (v_song ? 'artist' and jsonb_typeof(v_song->'artist') not in ('string','null')) or
+    exists(select 1 from jsonb_object_keys(v_song) as key where key not in ('title','artist')) then
+   raise exception 'Titre ou artiste non autorisé';end if;
+  v_title:=btrim(v_song->>'title');v_artist:=nullif(btrim(coalesce(v_song->>'artist','')),'');
+  if char_length(v_title) not between 1 and 120 or
+     (v_artist is not null and char_length(v_artist)>120) then
+   raise exception 'Taille de chanson non autorisée';end if;
+  v_sanitized:=v_sanitized||jsonb_build_array(jsonb_build_object('title',v_title,'artist',v_artist));
+ end loop;
+ select * into v_s from public.love_eclat_v2_sessions where id=p_session for update;
+ if not found then raise exception 'Séance inconnue';end if;
+ select couple_id into v_couple from public.couple_members where user_id=v_actor;
+ if v_couple is distinct from v_s.couple_id or v_actor not in(v_s.role_a,v_s.role_b)
+  or not public.love_eclat_has_access(v_s.couple_id) then
+  raise exception 'Accès interdit' using errcode='42501';end if;
+ if p_expected_step is distinct from v_s.chapter_index then
+  return public.love_eclat_v2_status(p_session);end if;
+ if v_s.coffret_id<>8 or v_s.device_mode<>'one' or v_s.state<>'active'
+  or v_s.chapter_plan[v_s.chapter_index]<>8 or v_actor<>v_s.role_a or
+   p_joint_oral is distinct from true then
+  raise exception 'Accord oral des deux requis sur téléphone partagé';end if;
+ if v_s.playlist_shared is null then
+  update public.love_eclat_v2_sessions
+   set playlist_shared=v_sanitized,updated_at=now() where id=p_session;
+ end if;
+ return public.love_eclat_v2_status(p_session);
+end;
+$$;
+
 -- All state transitions are serializable per session lock and guarded by an
 -- expected step token. Retrying a stale next/pass NEVER advances the next scene.
 create function public.love_eclat_v2_act(
@@ -1143,6 +1255,8 @@ begin
  elsif p_action='stop' then
   delete from public.love_eclat_v2_card_choices where session_id=p_session;
   delete from public.love_eclat_v2_card_votes where session_id=p_session;
+  delete from public.love_eclat_v2_playlist_votes where session_id=p_session;
+  delete from public.love_eclat_v2_music_notes where session_id=p_session;
   update public.love_eclat_v2_sessions set state='interrupted',ended_at=now(),updated_at=now()
    where id=p_session;
  else
@@ -1217,6 +1331,11 @@ begin
    update public.love_eclat_v2_sessions set puzzle_helped=true where id=p_session;
   end if;
   v_finished:=v_s.chapter_index=cardinality(v_s.chapter_plan);
+  if v_finished and v_s.coffret_id=8 then
+   -- Only the consensually saved list remains; never retain unrevealed notes.
+   delete from public.love_eclat_v2_playlist_votes where session_id=p_session;
+   delete from public.love_eclat_v2_music_notes where session_id=p_session;
+  end if;
   update public.love_eclat_v2_sessions
    set chapter_index=case when v_finished then chapter_index else chapter_index+1 end,
        skipped_scenes=case when p_action='pass'
@@ -1256,6 +1375,10 @@ revoke all on function public.love_eclat_v2_card_vote(uuid,integer,integer,boole
 grant execute on function public.love_eclat_v2_card_vote(uuid,integer,integer,boolean) to authenticated;
 revoke all on function public.love_eclat_v2_story_vote(uuid,integer,text,integer,boolean) from public,anon;
 grant execute on function public.love_eclat_v2_story_vote(uuid,integer,text,integer,boolean) to authenticated;
+revoke all on function public.love_eclat_v2_playlist_vote(uuid,integer,smallint[]) from public,anon;
+grant execute on function public.love_eclat_v2_playlist_vote(uuid,integer,smallint[]) to authenticated;
+revoke all on function public.love_eclat_v2_playlist_shared_phone(uuid,integer,jsonb,boolean) from public,anon;
+grant execute on function public.love_eclat_v2_playlist_shared_phone(uuid,integer,jsonb,boolean) to authenticated;
 revoke all on function public.love_eclat_v2_music_note(uuid,integer,text,text) from public,anon;
 grant execute on function public.love_eclat_v2_music_note(uuid,integer,text,text) to authenticated;
 revoke all on function public.love_eclat_v2_music_reveal(uuid,integer) from public,anon;

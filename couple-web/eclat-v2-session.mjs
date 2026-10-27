@@ -92,6 +92,24 @@ export function createEclatV2SessionApi(client){
     p_expected_step:step(expectedStep),p_action:action,
     p_expected_rerolls:expectedRerolls,p_joint_oral:jointOral});
   },
+  playlistVote:({sessionId:sid,expectedStep,slots})=>{
+   if(!Array.isArray(slots)||slots.length<1||slots.length>5||
+     new Set(slots).size!==slots.length||
+     slots.some(x=>!Number.isInteger(x)||x<1||x>10))
+    throw new RangeError('Choisir un à cinq titres révélés distincts');
+   return rpc('love_eclat_v2_playlist_vote',{p_session:sessionId(sid),
+    p_expected_step:step(expectedStep),p_slots:slots});
+  },
+  playlistSharedPhone:({sessionId:sid,expectedStep,songs,jointOral=false})=>{
+   if(!Array.isArray(songs)||songs.length<1||songs.length>5||jointOral!==true||
+    songs.some(x=>!x||typeof x.title!=='string'||!x.title.trim()||x.title.length>120||
+       (x.artist!==undefined&&typeof x.artist!=='string')||
+       (x.artist||'').length>120||Object.keys(x).some(k=>!['title','artist'].includes(k))))
+    throw new RangeError('Playlist consentie invalide');
+   return rpc('love_eclat_v2_playlist_shared_phone',{p_session:sessionId(sid),
+     p_expected_step:step(expectedStep),p_songs:songs.map(x=>({title:x.title.trim(),
+       artist:(x.artist||'').trim()})),p_joint_oral:true});
+  },
   musicNote:({sessionId:sid,expectedStep,title,artist=''})=>{
    if(typeof title!=='string'||!title.trim()||title.trim().length>120||
       typeof artist!=='string'||artist.length>120)throw new RangeError('Titre ou artiste invalide');
