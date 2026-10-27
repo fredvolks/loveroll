@@ -134,6 +134,24 @@ export default {
    const body=await req.json();
    if(!body||typeof body!=='object'||Array.isArray(body))return errorResponse('Commande invalide');
    const operator=ctx.userClaims!.id;
+   if(body.action==='health'){
+    // Read-only schema prerequisite check. It does NOT claim real Premium
+    // rights, Stripe readiness, Edge deployment or real player testing.
+    const required=[
+     ['loveroll_qa_managed_pairs','id'],
+     ['couples','id'],['couple_members','couple_id'],
+     ['love_eclat_v2_sessions','id'],
+     ['couple_sessions','id'],['couple_rolls','id']
+    ] as const;
+    const checks=[] as {table:string,present:boolean}[];
+    for(const [table,column] of required){
+     const {error}=await admin.from(table).select(column,{head:true,count:'exact'}).limit(0);
+     checks.push({table,present:!error});
+    }
+    return Response.json({ok:true,ready:checks.every(x=>x.present),checks,
+      warning:'Vérifie seulement les tables; le Premium QA et les RPC restent à tester.'},
+      {headers:{'Cache-Control':'no-store'}});
+   }
    if(body.action==='create'){
     const result=await createPair(admin,operator);
     return Response.json(result,{headers:{'Cache-Control':'no-store'}});

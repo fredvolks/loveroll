@@ -53,7 +53,7 @@ export function createEclatV2QaWorkbench({
  if(!root||typeof root.addEventListener!=='function'||typeof createClient!=='function')
   throw new TypeError('Atelier QA : conteneur et création de clients requis');
  let active=true,configured=false,sessionId=null,ticker=null,busy=false;
- let operatorClient=null,operatorId=null,soireeBench=null;
+ let operatorClient=null,operatorId=null,soireeBench=null,qaHealthOk=false;
  const players={A:{},B:{}};
  const el=id=>root.querySelector('[data-eclat-qa="'+id+'"]');
  const show=(id,value)=>{const target=el(id);if(target)target.hidden=!value;};
@@ -67,9 +67,9 @@ export function createEclatV2QaWorkbench({
  const dropPrivate=()=>{const target=el('one-time-passwords');
   if(target){target.replaceChildren();target.hidden=true;}};
  function operatorButtons(){
-  for(const name of ['qa-create','qa-list','qa-expire','qa-operator-logout']){
+  for(const name of ['qa-health','qa-create','qa-list','qa-expire','qa-operator-logout']){
    const b=root.querySelector('[data-eclat-qa-action="'+name+'"]');
-   if(b)b.disabled=!operatorId||busy;
+   if(b)b.disabled=!operatorId||busy||name==='qa-create'&&!qaHealthOk;
   }
  }
  async function callOperator(action,extra={}){
@@ -117,7 +117,7 @@ export function createEclatV2QaWorkbench({
   feedback('Identité QA validée. La fonction serveur vérifiera séparément le droit de créer ou de supprimer.');
  }
  async function operatorLogout(){
-  operatorId=null;dropPrivate();el('pairs')?.replaceChildren();
+  operatorId=null;qaHealthOk=false;dropPrivate();el('pairs')?.replaceChildren();
   await operatorClient?.auth?.signOut({scope:'local'}).catch(()=>{});
   operatorButtons();
  }
@@ -288,7 +288,16 @@ export function createEclatV2QaWorkbench({
    if(command==='start')await start();
    if(command==='resume')await resume();
    if(command==='refresh')await refresh();
+   if(command==='qa-health'){
+    const health=await callOperator('health');
+    qaHealthOk=health.ready===true;
+    feedback(qaHealthOk?
+     'Tables minimales QA présentes. Vérifier ensuite les fonctions et accès Premium des joueurs.':
+     'Pré-requis QA incomplets : '+(health.checks||[]).filter(c=>!c.present)
+       .map(c=>c.table).join(', '),!qaHealthOk);
+   }
    if(command==='qa-create'){
+    if(!qaHealthOk)throw new Error('Vérifier les tables QA avant de créer une paire');
     const result=await callOperator('create');
     dropPrivate();
     const area=el('one-time-passwords');area.hidden=false;

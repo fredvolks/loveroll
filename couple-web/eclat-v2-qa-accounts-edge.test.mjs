@@ -27,3 +27,12 @@ test('deletion checks BOTH metadata tags and deletes only ledger-associated pair
  assert.match(code,/admin\.auth\.admin\.deleteUser/);
  assert.match(code,/state:'failed'/);
 });
+
+test('operator can check QA schema without writing any user or database record',()=>{
+ const match=code.match(/if\(body\.action==='health'\)\{([\s\S]*?)\n   \}\n   if\(body\.action==='create'\)/);
+ assert.ok(match,'read-only health action must precede provisioning');
+ assert.match(match[1],/loveroll_qa_managed_pairs/);
+ assert.match(match[1],/love_eclat_v2_sessions/);
+ assert.match(match[1],/head:true/);
+ assert.doesNotMatch(match[1],/\.insert\(|\.update\(|\.delete\(|createUser|deleteUser/);
+});
