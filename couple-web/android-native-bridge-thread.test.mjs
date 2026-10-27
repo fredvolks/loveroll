@@ -19,8 +19,8 @@ test('Google native sign in reports Credential Manager problems and remains retr
  assert.match(native,/error\.getType\(\)/);
  assert.match(native,/Google Play Services/);
  assert.match(native,/signInWithGoogleOption|GetSignInWithGoogleOption/);
- assert.match(gradle,/versionCode 130013/);
- assert.match(gradle,/versionName '0[.]13[.]13'/);
+ assert.match(gradle,/versionCode 130014/);
+ assert.match(gradle,/versionName '0[.]13[.]14'/);
 });
 
 test('Native notification settings use the trusted UI-thread bridge',()=>{
@@ -47,4 +47,15 @@ test('Android notification preferences remain editable without remote push',asyn
   assert.match(html,/envoi inactif/);
   assert.match(html,/Alertes à distance indisponibles/);
  }finally{if(oldWindow===undefined)delete globalThis.window;else globalThis.window=oldWindow;}
+});
+
+test('Signed Android release is versioned, immutable and references the preceding official APK',()=>{
+ const release=readFileSync(new URL('../.github/workflows/android.yml',import.meta.url),'utf8');
+ assert.match(release,/TAG: des-a-deux-v0[.]13[.]14/);
+ assert.match(release,/des-a-deux-v0[.]13[.]13\\/LoveRoll-v0[.]13[.]13[.]apk/);
+ assert.match(release,/gh release create "\\$TAG"/);
+ assert.doesNotMatch(release,/gh release upload "\\$TAG".*--clobber/);
+ assert.match(release,/if gh release view "\\$TAG"/);
+ assert.match(release,/exit 1/);
+ assert.match(gradle,/versionCode 130014/);
 });

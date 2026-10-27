@@ -14,7 +14,7 @@ jobs:
     permissions:
       contents: write
     env:
-      TAG: des-a-deux-v0.13.13
+      TAG: des-a-deux-v0.13.14
       KEYSTORE_B64: ${{ secrets.KEYSTORE || secrets.ANDROID_KEYSTORE_BASE64 }}
       STORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || secrets.ANDROID_STORE_PASSWORD }}
       SIGN_ALIAS: ${{ secrets.KEY_ALIAS || secrets.ANDROID_KEY_ALIAS }}
@@ -164,21 +164,21 @@ jobs:
             --ks-key-alias "$SIGN_ALIAS" \
             --ks-pass env:STORE_PASSWORD \
             --key-pass env:KEY_PASSWORD \
-            --out dist/LoveRoll-v0.13.13.apk "$RUNNER_TEMP/aligned.apk"
-          cp dist/LoveRoll-v0.13.13.apk dist/Des-a-Deux-v0.13.13.apk
-          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs dist/LoveRoll-v0.13.13.apk
+            --out dist/LoveRoll-v0.13.14.apk "$RUNNER_TEMP/aligned.apk"
+          cp dist/LoveRoll-v0.13.14.apk dist/Des-a-Deux-v0.13.14.apk
+          "$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --verbose --print-certs dist/LoveRoll-v0.13.14.apk
           # Confirm this APK can update the installed release without uninstalling.
-          curl -fL --retry 3 'https://github.com/fredvolks/mon-wallet-android/releases/download/des-a-deux-v0.13.12/LoveRoll-v0.13.12.apk' -o "$RUNNER_TEMP/previous-loveroll.apk"
+          curl -fL --retry 3 'https://github.com/fredvolks/loveroll/releases/download/des-a-deux-v0.13.13/LoveRoll-v0.13.13.apk' -o "$RUNNER_TEMP/previous-loveroll.apk"
           installed_cert=$("$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs "$RUNNER_TEMP/previous-loveroll.apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
-          update_cert=$("$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs dist/LoveRoll-v0.13.13.apk | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
+          update_cert=$("$ANDROID_HOME/build-tools/35.0.0/apksigner" verify --print-certs dist/LoveRoll-v0.13.14.apk | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
           test -n "$installed_cert" && test "$installed_cert" = "$update_cert"
           echo 'APK signing certificate matches the existing LoveRoll release.'
-          sha256sum dist/LoveRoll-v0.13.13.apk dist/Des-a-Deux-v0.13.13.apk
+          sha256sum dist/LoveRoll-v0.13.14.apk dist/Des-a-Deux-v0.13.14.apk
           rm -f "$RUNNER_TEMP/des-a-deux.jks"
       - name: Upload installable APK
         uses: actions/upload-artifact@v4
         with:
-          name: LoveRoll-v0.13.13
+          name: LoveRoll-v0.13.14
           path: dist/*.apk
           if-no-files-found: error
       - name: Publish GitHub Release (automatic in-app update source)
@@ -187,10 +187,9 @@ jobs:
         run: |
           set -euo pipefail
           if gh release view "$TAG" >/dev/null 2>&1; then
-             gh release edit "$TAG" --title "LoveRoll v0.13.12" --notes "Chargement unifié avec lettrage partagé. Nouvelle présentation des notifications, mises à jour, invitations et événements. Calendrier et bilans harmonisés. Mise à jour signée compatible avec les comptes et données existants."
-            gh release upload "$TAG" dist/LoveRoll-v0.13.13.apk dist/Des-a-Deux-v0.13.13.apk --clobber
-          else
-            gh release create "$TAG" dist/LoveRoll-v0.13.13.apk dist/Des-a-Deux-v0.13.13.apk \
-              --target "$GITHUB_SHA" --title "LoveRoll v0.13.12" \
-              --notes "LoveRoll v0.13.12 : chargement unifié avec lettrage partagé, notifications et fenêtre de mise à jour redessinées, invitations et événements harmonisés. Calendrier et bilans accessibles depuis les réglages. Mise à jour signée compatible avec les comptes et données existants."
+            echo "::error::Version $TAG déjà publiée : ne jamais écraser une APK signée; incrémenter la version."
+            exit 1
           fi
+          gh release create "$TAG" dist/LoveRoll-v0.13.14.apk dist/Des-a-Deux-v0.13.14.apk \
+            --target "$GITHUB_SHA" --title "LoveRoll v0.13.14" \
+            --notes "Réglages des notifications Android : choix enregistrables sans fausse promesse d'envoi, accès direct aux autorisations système, authentification et données conservées. APK signée avec le certificat original, compatible avec la version 0.13.13."
