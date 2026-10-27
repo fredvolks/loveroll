@@ -1,0 +1,121 @@
+/* LoveRoll Web 236 — iPad parity with the Android photographic master.
+   The HD v202 artwork ALREADY includes roses, velvet and the one marble
+   pedestal. Never layer the older landscape picture, satin picture, a
+   decorative frame or a second pedestal above this photograph.
+   Keep the live transparent D6 / D100 WebGL canvases and all real controls. */
+@media (min-width:768px) {
+  main#app:is(.loveroll-real-home,.loveroll-evening-page) {
+    isolation:isolate!important;
+    background:#240208!important;
+    background-image:none!important;
+    --home-scene-top-image-height:calc(100vw * 1.776833);
+    --home-scene-contact:40.5dvh;
+    --lr-ipad-scene-offset:-15vh;
+  }
+  /* Single photo only. Its native 941:1672 aspect ratio is preserved on
+     portrait AND landscape tablets; the offset keeps the original podium
+     beneath the interactive die without changing to a different picture. */
+  main#app:is(.loveroll-real-home,.loveroll-evening-page)::before {
+    content:""!important;
+    display:block!important;
+    position:fixed!important;
+    inset:0!important;
+    width:100%!important;
+    height:100dvh!important;
+    z-index:-1!important;
+    pointer-events:none!important;
+    opacity:1!important;
+    filter:none!important;
+    background-color:#240208!important;
+    background-image:url('./assets/loveroll-home-portrait-v202.webp')!important;
+    background-size:100% var(--home-scene-top-image-height)!important;
+    background-position:center var(--lr-ipad-scene-offset)!important;
+    background-repeat:no-repeat!important;
+    border:0!important;
+    box-shadow:none!important;
+    mask-image:none!important;
+    -webkit-mask-image:none!important;
+  }
+  main#app:is(.loveroll-real-home,.loveroll-evening-page)::after {
+    display:none!important;
+    content:none!important;
+  }
+  /* No duplicate photo / top frame inside an already photographed scene. */
+  main#app.loveroll-real-home .home-die-theater,
+  main#app.loveroll-evening-page :is(
+    .evening-finale-hero,.evening-user-die>.love3d,
+    .evening-die-row,.evening-d100-theater
+  ) {
+    background:none!important;
+    background-image:none!important;
+    border:0!important;
+    border-radius:0!important;
+    box-shadow:none!important;
+    outline:0!important;
+    mask-image:none!important;
+    -webkit-mask-image:none!important;
+  }
+  main#app.loveroll-real-home .home-die-theater::before,
+  main#app.loveroll-real-home .home-die-theater::after,
+  main#app.loveroll-evening-page :is(
+    .evening-finale-hero,.evening-user-die>.love3d,
+    .evening-die-row,.evening-d100-theater
+  )::before,
+  main#app.loveroll-evening-page :is(
+    .evening-finale-hero,.evening-user-die>.love3d,
+    .evening-die-row,.evening-d100-theater
+  )::after {
+    display:none!important;
+    content:none!important;
+  }
+  main#app.loveroll-real-home :is(.home-fabric-photo,.home-satin-orbit),
+  main#app.loveroll-evening-page .evening-finale-velvet {
+    display:none!important;
+  }
+  /* These ZERO-SIZE elements are only WebGL alignment markers. There is
+     no independently drawn pedestal: its marble is part of the HD image. */
+  main#app.loveroll-real-home .home-die-theater>.home-pedestal,
+  main#app.loveroll-evening-page :is(
+    .evening-die-row>.home-pedestal,
+    .evening-finale-hero>.soiree-pedestal-marker
+  ) {
+    display:block!important;
+    position:fixed!important;
+    inset:var(--home-scene-contact) auto auto 50%!important;
+    width:0!important;
+    height:0!important;
+    min-width:0!important;
+    min-height:0!important;
+    border:0!important;
+    background:none!important;
+    background-image:none!important;
+    box-shadow:none!important;
+    filter:none!important;
+    transform:none!important;
+    pointer-events:none!important;
+    mask-image:none!important;
+    -webkit-mask-image:none!important;
+    z-index:0!important;
+  }
+  main#app:is(.loveroll-real-home,.loveroll-evening-page)
+  :is(.home-pedestal,.soiree-pedestal-marker)::before,
+  main#app:is(.loveroll-real-home,.loveroll-evening-page)
+  :is(.home-pedestal,.soiree-pedestal-marker)::after {
+    display:none!important;
+    content:none!important;
+  }
+  main#app:is(.loveroll-real-home,.loveroll-evening-page)
+  :is(.home-pedestal,.soiree-pedestal-marker)>.home-pedestal-contact {
+    position:absolute!important;
+    inset:0!important;
+    width:0!important;
+    height:0!important;
+  }
+  main#app.loveroll-real-home .home-die-platform {
+    filter:none!important;
+  }
+  /* Subtle, deep ruby rather than an overexposed plastic-looking D6. */
+  main#app.loveroll-real-home .home-die-platform>.dice-canvas {
+    filter:brightness(.94) saturate(.96)!important;
+  }
+}

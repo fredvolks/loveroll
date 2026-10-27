@@ -2,6 +2,7 @@
 // Preserve the approved HTML/CSS; change only the six visible odds numbers.
 import {WEEKLY_DEFAULT_WEIGHTS,effectiveDicePercentages,displayedDicePercent} from './dice-weighting.mjs?v=20261018-weights146';
 import {monthlyInvitation} from './monthly-invitation.mjs';
+import {fitTabletRomanceStage} from './shared-stage.mjs?v=20261026-web236';
 export const WEEKLY_ODDS=WEEKLY_DEFAULT_WEIGHTS;
 export const PIP_POSITIONS=Object.freeze({
   1:[[50,50]],2:[[29,29],[71,71]],3:[[29,29],[50,50],[71,71]],
@@ -30,7 +31,7 @@ export function fitHomeLayout(root){
  // The photographed marble base ends at 43.8% of the portrait asset.
  // Align its lower edge with the roll button; extend the velvet below it.
  const fitScene=()=>{
-  if(!win.matchMedia('(max-width:767px)').matches)return;
+  if(!win.matchMedia('(max-width:767px)').matches){fitTabletRomanceStage(root);return;}
   const roll=shell.querySelector('.home-roll-area');
   if(!roll)return;
   const split=roll.getBoundingClientRect().top;
