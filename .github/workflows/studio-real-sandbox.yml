@@ -31,4 +31,5 @@ jobs:
           node --test couple-web/studio-sandbox-foundation.test.mjs \
            couple-web/studio-real-sandbox.test.mjs \
            couple-web/studio-real-sandbox-ui.test.mjs \
+           couple-web/studio-frame-inspector.test.mjs \
            couple-web/studio-analytics-isolation.test.mjs
