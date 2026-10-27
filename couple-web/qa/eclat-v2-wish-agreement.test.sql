@@ -125,7 +125,32 @@ declare s jsonb;begin
  s:=public.love_eclat_v2_status();
  s:=public.love_eclat_v2_wish_vote((s->>'session_id')::uuid,6,'keep');
  if s->>'wish_invitation_card'<>'7' then raise exception 'Common invitation missing';end if;
-end $$;
+end $;
+set request.jwt.claim.sub='00000000-0000-0000-0000-000000000001';
+do $
+declare s jsonb;sid uuid;
+begin
+ s:=public.love_eclat_v2_status();sid:=(s->>'session_id')::uuid;
+ s:=public.love_eclat_v2_wish_phrase(sid,6,' Notre petite surprise ');
+ if s->>'wish_invitation_text' is not null or
+  s->>'my_wish_phrase'<>'Notre petite surprise' then
+  raise exception 'Own phrase wrongly shared before partner approval';end if;
+end $;
+set request.jwt.claim.sub='00000000-0000-0000-0000-000000000002';
+do $
+declare s jsonb;sid uuid;
+begin
+ s:=public.love_eclat_v2_status();sid:=(s->>'session_id')::uuid;
+ if s->>'my_wish_phrase' is not null or
+   position('Notre petite surprise' in s::text)>0 then
+  raise exception 'Unapproved phrase leaked to other account';end if;
+ s:=public.love_eclat_v2_wish_phrase(sid,6,'Une autre phrase');
+ if s->>'wish_invitation_text' is not null then
+  raise exception 'Different private phrases approved';end if;
+ s:=public.love_eclat_v2_wish_phrase(sid,6,'Notre petite surprise');
+ if s->>'wish_invitation_text'<>'Notre petite surprise' then
+  raise exception 'Matching invitation phrase was not approved';end if;
+end $;
 reset role;
 
 set role authenticated;
@@ -168,12 +193,22 @@ begin
  if s->>'chapter_number'<>'8' then raise exception 'Shared finale not reached';end if;
  s:=public.love_eclat_v2_wish_vote(sid,4,'keep',true);
  if s->>'wish_invitation_card'<>'7' then raise exception 'Shared oral invitation not recorded';end if;
+ begin
+  perform public.love_eclat_v2_wish_phrase(sid,4,'Mot commun');
+  raise exception 'Shared phrase saved without oral approval';
+ exception when raise_exception then
+  if sqlerrm<>'Accord oral commun explicite requis' then raise;end if;
+ end;
+ s:=public.love_eclat_v2_wish_phrase(sid,4,'Mot commun',true);
+ if s->>'wish_invitation_text'<>'Mot commun' then
+  raise exception 'Shared explicit phrase missing';end if;
  perform public.love_eclat_v2_act(sid,4,'stop');
 end $$;
 reset role;
 do $$
 begin
- if (select count(*) from public.love_eclat_v2_wish_votes)<>0 or
+ if (select count(*) from public.love_eclat_v2_wish_phrase_votes)<>0 or
+    (select count(*) from public.love_eclat_v2_wish_votes)<>0 or
     (select count(*) from public.love_eclat_v2_wish_contact)<>0 then
   raise exception 'Old refusal or temporary contact permission kept';end if;
 end $$;
