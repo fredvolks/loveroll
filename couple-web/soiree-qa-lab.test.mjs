@@ -93,6 +93,7 @@ test('QA Passer disabled at actual monthly quota; Refuser remains accessible',()
 test('actual Soirée QA click router respects independent A/B JWT gateways across branches',async()=>{
  const screens={A:{innerHTML:'',replaceChildren(){}},B:{innerHTML:'',replaceChildren(){}}};
  const events={},trace=[],errors=[],message={textContent:''};
+ const tracked={dataset:{},disabled:false};
  let approveCategory=true,approveExclude=true;
  const confirmations=[];
  const root={
@@ -108,6 +109,7 @@ test('actual Soirée QA click router respects independent A/B JWT gateways acros
   },
   querySelectorAll(sel){
    if(sel==='[data-soiree-qa-screen]')return Object.values(screens);
+   if(sel==='[data-soiree-qa-action]')return [tracked];
    return [];
   }
  };
@@ -148,6 +150,7 @@ test('actual Soirée QA click router respects independent A/B JWT gateways acros
  assert.match(screens.A.innerHTML,/Joueur A/);
  assert.match(screens.B.innerHTML,/Joueur B/);
  await click('A','weekly');
+ assert.equal(tracked.disabled,false,'network refresh with unchanged data must unlock buttons');
  await click('B','personal-d6');
  await click('A','d100');
  await click('B','answer:'+challenge+':accepted');
@@ -179,4 +182,34 @@ test('QA Soirée follows official Sensuel/Sexuel/Hasard selection, not internal 
  assert.match(markup,/<option value="SEXUEL">Sexuel/);
  assert.match(markup,/<option value="HASARD">Hasard/);
  assert.doesNotMatch(markup,/<option value="MIXTE">/);
+});
+
+test('a destroyed Soirée QA bench cannot repaint an old partner snapshot after logout',async()=>{
+ let release;
+ const delayed=new Promise(resolve=>{release=resolve});
+ const nodes={A:{innerHTML:'',replaceChildren(){this.innerHTML=''}},
+  B:{innerHTML:'',replaceChildren(){this.innerHTML=''}}};
+ const root={
+  addEventListener(){},removeEventListener(){},contains:()=>true,
+  querySelector(sel){
+   if(sel.includes('data-soiree-qa-screen="A"'))return nodes.A;
+   if(sel.includes('data-soiree-qa-screen="B"'))return nodes.B;
+   return null;
+  },
+  querySelectorAll(sel){return sel==='[data-soiree-qa-screen]'?Object.values(nodes):[]}
+ };
+ const bench=mountSoireeQaBench({root,clientA:{},clientB:{},
+  userA:{id:a},userB:{id:b},refreshMs:600000,
+  gatewayFactory:({expectedUserId})=>({
+   snapshot:async()=>delayed.then(()=>({
+    ...base,userId:expectedUserId,mine:[],
+    session:null,personal:[],passQuota:null
+   }))
+  })
+ });
+ bench.destroy();
+ release();
+ for(let i=0;i<4;i++)await new Promise(setImmediate);
+ assert.equal(nodes.A.innerHTML,'');
+ assert.equal(nodes.B.innerHTML,'');
 });

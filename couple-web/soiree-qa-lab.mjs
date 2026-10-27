@@ -143,6 +143,9 @@ export function mountSoireeQaBench({
   loading=true;
   try{
    const [a,b]=await Promise.all([api.A.snapshot(),api.B.snapshot()]);
+   // Logout or a new QA pair may have destroyed this workbench while its
+   // requests were in flight. Never paint private player data afterward.
+   if(dead)return;
    const pair=validateSoireeQaPair(a,b);
    if(pair.userA!==userA.id||pair.userB!==userB.id)
     throw new Error('Identités QA des joueurs incohérentes');
@@ -171,8 +174,14 @@ export function mountSoireeQaBench({
    lastPaintKey=key;
    buttons();
    void drawOfficialDice();
-  }catch(error){onError(error);show(error?.message||'Rafraîchissement QA refusé');}
-  finally{loading=false;}
+  }catch(error){
+   if(!dead){onError(error);show(error?.message||'Rafraîchissement QA refusé');}
+  }finally{
+   loading=false;
+   // Even an unchanged snapshot or denied RPC must re-enable buttons that
+   // were disabled while busy. Otherwise the first click freezes the lab.
+   if(!dead)buttons();
+  }
  }
  async function handle(event){
   const node=event.target?.closest?.('[data-soiree-qa-action]');
@@ -201,7 +210,7 @@ export function mountSoireeQaBench({
     const decision=await confirmCategory({
      category,percentage:status.oddsPercent??88
     });
-    if(!decision?.confirmed)return;
+    if(dead||!decision?.confirmed)return;
     if(context?.[role]?.session?.id!==session||
        root.querySelector('[data-soiree-qa-category="'+role+'"]')?.value!==category)
      throw new Error('La soirée ou la catégorie a changé : confirmer à nouveau');
@@ -225,8 +234,10 @@ export function mountSoireeQaBench({
     if(globalThis.confirm?.('Arrêter cette soirée QA sans la compter ?')!==true)return;
     await api.A.stop(session);
    }else return;
-   show('Résultat enregistré par le véritable serveur du joueur '+role+'.');
-  }catch(error){onError(error);show('Refus serveur '+role+' : '+(error?.message||'Action impossible'));}
+   if(!dead)show('Résultat enregistré par le véritable serveur du joueur '+role+'.');
+  }catch(error){
+   if(!dead){onError(error);show('Refus serveur '+role+' : '+(error?.message||'Action impossible'));}
+  }
   finally{busy=false;await refresh();}
  }
  root.addEventListener('click',handle);
