@@ -1,0 +1,34 @@
+name: LoveRoll real dual-account Studio sandbox
+on:
+  pull_request:
+    paths:
+      - 'couple-web/studio-*'
+      - 'couple-web/app.js'
+      - 'couple-web/admin.html'
+      - 'couple-web/platform-admin.js'
+      - 'couple-web/migrations/20261027_love_studio*'
+      - 'supabase/functions/love-studio-sandbox/**'
+      - '.github/workflows/studio-real-sandbox.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  sandbox:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: All test app JavaScript syntax
+        run: |
+          node --check couple-web/app.js
+          node --check couple-web/platform-admin.js
+          node --check couple-web/studio-seat-auth.mjs
+          node --check couple-web/studio-real-sandbox.mjs
+      - name: Verify real dual-account architecture, security, responsive layout
+        run: |
+          node --test couple-web/studio-sandbox-foundation.test.mjs \
+           couple-web/studio-real-sandbox.test.mjs \
+           couple-web/studio-real-sandbox-ui.test.mjs \
+           couple-web/studio-analytics-isolation.test.mjs
