@@ -42,3 +42,16 @@ test('laboratory refuses duplicated accounts before it mounts any player',()=>{
   root:{},clientA:{},clientB:{},userA:{id:a},userB:{id:a}
  }),/indépendants/);
 });
+
+test('Soirée QA caps WebGL contexts when many D100 challenges exist',()=>{
+ const many=Array.from({length:18},(_,n)=>({
+  id:'55555555-5555-4555-8555-'+String(n+1).padStart(12,'0'),
+  recipient:a,face:n+1,category:'MIXTE',status:n===17?'proposed':'completed',
+  card_id:n+1,card_title:'Carte '+(n+1),card_description:'Une idée autorisée'
+ }));
+ const markup=renderSoireeQaScreen({role:'A',snapshot:{...base,mine:many},partnerId:b});
+ const gpuContexts=(markup.match(/<canvas /g)||[]).length;
+ assert.ok(gpuContexts<=2,'A player gets max one D6 and one D100 WebGL renderer');
+ assert.equal((markup.match(/soiree-qa-challenge/g)||[]).length,18);
+ assert.match(markup,/Résultat officiel : 18/);
+});

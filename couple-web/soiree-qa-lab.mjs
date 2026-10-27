@@ -6,9 +6,9 @@ import {resolvedCard} from './evening-challenges.mjs';
 const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,c=>({
  '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
 })[c]);
-const die=(side,face,sides,kind)=>Number.isInteger(face)&&face>=1&&face<=sides
+const die=(side,face,sides,kind,enable3d=true)=>Number.isInteger(face)&&face>=1&&face<=sides
  ?'<div class="soiree-qa-die" aria-label="Résultat officiel '+sides+' faces : '+face+
-  '"><canvas data-soiree-qa-die="'+side+':'+kind+'" aria-hidden="true"></canvas>'+
+  '">'+(enable3d?'<canvas data-soiree-qa-die="'+side+':'+kind+'" aria-hidden="true"></canvas>':'')+
   '<strong>Résultat officiel : '+face+'</strong></div>'
  :'<p>Aucun résultat enregistré.</p>';
 const btn=(role,action,label,disabled=false)=>'<button type="button" data-soiree-qa-role="'+role+
@@ -22,7 +22,7 @@ export function renderSoireeQaScreen({role,snapshot,partnerId}){
  let html='<div class="soiree-qa-person"><h4>Joueur '+role+' · serveur officiel</h4>'+
   '<p>Identité QA : '+escapeHtml(snapshot.userId.slice(0,8))+'</p></div>';
  html+='<div class="soiree-qa-round"><h5>D6 de la semaine</h5>'+
-  die(role,latest?.face,6,'weekly')+
+  die(role,latest?.face,6,'weekly',own===null)+
   btn(role,'weekly','Brasser le vrai D6 hebdomadaire')+
   '<p class="soiree-qa-caption">Ce lancer respecte la semaine Québec et les quotas déjà enregistrés.</p></div>';
  html+='<div class="soiree-qa-round"><h5>Soirée du duo</h5>';
@@ -41,6 +41,9 @@ export function renderSoireeQaScreen({role,snapshot,partnerId}){
     '<option value="SEXUEL">Sexuel</option><option value="HASARD">Hasard</option>'+
    '</select></label>'+btn(role,'d100','Tirer un défi officiel D100',!ready)+
    '<p class="soiree-qa-caption">Les deux D6 sont nécessaires. Toute limite ou condition du serveur reste active.</p>';
+  const selectedChallenge=[...snapshot.mine].reverse().find(x=>
+    x.status==='proposed'||x.status==='accepted')||
+    snapshot.mine[snapshot.mine.length-1]||null;
   for(const item of snapshot.mine){
    const c=resolvedCard(item);
    html+='<article class="soiree-qa-challenge" aria-label="Défi privé de '+role+'">'+
@@ -48,7 +51,7 @@ export function renderSoireeQaScreen({role,snapshot,partnerId}){
     '<p>'+escapeHtml(c.description)+'</p>'+
     '<p>Carte '+escapeHtml(item.category)+' · D100 officiel '+
      escapeHtml(item.face)+' · '+escapeHtml(item.status)+'</p>'+
-    die(role,item.face,100,'challenge-'+item.id)+
+    die(role,item.face,100,'challenge-'+item.id,item.id===selectedChallenge?.id)+
     (item.status==='proposed'?btn(role,'answer:'+item.id+':accepted','Accepter')+
       btn(role,'answer:'+item.id+':passed','Passer'):'')+
     (item.status==='accepted'?btn(role,'answer:'+item.id+':completed','Terminer')+
@@ -68,7 +71,7 @@ export function mountSoireeQaBench({
 }){
  if(!root||!clientA||!clientB||!userA?.id||!userB?.id||
     userA.id===userB.id)throw new Error('Deux comptes QA indépendants requis');
- let dead=false,busy=false,loading=false,context=null,timer=null;
+ let dead=false,busy=false,loading=false,context=null,timer=null,lastPaintKey=null;
  const clients={A:clientA,B:clientB},identities={A:userA.id,B:userB.id};
  const api={A:gatewayFactory({client:clientA,expectedUserId:userA.id}),
   B:gatewayFactory({client:clientB,expectedUserId:userB.id})};
@@ -117,12 +120,24 @@ export function mountSoireeQaBench({
    if((a.session?.id||null)!==(b.session?.id||null))
     throw new Error('Soirée A/B désynchronisée : corriger côté serveur');
    context={A:a,B:b};
+   // Network polling never recreates WebGL or discards an unchanged selection.
+   const key=JSON.stringify([a,b]);
+   if(key===lastPaintKey)return;
+   const previous={};
+   for(const role of ['A','B'])previous[role]=
+    root.querySelector('[data-soiree-qa-category="'+role+'"]')?.value||'MIXTE';
    clearDice();
    for(const role of ['A','B']){
     const node=root.querySelector('[data-soiree-qa-screen="'+role+'"]');
     if(node)node.innerHTML=renderSoireeQaScreen({role,snapshot:context[role],
       partnerId:identities[role==='A'?'B':'A']});
    }
+   for(const role of ['A','B']){
+    const picker=root.querySelector('[data-soiree-qa-category="'+role+'"]');
+    if(picker&&['MIXTE','SENSUEL','SEXUEL','HASARD'].includes(previous[role]))
+     picker.value=previous[role];
+   }
+   lastPaintKey=key;
    buttons();
    void drawOfficialDice();
   }catch(error){onError(error);show(error?.message||'Rafraîchissement QA refusé');}
