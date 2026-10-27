@@ -259,7 +259,7 @@ $$;
 -- Coffret 04 only: mutual agreement, no votes on behalf of the other person.
 create function public.love_eclat_v2_choose_door(
  p_session uuid,p_expected_step integer,p_door text,p_joint_oral boolean default false
-) returns jsonb language plpgsql security definer set search_path='' as $
+) returns jsonb language plpgsql security definer set search_path='' as $$
 declare
  v_actor uuid:=auth.uid(); v_couple uuid; v_s public.love_eclat_v2_sessions%rowtype;
  v_scene integer; v_count integer; v_distinct integer;
@@ -300,7 +300,7 @@ begin
  end if;
  return public.love_eclat_v2_status(p_session);
 end;
-$;
+$$;
 
 -- All state transitions are serializable per session lock and guarded by an
 -- expected step token. Retrying a stale next/pass NEVER advances the next scene.
