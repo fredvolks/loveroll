@@ -71,6 +71,13 @@ test('two actual API clients, never A impersonating B, mount both full play cont
  for(const k of ['url','key','accounts','connection','game','feedback',
   'account-A','account-B','stage-A','stage-B','coffret','minutes'])put(k);
  put('url',QA);put('key',KEY);put('coffret','9');put('minutes','30');
+ const operatorFields={email:{value:'operator@qa.example.test'},
+  password:{value:'pass-OPERATOR'}};
+ const operatorForm={
+  hasAttribute(k){return k==='data-eclat-qa-operator-form';},
+  getAttribute(){return null;},
+  querySelector(k){return operatorFields[k==='[name="email"]'?'email':'password'];}
+ };
  const forms={};
  for(const role of ['A','B']){
   const fields={email:{value:role.toLowerCase()+'@qa.example.test'},
@@ -104,7 +111,12 @@ test('two actual API clients, never A impersonating B, mount both full play cont
     },
     async getUser(){return {data:{user:{id:'qa-'+role}},error:null};},
     async signOut(){return {error:null};}
-   },async rpc(){throw new Error('Unexpected direct RPC');}};
+   },functions:{async invoke(name,{body}){
+     assert.equal(name,'loveroll-qa-accounts');
+     assert.equal(role,'OPERATOR');
+     assert.equal(body.action,'health');
+     return {data:{ok:true,ready:true,checks:[]},error:null};
+   }},async rpc(){throw new Error('Unexpected direct RPC');}};
    created.push(client);return client;
   },
   createApi(client){
@@ -134,6 +146,12 @@ test('two actual API clients, never A impersonating B, mount both full play cont
   assert.deepEqual(created.map(x=>x.role),['OPERATOR','A','B']);
  assert.notEqual(created[0],created[1]);
  assert.equal(elements['[data-eclat-qa="key"]'].value,'');
+ // Accidental project selection must not allow any player login before
+ // a verified QA operator and its read-only server schema readiness probe.
+ await listeners.submit({target:forms.A,preventDefault(){}});
+ assert.ok(!elements['[data-eclat-qa="game"]'].hidden===false);
+ await listeners.submit({target:operatorForm,preventDefault(){}});
+ await click('qa-health');
  for(const role of ['A','B'])await listeners.submit({
   target:forms[role],preventDefault(){}
  });

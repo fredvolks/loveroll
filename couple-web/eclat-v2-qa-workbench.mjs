@@ -189,6 +189,8 @@ export function createEclatV2QaWorkbench({
  }
  async function signIn(role,form){
   if(!configured)throw new Error('Branchez d’abord une base de test');
+  if(!operatorId||!qaHealthOk)
+   throw new Error('Un opérateur QA autorisé doit vérifier les tables du projet dédié avant de connecter les joueurs');
   if(players[role].user)throw new Error('Compte '+role+' déjà connecté : déconnecter la base QA pour changer de joueur');
   const email=form.querySelector('[name="email"]')?.value?.trim();
   const input=form.querySelector('[name="password"]');
