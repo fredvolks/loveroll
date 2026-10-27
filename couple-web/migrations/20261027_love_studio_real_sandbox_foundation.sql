@@ -19,10 +19,11 @@ ALTER TABLE public.love_studio_test_pools ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.love_studio_test_seats ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.love_studio_test_pools FROM PUBLIC,anon,authenticated;
 REVOKE ALL ON public.love_studio_test_seats FROM PUBLIC,anon,authenticated;
+GRANT SELECT,INSERT,UPDATE,DELETE ON public.love_studio_test_pools,public.love_studio_test_seats TO service_role;
 
 -- Entirely privileged deletion: the service backend supplies its VERIFIED admin id;
 -- direct browser access is revoked. All target IDs come from the registry.
-CREATE OR REPLACE FUNCTION couple_private.love_studio_purge_test_couple(p_admin uuid)
+CREATE OR REPLACE FUNCTION public.love_studio_purge_test_couple(p_admin uuid)
 RETURNS TABLE(seat text,user_id uuid)
 LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $purge$
 DECLARE v_pool public.love_studio_test_pools%rowtype;
@@ -60,7 +61,7 @@ BEGIN
   RETURN QUERY SELECT s.seat,s.user_id FROM public.love_studio_test_seats s
   WHERE s.admin_id=p_admin ORDER BY s.seat;
 END;$purge$;
-REVOKE ALL ON FUNCTION couple_private.love_studio_purge_test_couple(uuid) FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION couple_private.love_studio_purge_test_couple(uuid) TO service_role;
+REVOKE ALL ON FUNCTION public.love_studio_purge_test_couple(uuid) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.love_studio_purge_test_couple(uuid) TO service_role;
 COMMENT ON TABLE public.love_studio_test_pools IS
  'Strictly registered platform-admin test couples. Never merge with real customer data or let browser alter.';
