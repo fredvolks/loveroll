@@ -3,6 +3,17 @@
 import {createSoireeQaGateway,validateSoireeQaPair} from './soiree-qa-gateway.mjs';
 import {resolvedCard} from './evening-challenges.mjs';
 
+// Server weekly die keys use Monday in America/Toronto, not the device timezone.
+export function currentTorontoWeekKey(now=new Date()){
+ const parts=new Intl.DateTimeFormat('en-CA',{
+  timeZone:'America/Toronto',year:'numeric',month:'2-digit',day:'2-digit'
+ }).formatToParts(now);
+ const read=k=>Number(parts.find(x=>x.type===k)?.value);
+ const day=new Date(Date.UTC(read('year'),read('month')-1,read('day')));
+ if(Number.isNaN(day.getTime()))throw new Error('Horloge Québec indisponible');
+ day.setUTCDate(day.getUTCDate()-(day.getUTCDay()+6)%7);
+ return day.toISOString().slice(0,10);
+}
 const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,c=>({
  '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
 })[c]);
@@ -13,18 +24,23 @@ const die=(side,face,sides,kind,enable3d=true)=>Number.isInteger(face)&&face>=1&
  :'<p>Aucun résultat enregistré.</p>';
 const btn=(role,action,label,disabled=false)=>'<button type="button" data-soiree-qa-role="'+role+
  '" data-soiree-qa-action="'+action+'"'+(disabled?' disabled':'')+'>'+escapeHtml(label)+'</button>';
-export function renderSoireeQaScreen({role,snapshot,partnerId}){
+export function renderSoireeQaScreen({role,snapshot,partnerId,weekKey=currentTorontoWeekKey()}){
  if(!['A','B'].includes(role)||!snapshot)throw new TypeError('Écran QA invalide');
  const own=snapshot.personal.find(p=>p.user_id===snapshot.userId)?.face??null;
  const theirs=snapshot.personal.find(p=>p.user_id===partnerId)?.face??null;
  const weeks=(snapshot.weekly||[]).filter(w=>Number.isInteger(w.face)&&w.face>=1&&w.face<=6);
- const latest=weeks.sort((a,b)=>String(b.key).localeCompare(String(a.key)))[0]||null;
+ const latest=weeks.find(w=>w.key===weekKey)||null;
+ const previous=weeks.filter(w=>w.key!==weekKey)
+  .sort((a,b)=>String(b.key).localeCompare(String(a.key)))[0]||null;
  let html='<div class="soiree-qa-person"><h4>Joueur '+role+' · serveur officiel</h4>'+
   '<p>Identité QA : '+escapeHtml(snapshot.userId.slice(0,8))+'</p></div>';
  html+='<div class="soiree-qa-round"><h5>D6 de la semaine</h5>'+
   die(role,latest?.face,6,'weekly',own===null)+
   btn(role,'weekly','Brasser le vrai D6 hebdomadaire')+
-  '<p class="soiree-qa-caption">Ce lancer respecte la semaine Québec et les quotas déjà enregistrés.</p></div>';
+  '<p class="soiree-qa-caption">Semaine québécoise du '+escapeHtml(weekKey)+
+  '. '+(previous&&!latest?'Résultat précédent : '+previous.face+
+    ' (semaine '+escapeHtml(previous.key)+'). Le dé actuel reste à lancer.':'')+
+  ' Les quotas sont vérifiés côté serveur.</p></div>';
  html+='<div class="soiree-qa-round"><h5>Soirée du duo</h5>';
  if(!snapshot.session){
   html+='<p>Aucune soirée active pour ce duo.</p>'+
@@ -100,8 +116,8 @@ export function mountSoireeQaBench({
   for(const canvas of root.querySelectorAll('canvas[data-soiree-qa-die]')){
    const [role,kind]=canvas.dataset.soireeQaDie.split(':');
    const ctx=context?.[role];let face=null,sides=6;
-   if(kind==='weekly')face=(ctx.weekly||[]).filter(x=>x.face>=1&&x.face<=6)
-    .sort((a,b)=>String(b.key).localeCompare(String(a.key)))[0]?.face??null;
+   if(kind==='weekly')face=(ctx.weekly||[]).find(x=>x.key===currentTorontoWeekKey()&&
+    x.face>=1&&x.face<=6)?.face??null;
    else if(kind==='personal')face=ctx.personal.find(x=>x.user_id===identities[role])?.face??null;
    else if(kind.startsWith('challenge-')){
     const item=ctx.mine.find(x=>x.id===kind.slice(10));
