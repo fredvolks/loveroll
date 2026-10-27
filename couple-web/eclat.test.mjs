@@ -113,7 +113,8 @@ test('Photographic Éclat shows exactly 12 clickable matching coffret pictures',
  assert.equal((gallery.match(/class="eclat-tile-photo"/g)||[]).length,12);
  assert.match(gallery,/--photo-y:0\.00000%/);
  assert.match(gallery,/--photo-y:100\.00000%/);
- assert.equal((gallery.match(/data-action="eclat:detail:/g)||[]).length,12);
+ // The discovery recommendation opens a detail too, but is not a thirteenth coffret.
+ assert.equal((gallery.match(/<button role="listitem" type="button" class="eclat-tile" data-action="eclat:detail:/g)||[]).length,12);
  assert.doesNotMatch(gallery,/<div class="eclat-intro">/);
  const style=read('./eclat-photo-gallery-v179.css');
  assert.match(style,/eclat-photo-strip\.webp/);
