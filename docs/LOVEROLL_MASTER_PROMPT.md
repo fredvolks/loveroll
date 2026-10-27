@@ -1,7 +1,7 @@
 # LoveRoll — PROMPT MAÎTRE OFFICIEL
 > Version documentaire 2026-10-27 · Dépôt officiel : [fredvolks/loveroll](https://github.com/fredvolks/loveroll) · Statut initial : **demandé / à auditer**, pas « terminé ».
 
-> **Design UX/UI Figma — à appliquer en continu :** [contrat LoveRoll / Figma / Work](LOVEROLL_FIGMA_UX_WORKFLOW.md), [fichier Figma](https://www.figma.com/design/lWctcurFW169eWWYm4yxuj). Revoir dans Figma les nouvelles interfaces et les refontes significatives, en prenant **l'application réellement exécutée** comme référence; conserver le vrai jeu, les assets HD Android/iPad et les règles des coffrets, du catalogue, des paiements et du Studio. Ne pas bloquer les petits correctifs ni ralentir le prompt maître par des maquettes obligatoires.
+> **Direction UX/UI autonome — à appliquer en continu :** [protocole LoveRoll / Work / captures réelles](LOVEROLL_UX_UI_AUTONOME_WORKFLOW.md). Pour chaque nouvelle interface, refonte importante ou parcours touché, Work agit comme designer, client payant, couple joueur et développeur : examiner le code réellement exécuté, critiquer proactivement ergonomie, compréhension, navigation, esthétique premium et accessibilité, proposer une correction vérifiable et comparer les captures réelles avant/après. Les améliorations visuelles simples conformes à la charte peuvent être corrigées directement; une refonte majeure ou une modification du comportement requiert l'accord du propriétaire. Préserver le vrai jeu, les dés WebGL, les assets HD Android/iPad, les règles des coffrets, du catalogue, des paiements et du Studio. Ne pas bloquer les petits correctifs, ni déclencher de maquettes ou d'outils graphiques payants obligatoires.
 
 
 
