@@ -4,6 +4,7 @@
 import {eclatV2SceneA} from './eclat-v2-coffrets-a.mjs';
 import {eclatV2SceneB} from './eclat-v2-coffrets-b.mjs';
 import {eclatV2SceneC} from './eclat-v2-coffrets-c.mjs';
+import {ECLAT_V2_EDITORIAL} from './eclat-v2-editorial.mjs';
 const esc =value=>String(value??'').replace(/[&<>"']/g,ch=>
  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const btn=(action,label,style='')=>'<button type="button" class="eclat-v2-btn '+style+'" data-eclat-v2-action="'+esc(action)+'">'+esc(label)+'</button>';
@@ -514,6 +515,20 @@ export function renderEclatV2PlayA({status,viewerId,localRole=null,seenRoles=[],
     '<ol>'+status.playlist_shared.map(song=>'<li>'+esc(song.title)+
      (song.artist?' — '+esc(song.artist):'')+'</li>').join('')+'</ol>'+
     '<p>Vous pouvez retrouver ces titres sur le service de votre choix. Aucun fichier ni lecture automatique.</p>'+
+    '</section>';
+  }
+  if(status.coffret_id===9&&status.state==='finished'){
+   const n=status.wish_invitation_card,variant=status.variant;
+   let title=null;
+   if(Number.isInteger(n)&&n>=1&&n<=12&&[0,1].includes(variant)){
+    const table=ECLAT_V2_EDITORIAL[8].tables.find(t=>t.headers[0]==='Carte');
+    title=table?.rows?.[n-1]?.[variant+1]?.replace(/^«\s*|\s*»$/g,'')||null;
+   }
+   return '<section class="eclat-v2-stage" aria-label="Finale du coffre des envies">'+
+    '<h2>Le coffre des envies</h2>'+
+    (title?'<p>Votre invitation commune : <strong>'+esc(title)+'</strong></p>'+
+       '<p>Cette invitation ne déclenche aucun achat, réservation ou rappel.</p>':
+       '<p>Ce coffre est terminé sans invitation à conserver. Vos choix personnels ne sont pas révélés.</p>')+
     '</section>';
   }
   return '<section class="eclat-v2-stage"><p>Aucune séance Éclat V2 en cours.</p></section>';

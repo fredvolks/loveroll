@@ -417,3 +417,16 @@ test('09 shared phone only A controls joint oral decisions and contact choices',
  assert.match(a,/wish-choice:without-contact/);
  assert.match(a,/wish-contact:yes/);
 });
+
+test('09 completed play shows only approved invitation, never intermediate refusals',()=>{
+ const s=status(9,0,60,8,{active:false,state:'finished',
+  wish_invitation_card:7,wish_scene5:null,wish_scene6:null,
+  selected_card:7,common_cards:[7]});
+ const completed=renderEclatV2PlayA({status:s,viewerId:aid});
+ assert.match(completed,/Finale du coffre des envies/);
+ assert.match(completed,/Votre invitation commune/);
+ assert.doesNotMatch(completed,/wish-choice:|Pas maintenant :|wish-contact/);
+ const declined=renderEclatV2PlayA({status:{...s,wish_invitation_card:null},viewerId:aid});
+ assert.match(declined,/sans invitation à conserver/);
+ assert.doesNotMatch(declined,/Votre invitation commune/);
+});
