@@ -53,6 +53,14 @@ export function createEclatV2SessionApi(client){
    return rpc('love_eclat_v2_choose_door',{p_session:sessionId(sid),p_expected_step:step(expectedStep),
     p_door:door,p_joint_oral:jointOral});
   },
+  storyVote:({sessionId:sid,expectedStep,action,expectedRerolls,jointOral=false})=>{
+   if(!['keep','reroll','off'].includes(action)||!Number.isInteger(expectedRerolls)||
+      expectedRerolls<0||typeof jointOral!=='boolean')
+    throw new RangeError('Action du récit ou compteur invalide');
+   return rpc('love_eclat_v2_story_vote',{p_session:sessionId(sid),
+    p_expected_step:step(expectedStep),p_action:action,
+    p_expected_rerolls:expectedRerolls,p_joint_oral:jointOral});
+  },
   musicNote:({sessionId:sid,expectedStep,title,artist=''})=>{
    if(typeof title!=='string'||!title.trim()||title.trim().length>120||
       typeof artist!=='string'||artist.length>120)throw new RangeError('Titre ou artiste invalide');

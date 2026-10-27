@@ -55,3 +55,5 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-attentions.test.sql
       - name: Verify private music notes and explicit per-author reveal
         run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-music.test.sql
+      - name: Validate persisted cryptographic story dice and consented constraint rerolls
+        run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-story.test.sql

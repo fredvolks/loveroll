@@ -25,6 +25,11 @@ create table public.love_eclat_v2_sessions (
  puzzle_solved_step smallint,
  puzzle_hint_level smallint not null default 0 check(puzzle_hint_level between 0 and 2),
  puzzle_helped boolean not null default false,
+ story_decor smallint check(story_decor between 1 and 6),
+ story_roles smallint check(story_roles between 1 and 6),
+ story_constraint smallint check(story_constraint between 1 and 6),
+ story_constraint_enabled boolean not null default true,
+ story_rerolls integer not null default 0 check(story_rerolls>=0),
  revealed_step smallint check (revealed_step between 1 and 8),
  started_at timestamptz not null default now(),
  updated_at timestamptz not null default now(),
@@ -113,6 +118,28 @@ create table public.love_eclat_v2_music_notes (
 );
 alter table public.love_eclat_v2_music_notes enable row level security;
 revoke all on public.love_eclat_v2_music_notes from public,anon,authenticated;
+-- Story constraint reroll history and independent, one-user-per-vote choices.
+create table public.love_eclat_v2_story_votes (
+ session_id uuid not null references public.love_eclat_v2_sessions(id) on delete cascade,
+ scene_number smallint not null check(scene_number in (1,6)),
+ user_id uuid not null references auth.users(id),
+ action text not null check(action in ('keep','reroll','off')),
+ updated_at timestamptz not null default now(),
+ primary key(session_id,scene_number,user_id)
+);
+create table public.love_eclat_v2_story_history (
+ session_id uuid not null references public.love_eclat_v2_sessions(id) on delete cascade,
+ sequence integer not null check(sequence>=1),
+ scene_number smallint not null check(scene_number in (1,6)),
+ previous_face smallint not null check(previous_face between 1 and 6),
+ next_face smallint not null check(next_face between 1 and 6),
+ decided_at timestamptz not null default now(),
+ primary key(session_id,sequence)
+);
+alter table public.love_eclat_v2_story_votes enable row level security;
+alter table public.love_eclat_v2_story_history enable row level security;
+revoke all on public.love_eclat_v2_story_votes from public,anon,authenticated;
+revoke all on public.love_eclat_v2_story_history from public,anon,authenticated;
 alter table public.love_eclat_v2_sessions enable row level security;
 alter table public.love_eclat_v2_readiness enable row level security;
 -- Fail closed: only authenticated, guarded RPCs can access these tables.
@@ -145,6 +172,20 @@ $$;
 revoke all on function public.love_eclat_v2_scene_type(integer,integer) from public,anon;
 grant execute on function public.love_eclat_v2_scene_type(integer,integer) to authenticated;
 
+-- Native PostgreSQL CSPRNG UUID, rejection sampling 0..251 => unbiased D6.
+-- No dependency on LoveRoll's official D6/D100 rolls or their quotas.
+create function public.love_eclat_v2_die_d6()
+ returns smallint language plpgsql volatile set search_path='' as $$
+declare byte_value integer;
+begin
+ loop
+  byte_value:=get_byte(uuid_send(gen_random_uuid()),0);
+  if byte_value<252 then return ((byte_value % 6)+1)::smallint;end if;
+ end loop;
+end;
+$$;
+revoke all on function public.love_eclat_v2_die_d6() from public,anon,authenticated;
+
 -- Returns only metadata and the caller's own readiness, never another's private answers.
 create function public.love_eclat_v2_status(p_session uuid default null)
  returns jsonb language plpgsql stable security definer set search_path='' as $$
@@ -154,6 +195,7 @@ declare
  v_contact_yes integer; v_my_contact text; v_my_answer integer;v_my_guess integer;
  v_attention_index integer;v_attention_response text;
  v_music_note jsonb;v_revealed_music jsonb;v_theme integer;
+ v_story_vote text;v_story_history jsonb;
 begin
  perform public.love_require_verified_identity();
  select couple_id into v_couple from public.couple_members where user_id=v_actor;
@@ -201,6 +243,13 @@ begin
     order by theme,user_id),'[]'::jsonb) into v_revealed_music
    from public.love_eclat_v2_music_notes where session_id=v_s.id and revealed=true;
  end if;
+ select action into v_story_vote from public.love_eclat_v2_story_votes
+ where session_id=v_s.id and scene_number=v_s.chapter_plan[v_s.chapter_index] and user_id=v_actor;
+ if v_s.coffret_id=12 then
+  select coalesce(jsonb_agg(jsonb_build_object('sequence',sequence,
+   'scene',scene_number,'previous',previous_face,'next',next_face) order by sequence),'[]'::jsonb)
+  into v_story_history from public.love_eclat_v2_story_history where session_id=v_s.id;
+ end if;
  select count(*),coalesce(bool_or(user_id=v_actor),false) into v_ready,v_mine
  from public.love_eclat_v2_readiness where session_id=v_s.id and step_index=v_s.chapter_index;
  return jsonb_build_object(
@@ -211,6 +260,11 @@ begin
   'substep_index',v_s.substep_index,
   'my_answer',v_my_answer,'my_prediction',v_my_guess,
   'attention_index',v_attention_index,'attention_response',v_attention_response,
+  'story_dice',case when v_s.coffret_id=12 then jsonb_build_object(
+    'decor',v_s.story_decor,'roles',v_s.story_roles,'constraint',v_s.story_constraint) else null end,
+  'constraint_rerolls',v_s.story_rerolls,
+  'constraint_enabled',v_s.story_constraint_enabled,
+  'my_story_vote',v_story_vote,'story_reroll_history',v_story_history,
   'music_theme',v_theme,'my_music_note',v_music_note,
   'revealed_music',v_revealed_music,
   'puzzle_solved',coalesce(v_s.puzzle_solved_step=v_s.chapter_index,false),
@@ -283,8 +337,12 @@ begin
   when 60 then array[5,8,12,12,15,8]::smallint[]
   else array[5,10,15,10,15,15,10,10]::smallint[] end;
  insert into public.love_eclat_v2_sessions
-  (couple_id,coffret_id,minutes,variant,device_mode,role_a,role_b,chapter_plan,budget_plan)
- values(v_couple,p_coffret,p_minutes,v_variant,p_device_mode,v_actor,v_partner,v_plan,v_budget)
+  (couple_id,coffret_id,minutes,variant,device_mode,role_a,role_b,chapter_plan,budget_plan,
+   story_decor,story_roles,story_constraint)
+ values(v_couple,p_coffret,p_minutes,v_variant,p_device_mode,v_actor,v_partner,v_plan,v_budget,
+  case when p_coffret=12 then public.love_eclat_v2_die_d6() else null end,
+  case when p_coffret=12 then public.love_eclat_v2_die_d6() else null end,
+  case when p_coffret=12 then public.love_eclat_v2_die_d6() else null end)
  returning id into v_new;
  return public.love_eclat_v2_status(v_new);
 end;
@@ -720,6 +778,68 @@ begin
 end;
 $$;
 
+-- One shared phone: authenticated creator records a joint oral agreement.
+-- Two devices: two independent authenticated votes must match. No impersonation.
+create function public.love_eclat_v2_story_vote(
+ p_session uuid,p_expected_step integer,p_action text,
+ p_expected_rerolls integer,p_joint_oral boolean default false
+) returns jsonb language plpgsql security definer set search_path='' as $$
+declare
+ v_actor uuid:=auth.uid();v_couple uuid;v_s public.love_eclat_v2_sessions%rowtype;
+ v_scene int;v_count int;v_distinct int;v_new smallint;v_execute boolean:=false;
+begin
+ perform public.love_require_verified_identity();
+ if p_action is null or p_action not in ('keep','reroll','off') or
+   p_expected_rerolls is null or p_expected_rerolls<0 then
+  raise exception 'Choix du récit inconnu';end if;
+ select * into v_s from public.love_eclat_v2_sessions where id=p_session for update;
+ if not found then raise exception 'Séance inconnue';end if;
+ select couple_id into v_couple from public.couple_members where user_id=v_actor;
+ if v_couple is distinct from v_s.couple_id or v_actor not in(v_s.role_a,v_s.role_b)
+    or not public.love_eclat_has_access(v_s.couple_id) then
+  raise exception 'Accès interdit' using errcode='42501';end if;
+ if p_expected_step is distinct from v_s.chapter_index or
+   p_expected_rerolls is distinct from v_s.story_rerolls then
+  return public.love_eclat_v2_status(p_session);end if;
+ v_scene:=v_s.chapter_plan[v_s.chapter_index];
+ if v_s.coffret_id<>12 or v_scene not in (1,6) or v_s.state<>'active' then
+  raise exception 'Relance hors de la scène autorisée';end if;
+ if v_scene=1 and p_action='off' then
+  raise exception 'Sans contrainte uniquement à la scène 6';end if;
+ if v_s.device_mode='one' then
+  if v_actor<>v_s.role_a or p_joint_oral is distinct from true then
+   raise exception 'Accord oral des deux requis';end if;
+  v_execute:=true;
+ else
+  insert into public.love_eclat_v2_story_votes(session_id,scene_number,user_id,action)
+  values(p_session,v_scene,v_actor,p_action)
+  on conflict(session_id,scene_number,user_id)
+   do update set action=excluded.action,updated_at=now();
+  select count(*),count(distinct action) into v_count,v_distinct
+    from public.love_eclat_v2_story_votes
+    where session_id=p_session and scene_number=v_scene and user_id in (v_s.role_a,v_s.role_b);
+  v_execute:=(v_count=2 and v_distinct=1);
+ end if;
+ if v_execute then
+  if p_action='reroll' then
+   v_new:=public.love_eclat_v2_die_d6();
+   update public.love_eclat_v2_sessions
+    set story_constraint=v_new,story_rerolls=story_rerolls+1,
+       story_constraint_enabled=true,updated_at=now() where id=p_session;
+   insert into public.love_eclat_v2_story_history
+    (session_id,sequence,scene_number,previous_face,next_face)
+   values(p_session,v_s.story_rerolls+1,v_scene,v_s.story_constraint,v_new);
+  else
+   update public.love_eclat_v2_sessions
+    set story_constraint_enabled=p_action='keep',updated_at=now() where id=p_session;
+  end if;
+  delete from public.love_eclat_v2_story_votes
+    where session_id=p_session and scene_number=v_scene;
+ end if;
+ return public.love_eclat_v2_status(p_session);
+end;
+$$;
+
 -- All state transitions are serializable per session lock and guarded by an
 -- expected step token. Retrying a stale next/pass NEVER advances the next scene.
 create function public.love_eclat_v2_act(
@@ -821,6 +941,8 @@ revoke all on function public.love_eclat_v2_contact_answer(uuid,integer,text,tex
 grant execute on function public.love_eclat_v2_contact_answer(uuid,integer,text,text,boolean) to authenticated;
 revoke all on function public.love_eclat_v2_choose_door(uuid,integer,text,boolean) from public,anon;
 grant execute on function public.love_eclat_v2_choose_door(uuid,integer,text,boolean) to authenticated;
+revoke all on function public.love_eclat_v2_story_vote(uuid,integer,text,integer,boolean) from public,anon;
+grant execute on function public.love_eclat_v2_story_vote(uuid,integer,text,integer,boolean) to authenticated;
 revoke all on function public.love_eclat_v2_music_note(uuid,integer,text,text) from public,anon;
 grant execute on function public.love_eclat_v2_music_note(uuid,integer,text,text) to authenticated;
 revoke all on function public.love_eclat_v2_music_reveal(uuid,integer) from public,anon;
