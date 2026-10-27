@@ -1,0 +1,49 @@
+/* LR-001 — Same physical D100 viewport on the entry screens of Soirée and Surprise.
+   The WebGL model and photographed marble stay untouched. This is deliberately
+   unlayered and loaded after the historical @layer tablet/mobile overrides. */
+#app.loveroll-evening-page .evening-premium-view.is-inactive.has-home-soiree-template
+.evening-finale-dice>.love3d{
+  display:grid!important;
+  place-items:center!important;
+  position:relative!important;
+  inset:auto!important;
+  width:100%!important;
+  height:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+}
+#app.loveroll-evening-page .evening-premium-view.is-inactive.has-home-soiree-template
+.evening-finale-dice .love3d-stage{
+  box-sizing:border-box!important;
+  position:relative!important;
+  display:block!important;
+  width:min(82%,41dvh,390px)!important;
+  height:auto!important;
+  min-width:0!important;
+  min-height:0!important;
+  max-width:100%!important;
+  max-height:none!important;
+  aspect-ratio:1!important;
+  flex:none!important;
+  margin:0 auto!important;
+}
+/* These three breakpoints mirror surprise-d100-v151.css, not an
+   independent Soirée scale or a viewport-wide 420px estimate. */
+@media (max-width:767px) and (max-height:750px){
+  #app.loveroll-evening-page .evening-premium-view.is-inactive.has-home-soiree-template
+  .evening-finale-dice .love3d-stage{
+    width:min(76%,31dvh,300px)!important;
+  }
+}
+@media (min-width:768px){
+  #app.loveroll-evening-page .evening-premium-view.is-inactive.has-home-soiree-template
+  .evening-finale-dice .love3d-stage{
+    width:min(82%,43dvh,440px)!important;
+  }
+}
+@media (orientation:landscape) and (max-height:600px){
+  #app.loveroll-evening-page .evening-premium-view.is-inactive.has-home-soiree-template
+  .evening-finale-dice .love3d-stage{
+    width:min(77%,59dvh,340px)!important;
+  }
+}
