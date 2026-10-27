@@ -93,7 +93,7 @@ test('QA Passer disabled at actual monthly quota; Refuser remains accessible',()
 test('actual Soirée QA click router respects independent A/B JWT gateways across branches',async()=>{
  const screens={A:{innerHTML:'',replaceChildren(){}},B:{innerHTML:'',replaceChildren(){}}};
  const events={},trace=[],errors=[],message={textContent:''};
- let approveCategory=true;
+ let approveCategory=true,approveExclude=true;
  const confirmations=[];
  const root={
   addEventListener(kind,fn){events[kind]=fn;},
@@ -136,6 +136,7 @@ test('actual Soirée QA click router respects independent A/B JWT gateways acros
    confirmations.push([category,percentage]);
    return {confirmed:approveCategory,neverShow:false};
   },
+  confirmExclude:async()=>approveExclude,
   refreshMs:600000,onError:e=>errors.push(e.message)});
  const settle=async()=>{for(let i=0;i<5;i++)await new Promise(setImmediate);};
  const click=async(role,action)=>{
@@ -154,6 +155,10 @@ test('actual Soirée QA click router respects independent A/B JWT gateways acros
  assert.deepEqual(trace.map(x=>x.role+':'+x.action),
   ['A:weekly','B:d6','A:d100','B:answer','B:redraw']);
  assert.deepEqual(trace.at(-1).payload,[challenge,'refuse',{exclude:true}]);
+ approveExclude=false;
+ await click('B','redraw:'+challenge+':refuse:yes');
+ assert.equal(trace.length,5,'annuler une exclusion ne doit jamais changer les RPC QA');
+ approveExclude=true;
  assert.deepEqual(confirmations,[['SENSUEL',88]]);
  approveCategory=false;
  await click('B','d100');

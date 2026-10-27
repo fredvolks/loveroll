@@ -34,7 +34,7 @@
 - `eclat-v2-qa-workbench.mjs` refuse explicitement l'URL Supabase publique de production et les clés secrètes. Il accepte une clé **sb_publishable_** d'un autre projet QA, et conserve les deux sessions A/B uniquement en mémoire de page (pas de mot de passe ou de session QA persistée).
 - Deux comptes préexistants différents, appartenant au même vrai duo QA, pilotent séparément **le contrôleur Éclat V2 officiel**, sans simulation des dés et sans usurpation des identités. En mode paysage iPad/PC, les écrans sont côte à côte, avec un mode empilé en portrait/mobile. L'atelier prévoit démarrage, reprise et rafraîchissement des états.
 - Protections additionnelles : rejette la réauthentification d'un rôle déjà connecté, refuse de démarrer sur une séance encore active et interrompt la nouvelle séance QA si la vérification du second compte échoue.
-- **Non livré :** création et suppression sécurisées de comptes d'essai, base QA LoveRoll explicitement choisie et provisionnée, permissions QA/abonnements validés, suite D6/D100 de la Soirée, campagne de recette physique iPad/Android. Ne pas confondre ce banc Éclat avec une console complète de tous les jeux.
+- **Codé, en branche uniquement :** service Edge QA pour créer/supprimer des paires jetables avec identité d'opérateur, registre fermé et nettoyage manuel; banc Soirée officiel D6/D100 et LR-015; deux panneaux A/B indépendants, confirmation LR-014, quotas de passe, accusés de réception serveur et tests de répartition des actions. **Non livré réellement :** base QA LoveRoll dédiée, installation/vérification de la fonction et des droits, suppression Auth/Storage en conditions réelles, accès Premium QA et campagne de recette physique iPad/Android. Ne pas confondre du code testé dans la branche avec un service déjà déployé.
 
 ## Vérifications et sécurité
 
@@ -47,7 +47,7 @@
 
 1. Tester dans une base QA dédiée la bande originale 08 désormais codée, dont approbations A/B, ordre des titres, purge des brouillons et finale sans musique.
 2. Tester de bout en bout les parcours 09 (contact et refus), 10 (minuteur sur deux vrais appareils) et 11 (deux tours distincts) déjà raccordés au moteur V2.
-3. L'atelier Super Admin QA est branché dans la PR en brouillon. Préparer une base QA *désignée et séparée*, y installer les prérequis et migrations, créer deux comptes de test associés au même duo et faire une recette réelle. La création/suppression automatique des comptes test, et les parcours D6/D100 hors Éclat, restent à développer. Ne pas recycler un projet Supabase existant non confirmé.
+3. L'atelier Super Admin QA est branché dans la PR en brouillon. Préparer une base QA *désignée et séparée*, y installer les prérequis et migrations, créer deux comptes de test associés au même duo et faire une recette réelle. Les interfaces et serveurs de création/suppression de comptes, ainsi que le banc D6/D100 hors Éclat, sont codés mais non déployés/recettés. L'installation QA contrôlée, le test d'entitlement et les scénarios Soirée réels restent à faire. Ne pas recycler un projet Supabase existant non confirmé.
 4. Faire revue sécurité SQL réelle et RLS/ACL, contrôles d'abonnement, paiements et confidentialité, revue Figma du rendu exécuté, et migration **coordonnée séparée** avant publication.
 5. Ne convertir la PR brouillon en PR prête que lorsque tous les parcours sont réellement utilisables, testés et conformes au prompt maître.
 

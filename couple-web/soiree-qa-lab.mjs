@@ -97,6 +97,7 @@ export function mountSoireeQaBench({
  gatewayFactory=createSoireeQaGateway,
  loadDice=()=>import('./dice3d.js'),
  confirmCategory=askEveningCategoryConfirmation,
+ confirmExclude=()=>globalThis.confirm?.('Refuser et exclure ce défi du cycle QA ?')===true,
  refreshMs=7000,onError=()=>{}
 }){
  if(!root||!clientA||!clientB||!userA?.id||!userB?.id||
@@ -215,6 +216,9 @@ export function mountSoireeQaBench({
      throw new Error('Défi non admissible à la repige');
     if(!['pass','refuse'].includes(choice)||!['yes','no'].includes(exclude))
      throw new Error('Repige invalide');
+    // Explicit opt-in for an exclusion that may affect later QA draws.
+    // A cancellation is not a server RPC and cannot change the cycle.
+    if(choice==='refuse'&&exclude==='yes'&&!await confirmExclude())return;
     await api[role].redraw(id,choice,{exclude:exclude==='yes'});
    }else if(action==='stop'){
     if(role!=='A'||!session)throw new Error('Aucune soirée à arrêter');
