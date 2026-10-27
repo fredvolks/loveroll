@@ -252,6 +252,8 @@ Afficher près des catégories les cartes distinctes encore admissibles à la pr
 
 **Coffret 09 :** les sélections privées (0–3 cartes) sont comparées uniquement pour les cartes communes et les choix non partagés sont détruits. Les étapes 5–8 comportent les choix maintenant/plus tard/passer, la participation facultative et l'invitation finale; tout contact des cartes 7/8 exige deux Oui spécifiques et révocables. La phrase commune est facultative et ne devient publique qu'après deux propositions identiques (ou accord oral sur un téléphone). Refus, votes temporaires et consentements de contact sont purgés; seule l'invitation et sa phrase expressément approuvées peuvent subsister.
 
+**Super Admin · atelier QA :** l'onglet Éclat V2 a été branché à la console propriétaire dans la PR #92, derrière son authentification serveur. Il exige une base Supabase QA distincte de la production et deux comptes indépendants. Les vraies vues A/B et le moteur V2 sont utilisés, avec reprises, synchronisation et contrôles d'identité. Il **ne crée ni ne supprime encore** de comptes test et **ne remplace pas** la recette des vrais dés Soirée D6/D100. Aucun projet QA n'a été modifié automatiquement par ce lot.
+
 **Restant avant de compter les coffrets comme livrés :** branchement dans la vraie navigation, migration coordonnée sécurisée, abonnements/entitlements, QA bout-en-bout de tous les coffrets/variantes sur deux comptes réels, contrôle de la reprise et des échanges A/B, essais physiques iPad/Android, finitions visuelles et accessibilité. Ne pas fusionner ni déployer #92 sans ces contrôles.
 
 ## Refonte Éclat — douze coffrets approuvés le 27 octobre 2026
