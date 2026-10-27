@@ -73,3 +73,15 @@ test('08 music note and reveal use authenticated RPC without choosing author',as
  assert.ok(calls.every(x=>!JSON.stringify(x[1]).includes('user_id')));
  assert.throws(()=>api.musicNote({sessionId:sid,expectedStep:1,title:' '}),RangeError);
 });
+
+test('12 story vote sends stage and counter, never writes dice faces locally',async()=>{
+ const calls=[];const api=createEclatV2SessionApi({async rpc(name,args){
+  calls.push([name,args]);return {data:status};}});
+ await api.storyVote({sessionId:sid,expectedStep:1,expectedRerolls:0,action:'reroll'});
+ await api.storyVote({sessionId:sid,expectedStep:3,expectedRerolls:2,action:'off',jointOral:true});
+ assert.deepEqual(calls.map(c=>c[0]),['love_eclat_v2_story_vote','love_eclat_v2_story_vote']);
+ assert.equal(calls[0][1].p_expected_rerolls,0);
+ assert.equal(calls[1][1].p_joint_oral,true);
+ assert.ok(calls.every(c=>!JSON.stringify(c[1]).includes('story_constraint')));
+ assert.throws(()=>api.storyVote({sessionId:sid,expectedStep:1,expectedRerolls:-1,action:'reroll'}),RangeError);
+});

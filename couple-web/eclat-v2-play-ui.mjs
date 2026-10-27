@@ -3,6 +3,7 @@
 // enters DOM. One-phone mode explicitly covers the screen between A and B.
 import {eclatV2SceneA} from './eclat-v2-coffrets-a.mjs';
 import {eclatV2SceneB} from './eclat-v2-coffrets-b.mjs';
+import {eclatV2SceneC} from './eclat-v2-coffrets-c.mjs';
 const esc =value=>String(value??'').replace(/[&<>"']/g,ch=>
  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const btn=(action,label,style='')=>'<button type="button" class="eclat-v2-btn '+style+'" data-eclat-v2-action="'+esc(action)+'">'+esc(label)+'</button>';
@@ -12,6 +13,38 @@ function mainContent(view,status,predictionDraft={},puzzleDraft={},puzzleAttempt
   '<p class="eclat-v2-instruction">'+esc(view.instruction)+'</p>';
  if(view.substepTotal)html+='<p class="eclat-v2-muted">'+(view.coffretId===1?'Enveloppe':view.coffretId===5?'Tour':'Partie')+
   ' '+view.substepIndex+' sur '+view.substepTotal+' de ce moment</p>';
+ if(view.coffretId===12){
+  html+='<section class="eclat-v2-activity"><h3>Votre histoire à inventer</h3>'+
+   '<p><strong>Votre objectif :</strong> '+esc(view.objective)+'</p>';
+  if(view.dicePending)
+   html+='<p role="status">Les trois dés réels du récit n’ont pas encore été reçus du serveur. Aucun résultat local n’est créé.</p>';
+  else{
+   const d=view.story;
+   html+='<p><strong>Décor ('+d.draws.decor+') :</strong> '+esc(d.decor)+'</p>'+
+    '<p><strong>Personnages fictifs :</strong> A · '+esc(view.roleSwapped?d.roleB:d.roleA)+
+     ' / B · '+esc(view.roleSwapped?d.roleA:d.roleB)+'</p>'+
+    '<p><strong>Contrainte ('+d.draws.constraint+') :</strong> '+
+     (status.constraint_enabled===false?'Sans contrainte, d’un commun accord':esc(d.constraint))+'</p>'+
+    '<p>Relances volontaires de la contrainte : '+view.reRollCount+
+     '. Le décor et les rôles ne sont jamais retirés.</p>';
+   if(view.shortRouteSwitch)html+='<p>Échangez maintenant vos rôles fictifs pour cette scène.</p>';
+  }
+  html+='</section>';
+  if(view.rerollConstraintOnly&&!view.dicePending){
+   html+='<fieldset class="eclat-v2-door"><legend>Décidons ensemble</legend>'+
+    btn('story-vote:keep','Garder notre contrainte')+
+    btn('story-vote:reroll','Relancer seulement la contrainte')+
+    (view.sceneNumber===6?btn('story-vote:off','Jouer sans contrainte'):'')+
+    '<p class="eclat-v2-muted">'+(status.device_mode==='two'?
+      'Chaque partenaire confirme sur son téléphone; deux choix identiques sont nécessaires.':
+      'Confirmez uniquement après un accord oral des deux.')+'</p>';
+   if(status.my_story_vote&&!status.story_decision_confirmed)
+    html+='<p role="status">Votre choix est transmis; attendez l’accord de l’autre.</p>';
+   if(status.story_decision_confirmed)
+    html+='<p role="status">Décision commune confirmée. Vous pouvez la conserver ou relancer uniquement la contrainte.</p>';
+   html+='</fieldset>';
+  }
+ }
  if(view.envelopes?.length){
   html+='<div class="eclat-v2-tasks">'+view.envelopes.map(e=>
    '<section class="eclat-v2-task"><small>ENVELOPPE '+e.number+(e.skipped?' · PASSÉE':'')+'</small>'+
@@ -254,7 +287,9 @@ function actions(view,status,seenRoles,sharedConfirmed=[]){
  const secretLocked=view.type==='Secret'&&!status.revealed;
  const puzzleLocked=!!view.puzzle&&!status.puzzle_solved&&status.puzzle_hint_level<2;
  const attentionLocked=!!view.attentions&&!['yes','pass'].includes(status.attention_response);
- if(!secretLocked&&!pendingDoor&&!view.awaitBranch&&!puzzleLocked&&!attentionLocked){
+ const storyLocked=view.coffretId===12&&!!view.rerollConstraintOnly&&
+  (!status.story_decision_confirmed||view.dicePending);
+ if(!secretLocked&&!pendingDoor&&!view.awaitBranch&&!puzzleLocked&&!attentionLocked&&!storyLocked){
   if(view.role==='A')rows+=btn('act:continue',view.type==='Finale'?
    'Terminer ensemble après notre accord':'Continuer ensemble après notre accord','primary');
   else rows+='<span role="status">Après votre accord oral, A pourra continuer cette scène commune.</span>';
@@ -276,7 +311,9 @@ export function renderEclatV2PlayA({status,viewerId,localRole=null,seenRoles=[],
    btn('show-role:B','Écran pour B · Je suis prêt','primary')+
    '<p>Aucune réponse privée n’est enregistrée dans le compte de l’autre personne.</p></section>';
  }
- const view=(status.coffret_id<=4?eclatV2SceneA:eclatV2SceneB)({session:status,viewerId,localDisplayRole:localRole});
+ const model=status.coffret_id<=4?eclatV2SceneA:
+   status.coffret_id<=8?eclatV2SceneB:eclatV2SceneC;
+ const view=model({session:status,viewerId,localDisplayRole:localRole});
  return '<section class="eclat-v2-stage" data-eclat-v2-scene="'+view.sceneNumber+'">'+
   '<header><small>ÉCLAT · COFFRET '+String(view.coffretId).padStart(2,'0')+
   ' · '+view.variantName+'</small><p>Étape '+view.number+' sur '+view.total+

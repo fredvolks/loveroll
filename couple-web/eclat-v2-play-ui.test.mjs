@@ -219,3 +219,27 @@ test('08 shared phone note is local and never claims to be B auth',()=>{
  assert.match(b,/Titre B/);
  assert.match(b,/data-eclat-v2-action="music-reveal"/);
 });
+
+test('12 reads persisted server dice and offers consented constraint-only reroll',()=>{
+ const sample=status(12,0,30,1,{
+  story_dice:{decor:2,roles:3,constraint:4},constraint_rerolls:0,
+  constraint_enabled:true,story_decision_confirmed:false
+ });
+ const pending=renderEclatV2PlayA({status:sample,viewerId:aid});
+ assert.match(pending,/data-eclat-v2-action="story-vote:reroll"/);
+ assert.match(pending,/data-eclat-v2-action="story-vote:keep"/);
+ assert.doesNotMatch(pending,/data-eclat-v2-action="story-vote:off"/);
+ assert.doesNotMatch(pending,/data-eclat-v2-action="act:continue"/);
+ assert.match(pending,/Décor \(2\)/);
+ const confirmed=renderEclatV2PlayA({status:{...sample,story_decision_confirmed:true},viewerId:aid});
+ assert.match(confirmed,/data-eclat-v2-action="act:continue"/);
+ const long=status(12,1,90,6,{
+  story_dice:{decor:1,roles:5,constraint:6},constraint_rerolls:3,
+  constraint_enabled:false,story_decision_confirmed:true
+ });
+ const stage6=renderEclatV2PlayA({status:long,viewerId:aid});
+ assert.match(stage6,/data-eclat-v2-action="story-vote:off"/);
+ assert.match(stage6,/Sans contrainte/);
+ const absent=renderEclatV2PlayA({status:status(12,1,30,1),viewerId:aid});
+ assert.match(absent,/Aucun résultat local n’est créé/);
+});

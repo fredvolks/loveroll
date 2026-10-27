@@ -92,7 +92,13 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
   try{
    const sid=status.session_id,idx=status.chapter_index;
    let next;
-   if(command==='music-save'){
+   if(command.startsWith('story-vote:')){
+    const action=command.slice('story-vote:'.length);
+    if(status.coffret_id!==12||!['keep','reroll','off'].includes(action))return;
+    next=await api.storyVote({sessionId:sid,expectedStep:idx,
+      expectedRerolls:status.constraint_rerolls,action,
+      jointOral:status.device_mode==='one'});
+   }else if(command==='music-save'){
     if(status.coffret_id!==8||status.device_mode!=='two')return;
     const title=(musicDraft.title??status.my_music_note?.title??'').trim();
     const artist=(musicDraft.artist??status.my_music_note?.artist??'').trim();
