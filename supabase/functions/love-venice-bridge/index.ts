@@ -42,9 +42,12 @@ Deno.serve(async (request: Request) => {
   catch { return json({ error: 'Requête JSON invalide.' }, 400); }
   const action = payload?.action;
   const coupleId = payload?.couple_id;
-  if (!['status', 'verify_key', 'get_latest_preview', 'preview_three'].includes(String(action)) ||
-      typeof coupleId !== 'string' ||
-      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(coupleId)) {
+  const studioAction = typeof action === 'string' && action.startsWith('studio_');
+  const allowedActions = ['status','verify_key','get_latest_preview','preview_three',
+    'studio_status','studio_verify_key','studio_get_latest_preview','studio_preview_three'];
+  if (!allowedActions.includes(String(action)) ||
+      (!studioAction && (typeof coupleId !== 'string' ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(coupleId)))) {
     return json({ error: 'Action ou couple invalide.' }, 400);
   }
 
@@ -54,15 +57,24 @@ Deno.serve(async (request: Request) => {
   const { data: identity, error: userError } = await supabase.auth.getUser(match[1]);
   if (userError || !identity?.user?.id) return json({ error: 'Session invalide.' }, 401);
 
-  // Owner/admin of THIS couple only. Client-provided role claims are ignored.
-  const { data: couple, error: coupleError } = await supabase
-    .from('couples').select('id,owner_user_id').eq('id', coupleId)
-    .eq('owner_user_id', identity.user.id).maybeSingle();
-  if (coupleError) return json({ error: 'Vérification des droits indisponible.' }, 503);
-  if (!couple) return json({ error: 'Accès réservé à l’administrateur du couple.' }, 403);
+  // Studio: authenticated, verified platform owner only. Other actions remain
+  // restricted to the owner of the specified couple.
+  if (studioAction) {
+    if (!identity.user.email_confirmed_at) return json({error:'Courriel non vérifié.'},403);
+    const {data:platformAdmin,error:adminError}=await supabase.from('love_platform_admins')
+      .select('user_id').eq('user_id',identity.user.id).maybeSingle();
+    if(adminError)return json({error:'Vérification Super Admin indisponible.'},503);
+    if(!platformAdmin)return json({error:'Accès réservé au Super Admin.'},403);
+  } else {
+    const { data: couple, error: coupleError } = await supabase
+      .from('couples').select('id,owner_user_id').eq('id', coupleId)
+      .eq('owner_user_id', identity.user.id).maybeSingle();
+    if (coupleError) return json({ error: 'Vérification des droits indisponible.' }, 503);
+    if (!couple) return json({ error: 'Accès réservé à l’administrateur du couple.' }, 403);
+  }
 
   const veniceKey = (Deno.env.get('VENICE_API_KEY') || '').trim();
-  if (action === 'status') {
+  if (action === 'status' || action === 'studio_status') {
     return json({
       provider: 'venice', configured: Boolean(veniceKey),
       api_base_url: VENICE_API_BASE_URL, generating: false,
@@ -73,9 +85,11 @@ Deno.serve(async (request: Request) => {
   }
 
 
-  if (action === 'get_latest_preview') {
-    const { data, error } = await supabase.from('love_venice_preview_trials')
-      .select('cards,status,created_at,model').eq('couple_id', coupleId)
+  if (action === 'get_latest_preview' || action === 'studio_get_latest_preview') {
+    const trialTable=studioAction?'love_venice_studio_trials':'love_venice_preview_trials';
+    const query=supabase.from(trialTable).select('cards,status,created_at,model');
+    const { data, error } = await (studioAction
+      ?query.eq('requested_by',identity.user.id):query.eq('couple_id',coupleId))
       .order('created_at', { ascending: false }).limit(1).maybeSingle();
     if (error) return json({ error: 'Brouillon indisponible.' }, 503);
     return json({ provider: 'venice', saved: Boolean(data),
@@ -83,15 +97,15 @@ Deno.serve(async (request: Request) => {
         created_at: data.created_at, model: data.model } : null });
   }
 
-  if (action === 'preview_three') {
+  if (action === 'preview_three' || action === 'studio_preview_three') {
     if (!veniceKey) return json({ error: 'Secret VENICE_API_KEY absent de Supabase.' }, 503);
     // Transactional per-couple/day limiter. Neither quota nor prices for full 100-card
     // regeneration are involved; this endpoint cannot mutate active libraries.
+    const trialTable=studioAction?'love_venice_studio_trials':'love_venice_preview_trials';
+    const payload={requested_by:identity.user.id, utc_day:new Date().toISOString().slice(0,10),
+      ...(studioAction?{}:{couple_id:coupleId})};
     const { data: receipt, error: reserveError } = await supabase
-      .from('love_venice_preview_trials').insert({
-        couple_id: coupleId, requested_by: identity.user.id,
-        utc_day: new Date().toISOString().slice(0, 10)
-      }).select('id').single();
+      .from(trialTable).insert(payload).select('id').single();
     if (reserveError) return json({
       error: reserveError.code === '23505'
         ? 'Essai de trois cartes déjà utilisé pour ce couple aujourd’hui (UTC).'
@@ -171,7 +185,7 @@ Deno.serve(async (request: Request) => {
     };
     const cards = await Promise.all(definitions.map(makeCard));
     const completed = cards.filter(card => !('error' in card)).length;
-    const { error: saveError } = await supabase.from('love_venice_preview_trials')
+    const { error: saveError } = await supabase.from(trialTable)
       .update({
         cards, model, status:completed===3?'completed':'partial',
         finished_at:new Date().toISOString()
