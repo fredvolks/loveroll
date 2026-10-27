@@ -10,6 +10,7 @@ test('Studio real sandbox uses existing secure platform gate and no standalone f
  assert.match(html,/studio-real-frame-A/);
  assert.match(html,/studio-real-frame-B/);
  assert.match(html,/studio-real-delete/);
+ assert.match(html,/id="studio-real-reset"/);
  assert.match(js,/createStudioRealSandbox/);
  assert.match(js,/realSandbox\.init/);
  assert.doesNotMatch(html,/id="sim-d100"|id="sim-d6-face-0"/);
