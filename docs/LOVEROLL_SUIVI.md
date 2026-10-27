@@ -241,3 +241,22 @@ Afficher près des catégories les cartes distinctes encore admissibles à la pr
 - **Correctif :** orientations d'arrêt D6/D100 plus frontales, repère de gravure réel de chaque face, suppression du réglage spécial de la face 2. Valeurs serveur, probabilités, gravures, matériaux, socle et trajectoire inchangés.
 - **Preuves prévues :** `couple-web/dice-face-readability-browser-check.cjs` (D6 1–6, D100 représentatifs; téléphone 360×700, tablette 820×1180, ordinateur 1366×768), `dice-roll-motion.test.mjs`, captures WebGL `LoveRoll-D6-D100-face-readability-*` de GitHub Actions, comparaison avec la capture initiale. Tests physiques sur les vrais appareils et comparaison avant/après à confirmer; captures CI « après » ne remplacent pas une capture « avant ».
 - **Livraison :** branche `fix/d6-d100-face-readability-20261026` ; PR, CI, version Web, déploiement Pages et comportement public à renseigner après vérification.
+
+## Refonte Éclat — douze coffrets approuvés le 27 octobre 2026
+
+**LR-ECLAT-001 : spécification de jeu rédigée, développement non commencé dans cette intervention.** [Maître](./LOVEROLL_MASTER_PROMPT.md) · [Contrat de jeu détaillé](./LOVEROLL_ECLAT_12_COFFRETS_SPEC.md). Work implémente les décisions fixées; aucun nouveau gameplay à inventer. Les colonnes designer/client/joueur/codeur exigent des preuves propres au coffret; aucune case de livraison cochée par la seule rédaction de cette spécification.
+
+| ID | Coffret | Spécification | Code / livraison | Recette designer / client / joueur / codeur |
+| --- | --- | --- | --- | --- |
+| LR-ECLAT-01 | Les cinq secrets | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |
+| LR-ECLAT-02 | Le double jeu | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |
+| LR-ECLAT-03 | Le langage des sens | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |
+| LR-ECLAT-04 | Les portes de minuit | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |
+| LR-ECLAT-05 | Comme au premier rendez-vous | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |
+| LR-ECLAT-06 | L’enquête amoureuse | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |
+| LR-ECLAT-07 | À ta place | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |
+| LR-ECLAT-08 | Notre bande originale | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |
+| LR-ECLAT-09 | Le coffre des envies | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |
+| LR-ECLAT-10 | Le compte à rebours | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |
+| LR-ECLAT-11 | L’art de te séduire | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |
+| LR-ECLAT-12 | La nuit du hasard | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |
