@@ -17,6 +17,8 @@ create table public.love_eclat_v2_sessions (
  chapter_index smallint not null default 1 check (chapter_index between 1 and 8),
  state text not null default 'active' check (state in ('active','paused','finished','interrupted')),
  skipped_scenes smallint[] not null default '{}'::smallint[],
+ branch text check (branch in ('Tendresse','Jeu','Mystère')),
+ door_confirmed_scene smallint check (door_confirmed_scene in (1,5)),
  revealed_step smallint check (revealed_step between 1 and 8),
  started_at timestamptz not null default now(),
  updated_at timestamptz not null default now(),
@@ -41,6 +43,18 @@ create table public.love_eclat_v2_readiness (
  ready_at timestamptz not null default now(),
  primary key(session_id,step_index,user_id)
 );
+-- Both public door votes must match before a branch is accepted. No secret
+-- answers are stored here, and an unresolved vote is visible only to its author.
+create table public.love_eclat_v2_door_votes (
+ session_id uuid not null references public.love_eclat_v2_sessions(id) on delete cascade,
+ scene_number smallint not null check (scene_number in (1,5)),
+ user_id uuid not null references auth.users(id),
+ door text not null check (door in ('Tendresse','Jeu','Mystère')),
+ updated_at timestamptz not null default now(),
+ primary key(session_id,scene_number,user_id)
+);
+alter table public.love_eclat_v2_door_votes enable row level security;
+revoke all on public.love_eclat_v2_door_votes from public,anon,authenticated;
 alter table public.love_eclat_v2_sessions enable row level security;
 alter table public.love_eclat_v2_readiness enable row level security;
 -- Fail closed: only authenticated, guarded RPCs can access these tables.
@@ -78,7 +92,7 @@ create function public.love_eclat_v2_status(p_session uuid default null)
  returns jsonb language plpgsql stable security definer set search_path='' as $$
 declare
  v_actor uuid:=auth.uid(); v_couple uuid; v_s public.love_eclat_v2_sessions%rowtype;
- v_ready integer; v_mine boolean; v_type text;
+ v_ready integer; v_mine boolean; v_type text; v_door_vote text;
 begin
  perform public.love_require_verified_identity();
  select couple_id into v_couple from public.couple_members where user_id=v_actor;
@@ -97,6 +111,8 @@ begin
  end if;
  if not found then return jsonb_build_object('access',true,'active',false); end if;
  v_type:=public.love_eclat_v2_scene_type(v_s.coffret_id,v_s.chapter_plan[v_s.chapter_index]);
+ select door into v_door_vote from public.love_eclat_v2_door_votes
+  where session_id=v_s.id and scene_number=v_s.chapter_plan[v_s.chapter_index] and user_id=v_actor;
  select count(*),coalesce(bool_or(user_id=v_actor),false) into v_ready,v_mine
  from public.love_eclat_v2_readiness where session_id=v_s.id and step_index=v_s.chapter_index;
  return jsonb_build_object(
@@ -107,6 +123,8 @@ begin
   'chapter_number',v_s.chapter_plan[v_s.chapter_index],
   'budget_minutes',v_s.budget_plan[v_s.chapter_index],
   'scene_type',v_type,'state',v_s.state,'skipped_scenes',v_s.skipped_scenes,
+  'branch',v_s.branch,'door_confirmed',v_s.door_confirmed_scene=v_s.chapter_plan[v_s.chapter_index],
+  'my_door_vote',v_door_vote,
   'revealed',v_s.revealed_step=v_s.chapter_index,
   'ready_count',v_ready,'my_ready',v_mine,
   'can_reveal',case when v_type<>'Secret' then false
@@ -238,6 +256,52 @@ begin
 end;
 $$;
 
+-- Coffret 04 only: mutual agreement, no votes on behalf of the other person.
+create function public.love_eclat_v2_choose_door(
+ p_session uuid,p_expected_step integer,p_door text,p_joint_oral boolean default false
+) returns jsonb language plpgsql security definer set search_path='' as $
+declare
+ v_actor uuid:=auth.uid(); v_couple uuid; v_s public.love_eclat_v2_sessions%rowtype;
+ v_scene integer; v_count integer; v_distinct integer;
+begin
+ perform public.love_require_verified_identity();
+ if p_door is null or p_door not in ('Tendresse','Jeu','Mystère') then
+  raise exception 'Porte non approuvée'; end if;
+ select * into v_s from public.love_eclat_v2_sessions where id=p_session for update;
+ if not found then raise exception 'Séance inconnue';end if;
+ select couple_id into v_couple from public.couple_members where user_id=v_actor;
+ if v_couple is distinct from v_s.couple_id or v_actor not in(v_s.role_a,v_s.role_b)
+  or not public.love_eclat_has_access(v_s.couple_id) then
+  raise exception 'Accès interdit' using errcode='42501';end if;
+ if p_expected_step is distinct from v_s.chapter_index then
+  return public.love_eclat_v2_status(p_session);end if;
+ v_scene:=v_s.chapter_plan[v_s.chapter_index];
+ if v_s.coffret_id<>4 or v_scene not in (1,5) or v_s.state<>'active' then
+  raise exception 'Choix de porte non permis à cette étape';end if;
+ if v_s.door_confirmed_scene=v_scene then return public.love_eclat_v2_status(p_session);end if;
+ if v_s.device_mode='one' then
+  if v_actor<>v_s.role_a or p_joint_oral is distinct from true then
+   raise exception 'Accord commun explicite requis';end if;
+  update public.love_eclat_v2_sessions
+    set branch=p_door,door_confirmed_scene=v_scene,updated_at=now() where id=v_s.id;
+ else
+  insert into public.love_eclat_v2_door_votes(session_id,scene_number,user_id,door)
+    values(v_s.id,v_scene,v_actor,p_door)
+    on conflict(session_id,scene_number,user_id)
+    do update set door=excluded.door,updated_at=now();
+  select count(*),count(distinct door) into v_count,v_distinct
+    from public.love_eclat_v2_door_votes
+    where session_id=v_s.id and scene_number=v_scene
+      and user_id in (v_s.role_a,v_s.role_b);
+  if v_count=2 and v_distinct=1 then
+   update public.love_eclat_v2_sessions
+    set branch=p_door,door_confirmed_scene=v_scene,updated_at=now() where id=v_s.id;
+  end if;
+ end if;
+ return public.love_eclat_v2_status(p_session);
+end;
+$;
+
 -- All state transitions are serializable per session lock and guarded by an
 -- expected step token. Retrying a stale next/pass NEVER advances the next scene.
 create function public.love_eclat_v2_act(
@@ -269,6 +333,10 @@ begin
  else
   if v_s.state<>'active' then raise exception 'Reprendre la séance avant de continuer'; end if;
   v_type:=public.love_eclat_v2_scene_type(v_s.coffret_id,v_s.chapter_plan[v_s.chapter_index]);
+  if p_action='continue' and v_s.coffret_id=4 and
+     v_s.chapter_plan[v_s.chapter_index] in (1,5) and
+     v_s.door_confirmed_scene is distinct from v_s.chapter_plan[v_s.chapter_index] then
+   raise exception 'Attendre le choix commun de la porte'; end if;
   if p_action='continue' and v_type='Secret' and v_s.revealed_step is distinct from v_s.chapter_index then
    raise exception 'Révélation convenue requise avant de continuer'; end if;
   delete from public.love_eclat_v2_readiness where session_id=p_session and step_index=v_s.chapter_index;
@@ -279,6 +347,10 @@ begin
           then array_append(skipped_scenes,chapter_plan[chapter_index])
           else skipped_scenes end,
        revealed_step=null,
+       branch=case when p_action='pass' and coffret_id=4 and chapter_plan[chapter_index]=1
+          then 'Jeu' else branch end,
+       door_confirmed_scene=case when p_action='pass' and coffret_id=4 and chapter_plan[chapter_index] in (1,5)
+          then chapter_plan[chapter_index] else door_confirmed_scene end,
        state=case when v_finished then 'finished' else state end,
        ended_at=case when v_finished then now() else ended_at end,
        updated_at=now()
@@ -287,6 +359,8 @@ begin
  return public.love_eclat_v2_status(p_session);
 end;
 $$;
+revoke all on function public.love_eclat_v2_choose_door(uuid,integer,text,boolean) from public,anon;
+grant execute on function public.love_eclat_v2_choose_door(uuid,integer,text,boolean) to authenticated;
 revoke all on function public.love_eclat_v2_status(uuid) from public,anon;
 revoke all on function public.love_eclat_v2_start(integer,integer,text,integer) from public,anon;
 revoke all on function public.love_eclat_v2_mark_ready(uuid,integer,boolean) from public,anon;
