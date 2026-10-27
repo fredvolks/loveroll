@@ -2,7 +2,7 @@
 <html lang="fr-CA"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow,noarchive"><meta name="theme-color" content="#210d18">
 <title>LoveRoll Studio — Administration</title><link rel="icon" href="./assets/loveroll-icon-192.png">
-<link rel="stylesheet" href="./platform-admin.css?v=20261019-center170"><link rel="stylesheet" href="./platform-admin-luxe.css?v=20261019-luxe172"></head>
+<link rel="stylesheet" href="./platform-admin.css?v=20261019-center170"><link rel="stylesheet" href="./platform-admin-luxe.css?v=20261019-luxe172"><link rel="stylesheet" href="./studio-real-sandbox.css?v=20261027-real250""></head>
 <body><div class="studio-app">
 <header class="studio-header"><div class="studio-mark"><span>♡</span><div><strong>LoveRoll</strong><small>STUDIO · ADMINISTRATION</small></div></div>
 <nav class="studio-top-nav"><a href="./">Retour à LoveRoll</a><button id="signout" hidden>Déconnexion</button></nav></header>
@@ -19,6 +19,10 @@
 <p>Configuration globale, catalogue D100, statistiques et préparation de la facturation.</p></div>
 <span id="safety-status" class="status-tag">Paiements non connectés</span></div>
 <div class="stats" id="stats" aria-live="polite"></div>
+<div class="studio-real-primary"><button type="button" data-pane="realtest">
+<span class="studio-real-primary-icon" aria-hidden="true">🎲</span>
+<span><strong>Tester le vrai LoveRoll à deux</strong><small>Deux comptes réels de test · tous les dés et défis officiels</small></span><b aria-hidden="true">›</b></button></div>
+<details class="studio-nav-more"><summary>Autres outils du Super Admin</summary>
 <nav class="studio-quick-grid" aria-label="Rubriques du centre de commande">
 <button type="button" data-pane="prices" data-studio-tile="prices"><span class="studio-quick-icon" data-studio-icon="tag" aria-hidden="true"></span><strong>Tarifs &amp; forfaits</strong><span class="studio-quick-arrow" aria-hidden="true">›</span></button>
 <button type="button" data-pane="referrals" data-studio-tile="referrals"><span class="studio-quick-icon" data-studio-icon="star" aria-hidden="true"></span><strong>Référencement</strong><span class="studio-quick-arrow" aria-hidden="true">›</span></button>
@@ -29,9 +33,10 @@
 <button type="button" data-pane="audience" data-studio-tile="audience"><span class="studio-quick-icon" data-studio-icon="shield-check" aria-hidden="true"></span><strong>Sécurité</strong><span class="studio-quick-arrow" aria-hidden="true">›</span></button>
 <button type="button" data-pane="catalogue" data-studio-tile="catalogue"><span class="studio-quick-icon" data-studio-icon="book-open" aria-hidden="true"></span><strong>Catalogue D100</strong><span class="studio-quick-arrow" aria-hidden="true">›</span></button>
 <button type="button" data-pane="history" data-studio-tile="history"><span class="studio-quick-icon" data-studio-icon="notebook" aria-hidden="true"></span><strong>Journal</strong><span class="studio-quick-arrow" aria-hidden="true">›</span></button>
-</nav>
+</nav></details>
 <div class="studio-layout">
 <aside class="studio-sidebar" id="tabs" aria-label="Sections administration">
+<button data-pane="realtest" class="active">🎲 Test du vrai jeu</button>
 <button data-pane="prices" class="active">Tarifs et forfaits</button><button data-pane="referrals">Référencement et crédits</button><button data-pane="promos">Codes promotionnels</button><button data-pane="d100">D100 et activités</button>
 <button data-pane="geo">Géolocalisation</button><button data-pane="notifications">Notifications</button>
 <button data-pane="audience">Utilisateurs et sécurité</button><button data-pane="catalogue">Catalogue des 100</button>
@@ -39,6 +44,7 @@
 <div class="studio-mobile-nav">
  <label for="studio-pane-select">Choisir une section de l’administration</label>
  <select id="studio-pane-select" aria-label="Section de LoveRoll Studio">
+  <option value="realtest">Test du vrai jeu</option>
   <option value="prices">Tarifs et forfaits</option>
   <option value="referrals">Référencement et crédits</option>
   <option value="promos">Codes promotionnels</option>
@@ -54,7 +60,36 @@
   <button type="button" data-pane="geo">Géolocalisation</button>
  </div>
 </div>
-<div class="studio-content"><form id="settings" autocomplete="off">
+<div class="studio-content"><section data-panel="realtest" id="studio-real-game" class="studio-real-game" hidden>
+<div class="section-head"><span class="eyebrow">LABORATOIRE PRIVÉ · VRAIES SESSIONS</span>
+<h2>Joue aux deux comptes.</h2>
+<p>Ce sont les véritables écrans LoveRoll connectés à Supabase. Même moteur de dés, mêmes défis, mêmes règles. Les comptes de test sont séparés des vrais clients.</p></div>
+<div class="studio-real-toolbar">
+ <div><strong>Mon couple de test</strong><small id="studio-real-status" role="status" aria-live="polite">Vérification du banc de test…</small></div>
+ <div class="studio-real-toolbar-actions">
+  <button type="button" class="primary" id="studio-real-create" hidden>Créer deux comptes de test</button>
+  <button type="button" class="secondary" id="studio-real-refresh" hidden>Actualiser les deux écrans</button>
+  <button type="button" class="secondary studio-real-destructive" id="studio-real-delete" hidden>Supprimer les comptes test</button>
+ </div>
+</div>
+<div id="studio-real-views" hidden>
+ <nav class="studio-real-seat-nav" aria-label="Joueur affiché sur cet écran">
+  <button type="button" id="studio-show-seat-A" aria-pressed="true">Joueur A</button>
+  <button type="button" id="studio-show-seat-B" aria-pressed="false">Joueur B</button>
+ </nav>
+ <div class="studio-real-frames" role="group" aria-label="Deux véritables sessions LoveRoll">
+  <div id="studio-real-frame-A" class="studio-real-frame studio-real-active" aria-label="Joueur A">
+   <span class="studio-real-frame-label">Joueur A · vrai LoveRoll</span>
+  </div>
+  <div id="studio-real-frame-B" class="studio-real-frame" aria-label="Joueur B">
+   <span class="studio-real-frame-label">Joueur B · vrai LoveRoll</span>
+  </div>
+ </div>
+ <p class="small-note">Chaque compte est authentifié séparément. Brasse le D6 de A, puis celui de B et continue le vrai parcours. Pour repartir à zéro, supprime ce banc et crée un nouveau duo test.</p>
+</div>
+<p class="small-note">Les tests de facturation nécessitent le mode sandbox officiel du fournisseur. Aucune transaction réelle ne sera simulée comme payée.</p>
+</section>
+<form id="settings" autocomplete="off">
 <section data-panel="prices" class="studio-pricing-panel">
 <div class="studio-price-heading">
  <div class="studio-price-emblem" data-studio-icon="tag" aria-hidden="true"></div>
@@ -182,4 +217,4 @@
 <div class="savebar"><span id="feedback" role="status" aria-live="polite"></span><button class="primary" id="save-settings" type="submit">Enregistrer les réglages</button></div>
 </form></div></div></section>
 </main><footer>LoveRoll Studio · Accès privé · Aucune facturation effectuée depuis cette console.</footer>
-</div><script type="module" src="./platform-admin.js?v=20261019-luxe172"></script></body></html>
+</div><script type="module" src="./platform-admin.js?v=20261027-real250"></script></body></html>

@@ -1,0 +1,77 @@
+/* LoveRoll Studio real sandbox · designed for iPad and PC; mobile urgent controls. */
+#studio-real-game[hidden],#studio-real-views[hidden],#studio-real-create[hidden],
+#studio-real-delete[hidden],#studio-real-refresh[hidden]{display:none!important}
+.studio-real-primary{margin:13px 0 15px}
+.studio-real-primary button{display:flex;gap:17px;align-items:center;width:100%;text-align:left;
+ min-height:94px;padding:18px 21px;color:#fff2f8;border:1px solid #ba7392;
+ border-radius:18px;background:linear-gradient(115deg,#63304d,#311929);
+ box-shadow:0 10px 24px #0004}
+.studio-real-primary-icon{display:grid;place-items:center;width:50px;height:50px;
+ border-radius:14px;background:#814463;font-size:26px}
+.studio-real-primary button span:nth-child(2){flex:1;min-width:0}
+.studio-real-primary strong,.studio-real-primary small{display:block}
+.studio-real-primary strong{font-size:17px;margin-bottom:5px}
+.studio-real-primary small{font-size:12px;color:#eac0d2;line-height:1.4}
+.studio-real-primary b{font-size:23px;font-weight:400;color:#ffc3db}
+.studio-nav-more{background:#281523;border:1px solid #714259;border-radius:13px;margin:0 0 16px}
+.studio-nav-more summary{cursor:pointer;min-height:46px;padding:13px 17px;font-size:13px;color:#f4d2e0}
+.studio-nav-more .studio-quick-grid{margin:0;padding:7px 12px 13px}
+.studio-nav-more .studio-quick-grid button{min-height:79px;padding:11px}
+.studio-real-game .section-head{margin-bottom:17px}
+.studio-real-game h2{font-size:clamp(27px,3.4vw,38px);font-family:Georgia,serif;font-style:normal}
+.studio-real-toolbar{display:flex;gap:14px;justify-content:space-between;align-items:center;
+ padding:15px;border:1px solid #7e4b62;border-radius:15px;margin:14px 0;
+ background:#361c2e}
+.studio-real-toolbar strong,.studio-real-toolbar small{display:block}
+.studio-real-toolbar small{font-size:12px;color:#e5bed0;margin-top:5px;line-height:1.4}
+.studio-real-toolbar-actions{display:flex;gap:9px;flex-wrap:wrap;justify-content:flex-end}
+.studio-real-toolbar-actions button{min-height:45px}
+.studio-real-destructive{border-color:#b97f88!important;background:#43232c!important}
+.studio-real-seat-nav{display:flex;gap:8px;margin:15px 0}
+.studio-real-seat-nav button{border:1px solid #b47794;border-radius:11px;min-height:45px;
+ padding:11px 16px;color:#ffe6f0;background:#3d2032;flex:1;font-weight:700}
+.studio-real-seat-nav button[aria-pressed=true]{border-color:#ffd2e2;background:#8a3b62}
+.studio-real-frames{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.studio-real-frame{min-width:0;overflow:hidden;border:1px solid #a16784;background:#1e0c19;
+ border-radius:16px;box-shadow:0 10px 25px #0003}
+.studio-real-frame-label{display:block;padding:10px 13px;font-size:12px;font-weight:700;color:#ffd5e6}
+.studio-real-frame iframe{display:block;border:0;background:#160813;width:100%;
+ height:clamp(560px,74dvh,1080px);min-height:560px}
+.studio-real-game .small-note{line-height:1.55}
+.studio-content>form[hidden]{display:none!important}
+.studio-content>.studio-real-game[hidden]{display:none!important}
+@media(min-width:1024px){
+ .studio-layout{display:grid!important;grid-template-columns:206px minmax(0,1fr);gap:17px}
+ .studio-sidebar{display:grid!important;position:sticky;top:12px;gap:6px}
+ .studio-sidebar button{padding:12px 10px;text-align:left}
+ .studio-mobile-nav{display:none!important}
+}
+@media(min-width:1380px){
+ .studio-layout{grid-template-columns:235px minmax(0,1fr)}
+}
+@media(max-width:1023px){
+ .studio-real-toolbar{align-items:flex-start;flex-direction:column}
+ .studio-real-toolbar-actions{width:100%;justify-content:stretch}
+ .studio-real-toolbar-actions button{flex:1}
+ .studio-real-frames{display:block}
+ .studio-real-frame{display:none}
+ .studio-real-frame.studio-real-active{display:block}
+ .studio-real-frame iframe{height:min(74dvh,900px)}
+}
+@media(min-width:1024px){
+ .studio-real-frames .studio-real-frame{display:block}
+ .studio-real-seat-nav{display:none}
+}
+@media(max-width:650px){
+ .studio-real-primary button{padding:13px 14px;min-height:76px;gap:10px}
+ .studio-real-primary-icon{width:39px;height:39px;font-size:21px}
+ .studio-real-primary strong{font-size:14px}
+ .studio-real-primary small{font-size:11px}
+ .studio-nav-more{display:none}
+ .studio-real-toolbar-actions{flex-direction:column}
+ .studio-real-toolbar-actions button{width:100%}
+ .studio-real-frame iframe{height:71dvh;min-height:520px}
+ .studio-real-game h2{font-size:27px}
+ .studio-content{padding:13px}
+}
+@media(prefers-reduced-motion:reduce){.studio-real-primary button{transition:none}}
