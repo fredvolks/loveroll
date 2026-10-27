@@ -31,6 +31,10 @@ create table public.love_eclat_v2_sessions (
  story_constraint_enabled boolean not null default true,
  story_decision_scene smallint check(story_decision_scene in (1,6)),
  story_rerolls integer not null default 0 check(story_rerolls>=0),
+ timer_mode text check(timer_mode in ('with','without')),
+ timer_remaining integer check(timer_remaining>=0),
+ timer_deadline timestamptz,
+ timer_extensions integer not null default 0 check(timer_extensions>=0),
  shared_cards smallint[],
  selected_card smallint check(selected_card between 1 and 12),
  revealed_step smallint check (revealed_step between 1 and 8),
@@ -164,6 +168,14 @@ alter table public.love_eclat_v2_card_choices enable row level security;
 alter table public.love_eclat_v2_card_votes enable row level security;
 revoke all on public.love_eclat_v2_card_choices from public,anon,authenticated;
 revoke all on public.love_eclat_v2_card_votes from public,anon,authenticated;
+create table public.love_eclat_v2_timer_votes (
+ session_id uuid not null references public.love_eclat_v2_sessions(id) on delete cascade,
+ user_id uuid not null references auth.users(id),
+ mode text not null check(mode in ('with','without')),
+ primary key(session_id,user_id)
+);
+alter table public.love_eclat_v2_timer_votes enable row level security;
+revoke all on public.love_eclat_v2_timer_votes from public,anon,authenticated;
 alter table public.love_eclat_v2_sessions enable row level security;
 alter table public.love_eclat_v2_readiness enable row level security;
 -- Fail closed: only authenticated, guarded RPCs can access these tables.
@@ -220,6 +232,7 @@ declare
  v_attention_index integer;v_attention_response text;
  v_music_note jsonb;v_revealed_music jsonb;v_theme integer;
  v_story_vote text;v_story_history jsonb;v_my_cards smallint[];v_my_card_ready boolean;
+ v_timer_vote text;v_timer_remaining integer;
 begin
  perform public.love_require_verified_identity();
  select couple_id into v_couple from public.couple_members where user_id=v_actor;
@@ -277,6 +290,10 @@ begin
  select selected into v_my_cards from public.love_eclat_v2_card_choices
  where session_id=v_s.id and user_id=v_actor;
  v_my_card_ready=v_my_cards is not null or v_s.shared_cards is not null;
+ select mode into v_timer_vote from public.love_eclat_v2_timer_votes
+  where session_id=v_s.id and user_id=v_actor;
+ v_timer_remaining:=case when v_s.timer_deadline is null then v_s.timer_remaining
+  else greatest(0,ceil(extract(epoch from (v_s.timer_deadline-clock_timestamp())))::integer) end;
  select count(*),coalesce(bool_or(user_id=v_actor),false) into v_ready,v_mine
  from public.love_eclat_v2_readiness where session_id=v_s.id and step_index=v_s.chapter_index;
  return jsonb_build_object(
@@ -299,6 +316,11 @@ begin
   'music_theme',v_theme,'my_music_note',v_music_note
  ) || jsonb_build_object(
   'revealed_music',v_revealed_music,
+  'timer_mode',v_s.timer_mode,'my_timer_vote',v_timer_vote,
+  'timer_running',v_s.timer_deadline is not null,
+  'timer_remaining_seconds',v_timer_remaining,
+  'timer_expired',coalesce(v_timer_remaining=0,false),
+  'timer_extensions',v_s.timer_extensions,
   'puzzle_solved',coalesce(v_s.puzzle_solved_step=v_s.chapter_index,false),
   'puzzle_hint_level',v_s.puzzle_hint_level,'puzzle_helped',v_s.puzzle_helped,
   'reveal_answers',v_s.last_prediction,
@@ -997,6 +1019,92 @@ begin
 end;
 $$;
 
+-- Fixed durations for individual rounds, not the overall evening.
+create function public.love_eclat_v2_round_seconds(p_scene integer,p_variant integer)
+ returns integer language sql immutable set search_path='' as $$
+ select case p_scene when 1 then 90 when 3 then 120
+  when 4 then case when p_variant=1 then 180 else 90 end
+  when 6 then case when p_variant=1 then 120 else 180 end
+  when 7 then 90 else null end
+$$;
+revoke all on function public.love_eclat_v2_round_seconds(integer,integer) from public,anon,authenticated;
+
+create function public.love_eclat_v2_timer_mode(
+ p_session uuid,p_expected_step integer,p_mode text,p_joint_oral boolean default false
+) returns jsonb language plpgsql security definer set search_path='' as $$
+declare v_actor uuid:=auth.uid();v_couple uuid;v_s public.love_eclat_v2_sessions%rowtype;
+ v_count integer;v_different integer;
+begin
+ perform public.love_require_verified_identity();
+ if p_mode is null or p_mode not in ('with','without') then raise exception 'Mode minuteur invalide';end if;
+ select * into v_s from public.love_eclat_v2_sessions where id=p_session for update;
+ if not found then raise exception 'Séance inconnue';end if;
+ select couple_id into v_couple from public.couple_members where user_id=v_actor;
+ if v_couple is distinct from v_s.couple_id or v_actor not in(v_s.role_a,v_s.role_b)
+  or not public.love_eclat_has_access(v_s.couple_id) then
+   raise exception 'Accès interdit' using errcode='42501';end if;
+ if p_expected_step is distinct from v_s.chapter_index then return public.love_eclat_v2_status(p_session);end if;
+ if v_s.coffret_id<>10 or v_s.state<>'active' or v_s.chapter_plan[v_s.chapter_index]<>1 then
+  raise exception 'Choix de minuteur non disponible';end if;
+ if v_s.timer_mode is not null then return public.love_eclat_v2_status(p_session);end if;
+ if v_s.device_mode='one' then
+  if v_actor<>v_s.role_a or p_joint_oral is distinct from true then
+   raise exception 'Accord oral des deux requis';end if;
+  update public.love_eclat_v2_sessions set timer_mode=p_mode,updated_at=now() where id=p_session;
+ else
+  insert into public.love_eclat_v2_timer_votes(session_id,user_id,mode)
+   values(p_session,v_actor,p_mode) on conflict(session_id,user_id)
+   do update set mode=excluded.mode;
+  select count(*),count(distinct mode) into v_count,v_different
+   from public.love_eclat_v2_timer_votes
+   where session_id=p_session and user_id in(v_s.role_a,v_s.role_b);
+  if v_count=2 and v_different=1 then
+   update public.love_eclat_v2_sessions set timer_mode=p_mode,updated_at=now() where id=p_session;
+   delete from public.love_eclat_v2_timer_votes where session_id=p_session;
+  end if;
+ end if;
+ return public.love_eclat_v2_status(p_session);
+end;
+$$;
+create function public.love_eclat_v2_timer_action(
+ p_session uuid,p_expected_step integer,p_action text
+) returns jsonb language plpgsql security definer set search_path='' as $$
+declare v_actor uuid:=auth.uid();v_couple uuid;v_s public.love_eclat_v2_sessions%rowtype;
+ v_duration integer;v_rem integer;
+begin
+ perform public.love_require_verified_identity();
+ if p_action is null or p_action not in ('start','pause','resume','extend')
+ then raise exception 'Action minuteur invalide';end if;
+ select * into v_s from public.love_eclat_v2_sessions where id=p_session for update;
+ if not found then raise exception 'Séance inconnue';end if;
+ select couple_id into v_couple from public.couple_members where user_id=v_actor;
+ if v_couple is distinct from v_s.couple_id or v_actor not in(v_s.role_a,v_s.role_b)
+  or not public.love_eclat_has_access(v_s.couple_id) then
+   raise exception 'Accès interdit' using errcode='42501';end if;
+ if p_expected_step is distinct from v_s.chapter_index then return public.love_eclat_v2_status(p_session);end if;
+ v_duration:=public.love_eclat_v2_round_seconds(v_s.chapter_plan[v_s.chapter_index],v_s.variant);
+ if v_s.coffret_id<>10 or v_s.timer_mode<>'with' or v_duration is null or v_s.state<>'active' then
+  raise exception 'Manche minutée non disponible';end if;
+ v_rem:=case when v_s.timer_deadline is null then v_s.timer_remaining
+  else greatest(0,ceil(extract(epoch from (v_s.timer_deadline-clock_timestamp())))::integer) end;
+ if p_action in ('start','resume') and v_s.timer_deadline is null then
+  if v_rem=0 then raise exception 'À zéro : prolonger ou voir la suite';end if;
+  v_rem:=coalesce(v_rem,v_duration);
+  update public.love_eclat_v2_sessions set timer_remaining=v_rem,
+   timer_deadline=clock_timestamp()+make_interval(secs=>v_rem),updated_at=now() where id=p_session;
+ elsif p_action='pause' and v_s.timer_deadline is not null then
+  update public.love_eclat_v2_sessions set timer_remaining=v_rem,
+   timer_deadline=null,updated_at=now() where id=p_session;
+ elsif p_action='extend' then
+  if v_rem is distinct from 0 then raise exception 'Prolonger seulement à zéro';end if;
+  update public.love_eclat_v2_sessions set timer_remaining=60,
+   timer_deadline=clock_timestamp()+interval '60 seconds',
+   timer_extensions=timer_extensions+1,updated_at=now() where id=p_session;
+ end if;
+ return public.love_eclat_v2_status(p_session);
+end;
+$$;
+
 -- All state transitions are serializable per session lock and guarded by an
 -- expected step token. Retrying a stale next/pass NEVER advances the next scene.
 create function public.love_eclat_v2_act(
@@ -1018,7 +1126,11 @@ begin
   return public.love_eclat_v2_status(p_session); end if;
  if p_action='pause' then
   if v_s.state<>'active' then return public.love_eclat_v2_status(p_session); end if;
-  update public.love_eclat_v2_sessions set state='paused',updated_at=now() where id=p_session;
+  update public.love_eclat_v2_sessions set state='paused',
+    timer_remaining=case when timer_deadline is not null
+      then greatest(0,ceil(extract(epoch from (timer_deadline-clock_timestamp())))::integer)
+      else timer_remaining end,
+    timer_deadline=null,updated_at=now() where id=p_session;
  elsif p_action='resume' then
   if v_s.state<>'paused' then return public.love_eclat_v2_status(p_session); end if;
   update public.love_eclat_v2_sessions set state='active',updated_at=now() where id=p_session;
@@ -1034,6 +1146,9 @@ begin
   if p_action='continue' and v_actor<>v_s.role_a then
    raise exception 'Seul le contrôleur de séance peut avancer';end if;
   v_type:=public.love_eclat_v2_scene_type(v_s.coffret_id,v_s.chapter_plan[v_s.chapter_index]);
+  if p_action='continue' and v_s.coffret_id=10 and
+    v_s.chapter_plan[v_s.chapter_index]=1 and v_s.timer_mode is null then
+   raise exception 'Choisir avec ou sans minuteur ensemble';end if;
   if p_action='continue' and v_s.coffret_id=9 and
     v_s.chapter_plan[v_s.chapter_index]=1 and v_s.shared_cards is null then
    raise exception 'Attendre les deux validations privées';end if;
@@ -1099,6 +1214,7 @@ begin
        substep_index=1,
        last_prediction=null,
        puzzle_solved_step=null,puzzle_hint_level=0,
+       timer_remaining=null,timer_deadline=null,timer_extensions=0,
        shared_contact_approved=false,
        branch=case when p_action='pass' and coffret_id=4 and chapter_plan[chapter_index]=1 and branch is null
           then 'Jeu' else branch end,
@@ -1116,6 +1232,10 @@ revoke all on function public.love_eclat_v2_contact_answer(uuid,integer,text,tex
 grant execute on function public.love_eclat_v2_contact_answer(uuid,integer,text,text,boolean) to authenticated;
 revoke all on function public.love_eclat_v2_choose_door(uuid,integer,text,boolean) from public,anon;
 grant execute on function public.love_eclat_v2_choose_door(uuid,integer,text,boolean) to authenticated;
+revoke all on function public.love_eclat_v2_timer_mode(uuid,integer,text,boolean) from public,anon;
+grant execute on function public.love_eclat_v2_timer_mode(uuid,integer,text,boolean) to authenticated;
+revoke all on function public.love_eclat_v2_timer_action(uuid,integer,text) from public,anon;
+grant execute on function public.love_eclat_v2_timer_action(uuid,integer,text) to authenticated;
 revoke all on function public.love_eclat_v2_cards_submit(uuid,integer,smallint[]) from public,anon;
 grant execute on function public.love_eclat_v2_cards_submit(uuid,integer,smallint[]) to authenticated;
 revoke all on function public.love_eclat_v2_cards_shared(uuid,integer,smallint[],boolean) from public,anon;
