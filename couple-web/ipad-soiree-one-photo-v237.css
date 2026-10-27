@@ -1,0 +1,148 @@
+/* LoveRoll 237: tablet Soirée MUST use the approved Android photograph
+   with the same restructured D6/D100 interactions, not the old desktop card.
+   The photo belongs only to #app::before, where its marble is already drawn. */
+@layer loveroll-soiree-template{
+ @media (min-width:768px) and (max-width:1199px), (min-width:768px) and (pointer:coarse){
+  main#app.loveroll-evening-page:has(.evening-premium-view.has-home-soiree-template){
+   height:100dvh!important;min-height:0!important;
+   padding:9px 14px calc(75px + env(safe-area-inset-bottom,0px))!important;
+   overflow:hidden!important;isolation:isolate!important;
+  }
+  main#app.loveroll-evening-page:has(.evening-premium-view.has-home-soiree-template)::before{
+   content:""!important;display:block!important;position:fixed!important;
+   inset:0!important;width:100%!important;height:100dvh!important;
+   background:#240208 url('./assets/loveroll-home-portrait-v202.webp')
+    center var(--lr-ipad-scene-offset) / 100% var(--home-scene-top-image-height) no-repeat!important;
+   opacity:1!important;filter:none!important;box-shadow:none!important;
+   border:0!important;pointer-events:none!important;z-index:-1!important;
+  }
+  main#app.loveroll-evening-page:has(.evening-premium-view.has-home-soiree-template)::after{
+   display:none!important;content:none!important;background:none!important;
+  }
+  #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template{
+   display:grid!important;grid-template-columns:minmax(0,1fr)!important;
+   grid-template-rows:80px auto minmax(0,1fr)!important;
+   align-content:stretch!important;gap:8px!important;
+   width:min(100%,660px)!important;height:100%!important;
+   min-height:0!important;margin:0 auto!important;
+   border:0!important;border-radius:0!important;
+   background:none!important;box-shadow:none!important;
+  }
+  #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template :is(
+   .evening-toolbar,.evening-intro,.evening-step,.evening-empty,.evening-aftercare,
+   .evening-finale-actions,.evening-finale-hero,.evening-die-row,.evening-user-die,
+   .evening-d100-theater,.evening-d6-theater,.evening-finale-dice,
+   .evening-finale-dice>.love3d
+  ){
+   background:none!important;background-image:none!important;
+   box-shadow:none!important;border:0!important;border-radius:0!important;
+   outline:0!important;
+  }
+  #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template :is(
+   .evening-finale-hero,.evening-die-row,.evening-user-die>.love3d
+  )::before,
+  #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template :is(
+   .evening-finale-hero,.evening-die-row,.evening-user-die>.love3d
+  )::after{display:none!important;content:none!important;}
+  #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template .evening-toolbar{
+   grid-column:1!important;grid-row:1!important;display:block!important;
+   position:relative!important;height:80px!important;min-height:0!important;
+  }
+  #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template .evening-toolbar [data-lr-privacy-hide]{
+   position:absolute!important;inset:15px auto auto 0!important;z-index:10!important;
+   min-height:44px!important;
+  }
+  #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template .evening-toolbar .ritual-heading{
+   display:flex!important;flex-direction:column!important;align-items:center!important;
+   justify-content:flex-start!important;height:80px!important;
+   width:100%!important;margin:0!important;pointer-events:none!important;
+  }
+  #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template .evening-intro{
+   grid-column:1!important;grid-row:2!important;display:flex!important;
+   flex-direction:column!important;align-items:center!important;
+   gap:6px!important;margin:0!important;padding:0!important;
+   min-height:0!important;position:relative!important;z-index:3!important;
+  }
+  #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template .evening-intro h2{
+   font-size:clamp(23px,4vw,30px)!important;line-height:1.1!important;
+   margin:0!important;text-align:center!important;
+  }
+  #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template .ritual-mode-switcher{
+   width:100%!important;max-width:520px!important;min-height:43px!important;
+   flex:none!important;
+  }
+  /* The legacy desktop editorial layout assigns choice to column 2 and the
+     D100 to column 1. Once the Android single-column template is enabled,
+     those assignments create an implicit ZERO-width first column, hiding
+     the real D100 on iPad. Explicitly place all live widgets in column 1. */
+  #app.loveroll-evening-page .evening-premium-view.has-evening-d100-template :is(
+   .evening-toolbar,.evening-intro,.evening-choice,.evening-d100-theater,
+   .evening-play-state,.evening-progress,.evening-d100-roll,
+   .evening-d100-utilities,.evening-d100-quota
+  ){
+   grid-column:1/-1!important;
+   min-width:0!important;
+  }
+  #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template .evening-empty{
+   grid-column:1!important;grid-row:3!important;
+   display:grid!important;grid-template-columns:minmax(0,1fr)!important;
+   grid-template-rows:minmax(0,1fr) auto!important;
+   min-height:0!important;gap:10px!important;
+  }
+  #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template .evening-finale-hero{
+   position:relative!important;display:grid!important;place-items:center!important;
+   min-height:0!important;overflow:visible!important;
+  }
+  #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template .evening-finale-dice{
+   width:100%!important;height:100%!important;display:grid!important;place-items:center!important;
+  }
+  #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template .evening-finale-dice>.love3d{
+   width:min(52vw,39dvh,340px)!important;height:auto!important;aspect-ratio:1!important;
+  }
+  #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template .evening-finale-actions{
+   display:grid!important;gap:8px!important;align-items:center!important;
+  }
+  #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template .evening-summary-shell{
+   display:grid!important;gap:6px!important;max-width:100%!important;
+   padding:10px 14px!important;min-height:0!important;
+  }
+  #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template .evening-finale-start{
+   min-height:48px!important;
+  }
+  /* The old desktop two-column rules still assign .evening-choice to
+     grid-column:2. On a one-column iPad that creates an implicit second
+     column and collapses the FIRST one to 0px, hiding the real D100.
+     Explicitly place ALL flattened Step 2 children in the single column. */
+  #app.has-evening-d100-template .evening-premium-view.has-evening-d100-template{
+   grid-template-columns:minmax(0,1fr)!important;
+  }
+  #app.has-evening-d100-template .evening-premium-view.has-evening-d100-template :is(
+   .evening-choice,.evening-d100-theater,.evening-play-state,
+   .evening-progress,.evening-d100-roll,.evening-d100-utilities,
+   .evening-d100-quota
+  ){
+   grid-column:1/-1!important;min-width:0!important;
+  }
+  #app.has-evening-d100-template .evening-premium-view.has-evening-d100-template .evening-choice{
+   grid-auto-flow:row!important;
+   grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  }
+  #app.has-evening-d100-template .evening-premium-view.has-evening-d100-template #lr-evening-category-hint{
+   display:none!important;
+  }
+  /* WebGL position marker only; the visible marble comes from the HD photo. */
+  #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template
+  :is(.home-pedestal,.soiree-pedestal-marker){
+   position:fixed!important;inset:var(--home-scene-contact) auto auto 50%!important;
+   display:block!important;width:0!important;height:0!important;
+   border:0!important;background:none!important;box-shadow:none!important;
+   pointer-events:none!important;
+  }
+  #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template
+  :is(.home-pedestal,.soiree-pedestal-marker)::before,
+  #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template
+  :is(.home-pedestal,.soiree-pedestal-marker)::after{
+   display:none!important;content:none!important;
+  }
+ }
+}

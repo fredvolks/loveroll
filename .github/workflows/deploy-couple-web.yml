@@ -30,6 +30,7 @@ jobs:
           test -s couple-web/assets/eclat-photo-strip.webp
           node --check couple-web/eclat-ui.mjs
           node --test couple-web/ipad-android-stage-v236.test.mjs
+          node --test couple-web/ipad-soiree-one-photo-v237.test.mjs
           node --test couple-web/ruby-visual-v182.test.mjs
           node --test couple-web/cinematic-v183.test.mjs
           node --check couple-web/dice3d.js
@@ -104,6 +105,7 @@ jobs:
           set -euo pipefail
           node couple-web/evening-d6-template-browser-check.cjs
           node couple-web/evening-d100-template-browser-check.cjs
+          node couple-web/ipad-romance-scene-browser-check.cjs
           node couple-web/shared-stage-browser-check.cjs
           node couple-web/evening-redesign-browser-check.cjs
           node couple-web/evening-queue-fixed-v102-browser-check.cjs

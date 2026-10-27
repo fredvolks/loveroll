@@ -41,8 +41,8 @@ test('both real dice and official results remain intact while glass follows the 
  assert.match(dice,/photoSoiree=.*loveroll-evening-page/);
  assert.match(dice,/built\.material\.roughness=\.075/);
  assert.match(home,/data-dice-sides="6"/);
- assert.match(evening,/classList\.add\('home-die-theater'\)/);
+ assert.match(evening,/classList\.add\('home-die-theater','evening-d100-theater'\)/);
  assert.match(html,/ipad-android-stage-v236\.css\?v=20261026-web236/);
  assert.match(read('service-worker.js'),/\.\/ipad-android-stage-v236\.css/);
- assert.equal(JSON.parse(read('web-version.json')).build,'2026-10-26.236');
+ assert.equal(JSON.parse(read('web-version.json')).build,'2026-10-27.237');
 });

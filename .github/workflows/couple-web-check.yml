@@ -157,6 +157,8 @@ jobs:
       - name: Verify evening finale actions and privacy control (deployment parity)
         run: node --test couple-web/evening-finale-v99.test.mjs
 
+      - name: Validate iPad Soirée one-HD-photo contract
+        run: node --test couple-web/ipad-soiree-one-photo-v237.test.mjs
       - name: Validate iPad uses exact Android HD v202 scene and one marble pedestal
         run: node --test couple-web/ipad-android-stage-v236.test.mjs
       - name: Verify real native premium Home buttons
@@ -502,6 +504,10 @@ jobs:
         if: matrix.group == 'dice'
         run: node couple-web/evening-d100-template-browser-check.cjs
 
+      - name: Verify real iPad Soirée D6 and D100 on the ONE HD photo (portrait and landscape)
+        if: matrix.group == 'dice'
+        run: node couple-web/ipad-romance-scene-browser-check.cjs
+
       - name: Verify Soirée responsive Step 1 and unchanged D35 on phones and tablets
         if: matrix.group == 'dice'
         run: node couple-web/evening-redesign-browser-check.cjs
@@ -559,6 +565,14 @@ jobs:
       - name: Verify premium gift/couple dialogs and safe notifications on S25 Ultra
         if: matrix.group == 'experience'
         run: node couple-web/premium-dialogs-visual-check.cjs
+
+      - name: Archive actual iPad Soirée D6 and D100 screenshots for visual review
+        if: always() && matrix.group == 'dice'
+        uses: actions/upload-artifact@v4
+        with:
+          name: LoveRoll-iPad-Android-photo-parity-${{ github.run_number }}
+          path: design-captures/ipad-romance-*.png
+          if-no-files-found: warn
 
       - name: Archive actual WebGL winning-face screenshots
         if: always()

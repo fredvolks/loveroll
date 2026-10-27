@@ -16,7 +16,22 @@ export function fitTabletRomanceStage(root){
  const height=win.innerHeight;
  // Source photographed artwork: 941 x 1672. Cover the full tablet width.
  const photoHeight=width*1672/941;
- const contact=height*(win.matchMedia('(orientation:landscape)').matches?.45:.405);
+ // On Soirée the inactive decorative D100 is taller and needs extra air
+ // under the heading. Landscape also needs a lower contact so the REAL D100
+ // is legible rather than reduced to a tiny icon on the large marble.
+ // Keep the Home/Android-approved anchor untouched.
+ const isEvening=root.classList.contains('loveroll-evening-page');
+ // Preserve the approved portrait crop from Android at all times; pushing
+ // the photo down exposes a flat maroon strip across the iPad header.
+ // A taller landscape needs a LOWER photographed marble so the real D100
+ // remains readable (without replacing/scaling the photographic asset).
+ const landscape=win.matchMedia('(orientation:landscape)').matches;
+ // On landscape inactive Soirée the decorative D100 has a large silhouette.
+ // The decorative D100 now uses centered-photo camera fitting, so keep
+ // the photographed marble ABOVE the start/summary controls in landscape.
+ const inactiveEvening=isEvening&&!!root.querySelector('.evening-premium-view.is-inactive');
+ const contactRatio=landscape?(inactiveEvening?.49:isEvening?.56:.45):.405;
+ const contact=height*contactRatio;
  const offset=contact-photoHeight*.342;
  root.style.setProperty('--home-scene-top-image-height',photoHeight+'px');
  root.style.setProperty('--home-scene-contact',contact+'px');

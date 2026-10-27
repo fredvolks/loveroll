@@ -2,7 +2,7 @@
 // Preserve the approved HTML/CSS; change only the six visible odds numbers.
 import {WEEKLY_DEFAULT_WEIGHTS,effectiveDicePercentages,displayedDicePercent} from './dice-weighting.mjs?v=20261018-weights146';
 import {monthlyInvitation} from './monthly-invitation.mjs';
-import {fitTabletRomanceStage} from './shared-stage.mjs?v=20261026-web236';
+import {fitTabletRomanceStage} from './shared-stage.mjs?v=20261027-web237';
 export const WEEKLY_ODDS=WEEKLY_DEFAULT_WEIGHTS;
 export const PIP_POSITIONS=Object.freeze({
   1:[[50,50]],2:[[29,29],[71,71]],3:[[29,29],[50,50],[71,71]],

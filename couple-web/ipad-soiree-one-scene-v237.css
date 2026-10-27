@@ -1,0 +1,172 @@
+/* Web 237 — Soirée iPad is ONE full-screen Android v202 photograph.
+   The photographed marble remains the ONLY pedestal. Real D6/D100 WebGL
+   models and HTML controls are fitted above it; no image within an image.
+   Portrait and landscape iPads follow the proven Android scene ordering. */
+@media (min-width:768px) and (max-width:1199px), (pointer:coarse) and (min-width:1200px) {
+ main#app.loveroll-evening-page:has(.evening-premium-view.has-home-soiree-template){
+  box-sizing:border-box!important;
+  padding:max(8px,env(safe-area-inset-top,0px)) 24px
+   calc(80px + env(safe-area-inset-bottom,0px))!important;
+  width:100%!important;height:100dvh!important;overflow:hidden!important;
+  background:#240208!important;background-image:none!important;
+ }
+ main#app.loveroll-evening-page .evening-premium-view.has-home-soiree-template{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  grid-auto-columns:minmax(0,1fr)!important;
+  width:min(100%,760px)!important;
+  height:100%!important;
+  min-height:0!important;
+  max-width:760px!important;
+  gap:7px!important;
+  margin-inline:auto!important;
+  border:0!important;outline:0!important;
+  background:none!important;box-shadow:none!important;
+ }
+ #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template::before,
+ #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template::after{
+  display:none!important;content:none!important;
+ }
+ #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template
+ :is(.evening-toolbar,.evening-intro,.evening-step.one,.evening-empty,
+ .evening-duo-capsules,.evening-small-roll,.evening-d6-next){
+  grid-column:1/-1!important;
+  min-width:0!important;
+ }
+ #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template .evening-toolbar{
+  height:80px!important;min-height:0!important;position:relative!important;
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  padding:0!important;margin:0!important;
+ }
+ #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template .evening-toolbar .ritual-heading{
+  margin:0 auto!important;max-height:80px!important;
+  display:flex!important;flex-direction:column!important;
+  align-items:center!important;justify-content:center!important;
+ }
+ #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template
+ .evening-toolbar [data-lr-privacy-hide]{
+  position:absolute!important;left:0!important;top:14px!important;z-index:9!important;
+ }
+ #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template
+ .evening-toolbar .evening-manage{
+  position:absolute!important;right:0!important;top:14px!important;z-index:9!important;
+ }
+ #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template .evening-intro{
+  display:flex!important;flex-direction:column!important;
+  align-items:stretch!important;gap:6px!important;
+  min-height:0!important;
+  padding:0!important;margin:0!important;
+ }
+ #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template
+ .evening-intro .ritual-page-title{
+  font:bold clamp(25px,3.3vw,30px)/1.1 Georgia,serif!important;
+  text-align:center!important;margin:0!important;
+  height:auto!important;white-space:normal!important;
+ }
+ #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template .ritual-mode-switcher{
+  box-sizing:border-box!important;width:100%!important;
+  height:43px!important;min-height:43px!important;
+  flex:none!important;margin:0!important;
+ }
+ /* Never draw a second rectangle or photograph around a real die. */
+ #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template
+ :is(.evening-finale-hero,.evening-die-row,.evening-d100-theater,
+     .evening-d6-theater,.evening-finale-dice,
+     .evening-d35-col,.evening-d35-col>.love3d,
+     .evening-user-die,.evening-user-die>.love3d,
+     .love3d-stage){
+  border:0!important;border-radius:0!important;
+  background:none!important;background-image:none!important;
+  box-shadow:none!important;mask-image:none!important;
+  -webkit-mask-image:none!important;
+ }
+ #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template
+ :is(.evening-finale-hero,.evening-die-row,.evening-d100-theater,
+     .evening-d6-theater,.evening-user-die)::before,
+ #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template
+ :is(.evening-finale-hero,.evening-die-row,.evening-d100-theater,
+     .evening-d6-theater,.evening-user-die)::after{
+  display:none!important;content:none!important;
+ }
+ #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template
+ :is(.home-die-platform,.love3d-stage)>.dice-canvas{
+  background:transparent!important;box-shadow:none!important;
+  border:0!important;max-height:none!important;
+ }
+ /* Inactive evening: the single D100 preview sits on the embedded marble.
+    Its caption/actions/stats remain genuine DOM controls below the scene. */
+ #app.loveroll-evening-page .evening-premium-view.is-inactive.has-home-soiree-template{
+  grid-template-rows:80px auto minmax(0,1fr)!important;
+ }
+ #app.loveroll-evening-page .evening-premium-view.is-inactive.has-home-soiree-template .evening-empty{
+  grid-row:3!important;display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  grid-template-rows:minmax(145px,1fr) auto!important;
+  gap:8px!important;height:100%!important;
+  min-height:0!important;padding:0!important;
+  background:none!important;border:0!important;box-shadow:none!important;
+ }
+ #app.loveroll-evening-page .evening-premium-view.is-inactive.has-home-soiree-template .evening-finale-hero{
+  grid-row:1!important;position:relative!important;
+  display:grid!important;place-items:center!important;
+  min-height:0!important;overflow:visible!important;
+ }
+ #app.loveroll-evening-page .evening-premium-view.is-inactive.has-home-soiree-template .evening-finale-dice{
+  display:grid!important;place-items:center!important;width:100%!important;height:100%!important;
+ }
+ #app.loveroll-evening-page .evening-premium-view.is-inactive.has-home-soiree-template .evening-finale-dice>.love3d{
+  display:grid!important;place-items:center!important;width:100%!important;height:100%!important;
+  position:relative!important;min-height:0!important;
+ }
+ #app.loveroll-evening-page .evening-premium-view.is-inactive.has-home-soiree-template .evening-finale-dice .love3d-stage{
+  width:min(55vw,41dvh,390px)!important;height:auto!important;
+  aspect-ratio:1!important;max-height:100%!important;
+ }
+ #app.loveroll-evening-page .evening-premium-view.is-inactive.has-home-soiree-template .evening-aftercare{
+  grid-row:2!important;display:block!important;
+  min-height:0!important;max-height:min(34dvh,340px)!important;
+  overflow-y:auto!important;padding:8px!important;
+ }
+ #app.loveroll-evening-page .evening-premium-view.is-inactive.has-home-soiree-template
+ .evening-finale-actions{
+  display:grid!important;grid-template-columns:1fr!important;
+  grid-template-rows:auto auto!important;gap:8px!important;
+ }
+ #app.loveroll-evening-page .evening-premium-view.is-inactive.has-home-soiree-template .evening-summary-shell{
+  box-sizing:border-box!important;height:auto!important;
+  max-height:25dvh!important;min-height:0!important;
+  overflow-y:auto!important;
+ }
+}
+@layer loveroll-evening-d6 {
+ @media (min-width:768px) and (max-width:1199px), (pointer:coarse) and (min-width:1200px) {
+  #app.has-evening-d6-template .evening-premium-view.has-evening-d6-template{
+   grid-template-columns:minmax(0,1fr)!important;
+   grid-template-rows:80px auto minmax(0,1fr) 38px 55px 34px!important;
+  }
+  #app.has-evening-d6-template .evening-d6-theater{
+   grid-column:1/-1!important;
+   width:100%!important;
+   overflow:visible!important;
+  }
+  #app.has-evening-d6-template :is(.evening-duo-capsules,.evening-small-roll,.evening-d6-next){
+   grid-column:1/-1!important;
+  }
+ }
+}
+@layer loveroll-evening-d100 {
+ @media (min-width:768px) and (max-width:1199px), (pointer:coarse) and (min-width:1200px) {
+  #app.has-evening-d100-template .evening-premium-view.has-evening-d100-template{
+   grid-template-columns:minmax(0,1fr)!important;
+   grid-template-rows:80px auto 48px minmax(0,1fr) 25px 34px 55px 44px 12px!important;
+  }
+  #app.has-evening-d100-template .evening-d100-theater{
+   grid-column:1/-1!important;
+   width:100%!important;overflow:visible!important;
+  }
+  #app.has-evening-d100-template :is(.evening-choice,.evening-progress,
+    .evening-play-state,.evening-d100-roll,.evening-d100-utilities,.evening-d100-quota){
+   grid-column:1/-1!important;
+  }
+ }
+}
