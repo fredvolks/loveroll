@@ -55,7 +55,7 @@ test('10 timer durations and no forced automatic completion',()=>{
 test('11 two turns use exactly three authored options with alternative/pass',()=>{
  for(let v=0;v<=1;v++){
   const first=get(11,v,30,3);
-  const other=get(11,v,30,6,{attention_card:3});
+  const other=get(11,v,30,6,{attention_index:2});
   assert.equal(first.proposer,'A');assert.equal(first.receiver,'B');
   assert.equal(other.proposer,'B');assert.equal(other.receiver,'A');
   assert.equal(first.cards.length,3);assert.equal(other.unlimitedAlternatives,true);
