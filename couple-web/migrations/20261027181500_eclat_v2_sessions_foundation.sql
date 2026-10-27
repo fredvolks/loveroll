@@ -17,6 +17,7 @@ create table public.love_eclat_v2_sessions (
  chapter_index smallint not null default 1 check (chapter_index between 1 and 8),
  state text not null default 'active' check (state in ('active','paused','finished','interrupted')),
  skipped_scenes smallint[] not null default '{}'::smallint[],
+ substep_index smallint not null default 1 check (substep_index in (1,2)),
  branch text check (branch in ('Tendresse','Jeu','Mystère')),
  door_confirmed_scene smallint check (door_confirmed_scene in (1,5)),
  revealed_step smallint check (revealed_step between 1 and 8),
@@ -120,6 +121,7 @@ begin
   'content_version',2,'coffret_id',v_s.coffret_id,'minutes',v_s.minutes,
   'variant',v_s.variant,'device_mode',v_s.device_mode,'role_a',v_s.role_a,'role_b',v_s.role_b,
   'chapter_index',v_s.chapter_index,'chapter_total',cardinality(v_s.chapter_plan),
+  'substep_index',v_s.substep_index,
   'chapter_number',v_s.chapter_plan[v_s.chapter_index],
   'budget_minutes',v_s.budget_plan[v_s.chapter_index],
   'scene_type',v_type,'state',v_s.state,'skipped_scenes',v_s.skipped_scenes,
@@ -250,8 +252,16 @@ begin
    where session_id=p_session and step_index=v_s.chapter_index and user_id in (v_s.role_a,v_s.role_b);
   if v_ready<>2 then raise exception 'Attendre les deux confirmations distinctes'; end if;
  end if;
- update public.love_eclat_v2_sessions
-  set revealed_step=chapter_index,updated_at=now() where id=p_session;
+ if v_s.coffret_id=1 and v_s.chapter_plan[v_s.chapter_index]=6 and v_s.substep_index=1 then
+  -- Envelope 3 is revealed; move to envelope 4, revoke old readiness.
+  delete from public.love_eclat_v2_readiness
+   where session_id=p_session and step_index=v_s.chapter_index;
+  update public.love_eclat_v2_sessions
+   set substep_index=2,updated_at=now() where id=p_session;
+ else
+  update public.love_eclat_v2_sessions
+   set revealed_step=chapter_index,updated_at=now() where id=p_session;
+ end if;
  return public.love_eclat_v2_status(p_session);
 end;
 $$;
@@ -347,6 +357,7 @@ begin
           then array_append(skipped_scenes,chapter_plan[chapter_index])
           else skipped_scenes end,
        revealed_step=null,
+       substep_index=1,
        branch=case when p_action='pass' and coffret_id=4 and chapter_plan[chapter_index]=1 and branch is null
           then 'Jeu' else branch end,
        door_confirmed_scene=case when p_action='pass' and coffret_id=4 and chapter_plan[chapter_index] in (1,5)

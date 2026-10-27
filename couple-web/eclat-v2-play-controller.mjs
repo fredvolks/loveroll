@@ -13,7 +13,7 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
   if(disposed)return;
   const updated=await api.status(status.session_id);
   if(updated.session_id!==status.session_id)throw Error('Séance Éclat remplacée');
-  const changed=updated.chapter_index!==status.chapter_index;
+  const changed=updated.chapter_index!==status.chapter_index||updated.substep_index!==status.substep_index;
   status=updated;
   if(changed){role=null;seen=new Set();}
   paint();
@@ -45,7 +45,7 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
     next=await api.door({sessionId:sid,expectedStep:idx,door,jointOral:status.device_mode==='one'});
    }else return;
    if(next.session_id!==sid)throw Error('Réponse d’une séance différente');
-   if(next.chapter_index!==idx){role=null;seen=new Set();}
+   if(next.chapter_index!==idx||next.substep_index!==status.substep_index){role=null;seen=new Set();}
    if(next.revealed && status.device_mode==='one')role=null;
    status=next;paint();
   }catch(err){onError(err);}finally{busy=false;}

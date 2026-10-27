@@ -48,7 +48,10 @@ export function eclatV2SceneA({session,viewerId,localDisplayRole=null}){
   role,number:session.chapter_index,total:session.chapter_total,
   budgetMinutes:session.budget_minutes,variantName:v===0?'V0':'V1'};
  if(coffret.id===1){
-  const numbers=sceneOrder[1][no]||[];
+  const substep=session.substep_index??1;
+  if(substep!==1&&substep!==2)throw new RangeError('Sous-étape Éclat invalide');
+  const numbers=no===6?[substep===1?3:4]:sceneOrder[1][no]||[];
+  if(no===6){out.substepIndex=substep;out.substepTotal=2;}
   const rows=table(coffret,'Enveloppe').rows;
   out.envelopes=numbers.map(n=>({number:n,theme:rows[n-1][v+1],
    first:n%2===1?'A':'B',clueLimit:3,guessLimit:2,

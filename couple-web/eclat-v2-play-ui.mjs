@@ -9,6 +9,7 @@ const paragraph=s=>'<p>'+esc(s)+'</p>';
 function mainContent(view,status){
  let html='<h2>'+esc(view.title)+'</h2>'+
   '<p class="eclat-v2-instruction">'+esc(view.instruction)+'</p>';
+ if(view.substepTotal)html+='<p class="eclat-v2-muted">Enveloppe '+view.substepIndex+' sur '+view.substepTotal+' de ce moment</p>';
  if(view.envelopes?.length){
   html+='<div class="eclat-v2-tasks">'+view.envelopes.map(e=>
    '<section class="eclat-v2-task"><small>ENVELOPPE '+e.number+(e.skipped?' · PASSÉE':'')+'</small>'+

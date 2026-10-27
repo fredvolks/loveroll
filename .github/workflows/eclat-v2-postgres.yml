@@ -43,3 +43,5 @@ jobs:
         run: bash couple-web/qa/eclat-v2-concurrency.sh
       - name: Verify consensual door selection and branching, short and long routes
         run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-door.test.sql
+      - name: Verify serial separate envelope 3 and 4 revelations
+        run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-envelopes.test.sql

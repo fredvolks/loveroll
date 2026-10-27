@@ -28,12 +28,14 @@ test('01 — five envelopes never omit 3/4 on short journey; odd/even roles fixe
  for(let v=0;v<=1;v++){
   const at1=eclatV2SceneA({session:base(1,v,30,1),viewerId:aid});
   const at3=eclatV2SceneA({session:base(1,v,30,3),viewerId:aid});
-  const at6=eclatV2SceneA({session:base(1,v,30,6),viewerId:aid});
+  const at6=eclatV2SceneA({session:{...base(1,v,30,6),substep_index:1},viewerId:aid});
+  const at6second=eclatV2SceneA({session:{...base(1,v,30,6),substep_index:2},viewerId:aid});
   const at8=eclatV2SceneA({session:base(1,v,30,8),viewerId:aid});
-  assert.deepEqual([at1,at3,at6,at8].flatMap(x=>x.envelopes.map(e=>e.number)),[1,2,3,4,5]);
-  assert.deepEqual([at1,at3,at6,at8].flatMap(x=>x.envelopes.map(e=>e.first)),['A','B','A','B','A']);
+  assert.deepEqual([at1,at3,at6,at6second,at8].flatMap(x=>x.envelopes.map(e=>e.number)),[1,2,3,4,5]);
+  assert.deepEqual([at1,at3,at6,at6second,at8].flatMap(x=>x.envelopes.map(e=>e.first)),['A','B','A','B','A']);
   assert.ok(at8.finales.length===2);
-  assert.ok(at6.envelopes.every(e=>e.clueLimit===3&&e.guessLimit===2));
+  assert.ok([...at6.envelopes,...at6second.envelopes].every(e=>e.clueLimit===3&&e.guessLimit===2));
+  assert.equal(at6second.substepIndex,2);
  }
 });
 test('02 — reversed word targets, role-specific private missions and real V0/V1 values',()=>{
