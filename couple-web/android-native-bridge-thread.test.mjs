@@ -57,7 +57,7 @@ test('Signed Android release is versioned, immutable and references the precedin
  assert.ok(release.includes('Invalid LoveRoll Android signing secret'));
  assert.ok(release.includes('EXPECTED_SIGNER_SHA256'));
 
- assert.ok(release.includes('EXPECTED_SIGNER_SHA256: be1f51d895a20bb6708919c1b98a044ee7646902d348d4c8d311e19a10728809'));
+ assert.ok(release.includes('EXPECTED_SIGNER_SHA256: fb41d117dc9952bf65876dd8d6f5c357b23145776eddeccd19d0b31fd410bbf8'));
  assert.doesNotMatch(release,/previous-loveroll[.]apk/);
  assert.match(readFileSync(new URL('../app/src/main/java/ca/desadeux/jeu/UpdateManager.java',import.meta.url),'utf8'),/PREFIX="loveroll-newsign-v"/);
  assert.match(release,/installation propre obligatoire/);
