@@ -59,14 +59,24 @@ jobs:
               raise SystemExit("Android signing secret is not configured or unavailable to this job")
           try:
               bundle = json.loads(raw)
-              assert isinstance(bundle, dict)
-              for field in ("KEYSTORE", "KEYSTORE_PASSWORD", "KEY_ALIAS", "KEY_PASSWORD"):
-                  assert isinstance(bundle.get(field), str) and bundle[field]
+          except json.JSONDecodeError:
+              raise SystemExit("Signing secret contains invalid JSON; paste the entire JSON object")
+          if not isinstance(bundle, dict):
+              raise SystemExit("Signing secret must be a JSON object")
+          fields = ("KEYSTORE", "KEYSTORE_PASSWORD", "KEY_ALIAS", "KEY_PASSWORD")
+          missing = [field for field in fields if not isinstance(bundle.get(field), str) or not bundle[field]]
+          if missing:
+              raise SystemExit("Signing secret is missing required JSON field(s): " + ", ".join(missing))
+          try:
               key_data = base64.b64decode(bundle["KEYSTORE"], validate=True)
-              assert len(key_data) > 1000
-              expected = re.search(r'EXPECTED_SIGNER_SHA256:\s*([0-9a-f]{64})', pathlib.Path(".github/workflows/android.yml").read_text()).group(1)
-          except (ValueError, TypeError, AssertionError, AttributeError, KeyError):
-              raise SystemExit("Android signing secret format or pinned certificate is invalid")
+          except ValueError:
+              raise SystemExit("KEYSTORE is not valid Base64")
+          if len(key_data) <= 1000:
+              raise SystemExit("KEYSTORE is too small to contain a PKCS12 signing key")
+          match_expected = re.search(r'EXPECTED_SIGNER_SHA256:\s*([0-9a-f]{64})', pathlib.Path(".github/workflows/android.yml").read_text())
+          if not match_expected:
+              raise SystemExit("Pinned certificate SHA256 setting missing from Android release workflow")
+          expected = match_expected.group(1)
           env = os.environ.copy()
           env["KS_STORE_PASS"] = bundle["KEYSTORE_PASSWORD"]
           env["KS_KEY_PASS"] = bundle["KEY_PASSWORD"]
