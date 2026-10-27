@@ -149,7 +149,7 @@ test('two actual API clients, never A impersonating B, mount both full play cont
  // Accidental project selection must not allow any player login before
  // a verified QA operator and its read-only server schema readiness probe.
  await listeners.submit({target:forms.A,preventDefault(){}});
- assert.ok(!elements['[data-eclat-qa="game"]'].hidden===false);
+ assert.match(elements['[data-eclat-qa="feedback"]'].textContent,/opérateur QA autorisé/);
  await listeners.submit({target:operatorForm,preventDefault(){}});
  await click('qa-health');
  for(const role of ['A','B'])await listeners.submit({
