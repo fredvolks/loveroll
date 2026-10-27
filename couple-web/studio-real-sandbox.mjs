@@ -35,6 +35,7 @@ export function createStudioRealSandbox({client}){
   $('studio-real-create').hidden=isReady||status?.state==='creating'||status?.state==='deleting';
   $('studio-real-delete').hidden=status?.state==='missing'||!status;
   $('studio-real-refresh').hidden=!status||status?.state==='missing';
+  $('studio-real-reset').hidden=!isReady;
   if(!isReady){closeFrames();return;}
   for(const seat of validSeats){
    const container=$('studio-real-frame-'+seat);
@@ -101,6 +102,25 @@ export function createStudioRealSandbox({client}){
    try{await request('create');await refresh()}
    catch(err){say(err.message);try{await refresh()}catch{}}
    finally{busy=false}
+  });
+  // Delete ONLY the registered test pair, then provision an entirely
+  // new genuine Auth pair. Do not bypass weekly quotas or fake any roll.
+  $('studio-real-reset').addEventListener('click',async()=>{
+   if(busy||!status?.ready)return;
+   if(!confirm('Nouvel essai : supprimer le duo A+B de test et ses parties, puis créer deux NOUVEAUX comptes techniques ?'))return;
+   if(!confirm('Confirmer le remplacement du banc de test seulement ? Aucun compte client réel ne sera utilisé.'))return;
+   busy=true;say('Réinitialisation du vrai banc A+B…');closeFrames();
+   try{
+    await request('delete');
+    status={state:'missing',ready:false};
+    display();
+    await request('create');
+    await refresh();
+    say('Nouveau couple de test A+B prêt. Les vrais dés et les quotas officiels repartent sur une nouvelle paire.');
+   }catch(err){
+    say('Nouvel essai interrompu : '+err.message+' — vérifier le banc avant de recommencer.');
+    try{await refresh()}catch{/* Preserve the error above. */}
+   }finally{busy=false}
   });
   $('studio-real-delete').addEventListener('click',async()=>{
    if(busy)return;
