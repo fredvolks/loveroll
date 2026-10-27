@@ -296,7 +296,8 @@ begin
   'constraint_enabled',v_s.story_constraint_enabled,
   'story_decision_confirmed',coalesce(v_s.story_decision_scene=v_s.chapter_plan[v_s.chapter_index],false),
   'my_story_vote',v_story_vote,'story_reroll_history',v_story_history,
-  'music_theme',v_theme,'my_music_note',v_music_note,
+  'music_theme',v_theme,'my_music_note',v_music_note
+ ) || jsonb_build_object(
   'revealed_music',v_revealed_music,
   'puzzle_solved',coalesce(v_s.puzzle_solved_step=v_s.chapter_index,false),
   'puzzle_hint_level',v_s.puzzle_hint_level,'puzzle_helped',v_s.puzzle_helped,
