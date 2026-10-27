@@ -95,9 +95,51 @@ Auditer audio/timers sur PWA iPhone Safari, PWA installée et Android. Après un
 ## P1 — Identité visuelle LoveRoll
 
 ### LR-010 — Accueil = référence officielle
+**Référence propriétaire précisée le 27 octobre 2026 : l’Accueil Android sert de repère visuel à toute l’application, sur Android, iPhone, iPad et ordinateur.** Préserver son identité appréciée et relever sa version, son rendu et ses fichiers actifs avant de décliner les autres écrans.
+
 Harmoniser **toutes** les pages avec les vrais éléments de l'Accueil : typographies, tailles et lignes de titre, logo, sous-titres, rubis/bordeaux/rose/or, images d'ambiance, transparences, bordures lumineuses, arrondis, reflets, dégradés, boutons, switches, pictogrammes, états d'interaction, cartes et onglets. Ne pas inventer un autre thème, ni teintes rose fluo discordantes.
 
 Créer/renforcer les **tokens et composants partagés** : en-tête LoveRoll, boutons rubis/dorés, bulles verre, sélecteurs, statistiques, dialogues, navigation, confirmations, états actifs/verrouillés. Les boutons restent des **vrais éléments HTML/app interactifs** avec effet de pression, pas des photographies de boutons.
+
+#### Directive approuvée — une seule identité LoveRoll et des Réglages compréhensibles (27 octobre 2026)
+
+**Demande produit à réaliser et vérifier :** revoir l’ensemble des pages pour que le couple reconnaisse une seule application cohérente. Adopter simultanément le regard du designer, du développeur et du client qui paie son abonnement : comprendre immédiatement l’écran, trouver l’action utile et avoir plaisir à revenir. Cette addition décrit le travail attendu; elle ne déclare aucune refonte déjà livrée.
+
+**1. Figer la référence et le système commun.**
+- Prendre l’**Accueil Android** comme référence pour rubis/bordeaux/rose/doré, typographie, logo, iconographie, traitement des titres, boutons, sélecteurs, cartes, transparences, bordures, arrondis, ombres, espacements, états et transitions. Relever les valeurs et composants réellement actifs; ne pas inventer une nouvelle palette ou redessiner l’Accueil pour justifier un autre thème.
+- Consigner une référence courte et versionnée : capture utile de l’Accueil, fichiers/assets utilisés et tokens communs. Distinguer un rendu observé sur Android d’une émulation. Si l’appareil n’est pas accessible, utiliser les sources Android/WebView pertinentes et déclarer la comparaison physique restante.
+- Réutiliser les composants existants et centraliser les variantes justifiées. Corriger ou consolider les styles responsables des écarts au lieu d’empiler des surcharges CSS indépendantes par onglet. Chaque nouveau composant doit appartenir au système commun.
+- Conserver la même identité sur tous les appareils, avec une disposition adaptée à leur espace. Les scènes concernées utilisent les mêmes assets HD Android, roses, velours et socle cohérent; préserver les vrais dés 3D. Un écran de formulaire peut employer des surfaces plus calmes et lisibles sans reproduire tout le décor héro de l’Accueil.
+
+**2. Réexaminer toutes les pages et leurs états.**
+Couvrir Accueil, Soirée (D6, D100, catégories, cartes, minuteries, fin de soirée), Surprise, Éclat, Avent, calendrier, profils, Réglages et leurs sous-pages, invitations, connexion/inscription, abonnement/paiement et administration accessible. Inclure menus, dialogues, confirmations, chargement, vide, erreur et accès restreint.
+Pour chaque parcours, vérifier hiérarchie, densité, vocabulaire, navigation/retour, visibilité de l’action principale et cohérence avec la référence. Enlever les doublons de présentation sans retirer de fonction. Un changement d’onglet ne doit pas donner l’impression d’entrer dans une autre application.
+Traiter en priorité **le parcours Réglages des deux partenaires**, puis harmoniser les autres parcours selon les écarts observés et leurs dépendances; un défaut critique de sécurité ou de fonctionnement reste prioritaire.
+
+**3. Reprendre Réglages comme un parcours complet.**
+Inventorier une seule fois les options réelles : emplacement actuel, fonction, stockage, portée personnelle/commune et permission. Proposer une arborescence courte, puis vérifier une maquette cohérente avant l’implémentation. Base approuvée, à rapprocher des fonctions existantes :
+
+| Entrée | Contenu attendu |
+| --- | --- |
+| Mon profil | Identité et compte personnel |
+| Notre couple | Partenaire, invitation et gestion du duo |
+| Notre jeu | Préférences communes, catégories, favoris, limites et options de soirée |
+| Sons et notifications | Ambiances, sonneries, rappels et préférences personnelles ou communes explicitement indiquées |
+| Abonnement | Forfait, facturation et gestion autorisée |
+| Aide | Explications, assistance et informations utiles |
+
+- Afficher sur la première page les entrées et une description courte; ouvrir les options détaillées dans leur section. Éviter la succession de grands formulaires et d’accordéons imbriqués. Regrouper les réglages avancés sans enterrer les fonctions courantes.
+- Donner à chaque option un seul emplacement canonique; un raccourci éventuel ouvre le même formulaire. Conserver les liens et accès existants utiles.
+- Les deux partenaires reconnaissent la même arborescence. Adapter les commandes aux permissions réelles et expliquer un accès en lecture seule ou réservé à l’admin; aucun droit nouveau accordé par simple changement d’interface.
+- Distinguer clairement **« Pour moi »** et **« Pour notre couple »**. Pour un réglage partagé, indiquer « Ce changement s’applique à vous deux ». Ne pas recopier un réglage commun en deux préférences personnelles divergentes, ni modifier les préférences privées du partenaire.
+- Préserver les valeurs enregistrées, les règles de jeu, les textes/durées des cartes, les rôles, les tarifs et les abonnements. Écriture visible et fiable, confirmation sobre, erreur compréhensible et retour au bon écran; aucune sauvegarde annoncée avant sa réussite.
+- Utiliser des libellés ordinaires, des contrôles confortables, du contraste et des espacements réguliers. Préserver défilement utile, clavier, zoom et gros caractères. Le couple doit trouver et comprendre un réglage courant sans tutoriel.
+
+**4. Livraison et maintien de la cohérence.**
+Cette demande **autorise la réorganisation de Réglages décrite ci-dessus et l’harmonisation graphique** dans ce périmètre, conformément aux autorisations de livraison existantes; elle précise LR-033 et n’exige pas une nouvelle permission pour chaque déplacement ou composant. Tout changement non prévu des règles métier conserve ses propres exigences d’approbation.
+Faire un inventaire/une revue d’ensemble au début de ce chantier, puis livrer des parcours complets avec composants communs. Appliquer le mode d’exécution prioritaire : validation par lot, pas d’audit global ou de matrice complète après chaque micro-ajout.
+À la recette du parcours concerné : comparer avant/après avec l’Accueil Android, tester les deux comptes et les droits, la portée des réglages, leur sauvegarde/rechargement, la navigation et les formats touchés. Revoir la matrice multiplateforme à la consolidation de l’harmonisation transversale. Consigner brièvement code/PR, contrôles exécutés, captures utiles et limites dans le suivi de LR-010/LR-011/LR-030; ne pas déclarer l’ensemble terminé sur la foi d’un seul onglet.
+Pour tout ajout futur, justifier son emplacement et réutiliser le système commun, puis revoir l’écran complet et son parcours. Une fonction nouvelle ne doit pas dégrader progressivement la cohérence retrouvée.
 
 ### LR-011 — Hiérarchie, centrage et décor
 - Contrôler alignement horizontal **et vertical** des textes, symboles, chevrons/flèches, rond et boutons.
