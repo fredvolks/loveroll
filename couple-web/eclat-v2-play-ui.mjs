@@ -32,7 +32,7 @@ function mainContent(view,status,predictionDraft={}){
  if(view.opening)html+='<p>'+esc(view.opening)+'</p>';
  if(view.places)html+='<section class="eclat-v2-tasks"><h3>Tableau des lieux</h3>'+
   '<ul>'+view.places.map(o=>'<li><strong>'+esc(o.name)+'</strong> : '+esc(o.clues)+'</li>').join('')+'</ul></section>';
- if(view.privateMission&&!status.revealed){
+ if(view.privateMission&&(!status.revealed||view.allowClueReread)){
   html+='<section class="eclat-v2-private" aria-label="Mission privée pour '+view.role+'"><small>'+esc(view.privateLabel||('POUR '+view.role+' UNIQUEMENT'))+
    '</small><p>'+esc(view.privateMission)+'</p>'+
    (view.constraint?paragraph(view.constraint):'')+'</section>';
@@ -66,23 +66,28 @@ function mainContent(view,status,predictionDraft={}){
    paragraph(q.prompt)+'<p>Choisis ta réponse puis celle que tu imagines pour l’autre. Aucune note.</p>';
   if(status.device_mode==='two'){
    for(const [kind,heading,key] of [['answer','Ma réponse','my_answer'],['prediction',"Ma prédiction pour l’autre",'my_prediction']]){
-    const selected=status[key]??draft[kind];
+    const selected=draft[kind]??status[key];
     html+='<fieldset class="eclat-v2-door"><legend>'+heading+'</legend>'+
      q.options.map((option,i)=>btn(kind+':'+i,
       (selected===i?'✓ ':'')+option)).join('')+'</fieldset>';
    }
-   if(status.my_answer!==null&&status.my_answer!==undefined&&
-       status.my_prediction!==null&&status.my_prediction!==undefined)
-    html+='<p role="status">Tes deux choix sont enregistrés dans ton compte, pas dans celui de ton partenaire.</p>';
-   else if(draft.answer!==null&&draft.answer!==undefined&&draft.prediction!==null&&draft.prediction!==undefined)
-    html+=btn('save-prediction','Enregistrer mes deux choix','primary');
+   const hasSaved=status.my_answer!==null&&status.my_answer!==undefined&&
+     status.my_prediction!==null&&status.my_prediction!==undefined;
+   const hasDraft=draft.answer!==null&&draft.answer!==undefined&&
+     draft.prediction!==null&&draft.prediction!==undefined;
+   const changed=hasDraft&&(!hasSaved||draft.answer!==status.my_answer||
+      draft.prediction!==status.my_prediction);
+   if(hasSaved)html+='<p role="status">Tes deux choix sont enregistrés dans ton compte, pas dans celui de ton partenaire.</p>';
+   if(changed&&!status.revealed)html+=btn('save-prediction',hasSaved?'Enregistrer mes modifications':
+      'Enregistrer mes deux choix','primary');
   }else html+='<p>En mode téléphone partagé, les réponses restent privées et éphémères; cette sélection numérique n’est pas encore activée.</p>';
   html+='</section>';
   if(view.revealAnswers?.players){
-   const r=view.revealAnswers.players;
-   if(r.A&&r.B)html+='<section class="eclat-v2-activity"><strong>Découverte de la question '+esc(view.revealAnswers.question)+'</strong>'+
-    '<p>A : '+esc(q.options[r.A.answer]??'Option '+(r.A.answer+1))+' — '+(r.A.prediction===r.B.answer?'Comme tu l’imaginais':'Une découverte')+'</p>'+
-    '<p>B : '+esc(q.options[r.B.answer]??'Option '+(r.B.answer+1))+' — '+(r.B.prediction===r.A.answer?'Comme tu l’imaginais':'Une découverte')+'</p></section>';
+   const r=view.revealAnswers.players,approved=view.revealedQuestion;
+   if(r.A&&r.B&&approved&&approved.number===view.revealAnswers.question)
+    html+='<section class="eclat-v2-activity"><strong>Découverte de la question '+esc(approved.number)+'</strong>'+
+    '<p>A : '+esc(approved.options[r.A.answer])+' — '+(r.A.prediction===r.B.answer?'Comme tu l’imaginais':'Une découverte')+'</p>'+
+    '<p>B : '+esc(approved.options[r.B.answer])+' — '+(r.B.prediction===r.A.answer?'Comme tu l’imaginais':'Une découverte')+'</p></section>';
   }
  }
  if(view.themes){

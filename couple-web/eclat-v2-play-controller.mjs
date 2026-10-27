@@ -29,7 +29,11 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
    if(status.coffret_id!==7||status.device_mode!=='two'||status.state!=='active'||status.revealed)return;
    const [key,index]=command.split(':'),value=Number(index);
    if(!['answer','prediction'].includes(key)||![0,1,2].includes(value))return;
-   predictionDraft={...predictionDraft,[key]:value};paint();return;
+   predictionDraft={
+    answer:predictionDraft.answer??status.my_answer??null,
+    prediction:predictionDraft.prediction??status.my_prediction??null,
+    [key]:value
+   };paint();return;
   }
   if(command==='show-role:A'||command==='show-role:B'){
    if(status.device_mode!=='one'||viewerId!==status.role_a)return;

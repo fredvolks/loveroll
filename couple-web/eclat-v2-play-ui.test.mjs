@@ -104,3 +104,19 @@ test('05–08 stage UX reflects approved content; Q predictions stay private unt
  const music=renderEclatV2PlayA({status:status(8,1,30,1),viewerId:aid});
  assert.match(music,/Thème 1/);assert.doesNotMatch(music,/<audio|<iframe/);
 });
+
+test('Saved answers may be changed and previous Q2 uses its own answer labels after Q3 opens',()=>{
+ const s=status(7,0,90,3,{substep_index:2,
+  my_answer:0,my_prediction:1,
+  reveal_answers:{question:2,players:{
+   A:{answer:2,prediction:0},B:{answer:0,prediction:2}}}});
+ const display=renderEclatV2PlayA({status:s,viewerId:aid});
+ assert.match(display,/Découverte de la question 2/);
+ assert.match(display,/data-eclat-v2-action="answer:0"/);
+ const changed=renderEclatV2PlayA({status:s,viewerId:aid,
+  predictionDraft:{answer:1,prediction:1}});
+ assert.match(changed,/Enregistrer mes modifications/);
+ const clue=renderEclatV2PlayA({status:status(6,1,30,3),viewerId:aid});
+ assert.match(clue,/DOSSIER A/);
+ assert.doesNotMatch(clue,/près d’un banc/);
+});

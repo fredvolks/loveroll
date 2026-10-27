@@ -92,9 +92,10 @@ export function eclatV2SceneB({session,viewerId,localDisplayRole=null}){
  }
  if(id===6){
   const dossier=investigation(game,v);
+  out.privateMission=dossier[me];out.privateLabel='DOSSIER '+me;
+  out.allowClueReread=true;
   if(n===1){
    out.opening=dossier.opening;out.places=dossier.places;
-   out.privateMission=dossier[me];out.privateLabel='DOSSIER '+me;
   }
   if(n===2)out.bonus=v===0?{cipher:'14-15-21-19',key:'A=1…Z=26',solution:'NOUS'}:
    {cipher:'4-5-21-24',key:'A=1…Z=26',solution:'DEUX'};
@@ -129,8 +130,12 @@ export function eclatV2SceneB({session,viewerId,localDisplayRole=null}){
    out.revealed=session.revealed===true;
    // This payload exists only after the guarded RPC has finished the joint reveal.
    // It may describe the previous Q when scene 3/6 advances to substep 2.
-   if(session.reveal_answers && typeof session.reveal_answers==='object')
+   if(session.reveal_answers && typeof session.reveal_answers==='object'){
     out.revealAnswers=session.reveal_answers;
+    const revealedId=Number(session.reveal_answers.question);
+    if(Number.isInteger(revealedId)&&revealedId>=1&&revealedId<=5)
+     out.revealedQuestion=answerRows(game,v,'Question',[revealedId])[0];
+   }
   }
   if(n===8)out.finale='Vous n’avez pas besoin de penser pareil pour continuer à vous découvrir.';
  }

@@ -94,3 +94,14 @@ test('Viewer permissions and phone handover never allow switching other account'
  const bview=eclatV2SceneB({session:shared,viewerId:a,localDisplayRole:'B'});
  assert.match(bview.privateMission,/horloge/);
 });
+
+test('Investigation dossiers remain readable on scene 3 without revealing the other user',()=>{
+ for(let v=0;v<=1;v++){
+  const m=view(6,v,30,3);
+  const n=view(6,v,30,3,b);
+  assert.equal(m.privateLabel,'DOSSIER A');
+  assert.equal(n.privateLabel,'DOSSIER B');
+  assert.notEqual(m.privateMission,n.privateMission);
+  assert.equal(m.allowClueReread,true);
+ }
+});
