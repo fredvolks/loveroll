@@ -17,7 +17,7 @@ import {createCoupleLiveSync} from './couple-live-sync.mjs?v=20261017-advent119'
 import {playableSessionForWeekly} from './couple-reset-view.mjs';
 import {eveningDailyAccess} from './evening-daily-policy.mjs?v=20261016-daily100';
 import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw} from './evening-private-queue.mjs';
-import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261027-web240';
+import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261027-web243';
 import {saveEveningSelection,restoreEveningSelection,clearEveningSelection} from './evening-resume.mjs?v=20261027-web240';
 import {eclatHtml} from './eclat-ui.mjs?v=20261027-web242';
 import {previewMode,previewCanEdit,previewEclatStatus} from './account-preview-mode.mjs?v=20261020-test180';
@@ -27,7 +27,7 @@ import {futureCoupleStyleMix,playStyleLabel} from './play-style.mjs?v=20261018-s
 import {cycleIntensityQuestionnaireHtml} from './cycle-questionnaire.mjs?v=20261018-cycle149';
 import {DICE_WEIGHT_CONFIG,configuredDiceWeights,parseDiceWeightInputs} from './dice-weighting.mjs?v=20261018-weights146';
 import {premiumEveningHtml,updateEveningCategoryUi} from './premium-evening.mjs?v=20261027-web242';
-import {eveningHistoryMarkup,eveningLocalDay} from './evening-calendar.mjs?v=20261027-web240';
+import {eveningHistoryMarkup,eveningLocalDay} from './evening-calendar.mjs?v=20261027-web243';
 import {eveningReviewModal,validEveningReview} from './evening-review.mjs?v=20261016-person-review97';
 import {premiumSurpriseHtml,sixSpecialEvents} from './premium-surprise.mjs?v=20261022-home228';
 import {surpriseSlot,surpriseCustom,surpriseTitle,formatSurpriseDateInput,parseSurpriseDateInput} from './surprise-event-config.mjs?v=20261016-surprise109';
@@ -53,14 +53,14 @@ import {referralSettingsHtml,referralLink,REFERRAL_CODE_PATTERN,REFERRAL_PENDING
 import {enhanceLoveRollSettingsSelects} from './loveroll-premium-pickers.mjs?v=20261019-personal171';
 import { CONFIG } from './config.js?v=20261019-love172';
 import {normalizeInviteEmail,composeInviteEmail} from './invite-email.mjs';
-import {enablePush,disablePush,updatePushPreference,sendTestPush,notificationSettingsMarkup,safeNativePushToken,currentPushDevice} from './push-notifications.mjs?v=20261017-complete127';
+import {enablePush,disablePush,updatePushPreference,sendTestPush,notificationSettingsMarkup,safeNativePushToken,currentPushDevice} from './push-notifications.mjs?v=20261027-web243';
 import {shouldOfferInstall,markInstallOffered,dismissInstall,requestInstall,installOfferHtml,installStepsHtml,installStatus,isEmbeddedBrowser,isIos} from './home-install.mjs?v=20261017-complete127';
 import {messengerExternalBrowserHtml} from './messenger-browser.mjs?v=20261017-entry139';
 import {invitationStatus,coupleStats,formatCoupleDate,invitationEmailText,invitationMessengerText,invitationPreviewMarkup} from './couple-dashboard.mjs';
 import {premiumConfirm,premiumCopyLink,focusInlineLoveDialog} from './premium-dialogs.mjs?v=20261017-complete127';
 
 
-const WEB_RELEASE='2026-10-27.242';
+const WEB_RELEASE='2026-10-27.243';
 const root=document.querySelector('#app');
 const enc=new TextEncoder(),dec=new TextDecoder();
 let diceCleanup=[],renderToken=0;
@@ -3123,7 +3123,12 @@ async function handle(action,element){
   setNotificationFeedback(result?'Demande de test acceptée. Vérifiez si la notification arrive sur cet appareil.':'Demande de test refusée par le serveur.',result?'status':'error');
   return;
  }
- if(verb==='native-notify-enable'){
+ if(verb==='native-notify-system'){
+   if(!window.LoveRollNativeAuth?.openNotificationSettings)throw Error('Mise à jour Android nécessaire.');
+   window.LoveRollNativeAuth.openNotificationSettings();
+   setNotificationFeedback('Ouverture des autorisations Android demandée.');return;
+  }
+  if(verb==='native-notify-enable'){
   if(!window.LoveRollNativeAuth?.enableWeeklyReminder)
    throw Error('Mettez à jour l’APK pour activer le rappel Android.');
   window.LoveRollNativeAuth.enableWeeklyReminder();
@@ -4548,6 +4553,6 @@ start().catch(error=>{fail(error);window.LoveRollBoot?.showFailure();});
 
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   window.addEventListener('load', () =>
-    navigator.serviceWorker.register('./service-worker.js?v=20261027-web242',
+    navigator.serviceWorker.register('./service-worker.js?v=20261027-web243',
      {scope:'./',updateViaCache:'none'}).then(reg=>reg.update()).catch(console.warn));
 }

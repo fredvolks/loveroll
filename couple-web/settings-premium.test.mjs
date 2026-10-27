@@ -50,7 +50,9 @@ test('Native version is real and unavailable notifications are not marked as on'
  assert.match(native,/getPackageManager\(\)\.getPackageInfo\(getPackageName\(\),0\)/);
  assert.match(app,/window\.LoveRollNativeAuth\.appVersion\(\)/);
  assert.match(push,/prefs\[key\]!==false/);
- assert.match(push,/\(!active\?' disabled':''\)/);
+ assert.doesNotMatch(push,/\(!active\?' disabled':''\)/);
+ assert.match(push,/data-push-option/);
+ assert.match(push,/envoi inactif/);
  assert.match(push,/weeklyReminderEnabled/);assert.match(push,/device\?\.registered===true/);
 });
 

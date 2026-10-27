@@ -1,0 +1,38 @@
+name: LoveRoll native Android PR validation
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - 'couple-web/android-native-bridge-thread.test.mjs'
+      - '.github/workflows/android.yml'
+      - '.github/workflows/android-native-pr.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: loveroll-native-pr-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  android-native-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Install Android SDK 35
+        run: |
+          set -euo pipefail
+          SDKMGR="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | head -n 1)"
+          yes | "$SDKMGR" --licenses >/dev/null || true
+          "$SDKMGR" --install 'platforms;android-35' 'build-tools;35.0.0'
+      - name: Validate native Android and notification bridge
+        run: node --test couple-web/android-native-bridge-thread.test.mjs
+      - name: Compile and run Android JUnit tests without release secrets
+        run: gradle :app:assembleDebug :app:testDebugUnitTest --no-daemon --stacktrace

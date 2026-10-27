@@ -7,6 +7,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.CancellationSignal;
 import android.os.Build;
+import android.provider.Settings;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -272,6 +273,24 @@ public final class ConnectedLoveRollActivity extends Activity {
      share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
      startActivity(Intent.createChooser(share,"Sauvegarder ou partager mon JSON LoveRoll"));
     }catch(Exception e){show("Export JSON impossible : "+e.getMessage());}
+   });
+  }
+  // Open only LoveRoll's Android notification permissions on the UI thread.
+  @JavascriptInterface public void openNotificationSettings(){
+   runOnUiThread(()->{
+    if(web==null||!pageReady||!isTrusted(Uri.parse(web.getUrl())))return;
+    try{
+     if(Build.VERSION.SDK_INT>=26){
+      Intent settings=new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS);
+      settings.putExtra(Settings.EXTRA_APP_PACKAGE,getPackageName());
+      startActivity(settings);
+     }else startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+       Uri.parse("package:"+getPackageName())));
+    }catch(Exception e){
+     try{startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+        Uri.parse("package:"+getPackageName())));}
+     catch(Exception ignored){show("Paramètres Android indisponibles.");}
+    }
    });
   }
   @JavascriptInterface public boolean nativePushConfigured(){return firebaseReady;}

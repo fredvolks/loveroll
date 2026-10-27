@@ -131,9 +131,10 @@ export function notificationSettingsMarkup(prefs={},device=null){
  if(e.native){
   const local=!!window.LoveRollNativeAuth?.weeklyReminderEnabled?.(),configured=safeNativePushConfigured();
   state=active?'active':configured?'inactive':'update';
-  status=active?'Activées sur cet appareil':configured?'Un rappel au bon moment':'Mise à jour nécessaire';
-  detail=active?'Choisissez les moments pour lesquels recevoir une alerte.':configured?'Activez les alertes pour retrouver vos moments à deux.':'Mettez LoveRoll à jour pour recevoir toutes les alertes.';
-  actions=configured?(active?action('push-test','Envoyer un test')+action('push-disable','Désactiver',true):action('push-enable','Activer les notifications')):'';
+  status=active?'Activées sur cet appareil':configured?'Un rappel au bon moment':'Alertes à distance indisponibles';
+  detail=active?'Choisissez les moments pour lesquels recevoir une alerte.':configured?'Activez les alertes pour retrouver vos moments à deux.':'Choisissez vos alertes et vérifiez les autorisations Android. Les notifications à distance nécessitent une application configurée.';
+  actions=(configured?(active?action('push-test','Envoyer un test')+action('push-disable','Désactiver',true):action('push-enable','Activer les notifications')):'')+
+    (typeof window.LoveRollNativeAuth?.openNotificationSettings==='function'?action('native-notify-system','Autorisations Android',true):'');
   localReminder='<div class="notification-local"><span class="notification-row-icon">'+editorialIcon('clock')+'</span>'+
    '<span class="notification-choice-copy"><strong>Rappel du lundi</strong><small>À 9 h, sur ce téléphone</small></span>'+
    '<button type="button" class="notification-local-switch" role="switch" aria-checked="'+local+'" aria-label="Rappel du lundi à 9 h" data-action="'+(local?'native-notify-disable':'native-notify-enable')+'"><span aria-hidden="true"></span></button></div>';
@@ -150,9 +151,9 @@ export function notificationSettingsMarkup(prefs={},device=null){
  }
  return '<section class="notification-settings" data-notification-state="'+state+'">'+
  '<div class="push-status notification-summary" role="status"><span class="notification-emblem">'+editorialIcon(statusIcon)+'</span><div><strong>'+status+'</strong><p>'+detail+'</p></div></div>'+
- '<section class="notification-choices" aria-labelledby="notification-choices-title"><div class="notification-section-heading"><h2 id="notification-choices-title">Mes alertes</h2><span>'+(active?'À votre rythme':'Choix conservés')+'</span></div>'+
+ '<section class="notification-choices" aria-labelledby="notification-choices-title"><div class="notification-section-heading"><h2 id="notification-choices-title">Mes alertes</h2><span>'+(active?'À votre rythme':'Choix sauvegardés, envoi inactif')+'</span></div>'+
  '<div class="push-options notification-options">'+categories.map(([key,title,desc,icon])=>'<label class="push-option notification-option"><span class="notification-row-icon">'+editorialIcon(icon)+'</span><span class="notification-choice-copy"><strong>'+title+'</strong><small>'+desc+'</small></span>'+
- '<input class="notification-toggle" type="checkbox" role="switch" data-push-option="'+key+'"'+(prefs[key]!==false?' checked':'')+(!active?' disabled':'')+' aria-label="'+title+'"></label>').join('')+'</div></section>'+
+ '<input class="notification-toggle" type="checkbox" role="switch" data-push-option="'+key+'"'+(prefs[key]!==false?' checked':'')+' aria-label="'+title+'"></label>').join('')+'</div></section>'+
  localReminder+(actions?'<div class="push-actions notification-actions">'+actions+'</div>':'')+
  '<p id="notification-feedback" class="notification-feedback" role="status" aria-live="polite" hidden></p>'+
  '<p class="tiny-note notification-privacy">'+editorialIcon('lock')+'<span>Le contenu de vos surprises reste privé.</span></p></section>';
