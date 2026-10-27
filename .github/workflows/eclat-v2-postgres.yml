@@ -51,3 +51,5 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-predictions.test.sql
       - name: Validate investigation solutions, hints and retries
         run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-enquete.test.sql
+      - name: Verify two-role attention proposals, alternatives, refusals and shared phone
+        run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-attentions.test.sql

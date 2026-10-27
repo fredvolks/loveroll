@@ -53,6 +53,18 @@ export function createEclatV2SessionApi(client){
    return rpc('love_eclat_v2_choose_door',{p_session:sessionId(sid),p_expected_step:step(expectedStep),
     p_door:door,p_joint_oral:jointOral});
   },
+  attentionPropose:({sessionId:sid,expectedStep,attention,jointOral=false})=>{
+   if(![0,1,2].includes(attention)||typeof jointOral!=='boolean')
+    throw new RangeError('Attention inconnue');
+   return rpc('love_eclat_v2_attention_propose',{p_session:sessionId(sid),
+    p_expected_step:step(expectedStep),p_attention:attention,p_joint_oral:jointOral});
+  },
+  attentionReply:({sessionId:sid,expectedStep,answer,jointOral=false})=>{
+   if(!['yes','other','pass'].includes(answer)||typeof jointOral!=='boolean')
+    throw new RangeError('Réponse attention inconnue');
+   return rpc('love_eclat_v2_attention_reply',{p_session:sessionId(sid),
+    p_expected_step:step(expectedStep),p_answer:answer,p_joint_oral:jointOral});
+  },
   puzzle:({sessionId:sid,expectedStep,place=null,time=null,code=null})=>{
    if((place===null&&time===null&&typeof code==='string')||
       (typeof place==='string'&&typeof time==='string'&&code===null))

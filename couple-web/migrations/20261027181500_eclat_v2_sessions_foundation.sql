@@ -85,6 +85,20 @@ create table public.love_eclat_v2_predictions (
 );
 alter table public.love_eclat_v2_predictions enable row level security;
 revoke all on public.love_eclat_v2_predictions from public,anon,authenticated;
+-- Coffret 05: publicly shared proposal and partner's reply, no private preference.
+-- The actor is verified by RPC; shared-phone entries use the creator account,
+-- never a forged partner user id.
+create table public.love_eclat_v2_attentions (
+ session_id uuid not null references public.love_eclat_v2_sessions(id) on delete cascade,
+ step_index smallint not null check(step_index between 1 and 8),
+ substep_index smallint not null check(substep_index in (1,2)),
+ attention_index smallint not null check(attention_index between 0 and 2),
+ response text check(response in ('yes','other','pass')),
+ updated_at timestamptz not null default now(),
+ primary key(session_id,step_index,substep_index)
+);
+alter table public.love_eclat_v2_attentions enable row level security;
+revoke all on public.love_eclat_v2_attentions from public,anon,authenticated;
 alter table public.love_eclat_v2_sessions enable row level security;
 alter table public.love_eclat_v2_readiness enable row level security;
 -- Fail closed: only authenticated, guarded RPCs can access these tables.
@@ -124,6 +138,7 @@ declare
  v_actor uuid:=auth.uid(); v_couple uuid; v_s public.love_eclat_v2_sessions%rowtype;
  v_ready integer; v_mine boolean; v_type text; v_door_vote text;
  v_contact_yes integer; v_my_contact text; v_my_answer integer;v_my_guess integer;
+ v_attention_index integer;v_attention_response text;
 begin
  perform public.love_require_verified_identity();
  select couple_id into v_couple from public.couple_members where user_id=v_actor;
@@ -151,6 +166,9 @@ begin
  from public.love_eclat_v2_predictions
  where session_id=v_s.id and step_index=v_s.chapter_index
    and substep_index=v_s.substep_index and user_id=v_actor;
+ select attention_index,response into v_attention_index,v_attention_response
+ from public.love_eclat_v2_attentions
+ where session_id=v_s.id and step_index=v_s.chapter_index and substep_index=v_s.substep_index;
  select count(*),coalesce(bool_or(user_id=v_actor),false) into v_ready,v_mine
  from public.love_eclat_v2_readiness where session_id=v_s.id and step_index=v_s.chapter_index;
  return jsonb_build_object(
@@ -160,6 +178,7 @@ begin
   'chapter_index',v_s.chapter_index,'chapter_total',cardinality(v_s.chapter_plan),
   'substep_index',v_s.substep_index,
   'my_answer',v_my_answer,'my_prediction',v_my_guess,
+  'attention_index',v_attention_index,'attention_response',v_attention_response,
   'puzzle_solved',coalesce(v_s.puzzle_solved_step=v_s.chapter_index,false),
   'puzzle_hint_level',v_s.puzzle_hint_level,'puzzle_helped',v_s.puzzle_helped,
   'reveal_answers',v_s.last_prediction,
@@ -526,6 +545,83 @@ begin
 end;
 $$;
 
+-- Coffret 05: proposing and replying are separate, authenticated actions.
+create function public.love_eclat_v2_attention_propose(
+ p_session uuid,p_expected_step integer,p_attention integer,
+ p_joint_oral boolean default false
+) returns jsonb language plpgsql security definer set search_path='' as $$
+declare
+ v_actor uuid:=auth.uid();v_couple uuid;v_s public.love_eclat_v2_sessions%rowtype;
+ v_author uuid;v_response text;
+begin
+ perform public.love_require_verified_identity();
+ if p_attention is null or p_attention not between 0 and 2 then
+  raise exception 'Attention non prévue';end if;
+ select * into v_s from public.love_eclat_v2_sessions where id=p_session for update;
+ if not found then raise exception 'Séance inconnue';end if;
+ select couple_id into v_couple from public.couple_members where user_id=v_actor;
+ if v_couple is distinct from v_s.couple_id or v_actor not in (v_s.role_a,v_s.role_b)
+   or not public.love_eclat_has_access(v_s.couple_id) then
+  raise exception 'Accès interdit' using errcode='42501';end if;
+ if p_expected_step is distinct from v_s.chapter_index then
+  return public.love_eclat_v2_status(p_session);end if;
+ if v_s.coffret_id<>5 or v_s.chapter_plan[v_s.chapter_index]<>6 or v_s.state<>'active' then
+  raise exception 'Attention non active';end if;
+ v_author:=case when v_s.substep_index=1 then v_s.role_a else v_s.role_b end;
+ if v_s.device_mode='two' and v_actor<>v_author then
+  raise exception 'Seul le partenaire qui propose peut choisir';
+ elsif v_s.device_mode='one' and (v_actor<>v_s.role_a or p_joint_oral is distinct from true) then
+  raise exception 'Proposition orale du couple requise';end if;
+ select response into v_response from public.love_eclat_v2_attentions
+  where session_id=p_session and step_index=v_s.chapter_index and substep_index=v_s.substep_index;
+ if v_response in ('yes','pass') then
+  raise exception 'Tour déjà décidé';end if;
+ insert into public.love_eclat_v2_attentions
+ (session_id,step_index,substep_index,attention_index,response)
+ values(p_session,v_s.chapter_index,v_s.substep_index,p_attention,null)
+ on conflict(session_id,step_index,substep_index)
+ do update set attention_index=excluded.attention_index,response=null,updated_at=now();
+ return public.love_eclat_v2_status(p_session);
+end;
+$$;
+create function public.love_eclat_v2_attention_reply(
+ p_session uuid,p_expected_step integer,p_answer text,
+ p_joint_oral boolean default false
+) returns jsonb language plpgsql security definer set search_path='' as $$
+declare
+ v_actor uuid:=auth.uid();v_couple uuid;v_s public.love_eclat_v2_sessions%rowtype;
+ v_receiver uuid;v_count int;v_existing text;
+begin
+ perform public.love_require_verified_identity();
+ if p_answer is null or p_answer not in ('yes','other','pass') then
+  raise exception 'Réponse attention non prévue';end if;
+ select * into v_s from public.love_eclat_v2_sessions where id=p_session for update;
+ if not found then raise exception 'Séance inconnue';end if;
+ select couple_id into v_couple from public.couple_members where user_id=v_actor;
+ if v_couple is distinct from v_s.couple_id or v_actor not in(v_s.role_a,v_s.role_b)
+   or not public.love_eclat_has_access(v_s.couple_id) then
+  raise exception 'Accès interdit' using errcode='42501';end if;
+ if p_expected_step is distinct from v_s.chapter_index then
+  return public.love_eclat_v2_status(p_session);end if;
+ if v_s.coffret_id<>5 or v_s.chapter_plan[v_s.chapter_index]<>6 or v_s.state<>'active' then
+  raise exception 'Réponse attention non active';end if;
+ v_receiver:=case when v_s.substep_index=1 then v_s.role_b else v_s.role_a end;
+ if v_s.device_mode='two' and v_actor<>v_receiver then
+  raise exception 'Seul le destinataire peut répondre';
+ elsif v_s.device_mode='one' and (v_actor<>v_s.role_a or p_joint_oral is distinct from true) then
+  raise exception 'Réponse orale commune requise';end if;
+ select count(*),max(response) into v_count,v_existing
+  from public.love_eclat_v2_attentions
+  where session_id=p_session and step_index=v_s.chapter_index and substep_index=v_s.substep_index;
+ if v_count<>1 then raise exception 'Choisir une attention avant de répondre';end if;
+ if v_existing in ('yes','pass') then
+  raise exception 'Tour déjà décidé';end if;
+ update public.love_eclat_v2_attentions set response=p_answer,updated_at=now()
+ where session_id=p_session and step_index=v_s.chapter_index and substep_index=v_s.substep_index;
+ return public.love_eclat_v2_status(p_session);
+end;
+$$;
+
 -- All state transitions are serializable per session lock and guarded by an
 -- expected step token. Retrying a stale next/pass NEVER advances the next scene.
 create function public.love_eclat_v2_act(
@@ -561,6 +657,11 @@ begin
   if p_action='continue' and v_actor<>v_s.role_a then
    raise exception 'Seul le contrôleur de séance peut avancer';end if;
   v_type:=public.love_eclat_v2_scene_type(v_s.coffret_id,v_s.chapter_plan[v_s.chapter_index]);
+  if p_action='continue' and v_s.coffret_id=5 and v_s.chapter_plan[v_s.chapter_index]=6
+   and not exists(select 1 from public.love_eclat_v2_attentions
+    where session_id=p_session and step_index=v_s.chapter_index
+      and substep_index=v_s.substep_index and response in ('yes','pass')) then
+   raise exception 'Attendre Oui ou Passer pour cette attention';end if;
   if p_action='continue' and v_s.coffret_id=4 and
      v_s.chapter_plan[v_s.chapter_index] in (1,5) and
      v_s.door_confirmed_scene is distinct from v_s.chapter_plan[v_s.chapter_index] then
@@ -576,6 +677,8 @@ begin
    where session_id=p_session and step_index=v_s.chapter_index;
   delete from public.love_eclat_v2_predictions
    where session_id=p_session and step_index=v_s.chapter_index;
+  -- Do not delete current attention before checking its response.
+
   -- Short routes still include each question/theme: passing the first
   -- private subquestion moves to the second without revealing any answer.
   if p_action='pass' and v_s.coffret_id in (7,8) and
@@ -620,6 +723,10 @@ revoke all on function public.love_eclat_v2_contact_answer(uuid,integer,text,tex
 grant execute on function public.love_eclat_v2_contact_answer(uuid,integer,text,text,boolean) to authenticated;
 revoke all on function public.love_eclat_v2_choose_door(uuid,integer,text,boolean) from public,anon;
 grant execute on function public.love_eclat_v2_choose_door(uuid,integer,text,boolean) to authenticated;
+revoke all on function public.love_eclat_v2_attention_propose(uuid,integer,integer,boolean) from public,anon;
+grant execute on function public.love_eclat_v2_attention_propose(uuid,integer,integer,boolean) to authenticated;
+revoke all on function public.love_eclat_v2_attention_reply(uuid,integer,text,boolean) from public,anon;
+grant execute on function public.love_eclat_v2_attention_reply(uuid,integer,text,boolean) to authenticated;
 revoke all on function public.love_eclat_v2_puzzle_try(uuid,integer,text,text,text) from public,anon;
 grant execute on function public.love_eclat_v2_puzzle_try(uuid,integer,text,text,text) to authenticated;
 revoke all on function public.love_eclat_v2_puzzle_help(uuid,integer) from public,anon;
