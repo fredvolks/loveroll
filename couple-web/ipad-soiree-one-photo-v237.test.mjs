@@ -25,6 +25,8 @@ test('iPad Soirée draws one photographic layer and NO second background or sepa
  assert.match(css,/\.home-pedestal,\.soiree-pedestal-marker/);
  assert.match(css,/width:0!important;height:0!important/);
  assert.match(css,/@layer loveroll-soiree-template/);
+ assert.match(css,/\.evening-premium-view\.has-evening-d100-template :is\(/);
+ assert.match(css,/grid-column:1\/-1!important/);
  assert.match(css,/min-width:768px/);
  assert.doesNotMatch(css,/url\(['"]?\.\/assets\/(?:ritual-satin-v115|loveroll-home-landscape-v199)\.webp/);
  assert.doesNotMatch(css,/<img|<canvas/);
