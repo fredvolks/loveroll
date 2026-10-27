@@ -27,18 +27,8 @@ let observer;
 export function fitEveningD100(root){
  observer?.disconnect();observer=null;
  const view=root.querySelector('.evening-premium-view.is-ready');
- const enabled=!!view&&matchMedia('(max-width:767px)').matches;
+ const enabled=!!view&&matchMedia('(max-width:1199px), (pointer:coarse) and (min-width:768px)').matches;
  root.classList.toggle('has-evening-d100-template',enabled);
- if(view&&matchMedia('(min-width:768px)').matches){
-  const hero=view.querySelector('.evening-die-row');
-  if(hero&&!hero.querySelector('.home-pedestal')){
-   hero.classList.add('home-die-theater');
-   hero.insertAdjacentHTML('beforeend','<div class="home-pedestal" aria-hidden="true"><span class="home-pedestal-contact"></span></div>');
-  }
-  const fit=()=>{if(view.isConnected)fitTabletRomanceStage(root);};
-  observer=new ResizeObserver(fit);observer.observe(root);fit();
-  return false;
- }
  if(!enabled)return false;
  view.classList.add('has-home-soiree-template','has-evening-d100-template');
  view.querySelector('.ritual-kicker').textContent='NOTRE RITUEL DE LA SOIRÉE';
@@ -73,7 +63,8 @@ export function fitEveningD100(root){
  dialog.addEventListener('close',()=>info.focus({preventScroll:true}));
  const fit=()=>{
   if(!view.isConnected){fitObserver.disconnect();return;}
-  fitSharedStage(root);
+  if(matchMedia('(min-width:768px)').matches)fitTabletRomanceStage(root);
+  else fitSharedStage(root);
   // LR-001: use the same D100 size reference as Surprise but respect the
   // actual, height-constrained Soirée theater (including safe-area/nav).
   const bounds=hero.getBoundingClientRect();
