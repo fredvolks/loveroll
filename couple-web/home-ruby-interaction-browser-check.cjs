@@ -40,21 +40,16 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
    return {held,released:await read()};
   };
   const changed=(a,b)=>Math.abs(a.quaternion.reduce((sum,v,i)=>sum+v*b.quaternion[i],0))<.995;
-  const stablePose=state=>{
-   // Web 235 deliberately rotates the winning face toward the camera so
-   // the result is readable. This is NOT the old face-flat-up pose.
-   // A finger drag may yaw the die, but must never pitch it or lift it.
-   assert.ok(Math.abs(state.restingUp[1]-initial.restingUp[1])<.01,
-    'Finger inspection must keep the photographed support-plane pitch');
-   assert.ok(Math.abs(state.support.y-initial.support.y)<.1,
-    'Dragging must not lift or lower the die');
+  const flat=state=>{
+   assert.ok(state.restingUp[1]>.999999,'A face must remain flat on the horizontal support plane');
+   assert.ok(Math.abs(state.support.y-initial.support.y)<.1,'Dragging must not lift or lower the die');
   };
   const horizontal=await drag(70,40);
   assert.ok(changed(initial,horizontal.held),'A finger swipe must visibly turn the model');
-  for(const state of [horizontal.held,horizontal.released]){stablePose(state);assert.equal(state.face,initial.face);assert.equal(state.modelId,initial.modelId);}
+  for(const state of [horizontal.held,horizontal.released]){flat(state);assert.equal(state.face,initial.face);assert.equal(state.modelId,initial.modelId);}
   const vertical=await drag(0,65);
   assert.ok(!changed(horizontal.released,vertical.held),'A vertical swipe must not tip the die');
-  stablePose(vertical.held);
+  flat(vertical.held);
   assert.equal(world.calls.filter(c=>c.name==='roll_couple_once').length,0,'Inspection must never draw a result');
   await page.route('**/__editorial-api',async route=>{
    const req=JSON.parse(route.request().postData());
@@ -81,16 +76,14 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   if(process.env.LOVEROLL_CAPTURE_DIR)await page.screenshot({path:path.join(process.env.LOVEROLL_CAPTURE_DIR,'ruby-official-result.png')});
   assert.equal(final.modelId,initial.modelId,'The final refresh must preserve the same model');
   assert.equal(await page.evaluate(()=>window.__originalRuby===document.querySelector('.home-die-platform canvas')),true);
-  assert.equal(final.face,5);assert.equal(final.frontFace,5);stablePose(final);
-  assert.ok(final.faceFacing>.90,'The official number must be front-facing, not sideways');
-  assert.ok(final.engravingUpright>.90,'The official number must remain upright');
+  assert.equal(final.face,5);assert.equal(final.frontFace,5);flat(final);
   const afterRoll=await drag(60,-35);
   assert.ok(changed(final,afterRoll.held),'Finger inspection must still work after the official roll');
-  assert.equal(afterRoll.released.face,5);stablePose(afterRoll.released);
+  assert.equal(afterRoll.released.face,5);flat(afterRoll.released);
   assert.equal(world.calls.filter(c=>c.name==='roll_couple_once').length,1);
   assert.equal(await page.locator('.home-roll-button').isDisabled(),true);
   assert.deepEqual(errors,[]);
-  console.log('HOME_RUBY_TOUCH_OK: stable yaw, frontal result, one model, one official result');
+  console.log('HOME_RUBY_TOUCH_OK: flat yaw before/after roll, one model, one official result');
   await context.close();
  }finally{await browser.close();}
 })().catch(error=>{console.error(error);process.exit(1)});
