@@ -39,7 +39,21 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
      await page.locator('.nav [data-action="tab:session"]').click();
      const hero=step==='inactive'?'.evening-finale-hero':
       step==='waiting'?'.evening-d6-theater':'.evening-d100-theater';
-     await page.locator(hero+' canvas').waitFor({timeout:16000});
+     await page.locator(hero+' canvas').waitFor({state:'attached',timeout:16000});
+     if(step==='ready'){
+      const debug=await page.evaluate(selector=>{
+       const all=['#app','.evening-premium-view','.evening-step.two','.evening-choice','.evening-d100-theater','.evening-d35-col','.evening-d35-col>.love3d','.evening-d35-col .love3d-stage','.evening-d100-theater canvas'];
+       return all.map(q=>{
+        const n=document.querySelector(q),r=n?.getBoundingClientRect(),c=n&&getComputedStyle(n);
+        return {selector:q,rect:r?{x:r.x,y:r.y,width:r.width,height:r.height}:null,
+         display:c?.display,visibility:c?.visibility,opacity:c?.opacity,
+         overflow:c?.overflow,gridRow:c?.gridRow,gridRows:c?.gridTemplateRows,
+         gridColumns:c?.gridTemplateColumns,position:c?.position};
+       });
+      },hero);
+      console.log('IPAD_D100_LAYOUT_DEBUG',width,height,JSON.stringify(debug));
+     }
+     await page.locator(hero+' canvas').waitFor({state:'visible',timeout:12000});
      await page.waitForFunction(selector=>
        !!document.querySelector(selector+' canvas')?.loveRollDie?.projectedBounds,
        hero,{timeout:20000});
