@@ -20,4 +20,4 @@ jobs:
         run: |
           node --check couple-web/eclat-v2-contract.mjs
           node --check couple-web/eclat-v2-editorial.mjs
-          node --test couple-web/eclat-v2-contract.test.mjs
+          node --test couple-web/eclat-v2-contract.test.mjs couple-web/eclat-v2-session.test.mjs
