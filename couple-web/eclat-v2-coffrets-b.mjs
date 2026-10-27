@@ -33,8 +33,8 @@ function investigation(game,v){
  if(variantBlocks.length!==2)throw Error('Deux dossiers approuvés requis');
  const b=variantBlocks[v];
  const first=(p,name)=>use(b,p,name)[0];
- const a=first(/- Indice privé A : «([^»]+)»/g,'Indice A')[0];
- const bSecret=first(/- Indice privé B : «([^»]+)»/g,'Indice B')[0];
+ const a=first(/- Indice privé A : «([^»]+)»/g,'Indice A')[0].trim();
+ const bSecret=first(/- Indice privé B : «([^»]+)»/g,'Indice B')[0].trim();
  const places=first(/Tableau des lieux V[01] : ([^\n]+)\./g,'Lieux')[0]
   .split('; ').map(item=>({name:item.split(' = ')[0],clues:item.split(' = ')[1]}));
  const codes=first(/Codes proposés : \*\*([0-9 ]+\/[0-9 /]+)\*\*/g,'Codes')[0].split(' / ');

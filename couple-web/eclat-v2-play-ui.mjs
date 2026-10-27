@@ -33,8 +33,8 @@ function mainContent(view,status,predictionDraft={}){
  if(view.places)html+='<section class="eclat-v2-tasks"><h3>Tableau des lieux</h3>'+
   '<ul>'+view.places.map(o=>'<li><strong>'+esc(o.name)+'</strong> : '+esc(o.clues)+'</li>').join('')+'</ul></section>';
  if(view.privateMission&&!status.revealed){
-  html+='<section class="eclat-v2-private" aria-label="Mission privée pour '+view.role+'"><small>POUR '+view.role+
-   ' UNIQUEMENT</small><p>'+esc(view.privateMission)+'</p>'+
+  html+='<section class="eclat-v2-private" aria-label="Mission privée pour '+view.role+'"><small>'+esc(view.privateLabel||('POUR '+view.role+' UNIQUEMENT'))+
+   '</small><p>'+esc(view.privateMission)+'</p>'+
    (view.constraint?paragraph(view.constraint):'')+'</section>';
  }
  if(view.bonus){
