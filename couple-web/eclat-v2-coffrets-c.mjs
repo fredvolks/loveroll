@@ -111,9 +111,12 @@ export function eclatV2SceneC({session,viewerId,localDisplayRole=null}){
    out.proposer=n===3?'A':'B';
    out.receiver=n===3?'B':'A';
    out.allowedReplies=['Oui','Une autre proposition','Passer'];
-   out.selectedCard=session.attention_card??null;
-   if(out.selectedCard!==null&&![1,2,3].includes(out.selectedCard))
+   const index=session.attention_index??null;
+   if(index!==null&&(!Number.isInteger(index)||index<0||index>2))
     throw Error('Carte attention serveur invalide');
+   out.selectedCard=index===null?null:index+1;
+   out.selectedTitle=out.selectedCard===null?null:out.cards[index].title;
+   out.response=session.attention_response??null;
    out.unlimitedAlternatives=true;
    out.contactChoice=version===0&&out.selectedCard===3;
    out.noAutoActivity=true;

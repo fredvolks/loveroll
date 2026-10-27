@@ -89,3 +89,11 @@ test('Role isolation for two phones and shared handover',()=>{
  const b=eclatV2SceneC({session:shared,viewerId:A,localDisplayRole:'B'});
  assert.deepEqual(b.mySelection,[]);
 });
+
+test('11 client uses server stored attention index and reply, not a local invented card',()=>{
+ const first=get(11,0,30,3,{attention_index:2,attention_response:'other'});
+ assert.equal(first.selectedCard,3);
+ assert.equal(first.response,'other');
+ assert.match(first.selectedTitle,/danse|écoute/);
+ assert.throws(()=>get(11,1,30,6,{attention_index:7}),/invalide/);
+});

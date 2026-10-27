@@ -61,3 +61,5 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-intersection.test.sql
       - name: Validate two-person optional server timers, pause and expiry
         run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-timers.test.sql
+      - name: Exercise both voluntary roles and alternative attentions in coffret 11
+        run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-seduction.test.sql

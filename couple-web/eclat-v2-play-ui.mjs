@@ -13,6 +13,30 @@ function mainContent(view,status,predictionDraft={},puzzleDraft={},puzzleAttempt
   '<p class="eclat-v2-instruction">'+esc(view.instruction)+'</p>';
  if(view.substepTotal)html+='<p class="eclat-v2-muted">'+(view.coffretId===1?'Enveloppe':view.coffretId===5?'Tour':'Partie')+
   ' '+view.substepIndex+' sur '+view.substepTotal+' de ce moment</p>';
+ if(view.coffretId===11&&view.proposer){
+  const proposer=view.role===view.proposer,chosen=view.selectedCard,response=view.response;
+  html+='<section class="eclat-v2-task" aria-label="Attention de séduction facultative">'+
+   '<h3>Tour de '+view.proposer+' — proposition libre</h3>'+
+   '<p>Ces propositions sont des invitations, jamais des obligations. Aucun historique de refus ni score.</p>';
+  if(chosen===null||response==='other'){
+   if(response==='other')html+='<p>Une autre proposition a été demandée. Il est toujours possible de passer.</p>';
+   if(proposer)html+='<fieldset class="eclat-v2-door"><legend>Choisir une attention</legend>'+
+    view.cards.map((c,i)=>btn('attention-propose:'+i,c.title)).join('')+'</fieldset>';
+   else html+='<p role="status">En attente du choix de '+view.proposer+'.</p>';
+  }else{
+   html+='<p><strong>Invitation :</strong> '+esc(view.selectedTitle)+'</p>';
+   if(response==='yes')html+='<p>Cette invitation est acceptée pour ce tour seulement.</p>';
+   else if(response==='pass')html+='<p>Proposition passée, sans justification.</p>';
+   else if(!proposer)html+='<fieldset class="eclat-v2-door"><legend>Ma réponse</legend>'+
+    btn('attention-reply:yes','Oui')+
+    btn('attention-reply:other','Une autre proposition')+
+    btn('attention-reply:pass','Passer')+'</fieldset>';
+   else html+='<p role="status">Le partenaire choisit librement sa réponse.</p>';
+  }
+  if(view.contactChoice)html+='<p><strong>Tout contact nécessite un nouvel accord explicite des deux. Une écoute côte à côte sans contact est une activité complète.</strong></p>';
+  if(status.device_mode==='one')html+='<p>Ce téléphone retranscrit seulement les choix annoncés oralement, sans se connecter au compte de B.</p>';
+  html+='</section>';
+ }
  if(view.coffretId===10){
   html+='<section class="eclat-v2-task" aria-label="Minuteur facultatif">';
   if(view.sceneNumber===1&&!status.timer_mode){
@@ -353,7 +377,8 @@ function actions(view,status,seenRoles,sharedConfirmed=[]){
  const pendingDoor=view.coffretId===4&&[1,5].includes(view.sceneNumber)&&!status.door_confirmed;
  const secretLocked=view.type==='Secret'&&!status.revealed;
  const puzzleLocked=!!view.puzzle&&!status.puzzle_solved&&status.puzzle_hint_level<2;
- const attentionLocked=!!view.attentions&&!['yes','pass'].includes(status.attention_response);
+ const attentionLocked=(!!view.attentions||view.coffretId===11&&!!view.proposer)&&
+  !['yes','pass'].includes(status.attention_response);
  const wishLocked=view.coffretId===9&&
   ((view.sceneNumber===1&&status.common_cards===null)||
    (view.sceneNumber===3&&view.commonCards?.length>0&&!view.selectedCard));

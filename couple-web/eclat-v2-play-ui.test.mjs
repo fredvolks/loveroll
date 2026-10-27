@@ -301,3 +301,22 @@ test('10 clock never auto-finishes and offers explicit timed or untimed rounds',
  const two=renderEclatV2PlayA({status:status(10,1,90,4,{timer_mode:'with'}),viewerId:aid});
  assert.match(two,/03:00/);
 });
+
+test('11 both distinct partners propose from only three approved cards',()=>{
+ const a=status(11,0,30,3,{attention_index:null,attention_response:null});
+ const onA=renderEclatV2PlayA({status:a,viewerId:aid});
+ const onB=renderEclatV2PlayA({status:a,viewerId:bid});
+ assert.match(onA,/data-eclat-v2-action="attention-propose:0"/);
+ assert.doesNotMatch(onB,/attention-propose:0/);
+ assert.doesNotMatch(onA,/data-eclat-v2-action="act:continue"/);
+ const proposed=renderEclatV2PlayA({status:{...a,attention_index:2},viewerId:bid});
+ assert.match(proposed,/data-eclat-v2-action="attention-reply:other"/);
+ assert.match(proposed,/data-eclat-v2-action="attention-reply:pass"/);
+ assert.match(proposed,/contact nécessite un nouvel accord/);
+ const accepted=renderEclatV2PlayA({status:{...a,attention_index:2,attention_response:'yes'},viewerId:aid});
+ assert.match(accepted,/data-eclat-v2-action="act:continue"/);
+ const b=status(11,1,30,6);
+ const bPropose=renderEclatV2PlayA({status:b,viewerId:bid});
+ assert.match(bPropose,/Tour de B/);
+ assert.match(bPropose,/data-eclat-v2-action="attention-propose:2"/);
+});

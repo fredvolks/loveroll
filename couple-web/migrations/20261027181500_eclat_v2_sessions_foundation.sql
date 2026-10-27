@@ -715,9 +715,12 @@ begin
   raise exception 'Accès interdit' using errcode='42501';end if;
  if p_expected_step is distinct from v_s.chapter_index then
   return public.love_eclat_v2_status(p_session);end if;
- if v_s.coffret_id<>5 or v_s.chapter_plan[v_s.chapter_index]<>6 or v_s.state<>'active' then
+ if not ((v_s.coffret_id=5 and v_s.chapter_plan[v_s.chapter_index]=6) or
+    (v_s.coffret_id=11 and v_s.chapter_plan[v_s.chapter_index] in (3,6))) or v_s.state<>'active' then
   raise exception 'Attention non active';end if;
- v_author:=case when v_s.substep_index=1 then v_s.role_a else v_s.role_b end;
+ v_author:=case when (v_s.coffret_id=5 and v_s.substep_index=1)
+  or (v_s.coffret_id=11 and v_s.chapter_plan[v_s.chapter_index]=3)
+  then v_s.role_a else v_s.role_b end;
  if v_s.device_mode='two' and v_actor<>v_author then
   raise exception 'Seul le partenaire qui propose peut choisir';
  elsif v_s.device_mode='one' and (v_actor<>v_s.role_a or p_joint_oral is distinct from true) then
@@ -753,9 +756,12 @@ begin
   raise exception 'Accès interdit' using errcode='42501';end if;
  if p_expected_step is distinct from v_s.chapter_index then
   return public.love_eclat_v2_status(p_session);end if;
- if v_s.coffret_id<>5 or v_s.chapter_plan[v_s.chapter_index]<>6 or v_s.state<>'active' then
+ if not ((v_s.coffret_id=5 and v_s.chapter_plan[v_s.chapter_index]=6) or
+    (v_s.coffret_id=11 and v_s.chapter_plan[v_s.chapter_index] in (3,6))) or v_s.state<>'active' then
   raise exception 'Réponse attention non active';end if;
- v_receiver:=case when v_s.substep_index=1 then v_s.role_b else v_s.role_a end;
+ v_receiver:=case when (v_s.coffret_id=5 and v_s.substep_index=1)
+  or (v_s.coffret_id=11 and v_s.chapter_plan[v_s.chapter_index]=3)
+  then v_s.role_b else v_s.role_a end;
  if v_s.device_mode='two' and v_actor<>v_receiver then
   raise exception 'Seul le destinataire peut répondre';
  elsif v_s.device_mode='one' and (v_actor<>v_s.role_a or p_joint_oral is distinct from true) then
@@ -1161,6 +1167,12 @@ begin
     v_s.chapter_plan[v_s.chapter_index] in (1,6) and
     v_s.story_decision_scene is distinct from v_s.chapter_plan[v_s.chapter_index] then
    raise exception 'Attendre un choix commun de la contrainte';end if;
+  if p_action='continue' and v_s.coffret_id=11 and
+    v_s.chapter_plan[v_s.chapter_index] in (3,6) and
+    not exists(select 1 from public.love_eclat_v2_attentions where session_id=p_session
+     and step_index=v_s.chapter_index and substep_index=v_s.substep_index
+     and response in ('yes','pass')) then
+   raise exception 'Attendre la réponse volontaire au jeu de séduction';end if;
   if p_action='continue' and v_s.coffret_id=5 and v_s.chapter_plan[v_s.chapter_index]=6
    and not exists(select 1 from public.love_eclat_v2_attentions
     where session_id=p_session and step_index=v_s.chapter_index
