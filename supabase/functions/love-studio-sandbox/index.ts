@@ -140,8 +140,21 @@ Deno.serve(async(req:Request)=>{
       detail:'Si le banc reste réservé, demandez sa suppression sécurisée.'},503);
   }
  }
+ // Before touching even one couple row, verify the two registered Auth users
+ // really belong to this studio sandbox. A corrupted registry must never
+ // initiate any deletion (including a database-level cascade).
+ const {data:registered,error:registeredError}=await service.from('love_studio_test_seats')
+  .select('seat,user_id').eq('admin_id',adminId);
+ if(registeredError)return response({error:'Registre de test indisponible'},503);
+ for(const row of registered||[]){
+  if(!row.user_id)continue;
+  const {data:u,error:lookupError}=await service.auth.admin.getUserById(row.user_id);
+  if(lookupError||!u?.user||u.user.app_metadata?.love_studio_test!==true||
+     u.user.app_metadata?.love_studio_admin!==adminId)
+    return response({error:'Identité non-test détectée : aucune suppression effectuée'},403);
+ }
  // DELETE only the registered test couple plus its two technical identities.
- // The server-side SQL function refuses deletion if any real member is present.
+ // SQL additionally refuses deletion if any unexpected real member is present.
  try{
   const {data:seats,error:purgeError}=await service.rpc('love_studio_purge_test_couple',{p_admin:adminId});
   if(purgeError)return response({error:'Purge du banc refusée : '+purgeError.message},409);
