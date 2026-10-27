@@ -157,6 +157,8 @@ jobs:
       - name: Verify evening finale actions and privacy control (deployment parity)
         run: node --test couple-web/evening-finale-v99.test.mjs
 
+      - name: LR-018 — resume live Soirée without duplicate draws
+        run: node --test couple-web/evening-resume.test.mjs
       - name: LR-014 — category confirmation and private setting
         run: node --test couple-web/evening-category-confirm.test.mjs
       - name: Validate iPad Soirée one-HD-photo contract

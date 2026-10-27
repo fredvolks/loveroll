@@ -36,7 +36,7 @@ test('Web 237 ships one photo rule for iPad and updates both versions and offlin
  assert.match(html,/ipad-soiree-one-photo-v237\.css\?v=20261027-web237/);
  assert.match(app,/soiree-home-template\.mjs\?v=20261027-web237/);
  assert.match(app,/const WEB_RELEASE='2026-10-27\.238'/);
- assert.match(sw,/loveroll-static-v238/);
+ assert.match(sw,/loveroll-static-v239/);
  assert.ok(sw.includes("'./ipad-soiree-one-photo-v237.css'"));
- assert.equal(JSON.parse(read('web-version.json')).build,'2026-10-27.238');
+ assert.equal(JSON.parse(read('web-version.json')).build,'2026-10-27.239');
 });
