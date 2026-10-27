@@ -19,7 +19,7 @@ do $$
 declare s jsonb;sid uuid;
 begin
  s:=public.love_eclat_v2_status();sid:=(s->>'session_id')::uuid;
- if s->'my_music_note' is not null or jsonb_array_length(s->'revealed_music')<>0 then
+ if s->>'my_music_note' is not null or jsonb_array_length(s->'revealed_music')<>0 or position('Chanson A' in s::text)>0 then
   raise exception 'A notes leaked to B';end if;
  begin
   perform public.love_eclat_v2_music_reveal(sid,1);
