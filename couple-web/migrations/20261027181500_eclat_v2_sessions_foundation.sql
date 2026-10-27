@@ -435,6 +435,8 @@ begin
   or public.love_eclat_v2_scene_type(v_s.coffret_id,v_s.chapter_plan[v_s.chapter_index])<>'Secret'
   or v_s.revealed_step=v_s.chapter_index then
   raise exception 'Confirmation privée non autorisée à cette étape'; end if;
+ if v_s.coffret_id=9 then
+  raise exception 'Validez les cartes avec le bouton privé dédié';end if;
  if p_ready is null then raise exception 'Confirmation explicite requise'; end if;
  if p_ready and v_s.coffret_id=7 and
   not exists(select 1 from public.love_eclat_v2_predictions
@@ -471,6 +473,8 @@ begin
  if v_s.state<>'active' or
    public.love_eclat_v2_scene_type(v_s.coffret_id,v_s.chapter_plan[v_s.chapter_index])<>'Secret'
  then raise exception 'Aucune révélation à cette étape'; end if;
+ if v_s.coffret_id=9 then
+  raise exception 'La comparaison des cartes passe par les deux sélections privées';end if;
  if v_s.revealed_step=v_s.chapter_index then return public.love_eclat_v2_status(p_session); end if;
  if v_s.device_mode='one' then
   if v_actor<>v_s.role_a or p_joint_oral is distinct from true then
@@ -1018,6 +1022,8 @@ begin
   if v_s.state<>'paused' then return public.love_eclat_v2_status(p_session); end if;
   update public.love_eclat_v2_sessions set state='active',updated_at=now() where id=p_session;
  elsif p_action='stop' then
+  delete from public.love_eclat_v2_card_choices where session_id=p_session;
+  delete from public.love_eclat_v2_card_votes where session_id=p_session;
   update public.love_eclat_v2_sessions set state='interrupted',ended_at=now(),updated_at=now()
    where id=p_session;
  else
@@ -1059,6 +1065,10 @@ begin
    where session_id=p_session and step_index=v_s.chapter_index;
   delete from public.love_eclat_v2_predictions
    where session_id=p_session and step_index=v_s.chapter_index;
+  if v_s.coffret_id=9 and (v_s.chapter_plan[v_s.chapter_index]=1 or
+     v_s.chapter_index=cardinality(v_s.chapter_plan)) then
+   delete from public.love_eclat_v2_card_choices where session_id=p_session;
+  end if;
   -- Do not delete current attention before checking its response.
 
   -- Short routes still include each question/theme: passing the first

@@ -9,6 +9,12 @@ begin
   (s->>'session_id')::uuid,(s->>'chapter_index')::integer,'stop');end if;
  s:=public.love_eclat_v2_start(9,30,'two');sid:=(s->>'session_id')::uuid;
  s:=public.love_eclat_v2_cards_submit(sid,1,array[1,7,9]::smallint[]);
+ begin
+  perform public.love_eclat_v2_mark_ready(sid,1,true);
+  raise exception 'Generic readiness bypassed private selections';
+ exception when raise_exception then
+  if sqlerrm<>'Validez les cartes avec le bouton privé dédié' then raise;end if;
+ end;
  if s->'my_cards'<>'[1,7,9]'::jsonb or s->'common_cards'<> 'null'::jsonb then
   raise exception 'First private 09 vote saved incorrectly';end if;
  begin
@@ -79,6 +85,17 @@ begin
  s:=public.love_eclat_v2_cards_shared(sid,1,array[7]::smallint[],true);
  if s->'common_cards'<>'[7]'::jsonb or s->'my_cards'<>'[]'::jsonb then
   raise exception 'Shared device stored private picks';end if;
+end $$;
+-- Verify unfinished private choices are purged when the session is stopped.
+set request.jwt.claim.sub='00000000-0000-0000-0000-000000000001';
+do $$
+declare s jsonb;sid uuid;
+begin
+ s:=public.love_eclat_v2_status();sid:=(s->>'session_id')::uuid;
+ perform public.love_eclat_v2_act(sid,1,'stop');
+ s:=public.love_eclat_v2_start(9,30,'two');sid:=(s->>'session_id')::uuid;
+ perform public.love_eclat_v2_cards_submit(sid,1,array[1,3]::smallint[]);
+ perform public.love_eclat_v2_act(sid,1,'stop');
 end $$;
 reset role;
 do $$
