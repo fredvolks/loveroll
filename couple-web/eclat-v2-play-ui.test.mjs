@@ -84,3 +84,23 @@ test('Only controller A can advance after common oral agreement',()=>{
  assert.doesNotMatch(b,/data-eclat-v2-action="act:continue"/);
  assert.match(b,/accord oral/);
 });
+
+test('05–08 stage UX reflects approved content; Q predictions stay private until saved',()=>{
+ const reunion=renderEclatV2PlayA({status:status(5,0,30,3),viewerId:aid});
+ assert.match(reunion,/Question A/);assert.match(reunion,/Question B/);
+ const evidence=renderEclatV2PlayA({status:status(6,0,30,1),viewerId:aid});
+ assert.match(evidence,/DOSSIER A/);assert.doesNotMatch(evidence,/avec une horloge/);
+ const other=renderEclatV2PlayA({status:status(6,0,30,1),viewerId:bid});
+ assert.match(other,/DOSSIER B/);assert.doesNotMatch(other,/contient le chiffre 4/);
+ const q=renderEclatV2PlayA({status:status(7,0,30,1),viewerId:aid});
+ assert.match(q,/data-eclat-v2-action="answer:0"/);
+ assert.match(q,/data-eclat-v2-action="prediction:0"/);
+ assert.doesNotMatch(q,/data-eclat-v2-action="ready:true"/);
+ const withDraft=renderEclatV2PlayA({status:status(7,0,30,1),viewerId:aid,
+  predictionDraft:{answer:0,prediction:1}});
+ assert.match(withDraft,/data-eclat-v2-action="save-prediction"/);
+ const saved=renderEclatV2PlayA({status:status(7,0,30,1,{my_answer:0,my_prediction:1}),viewerId:aid});
+ assert.match(saved,/data-eclat-v2-action="ready:true"/);
+ const music=renderEclatV2PlayA({status:status(8,1,30,1),viewerId:aid});
+ assert.match(music,/Thème 1/);assert.doesNotMatch(music,/<audio|<iframe/);
+});

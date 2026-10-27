@@ -127,9 +127,10 @@ export function eclatV2SceneB({session,viewerId,localDisplayRole=null}){
    out.myPrediction=session.my_prediction??null;
    out.bothReady=session.both_ready===true;
    out.revealed=session.revealed===true;
-   if(out.revealed&&session.reveal_answers){
+   // This payload exists only after the guarded RPC has finished the joint reveal.
+   // It may describe the previous Q when scene 3/6 advances to substep 2.
+   if(session.reveal_answers && typeof session.reveal_answers==='object')
     out.revealAnswers=session.reveal_answers;
-   }
   }
   if(n===8)out.finale='Vous n’avez pas besoin de penser pareil pour continuer à vous découvrir.';
  }

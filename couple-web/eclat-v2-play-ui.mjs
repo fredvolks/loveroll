@@ -2,26 +2,101 @@
 // Server snapshot is authoritative; only the active viewer's fictional mission
 // enters DOM. One-phone mode explicitly covers the screen between A and B.
 import {eclatV2SceneA} from './eclat-v2-coffrets-a.mjs';
+import {eclatV2SceneB} from './eclat-v2-coffrets-b.mjs';
 const esc =value=>String(value??'').replace(/[&<>"']/g,ch=>
  ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const btn=(action,label,style='')=>'<button type="button" class="eclat-v2-btn '+style+'" data-eclat-v2-action="'+esc(action)+'">'+esc(label)+'</button>';
 const paragraph=s=>'<p>'+esc(s)+'</p>';
-function mainContent(view,status){
+function mainContent(view,status,predictionDraft={}){
  let html='<h2>'+esc(view.title)+'</h2>'+
   '<p class="eclat-v2-instruction">'+esc(view.instruction)+'</p>';
- if(view.substepTotal)html+='<p class="eclat-v2-muted">Enveloppe '+view.substepIndex+' sur '+view.substepTotal+' de ce moment</p>';
+ if(view.substepTotal)html+='<p class="eclat-v2-muted">'+(view.coffretId===1?'Enveloppe':view.coffretId===5?'Tour':'Partie')+
+  ' '+view.substepIndex+' sur '+view.substepTotal+' de ce moment</p>';
  if(view.envelopes?.length){
   html+='<div class="eclat-v2-tasks">'+view.envelopes.map(e=>
    '<section class="eclat-v2-task"><small>ENVELOPPE '+e.number+(e.skipped?' · PASSÉE':'')+'</small>'+
    '<p>'+esc(e.theme)+'</p><p>Ordre : '+e.first+' puis '+(e.first==='A'?'B':'A')+
    ' · Jusqu’à trois indices et deux propositions par personne.</p></section>').join('')+'</div>';
  }
+ if(view.questions?.length&&view.coffretId===5)
+  html+='<section class="eclat-v2-tasks"><h3>À tour de rôle</h3>'+
+   view.questions.map(q=>'<p><strong>'+esc(q.name)+'</strong> · '+esc(q.text)+'</p>').join('')+'</section>';
+ if(view.attentions){
+  html+='<section class="eclat-v2-tasks"><h3>Au tour de '+view.turn+' de proposer</h3>'+
+   '<p>Une attention peut rester imaginaire, sans achat ni réservation.</p>'+
+   '<ol>'+view.attentions.map(t=>'<li>'+esc(t)+'</li>').join('')+'</ol>'+
+   '<p>L’autre choisit librement : Oui / Une autre proposition / Passer. Les refus ne sont pas enregistrés comme préférences.</p></section>';
+ }
+ if(view.endingOptions)html+='<section class="eclat-v2-tasks"><h3>Votre finale facultative</h3>'+
+  '<ul>'+view.endingOptions.map(o=>'<li>'+esc(o)+'</li>').join('')+'</ul></section>';
+ if(view.opening)html+='<p>'+esc(view.opening)+'</p>';
+ if(view.places)html+='<section class="eclat-v2-tasks"><h3>Tableau des lieux</h3>'+
+  '<ul>'+view.places.map(o=>'<li><strong>'+esc(o.name)+'</strong> : '+esc(o.clues)+'</li>').join('')+'</ul></section>';
  if(view.privateMission&&!status.revealed){
   html+='<section class="eclat-v2-private" aria-label="Mission privée pour '+view.role+'"><small>POUR '+view.role+
    ' UNIQUEMENT</small><p>'+esc(view.privateMission)+'</p>'+
    (view.constraint?paragraph(view.constraint):'')+'</section>';
  }
- if(view.bonus)html+='<section class="eclat-v2-task"><strong>Bonus facultatif</strong>'+paragraph(view.bonus)+'</section>';
+ if(view.bonus){
+  if(typeof view.bonus==='string')
+   html+='<section class="eclat-v2-task"><strong>Bonus facultatif</strong>'+paragraph(view.bonus)+'</section>';
+  else html+='<section class="eclat-v2-task"><strong>Énigme bonus</strong>'+paragraph(view.bonus.cipher)+
+   (view.bonus.key?paragraph(view.bonus.key):'')+
+   '<details><summary>Voir la solution (sur demande)</summary>'+paragraph(view.bonus.solution)+'</details></section>';
+ }
+ if(view.puzzle){
+  const opt=view.puzzle.kind==='place-time'?
+   'Lieux : '+view.puzzle.places.join(' · ')+' ; heures : '+view.puzzle.times.join(' · '):
+   'Codes : '+view.puzzle.codes.join(' · ');
+  html+='<section class="eclat-v2-task"><strong>Votre enquête</strong>'+paragraph(opt)+
+   '<p>Comparez vos dossiers et choisissez ensemble votre réponse. Vous pouvez demander une aide, réessayer ou passer.</p>'+
+   '<details><summary>Aide niveau 1</summary>'+paragraph(view.puzzle.firstHelp)+
+    '<details><summary>Révéler la solution (niveau 2)</summary>'+
+     paragraph(Object.values(view.puzzle.solution).join(' · '))+'</details></details></section>';
+ }
+ if(view.investigationFinal){
+  const f=view.investigationFinal;
+  html+='<section class="eclat-v2-task"><h3>La lettre finale</h3>'+
+   paragraph([f.place,f.time,f.code].join(' · '))+paragraph(f.letter)+
+   (f.assistance?paragraph('Résolution avec aide'):'')+'</section>';
+ }
+ if(view.questions?.length&&view.secretComparison){
+  const q=view.questions[0],draft=predictionDraft||{};
+  html+='<section class="eclat-v2-task"><h3>Question '+q.number+'</h3>'+
+   paragraph(q.prompt)+'<p>Choisis ta réponse puis celle que tu imagines pour l’autre. Aucune note.</p>';
+  if(status.device_mode==='two'){
+   for(const [kind,heading,key] of [['answer','Ma réponse','my_answer'],['prediction',"Ma prédiction pour l’autre",'my_prediction']]){
+    const selected=status[key]??draft[kind];
+    html+='<fieldset class="eclat-v2-door"><legend>'+heading+'</legend>'+
+     q.options.map((option,i)=>btn(kind+':'+i,
+      (selected===i?'✓ ':'')+option)).join('')+'</fieldset>';
+   }
+   if(status.my_answer!==null&&status.my_answer!==undefined&&
+       status.my_prediction!==null&&status.my_prediction!==undefined)
+    html+='<p role="status">Tes deux choix sont enregistrés dans ton compte, pas dans celui de ton partenaire.</p>';
+   else if(draft.answer!==null&&draft.answer!==undefined&&draft.prediction!==null&&draft.prediction!==undefined)
+    html+=btn('save-prediction','Enregistrer mes deux choix','primary');
+  }else html+='<p>En mode téléphone partagé, les réponses restent privées et éphémères; cette sélection numérique n’est pas encore activée.</p>';
+  html+='</section>';
+  if(view.revealAnswers?.players){
+   const r=view.revealAnswers.players;
+   if(r.A&&r.B)html+='<section class="eclat-v2-activity"><strong>Découverte de la question '+esc(view.revealAnswers.question)+'</strong>'+
+    '<p>A : '+esc(q.options[r.A.answer]??'Option '+(r.A.answer+1))+' — '+(r.A.prediction===r.B.answer?'Comme tu l’imaginais':'Une découverte')+'</p>'+
+    '<p>B : '+esc(q.options[r.B.answer]??'Option '+(r.B.answer+1))+' — '+(r.B.prediction===r.A.answer?'Comme tu l’imaginais':'Une découverte')+'</p></section>';
+  }
+ }
+ if(view.themes){
+  html+='<section class="eclat-v2-task"><strong>Thème '+view.themes[0].number+'</strong>'+
+   paragraph(view.themes[0].theme)+
+   '<p>Trois indices maximum, deux propositions maximum, à tour de rôle. Parlez de la musique sans diffuser de paroles.</p></section>';
+ }
+ if(view.listeningChoices)
+  html+='<section class="eclat-v2-task"><strong>Choisissez ensemble</strong><ul>'+
+   view.listeningChoices.map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>'+
+   '<p>LoveRoll ne démarre aucune lecture musicale.</p></section>';
+ if(view.playlistLimit)
+  html+='<section class="eclat-v2-task"><p>Jusqu’à '+view.playlistLimit+
+   ' titres révélés, uniquement avec l’accord des deux personnes. Aucune chanson ou fichier n’est téléchargé par l’app.</p></section>';
  if(view.optionalObjects)html+='<details><summary>Objets possibles, entièrement facultatifs</summary><p>'+
   esc(view.optionalObjects.join(' · '))+'</p></details>';
  if(view.choices?.length && view.coffretId===3){
@@ -75,11 +150,16 @@ function actions(view,status,seenRoles){
  if(status.state!=='active')return '';
  if(view.type==='Secret'&&!status.revealed){
   if(status.device_mode==='two'){
-   rows+=status.my_ready?btn('ready:false','Retirer ma confirmation'):btn('ready:true','Prêt à révéler','primary');
+   const missingPrediction=view.coffretId===7&&
+    (status.my_answer===null||status.my_answer===undefined||
+     status.my_prediction===null||status.my_prediction===undefined);
+   if(missingPrediction)rows+='<span role="status">Enregistre ta réponse et ta prédiction avant de confirmer.</span>';
+   else rows+=status.my_ready?btn('ready:false','Retirer ma confirmation'):btn('ready:true','Prêt à révéler','primary');
    if(status.can_reveal)rows+=btn('reveal','Révéler les missions ensemble','primary');
    else rows+='<span role="status">Révélation après les deux confirmations.</span>';
   }else{
-   if(seenRoles.includes('A')&&seenRoles.includes('B'))
+   if(view.coffretId===7)rows+='<span role="status">La comparaison privée sur un téléphone est encore en développement.</span>';
+   else if(seenRoles.includes('A')&&seenRoles.includes('B'))
     rows+=btn('reveal-oral','Nous sommes tous les deux d’accord pour révéler','primary');
    else rows+='<span role="status">Chaque personne consulte sa mission après remise du téléphone.</span>';
   }
@@ -96,7 +176,7 @@ function actions(view,status,seenRoles){
  rows+=btn('act:stop','Arrêter cette séance');
  return rows;
 }
-export function renderEclatV2PlayA({status,viewerId,localRole=null,seenRoles=[]}){
+export function renderEclatV2PlayA({status,viewerId,localRole=null,seenRoles=[],predictionDraft={}}){
  if(!status?.access)return '<section class="eclat-v2-stage"><p>Accès Éclat requis.</p></section>';
  if(!status.active)return '<section class="eclat-v2-stage"><p>Aucune séance Éclat V2 en cours.</p></section>';
  if(status.content_version!==2)throw Error('L’interface Éclat V2 refuse les séances V1');
@@ -108,13 +188,13 @@ export function renderEclatV2PlayA({status,viewerId,localRole=null,seenRoles=[]}
    btn('show-role:B','Écran pour B · Je suis prêt','primary')+
    '<p>Aucune réponse privée n’est enregistrée dans le compte de l’autre personne.</p></section>';
  }
- const view=eclatV2SceneA({session:status,viewerId,localDisplayRole:localRole});
+ const view=(status.coffret_id<=4?eclatV2SceneA:eclatV2SceneB)({session:status,viewerId,localDisplayRole:localRole});
  return '<section class="eclat-v2-stage" data-eclat-v2-scene="'+view.sceneNumber+'">'+
   '<header><small>ÉCLAT · COFFRET '+String(view.coffretId).padStart(2,'0')+
   ' · '+view.variantName+'</small><p>Étape '+view.number+' sur '+view.total+
   ' · '+view.budgetMinutes+' min indicatives</p></header>'+
   (status.device_mode==='one'?'<nav class="eclat-v2-handover-link">'+btn('hide-role','Masquer et passer le téléphone')+'</nav>':'')+
-  '<div class="eclat-v2-content">'+mainContent(view,status)+'</div>'+
+  '<div class="eclat-v2-content">'+mainContent(view,status,predictionDraft)+'</div>'+
   '<footer class="eclat-v2-actions">'+actions(view,status,seenRoles)+'</footer>'+
   '<p class="eclat-v2-muted">Toutes les activités sont facultatives. Aucun score. Aucun contact sans accord explicite.</p>'+
   '</section>';

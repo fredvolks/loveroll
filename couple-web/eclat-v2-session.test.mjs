@@ -40,3 +40,12 @@ test('Door selection is an explicit dedicated RPC and cannot impersonate B',asyn
  assert.ok(calls.every(x=>!JSON.stringify(x.args).includes('user_id')));
  assert.throws(()=>api.door({sessionId:sid,expectedStep:1,door:'Hasard'}),RangeError);
 });
+
+test('Prediction RPC authenticates the writer without accepting an author ID',async()=>{
+ const calls=[];const api=createEclatV2SessionApi({async rpc(name,args){
+  calls.push([name,args]);return {data:status};}});
+ await api.predict({sessionId:sid,expectedStep:1,answer:0,prediction:2});
+ assert.deepEqual(calls[0],['love_eclat_v2_predict',{
+  p_session:sid,p_expected_step:1,p_answer:0,p_prediction:2}]);
+ assert.throws(()=>api.predict({sessionId:sid,expectedStep:1,answer:5,prediction:0}),RangeError);
+});

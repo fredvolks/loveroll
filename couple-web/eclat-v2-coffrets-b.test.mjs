@@ -63,8 +63,11 @@ test('07 Q1..Q5 sequential; always 3 options; never reveal before both ready',()
   }
   assert.deepEqual(seen,[1,2,3,4,5]);
  }
- const notReady=view(7,0,30,1,a,{reveal_answers:{A:1,B:2}});
+ const notReady=view(7,0,30,1);
  assert.equal(notReady.revealAnswers,undefined);
+ const approved=view(7,0,90,3,a,{substep_index:2,reveal_answers:{
+   question:2,players:{A:{answer:0,prediction:1},B:{answer:1,prediction:0}}}});
+ assert.equal(approved.revealAnswers.question,2);
 });
 test('08 T1..T5 sequential, no automated streaming or lyrics',()=>{
  for(let v=0;v<=1;v++){

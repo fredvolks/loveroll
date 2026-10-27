@@ -7,15 +7,16 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
  if(!root||typeof root.addEventListener!=='function'||!api||!viewerId||!initialStatus)
   throw new TypeError('Conteneur, client, compte et séance requis');
  let status=initialStatus,role=null,seen=new Set(),busy=false,disposed=false;
+ let predictionDraft={answer:null,prediction:null};
  const paint=()=>{if(!disposed)root.innerHTML=renderEclatV2PlayA({
-  status,viewerId,localRole:role,seenRoles:[...seen]});};
+  status,viewerId,localRole:role,seenRoles:[...seen],predictionDraft});};
  async function refresh(){
   if(disposed)return;
   const updated=await api.status(status.session_id);
   if(updated.session_id!==status.session_id)throw Error('Séance Éclat remplacée');
   const changed=updated.chapter_index!==status.chapter_index||updated.substep_index!==status.substep_index;
   status=updated;
-  if(changed){role=null;seen=new Set();}
+  if(changed){role=null;seen=new Set();predictionDraft={answer:null,prediction:null};}
   paint();
  }
  async function click(event){
@@ -24,6 +25,12 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
   const command=button.getAttribute('data-eclat-v2-action');
   if(!command)return;
   if(command==='hide-role'){role=null;paint();return;}
+  if(command.startsWith('answer:')||command.startsWith('prediction:')){
+   if(status.coffret_id!==7||status.device_mode!=='two'||status.state!=='active'||status.revealed)return;
+   const [key,index]=command.split(':'),value=Number(index);
+   if(!['answer','prediction'].includes(key)||![0,1,2].includes(value))return;
+   predictionDraft={...predictionDraft,[key]:value};paint();return;
+  }
   if(command==='show-role:A'||command==='show-role:B'){
    if(status.device_mode!=='one'||viewerId!==status.role_a)return;
    role=command.endsWith(':A')?'A':'B';seen.add(role);paint();return;
@@ -33,7 +40,11 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
   try{
    const sid=status.session_id,idx=status.chapter_index;
    let next;
-   if(command.startsWith('act:'))
+   if(command==='save-prediction'){
+    if(![0,1,2].includes(predictionDraft.answer)||![0,1,2].includes(predictionDraft.prediction))return;
+    next=await api.predict({sessionId:sid,expectedStep:idx,
+      answer:predictionDraft.answer,prediction:predictionDraft.prediction});
+   }else if(command.startsWith('act:'))
     next=await api.act({sessionId:sid,expectedStep:idx,action:command.slice(4)});
    else if(command==='ready:true'||command==='ready:false')
     next=await api.ready({sessionId:sid,expectedStep:idx,ready:command==='ready:true'});
@@ -50,7 +61,9 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
     next=await api.door({sessionId:sid,expectedStep:idx,door,jointOral:status.device_mode==='one'});
    }else return;
    if(next.session_id!==sid)throw Error('Réponse d’une séance différente');
-   if(next.chapter_index!==idx||next.substep_index!==status.substep_index){role=null;seen=new Set();}
+   if(next.chapter_index!==idx||next.substep_index!==status.substep_index){
+    role=null;seen=new Set();predictionDraft={answer:null,prediction:null};
+   }
    if(next.revealed && status.device_mode==='one')role=null;
    status=next;paint();
   }catch(err){onError(err);}finally{busy=false;}
