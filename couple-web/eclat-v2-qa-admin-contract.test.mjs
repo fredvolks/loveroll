@@ -37,3 +37,12 @@ test('QA cannot use production URL or secret/admin keys',()=>{
  assert.match(qa,/detectSessionInUrl:false/);
  assert.match(qa,/validateEclatQaPair/);
 });
+
+test('operator and both QA players cannot be the same identity or skip entitlement',()=>{
+ const qa=readFileSync(new URL('./eclat-v2-qa-workbench.mjs',import.meta.url),'utf8');
+ assert.match(qa,/operatorId===data\.user\.id/);
+ assert.match(qa,/players\[role\]\.user\?\.id===data\.user\.id/);
+ assert.match(qa,/Accès Éclat Premium QA non autorisé/);
+ assert.match(qa,/players\[role\]\.api\.status\(\)/);
+ assert.match(qa,/await client\.auth\.signOut\(\{scope:'local'\}\)\.catch/);
+});

@@ -109,6 +109,10 @@ export function createEclatV2QaWorkbench({
   const {data:check,error:authError}=await operatorClient.auth.getUser();
   if(authError||check?.user?.id!==data.user.id)
    throw new Error('Identité opérateur non vérifiée');
+  if(['A','B'].some(role=>players[role].user?.id===data.user.id)){
+   await operatorClient.auth.signOut({scope:'local'});
+   throw new Error('L’opérateur QA doit être distinct des deux joueurs');
+  }
   operatorId=data.user.id;operatorButtons();
   feedback('Identité QA validée. La fonction serveur vérifiera séparément le droit de créer ou de supprimer.');
  }
@@ -198,11 +202,20 @@ export function createEclatV2QaWorkbench({
   if(authError||confirmed?.user?.id!==data.user.id)
    throw new Error('Identité du joueur non vérifiée');
   const other=role==='A'?'B':'A';
-  if(players[other].user?.id===data.user.id){
+  if(players[other].user?.id===data.user.id||operatorId===data.user.id){
    await client.auth.signOut({scope:'local'});
-   throw new Error('A et B doivent se connecter avec deux comptes différents');
+   throw new Error('Les trois identités QA (opérateur, A et B) doivent être distinctes');
   }
-  players[role].user=data.user;progress(role,'Connecté avec le compte QA');
+  try{
+   // Fail early if the real backend has not approved both the duo and
+   // its Éclat entitlement. Never fabricate access in the QA console.
+   const status=await players[role].api.status();
+   if(status?.access!==true)throw new Error('Accès Éclat Premium QA non autorisé');
+  }catch(error){
+   await client.auth.signOut({scope:'local'}).catch(()=>{});
+   throw error;
+  }
+  players[role].user=data.user;progress(role,'Connecté · accès Éclat confirmé');
   if(players.A.user&&players.B.user){
    show('game',true);
    if(!soireeBench){
