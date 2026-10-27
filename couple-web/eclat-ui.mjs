@@ -19,7 +19,26 @@ function memoHtml(history,id,status,full=false,unavailable=false){
  return '<span class="eclat-memo'+(m.active?' is-running':'')+'" aria-label="Progression du coffret"><span>'+label+'</span>'+
   ((m.started||full)?'<span class="eclat-memo-durations">'+[30,60,90].map(n=>'<span class="'+(m.completed.includes(n)?'is-done':'')+'">'+n+' min'+(m.completed.includes(n)?' ✓':'')+'</span>').join('')+'</span>':'')+'</span>';
 }
-export function eclatHtml({status=null,selected=1,minutes=60,details=false,members=[],userId=null,music=false,finished=null,history=[],historyError=false,browse=false,noteState={}}={}){
+// LR-ECLAT-001 : one catalogue, grouped by the owner's approved intentions.
+const ECLAT_INTENTIONS=[
+ {id:'together',label:'Jouer ensemble',ids:[1,2,4,6,7,10,12]},
+ {id:'reconnect',label:'Se retrouver',ids:[1,5,8]},
+ {id:'closer',label:'Se rapprocher',ids:[3,9,11]},
+ {id:'all',label:'Tous les coffrets',ids:ECLAT_COFFRETS.map(c=>c.id)}
+];
+function eclatRecommendation(history){
+ const lastStart=new Map();
+ for(const row of history||[]){
+  const id=Number(row.coffret_id),date=Date.parse(row.started_at||'');
+  if(!ECLAT_COFFRETS.some(c=>c.id===id))continue;
+  lastStart.set(id,Math.max(lastStart.get(id)??0,Number.isFinite(date)?date:0));
+ }
+ const newOne=ECLAT_COFFRETS.find(c=>!lastStart.has(c.id));
+ if(newOne)return {coffret:newOne,reason:'À découvrir · pas encore commencé'};
+ const oldOne=[...ECLAT_COFFRETS].sort((a,b)=>lastStart.get(a.id)-lastStart.get(b.id)||a.id-b.id)[0];
+ return {coffret:oldOne,reason:'À retrouver · commencé depuis le plus longtemps'};
+}
+export function eclatHtml({status=null,selected=1,minutes=30,intent='all',discovery=true,details=false,members=[],userId=null,music=false,finished=null,history=[],historyError=false,browse=false,noteState={}}={}){
  const access=status?.access===true,active=status?.active===true;
  const c=eclatCoffret(active&&!browse?status.coffret_id:selected)||ECLAT_COFFRETS[0];
  const heading='<header class="eclat-top">'+
@@ -64,13 +83,18 @@ export function eclatHtml({status=null,selected=1,minutes=60,details=false,membe
     '<button type="button" class="eclat-primary" disabled>Activation prochainement</button></div>')+
    btn('eclat:library','← Voir les 12 coffrets','eclat-link')+'</section>';
  }else{
+  const group=ECLAT_INTENTIONS.find(item=>item.id===intent)||ECLAT_INTENTIONS[3];
+  const visibleCoffrets=ECLAT_COFFRETS.filter(c=>!discovery||group.ids.includes(c.id));
+  const suggestion=discovery&&!active&&!historyError?eclatRecommendation(history):null;
   body='<section class="eclat-library">'+lead+
    (active?btn('eclat:resume','Reprendre notre coffret en cours '+goldArrowHtml(),'eclat-resume'):'')+
    (historyError?'<p class="eclat-history-notice" role="status">Historique temporairement indisponible.</p>':'')+
-   '<h3 class="eclat-gallery-a11y">Nos douze expériences · choisir un coffret</h3>'+
-   '<div class="eclat-grid eclat-photo-grid" role="list">'+ECLAT_COFFRETS.map((coff,i)=>
+   (discovery?'<nav class="eclat-intents" aria-label="Explorer les coffrets selon notre envie">'+ECLAT_INTENTIONS.map(item=>btn('eclat:intent:'+item.id,esc(item.label),'eclat-intent'+(group.id===item.id?' is-selected':''))).join('')+'</nav>':'')+ 
+   (suggestion?'<button type="button" class="eclat-recommendation" data-action="eclat:suggest:'+suggestion.coffret.id+'" aria-label="Voir notre suggestion : '+esc(suggestion.coffret.title)+'"><span><small>NOTRE SUGGESTION · '+esc(suggestion.reason)+'</small><strong>'+esc(suggestion.coffret.title)+'</strong></span><span aria-hidden="true">Voir le coffret ›</span></button>':'')+
+   '<h3 class="eclat-gallery-a11y">'+esc(group.label)+' · '+visibleCoffrets.length+' coffrets</h3>'+
+   '<div class="eclat-grid eclat-photo-grid" role="list">'+visibleCoffrets.map(coff=>
     '<button role="listitem" type="button" class="eclat-tile" data-action="eclat:detail:'+coff.id+'" aria-label="Ouvrir le coffret '+String(coff.id).padStart(2,'0')+' : '+esc(coff.title)+'">'+
-     '<span aria-hidden="true" class="eclat-tile-photo" style="'+atlasPosition(coff.id)+'--photo-y:'+(100*i/11).toFixed(5)+'%"></span>'+
+     '<span aria-hidden="true" class="eclat-tile-photo" style="'+atlasPosition(coff.id)+'--photo-y:'+(100*(Number(coff.id)-1)/11).toFixed(5)+'%"></span>'+
      '<span class="eclat-tile-number">'+String(coff.id).padStart(2,'0')+' / 12</span>'+
      '<strong>'+esc(coff.title)+'</strong>'+
      memoHtml(history,coff.id,status,false,historyError)+

@@ -48,7 +48,7 @@ test('LoveRoll build versions agree between endpoint, app, HTML and imported mod
  assert.match(html,/premium-home\.css\?v=20261019-ipad155/);
  assert.ok(app.includes('premium-home.mjs?v='+appTag));
  assert.match(app,new RegExp("dice3d\\.js\\?v="+diceTag));
- assert.ok(app.includes('premium-evening.mjs?v=20261022-home228'));
+ assert.ok(app.includes('premium-evening.mjs?v='+appTag));
  assert.ok(html.includes('evening-editorial.css?v=20261017-ritual130'));
  assert.ok(app.includes('onboarding.mjs?v=20261018-style148'));
  assert.ok(app.includes('json-libraries.mjs?v=20261016-restore113'));
@@ -107,7 +107,7 @@ test('Orphaned active evening NEVER blocks a corrected Web release from loading'
 
 test('Éclat mode tabs and title layout resources are cached and versioned',()=>{
  assert.ok(html.includes('evening-eclat-switcher.css?v=20261020-switch178'));
- assert.ok(app.includes('eclat-ui.mjs?v=20261022-home228'));
+ assert.ok(app.includes('eclat-ui.mjs?v='+appTag));
  assert.ok(sw.includes('./evening-eclat-switcher.mjs'));
  assert.ok(sw.includes('./evening-eclat-switcher.css'));
  assert.ok(read('ritual-titles.css').includes('.eclat-page-title'));
@@ -115,7 +115,7 @@ test('Éclat mode tabs and title layout resources are cached and versioned',()=>
 
 test('Web 179 delivers the selected twelve photographic coffrets offline',()=>{
  assert.ok(html.includes('eclat-photo-gallery-v179.css?v=20261020-photo179'));
- assert.ok(app.includes('eclat-ui.mjs?v=20261022-home228'));
+ assert.ok(app.includes('eclat-ui.mjs?v='+appTag));
  assert.ok(sw.includes('./assets/eclat-photo-strip.webp'));
  assert.ok(sw.includes('./eclat-photo-gallery-v179.css'));
  const style=read('eclat-photo-gallery-v179.css');
@@ -164,7 +164,7 @@ test('Web 183 adds cinematic theme assets and new ruby die optics',()=>{
  assert.ok(sw.includes('./assets/eclat-photo-strip-v183.webp'));
  assert.ok(sw.includes('./assets/eclat-secret-letter-v183.webp'));
  assert.ok(sw.includes('./assets/loveroll-romance-scene-v183.webp'));
- assert.ok(app.includes('eclat-ui.mjs?v=20261022-home228'));
+ assert.ok(app.includes('eclat-ui.mjs?v='+appTag));
  assert.ok(app.includes('service-worker.js?v='+appTag));
 });
 

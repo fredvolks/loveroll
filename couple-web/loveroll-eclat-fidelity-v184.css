@@ -141,3 +141,13 @@
   overflow:hidden!important;display:block!important;
  }
 }
+
+/* Discovery adds useful controls above the artwork. In a legacy fixed-grid
+   layout, scroll the gallery internally rather than squeezing 6 rows until
+   titles collide with their numbered labels. The real night-gallery layout
+   retains its own larger scrolling rows. */
+#app.loveroll-eclat-page:not(.has-night-gallery) .eclat-library:has(.eclat-intents) .eclat-photo-grid{
+ grid-template-rows:repeat(6,minmax(112px,1fr))!important;
+ overflow-y:auto!important;overscroll-behavior:contain;
+ align-content:start!important;scrollbar-width:thin;
+}
