@@ -74,3 +74,13 @@ test('Optional massage asks explicit contact consent and supports withdrawal',()
  assert.match(agreed,/Retirer mon Oui/);
  assert.doesNotMatch(agreed,/data-eclat-v2-action="contact:yes"/);
 });
+
+test('Only controller A can advance after common oral agreement',()=>{
+ const s=status(3,0,30,3);
+ const a=renderEclatV2PlayA({status:s,viewerId:aid});
+ const b=renderEclatV2PlayA({status:s,viewerId:bid});
+ assert.match(a,/data-eclat-v2-action="act:continue"/);
+ assert.match(a,/après notre accord/);
+ assert.doesNotMatch(b,/data-eclat-v2-action="act:continue"/);
+ assert.match(b,/accord oral/);
+});

@@ -75,3 +75,25 @@ begin
  if s->>'chapter_number'<>'8' or s->>'substep_index'<>'1'
  then raise exception 'Final invitation did not open correctly';end if;
 end $$;
+
+set request.jwt.claim.sub='00000000-0000-0000-0000-000000000002';
+do $$
+declare s jsonb;
+begin
+ s:=public.love_eclat_v2_status();
+ if s->>'chapter_number'<>'8' then raise exception 'Finale attendue pour le test du contrôleur';end if;
+ begin
+  perform public.love_eclat_v2_act((s->>'session_id')::uuid,4,'continue');
+  raise exception 'B advanced common finale without controlling the game';
+ exception when raise_exception then
+  if sqlerrm<>'Seul le contrôleur de séance peut avancer' then raise;end if;
+ end;
+end $$;
+set request.jwt.claim.sub='00000000-0000-0000-0000-000000000001';
+do $$
+declare s jsonb;
+begin
+ s:=public.love_eclat_v2_status();
+ s:=public.love_eclat_v2_act((s->>'session_id')::uuid,4,'continue');
+ if s->>'state'<>'finished' then raise exception 'Controller could not complete the finale';end if;
+end $$;

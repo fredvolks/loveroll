@@ -402,6 +402,10 @@ begin
    where id=p_session;
  else
   if v_s.state<>'active' then raise exception 'Reprendre la séance avant de continuer'; end if;
+  -- The creator is the common-scene controller; the other user may still pause,
+  -- pass or stop, but cannot advance both people without the controller's act.
+  if p_action='continue' and v_actor<>v_s.role_a then
+   raise exception 'Seul le contrôleur de séance peut avancer';end if;
   v_type:=public.love_eclat_v2_scene_type(v_s.coffret_id,v_s.chapter_plan[v_s.chapter_index]);
   if p_action='continue' and v_s.coffret_id=4 and
      v_s.chapter_plan[v_s.chapter_index] in (1,5) and

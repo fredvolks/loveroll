@@ -86,8 +86,11 @@ function actions(view,status,seenRoles){
  }
  const pendingDoor=view.coffretId===4&&[1,5].includes(view.sceneNumber)&&!status.door_confirmed;
  const secretLocked=view.type==='Secret'&&!status.revealed;
- if(!secretLocked&&!pendingDoor&&!view.awaitBranch)
-  rows+=btn('act:continue',view.type==='Finale'?'Terminer le coffret':'Continuer ensemble','primary');
+ if(!secretLocked&&!pendingDoor&&!view.awaitBranch){
+  if(view.role==='A')rows+=btn('act:continue',view.type==='Finale'?
+   'Terminer ensemble après notre accord':'Continuer ensemble après notre accord','primary');
+  else rows+='<span role="status">Après votre accord oral, A pourra continuer cette scène commune.</span>';
+ }
  rows+=btn('act:pass','Passer ce moment');
  rows+=btn('act:pause','Pause');
  rows+=btn('act:stop','Arrêter cette séance');
