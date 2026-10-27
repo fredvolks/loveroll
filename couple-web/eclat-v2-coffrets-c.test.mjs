@@ -83,7 +83,7 @@ test('12 never generates dice locally; fixed faces, swapped roles and stable obj
 test('Role isolation for two phones and shared handover',()=>{
  const s=state(9,0,30,1);
  assert.throws(()=>eclatV2SceneC({session:s,viewerId:'outsider'}),/refusé/);
- assert.throws(()=>eclatV2SceneC({session:s,viewerId:A,localDisplayRole:'B'}),/interdit/);
+ assert.throws(()=>eclatV2SceneC({session:s,viewerId:A,localDisplayRole:'B'}),/non modifiable/);
  const shared={...s,device_mode:'one'};
  assert.throws(()=>eclatV2SceneC({session:shared,viewerId:A}),/Passage protégé/);
  const b=eclatV2SceneC({session:shared,viewerId:A,localDisplayRole:'B'});
