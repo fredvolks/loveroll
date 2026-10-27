@@ -2,6 +2,7 @@
 // Authenticated Supabase Edge Function, service key and Geoapify key server-side only.
 // Never creates imaginary places, booking links, photos or road distances.
 import {createClient} from 'npm:@supabase/supabase-js@2.57.0';
+import {verifiedRoadMetres,verifiedMatrixCandidates} from './verified-road.mjs';
 
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{
  status,headers:{'Content-Type':'application/json','Cache-Control':'no-store','Access-Control-Allow-Origin':'*',
@@ -162,14 +163,15 @@ Deno.serve(async req=>{
    'https://api.geoapify.com/v1/routematrix?'+new URLSearchParams({apiKey}),
    (response:any)=>candidates.length+(
     Array.isArray(response?.sources_to_targets?.[0])?
-    response.sources_to_targets[0].reduce((sum:number,route:any)=>sum+
-      (Number.isFinite(Number(route?.distance))?Math.floor(Math.max(0,Number(route.distance))/500000):0),0):0
+    response.sources_to_targets[0].reduce((sum:number,route:any)=>{
+      const verified=verifiedRoadMetres(route?.distance);
+      return sum+(verified===null?0:Math.floor(verified/500000));
+    },0):0
    ),{
    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(routeBody)
   });
   const matrix=routes?.sources_to_targets?.[0];
-  const viable=candidates.map((p,i)=>({p,meters:Number(matrix?.[i]?.distance)}))
-   .filter(v=>Number.isFinite(v.meters)&&v.meters>=0&&v.meters<=radius*1000);
+  const viable=verifiedMatrixCandidates(candidates,matrix,radius);
   // Deterministic selection among nearby valid venues; do not always use the nearest.
   viable.sort((a,b)=>a.meters-b.meters||a.p.place_id.localeCompare(b.p.place_id));
   if(!viable.length){await finalize({state:'unavailable'});return json({status:'unavailable'});}

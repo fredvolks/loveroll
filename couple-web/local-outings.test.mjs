@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import './monthly-geo-ui.test.mjs';
 import {MONTHLY_ACTIVITIES} from './monthly-activities.mjs';
 import {activityCategory,VENUE_CATEGORIES,chooseNearbyVenue,localActivityResult,isRouteWithinRadius,verifiedRoadMetres,drivingKilometres} from './local-outings.mjs';
+import {verifiedRoadMetres as verifiedEdgeRoadMetres,verifiedMatrixCandidates} from '../supabase/functions/love-geo-surprise/verified-road.mjs';
 test('All 100 monthly activity themes can map to a supported places category',()=>{
  assert.equal(MONTHLY_ACTIVITIES.length,100);
  for(const activity of MONTHLY_ACTIVITIES){
@@ -52,4 +53,16 @@ test('LR-SURPRISE-001: null/unreachable Geoapify road distances never count as 0
  assert.equal(valid.distance_km,225);
  assert.equal(localActivityResult({face:18},valid,{travel_radius_km:null}).found,true);
  assert.throws(()=>localActivityResult({face:18},{...valid,distance_meters:null},{travel_radius_km:null}),/radius/);
+});
+
+test('LR-SURPRISE-001: Edge function rejects null and absent Geoapify road matrix entries',()=>{
+ const candidates=[{place_id:'missing'},{place_id:'valid'},{place_id:'blank'},{place_id:'far'}];
+ const matrix=[{distance:null},{distance:19500},{distance:''},{distance:60000}];
+ assert.equal(verifiedEdgeRoadMetres(null),null);
+ assert.equal(verifiedEdgeRoadMetres(''),null);
+ assert.equal(verifiedEdgeRoadMetres(0),0);
+ assert.deepEqual(verifiedMatrixCandidates(candidates,matrix,50).map(x=>x.p.place_id),['valid']);
+ assert.deepEqual(verifiedMatrixCandidates(candidates,matrix,null).map(x=>x.p.place_id),['valid','far']);
+ assert.deepEqual(verifiedMatrixCandidates(candidates,undefined,null),[]);
+ assert.deepEqual(verifiedMatrixCandidates(candidates,matrix,-5),[]);
 });
