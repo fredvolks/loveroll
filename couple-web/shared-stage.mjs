@@ -15,7 +15,7 @@ export function fitTabletRomanceStage(root){
  const width=root.getBoundingClientRect().width||win.innerWidth;
  const height=win.innerHeight;
  // Source photographed artwork: 941 x 1672. Cover the full tablet width.
- const photoHeight=width*1672/941;
+ const basePhotoHeight=width*1672/941;
  // On Soirée the inactive decorative D100 is taller and needs extra air
  // under the heading. Landscape also needs a lower contact so the REAL D100
  // is legible rather than reduced to a tiny icon on the large marble.
@@ -31,7 +31,21 @@ export function fitTabletRomanceStage(root){
  // the photographed marble ABOVE the start/summary controls in landscape.
  const inactiveEvening=isEvening&&!!root.querySelector('.evening-premium-view.is-inactive');
  const contactRatio=landscape?(inactiveEvening?.49:isEvening?.56:.45):.405;
- const contact=height*contactRatio;
+ // Inactive Soirée must show the SAME apparent D100 size as Surprise.
+ // Its marble may need to sit lower than the default Android contact:
+ // the separate Soirée header must not overlap the top of the 3D mesh.
+ // Use the measured *actual stage width*, not another guessed D100 scale.
+ const hero=inactiveEvening?root.querySelector('.evening-finale-hero'):null;
+ const stage=hero?.querySelector('.love3d-stage');
+ const heroBounds=hero?.getBoundingClientRect();
+ const stageBounds=stage?.getBoundingClientRect();
+ const neededContact=heroBounds&&stageBounds?.width>0?
+  heroBounds.top+stageBounds.width*.735+8:0;
+ const contact=inactiveEvening?Math.max(height*contactRatio,
+  Math.min(height*.70,neededContact)):height*contactRatio;
+ // Preserve original 941:1672 photo aspect ratio if the marble moves
+ // below its base position: cover/crop the same HD asset, never stretch.
+ const photoHeight=inactiveEvening?Math.max(basePhotoHeight,contact/.342):basePhotoHeight;
  const offset=contact-photoHeight*.342;
  root.style.setProperty('--home-scene-top-image-height',photoHeight+'px');
  root.style.setProperty('--home-scene-contact',contact+'px');

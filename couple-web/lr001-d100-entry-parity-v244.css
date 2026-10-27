@@ -49,3 +49,12 @@
     }
   }
 }
+/* When the iPad Soirée marble needs a lower contact to fit the Surprise-sized
+   3D mesh, cover-crop the SAME portrait HD photograph without stretching. */
+@layer loveroll-soiree-template {
+  @media (min-width:768px) {
+    main#app.loveroll-evening-page:has(.evening-premium-view.is-inactive.has-home-soiree-template)::before {
+      background-size:auto var(--home-scene-top-image-height)!important;
+    }
+  }
+}
