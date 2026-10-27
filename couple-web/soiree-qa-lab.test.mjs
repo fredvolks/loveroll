@@ -213,3 +213,18 @@ test('a destroyed Soirée QA bench cannot repaint an old partner snapshot after 
  assert.equal(nodes.A.innerHTML,'');
  assert.equal(nodes.B.innerHTML,'');
 });
+
+test('couple settings hide disabled public categories but always keep Au hasard',()=>{
+ const screen=renderSoireeQaScreen({role:'A',snapshot:{
+  ...base,categorySettings:{showSensuel:false,showSexuel:true}
+ },partnerId:b});
+ assert.doesNotMatch(screen,/<option value="SENSUEL">/);
+ assert.match(screen,/<option value="SEXUEL">/);
+ assert.match(screen,/<option value="HASARD">/);
+ const none=renderSoireeQaScreen({role:'B',snapshot:{
+  ...base,userId:b,mine:[],categorySettings:{showSensuel:false,showSexuel:false}
+ },partnerId:a});
+ assert.doesNotMatch(none,/<option value="SENSUEL">/);
+ assert.doesNotMatch(none,/<option value="SEXUEL">/);
+ assert.match(none,/<option value="HASARD">/);
+});

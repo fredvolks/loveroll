@@ -51,22 +51,26 @@ export function createSoireeQaGateway({client,expectedUserId}){
    // Mirror the same odds shown in production; a partial QA install defaults to
    // the official 88%, never silently to 0% via Number(null).
    rows('couples',[['id',who.coupleId]],
-    {fields:'category_weights_enabled,category_preference_percent'}).catch(()=>[])
+    {fields:'category_weights_enabled,category_preference_percent,show_sensuel_button,show_sexuel_button'}).catch(()=>[])
   ]);
   const pref=weights[0]?.category_preference_percent;
   const percent=pref===null||pref===undefined?88:Number(pref);
   const oddsPercent=weights[0]?.category_weights_enabled===false?50:
    Number.isFinite(percent)?Math.min(100,Math.max(0,percent)):88;
+  const categorySettings=Object.freeze({
+   showSensuel:weights[0]?.show_sensuel_button!==false,
+   showSexuel:weights[0]?.show_sexuel_button!==false
+  });
   if(session.length>1)throw new Error('Deux soirées actives : état serveur incohérent');
   const active=session[0]||null;
-  if(!active)return {...who,weekly:week,passQuota,oddsPercent,session:null,personal:[],mine:[],board:null};
+  if(!active)return {...who,weekly:week,passQuota,oddsPercent,categorySettings,session:null,personal:[],mine:[],board:null};
   const [personal,mine,board]=await Promise.all([
    rows('couple_personal_rolls',[['session_id',active.id]],{fields:'user_id,face'}),
    rows('couple_challenges',[['session_id',active.id],['recipient',who.userId]],
     {fields:'id,recipient,offered_by,category,face,card_id,card_title,card_description,card_timer_minutes,status,created_at',order:{field:'created_at',ascending:true}}),
    rpc('my_love_evening_board',{p_session:active.id})
   ]);
-  return {...who,weekly:week,passQuota,oddsPercent,session:active,personal,
+  return {...who,weekly:week,passQuota,oddsPercent,categorySettings,session:active,personal,
     mine:mine.filter(x=>x.recipient===who.userId),board};
  }
  async function weekly(){

@@ -10,7 +10,8 @@ function clientFor(userId=idA,override={}){
  const calls=[];
  const db={
   couple_members:[{couple_id:couple,user_id:userId}],
-  couples:[{id:couple,category_weights_enabled:true,category_preference_percent:88}],
+  couples:[{id:couple,category_weights_enabled:true,category_preference_percent:88,
+   show_sensuel_button:true,show_sexuel_button:true}],
   couple_rolls:[{id:challenge,couple_id:couple,kind:'weekly',face:2,key:'2025-10-20'},
     {id:challenge,couple_id:couple,kind:'weekly',face:3,key:'2026-10-26'}],
   couple_sessions:[{id:session,couple_id:couple,started_at:'2026-10-27',finished_at:null}],
@@ -81,6 +82,7 @@ test('reads only its own challenge cards, never a partner private challenge',asy
  assert.ok(calls.some(x=>x.name==='my_love_evening_board'));
  assert.deepEqual(snap.passQuota,{can_pass:true,remaining:2,used:1,limit:3});
  assert.equal(snap.oddsPercent,88);
+ assert.deepEqual(snap.categorySettings,{showSensuel:true,showSexuel:true});
  assert.ok(calls.some(x=>x.name==='my_love_monthly_pass_quota'));
 });
 test('identity refresh rejects reused sessions or wrong account',async()=>{

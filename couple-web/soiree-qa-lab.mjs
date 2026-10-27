@@ -54,8 +54,9 @@ export function renderSoireeQaScreen({role,snapshot,partnerId,weekKey=currentTor
   const ready=own!==null&&theirs!==null;
   html+='<h5>D100 · défi réel</h5>'+
    '<label>Catégorie<select data-soiree-qa-category="'+role+'">'+
-    '<option value="SENSUEL">Sensuel</option>'+
-    '<option value="SEXUEL">Sexuel</option><option value="HASARD">Hasard</option>'+
+    (snapshot.categorySettings?.showSensuel!==false?'<option value="SENSUEL">Sensuel</option>':'')+
+    (snapshot.categorySettings?.showSexuel!==false?'<option value="SEXUEL">Sexuel</option>':'')+
+    '<option value="HASARD">Hasard</option>'+
    '</select></label>'+btn(role,'d100','Tirer un défi officiel D100',!ready)+
    '<p class="soiree-qa-caption">Les deux D6 sont nécessaires. Toute limite ou condition du serveur reste active.</p>';
   const selectedChallenge=[...snapshot.mine].reverse().find(x=>
@@ -168,7 +169,7 @@ export function mountSoireeQaBench({
    }
    for(const role of ['A','B']){
     const picker=root.querySelector('[data-soiree-qa-category="'+role+'"]');
-    if(picker&&['SENSUEL','SEXUEL','HASARD'].includes(previous[role]))
+    if(picker&&Array.from(picker.options||[]).some(option=>option.value===previous[role]))
      picker.value=previous[role];
    }
    lastPaintKey=key;
@@ -205,6 +206,9 @@ export function mountSoireeQaBench({
     const category=root.querySelector('[data-soiree-qa-category="'+role+'"]')?.value;
     if(!['SENSUEL','SEXUEL','HASARD'].includes(category))
      throw new Error('Catégorie de défi inconnue');
+    if(category==='SENSUEL'&&status.categorySettings?.showSensuel===false||
+       category==='SEXUEL'&&status.categorySettings?.showSexuel===false)
+     throw new Error('Cette catégorie est désactivée dans les réglages du duo QA');
     // The same official LR-014 modal as the public Soirée. Cancel/ESC must
     // never trigger a draw, spend quota or rotate the displayed D100.
     const decision=await confirmCategory({
