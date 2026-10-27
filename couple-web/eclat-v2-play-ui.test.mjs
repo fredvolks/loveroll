@@ -138,3 +138,24 @@ test('06 puzzle requires server verification or voluntary second-level hint befo
  const c=renderEclatV2PlayA({status:status(6,1,30,6,{puzzle_solved:false,puzzle_hint_level:0}),viewerId:aid});
  assert.match(c,/data-eclat-v2-action="puzzle-code:562"/);
 });
+
+
+test('07 shared-phone: both roles choose privately before a joint reveal',()=>{
+ const s=status(7,0,30,1,{device_mode:'one'});
+ const answers={A:{answer:0,prediction:1},B:{answer:1,prediction:0}};
+ const hidden=renderEclatV2PlayA({status:s,viewerId:aid,
+  sharedAnswers:answers,sharedConfirmed:['A','B']});
+ assert.match(hidden,/Passer le téléphone/);
+ assert.doesNotMatch(hidden,/Comme tu l’imaginais|Une découverte/);
+ const before=renderEclatV2PlayA({status:s,viewerId:aid,localRole:'A',
+  sharedAnswers:answers,sharedConfirmed:['A']});
+ assert.doesNotMatch(before,/data-eclat-v2-action="reveal-oral"/);
+ const approved=renderEclatV2PlayA({status:s,viewerId:aid,localRole:'A',
+  sharedAnswers:answers,sharedConfirmed:['A','B']});
+ assert.match(approved,/data-eclat-v2-action="reveal-oral"/);
+ assert.doesNotMatch(approved,/Comme tu l’imaginais/);
+ const shown=renderEclatV2PlayA({status:{...s,revealed:true},viewerId:aid,localRole:'A',
+  sharedReveal:{question:1,options:['Marcher','Écouter de la musique','Jouer'],players:answers}});
+ assert.match(shown,/Comme tu l’imaginais/);
+ assert.match(shown,/Question 1/);
+});
