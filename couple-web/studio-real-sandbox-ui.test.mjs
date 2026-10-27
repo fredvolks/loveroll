@@ -11,6 +11,7 @@ test('Studio real sandbox uses existing secure platform gate and no standalone f
  assert.match(html,/studio-real-frame-B/);
  assert.match(html,/studio-real-delete/);
  assert.match(html,/id="studio-real-reset"/);
+ for(const seat of ['A','B'])assert.match(html,new RegExp('id="studio-real-expand-'+seat+'"'));
  assert.match(js,/createStudioRealSandbox/);
  assert.match(js,/realSandbox\.init/);
  assert.doesNotMatch(html,/id="sim-d100"|id="sim-d6-face-0"/);
@@ -20,4 +21,7 @@ test('Responsive iPad desktop split and mobile seat switching',()=>{
  assert.match(css,/grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
  assert.match(css,/@media\(max-width:1023px\)/);
  assert.match(css,/\.studio-real-frame\.studio-real-active/);
+ assert.match(css,/\.studio-real-frame\.studio-real-maximized/);
+ assert.match(css,/height:100dvh!important/);
+ assert.match(css,/studio-real-fullscreen/);
 });
