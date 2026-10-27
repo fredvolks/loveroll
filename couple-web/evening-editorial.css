@@ -212,3 +212,21 @@ main#app.loveroll-editorial{--nav-space:66px;box-sizing:border-box;width:100%;ma
  main#app.loveroll-evening-page .evening-premium-view.is-finale .evening-aftercare:has(.evening-finale-status){padding:4px!important;gap:3px!important;}
 }
 @media(prefers-reduced-motion:reduce){#app.loveroll-editorial *,#app.loveroll-editorial *::before{animation:none;scroll-behavior:auto;transition:none;}}
+
+/* LR-015: only challenge decision controls. The legacy queue stylesheet is
+   deliberately not loaded: it would override the approved Soirée artwork. */
+#app .lr-redraw-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}
+#app .lr-redraw-actions>button{min-width:0;width:100%;min-height:44px;white-space:normal}
+#app .lr-redraw-actions>small{grid-column:1/-1;display:block;min-width:0;font-size:.86rem;line-height:1.5;opacity:.92}
+#app .lr-redraw-actions button:focus-visible,#app .lr-refusal-buttons button:focus-visible{outline:3px solid #f3c76d;outline-offset:3px}
+#app .lr-refusal-dialog{position:relative;display:block;margin:14px 0;padding:14px;
+ background:rgba(46,12,32,.94);color:#fff1e3;border:1px solid rgba(231,185,113,.7);
+ border-radius:18px;box-shadow:0 14px 35px rgba(0,0,0,.3)}
+#app .lr-refusal-dialog h3{margin:0 0 8px;font-size:1.15rem}
+#app .lr-refusal-dialog p{margin:0 0 14px;line-height:1.55}
+#app .lr-refusal-buttons{display:flex;flex-wrap:wrap;gap:9px}
+#app .lr-refusal-buttons>button{flex:1 1 145px;min-height:44px;white-space:normal}
+@media(max-width:360px){
+ #app .lr-redraw-actions{grid-template-columns:minmax(0,1fr)}
+ #app .lr-refusal-buttons{display:grid;grid-template-columns:minmax(0,1fr)}
+}
