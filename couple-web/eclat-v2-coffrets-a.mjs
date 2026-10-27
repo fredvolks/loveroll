@@ -62,7 +62,7 @@ export function eclatV2SceneA({session,viewerId,localDisplayRole=null}){
   const t=table(coffret,'Donnée').rows;
   const get=label=>{const row=t.find(x=>x[0]===label);if(!row)throw Error('Donnée approuvée manquante '+label);return row[v+1];};
   if(no===1||no===3){
-   const first=get('Manche 1').match(/«([^»]+)»/g)?.map(s=>s.slice(1,-1));
+   const first=get('Manche 1').match(/«([^»]+)»/g)?.map(s=>s.slice(1,-1).trim());
    if(!first||first.length!==2)throw Error('Mots des deux missions invalides');
    const target=role==='A'?first[no===3?1:0]:first[no===3?0:1];
    out.privateMission='Faire prononcer « '+target+' » à '+(role==='A'?'B':'A');
