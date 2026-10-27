@@ -379,3 +379,41 @@ test('08 completed playlist remains readable; no private song nor action visible
  const stopped=renderEclatV2PlayA({status:{...completed,state:'interrupted'},viewerId:aid});
  assert.doesNotMatch(stopped,/Titre commun/);
 });
+
+test('09 stage 5/6/8 asks mutual agreement beyond a common card',()=>{
+ const stage5=status(9,0,60,5,{common_cards:[7],selected_card:7});
+ const choose=renderEclatV2PlayA({status:stage5,viewerId:aid});
+ assert.match(choose,/wish-choice:now/);
+ assert.match(choose,/wish-choice:later/);
+ assert.match(choose,/wish-choice:pass/);
+ assert.doesNotMatch(choose,/act:continue/);
+ const stage6=status(9,0,60,6,{common_cards:[7],selected_card:7,wish_scene5:'now',
+  wish_scene6:null,wish_contact_approved:false});
+ const awaitConsent=renderEclatV2PlayA({status:stage6,viewerId:aid});
+ assert.match(awaitConsent,/wish-contact:yes/);
+ assert.match(awaitConsent,/wish-choice:without-contact/);
+ assert.doesNotMatch(awaitConsent,/wish-choice:with-contact/);
+ assert.doesNotMatch(awaitConsent,/act:continue/);
+ const twoYes=renderEclatV2PlayA({status:{...stage6,wish_contact_approved:true},viewerId:bid});
+ assert.match(twoYes,/wish-choice:with-contact/);
+ assert.match(twoYes,/wish-contact:no/);
+ const decided=renderEclatV2PlayA({status:{...stage6,wish_scene6:'without-contact'},viewerId:aid});
+ assert.match(decided,/act:continue/);
+ const final=status(9,0,60,8,{common_cards:[7],selected_card:7,
+  wish_scene5:'now',wish_scene6:'without-contact'});
+ const invitation=renderEclatV2PlayA({status:final,viewerId:aid});
+ assert.match(invitation,/wish-choice:keep/);
+ assert.match(invitation,/wish-choice:finish/);
+ const kept=renderEclatV2PlayA({status:{...final,wish_invitation_card:7,wish_scene8:'keep'},viewerId:aid});
+ assert.match(kept,/Votre invitation commune/);
+ assert.doesNotMatch(kept,/wish-choice:keep/);
+});
+test('09 shared phone only A controls joint oral decisions and contact choices',()=>{
+ const s=status(9,1,30,6,{device_mode:'one',common_cards:[8],selected_card:8,
+  wish_contact_approved:false});
+ const b=renderEclatV2PlayA({status:s,viewerId:aid,localRole:'B'});
+ assert.doesNotMatch(b,/wish-choice:without-contact|wish-contact:yes/);
+ const a=renderEclatV2PlayA({status:s,viewerId:aid,localRole:'A'});
+ assert.match(a,/wish-choice:without-contact/);
+ assert.match(a,/wish-contact:yes/);
+});

@@ -125,3 +125,18 @@ test('08 playlist client never sends unauthorized author identity or unapproved 
  assert.throws(()=>api.playlistSharedPhone({sessionId:sid,expectedStep:4,
   songs:[{title:'Titre A'}]}),RangeError);
 });
+
+test('09 staged consent RPCs never submit partner identity or fabricate agreement',async()=>{
+ const calls=[];const api=createEclatV2SessionApi({async rpc(name,args){
+  calls.push([name,args]);return {data:status};}});
+ await api.wishVote({sessionId:sid,expectedStep:4,choice:'later'});
+ await api.wishContact({sessionId:sid,expectedStep:5,yes:false});
+ await api.wishVote({sessionId:sid,expectedStep:6,choice:'keep',jointOral:true});
+ assert.deepEqual(calls.map(x=>x[0]),[
+  'love_eclat_v2_wish_vote','love_eclat_v2_wish_contact_answer','love_eclat_v2_wish_vote']);
+ assert.equal(calls[1][1].p_yes,false);
+ assert.equal(calls[2][1].p_joint_oral,true);
+ assert.ok(calls.every(x=>!JSON.stringify(x[1]).includes('user_id')));
+ assert.throws(()=>api.wishVote({sessionId:sid,expectedStep:4,choice:'force'}),RangeError);
+ assert.throws(()=>api.wishContact({sessionId:sid,expectedStep:5,yes:'yes'}),RangeError);
+});

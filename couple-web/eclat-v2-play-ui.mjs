@@ -104,6 +104,74 @@ function mainContent(view,status,predictionDraft={},puzzleDraft={},puzzleAttempt
   if(view.contactAgreementRequired)html+='<p>Cette carte demande un accord explicite des deux, et une alternative sans contact reste possible.</p>';
   html+='</section>';
  }
+ if(view.coffretId===9&&[5,6,8].includes(view.sceneNumber)){
+  const roleCanAct=status.device_mode==='two'||view.role==='A';
+  const card=view.selectedCard;
+  const isContact=card&&[7,8].includes(card.number);
+  const s5=status.wish_scene5,s6=status.wish_scene6,s8=status.wish_scene8;
+  html+='<section class="eclat-v2-task" aria-label="Accord facultatif pour le coffre">';
+  if(view.sceneNumber===5){
+   html+='<h3>Notre choix pour cette invitation</h3>';
+   if(!card)html+='<p>Vous n’avez pas retenu de carte. Continuez à votre rythme.</p>';
+   else if(s5)html+='<p role="status">Votre décision commune est enregistrée : '+
+      esc(s5==='now'?'La vivre maintenant':s5==='later'?'En reparler une autre fois':'Passer')+
+      '.</p>';
+   else{
+    html+='<p>Choisir une carte ne donne jamais l’obligation de la réaliser.</p>';
+    if(roleCanAct)html+=btn('wish-choice:now','La vivre maintenant')+
+      btn('wish-choice:later','En parler une autre fois')+
+      btn('wish-choice:pass','Passer');
+    if(status.my_wish_vote)html+='<p role="status">Votre réponse est enregistrée, mais aucun choix commun n’est encore confirmé.</p>';
+   }
+  }else if(view.sceneNumber===6){
+   html+='<h3>Notre participation libre</h3>';
+   if(!card)html+='<p>Conversation calme ou moment côte à côte sans contact : vous pouvez aussi passer.</p>';
+   else if(s5==='later'||s5==='pass')html+='<p>Cette invitation n’est pas à vivre maintenant. Aucune activité n’est lancée automatiquement.</p>';
+   else if(s6)html+='<p role="status">Décision commune : '+
+     esc(s6==='with-contact'?'Avec contact explicitement accepté':
+       s6==='without-contact'?'Alternative sans contact':
+       s6==='participate'?'Participation facultative':'Passer')+'.</p>';
+   else{
+    html+='<p>Vous pouvez choisir une activité, une version sans contact ou passer. Un accord doit être donné pour cette scène, même si la carte était commune.</p>';
+    if(isContact){
+     html+='<p><strong>Le contact physique exige deux Oui distincts. Chacun peut retirer son Oui à tout moment.</strong></p>';
+     if(roleCanAct){
+      html+=status.wish_contact_approved?
+        btn('wish-contact:no','Retirer mon Oui pour le contact'):
+        btn('wish-contact:yes',status.device_mode==='one'?
+          'Nous disons tous les deux Oui pour ce contact':'Oui, pour ce contact seulement');
+      html+=btn('wish-choice:without-contact','Choisir une version sans contact')+
+        btn('wish-choice:pass','Passer cette invitation');
+      if(status.wish_contact_approved)html+=btn('wish-choice:with-contact','Vivre cette proposition avec contact');
+     }
+     if(status.my_wish_contact&&!status.wish_contact_approved)
+      html+='<p role="status">Ton Oui ne suffit pas : l’autre personne doit également confirmer.</p>';
+    }else if(roleCanAct){
+     html+=btn('wish-choice:participate','Participer à cette activité')+
+       btn('wish-choice:pass','Passer librement');
+    }
+    if(status.my_wish_vote)
+     html+='<p role="status">Ta décision est transmise; elle ne vaut pas décision commune à elle seule.</p>';
+   }
+   if(isContact&&s6==='with-contact'&&roleCanAct)
+    html+=btn('wish-contact:no','Retirer immédiatement mon Oui au contact');
+  }else{
+   html+='<h3>Garder une invitation commune ?</h3>';
+   if(status.wish_invitation_card&&card)
+    html+='<p role="status">Votre invitation commune : '+esc(card.title)+
+     '. Aucune réservation, aucun achat ni rappel automatique.</p>';
+   else if(s8==='finish')html+='<p>Vous terminez sans souvenir sauvegardé.</p>';
+   else{
+    const eligible=card&&(s5==='later'||['participate','without-contact','with-contact'].includes(s6));
+    if(!eligible)html+='<p>Aucune invitation confirmée à conserver. Vous pouvez terminer sans rien enregistrer.</p>';
+    else if(roleCanAct)html+=btn('wish-choice:keep','Garder notre invitation commune');
+    if(roleCanAct)html+=btn('wish-choice:finish','Terminer sans enregistrer une invitation');
+    if(status.my_wish_vote)html+='<p role="status">En attente de l’accord sur la même finale.</p>';
+   }
+  }
+  if(status.device_mode==='one')html+='<p class="eclat-v2-muted">Confirmez oralement à deux; cette action ne simule pas le compte de B.</p>';
+  html+='</section>';
+ }
  if(view.coffretId===12){
   html+='<section class="eclat-v2-activity"><h3>Votre histoire à inventer</h3>'+
    '<p><strong>Votre objectif :</strong> '+esc(view.objective)+'</p>';
@@ -415,13 +483,18 @@ function actions(view,status,seenRoles,sharedConfirmed=[]){
  const puzzleLocked=!!view.puzzle&&!status.puzzle_solved&&status.puzzle_hint_level<2;
  const attentionLocked=(!!view.attentions||view.coffretId===11&&!!view.proposer)&&
   !['yes','pass'].includes(status.attention_response);
+ const wishApprovalLocked=view.coffretId===9&&(
+  (view.sceneNumber===5&&!!view.selectedCard&&!status.wish_scene5)||
+  (view.sceneNumber===6&&!!view.selectedCard&&
+    (status.wish_scene5===null||status.wish_scene5===undefined||status.wish_scene5==='now')&&
+     !status.wish_scene6));
  const wishLocked=view.coffretId===9&&
   ((view.sceneNumber===1&&status.common_cards===null)||
    (view.sceneNumber===3&&view.commonCards?.length>0&&!view.selectedCard));
  const timerLocked=view.coffretId===10&&view.sceneNumber===1&&!status.timer_mode;
  const storyLocked=view.coffretId===12&&!!view.rerollConstraintOnly&&
   (!status.story_decision_confirmed||view.dicePending);
- if(!secretLocked&&!pendingDoor&&!view.awaitBranch&&!puzzleLocked&&!attentionLocked&&!storyLocked&&!wishLocked&&!timerLocked){
+ if(!secretLocked&&!pendingDoor&&!view.awaitBranch&&!puzzleLocked&&!attentionLocked&&!storyLocked&&!wishLocked&&!wishApprovalLocked&&!timerLocked){
   if(view.role==='A')rows+=btn('act:continue',view.type==='Finale'?
    'Terminer ensemble après notre accord':'Continuer ensemble après notre accord','primary');
   else rows+='<span role="status">Après votre accord oral, A pourra continuer cette scène commune.</span>';

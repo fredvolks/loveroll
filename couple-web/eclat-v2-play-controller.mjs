@@ -154,7 +154,20 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
   try{
    const sid=status.session_id,idx=status.chapter_index;
    let next;
-   if(command==='playlist-vote'){
+   if(command.startsWith('wish-choice:')){
+    const choice=command.slice('wish-choice:'.length);
+    if(status.coffret_id!==9||
+      !['now','later','pass','participate','without-contact','with-contact','keep','finish'].includes(choice))return;
+    if(status.device_mode==='one'&&role!=='A')return;
+    next=await api.wishVote({sessionId:sid,expectedStep:idx,
+      choice,jointOral:status.device_mode==='one'});
+   }else if(command.startsWith('wish-contact:')){
+    const answer=command.slice('wish-contact:'.length);
+    if(status.coffret_id!==9||!['yes','no'].includes(answer))return;
+    if(status.device_mode==='one'&&role!=='A')return;
+    next=await api.wishContact({sessionId:sid,expectedStep:idx,
+      yes:answer==='yes',jointOral:status.device_mode==='one'&&answer==='yes'});
+   }else if(command==='playlist-vote'){
     if(status.coffret_id!==8||status.chapter_number!==8||
        status.device_mode!=='two'||playlistDraft.length<1||playlistDraft.length>5)return;
     next=await api.playlistVote({sessionId:sid,expectedStep:idx,slots:playlistDraft});
