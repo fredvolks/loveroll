@@ -4,6 +4,12 @@ set request.jwt.claim.sub='00000000-0000-0000-0000-000000000001';
 do $$
 declare s jsonb; again jsonb;
 begin
+ begin
+  perform public.love_eclat_v2_start(1,30,'two',1);
+  raise exception 'New couple replayed V1 without history';
+ exception when raise_exception then
+  if sqlerrm<>'Version à rejouer introuvable dans cet historique' then raise; end if;
+ end;
  s:=public.love_eclat_v2_start(1,30,'two');
  if s->>'variant'<>'0' or s->>'role_a'<>'00000000-0000-0000-0000-000000000001'
     or s->>'role_b'<>'00000000-0000-0000-0000-000000000002'

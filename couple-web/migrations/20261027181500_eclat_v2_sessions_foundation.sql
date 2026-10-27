@@ -148,6 +148,12 @@ begin
  if exists(select 1 from public.love_eclat_sessions where couple_id=v_couple and ended_at is null) then
   raise exception 'Terminez la séance Éclat actuelle avant de commencer V2';
  end if;
+ -- Replay is allowed ONLY for a previously started version of this coffret,
+ -- never a way to skip the approved first-session V0 or choose arbitrary content.
+ if p_replay_variant is not null and not exists(
+  select 1 from public.love_eclat_v2_sessions
+  where couple_id=v_couple and coffret_id=p_coffret and variant=p_replay_variant
+ ) then raise exception 'Version à rejouer introuvable dans cet historique'; end if;
  select count(*)::integer % 2 into v_variant
   from public.love_eclat_v2_sessions where couple_id=v_couple and coffret_id=p_coffret;
  if p_replay_variant is not null then v_variant:=p_replay_variant; end if;
