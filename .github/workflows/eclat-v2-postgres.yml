@@ -1,0 +1,40 @@
+name: Éclat V2 isolated PostgreSQL security checks
+on:
+  pull_request:
+    paths:
+      - "couple-web/migrations/*eclat_v2*"
+      - "couple-web/qa/eclat-v2-*"
+      - ".github/workflows/eclat-v2-postgres.yml"
+  workflow_dispatch:
+jobs:
+  postgres-v2:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: testonly
+          POSTGRES_USER: postgres
+          POSTGRES_DB: eclatv2
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d eclatv2"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: testonly
+      PGDATABASE: eclatv2
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install psql for actual PostgreSQL execution
+        run: sudo apt-get update -qq && sudo apt-get install -y postgresql-client
+      - name: Create disposable identity and V1 fixtures
+        run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-fixture.sql
+      - name: Apply additive V2 migration to disposable PostgreSQL
+        run: psql -v ON_ERROR_STOP=1 -f couple-web/migrations/20261027181500_eclat_v2_sessions_foundation.sql
+      - name: Test privacy, variants, replay, session resume, pause, skip and stale retries
+        run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-postgres.test.sql
