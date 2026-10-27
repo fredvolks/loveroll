@@ -167,6 +167,8 @@ jobs:
         run: node --test couple-web/ipad-android-stage-v236.test.mjs
       - name: Verify real native premium Home buttons
         run: node --test couple-web/loveroll-home-native-v193.test.mjs
+      - name: Pre-release native splash and APK version consistency
+        run: node --test couple-web/native-splash-parity.test.mjs
 
       - name: Verify Surprise D100, prices and D6 pair/impair flow
         run: node --test couple-web/surprise-v86.test.mjs couple-web/surprise-host-flow-v107.test.mjs couple-web/surprise-date-editor-v109.test.mjs couple-web/surprise-d100-budget.test.mjs
