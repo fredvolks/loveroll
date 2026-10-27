@@ -49,3 +49,5 @@ jobs:
         run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-contact.test.sql
       - name: Protect and reveal only two real prediction answers
         run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-predictions.test.sql
+      - name: Validate investigation solutions, hints and retries
+        run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-enquete.test.sql

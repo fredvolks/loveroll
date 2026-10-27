@@ -53,6 +53,15 @@ export function createEclatV2SessionApi(client){
    return rpc('love_eclat_v2_choose_door',{p_session:sessionId(sid),p_expected_step:step(expectedStep),
     p_door:door,p_joint_oral:jointOral});
   },
+  puzzle:({sessionId:sid,expectedStep,place=null,time=null,code=null})=>{
+   if((place===null&&time===null&&typeof code==='string')||
+      (typeof place==='string'&&typeof time==='string'&&code===null))
+    return rpc('love_eclat_v2_puzzle_try',{p_session:sessionId(sid),
+      p_expected_step:step(expectedStep),p_place:place,p_time:time,p_code:code});
+   throw new RangeError('Lieu et heure, ou code, requis');
+  },
+  puzzleHelp:({sessionId:sid,expectedStep})=>rpc('love_eclat_v2_puzzle_help',{
+   p_session:sessionId(sid),p_expected_step:step(expectedStep)}),
   predict:({sessionId:sid,expectedStep,answer,prediction})=>{
    if(![0,1,2].includes(answer)||![0,1,2].includes(prediction))
     throw new RangeError('Réponse et prédiction doivent être un des trois choix');

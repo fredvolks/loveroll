@@ -22,6 +22,9 @@ create table public.love_eclat_v2_sessions (
  door_confirmed_scene smallint check (door_confirmed_scene in (1,5)),
  shared_contact_approved boolean not null default false,
  last_prediction jsonb,
+ puzzle_solved_step smallint,
+ puzzle_hint_level smallint not null default 0 check(puzzle_hint_level between 0 and 2),
+ puzzle_helped boolean not null default false,
  revealed_step smallint check (revealed_step between 1 and 8),
  started_at timestamptz not null default now(),
  updated_at timestamptz not null default now(),
@@ -157,6 +160,8 @@ begin
   'chapter_index',v_s.chapter_index,'chapter_total',cardinality(v_s.chapter_plan),
   'substep_index',v_s.substep_index,
   'my_answer',v_my_answer,'my_prediction',v_my_guess,
+  'puzzle_solved',coalesce(v_s.puzzle_solved_step=v_s.chapter_index,false),
+  'puzzle_hint_level',v_s.puzzle_hint_level,'puzzle_helped',v_s.puzzle_helped,
   'reveal_answers',v_s.last_prediction,
   'chapter_number',v_s.chapter_plan[v_s.chapter_index],
   'budget_minutes',v_s.budget_plan[v_s.chapter_index],
@@ -449,6 +454,78 @@ begin
 end;
 $$;
 
+-- Coffret 06: fixed solutions, optional help and unlimited retries.
+create function public.love_eclat_v2_puzzle_try(
+ p_session uuid,p_expected_step integer,p_place text default null,
+ p_time text default null,p_code text default null
+) returns jsonb language plpgsql security definer set search_path='' as $$
+declare
+ v_actor uuid:=auth.uid();v_couple uuid;v_s public.love_eclat_v2_sessions%rowtype;
+ v_scene integer;v_correct boolean:=false;v_allowed boolean:=false;
+begin
+ perform public.love_require_verified_identity();
+ select * into v_s from public.love_eclat_v2_sessions where id=p_session for update;
+ if not found then raise exception 'Séance inconnue';end if;
+ select couple_id into v_couple from public.couple_members where user_id=v_actor;
+ if v_couple is distinct from v_s.couple_id or v_actor not in(v_s.role_a,v_s.role_b)
+  or not public.love_eclat_has_access(v_s.couple_id) then
+  raise exception 'Accès interdit' using errcode='42501';end if;
+ if p_expected_step is distinct from v_s.chapter_index then
+  return public.love_eclat_v2_status(p_session) || jsonb_build_object('correct',false);end if;
+ v_scene:=v_s.chapter_plan[v_s.chapter_index];
+ if v_s.coffret_id<>6 or v_scene not in (3,6) or v_s.state<>'active' then
+  raise exception 'Enquête non active à cette scène';end if;
+ if v_scene=3 then
+  if p_code is not null or p_place is null or p_time is null then
+   raise exception 'Lieu et heure requis';end if;
+  if v_s.variant=0 then
+   v_allowed:=p_place=any(array['Jardin','Salon','Verrière','Bibliothèque'])
+    and p_time=any(array['21 h 10','21 h 20','21 h 30','21 h 40']);
+   v_correct:=p_place='Verrière' and p_time='21 h 30';
+  else
+   v_allowed:=p_place=any(array['Kiosque','Roseraie','Pavillon','Fontaine'])
+    and p_time=any(array['20 h 15','20 h 30','20 h 45','21 h 00']);
+   v_correct:=p_place='Pavillon' and p_time='20 h 45';
+  end if;
+ else
+  if p_place is not null or p_time is not null or p_code is null then
+   raise exception 'Un code proposé est requis';end if;
+  if v_s.variant=0 then
+   v_allowed:=p_code=any(array['247','481','629']);v_correct:=p_code='247';
+  else
+   v_allowed:=p_code=any(array['315','562','627']);v_correct:=p_code='562';
+  end if;
+ end if;
+ if not v_allowed then raise exception 'Option d’enquête inconnue';end if;
+ if v_correct then update public.love_eclat_v2_sessions
+  set puzzle_solved_step=chapter_index,updated_at=now() where id=p_session;end if;
+ return public.love_eclat_v2_status(p_session)||jsonb_build_object('correct',v_correct);
+end;
+$$;
+create function public.love_eclat_v2_puzzle_help(
+ p_session uuid,p_expected_step integer
+) returns jsonb language plpgsql security definer set search_path='' as $$
+declare v_actor uuid:=auth.uid();v_couple uuid;v_s public.love_eclat_v2_sessions%rowtype;
+begin
+ perform public.love_require_verified_identity();
+ select * into v_s from public.love_eclat_v2_sessions where id=p_session for update;
+ if not found then raise exception 'Séance inconnue';end if;
+ select couple_id into v_couple from public.couple_members where user_id=v_actor;
+ if v_couple is distinct from v_s.couple_id or v_actor not in(v_s.role_a,v_s.role_b)
+  or not public.love_eclat_has_access(v_s.couple_id) then
+  raise exception 'Accès interdit' using errcode='42501';end if;
+ if p_expected_step is distinct from v_s.chapter_index then
+  return public.love_eclat_v2_status(p_session);end if;
+ if v_s.coffret_id<>6 or v_s.chapter_plan[v_s.chapter_index] not in (3,6)
+  or v_s.state<>'active' then raise exception 'Aide indisponible';end if;
+ update public.love_eclat_v2_sessions
+  set puzzle_hint_level=least(2,puzzle_hint_level+1),
+      puzzle_helped=case when puzzle_hint_level>=1 then true else puzzle_helped end,
+      updated_at=now() where id=p_session;
+ return public.love_eclat_v2_status(p_session);
+end;
+$$;
+
 -- All state transitions are serializable per session lock and guarded by an
 -- expected step token. Retrying a stale next/pass NEVER advances the next scene.
 create function public.love_eclat_v2_act(
@@ -488,6 +565,10 @@ begin
      v_s.chapter_plan[v_s.chapter_index] in (1,5) and
      v_s.door_confirmed_scene is distinct from v_s.chapter_plan[v_s.chapter_index] then
    raise exception 'Attendre le choix commun de la porte'; end if;
+  if p_action='continue' and v_s.coffret_id=6 and
+    v_s.chapter_plan[v_s.chapter_index] in (3,6) and
+    v_s.puzzle_solved_step is distinct from v_s.chapter_index and v_s.puzzle_hint_level<2 then
+   raise exception 'Résolvez l’enquête ou révélez la solution avec l’aide';end if;
   if p_action='continue' and v_type='Secret' and v_s.revealed_step is distinct from v_s.chapter_index then
    raise exception 'Révélation convenue requise avant de continuer'; end if;
   delete from public.love_eclat_v2_readiness where session_id=p_session and step_index=v_s.chapter_index;
@@ -509,6 +590,9 @@ begin
     set substep_index=2,updated_at=now() where id=p_session;
    return public.love_eclat_v2_status(p_session);
   end if;
+  if p_action='pass' and v_s.coffret_id=6 and v_s.chapter_plan[v_s.chapter_index] in (2,3,5,6) then
+   update public.love_eclat_v2_sessions set puzzle_helped=true where id=p_session;
+  end if;
   v_finished:=v_s.chapter_index=cardinality(v_s.chapter_plan);
   update public.love_eclat_v2_sessions
    set chapter_index=case when v_finished then chapter_index else chapter_index+1 end,
@@ -518,6 +602,7 @@ begin
        revealed_step=null,
        substep_index=1,
        last_prediction=null,
+       puzzle_solved_step=null,puzzle_hint_level=0,
        shared_contact_approved=false,
        branch=case when p_action='pass' and coffret_id=4 and chapter_plan[chapter_index]=1 and branch is null
           then 'Jeu' else branch end,
@@ -535,6 +620,10 @@ revoke all on function public.love_eclat_v2_contact_answer(uuid,integer,text,tex
 grant execute on function public.love_eclat_v2_contact_answer(uuid,integer,text,text,boolean) to authenticated;
 revoke all on function public.love_eclat_v2_choose_door(uuid,integer,text,boolean) from public,anon;
 grant execute on function public.love_eclat_v2_choose_door(uuid,integer,text,boolean) to authenticated;
+revoke all on function public.love_eclat_v2_puzzle_try(uuid,integer,text,text,text) from public,anon;
+grant execute on function public.love_eclat_v2_puzzle_try(uuid,integer,text,text,text) to authenticated;
+revoke all on function public.love_eclat_v2_puzzle_help(uuid,integer) from public,anon;
+grant execute on function public.love_eclat_v2_puzzle_help(uuid,integer) to authenticated;
 revoke all on function public.love_eclat_v2_predict(uuid,integer,integer,integer) from public,anon;
 grant execute on function public.love_eclat_v2_predict(uuid,integer,integer,integer) to authenticated;
 revoke all on function public.love_eclat_v2_status(uuid) from public,anon;
