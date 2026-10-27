@@ -25,11 +25,29 @@ const {glassState}=require('./crystal-glass-browser-check.cjs');
      });
      const initial=await inspect();await page.waitForTimeout(500);const result=await inspect();
      const frame=await page.locator('.home-die-theater').evaluate(e=>{const s=getComputedStyle(e),r=e.getBoundingClientRect();return {border:parseFloat(s.borderTopWidth),radius:parseFloat(s.borderTopLeftRadius),mask:s.maskImage,image:s.backgroundImage,left:r.left,right:r.right,width:innerWidth};});
-     assert.equal(frame.border,0,'Home D6 must NOT have an enclosing frame');assert.equal(frame.radius,0);assert.notEqual(frame.mask,'none','Home artwork should fade at its edges');assert.ok(frame.image.includes('ritual-satin-v115.webp'),'The marble podium photograph must be the actual WebGL background');assert.ok(frame.left>=12&&frame.right<=frame.width-12,'Home artwork must remain inset from the screen');
+     assert.equal(frame.border,0,'Home D6 must NOT have an enclosing frame');
+     assert.equal(frame.radius,0);
+     if(width>=768){
+      assert.equal(frame.mask,'none','Tablet/desktop must not frame the single v202 photograph');
+      assert.equal(frame.image,'none','Tablet/desktop theater must not paint a SECOND photograph');
+      const stage=await page.locator('#app').evaluate(root=>({
+       image:getComputedStyle(root,'::before').backgroundImage,
+       sceneContact:parseFloat(getComputedStyle(root).getPropertyValue('--home-scene-contact')),
+       plinth:getComputedStyle(root.querySelector('.home-pedestal')).display,
+       singlePhotoHeight:parseFloat(getComputedStyle(root).getPropertyValue('--home-scene-top-image-height'))
+      }));
+      assert.ok(stage.image.includes('loveroll-home-portrait-v202.webp'),'Android v202 must be the actual iPad/desktop photo: '+JSON.stringify(stage));
+      assert.equal(stage.plinth,'block','An invisible WebGL alignment marker must remain present');
+      assert.ok(stage.singlePhotoHeight>height&&stage.sceneContact>0&&stage.sceneContact<height,'Photographed marble contact must be inside the viewport: '+JSON.stringify(stage));
+     }else{
+      assert.notEqual(frame.mask,'none','Mobile artwork should fade at its edges');
+      assert.ok(frame.image.includes('ritual-satin-v115.webp'),'Mobile legacy photo stage must remain unchanged');
+      assert.ok(frame.left>=12&&frame.right<=frame.width-12,'Mobile theater must remain inset');
+     }
      assert.deepEqual(result.q,initial.q,'Idle weekly die moved');assert.equal(result.webgl,'true');
      assert.equal(result.markers,'pips','Home D6 must use classic points');
      if(name.startsWith('iPad')){
-      assert.ok(result.sceneBackgroundY.split(',').every(y=>y.trim()==='62%'),'iPad photographed marble plinth is positioned below the die: '+result.sceneBackgroundY);
+      assert.ok(Number.isFinite(result.contact)&&result.contact>0,'iPad must calculate its podium contact: '+JSON.stringify(result));
       assert.ok(result.platformHeight<=result.sceneHeight+2,'iPad 3D platform extends below the photo frame: '+JSON.stringify(result));
       assert.ok(result.sceneHeight-result.contact>=28,'iPad marble base is outside the photo frame: '+JSON.stringify(result));
      }
