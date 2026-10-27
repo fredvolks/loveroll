@@ -19,7 +19,7 @@ function clientFor(userId=idA,override={}){
   ensure_couple_session:session,roll_my_evening_d6:{face:4},
   draw_for_partner:{id:challenge,face:83},
   draw_for_partner_random:{id:challenge,face:42},
-  answer_challenge:null,finish_couple_session:null,
+  answer_challenge:null,love_respond_and_redraw:{replacement_id:challenge},finish_couple_session:null,
   my_love_evening_board:{ready:true}};
  const client={
   auth:{async getUser(){return {data:{user:{id:override.actualUser||userId}}}}},
@@ -48,14 +48,18 @@ test('Soirée QA uses the exact production weekly D6, own D6 and D100 RPCs',asyn
  assert.equal((await api.d100(session,'MIXTE')).face,83);
  assert.equal((await api.d100(session,'HASARD')).face,42);
  await api.answer(challenge,'accepted');
+ await api.redraw(challenge,'pass');
+ await api.redraw(challenge,'refuse',{exclude:true});
  await api.stop(session);
  assert.deepEqual(calls.map(c=>c.name),['roll_couple_once','ensure_couple_session',
    'roll_my_evening_d6','draw_for_partner','draw_for_partner_random',
-   'answer_challenge','finish_couple_session']);
+   'answer_challenge','love_respond_and_redraw','love_respond_and_redraw','finish_couple_session']);
  assert.deepEqual(calls[0].args,{p_couple:couple,p_kind:'weekly'});
  assert.deepEqual(calls[3].args,{p_session:session,p_preference:'MIXTE',p_random:false});
  assert.deepEqual(calls[5].args,{p_id:challenge,p_status:'accepted'});
- assert.deepEqual(calls[6].args,{p_session:session,p_count:false});
+ assert.deepEqual(calls[6].args,{p_challenge:challenge,p_action:'pass',p_exclude:false});
+ assert.deepEqual(calls[7].args,{p_challenge:challenge,p_action:'refuse',p_exclude:true});
+ assert.deepEqual(calls[8].args,{p_session:session,p_count:false});
  assert.ok(calls.every(c=>!JSON.stringify(c.args).includes('user_id')));
 });
 test('reads only its own challenge cards, never a partner private challenge',async()=>{
@@ -76,6 +80,9 @@ test('invalid actions and server-made faces never become a fake dice result',asy
  await assert.rejects(()=>api.d100(session,'MIXTE'),/non confirmée/);
  await assert.rejects(()=>api.d100(session,'FORCE'),RangeError);
  await assert.rejects(()=>api.answer(challenge,'admin-bypass'),RangeError);
+ await assert.rejects(()=>api.answer(challenge,'passed'),RangeError);
+ await assert.rejects(()=>api.redraw(challenge,'pass',{exclude:true}),RangeError);
+ await assert.rejects(()=>api.redraw(challenge,'force'),RangeError);
  await assert.rejects(()=>api.d6('not-uuid'),RangeError);
 });
 test('A and B must be two distinct verified IDs in exactly the same QA duo',()=>{

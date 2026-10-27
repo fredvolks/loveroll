@@ -55,3 +55,10 @@ test('Soirée QA caps WebGL contexts when many D100 challenges exist',()=>{
  assert.equal((markup.match(/soiree-qa-challenge/g)||[]).length,18);
  assert.match(markup,/Résultat officiel : 18/);
 });
+
+test('Soirée QA Passer / Refuser uses the current atomic LR-015 RPC actions',()=>{
+ const screen=renderSoireeQaScreen({role:'A',snapshot:base,partnerId:b});
+ assert.match(screen,/redraw:55555555-5555-4555-8555-555555555555:pass:no/);
+ assert.match(screen,/redraw:55555555-5555-4555-8555-555555555555:refuse:yes/);
+ assert.doesNotMatch(screen,/answer:55555555-5555-4555-8555-555555555555:passed/);
+});

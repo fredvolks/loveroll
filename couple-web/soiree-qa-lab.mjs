@@ -53,9 +53,13 @@ export function renderSoireeQaScreen({role,snapshot,partnerId}){
      escapeHtml(item.face)+' · '+escapeHtml(item.status)+'</p>'+
     die(role,item.face,100,'challenge-'+item.id,item.id===selectedChallenge?.id)+
     (item.status==='proposed'?btn(role,'answer:'+item.id+':accepted','Accepter')+
-      btn(role,'answer:'+item.id+':passed','Passer'):'')+
+      btn(role,'redraw:'+item.id+':pass:no','Passer + repiger (quota serveur)')+
+      btn(role,'redraw:'+item.id+':refuse:no','Refuser et repiger')+
+      btn(role,'redraw:'+item.id+':refuse:yes','Refuser et exclure du cycle'):'')+
     (item.status==='accepted'?btn(role,'answer:'+item.id+':completed','Terminer')+
-      btn(role,'answer:'+item.id+':passed','Passer'):'')+
+      btn(role,'redraw:'+item.id+':pass:no','Passer + repiger (quota serveur)')+
+      btn(role,'redraw:'+item.id+':refuse:no','Refuser et repiger')+
+      btn(role,'redraw:'+item.id+':refuse:yes','Refuser et exclure du cycle'):'')+
     '</article>';
   }
   html+=btn(role,'stop','Arrêter cette soirée sans la compter',role!=='A');
@@ -170,6 +174,13 @@ export function mountSoireeQaBench({
     const [,id,answer]=action.split(':');
     if(!status.mine.some(c=>c.id===id))throw new Error('Défi non destiné à ce compte QA');
     await api[role].answer(id,answer);
+   }else if(action.startsWith('redraw:')){
+    const [,id,choice,exclude]=action.split(':');
+    if(!status.mine.some(c=>c.id===id&&['proposed','accepted'].includes(c.status)))
+     throw new Error('Défi non admissible à la repige');
+    if(!['pass','refuse'].includes(choice)||!['yes','no'].includes(exclude))
+     throw new Error('Repige invalide');
+    await api[role].redraw(id,choice,{exclude:exclude==='yes'});
    }else if(action==='stop'){
     if(role!=='A'||!session)throw new Error('Aucune soirée à arrêter');
     if(globalThis.confirm?.('Arrêter cette soirée QA sans la compter ?')!==true)return;

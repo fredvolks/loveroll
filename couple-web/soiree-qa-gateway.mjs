@@ -89,14 +89,24 @@ export function createSoireeQaGateway({client,expectedUserId}){
  }
  async function answer(challengeId,action){
   await identity();
-  if(!['accepted','passed','completed'].includes(action))
+  if(!['accepted','completed'].includes(action))
    throw new RangeError('Réponse au défi invalide');
   await rpc('answer_challenge',{p_id:requireUuid(challengeId),p_status:action});
   return true;
+ }
+ async function redraw(challengeId,action,{exclude=false}={}){
+  await identity();
+  if(!['pass','refuse'].includes(action)||typeof exclude!=='boolean'||
+     action==='pass'&&exclude)throw new RangeError('Action de repige invalide');
+  // Exactly the LR-015 atomic RPC used by the public app; the server
+  // checks monthly pass quota, exclusions and replacement selection.
+  return rpc('love_respond_and_redraw',{
+    p_challenge:requireUuid(challengeId),p_action:action,p_exclude:exclude
+  });
  }
  async function stop(sessionId){
   await identity();
   return rpc('finish_couple_session',{p_session:requireUuid(sessionId),p_count:false});
  }
- return Object.freeze({identity,snapshot,weekly,start,d6,d100,answer,stop});
+ return Object.freeze({identity,snapshot,weekly,start,d6,d100,answer,redraw,stop});
 }
