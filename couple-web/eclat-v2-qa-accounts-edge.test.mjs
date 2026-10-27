@@ -36,3 +36,13 @@ test('operator can check QA schema without writing any user or database record',
  assert.match(match[1],/head:true/);
  assert.doesNotMatch(match[1],/\.insert\(|\.update\(|\.delete\(|createUser|deleteUser/);
 });
+
+test('QA provisioner creates actual game profiles and refuses deleting migrated couples',()=>{
+ assert.match(code,/admin\.from\('couple_profiles'\)\.upsert/);
+ assert.match(code,/display_name:'Test A'/);
+ assert.match(code,/display_name:'Test B'/);
+ assert.match(code,/\['couple_profiles','id'\]/);
+ assert.match(code,/admin\.from\('couple_members'\)\s*\.select\('user_id'\)/);
+ assert.match(code,/new Set\(\[pair\.user_a,pair\.user_b\]\)/);
+ assert.match(code,/Suppression bloquée : ce couple QA contient un autre membre/);
+});

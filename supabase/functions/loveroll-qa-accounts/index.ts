@@ -40,6 +40,15 @@ async function deleteManagedPair(admin:Admin,pair:any,operatorId:string){
  }
  await assertResult(admin.from('loveroll_qa_managed_pairs')
   .update({state:'deleting'}).eq('id',pair.id).eq('operator_id',operatorId).select('id').single());
+ // Verify the couple has not acquired any unrelated member since provision.
+ // Otherwise a stale ledger could delete a real person's couple. Retrying a
+ // partially deleted pair (zero or one remaining member) stays possible.
+ const {data:members,error:membersError}=await admin.from('couple_members')
+  .select('user_id').eq('couple_id',pair.couple_id);
+ if(membersError)throw membersError;
+ const allowed=new Set([pair.user_a,pair.user_b]);
+ if((members||[]).some((member:any)=>!allowed.has(member.user_id)))
+  throw new Error('Suppression bloquée : ce couple QA contient un autre membre');
  // Cascades to the couple's V1/V2 sessions and private game data, but not any
  // unrelated couple. A missing couple is valid when retrying partial cleanup.
  const {error:coupleError}=await admin.from('couples').delete().eq('id',pair.couple_id);
@@ -87,6 +96,12 @@ async function createPair(admin:Admin,operatorId:string){
   }).select('id').single());
   ledger=true;
   await assertResult(admin.from('couples').insert({id:couple}).select('id').single());
+  // The actual LoveRoll onboarding and account UI expect a profile row for
+  // each player. Upsert is safe if QA schema has an Auth trigger generating it.
+  await assertResult(admin.from('couple_profiles').upsert([
+   {id:creds[0].id,display_name:'Test A'},
+   {id:creds[1].id,display_name:'Test B'}
+  ],{onConflict:'id'}).select('id'));
   await assertResult(admin.from('couple_members').insert([
    {couple_id:couple,user_id:creds[0].id},
    {couple_id:couple,user_id:creds[1].id}
@@ -139,7 +154,7 @@ export default {
     // rights, Stripe readiness, Edge deployment or real player testing.
     const required=[
      ['loveroll_qa_managed_pairs','id'],
-     ['couples','id'],['couple_members','couple_id'],
+     ['couples','id'],['couple_profiles','id'],['couple_members','couple_id'],
      ['love_eclat_v2_sessions','id'],
      ['couple_sessions','id'],['couple_rolls','id']
     ] as const;
