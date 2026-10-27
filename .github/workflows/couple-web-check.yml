@@ -38,6 +38,7 @@ jobs:
           node --check couple-web/ios-install-tour.mjs
           node --check couple-web/loveroll-sounds.mjs
           node --test couple-web/ios-install-sound-v229.test.mjs
+          node --test couple-web/ruby-surfaces-responsive.test.mjs
           node --test couple-web/timed-evening-completion.test.mjs
           node --check couple-web/premium-evening.mjs
           node --check couple-web/evening-calendar.mjs
