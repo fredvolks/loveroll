@@ -293,6 +293,20 @@ async function main(){
     // or manipulate any real customer Auth user ID directly.
     await page.locator('#studio-real-delete').click({timeout:8000});
     await page.locator('#studio-real-create').waitFor({state:'visible',timeout:35000});
+    // The original Studio Edge deletion must have completed, not merely
+    // re-enabled a button after an optimistic local UI transition. The audit
+    // is read back from the privileged backend by Studio's normal refresh.
+    await page.locator('#studio-real-audit-list li').first()
+     .filter({hasText:'Suppression du duo terminée'})
+     .waitFor({state:'visible',timeout:35000});
+    assert.equal(await page.locator('#studio-real-delete').isHidden(),true,
+     'registered A/B test pool still present after cleanup');
+    assert.equal(await page.locator('#studio-real-frame-A iframe').count(),0,
+     'player A iframe survived the supposedly successful purge');
+    assert.equal(await page.locator('#studio-real-frame-B iframe').count(),0,
+     'player B iframe survived the supposedly successful purge');
+    assert.equal((await page.locator('#studio-real-progress-count').innerText()).trim(),'0/9',
+     'Studio progress was not reset after both synthetic identities were removed');
     cleanupSuccessful=true;
    }catch(e){
     console.error('CRITICAL: verify staging cleanup manually; test pair may remain',String(e));
