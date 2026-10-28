@@ -34,21 +34,27 @@ async function rpc(name,args={}){
 const promoAdmin=createPromoAdmin({rpc});
 const geoUsage=createGeoUsageAdmin({rpc});
 const realSandbox=createStudioRealSandbox({client});
+let authGateGeneration=0;
 const gated=()=>{
+ authGateGeneration++;
  realSandbox.deactivate();
  $('gate').hidden=false;$('dashboard').hidden=true;$('signout').hidden=true;
 };
 async function bootstrap(){
+ const generation=authGateGeneration;
  try{
   const {data:auth,error}=await client.auth.getUser();
+  if(generation!==authGateGeneration)return; // A logout won the race.
   if(error||!auth.user){gated();return;}
   const [info,referrals]=await Promise.all([rpc('love_platform_admin_read'),rpc('love_admin_referral_settings')]);
+  if(generation!==authGateGeneration)return; // Don't reshow admin after signout.
   data=info;referralData=referrals;
   $('gate').hidden=true;$('dashboard').hidden=false;$('signout').hidden=false;
   render();
   realSandbox.init().catch(error=>console.warn('Banc réel indisponible',error));
   loadDashboardMetrics().catch(()=>{});
  }catch(error){
+  if(generation!==authGateGeneration)return;
   console.warn('Admin access denied',error?.message||'authentication required');
   gated();$('gate').querySelector('.small-note').textContent='Accès réservé au propriétaire de la plateforme. Contactez l’administrateur pour activer votre compte.';
  }
