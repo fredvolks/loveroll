@@ -47,7 +47,8 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
   'studio-show-seat-A','studio-show-seat-B','studio-real-expand-A','studio-real-expand-B',
   'studio-real-jump-A','studio-real-jump-B',
   'studio-real-frame-A','studio-real-frame-B','studio-real-seat-state-A','studio-real-seat-state-B',
-  'studio-real-challenge-cards','studio-real-challenge-list'])make(id);
+  'studio-real-challenge-cards','studio-real-challenge-list',
+  'studio-real-audit','studio-real-audit-list'])make(id);
  for(const s of ['A','B']){
   const title=new Element('div');title.classList.add('studio-real-frame-label');
   nodes.get('studio-real-frame-'+s).append(title);
@@ -67,6 +68,10 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
  const client={functions:{invoke:async(name,{body})=>{
   calls.push(body.action);
   if(body.action==='status')return {data:{ready:true,state:'ready',
+   audit:[
+    {action:'create_succeeded',created_at:'2026-10-27T22:35:00Z'},
+    {action:'login_requested',created_at:'2026-10-27T22:34:00Z'}
+   ],
    game:{weekly_face:3,monthly_face:47,personal_faces:{A:2,B:5},session:'open',challenges_total:2,eclat_enabled:false,
      challenge_preview:[{seat:'B',category:'SENSUEL',face:42,status:'offered',title:'Vraie carte de test',description:'Consigne issue de la base'}]},
    seats:[{seat:'A',user_id:'test-a'},{seat:'B',user_id:'test-b'}]}};
@@ -80,6 +85,12 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
   assert.ok(a&&b,'two independent official LoveRoll iframes');
   assert.match(nodes.get('studio-real-diagnostics').textContent,/D6 Soirée A : 2/);
   assert.match(nodes.get('studio-real-diagnostics').textContent,/D100 Surprise : 47/);
+  const auditEvents=nodes.get('studio-real-audit-list').children;
+  assert.equal(nodes.get('studio-real-audit').hidden,false);
+  assert.equal(auditEvents.length,2);
+  assert.match(auditEvents[0].children[0].textContent,/Duo de test créé/);
+  assert.match(auditEvents[1].children[0].textContent,/Connexion technique demandée/);
+  assert.ok(!auditEvents[0].children[0].textContent.includes('token'));
   const officialCards=nodes.get('studio-real-challenge-list').children;
   assert.equal(nodes.get('studio-real-challenge-cards').hidden,false);
   assert.equal(officialCards.length,1,'only actually saved cards are presented');
