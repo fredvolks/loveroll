@@ -39,12 +39,18 @@ export async function checkStagingReadiness({ref,url,key,fetcher=fetch}){
  validateStaging(ref,url,key);
  const headers={apikey:key,'Content-Type':'application/json'};
  const details=[];
- for(const table of requiredTables){
-  const r=await probe(fetcher,url,headers,
-   '/rest/v1/'+table+'?select=*&limit=0','GET');
-  const exists=r.status===200||(
-   [401,403].includes(r.status)&&r.code==='42501');
-  details.push({component:'table '+table,ready:exists,status:r.status,code:r.code});
+ // Probe independent schema objects in small batches to reduce staging
+ // setup time without flooding Supabase or hiding any incomplete table.
+ const parallel=4;
+ for(let i=0;i<requiredTables.length;i+=parallel){
+  const batch=await Promise.all(requiredTables.slice(i,i+parallel).map(async table=>{
+   const r=await probe(fetcher,url,headers,
+    '/rest/v1/'+table+'?select=*&limit=0','GET');
+   const exists=r.status===200||(
+    [401,403].includes(r.status)&&r.code==='42501');
+   return {component:'table '+table,ready:exists,status:r.status,code:r.code};
+  }));
+  details.push(...batch);
  }
  for(const fn of ['love-studio-sandbox','love-venice-bridge']){
   const r=await probe(fetcher,url,headers,'/functions/v1/'+fn,'POST');
