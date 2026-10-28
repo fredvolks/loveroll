@@ -79,6 +79,14 @@ begin
   if sqlerrm='SECURITY FAILURE: invalid answer accepted' then raise;end if;
  end;
 
+ -- Explicit NULL responses must be rejected just like unsupported strings.
+ begin
+  perform public.love_evening_invite_respond(invitation,null);
+  raise exception 'SECURITY FAILURE: NULL response accepted';
+ exception when raise_exception then
+  if sqlerrm='SECURITY FAILURE: NULL response accepted' then raise;end if;
+ end;
+
  -- Changing a couple's membership must not leak a former B invitation to C.
  delete from public.couple_members where couple_id=couple and user_id=b;
  insert into public.couple_members(couple_id,user_id) values(couple,c);
