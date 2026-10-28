@@ -188,8 +188,8 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
    'visual inspection and refresh must not alter live Supabase test accounts');
   simulatedDeletion=true;
   await studio.refresh();
-  assert.equal(getFrame('A'),undefined,'deleted sandbox never displays a stale logged-in seat');
-  assert.equal(getFrame('B'),undefined,'deleted sandbox closes the partner game too');
+  assert.equal(getFrame('A'),null,'deleted sandbox never displays a stale logged-in seat');
+  assert.equal(getFrame('B'),null,'deleted sandbox closes the partner game too');
   assert.equal(nodes.get('studio-real-audit').hidden,false,
    'private audit persists after the synthetic duo is deleted');
   assert.equal(nodes.get('studio-real-audit-list').children[0].children[0].textContent,
