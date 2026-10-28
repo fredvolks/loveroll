@@ -1335,7 +1335,16 @@ function renderEclat(){
      if(returnToGallery)returnToGallery.hidden=false;
     }
    }).catch(error=>{
-    if(eclatV2Player===currentPlayer)console.warn('Actualisation Éclat V2',error?.code||'');
+    if(eclatV2Player!==currentPlayer)return;
+    const latest=currentPlayer.getStatus();
+    if(latest?.access===false){
+     // The child already cleared its private state after revoked JWT or a
+     // replaced session. Propagate the denial to the parent before another
+     // app-level redraw can mount the previously cached Premium scene.
+     state.eclatV2Status={access:false,active:false};
+     disposeEclatV2Player();render();return;
+    }
+    console.warn('Actualisation Éclat V2',error?.code||'');
    });
   },5000);
   eclatV2Poll?.unref?.();
