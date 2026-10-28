@@ -26,6 +26,11 @@ export function coupleSyncChanged(local,remote,{week,month,tab}={}){
   const signature=q=>JSON.stringify([q?.month||null,Number(q?.used),Number(q?.limit),Boolean(q?.can_pass)]);
   if(signature(remote.passQuota)!==signature(local.monthlyPassQuota))return true;
  }
+ if(Array.isArray(remote.adaptations)){
+  const signature=rows=>JSON.stringify((rows||[]).map(x=>
+   [x.challenge_id,x.status,x.proposed_text,x.proposed_minutes].join(':')).sort());
+  if(signature(remote.adaptations)!==signature(local.adaptations))return true;
+ }
  if(remote.reviews&&JSON.stringify(remote.reviews.map(r=>r.session_id+':'+r.author_id+':'+r.submitted_at).sort())!==
      JSON.stringify((local.eveningReviews||[]).map(r=>r.session_id+':'+r.author_id+':'+r.submitted_at).sort()))return true;
  const session=(remote.sessions||[]).find(s=>s.finished_at==null)||null;
@@ -55,7 +60,8 @@ function sharedSignature(state){
   state.monthly?.monthly_restaurant?.id,state.eveningBoard,
   state.eveningInvite?.id,state.eveningInvite?.state,state.eveningInvite?.available,
   state.monthlyPassQuota?.month,state.monthlyPassQuota?.used,
-  state.monthlyPassQuota?.limit,state.monthlyPassQuota?.can_pass
+  state.monthlyPassQuota?.limit,state.monthlyPassQuota?.can_pass,
+  (state.adaptations||[]).map(x=>[x.challenge_id,x.status,x.proposed_text,x.proposed_minutes]).sort()
  ]);
 }
 /** Realtime fast path + secure fallback for browsers with sleeping/blocked sockets.
@@ -74,7 +80,7 @@ export function createCoupleLiveSync({state,query,rpc,refresh,render,ready,week,
  }
  async function reconcile(){
   if(!eligible())return;
-  if(inRefresh||state.diceStatus||state.adventOpening!=null){refreshAgain=true;return;}
+  if(inRefresh||state.diceStatus||state.adventOpening!=null||(state.tab==='session'&&state.showEveningChallenges&&state.selectedEveningChallengeId===state.adaptOpen&&state.adaptOpen)){refreshAgain=true;return;}
   if(['settings','library','monthly-library','advent-editor','special-editor'].includes(state.tab)&&formDirty()){
    refreshAgain=true;return;
   }
@@ -85,7 +91,7 @@ export function createCoupleLiveSync({state,query,rpc,refresh,render,ready,week,
    if(state.coupleId===couple&&!state.diceStatus&&state.adventOpening==null&&previous!==sharedSignature(state))render();
   }finally{
    inRefresh=false;
-   if(refreshAgain&&!state.diceStatus&&state.adventOpening==null&&eligible()&&!formDirty()){
+   if(refreshAgain&&!state.diceStatus&&state.adventOpening==null&&!(state.tab==='session'&&state.showEveningChallenges&&state.selectedEveningChallengeId===state.adaptOpen&&state.adaptOpen)&&eligible()&&!formDirty()){
     refreshAgain=false;request(350);
    }
   }
@@ -96,17 +102,18 @@ export function createCoupleLiveSync({state,query,rpc,refresh,render,ready,week,
   if(!force&&now-lastProbe<interval)return;
   lastProbe=now;inProbe=true;
   const couple=state.coupleId,tab=state.tab;
-  // The private quota is separate for each recipient. Once every 10 s is
-  // sufficient when Realtime is unavailable; don't poll it every 3.2 s.
+  // Keep recipient-only pass quota probes at most once every 10 s.
   const checkQuota=(tab==='session'||tab==='settings')&&(force||now-lastQuotaProbe>=10000);
   if(checkQuota)lastQuotaProbe=now;
   try{
-   const [rolls,sessions,reviews,advent,invitation,passQuota]=await Promise.all([
+   const [rolls,sessions,reviews,advent,invitation,adaptations,passQuota]=await Promise.all([
     query('couple_rolls',{eq:{couple_id:couple},columns:'id,kind,key,face'}),
     query('couple_sessions',{eq:{couple_id:couple},columns:'id,finished_at'}),
     rpc('love_evening_reviews_for_couple',{p_couple:couple}).catch(()=>null),
     tab==='advent'?query('couple_advent',{eq:{couple_id:couple},columns:'year,day,opened_by,opened_at'}):Promise.resolve(null),
     (tab==='home'||tab==='session')?rpc('love_evening_invite_status',{p_couple:couple}).catch(()=>null):Promise.resolve(null),
+    tab==='session'&&state.adaptations!==null?
+     query('love_challenge_adaptations',{eq:{couple_id:couple}}).catch(()=>null):Promise.resolve(null),
     checkQuota?rpc('my_love_monthly_pass_quota',{p_couple:couple}).catch(()=>null):Promise.resolve(null)
    ]);
    if(state.coupleId!==couple||state.diceStatus)return;
@@ -121,7 +128,7 @@ export function createCoupleLiveSync({state,query,rpc,refresh,render,ready,week,
     ]);
    }
    if(state.coupleId!==couple||state.diceStatus)return;
-   if(coupleSyncChanged(state,{rolls,sessions,rollStatus,challenges,board,reviews,advent,invitation,passQuota},
+   if(coupleSyncChanged(state,{rolls,sessions,rollStatus,challenges,board,reviews,advent,invitation,adaptations,passQuota},
     {week:week(),month:month(),tab}))request(0);
   }catch(e){
    if(online())console.warn('Statut des dés en direct',e?.code||e?.message);

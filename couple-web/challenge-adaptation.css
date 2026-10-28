@@ -1,0 +1,22 @@
+/* LR-017: a secondary, consent-first panel inside the real Soirée. */
+.lr-adapt-panel,.lr-adapt-inbox{box-sizing:border-box;color:#fff5f6;background:#4a1d30eb;
+ border:1px solid #d5a2b3;border-radius:16px;padding:12px;margin:12px auto;line-height:1.4}
+.lr-adapt-original{max-height:36dvh;overflow-y:auto;padding:9px 10px;margin:8px 0;
+ border:1px solid #ffffff48;border-radius:12px;background:#270e19a8}
+.lr-adapt-original strong{font-size:.85rem}
+.lr-adapt-original p{white-space:pre-wrap;overflow-wrap:anywhere}
+.lr-adapt-panel h3{margin:0 0 8px;font-size:1.05rem}
+.lr-adapt-panel p,.lr-adapt-inbox p{margin:7px 0;font-size:.9rem}
+.lr-adapt-panel label{display:block;font-size:.85rem;margin:8px 0 4px}
+.lr-adapt-panel textarea,.lr-adapt-panel input{box-sizing:border-box;display:block;width:100%;
+ border:1px solid #d8aebb;background:#fffafa;color:#381725;border-radius:10px;padding:10px;
+ font:inherit;min-height:44px}
+.lr-adapt-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.lr-adapt-actions button,.lr-adapt-open{border:1px solid #e7b8ca;border-radius:12px;
+ padding:9px 12px;min-height:44px;font:600 .88rem system-ui,sans-serif;cursor:pointer}
+.lr-adapt-actions button:first-child{background:#f6dbe7;color:#4b1c32}
+.lr-adapt-actions button:not(:first-child),.lr-adapt-open{background:transparent;color:#fff7fa}
+.lr-adapt-actions button:focus-visible,.lr-adapt-open:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.lr-adapt-request{border-top:1px solid #ffffff38;padding-top:8px;margin-top:8px}
+.lr-adapt-proposal{font-weight:650;white-space:pre-wrap;overflow-wrap:anywhere}
+@media (max-width:530px){.lr-adapt-panel,.lr-adapt-inbox{margin:8px 0;padding:10px}}
