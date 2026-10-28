@@ -74,7 +74,7 @@ export function createCoupleLiveSync({state,query,rpc,refresh,render,ready,week,
  }
  async function reconcile(){
   if(!eligible())return;
-  if(inRefresh||state.diceStatus||state.adventOpening!=null||state.adaptOpen){refreshAgain=true;return;}
+  if(inRefresh||state.diceStatus||state.adventOpening!=null||(state.tab==='session'&&state.showEveningChallenges&&state.selectedEveningChallengeId===state.adaptOpen&&state.adaptOpen)){refreshAgain=true;return;}
   if(['settings','library','monthly-library','advent-editor','special-editor'].includes(state.tab)&&formDirty()){
    refreshAgain=true;return;
   }
@@ -85,7 +85,7 @@ export function createCoupleLiveSync({state,query,rpc,refresh,render,ready,week,
    if(state.coupleId===couple&&!state.diceStatus&&state.adventOpening==null&&previous!==sharedSignature(state))render();
   }finally{
    inRefresh=false;
-   if(refreshAgain&&!state.diceStatus&&state.adventOpening==null&&!state.adaptOpen&&eligible()&&!formDirty()){
+   if(refreshAgain&&!state.diceStatus&&state.adventOpening==null&&!(state.tab==='session'&&state.showEveningChallenges&&state.selectedEveningChallengeId===state.adaptOpen&&state.adaptOpen)&&eligible()&&!formDirty()){
     refreshAgain=false;request(350);
    }
   }
