@@ -18,6 +18,21 @@ test('studio backend only acts for verified platform administrators',()=>{
 });
 test('two real Auth users are generated without pre-known credentials',()=>{
  assert.match(source,/service\.auth\.admin\.createUser/);
+ assert.match(source,/\.insert\(\{admin_id:adminId,seat:s,user_id:null,synthetic_email:email\}\)/,
+  'must persist exact pending technical email BEFORE creating Supabase Auth user');
+ assert.match(source,/\.update\(\{user_id:created\.user\.id\}\)/,
+  'must attach the actual Auth UUID to the pre-reserved seat');
+ assert.match(source,/\.eq\('synthetic_email',email\)\.is\('user_id',null\)/,
+  'registration may not overwrite a preexisting Auth identity');
+ assert.match(source,/service\.rpc\('love_studio_recover_pending_seats'/,
+  'failed creation must recover any newly issued Auth identity');
+ assert.match(source,/Date\.now\(\)-createdAt<5\*60\*1000/,
+  'deletion must not race an actively creating Auth account');
+ assert.match(schema,/FUNCTION public\.love_studio_recover_pending_seats\(p_admin uuid\)/);
+ assert.match(schema,/FROM auth\.users u/);
+ assert.match(schema,/lower\(u\.email\)=lower\(v_seat\.synthetic_email\)/);
+ assert.match(schema,/v_auth\.raw_app_meta_data->>'love_studio_admin' IS DISTINCT FROM p_admin::text/);
+ assert.match(schema,/REVOKE ALL ON FUNCTION public\.love_studio_recover_pending_seats\(uuid\) FROM PUBLIC,anon,authenticated/);
  assert.match(source,/email_confirm:true/);
  assert.match(source,/app_metadata:\{love_studio_test:true,love_studio_admin:adminId\}/);
  assert.match(source,/service\.from\('couple_members'\)\.insert/);
