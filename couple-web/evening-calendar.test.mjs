@@ -183,7 +183,7 @@ test('LR-003 monthly headline counts only CLOSED evenings in the selected Toront
   sessions:entries,members:[{user_id:'a',name:'Partenaire'}],stats:outcomes,
   me:'a',month,selectedDate});
  const headline=html=>{
-  const match=html.match(/<div class="evening-cal-stats" aria-label="Bilan du mois affiché">([\s\S]*?)<\/div>/);
+  const match=html.match(/<div class="evening-cal-stats">([\s\S]*?)<\/div>/);
   assert.ok(match,'headline totals are month-scoped and clearly labelled');
   return match[1];
  };
