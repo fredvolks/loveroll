@@ -67,3 +67,35 @@ test('OTP mismatch and nontechnical accounts never remain signed in as Studio se
   dispose();
  }
 });
+
+test('real Auth SIGNED_OUT immediately updates the A/B connection indicator and unsubscribes safely',async()=>{
+ let authListener,unsubscribeCount=0,handler;
+ const events=[],parent={postMessage:(message,origin)=>events.push({message,origin})};
+ const selfWindow={
+  parent,location:{reload(){}},
+  addEventListener:(_,fn)=>{handler=fn},
+  removeEventListener:()=>{}
+ };
+ const client={auth:{
+  getSession:async()=>({data:{session:null}}),
+  onAuthStateChange:fn=>{
+   authListener=fn;
+   return {data:{subscription:{unsubscribe(){unsubscribeCount++}}}};
+  }
+ }};
+ const done=startStudioSeatLogin(client,'B',{selfWindow,origin:'https://fredvolks.github.io'});
+ const technical={user:{id:'technical-b',app_metadata:{love_studio_test:true}}};
+ authListener('SIGNED_IN',technical);
+ assert.equal(events.at(-1).message.authenticated,true);
+ assert.equal(events.at(-1).message.user_id,'technical-b');
+ authListener('SIGNED_OUT',null);
+ assert.equal(events.at(-1).message.authenticated,false);
+ assert.equal(events.at(-1).message.user_id,null);
+ authListener('SIGNED_IN',{user:{id:'customer',app_metadata:{}}});
+ assert.equal(events.at(-1).message.authenticated,false,'real customer session is never counted as a technical seat');
+ done();
+ assert.equal(unsubscribeCount,1);
+ const size=events.length;
+ authListener('SIGNED_IN',technical);
+ assert.equal(events.length,size,'disposed Studio never leaks Auth state to parent');
+});
