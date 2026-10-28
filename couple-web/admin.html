@@ -2,7 +2,8 @@
 <html lang="fr-CA"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex,nofollow,noarchive"><meta name="theme-color" content="#210d18">
 <title>LoveRoll Studio — Administration</title><link rel="icon" href="./assets/loveroll-icon-192.png">
-<link rel="stylesheet" href="./platform-admin.css?v=20261019-center170"><link rel="stylesheet" href="./platform-admin-luxe.css?v=20261019-luxe172"></head>
+<link rel="stylesheet" href="./platform-admin.css?v=20261019-center170"><link rel="stylesheet" href="./platform-admin-luxe.css?v=20261019-luxe172">
+<link rel="stylesheet" href="./eclat-v2-stage.css?v=20261028-v2-live251"><link rel="stylesheet" href="./eclat-v2-qa-workbench.css?v=20261028-v2-live251"></head>
 <body><div class="studio-app">
 <header class="studio-header"><div class="studio-mark"><span>♡</span><div><strong>LoveRoll</strong><small>STUDIO · ADMINISTRATION</small></div></div>
 <nav class="studio-top-nav"><a href="./">Retour à LoveRoll</a><button id="signout" hidden>Déconnexion</button></nav></header>
@@ -29,13 +30,14 @@
 <button type="button" data-pane="audience" data-studio-tile="audience"><span class="studio-quick-icon" data-studio-icon="shield-check" aria-hidden="true"></span><strong>Sécurité</strong><span class="studio-quick-arrow" aria-hidden="true">›</span></button>
 <button type="button" data-pane="catalogue" data-studio-tile="catalogue"><span class="studio-quick-icon" data-studio-icon="book-open" aria-hidden="true"></span><strong>Catalogue D100</strong><span class="studio-quick-arrow" aria-hidden="true">›</span></button>
 <button type="button" data-pane="history" data-studio-tile="history"><span class="studio-quick-icon" data-studio-icon="notebook" aria-hidden="true"></span><strong>Journal</strong><span class="studio-quick-arrow" aria-hidden="true">›</span></button>
+<button type="button" data-pane="eclat-qa" data-studio-tile="eclat-qa"><span class="studio-quick-icon" data-studio-icon="dice" aria-hidden="true"></span><strong>Éclat · atelier de test</strong><span class="studio-quick-arrow" aria-hidden="true">›</span></button>
 </nav>
 <div class="studio-layout">
 <aside class="studio-sidebar" id="tabs" aria-label="Sections administration">
 <button data-pane="prices" class="active">Tarifs et forfaits</button><button data-pane="referrals">Référencement et crédits</button><button data-pane="promos">Codes promotionnels</button><button data-pane="d100">D100 et activités</button>
 <button data-pane="geo">Géolocalisation</button><button data-pane="notifications">Notifications</button>
 <button data-pane="audience">Utilisateurs et sécurité</button><button data-pane="catalogue">Catalogue des 100</button>
-<button data-pane="history">Journal des modifications</button></aside>
+<button data-pane="history">Journal des modifications</button><button data-pane="eclat-qa">Éclat · atelier de test</button></aside>
 <div class="studio-mobile-nav">
  <label for="studio-pane-select">Choisir une section de l’administration</label>
  <select id="studio-pane-select" aria-label="Section de LoveRoll Studio">
@@ -48,13 +50,96 @@
   <option value="audience">Utilisateurs et sécurité</option>
   <option value="catalogue">Catalogue des 100</option>
   <option value="history">Journal des modifications</option>
+  <option value="eclat-qa">Éclat · atelier de test</option>
  </select>
  <div class="studio-mobile-shortcuts" aria-label="Accès rapides">
   <button type="button" data-pane="promos">Codes promo</button>
   <button type="button" data-pane="geo">Géolocalisation</button>
+   <button type="button" data-pane="eclat-qa">Tester Éclat A/B</button>
  </div>
 </div>
-<div class="studio-content"><form id="settings" autocomplete="off">
+<div class="studio-content"><section data-panel="eclat-qa" class="eclat-qa-panel" hidden>
+ <div class="eclat-qa-intro"><span>LABORATOIRE ISOLÉ</span>
+ <h2>Éclat V2 · Deux vrais joueurs</h2>
+ <p>Le véritable écran Éclat des deux partenaires côte à côte. Tirages, défis, votes, secrets et finales proviennent des <strong>vraies fonctions V2 du serveur de test</strong>, jamais d'une simulation simplifiée.</p></div>
+ <p class="eclat-qa-warning">Sécurité : exclusivement un <strong>projet Supabase LoveRoll QA distinct</strong> avec les migrations V2. L'atelier refuse la production et les clés secrètes. La création et la suppression de comptes test nécessitent la fonction serveur QA installée, avec opérateur autorisé. Aucun effacement de compte réel n'est permis.</p>
+ <div data-eclat-qa="connection" class="eclat-qa-config">
+  <label>Adresse du projet Supabase QA<input data-eclat-qa="url" type="url" spellcheck="false" autocomplete="off" placeholder="https://abcdefghijklmnopqrst.supabase.co"></label>
+  <label>Clé publiable du projet QA<input data-eclat-qa="key" type="password" spellcheck="false" autocomplete="off" placeholder="sb_publishable_…"></label>
+  <button type="button" data-eclat-qa-action="connect" class="secondary">Connecter uniquement la base QA</button>
+ </div>
+ <div data-eclat-qa="accounts" hidden>
+<section class="eclat-qa-operator" data-eclat-qa="operator">
+ <h3>Comptes jetables · gestion côté serveur QA</h3>
+ <p class="small-note">Le compte opérateur QA est différent des joueurs et de la connexion Super Admin principale. La fonction `loveroll-qa-accounts` doit être déployée uniquement sur le projet QA désigné. Sans elle, la création et le nettoyage sont refusés.</p>
+ <form data-eclat-qa-operator-form autocomplete="off">
+  <label>Courriel opérateur QA<input name="email" type="email" autocomplete="off" required></label>
+  <label>Mot de passe opérateur QA<input name="password" type="password" autocomplete="off" required></label>
+  <button type="submit" class="secondary">Autoriser mon compte opérateur QA</button>
+ </form>
+ <div class="eclat-qa-operator-buttons">
+  <button type="button" data-eclat-qa-action="qa-health" disabled>Vérifier les tables QA</button>
+  <button type="button" data-eclat-qa-action="qa-create" disabled>Créer deux comptes QA</button>
+  <button type="button" data-eclat-qa-action="qa-list" disabled>Voir les paires QA</button>
+  <button type="button" data-eclat-qa-action="qa-expire" disabled>Nettoyer les comptes expirés</button>
+  <button type="button" data-eclat-qa-action="qa-operator-logout" disabled>Déconnecter l'opérateur</button>
+ </div>
+ <div data-eclat-qa="one-time-passwords" class="eclat-qa-credentials" hidden aria-live="polite"></div>
+ <div data-eclat-qa="pairs" class="eclat-qa-managed-pairs" aria-live="polite"></div>
+</section>
+  <div class="eclat-qa-people">
+   <form data-eclat-qa="login-A" data-eclat-qa-form="A" autocomplete="off">
+    <h3>Joueur A</h3><p data-eclat-qa="account-A">Non connecté</p>
+    <label>Courriel du compte test A<input name="email" type="email" autocomplete="off" required></label>
+    <label>Mot de passe test A<input name="password" type="password" autocomplete="off" required></label>
+    <button class="secondary" type="submit">Connecter le compte A</button>
+   </form>
+   <form data-eclat-qa="login-B" data-eclat-qa-form="B" autocomplete="off">
+    <h3>Joueur B</h3><p data-eclat-qa="account-B">Non connecté</p>
+    <label>Courriel du compte test B<input name="email" type="email" autocomplete="off" required></label>
+    <label>Mot de passe test B<input name="password" type="password" autocomplete="off" required></label>
+    <button class="secondary" type="submit">Connecter le compte B</button>
+   </form>
+  </div>
+  <button type="button" data-eclat-qa-action="disconnect" class="secondary">Déconnecter les deux comptes</button>
+ </div>
+ <div data-eclat-qa="game" hidden>
+  <div class="eclat-qa-toolbar">
+   <label>Coffret<select data-eclat-qa="coffret">
+    <option value="1">01 · Les cinq secrets</option><option value="2">02 · Le double jeu</option>
+    <option value="3">03 · Le langage des sens</option><option value="4">04 · Les portes de minuit</option>
+    <option value="5">05 · Premier rendez-vous</option><option value="6">06 · Enquête amoureuse</option>
+    <option value="7">07 · À ta place</option><option value="8">08 · Notre bande originale</option>
+    <option value="9">09 · Le coffre des envies</option><option value="10">10 · Le compte à rebours</option>
+    <option value="11">11 · L'art de te séduire</option><option value="12">12 · La nuit du hasard</option>
+   </select></label>
+   <label>Durée<select data-eclat-qa="minutes"><option value="30">30 minutes</option><option value="60">60 minutes</option><option value="90">90 minutes</option></select></label>
+   <button type="button" data-eclat-qa-action="start" class="secondary">Démarrer une vraie séance QA</button>
+   <button type="button" data-eclat-qa-action="resume" class="secondary">Reprendre la séance existante</button>
+   <button type="button" data-eclat-qa-action="refresh" class="secondary">Actualiser les deux écrans</button>
+  </div>
+  <p class="eclat-qa-hint">Chaque écran agit avec un jeton d'authentification distinct. Les états sont resynchronisés toutes les 6 secondes. Les règles officielles du coffret restent en vigueur : aucun vote ni résultat ne peut être inventé par cet atelier.</p>
+  <div class="eclat-qa-grid">
+   <div class="eclat-qa-player"><h3>Écran réel du joueur A</h3><div data-eclat-qa="stage-A" aria-label="Vrai parcours Éclat joueur A"></div></div>
+   <div class="eclat-qa-player"><h3>Écran réel du joueur B</h3><div data-eclat-qa="stage-B" aria-label="Vrai parcours Éclat joueur B"></div></div>
+  </div>
+ </div>
+ <section data-eclat-qa="soiree" class="soiree-qa-workshop" hidden>
+  <div class="section-head"><span class="eyebrow">SOIRÉE RÉELLE · BASE QA UNIQUEMENT</span>
+   <h3>Tester les vrais D6 et D100</h3>
+   <p>Deux comptes distincts jouent avec le moteur officiel et le rendu WebGL. Les limites,
+   les défis privés et les tirages restent entièrement vérifiés par le serveur.</p></div>
+  <div class="soiree-qa-grid">
+   <div class="soiree-qa-player" data-soiree-qa-screen="A" aria-label="Vrai jeu Soirée du joueur A"></div>
+   <div class="soiree-qa-player" data-soiree-qa-screen="B" aria-label="Vrai jeu Soirée du joueur B"></div>
+  </div>
+  <p data-soiree-qa-message role="status" aria-live="polite"></p>
+  <p class="small-note">Le serveur impose les étapes, les quotas et les consentements :
+   aucun résultat ou défi de production n’est modifié par cet outil QA isolé.</p>
+ </section>
+ <p data-eclat-qa="feedback" class="eclat-qa-status" role="status" aria-live="polite">Atelier non connecté.</p>
+</section>
+<form id="settings" autocomplete="off">
 <section data-panel="prices" class="studio-pricing-panel">
 <div class="studio-price-heading">
  <div class="studio-price-emblem" data-studio-icon="tag" aria-hidden="true"></div>
@@ -182,4 +267,4 @@
 <div class="savebar"><span id="feedback" role="status" aria-live="polite"></span><button class="primary" id="save-settings" type="submit">Enregistrer les réglages</button></div>
 </form></div></div></section>
 </main><footer>LoveRoll Studio · Accès privé · Aucune facturation effectuée depuis cette console.</footer>
-</div><script type="module" src="./platform-admin.js?v=20261019-luxe172"></script></body></html>
+</div><script type="module" src="./platform-admin.js?v=20261028-v2-live251"></script></body></html>

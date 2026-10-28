@@ -1,0 +1,67 @@
+/* Éclat QA in protected owner Studio: iPad/desktop split-screen, narrow single column. */
+.eclat-qa-panel{color:#f9e8ef;display:grid;gap:18px}
+.eclat-qa-panel[hidden],.eclat-qa-panel [hidden]{display:none!important}
+.eclat-qa-intro{background:linear-gradient(125deg,#57203c,#2d1127);border:1px solid #96536d;
+ border-radius:19px;padding:clamp(16px,3vw,28px)}
+.eclat-qa-intro span{letter-spacing:.14em;font-size:.75rem;font-weight:800;color:#ffbfdd}
+.eclat-qa-intro h2{color:#fff;font-size:clamp(1.4rem,2.8vw,2rem);margin:8px 0}
+.eclat-qa-intro p{max-width:70ch;line-height:1.55}
+.eclat-qa-warning,.eclat-qa-hint{background:#381c30;border:1px solid #855369;
+ border-radius:13px;padding:13px 15px;color:#f5dee9;line-height:1.5}
+.eclat-qa-config,.eclat-qa-people form,.eclat-qa-toolbar{background:#311727;
+ border:1px solid #875069;border-radius:15px;padding:17px}
+.eclat-qa-config,.eclat-qa-people form{display:grid;gap:12px}
+.eclat-qa-panel label{display:grid;gap:6px;color:#f7e5ec;font-size:.95rem}
+.eclat-qa-panel input,.eclat-qa-panel select{width:100%;box-sizing:border-box;min-height:46px;
+ border:1px solid #ab7189;border-radius:10px;background:#281421;color:#fff;
+ font:inherit;padding:10px}
+.eclat-qa-panel button{min-height:46px;cursor:pointer}
+.eclat-qa-people{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px;margin-bottom:12px}
+.eclat-qa-people h3{margin:0;color:#fff}
+.eclat-qa-toolbar{display:flex;flex-wrap:wrap;align-items:end;gap:10px}
+.eclat-qa-toolbar label{flex:1 1 140px}
+.eclat-qa-toolbar button{flex:1 1 190px}
+.eclat-qa-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.eclat-qa-player{min-width:0;padding:10px;border-radius:17px;background:#230f20;border:1px solid #91506b}
+.eclat-qa-player>h3{margin:0 0 12px;color:#fff}
+.eclat-qa-player .eclat-v2-stage{max-width:none;min-height:450px;padding:clamp(12px,2vw,22px)}
+.eclat-qa-status{margin:0;padding:13px;border-radius:11px;background:#44243a;color:#fff;
+ overflow-wrap:anywhere}
+.eclat-qa-status[data-error="true"]{border:1px solid #f5a3a3;color:#ffe5e5}
+/* Keep both real players visible side by side on landscape iPad and desktop.
+   Portrait tablet and emergency mobile collapse naturally to one column. */
+@media(max-width:1020px){.eclat-qa-grid{grid-template-columns:1fr}}
+@media(max-width:720px){.eclat-qa-people{grid-template-columns:1fr}
+ .eclat-qa-toolbar button{flex-basis:100%}
+ .eclat-qa-player{padding:5px}
+ .eclat-qa-config,.eclat-qa-toolbar,.eclat-qa-people form{padding:12px}}
+
+.eclat-qa-operator{background:#2d1927;border:1px solid #895d73;
+ border-radius:15px;padding:18px;margin-bottom:16px}
+.eclat-qa-operator form{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}
+.eclat-qa-operator-buttons,.eclat-qa-managed-row{display:flex;gap:9px;flex-wrap:wrap;
+ align-items:center;justify-content:space-between;margin:12px 0}
+.eclat-qa-credentials{padding:12px;border:1px solid #d5acbe;background:#45253a;
+ border-radius:11px;overflow-wrap:anywhere;user-select:text}
+.eclat-qa-managed-row{padding:9px;border-bottom:1px solid #88506a}
+@media(max-width:840px){.eclat-qa-operator form{grid-template-columns:1fr}}
+
+.soiree-qa-workshop{border-radius:18px;border:1px solid #99506d;background:#230f20;
+ display:grid;gap:16px;padding:clamp(12px,2vw,21px)}
+.soiree-qa-workshop[hidden]{display:none!important}
+.soiree-qa-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
+.soiree-qa-player{min-width:0;overflow:hidden;background:#381c30;
+ border:1px solid #824865;border-radius:15px;padding:12px}
+.soiree-qa-person h4,.soiree-qa-round h5{color:#fff;margin:8px 0}
+.soiree-qa-round{border-top:1px solid #875069;margin-top:13px;padding-top:10px}
+.soiree-qa-round label{margin:10px 0}
+.soiree-qa-round button{width:100%;margin:5px 0}
+.soiree-qa-die{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+ border-radius:12px;background:#3c2033;margin:8px 0;padding:8px}
+.soiree-qa-die canvas{width:115px;height:115px;max-width:100%;touch-action:pan-y}
+.soiree-qa-die strong{font-size:.92rem;color:#fff}
+.soiree-qa-challenge{padding:12px;margin:12px 0;border:1px solid #9c6980;
+ border-radius:12px;background:#442238;overflow-wrap:anywhere}
+.soiree-qa-challenge h5{font-size:1rem;color:#ffe5ee}
+.soiree-qa-caption{font-size:.82rem;line-height:1.5;color:#e3c3d5}
+@media(max-width:980px){.soiree-qa-grid{grid-template-columns:1fr}}

@@ -1,0 +1,74 @@
+/* Staged Éclat V2 premium UI. Scoped to avoid changing V1 or global navigation. */
+.eclat-v2-stage{box-sizing:border-box;max-width:680px;margin:0 auto;min-height:70vh;
+ padding:clamp(18px,4vw,38px);border:1px solid rgba(248,203,222,.2);
+ border-radius:22px;color:#fff0f5;background:linear-gradient(155deg,#501e32 0%,#310d23 52%,#1f0919 100%);
+ font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.5}
+.eclat-v2-stage *{box-sizing:border-box}
+.eclat-v2-stage h2{font-size:clamp(1.5rem,3vw,2.1rem);line-height:1.15;letter-spacing:-.02em}
+.eclat-v2-stage small{letter-spacing:.09em;color:#ecc3d3;font-weight:600}
+.eclat-v2-stage header{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;align-items:center;
+ border-bottom:1px solid rgba(255,218,230,.16);padding-bottom:13px}
+.eclat-v2-stage header p{font-size:.84rem;margin:0;color:#edc9d7}
+.eclat-v2-content{padding:10px 0 16px}
+.eclat-v2-instruction{font-size:1.06rem;max-width:54ch}
+.eclat-v2-task,.eclat-v2-private,.eclat-v2-activity{background:rgba(255,229,236,.07);
+ padding:15px 18px;margin:12px 0;border:1px solid rgba(255,219,235,.12);border-radius:16px}
+.eclat-v2-private{border-color:#c989a8;background:#61253f}
+.eclat-v2-btn{appearance:none;text-align:center;display:inline-flex;justify-content:center;align-items:center;
+ border:1px solid rgba(255,221,234,.36);background:rgba(255,239,245,.09);color:#fff1f6;
+ border-radius:13px;padding:12px 16px;min-height:48px;font-size:1rem;font-weight:650;cursor:pointer}
+.eclat-v2-btn.primary{background:#f6d9e6;color:#40152e;border-color:#f6d9e6}
+.eclat-v2-btn:focus-visible,.eclat-v2-stage summary:focus-visible{outline:3px solid #fff;outline-offset:3px}
+.eclat-v2-btn:hover{filter:brightness(1.07)}
+.eclat-v2-btn:active{transform:translateY(1px)}
+.eclat-v2-actions{display:flex;gap:10px;flex-wrap:wrap;padding-top:12px}
+.eclat-v2-handover{display:flex;flex-direction:column;align-items:stretch;justify-content:center;gap:16px;text-align:center}
+.eclat-v2-handover-link{display:flex;justify-content:flex-end;padding-top:12px}
+.eclat-v2-door{display:grid;gap:9px;border:1px solid rgba(255,230,239,.3);border-radius:14px;padding:14px}
+.eclat-v2-door legend{padding:0 8px;font-weight:700}
+.eclat-v2-stage details{margin:10px 0;border:1px solid rgba(255,230,239,.22);border-radius:12px;padding:10px 14px}
+.eclat-v2-stage summary{cursor:pointer;min-height:36px;font-weight:650}
+.eclat-v2-muted{font-size:.85rem;color:#e7b8cb}
+.eclat-v2-branch{font-weight:700;color:#ffd5e5}
+@media(max-width:480px){.eclat-v2-stage{border-radius:0;padding:16px 16px 28px}
+ .eclat-v2-actions,.eclat-v2-actions .eclat-v2-btn{width:100%}
+ .eclat-v2-handover-link .eclat-v2-btn{width:100%}}
+@media(prefers-reduced-motion:reduce){.eclat-v2-btn:active{transform:none}}
+
+.eclat-v2-stage input[data-eclat-v2-input]{width:100%;min-height:46px;box-sizing:border-box;
+ border:1px solid rgba(255,225,238,.35);background:rgba(12,6,14,.5);
+ border-radius:11px;color:#fff1f6;font-size:1rem;padding:10px 12px;outline-offset:3px}
+.eclat-v2-stage input[data-eclat-v2-input]:focus-visible{outline:3px solid #fff}
+.eclat-v2-stage input[data-eclat-v2-input]:disabled{opacity:.65}
+.eclat-v2-stage label{display:block;margin-top:8px;color:#ffe5ef}
+
+
+/* Genuine LoveRoll Éclat V2 mount; never a recreated/synthetic game. */
+#app.loveroll-eclat-page .eclat-v2-live{
+ width:min(100%,1000px);margin:0 auto;padding:clamp(12px,3vw,24px);
+ box-sizing:border-box;min-width:0;display:grid;gap:12px;
+}
+#app.loveroll-eclat-page .eclat-v2-live-footer{
+ display:flex;flex-wrap:wrap;justify-content:center;gap:12px;
+}
+#app.loveroll-eclat-page .eclat-v2-live-footer button{
+ min-height:44px;max-width:100%;white-space:normal;
+}
+#app.loveroll-eclat-page .eclat-v2-device-choice{
+ width:min(100% - 24px,720px);margin:15px auto 22px;
+ padding:14px;border:1px solid #d3a5b8;border-radius:15px;
+ background:rgba(53,22,45,.89);color:#fff1f7;
+ box-sizing:border-box;display:flex;gap:10px;flex-wrap:wrap;
+}
+#app.loveroll-eclat-page .eclat-v2-device-choice p{width:100%;margin:2px 0;font-size:.9rem}
+#app.loveroll-eclat-page .eclat-v2-device-choice button{
+ flex:1 1 180px;min-height:44px;white-space:normal;padding:9px 13px;
+ border-radius:12px;border:1px solid #d3a5b8;color:#fff7fb;background:#71384f;
+}
+#app.loveroll-eclat-page .eclat-v2-device-choice button[aria-pressed="true"]{
+ background:#a84b74;border-color:#ffe1ed;box-shadow:0 0 0 2px #ffe1ed33;
+}
+#app.loveroll-eclat-page .eclat-v2-device-choice button:focus-visible,
+#app.loveroll-eclat-page .eclat-v2-live button:focus-visible{
+ outline:3px solid #ffe1ed;outline-offset:3px;
+}

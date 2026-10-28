@@ -2,13 +2,15 @@
 // Admin rights are verified by Supabase security-definer RPC on every write.
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.57.0';
 import {CONFIG} from './config.js';
+import {createEclatV2QaWorkbench} from './eclat-v2-qa-workbench.mjs?v=20261028-v2-live251';
 import {createPromoAdmin} from './platform-promos.mjs?v=20261019-promo161';
 import {createGeoUsageAdmin} from './platform-geo-usage.mjs?v=20261019-geo165';
 const $=id=>document.getElementById(id);
 const client=createClient(CONFIG.supabaseUrl,CONFIG.supabasePublishableKey,{
  auth:{flowType:'pkce',autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}
 });
-const panes=new Set(['prices','referrals','promos','d100','geo','notifications','audience','catalogue','history']);
+const panes=new Set(['prices','referrals','promos','d100','geo','notifications','audience','catalogue','history','eclat-qa']);
+let qaWorkbench=null;
 const initialPane=new URLSearchParams(location.search).get('panel');
 let data=null,referralData=null,activeFace=null,pane=panes.has(initialPane)?initialPane:'prices';
 let geoSummary=null,promoTotal=null;
@@ -32,7 +34,10 @@ async function rpc(name,args={}){
 }
 const promoAdmin=createPromoAdmin({rpc});
 const geoUsage=createGeoUsageAdmin({rpc});
-const gated=()=>{$('gate').hidden=false;$('dashboard').hidden=true;$('signout').hidden=true;};
+const gated=()=>{
+ qaWorkbench?.destroy();qaWorkbench=null;
+ $('gate').hidden=false;$('dashboard').hidden=true;$('signout').hidden=true;
+};
 async function bootstrap(){
  try{
   const {data:auth,error}=await client.auth.getUser();
@@ -110,7 +115,13 @@ function choosePane(name){
  });
  const mobile=$('studio-pane-select');
  if(mobile)mobile.value=name;
- $('save-settings').hidden=['catalogue','history','referrals','promos'].includes(name);
+ $('save-settings').hidden=['catalogue','history','referrals','promos','eclat-qa'].includes(name);
+ if(name==='eclat-qa'&&data&&!qaWorkbench){
+  qaWorkbench=createEclatV2QaWorkbench({
+   root:document.querySelector('[data-panel="eclat-qa"]'),
+   createClient,productionUrl:CONFIG.supabaseUrl
+  });
+ }
  if(name==='promos')promoAdmin.refresh(true);
  if(name==='geo')geoUsage.refresh();
  if(name==='geo')loadDashboardMetrics().catch(()=>{});
