@@ -4,7 +4,7 @@ CREATE ROLE anon NOLOGIN;
 CREATE ROLE authenticated NOLOGIN;
 CREATE ROLE service_role NOLOGIN;
 CREATE SCHEMA auth;
-CREATE TABLE auth.users(id uuid PRIMARY KEY);
+CREATE TABLE auth.users(id uuid PRIMARY KEY,raw_app_meta_data jsonb DEFAULT '{}'::jsonb);
 CREATE FUNCTION auth.role() RETURNS text LANGUAGE sql STABLE AS $$
  SELECT current_setting('studio.test_role',true)
 $$;
@@ -123,7 +123,11 @@ INSERT INTO auth.users(id) VALUES
  ('00000000-0000-0000-0000-000000000001'),
  ('00000000-0000-0000-0000-00000000000a'),
  ('00000000-0000-0000-0000-00000000000b'),
- ('00000000-0000-0000-0000-00000000000f');
+ ('00000000-0000-0000-0000-00000000000f'),
+ ('00000000-0000-0000-0000-00000000000e');
+-- Simulate a failed registry insertion after creating a tagged technical user.
+UPDATE auth.users SET raw_app_meta_data='{"love_studio_test":true}'::jsonb
+ WHERE id='00000000-0000-0000-0000-00000000000e';
 INSERT INTO public.couples(id,owner_user_id) VALUES
  ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-00000000000a'),
  ('10000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-00000000000f');
