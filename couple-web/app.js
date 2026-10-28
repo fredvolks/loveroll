@@ -1680,7 +1680,7 @@ function renderSession(){
      (['proposed','accepted'].includes(view.status)?
        timerWidget(view,acceptedAdaptationMinutes(resolvedCard(view).minutes,adaptation)):
        '<p class="tiny-note">Ce défi est archivé dans votre historique.</p>')+
-     adaptationPanelHtml(view,adaptation,{open:state.adaptOpen===view.id,busy:state.adaptBusy})+
+     (state.adaptations!==null?adaptationPanelHtml(view,adaptation,{open:state.adaptOpen===view.id,busy:state.adaptBusy}):'')+
      (view.status==='proposed'?
        button('evening-start:'+view.id,'▶ Commencer ce défi','class="evening-primary"'):'')+
      (view.status==='accepted'?
