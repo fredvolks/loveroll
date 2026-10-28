@@ -36,7 +36,7 @@ Code : `couple-web/studio-authenticated-e2e.cjs`.
 Workflow manuel : `.github/workflows/studio-authenticated-staging.yml`.
 
 **Contrôle bloquant ajouté :** `couple-web/studio-staging-preflight.mjs` vérifie
-la référence Supabase, quinze tables indispensables (vrais dés, cartes, soirées, accès Éclat et registre privé) et l'existence des deux Edge
+la référence Supabase, dix-huit tables indispensables (vrais dés, cartes, soirées, accès Éclat et registre privé) et l'existence des deux Edge
 Functions **avant** de créer le moindre compte de test. Toutes les requêtes du
 contrôle sont en lecture seule (sans RPC de jeu). Les réponses 404, erreurs
 serveur, clés incorrectes ou fonctions non protégées bloquent la recette.
@@ -100,6 +100,8 @@ Prochain passage impératif : disposer d'un backend staging équipé des RPC Lov
 
 ### Renforcement de la recette du 28 octobre — garde-fous sur le staging
 
-- Le précontrôle exige désormais les tables nécessaires aux **véritables D6, D100, cartes et soirées**, aux exemptions techniques Base/Éclat et au registre Studio, soit 15 tables au total. Un schéma contenant seulement les tables administratives n'est plus éligible.
+- Le précontrôle exige désormais les tables nécessaires aux **véritables D6, D100, cartes et soirées**, aux exemptions techniques Base/Éclat et au registre Studio, soit 18 tables au total. Un schéma contenant seulement les tables administratives n'est plus éligible.
 - La recette de suppression ne se contente plus de revoir le bouton « Créer » : elle attend l'**audit serveur de suppression terminée**, la disparition des deux iframes authentifiées et le retour du compteur de validation à **0/9**. C'est un contrôle de staging, pas une preuve actuellement exécutée.
 - Ne jamais assimiler les tests SQL/Node verts à une recette Supabase Auth A/B réellement passée.
+
+- La recette A/B authentifiée vérifie **avant toute création** deux RPC réellement exécutables sous le JWT du Super Admin de staging : `love_eclat_status` (lecture de l'accès Éclat) et `love_test_mode_allowed` (droit au mode essai). Elle s'arrête si le schéma de fonctions est incomplet, même si les tables existent. Aucun dé ni coffret n'est généré pendant ce précontrôle.
