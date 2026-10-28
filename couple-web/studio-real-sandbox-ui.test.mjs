@@ -64,6 +64,9 @@ test('Studio real sandbox uses existing secure platform gate and no standalone f
  assert.match(js,/createStudioRealSandbox/);
  assert.match(js,/realSandbox\.init/);
  assert.match(js,/const gated=\(\)=>\{\s*realSandbox\.deactivate\(\)/);
+ assert.match(js,/authGateGeneration\+\+/);
+ assert.match(js,/generation!==authGateGeneration/);
+ assert.match(js,/if\(generation!==authGateGeneration\)return; \/\/ Don't reshow admin after signout/);
  assert.match(js,/if\(event==='SIGNED_OUT'\)\{data=null;gated\(\)/);
  assert.match(sandbox,/function deactivate\(\)/);
  assert.match(sandbox,/active=false;\s*status=null;\s*closeFrames\(\)/);
