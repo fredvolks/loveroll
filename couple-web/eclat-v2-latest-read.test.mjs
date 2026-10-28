@@ -69,3 +69,18 @@ test('switching Supabase accounts immediately removes the previous Premium playe
  assert.match(auth,/if\(event==='SIGNED_OUT'\)/);
  assert.match(auth,/if\(event==='PASSWORD_RECOVERY'\)/);
 });
+
+
+test('an old player A start result is discarded after switching the actual client to B',()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const start=app.slice(app.indexOf("if(kind==='start'){",app.indexOf("if(verb==='eclat'){")),
+   app.indexOf("if(kind==='choose')",app.indexOf("if(verb==='eclat'){")));
+ const capture=start.indexOf('const actorAtStart=state.user.id,coupleAtStart=state.coupleId');
+ const awaitStart=start.indexOf('const result=await eclatV2Api.start(');
+ const guard=start.indexOf('if(state.user?.id!==actorAtStart||state.coupleId!==coupleAtStart)');
+ const write=start.indexOf('state.eclatV2Status=result;');
+ assert.ok(capture>=0&&awaitStart>capture&&guard>awaitStart&&write>guard,
+  'the exact authorized A/couple context must be captured before the server request and rechecked before mounting');
+ assert.match(start,/if\(state\.user\?\.id!==actorAtStart\|\|state\.coupleId!==coupleAtStart\)\s*return/);
+ assert.match(start,/state\.eclatV2OwnerId=actorAtStart;state\.eclatV2CoupleId=coupleAtStart/);
+});
