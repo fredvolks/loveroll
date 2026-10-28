@@ -95,8 +95,9 @@ test('An in-flight poll for an old couple never changes its replacement',async()
  const h=harness(),a=h.device('a');
  h.setInvite({id:'invite-3',state:'pending',available:false});
  // A changed verified couple makes any delayed remote result inapplicable.
+ const pending=a.sync.probe(true);
  a.state.coupleId='next-couple';
- await a.sync.probe(true);
+ await pending;
  await delay(45);
  assert.equal(a.state.eveningInvite.state,'none');
  assert.equal(a.renders(),0);
