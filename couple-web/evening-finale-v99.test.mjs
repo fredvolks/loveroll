@@ -29,6 +29,6 @@ test('Premium finale uses one decorative 3D D100; mobile and desktop CSS is isol
  assert.match(html,/data-dice-preview="true"/);
  assert.match(html,/evening-finale-velvet/);
  assert.match(read('evening-editorial.css'),/\.evening-finale-start:disabled/);
- assert.match(read('index.html'),/evening-editorial\.css\?v=20261017-ritual130/);
+ assert.match(read('index.html'),/evening-editorial\.css\?v=20261028-lr027/);
  assert.match(read('service-worker.js'),/evening-editorial\.css/);
 });
