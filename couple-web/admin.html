@@ -37,6 +37,7 @@
 <div class="studio-layout">
 <aside class="studio-sidebar" id="tabs" aria-label="Sections administration">
 <button data-pane="realtest" class="active">🎲 Test du vrai jeu</button>
+<button data-pane="venice">✦ Venice IA · 3 cartes</button>
 <button data-pane="prices" class="active">Tarifs et forfaits</button><button data-pane="referrals">Référencement et crédits</button><button data-pane="promos">Codes promotionnels</button><button data-pane="d100">D100 et activités</button>
 <button data-pane="geo">Géolocalisation</button><button data-pane="notifications">Notifications</button>
 <button data-pane="audience">Utilisateurs et sécurité</button><button data-pane="catalogue">Catalogue des 100</button>
@@ -45,6 +46,7 @@
  <label for="studio-pane-select">Choisir une section de l’administration</label>
  <select id="studio-pane-select" aria-label="Section de LoveRoll Studio">
   <option value="realtest">Test du vrai jeu</option>
+  <option value="venice">Venice IA · Atelier de brouillons</option>
   <option value="prices">Tarifs et forfaits</option>
   <option value="referrals">Référencement et crédits</option>
   <option value="promos">Codes promotionnels</option>
@@ -114,6 +116,23 @@
  <p class="small-note">Chaque compte est authentifié séparément. Brasse le D6 de A, puis celui de B et continue le vrai parcours. Pour repartir à zéro, supprime ce banc et crée un nouveau duo test.</p>
 </div>
 <p class="small-note">Les tests de facturation nécessitent le mode sandbox officiel du fournisseur. Aucune transaction réelle ne sera simulée comme payée.</p>
+</section>
+<section data-panel="venice" id="studio-venice-workshop" class="studio-venice-workshop studio-real-game" hidden>
+ <div class="section-head">
+  <span class="eyebrow">ATELIER PRIVÉ · BROUILLONS SÉPARÉS</span>
+  <h2>Venice IA · Trois cartes à examiner</h2>
+  <p>Les échantillons Soft, Medium et Intense proviennent du véritable service Venice. Ils restent des brouillons : aucun défi n'est inséré dans le jeu officiel.</p>
+ </div>
+ <div class="studio-venice-panel">
+  <p id="studio-venice-status" role="status" aria-live="polite">Un couple de test A+B connecté est nécessaire. Le joueur A est le propriétaire technique autorisé.</p>
+  <div class="studio-real-toolbar-actions">
+   <button type="button" id="studio-venice-status-button" class="secondary" disabled>Vérifier la connexion Venice</button>
+   <button type="button" id="studio-venice-latest" class="secondary" disabled>Lire les derniers brouillons</button>
+   <button type="button" id="studio-venice-generate" class="primary" disabled>Générer 3 cartes réelles</button>
+  </div>
+  <p class="small-note">La génération utilise de véritables crédits Venice, avec confirmation, et est limitée à une demande par Super Admin et par jour UTC, même après « Nouveau cycle ». Une erreur du fournisseur peut consommer cette limite. Aucun résultat n'est publié automatiquement.</p>
+  <div id="studio-venice-cards" class="studio-venice-cards" aria-label="Cartes Venice conservées comme brouillons"></div>
+ </div>
 </section>
 <form id="settings" autocomplete="off">
 <section data-panel="prices" class="studio-pricing-panel">
