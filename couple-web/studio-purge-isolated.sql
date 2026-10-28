@@ -4,7 +4,7 @@ CREATE ROLE anon NOLOGIN;
 CREATE ROLE authenticated NOLOGIN;
 CREATE ROLE service_role NOLOGIN;
 CREATE SCHEMA auth;
-CREATE TABLE auth.users(id uuid PRIMARY KEY,raw_app_meta_data jsonb DEFAULT '{}'::jsonb);
+CREATE TABLE auth.users(id uuid PRIMARY KEY,email text,raw_app_meta_data jsonb DEFAULT '{}'::jsonb);
 CREATE FUNCTION auth.role() RETURNS text LANGUAGE sql STABLE AS $$
  SELECT current_setting('studio.test_role',true)
 $$;
@@ -115,6 +115,12 @@ BEGIN
   RAISE EXCEPTION 'Private test identity registry grants are unsafe';
  END IF;
  IF has_function_privilege('anon',
+       'public.love_studio_recover_pending_seats(uuid)','EXECUTE')
+ OR has_function_privilege('authenticated',
+       'public.love_studio_recover_pending_seats(uuid)','EXECUTE')
+ OR NOT has_function_privilege('service_role',
+       'public.love_studio_recover_pending_seats(uuid)','EXECUTE')
+ OR has_function_privilege('anon',
        'public.love_studio_purge_test_couple(uuid)','EXECUTE')
  OR has_function_privilege('authenticated',
        'public.love_studio_purge_test_couple(uuid)','EXECUTE')
@@ -132,7 +138,9 @@ INSERT INTO auth.users(id) VALUES
  ('00000000-0000-0000-0000-00000000000f'),
  ('00000000-0000-0000-0000-00000000000e');
 -- Simulate a failed registry insertion after creating a tagged technical user.
-UPDATE auth.users SET raw_app_meta_data='{"love_studio_test":true}'::jsonb
+UPDATE auth.users
+ SET email='loveroll-studio-aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee@example.invalid',
+ raw_app_meta_data='{"love_studio_test":true,"love_studio_admin":"00000000-0000-0000-0000-000000000001"}'::jsonb
  WHERE id='00000000-0000-0000-0000-00000000000e';
 INSERT INTO public.couples(id,owner_user_id) VALUES
  ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-00000000000a'),
@@ -231,6 +239,49 @@ DELETE FROM public.love_referral_credit_usage;
 INSERT INTO public.love_user_library_backup VALUES
  ('10000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-00000000000a');
 SELECT public.expect_studio_purge_refused('Données personnelles hors du banc');
+ROLLBACK;
+-- Auth created a tagged user, but the DB write of the newly issued UUID
+-- failed. The reserved synthetic email allows exact, service-only recovery.
+BEGIN;
+UPDATE public.love_studio_test_pools SET couple_id=NULL,state='creating';
+UPDATE public.love_studio_test_seats
+ SET user_id=NULL,
+ synthetic_email='loveroll-studio-aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee@example.invalid'
+ WHERE admin_id='00000000-0000-0000-0000-000000000001' AND seat='B';
+SELECT * FROM public.love_studio_recover_pending_seats(
+ '00000000-0000-0000-0000-000000000001');
+DO $recovered$
+BEGIN
+ IF (SELECT user_id FROM public.love_studio_test_seats
+    WHERE admin_id='00000000-0000-0000-0000-000000000001' AND seat='B')
+   IS DISTINCT FROM '00000000-0000-0000-0000-00000000000e'::uuid THEN
+   RAISE EXCEPTION 'Tagged orphan user was not recovered from reserved email';
+ END IF;
+END $recovered$;
+ROLLBACK;
+-- An identical email without the correct immutable admin tag is NOT enough.
+BEGIN;
+UPDATE public.love_studio_test_pools SET couple_id=NULL,state='creating';
+UPDATE public.love_studio_test_seats
+ SET user_id=NULL,
+ synthetic_email='loveroll-studio-aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee@example.invalid'
+ WHERE admin_id='00000000-0000-0000-0000-000000000001' AND seat='B';
+UPDATE auth.users SET raw_app_meta_data='{"love_studio_test":true,"love_studio_admin":"other"}'::jsonb
+ WHERE id='00000000-0000-0000-0000-00000000000e';
+DO $wrong_owner$
+DECLARE detail text;
+BEGIN
+ BEGIN
+  PERFORM 1 FROM public.love_studio_recover_pending_seats(
+   '00000000-0000-0000-0000-000000000001');
+  RAISE EXCEPTION 'RECOVERY_SHOULD_HAVE_FAILED';
+ EXCEPTION WHEN OTHERS THEN
+  GET STACKED DIAGNOSTICS detail=MESSAGE_TEXT;
+  IF detail='RECOVERY_SHOULD_HAVE_FAILED' OR position('non technique' in detail)=0 THEN
+   RAISE EXCEPTION 'Unsafe Auth recovery accepted: %',detail;
+  END IF;
+ END;
+END $wrong_owner$;
 ROLLBACK;
 -- Corrupted pool pointing to real owner: even a zero-member target is safe.
 UPDATE public.couples SET owner_user_id='00000000-0000-0000-0000-00000000000f'
