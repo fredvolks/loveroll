@@ -341,7 +341,16 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
     clearPrivateSession();
    }
    paint();
-  }catch(err){onError(err);}finally{busy=false;}
+  }catch(err){
+   // Revocation can arrive first as a rejected gameplay action rather than
+   // through the next read-only poll. The old private scene must disappear
+   // immediately, while an ordinary offline error preserves unsent drafts.
+   if([401,403].includes(Number(err?.status))||['42501','28000'].includes(err?.code)){
+    clearPrivateSession();status={access:false,active:false};
+    stateRevision++;paint();
+   }
+   onError(err);
+  }finally{busy=false;}
  }
  function input(event){
   const element=event.target;
