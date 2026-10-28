@@ -53,11 +53,17 @@ export function startStudioSeatLogin(client,seat,{selfWindow,origin,reload=()=>s
    const {data,error}=await client.auth.verifyOtp({
     token_hash:message.token_hash,type:'magiclink'
    });
-   if(error||!data?.session?.user?.id ||
-      (message.user_id&&data.session.user.id!==message.user_id))
+   // A valid OTP alone is not enough: never retain a regular customer's
+   // Auth session in an administrator-controlled technical game iframe.
+   if(error||!data?.session?.user?.id||
+      data.session.user.id!==message.user_id||
+      data.session.user.app_metadata?.love_studio_test!==true)
     throw Error('Connexion du compte de test non validée');
    reload();
   }catch{
+   // verifyOtp can already have installed an unexpected valid session.
+   // Always clear it locally before reporting an authentication failure.
+   try{await client.auth.signOut({scope:'local'})}catch{}
    signingIn=false;
    selfWindow.parent.postMessage({type:'loveroll-studio-seat-error',seat},origin);
   }
