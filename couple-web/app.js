@@ -2871,18 +2871,64 @@ async function handle(action,element){
  }
  if(verb==='evening-challenge'||verb==='evening-list'){
   if(state.user?.id&&state.session?.id)clearEveningSelection(localStorage,state.user.id,state.session.id);
-  state.showEveningChallenges=true;state.selectedEveningChallengeId=null;render();return;
+  state.adaptOpen=null;state.showEveningChallenges=true;state.selectedEveningChallengeId=null;render();return;
  }
  if(verb==='evening-close'){
   if(state.user?.id&&state.session?.id)clearEveningSelection(localStorage,state.user.id,state.session.id);
-  state.showEveningChallenges=false;state.selectedEveningChallengeId=null;render();return;
+  state.adaptOpen=null;state.showEveningChallenges=false;state.selectedEveningChallengeId=null;render();return;
  }
  if(verb==='evening-open'){
   if(!ownEveningChallenges(state.challenges,state.user?.id,state.session?.id).some(x=>x.id===parts[0]))
    throw Error('Ce défi ne fait pas partie de ta liste personnelle.');
-  state.selectedEveningChallengeId=parts[0];state.showEveningChallenges=true;
+  state.selectedEveningChallengeId=parts[0];state.adaptOpen=null;state.showEveningChallenges=true;
   saveEveningSelection(localStorage,state.user.id,state.session.id,parts[0]);
   render();return;
+ }
+ if(verb==='adapt-open'){
+  if(state.adaptations===null)throw Error('Les adaptations ne sont pas encore disponibles sur ce serveur.');
+  const card=ownEveningChallenges(state.challenges,state.user?.id,state.session?.id)
+   .find(x=>x.id===parts[0]&&['proposed','accepted'].includes(x.status));
+  if(!card||adaptationFor(state.adaptations,card.id))throw Error('Ce défi ne peut plus être adapté.');
+  state.adaptOpen=card.id;state.showEveningChallenges=true;render();
+  root.querySelector('#lr-adapt-text')?.focus();
+  return;
+ }
+ if(verb==='adapt-cancel'){
+  if(!state.adaptBusy){state.adaptOpen=null;render();liveSync.request(0);}
+  return;
+ }
+ if(verb==='adapt-propose'){
+  if(state.adaptBusy||state.adaptOpen!==parts[0])return;
+  const rawText=id('lr-adapt-text')?.value?.trim()||'';
+  const rawMinutes=id('lr-adapt-minutes')?.value?.trim()||'';
+  const duration=rawMinutes===''?null:Number(rawMinutes);
+  if(rawText.length>500||rawText.length===0&&duration===null||
+    duration!==null&&(!Number.isInteger(duration)||duration<1||duration>360))
+   throw Error('Propose une consigne de 500 caractères maximum ou une durée de 1 à 360 minutes.');
+  state.adaptBusy=true;
+  try{
+   await rpc('love_adaptation_propose',{
+    p_challenge:parts[0],p_text:rawText||null,p_minutes:duration});
+   state.adaptOpen=null;
+   await refreshAndShow();
+   notify('Proposition envoyée. Aucun défi ne change sans l’accord de l’autre partenaire.');
+  }finally{state.adaptBusy=false;render();liveSync.request(0);}
+  return;
+ }
+ if(verb==='adapt-answer'){
+  if(state.adaptBusy)return;
+  const choice=parts[1],row=adaptationFor(state.adaptations,parts[0]);
+  if(!row||row.status!=='pending'||row.proposed_by===state.user?.id||
+     row.session_id!==state.session?.id||!['yes','no'].includes(choice))
+   throw Error('La proposition n’est plus disponible.');
+  state.adaptBusy=true;
+  try{
+   await rpc('love_adaptation_respond',{
+    p_challenge:parts[0],p_accept:choice==='yes'});
+   await refreshAndShow();
+   notify(choice==='yes'?'Adaptation approuvée ♥':'Le défi original est conservé ♥');
+  }finally{state.adaptBusy=false;render();liveSync.request(0);}
+  return;
  }
  if(verb==='evening-refuse'){
   if(!state.redrawReady)throw Error('La repige sécurisée n’est pas encore disponible sur ce serveur.');
