@@ -165,3 +165,22 @@ test('only registered test couples and identities are eligible for deletion',()=
  assert.match(source,/Réponse Auth incomplète; registre conservé/);
  assert.match(schema,/REVOKE ALL ON public\.love_studio_test_pools FROM PUBLIC,anon,authenticated/);
 });
+
+test('staging A/B recipe clicks only controls shipped by the real production game',()=>{
+ const recipe=readFileSync(new URL('studio-authenticated-e2e.cjs',import.meta.url),'utf8');
+ const home=readFileSync(new URL('premium-home.mjs',import.meta.url),'utf8');
+ const surprise=readFileSync(new URL('premium-surprise.mjs',import.meta.url),'utf8');
+ const game=readFileSync(new URL('app.js',import.meta.url),'utf8');
+ const category=readFileSync(new URL('evening-challenges.mjs',import.meta.url),'utf8');
+ const confirmation=readFileSync(new URL('evening-category-confirm.mjs',import.meta.url),'utf8');
+ assert.match(home,/data-action="roll:weekly"/);
+ assert.match(surprise,/button\('roll:monthly_activity'/);
+ assert.match(game,/button\('new-session'/);
+ assert.match(game,/button\('my-d6'/);
+ assert.match(game,/button\('new-challenge'/);
+ assert.match(category,/EVENING_CATEGORIES=\['SENSUEL','SEXUEL'\]/);
+ assert.match(recipe,/category:SENSUEL/);
+ assert.match(confirmation,/data-confirm-action="yes"/);
+ assert.doesNotMatch(recipe,/category:HASARD|lr-dialog-accept/,
+  'staging must not click fictional controls absent from real LoveRoll');
+});
