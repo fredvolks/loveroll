@@ -5,6 +5,7 @@ import {readFileSync} from 'node:fs';
 const workflow=readFileSync(new URL('../.github/workflows/couple-web-check.yml',import.meta.url),'utf8');
 const expected=new Map([
  ['Diagnose D100 compact header geometry early (no skipped validations)', ['dice-core','evening-d100-template-browser-check.cjs']],
+ ['Verify real D100 information dialog on desktop (focus, official odds and no draw)', ['dice-core','evening-d100-desktop-info-browser-check.cjs']],
  ['Verify real iPad Soirée D6 and D100 on the ONE HD photo (portrait and landscape)', ['dice-stage','ipad-romance-scene-browser-check.cjs']],
  ['LR-001 — verify the actual idle Soirée and Surprise D100 projected mesh on Android', ['dice-stage','soiree-home-template-browser-check.cjs']],
  ['Verify real couple Evening and Surprise in WebGL at S25 sizes', ['dice-stage','premium-couple-visual-check.cjs']],
@@ -23,7 +24,7 @@ function namedStep(label){
  assert.equal(matching.length,1,'Missing/duplicated critical dice check: '+label);
  return matching[0];
 }
-test('All twelve original D6/D100 browser checks still run exactly once',()=>{
+test('All original D6/D100 checks plus desktop info run exactly once',()=>{
  assert.match(workflow,/group: \[entry, dice-core, dice-stage, dice-faces, experience\]/);
  assert.doesNotMatch(workflow,/matrix\.group == 'dice'/);
  for(const [name,[group,command]] of expected){

@@ -9,7 +9,7 @@ dans trois nouveaux groupes parallèles :
 
 | Groupe | Vérifications conservées |
 | --- | --- |
-| `dice-core` | Géométrie D100 compacte, confirmation LR-014, Soirée étape 1, consignes complètes, stabilité WebGL en changeant de catégorie |
+| `dice-core` | Géométrie D100 compacte, informations D100 desktop (Web 251), confirmation LR-014, Soirée étape 1, consignes complètes, stabilité WebGL en changeant de catégorie |
 | `dice-stage` | Image HD unique iPad, maillage D100 Soirée/Surprise, parcours réel à deux, sept dimensions de D100/socle |
 | `dice-faces` | Interaction tactile D6, toutes les faces D6 et exemples de gravures D100, dé hebdomadaire 3D sur iPad |
 

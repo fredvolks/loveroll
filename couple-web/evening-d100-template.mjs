@@ -23,13 +23,36 @@ export function showEveningCategoryReminder(root){
  }
  if(!dialog.open)dialog.showModal();return true;
 }
+function installDesktopEveningInfo(view){
+ // Desktop uses the exact same information modal and official category odds
+ // as the approved mobile/iPad D100. This does not touch WebGL or dice RPCs.
+ const hero=view.querySelector('.evening-step.two .evening-die-row');
+ if(!hero||hero.querySelector('.home-odds-info'))return;
+ const info=view.ownerDocument.createElement('button');
+ info.type='button';info.className='home-odds-info';
+ info.setAttribute('aria-label','Informations et options de la soirée');
+ info.setAttribute('aria-haspopup','dialog');
+ info.setAttribute('aria-controls','evening-play-info');
+ info.innerHTML='<span aria-hidden="true">i</span>';
+ hero.append(info);
+ const percent=Number(view.dataset.categoryPercent??88);
+ if(!view.querySelector('#evening-play-info'))view.insertAdjacentHTML('beforeend',eveningPlayInfoHtml(percent));
+ const dialog=view.querySelector('#evening-play-info');
+ info.addEventListener('click',()=>{if(!dialog.open)dialog.showModal();});
+ dialog.querySelector('.evening-play-close').addEventListener('click',()=>dialog.close());
+ dialog.querySelectorAll('[data-action]').forEach(button=>button.addEventListener('click',()=>dialog.close()));
+ dialog.addEventListener('click',event=>{if(event.target===dialog)dialog.close();});
+ dialog.addEventListener('close',()=>{if(info.isConnected)info.focus({preventScroll:true});});
+}
 let observer;
 export function fitEveningD100(root){
  observer?.disconnect();observer=null;
  const view=root.querySelector('.evening-premium-view.is-ready');
  const enabled=!!view&&matchMedia('(max-width:1199px), (pointer:coarse) and (min-width:768px)').matches;
  root.classList.toggle('has-evening-d100-template',enabled);
- if(!enabled)return false;
+ const desktop=!enabled&&!!view&&matchMedia('(min-width:1200px)').matches;
+ root.classList.toggle('has-evening-d100-desktop-info',desktop);
+ if(!enabled){if(desktop)installDesktopEveningInfo(view);return false;}
  view.classList.add('has-home-soiree-template','has-evening-d100-template');
  view.querySelector('.ritual-kicker').textContent='NOTRE RITUEL DE LA SOIRÉE';
  view.querySelector('.ritual-mode-switcher').classList.add('lr-surface');

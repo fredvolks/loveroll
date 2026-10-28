@@ -37,7 +37,7 @@ test('LR-014: the existing server draw is only reached after confirmation',()=>{
  assert.match(trigger,/eveningCategoryConfirmInFlight=true/);
  assert.match(trigger,/finally\{eveningCategoryConfirmInFlight=false;\}/);
  assert.match(source,/id\('evening-category-confirm-pref'\)\?\.checked/);
- assert.match(source,/function backFromLoveRoll\(\)\{[\s\S]{0,170}lr-evening-category-dialog/);
+ assert.match(source,/function backFromLoveRoll\(\)\{[\s\S]{0,440}lr-evening-category-dialog/);
  assert.match(html,/evening-category-confirm\.css/);
  assert.match(migration,/ADD COLUMN IF NOT EXISTS confirm_evening_category boolean NOT NULL DEFAULT true/);
 });

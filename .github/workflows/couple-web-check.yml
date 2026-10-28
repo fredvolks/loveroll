@@ -76,9 +76,10 @@ jobs:
           node --check couple-web/evening-review.mjs
           node --check couple-web/evening-private-queue.mjs
           node --test couple-web/evening-instructions.test.mjs
+          node --test couple-web/ci-dice-parallel-contract.test.mjs
           node --test couple-web/evening-private-queue.test.mjs couple-web/evening-redesign.test.mjs couple-web/evening-calendar.test.mjs couple-web/evening-category-v93.test.mjs couple-web/evening-review.test.mjs
           node --test couple-web/privacy-screen.test.mjs
-          node --test couple-web/ci-dice-parallel-contract.test.mjs
+          node --test couple-web/evening-d100-template.test.mjs
           node --test couple-web/pages-soiree-privacy-header.test.mjs
           node --test couple-web/monthly-pass-limit-sql.test.mjs
           node --test couple-web/extra-evening-eligibility.test.mjs
@@ -186,7 +187,6 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Every previous D6/D100 check still runs. Three lanes shorten wall-clock time.
         group: [entry, dice-core, dice-stage, dice-faces, experience]
     steps:
       - uses: actions/checkout@v4
@@ -495,6 +495,10 @@ jobs:
       - name: Diagnose D100 compact header geometry early (no skipped validations)
         if: matrix.group == 'dice-core'
         run: LOVEROLL_D100_HEADER_PROBE=1 node couple-web/evening-d100-template-browser-check.cjs
+
+      - name: Verify real D100 information dialog on desktop (focus, official odds and no draw)
+        if: matrix.group == 'dice-core'
+        run: node couple-web/evening-d100-desktop-info-browser-check.cjs
 
       - name: Verify real iPad Soirée D6 and D100 on the ONE HD photo (portrait and landscape)
         if: matrix.group == 'dice-stage'
