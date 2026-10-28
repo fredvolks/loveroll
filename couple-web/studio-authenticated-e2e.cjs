@@ -75,6 +75,32 @@ async function main(){
    assert.ok(displayed.textLength>20&&displayed.buttons>0,
     seat+' must show actual interactive LoveRoll, not an empty fake iframe');
   }
+  // Verify actual Supabase Auth sessions, not just "connected" labels.
+  // Supabase stores seat sessions in isolated, distinct sessionStorage keys.
+  // Never output access/refresh tokens, passwords, or private Auth records.
+  const verifiedSeats=await Promise.all(['A','B'].map(async seat=>
+   page.frameLocator('#studio-real-frame-'+seat+' iframe')
+    .locator('#app').evaluate((_,seatName)=>{
+      let session=null;
+      try{
+       session=JSON.parse(sessionStorage.getItem('loveroll-studio-auth-v1-'+seatName)||'null');
+      }catch{}
+      return {
+       id:session?.user?.id||null,
+       technical:session?.user?.app_metadata?.love_studio_test===true,
+       owner:session?.user?.app_metadata?.love_studio_admin||null
+      };
+    },seat)
+  ));
+  assert.ok(verifiedSeats.every(x=>
+   /^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(x.id||'')&&x.technical&&x.owner),
+   'the two real game frames must retain approved, tagged Supabase Auth sessions');
+  assert.notEqual(verifiedSeats[0].id,verifiedSeats[1].id,
+   'both players must be distinct Supabase Auth identities');
+  assert.equal(verifiedSeats[0].owner,verifiedSeats[1].owner,
+   'both players must belong to the same technical platform admin');
+  assert.ok(verifiedSeats.every(x=>x.owner!==x.id),
+   'neither game seat can use the actual platform admin account');
   assert.equal((await page.locator('#studio-real-progress-count').innerText()).includes('/9'),true);
   await page.screenshot({path:'studio-authenticated-e2e-proof/real-dual-account-desktop.png',fullPage:true});
   // REAL gameplay: click official shipped buttons, observe server-confirmed
