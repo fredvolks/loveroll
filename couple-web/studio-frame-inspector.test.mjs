@@ -193,10 +193,10 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
   assert.equal(getFrame('B'),b,'read-only check must not reload authenticated seat B');
   nodes.get('studio-real-refresh').click();
   await wait();
-  assert.notEqual(getFrame('A'),a,'refresh reloads the official frame');
-  assert.notEqual(getFrame('B'),b,'refresh reloads the partner frame');
-  assert.equal(nodes.get('studio-real-seat-state-A').dataset.state,'pending');
-  assert.equal(nodes.get('studio-real-seat-state-B').dataset.state,'pending');
+  assert.equal(getFrame('A'),a,'resume keeps the same signed-in official A game and timer');
+  assert.equal(getFrame('B'),b,'resume keeps the partner game and private Auth session');
+  assert.equal(nodes.get('studio-real-seat-state-A').dataset.state,'connected');
+  assert.equal(nodes.get('studio-real-seat-state-B').dataset.state,'connected');
   for(const s of ['A','B']){
    assert.equal(nodes.get('studio-real-frame-'+s).children.length,2,
     'the permanent header and full-screen control must survive refresh');
