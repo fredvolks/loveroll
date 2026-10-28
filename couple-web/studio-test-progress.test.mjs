@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {studioTestProgress,studioEclatOverview} from './studio-test-progress.mjs';
+import {studioTestProgress,studioEclatOverview,studioTestReport} from './studio-test-progress.mjs';
 
 test('real server roll data completes every supported milestone',()=>{
  const state={ready:true,game:{
@@ -77,4 +77,39 @@ test('Éclat QA refuses to invent progress from stale, invalid or failed server 
  assert.equal(impossible.rows[1].state,'active');
  assert.equal(impossible.rows[1].chapter,null);
  assert.equal(impossible.rows[1].minutes,null);
+});
+
+
+test('shareable QA report uses nine official milestones and twelve real coffret states only',()=>{
+ const status={ready:true,
+  seats:[{seat:'A',user_id:'private-user-id-do-not-leak'}],
+  audit:[{synthetic_email:'never-print@example.invalid'}],
+  game:{weekly_face:2,monthly_face:76,personal_faces:{A:4,B:5},
+   session:'open',challenges_total:1,eclat_enabled:true,
+   eclat_completed_coffrets:[5],
+   eclat_active:{coffret_id:2,minutes:60,chapter_index:3,chapter_total:8},
+   challenge_preview:[{description:'PRIVATE CARD MUST NOT LEAK',title:'PRIVATE TITLE'}],
+   access_token:'never_print_this_token'}
+ };
+ const report=studioTestReport(status,new Set(['A','B']),coffrets);
+ assert.match(report,/Jalons officiels : 9\/9/);
+ assert.match(report,/Éclat · 1\/12 coffrets terminés/);
+ assert.match(report,/02 · Coffret 2 : En cours · étape 3\/8 · 60 min/);
+ assert.match(report,/05 · Coffret 5 : Terminé/);
+ assert.match(report,/03 · Coffret 3 : Non vérifié/);
+ assert.match(report,/Tests Auth sur préproduction et essais physiques : À CONFIRMER/);
+ for(const privateText of ['private-user-id','never-print@example.invalid',
+  'PRIVATE CARD','PRIVATE TITLE','never_print_this_token'])
+  assert.ok(!report.includes(privateText),'no private value is copied: '+privateText);
+ assert.equal(report.split('\n').filter(x=>/^\d{2} · /.test(x)).length,12);
+});
+
+test('reports never falsely claim completion when diagnostics are missing',()=>{
+ const report=studioTestReport({ready:false,game:{
+  weekly_face:1,eclat_completed_coffrets:[1,2],
+  eclat_active:{coffret_id:3,minutes:90,chapter_index:6,chapter_total:8}
+ }},new Set(['A','B']),coffrets);
+ assert.match(report,/Jalons officiels : 0\/9/);
+ assert.match(report,/Éclat · 0\/12 coffrets terminés/);
+ assert.doesNotMatch(report,/ : Terminé| : En cours/);
 });
