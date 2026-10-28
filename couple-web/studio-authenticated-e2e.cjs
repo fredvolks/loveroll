@@ -2,7 +2,7 @@
 // LoveRoll Supabase project. Never runs on production and never uses fake dice.
 // Requires staging migrations, Studio Edge, platform-admin user and full schema.
 // Does not replace the complete real D6/D100/card/RLS acceptance matrix.
-const {chromium}=require('playwright');
+
 const assert=require('node:assert/strict');
 const fs=require('node:fs');
 const params={
@@ -20,6 +20,8 @@ if(!/^[a-z0-9]{20}$/.test(params.ref)||params.ref===productionRef||
    params.url!==`https://${params.ref}.supabase.co`){
  throw Error('REFUSED: staging ref must be explicit and NEVER LoveRoll production');
 }
+// Hard-block production before loading a browser dependency or making a request.
+const {chromium}=require('playwright');
 const localApp='http://127.0.0.1:8765';
 async function main(){
  const browser=await chromium.launch({headless:true});
