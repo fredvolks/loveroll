@@ -55,6 +55,22 @@ BEGIN
       RAISE EXCEPTION 'Propriétaire ou duo test non vérifié : suppression bloquée'
        USING ERRCODE='42501';
     END IF;
+    -- Auth deletion cascades couple_members and SET NULLs couples.owner_user_id.
+    -- Check both directions: technical A/B identities must be exclusive to
+    -- their own pair, never a member or owner of another customer couple.
+    IF EXISTS (
+      SELECT 1 FROM public.couple_members cm
+      JOIN public.love_studio_test_seats s ON s.user_id=cm.user_id
+      WHERE s.admin_id=p_admin AND cm.couple_id<>v_pool.couple_id
+    ) OR EXISTS (
+      SELECT 1 FROM public.couples other_couple
+      JOIN public.love_studio_test_seats s
+        ON s.user_id=other_couple.owner_user_id
+      WHERE s.admin_id=p_admin AND other_couple.id<>v_pool.couple_id
+    ) THEN
+      RAISE EXCEPTION 'Identité test utilisée dans un autre couple : purge interdite'
+       USING ERRCODE='42501';
+    END IF;
     -- The Studio is billing-exempt and must never initiate a real Stripe
     -- charge. Retain any unexpected provider-backed financial record for
     -- manual investigation rather than silently cascade-delete evidence.
