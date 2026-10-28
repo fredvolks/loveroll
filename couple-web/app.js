@@ -1291,6 +1291,9 @@ function renderEclat(){
    '<div id="eclat-v2-live-player"></div>'+
    '<div class="eclat-v2-live-footer">'+
    button('tab:home','Retour à l’accueil · séance reprenable','class="subtle"')+
+   '<span id="eclat-v2-finished-return" hidden>'+
+   button('eclat-v2:gallery','Retour aux 12 coffrets','class="subtle"')+
+   '</span>'+
    '</div></section>','Éclat','Notre expérience à deux');
   const host=root.querySelector('#eclat-v2-live-player');
   eclatV2Player=createEclatV2PlayController({
@@ -1310,8 +1313,15 @@ function renderEclat(){
      disposeEclatV2Player();return;
     }
     state.eclatV2Status=latest;
-    if(!latest?.access||!latest?.active){
-     disposeEclatV2Player();render();
+    if(!latest?.access){
+     disposeEclatV2Player();render();return;
+    }
+    if(!latest.active){
+     // The finale (a mutually approved playlist or saved invitation)
+     // must remain on screen instead of vanishing after five seconds.
+     if(eclatV2Poll!==null){clearInterval(eclatV2Poll);eclatV2Poll=null;}
+     const returnToGallery=root.querySelector('#eclat-v2-finished-return');
+     if(returnToGallery)returnToGallery.hidden=false;
     }
    }).catch(error=>{
     if(eclatV2Player===currentPlayer)console.warn('Actualisation Éclat V2',error?.code||'');
