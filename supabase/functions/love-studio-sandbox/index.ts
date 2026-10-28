@@ -140,6 +140,43 @@ Deno.serve(async(req:Request)=>{
       .is('ended_at',null).order('started_at',{ascending:false})
       .limit(1).maybeSingle())
     ]);
+    // The published V1 installation legitimately has no V2 table.
+    // Optional V2 diagnostics must not invent V2 status or suppress the
+    // real V1 overview when its independently versioned schema is absent.
+    let v2Summary:{installed:boolean,unavailable:boolean,active:null|Record<string,unknown>,
+     completed:number[]}={installed:false,unavailable:false,active:null,completed:[]};
+    try{
+     const [activeV2,finishedV2]=await Promise.all([
+      service.from('love_eclat_v2_sessions')
+       .select('coffret_id,minutes,chapter_index,chapter_plan,state,started_at')
+       .eq('couple_id',pool.couple_id).is('ended_at',null)
+       .order('started_at',{ascending:false}).limit(1).maybeSingle(),
+      service.from('love_eclat_v2_sessions')
+       .select('coffret_id').eq('couple_id',pool.couple_id)
+       .eq('state','finished').order('started_at',{ascending:false}).limit(1000)
+     ]);
+     if(activeV2.error||finishedV2.error){
+      const errors=[activeV2.error,finishedV2.error].filter(Boolean);
+      const missing=errors.every((err:any)=>
+       ['42P01','PGRST205'].includes(err?.code));
+      v2Summary={installed:false,unavailable:!missing,active:null,completed:[]};
+     }else{
+      const row=activeV2.data;
+      v2Summary={
+       installed:true,unavailable:false,
+       active:row?{
+        coffret_id:row.coffret_id,minutes:row.minutes,
+        chapter_index:row.chapter_index,
+        chapter_total:Array.isArray(row.chapter_plan)?row.chapter_plan.length:null,
+        version:2,state:row.state
+       }:null,
+       completed:[...new Set<number>((finishedV2.data||[])
+        .map((r:{coffret_id:number})=>r.coffret_id)
+        .filter((id:number)=>Number.isInteger(id)&&id>=1&&id<=12))]
+        .sort((a,b)=>a-b)
+      };
+     }
+    }catch{v2Summary={installed:false,unavailable:true,active:null,completed:[]};}
     // Count is exact; retrieve only three cards. Never silently truncate
     // challenge totals at Supabase's Data API row limit (often 1,000).
     const [personal,challengeResult]=latest?.id?await Promise.all([
@@ -174,16 +211,20 @@ Deno.serve(async(req:Request)=>{
      })),
      eclat_enabled:entitlement?.enabled===true&&
        (!entitlement.ends_at||new Date(entitlement.ends_at).getTime()>Date.now()),
-     eclat_active:eclatActive?{
+     eclat_active:v2Summary.active||(eclatActive?{
       coffret_id:eclatActive.coffret_id,
       minutes:eclatActive.minutes,
       chapter_index:eclatActive.chapter_index,
       chapter_total:Array.isArray(eclatActive.chapter_plan)
-       ?eclatActive.chapter_plan.length:null
-     }:null,
-     eclat_completed_coffrets:[...new Set<number>((eclatFinished||[])
-       .map((r:{coffret_id:number})=>r.coffret_id)
-       .filter((id:number)=>Number.isInteger(id)&&id>=1&&id<=12))]
+       ?eclatActive.chapter_plan.length:null,
+      version:1
+     }:null),
+     eclat_v2_installed:v2Summary.installed,
+     eclat_v2_unavailable:v2Summary.unavailable,
+     eclat_completed_coffrets:[...new Set<number>([
+      ...(eclatFinished||[]).map((r:{coffret_id:number})=>r.coffret_id),
+      ...v2Summary.completed
+     ].filter((id:number)=>Number.isInteger(id)&&id>=1&&id<=12))]
        .sort((a,b)=>a-b)
     };
    }catch{
