@@ -18,6 +18,13 @@ test('Studio real sandbox uses existing secure platform gate and no standalone f
  assert.match(html,/id="studio-real-progress"/);
  assert.match(html,/id="studio-real-progress-count"/);
  assert.match(html,/id="studio-real-progress-list"/);
+ assert.match(html,/id="studio-real-eclat-count"/);
+ assert.match(html,/id="studio-real-eclat-grid"/);
+ assert.match(css,/\.studio-real-eclat-coffret/);
+ assert.match(sandbox,/function renderEclatProgress\(/);
+ assert.match(sandbox,/ECLAT_COFFRETS\.filter\(x=>completed\.has\(x\.id\)\)/);
+ assert.match(sandbox,/item\.textContent=\(done\?/);
+ assert.doesNotMatch(sandbox,/item\.innerHTML/);
  assert.match(css,/\.studio-real-progress/);
  assert.match(sandbox,/function renderProgress\(/);
  assert.match(sandbox,/studioTestProgress\(status,authenticatedSeats\)/);
