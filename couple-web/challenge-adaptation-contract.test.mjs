@@ -94,3 +94,19 @@ test('LR-017 PostgreSQL A/B fixture always uses complete dollar-quoted DO blocks
  assert.match(acceptance,/Cette soirée est clôturée/);
  assert.match(acceptance,/Replacement partner can read prior private proposal/);
 });
+
+test('LR-017 preserves optional consent on self-draw without showing another private card',()=>{
+ const fixture=readFileSync(new URL('./qa/lr017-fixture.sql',import.meta.url),'utf8');
+ const qa=readFileSync(new URL('./qa/lr017-acceptance.sql',import.meta.url),'utf8');
+ const pair=sql.slice(sql.indexOf('CREATE OR REPLACE FUNCTION public.love_adaptation_pair_allowed('),
+  sql.indexOf('CREATE OR REPLACE FUNCTION public.love_adaptation_propose('));
+ const respond=sql.slice(sql.indexOf('CREATE OR REPLACE FUNCTION public.love_adaptation_respond('));
+ assert.match(pair,/q\.offered_by=q\.recipient AND EXISTS\(/);
+ assert.match(pair,/actual\.self_draws=true/);
+ assert.match(respond,/v_q\.offered_by=v_q\.recipient AND EXISTS\(/);
+ assert.match(respond,/v_actor=v_adaptation\.proposed_by/); // Never approve your own proposal.
+ assert.match(fixture,/self_draws boolean NOT NULL DEFAULT false/);
+ assert.match(qa,/Partner accessed private self-drawn card/);
+ assert.match(qa,/Second partner cannot approve self-drawn adaptation/);
+ assert.match(qa,/Adaptation approval revealed private self-drawn challenge/);
+});
