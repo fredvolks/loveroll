@@ -25,7 +25,7 @@ test('Studio real sandbox uses existing secure platform gate and no standalone f
  assert.match(css,/\.studio-real-eclat-coffret/);
  assert.match(sandbox,/function renderEclatProgress\(/);
  assert.match(sandbox,/studioEclatOverview\(status,ECLAT_COFFRETS\)/);
- assert.match(sandbox,/item\.textContent=\(running\?/);
+ assert.match(sandbox,/heading\.textContent=\(running\?/);
  assert.match(css,/\.studio-real-eclat-coffret\[data-state="active"\]/);
  assert.doesNotMatch(sandbox,/item\.innerHTML/);
  assert.match(css,/\.studio-real-progress/);
@@ -115,4 +115,20 @@ test('real history pagination is keyboard-accessible on iPad/PC/mobile, not a sy
  assert.match(sandbox,/historyPage===0/);
  assert.match(sandbox,/const requestGeneration=historyGeneration/);
  assert.doesNotMatch(sandbox,/document\.write|article\.innerHTML|Math\.random/);
+});
+
+
+test('12 coffrets each route to the REAL logged-in A/B app, never a local fake scene',()=>{
+ assert.match(sandbox,/function openRealCoffret\(seat,coffretId\)/);
+ assert.match(sandbox,/authenticatedSeats\.has\(seat\)/);
+ assert.match(sandbox,/frames\[seat\]\.contentWindow\.postMessage/);
+ assert.match(sandbox,/type:'loveroll-studio-navigate',seat,tab:'eclat',coffret_id:coffretId/);
+ assert.match(sandbox,/button\.textContent='Ouvrir dans '\+seat/);
+ assert.match(sandbox,/button\.disabled=!active\|\|tearingDown\|\|busy\|\|!authenticatedSeats\.has\(seat\)/);
+ assert.match(sandbox,/button\.addEventListener\('click',\(\)=>openRealCoffret\(seat,coffret\.id\)\)/);
+ assert.match(css,/\.studio-real-eclat-open:focus-visible/);
+ assert.match(gameApp,/await handle\('tab:'\+tab\)/);
+ assert.match(gameApp,/await handle\('eclat:detail:'\+coffretId\)/);
+ assert.match(gameApp,/state\.tab!=='eclat'/);
+ assert.doesNotMatch(sandbox,/fakeEclat|Math\.random|fakeCoffret/);
 });
