@@ -153,6 +153,24 @@ VALUES('00000000-0000-0000-0000-000000000001',
 INSERT INTO public.love_studio_test_seats(admin_id,seat,user_id,synthetic_email) VALUES
 ('00000000-0000-0000-0000-000000000001','A','00000000-0000-0000-0000-00000000000a','a@example.invalid'),
 ('00000000-0000-0000-0000-000000000001','B','00000000-0000-0000-0000-00000000000b','b@example.invalid');
+-- A platform administrator must not be deleted while its registered
+-- synthetic Auth pair exists: dropping the private registry would orphan
+-- technical identities and their couple. Isolated fixture only.
+DO $protect_studio_admin$
+DECLARE blocked boolean := false;
+BEGIN
+  BEGIN
+    DELETE FROM auth.users WHERE id='00000000-0000-0000-0000-000000000001';
+  EXCEPTION WHEN foreign_key_violation THEN
+    blocked := true;
+  END;
+  IF NOT blocked OR NOT EXISTS (
+    SELECT 1 FROM public.love_studio_test_pools
+    WHERE admin_id='00000000-0000-0000-0000-000000000001'
+  ) THEN
+    RAISE EXCEPTION 'Studio registry deleted with its administrator';
+  END IF;
+END $protect_studio_admin$;
 INSERT INTO public.couple_members(couple_id,user_id) VALUES
 ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-00000000000a'),
 ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-00000000000b');
