@@ -83,6 +83,9 @@ const assert=require('node:assert/strict');
        visible:node.getBoundingClientRect().width>0,
        target:node.target,rel:node.rel})),
      mobileNavVisible:getComputedStyle(document.querySelector('.studio-mobile-nav')).display!=='none',
+     gameFocused:document.querySelector('#dashboard').classList.contains('studio-test-focus'),
+     marketingHidden:getComputedStyle(document.querySelector('#dashboard > .studio-heading')).display==='none',
+     promoHidden:getComputedStyle(document.querySelector('#dashboard > .studio-real-primary')).display==='none',
      guide:box('#studio-real-progress'),eclat:box('#studio-real-eclat-progress')
     };
    });
@@ -90,6 +93,10 @@ const assert=require('node:assert/strict');
     preset.name+' horizontal scrolling '+JSON.stringify(layout));
    assert.equal(layout.frames.filter(x=>x.visible).length,preset.visibleSeats,
     preset.name+' visible genuine game holders');
+   assert.ok(layout.gameFocused&&layout.marketingHidden&&layout.promoHidden,
+    preset.name+' A/B gameplay must hide the decorative dashboard marketing');
+   assert.ok(layout.frames[0].y<layout.guide.y,
+    preset.name+' A/B live game must appear BEFORE checklists and 12 coffrets');
    assert.equal(layout.checklist,9);
    assert.equal(layout.count,12);
    assert.ok(layout.guide.width>=260&&layout.eclat.width>=260);
