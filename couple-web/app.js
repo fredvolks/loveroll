@@ -77,7 +77,7 @@ const eclatV2Api=client?createEclatV2SessionApi(client):null;
 let eclatV2Player=null,eclatV2Poll=null,eclatV2Resume=null;
 function disposeEclatV2Player(){
  if(eclatV2Poll!==null){clearInterval(eclatV2Poll);eclatV2Poll=null;}
- if(eclatV2Resume){document.removeEventListener('visibilitychange',eclatV2Resume);eclatV2Resume=null;}
+ if(eclatV2Resume){document.removeEventListener('visibilitychange',eclatV2Resume);window.removeEventListener('pageshow',eclatV2Resume);eclatV2Resume=null;}
  if(eclatV2Player){eclatV2Player.destroy();eclatV2Player=null;}
 }
 function pendingReferralCode(){
@@ -1342,7 +1342,7 @@ function renderEclat(){
      // The finale (a mutually approved playlist or saved invitation)
      // must remain on screen instead of vanishing after five seconds.
      if(eclatV2Poll!==null){clearInterval(eclatV2Poll);eclatV2Poll=null;}
-     if(eclatV2Resume){document.removeEventListener('visibilitychange',eclatV2Resume);eclatV2Resume=null;}
+     if(eclatV2Resume){document.removeEventListener('visibilitychange',eclatV2Resume);window.removeEventListener('pageshow',eclatV2Resume);eclatV2Resume=null;}
      const returnToGallery=root.querySelector('#eclat-v2-finished-return');
      if(returnToGallery)returnToGallery.hidden=false;
     }
@@ -1366,6 +1366,8 @@ function renderEclat(){
   };
   eclatV2Resume=()=>{if(!document.hidden)syncVisibleEclatV2();};
   document.addEventListener('visibilitychange',eclatV2Resume);
+  // Safari back-forward cache may restore without a visibility change.
+  window.addEventListener('pageshow',eclatV2Resume);
   eclatV2Poll=setInterval(syncVisibleEclatV2,5000);
   eclatV2Poll?.unref?.();
   return;
