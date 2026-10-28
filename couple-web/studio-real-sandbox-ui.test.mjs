@@ -132,3 +132,13 @@ test('12 coffrets each route to the REAL logged-in A/B app, never a local fake s
  assert.match(gameApp,/state\.tab!=='eclat'/);
  assert.doesNotMatch(sandbox,/fakeEclat|Math\.random|fakeCoffret/);
 });
+
+
+test('iPad and PC QA report copies only server-derived, non-sensitive milestones',()=>{
+ assert.match(html,/id="studio-real-copy-report"/);
+ assert.match(sandbox,/studioTestReport\(status,authenticatedSeats,ECLAT_COFFRETS\)/);
+ assert.match(sandbox,/navigator\.clipboard\.writeText\(report\)/);
+ assert.match(sandbox,/if\(!active\|\|tearingDown\|\|busy\|\|!status\?\.ready\)return/);
+ assert.match(sandbox,/\$\('studio-real-copy-report'\)\.hidden=!isReady/);
+ assert.doesNotMatch(sandbox,/JSON\.stringify\(status\).*clipboard/);
+});
