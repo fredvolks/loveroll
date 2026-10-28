@@ -33,6 +33,8 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
    const home=await measure();
    await page.locator('[data-action="tab:session"]').click();
    await page.waitForFunction(()=>document.querySelector('.evening-finale-dice canvas')?.loveRollDie?.readState().optics.loaded);
+   assert.equal(await page.locator('.evening-toolbar [data-lr-privacy-hide], .evening-toolbar .lr-privacy-quick-button').count(),0,
+    'LR-025: no floating Masquer button on the initial Soirée header');
    await page.evaluate(()=>document.fonts.ready);await page.waitForTimeout(250);
    if(width===360){
     const defects=await page.evaluate(async()=>{
