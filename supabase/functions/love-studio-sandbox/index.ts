@@ -74,6 +74,16 @@ Deno.serve(async(req:Request)=>{
   }catch{return false}
  }
 
+ async function auditStudio(event:
+  'create_requested'|'create_succeeded'|'create_failed'|
+  'login_requested'|'delete_requested'|'delete_completed'|'delete_failed'){
+  // No request body, emails, OTP hashes, Auth IDs or card data in this log.
+  const {error}=await service.from('love_studio_test_audit').insert({
+   admin_id:adminId,action:event
+  });
+  if(error)throw Error('Journal privé du Studio indisponible');
+ }
+
  async function status(){
   const {data:pool,error:poolError}=await service.from('love_studio_test_pools')
     .select('couple_id,state,created_at').eq('admin_id',adminId).maybeSingle();
@@ -165,6 +175,8 @@ Deno.serve(async(req:Request)=>{
    return response({error:'Identités du couple de test non vérifiées'},403);
   const row=rows?.find(r=>r.seat===seat);
   if(!row?.user_id||!row.synthetic_email)return response({error:'Joueur de test absent'},409);
+  try{await auditStudio('login_requested')}
+  catch{return response({error:'Journal de sécurité indisponible'},503)}
   const {data:link,error:linkError}=await service.auth.admin.generateLink({
     type:'magiclink',email:row.synthetic_email
   });
@@ -174,6 +186,8 @@ Deno.serve(async(req:Request)=>{
   return response({seat,token_hash:link.properties.hashed_token,user_id:row.user_id});
  }
  if(action==='create'){
+  try{await auditStudio('create_requested')}
+  catch{return response({error:'Journal de sécurité indisponible'},503)}
   const {error:reservationError}=await service.from('love_studio_test_pools')
    .insert({admin_id:adminId,state:'creating'}).select('admin_id').single();
   if(reservationError)return response({error:reservationError.code==='23505'
@@ -237,6 +251,7 @@ Deno.serve(async(req:Request)=>{
       .update({couple_id:newCouple,state:'ready',updated_at:new Date().toISOString()})
       .eq('admin_id',adminId);
     if(finishError)throw Error('Finalisation du duo test impossible');
+    try{await auditStudio('create_succeeded')}catch{/* Requested event retained. */}
     return response({ready:true,state:'ready',seats:[{seat:'A',ready:true},{seat:'B',ready:true}]});
   }catch(err){
     // Recover only IDs produced by this request; a registrable partial failure
@@ -274,6 +289,7 @@ Deno.serve(async(req:Request)=>{
           await service.from('love_studio_test_pools').delete().eq('admin_id',adminId);
       }
     }catch{/* Retain private registry if cleanup fails. */}
+    try{await auditStudio('create_failed')}catch{/* Requested event retained. */}
     return response({error:err instanceof Error?err.message:'Création incomplète',
       detail:'Si le banc reste réservé, demandez sa suppression sécurisée.'},503);
   }
@@ -293,6 +309,8 @@ Deno.serve(async(req:Request)=>{
  }
  // DELETE only the registered test couple plus its two technical identities.
  // SQL additionally refuses deletion if any unexpected real member is present.
+ try{await auditStudio('delete_requested')}
+ catch{return response({error:'Journal de sécurité indisponible'},503)}
  try{
   const {data:seats,error:purgeError}=await service.rpc('love_studio_purge_test_couple',{p_admin:adminId});
   if(purgeError)return response({error:'Purge du banc refusée : '+purgeError.message},409);
@@ -316,6 +334,10 @@ Deno.serve(async(req:Request)=>{
   const {error:clearError}=await service.from('love_studio_test_pools')
     .delete().eq('admin_id',adminId);
   if(clearError)return response({error:'Nettoyage du registre incomplet'},503);
+  try{await auditStudio('delete_completed')}catch{/* Requested event retained. */}
   return response({deleted:true});
- }catch{return response({error:'Suppression interrompue'},503)}
+ }catch{
+  try{await auditStudio('delete_failed')}catch{/* Requested event retained. */}
+  return response({error:'Suppression interrompue'},503)
+ }
 });
