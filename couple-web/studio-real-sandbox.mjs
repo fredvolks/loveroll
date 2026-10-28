@@ -73,7 +73,7 @@ export function createStudioRealSandbox({client}){
  function display(){
   const isReady=status?.ready===true,section=$('studio-real-views');
   section.hidden=!isReady;
-  $('studio-real-create').hidden=isReady||status?.state==='creating'||status?.state==='deleting';
+  $('studio-real-create').hidden=isReady||['creating','deleting','invalid'].includes(status?.state);
   $('studio-real-delete').hidden=status?.state==='missing'||!status;
   $('studio-real-refresh').hidden=!status||status?.state==='missing';
   $('studio-real-reset').hidden=!isReady;
@@ -127,6 +127,7 @@ export function createStudioRealSandbox({client}){
   say(status.ready?(authenticatedSeats.size===2?'Joueurs A et B connectés au vrai LoveRoll.':'Couple de test prêt. Connexion des joueurs A et B en cours…'):
     status.state==='missing'?'Aucun couple de test. Crée un duo pour jouer.':
     status.state==='creating'?'Création du duo en cours ou incomplète.':
+    status.state==='invalid'?'Sécurité : les comptes de test ne correspondent plus au duo enregistré. Connexion et lecture des cartes bloquées; supprimer ce banc avec précaution.':
     'Suppression de banc de test à terminer.');
   display();
  }
