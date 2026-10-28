@@ -24,9 +24,15 @@ test('only verified platform owner enters QA and logout destroys the lab',()=>{
  assert.match(owner,/qaWorkbench\?\.destroy\(\)/);
  assert.match(owner,/productionUrl:CONFIG\.supabaseUrl/);
 });
-test('V1 never mounts QA modules or its private player test screen',()=>{
- assert.doesNotMatch(publicApp,/eclat-v2-qa-workbench|eclat-v2-admin-pair/);
- assert.doesNotMatch(publicApp,/eclat-v2-play-controller/);
+test('the real game uses server-approved V2 but never embeds the privileged QA console',()=>{
+ // Production can load the genuine V2 player controller, unlike the old
+ // V1-only build. The distinct QA operator and technical Auth clients must
+ // remain confined to the Super Admin route, not the customer runtime.
+ assert.doesNotMatch(publicApp,/eclat-v2-qa-workbench|eclat-v2-admin-pair|soiree-qa-lab|loveroll-qa-accounts/);
+ assert.match(publicApp,/import \{createEclatV2PlayController\}/);
+ assert.match(publicApp,/eclatV2Api\.start\(/);
+ assert.match(publicApp,/eclatV2OwnerId===state\.user\?\.id&&state\.eclatV2CoupleId===state\.coupleId/);
+ assert.match(publicApp,/eclatV2Status\?\.access===true/);
  assert.match(qa,/validateEclatQaConfig/);
  assert.match(qa,/createEclatV2PlayController/);
 });
