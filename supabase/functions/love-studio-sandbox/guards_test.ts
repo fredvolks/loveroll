@@ -1,4 +1,4 @@
-import {isRegisteredStudioIdentity} from './guards.ts';
+import {isRegisteredStudioIdentity, type AuthPrincipal} from './guards.ts';
 
 function assert(condition:unknown,description:string){
  if(!condition)throw Error(description);
@@ -23,22 +23,27 @@ Deno.test('real customer id or email cannot borrow a technical seat',()=>{
   'wrong Auth id accepted');
 });
 Deno.test('user_metadata can never establish technical privilege',()=>{
- assert(!isRegisteredStudioIdentity({
+ const editedMetadata={
   id:valid.id,email:valid.email,
   app_metadata:{},
   user_metadata:{love_studio_test:true,love_studio_admin:admin}
- } as typeof valid,seat,admin),'self-editable metadata accepted');
+ };
+ assert(!isRegisteredStudioIdentity(editedMetadata,seat,admin),
+  'self-editable metadata accepted');
 });
 Deno.test('another platform admin cannot adopt a registered technical user',()=>{
  assert(!isRegisteredStudioIdentity(valid,seat,'different-admin'),
   'other administrator accepted');
 });
 Deno.test('missing, revoked or partially registered accounts fail closed',()=>{
- for(const principal of [null,undefined,{},{
-  id:'synthetic-id',email:'qa@example.invalid',
-  app_metadata:{love_studio_test:'true',love_studio_admin:admin}
- }]){
-  assert(!isRegisteredStudioIdentity(principal as typeof valid,seat,admin),
+ const invalidPrincipals: Array<AuthPrincipal|null|undefined>=[
+  null,undefined,
+  {id:'',email:'qa@example.invalid',app_metadata:{}},
+  {id:'synthetic-id',email:'qa@example.invalid',
+   app_metadata:{love_studio_test:'true',love_studio_admin:admin}}
+ ];
+ for(const principal of invalidPrincipals){
+  assert(!isRegisteredStudioIdentity(principal,seat,admin),
    'incomplete or spoofed user accepted');
  }
  assert(!isRegisteredStudioIdentity(valid,{...seat,user_id:null},admin),
