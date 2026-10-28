@@ -149,3 +149,15 @@ test('returning from Android/iPad background refreshes genuine server state at o
  assert.match(main,/if\(state\.eclatV2OwnerId!==state\.user\?\.id\|\|\s*state\.eclatV2CoupleId!==state\.coupleId\)/);
  assert.match(main,/if\(!latest\?\.access\)\{/);
 });
+
+
+test('a real Éclat reconnecting on mobile shows a calm, non-blocking sync message only during a failed poll',()=>{
+ const live=app.slice(app.indexOf('function renderEclat(){'),app.indexOf('function renderHome(){'));
+ assert.match(live,/id="eclat-v2-sync-feedback" role="status" aria-live="polite" hidden/);
+ assert.match(live,/if\(feedback\)\{feedback\.textContent='';feedback\.hidden=true;\}/);
+ assert.match(live,/feedback\.textContent='Connexion momentanément interrompue/);
+ assert.match(live,/feedback\.hidden=false/);
+ assert.match(live,/if\(latest\?\.access===false\)\{/,
+  'a real authorization refusal still revokes the Premium display rather than disguising it as offline');
+ assert.doesNotMatch(live,/setTimeout\(.*fake|fakeStage|mockStatus/);
+});
