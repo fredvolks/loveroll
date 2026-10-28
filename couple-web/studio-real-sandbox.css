@@ -44,6 +44,20 @@
 .studio-real-progress li[data-state="verified"]{border-color:#6c9b83;color:#dbf4e6;
  background:#203e30}
 @media(max-width:720px){.studio-real-progress ol{grid-template-columns:1fr}}
+.studio-real-eclat-progress{margin:13px 0 16px;padding:15px;
+ border:1px solid #98627b;border-radius:14px;background:#281724;color:#ffedf4}
+.studio-real-eclat-progress h3{font:700 17px/1.3 Georgia,serif;margin:0}
+.studio-real-eclat-progress p{font:400 12px/1.5 system-ui,sans-serif;
+ color:#e8c3d4;margin:9px 0}
+#studio-real-eclat-count{font:700 13px/1.3 system-ui,sans-serif;
+ border:1px solid #96627d;padding:6px 9px;border-radius:999px}
+.studio-real-eclat-grid{display:grid;
+ grid-template-columns:repeat(auto-fit,minmax(min(100%,225px),1fr));gap:7px}
+.studio-real-eclat-coffret{font:600 12px/1.4 system-ui,sans-serif;
+ color:#e8c3d5;background:#321c2b;padding:10px 12px;
+ border:1px solid #71465e;border-radius:10px;overflow-wrap:anywhere}
+.studio-real-eclat-coffret[data-state="verified"]{
+ border-color:#77aa91;background:#204334;color:#d7f4e7}
 .studio-real-audit{margin:12px 0 18px;padding:13px 16px;
  border:1px solid #86526e;border-radius:13px;background:#231321;color:#f8dfea}
 .studio-real-audit[hidden]{display:none!important}
