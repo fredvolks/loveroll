@@ -43,6 +43,9 @@ GRANT SELECT,INSERT ON public.love_studio_test_audit TO service_role;
 -- This table is independent of pairs, and survives deleting/replacing A/B.
 CREATE TABLE IF NOT EXISTS public.love_studio_venice_daily_quota (
  admin_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+ -- Deliberately no FK: the old pair is deleted after each test.
+ -- Bind the daily credit to THAT pair to block cross-reset replay.
+ couple_id uuid NOT NULL,
  utc_day date NOT NULL DEFAULT (now() AT TIME ZONE 'UTC')::date,
  created_at timestamptz NOT NULL DEFAULT now(),
  PRIMARY KEY(admin_id,utc_day)
