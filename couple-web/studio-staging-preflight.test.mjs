@@ -88,3 +88,19 @@ test('read-only preflight blocks fake readiness without the authentic dice, card
   assert.equal(result.details.find(x=>x.component==='table '+table)?.ready,false,table);
  }
 });
+
+
+test('staging table probes run concurrently but never exceed four simultaneous requests',async()=>{
+ let active=0,maximum=0;
+ const fetcher=async()=>{
+  active++;maximum=Math.max(maximum,active);
+  await new Promise(resolve=>setImmediate(resolve));
+  active--;
+  return {status:401,text:async()=>JSON.stringify({code:'42501'})};
+ };
+ const result=await checkStagingReadiness({ref,url,key,fetcher});
+ assert.equal(result.ready,true);
+ assert.equal(result.details.length,20);
+ assert.ok(maximum>=2,'sequential network reads would slow staging checks');
+ assert.ok(maximum<=4,'preflight should limit Supabase request fan-out');
+});
