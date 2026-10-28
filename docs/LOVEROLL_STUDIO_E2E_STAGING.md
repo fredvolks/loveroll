@@ -10,7 +10,7 @@ Configurer dans les secrets GitHub (pas dans les fichiers) :
 
 - `LOVEROLL_STUDIO_E2E_REF` : référence Supabase STAGING, jamais `ejsrqfpkgwraorrznjpm`.
 - `LOVEROLL_STUDIO_E2E_URL` : `https://<ref>.supabase.co`.
-- `LOVEROLL_STUDIO_E2E_PUBLISHABLE_KEY` : clé publique du staging.
+- `LOVEROLL_STUDIO_E2E_PUBLISHABLE_KEY` : clé **`sb_publishable_…` uniquement** du staging. Une clé `sb_secret_`, `service_role` ou JWT est refusée AVANT le lancement du navigateur : jamais de clé secrète côté client.
 - `LOVEROLL_STUDIO_E2E_ADMIN_EMAIL` : admin technique staging confirmé.
 - `LOVEROLL_STUDIO_E2E_ADMIN_PASSWORD` : son mot de passe **uniquement en secret GitHub**.
 
@@ -40,6 +40,7 @@ Ce test **ne couvre pas encore la totalité des branches** : refus/repige, favor
 ## Sécurité des données et du budget
 
 - N'utiliser aucune adresse, compte ou identifiant client production; le script refuse la référence production, et ne reçoit aucune clé service-role.
+- Le précontrôle anonyme exige 18 tables, dont les dépendances Éclat des scènes, consentements et réglages. Après connexion du Super Admin staging, deux RPC **en lecture seule** (`love_eclat_status`, `love_test_mode_allowed`) doivent fonctionner avant toute création de compte A/B.
 - Ne pas démarrer le workflow tant que la base de staging n'est pas complète. Le projet connecté nommé « Test » n'est **pas** automatiquement considéré comme un staging LoveRoll.
 - Pas de génération Venice à l'intérieur de ce test. Le véritable atelier Venice demande une confirmation explicite et utilise une limite par admin et jour UTC liée à la paire initiale.
 - Les captures de ce parcours ne contiennent pas le formulaire d'authentification et restent dans les artefacts GitHub durant sept jours.
