@@ -28,6 +28,9 @@ test('versioned backend retains existing opt-in and dispatch authentication',()=
  assert.match(source,/love_push_preferences/);
  assert.match(source,/pref\?\.enabled/);
  assert.match(source,/pref\[alert\.kind\]!==true/);
+ assert.match(source,/tag:alert\.kind==='invitation'/);
+ assert.match(source,/\?'evening-invite':/);
+ assert.match(source,/\?'evening-reply':/);
  assert.match(source,/love_push_native_devices/);
  assert.match(source,/love_push_subscriptions/);
  assert.match(source,/fcm\.googleapis\.com\/v1\/projects/);
