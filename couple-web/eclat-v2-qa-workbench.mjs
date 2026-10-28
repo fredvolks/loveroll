@@ -107,8 +107,11 @@ export function createEclatV2QaWorkbench({
   const {data,error}=await operatorClient.auth.signInWithPassword({email,password});
   if(error||!data?.user?.id)throw error||new Error('Connexion opérateur refusée');
   const {data:check,error:authError}=await operatorClient.auth.getUser();
-  if(authError||check?.user?.id!==data.user.id)
+  if(authError||check?.user?.id!==data.user.id){
+   // Even the QA operator has no permission to retain an unverified JWT.
+   try{await operatorClient.auth.signOut({scope:'local'});}catch{/* best effort */}
    throw new Error('Identité opérateur non vérifiée');
+  }
   if(['A','B'].some(role=>players[role].user?.id===data.user.id)){
    await operatorClient.auth.signOut({scope:'local'});
    throw new Error('L’opérateur QA doit être distinct des deux joueurs');
