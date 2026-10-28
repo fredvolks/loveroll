@@ -3,9 +3,18 @@
 import {createClient} from 'npm:@supabase/supabase-js@2.57.0';
 import {isRegisteredStudioIdentity,canSkipAlreadyDeletedStudioUser} from './guards.ts';
 
+const productionOrigin='https://fredvolks.github.io';
+const productionRef='ejsrqfpkgwraorrznjpm';
+// A dedicated staging project may explicitly enable a loopback browser
+// running the exact PR. Production can NEVER opt into that origin.
+const stagingOrigin='http://127.0.0.1:8765';
+const stagingAllowed=Deno.env.get('LOVEROLL_STUDIO_STAGING_MODE')==='true'&&
+ Deno.env.get('LOVEROLL_STUDIO_STAGING_ORIGIN')===stagingOrigin&&
+ !(Deno.env.get('SUPABASE_URL')||'').includes(productionRef);
+const allowedOrigin=stagingAllowed?stagingOrigin:productionOrigin;
 const headers={
   'Content-Type':'application/json;charset=utf-8','Cache-Control':'no-store',
-  'Access-Control-Allow-Origin':'https://fredvolks.github.io',
+  'Access-Control-Allow-Origin':allowedOrigin,
   'Access-Control-Allow-Headers':'authorization,apikey,content-type,x-client-info',
   'Access-Control-Allow-Methods':'POST,OPTIONS'
 };
@@ -22,7 +31,7 @@ Deno.serve(async(req:Request)=>{
  if(req.method==='OPTIONS')return new Response(null,{status:204,headers});
  if(req.method!=='POST')return response({error:'Méthode refusée'},405);
  const origin=req.headers.get('origin');
- if(origin&&origin!=='https://fredvolks.github.io')
+ if(origin&&origin!==allowedOrigin)
   return response({error:'Origine interdite'},403);
  const supabaseUrl=Deno.env.get('SUPABASE_URL')||'',key=serviceKey();
  if(!supabaseUrl||!key)return response({error:'Configuration serveur indisponible'},503);
