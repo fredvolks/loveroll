@@ -49,7 +49,7 @@ Deno.serve(async(req:Request)=>{
  try{body=await req.json()}catch{return response({error:'JSON invalide'},400)}
  const action=body.action;
  const seat=seatName(body.seat);
- if(!['status','create','seat_login','delete','venice_preview_authorize'].includes(String(action)))
+ if(!['status','challenge_history','create','seat_login','delete','venice_preview_authorize'].includes(String(action)))
   return response({error:'Action interdite'},400);
 
  // Defense in depth: never fetch another couple's private cards, or issue an
@@ -197,6 +197,39 @@ Deno.serve(async(req:Request)=>{
  if(action==='status'){
   try{return response(await status())}
   catch{return response({error:'État temporairement indisponible'},503)}
+ }
+
+ // A REAL, paginated history across this administrator's registered test
+ // couple. No UUID provided by the browser may select the couple or user.
+ // This read-only route cannot draw/advance a challenge or impersonate B.
+ if(action==='challenge_history'){
+  const page=body.page;
+  if(!Number.isSafeInteger(page)||Number(page)<0||Number(page)>999)
+   return response({error:'Page de défis invalide'},400);
+  const {data:pool,error:poolError}=await service.from('love_studio_test_pools')
+   .select('state,couple_id').eq('admin_id',adminId).maybeSingle();
+  if(poolError)return response({error:'Banc de test indisponible'},503);
+  if(pool?.state!=='ready'||!pool.couple_id)
+   return response({error:'Duo technique prêt requis'},409);
+  const {data:seats,error:seatError}=await service.from('love_studio_test_seats')
+   .select('seat,user_id,synthetic_email').eq('admin_id',adminId);
+  if(seatError||!await validRegisteredPair(pool.couple_id,seats||null))
+   return response({error:'Identités du duo test non vérifiées'},403);
+  const limit=10;
+  const {data, count, error}=await service.from('couple_challenges')
+   .select('recipient,card_title,card_description,category,face,status,created_at',
+    {count:'exact'})
+   .eq('couple_id',pool.couple_id)
+   .order('created_at',{ascending:false}).order('id',{ascending:false})
+   .range(Number(page)*limit,Number(page)*limit+limit-1);
+  if(error||typeof count!=='number')
+   return response({error:'Historique officiel indisponible'},503);
+  return response({page,limit,total:count,cards:(data||[]).map(row=>({
+   seat:seats?.find(s=>s.user_id===row.recipient)?.seat??'?',
+   category:row.category??'',face:row.face??null,
+   title:row.card_title??'',description:row.card_description??'',
+   status:row.status??'',created_at:row.created_at??null
+  }))});
  }
  if(action==='seat_login'){
   if(!seat)return response({error:'Joueur de test invalide'},400);
