@@ -60,7 +60,7 @@ test('LoveRoll build versions agree between endpoint, app, HTML and imported mod
  assert.ok(!html.includes('evening-queue-fixed-v102.css'));
  assert.ok(!html.includes('evening-private-queue.css'),
   'the deprecated queue stylesheet must not override official Soirée visuals');
- assert.ok(html.includes('evening-editorial.css?v=20261017-ritual130'),
+ assert.ok(html.includes('evening-editorial.css?v=20261028-lr027'),
   'the approved Soirée stylesheet must load the Passer/Refuser controls');
  assert.ok(sw.includes('./evening-editorial.css'),
   'the Soirée stylesheet must remain cached for PWA offline fallback');
