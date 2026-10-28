@@ -69,3 +69,58 @@ test('destroyed player discards late server response and never repaints hidden s
  assert.equal(await pending,false);
  assert.equal(root.innerHTML,'','private screen remains blank after disposal');
 });
+
+
+test('server-side Premium revocation blanks the real Éclat player instead of keeping private content',async()=>{
+ const root=fakeRoot(),original=initial();
+ const controller=createEclatV2PlayController({
+  root,api:{status:async()=>({access:false,active:false})},
+  viewerId:aid,initialStatus:original
+ });
+ assert.match(root.innerHTML,/ÉCLAT · COFFRET/,'original authorized scene is mounted');
+ assert.equal(await controller.refresh(),true);
+ assert.deepEqual(controller.getStatus(),{access:false,active:false});
+ assert.match(root.innerHTML,/Accès Éclat requis/);
+ assert.doesNotMatch(root.innerHTML,/ÉCLAT · COFFRET|Mission privée|data-eclat-v2-action="show-role/);
+ controller.destroy();
+});
+
+test('a replaced real V2 session fails closed even if the old view was valid',async()=>{
+ const root=fakeRoot(),original=initial();
+ const controller=createEclatV2PlayController({
+  root,api:{status:async()=>({...original,session_id:'44444444-4444-4444-8444-444444444444'})},
+  viewerId:aid,initialStatus:original
+ });
+ await assert.rejects(controller.refresh(),/Séance Éclat remplacée/);
+ assert.deepEqual(controller.getStatus(),{access:false,active:false});
+ assert.match(root.innerHTML,/Accès Éclat requis/);
+ controller.destroy();
+});
+
+test('expired authentication clears private screen; transient network failure does not destroy drafts',async()=>{
+ const root=fakeRoot(),original=initial();
+ let error=Object.assign(new Error('Temporary outage'),{status:503});
+ const controller=createEclatV2PlayController({
+  root,api:{status:async()=>{throw error;}},viewerId:aid,initialStatus:original
+ });
+ await assert.rejects(controller.refresh(),/Temporary outage/);
+ assert.equal(controller.getStatus().session_id,sid);
+ assert.match(root.innerHTML,/ÉCLAT · COFFRET/);
+ error=Object.assign(new Error('JWT revoked'),{status:401});
+ await assert.rejects(controller.refresh(),/JWT revoked/);
+ assert.deepEqual(controller.getStatus(),{access:false,active:false});
+ assert.match(root.innerHTML,/Accès Éclat requis/);
+ controller.destroy();
+});
+
+test('an external finished session clears private role and renders only a consented public finale',async()=>{
+ const root=fakeRoot(),original=initial();
+ const controller=createEclatV2PlayController({
+  root,api:{status:async()=>({...original,active:false,state:'finished'})},
+  viewerId:aid,initialStatus:original
+ });
+ assert.equal(await controller.refresh(),true);
+ assert.equal(controller.getStatus().active,false);
+ assert.doesNotMatch(root.innerHTML,/ÉCLAT · COFFRET|data-eclat-v2-action="show-role/);
+ controller.destroy();
+});
