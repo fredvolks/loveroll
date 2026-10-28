@@ -124,7 +124,7 @@ export function eveningHistoryMarkup({sessions=[],members=[],stats=[],historyCha
  return '<div class="evening-calendar-shell">'+
   '<div class="evening-cal-head">'+ritualHeadingHtml('NOS SOIRÉES À DEUX')+'<h2>Notre calendrier</h2>'+
    '<p>En cours : défis à faire. Clôturées : bilan définitif.</p></div>'+
-  '<div class="evening-cal-stats" aria-label="Bilan du mois affiché"><span><strong>'+history+'</strong> soirées clôturées ce mois</span>'+
+  '<div class="evening-cal-stats"><span><strong>'+history+'</strong> soirées clôturées ce mois</span>'+
    '<span><strong>'+done+'</strong> défis réalisés ce mois</span>'+
    '<span><strong>'+incomplete+'</strong> non réalisés ce mois</span></div>'+
   extraStats+
