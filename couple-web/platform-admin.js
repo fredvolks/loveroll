@@ -34,7 +34,10 @@ async function rpc(name,args={}){
 const promoAdmin=createPromoAdmin({rpc});
 const geoUsage=createGeoUsageAdmin({rpc});
 const realSandbox=createStudioRealSandbox({client});
-const gated=()=>{$('gate').hidden=false;$('dashboard').hidden=true;$('signout').hidden=true;};
+const gated=()=>{
+ realSandbox.deactivate();
+ $('gate').hidden=false;$('dashboard').hidden=true;$('signout').hidden=true;
+};
 async function bootstrap(){
  try{
   const {data:auth,error}=await client.auth.getUser();
