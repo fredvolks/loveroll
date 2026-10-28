@@ -336,10 +336,9 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
     if(status.device_mode==='one'){sharedMusicNotes={};sharedRevealedMusic=[];musicDraft={title:null,artist:null};}
    }
    if(!next.active){
-    wishPhraseDraft=null;
-    sharedMusicNotes={};sharedRevealedMusic=[];musicDraft={title:null,artist:null};
-    sharedAnswers=emptyShared();sharedConfirmed.clear();sharedReveal=null;
-    sharedCardDraft={A:[],B:[]};sharedCardConfirmed.clear();playlistDraft=[];
+    // A complete or stopped session is no longer a private editor. Erase
+    // every transient A/B draft, including the currently displayed role.
+    clearPrivateSession();
    }
    paint();
   }catch(err){onError(err);}finally{busy=false;}
