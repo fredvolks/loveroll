@@ -74,9 +74,10 @@ const client=CONFIG.supabaseUrl&&CONFIG.supabasePublishableKey?
 const launchParams=new URLSearchParams(location.search);
 const eclatAudio=createEclatAudio();
 const eclatV2Api=client?createEclatV2SessionApi(client):null;
-let eclatV2Player=null,eclatV2Poll=null;
+let eclatV2Player=null,eclatV2Poll=null,eclatV2Resume=null;
 function disposeEclatV2Player(){
  if(eclatV2Poll!==null){clearInterval(eclatV2Poll);eclatV2Poll=null;}
+ if(eclatV2Resume){document.removeEventListener('visibilitychange',eclatV2Resume);eclatV2Resume=null;}
  if(eclatV2Player){eclatV2Player.destroy();eclatV2Player=null;}
 }
 function pendingReferralCode(){
@@ -1313,8 +1314,11 @@ function renderEclat(){
    onError:err=>fail(err)
   });
   const currentPlayer=eclatV2Player;
-  eclatV2Poll=setInterval(()=>{
-   if(state.tab!=='eclat'||eclatV2Player!==currentPlayer)return;
+  const syncVisibleEclatV2=()=>{
+   // Android/iPad browsers throttle hidden tabs; polling them spends data
+   // without improving the game. On return, immediately read real partner
+   // progress, entitlement and completed state, never a simulated chapter.
+   if(document.hidden||state.tab!=='eclat'||eclatV2Player!==currentPlayer)return;
    currentPlayer.refresh().then(refreshed=>{
     if(!refreshed||eclatV2Player!==currentPlayer)return;
     const latest=currentPlayer.getStatus();
@@ -1332,6 +1336,7 @@ function renderEclat(){
      // The finale (a mutually approved playlist or saved invitation)
      // must remain on screen instead of vanishing after five seconds.
      if(eclatV2Poll!==null){clearInterval(eclatV2Poll);eclatV2Poll=null;}
+     if(eclatV2Resume){document.removeEventListener('visibilitychange',eclatV2Resume);eclatV2Resume=null;}
      const returnToGallery=root.querySelector('#eclat-v2-finished-return');
      if(returnToGallery)returnToGallery.hidden=false;
     }
@@ -1347,7 +1352,10 @@ function renderEclat(){
     }
     console.warn('Actualisation Éclat V2',error?.code||'');
    });
-  },5000);
+  };
+  eclatV2Resume=()=>{if(!document.hidden)syncVisibleEclatV2();};
+  document.addEventListener('visibilitychange',eclatV2Resume);
+  eclatV2Poll=setInterval(syncVisibleEclatV2,5000);
   eclatV2Poll?.unref?.();
   return;
  }
