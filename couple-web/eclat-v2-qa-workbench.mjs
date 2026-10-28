@@ -201,8 +201,11 @@ export function createEclatV2QaWorkbench({
   const {data,error}=await client.auth.signInWithPassword({email,password});
   if(error||!data?.user?.id)throw new Error(error?.message||'Connexion refusée');
   const {data:confirmed,error:authError}=await client.auth.getUser();
-  if(authError||confirmed?.user?.id!==data.user.id)
+  if(authError||confirmed?.user?.id!==data.user.id){
+   // A QA player must never retain an unverified JWT on this admin page.
+   try{await client.auth.signOut({scope:'local'});}catch{/* best effort */}
    throw new Error('Identité du joueur non vérifiée');
+  }
   const other=role==='A'?'B':'A';
   if(players[other].user?.id===data.user.id||operatorId===data.user.id){
    await client.auth.signOut({scope:'local'});
