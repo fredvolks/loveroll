@@ -111,6 +111,37 @@ async function main(){
    'both players must belong to the same technical platform admin');
   assert.ok(verifiedSeats.every(x=>x.owner!==x.id),
    'neither game seat can use the actual platform admin account');
+  // Genuine staging authorization probe: both players must be rejected by
+  // the Data API on ALL private Studio registries. This performs READS ONLY,
+  // sends each seat token solely to its staging Supabase backend, and returns
+  // no session secret or private row content to the test runner.
+  const privateTables=[
+   'love_studio_test_pools','love_studio_test_seats',
+   'love_studio_test_audit','love_studio_venice_daily_quota'
+  ];
+  for(const seat of ['A','B']){
+   const results=await page.frameLocator('#studio-real-frame-'+seat+' iframe')
+    .locator('#app').evaluate(async(_element,probe)=>{
+     const stored=JSON.parse(sessionStorage.getItem('loveroll-studio-auth-v1-'+probe.seat)||'null');
+     if(!stored?.access_token)return [{status:0}];
+     return Promise.all(probe.tables.map(async table=>{
+      const reply=await fetch(probe.url+'/rest/v1/'+table+'?select=*&limit=1',{
+       method:'GET',cache:'no-store',headers:{
+        apikey:probe.key,Authorization:'Bearer '+stored.access_token
+       }
+      });
+      return {table,status:reply.status};
+     }));
+    },{seat,tables:privateTables,url:params.url,key:params.key});
+   assert.equal(results.length,privateTables.length,
+    seat+' must have a real Auth token before testing SQL permissions');
+   for(const result of results){
+    assert.ok([401,403,404].includes(result.status),
+     'Security violation: Studio player '+seat+' can read private registry '+
+      result.table+' (HTTP '+result.status+')');
+   }
+  }
+  console.log('A/B denied access to four privileged Studio registries: PASS');
   assert.equal((await page.locator('#studio-real-progress-count').innerText()).includes('/9'),true);
   await page.screenshot({path:'studio-authenticated-e2e-proof/real-dual-account-desktop.png',fullPage:true});
   // REAL gameplay: click official shipped buttons, observe server-confirmed
