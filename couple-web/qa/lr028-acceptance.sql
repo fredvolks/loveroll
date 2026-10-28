@@ -91,9 +91,21 @@ begin
   if sqlerrm='SECURITY FAILURE: NULL response accepted' then raise;end if;
  end;
 
- -- Changing a couple's membership must not leak a former B invitation to C.
+ -- Changing a couple's membership must invalidate the former invitation
+ -- for both the replaced member AND the old member still in the couple.
  delete from public.couple_members where couple_id=couple and user_id=b;
  insert into public.couple_members(couple_id,user_id) values(couple,c);
+ perform set_config('request.jwt.claim.sub',a::text,true);
+ status_a:=public.love_evening_invite_status(couple);
+ if status_a->>'state'<>'none' or status_a->>'available'<>'false'
+    or status_a ? 'recipient_id' or status_a ? 'id' then
+  raise exception 'Old sender must never see removed partner or stale invitation: %',status_a;end if;
+ begin
+  perform public.love_evening_invite_send(couple);
+  raise exception 'SECURITY FAILURE: old sender reused removed partner invitation';
+ exception when raise_exception then
+  if sqlerrm='SECURITY FAILURE: old sender reused removed partner invitation' then raise;end if;
+ end;
  perform set_config('request.jwt.claim.sub',c::text,true);
  status_b:=public.love_evening_invite_status(couple);
  if status_b->>'state'<>'none' or status_b->>'available'<>'false' then
@@ -138,5 +150,20 @@ begin
  exception when raise_exception then
   if sqlerrm='SECURITY FAILURE: accepted expired invite' then raise;end if;
  end;
-end$$;
+ -- The reverse swap (original sender removed) must also revoke the ability
+ -- to answer, even if the recipient B remains a verified couple member.
+ delete from public.couple_members
+  where couple_id='eeeeeeee-eeee-4eee-eeee-eeeeeeeeeeee' and user_id=a;
+ insert into public.couple_members(couple_id,user_id) values
+  ('eeeeeeee-eeee-4eee-eeee-eeeeeeeeeeee',c);
+ perform set_config('request.jwt.claim.sub',b::text,true);
+ status_b:=public.love_evening_invite_status('eeeeeeee-eeee-4eee-eeee-eeeeeeeeeeee');
+ if status_b->>'state'<>'none' or status_b ? 'id' then
+  raise exception 'Remaining recipient must not see removed sender: %',status_b;end if;
+ begin
+  perform public.love_evening_invite_respond((again->>'id')::uuid,'no');
+  raise exception 'SECURITY FAILURE: recipient answered after sender was replaced';
+ exception when sqlstate '42501' then null;
+ end;
+end$;
 select 'LR-028: all isolated SQL A/B tests passed' as result;
