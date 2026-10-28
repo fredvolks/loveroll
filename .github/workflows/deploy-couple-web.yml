@@ -108,6 +108,7 @@ jobs:
         if: matrix.group == 'evening'
         run: |
           set -euo pipefail
+          node couple-web/challenge-adaptation-browser-check.cjs
           node couple-web/evening-d6-template-browser-check.cjs
           node couple-web/evening-d100-template-browser-check.cjs
           node couple-web/evening-category-confirm-browser-check.cjs
