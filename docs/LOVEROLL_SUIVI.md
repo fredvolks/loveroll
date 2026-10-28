@@ -1,5 +1,31 @@
 # LoveRoll — SUIVI OFFICIEL DU PROMPT MAÎTRE
 
+
+## Mise à jour vérifiée — travaux des 27–28 octobre 2026
+
+> **Attention :** plusieurs chantiers ci-dessous restent en **PR brouillon, non publiés**. La correction Notifications #102 est fusionnée dans `main`; sa disponibilité finale sur Pages doit être vérifiée séparément. Les suites CI et les captures de navigateur ne remplacent pas une recette avec deux vrais comptes Supabase sur appareil réel. Ce résumé actualise les passages historiques plus bas; il ne modifie pas leurs cases de recette physique.
+
+| Chantier prioritaire | Travail réellement dans GitHub | Reste impératif avant « terminé » |
+| --- | --- | --- |
+| **LR-STUDIO-001 · Super Admin vrai jeu A/B** | [PR #97](https://github.com/fredvolks/loveroll/pull/97), deux comptes Supabase Auth indépendants et jetables, deux fenêtres du même LoveRoll, création/reprise/nouveau cycle/purge sécurisée en code, vrais états D6/D100/défis, 12 compteurs Éclat, atelier Venice, **historique complet des cartes officielles par pages de 10 et filtre A/B**, fermeture des anciennes sessions Auth si le duo change hors de la console. Contrôles Studio (SQL, contrats, captures synthétiques) et Venice verts au SHA `54716e7e`; suite Web du dernier SHA à confirmer. | **Aucune recette authentifiée réelle staging exécutée**. Obtenir un projet de préproduction LoveRoll désigné (le projet nommé « Test » n'est pas un staging LoveRoll), installer la base et les Edge Functions, tester A/B/iPad/PC/mobile, abandon/reprise, facturation sandbox et suppression Auth/SQL puis intégrer/publier. |
+| **LR-ECLAT-001 · 12 coffrets Premium** | [PR #92](https://github.com/fredvolks/loveroll/pull/92), **12 coffrets × 8 scènes × 2 variantes codés en V2 isolé**, moteur, interface, contrôleur A/B et tests éditoriaux/PostgreSQL sur base éphémère verts au SHA `c1aa0833`. | V2 **raccordé à `app.js` dans la PR brouillon #92, non livré** : démarrage conditionné au vrai statut serveur, deux téléphones ou téléphone partagé, repli V1 conservé, version Web 251 en branche. Migrations non installées sur LoveRoll production; essais réels A/B des 12 parcours et toutes leurs finales, accès Premium, esthétique, consentements, appareils et rollout réversible. |
+| **Android / mises à jour natives** | [PR #91](https://github.com/fredvolks/loveroll/pull/91), vérifications natives Android réussies; **correction codée et testée** du verrou quotidien des mises à jour (vérification silencieuse toutes les 30 min au maximum, bouton manuel toujours disponible) au SHA `c135e1eb`; contrôle de signature **en échec** car `LOVEROLL_ANDROID_SIGNING` n'est pas un JSON valide dans GitHub Actions. | Remettre un secret structuré correct **sans l'afficher ni le committer**; surtout ne pas publier une APK sous un certificat neuf comme mise à jour silencieuse d'une ancienne signature. Vérifier la continuité et les appareils physiques. |
+| **Cache de mise à jour PWA** | [PR #105](https://github.com/fredvolks/loveroll/pull/105) **fusionnée dans `main`**, commit `a781184` : manifeste Web 248, script d'entrée, imports et service worker concordants. **Toute la CI de la PR est verte.** | Le workflow de publication Pages est automatique sur `main`, mais sa conclusion et la version effectivement servie sur le site public n'ont pas encore pu être vérifiées. |\n| **Notifications Android / Web** | [PR #102](https://github.com/fredvolks/loveroll/pull/102) **fusionnée dans `main`**, commit `1c9d89e` : autorisations, quatre catégories, rappel du lundi, activation et tests des écrans 360 px réunis. **Toute la CI de PR est verte.** | Contrôler le déploiement GitHub Pages et la réception réelle/les permissions sur Samsung Android. L'interface Web n'accorde pas elle-même la permission Android ni ne corrige la signature native bloquée dans #91. |
+| **LR-001 · D100 Soirée / Surprise** | [PR #101](https://github.com/fredvolks/loveroll/pull/101) déjà fusionnée/publiée, caméra ajustée pour parité visuelle ±3 %, tests automatiques Android/iPad réussis. | Vérification physique finale des dimensions, du socle et de la lisibilité de toutes les faces. |
+| **LR-019 · 5 favoris personnels** | [PR #104](https://github.com/fredvolks/loveroll/pull/104) réintégrée sur le `main` actuel : **5 favoris par membre** imposés en SQL, favoris sur vrais défis/archives, volet de retrait/remplacement, intégration D100, sécurité entre couples et cycle de 200 cartes. PostgreSQL 17, A/B Chromium et concurrence du cinquième cœur **verts** en workflow consolidé; les PR empilées #56–#60 sont conservées uniquement comme historique. | **PR brouillon, aucune migration production exécutée.** Suite Web finale à confirmer; vérification de compatibilité des quatre fonctions existantes, préproduction LoveRoll réelle, recette Auth à deux personnes et publication réversible indispensables. |
+
+**Autres exigences à développer ou clôturer après ces lots :** Soirée temporaire Soft/Medium/Intense, 300 cartes et régénération Venice/quotas/paiement, LR-002/003 minuteries/calendrier, LR-016/017/018/026/027/028, Soirée Extra LR-045, Surprise/Geoapify, ambiance musicale, réglages/notifications Android, audit UX iPad/Android/iPhone/PC, matrices de tests et déploiements. Une PR ou une section écrite ne représente pas une livraison client.
+
+
+## LR-001 — Régression : D100 Soirée plus petit que Surprise (27 octobre 2026)
+
+- **État : correction Web 247 fusionnée et publiée; tests Chromium de parité réussis sur Android et iPad. Essais physiques non réalisés.**
+- **Constat :** sur l'écran d'entrée « Soirée », le D100 est plus petit que le D100 de « Surprise », malgré la consigne d'identité visuelle. L'ancienne réduction motivée par un dé auparavant trop grand/coupé a laissé une ambiguïté dans l'acceptation UX.
+- **Source normative :** [LR-001 du prompt maître](./LOVEROLL_MASTER_PROMPT.md#lr-001--d100-soirée-coupé-et-disproportionné), rectificatif du 27 octobre 2026. Ne pas réduire le dé de Surprise; reproduire sur Soirée sa taille apparente, le rendu WebGL et la relation au socle à viewport identique (**tolérance maximale ±3 %**).
+- **Code livré :** [PR #101](https://github.com/fredvolks/loveroll/pull/101) fusionnée dans `main` (`185d9c7287c3314bb16104cb1808887778f59712`) ; ajustement de caméra du D100 WebGL, parité ±3 %, captures/comparaisons automatisées des mêmes viewports Android et iPad et protections de cadrage.
+- **Preuves :** [six contrôles GitHub Actions verts](https://github.com/fredvolks/loveroll/actions/runs/40616419277) sur le SHA final `1de6a354` (dont Chromium D100 Android/iPad) ; [GitHub Pages publié et diagnostic réussi](https://github.com/fredvolks/loveroll/actions/runs/40618307286) pour `main` `185d9c7`. **Reste :** essai physique sur appareils et revue finale à l’œil; ne pas cocher 100 % terminé avant.
+
+
 ## Livraisons vérifiées — parité iPad / confirmation D100 (27 octobre 2026)
 
 - **Web 237 — iPad/Android :** [PR #72 fusionnée](https://github.com/fredvolks/loveroll/pull/72), commit `735f31718d9151785bbf24f6551ef3148ce2db39`; image HD Android `loveroll-home-portrait-v202.webp` commune à Accueil et Soirée iPad, un seul socle photographié, vrais D6/D100 WebGL, tests portrait et paysage et captures Chromium. [GitHub Pages : succès avec contrôle du site réellement publié](https://github.com/fredvolks/loveroll/actions/runs/40495972734). Aucun essai physique iPad n'a été effectué dans cette livraison.
@@ -30,7 +56,7 @@
 
 | OK | ID | Demande / preuve d'acceptation | Statut | PR / preuve |
 |---|---|---|---|---|
-| [ ] | LR-001 | D100 Soirée **entier**, proportionné comme Surprise, posé sur le socle, durant toutes les animations | ◐ Web 237 : D6/D100 sur photo HD et socle unique ; tests Chromium iPad portrait/paysage + 7 mobiles réussis, essai physique non réalisé | [PR #72 fusionnée](https://github.com/fredvolks/loveroll/pull/72) · [Pages Web237](https://github.com/fredvolks/loveroll/actions/runs/40495972734) · `ipad-romance-scene-browser-check.cjs` |
+| [ ] | LR-001 | D100 Soirée **entier**, proportionné comme Surprise, posé sur le socle, durant toutes les animations | ◐ Web 247 fusionné/publié : parité ±3 % sur comparaisons Chromium Android/iPad, vrai WebGL conservé ; essais physiques restant à effectuer | [PR #101 fusionnée](https://github.com/fredvolks/loveroll/pull/101) · [CI verte](https://github.com/fredvolks/loveroll/actions/runs/40616419277) · [Pages publiée](https://github.com/fredvolks/loveroll/actions/runs/40618307286) |
 | [ ] | LR-002 | À 00:00, défi avec minuterie **réalisé automatiquement une seule fois** ; annulation/pause/saut exclus | ◐ En cours — validation serveur, reprise après fermeture et tests deux partenaires en cours ; non déployé | [PR nº 9](https://github.com/fredvolks/loveroll/pull/9) · `timed-evening-completion.test.mjs` · `evening-couple-flow-browser-check.cjs` (CI en cours) |
 | [ ] | LR-003 | Calendrier et compteurs cohérents : en cours ≠ non réalisé définitif ; cycle/partenaires corrects | ◐ En cours — libellés actifs et correctif des taux mensuels fusionnés dans main ; vérification complète du cycle 200 incomplète | [PR nº 20 fusionnée](https://github.com/fredvolks/loveroll/pull/20) · [PR nº 23 fusionnée](https://github.com/fredvolks/loveroll/pull/23) · `evening-calendar.test.mjs` / `calendar-success-stats.test.mjs` |
 | [ ] | LR-004 | Sonnerie des minuteries testée sur PWA Safari/iOS et Android, avec limites OS expliquées | ◐ En cours — sonnerie, préécoute et vibration Android codées (Web 229), tests physiques Safari/Android non effectués | [PR nº 8 fusionnée](https://github.com/fredvolks/loveroll/pull/8) · [PR nº 9](https://github.com/fredvolks/loveroll/pull/9) · `ios-install-sound-v229.test.mjs` |
@@ -242,44 +268,21 @@ Afficher près des catégories les cartes distinctes encore admissibles à la pr
 - **Preuves prévues :** `couple-web/dice-face-readability-browser-check.cjs` (D6 1–6, D100 représentatifs; téléphone 360×700, tablette 820×1180, ordinateur 1366×768), `dice-roll-motion.test.mjs`, captures WebGL `LoveRoll-D6-D100-face-readability-*` de GitHub Actions, comparaison avec la capture initiale. Tests physiques sur les vrais appareils et comparaison avant/après à confirmer; captures CI « après » ne remplacent pas une capture « avant ».
 - **Livraison :** branche `fix/d6-d100-face-readability-20261026` ; PR, CI, version Web, déploiement Pages et comportement public à renseigner après vérification.
 
-## Éclat V2 — état d'implémentation contrôlé (27 octobre 2026)
-
-### Atelier du Super Admin — branche V2
-
-- **Implémenté dans PR #92, brouillon :** rubrique \`Éclat · atelier de test\` dans \`admin.html\` (après authentification propriétaire); accès à deux comptes QA Auth indépendants, interface réelle de jeu pour A/B, choix 12 coffrets/30–60–90 min, démarrage/reprise/actualisation via le vrai backend, disposition iPad/PC et mobile. Blocage explicite du Supabase officiel, des clés privées et des identités identiques.
-- **Vérifié :** tests unitaires de garde de configuration, contrôle de deux identités/d'un seul couple, absence de partage JWT et tests d'enchaînement de deux connexions de jeu; la migration V2 et ses règles passent les tests PostgreSQL de CI sur base jetable.
-- **Non implémenté / non validé :** création/suppression de vrais comptes QA depuis Studio, Supabase QA provisionné, indépendance des dés D6/D100 en mode test, générateur réel de trois cartes, limites/surplus/paiements sandbox, essais physiques iPad/Android ou recette simultanée sur une QA distante. Ne pas présenter l'atelier comme utilisable immédiatement sans cette infrastructure.
-- [Procédure et garde-fous](./LOVEROLL_ECLAT_QA_WORKBENCH.md).
-
-
-
-**PR de préparation :** [#92 — Éclat V2](https://github.com/fredvolks/loveroll/pull/92). **Non fusionnée, aucune migration de production exécutée, Éclat V1 intact.** Les 12 coffrets possèdent une structure éditoriale et des modèles/contrôles de jeu dans la branche; cela **ne constitue pas** une livraison jouable dans l'application publique.
-
-**Contrôles automatisés en branche :** `Éclat V2 editorial & route contract` et `Éclat V2 isolated PostgreSQL security checks` vérifient les vraies migrations V2 en PostgreSQL 17 jetable et les parcours A/B. Le statut exact du dernier commit doit être relu dans la PR avant toute fusion. Aucun test physique iPad/Android ou recette réelle à deux comptes en application publiée n'est encore revendiqué.
-
-**Coffret 08 :** les thèmes T1–T5 et titres privés sont en code; révélation uniquement volontaire. La finale propose jusqu'à cinq titres révélés, ordonnés librement et sauvegardés seulement après deux approbations identiques (ou confirmation orale explicite en mode partagé). Les notes privées et brouillons sont effacés à la fin/à l'arrêt; la liste approuvée, titres et artistes uniquement, peut être relue après la séance. Aucune musique ni lecture automatique.
-
-**Coffret 09 :** les sélections privées (0–3 cartes) sont comparées uniquement pour les cartes communes et les choix non partagés sont détruits. Les étapes 5–8 comportent les choix maintenant/plus tard/passer, la participation facultative et l'invitation finale; tout contact des cartes 7/8 exige deux Oui spécifiques et révocables. La phrase commune est facultative et ne devient publique qu'après deux propositions identiques (ou accord oral sur un téléphone). Refus, votes temporaires et consentements de contact sont purgés; seule l'invitation et sa phrase expressément approuvées peuvent subsister.
-
-**Super Admin · atelier QA :** l'onglet Éclat V2 est branché à la console propriétaire dans la PR #92, derrière son authentification serveur. Deux sessions joueurs A/B et une troisième session opérateur distincte utilisent exclusivement un projet Supabase QA séparé. Les vraies vues A/B et le moteur V2 sont utilisés, avec reprises, synchronisation et contrôles d'identité. **Nouveau lot en code non déployé :** Edge Function de création/suppression de comptes QA jetables, liste et purge sur demande, registre privé RLS fermé, 48 heures d'expiration nominale (non automatisée), UI opérateur QA et tests de garde. Vérification read-only du schéma QA et interdiction de créer sans tables requises; accès Premium testé individuellement à la connexion A/B. **Banc Soirée QA en code :** le D6 hebdomadaire, les D6 personnels, le D100 officiel, Accepter/Terminer et Passer/Refuser/Repiger LR-015 utilisent les vraies RPC du jeu sous deux JWT séparés, avec le vrai moteur WebGL et une limite de contextes sur iPad. **Aucun vrai compte n'a été créé ou supprimé, aucune base Supabase QA n'a été modifiée**; l'accès Premium QA et la suppression réelle doivent encore être éprouvés. Le banc ne remplace pas la recette des vrais dés Soirée D6/D100.
-
-**Restant avant de compter les coffrets comme livrés :** branchement dans la vraie navigation, migration coordonnée sécurisée, abonnements/entitlements, QA bout-en-bout de tous les coffrets/variantes sur deux comptes réels, contrôle de la reprise et des échanges A/B, essais physiques iPad/Android, finitions visuelles et accessibilité. Ne pas fusionner ni déployer #92 sans ces contrôles.
-
 ## Refonte Éclat — douze coffrets approuvés le 27 octobre 2026
 
-**LR-ECLAT-001 : spécification figée; développement en cours dans la PR #92 (brouillon non fusionné, non publié).** [Maître](./LOVEROLL_MASTER_PROMPT.md) · [Contrat de jeu détaillé](./LOVEROLL_ECLAT_12_COFFRETS_SPEC.md). Work implémente les décisions fixées; aucun nouveau gameplay à inventer. Les colonnes designer/client/joueur/codeur exigent des preuves propres au coffret; aucune case de livraison cochée par la seule rédaction de cette spécification.
+**LR-ECLAT-001 : spécification de jeu rédigée, développement non commencé dans cette intervention.** [Maître](./LOVEROLL_MASTER_PROMPT.md) · [Contrat de jeu détaillé](./LOVEROLL_ECLAT_12_COFFRETS_SPEC.md). Work implémente les décisions fixées; aucun nouveau gameplay à inventer. Les colonnes designer/client/joueur/codeur exigent des preuves propres au coffret; aucune case de livraison cochée par la seule rédaction de cette spécification.
 
 | ID | Coffret | Spécification | Code / livraison | Recette designer / client / joueur / codeur |
 | --- | --- | --- | --- | --- |
-| LR-ECLAT-01 | Les cinq secrets | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | En cours — PR #92, non publié | À réaliser et documenter |
-| LR-ECLAT-02 | Le double jeu | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | En cours — PR #92, non publié | À réaliser et documenter |
-| LR-ECLAT-03 | Le langage des sens | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | En cours — PR #92, non publié | À réaliser et documenter |
-| LR-ECLAT-04 | Les portes de minuit | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | En cours — PR #92, non publié | À réaliser et documenter |
-| LR-ECLAT-05 | Comme au premier rendez-vous | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | En cours — PR #92, non publié | À réaliser et documenter |
-| LR-ECLAT-06 | L’enquête amoureuse | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | En cours — PR #92, non publié | À réaliser et documenter |
-| LR-ECLAT-07 | À ta place | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | En cours — PR #92, non publié | À réaliser et documenter |
-| LR-ECLAT-08 | Notre bande originale | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | En cours — PR #92, non publié | À réaliser et documenter |
-| LR-ECLAT-09 | Le coffre des envies | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | En cours — PR #92, non publié | À réaliser et documenter |
-| LR-ECLAT-10 | Le compte à rebours | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | En cours — PR #92, non publié | À réaliser et documenter |
-| LR-ECLAT-11 | L’art de te séduire | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | En cours — PR #92, non publié | À réaliser et documenter |
-| LR-ECLAT-12 | La nuit du hasard | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | En cours — PR #92, non publié | À réaliser et documenter |
+| LR-ECLAT-01 | Les cinq secrets | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |
+| LR-ECLAT-02 | Le double jeu | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |
+| LR-ECLAT-03 | Le langage des sens | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |
+| LR-ECLAT-04 | Les portes de minuit | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |
+| LR-ECLAT-05 | Comme au premier rendez-vous | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |
+| LR-ECLAT-06 | L’enquête amoureuse | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |
+| LR-ECLAT-07 | À ta place | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |
+| LR-ECLAT-08 | Notre bande originale | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |
+| LR-ECLAT-09 | Le coffre des envies | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |
+| LR-ECLAT-10 | Le compte à rebours | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |
+| LR-ECLAT-11 | L’art de te séduire | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |
+| LR-ECLAT-12 | La nuit du hasard | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |

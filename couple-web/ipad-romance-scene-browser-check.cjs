@@ -72,6 +72,7 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
        markerWidth:plinth?.getBoundingClientRect().width,markerHeight:plinth?.getBoundingClientRect().height,
        markerVisible:plinth&&getComputedStyle(plinth).display!=='none',
        contact:markerRect?.top,meshTop:rect.top+bounds.top*rect.height,meshBottom:rect.top+bounds.bottom*rect.height,heroTop:theater.getBoundingClientRect().top,
+       meshWidth:(bounds.right-bounds.left)*rect.width,meshHeight:(bounds.bottom-bounds.top)*rect.height,
        meshCenter:rect.left+(bounds.left+bounds.right)*rect.width/2,
        appWidth:root.getBoundingClientRect().width,
        scrollX:document.documentElement.scrollWidth-innerWidth,
@@ -106,6 +107,28 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
      fs.mkdirSync('design-captures',{recursive:true});
      await page.screenshot({path:path.join('design-captures',
       'ipad-romance-'+step+'-'+width+'x'+height+'.png')});
+     if(step==='inactive'){
+      // Same viewport, same actual 3D mesh: the old iPad Soirée parent
+      // imposed 52vw before its child imposed a further 55vw cap.
+      await page.locator('.nav [data-action="tab:special"]').click();
+      await page.waitForFunction(()=>
+       !!document.querySelector('.surprise-main-die-scene canvas')?.loveRollDie?.readState()?.optics?.loaded);
+      const reference=await page.evaluate(()=>{
+       const canvas=document.querySelector('.surprise-main-die-scene canvas');
+       const mesh=canvas.loveRollDie.projectedBounds(),rect=canvas.getBoundingClientRect();
+       return {width:(mesh.right-mesh.left)*rect.width,height:(mesh.bottom-mesh.top)*rect.height};
+      });
+      for(const dimension of ['width','height']){
+       const ratio=scene['mesh'+dimension[0].toUpperCase()+dimension.slice(1)]/reference[dimension];
+       assert.ok(ratio>=.97&&ratio<=1.03,
+        'LR-001 iPad Soirée D100 must match Surprise projected '+dimension+' (±3 %): '+
+         JSON.stringify({width,height,ratio,scene,reference}));
+      }
+      console.log('IPAD_LR001_D100_PARITY_OK',width,height,JSON.stringify({
+       soiree:{width:scene.meshWidth,height:scene.meshHeight},surprise:reference}));
+      await page.screenshot({path:path.join('design-captures',
+       'ipad-romance-surprise-reference-'+width+'x'+height+'.png')});
+     }
     }finally{await context.close();}
    }
   }

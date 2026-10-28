@@ -56,7 +56,7 @@ import {referralSettingsHtml,referralLink,REFERRAL_CODE_PATTERN,REFERRAL_PENDING
 import {enhanceLoveRollSettingsSelects} from './loveroll-premium-pickers.mjs?v=20261019-personal171';
 import { CONFIG } from './config.js?v=20261019-love172';
 import {normalizeInviteEmail,composeInviteEmail} from './invite-email.mjs';
-import {enablePush,disablePush,updatePushPreference,sendTestPush,notificationSettingsMarkup,safeNativePushToken,currentPushDevice} from './push-notifications.mjs?v=20261027-web243';
+import {enablePush,disablePush,updatePushPreference,sendTestPush,notificationSettingsMarkup,safeNativePushToken,currentPushDevice} from './push-notifications.mjs?v=20261027-web247';
 import {shouldOfferInstall,markInstallOffered,dismissInstall,requestInstall,installOfferHtml,installStepsHtml,installStatus,isEmbeddedBrowser,isIos} from './home-install.mjs?v=20261017-complete127';
 import {messengerExternalBrowserHtml} from './messenger-browser.mjs?v=20261017-entry139';
 import {invitationStatus,coupleStats,formatCoupleDate,invitationEmailText,invitationMessengerText,invitationPreviewMarkup} from './couple-dashboard.mjs';
@@ -414,7 +414,7 @@ function frame(body,title='LOVEROLL',subtitle='Un jeu intime, juste pour vous de
  // never a fabricated pip result. Actual face comes from Supabase after rolling.
  const canvases=[...root.querySelectorAll('canvas[data-dice-sides]')];
  if(canvases.length){
-  import('./dice3d.js?v=20261027-web242').then(({dieOn})=>{
+  import('./dice3d.js?v=20261027-web247').then(({dieOn})=>{
    if(token!==renderToken)return;
    for(const canvas of canvases){
     if(!canvas.isConnected||canvas.loveRollDie)continue;

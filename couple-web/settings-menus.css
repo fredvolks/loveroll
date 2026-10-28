@@ -60,6 +60,16 @@
 #app.loveroll-settings-page:is(.loveroll-settings-menu,.loveroll-settings-detail,.loveroll-library-page),#app.loveroll-settings-page .settings-editorial{border:0!important;border-radius:0!important;box-shadow:none!important;}
 #app.loveroll-settings-page .settings-detail-body.has-settings-menus{border:0!important;box-shadow:none!important;background:none!important;padding:4px 0!important;}
 
+/* One notifications screen, not three leaf pages. Short phones need a real
+   inner scroll region for accessible full-size switches, permissions and
+   reminder controls; never clip the final actions to fit one viewport. */
+#app.loveroll-settings-page .settings-detail-body[data-settings-page="notifications"].settings-notifications-unified{
+ overflow-x:hidden!important;overflow-y:auto!important;
+ overscroll-behavior-y:contain;scrollbar-width:thin;
+ scroll-padding-bottom:12px;-webkit-overflow-scrolling:touch;
+}
+
+
 /* One account form, with every field and action visible together. */
 #app.loveroll-settings-page .settings-account-overview .settings-account-form{height:100%!important;display:flex!important;flex-direction:column!important;gap:8px!important;margin:0!important;}
 #app.loveroll-settings-page .settings-account-overview .settings-premium-section-head{display:none!important;}

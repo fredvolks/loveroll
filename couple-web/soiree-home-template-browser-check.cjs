@@ -83,11 +83,13 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
    assert.equal(reference.sides,'100');
    console.log('LR001_WAITING_D100_PARITY',width,height,JSON.stringify({idle,reference,
     heightRatio:idle.height/reference.height,widthRatio:idle.width/reference.width}));
-   for(const dimension of ['width','height'])
-    assert.ok(idle[dimension]<=reference[dimension]*1.12,
-     'Waiting Soirée D100 must not be bigger than Surprise ('+dimension+'): '+JSON.stringify({width,height,idle,reference}));
-   assert.ok(Math.abs(idle.height/reference.height-1)<.24,
-    'Waiting Soirée D100 should have comparable visual size to Surprise: '+JSON.stringify({width,height,idle,reference}));
+   // LR-001 acceptance: compare actual *projected 3D geometry*, not just
+   // equivalent canvas dimensions or an arbitrary upper bound.
+   for(const dimension of ['width','height']){
+    const ratio=idle[dimension]/reference[dimension];
+    assert.ok(ratio>=.97&&ratio<=1.03,
+     'LR-001 Soirée vs Surprise '+dimension+' mismatch (±3 % max): '+JSON.stringify({width,height,ratio,idle,reference}));
+   }
    if(process.env.LOVEROLL_CAPTURE_DIR)await page.screenshot({path:path.join(process.env.LOVEROLL_CAPTURE_DIR,
     'lr001-surprise-'+width+'x'+height+'.png')});
    await page.locator('.nav [data-action="tab:session"]').click();
