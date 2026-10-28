@@ -77,7 +77,8 @@ jobs:
             -f couple-web/studio-purge-isolated.sql
 
   visual-layout:
-    needs: [sandbox,postgres-purge]
+    # Independent layout check: no database/Auth dependency. Run alongside
+    # security jobs, never treat its success as substitute for either one.
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
