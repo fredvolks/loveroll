@@ -377,15 +377,14 @@ Deno.serve(async(req:Request)=>{
    if(recoveryError)return response({error:'Récupération des identités techniques impossible : registre conservé'},503);
  }
  const {data:registered,error:registeredError}=await service.from('love_studio_test_seats')
-  .select('seat,user_id').eq('admin_id',adminId);
+   .select('seat,user_id,synthetic_email').eq('admin_id',adminId);
  if(registeredError)return response({error:'Registre de test indisponible'},503);
  for(const row of registered||[]){
   if(!row.user_id)continue;
   const {data:u,error:lookupError}=await service.auth.admin.getUserById(row.user_id);
   if(canSkipAlreadyDeletedStudioUser(lookupError,deletePool.state,deletePool.couple_id))
    continue;
-  if(lookupError||!u?.user||u.user.app_metadata?.love_studio_test!==true||
-     u.user.app_metadata?.love_studio_admin!==adminId)
+  if(lookupError||!isRegisteredStudioIdentity(u?.user,row,adminId))
     return response({error:'Identité non-test détectée : aucune suppression effectuée'},403);
  }
  // DELETE only the registered test couple plus its two technical identities.
@@ -406,9 +405,12 @@ Deno.serve(async(req:Request)=>{
       return response({error:'Identité Auth non vérifiable; registre conservé'},503);
     }
     if(!u?.user)return response({error:'Réponse Auth incomplète; registre conservé'},503);
-    if(u.user.app_metadata?.love_studio_test!==true||
-       u.user.app_metadata?.love_studio_admin!==adminId)
-      return response({error:'Protection : suppression identité non-test interdite'},403);
+    // SQL preflight validates couple ownership. Auth deletion is also bound
+    // to the exact saved seat+email; an unrelated tagged account belonging
+    // to the same administrator must still be protected.
+    const expectedSeat=registered?.find(s=>s.seat===row.seat&&s.user_id===id);
+    if(!expectedSeat||!isRegisteredStudioIdentity(u.user,expectedSeat,adminId))
+      return response({error:'Protection : identité Auth ne correspond pas au siège technique'},403);
     const {error:delError}=await service.auth.admin.deleteUser(id);
     if(delError)return response({error:'Suppression partielle, relancer la suppression de ce banc'},503);
     // Never announce "deleted" based solely on deleteUser's HTTP 2xx.
