@@ -2,6 +2,20 @@
 -- Review on an isolated LoveRoll staging clone before applying to production.
 -- Preserves the original one-invitation/day, existing statuses and all D6 rules.
 begin;
+-- Fail closed if a concurrent migration has changed the official RPC logic.
+-- Fingerprints are from read-only inspection of LoveRoll PostgreSQL 17.
+do $guard$
+begin
+ if md5(pg_get_functiondef('public.love_evening_invite_send(uuid)'::regprocedure))
+      <> '265157f212a1915ee5f62d5f9c0f1ce1'
+    or md5(pg_get_functiondef('public.love_evening_invite_respond(uuid,text)'::regprocedure))
+      <> 'dcc538357da0500562d68db3994f9c14'
+    or md5(pg_get_functiondef('public.love_evening_invite_status(uuid)'::regprocedure))
+      <> '180d6b69177a35716213013a470b9298' then
+  raise exception 'LR-028 migration refused: function changed since review';
+ end if;
+end
+$guard$;
 drop policy if exists love_evening_invitation_members_read on public.love_evening_invitations;
 create policy love_evening_invitation_members_read on public.love_evening_invitations
  for select to authenticated using (
