@@ -71,4 +71,10 @@ VALUES
   'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb','aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa'),
  ('33333333-3333-4333-8333-333333333333','dddddddd-dddd-4ddd-dddd-dddddddddddd',
   'eeeeeeee-eeee-4eee-eeee-eeeeeeeeeeee',
+  'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa','bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb'),
+ ('44444444-4444-4444-8444-444444444444','dddddddd-dddd-4ddd-dddd-dddddddddddd',
+  'eeeeeeee-eeee-4eee-eeee-eeeeeeeeeeee',
   'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa','bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb');
+-- A previously started challenge must reject a proposed duration (but allow text).
+UPDATE public.couple_challenges SET status='accepted'
+WHERE id='22222222-2222-4222-8222-222222222222';
