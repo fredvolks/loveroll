@@ -158,8 +158,8 @@ test('two actual API clients, never A impersonating B, mount both full play cont
  assert.equal(elements['[data-eclat-qa="game"]'].hidden,false);
  await click('start');
  assert.deepEqual(rpcLog.map(x=>x[0]+':'+x[1]),[
-  'A:status','B:status','A:start','B:status']);
- assert.equal(rpcLog[2][2].deviceMode,'two');
+  'A:status','B:status','A:status','B:status','A:start','B:status']);
+ assert.equal(rpcLog[4][2].deviceMode,'two');
  assert.deepEqual(views.map(x=>x.viewerId),['qa-A','qa-B']);
  assert.notEqual(views[0].stage,views[1].stage);
  await click('refresh');
