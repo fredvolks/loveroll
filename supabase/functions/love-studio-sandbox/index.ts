@@ -152,6 +152,15 @@ Deno.serve(async(req:Request)=>{
       .insert({owner_user_id:ids[0]}).select('id').single();
     if(coupleError||!couple?.id)throw Error('Création du couple test impossible');
     newCouple=couple.id;
+    // Register the new couple BEFORE writing profiles, entitlements or members.
+    // If any later step fails, the privileged purge RPC can now locate and
+    // remove the very same synthetic couple, not just its Auth identities.
+    const {data:registeredCouple,error:registerError}=await service.from('love_studio_test_pools')
+      .update({couple_id:newCouple,updated_at:new Date().toISOString()})
+      .eq('admin_id',adminId).eq('state','creating').is('couple_id',null)
+      .select('couple_id').single();
+    if(registerError||registeredCouple?.couple_id!==newCouple)
+      throw Error('Référence du couple de test indisponible; nettoyage requis');
     const {error:profilesError}=await service.from('couple_profiles').insert([
       {id:ids[0],display_name:'Joueur A (test)',gender:'him',play_style:'medium'},
       {id:ids[1],display_name:'Joueur B (test)',gender:'her',play_style:'medium'}
@@ -185,6 +194,18 @@ Deno.serve(async(req:Request)=>{
     // Recover only IDs produced by this request; a registrable partial failure
     // remains in "creating" so a privileged retry can clean it safely.
     try {
+      // A failed database registration is the only case where the fresh
+      // couple is still not reachable through the registry. If safe, delete
+      // that exact newly inserted ID with its synthetic owner before purge.
+      if(newCouple){
+        const {data:linked}=await service.from('love_studio_test_pools')
+          .select('couple_id').eq('admin_id',adminId).maybeSingle();
+        if(!linked?.couple_id){
+          const {error:orphanError}=await service.from('couples').delete()
+            .eq('id',newCouple).eq('owner_user_id',ids[0]);
+          if(orphanError)throw orphanError;
+        }
+      }
       const purge=await service.rpc('love_studio_purge_test_couple',{p_admin:adminId});
       if(!purge.error){
         for(const id of ids){

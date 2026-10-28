@@ -17,6 +17,10 @@ test('two real Auth users are generated without pre-known credentials',()=>{
  assert.match(source,/service\.from\('couple_members'\)\.insert/);
  assert.match(source,/service\.from\('couple_profiles'\)\.insert/);
  assert.match(source,/service\.from\('couples'\)/);
+ assert.match(source,/registeredCouple\?\.couple_id!==newCouple/);
+ assert.match(source,/\.eq\('state','creating'\)\.is\('couple_id',null\)/);
+ assert.match(source,/\.eq\('id',newCouple\)\.eq\('owner_user_id',ids\[0\]\)/);
+ 
  assert.doesNotMatch(source,/Math\.random\(/);
  assert.match(source,/love_account_premium_exemptions/);
  assert.match(source,/love_eclat_entitlements/);
