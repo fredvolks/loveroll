@@ -89,3 +89,14 @@ Tests de régression ajoutés pour ces scénarios au fichier `eclat-v2-play-cont
 - Un refus d'autorisation ou le remplacement de la séance efface les données privées du contrôleur **et l'état V2 mis en cache dans le parent**. La fermeture est aussi forcée en cas de perte d'identité vérifiée ou de duo incomplet. Les erreurs réseau temporaires ne sont pas traitées comme des révocations.
 - Le manifeste, les imports, la feuille CSS, la page d'entrée et le cache PWA sont alignés sur Web 251 **dans cette branche**, qui n'est pas fusionnée.
 - **Reste bloqué avant publication :** la PR #92 est actuellement non fusionnable avec `main` (modifications nouvelles depuis le départ de la branche), le dernier SHA n'a pas encore de preuve CI complète, les fonctions PostgreSQL V2 ne sont pas installées sur un environnement de préproduction LoveRoll dédié, et la recette deux comptes Auth / appareils physiques n'a pas eu lieu. Ne pas forcer le merge ou la migration de production.
+
+
+## Raccordement dans la vraie application LoveRoll — Web 251 (28 octobre 2026)
+
+**Statut du code en PR #92 :** les 12 coffrets V2 sont maintenant raccordés à `couple-web/app.js` et non plus seulement à l'atelier QA. Les actions officielles utilisent le contrôleur et les RPC V2 à identité Auth réelle. L'interface V2 comprend les deux téléphones et le téléphone partagé, dont le propriétaire réel reste l'unique auteur des écritures; accès Premium et séance vérifiés par le backend. Les sorties effacent les brouillons privés, et les mises à jour de la même séance évitent de réinitialiser les saisies.
+
+**Basculement sans interruption V1 :** `love_eclat_v2_status` est interrogée sous l'identité du joueur actuel et du couple courant. Tant que la fonction V2 est absente ou que le serveur ne confirme pas un droit réel, le lancement des coffrets continue d'utiliser `love_eclat_start` avec ses propres droits Premium V1. Aucune simulation locale, élévation de privilège ou variante imposée. Les contenus V2 ne doivent pas apparaître sur le site client sans déploiement SQL V2 après recette.
+
+**Réconciliation GitHub :** la branche a intégré `main` via un commit de fusion à deux parents `0f825f7`, en préservant la correction D100 Web 247, les notifications et le cache Web 248. Les tests de contrat ont ensuite été actualisés pour refléter le vrai lancement V2 et vérifier explicitement le propriétaire Auth/le couple, et non l'ancienne hypothèse « l'app publique n'importe jamais V2 ».
+
+**Limites strictes :** tous les tests unitaires et PostgreSQL CI demeurent distincts d'un test Auth A/B sur un Supabase LoveRoll dédié. PR encore brouillon; aucune migration production exécutée, aucune validation physique iPad/Android/PC ni confirmation d'une expérience payante réelle.
