@@ -25,6 +25,9 @@ CREATE TABLE IF NOT EXISTS public.love_challenge_adaptations(
  CONSTRAINT love_adaptation_minutes_range
   CHECK (proposed_minutes IS NULL OR proposed_minutes BETWEEN 1 AND 360)
 );
+ALTER TABLE public.love_challenge_adaptations
+ ADD COLUMN IF NOT EXISTS original_text text,
+ ADD COLUMN IF NOT EXISTS original_minutes integer;
 CREATE INDEX IF NOT EXISTS love_adaptations_couple_created_idx
  ON public.love_challenge_adaptations(couple_id,session_id,created_at DESC);
 -- Challenges are recipient-private: a normal RLS subquery could not see the
