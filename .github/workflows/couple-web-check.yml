@@ -72,6 +72,9 @@ jobs:
           node --test couple-web/ruby-surfaces-responsive.test.mjs
           node --test couple-web/timed-evening-completion.test.mjs
           node --check couple-web/premium-evening.mjs
+          node --check couple-web/evening-invitation.mjs
+          node --test couple-web/evening-invitation.test.mjs
+          node --test couple-web/evening-invitation-contract.test.mjs
           node --check couple-web/evening-calendar.mjs
           node --check couple-web/evening-review.mjs
           node --check couple-web/evening-private-queue.mjs
