@@ -39,11 +39,16 @@ export function eveningHistoryMarkup({sessions=[],members=[],stats=[],historyCha
  const firstDay=new Date(Date.UTC(year,m-1,1)).getUTCDay(),padding=(firstDay+6)%7;
  const days=new Date(Date.UTC(year,m,0)).getUTCDate();
  const archives=(sessions||[]).filter(s=>!!s.started_at).map(s=>({...s,localDay:eveningLocalDay(s.started_at)}));
- const forDay=archives.filter(s=>s.localDay===validDate).sort((a,b)=>Date.parse(b.started_at)-Date.parse(a.started_at));
- const history=archives.filter(s=>s.finished_at).length;
- const done=stats.filter(r=>archives.some(s=>s.id===r.session_id&&!!s.finished_at))
+ // The displayed totals must describe the selected Toronto calendar month.
+ // Previously they summed EVERY archived year/month while the grid showed one.
+ // Only CLOSED evenings count as final non-completions; never penalize open cards.
+ const monthSessions=archives.filter(s=>s.localDay?.startsWith(current+'-'));
+ const forDay=monthSessions.filter(s=>s.localDay===validDate).sort((a,b)=>Date.parse(b.started_at)-Date.parse(a.started_at));
+ const closedMonthIds=new Set(monthSessions.filter(s=>s.finished_at).map(s=>s.id));
+ const history=closedMonthIds.size;
+ const done=stats.filter(r=>closedMonthIds.has(r.session_id))
   .reduce((n,r)=>n+Number(r.completed||0),0);
- const incomplete=stats.filter(r=>archives.some(s=>s.id===r.session_id&&!!s.finished_at))
+ const incomplete=stats.filter(r=>closedMonthIds.has(r.session_id))
   .reduce((n,r)=>n+Math.max(0,Number(r.target==null?r.incomplete:(r.target-r.completed))||0),0);
  const weekResult=calendarWeekSuccess({date:validDate,weeklyRolls,sessions});
  const monthlyResults=monthlyChallengeSuccess({
@@ -60,7 +65,7 @@ export function eveningHistoryMarkup({sessions=[],members=[],stats=[],historyCha
    (item.penalizedPasses?' · pénalisées : '+item.penalizedPasses:'')+'</small></span>').join('')+
   '</div>';
  const byDay=new Map();
- for(const row of archives){byDay.set(row.localDay,(byDay.get(row.localDay)||0)+1);}
+ for(const row of monthSessions){byDay.set(row.localDay,(byDay.get(row.localDay)||0)+1);}
  let cells=Array.from({length:padding},()=>'<span class="evening-cal-blank"></span>').join('');
  for(let d=1;d<=days;d++){
   const date=current+'-'+String(d).padStart(2,'0'),has=byDay.has(date);
@@ -119,9 +124,9 @@ export function eveningHistoryMarkup({sessions=[],members=[],stats=[],historyCha
  return '<div class="evening-calendar-shell">'+
   '<div class="evening-cal-head">'+ritualHeadingHtml('NOS SOIRÉES À DEUX')+'<h2>Notre calendrier</h2>'+
    '<p>En cours : défis à faire. Clôturées : bilan définitif.</p></div>'+
-  '<div class="evening-cal-stats"><span><strong>'+history+'</strong> soirées clôturées</span>'+
-   '<span><strong>'+done+'</strong> défis réalisés</span>'+
-   '<span><strong>'+incomplete+'</strong> non réalisés</span></div>'+
+  '<div class="evening-cal-stats" aria-label="Bilan du mois affiché"><span><strong>'+history+'</strong> soirées clôturées ce mois</span>+'
+   '<span><strong>'+done+'</strong> défis réalisés ce mois</span>+'
+   '<span><strong>'+incomplete+'</strong> non réalisés ce mois</span></div>+
   extraStats+
   '<section class="evening-cal-month"><div class="evening-cal-toolbar">'+
    '<button data-action="evening-month-prev" aria-label="Mois précédent">‹</button>'+
