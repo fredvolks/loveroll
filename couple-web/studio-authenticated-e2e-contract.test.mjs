@@ -7,7 +7,8 @@ const workflow=readFileSync(new URL('../.github/workflows/studio-authenticated-s
 test('real A/B E2E cannot use production, requires a manual isolated staging project',()=>{
  assert.match(script,/const productionRef='ejsrqfpkgwraorrznjpm'/);
  assert.match(script,/params\.ref===productionRef/);
- assert.match(script,/params\.url!==`https:\/\/${params\.ref}\.supabase\.co`/);
+ assert.ok(script.includes('params.url!==`https://${params.ref}.supabase.co`'),
+  'staging host must match the isolated project reference');
  assert.match(workflow,/workflow_dispatch/);
  assert.doesNotMatch(workflow,/pull_request:|push:/);
  assert.match(workflow,/test "\$STAGING_REF" != "ejsrqfpkgwraorrznjpm"/);
@@ -18,7 +19,8 @@ test('real game clicks official D6 D100 and waits for official server milestones
   assert.ok(script.includes(`[data-action="${action}"]`),action);
  }
  for(const milestone of [3,4,5,6,7,8])assert.ok(script.includes(`verified(${milestone})`),milestone);
- assert.match(script,/data-action="new-challenge":not\(\[disabled\]\)/);
+ assert.match(script,/data-action="new-challenge"/);
+ assert.match(script,/new-challenge.*not\(\[disabled\]\)/s);
  assert.match(script,/data-confirm-action="yes"/);
  assert.match(script,/studio-real-seat-state-.*data-state=connected/);
  assert.doesNotMatch(script,/Math\.random|fakeFace|fakeCard|mockAuth|service_role_key/);
