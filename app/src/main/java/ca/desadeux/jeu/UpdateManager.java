@@ -25,9 +25,7 @@ public final class UpdateManager {
  // in a separate lineage so old users do not receive an incompatible APK.
  private static final String PREFIX="loveroll-newsign-v";
  private static final String API="https://api.github.com/repos/"+REPO+"/releases?per_page=50";
- // A short, successful-check cooldown prevents GitHub API bursts while
- // still discovering a native release published later on the same day.
- private static final long CHECK_INTERVAL_MS=30L*60L*1000L;
+ // The cooldown policy is separately unit-tested without Android SDK.
  private static volatile boolean working=false;
  public static void check(Activity a,boolean quiet){
   SharedPreferences prefs=a.getSharedPreferences("des_a_deux_game",Activity.MODE_PRIVATE);
@@ -35,7 +33,7 @@ public final class UpdateManager {
   long last=prefs.getLong("last_success_ms",0L);
   // Manual "Check updates" always bypasses this silent cooldown. A clock
   // correction backwards never blocks updates indefinitely.
-  if(quiet&&last>0L&&now>=last&&now-last<CHECK_INTERVAL_MS)return;
+  if(UpdateCheckPolicy.postponeQuietCheck(quiet,now,last))return;
   if(working)return;
   working=true;
   new Thread(()->{
