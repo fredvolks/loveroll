@@ -83,6 +83,7 @@ jobs:
           node --check couple-web/evening-private-queue.mjs
           node --test couple-web/evening-instructions.test.mjs
           node --test couple-web/ci-dice-parallel-contract.test.mjs
+          node --test couple-web/pages-entry-parallel-contract.test.mjs
           node --test couple-web/evening-private-queue.test.mjs couple-web/evening-redesign.test.mjs couple-web/evening-calendar.test.mjs couple-web/evening-category-v93.test.mjs couple-web/evening-review.test.mjs
           node --test couple-web/privacy-screen.test.mjs
           node --test couple-web/evening-d100-template.test.mjs
