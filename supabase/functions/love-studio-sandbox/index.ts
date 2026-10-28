@@ -186,6 +186,15 @@ Deno.serve(async(req:Request)=>{
   });
   if(linkError||!link?.properties?.hashed_token)
     return response({error:'Ouverture de session test indisponible'},503);
+  // Supabase generateLink('magiclink') may create a user if the supplied
+  // email was deleted concurrently. The returned link MUST refer to the
+  // previously registered technical account; never log in a new orphan or
+  // silently grant access to an unrelated identity.
+  if(link.user?.id!==row.user_id||
+     link.user?.email!==row.synthetic_email||
+     link.user?.app_metadata?.love_studio_test!==true||
+     link.user?.app_metadata?.love_studio_admin!==adminId)
+    return response({error:'Lien Auth non conforme au joueur technique enregistré'},409);
   // One-time Auth verification token: returned ONLY to this verified platform admin.
   return response({seat,token_hash:link.properties.hashed_token,user_id:row.user_id});
  }
