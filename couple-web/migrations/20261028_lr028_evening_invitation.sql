@@ -133,7 +133,7 @@ as $function$
 declare row_inv public.love_evening_invitations%rowtype;
 begin
  perform public.love_require_verified_identity();
- if p_answer not in ('yes','no','maybe','ignored') then
+ if p_answer is null or p_answer not in ('yes','no','maybe','ignored') then
   raise exception 'Réponse invalide'; end if;
  select * into row_inv from public.love_evening_invitations
  where id=p_invitation for update;
