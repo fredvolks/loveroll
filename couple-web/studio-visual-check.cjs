@@ -73,6 +73,11 @@ const assert=require('node:assert/strict');
      count:document.querySelectorAll('.studio-real-eclat-coffret').length,
      checklist:document.querySelectorAll('#studio-real-progress-list li').length,
      buttons:buttons.filter(x=>x.visible).map(x=>({w:x.width,h:x.height})),
+     shortcuts:[...document.querySelectorAll('.studio-mobile-shortcuts button')]
+      .filter(node=>getComputedStyle(node).display!=='none')
+      .map(node=>({pane:node.dataset.pane,height:node.getBoundingClientRect().height,
+       visible:node.getBoundingClientRect().width>0})),
+     mobileNavVisible:getComputedStyle(document.querySelector('.studio-mobile-nav')).display!=='none',
      guide:box('#studio-real-progress'),eclat:box('#studio-real-eclat-progress')
     };
    });
@@ -85,6 +90,13 @@ const assert=require('node:assert/strict');
    assert.ok(layout.guide.width>=260&&layout.eclat.width>=260);
    assert.ok(layout.buttons.every(x=>x.w>=100&&x.h>=32),
     preset.name+' action controls are too small');
+   if(preset.name==='mobile-emergency'){
+    assert.equal(layout.mobileNavVisible,true,'mobile navigation must remain available');
+    assert.deepEqual(layout.shortcuts.map(x=>x.pane),
+     ['realtest','venice','notifications','audience','promos','geo']);
+    assert.ok(layout.shortcuts.every(x=>x.visible&&x.height>=44),
+     'every mobile emergency shortcut must be large enough to touch');
+   }
    if(preset.visibleSeats===2){
     const [a,b]=layout.frames;
     assert.ok(b.x>a.x+a.width-3,
