@@ -14,9 +14,14 @@ test('LR-019 heart button uses real RPC with idempotent refresh and a server cap
  assert.match(app,/if\(state\.loveFavoritesBusy\)return/);
  assert.match(app,/finally\{state\.loveFavoritesBusy=false;render\(\);\}/);
 });
-test('LR-019 hearts remain per-partner, keep challenge content and protect private history',()=>{
- assert.match(app,/mark\.marked_by===state\.user\?\.id/);
- assert.match(app,/f\.marked_by===state\.user\.id/);
+test('LR-019 shared list and one-click replacement preserve authorized challenge content',()=>{
+ assert.match(app,/const hearts=\[\.\.\.\(state\.loveFavorites\|\|\[\]\)\]/);
+ assert.match(app,/favorite-limit-replace:/);
+ assert.match(app,/rpc\('replace_love_couple_favorite',\{/);
+ assert.match(app,/p_old_category:category,p_old_card_id:cardId/);
+ assert.match(app,/p_new_category:pending\.category,p_new_card_id:Number\(pending\.cardId\)/);
+ assert.match(app,/Nos coups de cœur · /);
+ assert.match(app,/state\.loveFavorites\|\|\[\]\)\.length>=5/);
  assert.match(app,/item\.recipient===state\.user\?\.id/);
  assert.match(app,/mine\?\.card_title\|\|\('Carte '\+cardId\)/);
  assert.match(app,/if\(!present&&!owned&&!archived\)throw Error/);
@@ -24,6 +29,18 @@ test('LR-019 hearts remain per-partner, keep challenge content and protect priva
  assert.match(app,/safe\(resolvedCard\(view\)\.description\)/);
  assert.match(app,/state\.loveFavoritesReady\?settingRow\('Nos coups de cœur'/);
  assert.match(app,/\['admin','excluded-cards','favorites'\]\.includes\(settingsOpenSection\)\?'jeu'/);
+});
+test('LR-019 database enforces five DISTINCT couple-wide hearts with one atomic replacement',()=>{
+ const sql=readFileSync(new URL('./migrations/20261026_lr019_favorites_core.sql',import.meta.url),'utf8');
+ assert.match(sql,/PRIMARY KEY \(couple_id,category,card_id\)/);
+ assert.doesNotMatch(sql,/PRIMARY KEY \(couple_id,category,card_id,marked_by\)/);
+ assert.match(sql,/WHERE f\.couple_id=p_couple\s*\)\s*>=5/);
+ assert.match(sql,/FUNCTION public\.replace_love_couple_favorite\(/);
+ assert.match(sql,/FROM public\.couples WHERE id=p_couple FOR UPDATE/);
+ assert.match(sql,/DELETE FROM public\.love_couple_favorites/);
+ assert.match(sql,/INSERT INTO public\.love_couple_favorites/);
+ assert.match(sql,/GRANT EXECUTE ON FUNCTION public\.replace_love_couple_favorite/);
+ assert.doesNotMatch(sql,/WHERE f\.couple_id=p_couple AND f\.marked_by=v_actor/);
 });
 
 test('History hearts are available for both partners after closure and obey capability/busy gating',()=>{
