@@ -100,6 +100,12 @@ BEGIN
  THEN
   RAISE EXCEPTION 'Private Studio audit ACL is unsafe';
  END IF;
+ IF has_table_privilege('anon','public.love_studio_venice_daily_quota','SELECT')
+ OR has_table_privilege('authenticated','public.love_studio_venice_daily_quota','INSERT')
+ OR NOT has_table_privilege('service_role','public.love_studio_venice_daily_quota','INSERT')
+ THEN
+  RAISE EXCEPTION 'Venice inference quota is accessible to a client';
+ END IF;
  IF has_table_privilege('anon','public.love_studio_test_pools','SELECT')
  OR has_table_privilege('authenticated','public.love_studio_test_pools','UPDATE')
  OR has_table_privilege('anon','public.love_studio_test_seats','SELECT')
@@ -263,6 +269,18 @@ INSERT INTO public.love_eclat_private_notes VALUES
 SELECT public.expect_studio_purge_refused('Historique personnel extérieur au banc');
 DELETE FROM public.love_eclat_private_notes;
 DELETE FROM public.love_eclat_sessions WHERE id='30000000-0000-0000-0000-000000000002';
+-- The cost guard is unique per admin across ANY number of disposable pairs.
+INSERT INTO public.love_studio_venice_daily_quota(admin_id,utc_day) VALUES
+ ('00000000-0000-0000-0000-000000000001','2026-10-28');
+DO $quota$
+BEGIN
+ BEGIN
+  INSERT INTO public.love_studio_venice_daily_quota(admin_id,utc_day) VALUES
+   ('00000000-0000-0000-0000-000000000001','2026-10-28');
+  RAISE EXCEPTION 'QUOTA_SHOULD_HAVE_FAILED';
+ EXCEPTION WHEN unique_violation THEN NULL;
+ END;
+END $quota$;
 -- Registered users' legitimate game data is purged, not fabricated or skipped.
 INSERT INTO public.couple_rolls(couple_id,actor) VALUES
  ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-00000000000a');
@@ -291,6 +309,9 @@ BEGIN
  IF (SELECT count(*) FROM public.love_studio_test_audit
      WHERE action='create_requested')<>1 THEN
   RAISE EXCEPTION 'Private audit must remain after the synthetic couple is purged';
+ END IF;
+ IF (SELECT count(*) FROM public.love_studio_venice_daily_quota)<>1 THEN
+  RAISE EXCEPTION 'Resetting the A/B pair must not reset paid Venice quota';
  END IF;
 END $assert$;
 SELECT 'LoveRoll Studio isolated PostgreSQL purge: ALL SECURITY ASSERTIONS PASSED' AS result;
