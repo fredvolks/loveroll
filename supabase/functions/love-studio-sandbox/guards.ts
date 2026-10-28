@@ -18,3 +18,15 @@ export function isRegisteredStudioIdentity(
   user.app_metadata?.love_studio_test===true&&
   user.app_metadata?.love_studio_admin===adminId;
 }
+
+export function canSkipAlreadyDeletedStudioUser(
+ error:{status?:number|null;code?:string|null}|null|undefined,
+ state:string|null|undefined,
+ coupleId:string|null|undefined
+):boolean{
+ // Only after the SECURITY DEFINER purge has nullified the test couple.
+ // A missing Auth identity during the active/creating state is a corruption,
+ // never authorization to erase or overwrite a different user's data.
+ return state==='deleting'&&coupleId===null&&
+  (error?.status===404||error?.code==='user_not_found');
+}
