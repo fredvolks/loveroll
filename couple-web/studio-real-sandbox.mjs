@@ -1,4 +1,6 @@
 // Real dual-account sandbox inside Super Admin. No local card/dice fabrication.
+import {createStudioStatusSync} from './studio-status-sync.mjs';
+
 export function createStudioRealSandbox({client}){
  const $=id=>document.getElementById(id);
  const uri='love-studio-sandbox';
@@ -58,6 +60,8 @@ export function createStudioRealSandbox({client}){
    button.focus({preventScroll:true});}
  }
  function closeFrames(){
+  // Late status responses must never remount an already-deleted test pair.
+  statusSync.invalidate();
   collapseSeat();
   for(const seat of validSeats){
    // Keep the permanent heading and 'Agrandir' control, remove ONLY the
@@ -175,15 +179,19 @@ export function createStudioRealSandbox({client}){
   }
   showSeat(tab);
  }
- async function refresh(){
-  status=await request('status');
-  say(status.ready?(authenticatedSeats.size===2?'Joueurs A et B connectés au vrai LoveRoll.':'Couple de test prêt. Connexion des joueurs A et B en cours…'):
+ const statusSync=createStudioStatusSync(
+  ()=>request('status'),
+  value=>{
+   status=value;
+   say(status.ready?(authenticatedSeats.size===2?'Joueurs A et B connectés au vrai LoveRoll.':'Couple de test prêt. Connexion des joueurs A et B en cours…'):
     status.state==='missing'?'Aucun couple de test. Crée un duo pour jouer.':
     status.state==='creating'?'Création du duo en cours ou incomplète.':
     status.state==='invalid'?'Sécurité : les comptes de test ne correspondent plus au duo enregistré. Connexion et lecture des cartes bloquées; supprimer ce banc avec précaution.':
     'Suppression de banc de test à terminer.');
-  display();
- }
+   display();
+  }
+ );
+ const refresh=()=>statusSync.refresh();
  async function onChildMessage(event){
   if(event.origin!==location.origin||!status?.ready)return;
   const seat=validSeats.find(s=>frames[s]?.contentWindow===event.source);
