@@ -18,14 +18,22 @@ export function studioAuthOptions(base,seat,storage){
 export function startStudioSeatLogin(client,seat,{selfWindow,origin,reload=()=>selfWindow.location.reload(),navigate=()=>{}}={}){
  if(!seat||!selfWindow||selfWindow.parent===selfWindow)return ()=>{};
  let disposed=false,signingIn=false;
- const announce=async()=>{
+ const postSeatState=session=>{
   if(disposed)return;
-  const {data}=await client.auth.getSession();
+  const user=session?.user;
+  const verified=!!user?.id&&user.app_metadata?.love_studio_test===true;
   selfWindow.parent.postMessage({
    type:'loveroll-studio-seat-ready',seat,
-   authenticated:!!data?.session?.user?.id,
-   user_id:data?.session?.user?.id||null
+   authenticated:verified,
+   user_id:verified?user.id:null
   },origin);
+ };
+ const announce=async()=>{
+  if(disposed)return;
+  try{
+   const {data}=await client.auth.getSession();
+   postSeatState(data?.session);
+  }catch{postSeatState(null)}
  };
  const receive=async event=>{
   if(disposed||signingIn||event.source!==selfWindow.parent||event.origin!==origin)return;
@@ -69,6 +77,15 @@ export function startStudioSeatLogin(client,seat,{selfWindow,origin,reload=()=>s
   }
  };
  selfWindow.addEventListener('message',receive);
+ // Read the session from the Auth event itself. Do not call getSession()
+ // inside onAuthStateChange: it risks re-entering the Auth lock.
+ const subscription=client.auth.onAuthStateChange?.((_event,session)=>{
+  postSeatState(session);
+ })?.data?.subscription;
  void announce();
- return ()=>{disposed=true;selfWindow.removeEventListener('message',receive)};
+ return ()=>{
+  disposed=true;
+  selfWindow.removeEventListener('message',receive);
+  subscription?.unsubscribe();
+ };
 }
