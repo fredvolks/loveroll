@@ -61,3 +61,17 @@ export function eveningInviteChanged(before,after){
   i?.available===true,i?.direction||null]);
  return signature(before)!==signature(after);
 }
+
+// Small, visible in-app fallback on Accueil when system Push is unavailable.
+// It only opens Soirée; replying and any official D6 still require a tap there.
+export function eveningInviteInboxHtml(invite,{partnerName='Ton partenaire'}={}){
+ if(invite?.direction!=='received'||!['pending','maybe'].includes(invite?.state))
+  return '';
+ const name=String(partnerName||'Ton partenaire').trim().split(/\s+/)[0];
+ const prefix=invite.state==='maybe'?'Toujours partant·e ? ':'';
+ return '<aside class="lr-evening-inbox" role="region" aria-label="Invitation à jouer">'+
+  '<span aria-hidden="true" class="lr-evening-inbox-heart">♥</span>'+
+  '<span class="lr-evening-inbox-copy">'+escapeHtml(prefix+name+' a envie de jouer ce soir.')+'</span>'+
+  '<button type="button" data-action="tab:session" class="lr-evening-inbox-open">'+
+   'Répondre<span class="sr-only"> dans Soirée</span></button></aside>';
+}
