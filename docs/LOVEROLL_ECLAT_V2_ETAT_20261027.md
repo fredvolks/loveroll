@@ -100,3 +100,11 @@ Tests de régression ajoutés pour ces scénarios au fichier `eclat-v2-play-cont
 **Réconciliation GitHub :** la branche a intégré `main` via un commit de fusion à deux parents `0f825f7`, en préservant la correction D100 Web 247, les notifications et le cache Web 248. Les tests de contrat ont ensuite été actualisés pour refléter le vrai lancement V2 et vérifier explicitement le propriétaire Auth/le couple, et non l'ancienne hypothèse « l'app publique n'importe jamais V2 ».
 
 **Limites strictes :** tous les tests unitaires et PostgreSQL CI demeurent distincts d'un test Auth A/B sur un Supabase LoveRoll dédié. PR encore brouillon; aucune migration production exécutée, aucune validation physique iPad/Android/PC ni confirmation d'une expérience payante réelle.
+
+
+## Lot du 28 octobre — consentement avant connexion et saisie stable
+
+- La **vérification invitation → consentement → authentification** demeure prioritaire aux vues connectées; le garde de nettoyage des séances Éclat V2 ne doit pas masquer ou contourner le parcours d'invitation. Les deux contrats historiques `discover-flow.test.mjs` et `invite-links.test.mjs` restent obligatoires.
+- Le poll V2 conserve les champs et la position du curseur quand l'état officiel Supabase est **strictement identique** à la dernière lecture. Dès qu'une décision réelle ou un changement de chapitre produit un nouvel état, le serveur reste autoritaire et le rendu est mis à jour normalement. Le rejet de l'accès Premium, une séance remplacée ou une expiration d'identité continuent à effacer immédiatement l'écran.
+- Tests du contrôleur : état identique sans remonter le DOM, changement réel avec nouveau rendu, et révocation qui ne peut jamais profiter de cette optimisation.
+- À la rédaction, workflow éditorial et PostgreSQL éphémère verts sur le SHA `76cf2158d4b2d32ff31ccedefb405c283317f18f`; suite Web complète non encore terminée. **PR non fusionnée, V2 non déployée, recette Auth A/B et appareils physiques toujours requise.**
