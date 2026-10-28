@@ -92,3 +92,23 @@ test('Studio inspector refreshes after real Supabase RPC success, without fabric
  assert.match(sandbox,/if\(authenticatedSeats\.has\(seat\)\)/);
  assert.match(sandbox,/await refresh\(\)/);
 });
+
+
+test('real history pagination is keyboard-accessible on iPad/PC/mobile, not a synthetic card list',()=>{
+ for(const id of ['studio-real-history-open','studio-real-history-nav',
+  'studio-real-history-prev','studio-real-history-next',
+  'studio-real-history-count','studio-real-history-close']){
+  assert.match(html,new RegExp('id="'+id+'"'));
+ }
+ assert.match(html,/aria-label="Pages de l’historique des défis"/);
+ assert.match(html,/studio-real-history-count" role="status" aria-live="polite"/);
+ assert.match(css,/\.studio-real-history-nav/);
+ assert.match(css,/@media\(max-width:650px\)/);
+ assert.match(sandbox,/function loadChallengeHistory\(page\)/);
+ assert.match(sandbox,/await request\('challenge_history',null,\{page\}\)/);
+ assert.match(sandbox,/const cards=historyOpen\?historyCards:game\.challenge_preview\.slice\(0,3\)/);
+ assert.match(sandbox,/historyBusy\|\|\(historyPage\+1\)\*10>=historyTotal/);
+ assert.match(sandbox,/historyPage===0/);
+ assert.match(sandbox,/const requestGeneration=historyGeneration/);
+ assert.doesNotMatch(sandbox,/document\.write|article\.innerHTML|Math\.random/);
+});
