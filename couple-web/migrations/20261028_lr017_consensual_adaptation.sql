@@ -29,8 +29,9 @@ CREATE POLICY love_adaptations_pair_read ON public.love_challenge_adaptations
  FOR SELECT TO authenticated USING (
    couple_private.is_member(couple_id)
    AND EXISTS (SELECT 1 FROM public.couple_challenges q
-    WHERE q.id=challenge_id AND q.couple_id=couple_id
-     AND q.session_id=session_id)
+    WHERE q.id=love_challenge_adaptations.challenge_id
+      AND q.couple_id=love_challenge_adaptations.couple_id
+      AND q.session_id=love_challenge_adaptations.session_id)
  );
 REVOKE ALL ON public.love_challenge_adaptations FROM public,anon,authenticated;
 GRANT SELECT ON public.love_challenge_adaptations TO authenticated;
