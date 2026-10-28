@@ -37,6 +37,24 @@ BEGIN
   WHERE admin_id=p_admin FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'Banc de test introuvable'; END IF;
   IF v_pool.couple_id IS NOT NULL THEN
+    -- A stale/corrupted pool ID must NEVER cause deletion of an unrelated
+    -- couple, including an empty real couple without any members yet.
+    -- A real Studio couple is only created AFTER both seats were registered.
+    IF (SELECT count(*) FROM public.love_studio_test_seats s
+        WHERE s.admin_id=p_admin AND s.seat IN ('A','B')
+          AND s.user_id IS NOT NULL) <> 2
+       OR NOT EXISTS (
+        SELECT 1 FROM public.couples c
+        JOIN public.love_studio_test_seats owner_seat
+          ON owner_seat.admin_id=p_admin
+         AND owner_seat.seat='A'
+         AND owner_seat.user_id=c.owner_user_id
+        WHERE c.id=v_pool.couple_id
+       )
+    THEN
+      RAISE EXCEPTION 'Propriétaire ou duo test non vérifié : suppression bloquée'
+       USING ERRCODE='42501';
+    END IF;
     IF EXISTS(
       SELECT 1 FROM public.couple_members cm
       WHERE cm.couple_id=v_pool.couple_id AND NOT EXISTS(
