@@ -18,7 +18,7 @@ class Classes {
 class Element {
  constructor(tag='div',id=''){
   this.tagName=tag.toUpperCase();this.id=id;this.children=[];this.parent=null;
-  this.attrs=new Map();this.handlers={};this.classList=new Classes();
+  this.attrs=new Map();this.handlers={};this.classList=new Classes();this.dataset={};
   this.hidden=false;this.textContent='';
  }
  setAttribute(name,value){this.attrs.set(name,String(value));}
@@ -45,7 +45,7 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
   'studio-real-delete','studio-real-refresh','studio-real-reset',
   'studio-show-seat-A','studio-show-seat-B','studio-real-expand-A','studio-real-expand-B',
   'studio-real-jump-A','studio-real-jump-B',
-  'studio-real-frame-A','studio-real-frame-B'])make(id);
+  'studio-real-frame-A','studio-real-frame-B','studio-real-seat-state-A','studio-real-seat-state-B'])make(id);
  for(const s of ['A','B']){
   const title=new Element('div');title.classList.add('studio-real-frame-label');
   nodes.get('studio-real-frame-'+s).append(title);
@@ -86,6 +86,22 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
   const sent=[];
   a.contentWindow={postMessage:(message,origin)=>sent.push({message,origin})};
   b.contentWindow={postMessage:(message,origin)=>sent.push({message,origin})};
+  // The Studio must NEVER claim both real seats authenticated after only A.
+  const announce=(source,data,origin=globalThis.location.origin)=>
+   windowListeners.message({source,data,origin});
+  assert.match(nodes.get('studio-real-status').textContent,/Connexion des joueurs A et B en cours/);
+  await announce(a.contentWindow,{type:'loveroll-studio-seat-ready',seat:'A',authenticated:true,user_id:'test-a'});
+  assert.equal(nodes.get('studio-real-seat-state-A').dataset.state,'connected');
+  assert.equal(nodes.get('studio-real-seat-state-B').dataset.state,'pending');
+  assert.match(nodes.get('studio-real-status').textContent,/Joueur A connecté/);
+  assert.doesNotMatch(nodes.get('studio-real-status').textContent,/Les deux vrais joueurs A et B/);
+  // A message from another iframe/origin can never authenticate B.
+  await announce(a.contentWindow,{type:'loveroll-studio-seat-ready',seat:'B',authenticated:true,user_id:'test-b'});
+  await announce(b.contentWindow,{type:'loveroll-studio-seat-ready',seat:'B',authenticated:true,user_id:'test-b'},'https://attacker.example');
+  assert.equal(nodes.get('studio-real-seat-state-B').dataset.state,'pending');
+  await announce(b.contentWindow,{type:'loveroll-studio-seat-ready',seat:'B',authenticated:true,user_id:'test-b'});
+  assert.equal(nodes.get('studio-real-seat-state-B').dataset.state,'connected');
+  assert.match(nodes.get('studio-real-status').textContent,/Les deux vrais joueurs A et B sont connectés/);
   nodes.get('studio-real-jump-A').value='session';
   nodes.get('studio-real-jump-A').handlers.change();
   assert.deepEqual(sent[0],{message:{type:'loveroll-studio-navigate',seat:'A',tab:'session'},origin:globalThis.location.origin});
@@ -117,6 +133,8 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
   await wait();
   assert.notEqual(getFrame('A'),a,'refresh reloads the official frame');
   assert.notEqual(getFrame('B'),b,'refresh reloads the partner frame');
+  assert.equal(nodes.get('studio-real-seat-state-A').dataset.state,'pending');
+  assert.equal(nodes.get('studio-real-seat-state-B').dataset.state,'pending');
   for(const s of ['A','B']){
    assert.equal(nodes.get('studio-real-frame-'+s).children.length,2,
     'the permanent header and full-screen control must survive refresh');
