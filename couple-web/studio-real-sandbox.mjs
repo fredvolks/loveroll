@@ -109,6 +109,8 @@ export function createStudioRealSandbox({client}){
   for(const seat of validSeats){
    const container=$('studio-real-frame-'+seat);
    if(frames[seat])continue;
+   // Initialize each seat's connection indicator from the actual iframe lifecycle.
+   showSeatConnection(seat,'pending');
    const frame=document.createElement('iframe');
    frame.title=label(seat)+' · LoveRoll réel';
    frame.setAttribute('allow','clipboard-write');
