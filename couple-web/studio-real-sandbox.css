@@ -134,6 +134,12 @@ html.studio-real-fullscreen,html.studio-real-fullscreen body{overflow:hidden!imp
 }
 .studio-real-frame iframe{display:block;border:0;background:#160813;width:100%;
  height:clamp(560px,74dvh,1080px);min-height:560px}
+/* The official A/B iframes are the point of this screen: don't bury them
+   behind large admin summary tiles while the real game is selected. */
+#dashboard.studio-test-focus > .studio-heading,
+#dashboard.studio-test-focus > #stats,
+#dashboard.studio-test-focus > .studio-real-primary,
+#dashboard.studio-test-focus > .studio-nav-more{display:none!important}
 .studio-real-game .small-note{line-height:1.55}
 .studio-content>form[hidden]{display:none!important}
 .studio-content>.studio-real-game[hidden]{display:none!important}
