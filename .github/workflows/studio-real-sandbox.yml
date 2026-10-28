@@ -53,7 +53,8 @@ jobs:
            couple-web/studio-test-progress.test.mjs \
            couple-web/studio-venice-workshop.test.mjs \
            couple-web/studio-authenticated-e2e-contract.test.mjs \
-           couple-web/studio-authenticated-e2e-guard.test.mjs
+           couple-web/studio-authenticated-e2e-guard.test.mjs \
+           couple-web/studio-staging-preflight.test.mjs
 
   postgres-purge:
     runs-on: ubuntu-latest
