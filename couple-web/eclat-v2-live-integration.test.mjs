@@ -117,3 +117,22 @@ test('a confirmed V2 Premium entitlement opens the public gallery without legacy
  assert.match(start,/state\.eclatV2OwnerId===state\.user\?\.id&&state\.eclatV2CoupleId===state\.coupleId/);
  assert.match(start,/state\.eclatV2Status\?\.access===true&&!state\.eclat\?\.active/);
 });
+
+
+test('an approved V2 finale survives normal app refresh but not identity, couple or session changes',()=>{
+ const start=app.indexOf('const finished=eclatV2Player?.getStatus();');
+ assert.ok(start>0);
+ const end=app.indexOf('disposeEclatV2Player();',start);
+ assert.ok(end>start);
+ const guard=app.slice(start,end);
+ for(const required of [
+  'v2?.access===true','v2.active===false','!e?.active',
+  'finished?.access===true','finished.active===false',
+  'v2.session_id===finished.session_id',
+  'state.eclatV2OwnerId===state.user?.id',
+  'state.eclatV2CoupleId===state.coupleId',
+  "root.querySelector('#eclat-v2-live-player')"
+ ])assert.ok(guard.includes(required),required+' should gate a visible approved finale');
+ assert.match(guard,/\)\)\{\s*return;\s*\}/);
+ assert.match(app,/button\('eclat-v2:gallery','Retour aux 12 coffrets'/);
+});
