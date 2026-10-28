@@ -48,7 +48,8 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
   'studio-real-jump-A','studio-real-jump-B',
   'studio-real-frame-A','studio-real-frame-B','studio-real-seat-state-A','studio-real-seat-state-B',
   'studio-real-challenge-cards','studio-real-challenge-list',
-  'studio-real-audit','studio-real-audit-list'])make(id);
+  'studio-real-audit','studio-real-audit-list',
+  'studio-real-progress','studio-real-progress-count','studio-real-progress-list'])make(id);
  for(const s of ['A','B']){
   const title=new Element('div');title.classList.add('studio-real-frame-label');
   nodes.get('studio-real-frame-'+s).append(title);
@@ -93,6 +94,10 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
   assert.ok(a&&b,'two independent official LoveRoll iframes');
   assert.match(nodes.get('studio-real-diagnostics').textContent,/D6 Soirée A : 2/);
   assert.match(nodes.get('studio-real-diagnostics').textContent,/D100 Surprise : 47/);
+  assert.equal(nodes.get('studio-real-progress-count').textContent,'7/9');
+  assert.equal(nodes.get('studio-real-progress-list').children.length,9);
+  assert.equal(nodes.get('studio-real-progress-list').children[1].dataset.state,'pending');
+  assert.equal(nodes.get('studio-real-progress-list').children[8].dataset.state,'pending');
   const auditEvents=nodes.get('studio-real-audit-list').children;
   assert.equal(nodes.get('studio-real-audit').hidden,false);
   assert.equal(auditEvents.length,2);
@@ -127,6 +132,8 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
   await announce(b.contentWindow,{type:'loveroll-studio-seat-ready',seat:'B',authenticated:true,user_id:'test-b'});
   assert.equal(nodes.get('studio-real-seat-state-B').dataset.state,'connected');
   assert.match(nodes.get('studio-real-status').textContent,/Les deux vrais joueurs A et B sont connectés/);
+  assert.equal(nodes.get('studio-real-progress-count').textContent,'8/9');
+  assert.equal(nodes.get('studio-real-progress-list').children[1].dataset.state,'verified');
   // A successful game mutation only asks the parent to reread actual DB state.
   const beforeUpdate=calls.filter(x=>x==='status').length;
   await announce(a.contentWindow,{type:'loveroll-studio-game-updated',seat:'A'});
@@ -191,6 +198,8 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
   assert.ok(calls.includes('delete'),'the actual deletion request was issued');
   assert.equal(getFrame('A'),null,'deleted sandbox never displays a stale logged-in seat');
   assert.equal(getFrame('B'),null,'deleted sandbox closes the partner game too');
+  assert.equal(nodes.get('studio-real-progress-count').textContent,'0/9',
+   'deleted technical pair never retains completed QA milestones');
   assert.equal(nodes.get('studio-real-audit').hidden,false,
    'private audit persists after the synthetic duo is deleted');
   assert.equal(nodes.get('studio-real-audit-list').children[0].children[0].textContent,
