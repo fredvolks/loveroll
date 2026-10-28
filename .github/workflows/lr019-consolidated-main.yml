@@ -92,3 +92,27 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f couple-web/qa/lr019-cycle-unique.sql
       - name: Refuse sixth heart and verify distinct actor limits
         run: psql -X -v ON_ERROR_STOP=1 -f couple-web/qa/lr019-five-favorites.sql
+      - name: Parallel devices cannot claim the fifth favorite twice
+        shell: bash
+        run: |
+          set -euo pipefail
+          actor="11111111-1111-4111-8111-111111111111"
+          duo="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+          psql -X -v ON_ERROR_STOP=1 -c "SELECT set_config('request.jwt.claim.sub','$actor',false); SELECT public.set_love_couple_favorite('$duo','SENSUEL',5,false);" >/dev/null
+          first="SELECT set_config('request.jwt.claim.sub','$actor',false); SELECT public.set_love_couple_favorite('$duo','SEXUEL',2,true);"
+          second="SELECT set_config('request.jwt.claim.sub','$actor',false); SELECT public.set_love_couple_favorite('$duo','SEXUEL',3,true);"
+          psql -X -v ON_ERROR_STOP=1 -c "$first" >/tmp/favorite-first.out 2>/tmp/favorite-first.err &
+          pid_a=$!
+          psql -X -v ON_ERROR_STOP=1 -c "$second" >/tmp/favorite-second.out 2>/tmp/favorite-second.err &
+          pid_b=$!
+          if wait "$pid_a"; then ok_a=1; else ok_a=0; fi
+          if wait "$pid_b"; then ok_b=1; else ok_b=0; fi
+          if [ $((ok_a + ok_b)) -ne 1 ]; then
+            echo "Expected exactly one accepted concurrent heart"
+            cat /tmp/favorite-first.err /tmp/favorite-second.err
+            exit 1
+          fi
+          result=$(psql -X -qAt -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM public.love_couple_favorites WHERE couple_id='$duo' AND marked_by='$actor';")
+          test "$result" = "5" || { echo "Concurrent favorite count is $result, expected 5"; exit 1; }
+          echo "LR019_CONCURRENT_FIVE_HEARTS_ONE_WINNER_OK"
+
