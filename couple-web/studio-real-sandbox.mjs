@@ -12,6 +12,8 @@ export function createStudioRealSandbox({client}){
  let status=null,tab='A',busy=false,tearingDown=false,initialized=false,active=false,loginInFlight=new Set(),expandedSeat=null;
  let veniceBusy=false,veniceData=null,veniceMessage='Connecte le joueur A pour accéder aux brouillons.';
  let veniceWatch=null,veniceActiveRequest=null;
+ let historyOpen=false,historyPage=0,historyTotal=0,historyCards=null;
+ let historyBusy=false,historyError='',historyGeneration=0;
  const authenticatedSeats=new Set();
  const label=s=>s==='A'?'Joueur A':'Joueur B';
  const say=(message)=>{const node=$('studio-real-status');if(node)node.textContent=message;};
@@ -23,8 +25,10 @@ export function createStudioRealSandbox({client}){
   renderProgress();
   renderVenice();
  }
- async function request(action,seat){
-  const {data,error}=await client.functions.invoke(uri,{body:{action,...(seat?{seat}:{})}});
+ async function request(action,seat,parameters=null){
+  const {data,error}=await client.functions.invoke(uri,{
+   body:{action,...(seat?{seat}:{}),...(parameters||{})}
+  });
   if(error)throw Error(data?.error||error?.message||'Service test indisponible');
   if(data?.error)throw Error(data.error);
   return data;
@@ -65,7 +69,13 @@ export function createStudioRealSandbox({client}){
    button.setAttribute('aria-label','Quitter le plein écran du joueur '+seat);
    button.focus({preventScroll:true});}
  }
+ function resetHistory(){
+  historyGeneration++;
+  historyOpen=false;historyPage=0;historyTotal=0;historyCards=null;
+  historyBusy=false;historyError='';
+ }
  function closeFrames(){
+  resetHistory();
   if(veniceWatch!==null)clearTimeout(veniceWatch);
   veniceWatch=null;veniceActiveRequest=null;
   veniceBusy=false;veniceData=null;
@@ -192,13 +202,29 @@ export function createStudioRealSandbox({client}){
   const game=status?.game;
   const available=status?.ready===true&&!game?.error&&Array.isArray(game?.challenge_preview);
   section.hidden=!available;
+  const openButton=$('studio-real-history-open'),nav=$('studio-real-history-nav');
+  if(openButton){openButton.hidden=!available||historyOpen;openButton.disabled=historyBusy;}
+  if(nav)nav.hidden=!available||!historyOpen;
+  const count=$('studio-real-history-count');
+  if(count){
+   const first=historyTotal?historyPage*10+1:0;
+   const last=Math.min((historyPage+1)*10,historyTotal);
+   count.textContent=historyBusy?'Lecture des défis officiels…':
+    historyError?'Lecture impossible : '+historyError:
+    first+'–'+last+' sur '+historyTotal+' défis';
+  }
+  const previous=$('studio-real-history-prev'),next=$('studio-real-history-next');
+  if(previous)previous.disabled=historyBusy||historyPage===0;
+  if(next)next.disabled=historyBusy||(historyPage+1)*10>=historyTotal||historyPage>=999;
   list.replaceChildren();
   if(!available)return;
-  const cards=game.challenge_preview.slice(0,3);
-  if(!cards.length){
+  const cards=historyOpen?historyCards:game.challenge_preview.slice(0,3);
+  if(!cards?.length){
    const empty=document.createElement('p');
    empty.classList.add('studio-real-card-empty');
-   empty.textContent='Aucun défi tiré dans la dernière soirée.';
+   empty.textContent=historyBusy?'Lecture de l’historique réel…':
+    historyError?'Historique indisponible. Réessaie.':
+    historyOpen?'Aucun défi dans cette page.':'Aucun défi tiré dans la dernière soirée.';
    list.append(empty);return;
   }
   for(const card of cards){
@@ -208,14 +234,40 @@ export function createStudioRealSandbox({client}){
    meta.classList.add('studio-real-card-meta');
    const face=Number.isInteger(card.face)?String(card.face):'—';
    const seat=validSeats.includes(card.seat)?card.seat:'?';
+   const date=new Date(card.created_at);
+   const at=historyOpen&&Number.isFinite(date.getTime())
+    ?' · '+new Intl.DateTimeFormat('fr-CA',{
+      timeZone:'America/Toronto',dateStyle:'short',timeStyle:'short'
+     }).format(date):'';
    meta.textContent='Joueur '+seat+' · '+String(card.category||'Sans catégorie')+
-    ' · D100 '+face+' · '+String(card.status||'État inconnu');
+    ' · D100 '+face+' · '+String(card.status||'État inconnu')+at;
    const title=document.createElement('h4');
    title.textContent=String(card.title||'Défi');
    const description=document.createElement('p');
    description.textContent=String(card.description||'Aucune consigne enregistrée');
    article.append(meta,title,description);
    list.append(article);
+  }
+ }
+ async function loadChallengeHistory(page){
+  if(!active||tearingDown||!status?.ready||historyBusy||
+   !Number.isInteger(page)||page<0||page>999)return;
+  const requestGeneration=historyGeneration;
+  historyOpen=true;historyBusy=true;historyError='';historyCards=null;
+  renderChallengeCards();
+  try{
+   const result=await request('challenge_history',null,{page});
+   if(requestGeneration!==historyGeneration||!active||tearingDown)return;
+   if(result?.page!==page||result?.limit!==10||
+      !Number.isSafeInteger(result?.total)||result.total<0||
+      !Array.isArray(result?.cards)||result.cards.length>10)
+    throw Error('Réponse du serveur non conforme');
+   historyCards=result.cards;historyTotal=result.total;historyPage=page;
+  }catch(error){
+   if(requestGeneration!==historyGeneration)return;
+   historyError=error instanceof Error?error.message:'Erreur de lecture';
+  }finally{
+   if(requestGeneration===historyGeneration){historyBusy=false;renderChallengeCards();}
   }
  }
  function display(){
@@ -455,6 +507,13 @@ export function createStudioRealSandbox({client}){
    ['studio-venice-latest','get_latest_preview'],
    ['studio-venice-generate','preview_three']
   ])$(id)?.addEventListener('click',()=>veniceAction(action));
+
+  $('studio-real-history-open')?.addEventListener('click',()=>loadChallengeHistory(0));
+  $('studio-real-history-prev')?.addEventListener('click',()=>loadChallengeHistory(historyPage-1));
+  $('studio-real-history-next')?.addEventListener('click',()=>loadChallengeHistory(historyPage+1));
+  $('studio-real-history-close')?.addEventListener('click',()=>{
+   resetHistory();renderChallengeCards();
+  });
   $('studio-real-check').addEventListener('click',()=>refresh().catch(e=>say(e.message)));
   $('studio-real-refresh').addEventListener('click',()=>{
    // Resume the SAME game; preserving iframe/OTP session is essential for
