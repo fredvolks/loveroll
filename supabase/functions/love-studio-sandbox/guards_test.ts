@@ -1,0 +1,46 @@
+import {isRegisteredStudioIdentity} from './guards.ts';
+
+function assert(condition:unknown,description:string){
+ if(!condition)throw Error(description);
+}
+const admin='studio-admin-id';
+const seat={user_id:'synthetic-id',synthetic_email:'qa@example.invalid'};
+const valid={
+ id:'synthetic-id',email:'qa@example.invalid',
+ app_metadata:{love_studio_test:true,love_studio_admin:admin}
+};
+Deno.test('existing tagged A/B identity accepted without user-provided claims',()=>{
+ assert(isRegisteredStudioIdentity(valid,seat,admin),'genuine seat rejected');
+});
+Deno.test('magiclink cannot authorize a newly-created stranger with same synthetic email',()=>{
+ assert(!isRegisteredStudioIdentity({...valid,id:'orphan-id'},seat,admin),
+  'orphan Auth user was mistaken for registered seat');
+});
+Deno.test('real customer id or email cannot borrow a technical seat',()=>{
+ assert(!isRegisteredStudioIdentity({...valid,email:'customer@example.com'},seat,admin),
+  'wrong email accepted');
+ assert(!isRegisteredStudioIdentity({...valid,id:'customer-id'},seat,admin),
+  'wrong Auth id accepted');
+});
+Deno.test('user_metadata can never establish technical privilege',()=>{
+ assert(!isRegisteredStudioIdentity({
+  id:valid.id,email:valid.email,
+  app_metadata:{},
+  user_metadata:{love_studio_test:true,love_studio_admin:admin}
+ } as typeof valid,seat,admin),'self-editable metadata accepted');
+});
+Deno.test('another platform admin cannot adopt a registered technical user',()=>{
+ assert(!isRegisteredStudioIdentity(valid,seat,'different-admin'),
+  'other administrator accepted');
+});
+Deno.test('missing, revoked or partially registered accounts fail closed',()=>{
+ for(const principal of [null,undefined,{},{
+  id:'synthetic-id',email:'qa@example.invalid',
+  app_metadata:{love_studio_test:'true',love_studio_admin:admin}
+ }]){
+  assert(!isRegisteredStudioIdentity(principal as typeof valid,seat,admin),
+   'incomplete or spoofed user accepted');
+ }
+ assert(!isRegisteredStudioIdentity(valid,{...seat,user_id:null},admin),
+  'unregistered seat accepted');
+});
