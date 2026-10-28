@@ -108,6 +108,18 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
   await announce(b.contentWindow,{type:'loveroll-studio-seat-ready',seat:'B',authenticated:true,user_id:'test-b'});
   assert.equal(nodes.get('studio-real-seat-state-B').dataset.state,'connected');
   assert.match(nodes.get('studio-real-status').textContent,/Les deux vrais joueurs A et B sont connectés/);
+  // A successful game mutation only asks the parent to reread actual DB state.
+  const beforeUpdate=calls.filter(x=>x==='status').length;
+  await announce(a.contentWindow,{type:'loveroll-studio-game-updated',seat:'A'});
+  assert.equal(calls.filter(x=>x==='status').length,beforeUpdate+1,
+   'a genuine A game event refreshes server read-only diagnostics');
+  assert.equal(getFrame('A'),a,'updating diagnostics preserves A game and Auth');
+  assert.equal(getFrame('B'),b,'updating diagnostics preserves B game and Auth');
+  await announce(a.contentWindow,{type:'loveroll-studio-game-updated',seat:'B'});
+  await announce(b.contentWindow,{type:'loveroll-studio-game-updated',seat:'B'},
+   'https://attacker.example');
+  assert.equal(calls.filter(x=>x==='status').length,beforeUpdate+1,
+   'wrong seat and foreign origin must never access server diagnostics');
   nodes.get('studio-real-jump-A').value='session';
   nodes.get('studio-real-jump-A').handlers.change();
   assert.deepEqual(sent[0],{message:{type:'loveroll-studio-navigate',seat:'A',tab:'session'},origin:globalThis.location.origin});
