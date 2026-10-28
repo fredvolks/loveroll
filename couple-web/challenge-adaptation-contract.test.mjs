@@ -8,6 +8,9 @@ const sync=readFileSync(new URL('./couple-live-sync.mjs',import.meta.url),'utf8'
 
 test('proposal table is private, scoped to one challenge and one session',()=>{
  assert.match(sql,/challenge_id uuid PRIMARY KEY REFERENCES public\.couple_challenges\(id\)/);
+ assert.match(sql,/original_text text/);
+ assert.match(sql,/original_minutes integer/);
+ assert.match(sql,/v_q\.card_description,v_q\.card_timer_minutes/);
  assert.match(sql,/session_id uuid NOT NULL REFERENCES public\.couple_sessions\(id\)/);
  assert.match(sql,/ENABLE ROW LEVEL SECURITY/);
  assert.match(sql,/couple_private\.is_member\(p_couple\)/);
