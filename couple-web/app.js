@@ -1350,6 +1350,19 @@ function renderEclat(){
   eclatV2Poll?.unref?.();
   return;
  }
+ // An approved finale (playlist, wish or ending) is part of the real
+ // session view, not a local success banner. Keep it visible across
+ // unrelated app redraws until the user chooses "Retour aux 12 coffrets".
+ // Never reuse a view across another user, couple or server session.
+ const finished=eclatV2Player?.getStatus();
+ if(v2?.access===true&&v2.active===false&&!e?.active&&
+    finished?.access===true&&finished.active===false&&
+    typeof v2.session_id==='string'&&v2.session_id===finished.session_id&&
+    state.eclatV2OwnerId===state.user?.id&&
+    state.eclatV2CoupleId===state.coupleId&&
+    root.querySelector('#eclat-v2-live-player')){
+   return;
+ }
  disposeEclatV2Player();
  if(e?.active){
   const current=eclatStage(e.coffret_id,e.chapter_number,e.variant_number);
