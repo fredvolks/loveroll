@@ -106,7 +106,7 @@ Deno.serve(async(req:Request)=>{
      if(error)throw Error('Diagnostic du jeu indisponible');
      return data;
     };
-    const [weekly,monthly,latest,entitlement]=await Promise.all([
+    const [weekly,monthly,latest,entitlement,eclatFinished]=await Promise.all([
      checked(service.from('couple_rolls').select('face,created_at')
       .eq('couple_id',pool.couple_id).eq('kind','weekly')
       .order('created_at',{ascending:false}).limit(1)),
@@ -117,7 +117,12 @@ Deno.serve(async(req:Request)=>{
       .eq('couple_id',pool.couple_id).order('started_at',{ascending:false})
       .limit(1).maybeSingle()),
      checked(service.from('love_eclat_entitlements').select('enabled,ends_at')
-      .eq('couple_id',pool.couple_id).maybeSingle())
+      .eq('couple_id',pool.couple_id).maybeSingle()),
+     // Official Éclat next() sets ended_at without cancelled. The explicit
+     // end()/abandon action sets cancelled=true and never counts as completed.
+     checked(service.from('love_eclat_sessions').select('coffret_id')
+      .eq('couple_id',pool.couple_id).eq('cancelled',false)
+      .not('ended_at','is',null).limit(1000))
     ]);
     // Count is exact; retrieve only three cards. Never silently truncate
     // challenge totals at Supabase's Data API row limit (often 1,000).
@@ -152,7 +157,11 @@ Deno.serve(async(req:Request)=>{
       status:row.status??''
      })),
      eclat_enabled:entitlement?.enabled===true&&
-       (!entitlement.ends_at||new Date(entitlement.ends_at).getTime()>Date.now())
+       (!entitlement.ends_at||new Date(entitlement.ends_at).getTime()>Date.now()),
+     eclat_completed_coffrets:[...new Set((eclatFinished||[])
+       .map((r:{coffret_id:number})=>r.coffret_id)
+       .filter((id:number)=>Number.isInteger(id)&&id>=1&&id<=12))]
+       .sort((a,b)=>a-b)
     };
    }catch{
     game={error:'Diagnostic temporairement indisponible'};
