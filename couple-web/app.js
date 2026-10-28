@@ -52,7 +52,7 @@ import {cadExchangeRate} from './currency-exchange.mjs';
 import {referralSettingsHtml,referralLink,REFERRAL_CODE_PATTERN,REFERRAL_PENDING_STORAGE_KEY} from './referral-program.mjs?v=20261019-personal171';
 import {enhanceLoveRollSettingsSelects} from './loveroll-premium-pickers.mjs?v=20261019-personal171';
 import { CONFIG } from './config.js?v=20261019-love172';
-import {studioSeat,studioAuthOptions,startStudioSeatLogin} from './studio-seat-auth.mjs?v=20261027-real250';
+import {studioSeat,studioAuthOptions,startStudioSeatLogin} from './studio-seat-auth.mjs?v=20261028-real290';
 import {normalizeInviteEmail,composeInviteEmail} from './invite-email.mjs';
 import {enablePush,disablePush,updatePushPreference,sendTestPush,notificationSettingsMarkup,safeNativePushToken,currentPushDevice} from './push-notifications.mjs?v=20261027-web248';
 import {shouldOfferInstall,markInstallOffered,dismissInstall,requestInstall,installOfferHtml,installStepsHtml,installStatus,isEmbeddedBrowser,isIos} from './home-install.mjs?v=20261017-complete127';
@@ -61,7 +61,7 @@ import {invitationStatus,coupleStats,formatCoupleDate,invitationEmailText,invita
 import {premiumConfirm,premiumCopyLink,focusInlineLoveDialog} from './premium-dialogs.mjs?v=20261017-complete127';
 
 
-const WEB_RELEASE='2026-10-27.248';
+const WEB_RELEASE='2026-10-28.249';
 const root=document.querySelector('#app');
 const enc=new TextEncoder(),dec=new TextDecoder();
 let diceCleanup=[],renderToken=0;
