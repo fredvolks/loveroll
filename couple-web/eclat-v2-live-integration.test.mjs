@@ -65,3 +65,13 @@ test('cached V2 status belongs only to the exact signed-in user and original cou
  assert.match(app,/if\(!state\.user\|\|state\.passwordRecovery\)\{state\.eclatV2Status=null/);
  assert.match(app,/if\(state\.eclatV2OwnerId!==state\.user\?\.id\|\|state\.eclatV2CoupleId!==state\.coupleId/);
 });
+
+
+test('V2 completion preserves the approved finale until user intentionally opens the gallery',()=>{
+ assert.match(app,/id="eclat-v2-finished-return" hidden/);
+ assert.match(app,/button\('eclat-v2:gallery','Retour aux 12 coffrets'/);
+ assert.match(app,/if\(!latest\.active\)\{/);
+ assert.match(app,/returnToGallery\.hidden=false/);
+ assert.match(app,/clearInterval\(eclatV2Poll\)/);
+ assert.match(app,/if\(!latest\?\.access\)\{\s*disposeEclatV2Player\(\);render\(\);return;/);
+});
