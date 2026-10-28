@@ -63,6 +63,10 @@ test('Studio real sandbox uses existing secure platform gate and no standalone f
  assert.doesNotMatch(sandbox,/say\('Vraies sessions LoveRoll A et B disponibles/);
  assert.match(js,/createStudioRealSandbox/);
  assert.match(js,/realSandbox\.init/);
+ assert.match(js,/const gated=\(\)=>\{\s*realSandbox\.deactivate\(\)/);
+ assert.match(js,/if\(event==='SIGNED_OUT'\)\{data=null;gated\(\)/);
+ assert.match(sandbox,/function deactivate\(\)/);
+ assert.match(sandbox,/active=false;\s*status=null;\s*closeFrames\(\)/);
  assert.doesNotMatch(html,/id="sim-d100"|id="sim-d6-face-0"/);
 });
 test('Responsive iPad desktop split and mobile seat switching',()=>{
