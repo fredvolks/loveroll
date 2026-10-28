@@ -51,16 +51,7 @@ html.lr-privacy-active .lr-privacy-screen{
  }
 }
 
-/* Preserve small secondary geometry under the active, layered Soirée skins. */
-#app.loveroll-evening-page .evening-premium-view .evening-toolbar button.lr-privacy-quick-button{
- display:inline-flex!important;visibility:visible!important;pointer-events:auto!important;
- min-height:34px!important;min-width:0!important;
- padding:5px 8px!important;
- border:1px solid #a85a78!important;border-radius:14px!important;
- background:#47172f!important;color:#ffe9eb!important;
- font:600 12px/1.2 system-ui,sans-serif!important;
- box-shadow:none!important;text-shadow:none!important;
-}
+/* The privacy control stays on opened challenge cards, never on the entry header. */
 #app.loveroll-evening-page .evening-queue-modal button.lr-privacy-challenge-button{
  flex:0 0 auto;min-height:36px!important;
  background:#47172f!important;color:#ffe9eb!important;
