@@ -72,9 +72,9 @@
    position:relative!important;
    width:100vw!important;
    max-width:none!important;
-   /* Half of the original inset correction: 360px WebGL measurement
-      gives x=166 for the full offset and x=194 without it; x=180 wins. */
-   left:calc(25% - 25vw)!important;
+   /* Do not stack estimated offsets: dice3d.js projects and centres
+      the real mesh from its current canvas bounds each time. */
+   left:auto!important;
   }
  }
 }

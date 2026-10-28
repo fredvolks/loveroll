@@ -586,9 +586,14 @@ export function dieOn(canvas,sides,value,rolling){
   bounds=projectedBounds();
   built.group.quaternion.copy(pose);built.group.position.copy(position);built.group.updateMatrixWorld(true);
   const delta=contact-(rect.top+bounds.bottom*rect.height);
-  // LR-001 phone horizontal positioning is owned by the final Soirée
-  // CSS host rule. Preserve the photographed contact's vertical 3D fit.
-  stage.style.transform='translateY('+delta.toFixed(2)+'px)';
+  // LR-001: after resetting stage.transform above, measure the actual
+  // projected D100 centre at this viewport. Align the *same real mesh* to
+  // the centre of the photographed marble. Unlike a fixed CSS offset, this
+  // remains exact across 360/412px phones, resize and repeated animation.
+  const meshX=rect.left+(bounds.left+bounds.right)*rect.width/2;
+  const dx=idleEveningD100&&window.matchMedia?.('(max-width:767px)').matches
+   ? window.innerWidth/2-meshX : 0;
+  stage.style.transform='translate('+dx.toFixed(2)+'px,'+delta.toFixed(2)+'px)';
   canvas.dataset.podiumContact=String(contact-sceneRect.top);
  }
  let frame=0,drag=false,x=0,y=0,vx=0,vy=0,shown=true,lastFrame=0,renderedFrames=0;

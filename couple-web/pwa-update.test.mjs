@@ -7,13 +7,13 @@ const html=read('index.html'),app=read('app.js'),sw=read('service-worker.js');
 const release=JSON.parse(read('web-version.json'));
 const appTag=release.build.replaceAll('-','').replace('.', '-web');
 test('LoveRoll build versions agree between endpoint, app, HTML and imported modules',()=>{
- const build=release.build,tag='20261015-no-toast87',inviteTag='20261018-safari150',controlsTag='20261017-controls141',diceTag='20261027-web246';
+ const build=release.build,tag='20261015-no-toast87',inviteTag='20261018-safari150',controlsTag='20261017-controls141',diceTag='20261027-web247';
  assert.match(build,/^\d{4}-\d{2}-\d{2}\.\d+$/);
  assert.ok(sw.includes("const CACHE='loveroll-static-v"+build.split('.')[1]+"'"));
  assert.ok(app.includes('invite-links.mjs?v='+inviteTag));
  assert.ok(sw.includes('./assets/loveroll-messenger-og-v142.jpg'));
  assert.ok(sw.includes('./lr001-d100-entry-parity-v244.css'));
- assert.ok(html.includes('lr001-d100-entry-parity-v244.css?v=20261027-lr001-parity246'));
+ assert.ok(html.includes('lr001-d100-entry-parity-v244.css?v=20261027-lr001-parity247'));
  assert.match(html,/og:image:type" content="image\/jpeg/);
  for(const css of ['controls-rose-v141.css','premium-theme.css','editorial-details.css','entry-ritual-v139.css']){
   assert.ok(html.includes(css+'?v='+(css==='entry-ritual-v139.css'?'20261018-style148':controlsTag)),
