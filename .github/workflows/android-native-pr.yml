@@ -57,10 +57,12 @@ jobs:
           raw = os.environ.get("LOVEROLL_ANDROID_SIGNING", "")
           if not raw:
               raise SystemExit("Android signing secret is not configured or unavailable to this job")
+          print("SIGNING_PREFLIGHT_STAGE: secret_received", flush=True)
           try:
               bundle = json.loads(raw)
           except json.JSONDecodeError:
               raise SystemExit("Signing secret contains invalid JSON; paste the entire JSON object")
+          print("SIGNING_PREFLIGHT_STAGE: json_parsed", flush=True)
           if not isinstance(bundle, dict):
               raise SystemExit("Signing secret must be a JSON object")
           fields = ("KEYSTORE", "KEYSTORE_PASSWORD", "KEY_ALIAS", "KEY_PASSWORD")
@@ -73,6 +75,7 @@ jobs:
               raise SystemExit("KEYSTORE is not valid Base64")
           if len(key_data) <= 1000:
               raise SystemExit("KEYSTORE is too small to contain a PKCS12 signing key")
+          print("SIGNING_PREFLIGHT_STAGE: keystore_decoded", flush=True)
           match_expected = re.search(r'EXPECTED_SIGNER_SHA256:\s*([0-9a-f]{64})', pathlib.Path(".github/workflows/android.yml").read_text())
           if not match_expected:
               raise SystemExit("Pinned certificate SHA256 setting missing from Android release workflow")
@@ -92,6 +95,7 @@ jobs:
               fingerprint = match.group(1).replace(":", "").lower() if match else ""
               if fingerprint != expected:
                   raise SystemExit("Android certificate fingerprint does not match pinned SHA-256")
+              print("SIGNING_PREFLIGHT_STAGE: certificate_matches", flush=True)
               unsigned = temp / "unsigned.jar"
               with zipfile.ZipFile(unsigned, "w") as archive:
                   archive.writestr("signing-fixture.txt", "love-roll")
@@ -103,5 +107,6 @@ jobs:
               verified = subprocess.run(["jarsigner", "-verify", str(signed)], env=env, capture_output=True, text=True)
               if verified.returncode:
                   raise SystemExit("Android signing fixture verification failed")
+          print("SIGNING_PREFLIGHT_STAGE: private_key_verified", flush=True)
           print("Signing secret present, pinned certificate matched, private key signed fixture successfully.")
           PY
