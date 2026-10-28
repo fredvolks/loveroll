@@ -107,7 +107,9 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   assert.equal(await page.evaluate(()=>window.__eveningD100===document.querySelector('.evening-d35-col canvas')),true,'Official draw keeps the same model');
   assert.equal(await page.locator('.evening-d35-col canvas').getAttribute('data-face'),'17');
   assert.equal(await page.locator('.evening-choice [aria-pressed=true]').count(),0,'Category resets after each official draw');
-  assert.equal(await page.locator('[data-action="new-challenge"]').isDisabled(),true,'Partner turn stays locked');await capture('recorded');
+  assert.equal(await page.locator('[data-action="new-challenge"]').count(),0,'No fake disabled D100 during partner turn');
+  assert.match(await page.locator('.evening-primary-status').textContent(),/En attente du tour de ton partenaire/);
+  await capture('recorded');
   assert.deepEqual(errors,[]);await context.close();console.log('EVENING_D100_TEMPLATE_OK',width,height);
  }}finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exit(1)});
