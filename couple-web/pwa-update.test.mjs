@@ -50,8 +50,8 @@ test('LoveRoll build versions agree between endpoint, app, HTML and imported mod
  assert.match(html,/premium-home\.css\?v=20261019-ipad155/);
  assert.ok(app.includes('premium-home.mjs?v='+appTag));
  assert.match(app,new RegExp("dice3d\\.js\\?v="+diceTag));
- assert.ok(app.includes('premium-evening.mjs?v=20261027-web242'));
- assert.ok(html.includes('evening-editorial.css?v=20261017-ritual130'));
+ assert.ok(app.includes('premium-evening.mjs?v=20261028-lr027-web254'));
+ assert.ok(html.includes('evening-editorial.css?v=20261028-lr027'));
  assert.ok(app.includes('onboarding.mjs?v=20261018-style148'));
  assert.ok(app.includes('json-libraries.mjs?v=20261016-restore113'));
  assert.match(html,/settings-premium\.css\?v=20261019-(?:ref|personal)\d+/);
