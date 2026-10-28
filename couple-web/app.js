@@ -1356,6 +1356,10 @@ function renderEclat(){
   if(current)eclatAudio.setMood(current.mood);
  }else if(state.eclatMusic){eclatAudio.stop();state.eclatMusic=false;}
  const v2Ready=v2?.access===true&&!e?.active;
+ // The V2 entitlement is authoritative only after the exact Auth user and
+ // couple received it from their own server RPC. The legacy gallery must
+ // not hide a valid V2 entitlement simply because V1 is not yet enabled.
+ const catalogStatus=v2Ready?{...(e||{}),access:true,active:false}:e;
  const deviceMode=v2Ready&&state.eclatDetails?
   '<section class="eclat-v2-device-choice" aria-label="Nombre de téléphones Éclat">'+
    '<p><strong>Pour ce coffret : choisissez votre façon de jouer</strong></p>'+
@@ -1363,7 +1367,7 @@ function renderEclat(){
    button('eclat-v2:mode:one','Un téléphone partagé', 'aria-pressed="'+(state.eclatV2DeviceMode==='one')+'"')+
    '<p>Les règles, autorisations et scènes sont validées par le serveur. En mode partagé, aucun compte partenaire n’est usurpé.</p>'+
    '</section>':'';
- frame(eclatHtml({status:e,selected:state.eclatSelection,minutes:state.eclatMinutes,
+ frame(eclatHtml({status:catalogStatus,selected:state.eclatSelection,minutes:state.eclatMinutes,
   details:state.eclatDetails,members:state.members,userId:state.user?.id,
   music:state.eclatMusic,finished:state.eclatFinished,browse:state.eclatBrowse,intent:state.eclatIntent,
   noteState:e?.active&&!state.eclatBrowse?eclatNoteState():{},
@@ -2700,7 +2704,6 @@ async function handle(action,element){
   }
   if(kind==='start'){
    if(!Number.isInteger(num)||num<1||num>12)throw Error('Coffret inconnu');
-   if(!previewEclatStatus(state.eclat,state.testMode,state.testModeEligible)?.access)throw Error('Ce coffret nécessite le forfait Éclat.');
    if(state.eclatV2OwnerId===state.user?.id&&state.eclatV2CoupleId===state.coupleId&&
       state.eclatV2Status?.access===true&&!state.eclat?.active){
     const result=await eclatV2Api.start({coffretId:num,minutes:state.eclatMinutes,
@@ -2711,6 +2714,10 @@ async function handle(action,element){
     state.eclatBrowse=false;state.eclatDetails=false;state.eclatFinished=null;
     render();return;
    }
+   // Only V1 can authorize this fallback. A denied V2 entitlement never
+   // grants access to the legacy game and cannot bypass its subscription.
+   if(!previewEclatStatus(state.eclat,state.testMode,state.testModeEligible)?.access)
+    throw Error('Ce coffret nécessite le forfait Éclat.');
    state.eclat=await rpc('love_eclat_start',{p_coffret:num,p_minutes:state.eclatMinutes});
    state.eclatBrowse=false;state.eclatDetails=false;state.eclatFinished=null;await refreshEclatHistory();render();return;
   }
