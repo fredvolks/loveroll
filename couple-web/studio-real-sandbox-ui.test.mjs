@@ -63,7 +63,7 @@ test('Studio real sandbox uses existing secure platform gate and no standalone f
  assert.doesNotMatch(sandbox,/say\('Vraies sessions LoveRoll A et B disponibles/);
  assert.match(js,/createStudioRealSandbox/);
  assert.match(js,/realSandbox\.init/);
- assert.match(js,/const gated=\(\)=>\{\s*realSandbox\.deactivate\(\)/);
+ assert.match(js,/const gated=\(\)=>\{\s*authGateGeneration\+\+;\s*realSandbox\.deactivate\(\)/);
  assert.match(js,/authGateGeneration\+\+/);
  assert.match(js,/generation!==authGateGeneration/);
  assert.match(js,/if\(generation!==authGateGeneration\)return; \/\/ Don't reshow admin after signout/);
