@@ -56,10 +56,13 @@ export function startStudioSeatLogin(client,seat,{selfWindow,origin,reload=()=>s
   }
   if(message.type==='loveroll-studio-venice'&&seat==='A'&&!veniceRunning){
    const action=message.action;
-   if(!['status','get_latest_preview','preview_three'].includes(action))return;
+   if(!['status','get_latest_preview','preview_three'].includes(action)||
+      typeof message.request_id!=='string'||
+      !/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(message.request_id))return;
    veniceRunning=true;
    const send=(data)=>selfWindow.parent.postMessage({
-    type:'loveroll-studio-venice-result',seat:'A',action,data
+    type:'loveroll-studio-venice-result',seat:'A',action,
+    request_id:message.request_id,data
    },origin);
    try{
     const {data:auth,error:authError}=await client.auth.getUser();
