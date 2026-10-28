@@ -108,3 +108,12 @@ Tests de régression ajoutés pour ces scénarios au fichier `eclat-v2-play-cont
 - Le poll V2 conserve les champs et la position du curseur quand l'état officiel Supabase est **strictement identique** à la dernière lecture. Dès qu'une décision réelle ou un changement de chapitre produit un nouvel état, le serveur reste autoritaire et le rendu est mis à jour normalement. Le rejet de l'accès Premium, une séance remplacée ou une expiration d'identité continuent à effacer immédiatement l'écran.
 - Tests du contrôleur : état identique sans remonter le DOM, changement réel avec nouveau rendu, et révocation qui ne peut jamais profiter de cette optimisation.
 - À la rédaction, workflow éditorial et PostgreSQL éphémère verts sur le SHA `76cf2158d4b2d32ff31ccedefb405c283317f18f`; suite Web complète non encore terminée. **PR non fusionnée, V2 non déployée, recette Auth A/B et appareils physiques toujours requise.**
+
+
+## Synchronisation protégée et changement de compte (28 octobre)
+
+- Les lectures `love_eclat_v2_status` successives reçoivent une génération croissante. Une réponse lente **ne peut plus rétablir un ancien coffret, une étape antérieure ou une autorisation Premium** après qu'une lecture plus récente a été acceptée.
+- Chaque démarrage réel V2, actualisation confirmée du joueur, retour à la galerie et refus d'autorisation invalide les lectures précédemment en vol. Le test `eclat-v2-latest-read.test.mjs` simule une réponse serveur lente qui arrive **après** une réponse plus fraîche, et exige de garder uniquement cette dernière.
+- Lorsqu'un autre compte Supabase se connecte dans la même fenêtre ou que l'utilisateur se déconnecte, le contrôleur Éclat V2 est **détruit immédiatement**. Les brouillons, notes privées, identité, couple et droit V2 précédent sont réinitialisés avant de recharger le nouveau profil réel, sans jamais présenter une partie du partenaire comme sa propre partie.
+- Les tests du garde anti-régression sont obligatoires dans `.github/workflows/eclat-v2-contract.yml`. Attendre que les workflows du **dernier SHA** se terminent avant de proclamer la validation. Les tests isolés ne remplacent pas une recette réelle avec A/B Auth sur préproduction LoveRoll.
+- Cette amélioration reste dans la PR #92 **non fusionnée et non publiée**. Aucun compte client ni schéma Supabase production modifié.
