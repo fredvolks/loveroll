@@ -31,7 +31,9 @@ const assert=require('node:assert/strict');
     for(const id of ['studio-real-create','studio-real-refresh',
       'studio-real-check','studio-real-reset','studio-real-delete'])
      document.getElementById(id).hidden=false;
-    document.querySelector('#studio-real-progress-count').textContent='7/9';
+    // Layout evidence has NO Supabase Auth, official rolls or game results.
+    // Never make a visual screenshot look like seven live QA steps passed.
+    document.querySelector('#studio-real-progress-count').textContent='0/9';
     const list=document.querySelector('#studio-real-progress-list');
     for(const text of ['Duo de test A+B','Connexion des deux joueurs',
      'D6 hebdomadaire','D100 Surprise','Soirée',
@@ -98,6 +100,8 @@ const assert=require('node:assert/strict');
    assert.ok(layout.frames[0].y<layout.guide.y,
     preset.name+' A/B live game must appear BEFORE checklists and 12 coffrets');
    assert.equal(layout.checklist,9);
+   assert.equal(await page.locator('#studio-real-progress-count').innerText(),'0/9',
+    'static visual fixture must not impersonate real completed gameplay');
    assert.equal(layout.count,12);
    assert.ok(layout.guide.width>=260&&layout.eclat.width>=260);
    assert.ok(layout.buttons.every(x=>x.w>=100&&x.h>=32),
