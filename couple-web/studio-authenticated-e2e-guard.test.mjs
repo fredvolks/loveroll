@@ -82,3 +82,15 @@ test('both genuine staging seats must receive HTTP denial for all private Studio
  assert.match(e2e,/for\(const seat of \['A','B'\]\)/);
  assert.doesNotMatch(e2e,/console\.log\([^\n]*access_token/);
 });
+
+test('both genuine staging seats must receive HTTP denial for all private Studio tables',()=>{
+ for(const table of ['love_studio_test_pools','love_studio_test_seats',
+  'love_studio_test_audit','love_studio_venice_daily_quota']){
+  assert.ok(e2e.includes(table),table+' must be checked');
+ }
+ assert.match(e2e,/\[401,403,404\]\.includes\(result\.status\)/);
+ assert.match(e2e,/sessionStorage\.getItem\('loveroll-studio-auth-v1-'\+probe\.seat\)/);
+ assert.match(e2e,/method:'GET',cache:'no-store'/);
+ assert.match(e2e,/for\(const seat of \['A','B'\]\)/);
+ assert.doesNotMatch(e2e,/console\.log\([^\n]*access_token/);
+});
