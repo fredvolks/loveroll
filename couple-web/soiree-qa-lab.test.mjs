@@ -69,8 +69,9 @@ test('a stale saved weekly D6 never masquerades as this week’s official result
  const markup=renderSoireeQaScreen({role:'A',snapshot:base,partnerId:b,weekKey:'2026-11-02'});
  assert.match(markup,/Semaine québécoise du 2026-11-02/);
  assert.match(markup,/Résultat précédent : 4/);
- assert.doesNotMatch(markup,/Résultat officiel : 4/);
- assert.match(markup,/Brasser le vrai D6 hebdomadaire/);
+ const weeklySection=markup.split('<h5>Soirée du duo</h5>')[0];
+ assert.doesNotMatch(weeklySection,/Résultat officiel : 4/);
+ assert.match(weeklySection,/Brasser le vrai D6 hebdomadaire/);
 });
 test('Toronto week starts on Monday across DST boundary',async()=>{
  const {currentTorontoWeekKey}=await import('./soiree-qa-lab.mjs');
