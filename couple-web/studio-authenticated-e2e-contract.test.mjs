@@ -14,6 +14,19 @@ test('real A/B E2E cannot use production, requires a manual isolated staging pro
  assert.match(workflow,/test "\$STAGING_REF" != "ejsrqfpkgwraorrznjpm"/);
  assert.match(workflow,/LOVEROLL_STUDIO_E2E_ADMIN_PASSWORD.*secrets\./);
 });
+test('staging checks actual read-only gameplay RPCs before creating any Auth A/B user',()=>{
+ const tests=['love_eclat_status','love_test_mode_allowed'];
+ for(const name of tests)assert.ok(script.includes("name:'"+name+"'"));
+ assert.ok(script.includes("localStorage.getItem('sb-'+probe.ref+'-auth-token')"));
+ assert.ok(script.includes("'Authorization:'")===false);
+ assert.ok(script.includes("Authorization:'Bearer '+session.access_token"));
+ assert.ok(script.includes("response.ok&&rpc.valid(data)"));
+ assert.ok(script.includes("assert.equal(rpcReadiness.length,2"));
+ assert.ok(script.indexOf("const rpcReadiness=await page.evaluate")<
+  script.indexOf("await page.locator('#studio-real-create').click()"));
+ assert.ok(!script.includes("console.log(session.access_token)"));
+});
+
 test('real game clicks official D6 D100 and waits for official server milestones',()=>{
  for(const action of ['roll:weekly','new-session','my-d6','new-challenge','roll:monthly_activity']){
   assert.ok(script.includes(`[data-action="${action}"]`),action);
