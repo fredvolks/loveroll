@@ -100,11 +100,11 @@ async function main(){
   // Genuine category controls are SENSUEL and SEXUEL; HASARD is a valid
   // RPC category but not a visible option in the production Soirée UI.
   // The official paired-turn engine chooses WHO draws first. It might be
-  // B, never assume the owner A has the first card to give. Only an enabled
-  // official category control qualifies as evidence of whose turn it is.
+  // B; only an ENABLED genuine "new-challenge" action confirms the server
+  // granted that player a turn. Category selection alone doesn't prove it.
   const candidates=[a,b];
   const firstTurn=await Promise.any(candidates.map(async (frame,index)=>{
-   await frame.locator('[data-action="category:SENSUEL"]:not([disabled])')
+   await frame.locator('[data-action="new-challenge"]:not([disabled])')
     .first().waitFor({state:'visible',timeout:60000});
    return index;
   }));
