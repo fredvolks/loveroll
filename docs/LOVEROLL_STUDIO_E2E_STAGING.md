@@ -30,9 +30,12 @@ Lancer manuellement GitHub Actions → **LoveRoll Studio — real A/B staging ac
 6. Choix de catégorie officiel, lancer D100 de défi et vérification d'au moins une carte enregistrée.
 7. Lancer D100 Surprise sur le vrai jeu.
 8. Présence des jalons confirmés uniquement par les lectures serveur, avec capture d'écran post-lancers.
-9. Suppression sécurisée de la paire via la même console, exigée même après un échec de parcours.
+9. Lecture de **9/9 jalons officiels** dans le Super Admin : aucune réussite basée uniquement sur une animation ou un bouton.
+10. Avec les authentifications réelles A et B, visite des **12 fiches Éclat** et présence des boutons de démarrage officiels (sans déclencher de paiement).
+11. Démarrage réel du **coffret Éclat n° 1** par le compte A et constatation de son état `en cours`, avec étape/durée issues de la base Supabase du duo technique.
+12. Suppression sécurisée de la paire via la même console, exigée même après un échec de parcours. Vérifier l'audit `delete_completed`, les deux iframes supprimées et le compteur revenu à `0/9`.
 
-Ce test **ne couvre pas encore la totalité des branches** : refus/repige, favoris, cycles de 200, notifications, 12 fins Éclat, prestataires externes et paiements. Ceux-ci nécessitent des preuves authentifiées supplémentaires avant publication annoncée « 100 % ».
+Ce test **ne couvre pas encore la totalité des branches** : refus/repige, favoris, cycles de 200, notifications, **progression à deux et 12 fins Éclat réellement terminées**, prestataires externes et paiements. L'ouverture des 12 fiches ne prouve pas que les 12 expériences sont complètes. Le démarrage Éclat n° 1 est une écriture officielle, suivie d'une lecture serveur, et non une simulation. Ceux-ci nécessitent des preuves authentifiées supplémentaires avant publication annoncée « 100 % ».
 
 ## Sécurité des données et du budget
 
