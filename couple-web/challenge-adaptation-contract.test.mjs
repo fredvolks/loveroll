@@ -45,6 +45,18 @@ test('only the OTHER partner can approve, and a running timer cannot change',()=
  assert.match(fn,/GRANT EXECUTE ON FUNCTION public\.love_adaptation_respond\(uuid,boolean\) TO authenticated/);
  assert.doesNotMatch(fn,/UPDATE public\.couple_challenges|INSERT INTO public\.couple_rolls|INSERT INTO public\.couple_sessions|love_respond_and_redraw\(/i);
 });
+test('response serializes a concurrent evening close before recording consent',()=>{
+ const fn=sql.slice(sql.indexOf('CREATE OR REPLACE FUNCTION public.love_adaptation_respond('));
+ const couple=fn.indexOf('FROM public.couples WHERE id=v_couple FOR UPDATE');
+ const challenge=fn.indexOf('WHERE id=p_challenge AND couple_id=v_couple FOR UPDATE');
+ const session=fn.indexOf('WHERE id=v_q.session_id AND couple_id=v_couple AND finished_at IS NULL FOR UPDATE');
+ const adaptation=fn.indexOf('WHERE challenge_id=p_challenge AND couple_id=v_couple FOR UPDATE');
+ const mutation=fn.indexOf('UPDATE public.love_challenge_adaptations');
+ assert.ok(couple>=0&&challenge>couple&&session>challenge&&adaptation>session&&mutation>adaptation,
+  'Lock order must remain couple -> challenge -> active session -> adaptation before consent');
+ assert.match(fn,/IF NOT FOUND THEN RAISE EXCEPTION 'Cette soirée est clôturée'; END IF/);
+});
+
 test('client can safely run against old servers; two devices refresh without modifying dice',()=>{
  assert.match(app,/query\('love_challenge_adaptations',\{eq:\{couple_id:c\}\}\)\.catch\(\(\)=>null\)/);
  assert.match(app,/rpc\('love_adaptation_propose'/);
