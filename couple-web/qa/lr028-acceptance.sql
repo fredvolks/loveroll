@@ -78,5 +78,53 @@ begin
  exception when raise_exception then
   if sqlerrm='SECURITY FAILURE: invalid answer accepted' then raise;end if;
  end;
-end$$;
+
+ -- Changing a couple's membership must not leak a former B invitation to C.
+ delete from public.couple_members where couple_id=couple and user_id=b;
+ insert into public.couple_members(couple_id,user_id) values(couple,c);
+ perform set_config('request.jwt.claim.sub',c::text,true);
+ status_b:=public.love_evening_invite_status(couple);
+ if status_b->>'state'<>'none' or status_b->>'available'<>'false' then
+  raise exception 'New member must not read former invitation: %',status_b;end if;
+ begin
+  perform public.love_evening_invite_send(couple);
+  raise exception 'SECURITY FAILURE: new member acquired old invitation';
+ exception when raise_exception then
+  if sqlerrm='SECURITY FAILURE: new member acquired old invitation' then raise;end if;
+ end;
+
+ -- Entirely new technical couple: B has disabled Push, but can still
+ -- receive and decline in app with no penalty/session creation.
+ insert into public.couples(id) values('eeeeeeee-eeee-4eee-eeee-eeeeeeeeeeee');
+ insert into public.couple_members(couple_id,user_id) values
+  ('eeeeeeee-eeee-4eee-eeee-eeeeeeeeeeee',a),
+  ('eeeeeeee-eeee-4eee-eeee-eeeeeeeeeeee',b);
+ insert into public.couple_rolls(couple_id,kind,key,face)
+  select 'eeeeeeee-eeee-4eee-eeee-eeeeeeeeeeee',kind,key,2
+   from public.couple_rolls where couple_id=couple and kind='weekly';
+ update public.love_push_preferences set enabled=false where user_id=b;
+ perform set_config('request.jwt.claim.sub',a::text,true);
+ again:=public.love_evening_invite_send('eeeeeeee-eeee-4eee-eeee-eeeeeeeeeeee');
+ if (select count(*) from public.love_push_outbox where
+  event_key='evening-invite:'||(again->>'id'))<>0 then
+  raise exception 'Disabled Push must not enqueue a notification';end if;
+ perform set_config('request.jwt.claim.sub',b::text,true);
+ if (public.love_evening_invite_status('eeeeeeee-eeee-4eee-eeee-eeeeeeeeeeee')->>'direction')<>'received' then
+  raise exception 'Disabled Push must not hide the in-app invitation';end if;
+ if (public.love_evening_invite_respond((again->>'id')::uuid,'no')->>'status')<>'no' then
+  raise exception 'No must be stored';end if;
+ if (select count(*) from public.couple_sessions where
+  couple_id='eeeeeeee-eeee-4eee-eeee-eeeeeeeeeeee')<>0 then
+  raise exception 'No must not start a session';end if;
+ update public.love_evening_invitations set expires_at=now()-interval '1 second'
+  where id=(again->>'id')::uuid;
+ if (public.love_evening_invite_status('eeeeeeee-eeee-4eee-eeee-eeeeeeeeeeee')->>'state')<>'expired' then
+  raise exception 'Expired invitation must not appear actionable';end if;
+ begin
+  perform public.love_evening_invite_respond((again->>'id')::uuid,'yes');
+  raise exception 'SECURITY FAILURE: accepted expired invite';
+ exception when raise_exception then
+  if sqlerrm='SECURITY FAILURE: accepted expired invite' then raise;end if;
+ end;
+end$;
 select 'LR-028: all isolated SQL A/B tests passed' as result;
