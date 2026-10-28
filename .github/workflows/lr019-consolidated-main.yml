@@ -115,4 +115,11 @@ jobs:
           result=$(psql -X -qAt -v ON_ERROR_STOP=1 -c "SELECT count(*) FROM public.love_couple_favorites WHERE couple_id='$duo' AND marked_by='$actor';")
           test "$result" = "5" || { echo "Concurrent favorite count is $result, expected 5"; exit 1; }
           echo "LR019_CONCURRENT_FIVE_HEARTS_ONE_WINNER_OK"
-
+      - name: Verify real PostgREST actor privileges, prior-night rule and cross-couple privacy
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Isolate the security fixture from the D100 history while reusing
+          # this single PostgreSQL service and existing SQL roles.
+          psql -X -v ON_ERROR_STOP=1 -c "CREATE DATABASE loveroll_lr019_security;"
+          PGDATABASE=loveroll_lr019_security psql -X -v ON_ERROR_STOP=1 -f couple-web/qa/lr019-favorites-security.sql
