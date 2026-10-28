@@ -6,8 +6,15 @@ export function createStudioRealSandbox({client}){
  const validRoutes=['home','session','special','eclat','advent','settings'];
  const frames={A:null,B:null};
  let status=null,tab='A',busy=false,initialized=false,loginInFlight=new Set(),expandedSeat=null;
+ const authenticatedSeats=new Set();
  const label=s=>s==='A'?'Joueur A':'Joueur B';
  const say=(message)=>{const node=$('studio-real-status');if(node)node.textContent=message;};
+ function showSeatConnection(seat,state){
+  const node=$('studio-real-seat-state-'+seat);
+  if(!node)return;
+  node.dataset.state=state;
+  node.textContent=state==='connected'?'Connecté':state==='error'?'Connexion à vérifier':'À connecter';
+ }
  async function request(action,seat){
   const {data,error}=await client.functions.invoke(uri,{body:{action,...(seat?{seat}:{})}});
   if(error)throw Error(data?.error||error?.message||'Service test indisponible');
@@ -58,6 +65,8 @@ export function createStudioRealSandbox({client}){
    $('studio-real-frame-'+seat)?.querySelector('iframe')?.remove();
    frames[seat]=null;
    loginInFlight.delete(seat);
+   authenticatedSeats.delete(seat);
+   showSeatConnection(seat,'pending');
    try{sessionStorage.removeItem('loveroll-studio-auth-v1-'+seat)}catch{}
   }
  }
@@ -113,7 +122,7 @@ export function createStudioRealSandbox({client}){
  }
  async function refresh(){
   status=await request('status');
-  say(status.ready?'Couple de test prêt. Les deux fenêtres utilisent le vrai LoveRoll.':
+  say(status.ready?(authenticatedSeats.size===2?'Joueurs A et B connectés au vrai LoveRoll.':'Couple de test prêt. Connexion des joueurs A et B en cours…'):
     status.state==='missing'?'Aucun couple de test. Crée un duo pour jouer.':
     status.state==='creating'?'Création du duo en cours ou incomplète.':
     'Suppression de banc de test à terminer.');
@@ -129,6 +138,7 @@ export function createStudioRealSandbox({client}){
    return;
   }
   if(msg.type==='loveroll-studio-seat-error'){
+   authenticatedSeats.delete(seat);showSeatConnection(seat,'error');
    loginInFlight.delete(seat);say(label(seat)+' : authentification non aboutie, recharge la paire.');
    return;
   }
@@ -137,13 +147,20 @@ export function createStudioRealSandbox({client}){
   if(!expected)return;
   if(msg.authenticated&&msg.user_id===expected){
    loginInFlight.delete(seat);
-   say('Vraies sessions LoveRoll A et B disponibles. Tester les dés dans les deux fenêtres.');
+   authenticatedSeats.add(seat);
+   showSeatConnection(seat,'connected');
+   say(authenticatedSeats.size===2
+    ?'Les deux vrais joueurs A et B sont connectés. Les dés officiels sont prêts à être testés.'
+    :label(seat)+' connecté au vrai LoveRoll. Connexion de l’autre joueur en cours…');
    return;
   }
   if(msg.authenticated&&msg.user_id!==expected){
+   authenticatedSeats.delete(seat);showSeatConnection(seat,'error');
    frames[seat].contentWindow.postMessage({type:'loveroll-studio-clear-seat',seat},location.origin);
    return;
   }
+  authenticatedSeats.delete(seat);
+  showSeatConnection(seat,'pending');
   if(loginInFlight.has(seat))return;
   loginInFlight.add(seat);
   try{
