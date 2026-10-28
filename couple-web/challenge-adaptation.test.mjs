@@ -26,12 +26,18 @@ test('proposal is secondary and cannot start a challenge or roll any dice',()=>{
 test('one recipient approves or keeps original, user-supplied content is escaped',()=>{
  const rows=[{challenge_id:'challenge-1',proposed_by:'alice',proposed_text:'<img src=x onerror=alert(1)>',status:'pending',proposed_minutes:30},
   {challenge_id:'challenge-2',proposed_by:'bob',status:'pending'}];
+ rows[0].original_text='<strong>Consigne privée originale</strong>';
+ rows[0].original_minutes=5;
  const html=pendingAdaptationsHtml(rows,'bob');
  assert.match(html,/adapt-answer:challenge-1:yes/);
  assert.match(html,/adapt-answer:challenge-1:no/);
  assert.doesNotMatch(html,/adapt-answer:challenge-2/);
  assert.doesNotMatch(html,/<img/);
  assert.match(html,/&lt;img/);
+ assert.match(html,/Consigne originale/);
+ assert.match(html,/&lt;strong&gt;Consigne privée originale&lt;\/strong&gt;/);
+ assert.match(html,/Durée originale : 5 minutes/);
+ assert.doesNotMatch(html,/<strong>Consigne privée originale<\/strong>/);
  assert.equal(adaptationFor(rows,'challenge-1'),rows[0]);
 });
 
