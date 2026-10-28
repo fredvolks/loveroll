@@ -2,11 +2,11 @@
 
 ## LR-001 — Régression : D100 Soirée plus petit que Surprise (27 octobre 2026)
 
-- **État : P0 UX — nouvelle anomalie constatée par captures Android, rectificatif inscrit au prompt maître; code NON corrigé et parité NON validée.**
+- **État : correction Web 247 fusionnée et publiée; tests Chromium de parité réussis sur Android et iPad. Essais physiques non réalisés.**
 - **Constat :** sur l'écran d'entrée « Soirée », le D100 est plus petit que le D100 de « Surprise », malgré la consigne d'identité visuelle. L'ancienne réduction motivée par un dé auparavant trop grand/coupé a laissé une ambiguïté dans l'acceptation UX.
 - **Source normative :** [LR-001 du prompt maître](./LOVEROLL_MASTER_PROMPT.md#lr-001--d100-soirée-coupé-et-disproportionné), rectificatif du 27 octobre 2026. Ne pas réduire le dé de Surprise; reproduire sur Soirée sa taille apparente, le rendu WebGL et la relation au socle à viewport identique (**tolérance maximale ±3 %**).
-- **À faire dans le code :** corriger source d'échelle/caméra/layout du D100 de Soirée, vérifier absence de coupe et de chevauchement; produire captures côte à côte Soirée / Surprise au même viewport/pose; régression visuelle déterministe; contrôler mobile Android, petit écran, iPad portrait/paysage et PC.
-- **Preuves pour fermer :** lien PR/code, capture de chaque écran à dimensions identiques avec mesure, CI et déploiement réellement vérifiés, statut explicite des essais physiques. Un test UX vert sans confrontation des deux rendus ne suffit pas. Aucune de ces preuves n'est fournie par le seul présent ajout documentaire.
+- **Code livré :** [PR #101](https://github.com/fredvolks/loveroll/pull/101) fusionnée dans `main` (`185d9c7287c3314bb16104cb1808887778f59712`) ; ajustement de caméra du D100 WebGL, parité ±3 %, captures/comparaisons automatisées des mêmes viewports Android et iPad et protections de cadrage.
+- **Preuves :** [six contrôles GitHub Actions verts](https://github.com/fredvolks/loveroll/actions/runs/40616419277) sur le SHA final `1de6a354` (dont Chromium D100 Android/iPad) ; [GitHub Pages publié et diagnostic réussi](https://github.com/fredvolks/loveroll/actions/runs/40618307286) pour `main` `185d9c7`. **Reste :** essai physique sur appareils et revue finale à l’œil; ne pas cocher 100 % terminé avant.
 
 
 ## Livraisons vérifiées — parité iPad / confirmation D100 (27 octobre 2026)
@@ -39,7 +39,7 @@
 
 | OK | ID | Demande / preuve d'acceptation | Statut | PR / preuve |
 |---|---|---|---|---|
-| [ ] | LR-001 | D100 Soirée **entier**, proportionné comme Surprise, posé sur le socle, durant toutes les animations | ◐ Web 237 : D6/D100 sur photo HD et socle unique ; tests Chromium iPad portrait/paysage + 7 mobiles réussis, essai physique non réalisé | [PR #72 fusionnée](https://github.com/fredvolks/loveroll/pull/72) · [Pages Web237](https://github.com/fredvolks/loveroll/actions/runs/40495972734) · `ipad-romance-scene-browser-check.cjs` |
+| [ ] | LR-001 | D100 Soirée **entier**, proportionné comme Surprise, posé sur le socle, durant toutes les animations | ◐ Web 247 fusionné/publié : parité ±3 % sur comparaisons Chromium Android/iPad, vrai WebGL conservé ; essais physiques restant à effectuer | [PR #101 fusionnée](https://github.com/fredvolks/loveroll/pull/101) · [CI verte](https://github.com/fredvolks/loveroll/actions/runs/40616419277) · [Pages publiée](https://github.com/fredvolks/loveroll/actions/runs/40618307286) |
 | [ ] | LR-002 | À 00:00, défi avec minuterie **réalisé automatiquement une seule fois** ; annulation/pause/saut exclus | ◐ En cours — validation serveur, reprise après fermeture et tests deux partenaires en cours ; non déployé | [PR nº 9](https://github.com/fredvolks/loveroll/pull/9) · `timed-evening-completion.test.mjs` · `evening-couple-flow-browser-check.cjs` (CI en cours) |
 | [ ] | LR-003 | Calendrier et compteurs cohérents : en cours ≠ non réalisé définitif ; cycle/partenaires corrects | ◐ En cours — libellés actifs et correctif des taux mensuels fusionnés dans main ; vérification complète du cycle 200 incomplète | [PR nº 20 fusionnée](https://github.com/fredvolks/loveroll/pull/20) · [PR nº 23 fusionnée](https://github.com/fredvolks/loveroll/pull/23) · `evening-calendar.test.mjs` / `calendar-success-stats.test.mjs` |
 | [ ] | LR-004 | Sonnerie des minuteries testée sur PWA Safari/iOS et Android, avec limites OS expliquées | ◐ En cours — sonnerie, préécoute et vibration Android codées (Web 229), tests physiques Safari/Android non effectués | [PR nº 8 fusionnée](https://github.com/fredvolks/loveroll/pull/8) · [PR nº 9](https://github.com/fredvolks/loveroll/pull/9) · `ios-install-sound-v229.test.mjs` |
