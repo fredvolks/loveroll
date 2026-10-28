@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {shouldRestorePrivacy,PRIVACY_STORAGE_KEY} from './privacy-screen.mjs';
+import {unlockLoveRollSounds,playLoveRollSound,silenceLoveRollSounds} from './loveroll-sounds.mjs';
+import {createEclatAudio} from './eclat-audio.mjs';
 
 const read=path=>readFileSync(new URL(path,import.meta.url),'utf8');
 const index=read('./index.html'),app=read('./app.js'),evening=read('./premium-evening.mjs');
@@ -39,4 +41,67 @@ test('LR-025 first paint and offline PWA use the privacy shield',()=>{
  assert.match(sw,/\.\/privacy-screen\.mjs/);
  assert.match(sw,/\.\/privacy-screen\.css/);
  assert.match(code,/doc\.title='LoveRoll'/);
+});
+
+
+test('LR-025 privacy immediately mutes active Éclat and scheduled timer tones',async()=>{
+ const audio=read('./loveroll-sounds.mjs');
+ assert.match(code,/dispatchEvent\?\.\(new Event\('loveroll:privacy-mask'\)\)/);
+ assert.match(app,/document\.addEventListener\('loveroll:privacy-mask'/);
+ assert.match(audio,/document\.addEventListener\('loveroll:privacy-mask',silenceLoveRollSounds\)/);
+ assert.match(audio,/classList\?\.contains\('lr-privacy-active'\)/);
+ const previousWindow=globalThis.window,previousDocument=globalThis.document;
+ const oscillators=[];let masked=false;
+ class FakeOscillator{
+  constructor(){this.frequency={value:0};this.stopped=[];oscillators.push(this);}
+  connect(){}
+  start(at){this.started=at;}
+  stop(at){this.stopped.push(at);}
+  disconnect(){this.disconnected=true;}
+ }
+ class FakeContext{
+  constructor(){this.currentTime=10;this.state='running';this.destination={};}
+  createOscillator(){return new FakeOscillator();}
+  createGain(){return {gain:{setValueAtTime(){},exponentialRampToValueAtTime(){}},connect(){},disconnect(){}};}
+  async resume(){}
+ }
+ try{
+  globalThis.window={AudioContext:FakeContext};
+  globalThis.document={documentElement:{classList:{contains:()=>masked}}};
+  assert.equal(await unlockLoveRollSounds(),true);
+  assert.equal(playLoveRollSound('privacy-in-progress',{force:true}),true);
+  assert.equal(oscillators.length,6);
+  masked=true;
+  silenceLoveRollSounds();
+  assert.ok(oscillators.every(osc=>osc.disconnected&&osc.stopped.at(-1)===10),
+   'Masking must stop every already scheduled tone at the current audio clock');
+  assert.equal(playLoveRollSound('privacy-still-masked',{force:true}),false);
+ }finally{
+  silenceLoveRollSounds();
+  if(previousWindow===undefined)delete globalThis.window;else globalThis.window=previousWindow;
+  if(previousDocument===undefined)delete globalThis.document;else globalThis.document=previousDocument;
+ }
+});
+
+
+test('Masking Éclat during an asynchronous AudioContext resume never restarts music',async()=>{
+ let unfreeze,masked=false,intervals=0;
+ class PendingContext{
+  constructor(){this.currentTime=10;this.state='suspended';this.destination={};}
+  createGain(){return {numberOfOutputs:1,gain:{value:0,setTargetAtTime(){}},connect(){},disconnect(){}};}
+  resume(){return new Promise(resolve=>{unfreeze=resolve;});}
+  close(){this.state='closed';return Promise.resolve();}
+ }
+ const win={AudioContext:PendingContext,document:{documentElement:{classList:{contains:()=>masked}}},
+  setInterval(){intervals++;return 1;},clearInterval(){}};
+ const music=createEclatAudio(win);
+ const pending=music.start('romantique');
+ assert.equal(typeof unfreeze,'function');
+ masked=true;
+ music.stop();
+ unfreeze();
+ assert.equal(await pending,false);
+ assert.equal(music.isPlaying(),false);
+ assert.equal(intervals,0,'An already cancelled soundtrack must not leave a looping timer');
+ assert.equal(await music.start('romantique'),false,'No audio may start while masked');
 });

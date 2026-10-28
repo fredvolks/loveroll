@@ -4,6 +4,14 @@ const KEY='loveroll-timer-sound-v229';
 let context=null;
 let currentUser='anonymous';
 const recent=new Set();
+const activeMelodyOscillators=new Set();
+export function silenceLoveRollSounds(){
+ for(const oscillator of activeMelodyOscillators){
+  try{oscillator.stop(context?.currentTime??0);}catch{}
+  try{oscillator.disconnect();}catch{}
+ }
+ activeMelodyOscillators.clear();
+}
 export const setLoveRollSoundUser=id=>{currentUser=String(id||'anonymous');};
 const key=()=>KEY+':'+currentUser;
 export function soundEnabled(store=globalThis.localStorage){
@@ -39,6 +47,8 @@ export function armLoveRollSounds(){
  document.addEventListener('keydown',unlock,true);
 }
 export function playLoveRollSound(eventId='timer-preview',{force=false}={}){
+ // Privacy always wins, including the manual sound preview.
+ if(globalThis.document?.documentElement?.classList?.contains('lr-privacy-active'))return false;
  if(!force&&!soundEnabled())return false;
  if(!context||context.state!=='running')return false;
  const id=String(eventId);
@@ -56,6 +66,8 @@ export function playLoveRollSound(eventId='timer-preview',{force=false}={}){
    gain.gain.exponentialRampToValueAtTime(.115,at+.025);
    gain.gain.exponentialRampToValueAtTime(.0001,at+.235);
    oscillator.connect(gain);gain.connect(context.destination);
+   activeMelodyOscillators.add(oscillator);
+   oscillator.onended=()=>{activeMelodyOscillators.delete(oscillator);try{oscillator.disconnect();gain.disconnect();}catch{}};
    oscillator.start(at);oscillator.stop(at+.245);
   }
   if(!force){
@@ -75,4 +87,5 @@ export function soundSettingsHtml(){
  '<p class="tiny-note">Sur iPhone Safari, laisse LoveRoll ouvert et audible pendant le minuteur. '+
  'En arrière-plan ou écran verrouillé, iOS ne garantit pas qu’une page Web puisse jouer un son programmé.</p></section>';
 }
+if(typeof document!=='undefined')document.addEventListener('loveroll:privacy-mask',silenceLoveRollSounds);
 armLoveRollSounds();

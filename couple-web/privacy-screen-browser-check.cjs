@@ -14,19 +14,20 @@ const origin='http://127.0.0.1:8765';
      '<main id="app"><h1>Défi privé : contenu confidentiel</h1>'+
      '<button type="button" data-lr-privacy-hide>Masquer</button>'+
      '<button type="button" data-unsafe-action>Action du jeu</button></main>'+
-     '<script>document.addEventListener("keydown",e=>{if(e.key==="Escape")document.body.dataset.gameBack="yes"})</script>'+'<script type="module" src="'+origin+'/privacy-screen.mjs"></script></body></html>'
+     '<script>window.__privacyMuteEvents=0;document.addEventListener("loveroll:privacy-mask",()=>window.__privacyMuteEvents++);document.addEventListener("keydown",e=>{if(e.key==="Escape")document.body.dataset.gameBack="yes"})</script>'+'<script type="module" src="'+origin+'/privacy-screen.mjs"></script></body></html>'
    }));
    await page.goto(origin+'/__lr025_privacy.html',{waitUntil:'load'});
    await page.locator('[data-lr-privacy-hide]').click();
    const hidden=await page.evaluate(()=>{
     const app=document.querySelector('#app');
     const overlay=document.querySelector('[data-lr-privacy-screen]');
-    return {stored:localStorage.getItem('loveroll-privacy-mask-v1'),
+    return {muteEvents:window.__privacyMuteEvents,stored:localStorage.getItem('loveroll-privacy-mask-v1'),
       title:document.title,hidden:getComputedStyle(app).visibility,
       inert:app.inert,shield:getComputedStyle(overlay).display,
       screenTop:overlay.getBoundingClientRect().top,
       screenBottom:overlay.getBoundingClientRect().bottom};
    });
+   assert.equal(hidden.muteEvents,1,'The privacy shield must signal audio mute exactly once per mask');
    assert.equal(hidden.stored,'1');
    assert.equal(hidden.title,'LoveRoll');
    assert.equal(hidden.hidden,'hidden');
