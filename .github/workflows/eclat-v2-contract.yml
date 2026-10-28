@@ -1,0 +1,53 @@
+name: Éclat V2 editorial & route contract
+on:
+  pull_request:
+    paths:
+      - "couple-web/eclat-v2-*.mjs"
+      - "couple-web/app.js"
+      - "couple-web/index.html"
+      - "couple-web/eclat-v2-stage.css"
+      - "couple-web/web-version.json"
+      - "couple-web/service-worker.js"
+      - "couple-web/soiree-qa-*.mjs"
+      - "couple-web/admin.html"
+      - "couple-web/eclat-v2-qa-workbench.css"
+      - "couple-web/qa/eclat-v2-qa-managed-pairs.sql"
+      - "supabase/functions/loveroll-qa-accounts/**"
+      - "supabase/functions/_shared/loveroll-qa-guards.mjs"
+      - "docs/LOVEROLL_ECLAT_QA_*.md"
+      - "docs/LOVEROLL_ECLAT_12_COFFRETS_SPEC.md"
+      - ".github/workflows/eclat-v2-contract.yml"
+  workflow_dispatch:
+# One authoritative validation for the current PR SHA; cancel redundant
+# older runs without skipping any required editorial or route assertions.
+concurrency:
+  group: eclat-v2-editorial-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  editorial-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate new Éclat engine without changing production or secrets
+        run: |
+          node --check couple-web/eclat-v2-contract.mjs
+          node --check couple-web/eclat-v2-editorial.mjs
+          node --check couple-web/eclat-v2-coffrets-a.mjs
+          node --check couple-web/eclat-v2-coffrets-b.mjs
+          node --check couple-web/eclat-v2-coffrets-c.mjs
+          node --check couple-web/eclat-v2-play-ui.mjs
+          node --check couple-web/eclat-v2-play-controller.mjs
+          node --check couple-web/eclat-v2-live-ownership.mjs
+          node --check couple-web/app.js
+          node --check couple-web/eclat-v2-qa-workbench.mjs
+          node --check couple-web/soiree-qa-gateway.mjs
+          node --check couple-web/soiree-qa-lab.mjs
+          node --check couple-web/eclat-v2-qa-accounts-guards.mjs
+          node --check couple-web/platform-admin.js
+          node --test --test-timeout=90000 --test-force-exit couple-web/soiree-qa-gateway.test.mjs couple-web/soiree-qa-lab.test.mjs couple-web/eclat-v2-qa-accounts-edge.test.mjs couple-web/eclat-v2-qa-accounts-guards.test.mjs couple-web/eclat-v2-qa-admin-contract.test.mjs couple-web/eclat-v2-admin-pair.test.mjs couple-web/eclat-v2-qa-workbench.test.mjs couple-web/eclat-v2-contract.test.mjs couple-web/eclat-v2-session.test.mjs couple-web/eclat-v2-coffrets-a.test.mjs couple-web/eclat-v2-coffrets-b.test.mjs couple-web/eclat-v2-coffrets-c.test.mjs couple-web/eclat-v2-play-controller.test.mjs couple-web/eclat-v2-play-ui.test.mjs couple-web/eclat-v2-live-integration.test.mjs couple-web/eclat-v2-live-ownership.test.mjs

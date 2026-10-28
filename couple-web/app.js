@@ -17,9 +17,13 @@ import {createCoupleLiveSync} from './couple-live-sync.mjs?v=20261017-advent119'
 import {playableSessionForWeekly} from './couple-reset-view.mjs';
 import {eveningDailyAccess} from './evening-daily-policy.mjs?v=20261016-daily100';
 import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw} from './evening-private-queue.mjs';
-import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261028-web248';
+import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261028-web251';
 import {saveEveningSelection,restoreEveningSelection,clearEveningSelection} from './evening-resume.mjs?v=20261027-web240';
 import {eclatHtml} from './eclat-ui.mjs?v=20261027-web242';
+import {createEclatV2SessionApi} from './eclat-v2-session.mjs?v=20261028-v2-live251';
+import {createEclatV2PlayController} from './eclat-v2-play-controller.mjs?v=20261028-v2-live251';
+import {renderEclatV2PlayA} from './eclat-v2-play-ui.mjs?v=20261028-v2-live251';
+import {canReuseEclatV2Editor} from './eclat-v2-live-ownership.mjs?v=20261028-v2-live251';
 import {previewMode,previewCanEdit,previewEclatStatus} from './account-preview-mode.mjs?v=20261020-test180';
 import {eclatStage} from './eclat-catalog.mjs?v=20261019-eclat174';
 import {createEclatAudio} from './eclat-audio.mjs?v=20261019-eclat174';
@@ -27,7 +31,7 @@ import {futureCoupleStyleMix,playStyleLabel} from './play-style.mjs?v=20261018-s
 import {cycleIntensityQuestionnaireHtml} from './cycle-questionnaire.mjs?v=20261018-cycle149';
 import {DICE_WEIGHT_CONFIG,configuredDiceWeights,parseDiceWeightInputs} from './dice-weighting.mjs?v=20261018-weights146';
 import {premiumEveningHtml,updateEveningCategoryUi} from './premium-evening.mjs?v=20261027-web242';
-import {eveningHistoryMarkup,eveningLocalDay} from './evening-calendar.mjs?v=20261028-web248';
+import {eveningHistoryMarkup,eveningLocalDay} from './evening-calendar.mjs?v=20261028-web251';
 import {eveningReviewModal,validEveningReview} from './evening-review.mjs?v=20261016-person-review97';
 import {premiumSurpriseHtml,sixSpecialEvents} from './premium-surprise.mjs?v=20261022-home228';
 import {surpriseSlot,surpriseCustom,surpriseTitle,formatSurpriseDateInput,parseSurpriseDateInput} from './surprise-event-config.mjs?v=20261016-surprise109';
@@ -60,7 +64,7 @@ import {invitationStatus,coupleStats,formatCoupleDate,invitationEmailText,invita
 import {premiumConfirm,premiumCopyLink,focusInlineLoveDialog} from './premium-dialogs.mjs?v=20261017-complete127';
 
 
-const WEB_RELEASE='2026-10-28.248';
+const WEB_RELEASE='2026-10-28.251';
 const root=document.querySelector('#app');
 const enc=new TextEncoder(),dec=new TextDecoder();
 let diceCleanup=[],renderToken=0;
@@ -69,6 +73,13 @@ const client=CONFIG.supabaseUrl&&CONFIG.supabasePublishableKey?
  createClient(CONFIG.supabaseUrl,CONFIG.supabasePublishableKey,opts):null;
 const launchParams=new URLSearchParams(location.search);
 const eclatAudio=createEclatAudio();
+const eclatV2Api=client?createEclatV2SessionApi(client):null;
+let eclatV2Player=null,eclatV2Poll=null,eclatV2Resume=null;
+function disposeEclatV2Player(){
+ if(eclatV2Poll!==null){clearInterval(eclatV2Poll);eclatV2Poll=null;}
+ if(eclatV2Resume){document.removeEventListener('visibilitychange',eclatV2Resume);window.removeEventListener('pageshow',eclatV2Resume);eclatV2Resume=null;}
+ if(eclatV2Player){eclatV2Player.destroy();eclatV2Player=null;}
+}
 function pendingReferralCode(){
  try{const value=String(sessionStorage.getItem(REFERRAL_PENDING_STORAGE_KEY)||'').trim().toLowerCase();
  return REFERRAL_CODE_PATTERN.test(value)?value:null;}catch{return null;}
@@ -97,7 +108,7 @@ const worldText=key=>worldT(worldLocale(),key);
 const state={user:null,profile:null,members:[],coupleId:null,couple:null,
  tab:launchParams.has('settings')?'settings':(['home','session','special','advent'].includes(launchParams.get('open'))?launchParams.get('open'):'home'),weekly:null,monthly:{},session:null,personal:[],challenges:[],gifts:[],rollStatus:null,customCards:[],customCategory:'SENSUEL',customSlot:1,customSearch:'',customFilter:'all',monthlyActivities:[],monthlySlot:1,libraryScreen:'list',libraryImportKind:null,specialEditorKey:null,specialEditorStage:'D6_activite',specialEditorFace:1,adventEditorDay:1,pushDevice:null,
  events:[],journal:[],advent:[],advent2026Config:null,advent2026Days:[],selectedDay:1,adventYear:null,adventSelected:null,adventHistory:false,adventOpening:null,adventRevealing:false,adventServerDate:null,unlockKey:null,channel:null,
- occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningRefusalId:null,redrawReady:false,redrawBusy:false,loveExcludedCards:[],eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],monthlyPassQuota:null,calendarPassMonth:null,cycleStatus:null,cycleDeferred:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoBookingEdit:false,referral:null,eclat:null,eclatGalleryScroll:0,eclatHistory:[],eclatHistoryCouple:null,eclatBrowse:false,eclatHistoryError:false,eclatSelection:1,eclatMinutes:30,eclatIntent:'all',eclatDetails:false,eclatMusic:false,eclatFinished:null,testModeEligible:false,testMode:'real'};
+ occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningRefusalId:null,redrawReady:false,redrawBusy:false,loveExcludedCards:[],eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],monthlyPassQuota:null,calendarPassMonth:null,cycleStatus:null,cycleDeferred:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoBookingEdit:false,referral:null,eclat:null,eclatGalleryScroll:0,eclatHistory:[],eclatHistoryCouple:null,eclatBrowse:false,eclatHistoryError:false,eclatV2Status:null,eclatV2OwnerId:null,eclatV2CoupleId:null,eclatV2FinaleDismissed:null,eclatV2DeviceMode:'two',eclatSelection:1,eclatMinutes:30,eclatIntent:'all',eclatDetails:false,eclatMusic:false,eclatFinished:null,testModeEligible:false,testMode:'real'};
 const names={SENSUEL:'Sensuel',COQUIN:'Coquin',SEXUEL:'Sexuel'};
 function isSharedCoupleReady(coupleId,members){
  return !!coupleId&&Array.isArray(members)&&members.length===2;
@@ -648,6 +659,10 @@ function authMessage(message){
  else{state.authNotice=message;showInlineError(message);}
 }
 function render(){
+ if(state.tab!=='eclat'||!state.user||state.passwordRecovery||
+    !verifiedLoveEmail(state.user)||!state.profile?.birthday_md||
+    !isSharedCoupleReady(state.coupleId,state.members))disposeEclatV2Player();
+ if(!state.user || state.passwordRecovery){state.eclatV2Status=null;state.eclatV2OwnerId=null;state.eclatV2CoupleId=null;}
  // Old navigation references now open the current calendar and personal bilans.
  // Existing encrypted records remain intact; the retired journal forms stay closed.
  if(['journal','personal-journal'].includes(state.tab)){
@@ -1225,22 +1240,176 @@ async function refreshEclatHistory(){
   if(state.coupleId===coupleId){state.eclatHistory=rows;state.eclatHistoryError=false;}
  }catch(error){if(state.coupleId===coupleId)state.eclatHistoryError=true;console.warn('Historique Éclat indisponible',error?.code||'');}
 }
+async function refreshEclatV2Status(){
+ if(!eclatV2Api||!state.user||!isSharedCoupleReady(state.coupleId,state.members)){
+  state.eclatV2Status=null;state.eclatV2OwnerId=null;state.eclatV2CoupleId=null;return null;
+ }
+ // A missing V2 RPC is the normal production state before migrations.
+ // Do not replace V1, invent access or display a false premium session.
+ const coupleId=state.coupleId,userId=state.user.id;
+ try{
+  const value=await eclatV2Api.status();
+  if(state.coupleId===coupleId&&state.user?.id===userId)
+   {state.eclatV2Status=value;state.eclatV2OwnerId=userId;state.eclatV2CoupleId=coupleId;}
+  return value;
+ }catch(error){
+  if(state.coupleId===coupleId&&state.user?.id===userId){
+   if(['PGRST202','42883'].includes(error?.code)){
+    state.eclatV2Status=null;state.eclatV2OwnerId=null;state.eclatV2CoupleId=null;
+    disposeEclatV2Player();
+   }else if([401,403].includes(Number(error?.status))||
+             ['42501','28000'].includes(error?.code)){
+    // Never serve a cached Premium scene after the backend has explicitly
+    // denied this user. A brief connectivity outage is not a revocation.
+    state.eclatV2Status={access:false,active:false};
+    disposeEclatV2Player();
+   }else console.warn('Éclat V2 non accessible',error?.code||'');
+  }
+  return null;
+ }
+}
 async function refreshEclatStatus(){
  if(!state.user||!isSharedCoupleReady(state.coupleId,state.members))return null;
  const value=await rpc('love_eclat_status');
  if(value&&state.coupleId)state.eclat=value;
- await refreshEclatHistory();
+ await Promise.all([refreshEclatHistory(),refreshEclatV2Status()]);
  return value;
 }
 function renderEclat(){
  const e=previewEclatStatus(state.eclat,state.testMode,state.testModeEligible);
+ const v2=state.eclatV2OwnerId===state.user?.id&&
+  state.eclatV2CoupleId===state.coupleId?state.eclatV2Status:null;
+ if(v2?.access&&v2.active&&!e?.active){
+  // App-level refreshes happen frequently (live sync, settings, timers).
+  // Keep the same authenticated scene editor mounted for the same user,
+  // couple and server session: remounting here used to erase private drafts
+  // and momentarily expose the shared-phone handover on every refresh.
+  const mounted=eclatV2Player?.getStatus();
+  if(canReuseEclatV2Editor({
+    server:v2,player:mounted,userId:state.user?.id,
+    ownerId:state.eclatV2OwnerId,coupleId:state.coupleId,
+    lockedCoupleId:state.eclatV2CoupleId,
+    hasMountedHost:!!root.querySelector('#eclat-v2-live-player')
+  }))return;
+  disposeEclatV2Player();
+  eclatAudio.stop();state.eclatMusic=false;
+  const sharedDevice=v2.device_mode==='one',isSharedHost=state.user?.id===v2.role_a;
+  if(sharedDevice&&!isSharedHost){
+   frame('<section class="eclat-v2-live"><h2>Coffret à deux sur un téléphone</h2>'+
+    '<p>Cette séance se joue sur le téléphone du joueur qui l’a commencée. Le compte B n’est jamais simulé ici.</p>'+
+    button('tab:home','Retour à l’accueil','class="subtle"')+'</section>','Éclat','Notre expérience à deux');
+   return;
+  }
+  frame('<section class="eclat-v2-live" aria-label="Vrai coffret Éclat V2">'+
+   '<div id="eclat-v2-live-player"></div>'+
+   '<p id="eclat-v2-sync-feedback" role="status" aria-live="polite" hidden></p>'+
+   '<div class="eclat-v2-live-footer">'+
+   button('tab:home','Retour à l’accueil · séance reprenable','class="subtle"')+
+   '<span id="eclat-v2-finished-return" hidden>'+
+   button('eclat-v2:gallery','Retour aux 12 coffrets','class="subtle"')+
+   '</span>'+
+   '</div></section>','Éclat','Notre expérience à deux');
+  const host=root.querySelector('#eclat-v2-live-player');
+  eclatV2Player=createEclatV2PlayController({
+   root:host,api:eclatV2Api,viewerId:state.user.id,initialStatus:v2,
+   confirmStop:()=>premiumConfirm('Arrêter ce coffret maintenant ? Les moments déjà vécus restent dans votre historique, mais cette séance ne pourra pas être reprise.',{
+    kind:'library',title:'Arrêter ce coffret Éclat ?',accept:'Arrêter la séance',cancel:'Continuer le jeu'
+   }),
+   onError:err=>fail(err)
+  });
+  const currentPlayer=eclatV2Player;
+  const syncVisibleEclatV2=()=>{
+   // Android/iPad browsers throttle hidden tabs; polling them spends data
+   // without improving the game. On return, immediately read real partner
+   // progress, entitlement and completed state, never a simulated chapter.
+   if(document.hidden||state.tab!=='eclat'||eclatV2Player!==currentPlayer)return;
+   currentPlayer.refresh().then(refreshed=>{
+    if(!refreshed||eclatV2Player!==currentPlayer)return;
+    const feedback=root.querySelector('#eclat-v2-sync-feedback');
+    if(feedback){feedback.textContent='';feedback.hidden=true;}
+    const latest=currentPlayer.getStatus();
+    // The parent app is not allowed to resurrect an older chapter the next
+    // time its ordinary navigation/settings renderer runs.
+    if(state.eclatV2OwnerId!==state.user?.id||
+       state.eclatV2CoupleId!==state.coupleId){
+     disposeEclatV2Player();return;
+    }
+    state.eclatV2Status=latest;
+    if(!latest?.access){
+     disposeEclatV2Player();render();return;
+    }
+    if(!latest.active){
+     // The finale (a mutually approved playlist or saved invitation)
+     // must remain on screen instead of vanishing after five seconds.
+     if(eclatV2Poll!==null){clearInterval(eclatV2Poll);eclatV2Poll=null;}
+     if(eclatV2Resume){document.removeEventListener('visibilitychange',eclatV2Resume);window.removeEventListener('pageshow',eclatV2Resume);eclatV2Resume=null;}
+     const returnToGallery=root.querySelector('#eclat-v2-finished-return');
+     if(returnToGallery)returnToGallery.hidden=false;
+    }
+   }).catch(error=>{
+    if(eclatV2Player!==currentPlayer)return;
+    const latest=currentPlayer.getStatus();
+    if(latest?.access===false){
+     // The child already cleared its private state after revoked JWT or a
+     // replaced session. Propagate the denial to the parent before another
+     // app-level redraw can mount the previously cached Premium scene.
+     state.eclatV2Status={access:false,active:false};
+     disposeEclatV2Player();render();return;
+    }
+    const feedback=root.querySelector('#eclat-v2-sync-feedback');
+    if(feedback){
+     feedback.textContent='Connexion momentanément interrompue. La progression du partenaire sera revérifiée automatiquement.';
+     feedback.hidden=false;
+    }
+    console.warn('Actualisation Éclat V2',error?.code||'');
+   });
+  };
+  eclatV2Resume=()=>{if(!document.hidden)syncVisibleEclatV2();};
+  document.addEventListener('visibilitychange',eclatV2Resume);
+  // Safari back-forward cache may restore without a visibility change.
+  window.addEventListener('pageshow',eclatV2Resume);
+  eclatV2Poll=setInterval(syncVisibleEclatV2,5000);
+  eclatV2Poll?.unref?.();
+  return;
+ }
+ // A completed V2 finale is an official, consented result. It must not be
+ // erased by unrelated app redraws, navigation sync or the five-second poll.
+ // No private drafts are retained: the view is rendered exclusively from the
+ // last server-confirmed snapshot, never from a local partner simulation.
+ if(v2?.access===true&&v2.active===false&&v2.state==='finished'&&
+    v2.content_version===2&&typeof v2.session_id==='string'&&
+    state.eclatV2FinaleDismissed!==v2.session_id&&!e?.active){
+  disposeEclatV2Player();
+  frame('<section class="eclat-v2-live" aria-label="Finale officielle Éclat">'+
+   renderEclatV2PlayA({status:v2,viewerId:state.user.id})+
+   '<footer class="eclat-v2-live-footer">'+
+   button('eclat-v2:gallery','Retour aux 12 coffrets','class="subtle"')+
+   '</footer></section>','Éclat','Notre expérience à deux');
+  return;
+ }
+ disposeEclatV2Player();
  if(e?.active){
   const current=eclatStage(e.coffret_id,e.chapter_number,e.variant_number);
   if(current)eclatAudio.setMood(current.mood);
  }else if(state.eclatMusic){eclatAudio.stop();state.eclatMusic=false;}
- frame(eclatHtml({status:e,selected:state.eclatSelection,minutes:state.eclatMinutes,
+ const v2Ready=v2?.access===true&&!e?.active;
+ // The V2 entitlement is authoritative only after the exact Auth user and
+ // couple received it from their own server RPC. The legacy gallery must
+ // not hide a valid V2 entitlement simply because V1 is not yet enabled.
+ const catalogStatus=v2Ready?{...(e||{}),access:true,active:false}:e;
+ const deviceMode=v2Ready&&state.eclatDetails?
+  '<section class="eclat-v2-device-choice" aria-label="Nombre de téléphones Éclat">'+
+   '<p><strong>Pour ce coffret : choisissez votre façon de jouer</strong></p>'+
+   button('eclat-v2:mode:two','Deux téléphones · A et B', 'aria-pressed="'+(state.eclatV2DeviceMode==='two')+'"')+
+   button('eclat-v2:mode:one','Un téléphone partagé', 'aria-pressed="'+(state.eclatV2DeviceMode==='one')+'"')+
+   '<p>Les règles, autorisations et scènes sont validées par le serveur. En mode partagé, aucun compte partenaire n’est usurpé.</p>'+
+   '</section>':'';
+ frame(eclatHtml({status:catalogStatus,selected:state.eclatSelection,minutes:state.eclatMinutes,
   details:state.eclatDetails,members:state.members,userId:state.user?.id,
-  music:state.eclatMusic,finished:state.eclatFinished,browse:state.eclatBrowse,intent:state.eclatIntent,noteState:e?.active&&!state.eclatBrowse?eclatNoteState():{},history:state.eclatHistoryCouple===state.coupleId?state.eclatHistory:[],historyError:state.eclatHistoryError}), 'Éclat','Notre expérience à deux');
+  music:state.eclatMusic,finished:state.eclatFinished,browse:state.eclatBrowse,intent:state.eclatIntent,
+  noteState:e?.active&&!state.eclatBrowse?eclatNoteState():{},
+  history:state.eclatHistoryCouple===state.coupleId?state.eclatHistory:[],
+  historyError:state.eclatHistoryError})+deviceMode,'Éclat','Notre expérience à deux');
 }
 function renderHome(){
  const members=state.members||[];
@@ -2512,6 +2681,28 @@ async function handle(action,element){
   eclatAudio.stop();state.eclatMusic=false;
   render();return;
  }
+ if(verb==='eclat-v2'){
+  if(!state.user||!isSharedCoupleReady(state.coupleId,state.members))
+   throw Error('Les deux partenaires doivent être associés.');
+  const kind=parts[0];
+  if(kind==='mode'){
+   if(!['one','two'].includes(parts[1]))throw Error('Mode Éclat V2 inconnu');
+   if(state.eclatV2OwnerId!==state.user?.id||state.eclatV2CoupleId!==state.coupleId||
+      !state.eclatV2Status?.access||state.eclatV2Status?.active)
+    throw Error('Mode Éclat V2 indisponible');
+   state.eclatV2DeviceMode=parts[1];render();return;
+  }
+  if(kind==='gallery'){
+   // Dismiss only the already finished session, not another player's or
+   // a newly started game. Server state remains the source of truth.
+   if(state.eclatV2Status?.active===false&&state.eclatV2Status?.state==='finished')
+    state.eclatV2FinaleDismissed=state.eclatV2Status.session_id;
+   disposeEclatV2Player();state.eclatV2Status=null;state.eclatV2OwnerId=null;state.eclatV2CoupleId=null;
+   state.eclatBrowse=true;state.eclatDetails=false;
+   await refreshEclatStatus();render();return;
+  }
+  throw Error('Action Éclat V2 inconnue');
+ }
  if(verb==='eclat'){
   if(!isSharedCoupleReady(state.coupleId,state.members))throw Error('Éclat nécessite deux partenaires associés.');
   const kind=parts[0],num=Number(parts[1]);
@@ -2554,7 +2745,21 @@ async function handle(action,element){
   }
   if(kind==='start'){
    if(!Number.isInteger(num)||num<1||num>12)throw Error('Coffret inconnu');
-   if(!previewEclatStatus(state.eclat,state.testMode,state.testModeEligible)?.access)throw Error('Ce coffret nécessite le forfait Éclat.');
+   if(state.eclatV2OwnerId===state.user?.id&&state.eclatV2CoupleId===state.coupleId&&
+      state.eclatV2Status?.access===true&&!state.eclat?.active){
+    const result=await eclatV2Api.start({coffretId:num,minutes:state.eclatMinutes,
+     deviceMode:state.eclatV2DeviceMode});
+    if(!result?.access||!result.active||result.content_version!==2)
+     throw Error('Le serveur n’a pas ouvert de séance Éclat V2 officielle.');
+    state.eclatV2Status=result;state.eclatV2OwnerId=state.user.id;state.eclatV2CoupleId=state.coupleId;
+    state.eclatBrowse=false;state.eclatDetails=false;state.eclatFinished=null;
+    state.eclatV2FinaleDismissed=null;
+    render();return;
+   }
+   // Only V1 can authorize this fallback. A denied V2 entitlement never
+   // grants access to the legacy game and cannot bypass its subscription.
+   if(!previewEclatStatus(state.eclat,state.testMode,state.testModeEligible)?.access)
+    throw Error('Ce coffret nécessite le forfait Éclat.');
    state.eclat=await rpc('love_eclat_start',{p_coffret:num,p_minutes:state.eclatMinutes});
    state.eclatBrowse=false;state.eclatDetails=false;state.eclatFinished=null;await refreshEclatHistory();render();return;
   }
@@ -3933,7 +4138,7 @@ async function handle(action,element){
   if(parts[0]==='settings'&&state.tab!=='occasions')settingsOpenSection='';
   if(state.tab!==parts[0]){state.libraryImportKind=null;state.libraryScreen='list';state.specialEditorKey=null;state.jsonPending=null;lastFormTab=null;}
   allowBackExit=false;state.tab=parts[0];state.confirmCancel=false;
-  if(state.tab!=='eclat'){eclatAudio.stop();state.eclatMusic=false;}
+  if(state.tab!=='eclat'){disposeEclatV2Player();eclatAudio.stop();state.eclatMusic=false;}
   else{state.eclatBrowse=false;state.eclatDetails=false;await refreshEclatStatus();}
   if(state.tab!=='occasions')state.specialFocus=null;
   if(state.tab!=='session'){state.showEveningChallenge=false;state.showEveningChallenges=false;state.selectedEveningChallengeId=null;state.eveningMore=false;}
@@ -4553,6 +4758,6 @@ start().catch(error=>{fail(error);window.LoveRollBoot?.showFailure();});
 
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   window.addEventListener('load', () =>
-    navigator.serviceWorker.register('./service-worker.js?v=20261028-web248',
+    navigator.serviceWorker.register('./service-worker.js?v=20261028-web251',
      {scope:'./',updateViaCache:'none'}).then(reg=>reg.update()).catch(console.warn));
 }

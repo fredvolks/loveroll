@@ -1,0 +1,72 @@
+name: Éclat V2 isolated PostgreSQL security checks
+on:
+  pull_request:
+    paths:
+      - "couple-web/migrations/*eclat_v2*"
+      - "couple-web/qa/eclat-v2-*"
+      - ".github/workflows/eclat-v2-postgres.yml"
+  workflow_dispatch:
+concurrency:
+  group: eclat-v2-postgres-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  postgres-v2:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: testonly
+          POSTGRES_USER: postgres
+          POSTGRES_DB: eclatv2
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d eclatv2"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: testonly
+      PGDATABASE: eclatv2
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install psql for actual PostgreSQL execution
+        run: sudo apt-get update -qq && sudo apt-get install -y postgresql-client
+      - name: Create disposable identity and V1 fixtures
+        run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-fixture.sql
+      - name: Apply additive V2 migration to disposable PostgreSQL
+        run: psql -v ON_ERROR_STOP=1 -f couple-web/migrations/20261027181500_eclat_v2_sessions_foundation.sql
+      - name: Test privacy, variants, replay, session resume, pause, skip and stale retries
+        run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-postgres.test.sql
+
+      - name: Serialize simultaneous starts on PostgreSQL 17
+        run: bash couple-web/qa/eclat-v2-concurrency.sh
+      - name: Verify consensual door selection and branching, short and long routes
+        run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-door.test.sql
+      - name: Verify serial separate envelope 3 and 4 revelations
+        run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-envelopes.test.sql
+      - name: Verify contact consent and withdrawal on two and one phones
+        run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-contact.test.sql
+      - name: Protect and reveal only two real prediction answers
+        run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-predictions.test.sql
+      - name: Validate investigation solutions, hints and retries
+        run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-enquete.test.sql
+      - name: Verify two-role attention proposals, alternatives, refusals and shared phone
+        run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-attentions.test.sql
+      - name: Verify private music notes and explicit per-author reveal
+        run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-music.test.sql
+      - name: Verify mutual playlist authorization, hidden notes and final clean-up
+        run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-playlist.test.sql
+      - name: Validate persisted cryptographic story dice and consented constraint rerolls
+        run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-story.test.sql
+      - name: Validate only shared 09 card intersection, never private refusals
+        run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-intersection.test.sql
+      - name: Verify 09 proposals, joint choices and revocable independent contact consent
+        run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-wish-agreement.test.sql
+      - name: Validate two-person optional server timers, pause and expiry
+        run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-timers.test.sql
+      - name: Exercise both voluntary roles and alternative attentions in coffret 11
+        run: psql -v ON_ERROR_STOP=1 -f couple-web/qa/eclat-v2-seduction.test.sql
