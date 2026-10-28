@@ -35,6 +35,9 @@ test('9/9 server milestones and all 12 real coffrets are browsed with BOTH genui
  assert.ok(script.includes('eclat:start:'));
  assert.ok(script.includes('eclat:library'));
  assert.ok(script.includes('real-eclat-twelve-coffrets.png'));
+ assert.ok(script.includes('button[data-action="eclat:start:1"]'));
+ assert.ok(script.includes('.studio-real-eclat-coffret[data-state="active"]'));
+ assert.ok(script.includes('real-eclat-started.png'));
  assert.ok(!script.includes('love_eclat_grant'));
 });
 
