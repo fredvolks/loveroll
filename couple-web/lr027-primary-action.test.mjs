@@ -57,4 +57,7 @@ test('actual dice animation never offers a second trigger and stays accessible',
  const css=readFileSync(new URL('./evening-editorial.css',import.meta.url),'utf8');
  assert.match(css,/\.evening-primary-status\{display:grid/);
  assert.match(css,/\.evening-roll-actions:has\(> :only-child\)/);
+ const mobile=readFileSync(new URL('./evening-d100-template.mjs',import.meta.url),'utf8');
+ assert.match(mobile,/if\(roll\.matches\('button'\)\)/,'Waiting statuses must not receive button controls');
+ assert.match(mobile,/if\(!button\|\|button===roll\)continue/,'The main View cards button must not be duplicated on mobile');
 });
