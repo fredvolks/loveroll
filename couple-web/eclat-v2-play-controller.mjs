@@ -21,6 +21,17 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
  // A delayed poll must never overwrite a newer real RPC action or a fresher
  // poll response when both technical seats act at nearly the same time.
  let stateRevision=0,refreshSequence=0;
+ // Revoked access, replaced sessions and completed sessions must never
+ // retain another player's private, unsubmitted or one-phone draft data.
+ function clearPrivateSession(){
+  role=null;seen=new Set();
+  predictionDraft={answer:null,prediction:null};
+  puzzleDraft={place:null,time:null,code:null};puzzleAttempt=null;
+  sharedAnswers=emptyShared();sharedConfirmed.clear();sharedReveal=null;
+  musicDraft={title:null,artist:null};sharedMusicNotes={};sharedRevealedMusic=[];
+  cardDraft=[];sharedCardDraft={A:[],B:[]};sharedCardConfirmed.clear();
+  playlistDraft=[];wishPhraseDraft=null;
+ }
  const timedStatus=()=>{
   if(status.coffret_id!==10||!status.timer_running||
      !Number.isInteger(status.timer_remaining_seconds))return status;
@@ -37,12 +48,32 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
   if(disposed||busy)return false;
   const requestedSession=status.session_id;
   const requestedRevision=stateRevision,requestNumber=++refreshSequence;
-  const updated=await api.status(requestedSession);
+  let updated;
+  try{updated=await api.status(requestedSession);}
+  catch(error){
+   // Ordinary connectivity failures leave the working draft alone; a
+   // revoked authenticated session MUST fail closed and erase local secrets.
+   if([401,403].includes(Number(error?.status))||['42501','28000'].includes(error?.code)){
+    if(!disposed&&!busy&&requestedRevision===stateRevision&&
+       requestNumber===refreshSequence){
+     clearPrivateSession();status={access:false,active:false};
+     stateRevision++;paint();
+    }
+   }
+   throw error;
+  }
   // Never resurrect a deleted player view or apply network data that was
   // fetched before this user's latest server-side choice or chapter action.
   if(disposed||busy||requestedRevision!==stateRevision||
      requestNumber!==refreshSequence)return false;
-  if(updated.session_id!==requestedSession)throw Error('Séance Éclat remplacée');
+  if(!updated?.access||updated.active===false){
+   clearPrivateSession();status=updated||{access:false,active:false};
+   stateRevision++;timerAnchorMs=Date.now();paint();return true;
+  }
+  if(updated.session_id!==requestedSession){
+   clearPrivateSession();status={access:false,active:false};
+   stateRevision++;paint();throw Error('Séance Éclat remplacée');
+  }
   const changed=updated.chapter_index!==status.chapter_index||updated.substep_index!==status.substep_index;
   status=updated;timerAnchorMs=Date.now();
   if(updated.wish_invitation_text)wishPhraseDraft=null;
@@ -338,10 +369,7 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
   disposed=true;stateRevision++;refreshSequence++;
   if(ticker!==null&&ticker!==undefined)globalThis.clearInterval?.(ticker);
   root.removeEventListener('click',click);root.removeEventListener('input',input);
-  sharedAnswers=emptyShared();sharedConfirmed.clear();sharedReveal=null;
-  musicDraft={title:null,artist:null};sharedMusicNotes={};sharedRevealedMusic=[];
-  cardDraft=[];sharedCardDraft={A:[],B:[]};sharedCardConfirmed.clear();
-  playlistDraft=[];wishPhraseDraft=null;
+  clearPrivateSession();
   root.innerHTML='';
  },getStatus(){return status;}});
 }
