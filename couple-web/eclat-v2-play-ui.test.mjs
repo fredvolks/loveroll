@@ -467,3 +467,36 @@ test('10 V1 scene 4 has separate 90-second A/B turns, with B starting voluntaril
  assert.match(nowB,/timer-action:start/);
  assert.doesNotMatch(nowB,/timer-action:next-turn/);
 });
+
+
+test('two real QA player panels never duplicate IDs or send B label focus to A private music/phrase fields',()=>{
+ const music=status(8,0,30,1,{music_theme:1});
+ const a=renderEclatV2PlayA({status:music,viewerId:aid});
+ const b=renderEclatV2PlayA({status:music,viewerId:bid});
+ for(const name of ['song-title','song-artist']){
+  for(const [letter,html] of [['A',a],['B',b]]){
+   const field='eclat-v2-'+name+'-'+letter;
+   assert.ok(html.includes('for="'+field+'"'),'accessible label must select its own user');
+   assert.ok(html.includes('id="'+field+'"'),'matching input must exist only in that user panel');
+   assert.ok(!html.includes('id="eclat-v2-'+name+'-'+(letter==='A'?'B':'A')+'"'));
+  }
+ }
+ const favorite=status(9,0,60,8,{
+  selected_card:7,common_cards:[7],wish_invitation_card:7,
+  wish_scene8:'keep',wish_invitation_text:null
+ });
+ const phraseA=renderEclatV2PlayA({status:favorite,viewerId:aid});
+ const phraseB=renderEclatV2PlayA({status:favorite,viewerId:bid});
+ for(const [letter,html] of [['A',phraseA],['B',phraseB]]){
+  assert.ok(html.includes('for="eclat-v2-wish-phrase-'+letter+'"'));
+  assert.ok(html.includes('id="eclat-v2-wish-phrase-'+letter+'"'));
+ }
+ const combined=a+b+phraseA+phraseB;
+ for(const id of [
+  'eclat-v2-song-title-A','eclat-v2-song-title-B',
+  'eclat-v2-song-artist-A','eclat-v2-song-artist-B',
+  'eclat-v2-wish-phrase-A','eclat-v2-wish-phrase-B']){
+  assert.equal(combined.split('id="'+id+'"').length-1,1,
+   'two role-specific QA forms must never share a DOM input ID');
+ }
+});
