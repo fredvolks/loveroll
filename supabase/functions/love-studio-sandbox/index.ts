@@ -85,10 +85,14 @@ Deno.serve(async(req:Request)=>{
  }
 
  async function status(){
+  const {data:audit,error:auditError}=await service.from('love_studio_test_audit')
+   .select('action,created_at').eq('admin_id',adminId)
+   .order('created_at',{ascending:false}).limit(8);
+  if(auditError)throw Error('Journal de test indisponible');
   const {data:pool,error:poolError}=await service.from('love_studio_test_pools')
     .select('couple_id,state,created_at').eq('admin_id',adminId).maybeSingle();
   if(poolError)throw Error('État de test indisponible');
-  if(!pool)return {ready:false,state:'missing',seats:[]};
+  if(!pool)return {ready:false,state:'missing',seats:[],audit:audit||[]};
   const {data:seats,error:seatError}=await service.from('love_studio_test_seats')
     .select('seat,user_id,synthetic_email').eq('admin_id',adminId).order('seat');
   if(seatError)throw Error('Profils de test indisponibles');
@@ -158,7 +162,7 @@ Deno.serve(async(req:Request)=>{
   }
   return {ready,state:pool.state==='ready'&&!ready?'invalid':pool.state,
     seats:ready?(seats||[]).map(x=>({seat:x.seat,ready:true,user_id:x.user_id})):[],
-    created_at:pool.created_at,game};
+    created_at:pool.created_at,game,audit:audit||[]};
  }
  if(action==='status'){
   try{return response(await status())}
