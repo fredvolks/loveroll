@@ -25,6 +25,19 @@ test('real game clicks official D6 D100 and waits for official server milestones
  assert.match(script,/studio-real-seat-state-.*data-state=connected/);
  assert.doesNotMatch(script,/Math\.random|fakeFace|fakeCard|mockAuth|service_role_key/);
 });
+test('9/9 server milestones and all 12 real coffrets are browsed with BOTH genuine Auth seats',()=>{
+ assert.ok(script.includes('await verified(9).waitFor'));
+ assert.ok(script.includes("'9/9'"));
+ assert.ok(script.includes("for(const [seat,frame] of [['A',a],['B',b]])"));
+ assert.ok(script.includes('button[data-action^="eclat:detail:"]'));
+ assert.ok(script.includes('assert.equal(await tiles.count(),12'));
+ assert.ok(script.includes('for(let id=1;id<=12;id++)'));
+ assert.ok(script.includes('eclat:start:'));
+ assert.ok(script.includes('eclat:library'));
+ assert.ok(script.includes('real-eclat-twelve-coffrets.png'));
+ assert.ok(!script.includes('love_eclat_grant'));
+});
+
 test('technical account cleanup is mandatory even when a genuine E2E step fails',()=>{
  assert.match(script,/\}finally\{/);
  assert.match(script,/if\(page&&created\)/);
