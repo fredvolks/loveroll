@@ -9,7 +9,12 @@ test('studio backend only acts for verified platform administrators',()=>{
  assert.match(source,/email_confirmed_at/);
  assert.match(source,/\.from\('love_platform_admins'\)/);
  assert.match(source,/\.eq\('user_id',adminId\)/);
- assert.match(source,/origin!==.https:\/\/fredvolks\.github\.io./);
+ assert.match(source,/origin!==allowedOrigin/);
+ assert.match(source,/productionOrigin='https:\/\/fredvolks\.github\.io'/);
+ assert.match(source,/productionRef='ejsrqfpkgwraorrznjpm'/);
+ assert.match(source,/LOVEROLL_STUDIO_STAGING_MODE/);
+ assert.match(source,/LOVEROLL_STUDIO_STAGING_ORIGIN/);
+ assert.match(source,/stagingAllowed\?stagingOrigin:productionOrigin/);
 });
 test('two real Auth users are generated without pre-known credentials',()=>{
  assert.match(source,/service\.auth\.admin\.createUser/);
