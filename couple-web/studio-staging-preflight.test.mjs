@@ -20,7 +20,11 @@ test('must categorically refuse live LoveRoll production, malformed or redirecte
   [ref,'https://evil.invalid',key],
   [ref,'http://'+ref+'.supabase.co',key],
   ['',url,key],
-  [ref,url,'']
+  [ref,url,''],
+  [ref,url,'sb_secret_sensitive_not_a_public_key'],
+  [ref,url,'service_role'],
+  [ref,url,'eyJhbGciOiJIUzI1NiJ9.test.test'],
+  [ref,url,'sb_publishable_short']
  ]) assert.throws(()=>validateStaging(...params),/STAGING REFUSED/);
  assert.equal(validateStaging(ref,url,key),url);
 });
