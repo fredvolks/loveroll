@@ -289,3 +289,23 @@ test('real challenge changes during paginated server reads trigger a fresh read,
  assert.ok(src.includes("requestGeneration!==historyGeneration"));
  assert.ok(src.includes("historyGeneration++"));
 });
+
+
+test('real Super Admin V1/V2 Éclat progress comes only from the authenticated couple database',()=>{
+ assert.ok(server.includes("service.from('love_eclat_v2_sessions')"));
+ assert.ok(server.includes(".eq('couple_id',pool.couple_id).is('ended_at',null)"));
+ assert.ok(server.includes(".eq('state','finished').order('started_at',{ascending:false})"));
+ assert.ok(server.includes("Array.isArray(row.chapter_plan)?row.chapter_plan.length:null"));
+ assert.ok(server.includes("eclat_active:v2Summary.active||(eclatActive?{"));
+ assert.ok(server.includes("eclat_v2_installed:v2Summary.installed"));
+ assert.ok(server.includes("eclat_v2_unavailable:v2Summary.unavailable"));
+ assert.ok(server.includes("...v2Summary.completed"));
+ assert.ok(server.includes("['42P01','PGRST205'].includes(err?.code)"),
+  'a published V1 server without V2 schema must not falsely fail the old game');
+ assert.ok(!server.includes("body.coffret_id"));
+ assert.ok(!server.includes("body.couple_id"));
+ assert.ok(!server.includes("service.from('love_eclat_v2_predictions')"),
+  'Super Admin progress must never fetch private predictions');
+ assert.ok(!server.includes("service.from('love_eclat_v2_card_choices')"),
+  'Super Admin progress must never fetch private card preferences');
+});
