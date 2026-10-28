@@ -27,6 +27,9 @@ test('two real Auth users are generated without pre-known credentials',()=>{
  assert.match(source,/studio_synthetic_qa_only/);
  assert.match(source,/source:'studio_test_only'/);
  assert.match(source,/monthly_d100_limit:12/);
+ assert.match(source,/let identitiesClean=true/);
+ assert.match(source,/if\(deleteError\)identitiesClean=false/);
+ assert.match(source,/if\(identitiesClean\)/);
  assert.doesNotMatch(source,/stripe\.checkout|payment_intent\.succeeded|fakePayment/);
 });
 test('seat auth uses official one-time magiclink and fixed registry',()=>{
@@ -52,6 +55,11 @@ test('only registered test couples and identities are eligible for deletion',()=
  assert.match(schema,/public\.couple_personal_rolls pr/);
  assert.match(schema,/s\.user_id=pr\.user_id/);
  assert.match(schema,/Un lancer ou un défi appartient à un utilisateur réel/);
+ assert.match(schema,/couple_advent','opened_by/);
+ assert.match(schema,/couple_events','actor_id/);
+ assert.match(schema,/love_card_draw_history','recipient_user_id/);
+ assert.match(schema,/love_custom_challenges','recipient_user_id/);
+ assert.match(schema,/Auteur externe dans les données du jeu/);
  assert.match(schema,/x\.source_couple_id=v_pool\.couple_id/);
  assert.match(schema,/s\.admin_id=p_admin AND s\.user_id=x\.user_id/);
  assert.match(schema,/x\.referrer_couple_id IS NOT NULL/);

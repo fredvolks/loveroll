@@ -27,6 +27,8 @@ CREATE OR REPLACE FUNCTION public.love_studio_purge_test_couple(p_admin uuid)
 RETURNS TABLE(seat text,user_id uuid)
 LANGUAGE plpgsql SECURITY DEFINER SET search_path='' AS $purge$
 DECLARE v_pool public.love_studio_test_pools%rowtype;
+        v_actor_ref record;
+        v_foreign_actor boolean;
 BEGIN
   IF auth.role() IS DISTINCT FROM 'service_role' THEN
     RAISE EXCEPTION 'Accès refusé' USING ERRCODE='42501';
@@ -134,6 +136,37 @@ BEGIN
     ) THEN
       RAISE EXCEPTION 'Un lancer ou un défi appartient à un utilisateur réel : suppression du banc refusée';
     END IF;
+    -- Cover other tables whose rows are cascaded with the couple. Every
+    -- table+column pair below was verified against the live schema; both
+    -- identifiers come from this constant list, never from a request.
+    FOR v_actor_ref IN SELECT * FROM (VALUES
+      ('couple_advent','opened_by'),('couple_advent','performed_by'),
+      ('couple_challenge_gifts','donor_user_id'),
+      ('couple_challenge_gifts','receiver_user_id'),
+      ('couple_events','actor_id'),('couple_feedback','author_id'),
+      ('couple_intimacy','author_id'),('couple_invitations','created_by'),
+      ('couple_occasion_rolls','actor'),
+      ('love_card_draw_history','recipient_user_id'),
+      ('love_challenge_redraws','actor_id'),
+      ('love_custom_challenges','drawer_user_id'),
+      ('love_custom_challenges','recipient_user_id'),
+      ('love_cycle_responses','user_id'),
+      ('love_monthly_reservations','host_user_id')
+    ) AS known(table_name,actor_column) LOOP
+      EXECUTE format(
+        'SELECT EXISTS(
+           SELECT 1 FROM public.%I x
+           WHERE x.couple_id=$1 AND x.%I IS NOT NULL
+             AND NOT EXISTS(
+               SELECT 1 FROM public.love_studio_test_seats s
+               WHERE s.admin_id=$2 AND s.user_id=x.%I
+             )
+         )',v_actor_ref.table_name,v_actor_ref.actor_column,v_actor_ref.actor_column
+      ) INTO v_foreign_actor USING v_pool.couple_id,p_admin;
+      IF v_foreign_actor THEN
+        RAISE EXCEPTION 'Auteur externe dans les données du jeu : suppression du banc interdite';
+      END IF;
+    END LOOP;
     -- This NO ACTION FK must be cleared ONLY for registered synthetic users.
     DELETE FROM public.love_user_library_backup x
     WHERE x.source_couple_id=v_pool.couple_id AND EXISTS (

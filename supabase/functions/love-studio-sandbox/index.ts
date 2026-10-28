@@ -208,13 +208,22 @@ Deno.serve(async(req:Request)=>{
       }
       const purge=await service.rpc('love_studio_purge_test_couple',{p_admin:adminId});
       if(!purge.error){
+        // Never erase the registry while a technical Auth identity might
+        // still exist. Keeping it allows retry by this exact Super Admin.
+        let identitiesClean=true;
         for(const id of ids){
           const result=await service.auth.admin.getUserById(id);
-          if(result.data?.user?.app_metadata?.love_studio_test===true &&
-              result.data.user.app_metadata?.love_studio_admin===adminId)
-            await service.auth.admin.deleteUser(id);
+          if(result.error){identitiesClean=false;continue;}
+          if(!result.data?.user)continue;
+          if(result.data.user.app_metadata?.love_studio_test!==true ||
+             result.data.user.app_metadata?.love_studio_admin!==adminId){
+            identitiesClean=false;continue;
+          }
+          const {error:deleteError}=await service.auth.admin.deleteUser(id);
+          if(deleteError)identitiesClean=false;
         }
-        await service.from('love_studio_test_pools').delete().eq('admin_id',adminId);
+        if(identitiesClean)
+          await service.from('love_studio_test_pools').delete().eq('admin_id',adminId);
       }
     }catch{/* Retain private registry if cleanup fails. */}
     return response({error:err instanceof Error?err.message:'Création incomplète',
