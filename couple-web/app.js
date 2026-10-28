@@ -1281,7 +1281,7 @@ function renderEclat(){
   frame('<section class="eclat-v2-live" aria-label="Vrai coffret Éclat V2">'+
    '<div id="eclat-v2-live-player"></div>'+
    '<div class="eclat-v2-live-footer">'+
-   button('eclat-v2:gallery','Retour aux coffrets (séance conservée)','class="subtle"')+
+   button('tab:home','Retour à l’accueil · séance reprenable','class="subtle"')+
    '</div></section>','Éclat','Notre expérience à deux');
   const host=root.querySelector('#eclat-v2-live-player');
   eclatV2Player=createEclatV2PlayController({
