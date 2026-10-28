@@ -7,9 +7,39 @@ for(const route of ['compte','couple','jeu','notifications','monde','confidentia
  assert.equal(await page.locator('.settings-screen-pager').count(),0);
  async function walk(path=[]){
   await page.waitForTimeout(40);
-  const g=await page.locator('.settings-detail-body').evaluate(el=>({overflow:el.scrollHeight-el.clientHeight,document:document.documentElement.scrollHeight-innerHeight,title:document.querySelector('.editorial-title h1').textContent,visible:el.innerText}));
+  const g=await page.locator('.settings-detail-body').evaluate(el=>({
+   overflow:el.scrollHeight-el.clientHeight,
+   horizontal:el.scrollWidth-el.clientWidth,
+   document:document.documentElement.scrollHeight-innerHeight,
+   overflowY:getComputedStyle(el).overflowY,
+   title:document.querySelector('.editorial-title h1').textContent,visible:el.innerText
+  }));
   console.log(width,route,path.join('/'),g.overflow,g.title);
-  if(g.overflow>2||g.document>2)throw Error(JSON.stringify({width,route,path,g}));
+  // Unifying the Android notifications page makes it taller than 360×640.
+  // It must scroll INSIDE the panel (accessible at zoom), not clip the last
+  // preference and button, overflow horizontally or push the fixed app nav.
+  const notifications=route==='notifications';
+  const scrollable=notifications&&['auto','scroll'].includes(g.overflowY);
+  if(g.document>2||g.horizontal>2||(g.overflow>2&&!scrollable))
+   throw Error(JSON.stringify({width,route,path,g}));
+  if(notifications){
+   for(const selector of [
+    '[data-push-option="weekly"]',
+    '[data-push-option="special"]',
+    '.notification-actions .notification-action'
+   ]){
+    const el=page.locator(selector).first();
+    if(await el.count()){
+     await el.scrollIntoViewIfNeeded();
+     const [item,panel]=await Promise.all([
+      el.boundingBox(),page.locator('.settings-detail-body').boundingBox()
+     ]);
+     assert.ok(item&&panel&&item.y>=panel.y-3&&
+      item.y+item.height<=panel.y+panel.height+3,
+      selector+' must remain reachable inside the short-phone panel');
+    }
+   }
+  }
 
   const keys=await page.locator('.settings-submenu-list:visible [data-settings-open]').evaluateAll(els=>els.map(el=>el.dataset.settingsOpen));
   for(const key of keys){await page.locator('[data-settings-open="'+key+'"]').click();await walk([...path,key]);await page.locator('.settings-back').click();}
