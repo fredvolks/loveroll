@@ -44,7 +44,8 @@ test('Automatic after-roll modal, personal privacy, timer and navigation impleme
  assert.match(app,/evening-list/);
  assert.match(app,/Précédent/);
  assert.match(app,/Suivant/);
- assert.match(app,/timerWidget\(view,resolvedCard\(view\)\.minutes\)/);
+ assert.match(app,/timerWidget\(view,acceptedAdaptationMinutes\(resolvedCard\(view\)\.minutes,adaptation\)\)/);
+ assert.match(app,/acceptedAdaptationText\(resolvedCard\(view\)\.description,adaptation\)/);
  assert.match(app,/saveChallengeTimer\(\)/);
  assert.match(app,/answer_challenge.*accepted/);
 });
