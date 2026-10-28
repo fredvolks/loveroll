@@ -87,6 +87,13 @@ VALUES ('55555555-5555-4555-8555-555555555555',
  'ffffffff-ffff-4fff-8fff-ffffffffffff',
  'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',
  'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa');
+-- An additional self-drawn proposal remains pending when partner B is replaced.
+INSERT INTO public.couple_challenges(id,couple_id,session_id,offered_by,recipient)
+VALUES ('66666666-6666-4666-8666-666666666666',
+ 'dddddddd-dddd-4ddd-dddd-dddddddddddd',
+ 'ffffffff-ffff-4fff-8fff-ffffffffffff',
+ 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',
+ 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa');
 -- A previously started challenge must reject a proposed duration (but allow text).
 UPDATE public.couple_challenges SET status='accepted'
 WHERE id='22222222-2222-4222-8222-222222222222';
