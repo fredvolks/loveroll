@@ -52,6 +52,9 @@ test('only registered test couples and identities are eligible for deletion',()=
  assert.match(schema,/owner_seat\.user_id=c\.owner_user_id/);
  assert.match(schema,/count\(\*\) FROM public\.love_studio_test_seats s/);
  assert.match(schema,/Propriétaire ou duo test non vérifié : suppression bloquée/);
+ assert.match(schema,/cm\.couple_id<>v_pool\.couple_id/);
+ assert.match(schema,/other_couple\.owner_user_id/);
+ assert.match(schema,/Identité test utilisée dans un autre couple : purge interdite/);
   assert.match(schema,/public\.love_monthly_paid_entitlements p/);
  assert.match(schema,/public\.love_annual_discount_settlements p/);
  assert.match(schema,/public\.love_promo_redemptions p/);
