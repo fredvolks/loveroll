@@ -49,6 +49,9 @@ test('actual manual browser steps target official production markup, not guesses
 });
 test('manual test uses a real signed-in app, not just a splash or fake locally drawn cards',()=>{
  assert.match(e2e,/button\[data-action="tab:home"\]/);
+ assert.match(e2e,/sessionStorage\.getItem\('loveroll-studio-auth-v1-'\+seatName\)/);
+ assert.match(e2e,/assert\.notEqual\(verifiedSeats\[0\]\.id,verifiedSeats\[1\]\.id/);
+ assert.match(e2e,/x\.owner!==x\.id/);
  assert.match(e2e,/studio-real-progress-list li:nth-child/);
  assert.match(e2e,/official-rolled-dice-and-cards\.png/);
  assert.doesNotMatch(e2e,/Math\.random\(/);
