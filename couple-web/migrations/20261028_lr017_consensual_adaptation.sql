@@ -23,19 +23,35 @@ CREATE TABLE IF NOT EXISTS public.love_challenge_adaptations(
 );
 CREATE INDEX IF NOT EXISTS love_adaptations_couple_created_idx
  ON public.love_challenge_adaptations(couple_id,session_id,created_at DESC);
+-- Challenges are recipient-private: a normal RLS subquery could not see the
+-- offered_by partner's card. This BOOLEAN-only SECURITY DEFINER helper verifies
+-- the exact original pair without returning any hidden titles or D100 cards.
+CREATE OR REPLACE FUNCTION public.love_adaptation_pair_allowed(
+ p_challenge uuid,p_couple uuid,p_session uuid
+) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=''
+AS $pair$
+ SELECT auth.uid() IS NOT NULL
+  AND couple_private.is_member(p_couple)
+  AND (SELECT count(*) FROM public.couple_members WHERE couple_id=p_couple)=2
+  AND EXISTS(
+   SELECT 1 FROM public.couple_challenges q
+   WHERE q.id=p_challenge AND q.couple_id=p_couple AND q.session_id=p_session
+    AND auth.uid() IN(q.offered_by,q.recipient)
+    AND EXISTS (SELECT 1 FROM public.couple_members m
+     WHERE m.couple_id=p_couple AND m.user_id=q.offered_by)
+    AND EXISTS (SELECT 1 FROM public.couple_members m
+     WHERE m.couple_id=p_couple AND m.user_id=q.recipient)
+  )
+$pair$;
+REVOKE ALL ON FUNCTION public.love_adaptation_pair_allowed(uuid,uuid,uuid)
+ FROM public,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.love_adaptation_pair_allowed(uuid,uuid,uuid)
+ TO authenticated;
 ALTER TABLE public.love_challenge_adaptations ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS love_adaptations_pair_read ON public.love_challenge_adaptations;
 CREATE POLICY love_adaptations_pair_read ON public.love_challenge_adaptations
- FOR SELECT TO authenticated USING (
-   couple_private.is_member(couple_id)
-   AND EXISTS (SELECT 1 FROM public.couple_challenges q
-    WHERE q.id=love_challenge_adaptations.challenge_id
-      AND q.couple_id=love_challenge_adaptations.couple_id
-      AND q.session_id=love_challenge_adaptations.session_id
-      AND (q.offered_by=(select auth.uid()) OR q.recipient=(select auth.uid()))
-      AND EXISTS (SELECT 1 FROM public.couple_members m WHERE m.couple_id=love_challenge_adaptations.couple_id AND m.user_id=q.offered_by)
-      AND EXISTS (SELECT 1 FROM public.couple_members m WHERE m.couple_id=love_challenge_adaptations.couple_id AND m.user_id=q.recipient))
- );
+ FOR SELECT TO authenticated
+ USING (public.love_adaptation_pair_allowed(challenge_id,couple_id,session_id));
 REVOKE ALL ON public.love_challenge_adaptations FROM public,anon,authenticated;
 GRANT SELECT ON public.love_challenge_adaptations TO authenticated;
 
