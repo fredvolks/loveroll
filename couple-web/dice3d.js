@@ -575,8 +575,12 @@ export function dieOn(canvas,sides,value,rolling){
    const fitBounds=projectedBounds();
    // A tall Surprise stage must still fit the entire ruby mesh inside its canvas.
    camera.zoom*=Math.min(1,(contact-sceneRect.top-headroom)/((fitBounds.bottom-fitBounds.top)*rect.height),.49/(.5-fitBounds.top),.49/(fitBounds.bottom-.5),.49/(.5-fitBounds.left),.49/(fitBounds.right-.5));
-   // Both entry screens now share the same WebGL fit and CSS stage size.
-   // Never apply a Soirée-only zoom penalty after fitting the real mesh.
+   // LR-001: Soirée's separate mobile heading and hero yield a different
+   // photographed-marble fit despite matching Surprise canvas dimensions.
+   // Calibrated on actual 3D projected bounds (360x740 reference): keep
+   // apparent size equal without touching the true game, iPad or D6.
+   if(idleEveningD100&&window.matchMedia?.('(max-width:767px)').matches)
+    camera.zoom*=.929;
    camera.updateProjectionMatrix();
   }
   bounds=projectedBounds();
