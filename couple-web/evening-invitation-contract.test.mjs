@@ -36,7 +36,8 @@ test('Push is opt-in and private while in-app invite always exists',()=>{
  assert.match(sql,/on conflict\(user_id,event_key\) do nothing/);
  assert.match(sql,/♥ Une invitation LoveRoll t''attend/);
  assert.doesNotMatch(sql,/select .*card_title/i);
- assert.match(sw,/kind==='invitation'\?'session'/);
+ assert.match(sw,/'evening-invite','evening-reply'/);
+ assert.match(sw,/\['weekly','evening-invite','evening-reply'\]\.includes\(kind\)/);
 });
 test('Yes only navigates and optionally starts real server session; D6 still by user',()=>{
  assert.match(app,/if\(verb==='evening-invite'\)/);
