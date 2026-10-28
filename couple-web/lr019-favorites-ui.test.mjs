@@ -60,6 +60,6 @@ test('LR-019 cannot regress the already published privacy mask or expose private
  assert.match(sw,/const body=safeBodies\[kind\]/);
  assert.doesNotMatch(sw,/message\.body:\s*'Votre espace à deux vous attend'/);
  assert.match(html,/privacy-screen\.mjs\?v=20261028-privacy250/);
- assert.match(html,/evening-calendar\.css\?v=20261028-favs250/);
- assert.match(html,/settings-premium\.css\?v=20261028-favs250/);
+ assert.match(html,/evening-calendar\.css\?v=20261028-favs252/);
+ assert.match(html,/settings-premium\.css\?v=20261028-favs252/);
 });
