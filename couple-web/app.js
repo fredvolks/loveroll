@@ -1,6 +1,6 @@
 import {organizeSettingsMenus} from './settings-menus.mjs?v=20261022-home228';
 import {showEveningCategoryReminder} from './evening-d100-template.mjs?v=20261028-web252';
-import {eveningInviteHtml,isEveningInviteAction} from './evening-invitation.mjs?v=20261028-web252';
+import {eveningInviteHtml,eveningInviteInboxHtml,isEveningInviteAction} from './evening-invitation.mjs?v=20261028-web252';
 import {askEveningCategoryConfirmation,categoryConfirmEnabled,saveCategoryConfirmLocal} from './evening-category-confirm.mjs?v=20261027-web238';
 import {soundEnabled,setSoundEnabled,setLoveRollSoundUser,unlockLoveRollSounds,playLoveRollSound,soundSettingsHtml} from './loveroll-sounds.mjs?v=20261028-privacy250';
 import {isAcceptedTimedEveningChallenge,completeTimedEveningChallenge} from './timed-evening-completion.mjs?v=20261027-web240';
@@ -366,7 +366,8 @@ function frame(body,title='LOVEROLL',subtitle='Un jeu intime, juste pour vous de
  if(oldGallery)state.eclatGalleryScroll=oldGallery.scrollTop;
  const oldDetail=root.querySelector('.eclat-detail');
  const detailScroll=oldDetail?{id:oldDetail.dataset.coffretId,top:oldDetail.scrollTop}:null;
- root.innerHTML=(realHome||realEvening||realSurprise||realEclat||realSettings||realEditor||eveningArchive||(isCouple&&state.tab==='advent')?'':usualHeader)+body+(connected?nav():'')+installation+reviewPanel+cyclePanel;
+ const inviteInbox=realHome?eveningInviteInboxHtml(state.eveningInvite,{partnerName:other()?.name}):'';
+ root.innerHTML=(realHome||realEvening||realSurprise||realEclat||realSettings||realEditor||eveningArchive||(isCouple&&state.tab==='advent')?'':usualHeader)+body+inviteInbox+(connected?nav():'')+installation+reviewPanel+cyclePanel;
  if(homeStage){
   const fresh=root.querySelector('.home-die-platform canvas'),replacement=fresh?.closest('.home-die-platform');
   if(replacement){
@@ -1068,6 +1069,11 @@ function subscribe(){
    });
  channel=channel.on('postgres_changes',{event:'INSERT',schema:'public',
   table:'couple_personal_rolls'},()=>liveSync.request(120));
+ // Keep the in-app invitation visible even if Push is blocked or delayed.
+ // RLS limits this subscription to the two members of the exact couple.
+ channel=channel.on('postgres_changes',{event:'*',schema:'public',
+  table:'love_evening_invitations',filter:'couple_id=eq.'+state.coupleId},
+  ()=>liveSync.request(80));
  channel=channel.on('postgres_changes',{event:'*',schema:'public',table:'love_eclat_sessions',
   filter:'couple_id=eq.'+state.coupleId},()=>{
   if(state.tab==='eclat')refreshEclatStatus().then(()=>{if(state.tab==='eclat')render();}).catch(console.warn);
