@@ -32,7 +32,7 @@ jobs:
           PGPASSWORD: synthetic-only
         run: |
           set -euo pipefail
-          psql -X -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d loveroll_lr017 \\
-            -f couple-web/qa/lr017-fixture.sql \\
-            -f couple-web/migrations/20261028_lr017_consensual_adaptation.sql \\
+          psql -X -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d loveroll_lr017 \
+            -f couple-web/qa/lr017-fixture.sql \
+            -f couple-web/migrations/20261028_lr017_consensual_adaptation.sql \
             -f couple-web/qa/lr017-acceptance.sql
