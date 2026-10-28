@@ -81,3 +81,17 @@ test('real A and B JWTs are denied Super Admin Edge access while parent stays si
  assert.ok(script.includes('the parent platform admin must remain authenticated'));
  assert.ok(!script.includes('console.log(session.access_token)'));
 });
+
+test('real Éclat stage cannot advance without BOTH signed-in partner choices and confirmations',()=>{
+ assert.ok(script.includes('const guidedA=a.locator'));
+ assert.ok(script.includes('const guidedB=b.locator'));
+ assert.ok(script.includes("await page.selectOption('#studio-real-jump-B','eclat')"));
+ assert.ok(script.includes("guidedA.locator('[data-action=\"eclat:choose:0\"]')"));
+ assert.ok(script.includes("guidedB.locator('[data-action=\"eclat:choose:0\"]')"));
+ assert.ok(script.includes(".eclat-guided[data-eclat-coffret=\"1\"][data-eclat-phase=\"reveal\"]"));
+ assert.ok(script.includes("guidedA.locator('[data-action=\"eclat:next\"][disabled]')"));
+ assert.ok(script.includes("guidedB.locator('[data-action=\"eclat:next\"]:not([disabled])')"));
+ assert.ok(script.includes('real-eclat-two-player-stage-2.png'));
+ assert.ok(script.includes('Both authentic A/B Éclat seats skipped by choice'));
+ assert.doesNotMatch(script,/admin\.rpc\('love_eclat_(choose|next)'/);
+});
