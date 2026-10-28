@@ -77,6 +77,7 @@ jobs:
           node --test couple-web/evening-invitation-contract.test.mjs
           node --test couple-web/evening-invitation-live-sync.test.mjs
           node --test couple-web/native-evening-push.test.mjs
+          node --test couple-web/push-dispatch-routing.test.mjs
           node --check couple-web/evening-calendar.mjs
           node --check couple-web/evening-review.mjs
           node --check couple-web/evening-private-queue.mjs
