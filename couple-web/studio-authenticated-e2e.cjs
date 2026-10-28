@@ -142,6 +142,35 @@ async function main(){
    }
   }
   console.log('A/B denied access to four privileged Studio registries: PASS');
+
+  // A valid seat JWT must NOT inherit the parent Super Admin's authority.
+  // Query the real privileged Edge endpoint from EACH authenticated game
+  // frame. This is read-only, never logs bearer tokens, never sends them
+  // outside the isolated staging project, and must return a hard 403.
+  for(const seat of ['A','B']){
+   const denial=await page.frameLocator('#studio-real-frame-'+seat+' iframe')
+    .locator('#app').evaluate(async(_element,probe)=>{
+     const session=JSON.parse(
+      sessionStorage.getItem('loveroll-studio-auth-v1-'+probe.seat)||'null');
+     if(!session?.access_token)return {status:0};
+     const reply=await fetch(probe.url+'/functions/v1/love-studio-sandbox',{
+      method:'POST',cache:'no-store',
+      headers:{
+       apikey:probe.key,
+       Authorization:'Bearer '+session.access_token,
+       'Content-Type':'application/json'
+      },
+      body:JSON.stringify({action:'status'})
+     });
+     return {status:reply.status};
+    },{seat,url:params.url,key:params.key});
+   assert.equal(denial.status,403,
+    'SECURITY: technical player '+seat+
+    ' must NOT be authorized as a platform admin by the Studio Edge function');
+  }
+  assert.equal(await page.locator('#gate').isVisible(),false,
+   'the parent platform admin must remain authenticated after both seat logins');
+  console.log('A/B denied Super Admin Edge authority; parent still signed in: PASS');
   assert.equal((await page.locator('#studio-real-progress-count').innerText()).includes('/9'),true);
   await page.screenshot({path:'studio-authenticated-e2e-proof/real-dual-account-desktop.png',fullPage:true});
   // REAL gameplay: click official shipped buttons, observe server-confirmed
