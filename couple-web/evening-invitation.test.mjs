@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {eveningInviteHtml,isEveningInviteAction,eveningInviteChanged} from './evening-invitation.mjs';
+import {eveningInviteHtml,eveningInviteInboxHtml,isEveningInviteAction,eveningInviteChanged} from './evening-invitation.mjs';
 test('discreet invite only offered when verified server says available',()=>{
  assert.equal(eveningInviteHtml({state:'none',available:false}),'');
  assert.equal(eveningInviteHtml(null),'');
@@ -33,6 +33,20 @@ test('sender sees polite response states with no resend button',()=>{
   assert.ok(html.includes('lr-evening-invite'));
   assert.doesNotMatch(html,/evening-invite:send/);
  }
+});
+test('Accueil displays an in-app invitation even with Push disabled',()=>{
+ assert.equal(eveningInviteInboxHtml(null),'');
+ for(const status of ['none','no','yes','ignored','obsolete','expired'])
+  assert.equal(eveningInviteInboxHtml({state:status,direction:'received'}),'');
+ assert.equal(eveningInviteInboxHtml({state:'pending',direction:'sent'}),'');
+ const html=eveningInviteInboxHtml({state:'pending',direction:'received'},
+  {partnerName:'<script>Intrus</script>'});
+ assert.match(html,/data-action="tab:session"/);
+ assert.match(html,/&lt;script&gt;Intrus/);
+ assert.doesNotMatch(html,/<script>|roll_my_evening_d6|evening-invite:yes/);
+ const maybe=eveningInviteInboxHtml({state:'maybe',direction:'received'},{partnerName:'Alex'});
+ assert.match(maybe,/Toujours partant/);
+ assert.match(maybe,/Alex a envie de jouer ce soir/);
 });
 test('status changes only when official invitation read changes',()=>{
  assert.equal(eveningInviteChanged({state:'pending',id:'a'},{state:'yes',id:'a'}),true);
