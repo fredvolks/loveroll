@@ -1,5 +1,6 @@
 // Real dual-account sandbox inside Super Admin. No local card/dice fabrication.
 import {createStudioStatusSync} from './studio-status-sync.mjs';
+import {studioTestProgress} from './studio-test-progress.mjs';
 
 export function createStudioRealSandbox({client}){
  const $=id=>document.getElementById(id);
@@ -16,6 +17,7 @@ export function createStudioRealSandbox({client}){
   if(!node)return;
   node.dataset.state=state;
   node.textContent=state==='connected'?'Connecté':state==='error'?'Connexion à vérifier':'À connecter';
+  renderProgress();
  }
  async function request(action,seat){
   const {data,error}=await client.functions.invoke(uri,{body:{action,...(seat?{seat}:{})}});
@@ -72,6 +74,19 @@ export function createStudioRealSandbox({client}){
    authenticatedSeats.delete(seat);
    showSeatConnection(seat,'pending');
    try{sessionStorage.removeItem('loveroll-studio-auth-v1-'+seat)}catch{}
+  }
+ }
+ function renderProgress(){
+  const list=$('studio-real-progress-list'),counter=$('studio-real-progress-count');
+  if(!list||!counter)return;
+  const progress=studioTestProgress(status,authenticatedSeats);
+  list.replaceChildren();
+  counter.textContent=progress.completed+'/'+progress.total;
+  for(const step of progress.steps){
+   const item=document.createElement('li');
+   item.dataset.state=step.done?'verified':'pending';
+   item.textContent=(step.done?'✓ ':'○ ')+step.title;
+   list.append(item);
   }
  }
  function renderAudit(){
@@ -161,6 +176,7 @@ export function createStudioRealSandbox({client}){
    }
   }
   renderChallengeCards();
+  renderProgress();
   renderAudit();
   if(!isReady){closeFrames();return;}
   for(const seat of validSeats){
