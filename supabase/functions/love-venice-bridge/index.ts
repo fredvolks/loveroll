@@ -84,6 +84,24 @@ Deno.serve(async (request: Request) => {
   }
 
   if (action === 'preview_three') {
+    // The official Venice endpoint is reached with the ACTUAL owner seat A,
+    // not with a forged admin JWT. A disposable Studio pair can be recreated
+    // indefinitely, so per-couple quota is insufficient on its own.
+    // Check the matching cost reservation from the private admin registry.
+    if (identity.user.app_metadata?.love_studio_test === true) {
+      const adminId = identity.user.app_metadata?.love_studio_admin;
+      if (typeof adminId !== 'string' || !adminId) {
+        return json({error:'Identité Studio non autorisée'},403);
+      }
+      const {data:quota,error:quotaError}=await supabase
+        .from('love_studio_venice_daily_quota').select('couple_id')
+        .eq('admin_id',adminId)
+        .eq('utc_day',new Date().toISOString().slice(0,10))
+        .eq('couple_id',coupleId).maybeSingle();
+      if (quotaError || !quota?.couple_id) {
+        return json({error:'Réservation de budget Venice Studio manquante ou déjà utilisée par un autre duo.'},403);
+      }
+    }
     if (!veniceKey) return json({ error: 'Secret VENICE_API_KEY absent de Supabase.' }, 503);
     // Transactional per-couple/day limiter. Neither quota nor prices for full 100-card
     // regeneration are involved; this endpoint cannot mutate active libraries.
