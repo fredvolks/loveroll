@@ -300,6 +300,8 @@ test('real Super Admin V1/V2 Éclat progress comes only from the authenticated c
  assert.ok(server.includes("eclat_v2_installed:v2Summary.installed"));
  assert.ok(server.includes("eclat_v2_unavailable:v2Summary.unavailable"));
  assert.ok(server.includes("...v2Summary.completed"));
+ assert.ok(src.includes("' · Lecture V2 indisponible'"));
+ assert.ok(src.includes("' · Séances V2 connectées'"));
  assert.ok(server.includes("['42P01','PGRST205'].includes(err?.code)"),
   'a published V1 server without V2 schema must not falsely fail the old game');
  assert.ok(!server.includes("body.coffret_id"));
