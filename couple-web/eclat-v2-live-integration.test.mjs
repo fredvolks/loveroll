@@ -96,3 +96,21 @@ test('revoked child status cannot be remounted by an unrelated app-level update'
  assert.match(app,/state\.eclatV2Status=\{access:false,active:false\};\s*disposeEclatV2Player\(\);render\(\);return;/);
  assert.match(app,/if\(canReuseEclatV2Editor\(\{/);
 });
+
+
+test('a confirmed V2 Premium entitlement opens the public gallery without legacy V1 entitlement',()=>{
+ // A server-confirmed V2 right is only projected onto the catalog display;
+ // it never writes into, escalates or replaces the existing V1 SQL status.
+ assert.match(app,/const catalogStatus=v2Ready\?\{\.\.\.\(e\|\|\{\}\),access:true,active:false\}:e/);
+ assert.match(app,/frame\(eclatHtml\(\{status:catalogStatus/);
+ assert.match(app,/const v2Ready=v2\?\.access===true&&!e\?\.active/);
+ // The V2 start MUST happen before the V1-only entitlement rejection.
+ const start=app.slice(app.indexOf("if(kind==='start'){"),app.indexOf("if(kind==='choose'){"));
+ const v2Start=start.indexOf("await eclatV2Api.start(");
+ const v1Guard=start.indexOf("if(!previewEclatStatus(");
+ const v1Start=start.indexOf("await rpc('love_eclat_start'");
+ assert.ok(v2Start>0&&v1Guard>v2Start&&v1Start>v1Guard,
+  'genuine V2 server rights must work independently of V1, which retains its own guard');
+ assert.match(start,/state\.eclatV2OwnerId===state\.user\?\.id&&state\.eclatV2CoupleId===state\.coupleId/);
+ assert.match(start,/state\.eclatV2Status\?\.access===true&&!state\.eclat\?\.active/);
+});
