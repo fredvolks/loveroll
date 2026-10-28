@@ -657,7 +657,9 @@ function authMessage(message){
  else{state.authNotice=message;showInlineError(message);}
 }
 function render(){
- if(state.tab!=='eclat'||!state.user||state.passwordRecovery)disposeEclatV2Player();
+ if(state.tab!=='eclat'||!state.user||state.passwordRecovery||
+    !verifiedLoveEmail(state.user)||!state.profile?.birthday_md||
+    !isSharedCoupleReady(state.coupleId,state.members))disposeEclatV2Player();
  if(!state.user||state.passwordRecovery){state.eclatV2Status=null;state.eclatV2OwnerId=null;state.eclatV2CoupleId=null;}
  // Old navigation references now open the current calendar and personal bilans.
  // Existing encrypted records remain intact; the retired journal forms stay closed.
@@ -1252,8 +1254,14 @@ async function refreshEclatV2Status(){
   if(state.coupleId===coupleId&&state.user?.id===userId){
    if(['PGRST202','42883'].includes(error?.code)){
     state.eclatV2Status=null;state.eclatV2OwnerId=null;state.eclatV2CoupleId=null;
-   }
-   else console.warn('Éclat V2 non accessible',error?.code||'');
+    disposeEclatV2Player();
+   }else if([401,403].includes(Number(error?.status))||
+             ['42501','28000'].includes(error?.code)){
+    // Never serve a cached Premium scene after the backend has explicitly
+    // denied this user. A brief connectivity outage is not a revocation.
+    state.eclatV2Status={access:false,active:false};
+    disposeEclatV2Player();
+   }else console.warn('Éclat V2 non accessible',error?.code||'');
   }
   return null;
  }
