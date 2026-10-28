@@ -1,0 +1,62 @@
+name: LoveRoll Studio — real A/B staging acceptance (manual only)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  actual-auth-a-b:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Require separate nonproduction staging and real admin credentials
+        env:
+          STAGING_REF: ${{ secrets.LOVEROLL_STUDIO_E2E_REF }}
+          STAGING_URL: ${{ secrets.LOVEROLL_STUDIO_E2E_URL }}
+          STAGING_KEY: ${{ secrets.LOVEROLL_STUDIO_E2E_PUBLISHABLE_KEY }}
+          ADMIN_EMAIL: ${{ secrets.LOVEROLL_STUDIO_E2E_ADMIN_EMAIL }}
+          ADMIN_PASSWORD: ${{ secrets.LOVEROLL_STUDIO_E2E_ADMIN_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$STAGING_REF" && test -n "$STAGING_URL" && test -n "$STAGING_KEY"
+          test -n "$ADMIN_EMAIL" && test -n "$ADMIN_PASSWORD"
+          test "$STAGING_REF" != "ejsrqfpkgwraorrznjpm"
+          test "$STAGING_URL" = "https://${STAGING_REF}.supabase.co"
+          echo "Isolated staging accepted (never publishing or touching production)"
+      - name: Refuse incomplete LoveRoll staging schema (READ-ONLY)
+        env:
+          LOVEROLL_STUDIO_E2E_REF: ${{ secrets.LOVEROLL_STUDIO_E2E_REF }}
+          LOVEROLL_STUDIO_E2E_URL: ${{ secrets.LOVEROLL_STUDIO_E2E_URL }}
+          LOVEROLL_STUDIO_E2E_PUBLISHABLE_KEY: ${{ secrets.LOVEROLL_STUDIO_E2E_PUBLISHABLE_KEY }}
+        run: node couple-web/studio-staging-preflight.mjs
+      - name: Install pinned Chromium
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.56.0
+          npx playwright install chromium
+      - name: Serve exact Studio code under test (no real customers)
+        run: |
+          python3 -m http.server 8765 -d couple-web >/tmp/loveroll-studio-e2e-http.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8765/admin.html >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          exit 1
+      - name: Real Super Admin login, real Supabase A/B sessions and safe purge
+        env:
+          LOVEROLL_STUDIO_E2E_REF: ${{ secrets.LOVEROLL_STUDIO_E2E_REF }}
+          LOVEROLL_STUDIO_E2E_URL: ${{ secrets.LOVEROLL_STUDIO_E2E_URL }}
+          LOVEROLL_STUDIO_E2E_PUBLISHABLE_KEY: ${{ secrets.LOVEROLL_STUDIO_E2E_PUBLISHABLE_KEY }}
+          LOVEROLL_STUDIO_E2E_ADMIN_EMAIL: ${{ secrets.LOVEROLL_STUDIO_E2E_ADMIN_EMAIL }}
+          LOVEROLL_STUDIO_E2E_ADMIN_PASSWORD: ${{ secrets.LOVEROLL_STUDIO_E2E_ADMIN_PASSWORD }}
+        run: node couple-web/studio-authenticated-e2e.cjs
+      - name: Keep genuine staging evidence (no credentials)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: loveroll-studio-authenticated-staging-e2e
+          path: studio-authenticated-e2e-proof/
+          if-no-files-found: ignore
+          retention-days: 7

@@ -326,8 +326,23 @@ export function createClient(){
     await refuse.click();
     const exclude=name==='redraw-iphone';
     await page.locator('[data-action="evening-refuse-choice:redraw-original:'+(exclude?'yes':'no')+'"]').click();
-    await page.locator('.evening-queue-detail h2')
-     .filter({hasText:'Remplacement du défi'}).waitFor({timeout:10000});
+    try{
+     await page.locator('.evening-queue-detail h2')
+      .filter({hasText:'Remplacement du défi'}).waitFor({timeout:15000});
+    }catch(error){
+     const proof=await page.evaluate(()=>({
+      calls:window.__redrawCalls,exclusions:window.__fakeExclusions,
+      alerts:[...document.querySelectorAll('[role="alert"],.inline-error')]
+       .map(e=>e.textContent?.trim()).filter(Boolean).slice(0,6),
+      queue:[...document.querySelectorAll('.evening-queue-item')]
+       .map(e=>e.textContent?.trim().slice(0,130)),
+      details:[...document.querySelectorAll('.evening-queue-detail')]
+       .map(e=>e.textContent?.trim().slice(0,460)),
+      body:document.querySelector('#app')?.innerText?.slice(-1200)
+     }));
+     throw Error('LR015 refusal replacement not displayed: '+
+      JSON.stringify({name,proof,cause:error.message}));
+    }
     await page.screenshot({path:'lr015-captures/'+name+'-remplacement.png',fullPage:true});
     const calls=await page.evaluate(()=>window.__redrawCalls);
     if(calls.length!==1||calls[0].args.p_challenge!=='redraw-original'||

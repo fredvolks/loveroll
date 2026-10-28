@@ -17,7 +17,7 @@ import {createCoupleLiveSync} from './couple-live-sync.mjs?v=20261017-advent119'
 import {playableSessionForWeekly} from './couple-reset-view.mjs';
 import {eveningDailyAccess} from './evening-daily-policy.mjs?v=20261016-daily100';
 import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw} from './evening-private-queue.mjs';
-import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261028-web248';
+import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261028-web249';
 import {saveEveningSelection,restoreEveningSelection,clearEveningSelection} from './evening-resume.mjs?v=20261027-web240';
 import {eclatHtml} from './eclat-ui.mjs?v=20261027-web242';
 import {previewMode,previewCanEdit,previewEclatStatus} from './account-preview-mode.mjs?v=20261020-test180';
@@ -27,7 +27,7 @@ import {futureCoupleStyleMix,playStyleLabel} from './play-style.mjs?v=20261018-s
 import {cycleIntensityQuestionnaireHtml} from './cycle-questionnaire.mjs?v=20261018-cycle149';
 import {DICE_WEIGHT_CONFIG,configuredDiceWeights,parseDiceWeightInputs} from './dice-weighting.mjs?v=20261018-weights146';
 import {premiumEveningHtml,updateEveningCategoryUi} from './premium-evening.mjs?v=20261027-web242';
-import {eveningHistoryMarkup,eveningLocalDay} from './evening-calendar.mjs?v=20261028-web248';
+import {eveningHistoryMarkup,eveningLocalDay} from './evening-calendar.mjs?v=20261028-web249';
 import {eveningReviewModal,validEveningReview} from './evening-review.mjs?v=20261016-person-review97';
 import {premiumSurpriseHtml,sixSpecialEvents} from './premium-surprise.mjs?v=20261022-home228';
 import {surpriseSlot,surpriseCustom,surpriseTitle,formatSurpriseDateInput,parseSurpriseDateInput} from './surprise-event-config.mjs?v=20261016-surprise109';
@@ -52,21 +52,39 @@ import {cadExchangeRate} from './currency-exchange.mjs';
 import {referralSettingsHtml,referralLink,REFERRAL_CODE_PATTERN,REFERRAL_PENDING_STORAGE_KEY} from './referral-program.mjs?v=20261019-personal171';
 import {enhanceLoveRollSettingsSelects} from './loveroll-premium-pickers.mjs?v=20261019-personal171';
 import { CONFIG } from './config.js?v=20261019-love172';
+import {studioSeat,studioAuthOptions,startStudioSeatLogin} from './studio-seat-auth.mjs?v=20261028-real290';
 import {normalizeInviteEmail,composeInviteEmail} from './invite-email.mjs';
-import {enablePush,disablePush,updatePushPreference,sendTestPush,notificationSettingsMarkup,safeNativePushToken,currentPushDevice} from './push-notifications.mjs?v=20261027-web247';
+import {enablePush,disablePush,updatePushPreference,sendTestPush,notificationSettingsMarkup,safeNativePushToken,currentPushDevice} from './push-notifications.mjs?v=20261027-web248';
 import {shouldOfferInstall,markInstallOffered,dismissInstall,requestInstall,installOfferHtml,installStepsHtml,installStatus,isEmbeddedBrowser,isIos} from './home-install.mjs?v=20261017-complete127';
 import {messengerExternalBrowserHtml} from './messenger-browser.mjs?v=20261017-entry139';
 import {invitationStatus,coupleStats,formatCoupleDate,invitationEmailText,invitationMessengerText,invitationPreviewMarkup} from './couple-dashboard.mjs';
 import {premiumConfirm,premiumCopyLink,focusInlineLoveDialog} from './premium-dialogs.mjs?v=20261017-complete127';
 
 
-const WEB_RELEASE='2026-10-28.248';
+const WEB_RELEASE='2026-10-28.249';
 const root=document.querySelector('#app');
 const enc=new TextEncoder(),dec=new TextDecoder();
 let diceCleanup=[],renderToken=0;
-const opts={auth:{flowType:'pkce',autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}};
+const studioSeatId=studioSeat(location.search,window.parent!==window);
+const opts=studioAuthOptions({
+ auth:{flowType:'pkce',autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}
+},studioSeatId,window.sessionStorage);
 const client=CONFIG.supabaseUrl&&CONFIG.supabasePublishableKey?
  createClient(CONFIG.supabaseUrl,CONFIG.supabasePublishableKey,opts):null;
+if(client&&studioSeatId)startStudioSeatLogin(client,studioSeatId,{
+ selfWindow:window,origin:location.origin,
+ navigate:async(tab,coffretId)=>{
+  try{
+   await handle('tab:'+tab);
+   if(coffretId!==undefined){
+    if(tab!=='eclat'||!Number.isInteger(coffretId)||coffretId<1||
+       coffretId>12||state.tab!=='eclat')
+     throw Error('Le vrai coffret Éclat ne peut pas être ouvert actuellement.');
+    await handle('eclat:detail:'+coffretId);
+   }
+  }catch(error){fail(error);throw error;}
+ }
+});
 const launchParams=new URLSearchParams(location.search);
 const eclatAudio=createEclatAudio();
 function pendingReferralCode(){
@@ -187,7 +205,24 @@ function refreshNativeNotificationSettings(){
  if(!isNotificationPage())return;
  render();
 }
-async function rpc(name,args={}){const {data,error}=await client.rpc(name,args);if(error)throw error;return data;}
+// Only report successful official gameplay writes. The Studio never creates
+// faces/cards and never sends private card contents through postMessage.
+const studioGameWriteRpcs=new Set([
+ 'roll_couple_once','ensure_couple_session','roll_my_evening_d6',
+ 'draw_for_partner','draw_for_partner_random','give_love_challenge',
+ 'answer_challenge','love_respond_and_redraw','finish_couple_session',
+ 'close_love_evening_preserve','roll_love_occasion_once',
+ 'love_eclat_start','love_eclat_choose','love_eclat_next','love_eclat_end'
+]);
+async function rpc(name,args={}){
+ const {data,error}=await client.rpc(name,args);
+ if(error)throw error;
+ if(studioSeatId&&studioGameWriteRpcs.has(name)){
+  window.parent.postMessage({type:'loveroll-studio-game-updated',seat:studioSeatId},
+   location.origin);
+ }
+ return data;
+}
 async function query(table,options={}){
  let q=client.from(table).select(options.columns||'*');
  for(const [column,value] of Object.entries(options.eq||{}))q=q.eq(column,value);
@@ -405,7 +440,7 @@ function frame(body,title='LOVEROLL',subtitle='Un jeu intime, juste pour vous de
  // never a fabricated pip result. Actual face comes from Supabase after rolling.
  const canvases=[...root.querySelectorAll('canvas[data-dice-sides]')];
  if(canvases.length){
-  import('./dice3d.js?v=20261027-web247').then(({dieOn})=>{
+  import('./dice3d.js?v=20261027-web248').then(({dieOn})=>{
    if(token!==renderToken)return;
    for(const canvas of canvases){
     if(!canvas.isConnected||canvas.loveRollDie)continue;
@@ -4553,6 +4588,6 @@ start().catch(error=>{fail(error);window.LoveRollBoot?.showFailure();});
 
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   window.addEventListener('load', () =>
-    navigator.serviceWorker.register('./service-worker.js?v=20261028-web248',
+    navigator.serviceWorker.register('./service-worker.js?v=20261028-web249',
      {scope:'./',updateViaCache:'none'}).then(reg=>reg.update()).catch(console.warn));
 }

@@ -1,0 +1,118 @@
+name: LoveRoll real dual-account Studio sandbox
+on:
+  pull_request:
+    paths:
+      - 'couple-web/studio-*'
+      - 'couple-web/app.js'
+      - 'couple-web/admin.html'
+      - 'couple-web/platform-admin.js'
+      - 'couple-web/migrations/20261027_love_studio*'
+      - 'supabase/functions/love-studio-sandbox/**'
+      - '.github/workflows/studio-real-sandbox.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: loveroll-studio-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+jobs:
+  sandbox:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.5.6
+      - name: Type-check privileged Studio Supabase Edge Function
+        run: deno check supabase/functions/love-studio-sandbox/index.ts
+      - name: Type-check existing Venice bridge with Studio cost guard
+        run: deno check supabase/functions/love-venice-bridge/index.ts
+      - name: Exercise pure Auth and OTP authorization guards in Deno
+        run: deno test supabase/functions/love-studio-sandbox/guards_test.ts
+      - name: All test app JavaScript syntax
+        run: |
+          node --check couple-web/app.js
+          node --check couple-web/platform-admin.js
+          node --check couple-web/studio-seat-auth.mjs
+          node --check couple-web/studio-real-sandbox.mjs
+          node --check couple-web/studio-authenticated-e2e.cjs
+          node --check couple-web/studio-visual-check.cjs
+          node --check couple-web/studio-status-sync.mjs
+          node --check couple-web/studio-test-progress.mjs
+      - name: Verify real dual-account architecture, security, responsive layout
+        run: |
+          node --test couple-web/studio-sandbox-foundation.test.mjs \
+           couple-web/studio-real-sandbox.test.mjs \
+           couple-web/studio-real-sandbox-ui.test.mjs \
+           couple-web/studio-frame-inspector.test.mjs \
+           couple-web/studio-analytics-isolation.test.mjs \
+           couple-web/studio-status-sync.test.mjs \
+           couple-web/studio-test-progress.test.mjs \
+           couple-web/studio-venice-workshop.test.mjs \
+           couple-web/studio-authenticated-e2e-contract.test.mjs \
+           couple-web/studio-authenticated-e2e-guard.test.mjs \
+           couple-web/studio-staging-preflight.test.mjs
+
+  postgres-purge:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: studio_ci_only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Execute real Studio SQL migration and adversarial purge tests
+        env:
+          PGPASSWORD: studio_ci_only
+        run: |
+          set -euo pipefail
+          if ! command -v psql >/dev/null 2>&1; then
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq postgresql-client
+          fi
+          psql -X -h 127.0.0.1 -U postgres -d postgres -v ON_ERROR_STOP=1 \
+            -f couple-web/studio-purge-isolated.sql
+
+  visual-layout:
+    # Independent layout check: no database/Auth dependency. Run alongside
+    # security jobs, never treat its success as substitute for either one.
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prepare pinned Chromium visual checks
+        run: |
+          set -euo pipefail
+          npm install --no-save --no-audit --no-fund playwright@1.56.0
+          npx playwright install chromium
+          python3 -m http.server 8765 -d couple-web >/tmp/loveroll-studio-http.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8765/admin.html >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/loveroll-studio-http.log
+          exit 1
+      - name: Verify desktop/iPad/mobile Studio layout and capture screenshots
+        run: node couple-web/studio-visual-check.cjs
+      - name: Retain private Studio visual review evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: loveroll-studio-visual-pc-ipad-mobile
+          path: studio-visual-captures/
+          if-no-files-found: warn
+          retention-days: 14

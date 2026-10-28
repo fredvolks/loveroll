@@ -2,15 +2,16 @@
 // Admin rights are verified by Supabase security-definer RPC on every write.
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.57.0';
 import {CONFIG} from './config.js';
+import {createStudioRealSandbox} from './studio-real-sandbox.mjs?v=20261028-real291';
 import {createPromoAdmin} from './platform-promos.mjs?v=20261019-promo161';
 import {createGeoUsageAdmin} from './platform-geo-usage.mjs?v=20261019-geo165';
 const $=id=>document.getElementById(id);
 const client=createClient(CONFIG.supabaseUrl,CONFIG.supabasePublishableKey,{
  auth:{flowType:'pkce',autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}
 });
-const panes=new Set(['prices','referrals','promos','d100','geo','notifications','audience','catalogue','history']);
+const panes=new Set(['realtest','venice','prices','referrals','promos','d100','geo','notifications','audience','catalogue','history']);
 const initialPane=new URLSearchParams(location.search).get('panel');
-let data=null,referralData=null,activeFace=null,pane=panes.has(initialPane)?initialPane:'prices';
+let data=null,referralData=null,activeFace=null,pane=panes.has(initialPane)?initialPane:'realtest';
 let geoSummary=null,promoTotal=null;
 const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const fmt=n=>new Intl.NumberFormat('fr-CA').format(n||0);
@@ -32,17 +33,28 @@ async function rpc(name,args={}){
 }
 const promoAdmin=createPromoAdmin({rpc});
 const geoUsage=createGeoUsageAdmin({rpc});
-const gated=()=>{$('gate').hidden=false;$('dashboard').hidden=true;$('signout').hidden=true;};
+const realSandbox=createStudioRealSandbox({client});
+let authGateGeneration=0;
+const gated=()=>{
+ authGateGeneration++;
+ realSandbox.deactivate();
+ $('gate').hidden=false;$('dashboard').hidden=true;$('signout').hidden=true;
+};
 async function bootstrap(){
+ const generation=authGateGeneration;
  try{
   const {data:auth,error}=await client.auth.getUser();
+  if(generation!==authGateGeneration)return; // A logout won the race.
   if(error||!auth.user){gated();return;}
   const [info,referrals]=await Promise.all([rpc('love_platform_admin_read'),rpc('love_admin_referral_settings')]);
+  if(generation!==authGateGeneration)return; // Don't reshow admin after signout.
   data=info;referralData=referrals;
   $('gate').hidden=true;$('dashboard').hidden=false;$('signout').hidden=false;
   render();
+  realSandbox.init().catch(error=>console.warn('Banc réel indisponible',error));
   loadDashboardMetrics().catch(()=>{});
  }catch(error){
+  if(generation!==authGateGeneration)return;
   console.warn('Admin access denied',error?.message||'authentication required');
   gated();$('gate').querySelector('.small-note').textContent='Accès réservé au propriétaire de la plateforme. Contactez l’administrateur pour activer votre compte.';
  }
@@ -103,6 +115,9 @@ function render(){
 function choosePane(name){
  if(!panes.has(name))return;
  pane=name;
+ // Game-first Studio: hide the marketing/dashboard summary while the owner
+ // is actively playing A/B. All other admin sections retain their KPIs.
+ $('dashboard').classList.toggle('studio-test-focus',name==='realtest');
  document.querySelectorAll('[data-panel]').forEach(el=>el.hidden=el.dataset.panel!==name);
  document.querySelectorAll('button[data-pane]').forEach(el=>{
   el.classList.toggle('active',el.dataset.pane===name);
@@ -110,7 +125,8 @@ function choosePane(name){
  });
  const mobile=$('studio-pane-select');
  if(mobile)mobile.value=name;
- $('save-settings').hidden=['catalogue','history','referrals','promos'].includes(name);
+ $('save-settings').hidden=['realtest','venice','catalogue','history','referrals','promos'].includes(name);
+ $('settings').hidden=name==='realtest'||name==='venice';
  if(name==='promos')promoAdmin.refresh(true);
  if(name==='geo')geoUsage.refresh();
  if(name==='geo')loadDashboardMetrics().catch(()=>{});
@@ -152,6 +168,12 @@ document.addEventListener('click',event=>{
  if(btn.dataset.pane){
   choosePane(btn.dataset.pane);msg('');
   if(btn.closest('.studio-quick-grid'))document.querySelector('.studio-content')?.scrollIntoView({behavior:'smooth',block:'start'});
+  if(btn.closest('.studio-mobile-shortcuts')){
+   // One-tap emergency shortcuts must reach the working tool, not merely
+   // change a hidden pane while leaving a tall iPad/mobile header in view.
+   document.querySelector('[data-panel="'+btn.dataset.pane+'"]')
+    ?.scrollIntoView({behavior:'smooth',block:'start'});
+  }
   return;
  }
  if(btn.dataset.face){
