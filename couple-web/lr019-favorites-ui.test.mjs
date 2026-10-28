@@ -48,3 +48,18 @@ test('History hearts are available for both partners after closure and obey capa
  const openNight=eveningHistoryMarkup({...params,sessions:[{...params.sessions[0],finished_at:null}]});
  assert.doesNotMatch(openNight,/data-action="favorite-toggle:/);
 });
+
+
+test('LR-019 cannot regress the already published privacy mask or expose private notifications',()=>{
+ const sw=readFileSync(new URL('./service-worker.js',import.meta.url),'utf8');
+ const html=readFileSync(new URL('./index.html',import.meta.url),'utf8');
+ assert.match(app,/document\.addEventListener\('loveroll:privacy-mask'/);
+ assert.match(app,/if\(document\.documentElement\.classList\.contains\('lr-privacy-active'\)\)/);
+ assert.match(app,/eclatAudio\.stop\(\);state\.eclatMusic=false;return;/);
+ assert.match(sw,/const safeBodies=\{/);
+ assert.match(sw,/const body=safeBodies\[kind\]/);
+ assert.doesNotMatch(sw,/message\.body:\s*'Votre espace à deux vous attend'/);
+ assert.match(html,/privacy-screen\.mjs\?v=20261028-privacy250/);
+ assert.match(html,/evening-calendar\.css\?v=20261028-favs250/);
+ assert.match(html,/settings-premium\.css\?v=20261028-favs250/);
+});
