@@ -11,6 +11,7 @@ export function createStudioRealSandbox({client}){
  const frames={A:null,B:null};
  let status=null,tab='A',busy=false,tearingDown=false,initialized=false,loginInFlight=new Set(),expandedSeat=null;
  let veniceBusy=false,veniceData=null,veniceMessage='Connecte le joueur A pour accéder aux brouillons.';
+ let veniceWatch=null;
  const authenticatedSeats=new Set();
  const label=s=>s==='A'?'Joueur A':'Joueur B';
  const say=(message)=>{const node=$('studio-real-status');if(node)node.textContent=message;};
@@ -65,6 +66,8 @@ export function createStudioRealSandbox({client}){
    button.focus({preventScroll:true});}
  }
  function closeFrames(){
+  if(veniceWatch!==null)clearTimeout(veniceWatch);
+  veniceWatch=null;
   veniceBusy=false;veniceData=null;
   veniceMessage='Le joueur A doit être reconnecté pour accéder à Venice.';
   renderVenice();
@@ -280,8 +283,9 @@ export function createStudioRealSandbox({client}){
   const seat=validSeats.find(s=>frames[s]?.contentWindow===event.source);
   if(!seat||event.data?.seat!==seat)return;
   const msg=event.data;
-  if(msg.type==='loveroll-studio-venice-result'&&seat==='A'){
-   veniceBusy=false;
+  if(msg.type==='loveroll-studio-venice-result'&&seat==='A'&&veniceBusy){
+   if(veniceWatch!==null)clearTimeout(veniceWatch);
+   veniceWatch=null;veniceBusy=false;
    if(msg.data?.ok===true){
     veniceData=msg.data.result||null;
     veniceMessage=msg.action==='status'
@@ -420,9 +424,16 @@ export function createStudioRealSandbox({client}){
      type:'loveroll-studio-venice',seat:'A',action
     },location.origin);
     veniceMessage='En attente du service officiel Venice via le joueur A…';
+    veniceWatch=setTimeout(()=>{
+     veniceWatch=null;veniceBusy=false;
+     veniceMessage='Réponse Venice non reçue. Vérifie les derniers brouillons avant de recommencer; la génération peut déjà avoir consommé le quota.';
+     renderVenice();
+    },60000);
+    veniceWatch?.unref?.();
     renderVenice();
    }catch(err){
-    veniceBusy=false;
+    if(veniceWatch!==null)clearTimeout(veniceWatch);
+    veniceWatch=null;veniceBusy=false;
     veniceMessage=err instanceof Error?err.message:'Erreur Venice';
     renderVenice();
    }
