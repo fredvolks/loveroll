@@ -42,7 +42,8 @@ test('Soirée removes oversized header and old top Options, but retains contextu
  assert.doesNotMatch(html,/NOTRE SOIRÉE PARTAGÉE|⋯ Options/);
  assert.match(html,/<h2 class="ritual-page-title">À toi de brasser ton dé<\/h2>/);
  assert.match(html,/class="evening-manage" data-action="evening-more" aria-label="Gérer notre soirée"/);
- assert.match(html,/data-action="evening-list"/);
+ assert.doesNotMatch(html,/data-action="evening-list"/,'No empty personal list is advertised');
+ assert.match(html,/class="evening-primary-status" role="status"/);
  assert.match(html,/data-action="give-challenge"/);
 });
 test('Partner has no 3D D6 until server confirms their actual pip face',()=>{
@@ -74,7 +75,7 @@ test('Editorial layout owns a fixed viewport with square personal dice and a par
  assert.match(css,/\.evening-user-die \.love3d-stage/);
  assert.match(css,/aspect-ratio:1/);
  assert.match(css,/\.evening-premium-view\.is-ready/);
- assert.match(index,/evening-editorial\.css\?v=20261017-ritual130/);
+ assert.match(index,/evening-editorial\.css\?v=20261028-lr027/);
  assert.doesNotMatch(index,/evening-clean-v83\.css|evening-focused-v84\.css/);
  assert.match(worker,/\.\/evening-editorial\.css/);
 });
@@ -82,11 +83,12 @@ test('Editorial layout owns a fixed viewport with square personal dice and a par
 test('Two-step design locks challenges until both D6 and retains the ORIGINAL 3D engines',()=>{
  const wait=premiumEveningHtml({...base,status:{both_ready:false}});
  assert.match(wait,/Compléter l’étape 1 pour brasser le dé/);
- assert.match(wait,/data-action="new-challenge"[^>]*disabled/);
+ assert.doesNotMatch(wait,/data-action="new-challenge"/);
+ assert.match(wait,/class="evening-primary-status" role="status">Lance ton D6 pour continuer/);
  assert.equal((wait.match(/data-dice-sides="6"/g)||[]).length,1);
  const ready=premiumEveningHtml({...base,status:{both_ready:true,my_rolled:true,partner_rolled:true},
   rolls:[{user_id:'one',face:3},{user_id:'two',face:6}],
-  turn:{...base.turn,ready:true,next:'one'},category:'SEXUEL'});
+  turn:{...base.turn,ready:true,next:'one'},category:'SEXUEL',ownChallengeCount:2});
  assert.match(ready,/evening-summary-die/);
  assert.match(ready,/data-dice-sides="100"/);
  assert.match(ready,/88 %/);
@@ -109,7 +111,8 @@ test('Step 1 shows partner D6 before mine and keeps Step 2 locked',()=>{
  assert.match(html,/class="evening-partner-result"/);
  assert.match(html,/<strong>5<\/strong>/);
  assert.match(html,/data-action="my-d6"/);
- assert.match(html,/data-action="new-challenge"[^>]*disabled/);
+ assert.doesNotMatch(html,/data-action="new-challenge"/);
+ assert.match(html,/class="evening-primary-status" role="status">Lance ton D6 pour continuer/);
  assert.doesNotMatch(html,/MON DÉ ·|evening-person/);
  assert.equal((html.match(/data-dice-sides="6"/g)||[]).length,2);
 });

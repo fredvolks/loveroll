@@ -67,13 +67,21 @@ export function fitEveningD100(root){
  const progress=step.querySelector('.evening-progress');
  for(const item of progress.children)item.classList.add('lr-surface');
  const roll=step.querySelector('.evening-roll-actions>:first-child');
- roll.classList.add('evening-d100-roll','lr-surface','lr-ruby-control','lr-ruby-action');
- if(roll.dataset.action==='new-challenge')roll.textContent=roll.disabled?'En attente de ton tour':'Brasser le dé';
+ // A waiting status is not a button. Do not make it look interactive.
+ roll.classList.add('evening-d100-roll','lr-surface');
+ if(roll.matches('button'))roll.classList.add('lr-ruby-control','lr-ruby-action');
+ if(roll.dataset.action==='new-challenge')roll.textContent='Brasser le D100';
  const utilities=document.createElement('div');utilities.className='evening-d100-utilities';
  const queue=step.querySelector('[data-action="evening-list"]'),gift=view.querySelector('[data-action="give-challenge"]');
  const quota=document.createElement('small');quota.className='evening-d100-quota';
  quota.textContent=view.querySelector('.evening-gift p').textContent.split(' · ').at(-1);
- for(const button of [queue,gift]){button.classList.add('lr-surface');button.textContent=button.textContent.replace(/^[♡\s]+/u,'');utilities.append(button);}
+ for(const button of [queue,gift]){
+  // If "Voir mes défis" is primary, keep it primary instead of moving it.
+  if(!button||button===roll)continue;
+  button.classList.add('lr-surface');
+  button.textContent=button.textContent.replace(/^[♡\s]+/u,'');
+  utilities.append(button);
+ }
  step.replaceChildren(choice,hero,state,progress,roll,utilities,quota);
  view.querySelector('.evening-step.one')?.remove();view.querySelector('.evening-gift')?.remove();
  const percent=Number(view.dataset.categoryPercent??88);

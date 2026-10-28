@@ -155,6 +155,21 @@ export function premiumEveningHtml({
  // Keep the official face on the 3D die and show a separate readable
  // result BELOW it, never painted over the 3D face or used as a placeholder.
  const count=(uid)=>esc((done[uid]||0)+' / '+(totals[uid]??'—'));
+ // LR-027: waiting for another person is a state, not a fake disabled button.
+ const waitingStatus=label=>'<p class="evening-primary-status" role="status">'+esc(label)+'</p>';
+ const primaryAction=turn.finished?
+  bt('finish-session','✓ Terminer la soirée','evening-primary'):
+  rolling?waitingStatus('Brassage en cours…'):
+  !ready?waitingStatus(status?.my_rolled?
+   'En attente du D6 de ton partenaire':'Lance ton D6 pour continuer'):
+  turn.drawsFinished?(ownChallengeCount>0?
+   bt('evening-list','♡ Voir mes défis ('+ownChallengeCount+')','evening-primary'):
+   waitingStatus('Tous les tirages sont terminés')):
+  canDraw?bt('new-challenge','🎲 Brasser le D100','evening-primary'):
+   waitingStatus('En attente du tour de ton partenaire');
+ const secondaryAction=ownChallengeCount>0&&
+  !(turn.drawsFinished&&!turn.finished&&!rolling)?
+  bt('evening-list','♡ Voir mes défis ('+ownChallengeCount+')','evening-queue-open-btn'):'';
  return '<div class="evening-premium-view '+(session?(ready?'is-ready':'is-waiting'):'is-inactive is-finale')+'" data-category-percent="'+esc(categoryOdds)+'">'+
  '<div class="evening-toolbar">'+
   '<span class="evening-header-balance" aria-hidden="true"></span>'+
@@ -193,12 +208,7 @@ export function premiumEveningHtml({
        '<div class="evening-play-state">'+currentStatus+'</div></div>'+
 
     '</div>'+
-    '<div class="evening-roll-actions">'+
-      (turn.finished?bt('finish-session','✓ Terminer la soirée','evening-primary'):
-       turn.drawsFinished?'<p class="evening-draw-done">✓ Tous les tirages sont prêts !</p>':
-        bt('new-challenge','🎲 Brasser le dé','evening-primary',!canDraw||rolling))+
-      bt('evening-list','♡ Voir mes défis ('+ownChallengeCount+')','evening-queue-open-btn')+
-    '</div>'+
+    '<div class="evening-roll-actions">'+primaryAction+secondaryAction+'</div>'+
   '</div></section>'+
 
   '<section class="evening-gift"><div><strong>🎁 UN PETIT CADEAU</strong>'+

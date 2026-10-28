@@ -265,8 +265,12 @@ export function createClient(){
    await selectTab(page,'session');
    await page.locator('.evening-premium-view').waitFor({timeout:10000});
    const evening=await page.locator('.evening-premium-view').innerText();
-   if(!evening.includes('Votre défi du soir')||!evening.includes('Voir mes défis')||errors.length)
-    throw Error('S25 ACTIVE SOIRÉE failed '+JSON.stringify({evening:evening.slice(0,350),errors}));
+   // LR-027: no fake "Voir mes défis" action when the personal list is empty.
+   // An active player must have exactly one genuine main Soirée action.
+   const officialPrimary=await page.locator('.evening-premium-view .evening-primary[data-action="new-challenge"]').count();
+   const privateCards=await page.locator('.evening-premium-view .evening-primary[data-action="evening-list"]').count();
+   if(!evening.includes('Votre défi du soir')||officialPrimary+privateCards!==1||errors.length)
+    throw Error('S25 ACTIVE SOIRÉE failed '+JSON.stringify({evening:evening.slice(0,350),officialPrimary,privateCards,errors}));
    const warnings=await page.locator('.toast.visible').allInnerTexts();
    if(warnings.some(t=>/pending is not defined|not defined|impossible/i.test(t)))
     throw Error('S25 active Soirée still shows JS exception '+JSON.stringify(warnings));

@@ -35,7 +35,8 @@ test('First D6 is immediately FINAL, its unrolled partner stays blank, and Step 
  assert.match(first,/data-dice-sides="6" data-face="4"/);
  assert.match(first,/aria-label="Total actuel 4 défis; dé initial 4"><strong>4<\/strong>/);
  assert.match(first,/Étape 2 verrouillée/);
- assert.match(first,/data-action="new-challenge"[^>]*disabled/);
+ assert.doesNotMatch(first,/data-action="new-challenge"/);
+ assert.match(first,/class="evening-primary-status" role="status">En attente du D6 de ton partenaire/);
  assert.doesNotMatch(first,/Dé initial : 4/);
  assert.equal((first.match(/data-dice-sides="6"/g)||[]).length,1,'Only own D6 is rendered');
  assert.match(first,/evening-partner-card is-pending/);
