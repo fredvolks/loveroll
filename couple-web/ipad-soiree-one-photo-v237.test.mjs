@@ -35,7 +35,9 @@ test('Web 237 one-photo rule remains intact in the current release with offline 
  const html=read('index.html'),app=read('app.js'),sw=read('service-worker.js');
  const build=JSON.parse(read('web-version.json')).build;
  assert.match(html,/ipad-soiree-one-photo-v237\.css\?v=20261027-web237/);
- assert.match(app,/soiree-home-template\.mjs\?v=20261027-web237/);
+ const moduleTag=build.split('.')[0].replaceAll('-','')+'-web'+build.split('.')[1];
+ assert.ok(app.includes('soiree-home-template.mjs?v='+moduleTag),
+  'The real Soirée module must be refreshed at the displayed PWA release');
  assert.ok(app.includes("const WEB_RELEASE='"+build+"'"));
  assert.ok(sw.includes('loveroll-static-v'+build.split('.')[1]));
  assert.ok(sw.includes("'./ipad-soiree-one-photo-v237.css'"));
