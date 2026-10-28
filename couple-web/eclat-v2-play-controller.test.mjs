@@ -124,3 +124,21 @@ test('an external finished session clears private role and renders only a consen
  assert.doesNotMatch(root.innerHTML,/ÉCLAT · COFFRET|data-eclat-v2-action="show-role/);
  controller.destroy();
 });
+
+
+test('stop on the original device erases private role/drafts without waiting for polling',async()=>{
+ const root=fakeRoot(),original=initial(),actions=[];
+ const controller=createEclatV2PlayController({
+  root,api:{act:async args=>{
+   actions.push(args);
+   return {...original,active:false,state:'stopped'};
+  }},
+  viewerId:aid,initialStatus:original,confirmStop:async()=>true
+ });
+ const button={getAttribute:()=> 'act:stop'};
+ await root.handlers.click({target:{closest:()=>button}});
+ assert.deepEqual(actions,[{sessionId:sid,expectedStep:1,action:'stop'}]);
+ assert.equal(controller.getStatus().active,false);
+ assert.doesNotMatch(root.innerHTML,/ÉCLAT · COFFRET|Mission privée/);
+ controller.destroy();
+});
