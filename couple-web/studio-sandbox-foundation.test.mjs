@@ -37,6 +37,12 @@ test('seat auth uses official one-time magiclink and fixed registry',()=>{
  assert.match(source,/type:'magiclink'/);
  assert.match(source,/link\.properties\.hashed_token/);
  assert.match(source,/love_studio_admin!==adminId/);
+ assert.match(source,/async function validRegisteredPair\(/);
+ assert.match(source,/members\.data\?\.length!==2/);
+ assert.match(source,/couple\.data\?\.owner_user_id!==a\.user_id/);
+ assert.match(source,/record\.data\.user\.email===seat\.synthetic_email/);
+ assert.match(source,/if\(rowsError\|\|!await validRegisteredPair\(pool\.couple_id,rows\|\|null\)\)/);
+ assert.match(source,/state:pool\.state==='ready'&&!ready\?'invalid'/);
 });
 test('only registered test couples and identities are eligible for deletion',()=>{
  assert.match(schema,/public\.love_studio_test_pools/);
