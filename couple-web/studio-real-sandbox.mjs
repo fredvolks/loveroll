@@ -1,6 +1,6 @@
 // Real dual-account sandbox inside Super Admin. No local card/dice fabrication.
 import {createStudioStatusSync} from './studio-status-sync.mjs';
-import {studioTestProgress,studioEclatOverview} from './studio-test-progress.mjs?v=20261028-real288';
+import {studioTestProgress,studioEclatOverview,studioTestReport} from './studio-test-progress.mjs?v=20261028-real291';
 import {ECLAT_COFFRETS} from './eclat-catalog.mjs';
 
 export function createStudioRealSandbox({client}){
@@ -324,6 +324,7 @@ export function createStudioRealSandbox({client}){
   $('studio-real-reconnect').hidden=!isReady;
   $('studio-real-reset').hidden=!isReady;
   $('studio-real-check').hidden=!isReady;
+  $('studio-real-copy-report').hidden=!isReady;
   const diagnostics=$('studio-real-diagnostics');
   if(diagnostics){
    diagnostics.hidden=!isReady;
@@ -578,6 +579,20 @@ export function createStudioRealSandbox({client}){
   $('studio-real-history-next')?.addEventListener('click',()=>loadChallengeHistory(historyPage+1));
   $('studio-real-history-close')?.addEventListener('click',()=>{
    resetHistory();renderChallengeCards();
+  });
+  $('studio-real-copy-report')?.addEventListener('click',async()=>{
+   if(!active||tearingDown||busy||!status?.ready)return;
+   // Invoke clipboard within the user gesture; an awaited network refresh
+   // could consume iPad Safari's short-lived clipboard permission.
+   const report=studioTestReport(status,authenticatedSeats,ECLAT_COFFRETS);
+   try{
+    if(!navigator.clipboard?.writeText)
+     throw Error('Copie non disponible. Utilise un navigateur avec accès au presse-papiers.');
+    await navigator.clipboard.writeText(report);
+    say('Rapport A/B copié. Il contient seulement les jalons et états des coffrets vérifiés.');
+   }catch(error){
+    say(error instanceof Error?error.message:'Rapport impossible à copier');
+   }
   });
   $('studio-real-check').addEventListener('click',()=>refresh().catch(e=>say(e.message)));
   $('studio-real-refresh').addEventListener('click',()=>{
