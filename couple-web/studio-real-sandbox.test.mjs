@@ -21,6 +21,8 @@ test('two actual full-app iframes, distinct Auth OTP and no fake server dice',()
  assert.match(src,/createElement\('iframe'\)/);
  assert.match(src,/new URL\('\.\/\?studio_seat='/);
  assert.match(src,/request\('seat_login',seat\)/);
+ for(const route of ['journal','personal-journal','occasions'])
+  assert.ok(src.includes("'"+route+"'"),route+' stays inside the official route allow-list');
  assert.match(src,/loveroll-studio-login/);
  assert.doesNotMatch(src,/Math\.random|randomFace|fakeDie|drawFakeCard/);
  assert.match(src,/request\('create'\)/);
