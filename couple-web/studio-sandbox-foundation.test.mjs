@@ -57,6 +57,9 @@ test('two real Auth users are generated without pre-known credentials',()=>{
  assert.match(source,/canSkipAlreadyDeletedStudioUser\(lookupError,deletePool\.state,deletePool\.couple_id\)/);
  assert.match(source,/if\(!deletePool\)return response/);
  assert.match(source,/canSkipAlreadyDeletedStudioUser\(lookupError,'deleting',null\)/);
+ assert.match(source,/const verified=await service\.auth\.admin\.getUserById\(id\)/);
+ assert.match(source,/canSkipAlreadyDeletedStudioUser\(verified\.error,'deleting',null\)/);
+ assert.match(source,/Suppression Auth non confirmée; registre conservé/);
  assert.match(source,/if\(deleteError\)identitiesClean=false/);
  assert.match(source,/if\(identitiesClean\)/);
  assert.doesNotMatch(source,/stripe\.checkout|payment_intent\.succeeded|fakePayment/);
