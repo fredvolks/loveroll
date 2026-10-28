@@ -24,9 +24,15 @@ test('only verified platform owner enters QA and logout destroys the lab',()=>{
  assert.match(owner,/qaWorkbench\?\.destroy\(\)/);
  assert.match(owner,/productionUrl:CONFIG\.supabaseUrl/);
 });
-test('V1 never mounts QA modules or its private player test screen',()=>{
+test('the real V2 player is server-gated; private QA workbench never leaks into public LoveRoll',()=>{
  assert.doesNotMatch(publicApp,/eclat-v2-qa-workbench|eclat-v2-admin-pair/);
- assert.doesNotMatch(publicApp,/eclat-v2-play-controller/);
+ // The shipped V2 controller is deliberately imported by the genuine game,
+ // unlike the operator-only QA bench. A V1 couple can never start it without
+ // a real, authenticated, server-reported V2 access and active session.
+ assert.match(publicApp,/import \{createEclatV2PlayController\}/);
+ assert.match(publicApp,/if\(v2\?\.access&&v2\.active&&!e\?\.active\)\{/);
+ assert.match(publicApp,/viewerId:state\.user\.id,initialStatus:v2/);
+ assert.match(publicApp,/state\.eclat=await rpc\('love_eclat_start'/);
  assert.match(qa,/validateEclatQaConfig/);
  assert.match(qa,/createEclatV2PlayController/);
 });
