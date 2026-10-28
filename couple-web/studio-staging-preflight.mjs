@@ -20,7 +20,7 @@ const requiredTables=[
 export function validateStaging(ref,url,key){
  if(!/^[a-z0-9]{20}$/.test(ref||'')||ref===PROD||
     url!==`https://${ref}.supabase.co`||
-    !key||typeof key!=='string'){
+    typeof key!=='string'||!/^sb_publishable_[A-Za-z0-9_-]{12,}$//.test(key)){
   throw Error('STAGING REFUSED: distinct valid Supabase project and publishable key required');
  }
  return url;
