@@ -54,3 +54,14 @@ test('Web 251 CSS, bootloader and cache agree on the same feature revision',()=>
  assert.match(css,/\.eclat-v2-live/);
  assert.match(css,/\.eclat-v2-device-choice/);
 });
+
+
+test('cached V2 status belongs only to the exact signed-in user and original couple',()=>{
+ assert.match(app,/eclatV2OwnerId:null,eclatV2CoupleId:null/);
+ assert.match(app,/state\.eclatV2OwnerId===state\.user\?\.id&&/);
+ assert.match(app,/state\.eclatV2CoupleId===state\.coupleId\?state\.eclatV2Status:null/);
+ assert.match(app,/state\.eclatV2OwnerId=userId;state\.eclatV2CoupleId=coupleId/);
+ assert.match(app,/state\.eclatV2OwnerId=state\.user\.id;state\.eclatV2CoupleId=state\.coupleId/);
+ assert.match(app,/if\(!state\.user\|\|state\.passwordRecovery\)\{state\.eclatV2Status=null/);
+ assert.match(app,/if\(state\.eclatV2OwnerId!==state\.user\?\.id\|\|state\.eclatV2CoupleId!==state\.coupleId/);
+});
