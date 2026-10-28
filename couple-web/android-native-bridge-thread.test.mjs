@@ -67,3 +67,17 @@ test('Signed Android release is versioned, immutable and references the precedin
  assert.match(release,/exit 1/);
  assert.match(gradle,/versionCode 130014/);
 });
+
+
+test('native Android updater can detect a release later the same day, with manual retry',()=>{
+ const src=readFileSync(new URL('../app/src/main/java/ca/desadeux/jeu/UpdateManager.java',import.meta.url),'utf8');
+ const policy=readFileSync(new URL('../app/src/main/java/ca/desadeux/jeu/UpdateCheckPolicy.java',import.meta.url),'utf8');
+ const junit=readFileSync(new URL('../app/src/test/java/ca/desadeux/jeu/UpdateCheckPolicyTest.java',import.meta.url),'utf8');
+ assert.match(src,/UpdateCheckPolicy\.postponeQuietCheck\(quiet,now,last\)/);
+ assert.match(src,/putLong\("last_success_ms",System\.currentTimeMillis\(\)\)/);
+ assert.doesNotMatch(src,/today\.equals\(prefs\.getString\("last_success"/);
+ assert.match(policy,/QUIET_INTERVAL_MILLIS=30L\*60L\*1000L/);
+ assert.match(policy,/quiet && lastSuccess>0L && now>=lastSuccess/);
+ assert.match(junit,/manualCheckNeverBlockedAfterSuccess/);
+ assert.match(junit,/futureReleaseSameDayCanBeFoundAfterCooldown/);
+});
