@@ -29,15 +29,21 @@ self.addEventListener('fetch',e=>{
 self.addEventListener('push',event=>{
  let message={};
  try{message=event.data?.json()||{};}catch{}
- const title=typeof message.title==='string'&&message.title.length<120?
-  message.title:'LoveRoll ❤️';
- const body=typeof message.body==='string'&&message.body.length<300?
-  message.body:'Votre espace à deux vous attend.';
+ // Lock-screen payloads are intentionally generic: never show raw private cards.
  const kind=['weekly','invitation','monthly','special'].includes(message.tag)?message.tag:'home';
+ const title='LoveRoll ❤️';
+ const safeBodies={
+  weekly:'Votre rituel de la semaine vous attend.',
+  invitation:'Une invitation LoveRoll vous attend.',
+  monthly:'Une surprise à deux vous attend.',
+  special:'Un moment LoveRoll vous attend.',
+  home:'Votre espace à deux vous attend.'
+ };
+ const body=safeBodies[kind];
  const tab=kind==='weekly'?'session':kind==='monthly'||kind==='special'?'special':'home';
  const url=new URL('./?open='+tab,self.registration.scope).href;
  event.waitUntil(self.registration.showNotification(title,{
-  body,tag:String(message.tag||'loveroll').slice(0,60),
+  body,tag:'loveroll-'+kind,
   icon:new URL('./assets/loveroll-hero.webp',self.registration.scope).href,
   badge:new URL('./assets/loveroll-hero.webp',self.registration.scope).href,
   data:{url}
