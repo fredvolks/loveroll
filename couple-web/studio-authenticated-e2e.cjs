@@ -247,6 +247,33 @@ async function main(){
   await a.locator('[data-action="roll:monthly_activity"]').first().click({timeout:25000});
   await verified(4).waitFor({timeout:60000});
   console.log('Official Surprise D100 from real A: PASS');
+
+  // Premium QA is NOT a mock paywall. The technical accounts must receive
+  // a genuine backend Éclat entitlement and open the shipped 12-coffret UI
+  // under their OWN Auth sessions. Only browse details: starting chapters
+  // or completing all 12 experiences is a separate authenticated test.
+  await verified(9).waitFor({timeout:60000});
+  assert.equal((await page.locator('#studio-real-progress-count').innerText()).trim(),'9/9',
+   'all nine official read-only server milestones must be verified');
+  for(const [seat,frame] of [['A',a],['B',b]]){
+   await page.selectOption('#studio-real-jump-'+seat,'eclat');
+   const tiles=frame.locator('button[data-action^="eclat:detail:"]');
+   await tiles.first().waitFor({state:'visible',timeout:45000});
+   assert.equal(await tiles.count(),12,
+    'technical '+seat+' must have access to all twelve genuine Éclat coffrets');
+   for(let id=1;id<=12;id++){
+    const tile=frame.locator('button[data-action="eclat:detail:'+id+'"]');
+    await tile.click({timeout:15000});
+    const detail=frame.locator('.eclat-detail[data-coffret-id="'+id+'"]');
+    await detail.waitFor({state:'visible',timeout:15000});
+    assert.equal(await detail.locator('button[data-action="eclat:start:'+id+'"]').count(),1,
+     'Éclat '+id+' must expose the real start control to authorized seat '+seat);
+    await frame.locator('button[data-action="eclat:library"]').first().click({timeout:15000});
+    await tile.waitFor({state:'visible',timeout:15000});
+   }
+  }
+  await page.screenshot({path:'studio-authenticated-e2e-proof/real-eclat-twelve-coffrets.png',fullPage:true});
+  console.log('Both authenticated players may browse all 12 real Éclat coffrets: PASS');
   await page.screenshot({path:'studio-authenticated-e2e-proof/official-rolled-dice-and-cards.png',fullPage:true});
   // The private Venice section can inspect provider status without spending
   // inference credits. NEVER trigger preview_three in an automated QA run.
