@@ -270,13 +270,15 @@ SELECT public.expect_studio_purge_refused('Historique personnel extérieur au ba
 DELETE FROM public.love_eclat_private_notes;
 DELETE FROM public.love_eclat_sessions WHERE id='30000000-0000-0000-0000-000000000002';
 -- The cost guard is unique per admin across ANY number of disposable pairs.
-INSERT INTO public.love_studio_venice_daily_quota(admin_id,utc_day) VALUES
- ('00000000-0000-0000-0000-000000000001','2026-10-28');
+INSERT INTO public.love_studio_venice_daily_quota(admin_id,couple_id,utc_day) VALUES
+ ('00000000-0000-0000-0000-000000000001',
+  '10000000-0000-0000-0000-000000000001','2026-10-28');
 DO $quota$
 BEGIN
  BEGIN
-  INSERT INTO public.love_studio_venice_daily_quota(admin_id,utc_day) VALUES
-   ('00000000-0000-0000-0000-000000000001','2026-10-28');
+  INSERT INTO public.love_studio_venice_daily_quota(admin_id,couple_id,utc_day) VALUES
+   ('00000000-0000-0000-0000-000000000001',
+    '10000000-0000-0000-0000-000000000002','2026-10-28');
   RAISE EXCEPTION 'QUOTA_SHOULD_HAVE_FAILED';
  EXCEPTION WHEN unique_violation THEN NULL;
  END;
