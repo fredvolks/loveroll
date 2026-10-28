@@ -203,6 +203,35 @@ END $expect$;
 SELECT set_config('studio.test_role','authenticated',false);
 SELECT public.expect_studio_purge_refused('Accès refusé');
 SELECT set_config('studio.test_role','service_role',false);
+-- Interrupted Studio creation has no couple_id. This MUST NOT bypass the
+-- Auth-user foreign-cascade checks and silently change real customer data.
+BEGIN;
+UPDATE public.love_studio_test_pools SET couple_id=NULL,state='creating';
+SELECT public.expect_studio_purge_refused('Identité test utilisée dans un autre couple');
+ROLLBACK;
+-- Simulate a genuinely partial pair: no membership or ownership of its own
+-- and a foreign relationship injected later. All changes are rolled back.
+BEGIN;
+UPDATE public.love_studio_test_pools SET couple_id=NULL,state='creating';
+DELETE FROM public.couple_members WHERE couple_id='10000000-0000-0000-0000-000000000001';
+UPDATE public.couples SET owner_user_id='00000000-0000-0000-0000-00000000000f'
+ WHERE id='10000000-0000-0000-0000-000000000001';
+INSERT INTO public.couple_members VALUES
+ ('10000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-00000000000a');
+SELECT public.expect_studio_purge_refused('Identité test utilisée dans un autre couple');
+DELETE FROM public.couple_members WHERE couple_id='10000000-0000-0000-0000-000000000002';
+UPDATE public.couples SET owner_user_id='00000000-0000-0000-0000-00000000000b'
+ WHERE id='10000000-0000-0000-0000-000000000002';
+SELECT public.expect_studio_purge_refused('Identité test utilisée dans un autre couple');
+UPDATE public.couples SET owner_user_id='00000000-0000-0000-0000-00000000000f'
+ WHERE id='10000000-0000-0000-0000-000000000002';
+INSERT INTO public.love_referral_credit_usage VALUES ('00000000-0000-0000-0000-00000000000a');
+SELECT public.expect_studio_purge_refused('Crédit payé lié au banc');
+DELETE FROM public.love_referral_credit_usage;
+INSERT INTO public.love_user_library_backup VALUES
+ ('10000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-00000000000a');
+SELECT public.expect_studio_purge_refused('Données personnelles hors du banc');
+ROLLBACK;
 -- Corrupted pool pointing to real owner: even a zero-member target is safe.
 UPDATE public.couples SET owner_user_id='00000000-0000-0000-0000-00000000000f'
 WHERE id='10000000-0000-0000-0000-000000000001';
