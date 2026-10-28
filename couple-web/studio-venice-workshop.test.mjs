@@ -33,6 +33,8 @@ test('real Venice inference requires one authorized per-admin daily reservation 
  assert.match(bridge,/identity\.user\.app_metadata\?\.love_studio_test === true/);
  assert.match(bridge,/\.eq\('couple_id',coupleId\)\.maybeSingle\(\)/);
  assert.match(endpoint,/if\(action==='venice_preview_authorize'\)/);
+ assert.match(endpoint,/Deno\.env\.get\('VENICE_API_KEY'\)/);
+ assert.match(endpoint,/aucun crédit de génération réservé/);
  assert.match(endpoint,/validRegisteredPair\(pool\.couple_id,rows\|\|null\)/);
  assert.match(endpoint,/quotaError\.code==='23505'/);
  assert.match(endpoint,/admin_id:adminId,couple_id:pool\.couple_id/);
