@@ -1312,6 +1312,9 @@ function renderEclat(){
   const host=root.querySelector('#eclat-v2-live-player');
   eclatV2Player=createEclatV2PlayController({
    root:host,api:eclatV2Api,viewerId:state.user.id,initialStatus:v2,
+   confirmStop:()=>premiumConfirm('Arrêter ce coffret maintenant ? Les moments déjà vécus restent dans votre historique, mais cette séance ne pourra pas être reprise.',{
+    kind:'library',title:'Arrêter ce coffret Éclat ?',accept:'Arrêter la séance',cancel:'Continuer le jeu'
+   }),
    onError:err=>fail(err)
   });
   const currentPlayer=eclatV2Player;
