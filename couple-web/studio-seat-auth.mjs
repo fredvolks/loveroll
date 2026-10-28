@@ -44,11 +44,17 @@ export function startStudioSeatLogin(client,seat,{selfWindow,origin,reload=()=>s
   }
   if(message.type==='loveroll-studio-navigate'){
    if(!['home','session','special','eclat','advent','settings','journal','personal-journal','occasions'].includes(message.tab))return;
+   // An optional coffret shortcut opens the REAL Éclat details through the
+   // shipped action handler. It must never write a session or override access.
+   const coffretId=message.coffret_id;
+   if(coffretId!==undefined&&
+      (message.tab!=='eclat'||!Number.isInteger(coffretId)||
+       coffretId<1||coffretId>12))return;
    try{
     const {data}=await client.auth.getSession();
     // Admin shortcuts never turn a normal signed-in user into a Studio seat.
     if(data?.session?.user?.app_metadata?.love_studio_test!==true)return;
-    await navigate(message.tab); // The actual production tab handler enforces eligibility.
+    await navigate(message.tab,coffretId); // Production handler checks eligibility.
    }catch{
     selfWindow.parent.postMessage({type:'loveroll-studio-navigate-error',seat},origin);
    }
