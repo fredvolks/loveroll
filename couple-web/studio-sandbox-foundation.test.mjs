@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const source=readFileSync(new URL('../supabase/functions/love-studio-sandbox/index.ts',import.meta.url),'utf8');
+const guard=readFileSync(new URL('../supabase/functions/love-studio-sandbox/guards.ts',import.meta.url),'utf8');
 const schema=readFileSync(new URL('migrations/20261027_love_studio_real_sandbox_foundation.sql',import.meta.url),'utf8');
 test('studio backend only acts for verified platform administrators',()=>{
  assert.match(source,/service\.auth\.getUser\(token\)/);
@@ -40,12 +41,18 @@ test('seat auth uses official one-time magiclink and fixed registry',()=>{
  assert.match(source,/async function validRegisteredPair\(/);
  assert.match(source,/members\.data\?\.length!==2/);
  assert.match(source,/couple\.data\?\.owner_user_id!==a\.user_id/);
- assert.match(source,/record\.data\.user\.email===seat\.synthetic_email/);
+ assert.match(source,/isRegisteredStudioIdentity\(authA\.data\?\.user,a,adminId\)/);
+ assert.match(source,/isRegisteredStudioIdentity\(authB\.data\?\.user,b,adminId\)/);
  assert.match(source,/if\(rowsError\|\|!await validRegisteredPair\(pool\.couple_id,rows\|\|null\)\)/);
- assert.match(source,/link\.user\?\.id!==row\.user_id/);
- assert.match(source,/link\.user\?\.email!==row\.synthetic_email/);
- assert.match(source,/link\.user\?\.app_metadata\?\.love_studio_test!==true/);
- assert.match(source,/link\.user\?\.app_metadata\?\.love_studio_admin!==adminId/);
+
+
+
+
+ assert.match(source,/isRegisteredStudioIdentity\(link\.user,row,adminId\)/);
+ assert.match(guard,/user\.id===seat\.user_id/);
+ assert.match(guard,/user\.email===seat\.synthetic_email/);
+ assert.match(guard,/user\.app_metadata\?\.love_studio_test===true/);
+ assert.match(guard,/user\.app_metadata\?\.love_studio_admin===adminId/);
  assert.match(source,/Lien Auth non conforme au joueur technique enregistré/);
  assert.match(source,/state:pool\.state==='ready'&&!ready\?'invalid'/);
 });
