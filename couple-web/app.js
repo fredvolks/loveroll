@@ -282,29 +282,35 @@ let diceView=null;
 function favoriteLimitDialogHtml(){
  const pending=state.favoriteLimitPending;
  if(!pending||!state.loveFavoritesReady)return '';
- const own=(state.loveFavorites||[]).filter(f=>f.marked_by===state.user?.id)
-  .sort((a,b)=>(a.category+String(a.card_id).padStart(3,'0')).localeCompare(
-   b.category+String(b.card_id).padStart(3,'0'),'fr-CA'));
- const full=own.length>=5;
- const cards=own.map(heart=>{
-  const category=heart.category,cardId=Number(heart.card_id);
-  const history=[...(state.challenges||[]),...(state.challengesHistory||[])]
-   .filter(x=>x.recipient===state.user?.id&&x.category===category&&Number(x.card_id)===cardId).at(-1);
-  return '<li><span><strong>'+safe(history?.card_title||('Carte '+cardId))+'</strong>'+
-   '<small>'+safe(category==='SEXUEL'?'Sexuel':'Sensuel')+' · n° '+cardId+'</small></span>'+
-   button('favorite-limit-remove:'+category+':'+cardId,'Retirer',
-    'class="subtle" '+(state.loveFavoritesBusy?'disabled':''))+'</li>';
+ const hearts=[...(state.loveFavorites||[])].sort((a,b)=>
+  (a.category+String(a.card_id).padStart(3,'0')).localeCompare(b.category+String(b.card_id).padStart(3,'0'),'fr-CA'));
+ const full=hearts.length>=5;
+ const closed=new Set((state.sessions||[]).filter(n=>n.finished_at).map(n=>n.id));
+ const cardInfo=(cat,id)=>{
+  const own=[...(state.challenges||[]),...(state.challengesHistory||[])]
+   .filter(n=>n.recipient===state.user?.id&&n.category===cat&&Number(n.card_id)===id).at(-1);
+  const archived=(state.eveningCalendarChallenges||[])
+   .filter(n=>closed.has(n.session_id)&&n.category===cat&&Number(n.card_id)===id).at(-1);
+  return own||archived||null;
+ };
+ const newCard=cardInfo(pending.category,Number(pending.cardId));
+ const newTitle=newCard?.card_title||('Carte '+Number(pending.cardId));
+ const cards=hearts.map(heart=>{
+  const cat=heart.category,id=Number(heart.card_id),card=cardInfo(cat,id),title=card?.card_title||('Carte '+id);
+  return '<li><span><strong>'+safe(title)+'</strong>'+
+   '<small>'+safe(cat==='SEXUEL'?'Sexuel':'Sensuel')+' · n° '+id+'</small>'+
+   (card?.card_description?'<details><summary>Voir la consigne</summary><p>'+safe(card.card_description)+'</p></details>':'')+
+   '</span>'+button('favorite-limit-replace:'+cat+':'+id,'Retirer et ajouter le nouveau',
+    'class="subtle" aria-label="'+safe('Retirer '+title+' et ajouter '+newTitle)+'" '+(state.loveFavoritesBusy?'disabled':''))+'</li>';
  }).join('');
  return '<div class="lr-favorite-cap-shade"><section class="lr-favorite-cap-dialog" role="dialog" aria-modal="true" aria-labelledby="lr-favorite-cap-title">'+
-  '<h2 id="lr-favorite-cap-title">'+(full?'Vous avez déjà 5 coups de cœur':'Une place est disponible')+'</h2>'+
-  '<p>'+(full?'Retirez une carte directement ici pour libérer une place.':
-   'Vous pouvez maintenant ajouter votre nouveau défi.')+'</p>'+
-  '<p class="lr-favorite-cap-new">À ajouter : '+safe(pending.category==='SEXUEL'?'Sexuel':'Sensuel')+
-   ' · carte '+Number(pending.cardId)+'</p>'+
+  '<h2 id="lr-favorite-cap-title">'+(full?'Déjà 5 coups de cœur':'Une place est disponible')+'</h2>'+
+  '<p>Nos coups de cœur · '+hearts.length+'/5. '+(full?'Lequel voulez-vous retirer pour ajouter le nouveau ?':
+   'Vous pouvez ajouter sans retirer de carte.')+'</p>'+
+  '<p class="lr-favorite-cap-new">À ajouter : '+safe(newTitle)+' · '+safe(pending.category==='SEXUEL'?'Sexuel':'Sensuel')+'</p>'+
   '<ul class="lr-favorite-cap-list">'+cards+'</ul><div class="lr-favorite-cap-actions">'+
-  (!full?button('favorite-limit-add','♡ Ajouter mon nouveau coup de cœur',
-   'class="evening-primary" '+(state.loveFavoritesBusy?'disabled':'')):'')+
-  button('favorite-limit-close','Fermer','class="subtle" '+(state.loveFavoritesBusy?'disabled':''))+
+   (!full?button('favorite-limit-add','♡ Ajouter ce défi','class="evening-primary" '+(state.loveFavoritesBusy?'disabled':'')):'')+
+   button('favorite-limit-close','Annuler','class="subtle" '+(state.loveFavoritesBusy?'disabled':''))+
   '</div></section></div>';
 }
 function frame(body,title='LOVEROLL',subtitle='Un jeu intime, juste pour vous deux'){
