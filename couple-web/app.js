@@ -1071,9 +1071,13 @@ function subscribe(){
   table:'couple_personal_rolls'},()=>liveSync.request(120));
  // Keep the in-app invitation visible even if Push is blocked or delayed.
  // RLS limits this subscription to the two members of the exact couple.
- channel=channel.on('postgres_changes',{event:'*',schema:'public',
-  table:'love_evening_invitations',filter:'couple_id=eq.'+state.coupleId},
-  ()=>liveSync.request(80));
+ if(state.eveningInvite!==null){
+  // Pages may update before the SQL is installed. Keep all older Realtime
+  // channels working instead of subscribing to a non-existent table.
+  channel=channel.on('postgres_changes',{event:'*',schema:'public',
+   table:'love_evening_invitations',filter:'couple_id=eq.'+state.coupleId},
+   ()=>liveSync.request(80));
+ }
  channel=channel.on('postgres_changes',{event:'*',schema:'public',table:'love_eclat_sessions',
   filter:'couple_id=eq.'+state.coupleId},()=>{
   if(state.tab==='eclat')refreshEclatStatus().then(()=>{if(state.tab==='eclat')render();}).catch(console.warn);
