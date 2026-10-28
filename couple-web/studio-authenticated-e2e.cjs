@@ -28,7 +28,17 @@ async function main(){
  let page=null,created=false,cleanupSuccessful=false;
  fs.mkdirSync('studio-authenticated-e2e-proof',{recursive:true});
  try{
-  const context=await browser.newContext({viewport:{width:1440,height:900}});
+  // Service workers can bypass Playwright routing and reuse production
+  // config from a prior run. Block them completely in isolated staging.
+  const context=await browser.newContext({
+   viewport:{width:1440,height:900},serviceWorkers:'block'
+  });
+  let blockedProductionRequests=0;
+  // Even a stale hardcoded endpoint must NEVER reach real LoveRoll from E2E.
+  await context.route('https://ejsrqfpkgwraorrznjpm.supabase.co/**',route=>{
+   blockedProductionRequests++;
+   return route.abort();
+  });
   await context.route('**/config.js*',route=>{
    route.fulfill({status:200,contentType:'text/javascript',body:
     `export const CONFIG = ${JSON.stringify({
@@ -188,6 +198,8 @@ async function main(){
   assert.equal(await page.locator('#studio-real-frame-B iframe').count(),1);
   await page.locator('#studio-show-seat-A').click();
   assert.equal(await page.locator('#studio-real-frame-A iframe').count(),1);
+  assert.equal(blockedProductionRequests,0,
+   'a staging test attempted to contact the real LoveRoll Supabase project');
   console.log('Authenticated real A/B sessions + official dice/cards + responsive layouts: PASS');
  }finally{
   if(page&&created){
