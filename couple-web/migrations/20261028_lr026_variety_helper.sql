@@ -9,14 +9,14 @@ DECLARE
  a_theme text:='other'; b_theme text:='other'; common_words integer:=0;
 BEGIN
  IF nullif(btrim(coalesce(p_previous_title,'')),'') IS NULL THEN RETURN 0; END IF;
- a_title:=regexp_replace(lower(translate(coalesce(p_title,''),
+ a_title:=regexp_replace(lower(translate(replace(lower(coalesce(p_title,'')),'œ','oe'),
   'éèêëàâäîïôöùûüç','eeeeaaaiioouuuc')),'[^a-z0-9]+',' ','g');
- b_title:=regexp_replace(lower(translate(coalesce(p_previous_title,''),
+ b_title:=regexp_replace(lower(translate(replace(lower(coalesce(p_previous_title,'')),'œ','oe'),
   'éèêëàâäîïôöùûüç','eeeeaaaiioouuuc')),'[^a-z0-9]+',' ','g');
  IF nullif(btrim(a_title),'') IS NOT NULL AND btrim(a_title)=btrim(b_title) THEN RETURN 100; END IF;
- a_text:=a_title||' '||regexp_replace(lower(translate(coalesce(p_description,''),
+ a_text:=a_title||' '||regexp_replace(lower(translate(replace(lower(coalesce(p_description,'')),'œ','oe'),
   'éèêëàâäîïôöùûüç','eeeeaaaiioouuuc')),'[^a-z0-9]+',' ','g');
- b_text:=b_title||' '||regexp_replace(lower(translate(coalesce(p_previous_description,''),
+ b_text:=b_title||' '||regexp_replace(lower(translate(replace(lower(coalesce(p_previous_description,'')),'œ','oe'),
   'éèêëàâäîïôöùûüç','eeeeaaaiioouuuc')),'[^a-z0-9]+',' ','g');
  a_theme:=CASE
   WHEN a_text ~ '\m(massage|masser|masses)\M' THEN 'massage'
