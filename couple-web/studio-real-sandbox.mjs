@@ -9,7 +9,7 @@ export function createStudioRealSandbox({client}){
  const validSeats=['A','B'];
  const validRoutes=['home','session','special','eclat','advent','settings','journal','personal-journal','occasions'];
  const frames={A:null,B:null};
- let status=null,tab='A',busy=false,initialized=false,loginInFlight=new Set(),expandedSeat=null;
+ let status=null,tab='A',busy=false,tearingDown=false,initialized=false,loginInFlight=new Set(),expandedSeat=null;
  const authenticatedSeats=new Set();
  const label=s=>s==='A'?'Joueur A':'Joueur B';
  const say=(message)=>{const node=$('studio-real-status');if(node)node.textContent=message;};
@@ -218,6 +218,9 @@ export function createStudioRealSandbox({client}){
  const statusSync=createStudioStatusSync(
   ()=>request('status'),
   value=>{
+   // A pre-delete diagnostic must never resurrect an old pair while the
+   // authorized SQL/Auth cleanup or replacement is still in flight.
+   if(tearingDown)return;
    status=value;
    say(status.ready?(authenticatedSeats.size===2?'Joueurs A et B connectés au vrai LoveRoll.':'Couple de test prêt. Connexion des joueurs A et B en cours…'):
     status.state==='missing'?'Aucun couple de test. Crée un duo pour jouer.':
@@ -229,7 +232,7 @@ export function createStudioRealSandbox({client}){
  );
  const refresh=()=>statusSync.refresh();
  async function onChildMessage(event){
-  if(event.origin!==location.origin||!status?.ready)return;
+  if(tearingDown||event.origin!==location.origin||!status?.ready)return;
   const seat=validSeats.find(s=>frames[s]?.contentWindow===event.source);
   if(!seat||event.data?.seat!==seat)return;
   const msg=event.data;
@@ -308,27 +311,36 @@ export function createStudioRealSandbox({client}){
    if(busy||!status?.ready)return;
    if(!confirm('Nouvel essai : supprimer le duo A+B de test et ses parties, puis créer deux NOUVEAUX comptes techniques ?'))return;
    if(!confirm('Confirmer le remplacement du banc de test seulement ? Aucun compte client réel ne sera utilisé.'))return;
-   busy=true;say('Réinitialisation du vrai banc A+B…');closeFrames();
+   busy=true;tearingDown=true;say('Réinitialisation du vrai banc A+B…');closeFrames();
    try{
     await request('delete');
     status={state:'missing',ready:false};
     display();
     await request('create');
+    tearingDown=false;
     await refresh();
     say('Nouveau couple de test A+B prêt. Les vrais dés et les quotas officiels repartent sur une nouvelle paire.');
    }catch(err){
+    tearingDown=false;
     say('Nouvel essai interrompu : '+err.message+' — vérifier le banc avant de recommencer.');
     try{await refresh()}catch{/* Preserve the error above. */}
-   }finally{busy=false}
+   }finally{tearingDown=false;busy=false}
   });
   $('studio-real-delete').addEventListener('click',async()=>{
    if(busy)return;
    if(!confirm('Supprimer les deux comptes techniques et toutes leurs données de test ? AUCUN compte réel ne sera touché.'))return;
    if(!confirm('Confirmer la suppression DÉFINITIVE du banc de test uniquement ?'))return;
-   busy=true;say('Suppression sécurisée en cours…');closeFrames();
-   try{await request('delete');await refresh();say('Banc de test supprimé. Journal de sécurité à jour.')}
-   catch(err){say(err.message);}
-   finally{busy=false}
+   busy=true;tearingDown=true;say('Suppression sécurisée en cours…');closeFrames();
+   try{
+    await request('delete');
+    tearingDown=false;
+    await refresh();
+    say('Banc de test supprimé. Journal de sécurité à jour.');
+   }catch(err){
+    tearingDown=false;
+    say(err.message);
+    try{await refresh()}catch{/* Keep original deletion error. */}
+   }finally{tearingDown=false;busy=false}
   });
   $('studio-real-check').addEventListener('click',()=>refresh().catch(e=>say(e.message)));
   $('studio-real-refresh').addEventListener('click',()=>{closeFrames();refresh().catch(e=>say(e.message))});
