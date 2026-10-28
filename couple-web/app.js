@@ -1294,8 +1294,14 @@ function renderEclat(){
    currentPlayer.refresh().then(refreshed=>{
     if(!refreshed||eclatV2Player!==currentPlayer)return;
     const latest=currentPlayer.getStatus();
+    // The parent app is not allowed to resurrect an older chapter the next
+    // time its ordinary navigation/settings renderer runs.
+    if(state.eclatV2OwnerId!==state.user?.id||
+       state.eclatV2CoupleId!==state.coupleId){
+     disposeEclatV2Player();return;
+    }
+    state.eclatV2Status=latest;
     if(!latest?.access||!latest?.active){
-     state.eclatV2Status=latest;
      disposeEclatV2Player();render();
     }
    }).catch(error=>{
