@@ -28,7 +28,8 @@ CREATE TABLE IF NOT EXISTS public.love_studio_test_audit (
   admin_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   action text NOT NULL CHECK (action IN (
     'create_requested','create_succeeded','create_failed',
-    'login_requested','delete_requested','delete_completed','delete_failed'
+    'login_requested','delete_requested','delete_completed','delete_failed',
+    'venice_preview_requested'
   )),
   created_at timestamptz NOT NULL DEFAULT now()
 );
