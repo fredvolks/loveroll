@@ -30,17 +30,19 @@ self.addEventListener('push',event=>{
  let message={};
  try{message=event.data?.json()||{};}catch{}
  // Lock-screen payloads are intentionally generic: never show raw private cards.
- const kind=['weekly','invitation','monthly','special'].includes(message.tag)?message.tag:'home';
+ const kind=['weekly','invitation','evening-invite','evening-reply','monthly','special'].includes(message.tag)?message.tag:'home';
  const title='LoveRoll ❤️';
  const safeBodies={
   weekly:'Votre rituel de la semaine vous attend.',
-  invitation:'♥ Une invitation LoveRoll t\'attend',
+  invitation:'Une nouveauté LoveRoll vous attend.',
+  'evening-invite':'♥ Une invitation LoveRoll t\'attend',
+  'evening-reply':'Votre invitation LoveRoll a une réponse.',
   monthly:'Une surprise à deux vous attend.',
   special:'Un moment LoveRoll vous attend.',
   home:'Votre espace à deux vous attend.'
  };
  const body=safeBodies[kind];
- const tab=kind==='weekly'||kind==='invitation'?'session':kind==='monthly'||kind==='special'?'special':'home';
+ const tab=['weekly','evening-invite','evening-reply'].includes(kind)?'session':kind==='monthly'||kind==='special'?'special':'home';
  const url=new URL('./?open='+tab,self.registration.scope).href;
  event.waitUntil(self.registration.showNotification(title,{
   body,tag:'loveroll-'+kind,
