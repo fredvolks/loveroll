@@ -40,6 +40,8 @@ CREATE TABLE public.couple_challenges(
  card_description text NOT NULL DEFAULT 'Consigne officielle originale',
  card_timer_minutes integer NOT NULL DEFAULT 5
 );
+-- The real Supabase schema already grants authorized member reads under RLS.
+GRANT SELECT ON public.couple_challenges,public.couple_members TO authenticated;
 INSERT INTO auth.users VALUES
  ('aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa'),
  ('bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb'),
