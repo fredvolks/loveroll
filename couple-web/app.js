@@ -4631,6 +4631,10 @@ async function start(){
   catch(e){fail(e);window.LoveRollBoot?.showFailure();}
  }else render();
  client.auth.onAuthStateChange((event,session)=>{
+  // An account switch invalidates every pending V2 entitlement/status read,
+  // even when a user signs back into the same account immediately.
+  if(event==='SIGNED_OUT'||event==='SIGNED_IN'&&session?.user&&!state.user)
+   eclatV2StatusFence.invalidate();
   if(event==='SIGNED_IN'&&session?.user&&!state.user){
    state.user=session.user;
    setTimeout(()=>reload().catch(fail),0);
