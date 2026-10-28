@@ -21,6 +21,7 @@ import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=202
 import {saveEveningSelection,restoreEveningSelection,clearEveningSelection} from './evening-resume.mjs?v=20261027-web240';
 import {eclatHtml} from './eclat-ui.mjs?v=20261027-web242';
 import {createEclatV2SessionApi} from './eclat-v2-session.mjs?v=20261028-v2-live251';
+import {createEclatV2LatestRead} from './eclat-v2-latest-read.mjs?v=20261028-v2-status252';
 import {createEclatV2PlayController} from './eclat-v2-play-controller.mjs?v=20261028-v2-live251';
 import {renderEclatV2PlayA} from './eclat-v2-play-ui.mjs?v=20261028-v2-live251';
 import {canReuseEclatV2Editor} from './eclat-v2-live-ownership.mjs?v=20261028-v2-live251';
@@ -74,6 +75,7 @@ const client=CONFIG.supabaseUrl&&CONFIG.supabasePublishableKey?
 const launchParams=new URLSearchParams(location.search);
 const eclatAudio=createEclatAudio();
 const eclatV2Api=client?createEclatV2SessionApi(client):null;
+const eclatV2StatusFence=createEclatV2LatestRead();
 let eclatV2Player=null,eclatV2Poll=null,eclatV2Resume=null;
 function disposeEclatV2Player(){
  if(eclatV2Poll!==null){clearInterval(eclatV2Poll);eclatV2Poll=null;}
@@ -1241,6 +1243,7 @@ async function refreshEclatHistory(){
  }catch(error){if(state.coupleId===coupleId)state.eclatHistoryError=true;console.warn('Historique Éclat indisponible',error?.code||'');}
 }
 async function refreshEclatV2Status(){
+ const ticket=eclatV2StatusFence.begin();
  if(!eclatV2Api||!state.user||!isSharedCoupleReady(state.coupleId,state.members)){
   state.eclatV2Status=null;state.eclatV2OwnerId=null;state.eclatV2CoupleId=null;return null;
  }
@@ -1249,11 +1252,11 @@ async function refreshEclatV2Status(){
  const coupleId=state.coupleId,userId=state.user.id;
  try{
   const value=await eclatV2Api.status();
-  if(state.coupleId===coupleId&&state.user?.id===userId)
+  if(eclatV2StatusFence.isCurrent(ticket)&&state.coupleId===coupleId&&state.user?.id===userId)
    {state.eclatV2Status=value;state.eclatV2OwnerId=userId;state.eclatV2CoupleId=coupleId;}
   return value;
  }catch(error){
-  if(state.coupleId===coupleId&&state.user?.id===userId){
+  if(eclatV2StatusFence.isCurrent(ticket)&&state.coupleId===coupleId&&state.user?.id===userId){
    if(['PGRST202','42883'].includes(error?.code)){
     state.eclatV2Status=null;state.eclatV2OwnerId=null;state.eclatV2CoupleId=null;
     disposeEclatV2Player();
@@ -1334,6 +1337,7 @@ function renderEclat(){
        state.eclatV2CoupleId!==state.coupleId){
      disposeEclatV2Player();return;
     }
+    eclatV2StatusFence.invalidate();
     state.eclatV2Status=latest;
     if(!latest?.access){
      disposeEclatV2Player();render();return;
@@ -1353,6 +1357,7 @@ function renderEclat(){
      // The child already cleared its private state after revoked JWT or a
      // replaced session. Propagate the denial to the parent before another
      // app-level redraw can mount the previously cached Premium scene.
+     eclatV2StatusFence.invalidate();
      state.eclatV2Status={access:false,active:false};
      disposeEclatV2Player();render();return;
     }
@@ -2697,6 +2702,7 @@ async function handle(action,element){
    // a newly started game. Server state remains the source of truth.
    if(state.eclatV2Status?.active===false&&state.eclatV2Status?.state==='finished')
     state.eclatV2FinaleDismissed=state.eclatV2Status.session_id;
+   eclatV2StatusFence.invalidate();
    disposeEclatV2Player();state.eclatV2Status=null;state.eclatV2OwnerId=null;state.eclatV2CoupleId=null;
    state.eclatBrowse=true;state.eclatDetails=false;
    await refreshEclatStatus();render();return;
@@ -2751,6 +2757,7 @@ async function handle(action,element){
      deviceMode:state.eclatV2DeviceMode});
     if(!result?.access||!result.active||result.content_version!==2)
      throw Error('Le serveur n’a pas ouvert de séance Éclat V2 officielle.');
+    eclatV2StatusFence.invalidate();
     state.eclatV2Status=result;state.eclatV2OwnerId=state.user.id;state.eclatV2CoupleId=state.coupleId;
     state.eclatBrowse=false;state.eclatDetails=false;state.eclatFinished=null;
     state.eclatV2FinaleDismissed=null;
