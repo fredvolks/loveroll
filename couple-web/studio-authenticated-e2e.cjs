@@ -293,7 +293,7 @@ async function main(){
   await page.selectOption('#studio-real-history-seat',recipientSeat);
   await page.waitForFunction(()=>{
    const text=document.querySelector('#studio-real-history-count')?.textContent||'';
-   return /^1–1 sur 1 défis$/.test(text.trim());
+   return /^1–1 sur 1 défi$/.test(text.trim());
   },null,{timeout:30000});
   assert.equal(await page.locator('#studio-real-challenge-list .studio-real-challenge-card h4')
    .first().innerText(),officialTitle,
@@ -309,7 +309,7 @@ async function main(){
   await page.selectOption('#studio-real-history-seat','all');
   await page.waitForFunction(()=>{
    const text=document.querySelector('#studio-real-history-count')?.textContent||'';
-   return /^1–1 sur 1 défis$/.test(text.trim());
+   return /^1–1 sur 1 défi$/.test(text.trim());
   },null,{timeout:30000});
   await page.screenshot({
    path:'studio-authenticated-e2e-proof/real-server-challenge-history.png',fullPage:true
