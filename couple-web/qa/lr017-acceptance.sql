@@ -39,6 +39,10 @@ BEGIN
  PERFORM set_config('request.jwt.claim.sub',b::text,true);
  IF (SELECT count(*) FROM public.love_challenge_adaptations)<>1 THEN
   RAISE EXCEPTION 'Other partner cannot read their invitation';END IF;
+ IF (SELECT original_text FROM public.love_challenge_adaptations WHERE challenge_id=first)
+   IS DISTINCT FROM 'Consigne officielle originale' OR
+    (SELECT original_minutes FROM public.love_challenge_adaptations WHERE challenge_id=first)<>5 THEN
+  RAISE EXCEPTION 'Informed consent must display the exact original instructions and minutes';END IF;
  v:=public.love_adaptation_respond(first,true);
  IF v->>'status'<>'accepted' OR v->>'updated'<>'true' THEN
   RAISE EXCEPTION 'Other partner failed to approve: %',v;END IF;
