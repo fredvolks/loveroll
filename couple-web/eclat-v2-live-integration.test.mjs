@@ -172,3 +172,18 @@ test('the Premium Éclat stop action uses the official styled LoveRoll confirmat
  assert.match(live,/eclatV2Player=createEclatV2PlayController/);
  assert.doesNotMatch(live,/confirmStop:\(\)=>globalThis\.confirm/);
 });
+
+
+test('Éclat V2 preserves published privacy mask, silent music and generic notifications',()=>{
+ const sw=readFileSync(new URL('./service-worker.js',import.meta.url),'utf8');
+ assert.match(app,/document\.addEventListener\('loveroll:privacy-mask'/);
+ assert.match(app,/eclatAudio\.stop\(\);state\.eclatMusic=false/);
+ assert.match(app,/if\(document\.documentElement\.classList\.contains\('lr-privacy-active'\)\)/);
+ assert.match(app,/import \{createEclatAudio\} from '.\/eclat-audio\.mjs\?v=20261028-privacy250'/);
+ assert.match(html,/privacy-screen\.mjs\?v=20261028-privacy250/);
+ assert.match(html,/eclat-v2-stage\.css\?v=20261028-v2-live251/);
+ assert.match(sw,/const safeBodies=\{/);
+ assert.match(sw,/const body=safeBodies\[kind\]/);
+ assert.doesNotMatch(sw,/const body=typeof message\.body/);
+ assert.match(sw,/const CACHE='loveroll-static-v251'/);
+});
