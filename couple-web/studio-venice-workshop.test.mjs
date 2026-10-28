@@ -41,6 +41,10 @@ test('real Venice inference requires one authorized per-admin daily reservation 
  assert.match(quotaTest,/QUOTA_SHOULD_HAVE_FAILED/);
  assert.match(parent,/await request\('venice_preview_authorize'\)/);
  assert.match(parent,/Venice utilisera de vrais crédits/);
+ assert.match(parent,/veniceWatch=setTimeout\(\(\)=>\{/);
+ assert.match(parent,/60000/);
+ assert.match(parent,/quota\.'/);
+ assert.match(parent,/clearTimeout\(veniceWatch\)/);
  assert.match(parent,/une seule génération par jour UTC/);
  assert.match(parent,/title\.textContent=String\(card\.title/);
  assert.doesNotMatch(parent,/article\.innerHTML/);
