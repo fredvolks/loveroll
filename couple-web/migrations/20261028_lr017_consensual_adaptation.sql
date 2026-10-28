@@ -31,7 +31,10 @@ CREATE POLICY love_adaptations_pair_read ON public.love_challenge_adaptations
    AND EXISTS (SELECT 1 FROM public.couple_challenges q
     WHERE q.id=love_challenge_adaptations.challenge_id
       AND q.couple_id=love_challenge_adaptations.couple_id
-      AND q.session_id=love_challenge_adaptations.session_id)
+      AND q.session_id=love_challenge_adaptations.session_id
+      AND (q.offered_by=(select auth.uid()) OR q.recipient=(select auth.uid()))
+      AND EXISTS (SELECT 1 FROM public.couple_members m WHERE m.couple_id=couple_id AND m.user_id=q.offered_by)
+      AND EXISTS (SELECT 1 FROM public.couple_members m WHERE m.couple_id=couple_id AND m.user_id=q.recipient))
  );
 REVOKE ALL ON public.love_challenge_adaptations FROM public,anon,authenticated;
 GRANT SELECT ON public.love_challenge_adaptations TO authenticated;
@@ -66,7 +69,9 @@ BEGIN
  IF NOT FOUND OR v_session.finished_at IS NOT NULL THEN
   RAISE EXCEPTION 'Soirée déjà terminée'; END IF;
  IF NOT (v_actor IN (v_q.offered_by,v_q.recipient))
-  OR (SELECT count(*) FROM public.couple_members WHERE couple_id=v_couple)<>2 THEN
+  OR (SELECT count(*) FROM public.couple_members WHERE couple_id=v_couple)<>2
+  OR NOT EXISTS(SELECT 1 FROM public.couple_members WHERE couple_id=v_couple AND user_id=v_q.offered_by)
+  OR NOT EXISTS(SELECT 1 FROM public.couple_members WHERE couple_id=v_couple AND user_id=v_q.recipient) THEN
   RAISE EXCEPTION 'Deux partenaires associés sont nécessaires' USING errcode='42501'; END IF;
  -- A running timer must never be silently replaced. A changed duration
  -- can be proposed/approved only before the challenge begins.
@@ -115,7 +120,10 @@ BEGIN
  SELECT * INTO v_adaptation FROM public.love_challenge_adaptations
   WHERE challenge_id=p_challenge AND couple_id=v_couple FOR UPDATE;
  IF NOT FOUND OR NOT (v_actor IN (v_q.offered_by,v_q.recipient))
-   OR v_actor=v_adaptation.proposed_by THEN
+   OR v_actor=v_adaptation.proposed_by
+   OR (SELECT count(*) FROM public.couple_members WHERE couple_id=v_couple)<>2
+   OR NOT EXISTS(SELECT 1 FROM public.couple_members WHERE couple_id=v_couple AND user_id=v_q.offered_by)
+   OR NOT EXISTS(SELECT 1 FROM public.couple_members WHERE couple_id=v_couple AND user_id=v_q.recipient) THEN
   RAISE EXCEPTION 'Seul l’autre partenaire peut répondre' USING errcode='42501'; END IF;
  IF v_adaptation.status<>'pending' THEN
   RETURN jsonb_build_object('status',v_adaptation.status,'updated',false);
