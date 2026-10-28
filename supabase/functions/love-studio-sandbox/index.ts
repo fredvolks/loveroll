@@ -204,6 +204,10 @@ Deno.serve(async(req:Request)=>{
   return response({seat,token_hash:link.properties.hashed_token,user_id:row.user_id});
  }
  if(action==='venice_preview_authorize'){
+  // Don't exhaust the one paid-preview slot when Venice has no API key.
+  // Secrets remain on the server; only a non-secret configured flag is used.
+  if(!(Deno.env.get('VENICE_API_KEY')||'').trim())
+   return response({error:'Venice n’est pas configuré : aucun crédit de génération réservé.'},503);
   // This endpoint ONLY reserves a one-time real-inference budget. It does
   // not call Venice, expose credentials, or insert cards into the game.
   const {data:pool,error:poolError}=await service.from('love_studio_test_pools')
