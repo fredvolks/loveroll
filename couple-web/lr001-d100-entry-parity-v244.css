@@ -1,0 +1,80 @@
+/* LR-001: exact visible WebGL stage parity with the EFFECTIVE Surprise CSS.
+   Surprise's layered !important sizing overrides the older v151 nominal size.
+   Use the SAME existing layer as Soirée (including its tablet overrides):
+   unlayered !important styles cannot override layered !important styles.
+   Keep the official WebGL mesh, photograph and photographed marble unchanged. */
+@layer loveroll-soiree-template {
+  #app.loveroll-evening-page .evening-premium-view.is-inactive.has-home-soiree-template
+  .evening-finale-dice>.love3d {
+    display:grid!important;
+    place-items:center!important;
+    position:relative!important;
+    inset:auto!important;
+    width:100%!important;
+    height:100%!important;
+    min-width:0!important;
+    min-height:0!important;
+  }
+  /* Effective Surprise phone stage from surprise-minimal.css: 100vw/420px.
+     Its old unlayered 82%/41dvh cap is not applied because of !important
+     CSS-layer priority. The stage is centered and never clipped/masked. */
+  #app.loveroll-evening-page .evening-premium-view.is-inactive.has-home-soiree-template
+  .evening-finale-dice .love3d-stage {
+    box-sizing:border-box!important;
+    position:relative!important;
+    display:block!important;
+    width:min(100vw,420px)!important;
+    height:auto!important;
+    min-width:0!important;
+    min-height:0!important;
+    max-width:none!important;
+    max-height:none!important;
+    aspect-ratio:1!important;
+    flex:none!important;
+    margin:0 auto!important;
+  }
+  @media (min-width:768px) {
+    /* Effective desktop/tablet Surprise entry D100: v151 is not important
+       here, so its 82% / 43dvh / 440px sizing wins. */
+    #app.loveroll-evening-page .evening-premium-view.is-inactive.has-home-soiree-template
+    .evening-finale-dice .love3d-stage {
+      width:min(82%,43dvh,440px)!important;
+      max-width:100%!important;
+    }
+  }
+  @media (orientation:landscape) and (max-height:600px) and (min-width:768px) {
+    #app.loveroll-evening-page .evening-premium-view.is-inactive.has-home-soiree-template
+    .evening-finale-dice .love3d-stage {
+      width:min(77%,59dvh,340px)!important;
+    }
+  }
+}
+/* When the iPad Soirée marble needs a lower contact to fit the Surprise-sized
+   3D mesh, cover-crop the SAME portrait HD photograph without stretching. */
+@layer loveroll-soiree-template {
+  @media (min-width:768px) {
+    main#app.loveroll-evening-page:has(.evening-premium-view.is-inactive.has-home-soiree-template)::before {
+      background-size:auto var(--home-scene-top-image-height)!important;
+    }
+  }
+}
+
+/* LR-001 PHONE CENTRING: Soirée's page inset is 14px while Surprise's
+   WebGL scene uses the full viewport. The oversized canvas formerly
+   overflowed from the inset's left edge, placing its Ruby centre at x+14.
+   Expand the existing die host to viewport width and centre it without
+   adding any transform to .love3d-stage (the real 3D marble contact owns
+   stage.style.transform=translateY from dice3d.js). */
+@layer loveroll-soiree-template {
+ @media (max-width:767px) {
+  #app.loveroll-evening-page .evening-premium-view.is-inactive.has-home-soiree-template
+  .evening-finale-dice>.love3d {
+   position:relative!important;
+   width:100vw!important;
+   max-width:none!important;
+   /* Do not stack estimated offsets: dice3d.js projects and centres
+      the real mesh from its current canvas bounds each time. */
+   left:auto!important;
+  }
+ }
+}

@@ -575,15 +575,28 @@ export function dieOn(canvas,sides,value,rolling){
    const fitBounds=projectedBounds();
    // A tall Surprise stage must still fit the entire ruby mesh inside its canvas.
    camera.zoom*=Math.min(1,(contact-sceneRect.top-headroom)/((fitBounds.bottom-fitBounds.top)*rect.height),.49/(.5-fitBounds.top),.49/(fitBounds.bottom-.5),.49/(.5-fitBounds.left),.49/(fitBounds.right-.5));
-   // On 360x640 the idle Soirée D100 projected 12.4% larger than Surprise.
-   // Match the reference mesh on narrow phones without altering game results.
-   if(idleEveningD100&&window.matchMedia?.('(max-width:767px)').matches)camera.zoom*=.86;
+   // LR-001: Soirée and Surprise use different marble-contact constraints.
+   // The 3D mesh is already the correct size on a tall 412x915 phone, but
+   // needs a smaller fit on short phones. A fixed .929 multiplier shrinks
+   // the tall-phone mesh by 7.1%. Interpolate smoothly by available height:
+   // measured parity references: 360x740, 412x824 and 412x915.
+   if(idleEveningD100&&window.matchMedia?.('(max-width:767px)').matches){
+    const t=Math.max(0,Math.min(1,(window.innerHeight-740)/175));
+    camera.zoom*=.929+.071*t*t;
+   }
    camera.updateProjectionMatrix();
   }
   bounds=projectedBounds();
   built.group.quaternion.copy(pose);built.group.position.copy(position);built.group.updateMatrixWorld(true);
   const delta=contact-(rect.top+bounds.bottom*rect.height);
-  stage.style.transform='translateY('+delta.toFixed(2)+'px)';
+  // LR-001: after resetting stage.transform above, measure the actual
+  // projected D100 centre at this viewport. Align the *same real mesh* to
+  // the centre of the photographed marble. Unlike a fixed CSS offset, this
+  // remains exact across 360/412px phones, resize and repeated animation.
+  const meshX=rect.left+(bounds.left+bounds.right)*rect.width/2;
+  const dx=idleEveningD100&&window.matchMedia?.('(max-width:767px)').matches
+   ? window.innerWidth/2-meshX : 0;
+  stage.style.transform='translate('+dx.toFixed(2)+'px,'+delta.toFixed(2)+'px)';
   canvas.dataset.podiumContact=String(contact-sceneRect.top);
  }
  let frame=0,drag=false,x=0,y=0,vx=0,vy=0,shown=true,lastFrame=0,renderedFrames=0;
