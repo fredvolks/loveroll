@@ -159,6 +159,12 @@ document.addEventListener('click',event=>{
  if(btn.dataset.pane){
   choosePane(btn.dataset.pane);msg('');
   if(btn.closest('.studio-quick-grid'))document.querySelector('.studio-content')?.scrollIntoView({behavior:'smooth',block:'start'});
+  if(btn.closest('.studio-mobile-shortcuts')){
+   // One-tap emergency shortcuts must reach the working tool, not merely
+   // change a hidden pane while leaving a tall iPad/mobile header in view.
+   document.querySelector('[data-panel="'+btn.dataset.pane+'"]')
+    ?.scrollIntoView({behavior:'smooth',block:'start'});
+  }
   return;
  }
  if(btn.dataset.face){
