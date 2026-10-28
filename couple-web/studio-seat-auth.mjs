@@ -35,7 +35,7 @@ export function startStudioSeatLogin(client,seat,{selfWindow,origin,reload=()=>s
    signingIn=true;await client.auth.signOut({scope:'local'});reload();return;
   }
   if(message.type==='loveroll-studio-navigate'){
-   if(!['home','session','special','eclat','advent','settings'].includes(message.tab))return;
+   if(!['home','session','special','eclat','advent','settings','journal','personal-journal','occasions'].includes(message.tab))return;
    try{
     const {data}=await client.auth.getSession();
     // Admin shortcuts never turn a normal signed-in user into a Studio seat.
