@@ -1,4 +1,4 @@
-import {isRegisteredStudioIdentity, type AuthPrincipal} from './guards.ts';
+import {isRegisteredStudioIdentity,canSkipAlreadyDeletedStudioUser, type AuthPrincipal} from './guards.ts';
 
 function assert(condition:unknown,description:string){
  if(!condition)throw Error(description);
@@ -48,4 +48,21 @@ Deno.test('missing, revoked or partially registered accounts fail closed',()=>{
  }
  assert(!isRegisteredStudioIdentity(valid,{...seat,user_id:null},admin),
   'unregistered seat accepted');
+});
+
+Deno.test('retry deletes the remaining B after A was removed, but only post-purge',()=>{
+ for(const missing of [{status:404},{code:'user_not_found'}]){
+  assert(canSkipAlreadyDeletedStudioUser(missing,'deleting',null),
+   'verified already-deleted A should not block B recovery');
+  assert(!canSkipAlreadyDeletedStudioUser(missing,'ready',null),
+   'missing user can never be tolerated during an active test');
+  assert(!canSkipAlreadyDeletedStudioUser(missing,'creating',null),
+   'partial registration must be investigated, not silently skipped');
+  assert(!canSkipAlreadyDeletedStudioUser(missing,'deleting','real-couple-id'),
+   'Auth user must not be considered deleted before the couple is purged');
+ }
+ for(const error of [null,{status:403},{status:500},{code:'internal_error'}]){
+  assert(!canSkipAlreadyDeletedStudioUser(error,'deleting',null),
+   'unexpected outages and permission failures must preserve recovery registry');
+ }
 });
