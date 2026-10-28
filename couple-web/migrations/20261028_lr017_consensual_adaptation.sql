@@ -44,7 +44,16 @@ AS $pair$
   AND EXISTS(
    SELECT 1 FROM public.couple_challenges q
    WHERE q.id=p_challenge AND q.couple_id=p_couple AND q.session_id=p_session
-    AND auth.uid() IN(q.offered_by,q.recipient)
+    AND (
+     auth.uid() IN(q.offered_by,q.recipient)
+     -- Self-drawn cards are known only to their recipient. A proposal is
+     -- a deliberate disclosure to the second verified partner for consent;
+     -- that partner may READ the adaptation, never the underlying card.
+     OR (q.offered_by=q.recipient AND EXISTS(
+      SELECT 1 FROM public.couple_sessions actual
+      WHERE actual.id=q.session_id AND actual.couple_id=p_couple
+        AND actual.self_draws=true))
+    )
     AND EXISTS (SELECT 1 FROM public.couple_members m
      WHERE m.couple_id=p_couple AND m.user_id=q.offered_by)
     AND EXISTS (SELECT 1 FROM public.couple_members m
@@ -150,7 +159,13 @@ BEGIN
  IF NOT FOUND THEN RAISE EXCEPTION 'Cette soirée est clôturée'; END IF;
  SELECT * INTO v_adaptation FROM public.love_challenge_adaptations
   WHERE challenge_id=p_challenge AND couple_id=v_couple FOR UPDATE;
- IF NOT FOUND OR NOT (v_actor IN (v_q.offered_by,v_q.recipient))
+ IF NOT FOUND OR NOT (
+    v_actor IN (v_q.offered_by,v_q.recipient)
+    OR (v_q.offered_by=v_q.recipient AND EXISTS(
+     SELECT 1 FROM public.couple_sessions actual
+     WHERE actual.id=v_q.session_id AND actual.couple_id=v_couple
+       AND actual.self_draws=true))
+   )
    OR v_actor=v_adaptation.proposed_by
    OR (SELECT count(*) FROM public.couple_members WHERE couple_id=v_couple)<>2
    OR NOT EXISTS(SELECT 1 FROM public.couple_members WHERE couple_id=v_couple AND user_id=v_q.offered_by)
