@@ -65,7 +65,8 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
  const client={functions:{invoke:async(name,{body})=>{
   calls.push(body.action);
   if(body.action==='status')return {data:{ready:true,state:'ready',
-   game:{weekly_face:3,monthly_face:47,personal_faces:{A:2,B:5},session:'open',challenges_total:2,eclat_enabled:false},
+   game:{weekly_face:3,monthly_face:47,personal_faces:{A:2,B:5},session:'open',challenges_total:2,eclat_enabled:false,
+     challenge_preview:[{seat:'B',category:'SENSUEL',face:42,status:'offered',title:'Vraie carte de test',description:'Consigne issue de la base'}]},
    seats:[{seat:'A',user_id:'test-a'},{seat:'B',user_id:'test-b'}]}};
   return {data:{ready:true}};
  }}};
@@ -77,6 +78,8 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
   assert.ok(a&&b,'two independent official LoveRoll iframes');
   assert.match(nodes.get('studio-real-diagnostics').textContent,/D6 Soirée A : 2/);
   assert.match(nodes.get('studio-real-diagnostics').textContent,/D100 Surprise : 47/);
+  assert.match(nodes.get('studio-real-diagnostics').textContent,/Joueur B · SENSUEL · D100 42/);
+  assert.match(nodes.get('studio-real-diagnostics').textContent,/Consigne issue de la base/);
   assert.match(a.src,/studio_seat=A/);
   assert.match(b.src,/studio_seat=B/);
   assert.notEqual(a.src,b.src);

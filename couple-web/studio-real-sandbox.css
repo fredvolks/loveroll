@@ -27,7 +27,7 @@
 .studio-real-toolbar-actions{display:flex;gap:9px;flex-wrap:wrap;justify-content:flex-end}
 .studio-real-toolbar-actions button{min-height:45px}
 .studio-real-destructive{border-color:#b97f88!important;background:#43232c!important}
-.studio-real-diagnostics{padding:13px 16px;border:1px solid #86526e;border-radius:13px;background:#291524;color:#f6dce9;font:500 13px/1.6 system-ui,sans-serif;margin:12px 0;overflow-wrap:anywhere}
+.studio-real-diagnostics{white-space:pre-line;padding:13px 16px;border:1px solid #86526e;border-radius:13px;background:#291524;color:#f6dce9;font:500 13px/1.6 system-ui,sans-serif;margin:12px 0;overflow-wrap:anywhere}
 .studio-real-seat-nav{display:flex;gap:8px;margin:15px 0}
 .studio-real-seat-nav button{border:1px solid #b47794;border-radius:11px;min-height:45px;
  padding:11px 16px;color:#ffe6f0;background:#3d2032;flex:1;font-weight:700}

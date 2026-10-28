@@ -83,7 +83,17 @@ export function createStudioRealSandbox({client}){
       ' · D6 Soirée B : '+face(g.personal_faces?.B)+
       ' · Soirée : '+(g.session==='open'?'en cours':g.session==='finished'?'terminée':'non commencée')+
       ' · Défis : '+Number(g.challenges_total||0)+
-      ' · Éclat : '+(g.eclat_enabled?'test autorisé':'non actif');
+      ' · Éclat : '+(g.eclat_enabled?'test autorisé':'non actif')+
+       (Array.isArray(g.challenge_preview)&&g.challenge_preview.length
+        ?'\nTrois derniers défis réels :\n'+g.challenge_preview.map(card=>
+          'Joueur '+(card.seat==='A'||card.seat==='B'?card.seat:'?')+
+          ' · '+String(card.category||'Sans catégorie')+
+          ' · D100 '+face(card.face)+
+          ' · '+String(card.status||'')+
+          '\n'+String(card.title||'Défi')+
+          '\n'+String(card.description||'')
+         ).join('\n\n')
+        :'\nAucun défi tiré dans la dernière soirée.');
    }
   }
   if(!isReady){closeFrames();return;}

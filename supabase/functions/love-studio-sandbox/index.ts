@@ -79,8 +79,10 @@ Deno.serve(async(req:Request)=>{
     const [personal,challenges]=latest?.id?await Promise.all([
      checked(service.from('couple_personal_rolls').select('user_id,face')
       .eq('session_id',latest.id)),
-     checked(service.from('couple_challenges').select('status,recipient')
-      .eq('couple_id',pool.couple_id).eq('session_id',latest.id))
+     checked(service.from('couple_challenges')
+      .select('status,recipient,card_title,card_description,category,face,created_at')
+      .eq('couple_id',pool.couple_id).eq('session_id',latest.id)
+      .order('created_at',{ascending:false}))
     ]):[[],[]];
     const seatFace=(s:Seat)=>personal.find((r:{user_id:string})=>
      r.user_id===seats.find(x=>x.seat===s)?.user_id)?.face??null;
@@ -90,6 +92,16 @@ Deno.serve(async(req:Request)=>{
      session:latest?(latest.finished_at?'finished':'open'):'not_started',
      personal_faces:{A:seatFace('A'),B:seatFace('B')},
      challenges_total:challenges.length,
+     // Only actual cards stored by official drawing RPCs, latest first.
+     challenge_preview:challenges.slice(0,3).map((row:{
+      recipient:string|null,card_title:string|null,card_description:string|null,
+      category:string|null,face:number|null,status:string|null
+     })=>({
+      seat:seats.find(x=>x.user_id===row.recipient)?.seat??'?',
+      category:row.category??'',face:row.face??null,
+      title:row.card_title??'',description:row.card_description??'',
+      status:row.status??''
+     })),
      eclat_enabled:entitlement?.enabled===true&&
        (!entitlement.ends_at||new Date(entitlement.ends_at).getTime()>Date.now())
     };

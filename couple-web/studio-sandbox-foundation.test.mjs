@@ -67,6 +67,8 @@ test('only registered test couples and identities are eligible for deletion',()=
  assert.match(schema,/GRANT EXECUTE ON FUNCTION public\.love_studio_purge_test_couple/);
  assert.match(source,/\.eq\('couple_id',pool\.couple_id\)/);
  assert.match(source,/\.eq\('session_id',latest\.id\)/);
+ assert.match(source,/card_title,card_description,category,face,created_at/);
+ assert.match(source,/challenge_preview:challenges\.slice\(0,3\)/);
  assert.match(source,/Diagnostic temporairement indisponible/);
  assert.match(source,/service\.rpc\('love_studio_purge_test_couple'/);
  assert.match(source,/service\.auth\.admin\.deleteUser/);
