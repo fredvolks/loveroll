@@ -92,7 +92,7 @@ test('identity refresh rejects reused sessions or wrong account',async()=>{
 });
 test('invalid actions and server-made faces never become a fake dice result',async()=>{
  const {api}=clientFor(idA,{draw_for_partner:{face:105,id:challenge}});
- await assert.rejects(()=>api.d100(session,'HASARD'),/non confirmée/);
+ await assert.rejects(()=>api.d100(session,'SENSUEL'),/non confirmée/);
  await assert.rejects(()=>api.d100(session,'FORCE'),RangeError);
  await assert.rejects(()=>api.d100(session,'MIXTE'),RangeError);
  await assert.rejects(()=>api.answer(challenge,'admin-bypass'),RangeError);
