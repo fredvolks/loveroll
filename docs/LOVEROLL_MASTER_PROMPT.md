@@ -175,6 +175,8 @@ Ce document est la **source de vérité des demandes** LoveRoll : jeu, Accueil, 
 ### Rôles attendus de l'agent exécutant
 Travailler simultanément comme développeur senior Web/Android/PWA/WebGL, directeur artistique haut de gamme, expert UX/UI/accessibilité, testeur QA multiplateforme et **couple utilisateur** (un partenaire expérimenté et un peu moins technophile). Identifier les vrais irritants d'usage, pas uniquement les anomalies CSS. Faire des propositions vérifiables, avec priorité et raison, en conservant l'ambiance romantique.
 
+**Consigne temporaire du propriétaire — 28 octobre 2026 :** retirer le rôle distinct de « responsable sécurité » de l'équipe ou des casquettes obligatoires du prompt maître. Ne pas solliciter un responsable sécurité, une revue humaine dédiée ou une approbation supplémentaire à chaque lot pour poursuivre les développements courants. Cette simplification de l'organisation **ne supprime pas** les contrôles automatiques, RLS/Supabase Auth, la protection des données réelles, les tests ni les validations de déploiement déjà exigés; aucun changement destructif ou contournement d'accès n'est autorisé par cette décision.
+
 ## P0 — Correctifs fonctionnels
 
 ### LR-001 — D100 Soirée coupé et disproportionné
