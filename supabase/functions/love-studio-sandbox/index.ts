@@ -1,6 +1,7 @@
 // LoveRoll Studio REAL dual-account sandbox. Never impersonate customer accounts.
 // Service role stays on server. Does not affect other couples or roll engines.
 import {createClient} from 'npm:@supabase/supabase-js@2.57.0';
+import {isRegisteredStudioIdentity} from './guards.ts';
 
 const headers={
   'Content-Type':'application/json;charset=utf-8','Cache-Control':'no-store',
@@ -65,12 +66,9 @@ Deno.serve(async(req:Request)=>{
       members.error||members.data?.length!==2||
       !members.data.some(m=>m.user_id===a.user_id)||
       !members.data.some(m=>m.user_id===b.user_id))return false;
-   const validAuth=(record:typeof authA,seat:{user_id:string|null;synthetic_email:string})=>
-    !record.error&&record.data?.user?.id===seat.user_id&&
-    record.data.user.app_metadata?.love_studio_test===true&&
-    record.data.user.app_metadata?.love_studio_admin===adminId&&
-    record.data.user.email===seat.synthetic_email;
-   return validAuth(authA,a)&&validAuth(authB,b);
+   return !authA.error&&!authB.error&&
+    isRegisteredStudioIdentity(authA.data?.user,a,adminId)&&
+    isRegisteredStudioIdentity(authB.data?.user,b,adminId);
   }catch{return false}
  }
 
@@ -190,10 +188,7 @@ Deno.serve(async(req:Request)=>{
   // email was deleted concurrently. The returned link MUST refer to the
   // previously registered technical account; never log in a new orphan or
   // silently grant access to an unrelated identity.
-  if(link.user?.id!==row.user_id||
-     link.user?.email!==row.synthetic_email||
-     link.user?.app_metadata?.love_studio_test!==true||
-     link.user?.app_metadata?.love_studio_admin!==adminId)
+  if(!isRegisteredStudioIdentity(link.user,row,adminId))
     return response({error:'Lien Auth non conforme au joueur technique enregistré'},409);
   // One-time Auth verification token: returned ONLY to this verified platform admin.
   return response({seat,token_hash:link.properties.hashed_token,user_id:row.user_id});
