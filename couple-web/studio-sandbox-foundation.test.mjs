@@ -27,6 +27,11 @@ test('two real Auth users are generated without pre-known credentials',()=>{
  assert.match(source,/love_eclat_entitlements/);
  assert.match(source,/studio_synthetic_qa_only/);
  assert.match(source,/source:'studio_test_only'/);
+ assert.match(source,/service\.from\('love_eclat_sessions'\)\.select\('coffret_id'\)/);
+ assert.match(source,/\.eq\('cancelled',false\)/);
+ assert.match(source,/\.not\('ended_at','is',null\)/);
+ assert.match(source,/eclat_completed_coffrets/);
+ assert.match(source,/\.filter\(\(id:number\)=>Number\.isInteger\(id\)&&id>=1&&id<=12\)/);
  assert.match(source,/monthly_d100_limit:12/);
  assert.match(source,/let identitiesClean=true/);
  assert.match(source,/canSkipAlreadyDeletedStudioUser\(lookupError,deletePool\.state,deletePool\.couple_id\)/);
