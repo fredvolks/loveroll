@@ -74,8 +74,15 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
    clearPrivateSession();status={access:false,active:false};
    stateRevision++;paint();throw Error('Séance Éclat remplacée');
   }
+  // The two phones poll frequently, including while users type optional
+  // answers or songs. A byte-for-byte identical authoritative snapshot
+  // does not justify destroying focused inputs and moving their cursor.
+  // Access/session denial and finished states have already been handled
+  // above, so this fast path never retains a revoked private screen.
+  const identical=JSON.stringify(updated)===JSON.stringify(status);
   const changed=updated.chapter_index!==status.chapter_index||updated.substep_index!==status.substep_index;
   status=updated;timerAnchorMs=Date.now();
+  if(identical)return true;
   if(updated.wish_invitation_text)wishPhraseDraft=null;
   if(updated.playlist_shared)playlistDraft=[];
   else if(updated.chapter_number===8&&Array.isArray(updated.my_playlist_slots))
