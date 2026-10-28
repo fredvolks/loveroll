@@ -1051,7 +1051,13 @@ function subscribe(){
   filter:'id=eq.'+state.coupleId},payload=>{
   const updated=payload?.new;
   if(!updated||updated.id!==state.coupleId||!state.couple)return;
+  const earlierLimit=Number(state.couple.monthly_pass_limit??3);
   state.couple={...state.couple,...updated};
+  if(Number(state.couple.monthly_pass_limit??3)!==earlierLimit){
+   // Re-read the OTHER user's private quota; never copy the owner's count.
+   // Reconcile avoids interrupting official 3D throws or unsaved forms.
+   liveSync.request(120);
+  }
   if(state.tab==='home'||(state.tab==='settings'&&settingsOpenSection==='admin'&&!hasUnsavedForm()))
    render();
  });
