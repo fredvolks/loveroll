@@ -7,6 +7,8 @@
 
 
 
+> **Décision du 28 octobre 2026 — rôle en pause :** retirer temporairement le poste, l'intervenant ou l'approbation distincte de **« responsable sécurité »** des étapes et responsabilités imposées par ce prompt maître. Work continue directement les développements et validations techniques sans attendre ce rôle. Cette suspension ne supprime **aucun** contrôle automatique déjà exigé (Auth, RLS, protection des comptes et paiements, CI, isolation A/B, tests de suppression) ni le blocage de publication tant que des tests obligatoires échouent ou que la vraie recette A/B manque. Le rôle pourra être réintroduit sur décision du propriétaire.
+
 ## LR-STUDIO-VRAI-JEU-2-COMPTES-20261027 — Super Admin iPad/PC, deux VRAIS comptes de test, jeu officiel intégral (PRIORITÉ)
 
 > Décision produit impérative du 27 octobre 2026, précisée après l'essai de faux simulateur envisagé : **le propriétaire REFUSE tout dé, carte ou soirée uniquement simulés en JavaScript** comme substitut à un vrai test. Work/code ne peut pas requalifier une simple maquette, un lancer local, un tableau de bord de nombres ou une démo marketing en « jeu 100 % ». **Ne fusionner ni publier le prototype de branche \`feat/love-super-admin-ipad-venice-20261027\`**, qui utilisait des résultats virtuels non officiels. Construire un nouveau parcours complet, isolé, depuis le dernier \`main\`, puis le tester réellement.
