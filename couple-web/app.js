@@ -1663,8 +1663,8 @@ function renderSession(){
      (state.loveFavoritesReady?
       '<div class="lr-favorite-actions" aria-label="Coup de cœur">'+
       button('favorite-toggle:'+view.category+':'+Number(view.card_id),
-       (state.loveFavorites||[]).some(f=>f.category===view.category&&Number(f.card_id)===Number(view.card_id)&&f.marked_by===uid)?
-        '♥ Retirer mon cœur':'♡ Ajouter aux coups de cœur',
+       (state.loveFavorites||[]).some(f=>f.category===view.category&&Number(f.card_id)===Number(view.card_id) )?
+        '♥ Retirer des coups de cœur':'♡ Ajouter aux coups de cœur',
        'class="subtle" '+(state.loveFavoritesBusy?'disabled':''))+'</div>':'')+
      '<div class="evening-challenge-scene" aria-hidden="true"></div>'+
      '<p class="evening-challenge-instructions" role="region" aria-label="Consigne du défi" tabindex="0">'+safe(resolvedCard(view).description)+'</p>'+
@@ -2346,16 +2346,16 @@ function renderSettings(){
   // private card descriptions are never fetched or revealed by a heart.
   const mine=(state.challengesHistory||[]).filter(item=>item.recipient===state.user?.id&&
    item.category===category&&Number(item.card_id)===cardId).at(-1);
-  const ownMark=marks.some(mark=>mark.marked_by===state.user?.id);
+  const isHeart=marks.length>0;
   return '<div class="settings-item lr-favorite-row"><div><strong>'+
    safe(mine?.card_title||('Carte '+cardId))+'</strong><p class="tiny-note">'+
    safe(category==='SEXUEL'?'Sexuel':'Sensuel')+' · carte '+cardId+
-   ' · '+marks.length+' cœur'+(marks.length>1?'s':'')+' dans notre duo</p></div>'+
-   button('favorite-toggle:'+category+':'+cardId,ownMark?'♥ Retirer mon cœur':'♡ Ajouter mon cœur',
+   ' · coup de cœur commun</p></div>'+
+   button('favorite-toggle:'+category+':'+cardId,isHeart?'♥ Retirer des coups de cœur':'♡ Ajouter aux coups de cœur',
     'class="settings-secondary" '+(state.loveFavoritesBusy?'disabled':''))+'</div>';
  }).join('');
  const favoritesPage='<section aria-label="Nos coups de cœur">'+
-  '<p class="tiny-note">Chaque personne garde son propre cœur. Une carte aimée peut ressortir lors d’une prochaine soirée, sauf si elle est retirée du cycle.</p>'+
+  '<p class="tiny-note">Nos coups de cœur · '+favoritesByCard.size+'/5. Une liste commune; un favori peut revenir lors d’une prochaine pige sans contourner une exclusion.</p>'+
   (favoriteRows||'<p class="tiny-note">Aucun coup de cœur encore enregistré.</p>')+'</section>';
  const excludedCards=(state.loveExcludedCards||[]).length?
   (state.loveExcludedCards||[]).map(card=>{
@@ -3477,25 +3477,30 @@ async function handle(action,element){
   if(state.loveFavoritesBusy)return;
   state.favoriteLimitPending=null;render();return;
  }
- if(verb==='favorite-limit-remove'){
-  if(!state.favoriteLimitPending||!state.loveFavoritesReady||state.loveFavoritesBusy)return;
+ if(verb==='favorite-limit-replace'){
+  const pending=state.favoriteLimitPending;
+  if(!pending||!state.loveFavoritesReady||state.loveFavoritesBusy)return;
   const category=parts[0],cardId=Number(parts[1]);
   if(!['SENSUEL','SEXUEL'].includes(category)||!Number.isInteger(cardId)||cardId<1||cardId>100)
-   throw Error('Favori invalide.');
-  if(!(state.loveFavorites||[]).some(f=>f.marked_by===state.user?.id&&
-     f.category===category&&Number(f.card_id)===cardId))throw Error('Ce cœur ne vous appartient plus.');
+   throw Error('Favori à remplacer invalide.');
+  if(!(state.loveFavorites||[]).some(f=>f.category===category&&Number(f.card_id)===cardId))
+   throw Error('Ce favori a changé. Actualisez votre liste.');
   state.loveFavoritesBusy=true;render();
   try{
-   await rpc('set_love_couple_favorite',{p_couple:state.coupleId,p_category:category,p_card_id:cardId,p_enabled:false});
-   await refreshShared();notify('Coup de cœur retiré, une place est disponible.');
-  }finally{state.loveFavoritesBusy=false;render();}
+   await rpc('replace_love_couple_favorite',{
+    p_couple:state.coupleId,p_old_category:category,p_old_card_id:cardId,
+    p_new_category:pending.category,p_new_card_id:Number(pending.cardId)});
+   state.favoriteLimitPending=null;
+   await refreshShared();notify('Coup de cœur remplacé pour votre duo.');
+  }catch(error){await refreshShared();throw error;}
+  finally{state.loveFavoritesBusy=false;render();}
   return;
  }
  if(verb==='favorite-limit-add'){
   const pending=state.favoriteLimitPending;
   if(!pending||state.loveFavoritesBusy)return;
-  if((state.loveFavorites||[]).filter(f=>f.marked_by===state.user?.id).length>=5)
-   throw Error('Retirez d’abord une carte de cette liste.');
+  if((state.loveFavorites||[]).length>=5)
+   throw Error('La liste commune est pleine. Choisissez une carte à remplacer.');
   state.favoriteLimitPending=null;
   try{await handle('favorite-toggle:'+pending.category+':'+pending.cardId,element);}
   catch(error){state.favoriteLimitPending=pending;render();throw error;}
@@ -3516,15 +3521,15 @@ async function handle(action,element){
   const archived=(state.eveningCalendarChallenges||[]).some(c=>
     closedIds.has(c.session_id)&&c.category===category&&Number(c.card_id)===cardId);
   if(!present&&!owned&&!archived)throw Error('Cette carte n’est pas accessible depuis votre historique.');
-  const mine=(state.loveFavorites||[]).some(f=>f.category===category&&Number(f.card_id)===cardId&&f.marked_by===state.user.id);
-  if(!mine&&(state.loveFavorites||[]).filter(f=>f.marked_by===state.user?.id).length>=5){
+  const mine=(state.loveFavorites||[]).some(f=>f.category===category&&Number(f.card_id)===cardId);
+  if(!mine&&(state.loveFavorites||[]).length>=5){
    state.favoriteLimitPending={category,cardId};render();return;
   }
   state.loveFavoritesBusy=true;render();
   try{
    await rpc('set_love_couple_favorite',{p_couple:state.coupleId,p_category:category,p_card_id:cardId,p_enabled:!mine});
    await refreshShared();
-   notify(mine?'Mon coup de cœur a été retiré.':'Coup de cœur enregistré pour une prochaine soirée.');
+   notify(mine?'Coup de cœur retiré de votre liste commune.':'Coup de cœur enregistré pour votre duo.');
   }catch(error){
    if(!mine&&String(error?.message||'').includes('Maximum de 5 coups de cœur')){
     state.favoriteLimitPending={category,cardId};await refreshShared();
