@@ -27,7 +27,7 @@ import {createEclatAudio} from './eclat-audio.mjs?v=20261028-privacy250';
 import {futureCoupleStyleMix,playStyleLabel} from './play-style.mjs?v=20261018-styles149';
 import {cycleIntensityQuestionnaireHtml} from './cycle-questionnaire.mjs?v=20261018-cycle149';
 import {DICE_WEIGHT_CONFIG,configuredDiceWeights,parseDiceWeightInputs} from './dice-weighting.mjs?v=20261018-weights146';
-import {premiumEveningHtml,updateEveningCategoryUi} from './premium-evening.mjs?v=20261027-web242';
+import {premiumEveningHtml,updateEveningCategoryUi} from './premium-evening.mjs?v=20261028-lr027-web254';
 import {eveningHistoryMarkup,eveningLocalDay} from './evening-calendar.mjs?v=20261028-web252';
 import {eveningReviewModal,validEveningReview} from './evening-review.mjs?v=20261016-person-review97';
 import {premiumSurpriseHtml,sixSpecialEvents} from './premium-surprise.mjs?v=20261022-home228';
@@ -61,7 +61,7 @@ import {invitationStatus,coupleStats,formatCoupleDate,invitationEmailText,invita
 import {premiumConfirm,premiumCopyLink,focusInlineLoveDialog} from './premium-dialogs.mjs?v=20261017-complete127';
 
 
-const WEB_RELEASE='2026-10-28.252';
+const WEB_RELEASE='2026-10-28.254';
 const root=document.querySelector('#app');
 const enc=new TextEncoder(),dec=new TextDecoder();
 let diceCleanup=[],renderToken=0;
