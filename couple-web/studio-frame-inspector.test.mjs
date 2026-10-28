@@ -49,7 +49,8 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
   'studio-real-frame-A','studio-real-frame-B','studio-real-seat-state-A','studio-real-seat-state-B',
   'studio-real-challenge-cards','studio-real-challenge-list',
   'studio-real-audit','studio-real-audit-list',
-  'studio-real-progress','studio-real-progress-count','studio-real-progress-list'])make(id);
+  'studio-real-progress','studio-real-progress-count','studio-real-progress-list',
+  'studio-real-eclat-progress','studio-real-eclat-count','studio-real-eclat-grid'])make(id);
  for(const s of ['A','B']){
   const title=new Element('div');title.classList.add('studio-real-frame-label');
   nodes.get('studio-real-frame-'+s).append(title);
@@ -82,6 +83,7 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
     {action:'login_requested',created_at:'2026-10-27T22:34:00Z'}
    ],
    game:{weekly_face:3,monthly_face:47,personal_faces:{A:2,B:5},session:'open',challenges_total:2,eclat_enabled:false,
+     eclat_completed_coffrets:[1,5],
      challenge_preview:[{seat:'B',category:'SENSUEL',face:42,status:'offered',title:'Vraie carte de test',description:'Consigne issue de la base'}]},
    seats:[{seat:'A',user_id:'test-a'},{seat:'B',user_id:'test-b'}]}};
   return {data:{ready:true}};
@@ -98,6 +100,11 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
   assert.equal(nodes.get('studio-real-progress-list').children.length,9);
   assert.equal(nodes.get('studio-real-progress-list').children[1].dataset.state,'pending');
   assert.equal(nodes.get('studio-real-progress-list').children[8].dataset.state,'pending');
+  assert.equal(nodes.get('studio-real-eclat-count').textContent,'2/12 terminés');
+  assert.equal(nodes.get('studio-real-eclat-grid').children.length,12);
+  assert.equal(nodes.get('studio-real-eclat-grid').children[0].dataset.state,'verified');
+  assert.equal(nodes.get('studio-real-eclat-grid').children[4].dataset.state,'verified');
+  assert.equal(nodes.get('studio-real-eclat-grid').children[1].dataset.state,'pending');
   const auditEvents=nodes.get('studio-real-audit-list').children;
   assert.equal(nodes.get('studio-real-audit').hidden,false);
   assert.equal(auditEvents.length,2);
@@ -200,6 +207,8 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
   assert.equal(getFrame('B'),null,'deleted sandbox closes the partner game too');
   assert.equal(nodes.get('studio-real-progress-count').textContent,'0/9',
    'deleted technical pair never retains completed QA milestones');
+  assert.equal(nodes.get('studio-real-eclat-count').textContent,'0/12 terminés',
+   'deleted pair does not claim any Éclat completions');
   assert.equal(nodes.get('studio-real-audit').hidden,false,
    'private audit persists after the synthetic duo is deleted');
   assert.equal(nodes.get('studio-real-audit-list').children[0].children[0].textContent,
