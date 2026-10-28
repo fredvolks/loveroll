@@ -7,7 +7,7 @@ const html=read('index.html'),app=read('app.js'),sw=read('service-worker.js');
 const release=JSON.parse(read('web-version.json'));
 const appTag=release.build.replaceAll('-','').replace('.', '-web');
 test('LoveRoll build versions agree between endpoint, app, HTML and imported modules',()=>{
- const build=release.build,tag='20261015-no-toast87',inviteTag='20261018-safari150',controlsTag='20261017-controls141',diceTag='20261027-web247';
+ const build=release.build,tag='20261015-no-toast87',inviteTag='20261018-safari150',controlsTag='20261017-controls141',diceTag=appTag;
  assert.match(build,/^\d{4}-\d{2}-\d{2}\.\d+$/);
  assert.ok(sw.includes("const CACHE='loveroll-static-v"+build.split('.')[1]+"'"));
  assert.ok(app.includes('invite-links.mjs?v='+inviteTag));
@@ -35,7 +35,8 @@ test('LoveRoll build versions agree between endpoint, app, HTML and imported mod
  assert.ok(app.includes('cycle-questionnaire.mjs?v=20261018-cycle149'));
  assert.ok(app.includes("rpc('love_cycle_status'"));
  assert.ok(app.includes("rpc('reset_love_challenges_admin'"));
- assert.ok(html.includes('evening-calendar.css?v=20261018-stats148'));
+ assert.ok(html.includes('evening-calendar.css?v=20261028-favs250'));
+ assert.ok(sw.includes('./evening-calendar.css'),'calendar stylesheet must remain available offline');
  assert.ok(app.includes('couple-live-sync.mjs?v=20261017-advent119'));
  assert.ok(html.includes('premium-advent.css?v=20261019-ipad155'));
   assert.ok(app.includes("const WEB_RELEASE='"+build+"'"));
@@ -54,7 +55,8 @@ test('LoveRoll build versions agree between endpoint, app, HTML and imported mod
  assert.ok(html.includes('evening-editorial.css?v=20261017-ritual130'));
  assert.ok(app.includes('onboarding.mjs?v=20261018-style148'));
  assert.ok(app.includes('json-libraries.mjs?v=20261016-restore113'));
- assert.match(html,/settings-premium\.css\?v=20261019-(?:ref|personal)\d+/);
+ assert.ok(html.includes('settings-premium.css?v=20261028-favs250'));
+ assert.ok(sw.includes('./settings-premium.css'),'favorite dialog styling must remain available offline');
  assert.ok(!html.includes('restore-categories-v113.css'));
  assert.ok(!html.includes('evening-step1-mobile-v101.css'));
  assert.ok(!html.includes('evening-queue-fixed-v102.css'));
