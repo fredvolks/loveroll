@@ -69,6 +69,69 @@ BEGIN
   SELECT * INTO v_pool FROM public.love_studio_test_pools
   WHERE admin_id=p_admin FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'Banc de test introuvable'; END IF;
+  -- CRITICAL: cleanup after an interrupted creation also runs with
+  -- couple_id=NULL. Such a registry is NEVER proof that its Auth identities
+  -- are safe to delete. A missing couple must not bypass foreign-link checks:
+  -- deleting an Auth user can cascade membership and null out real owners.
+  IF EXISTS (
+    SELECT 1 FROM public.couple_members cm
+    JOIN public.love_studio_test_seats s ON s.user_id=cm.user_id
+    WHERE s.admin_id=p_admin
+      AND (v_pool.couple_id IS NULL OR cm.couple_id<>v_pool.couple_id)
+  ) OR EXISTS (
+    SELECT 1 FROM public.couples c
+    JOIN public.love_studio_test_seats s ON s.user_id=c.owner_user_id
+    WHERE s.admin_id=p_admin
+      AND (v_pool.couple_id IS NULL OR c.id<>v_pool.couple_id)
+  ) THEN
+    RAISE EXCEPTION 'Identité test utilisée dans un autre couple : purge interdite'
+      USING ERRCODE='42501';
+  END IF;
+  -- Provider-backed credit must be protected even when initial creation
+  -- failed before the technical couple could be registered.
+  IF EXISTS (
+    SELECT 1 FROM public.love_referral_credit_usage u
+    JOIN public.love_studio_test_seats s ON s.user_id=u.beneficiary_user_id
+    WHERE s.admin_id=p_admin
+  ) THEN
+    RAISE EXCEPTION 'Crédit payé lié au banc : suppression bloquée'
+      USING ERRCODE='42501';
+  END IF;
+  -- With no registered couple there is no approved scope for deleting ANY
+  -- user-linked history. Fail closed instead of relying on FK cascades.
+  IF v_pool.couple_id IS NULL AND (
+    EXISTS (SELECT 1 FROM public.love_user_library_backup x
+      JOIN public.love_studio_test_seats s ON s.user_id=x.user_id
+      WHERE s.admin_id=p_admin)
+    OR EXISTS (SELECT 1 FROM public.love_trial_identity_claims x
+      JOIN public.love_studio_test_seats s ON s.user_id=x.user_id
+      WHERE s.admin_id=p_admin)
+    OR EXISTS (SELECT 1 FROM public.love_referral_links x
+      JOIN public.love_studio_test_seats s ON s.user_id=x.user_id
+      WHERE s.admin_id=p_admin)
+    OR EXISTS (SELECT 1 FROM public.love_referral_credit_ledger x
+      JOIN public.love_studio_test_seats s ON s.user_id=x.beneficiary_user_id
+      WHERE s.admin_id=p_admin)
+    OR EXISTS (SELECT 1 FROM public.love_referral_claims x
+      JOIN public.love_studio_test_seats s ON
+        s.user_id=x.referrer_user_id OR s.user_id=x.referred_owner_id
+      WHERE s.admin_id=p_admin)
+    OR EXISTS (SELECT 1 FROM public.love_personal_intimacy x
+      JOIN public.love_studio_test_seats s ON s.user_id=x.user_id
+      WHERE s.admin_id=p_admin)
+    OR EXISTS (SELECT 1 FROM public.couple_personal_rolls x
+      JOIN public.love_studio_test_seats s ON s.user_id=x.user_id
+      WHERE s.admin_id=p_admin)
+    OR EXISTS (SELECT 1 FROM public.couple_evening_reviews x
+      JOIN public.love_studio_test_seats s ON s.user_id=x.author_id
+      WHERE s.admin_id=p_admin)
+    OR EXISTS (SELECT 1 FROM public.love_eclat_private_notes x
+      JOIN public.love_studio_test_seats s ON s.user_id=x.user_id
+      WHERE s.admin_id=p_admin)
+  ) THEN
+    RAISE EXCEPTION 'Données personnelles hors du banc : purge interdite'
+      USING ERRCODE='42501';
+  END IF;
   IF v_pool.couple_id IS NOT NULL THEN
     -- Serialize test roll/session FK inserts against the purge. Row lock
     -- is held until all preflight checks and the couple deletion complete.
