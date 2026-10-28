@@ -109,9 +109,17 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
   nodes.get('studio-real-jump-B').handlers.change();
   assert.equal(sent[1].message.seat,'B');
   assert.equal(sent[1].message.tab,'special');
+  // New shortcuts must call the real existing game, never a Studio-made screen.
+  for(const [seat,tab] of [['A','journal'],['B','personal-journal'],['A','occasions']]){
+   nodes.get('studio-real-jump-'+seat).value=tab;
+   nodes.get('studio-real-jump-'+seat).handlers.change();
+   const last=sent.at(-1);
+   assert.deepEqual(last,{message:{type:'loveroll-studio-navigate',seat,tab},
+    origin:globalThis.location.origin});
+  }
   nodes.get('studio-real-jump-A').value='delete';
   nodes.get('studio-real-jump-A').handlers.change();
-  assert.equal(sent.length,2,'navigation must allow only official harmless tab routes');
+  assert.equal(sent.length,5,'navigation must allow only official harmless tab routes');
   nodes.get('studio-real-expand-A').click();
   assert.equal(html.classList.contains('studio-real-fullscreen'),true);
   assert.equal(nodes.get('studio-real-frame-A').classList.contains('studio-real-maximized'),true);
