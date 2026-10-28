@@ -103,7 +103,10 @@ Deno.serve(async req=>{
     try{
      await webpush.sendNotification({endpoint:d.endpoint,keys:{p256dh:d.p256dh,auth:d.auth_key}},
       JSON.stringify({title:alert.title,body:alert.body,
-       url:'https://fredvolks.github.io/loveroll/',tag:alert.kind}),
+       url:'https://fredvolks.github.io/loveroll/',
+       tag:alert.kind==='invitation'&&String(alert.event_key||'').startsWith('evening-invite:')?'evening-invite':
+        alert.kind==='invitation'&&String(alert.event_key||'').startsWith('evening-reply:')?'evening-reply':
+        alert.kind}),
       {TTL:86400,urgency:'normal'});
      delivered=true;
     }catch(error){
