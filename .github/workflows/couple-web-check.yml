@@ -493,6 +493,14 @@ jobs:
         if: matrix.group == 'dice'
         run: LOVEROLL_D100_HEADER_PROBE=1 node couple-web/evening-d100-template-browser-check.cjs
 
+      - name: Verify real iPad Soirée D6 and D100 on the ONE HD photo (portrait and landscape)
+        if: matrix.group == 'dice'
+        run: node couple-web/ipad-romance-scene-browser-check.cjs
+
+      - name: LR-001 — verify the actual idle Soirée and Surprise D100 projected mesh on Android
+        if: matrix.group == 'dice'
+        run: node couple-web/soiree-home-template-browser-check.cjs
+
       - name: Verify real couple Evening and Surprise in WebGL at S25 sizes
         if: matrix.group == 'dice'
         run: |
@@ -513,10 +521,6 @@ jobs:
       - name: LR-014 — verify category modal on phone and iPad
         if: matrix.group == 'dice'
         run: node couple-web/evening-category-confirm-browser-check.cjs
-      - name: Verify real iPad Soirée D6 and D100 on the ONE HD photo (portrait and landscape)
-        if: matrix.group == 'dice'
-        run: node couple-web/ipad-romance-scene-browser-check.cjs
-
       - name: Verify Soirée responsive Step 1 and unchanged D35 on phones and tablets
         if: matrix.group == 'dice'
         run: node couple-web/evening-redesign-browser-check.cjs
