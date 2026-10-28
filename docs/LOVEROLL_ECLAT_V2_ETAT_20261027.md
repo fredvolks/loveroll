@@ -52,3 +52,17 @@
 5. Ne convertir la PR brouillon en PR prête que lorsque tous les parcours sont réellement utilisables, testés et conformes au prompt maître.
 
 **Ne pas utiliser une maquette ou le modèle éditorial seul comme preuve de « jeu terminé ».**
+
+
+## Sécurité en cours de partie — révocation et remplacement de séance (28 octobre)
+
+Le contrôleur `eclat-v2-play-controller.mjs` purge désormais les données **éphémères** des deux joueurs (réponses privées, prédictions, brouillons musicaux, cartes du Coffre, playlists non soumises, rôle affiché et votes locaux) dans les situations suivantes :
+
+- Supabase retourne `access:false` après la révocation d'un droit ou abonnement Premium.
+- La séance active est terminée/arrêtée depuis un autre appareil, ou est remplacée par une nouvelle séance avec un identifiant distinct.
+- La requête de statut indique une identité invalide : HTTP 401/403 ou PostgreSQL `28000` / `42501`.
+- L'utilisateur arrête la partie depuis son appareil : la confirmation serveur termine la séance et efface immédiatement les brouillons, sans attendre un prochain polling.
+
+Les erreurs de réseau transitoires (p. ex. HTTP 503) ne sont **pas** interprétées comme une révocation : elles laissent la séance et les saisies locales intactes pour permettre une reprise. Une réponse de polling périmée ne peut pas supplanter une action serveur plus récente.
+
+Tests de régression ajoutés pour ces scénarios au fichier `eclat-v2-play-controller.test.mjs`. **Leurs résultats CI doivent être vérifiés au dernier SHA**; cela ne constitue toujours pas une preuve de recette réelle A/B sur préproduction ni une autorisation de déployer V2.
