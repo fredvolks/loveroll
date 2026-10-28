@@ -172,3 +172,37 @@ test('temporary action errors leave the Éclat scene available for retry',async(
  assert.match(root.innerHTML,/ÉCLAT · COFFRET/);
  controller.destroy();
 });
+
+
+test('unchanged real polling never remounts a text field or loses its cursor',async()=>{
+ const root=fakeRoot(),original=initial();
+ let dom='',writes=0,next=original;
+ Object.defineProperty(root,'innerHTML',{
+  configurable:true,get:()=>dom,
+  set:value=>{writes++;dom=value;}
+ });
+ const controller=createEclatV2PlayController({
+  root,api:{status:async()=>next},viewerId:aid,initialStatus:original
+ });
+ const initialWrites=writes;
+ assert.ok(initialWrites>=1,'initial real stage must render');
+ assert.equal(await controller.refresh(),true);
+ assert.equal(await controller.refresh(),true);
+ assert.equal(writes,initialWrites,
+  'identical authenticated snapshots must preserve the focused music/note fields');
+ next={...original,state:'paused'};
+ assert.equal(await controller.refresh(),true);
+ assert.ok(writes>initialWrites,'a meaningful server state change still repaints');
+ controller.destroy();
+});
+
+test('revocation is never hidden by unchanged-poll optimization',async()=>{
+ const root=fakeRoot(),original=initial();
+ const controller=createEclatV2PlayController({
+  root,api:{status:async()=>({access:false,active:false})},
+  viewerId:bid,initialStatus:original
+ });
+ assert.equal(await controller.refresh(),true);
+ assert.match(root.innerHTML,/Accès Éclat requis/);
+ controller.destroy();
+});
