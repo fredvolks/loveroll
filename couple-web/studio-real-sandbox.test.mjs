@@ -312,3 +312,61 @@ test('real Super Admin V1/V2 Éclat progress comes only from the authenticated c
  assert.ok(!server.includes("service.from('love_eclat_v2_card_choices')"),
   'Super Admin progress must never fetch private card preferences');
 });
+
+
+test('a pending genuine OTP after teardown cannot resurrect a deleted Studio seat',async()=>{
+ const origin='https://fredvolks.github.io';
+ for(const rejects of [false,true]){
+  let receive,resolveOtp,rejectOtp,signOuts=0,reloads=0;
+  const reported=[],parent={postMessage:(message)=>reported.push(message)};
+  const selfWindow={
+   parent,location:{reload:()=>{reloads++}},
+   addEventListener:(name,handler)=>{if(name==='message')receive=handler},
+   removeEventListener:()=>{}
+  };
+  const client={auth:{
+   getSession:async()=>({data:{session:null}}),
+   verifyOtp:()=>new Promise((resolve,reject)=>{resolveOtp=resolve;rejectOtp=reject}),
+   signOut:async({scope})=>{assert.equal(scope,'local');signOuts++}
+  }};
+  const dispose=startStudioSeatLogin(client,'A',{selfWindow,origin});
+  const before=receive({source:parent,origin,data:{
+   type:'loveroll-studio-login',seat:'A',user_id:'technical-a',
+   token_hash:'b'.repeat(64)
+  }});
+  dispose();
+  if(rejects)rejectOtp(Error('OTP cancelled by server'));
+  else resolveOtp({data:{session:{user:{
+   id:'technical-a',app_metadata:{love_studio_test:true}
+  }}},error:null});
+  await before;
+  assert.equal(signOuts,1,'late OTP Auth state must be cleared locally');
+  assert.equal(reloads,0,'a disposed iframe must never reload after OTP resolution');
+  assert.equal(reported.some(item=>item.type==='loveroll-studio-seat-error'),false,
+   'disposed frames must not post obsolete errors to the owner console');
+ }
+});
+
+test('failed local Studio seat sign-out never reloads a still-authenticated iframe',async()=>{
+ const origin='https://fredvolks.github.io',reports=[];
+ let receive,reloads=0,attempts=0;
+ const parent={postMessage:message=>reports.push(message)};
+ const selfWindow={
+  parent,location:{reload:()=>{reloads++}},
+  addEventListener:(name,handler)=>{if(name==='message')receive=handler},
+  removeEventListener:()=>{}
+ };
+ const client={auth:{
+  getSession:async()=>({data:{session:null}}),
+  signOut:async()=>{attempts++;throw Error('local storage unavailable')}
+ }};
+ const dispose=startStudioSeatLogin(client,'B',{selfWindow,origin});
+ await receive({source:parent,origin,data:{
+  type:'loveroll-studio-clear-seat',seat:'B'
+ }});
+ assert.equal(attempts,1);
+ assert.equal(reloads,0,'reload would preserve the stale Auth session');
+ assert.ok(reports.some(item=>item.type==='loveroll-studio-seat-error'&&item.seat==='B'),
+  'owner console must be told that the technical sign-out failed');
+ dispose();
+});
