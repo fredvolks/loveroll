@@ -1,5 +1,6 @@
 import {organizeSettingsMenus} from './settings-menus.mjs?v=20261022-home228';
-import {showEveningCategoryReminder} from './evening-d100-template.mjs?v=20261028-web251';
+import {showEveningCategoryReminder} from './evening-d100-template.mjs?v=20261028-web252';
+import {eveningInviteHtml,eveningInviteInboxHtml,isEveningInviteAction} from './evening-invitation.mjs?v=20261028-web252';
 import {askEveningCategoryConfirmation,categoryConfirmEnabled,saveCategoryConfirmLocal} from './evening-category-confirm.mjs?v=20261027-web238';
 import {soundEnabled,setSoundEnabled,setLoveRollSoundUser,unlockLoveRollSounds,playLoveRollSound,soundSettingsHtml} from './loveroll-sounds.mjs?v=20261028-privacy250';
 import {isAcceptedTimedEveningChallenge,completeTimedEveningChallenge} from './timed-evening-completion.mjs?v=20261027-web240';
@@ -7,7 +8,7 @@ import {fitSurpriseMinimal} from './surprise-minimal.mjs?v=20261022-home228';
 import {eclatNoteKey,loadEclatNote,saveEclatNote} from './eclat-guidance.mjs?v=20261022-home228';
 import {loadEclatHistory} from './eclat-history.mjs?v=20261022-home228';
 import {enhanceGoldBacks} from './gold-arrows.mjs?v=20261022-home228';
-import {fitSoireeHomeTemplate,fitRubyCalendar} from './soiree-home-template.mjs?v=20261028-web251';
+import {fitSoireeHomeTemplate,fitRubyCalendar} from './soiree-home-template.mjs?v=20261028-web252';
 import { marketingHtml,authHtml,profileHtml,inviteProfileHtml,emailConfirmationHtml,profileGenderSelect,profilePlayStyleSelect,matchHtml,parseMonthDay,monthDayInputs } from './onboarding.mjs?v=20261018-style148';
 import {editorialHeader,editorialRow,editorialIcon} from './editorial-ui.mjs?v=20261017-ritual130';
 import {cardLibraryHtml,monthlyEditorHtml,adventEditorHtml,specialEditorHtml,importEditorHtml} from './editorial-editors.mjs?v=20261017-ritual130';
@@ -17,7 +18,7 @@ import {createCoupleLiveSync} from './couple-live-sync.mjs?v=20261017-advent119'
 import {playableSessionForWeekly} from './couple-reset-view.mjs';
 import {eveningDailyAccess} from './evening-daily-policy.mjs?v=20261016-daily100';
 import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw} from './evening-private-queue.mjs';
-import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261028-web251';
+import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261028-web252';
 import {saveEveningSelection,restoreEveningSelection,clearEveningSelection} from './evening-resume.mjs?v=20261027-web240';
 import {eclatHtml} from './eclat-ui.mjs?v=20261027-web242';
 import {previewMode,previewCanEdit,previewEclatStatus} from './account-preview-mode.mjs?v=20261020-test180';
@@ -27,7 +28,7 @@ import {futureCoupleStyleMix,playStyleLabel} from './play-style.mjs?v=20261018-s
 import {cycleIntensityQuestionnaireHtml} from './cycle-questionnaire.mjs?v=20261018-cycle149';
 import {DICE_WEIGHT_CONFIG,configuredDiceWeights,parseDiceWeightInputs} from './dice-weighting.mjs?v=20261018-weights146';
 import {premiumEveningHtml,updateEveningCategoryUi} from './premium-evening.mjs?v=20261027-web242';
-import {eveningHistoryMarkup,eveningLocalDay} from './evening-calendar.mjs?v=20261028-web251';
+import {eveningHistoryMarkup,eveningLocalDay} from './evening-calendar.mjs?v=20261028-web252';
 import {eveningReviewModal,validEveningReview} from './evening-review.mjs?v=20261016-person-review97';
 import {premiumSurpriseHtml,sixSpecialEvents} from './premium-surprise.mjs?v=20261022-home228';
 import {surpriseSlot,surpriseCustom,surpriseTitle,formatSurpriseDateInput,parseSurpriseDateInput} from './surprise-event-config.mjs?v=20261016-surprise109';
@@ -60,7 +61,7 @@ import {invitationStatus,coupleStats,formatCoupleDate,invitationEmailText,invita
 import {premiumConfirm,premiumCopyLink,focusInlineLoveDialog} from './premium-dialogs.mjs?v=20261017-complete127';
 
 
-const WEB_RELEASE='2026-10-28.251';
+const WEB_RELEASE='2026-10-28.252';
 const root=document.querySelector('#app');
 const enc=new TextEncoder(),dec=new TextDecoder();
 let diceCleanup=[],renderToken=0;
@@ -102,7 +103,7 @@ const worldText=key=>worldT(worldLocale(),key);
 const state={user:null,profile:null,members:[],coupleId:null,couple:null,
  tab:launchParams.has('settings')?'settings':(['home','session','special','advent'].includes(launchParams.get('open'))?launchParams.get('open'):'home'),weekly:null,monthly:{},session:null,personal:[],challenges:[],gifts:[],rollStatus:null,customCards:[],customCategory:'SENSUEL',customSlot:1,customSearch:'',customFilter:'all',monthlyActivities:[],monthlySlot:1,libraryScreen:'list',libraryImportKind:null,specialEditorKey:null,specialEditorStage:'D6_activite',specialEditorFace:1,adventEditorDay:1,pushDevice:null,
  events:[],journal:[],advent:[],advent2026Config:null,advent2026Days:[],selectedDay:1,adventYear:null,adventSelected:null,adventHistory:false,adventOpening:null,adventRevealing:false,adventServerDate:null,unlockKey:null,channel:null,
- occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningRefusalId:null,redrawReady:false,redrawBusy:false,loveExcludedCards:[],eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],monthlyPassQuota:null,calendarPassMonth:null,cycleStatus:null,cycleDeferred:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoBookingEdit:false,referral:null,eclat:null,eclatGalleryScroll:0,eclatHistory:[],eclatHistoryCouple:null,eclatBrowse:false,eclatHistoryError:false,eclatSelection:1,eclatMinutes:30,eclatIntent:'all',eclatDetails:false,eclatMusic:false,eclatFinished:null,testModeEligible:false,testMode:'real'};
+ occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningRefusalId:null,redrawReady:false,redrawBusy:false,loveExcludedCards:[],eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],monthlyPassQuota:null,calendarPassMonth:null,cycleStatus:null,cycleDeferred:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,eveningInvite:null,eveningInviteBusy:false,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoBookingEdit:false,referral:null,eclat:null,eclatGalleryScroll:0,eclatHistory:[],eclatHistoryCouple:null,eclatBrowse:false,eclatHistoryError:false,eclatSelection:1,eclatMinutes:30,eclatIntent:'all',eclatDetails:false,eclatMusic:false,eclatFinished:null,testModeEligible:false,testMode:'real'};
 const names={SENSUEL:'Sensuel',COQUIN:'Coquin',SEXUEL:'Sexuel'};
 function isSharedCoupleReady(coupleId,members){
  return !!coupleId&&Array.isArray(members)&&members.length===2;
@@ -365,7 +366,8 @@ function frame(body,title='LOVEROLL',subtitle='Un jeu intime, juste pour vous de
  if(oldGallery)state.eclatGalleryScroll=oldGallery.scrollTop;
  const oldDetail=root.querySelector('.eclat-detail');
  const detailScroll=oldDetail?{id:oldDetail.dataset.coffretId,top:oldDetail.scrollTop}:null;
- root.innerHTML=(realHome||realEvening||realSurprise||realEclat||realSettings||realEditor||eveningArchive||(isCouple&&state.tab==='advent')?'':usualHeader)+body+(connected?nav():'')+installation+reviewPanel+cyclePanel;
+ const inviteInbox=realHome?eveningInviteInboxHtml(state.eveningInvite,{partnerName:other()?.name}):'';
+ root.innerHTML=(realHome||realEvening||realSurprise||realEclat||realSettings||realEditor||eveningArchive||(isCouple&&state.tab==='advent')?'':usualHeader)+body+inviteInbox+(connected?nav():'')+installation+reviewPanel+cyclePanel;
  if(homeStage){
   const fresh=root.querySelector('.home-die-platform canvas'),replacement=fresh?.closest('.home-die-platform');
   if(replacement){
@@ -414,7 +416,7 @@ function frame(body,title='LOVEROLL',subtitle='Un jeu intime, juste pour vous de
  // never a fabricated pip result. Actual face comes from Supabase after rolling.
  const canvases=[...root.querySelectorAll('canvas[data-dice-sides]')];
  if(canvases.length){
-  import('./dice3d.js?v=20261028-web251').then(({dieOn})=>{
+  import('./dice3d.js?v=20261028-web252').then(({dieOn})=>{
    if(token!==renderToken)return;
    for(const canvas of canvases){
     if(!canvas.isConnected||canvas.loveRollDie)continue;
@@ -441,7 +443,8 @@ function nav(){
   ['personal-journal','♥','Calendrier'],['settings','⚙',worldText('settings')]];
  return '<nav class="nav lr-ruby-nav lr-surface"><div class="nav-inner" style="grid-template-columns:repeat('+tabs.length+',minmax(0,1fr))">'+tabs.map(([key,icon,label])=>
  '<button data-action="tab:'+key+'" class="lr-ruby-tab '+((state.tab===key||(['session','personal-journal'].includes(key)&&state.tab==='evening-calendar')||(key==='special'&&state.tab==='occasions')||(key==='session'&&state.tab==='eclat')||(key==='settings'&&!tabs.some(([tab])=>tab===state.tab)&&['library','monthly-library','advent-editor','special-editor','journal'].includes(state.tab)))?'active':'')+'"'+(state.diceStatus?' disabled':'')+'><span>'+navIcon(key,icon)+
- '</span>'+safe(label)+'</button>').join('')+'</div></nav>';
+ '</span>'+safe(label)+(key==='session'&&state.eveningInvite?.direction==='received'&&
+  ['pending','maybe'].includes(state.eveningInvite?.state)?'<span class="lr-evening-invite-dot" aria-label="Invitation reçue">♥</span>':'')+'</button>').join('')+'</div></nav>';
 }
 function bindActions(){
  const categoryPref=root.querySelector('#evening-category-confirm-pref');
@@ -841,7 +844,7 @@ async function reload(){
   state.couple=null;state.members=[];state.weekly=null;state.monthly={};state.customCards=[];state.monthlyActivities=[];state.rollStatus=null;state.gifts=[];
   state.session=null;state.sessions=[];state.events=[];state.journal=[];state.eveningHistoryStats=[];state.eveningCalendarChallenges=[];state.weeklyRollHistory=[];state.calendarPassQuota=[];state.monthlyPassQuota=null;state.calendarPassMonth=null;state.cycleStatus=null;state.cycleDeferred=null;state.eveningReviews=[];state.reviewModalSessionId=null;
   state.advent=[];state.adventYear=null;state.adventSelected=null;state.adventServerDate=null;state.advent2026Config=null;state.advent2026Days=[];state.specialEventsConfig=null;state.specialEventKeys=[];state.unlockKey=null;
-  state.invitations=[];state.inviteDraft=null;state.challengesHistory=[];state.eveningHistoryStats=[];state.eveningCalendarChallenges=[];state.eveningReviews=[];state.reviewModalSessionId=null;state.reviewDraft={};
+  state.invitations=[];state.inviteDraft=null;state.eveningInvite=null;state.challengesHistory=[];state.eveningHistoryStats=[];state.eveningCalendarChallenges=[];state.eveningReviews=[];state.reviewModalSessionId=null;state.reviewDraft={};
   state.tab=['settings','personal-journal'].includes(state.tab)?state.tab:'home';
   state.guidance=state.wellbeing?await rpc('get_love_guidance',{}):'gentle';
   render();return;
@@ -1025,6 +1028,9 @@ async function refreshShared(){
   state.playableCounts=Array.isArray(totals)?totals[0]||null:null;
  }catch(error){state.playableCounts=null;}
  try{await refreshEclatStatus();}catch(error){console.warn('Éclat temporairement indisponible',error?.code||'');}
+ // A separate, private read: no partner's D6 face or challenge is revealed.
+ try{state.eveningInvite=await rpc('love_evening_invite_status',{p_couple:c});}
+ catch{state.eveningInvite=null;} // Feature hidden until its staging-approved migration exists.
 }
 const liveSync=createCoupleLiveSync({
  state,query,rpc,refresh:refreshShared,render,ready:isSharedCoupleReady,
@@ -1063,6 +1069,15 @@ function subscribe(){
    });
  channel=channel.on('postgres_changes',{event:'INSERT',schema:'public',
   table:'couple_personal_rolls'},()=>liveSync.request(120));
+ // Keep the in-app invitation visible even if Push is blocked or delayed.
+ // RLS limits this subscription to the two members of the exact couple.
+ if(state.eveningInvite!==null){
+  // Pages may update before the SQL is installed. Keep all older Realtime
+  // channels working instead of subscribing to a non-existent table.
+  channel=channel.on('postgres_changes',{event:'*',schema:'public',
+   table:'love_evening_invitations',filter:'couple_id=eq.'+state.coupleId},
+   ()=>liveSync.request(80));
+ }
  channel=channel.on('postgres_changes',{event:'*',schema:'public',table:'love_eclat_sessions',
   filter:'couple_id=eq.'+state.coupleId},()=>{
   if(state.tab==='eclat')refreshEclatStatus().then(()=>{if(state.tab==='eclat')render();}).catch(console.warn);
@@ -1671,6 +1686,7 @@ function renderSession(){
  }
  frame(premiumEveningHtml({
    session,members:state.members,me:uid,rolls:state.personal,status:state.rollStatus,
+   invitationHtml:eveningInviteHtml(state.eveningInvite,{partnerName:partner?.name,busy:state.eveningInviteBusy}),
    turn,category:state.category,eveningWeights:state.couple?.evening_face_weights,eveningWeightsEnabled:state.couple?.evening_weights_enabled!==false,
    showSensuel:state.couple?.show_sensuel_button!==false,
    showSexuel:state.couple?.show_sexuel_button!==false,
@@ -2510,6 +2526,49 @@ function keepAuthModeInUrl(mode){
 }
 async function handle(action,element){
  const [verb,...parts]=action.split(':');
+ if(verb==='evening-invite'){
+  const answer=parts[0];
+  if(!isEveningInviteAction(answer)||!state.coupleId||
+     !isSharedCoupleReady(state.coupleId,state.members)||state.diceStatus)
+   throw Error('Invitation indisponible.');
+  if(state.eveningInviteBusy)return;
+  if(answer==='send'&&state.eveningInvite?.available!==true)
+   throw Error('Ton partenaire n’est plus disponible pour ce D6.');
+  if(answer!=='send'&&
+    (state.eveningInvite?.direction!=='received'||
+     !['pending','maybe'].includes(state.eveningInvite?.state)||
+     !state.eveningInvite.id))
+   throw Error('Cette invitation ne peut plus recevoir de réponse.');
+  const who=state.user?.id,couple=state.coupleId;
+  state.eveningInviteBusy=true;
+  if(element){element.disabled=true;element.setAttribute('aria-busy','true');}
+  try{
+   if(answer==='send'){
+    await rpc('love_evening_invite_send',{p_couple:couple});
+   }else{
+    await rpc('love_evening_invite_respond',{
+     p_invitation:state.eveningInvite.id,p_answer:answer
+    });
+   }
+   if(state.coupleId!==couple||state.user?.id!==who)return;
+   state.eveningInviteBusy=false; // Refresh must render enabled controls.
+   if(answer==='yes'){
+    // Yes gives permission to open the real Soirée; never roll either D6.
+    // The official session RPC still enforces day/week and partner rules.
+    state.tab='session';
+    let setupError=null;
+    if(!state.session)try{
+     await rpc('ensure_couple_session',{p_couple:couple});
+    }catch(error){setupError=error;}
+    await refreshAndShow();
+    if(setupError)showInlineError('Invitation acceptée. Ouvre la soirée manuellement si le D6 n’est pas encore disponible.');
+   }else await refreshAndShow();
+  }finally{
+   state.eveningInviteBusy=false;
+   if(element?.isConnected){element.disabled=false;element.removeAttribute('aria-busy');}
+  }
+  return;
+ }
  if(verb==='account-test'){
   if(!state.testModeEligible)throw Error('Mode réservé au compte de test autorisé.');
   const next=parts[0];
@@ -4565,6 +4624,6 @@ start().catch(error=>{fail(error);window.LoveRollBoot?.showFailure();});
 
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   window.addEventListener('load', () =>
-    navigator.serviceWorker.register('./service-worker.js?v=20261028-web251',
+    navigator.serviceWorker.register('./service-worker.js?v=20261028-web252',
      {scope:'./',updateViaCache:'none'}).then(reg=>reg.update()).catch(console.warn));
 }

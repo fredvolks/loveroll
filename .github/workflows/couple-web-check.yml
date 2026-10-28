@@ -72,6 +72,12 @@ jobs:
           node --test couple-web/ruby-surfaces-responsive.test.mjs
           node --test couple-web/timed-evening-completion.test.mjs
           node --check couple-web/premium-evening.mjs
+          node --check couple-web/evening-invitation.mjs
+          node --test couple-web/evening-invitation.test.mjs
+          node --test couple-web/evening-invitation-contract.test.mjs
+          node --test couple-web/evening-invitation-live-sync.test.mjs
+          node --test couple-web/native-evening-push.test.mjs
+          node --test couple-web/push-dispatch-routing.test.mjs
           node --check couple-web/evening-calendar.mjs
           node --check couple-web/evening-review.mjs
           node --check couple-web/evening-private-queue.mjs
@@ -561,6 +567,16 @@ jobs:
           path: |
             design-captures/coffrets-v184-*.png
             design-captures/coffrets-v184-*.json
+          if-no-files-found: warn
+      - name: LR-028 — invitation and in-app fallback fit Android, iPad and PC
+        if: matrix.group == 'experience'
+        run: node couple-web/evening-invitation-browser-check.cjs
+      - name: Archive LR-028 invitation screenshots
+        if: always() && matrix.group == 'experience'
+        uses: actions/upload-artifact@v4
+        with:
+          name: LoveRoll-LR028-invite-${{ github.run_number }}
+          path: design-captures/lr028-*.png
           if-no-files-found: warn
       - name: Verify end-of-evening 5-heart review on phone tablet and desktop
         if: matrix.group == 'experience'
