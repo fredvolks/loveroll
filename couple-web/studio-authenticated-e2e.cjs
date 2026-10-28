@@ -395,8 +395,8 @@ async function main(){
   await guidedA.locator('[data-action="eclat:choose:0"]').click({timeout:20000});
   await guidedB.locator('[data-action="eclat:choose:0"]').click({timeout:20000});
   await page.selectOption('#studio-real-jump-A','eclat');
-  await guidedA.locator('[data-eclat-phase="reveal"]').waitFor({timeout:30000});
-  await guidedB.locator('[data-eclat-phase="reveal"]').waitFor({timeout:30000});
+  await a.locator('.eclat-guided[data-eclat-coffret="1"][data-eclat-phase="reveal"]').waitFor({timeout:30000});
+  await b.locator('.eclat-guided[data-eclat-coffret="1"][data-eclat-phase="reveal"]').waitFor({timeout:30000});
   // Next chapter requires BOTH true player confirmations. A alone must not
   // advance the session on the server; it should wait for real partner B.
   await guidedA.locator('[data-action="eclat:next"]:not([disabled])')
