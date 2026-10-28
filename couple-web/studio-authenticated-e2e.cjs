@@ -290,6 +290,27 @@ async function main(){
   assert.equal(await page.locator('#studio-real-challenge-list .studio-real-challenge-card h4')
    .first().innerText(),officialTitle,
    'full server history must display the already-confirmed real D100 card');
+  await page.selectOption('#studio-real-history-seat',recipientSeat);
+  await page.waitForFunction(()=>{
+   const text=document.querySelector('#studio-real-history-count')?.textContent||'';
+   return /^1–1 sur 1 défis$/.test(text.trim());
+  },null,{timeout:30000});
+  assert.equal(await page.locator('#studio-real-challenge-list .studio-real-challenge-card h4')
+   .first().innerText(),officialTitle,
+   'server filter must return the real card only for its registered recipient');
+  const nonRecipient=recipientSeat==='A'?'B':'A';
+  await page.selectOption('#studio-real-history-seat',nonRecipient);
+  await page.waitForFunction(()=>{
+   const text=document.querySelector('#studio-real-history-count')?.textContent||'';
+   return /^0–0 sur 0 défis$/.test(text.trim());
+  },null,{timeout:30000});
+  assert.equal(await page.locator('#studio-real-challenge-list .studio-real-challenge-card').count(),0,
+   'the other player must not be attributed a card they did not receive');
+  await page.selectOption('#studio-real-history-seat','all');
+  await page.waitForFunction(()=>{
+   const text=document.querySelector('#studio-real-history-count')?.textContent||'';
+   return /^1–1 sur 1 défis$/.test(text.trim());
+  },null,{timeout:30000});
   await page.screenshot({
    path:'studio-authenticated-e2e-proof/real-server-challenge-history.png',fullPage:true
   });
