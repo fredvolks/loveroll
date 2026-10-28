@@ -1,6 +1,6 @@
 // Real dual-account sandbox inside Super Admin. No local card/dice fabrication.
 import {createStudioStatusSync} from './studio-status-sync.mjs';
-import {studioTestProgress} from './studio-test-progress.mjs';
+import {studioTestProgress,studioEclatOverview} from './studio-test-progress.mjs';
 import {ECLAT_COFFRETS} from './eclat-catalog.mjs';
 
 export function createStudioRealSandbox({client}){
@@ -101,28 +101,21 @@ export function createStudioRealSandbox({client}){
  function renderEclatProgress(){
   const grid=$('studio-real-eclat-grid'),counter=$('studio-real-eclat-count');
   if(!grid||!counter)return;
+  const progress=studioEclatOverview(status,ECLAT_COFFRETS);
   grid.replaceChildren();
-  const completed=Array.isArray(status?.game?.eclat_completed_coffrets)
-   ?new Set(status.game.eclat_completed_coffrets.filter(x=>Number.isInteger(x)&&x>=1&&x<=12))
-   :new Set();
-  const active=status?.ready===true&&!status?.game?.error
-   ?status?.game?.eclat_active:null;
-  const activeId=Number.isInteger(active?.coffret_id)&&active.coffret_id>=1&&active.coffret_id<=12
-   ?active.coffret_id:null;
-  const verified=ECLAT_COFFRETS.filter(x=>completed.has(x.id)).length;
-  counter.textContent=verified+'/12 terminés'+(activeId?' · 1 en cours':'');
-  for(const coffret of ECLAT_COFFRETS){
+  counter.textContent=progress.verified+'/12 terminés'+
+   (progress.activeId?' · 1 en cours':'');
+  for(const coffret of progress.rows){
    const item=document.createElement('div');
-   const done=completed.has(coffret.id),running=activeId===coffret.id;
    item.classList.add('studio-real-eclat-coffret');
-   item.dataset.state=running?'active':done?'verified':'pending';
-   const progress=running?
-    ' · en cours'+
-    (Number.isInteger(active?.chapter_index)&&Number.isInteger(active?.chapter_total)&&active.chapter_total>0
-     ?' · étape '+active.chapter_index+'/'+active.chapter_total:'')+
-    ([30,60,90].includes(active?.minutes)?' · '+active.minutes+' min':''):'';
-   item.textContent=(running?'◉ ':done?'✓ ':'○ ')+
-    'Coffret '+coffret.id+' · '+coffret.title+progress;
+   item.dataset.state=coffret.state;
+   const running=coffret.state==='active';
+   const phase=running?' · en cours'+
+    (coffret.chapter!==null&&coffret.chapterTotal!==null
+     ?' · étape '+coffret.chapter+'/'+coffret.chapterTotal:'')+
+    (coffret.minutes!==null?' · '+coffret.minutes+' min':''):'';
+   item.textContent=(running?'◉ ':coffret.state==='verified'?'✓ ':'○ ')+
+    'Coffret '+coffret.id+' · '+coffret.title+phase;
    grid.append(item);
   }
  }
