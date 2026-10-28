@@ -27,6 +27,9 @@ const assert=require('node:assert/strict');
     document.querySelector('#studio-real-game').hidden=false;
     document.querySelector('#studio-real-views').hidden=false;
     document.querySelector('#studio-real-audit').hidden=true;
+    for(const id of ['studio-real-create','studio-real-refresh',
+      'studio-real-check','studio-real-reset','studio-real-delete'])
+     document.getElementById(id).hidden=false;
     document.querySelector('#studio-real-progress-count').textContent='7/9';
     const list=document.querySelector('#studio-real-progress-list');
     for(const text of ['Duo de test A+B','Connexion des deux joueurs',
