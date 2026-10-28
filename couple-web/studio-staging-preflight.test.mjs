@@ -54,3 +54,18 @@ test('open Studio Edge endpoint fails security prerequisite, even if schema exis
  assert.equal(result.ready,false);
  assert.equal(result.details.find(x=>x.component==='edge love-studio-sandbox').ready,false);
 });
+
+test('provider outages and anonymous authentication errors cannot masquerade as a real LoveRoll schema',async()=>{
+ for(const issue of [
+  {status:500,code:'PGRST_INTERNAL_ERROR'},
+  {status:429,code:'RATE_LIMITED'},
+  {status:401,code:'invalid_api_key'},
+  {status:403,code:'invalid_jwt'}
+ ]){
+  const {fetcher}=mock(path=>path.includes('/rest/v1/')
+   ?issue:{status:401,code:'42501'});
+  const result=await checkStagingReadiness({ref,url,key,fetcher});
+  assert.equal(result.ready,false,'HTTP '+issue.status+' must fail closed');
+  assert.equal(result.details.find(x=>x.component==='table couples').ready,false);
+ }
+});
