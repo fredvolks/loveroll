@@ -72,7 +72,8 @@ const opts=studioAuthOptions({
 const client=CONFIG.supabaseUrl&&CONFIG.supabasePublishableKey?
  createClient(CONFIG.supabaseUrl,CONFIG.supabasePublishableKey,opts):null;
 if(client&&studioSeatId)startStudioSeatLogin(client,studioSeatId,{
- selfWindow:window,origin:location.origin
+ selfWindow:window,origin:location.origin,
+ navigate:tab=>handle('tab:'+tab).catch(fail)
 });
 const launchParams=new URLSearchParams(location.search);
 const eclatAudio=createEclatAudio();

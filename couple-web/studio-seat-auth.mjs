@@ -15,7 +15,7 @@ export function studioAuthOptions(base,seat,storage){
   persistSession:true
  }};
 }
-export function startStudioSeatLogin(client,seat,{selfWindow,origin,reload=()=>selfWindow.location.reload()}={}){
+export function startStudioSeatLogin(client,seat,{selfWindow,origin,reload=()=>selfWindow.location.reload(),navigate=()=>{}}={}){
  if(!seat||!selfWindow||selfWindow.parent===selfWindow)return ()=>{};
  let disposed=false,signingIn=false;
  const announce=async()=>{
@@ -33,6 +33,18 @@ export function startStudioSeatLogin(client,seat,{selfWindow,origin,reload=()=>s
   if(!message||message.seat!==seat)return;
   if(message.type==='loveroll-studio-clear-seat'){
    signingIn=true;await client.auth.signOut({scope:'local'});reload();return;
+  }
+  if(message.type==='loveroll-studio-navigate'){
+   if(!['home','session','special','eclat','advent','settings'].includes(message.tab))return;
+   try{
+    const {data}=await client.auth.getSession();
+    // Admin shortcuts never turn a normal signed-in user into a Studio seat.
+    if(data?.session?.user?.app_metadata?.love_studio_test!==true)return;
+    await navigate(message.tab); // The actual production tab handler enforces eligibility.
+   }catch{
+    selfWindow.parent.postMessage({type:'loveroll-studio-navigate-error',seat},origin);
+   }
+   return;
   }
   if(message.type!=='loveroll-studio-login'||typeof message.token_hash!=='string'||
      !/^[0-9a-f]{12,256}$/i.test(message.token_hash))return;

@@ -44,6 +44,7 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
  for(const id of ['studio-real-status','studio-real-views','studio-real-create',
   'studio-real-delete','studio-real-refresh','studio-real-reset',
   'studio-show-seat-A','studio-show-seat-B','studio-real-expand-A','studio-real-expand-B',
+  'studio-real-jump-A','studio-real-jump-B',
   'studio-real-frame-A','studio-real-frame-B'])make(id);
  for(const s of ['A','B']){
   const title=new Element('div');title.classList.add('studio-real-frame-label');
@@ -76,6 +77,19 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
   assert.match(a.src,/studio_seat=A/);
   assert.match(b.src,/studio_seat=B/);
   assert.notEqual(a.src,b.src);
+  const sent=[];
+  a.contentWindow={postMessage:(message,origin)=>sent.push({message,origin})};
+  b.contentWindow={postMessage:(message,origin)=>sent.push({message,origin})};
+  nodes.get('studio-real-jump-A').value='session';
+  nodes.get('studio-real-jump-A').handlers.change();
+  assert.deepEqual(sent[0],{message:{type:'loveroll-studio-navigate',seat:'A',tab:'session'},origin:globalThis.location.origin});
+  nodes.get('studio-real-jump-B').value='special';
+  nodes.get('studio-real-jump-B').handlers.change();
+  assert.equal(sent[1].message.seat,'B');
+  assert.equal(sent[1].message.tab,'special');
+  nodes.get('studio-real-jump-A').value='delete';
+  nodes.get('studio-real-jump-A').handlers.change();
+  assert.equal(sent.length,2,'navigation must allow only official harmless tab routes');
   nodes.get('studio-real-expand-A').click();
   assert.equal(html.classList.contains('studio-real-fullscreen'),true);
   assert.equal(nodes.get('studio-real-frame-A').classList.contains('studio-real-maximized'),true);

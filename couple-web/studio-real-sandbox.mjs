@@ -3,6 +3,7 @@ export function createStudioRealSandbox({client}){
  const $=id=>document.getElementById(id);
  const uri='love-studio-sandbox';
  const validSeats=['A','B'];
+ const validRoutes=['home','session','special','eclat','advent','settings'];
  const frames={A:null,B:null};
  let status=null,tab='A',busy=false,initialized=false,loginInFlight=new Set(),expandedSeat=null;
  const label=s=>s==='A'?'Joueur A':'Joueur B';
@@ -95,6 +96,10 @@ export function createStudioRealSandbox({client}){
   const seat=validSeats.find(s=>frames[s]?.contentWindow===event.source);
   if(!seat||event.data?.seat!==seat)return;
   const msg=event.data;
+  if(msg.type==='loveroll-studio-navigate-error'){
+   say(label(seat)+' : ouverture refusée par le vrai jeu. Vérifie ses conditions d’accès.');
+   return;
+  }
   if(msg.type==='loveroll-studio-seat-error'){
    loginInFlight.delete(seat);say(label(seat)+' : authentification non aboutie, recharge la paire.');
    return;
@@ -127,6 +132,12 @@ export function createStudioRealSandbox({client}){
   window.addEventListener('message',onChildMessage);
   for(const seat of validSeats)$('studio-show-seat-'+seat).addEventListener('click',()=>showSeat(seat));
   for(const seat of validSeats)$('studio-real-expand-'+seat).addEventListener('click',()=>toggleExpandedSeat(seat));
+  for(const seat of validSeats)$('studio-real-jump-'+seat).addEventListener('change',()=>{
+   const selector=$('studio-real-jump-'+seat),tab=selector.value;
+   selector.value='';
+   if(!status?.ready||!validRoutes.includes(tab))return;
+   frames[seat]?.contentWindow?.postMessage({type:'loveroll-studio-navigate',seat,tab},location.origin);
+  });
   window.addEventListener('keydown',event=>{
    if(event.key==='Escape'&&expandedSeat){event.preventDefault();collapseSeat();}
   });
