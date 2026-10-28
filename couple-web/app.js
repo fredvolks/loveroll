@@ -4631,19 +4631,37 @@ async function start(){
   catch(e){fail(e);window.LoveRollBoot?.showFailure();}
  }else render();
  client.auth.onAuthStateChange((event,session)=>{
-  // An account switch invalidates every pending V2 entitlement/status read,
-  // even when a user signs back into the same account immediately.
-  if(event==='SIGNED_OUT'||event==='SIGNED_IN'&&session?.user&&!state.user)
+  // A different authenticated identity may arrive from another browser tab.
+  // Never leave a previous user's private V2 scene or cached entitlement
+  // mounted while asynchronously loading the new account's real couple.
+  if(event==='SIGNED_IN'&&session?.user&&state.user?.id!==session.user.id){
+   const switching=!!state.user;
    eclatV2StatusFence.invalidate();
-  if(event==='SIGNED_IN'&&session?.user&&!state.user){
+   disposeEclatV2Player();
+   state.eclatV2Status=null;state.eclatV2OwnerId=null;state.eclatV2CoupleId=null;
    state.user=session.user;
+   if(switching){
+    eclatNoteDrafts.clear();state.eclat=null;state.profile=null;
+    state.coupleId=null;state.couple=null;state.members=[];
+    state.unlockKey=null;state.personalPass=null;state.personalJournal=[];
+    state.tab='home';
+    root.replaceChildren();
+   }
    setTimeout(()=>reload().catch(fail),0);
   }
   if(event==='PASSWORD_RECOVERY'){
-    state.passwordRecovery=true;state.showAuth=true;
-    state.user=session?.user||state.user;render();
-   }
-   if(event==='SIGNED_OUT'){eclatNoteDrafts.clear();state.user=null;state.profile=null;state.coupleId=null;state.wellbeing=null;state.personalPass=null;state.personalJournal=[];state.emailVerificationPending=false;render();}
+   eclatV2StatusFence.invalidate();disposeEclatV2Player();
+   state.passwordRecovery=true;state.showAuth=true;
+   state.user=session?.user||state.user;render();
+  }
+  if(event==='SIGNED_OUT'){
+   eclatV2StatusFence.invalidate();disposeEclatV2Player();
+   eclatNoteDrafts.clear();state.user=null;state.profile=null;state.coupleId=null;
+   state.couple=null;state.members=[];state.eclat=null;state.wellbeing=null;
+   state.personalPass=null;state.personalJournal=[];state.unlockKey=null;
+   state.eclatV2Status=null;state.eclatV2OwnerId=null;state.eclatV2CoupleId=null;
+   state.emailVerificationPending=false;render();
+  }
  });
 }
 // Version probe bypasses WebView/Chrome and service worker HTTP cache.
