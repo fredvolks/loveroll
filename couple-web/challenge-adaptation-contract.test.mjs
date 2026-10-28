@@ -11,6 +11,7 @@ test('proposal table is private, scoped to one challenge and one session',()=>{
  assert.match(sql,/session_id uuid NOT NULL REFERENCES public\.couple_sessions\(id\)/);
  assert.match(sql,/ENABLE ROW LEVEL SECURITY/);
  assert.match(sql,/couple_private\.is_member\(p_couple\)/);
+ assert.match(sql,/AND public\.love_verified_identity\(\)/);
  assert.match(sql,/CREATE OR REPLACE FUNCTION public\.love_adaptation_pair_allowed\(/);
  assert.match(sql,/USING \(public\.love_adaptation_pair_allowed\(challenge_id,couple_id,session_id\)\)/);
  assert.match(sql,/REVOKE ALL ON public\.love_challenge_adaptations FROM public,anon,authenticated/);
