@@ -1,6 +1,9 @@
 import {readFileSync} from 'node:fs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
+// CI's established Settings suite also executes the unified notifications
+// behavior tests, so this Web-only fix cannot pass via skipped test files.
+import './notification-unified-settings.test.mjs';
 
 const read=name=>readFileSync(new URL(name,import.meta.url),'utf8');
 const app=read('./app.js');
@@ -94,7 +97,7 @@ test('LR-015: excluded cards submenu is reachable only after server feature gati
 test('LR-015: Settings menu exposes excluded cards as a navigable leaf rather than hiding its source row',()=>{
  const menu=readFileSync(new URL('./settings-menus.mjs',import.meta.url),'utf8');
  const start=menu.indexOf("else if(route==='jeu')");
- const end=menu.indexOf("else if(route==='notifications')",start);
+ const end=menu.indexOf("else if(route==='application')",start);
  assert.ok(start>0&&end>start);
  const jeu=menu.slice(start,end);
  assert.match(jeu,/link\('\.settings-advanced \[data-action="settings-page:excluded-cards"\]'\)/);
