@@ -221,6 +221,7 @@ export function createStudioRealSandbox({client}){
   $('studio-real-create').hidden=isReady||['creating','deleting','invalid'].includes(status?.state);
   $('studio-real-delete').hidden=status?.state==='missing'||!status;
   $('studio-real-refresh').hidden=!status||status?.state==='missing';
+  $('studio-real-reconnect').hidden=!isReady;
   $('studio-real-reset').hidden=!isReady;
   $('studio-real-check').hidden=!isReady;
   const diagnostics=$('studio-real-diagnostics');
@@ -453,6 +454,13 @@ export function createStudioRealSandbox({client}){
   $('studio-real-refresh').addEventListener('click',()=>{
    // Resume the SAME game; preserving iframe/OTP session is essential for
    // official WebGL animation, timer and in-progress challenge continuity.
+   refresh().catch(e=>say(e.message));
+  });
+  $('studio-real-reconnect').addEventListener('click',()=>{
+   if(busy||tearingDown||!status?.ready)return;
+   if(!confirm('Recharger les deux fenêtres A/B pour rétablir une connexion ? Les tirages et cartes restent enregistrés, mais un minuteur local en cours pourrait être interrompu.'))return;
+   closeFrames();
+   say('Réouverture des deux vrais comptes A/B…');
    refresh().catch(e=>say(e.message));
   });
   try{await refresh()}catch(err){say(err.message)}
