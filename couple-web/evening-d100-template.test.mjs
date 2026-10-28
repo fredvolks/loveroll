@@ -9,8 +9,14 @@ test('No category is preselected; an eligible player can press roll to receive g
  assert.equal((html.match(/aria-pressed="false"/g)||[]).length,3);
  assert.doesNotMatch(html,/aria-pressed="true"/);
  assert.doesNotMatch(html,/data-action="new-challenge"[^>]*disabled/);
- for(const blocked of [{...ready,turn:{...ready.turn,next:'b'}},{...ready,rolling:true},{...ready,status:{both_ready:false}}]){
-  assert.match(premiumEveningHtml(blocked),/data-action="new-challenge"[^>]*disabled/);
+ for(const [blocked,label] of [
+  [{...ready,turn:{...ready.turn,next:'b'}},'En attente du tour de ton partenaire'],
+  [{...ready,rolling:true},'Brassage en cours…'],
+  [{...ready,status:{both_ready:false}},'Lance ton D6 pour continuer']
+ ]){
+  const view=premiumEveningHtml(blocked);
+  assert.doesNotMatch(view,/data-action="new-challenge"/,'A waiting state must never be a fake button');
+  assert.match(view,new RegExp('class="evening-primary-status" role="status">'+label));
  }
 });
 test('Information uses the actual configured preference and preserves calendar and closure',()=>{
