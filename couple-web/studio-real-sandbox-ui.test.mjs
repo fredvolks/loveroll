@@ -11,6 +11,9 @@ test('Studio real sandbox uses existing secure platform gate and no standalone f
  assert.match(html,/studio-real-frame-B/);
  assert.match(html,/studio-real-delete/);
  assert.match(html,/id="studio-real-reset"/);
+ assert.match(html,/id="studio-real-check"/);
+ assert.match(html,/id="studio-real-diagnostics"/);
+ assert.match(css,/\.studio-real-diagnostics/);
  for(const seat of ['A','B']){
   assert.match(html,new RegExp('id="studio-real-expand-'+seat+'"'));
   assert.match(html,new RegExp('id="studio-real-jump-'+seat+'"'));

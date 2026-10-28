@@ -51,9 +51,55 @@ Deno.serve(async(req:Request)=>{
   const {data:seats,error:seatError}=await service.from('love_studio_test_seats')
     .select('seat,user_id').eq('admin_id',adminId).order('seat');
   if(seatError)throw Error('Profils de test indisponibles');
-  return {ready:pool.state==='ready'&&seats?.length===2,state:pool.state,
+  // All QA diagnostics are read-only, scoped to this verified admin's
+  // registered technical couple. Never touch customer rolls or create faces.
+  const ready=pool.state==='ready'&&!!pool.couple_id&&seats?.length===2&&
+   seats.every(x=>x.user_id&&seatName(x.seat));
+  let game:null|Record<string,unknown>=null;
+  if(ready){
+   try{
+    const checked=async(promise:PromiseLike<{data:any,error:any}>)=>{
+     const {data,error}=await promise;
+     if(error)throw Error('Diagnostic du jeu indisponible');
+     return data;
+    };
+    const [weekly,monthly,latest,entitlement]=await Promise.all([
+     checked(service.from('couple_rolls').select('face,created_at')
+      .eq('couple_id',pool.couple_id).eq('kind','weekly')
+      .order('created_at',{ascending:false}).limit(1)),
+     checked(service.from('couple_rolls').select('face,created_at')
+      .eq('couple_id',pool.couple_id).eq('kind','monthly_activity')
+      .order('created_at',{ascending:false}).limit(1)),
+     checked(service.from('couple_sessions').select('id,finished_at')
+      .eq('couple_id',pool.couple_id).order('started_at',{ascending:false})
+      .limit(1).maybeSingle()),
+     checked(service.from('love_eclat_entitlements').select('enabled,ends_at')
+      .eq('couple_id',pool.couple_id).maybeSingle())
+    ]);
+    const [personal,challenges]=latest?.id?await Promise.all([
+     checked(service.from('couple_personal_rolls').select('user_id,face')
+      .eq('session_id',latest.id)),
+     checked(service.from('couple_challenges').select('status,recipient')
+      .eq('couple_id',pool.couple_id).eq('session_id',latest.id))
+    ]):[[],[]];
+    const seatFace=(s:Seat)=>personal.find((r:{user_id:string})=>
+     r.user_id===seats.find(x=>x.seat===s)?.user_id)?.face??null;
+    game={
+     weekly_face:weekly?.[0]?.face??null,
+     monthly_face:monthly?.[0]?.face??null,
+     session:latest?(latest.finished_at?'finished':'open'):'not_started',
+     personal_faces:{A:seatFace('A'),B:seatFace('B')},
+     challenges_total:challenges.length,
+     eclat_enabled:entitlement?.enabled===true&&
+       (!entitlement.ends_at||new Date(entitlement.ends_at).getTime()>Date.now())
+    };
+   }catch{
+    game={error:'Diagnostic temporairement indisponible'};
+   }
+  }
+  return {ready,state:pool.state,
     seats:(seats||[]).map(x=>({seat:x.seat,ready:Boolean(x.user_id),user_id:x.user_id})),
-    created_at:pool.created_at};
+    created_at:pool.created_at,game};
  }
  if(action==='status'){
   try{return response(await status())}

@@ -73,7 +73,7 @@ const client=CONFIG.supabaseUrl&&CONFIG.supabasePublishableKey?
  createClient(CONFIG.supabaseUrl,CONFIG.supabasePublishableKey,opts):null;
 if(client&&studioSeatId)startStudioSeatLogin(client,studioSeatId,{
  selfWindow:window,origin:location.origin,
- navigate:tab=>handle('tab:'+tab).catch(fail)
+ navigate:tab=>handle('tab:'+tab).catch(error=>{fail(error);throw error;})
 });
 const launchParams=new URLSearchParams(location.search);
 const eclatAudio=createEclatAudio();

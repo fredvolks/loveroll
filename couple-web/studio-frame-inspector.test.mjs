@@ -41,7 +41,7 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
   confirm:globalThis.confirm};
  const nodes=new Map();
  const make=id=>{const node=new Element('div',id);nodes.set(id,node);return node;};
- for(const id of ['studio-real-status','studio-real-views','studio-real-create',
+ for(const id of ['studio-real-status','studio-real-views','studio-real-diagnostics','studio-real-check','studio-real-create',
   'studio-real-delete','studio-real-refresh','studio-real-reset',
   'studio-show-seat-A','studio-show-seat-B','studio-real-expand-A','studio-real-expand-B',
   'studio-real-jump-A','studio-real-jump-B',
@@ -65,6 +65,7 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
  const client={functions:{invoke:async(name,{body})=>{
   calls.push(body.action);
   if(body.action==='status')return {data:{ready:true,state:'ready',
+   game:{weekly_face:3,monthly_face:47,personal_faces:{A:2,B:5},session:'open',challenges_total:2,eclat_enabled:false},
    seats:[{seat:'A',user_id:'test-a'},{seat:'B',user_id:'test-b'}]}};
   return {data:{ready:true}};
  }}};
@@ -74,6 +75,8 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
   const getFrame=s=>nodes.get('studio-real-frame-'+s).querySelector('iframe');
   const a=getFrame('A'),b=getFrame('B');
   assert.ok(a&&b,'two independent official LoveRoll iframes');
+  assert.match(nodes.get('studio-real-diagnostics').textContent,/D6 Soirée A : 2/);
+  assert.match(nodes.get('studio-real-diagnostics').textContent,/D100 Surprise : 47/);
   assert.match(a.src,/studio_seat=A/);
   assert.match(b.src,/studio_seat=B/);
   assert.notEqual(a.src,b.src);
@@ -103,6 +106,10 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
   windowListeners.keydown({key:'Escape',preventDefault(){prevented=true;}});
   assert.equal(prevented,true);
   assert.equal(html.classList.contains('studio-real-fullscreen'),false);
+  nodes.get('studio-real-check').click();
+  await wait();
+  assert.equal(getFrame('A'),a,'read-only check must not reload authenticated seat A');
+  assert.equal(getFrame('B'),b,'read-only check must not reload authenticated seat B');
   nodes.get('studio-real-refresh').click();
   await wait();
   assert.notEqual(getFrame('A'),a,'refresh reloads the official frame');

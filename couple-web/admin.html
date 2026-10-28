@@ -69,11 +69,13 @@
  <div class="studio-real-toolbar-actions">
   <button type="button" class="primary" id="studio-real-create" hidden>Créer deux comptes de test</button>
   <button type="button" class="secondary" id="studio-real-refresh" hidden>Actualiser les deux écrans</button>
+  <button type="button" class="secondary" id="studio-real-check" hidden>État des lancers</button>
   <button type="button" class="secondary" id="studio-real-reset" hidden>Nouvel essai A+B</button>
   <button type="button" class="secondary studio-real-destructive" id="studio-real-delete" hidden>Supprimer les comptes test</button>
  </div>
 </div>
 <div id="studio-real-views" hidden>
+ <div class="studio-real-diagnostics" id="studio-real-diagnostics" role="status" aria-live="polite" hidden></div>
  <nav class="studio-real-seat-nav" aria-label="Joueur affiché sur cet écran">
   <button type="button" id="studio-show-seat-A" aria-pressed="true">Joueur A</button>
   <button type="button" id="studio-show-seat-B" aria-pressed="false">Joueur B</button>

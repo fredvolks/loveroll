@@ -68,6 +68,24 @@ export function createStudioRealSandbox({client}){
   $('studio-real-delete').hidden=status?.state==='missing'||!status;
   $('studio-real-refresh').hidden=!status||status?.state==='missing';
   $('studio-real-reset').hidden=!isReady;
+  $('studio-real-check').hidden=!isReady;
+  const diagnostics=$('studio-real-diagnostics');
+  if(diagnostics){
+   diagnostics.hidden=!isReady;
+   if(isReady){
+    const g=status?.game;
+    const face=n=>Number.isInteger(n)?String(n):'—';
+    diagnostics.textContent=!g||g.error
+     ?'Diagnostics officiels momentanément indisponibles — les deux jeux restent accessibles.'
+     :'D6 hebdomadaire : '+face(g.weekly_face)+
+      ' · D100 Surprise : '+face(g.monthly_face)+
+      ' · D6 Soirée A : '+face(g.personal_faces?.A)+
+      ' · D6 Soirée B : '+face(g.personal_faces?.B)+
+      ' · Soirée : '+(g.session==='open'?'en cours':g.session==='finished'?'terminée':'non commencée')+
+      ' · Défis : '+Number(g.challenges_total||0)+
+      ' · Éclat : '+(g.eclat_enabled?'test autorisé':'non actif');
+   }
+  }
   if(!isReady){closeFrames();return;}
   for(const seat of validSeats){
    const container=$('studio-real-frame-'+seat);
@@ -177,6 +195,7 @@ export function createStudioRealSandbox({client}){
    catch(err){say(err.message);}
    finally{busy=false}
   });
+  $('studio-real-check').addEventListener('click',()=>refresh().catch(e=>say(e.message)));
   $('studio-real-refresh').addEventListener('click',()=>{closeFrames();refresh().catch(e=>say(e.message))});
   try{await refresh()}catch(err){say(err.message)}
  }
