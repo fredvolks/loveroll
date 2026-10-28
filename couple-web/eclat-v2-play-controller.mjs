@@ -18,6 +18,9 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
   [...initialStatus.my_playlist_slots]:[];
  let wishPhraseDraft=null;
  let timerAnchorMs=Date.now();
+ // A delayed poll must never overwrite a newer real RPC action or a fresher
+ // poll response when both technical seats act at nearly the same time.
+ let stateRevision=0,refreshSequence=0;
  const timedStatus=()=>{
   if(status.coffret_id!==10||!status.timer_running||
      !Number.isInteger(status.timer_remaining_seconds))return status;
@@ -31,9 +34,15 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
   musicDraft,sharedMusicNotes,sharedRevealedMusic,
   cardDraft,sharedCardDraft,sharedCardConfirmed:[...sharedCardConfirmed],playlistDraft,wishPhraseDraft});};
  async function refresh(){
-  if(disposed)return;
-  const updated=await api.status(status.session_id);
-  if(updated.session_id!==status.session_id)throw Error('Séance Éclat remplacée');
+  if(disposed||busy)return false;
+  const requestedSession=status.session_id;
+  const requestedRevision=stateRevision,requestNumber=++refreshSequence;
+  const updated=await api.status(requestedSession);
+  // Never resurrect a deleted player view or apply network data that was
+  // fetched before this user's latest server-side choice or chapter action.
+  if(disposed||busy||requestedRevision!==stateRevision||
+     requestNumber!==refreshSequence)return false;
+  if(updated.session_id!==requestedSession)throw Error('Séance Éclat remplacée');
   const changed=updated.chapter_index!==status.chapter_index||updated.substep_index!==status.substep_index;
   status=updated;timerAnchorMs=Date.now();
   if(updated.wish_invitation_text)wishPhraseDraft=null;
@@ -50,6 +59,7 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
    playlistDraft=Array.isArray(updated.my_playlist_slots)?[...updated.my_playlist_slots]:[];
   }
   paint();
+  return true;
  }
  async function click(event){
   const button=event.target?.closest?.('[data-eclat-v2-action]');
@@ -153,7 +163,7 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
    role=command.endsWith(':A')?'A':'B';seen.add(role);paint();return;
   }
   if(command==='act:stop'&&!(await confirmStop()))return;
-  busy=true;
+  busy=true;stateRevision++;
   try{
    const sid=status.session_id,idx=status.chapter_index;
    let next;
@@ -288,7 +298,7 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
     cardDraft=next.my_cards||[];sharedCardDraft={A:[],B:[]};sharedCardConfirmed.clear();
    }
    if(next.revealed && status.device_mode==='one')role=null;
-   status=next;timerAnchorMs=Date.now();
+   status=next;stateRevision++;timerAnchorMs=Date.now();
    if(next.wish_invitation_text)wishPhraseDraft=null;
    if(next.playlist_shared){
     playlistDraft=[];
@@ -325,7 +335,7 @@ export function createEclatV2PlayController({root,api,viewerId,initialStatus,
  root.addEventListener('click',click);
  paint();
  return Object.freeze({refresh,destroy(){
-  disposed=true;
+  disposed=true;stateRevision++;refreshSequence++;
   if(ticker!==null&&ticker!==undefined)globalThis.clearInterval?.(ticker);
   root.removeEventListener('click',click);root.removeEventListener('input',input);
   sharedAnswers=emptyShared();sharedConfirmed.clear();sharedReveal=null;
