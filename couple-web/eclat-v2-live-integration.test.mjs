@@ -119,3 +119,18 @@ test('a confirmed V2 Premium entitlement opens the public gallery without legacy
  assert.match(start,/state\.eclatV2OwnerId===state\.user\?\.id&&state\.eclatV2CoupleId===state\.coupleId/);
  assert.match(start,/state\.eclatV2Status\?\.access===true&&!state\.eclat\?\.active/);
 });
+
+
+test('only a server-confirmed, completed V2 session keeps its finale after a redraw',()=>{
+ assert.match(app,/import \{renderEclatV2PlayA\}/);
+ assert.match(app,/v2\?\.access===true&&v2\.active===false&&v2\.state==='finished'/);
+ assert.match(app,/v2\.content_version===2&&typeof v2\.session_id==='string'/);
+ assert.match(app,/state\.eclatV2FinaleDismissed!==v2\.session_id&&!e\?\.active/);
+ assert.match(app,/renderEclatV2PlayA\(\{status:v2,viewerId:state\.user\.id\}\)/);
+ assert.match(app,/aria-label="Finale officielle Éclat"/);
+ assert.match(app,/if\(state\.eclatV2Status\?\.active===false&&state\.eclatV2Status\?\.state==='finished'\)/);
+ assert.match(app,/state\.eclatV2FinaleDismissed=state\.eclatV2Status\.session_id/);
+ assert.match(app,/state\.eclatV2FinaleDismissed=null/);
+ // A stopped/denied or V1 session is never promoted to a completed finale.
+ assert.doesNotMatch(app,/v2\?\.active===false\?renderEclatV2PlayA/);
+});

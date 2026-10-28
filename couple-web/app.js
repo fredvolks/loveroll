@@ -22,6 +22,7 @@ import {saveEveningSelection,restoreEveningSelection,clearEveningSelection} from
 import {eclatHtml} from './eclat-ui.mjs?v=20261027-web242';
 import {createEclatV2SessionApi} from './eclat-v2-session.mjs?v=20261028-v2-live251';
 import {createEclatV2PlayController} from './eclat-v2-play-controller.mjs?v=20261028-v2-live251';
+import {renderEclatV2PlayA} from './eclat-v2-play-ui.mjs?v=20261028-v2-live251';
 import {canReuseEclatV2Editor} from './eclat-v2-live-ownership.mjs?v=20261028-v2-live251';
 import {previewMode,previewCanEdit,previewEclatStatus} from './account-preview-mode.mjs?v=20261020-test180';
 import {eclatStage} from './eclat-catalog.mjs?v=20261019-eclat174';
@@ -106,7 +107,7 @@ const worldText=key=>worldT(worldLocale(),key);
 const state={user:null,profile:null,members:[],coupleId:null,couple:null,
  tab:launchParams.has('settings')?'settings':(['home','session','special','advent'].includes(launchParams.get('open'))?launchParams.get('open'):'home'),weekly:null,monthly:{},session:null,personal:[],challenges:[],gifts:[],rollStatus:null,customCards:[],customCategory:'SENSUEL',customSlot:1,customSearch:'',customFilter:'all',monthlyActivities:[],monthlySlot:1,libraryScreen:'list',libraryImportKind:null,specialEditorKey:null,specialEditorStage:'D6_activite',specialEditorFace:1,adventEditorDay:1,pushDevice:null,
  events:[],journal:[],advent:[],advent2026Config:null,advent2026Days:[],selectedDay:1,adventYear:null,adventSelected:null,adventHistory:false,adventOpening:null,adventRevealing:false,adventServerDate:null,unlockKey:null,channel:null,
- occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningRefusalId:null,redrawReady:false,redrawBusy:false,loveExcludedCards:[],eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],monthlyPassQuota:null,calendarPassMonth:null,cycleStatus:null,cycleDeferred:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoBookingEdit:false,referral:null,eclat:null,eclatGalleryScroll:0,eclatHistory:[],eclatHistoryCouple:null,eclatBrowse:false,eclatHistoryError:false,eclatV2Status:null,eclatV2OwnerId:null,eclatV2CoupleId:null,eclatV2DeviceMode:'two',eclatSelection:1,eclatMinutes:30,eclatIntent:'all',eclatDetails:false,eclatMusic:false,eclatFinished:null,testModeEligible:false,testMode:'real'};
+ occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningRefusalId:null,redrawReady:false,redrawBusy:false,loveExcludedCards:[],eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],monthlyPassQuota:null,calendarPassMonth:null,cycleStatus:null,cycleDeferred:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoBookingEdit:false,referral:null,eclat:null,eclatGalleryScroll:0,eclatHistory:[],eclatHistoryCouple:null,eclatBrowse:false,eclatHistoryError:false,eclatV2Status:null,eclatV2OwnerId:null,eclatV2CoupleId:null,eclatV2FinaleDismissed:null,eclatV2DeviceMode:'two',eclatSelection:1,eclatMinutes:30,eclatIntent:'all',eclatDetails:false,eclatMusic:false,eclatFinished:null,testModeEligible:false,testMode:'real'};
 const names={SENSUEL:'Sensuel',COQUIN:'Coquin',SEXUEL:'Sexuel'};
 function isSharedCoupleReady(coupleId,members){
  return !!coupleId&&Array.isArray(members)&&members.length===2;
@@ -1348,6 +1349,21 @@ function renderEclat(){
    });
   },5000);
   eclatV2Poll?.unref?.();
+  return;
+ }
+ // A completed V2 finale is an official, consented result. It must not be
+ // erased by unrelated app redraws, navigation sync or the five-second poll.
+ // No private drafts are retained: the view is rendered exclusively from the
+ // last server-confirmed snapshot, never from a local partner simulation.
+ if(v2?.access===true&&v2.active===false&&v2.state==='finished'&&
+    v2.content_version===2&&typeof v2.session_id==='string'&&
+    state.eclatV2FinaleDismissed!==v2.session_id&&!e?.active){
+  disposeEclatV2Player();
+  frame('<section class="eclat-v2-live" aria-label="Finale officielle Éclat">'+
+   renderEclatV2PlayA({status:v2,viewerId:state.user.id})+
+   '<footer class="eclat-v2-live-footer">'+
+   button('eclat-v2:gallery','Retour aux 12 coffrets','class="subtle"')+
+   '</footer></section>','Éclat','Notre expérience à deux');
   return;
  }
  disposeEclatV2Player();
@@ -2656,6 +2672,10 @@ async function handle(action,element){
    state.eclatV2DeviceMode=parts[1];render();return;
   }
   if(kind==='gallery'){
+   // Dismiss only the already finished session, not another player's or
+   // a newly started game. Server state remains the source of truth.
+   if(state.eclatV2Status?.active===false&&state.eclatV2Status?.state==='finished')
+    state.eclatV2FinaleDismissed=state.eclatV2Status.session_id;
    disposeEclatV2Player();state.eclatV2Status=null;state.eclatV2OwnerId=null;state.eclatV2CoupleId=null;
    state.eclatBrowse=true;state.eclatDetails=false;
    await refreshEclatStatus();render();return;
@@ -2712,6 +2732,7 @@ async function handle(action,element){
      throw Error('Le serveur n’a pas ouvert de séance Éclat V2 officielle.');
     state.eclatV2Status=result;state.eclatV2OwnerId=state.user.id;state.eclatV2CoupleId=state.coupleId;
     state.eclatBrowse=false;state.eclatDetails=false;state.eclatFinished=null;
+    state.eclatV2FinaleDismissed=null;
     render();return;
    }
    // Only V1 can authorize this fallback. A denied V2 entitlement never
