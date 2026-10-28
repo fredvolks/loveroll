@@ -16,7 +16,7 @@ export function adaptedTimerDurationMs(row){
 }
 export function needsAdaptedTimerReset(row,currentDurationMs){
  const expected=adaptedTimerDurationMs(row);
- return expected!==null&&Number.isFinite(currentDurationMs)&&currentDurationMs!==expected;
+ return expected!==null&&currentDurationMs!==expected;
 }
 export function adaptationPanelHtml(card,row,{open=false,busy=false}={}){
  if(!card||!['proposed','accepted'].includes(card.status))return '';
