@@ -90,12 +90,17 @@ const assert=require('node:assert/strict');
    assert.ok(layout.guide.width>=260&&layout.eclat.width>=260);
    assert.ok(layout.buttons.every(x=>x.w>=100&&x.h>=32),
     preset.name+' action controls are too small');
-   if(preset.name==='mobile-emergency'){
-    assert.equal(layout.mobileNavVisible,true,'mobile navigation must remain available');
+   if(preset.name==='mobile-emergency'||preset.name==='iPad-portrait'){
+    assert.equal(layout.mobileNavVisible,true,
+     preset.name+' navigation must remain available below desktop breakpoint');
     assert.deepEqual(layout.shortcuts.map(x=>x.pane),
      ['realtest','venice','notifications','audience','promos','geo']);
     assert.ok(layout.shortcuts.every(x=>x.visible&&x.height>=44),
      'every mobile emergency shortcut must be large enough to touch');
+   }
+   if(preset.name==='PC-1440'||preset.name==='iPad-landscape'){
+    assert.equal(layout.mobileNavVisible,false,
+     'PC and wide iPad keep the normal sidebar');
    }
    if(preset.visibleSeats===2){
     const [a,b]=layout.frames;
