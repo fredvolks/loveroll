@@ -75,3 +75,16 @@ test('V2 completion preserves the approved finale until user intentionally opens
  assert.match(app,/clearInterval\(eclatV2Poll\)/);
  assert.match(app,/if\(!latest\?\.access\)\{\s*disposeEclatV2Player\(\);render\(\);return;/);
 });
+
+
+test('ordinary redraw preserves same real editor; identity loss or server denial closes it',()=>{
+ assert.match(app,/import \{canReuseEclatV2Editor\}/);
+ assert.match(app,/if\(canReuseEclatV2Editor\(\{/);
+ assert.match(app,/player:mounted,userId:state\.user\?\.id/);
+ assert.match(app,/lockedCoupleId:state\.eclatV2CoupleId/);
+ assert.match(app,/hasMountedHost:!!root\.querySelector\('#eclat-v2-live-player'\)/);
+ assert.match(app,/if\(state\.tab!=='eclat'\|\|!state\.user\|\|state\.passwordRecovery\|\|/);
+ assert.match(app,/!verifiedLoveEmail\(state\.user\)\|\|!state\.profile\?\.birthday_md/);
+ assert.match(app,/\['42501','28000'\]\.includes\(error\?\.code\)/);
+ assert.match(app,/state\.eclatV2Status=\{access:false,active:false\};\s*disposeEclatV2Player\(\)/);
+});
