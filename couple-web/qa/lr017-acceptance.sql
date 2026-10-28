@@ -90,14 +90,39 @@ BEGIN
  END IF;
 END $$;
 RESET ROLE;
+-- Self-draw uses offered_by = recipient = A; B must explicitly consent.
+-- A's private challenge remains completely hidden to B even after consent.
+SET ROLE authenticated;
+DO $$
+DECLARE
+ self_draw uuid:='55555555-5555-4555-8555-555555555555';
+ v jsonb;
+BEGIN
+ PERFORM set_config('request.jwt.claim.sub','aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',true);
+ PERFORM set_config('request.jwt.claim.email_verified','true',true);
+ v:=public.love_adaptation_propose(self_draw,'Version qui convient aux deux',NULL);
+ IF v->>'status'<>'pending' THEN
+  RAISE EXCEPTION 'Self-draw recipient cannot propose consensual adaptation'; END IF;
+ PERFORM set_config('request.jwt.claim.sub','bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb',true);
+ IF (SELECT count(*) FROM public.couple_challenges WHERE id=self_draw)<>0 THEN
+  RAISE EXCEPTION 'Partner accessed private self-drawn card'; END IF;
+ IF (SELECT count(*) FROM public.love_challenge_adaptations WHERE challenge_id=self_draw)<>1 THEN
+  RAISE EXCEPTION 'Second partner cannot see consent request for self-draw'; END IF;
+ v:=public.love_adaptation_respond(self_draw,true);
+ IF v->>'status'<>'accepted' OR v->>'updated'<>'true' THEN
+  RAISE EXCEPTION 'Second partner cannot approve self-drawn adaptation'; END IF;
+ IF (SELECT count(*) FROM public.couple_challenges WHERE id=self_draw)<>0 THEN
+  RAISE EXCEPTION 'Adaptation approval revealed private self-drawn challenge'; END IF;
+END $$;
+RESET ROLE;
 -- The original card is byte-for-byte unchanged, including its duration.
 DO $$
 BEGIN
  IF EXISTS (SELECT 1 FROM public.couple_challenges WHERE
   card_description<>'Consigne officielle originale' OR card_timer_minutes<>5) THEN
   RAISE EXCEPTION 'A proposal or approval changed the original card';END IF;
- IF (SELECT count(*) FROM public.couple_challenges)<>4 OR
-    (SELECT count(*) FROM public.couple_sessions)<>1 THEN
+ IF (SELECT count(*) FROM public.couple_challenges)<>5 OR
+    (SELECT count(*) FROM public.couple_sessions)<>2 THEN
   RAISE EXCEPTION 'An adaptation created a new card/session';END IF;
 END $$;
 -- A closed evening must reject even a previously pending proposal.
