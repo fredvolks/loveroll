@@ -134,13 +134,15 @@ test('Venice workshop uses only real tagged owner seat A and official bridge, ne
   }}
  };
  const unsub=startStudioSeatLogin(client,'A',{selfWindow,origin});
+ const requestId='11111111-1111-4111-8111-111111111111';
  await listener({source:parent,origin,data:{
-  type:'loveroll-studio-venice',seat:'A',action:'get_latest_preview'
+  type:'loveroll-studio-venice',seat:'A',action:'get_latest_preview',request_id:requestId
  }});
  assert.equal(bridgeCalls,1);
  const response=messages.find(x=>x.m.type==='loveroll-studio-venice-result');
  assert.ok(response,'parent receives only the resulting drafts');
  assert.equal(response.at,origin);
+ assert.equal(response.m.request_id,requestId);
  assert.equal(response.m.data.result.preview.cards[0].title,'Only draft');
  assert.ok(!JSON.stringify(response).includes('access_token'));
  await listener({source:parent,origin:'https://attacker.invalid',data:{
@@ -149,7 +151,11 @@ test('Venice workshop uses only real tagged owner seat A and official bridge, ne
  await listener({source:parent,origin,data:{
   type:'loveroll-studio-venice',seat:'A',action:'delete_everyone'
  }});
- assert.equal(bridgeCalls,1,'foreign and unapproved actions never access paid provider');
+ await listener({source:parent,origin,data:{
+  type:'loveroll-studio-venice',seat:'A',action:'preview_three',
+  request_id:'invalid-request-id'
+ }});
+ assert.equal(bridgeCalls,1,'foreign, malformed and unapproved actions never access paid provider');
  unsub();
 });
 test('nonowner seat B cannot invoke the couple-owned Venice provider',async()=>{
