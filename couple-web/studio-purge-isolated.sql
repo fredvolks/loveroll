@@ -72,6 +72,11 @@ BEGIN
    row.name,row.columns);
  END LOOP;
 END $fixture$;
+ALTER TABLE public.love_eclat_sessions ADD COLUMN id uuid UNIQUE;
+CREATE TABLE public.love_referral_credit_usage(beneficiary_user_id uuid);
+CREATE TABLE public.love_personal_intimacy(user_id uuid,source_couple_id uuid);
+CREATE TABLE public.couple_evening_reviews(session_id uuid,author_id uuid);
+CREATE TABLE public.love_eclat_private_notes(session_id uuid,user_id uuid);
 -- The migration is the exact file proposed for LoveRoll (not a reimplementation).
 \i couple-web/migrations/20261027_love_studio_real_sandbox_foundation.sql
 SELECT set_config('studio.test_role','service_role',false);
@@ -154,6 +159,33 @@ INSERT INTO public.love_couple_free_trials VALUES
  ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-00000000000f',null);
 SELECT public.expect_studio_purge_refused('Essai lié à un utilisateur réel');
 DELETE FROM public.love_couple_free_trials;
+-- Credit redemption backed by a provider reference: never cascade it.
+INSERT INTO public.love_referral_credit_usage VALUES
+ ('00000000-0000-0000-0000-00000000000a');
+SELECT public.expect_studio_purge_refused('Crédit payé lié au banc');
+DELETE FROM public.love_referral_credit_usage;
+-- Personal journal from a foreign couple must remain untouched.
+INSERT INTO public.love_personal_intimacy VALUES
+ ('00000000-0000-0000-0000-00000000000b',
+  '10000000-0000-0000-0000-000000000002');
+SELECT public.expect_studio_purge_refused('Historique personnel extérieur au banc');
+DELETE FROM public.love_personal_intimacy;
+INSERT INTO public.couple_sessions(id,couple_id) VALUES
+ ('20000000-0000-0000-0000-000000000002','10000000-0000-0000-0000-000000000002');
+INSERT INTO public.couple_evening_reviews VALUES
+ ('20000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-00000000000a');
+SELECT public.expect_studio_purge_refused('Historique personnel extérieur au banc');
+DELETE FROM public.couple_evening_reviews;
+DELETE FROM public.couple_sessions WHERE id='20000000-0000-0000-0000-000000000002';
+INSERT INTO public.love_eclat_sessions(couple_id,started_by,id) VALUES
+ ('10000000-0000-0000-0000-000000000002',
+  '00000000-0000-0000-0000-00000000000a',
+  '30000000-0000-0000-0000-000000000002');
+INSERT INTO public.love_eclat_private_notes VALUES
+ ('30000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-00000000000b');
+SELECT public.expect_studio_purge_refused('Historique personnel extérieur au banc');
+DELETE FROM public.love_eclat_private_notes;
+DELETE FROM public.love_eclat_sessions WHERE id='30000000-0000-0000-0000-000000000002';
 -- Registered users' legitimate game data is purged, not fabricated or skipped.
 INSERT INTO public.couple_rolls VALUES
  ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-00000000000a');
