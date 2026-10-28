@@ -121,6 +121,18 @@ WHERE id='10000000-0000-0000-0000-000000000001';
 SELECT public.expect_studio_purge_refused('Propriétaire ou duo test non vérifié');
 UPDATE public.couples SET owner_user_id='00000000-0000-0000-0000-00000000000a'
 WHERE id='10000000-0000-0000-0000-000000000001';
+-- Even a corrupted extra membership or ownership must never be
+-- cascaded/SET NULL when technical Auth identities are deleted.
+INSERT INTO public.couple_members VALUES
+ ('10000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-00000000000a');
+SELECT public.expect_studio_purge_refused('Identité test utilisée dans un autre couple');
+DELETE FROM public.couple_members WHERE
+ couple_id='10000000-0000-0000-0000-000000000002';
+UPDATE public.couples SET owner_user_id='00000000-0000-0000-0000-00000000000b'
+ WHERE id='10000000-0000-0000-0000-000000000002';
+SELECT public.expect_studio_purge_refused('Identité test utilisée dans un autre couple');
+UPDATE public.couples SET owner_user_id='00000000-0000-0000-0000-00000000000f'
+ WHERE id='10000000-0000-0000-0000-000000000002';
 -- Foreign member, last-moment leaked roll, payment, Venice author and trial.
 INSERT INTO public.couple_members VALUES
  ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-00000000000f');
