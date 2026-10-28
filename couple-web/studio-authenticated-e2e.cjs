@@ -62,7 +62,10 @@ async function main(){
   assert.notEqual(sources[0],sources[1]);
   for(const seat of ['A','B']){
    const frame=page.frameLocator('#studio-real-frame-'+seat+' iframe');
-   await frame.locator('#app').waitFor({state:'visible',timeout:45000});
+   // A visible splash is NOT evidence that LoveRoll initialized. Require a
+   // native signed-in game control before assessing the actual screen.
+   await frame.locator('button[data-action="tab:home"]')
+    .first().waitFor({state:'visible',timeout:45000});
    const displayed=await frame.locator('#app').evaluate(el=>{
     const text=(el.textContent||'').trim();
     return {textLength:text.length,buttons:el.querySelectorAll('button').length};
@@ -109,8 +112,14 @@ async function main(){
   // Real D100 category confirmation is an actual <dialog>, which may
   // disappear when the player has opted out in the true settings.
   const confirmation=drawer.locator('dialog.lr-evening-category-dialog[open] [data-confirm-action="yes"]');
-  if(await confirmation.isVisible().catch(()=>false))
+  try{
+   await confirmation.waitFor({state:'visible',timeout:4500});
    await confirmation.click({timeout:10000});
+  }catch(error){
+   // No dialog is permitted only if the real user explicitly disabled its
+   // preference. In all other cases the next server-evidenced stage fails.
+   if(await confirmation.isVisible().catch(()=>false))throw error;
+  }
   await verified(8).waitFor({timeout:60000});
   console.log('Real Soirée D100 and official challenge server record: PASS');
   await page.selectOption('#studio-real-jump-A','special');
