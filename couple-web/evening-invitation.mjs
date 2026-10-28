@@ -7,7 +7,7 @@ export function eveningInviteHtml(invite,{partnerName='Ton partenaire',busy=fals
  const isSent=invite.direction==='sent',received=invite.direction==='received';
  const state=invite.state;
  const heading='<span class="lr-evening-invite-label">♥ UNE INVITATION À DEUX</span>';
- const name=escapeHtml(String(partnerName||'Ton partenaire').trim().split(/\s+/)[0]);
+ const name=String(partnerName||'Ton partenaire').trim().split(/\s+/)[0];
  const action=(kind,label,primary=false)=>
   '<button type="button" data-action="evening-invite:'+kind+'"'+
    (busy?' disabled aria-disabled="true"':'')+
