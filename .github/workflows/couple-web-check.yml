@@ -78,6 +78,7 @@ jobs:
           node --test couple-web/evening-instructions.test.mjs
           node --test couple-web/evening-private-queue.test.mjs couple-web/evening-redesign.test.mjs couple-web/evening-calendar.test.mjs couple-web/evening-category-v93.test.mjs couple-web/evening-review.test.mjs
           node --test couple-web/privacy-screen.test.mjs
+          node --test couple-web/ci-dice-parallel-contract.test.mjs
           node --test couple-web/pages-soiree-privacy-header.test.mjs
           node --test couple-web/monthly-pass-limit-sql.test.mjs
           node --test couple-web/extra-evening-eligibility.test.mjs
@@ -185,7 +186,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        group: [entry, dice, experience]
+        # Every previous D6/D100 check still runs. Three lanes shorten wall-clock time.
+        group: [entry, dice-core, dice-stage, dice-faces, experience]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -491,51 +493,51 @@ jobs:
         run: node couple-web/actual-discover-visual-check.cjs
 
       - name: Diagnose D100 compact header geometry early (no skipped validations)
-        if: matrix.group == 'dice'
+        if: matrix.group == 'dice-core'
         run: LOVEROLL_D100_HEADER_PROBE=1 node couple-web/evening-d100-template-browser-check.cjs
 
       - name: Verify real iPad Soirée D6 and D100 on the ONE HD photo (portrait and landscape)
-        if: matrix.group == 'dice'
+        if: matrix.group == 'dice-stage'
         run: node couple-web/ipad-romance-scene-browser-check.cjs
 
       - name: LR-001 — verify the actual idle Soirée and Surprise D100 projected mesh on Android
-        if: matrix.group == 'dice'
+        if: matrix.group == 'dice-stage'
         run: node couple-web/soiree-home-template-browser-check.cjs
 
       - name: Verify real couple Evening and Surprise in WebGL at S25 sizes
-        if: matrix.group == 'dice'
+        if: matrix.group == 'dice-stage'
         run: |
           node couple-web/premium-couple-visual-check.cjs
 
       - name: Verify Home D6 stays flat during touch and official result (Pages gate)
-        if: matrix.group == 'dice'
+        if: matrix.group == 'dice-faces'
         run: node couple-web/home-ruby-interaction-browser-check.cjs
 
       - name: Validate every real D6 face and representative D100 engravings on phone, tablet and desktop
-        if: matrix.group == 'dice'
+        if: matrix.group == 'dice-faces'
         run: node couple-web/dice-face-readability-browser-check.cjs
 
       - name: Verify live D100 Soirée size and marble contact across seven mobile viewports
-        if: matrix.group == 'dice'
+        if: matrix.group == 'dice-stage'
         run: node couple-web/evening-d100-template-browser-check.cjs
 
       - name: LR-014 — verify category modal on phone and iPad
-        if: matrix.group == 'dice'
+        if: matrix.group == 'dice-core'
         run: node couple-web/evening-category-confirm-browser-check.cjs
       - name: Verify Soirée responsive Step 1 and unchanged D35 on phones and tablets
-        if: matrix.group == 'dice'
+        if: matrix.group == 'dice-core'
         run: node couple-web/evening-redesign-browser-check.cjs
 
       - name: Verify full challenge instructions remain readable on mobile
-        if: matrix.group == 'dice'
+        if: matrix.group == 'dice-core'
         run: node couple-web/evening-instructions-browser-check.cjs
 
       - name: Verify category switches never remount live WebGL dice
-        if: matrix.group == 'dice'
+        if: matrix.group == 'dice-core'
         run: node couple-web/evening-category-no-flicker-browser-check.cjs
 
       - name: Verify weekly 3D die and photographed marble plinth on iPad
-        if: matrix.group == 'dice'
+        if: matrix.group == 'dice-faces'
         run: LOVE_PAD_ONLY=1 node couple-web/home-podium-browser-check.cjs
 
       - name: Vérifier les 12 coffrets par positions et pixels réels
@@ -584,7 +586,7 @@ jobs:
         run: node couple-web/premium-dialogs-visual-check.cjs
 
       - name: Archive actual iPad Soirée D6 and D100 screenshots for visual review
-        if: always() && matrix.group == 'dice'
+        if: always() && matrix.group == 'dice-stage'
         uses: actions/upload-artifact@v4
         with:
           name: LoveRoll-iPad-Android-photo-parity-${{ github.run_number }}
