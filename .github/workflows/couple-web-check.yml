@@ -88,6 +88,7 @@ jobs:
           node --test couple-web/evening-d100-template.test.mjs
           node --test couple-web/pages-soiree-privacy-header.test.mjs
           node --test couple-web/monthly-pass-limit-sql.test.mjs
+          node --test couple-web/lr027-primary-action.test.mjs
           node --test couple-web/lr016-pass-quota-live-sync.test.mjs
           node --test couple-web/extra-evening-eligibility.test.mjs
           node --test couple-web/soiree-surprise-recovery.test.mjs
