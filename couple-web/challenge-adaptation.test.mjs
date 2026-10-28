@@ -11,7 +11,11 @@ test('original instructions and timer win until explicit other-person acceptance
  assert.equal(acceptedAdaptationMinutes(5,{...row,status:'accepted'}),15);
 });
 test('proposal is secondary and cannot start a challenge or roll any dice',()=>{
- const html=adaptationPanelHtml(card,null,{open:true});
+ const html=adaptationPanelHtml(card,null,{open:true,originalText:'<em>Consigne originale</em>',originalMinutes:5});
+ assert.match(html,/Consigne originale/);
+ assert.match(html,/Durée actuelle : 5 min/);
+ assert.match(html,/&lt;em&gt;Consigne originale&lt;\/em&gt;/);
+ assert.doesNotMatch(html,/<em>/);
  assert.match(html,/data-action="adapt-propose:challenge-1"/);
  assert.match(html,/data-action="adapt-cancel"/);
  assert.match(html,/lr-adapt-minutes/);
