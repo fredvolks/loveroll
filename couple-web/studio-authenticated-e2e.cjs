@@ -256,6 +256,10 @@ async function main(){
  }finally{
   if(page&&created){
    try{
+    // Failure may occur inside Venice or in a narrow mobile viewport.
+    // Return to the actual A/B controls before trying the mandatory purge.
+    await page.setViewportSize({width:1440,height:900});
+    await page.locator('#tabs button[data-pane="realtest"]').click({timeout:8000});
     // Always use only the registered test-pair DELETE operation. Never query
     // or manipulate any real customer Auth user ID directly.
     await page.locator('#studio-real-delete').click({timeout:8000});
