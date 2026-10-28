@@ -56,7 +56,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        group: [entry, evening, experience]
+        group: [entry-interaction, entry-layout, evening, experience]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -83,22 +83,28 @@ jobs:
           done
           cat /tmp/loveroll-pages-http.log
           exit 1
-      - name: Validate entry before publication
-        if: matrix.group == 'entry'
+      # Two parallel, mandatory entry lanes. The former single lane could
+      # hold all Pages publication while software WebGL warmed up.
+      - name: Validate entry interaction before publication
+        if: matrix.group == 'entry-interaction'
         run: |
           set -euo pipefail
           node couple-web/boot-smoke.cjs
-          node couple-web/android-ruby-browser-check.cjs
           node couple-web/home-ruby-interaction-browser-check.cjs
           node couple-web/ruby-controls-browser-check.cjs
           node couple-web/home-duo-browser-check.cjs
+          node couple-web/loveroll-splash-browser-check.cjs
+      - name: Validate entry layout before publication
+        if: matrix.group == 'entry-layout'
+        run: |
+          set -euo pipefail
+          node couple-web/android-ruby-browser-check.cjs
           node couple-web/soiree-home-template-browser-check.cjs
           node couple-web/surprise-minimal-browser-check.cjs
           node couple-web/checkout-one-screen-browser-check.cjs
-          node couple-web/loveroll-splash-browser-check.cjs
           node couple-web/surprise-desktop-v86-check.cjs
-          # Always publish a healthy application: a *layout diagnostic* must not
-          # strand browsers on the previous release. Report any visual regression.
+          # Preserve the existing non-blocking layout-only diagnostic.
+          # No layout warning may bypass the mandatory functional tests above.
           if ! node couple-web/mobile-entry-visual-check.cjs; then
             echo '::warning::Responsive visual check needs follow-up; publishing current authenticated PWA instead of leaving stale web version.'
           fi
