@@ -40,7 +40,7 @@ const assert=require('node:assert/strict');
      list.append(item);
     }
     const grid=document.querySelector('#studio-real-eclat-grid');
-    const {ECLAT_COFFRETS}=await import('./eclat-catalog.mjs');
+    const {ECLAT_COFFRETS}=await import(new URL('./eclat-catalog.mjs',location.href).href);
     for(const item of ECLAT_COFFRETS){
      const node=document.createElement('div');
      node.className='studio-real-eclat-coffret';
