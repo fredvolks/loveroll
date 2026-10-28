@@ -74,6 +74,16 @@ test('only registered test couples and identities are eligible for deletion',()=
  assert.match(schema,/couple_events','actor_id/);
  assert.match(schema,/love_card_draw_history','recipient_user_id/);
  assert.match(schema,/love_custom_challenges','recipient_user_id/);
+ assert.match(schema,/love_all_dice_reset_audit','actor_id/);
+ assert.match(schema,/love_cycle_excluded_cards','excluded_by/);
+ assert.match(schema,/love_personal_sexual_cards','drawer_user_id/);
+ assert.match(schema,/love_personal_sexual_cards','recipient_user_id/);
+ assert.match(schema,/love_venice_preview_trials','requested_by/);
+ assert.match(schema,/love_weekly_reset_audit','actor_id/);
+ assert.match(schema,/public\.love_couple_free_trials t/);
+ assert.match(schema,/s\.user_id=t\.first_user_id/);
+ assert.match(schema,/s\.user_id=t\.second_user_id/);
+ assert.match(schema,/Essai lié à un utilisateur réel : purge interdite/);
  assert.match(schema,/Auteur externe dans les données du jeu/);
  assert.match(schema,/x\.source_couple_id=v_pool\.couple_id/);
  assert.match(schema,/s\.admin_id=p_admin AND s\.user_id=x\.user_id/);
