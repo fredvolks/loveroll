@@ -13,7 +13,7 @@ export function createStudioRealSandbox({client}){
  let veniceBusy=false,veniceData=null,veniceMessage='Connecte le joueur A pour accéder aux brouillons.';
  let veniceWatch=null,veniceActiveRequest=null;
  let historyOpen=false,historyPage=0,historyTotal=0,historyCards=null;
- let historyBusy=false,historyError='',historyGeneration=0;
+ let historyBusy=false,historyError='',historyGeneration=0,historySeat='all';
  const authenticatedSeats=new Set();
  const label=s=>s==='A'?'Joueur A':'Joueur B';
  const say=(message)=>{const node=$('studio-real-status');if(node)node.textContent=message;};
@@ -72,7 +72,9 @@ export function createStudioRealSandbox({client}){
  function resetHistory(){
   historyGeneration++;
   historyOpen=false;historyPage=0;historyTotal=0;historyCards=null;
-  historyBusy=false;historyError='';
+  historyBusy=false;historyError='';historySeat='all';
+  const selector=$('studio-real-history-seat');
+  if(selector)selector.value='all';
  }
  function closeFrames(){
   resetHistory();
@@ -205,6 +207,8 @@ export function createStudioRealSandbox({client}){
   const openButton=$('studio-real-history-open'),nav=$('studio-real-history-nav');
   if(openButton){openButton.hidden=!available||historyOpen;openButton.disabled=historyBusy;}
   if(nav)nav.hidden=!available||!historyOpen;
+  const filter=$('studio-real-history-seat');
+  if(filter)filter.disabled=historyBusy||!available;
   const count=$('studio-real-history-count');
   if(count){
    const first=historyTotal?historyPage*10+1:0;
@@ -256,9 +260,9 @@ export function createStudioRealSandbox({client}){
   historyOpen=true;historyBusy=true;historyError='';historyCards=null;
   renderChallengeCards();
   try{
-   const result=await request('challenge_history',null,{page});
+   const result=await request('challenge_history',historySeat==='all'?null:historySeat,{page});
    if(requestGeneration!==historyGeneration||!active||tearingDown)return;
-   if(result?.page!==page||result?.limit!==10||
+   if(result?.page!==page||result?.limit!==10||result?.filter!==historySeat||
       !Number.isSafeInteger(result?.total)||result.total<0||
       !Array.isArray(result?.cards)||result.cards.length>10)
     throw Error('Réponse du serveur non conforme');
@@ -512,6 +516,13 @@ export function createStudioRealSandbox({client}){
   ])$(id)?.addEventListener('click',()=>veniceAction(action));
 
   $('studio-real-history-open')?.addEventListener('click',()=>loadChallengeHistory(0));
+  $('studio-real-history-seat')?.addEventListener('change',event=>{
+   if(historyBusy||!historyOpen)return;
+   const seat=event.target.value;
+   if(!['all','A','B'].includes(seat))return;
+   historySeat=seat;
+   loadChallengeHistory(0);
+  });
   $('studio-real-history-prev')?.addEventListener('click',()=>loadChallengeHistory(historyPage-1));
   $('studio-real-history-next')?.addEventListener('click',()=>loadChallengeHistory(historyPage+1));
   $('studio-real-history-close')?.addEventListener('click',()=>{
