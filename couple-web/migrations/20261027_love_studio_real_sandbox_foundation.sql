@@ -90,6 +90,50 @@ BEGIN
     ) THEN
       RAISE EXCEPTION 'Lien vers un utilisateur ou un couple réel : suppression du banc bloquée';
     END IF;
+    -- LR-STUDIO deletion preflight: even a corrupted synthetic couple must
+    -- NOT delete a real user's rolls, sessions, challenges or personal D6.
+    -- These are the exact production Auth FK columns checked on 2026-10-27.
+    IF EXISTS (
+      SELECT 1 FROM public.couple_rolls r
+      WHERE r.couple_id=v_pool.couple_id AND r.actor IS NOT NULL
+        AND NOT EXISTS (
+          SELECT 1 FROM public.love_studio_test_seats s
+          WHERE s.admin_id=p_admin AND s.user_id=r.actor
+        )
+    ) OR EXISTS (
+      SELECT 1 FROM public.couple_sessions ss
+      WHERE ss.couple_id=v_pool.couple_id AND (
+        (ss.opened_by IS NOT NULL AND NOT EXISTS (
+          SELECT 1 FROM public.love_studio_test_seats s
+          WHERE s.admin_id=p_admin AND s.user_id=ss.opened_by
+        )) OR
+        (ss.starting_user_id IS NOT NULL AND NOT EXISTS (
+          SELECT 1 FROM public.love_studio_test_seats s
+          WHERE s.admin_id=p_admin AND s.user_id=ss.starting_user_id
+        ))
+      )
+    ) OR EXISTS (
+      SELECT 1 FROM public.couple_challenges ch
+      WHERE ch.couple_id=v_pool.couple_id AND (
+        (ch.offered_by IS NOT NULL AND NOT EXISTS (
+          SELECT 1 FROM public.love_studio_test_seats s
+          WHERE s.admin_id=p_admin AND s.user_id=ch.offered_by
+        )) OR
+        (ch.recipient IS NOT NULL AND NOT EXISTS (
+          SELECT 1 FROM public.love_studio_test_seats s
+          WHERE s.admin_id=p_admin AND s.user_id=ch.recipient
+        ))
+      )
+    ) OR EXISTS (
+      SELECT 1 FROM public.couple_personal_rolls pr
+      JOIN public.couple_sessions ss ON ss.id=pr.session_id
+      WHERE ss.couple_id=v_pool.couple_id AND NOT EXISTS (
+        SELECT 1 FROM public.love_studio_test_seats s
+        WHERE s.admin_id=p_admin AND s.user_id=pr.user_id
+      )
+    ) THEN
+      RAISE EXCEPTION 'Un lancer ou un défi appartient à un utilisateur réel : suppression du banc refusée';
+    END IF;
     -- This NO ACTION FK must be cleared ONLY for registered synthetic users.
     DELETE FROM public.love_user_library_backup x
     WHERE x.source_couple_id=v_pool.couple_id AND EXISTS (

@@ -32,6 +32,16 @@ test('only registered test couples and identities are eligible for deletion',()=
  assert.match(schema,/Membre réel détecté/);
  assert.match(schema,/public\.love_user_library_backup/);
  assert.match(schema,/Lien vers un utilisateur ou un couple réel/);
+ assert.match(schema,/public\.couple_rolls r/);
+ assert.match(schema,/s\.user_id=r\.actor/);
+ assert.match(schema,/public\.couple_sessions ss/);
+ assert.match(schema,/s\.user_id=ss\.opened_by/);
+ assert.match(schema,/s\.user_id=ss\.starting_user_id/);
+ assert.match(schema,/public\.couple_challenges ch/);
+ assert.match(schema,/s\.user_id=ch\.recipient/);
+ assert.match(schema,/public\.couple_personal_rolls pr/);
+ assert.match(schema,/s\.user_id=pr\.user_id/);
+ assert.match(schema,/Un lancer ou un défi appartient à un utilisateur réel/);
  assert.match(schema,/x\.source_couple_id=v_pool\.couple_id/);
  assert.match(schema,/s\.admin_id=p_admin AND s\.user_id=x\.user_id/);
  assert.match(schema,/x\.referrer_couple_id IS NOT NULL/);
