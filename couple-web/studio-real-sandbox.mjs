@@ -3,7 +3,7 @@ export function createStudioRealSandbox({client}){
  const $=id=>document.getElementById(id);
  const uri='love-studio-sandbox';
  const validSeats=['A','B'];
- const validRoutes=['home','session','special','eclat','advent','settings'];
+ const validRoutes=['home','session','special','eclat','advent','settings','journal','personal-journal','occasions'];
  const frames={A:null,B:null};
  let status=null,tab='A',busy=false,initialized=false,loginInFlight=new Set(),expandedSeat=null;
  const authenticatedSeats=new Set();
