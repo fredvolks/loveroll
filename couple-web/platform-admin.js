@@ -9,7 +9,7 @@ const $=id=>document.getElementById(id);
 const client=createClient(CONFIG.supabaseUrl,CONFIG.supabasePublishableKey,{
  auth:{flowType:'pkce',autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}
 });
-const panes=new Set(['realtest','prices','referrals','promos','d100','geo','notifications','audience','catalogue','history']);
+const panes=new Set(['realtest','venice','prices','referrals','promos','d100','geo','notifications','audience','catalogue','history']);
 const initialPane=new URLSearchParams(location.search).get('panel');
 let data=null,referralData=null,activeFace=null,pane=panes.has(initialPane)?initialPane:'realtest';
 let geoSummary=null,promoTotal=null;
@@ -113,8 +113,8 @@ function choosePane(name){
  });
  const mobile=$('studio-pane-select');
  if(mobile)mobile.value=name;
- $('save-settings').hidden=['realtest','catalogue','history','referrals','promos'].includes(name);
- $('settings').hidden=name==='realtest';
+ $('save-settings').hidden=['realtest','venice','catalogue','history','referrals','promos'].includes(name);
+ $('settings').hidden=name==='realtest'||name==='venice';
  if(name==='promos')promoAdmin.refresh(true);
  if(name==='geo')geoUsage.refresh();
  if(name==='geo')loadDashboardMetrics().catch(()=>{});
