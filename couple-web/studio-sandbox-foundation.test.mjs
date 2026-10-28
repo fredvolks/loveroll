@@ -59,6 +59,12 @@ test('only registered test couples and identities are eligible for deletion',()=
  assert.match(schema,/public\.love_annual_discount_settlements p/);
  assert.match(schema,/public\.love_promo_redemptions p/);
  assert.match(schema,/Écriture financière détectée : purge de test bloquée/);
+ assert.match(schema,/public\.love_referral_credit_usage u/);
+ assert.match(schema,/Crédit payé lié au banc : suppression bloquée/);
+ assert.match(schema,/public\.love_personal_intimacy x/);
+ assert.match(schema,/public\.couple_evening_reviews x/);
+ assert.match(schema,/public\.love_eclat_private_notes x/);
+ assert.match(schema,/Historique personnel extérieur au banc : purge interdite/);
  assert.match(schema,/love_eclat_sessions','started_by/);
  assert.match(schema,/Membre réel détecté/);
  assert.match(schema,/public\.love_user_library_backup/);
