@@ -1326,13 +1326,14 @@ function saveChallengeTimer(){
 // LR-017: accepted duration changes must invalidate a previous, possibly
 // expired background timer before any LR-002 auto-completion sees it.
 function resetStaleAdaptationTimer(challengeId,saved=undefined){
- const expected=adaptedTimerDurationMs(adaptationFor(state.adaptations,challengeId));
+ const row=adaptationFor(state.adaptations,challengeId);
+ const expected=adaptedTimerDurationMs(row);
  if(expected===null||!state.user?.id)return false;
  const key='loveroll-challenge-clock:'+state.user.id+':'+challengeId;
  const stored=saved===undefined?readSavedChallengeTimer(key):saved;
  const active=challengeTimer.id===challengeId;
- if(!needsAdaptedTimerReset({status:'accepted',proposed_minutes:expected/60000},stored?.durationMs)&&
-    !(active&&needsAdaptedTimerReset({status:'accepted',proposed_minutes:expected/60000},challengeTimer.durationMs)))return false;
+ if(!(stored&&needsAdaptedTimerReset(row,stored.durationMs))&&
+    !(active&&needsAdaptedTimerReset(row,challengeTimer.durationMs)))return false;
  const fresh={durationMs:expected,remainingMs:expected,deadline:0,running:false,
   notified:false,autoCompletePending:false};
  writeSavedChallengeTimer(key,fresh);
