@@ -204,8 +204,12 @@ Deno.serve(async(req:Request)=>{
  // This read-only route cannot draw/advance a challenge or impersonate B.
  if(action==='challenge_history'){
   const page=body.page;
+  // No caller-supplied user UUID, only the registered A/B seat alias.
   if(!Number.isSafeInteger(page)||Number(page)<0||Number(page)>999)
    return response({error:'Page de défis invalide'},400);
+  if(body.seat!==undefined&&body.seat!==null&&
+     body.seat!=='A'&&body.seat!=='B')
+   return response({error:'Filtre joueur invalide'},400);
   const {data:pool,error:poolError}=await service.from('love_studio_test_pools')
    .select('state,couple_id').eq('admin_id',adminId).maybeSingle();
   if(poolError)return response({error:'Banc de test indisponible'},503);
@@ -216,15 +220,21 @@ Deno.serve(async(req:Request)=>{
   if(seatError||!await validRegisteredPair(pool.couple_id,seats||null))
    return response({error:'Identités du duo test non vérifiées'},403);
   const limit=10;
-  const {data, count, error}=await service.from('couple_challenges')
+  let query=service.from('couple_challenges')
    .select('recipient,card_title,card_description,category,face,status,created_at',
     {count:'exact'})
-   .eq('couple_id',pool.couple_id)
+   .eq('couple_id',pool.couple_id);
+  if(seat){
+   const target=seats?.find(row=>row.seat===seat)?.user_id;
+   if(!target)return response({error:'Joueur technique non inscrit'},403);
+   query=query.eq('recipient',target);
+  }
+  const {data,count,error}=await query
    .order('created_at',{ascending:false}).order('id',{ascending:false})
    .range(Number(page)*limit,Number(page)*limit+limit-1);
   if(error||typeof count!=='number')
    return response({error:'Historique officiel indisponible'},503);
-  return response({page,limit,total:count,cards:(data||[]).map(row=>({
+  return response({page,limit,filter:seat||'all',total:count,cards:(data||[]).map(row=>({
    seat:seats?.find(s=>s.user_id===row.recipient)?.seat??'?',
    category:row.category??'',face:row.face??null,
    title:row.card_title??'',description:row.card_description??'',
