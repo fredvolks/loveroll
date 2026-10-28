@@ -4,6 +4,13 @@
 const PROD='ejsrqfpkgwraorrznjpm';
 const requiredTables=[
  'couples','couple_members','couple_profiles','love_platform_admins',
+ // Required by the REAL D6, D100 and two-person challenge flows.
+ 'couple_rolls','couple_personal_rolls','couple_sessions','couple_challenges',
+ // The synthetic accounts receive genuine, server-side QA entitlements;
+ // neither Stripe nor the browser may fabricate access to paid coffrets.
+ 'love_account_premium_exemptions','love_eclat_entitlements',
+ 'love_eclat_sessions',
+ // Studio service registry/audit: never readable by regular players.
  'love_studio_test_pools','love_studio_test_seats','love_studio_test_audit',
  'love_studio_venice_daily_quota'
 ];
