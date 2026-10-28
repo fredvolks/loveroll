@@ -33,6 +33,7 @@ jobs:
           node --test couple-web/evening-resume.test.mjs
           node --test couple-web/evening-category-confirm.test.mjs
           node --test couple-web/ipad-soiree-one-photo-v237.test.mjs
+          node --test couple-web/pages-entry-parallel-contract.test.mjs
           node --test couple-web/lr016-pass-quota-live-sync.test.mjs
           node --test couple-web/ruby-visual-v182.test.mjs
           node --test couple-web/cinematic-v183.test.mjs
