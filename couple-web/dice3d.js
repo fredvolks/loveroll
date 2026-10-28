@@ -586,7 +586,15 @@ export function dieOn(canvas,sides,value,rolling){
   bounds=projectedBounds();
   built.group.quaternion.copy(pose);built.group.position.copy(position);built.group.updateMatrixWorld(true);
   const delta=contact-(rect.top+bounds.bottom*rect.height);
-  stage.style.transform='translateY('+delta.toFixed(2)+'px)';
+  // LR-001: center the real idle mobile mesh above the photo's marble.
+  // The old Soirée layout centers its canvas ~14px right of the page on
+  // 360px phones, even though its projected mesh matches Surprise in size.
+  // Resetting stage.transform at the start makes this correction idempotent
+  // on resize and on each refresh (no cumulative horizontal drift).
+  const meshCenter=rect.left+(bounds.left+bounds.right)*rect.width/2;
+  const deltaX=idleEveningD100&&window.matchMedia?.('(max-width:767px)').matches
+   ? window.innerWidth/2-meshCenter : 0;
+  stage.style.transform='translate('+deltaX.toFixed(2)+'px,'+delta.toFixed(2)+'px)';
   canvas.dataset.podiumContact=String(contact-sceneRect.top);
  }
  let frame=0,drag=false,x=0,y=0,vx=0,vy=0,shown=true,lastFrame=0,renderedFrames=0;
