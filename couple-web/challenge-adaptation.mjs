@@ -18,7 +18,7 @@ export function needsAdaptedTimerReset(row,currentDurationMs){
  const expected=adaptedTimerDurationMs(row);
  return expected!==null&&currentDurationMs!==expected;
 }
-export function adaptationPanelHtml(card,row,{open=false,busy=false}={}){
+export function adaptationPanelHtml(card,row,{open=false,busy=false,originalText=null,originalMinutes=null}={}){
  if(!card||!['proposed','accepted'].includes(card.status))return '';
  if(row){
   const state=row.status==='pending'?'Adaptation proposée · en attente de votre accord à deux':
@@ -29,7 +29,9 @@ export function adaptationPanelHtml(card,row,{open=false,busy=false}={}){
  if(open){
   return '<section class="lr-adapt-panel" aria-label="Proposer une adaptation">'+
    '<h3>Adapter ce défi, ensemble</h3>'+
-   '<p>La consigne originale reste dans l’historique. Ton partenaire doit accepter avant tout changement.</p>'+
+   '<p>La consigne originale reste dans l’historique. Ton partenaire doit accepter avant tout changement.</p>'+ 
+   (originalText!==null?'<div class="lr-adapt-original"><strong>Consigne originale</strong><p>'+safe(originalText)+'</p>'+ 
+    (Number.isFinite(originalMinutes)?'<small>Durée actuelle : '+safe(originalMinutes)+' min</small>':'')+'</div>':'')+
    '<label for="lr-adapt-text">Ta proposition (facultatif si tu modifies la durée)</label>'+
    '<textarea id="lr-adapt-text" maxlength="500" rows="3" placeholder="Une version qui vous convient à tous les deux…"></textarea>'+
    (card.status==='proposed'?
