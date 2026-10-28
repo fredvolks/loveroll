@@ -19,10 +19,10 @@ RETURNS boolean LANGUAGE sql SECURITY DEFINER SET search_path='' STABLE AS $$
  SELECT EXISTS(SELECT 1 FROM public.couple_members m
  WHERE m.couple_id=p_couple AND m.user_id=auth.uid())
 $$;
-CREATE FUNCTION public.love_verified_identity() RETURNS boolean LANGUAGE sql STABLE AS $
+CREATE FUNCTION public.love_verified_identity() RETURNS boolean LANGUAGE sql STABLE AS $verify$
  SELECT auth.uid() IS NOT NULL AND
   coalesce(nullif(current_setting('request.jwt.claim.email_verified',true),''),'true')='true'
-$;
+$verify$;
 CREATE FUNCTION public.love_require_verified_identity()
 RETURNS void LANGUAGE plpgsql AS $$
 BEGIN
