@@ -660,7 +660,7 @@ function render(){
  if(state.tab!=='eclat'||!state.user||state.passwordRecovery||
     !verifiedLoveEmail(state.user)||!state.profile?.birthday_md||
     !isSharedCoupleReady(state.coupleId,state.members))disposeEclatV2Player();
- if(!state.user||state.passwordRecovery){state.eclatV2Status=null;state.eclatV2OwnerId=null;state.eclatV2CoupleId=null;}
+ if(!state.user?.id||state.passwordRecovery){state.eclatV2Status=null;state.eclatV2OwnerId=null;state.eclatV2CoupleId=null;}
  // Old navigation references now open the current calendar and personal bilans.
  // Existing encrypted records remain intact; the retired journal forms stay closed.
  if(['journal','personal-journal'].includes(state.tab)){
