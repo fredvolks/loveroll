@@ -28,6 +28,22 @@
 .studio-real-toolbar-actions button{min-height:45px}
 .studio-real-destructive{border-color:#b97f88!important;background:#43232c!important}
 .studio-real-diagnostics{white-space:pre-line;padding:13px 16px;border:1px solid #86526e;border-radius:13px;background:#291524;color:#f6dce9;font:500 13px/1.6 system-ui,sans-serif;margin:12px 0;overflow-wrap:anywhere}
+.studio-real-progress{margin:13px 0 16px;padding:15px;border:1px solid #86526e;
+ border-radius:14px;background:#281622;color:#ffedf4}
+.studio-real-progress-heading{display:flex;align-items:center;
+ justify-content:space-between;gap:12px}
+.studio-real-progress h3{font:700 17px/1.3 Georgia,serif;margin:0}
+.studio-real-progress-count{font:700 14px/1.2 system-ui,sans-serif;
+ padding:5px 10px;border:1px solid #99637f;border-radius:999px;white-space:nowrap}
+.studio-real-progress p{font:400 12px/1.5 system-ui,sans-serif;
+ color:#e8c3d4;margin:9px 0}
+.studio-real-progress ol{list-style:none;padding:0;margin:0;
+ display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.studio-real-progress li{padding:9px 11px;font:600 12px/1.45 system-ui,sans-serif;
+ border:1px solid #71465e;border-radius:9px;color:#e9c7d7;background:#301c2a}
+.studio-real-progress li[data-state="verified"]{border-color:#6c9b83;color:#dbf4e6;
+ background:#203e30}
+@media(max-width:720px){.studio-real-progress ol{grid-template-columns:1fr}}
 .studio-real-audit{margin:12px 0 18px;padding:13px 16px;
  border:1px solid #86526e;border-radius:13px;background:#231321;color:#f8dfea}
 .studio-real-audit[hidden]{display:none!important}
