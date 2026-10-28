@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS public.love_challenge_adaptations(
  couple_id uuid NOT NULL REFERENCES public.couples(id) ON DELETE CASCADE,
  session_id uuid NOT NULL REFERENCES public.couple_sessions(id) ON DELETE CASCADE,
  proposed_by uuid NOT NULL REFERENCES auth.users(id),
+ consent_partner_id uuid NOT NULL REFERENCES auth.users(id),
  proposed_text text,
  proposed_minutes integer,
  -- Immutable context visible only to the exact pair: consent requires knowing
@@ -34,16 +35,33 @@ CREATE INDEX IF NOT EXISTS love_adaptations_couple_created_idx
 -- offered_by partner's card. This BOOLEAN-only SECURITY DEFINER helper verifies
 -- the exact original pair without returning any hidden titles or D100 cards.
 CREATE OR REPLACE FUNCTION public.love_adaptation_pair_allowed(
- p_challenge uuid,p_couple uuid,p_session uuid
+ p_challenge uuid,p_couple uuid,p_session uuid,
+ p_proposed_by uuid,p_consent_partner uuid
 ) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=''
 AS $pair$
  SELECT auth.uid() IS NOT NULL
   AND public.love_verified_identity()
   AND couple_private.is_member(p_couple)
+  AND p_proposed_by IS DISTINCT FROM p_consent_partner
+  AND auth.uid() IN (p_proposed_by,p_consent_partner)
   AND (SELECT count(*) FROM public.couple_members WHERE couple_id=p_couple)=2
+  AND EXISTS (SELECT 1 FROM public.couple_members m
+    WHERE m.couple_id=p_couple AND m.user_id=p_proposed_by)
+  AND EXISTS (SELECT 1 FROM public.couple_members m
+    WHERE m.couple_id=p_couple AND m.user_id=p_consent_partner)
   AND EXISTS(
    SELECT 1 FROM public.couple_challenges q
    WHERE q.id=p_challenge AND q.couple_id=p_couple AND q.session_id=p_session
+    AND (p_proposed_by IN (q.offered_by,q.recipient))
+    AND (
+     (q.offered_by<>q.recipient
+      AND p_consent_partner IN (q.offered_by,q.recipient))
+     OR (q.offered_by=q.recipient
+      AND p_proposed_by=q.recipient AND EXISTS (
+       SELECT 1 FROM public.couple_sessions actual
+       WHERE actual.id=q.session_id AND actual.couple_id=p_couple
+         AND actual.self_draws=true))
+    )
     AND (
      auth.uid() IN(q.offered_by,q.recipient)
      -- Self-drawn cards are known only to their recipient. A proposal is
@@ -60,15 +78,15 @@ AS $pair$
      WHERE m.couple_id=p_couple AND m.user_id=q.recipient)
   )
 $pair$;
-REVOKE ALL ON FUNCTION public.love_adaptation_pair_allowed(uuid,uuid,uuid)
+REVOKE ALL ON FUNCTION public.love_adaptation_pair_allowed(uuid,uuid,uuid,uuid,uuid)
  FROM public,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.love_adaptation_pair_allowed(uuid,uuid,uuid)
+GRANT EXECUTE ON FUNCTION public.love_adaptation_pair_allowed(uuid,uuid,uuid,uuid,uuid)
  TO authenticated;
 ALTER TABLE public.love_challenge_adaptations ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS love_adaptations_pair_read ON public.love_challenge_adaptations;
 CREATE POLICY love_adaptations_pair_read ON public.love_challenge_adaptations
  FOR SELECT TO authenticated
- USING (public.love_adaptation_pair_allowed(challenge_id,couple_id,session_id));
+ USING (public.love_adaptation_pair_allowed(challenge_id,couple_id,session_id,proposed_by,consent_partner_id));
 REVOKE ALL ON public.love_challenge_adaptations FROM public,anon,authenticated;
 GRANT SELECT ON public.love_challenge_adaptations TO authenticated;
 
@@ -80,6 +98,7 @@ DECLARE
  v_couple uuid; v_q public.couple_challenges%rowtype;
  v_session public.couple_sessions%rowtype;
  v_old public.love_challenge_adaptations%rowtype;
+ v_partner uuid;
  v_text text:=NULLIF(btrim(coalesce(p_text,'')),'');
  v_actor uuid:=auth.uid();
 BEGIN
@@ -106,6 +125,13 @@ BEGIN
   OR NOT EXISTS(SELECT 1 FROM public.couple_members WHERE couple_id=v_couple AND user_id=v_q.offered_by)
   OR NOT EXISTS(SELECT 1 FROM public.couple_members WHERE couple_id=v_couple AND user_id=v_q.recipient) THEN
   RAISE EXCEPTION 'Deux partenaires associés sont nécessaires' USING errcode='42501'; END IF;
+ -- Freeze the exact consent partner while this couple has precisely two members.
+ -- If membership changes later, a replacement member must never inspect or
+ -- approve the original private adaptation (including self-drawn cards).
+ SELECT user_id INTO v_partner FROM public.couple_members
+ WHERE couple_id=v_couple AND user_id<>v_actor;
+ IF v_partner IS NULL THEN
+  RAISE EXCEPTION 'Le partenaire doit être associé' USING errcode='42501'; END IF;
  -- A running timer must never be silently replaced. A changed duration
  -- can be proposed/approved only before the challenge begins.
  IF p_minutes IS NOT NULL AND v_q.status<>'proposed' THEN
@@ -120,9 +146,9 @@ BEGIN
   RAISE EXCEPTION 'Une proposition existe déjà pour ce défi';
  END IF;
  INSERT INTO public.love_challenge_adaptations(
-  challenge_id,couple_id,session_id,proposed_by,proposed_text,proposed_minutes,
+  challenge_id,couple_id,session_id,proposed_by,consent_partner_id,proposed_text,proposed_minutes,
   original_text,original_minutes)
- VALUES(p_challenge,v_couple,v_q.session_id,v_actor,v_text,p_minutes,
+ VALUES(p_challenge,v_couple,v_q.session_id,v_actor,v_partner,v_text,p_minutes,
   v_q.card_description,v_q.card_timer_minutes);
  RETURN jsonb_build_object('status','pending','created',true);
 END
@@ -167,6 +193,11 @@ BEGIN
        AND actual.self_draws=true))
    )
    OR v_actor=v_adaptation.proposed_by
+   OR v_actor IS DISTINCT FROM v_adaptation.consent_partner_id
+   OR NOT EXISTS(SELECT 1 FROM public.couple_members m
+     WHERE m.couple_id=v_couple AND m.user_id=v_adaptation.proposed_by)
+   OR NOT EXISTS(SELECT 1 FROM public.couple_members m
+     WHERE m.couple_id=v_couple AND m.user_id=v_adaptation.consent_partner_id)
    OR (SELECT count(*) FROM public.couple_members WHERE couple_id=v_couple)<>2
    OR NOT EXISTS(SELECT 1 FROM public.couple_members WHERE couple_id=v_couple AND user_id=v_q.offered_by)
    OR NOT EXISTS(SELECT 1 FROM public.couple_members WHERE couple_id=v_couple AND user_id=v_q.recipient) THEN
