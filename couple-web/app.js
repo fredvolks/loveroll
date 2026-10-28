@@ -1,7 +1,7 @@
 import {organizeSettingsMenus} from './settings-menus.mjs?v=20261022-home228';
 import {showEveningCategoryReminder} from './evening-d100-template.mjs?v=20261028-web252';
 import {eveningInviteHtml,eveningInviteInboxHtml,isEveningInviteAction} from './evening-invitation.mjs?v=20261028-web252';
-import {adaptationFor,acceptedAdaptationText,acceptedAdaptationMinutes,adaptationPanelHtml,pendingAdaptationsHtml} from './challenge-adaptation.mjs?v=20261028-lr017';
+import {adaptationFor,acceptedAdaptationText,acceptedAdaptationMinutes,adaptedTimerDurationMs,needsAdaptedTimerReset,adaptationPanelHtml,pendingAdaptationsHtml} from './challenge-adaptation.mjs?v=20261028-lr017';
 import {askEveningCategoryConfirmation,categoryConfirmEnabled,saveCategoryConfirmLocal} from './evening-category-confirm.mjs?v=20261027-web238';
 import {soundEnabled,setSoundEnabled,setLoveRollSoundUser,unlockLoveRollSounds,playLoveRollSound,soundSettingsHtml} from './loveroll-sounds.mjs?v=20261028-privacy250';
 import {isAcceptedTimedEveningChallenge,completeTimedEveningChallenge} from './timed-evening-completion.mjs?v=20261027-web240';
@@ -1323,7 +1323,24 @@ function saveChallengeTimer(){
    deadline:challengeTimer.deadline,running:challengeTimer.running,notified:challengeTimer.notified,
    autoCompletePending:challengeTimer.autoCompletePending});
 }
+// LR-017: accepted duration changes must invalidate a previous, possibly
+// expired background timer before any LR-002 auto-completion sees it.
+function resetStaleAdaptationTimer(challengeId,saved=undefined){
+ const expected=adaptedTimerDurationMs(adaptationFor(state.adaptations,challengeId));
+ if(expected===null||!state.user?.id)return false;
+ const key='loveroll-challenge-clock:'+state.user.id+':'+challengeId;
+ const stored=saved===undefined?readSavedChallengeTimer(key):saved;
+ const active=challengeTimer.id===challengeId;
+ if(!needsAdaptedTimerReset({status:'accepted',proposed_minutes:expected/60000},stored?.durationMs)&&
+    !(active&&needsAdaptedTimerReset({status:'accepted',proposed_minutes:expected/60000},challengeTimer.durationMs)))return false;
+ const fresh={durationMs:expected,remainingMs:expected,deadline:0,running:false,
+  notified:false,autoCompletePending:false};
+ writeSavedChallengeTimer(key,fresh);
+ if(active){Object.assign(challengeTimer,fresh);challengeTimer.decisionPending=false;}
+ return true;
+}
 function activeTimer(challenge,minutes){
+ resetStaleAdaptationTimer(challenge.id);
  const millis=minutes*60000;
  if(challengeTimer.id!==challenge.id){
   saveChallengeTimer();
@@ -1364,6 +1381,7 @@ async function retryExpiredTimedEvening(){
     Date.now()<timerCompletionRetryAt||!state.user||!state.session)return;
  const id=challengeTimer.id,item=timedEveningItem(id);
  if(!item)return; // Keep pending until the corresponding session is loaded again.
+ if(resetStaleAdaptationTimer(id))return; // Old expiry cannot complete changed duration.
  if(['completed','passed','refused'].includes(item.status)){
   challengeTimer.autoCompletePending=false;saveChallengeTimer();return;
  }
@@ -1400,6 +1418,7 @@ async function reconcileSavedEveningTimers(){
   const key='loveroll-challenge-clock:'+state.user.id+':'+item.id;
   const saved=readSavedChallengeTimer(key);
   if(!saved||!Number.isFinite(saved.durationMs)||saved.durationMs<=0)continue;
+  if(resetStaleAdaptationTimer(item.id,saved))continue; // Never replay an obsolete deadline.
   const due=!!saved.autoCompletePending||
    (saved.running&&Number.isFinite(saved.deadline)&&saved.deadline>0&&saved.deadline<=now);
   if(!due||challengeTimer.decisionPending&&challengeTimer.id===item.id)continue;
@@ -1435,6 +1454,7 @@ async function reconcileSavedEveningTimers(){
  }
 }
 function endSignal(){
+ if(resetStaleAdaptationTimer(challengeTimer.id))return;
  if(challengeTimer.notified)return;
  challengeTimer.notified=true;
  const item=timedEveningItem(challengeTimer.id);
@@ -1458,6 +1478,7 @@ function endSignal(){
 function updateChallengeClock(){
  void reconcileSavedEveningTimers();
  if(!challengeTimer.id)return;
+ if(resetStaleAdaptationTimer(challengeTimer.id))return;
  if(challengeTimer.running&&Date.now()>=challengeTimer.deadline){
   challengeTimer.running=false;challengeTimer.remainingMs=0;endSignal();saveChallengeTimer();
  }
