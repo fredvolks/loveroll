@@ -81,3 +81,16 @@ test('LR-002 timer deadline cannot auto-complete after an agreed changed duratio
  assert.match(app,/function activeTimer\(challenge,minutes\)\{\s*resetStaleAdaptationTimer\(challenge\.id\);/);
  assert.match(app,/function updateChallengeClock\(\)[\s\S]*?if\(resetStaleAdaptationTimer\(challengeTimer\.id\)\)return;/);
 });
+
+
+test('LR-017 PostgreSQL A/B fixture always uses complete dollar-quoted DO blocks',()=>{
+ const acceptance=readFileSync(new URL('./qa/lr017-acceptance.sql',import.meta.url),'utf8');
+ const open=acceptance.match(/^DO \$\$$/gm)||[];
+ const close=acceptance.match(/^END \$\$;$/gm)||[];
+ assert.ok(open.length>=4,'all synthetic partners and closed-evening flows must be exercised');
+ assert.equal(close.length,open.length,'every SQL anonymous block must close correctly');
+ assert.doesNotMatch(acceptance,/^(?:DO \$|END \$;)$/m,
+  'single-dollar anonymous blocks are invalid PostgreSQL and disable A/B acceptance tests');
+ assert.match(acceptance,/Cette soirée est clôturée/);
+ assert.match(acceptance,/Replacement partner can read prior private proposal/);
+});
