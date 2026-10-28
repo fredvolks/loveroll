@@ -5,6 +5,7 @@ const html=readFileSync(new URL('admin.html',import.meta.url),'utf8');
 const css=readFileSync(new URL('studio-real-sandbox.css',import.meta.url),'utf8');
 const js=readFileSync(new URL('platform-admin.js',import.meta.url),'utf8');
 const sandbox=readFileSync(new URL('studio-real-sandbox.mjs',import.meta.url),'utf8');
+const gameApp=readFileSync(new URL('app.js',import.meta.url),'utf8');
 test('Studio real sandbox uses existing secure platform gate and no standalone fake dice',()=>{
  assert.match(html,/id="gate"/);
  assert.match(html,/data-panel="realtest"/);
@@ -48,4 +49,14 @@ test('Responsive iPad desktop split and mobile seat switching',()=>{
  assert.match(css,/\.studio-real-frame\.studio-real-maximized/);
  assert.match(css,/height:100dvh!important/);
  assert.match(css,/studio-real-fullscreen/);
+});
+
+test('Studio inspector refreshes after real Supabase RPC success, without fabricating card payloads',()=>{
+ assert.match(gameApp,/const studioGameWriteRpcs=new Set/);
+ assert.match(gameApp,/if\(studioSeatId&&studioGameWriteRpcs\.has\(name\)\)/);
+ assert.match(gameApp,/if\(error\)throw error/);
+ assert.match(gameApp,/type:'loveroll-studio-game-updated',seat:studioSeatId/);
+ assert.match(sandbox,/if\(msg\.type==='loveroll-studio-game-updated'\)/);
+ assert.match(sandbox,/if\(authenticatedSeats\.has\(seat\)\)/);
+ assert.match(sandbox,/await refresh\(\)/);
 });
