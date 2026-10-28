@@ -261,6 +261,22 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
    'replacement remounts new official player B');
   assert.equal(nodes.get('studio-real-progress-count').textContent,'7/9',
    'the new test follows fresh server evidence, not a simulated dice reset');
+  // Platform-owner signout must terminate both sessions in this browser tab,
+  // even when the technical couple remains ready in Supabase.
+  const createdBeforeSignout=calls.filter(x=>x==='create').length;
+  const deletedBeforeSignout=calls.filter(x=>x==='delete').length;
+  studio.deactivate();
+  assert.equal(getFrame('A'),null,'logout destroys live Auth seat A, not merely hiding it');
+  assert.equal(getFrame('B'),null,'logout destroys live Auth seat B, not merely hiding it');
+  await studio.refresh();
+  assert.equal(getFrame('A'),null,'a stale status cannot remount A behind the login gate');
+  assert.equal(getFrame('B'),null,'a stale status cannot remount B behind the login gate');
+  assert.equal(calls.filter(x=>x==='create').length,createdBeforeSignout);
+  assert.equal(calls.filter(x=>x==='delete').length,deletedBeforeSignout,
+   'logout does not delete genuine test accounts or saved games');
+  await studio.init();
+  assert.ok(getFrame('A')&&getFrame('B'),
+   're-authenticating the true platform owner remounts saved A/B games');
   const deleting=nodes.get('studio-real-delete').click();
   assert.ok(calls.includes('delete'),'the actual deletion request was issued');
   assert.equal(getFrame('A'),null,'A removed immediately when deletion starts');
