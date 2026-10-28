@@ -23,7 +23,8 @@ test('no exact invitation UUID, card text or secret material goes into FCM data'
  assert.match(sql,/'evening-reply:'\|\|row_inv\.id/);
 });
 test('versioned backend retains existing opt-in and dispatch authentication',()=>{
- assert.match(source,/loveroll_push_dispatch_token/);
+ assert.match(source,/x-loveroll-dispatch/);
+ assert.match(source,/love_push_verify_dispatch/);
  assert.match(source,/love_push_preferences/);
  assert.match(source,/pref\?\.enabled/);
  assert.match(source,/pref\[alert\.kind\]!==true/);
