@@ -73,7 +73,37 @@ async function main(){
   }
   assert.equal((await page.locator('#studio-real-progress-count').innerText()).includes('/9'),true);
   await page.screenshot({path:'studio-authenticated-e2e-proof/real-dual-account-desktop.png',fullPage:true});
-  console.log('Authenticated staging owner A/B sessions and official screens: PASS');
+  // REAL gameplay: click official shipped buttons, observe server-confirmed
+  // progress in the admin dashboard; never write dice/card values from tests.
+  const a=page.frameLocator('#studio-real-frame-A iframe');
+  const b=page.frameLocator('#studio-real-frame-B iframe');
+  const verified=(index)=>page.locator(
+   '#studio-real-progress-list li:nth-child('+index+')[data-state="verified"]');
+  await page.selectOption('#studio-real-jump-A','home');
+  await a.locator('[data-action="roll:weekly"]').first().click({timeout:25000});
+  await a.locator('.lr-dialog-accept').click({timeout:10000});
+  await verified(3).waitFor({timeout:60000});
+  console.log('Official shared weekly D6 from real A: PASS');
+  await page.selectOption('#studio-real-jump-A','session');
+  await a.locator('[data-action="new-session"]').first().click({timeout:25000});
+  await verified(5).waitFor({timeout:60000});
+  await a.locator('[data-action="my-d6"]').first().click({timeout:25000});
+  await verified(6).waitFor({timeout:60000});
+  await page.selectOption('#studio-real-jump-B','session');
+  await b.locator('[data-action="my-d6"]').first().click({timeout:25000});
+  await verified(7).waitFor({timeout:60000});
+  console.log('Real couple Soirée created, official D6 of both A/B: PASS');
+  await a.locator('[data-action="category:HASARD"]').first().click({timeout:25000});
+  await a.locator('[data-action="new-challenge"]').first().click({timeout:25000});
+  await a.locator('[data-confirm-action="yes"]').click({timeout:10000});
+  await verified(8).waitFor({timeout:60000});
+  console.log('Real Soirée D100 and official challenge server record: PASS');
+  await page.selectOption('#studio-real-jump-A','special');
+  await a.locator('[data-action="roll:monthly_activity"]').first().click({timeout:25000});
+  await verified(4).waitFor({timeout:60000});
+  console.log('Official Surprise D100 from real A: PASS');
+  await page.screenshot({path:'studio-authenticated-e2e-proof/official-rolled-dice-and-cards.png',fullPage:true});
+  console.log('Authenticated real A/B sessions + weekly, evening, challenge, surprise: PASS');
  }finally{
   if(page&&created){
    try{
