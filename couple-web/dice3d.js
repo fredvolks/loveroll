@@ -455,13 +455,14 @@ export function dieOn(canvas,sides,value,rolling){
  let preview=canvas.dataset.dicePreview==='true'&&sides===6;
  const built=geometry(sides,canvas.dataset.diceMarkers==='pips',neutral,referenceRuby);scene.add(built.group);
  if(referenceRuby)renderer.toneMappingExposure=1.2;
- // Reduce the overexposed plastic highlights on the larger iPad D6 only.
- // Android keeps its existing approved ruby material and lighting.
- if(flatHome&&window.matchMedia?.('(min-width:768px)').matches){
+ // The D6 was still overexposed on Android while iPad used a softer ruby.
+ // Apply the same satin-glass finish on both devices (including Soirée D6).
+ // Official faces, geometry, quaternion, marble contact and D100 optics stay unchanged.
+ if(sides===6){
   built.material.roughness=.075;
   built.material.clearcoatRoughness=.085;
   built.material.needsUpdate=true;
-  renderer.toneMappingExposure=1.03;
+  renderer.toneMappingExposure=referenceRuby?1.03:1.14;
  }
  // A soft contact shadow stays on the stage while the die rises and settles.
  const shadow=new THREE.Mesh(new THREE.CircleGeometry(1.08,40),
