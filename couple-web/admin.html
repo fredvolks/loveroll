@@ -120,7 +120,18 @@
   <div id="studio-real-eclat-grid" class="studio-real-eclat-grid"></div>
  </section>
  <section id="studio-real-challenge-cards" class="studio-real-challenge-cards" aria-label="Derniers défis réels du banc de test" hidden>
-  <h3>Derniers défis officiels</h3><div id="studio-real-challenge-list" class="studio-real-challenge-list"></div>
+  <div class="studio-real-progress-heading">
+   <h3>Défis officiels du duo de test</h3>
+   <button type="button" class="secondary" id="studio-real-history-open">Voir tout l’historique</button>
+  </div>
+  <p class="small-note">Uniquement les vrais tirages enregistrés pour ces deux comptes techniques. Aucun dé ni carte n’est simulé.</p>
+  <div id="studio-real-challenge-list" class="studio-real-challenge-list"></div>
+  <nav id="studio-real-history-nav" class="studio-real-history-nav" aria-label="Pages de l’historique des défis" hidden>
+   <button type="button" class="secondary" id="studio-real-history-prev">Précédents</button>
+   <span id="studio-real-history-count" role="status" aria-live="polite"></span>
+   <button type="button" class="secondary" id="studio-real-history-next">Suivants</button>
+   <button type="button" class="secondary" id="studio-real-history-close">Retour aux derniers</button>
+  </nav>
  </section>
 </div>
 <p class="small-note">Les tests de facturation nécessitent le mode sandbox officiel du fournisseur. Aucune transaction réelle ne sera simulée comme payée.</p>
