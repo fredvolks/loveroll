@@ -359,6 +359,11 @@ async function main(){
   await b.locator('.eclat-detail[data-coffret-id="3"]')
    .waitFor({state:'visible',timeout:30000});
   console.log('Direct A/B coffret shortcuts opened genuine authenticated game details: PASS');
+  // The genuine app is now displaying coffret 2 in A, not the gallery:
+  // return through its own official navigation before opening coffret 1.
+  await a.locator('button[data-action="eclat:library"]').first().click({timeout:15000});
+  await a.locator('button[data-action="eclat:detail:1"]')
+   .waitFor({state:'visible',timeout:15000});
   // Start ONE real coffret through the shipped UI, then inspect the server's
   // active-chapter record. No artificial RPC, scene advancement or mock state.
   await a.locator('button[data-action="eclat:detail:1"]').click({timeout:15000});
