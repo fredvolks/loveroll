@@ -28,11 +28,11 @@ test('read-only staging probes must require both Edge functions and full schema'
  const {fetcher,calls}=mock();
  const result=await checkStagingReadiness({ref,url,key,fetcher});
  assert.equal(result.ready,true);
- assert.equal(result.details.length,17);
+ assert.equal(result.details.length,20);
  assert.ok(calls.every(x=>x.path.startsWith(url+'/')));
  assert.ok(calls.every(x=>x.headers.apikey===key));
  assert.ok(calls.every(x=>x.method==='GET'||x.method==='POST'));
- assert.equal(calls.filter(x=>x.method==='GET').length,15);
+ assert.equal(calls.filter(x=>x.method==='GET').length,18);
  assert.equal(calls.filter(x=>x.method==='POST').length,2);
  assert.ok(calls.filter(x=>x.method==='POST').every(x=>/\/functions\/v1\//.test(x.path)));
  assert.ok(calls.every(x=>!x.path.includes('/auth/v1/admin/')));
@@ -73,7 +73,8 @@ test('provider outages and anonymous authentication errors cannot masquerade as 
 test('read-only preflight blocks fake readiness without the authentic dice, cards and premium tables',async()=>{
  const missing=new Set([
   'couple_rolls','couple_personal_rolls','couple_sessions','couple_challenges',
-  'love_account_premium_exemptions','love_eclat_entitlements','love_eclat_sessions'
+  'love_account_premium_exemptions','love_eclat_entitlements','love_eclat_sessions',
+  'love_eclat_scene_uses','love_eclat_private_choices','love_platform_settings'
  ]);
  const {fetcher}=mock(path=>[...missing].some(table=>path.includes('/rest/v1/'+table+'?'))
   ?{status:404,code:'PGRST205'}:{status:401,code:'42501'});
