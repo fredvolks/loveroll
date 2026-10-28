@@ -280,3 +280,12 @@ test('real Éclat seat shortcuts are origin-, seat- and user-verified; reject fa
  await send(valid);
  assert.equal(navigation.length,2,'a disposed Studio must ignore all shortcuts');
 });
+
+
+test('real challenge changes during paginated server reads trigger a fresh read, never stale history',()=>{
+ assert.ok(src.includes("if(historyBusy)historyDirty=true"));
+ assert.ok(src.includes("if(historyDirty){historyDirty=false;void loadChallengeHistory(historyPage);}"));
+ assert.ok(src.includes("historySeat='all';historyDirty=false"));
+ assert.ok(src.includes("requestGeneration!==historyGeneration"));
+ assert.ok(src.includes("historyGeneration++"));
+});
