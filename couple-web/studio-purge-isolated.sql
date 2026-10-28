@@ -72,7 +72,16 @@ BEGIN
    row.name,row.columns);
  END LOOP;
 END $fixture$;
+ALTER TABLE public.couple_rolls ADD COLUMN kind text;
+ALTER TABLE public.love_monthly_reservations ADD COLUMN status text;
 ALTER TABLE public.love_eclat_sessions ADD COLUMN id uuid UNIQUE;
+-- Minimal read-only fixture dependencies for the OFFICIAL analytics migration.
+CREATE TABLE public.love_platform_settings(id integer PRIMARY KEY,updated_by uuid);
+CREATE TABLE public.love_world_experiences(face integer);
+CREATE TABLE public.love_platform_admin_audit(changed_at timestamptz,patch jsonb);
+CREATE TABLE public.love_monthly_places(couple_id uuid,state text);
+CREATE FUNCTION public.love_platform_is_admin() RETURNS boolean
+LANGUAGE sql STABLE AS $ SELECT true $;
 CREATE TABLE public.love_referral_credit_usage(beneficiary_user_id uuid);
 CREATE TABLE public.love_personal_intimacy(user_id uuid,source_couple_id uuid);
 CREATE TABLE public.couple_evening_reviews(session_id uuid,author_id uuid);
@@ -112,6 +121,38 @@ INSERT INTO public.love_studio_test_seats(admin_id,seat,user_id,synthetic_email)
 INSERT INTO public.couple_members(couple_id,user_id) VALUES
 ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-00000000000a'),
 ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-00000000000b');
+-- Run the exact production platform-metrics migration against test+real
+-- records. Studio identities and rolls must not inflate customer statistics.
+\i couple-web/migrations/20261027_love_studio_exclude_analytics.sql
+INSERT INTO public.couple_rolls(couple_id,actor,kind) VALUES
+ ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-00000000000a','monthly_activity'),
+ ('10000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-00000000000f','monthly_activity');
+INSERT INTO public.love_monthly_places VALUES
+ ('10000000-0000-0000-0000-000000000001','ready'),
+ ('10000000-0000-0000-0000-000000000002','ready');
+INSERT INTO public.love_monthly_reservations(couple_id,status) VALUES
+ ('10000000-0000-0000-0000-000000000001','confirmed'),
+ ('10000000-0000-0000-0000-000000000002','confirmed');
+INSERT INTO public.love_monthly_paid_entitlements VALUES
+ ('10000000-0000-0000-0000-000000000001'),
+ ('10000000-0000-0000-0000-000000000002');
+DO $isolation$
+DECLARE metrics jsonb;
+BEGIN
+ metrics=public.love_platform_admin_read()->'stats';
+ IF (metrics->>'registered_users')::integer<>2
+ OR (metrics->>'couples')::integer<>0
+ OR (metrics->>'monthly_draws')::integer<>1
+ OR (metrics->>'geo_ready')::integer<>1
+ OR (metrics->>'bookings')::integer<>1
+ OR (metrics->>'paid_grants')::integer<>1 THEN
+   RAISE EXCEPTION 'Studio identity inflated actual platform metrics: %',metrics;
+ END IF;
+END $isolation$;
+DELETE FROM public.couple_rolls;
+DELETE FROM public.love_monthly_places;
+DELETE FROM public.love_monthly_reservations;
+DELETE FROM public.love_monthly_paid_entitlements;
 CREATE FUNCTION public.expect_studio_purge_refused(expected text) RETURNS void
 LANGUAGE plpgsql AS $expect$
 DECLARE detail text;
@@ -158,7 +199,7 @@ INSERT INTO public.couple_members VALUES
  ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-00000000000f');
 SELECT public.expect_studio_purge_refused('Membre réel détecté');
 DELETE FROM public.couple_members WHERE user_id='00000000-0000-0000-0000-00000000000f';
-INSERT INTO public.couple_rolls VALUES
+INSERT INTO public.couple_rolls(couple_id,actor) VALUES
  ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-00000000000f');
 SELECT public.expect_studio_purge_refused('utilisateur réel');
 DELETE FROM public.couple_rolls;
@@ -202,7 +243,7 @@ SELECT public.expect_studio_purge_refused('Historique personnel extérieur au ba
 DELETE FROM public.love_eclat_private_notes;
 DELETE FROM public.love_eclat_sessions WHERE id='30000000-0000-0000-0000-000000000002';
 -- Registered users' legitimate game data is purged, not fabricated or skipped.
-INSERT INTO public.couple_rolls VALUES
+INSERT INTO public.couple_rolls(couple_id,actor) VALUES
  ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-00000000000a');
 INSERT INTO public.couple_challenges VALUES
  ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-00000000000a',
