@@ -20,6 +20,8 @@ import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTur
 import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261027-web243';
 import {saveEveningSelection,restoreEveningSelection,clearEveningSelection} from './evening-resume.mjs?v=20261027-web240';
 import {eclatHtml} from './eclat-ui.mjs?v=20261027-web242';
+import {createEclatV2SessionApi} from './eclat-v2-session.mjs?v=20261028-v2-live251';
+import {createEclatV2PlayController} from './eclat-v2-play-controller.mjs?v=20261028-v2-live251';
 import {previewMode,previewCanEdit,previewEclatStatus} from './account-preview-mode.mjs?v=20261020-test180';
 import {eclatStage} from './eclat-catalog.mjs?v=20261019-eclat174';
 import {createEclatAudio} from './eclat-audio.mjs?v=20261019-eclat174';
@@ -69,6 +71,12 @@ const client=CONFIG.supabaseUrl&&CONFIG.supabasePublishableKey?
  createClient(CONFIG.supabaseUrl,CONFIG.supabasePublishableKey,opts):null;
 const launchParams=new URLSearchParams(location.search);
 const eclatAudio=createEclatAudio();
+const eclatV2Api=client?createEclatV2SessionApi(client):null;
+let eclatV2Player=null,eclatV2Poll=null;
+function disposeEclatV2Player(){
+ if(eclatV2Poll!==null){clearInterval(eclatV2Poll);eclatV2Poll=null;}
+ if(eclatV2Player){eclatV2Player.destroy();eclatV2Player=null;}
+}
 function pendingReferralCode(){
  try{const value=String(sessionStorage.getItem(REFERRAL_PENDING_STORAGE_KEY)||'').trim().toLowerCase();
  return REFERRAL_CODE_PATTERN.test(value)?value:null;}catch{return null;}
@@ -97,7 +105,7 @@ const worldText=key=>worldT(worldLocale(),key);
 const state={user:null,profile:null,members:[],coupleId:null,couple:null,
  tab:launchParams.has('settings')?'settings':(['home','session','special','advent'].includes(launchParams.get('open'))?launchParams.get('open'):'home'),weekly:null,monthly:{},session:null,personal:[],challenges:[],gifts:[],rollStatus:null,customCards:[],customCategory:'SENSUEL',customSlot:1,customSearch:'',customFilter:'all',monthlyActivities:[],monthlySlot:1,libraryScreen:'list',libraryImportKind:null,specialEditorKey:null,specialEditorStage:'D6_activite',specialEditorFace:1,adventEditorDay:1,pushDevice:null,
  events:[],journal:[],advent:[],advent2026Config:null,advent2026Days:[],selectedDay:1,adventYear:null,adventSelected:null,adventHistory:false,adventOpening:null,adventRevealing:false,adventServerDate:null,unlockKey:null,channel:null,
- occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningRefusalId:null,redrawReady:false,redrawBusy:false,loveExcludedCards:[],eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],monthlyPassQuota:null,calendarPassMonth:null,cycleStatus:null,cycleDeferred:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoBookingEdit:false,referral:null,eclat:null,eclatGalleryScroll:0,eclatHistory:[],eclatHistoryCouple:null,eclatBrowse:false,eclatHistoryError:false,eclatSelection:1,eclatMinutes:30,eclatIntent:'all',eclatDetails:false,eclatMusic:false,eclatFinished:null,testModeEligible:false,testMode:'real'};
+ occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningRefusalId:null,redrawReady:false,redrawBusy:false,loveExcludedCards:[],eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],monthlyPassQuota:null,calendarPassMonth:null,cycleStatus:null,cycleDeferred:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoBookingEdit:false,referral:null,eclat:null,eclatGalleryScroll:0,eclatHistory:[],eclatHistoryCouple:null,eclatBrowse:false,eclatHistoryError:false,eclatV2Status:null,eclatV2DeviceMode:'two',eclatSelection:1,eclatMinutes:30,eclatIntent:'all',eclatDetails:false,eclatMusic:false,eclatFinished:null,testModeEligible:false,testMode:'real'};
 const names={SENSUEL:'Sensuel',COQUIN:'Coquin',SEXUEL:'Sexuel'};
 function isSharedCoupleReady(coupleId,members){
  return !!coupleId&&Array.isArray(members)&&members.length===2;
@@ -648,6 +656,7 @@ function authMessage(message){
  else{state.authNotice=message;showInlineError(message);}
 }
 function render(){
+ if(state.tab!=='eclat'||!state.user||state.passwordRecovery)disposeEclatV2Player();
  // Old navigation references now open the current calendar and personal bilans.
  // Existing encrypted records remain intact; the retired journal forms stay closed.
  if(['journal','personal-journal'].includes(state.tab)){
@@ -1225,22 +1234,92 @@ async function refreshEclatHistory(){
   if(state.coupleId===coupleId){state.eclatHistory=rows;state.eclatHistoryError=false;}
  }catch(error){if(state.coupleId===coupleId)state.eclatHistoryError=true;console.warn('Historique Éclat indisponible',error?.code||'');}
 }
+async function refreshEclatV2Status(){
+ if(!eclatV2Api||!state.user||!isSharedCoupleReady(state.coupleId,state.members)){
+  state.eclatV2Status=null;return null;
+ }
+ // A missing V2 RPC is the normal production state before migrations.
+ // Do not replace V1, invent access or display a false premium session.
+ const coupleId=state.coupleId,userId=state.user.id;
+ try{
+  const value=await eclatV2Api.status();
+  if(state.coupleId===coupleId&&state.user?.id===userId)
+   state.eclatV2Status=value;
+  return value;
+ }catch(error){
+  if(state.coupleId===coupleId&&state.user?.id===userId){
+   if(['PGRST202','42883'].includes(error?.code))state.eclatV2Status=null;
+   else console.warn('Éclat V2 non accessible',error?.code||'');
+  }
+  return null;
+ }
+}
 async function refreshEclatStatus(){
  if(!state.user||!isSharedCoupleReady(state.coupleId,state.members))return null;
  const value=await rpc('love_eclat_status');
  if(value&&state.coupleId)state.eclat=value;
- await refreshEclatHistory();
+ await Promise.all([refreshEclatHistory(),refreshEclatV2Status()]);
  return value;
 }
 function renderEclat(){
  const e=previewEclatStatus(state.eclat,state.testMode,state.testModeEligible);
+ const v2=state.eclatV2Status;
+ if(v2?.access&&v2.active&&!e?.active){
+  disposeEclatV2Player();
+  eclatAudio.stop();state.eclatMusic=false;
+  const sharedDevice=v2.device_mode==='one',isSharedHost=state.user?.id===v2.role_a;
+  if(sharedDevice&&!isSharedHost){
+   frame('<section class="eclat-v2-live"><h2>Coffret à deux sur un téléphone</h2>'+
+    '<p>Cette séance se joue sur le téléphone du joueur qui l’a commencée. Le compte B n’est jamais simulé ici.</p>'+
+    button('tab:home','Retour à l’accueil','class="subtle"')+'</section>','Éclat','Notre expérience à deux');
+   return;
+  }
+  frame('<section class="eclat-v2-live" aria-label="Vrai coffret Éclat V2">'+
+   '<div id="eclat-v2-live-player"></div>'+
+   '<div class="eclat-v2-live-footer">'+
+   button('eclat-v2:gallery','Retour aux coffrets (séance conservée)','class="subtle"')+
+   '</div></section>','Éclat','Notre expérience à deux');
+  const host=root.querySelector('#eclat-v2-live-player');
+  eclatV2Player=createEclatV2PlayController({
+   root:host,api:eclatV2Api,viewerId:state.user.id,initialStatus:v2,
+   onError:err=>fail(err)
+  });
+  const currentPlayer=eclatV2Player;
+  eclatV2Poll=setInterval(()=>{
+   if(state.tab!=='eclat'||eclatV2Player!==currentPlayer)return;
+   currentPlayer.refresh().then(refreshed=>{
+    if(!refreshed||eclatV2Player!==currentPlayer)return;
+    const latest=currentPlayer.getStatus();
+    if(!latest?.access||!latest?.active){
+     state.eclatV2Status=latest;
+     disposeEclatV2Player();render();
+    }
+   }).catch(error=>{
+    if(eclatV2Player===currentPlayer)console.warn('Actualisation Éclat V2',error?.code||'');
+   });
+  },5000);
+  eclatV2Poll?.unref?.();
+  return;
+ }
+ disposeEclatV2Player();
  if(e?.active){
   const current=eclatStage(e.coffret_id,e.chapter_number,e.variant_number);
   if(current)eclatAudio.setMood(current.mood);
  }else if(state.eclatMusic){eclatAudio.stop();state.eclatMusic=false;}
+ const v2Ready=v2?.access===true&&!e?.active;
+ const deviceMode=v2Ready&&state.eclatDetails?
+  '<section class="eclat-v2-device-choice" aria-label="Nombre de téléphones Éclat">'+
+   '<p><strong>Pour ce coffret : choisissez votre façon de jouer</strong></p>'+
+   button('eclat-v2:mode:two','Deux téléphones · A et B', 'aria-pressed="'+(state.eclatV2DeviceMode==='two')+'"')+
+   button('eclat-v2:mode:one','Un téléphone partagé', 'aria-pressed="'+(state.eclatV2DeviceMode==='one')+'"')+
+   '<p>Les règles, autorisations et scènes sont validées par le serveur. En mode partagé, aucun compte partenaire n’est usurpé.</p>'+
+   '</section>':'';
  frame(eclatHtml({status:e,selected:state.eclatSelection,minutes:state.eclatMinutes,
   details:state.eclatDetails,members:state.members,userId:state.user?.id,
-  music:state.eclatMusic,finished:state.eclatFinished,browse:state.eclatBrowse,intent:state.eclatIntent,noteState:e?.active&&!state.eclatBrowse?eclatNoteState():{},history:state.eclatHistoryCouple===state.coupleId?state.eclatHistory:[],historyError:state.eclatHistoryError}), 'Éclat','Notre expérience à deux');
+  music:state.eclatMusic,finished:state.eclatFinished,browse:state.eclatBrowse,intent:state.eclatIntent,
+  noteState:e?.active&&!state.eclatBrowse?eclatNoteState():{},
+  history:state.eclatHistoryCouple===state.coupleId?state.eclatHistory:[],
+  historyError:state.eclatHistoryError})+deviceMode,'Éclat','Notre expérience à deux');
 }
 function renderHome(){
  const members=state.members||[];
@@ -2512,6 +2591,23 @@ async function handle(action,element){
   eclatAudio.stop();state.eclatMusic=false;
   render();return;
  }
+ if(verb==='eclat-v2'){
+  if(!state.user||!isSharedCoupleReady(state.coupleId,state.members))
+   throw Error('Les deux partenaires doivent être associés.');
+  const kind=parts[0];
+  if(kind==='mode'){
+   if(!['one','two'].includes(parts[1]))throw Error('Mode Éclat V2 inconnu');
+   if(!state.eclatV2Status?.access||state.eclatV2Status?.active)
+    throw Error('Mode Éclat V2 indisponible');
+   state.eclatV2DeviceMode=parts[1];render();return;
+  }
+  if(kind==='gallery'){
+   disposeEclatV2Player();state.eclatV2Status=null;
+   state.eclatBrowse=true;state.eclatDetails=false;
+   await refreshEclatStatus();render();return;
+  }
+  throw Error('Action Éclat V2 inconnue');
+ }
  if(verb==='eclat'){
   if(!isSharedCoupleReady(state.coupleId,state.members))throw Error('Éclat nécessite deux partenaires associés.');
   const kind=parts[0],num=Number(parts[1]);
@@ -2555,6 +2651,15 @@ async function handle(action,element){
   if(kind==='start'){
    if(!Number.isInteger(num)||num<1||num>12)throw Error('Coffret inconnu');
    if(!previewEclatStatus(state.eclat,state.testMode,state.testModeEligible)?.access)throw Error('Ce coffret nécessite le forfait Éclat.');
+   if(state.eclatV2Status?.access===true&&!state.eclat?.active){
+    const result=await eclatV2Api.start({coffretId:num,minutes:state.eclatMinutes,
+     deviceMode:state.eclatV2DeviceMode});
+    if(!result?.access||!result.active||result.content_version!==2)
+     throw Error('Le serveur n’a pas ouvert de séance Éclat V2 officielle.');
+    state.eclatV2Status=result;
+    state.eclatBrowse=false;state.eclatDetails=false;state.eclatFinished=null;
+    render();return;
+   }
    state.eclat=await rpc('love_eclat_start',{p_coffret:num,p_minutes:state.eclatMinutes});
    state.eclatBrowse=false;state.eclatDetails=false;state.eclatFinished=null;await refreshEclatHistory();render();return;
   }
@@ -3933,7 +4038,7 @@ async function handle(action,element){
   if(parts[0]==='settings'&&state.tab!=='occasions')settingsOpenSection='';
   if(state.tab!==parts[0]){state.libraryImportKind=null;state.libraryScreen='list';state.specialEditorKey=null;state.jsonPending=null;lastFormTab=null;}
   allowBackExit=false;state.tab=parts[0];state.confirmCancel=false;
-  if(state.tab!=='eclat'){eclatAudio.stop();state.eclatMusic=false;}
+  if(state.tab!=='eclat'){disposeEclatV2Player();eclatAudio.stop();state.eclatMusic=false;}
   else{state.eclatBrowse=false;state.eclatDetails=false;await refreshEclatStatus();}
   if(state.tab!=='occasions')state.specialFocus=null;
   if(state.tab!=='session'){state.showEveningChallenge=false;state.showEveningChallenges=false;state.selectedEveningChallengeId=null;state.eveningMore=false;}
