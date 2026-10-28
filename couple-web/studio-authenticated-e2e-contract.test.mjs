@@ -29,6 +29,11 @@ test('technical account cleanup is mandatory even when a genuine E2E step fails'
  assert.match(script,/\}finally\{/);
  assert.match(script,/if\(page&&created\)/);
  assert.match(script,/studio-real-delete/);
+ assert.ok(script.includes('Suppression du duo terminée'));
+ assert.ok(script.includes("studio-real-frame-A iframe"));
+ assert.ok(script.includes("studio-real-frame-B iframe"));
+ assert.ok(script.includes("studio-real-progress-count"));
+ assert.ok(script.includes("cleanupSuccessful=true;"));
  assert.match(script,/if\(created&&!cleanupSuccessful\)throw/);
  assert.match(script,/real-ipad-portrait\.png|real-'\+viewport\.name/);
  assert.doesNotMatch(script,/preview_three\s*\)/);
