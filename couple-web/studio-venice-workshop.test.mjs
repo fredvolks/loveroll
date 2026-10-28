@@ -22,6 +22,12 @@ test('Venice atelier is separate from the true LoveRoll game, with owner-A gate'
  assert.match(child,/\.from\('couple_members'\)\.select\('couple_id'\)/);
  assert.match(parent,/type:'loveroll-studio-venice'/);
  assert.match(parent,/msg\.type==='loveroll-studio-venice-result'/);
+ assert.match(child,/request_id:message\.request_id/);
+ assert.match(child,/typeof message\.request_id!=='string'/);
+ assert.match(parent,/request_id:veniceActiveRequest\.id/);
+ assert.match(parent,/msg\.request_id!==veniceActiveRequest\.id/);
+ assert.match(parent,/msg\.action!==veniceActiveRequest\.action/);
+ assert.match(parent,/veniceActiveRequest=null/);
  assert.doesNotMatch(child,/postMessage\(\{[^}]*access_token/);
 });
 test('real Venice inference requires one authorized per-admin daily reservation tied to pair',()=>{
