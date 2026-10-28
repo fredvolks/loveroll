@@ -99,3 +99,70 @@ test('real Auth SIGNED_OUT immediately updates the A/B connection indicator and 
  authListener('SIGNED_IN',technical);
  assert.equal(events.length,size,'disposed Studio never leaks Auth state to parent');
 });
+
+test('Venice workshop uses only real tagged owner seat A and official bridge, never shares JWT',async()=>{
+ const origin='https://fredvolks.github.io',messages=[];
+ const parent={postMessage:(m,at)=>messages.push({m,at})};
+ let listener,bridgeCalls=0;
+ const selfWindow={
+  parent,location:{reload(){}},
+  addEventListener:(type,fn)=>{if(type==='message')listener=fn},
+  removeEventListener(){}
+ };
+ const client={
+  auth:{
+   getSession:async()=>({data:{session:null}}),
+   getUser:async()=>({data:{user:{
+    id:'test-owner-a',app_metadata:{love_studio_test:true,love_studio_admin:'admin'}
+   }},error:null})
+  },
+  from:table=>{
+   assert.equal(table,'couple_members');
+   return {select:()=>{
+    return {eq:()=>({maybeSingle:async()=>({
+     data:{couple_id:'real-technical-pair'},error:null
+    })})};
+   }};
+  },
+  functions:{invoke:async(fn,args)=>{
+   bridgeCalls++;
+   assert.equal(fn,'love-venice-bridge');
+   assert.deepEqual(args.body,{
+    action:'get_latest_preview',couple_id:'real-technical-pair'
+   });
+   return {data:{saved:true,preview:{cards:[{title:'Only draft'}]}},error:null};
+  }}
+ };
+ const unsub=startStudioSeatLogin(client,'A',{selfWindow,origin});
+ await listener({source:parent,origin,data:{
+  type:'loveroll-studio-venice',seat:'A',action:'get_latest_preview'
+ }});
+ assert.equal(bridgeCalls,1);
+ const response=messages.find(x=>x.m.type==='loveroll-studio-venice-result');
+ assert.ok(response,'parent receives only the resulting drafts');
+ assert.equal(response.at,origin);
+ assert.equal(response.m.data.result.preview.cards[0].title,'Only draft');
+ assert.ok(!JSON.stringify(response).includes('access_token'));
+ await listener({source:parent,origin:'https://attacker.invalid',data:{
+  type:'loveroll-studio-venice',seat:'A',action:'preview_three'
+ }});
+ await listener({source:parent,origin,data:{
+  type:'loveroll-studio-venice',seat:'A',action:'delete_everyone'
+ }});
+ assert.equal(bridgeCalls,1,'foreign and unapproved actions never access paid provider');
+ unsub();
+});
+test('nonowner seat B cannot invoke the couple-owned Venice provider',async()=>{
+ let listener,called=false;
+ const parent={postMessage(){}};
+ const client={auth:{
+  getSession:async()=>({data:{session:null}}),
+  getUser:async()=>{called=true;return {data:{user:{id:'B'}}}}
+ }};
+ const selfWindow={parent,addEventListener:(_,fn)=>listener=fn,removeEventListener(){},location:{reload(){}}};
+ startStudioSeatLogin(client,'B',{selfWindow,origin:'https://fredvolks.github.io'});
+ await listener({source:parent,origin:'https://fredvolks.github.io',data:{
+  type:'loveroll-studio-venice',seat:'B',action:'preview_three'
+ }});
+ assert.equal(called,false);
+});
