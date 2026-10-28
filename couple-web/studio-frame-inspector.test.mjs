@@ -64,9 +64,16 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
  globalThis.location={origin:'https://fredvolks.github.io',href:'https://fredvolks.github.io/loveroll/admin.html'};
  globalThis.sessionStorage={removeItem(){}};
  globalThis.confirm=()=>true;
+ let simulatedDeletion=false;
  const calls=[];
  const client={functions:{invoke:async(name,{body})=>{
   calls.push(body.action);
+  if(body.action==='status'&&simulatedDeletion)return {data:{
+   ready:false,state:'missing',seats:[],audit:[
+    {action:'delete_completed',created_at:'2026-10-27T23:00:00Z'},
+    {action:'<script>bad</script>',created_at:'2026-10-27T22:59:00Z'}
+   ]
+  }};
   if(body.action==='status')return {data:{ready:true,state:'ready',
    audit:[
     {action:'create_succeeded',created_at:'2026-10-27T22:35:00Z'},
@@ -179,6 +186,16 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
   assert.ok(calls.filter(x=>x==='status').length>=2);
   assert.ok(!calls.includes('create')&&!calls.includes('delete'),
    'visual inspection and refresh must not alter live Supabase test accounts');
+  simulatedDeletion=true;
+  await studio.refresh();
+  assert.equal(getFrame('A'),undefined,'deleted sandbox never displays a stale logged-in seat');
+  assert.equal(getFrame('B'),undefined,'deleted sandbox closes the partner game too');
+  assert.equal(nodes.get('studio-real-audit').hidden,false,
+   'private audit persists after the synthetic duo is deleted');
+  assert.equal(nodes.get('studio-real-audit-list').children[0].children[0].textContent,
+   'Suppression du duo terminée');
+  assert.equal(nodes.get('studio-real-audit-list').children[1].children[0].textContent,
+   'Opération technique','unexpected event label is not injected as HTML');
  }finally{
   for(const [key,value] of Object.entries(original)){
    if(value===undefined)delete globalThis[key];
