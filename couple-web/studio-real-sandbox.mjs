@@ -9,7 +9,7 @@ export function createStudioRealSandbox({client}){
  const validSeats=['A','B'];
  const validRoutes=['home','session','special','eclat','advent','settings','journal','personal-journal','occasions'];
  const frames={A:null,B:null};
- let status=null,tab='A',busy=false,tearingDown=false,initialized=false,loginInFlight=new Set(),expandedSeat=null;
+ let status=null,tab='A',busy=false,tearingDown=false,initialized=false,active=false,loginInFlight=new Set(),expandedSeat=null;
  let veniceBusy=false,veniceData=null,veniceMessage='Connecte le joueur A pour accéder aux brouillons.';
  let veniceWatch=null,veniceActiveRequest=null;
  const authenticatedSeats=new Set();
@@ -268,7 +268,7 @@ export function createStudioRealSandbox({client}){
   value=>{
    // A pre-delete diagnostic must never resurrect an old pair while the
    // authorized SQL/Auth cleanup or replacement is still in flight.
-   if(tearingDown)return;
+   if(tearingDown||!active)return;
    status=value;
    say(status.ready?(authenticatedSeats.size===2?'Joueurs A et B connectés au vrai LoveRoll.':'Couple de test prêt. Connexion des joueurs A et B en cours…'):
     status.state==='missing'?'Aucun couple de test. Crée un duo pour jouer.':
@@ -280,7 +280,7 @@ export function createStudioRealSandbox({client}){
  );
  const refresh=()=>statusSync.refresh();
  async function onChildMessage(event){
-  if(tearingDown||event.origin!==location.origin||!status?.ready)return;
+  if(!active||tearingDown||event.origin!==location.origin||!status?.ready)return;
   const seat=validSeats.find(s=>frames[s]?.contentWindow===event.source);
   if(!seat||event.data?.seat!==seat)return;
   const msg=event.data;
@@ -350,7 +350,9 @@ export function createStudioRealSandbox({client}){
   }catch(err){loginInFlight.delete(seat);say('Impossible de connecter '+label(seat)+' : '+err.message);}
  }
  async function init(){
-  if(initialized)return;initialized=true;
+  active=true;
+  if(initialized){await refresh();return;}
+  initialized=true;
   window.addEventListener('message',onChildMessage);
   for(const seat of validSeats)$('studio-show-seat-'+seat).addEventListener('click',()=>showSeat(seat));
   for(const seat of validSeats)$('studio-real-expand-'+seat).addEventListener('click',()=>toggleExpandedSeat(seat));
@@ -465,5 +467,14 @@ export function createStudioRealSandbox({client}){
   });
   try{await refresh()}catch(err){say(err.message)}
  }
- return {init,refresh};
+ function deactivate(){
+  // Hiding admin UI isn't enough: technical Auth seats and their timers must
+  // be destroyed on owner logout or loss of privileged session. The actual
+  // test accounts and server records remain untouched for later login.
+  active=false;
+  status=null;
+  closeFrames();
+  say('Connexion propriétaire requise pour utiliser le banc A/B.');
+ }
+ return {init,refresh,deactivate};
 }
