@@ -123,3 +123,96 @@ test('Realtime refresh waits until the official envelope animation has finished'
  sync.request(0);await sleep(30);assert.equal(refreshed,0);assert.equal(renders,0);
  state.adventOpening=null;sync.request(0);await sleep(40);assert.equal(refreshed,1);assert.equal(renders,1);
 });
+
+
+// LR-016: all quota values come from the authenticated user's RPC, not from
+// the other partner's Realtime payload or a local counter.
+function quotaHarness(){
+ const db={month:'2026-10',limit:3,used:{alice:1,bob:2}};
+ let tick=100000;
+ function phone(userId){
+  const own=()=>({month:db.month,used:db.used[userId],limit:db.limit,
+   remaining:Math.max(0,db.limit-db.used[userId]),can_pass:db.used[userId]<db.limit});
+  const state={user:{id:userId},coupleId:'duo',members:[{user_id:'alice'},{user_id:'bob'}],
+   tab:'session',diceStatus:null,weekly,monthly:{},session:null,sessions:[],
+   personal:[],challenges:[],events:[],gifts:[],occasionRolls:[],
+   eveningReviews:[],advent:[],monthlyPassQuota:own()};
+  let rendered=0,quotaCalls=0,refreshes=0,dirty=false;
+  const query=async(name)=>{
+   if(name==='couple_rolls')return [weekly];
+   if(name==='couple_sessions')return [];
+   throw Error('Forbidden cross-user data: '+name);
+  };
+  const rpc=async(name)=>{
+   if(name==='love_evening_reviews_for_couple')return [];
+   if(name==='love_evening_invite_status')return null;
+   if(name==='my_love_monthly_pass_quota'){quotaCalls++;return own();}
+   throw Error('Unexpected RPC: '+name);
+  };
+  const refresh=async()=>{refreshes++;state.monthlyPassQuota=await rpc('my_love_monthly_pass_quota');};
+  const sync=createCoupleLiveSync({state,query,rpc,refresh,render:()=>rendered++,
+   ready:(couple,members)=>couple==='duo'&&members.length===2,
+   week:()=>weekly.key,month:()=>db.month,formDirty:()=>dirty,
+   visible:()=>true,clock:()=>tick,online:()=>false});
+  return {state,sync,rendered:()=>rendered,refreshes:()=>refreshes,
+   quotaCalls:()=>quotaCalls,formDirty:value=>{dirty=value;}};
+ }
+ return {db,phone,advance:ms=>{tick+=ms;}};
+}
+test('LR-016: the owner limit propagates to BOTH clients with separate private counts',async()=>{
+ const h=quotaHarness(),alice=h.phone('alice'),bob=h.phone('bob');
+ h.db.limit=1;
+ await Promise.all([alice.sync.probe(true),bob.sync.probe(true)]);
+ await sleep(60);
+ assert.deepEqual(alice.state.monthlyPassQuota,{month:'2026-10',used:1,limit:1,remaining:0,can_pass:false});
+ assert.deepEqual(bob.state.monthlyPassQuota,{month:'2026-10',used:2,limit:1,remaining:0,can_pass:false});
+ assert.equal(alice.rendered(),1);
+ assert.equal(bob.rendered(),1);
+ assert.ok(alice.quotaCalls()>0&&bob.quotaCalls()>0);
+ // Repeated identical server polls must not rebuild the die or wipe UI state.
+ await Promise.all([alice.sync.probe(true),bob.sync.probe(true)]);
+ await sleep(40);
+ assert.equal(alice.rendered(),1);
+ assert.equal(bob.rendered(),1);
+ h.db.limit=5;
+ await bob.sync.probe(true);await sleep(55);
+ assert.deepEqual(bob.state.monthlyPassQuota,{month:'2026-10',used:2,limit:5,remaining:3,can_pass:true});
+ assert.equal(alice.state.monthlyPassQuota.limit,1,'one device cannot mutate another client until sync');
+});
+test('LR-016: a new Toronto calendar month restores quota without client-side reset',async()=>{
+ const h=quotaHarness(),bob=h.phone('bob');
+ h.db.month='2026-11';
+ h.db.used.bob=0;
+ await bob.sync.probe(true);await sleep(50);
+ assert.deepEqual(bob.state.monthlyPassQuota,{month:'2026-11',used:0,limit:3,remaining:3,can_pass:true});
+ assert.equal(bob.rendered(),1);
+});
+test('LR-016: quota polling is bounded and the active D6 throw stays untouched',async()=>{
+ const h=quotaHarness(),bob=h.phone('bob');
+ await bob.sync.probe(false);
+ const first=bob.quotaCalls();
+ assert.equal(first,1);
+ h.advance(3500);
+ await bob.sync.probe(false);
+ assert.equal(bob.quotaCalls(),first,'the D6 probe must not query personal quota every 3 seconds');
+ h.db.limit=0;bob.state.diceStatus='rolling';
+ h.advance(11000);
+ await bob.sync.probe(true);await sleep(30);
+ assert.equal(bob.rendered(),0);
+ assert.equal(bob.state.monthlyPassQuota.limit,3);
+ bob.state.diceStatus=null;
+ await bob.sync.probe(false);await sleep(55);
+ assert.equal(bob.state.monthlyPassQuota.limit,0);
+ assert.equal(bob.state.monthlyPassQuota.can_pass,false);
+});
+test('LR-016: unsaved Settings fields are never overwritten by remote quota refresh',async()=>{
+ const h=quotaHarness(),alice=h.phone('alice');
+ alice.state.tab='settings';alice.formDirty(true);
+ h.db.limit=0;
+ await alice.sync.probe(true);await sleep(40);
+ assert.equal(alice.state.monthlyPassQuota.limit,3);
+ assert.equal(alice.rendered(),0);
+ alice.formDirty(false);alice.sync.request(0);await sleep(55);
+ assert.equal(alice.state.monthlyPassQuota.limit,0);
+ assert.equal(alice.rendered(),1);
+});
