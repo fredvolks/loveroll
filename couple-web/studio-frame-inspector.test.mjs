@@ -50,7 +50,9 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
   'studio-real-challenge-cards','studio-real-challenge-list',
   'studio-real-audit','studio-real-audit-list',
   'studio-real-progress','studio-real-progress-count','studio-real-progress-list',
-  'studio-real-eclat-progress','studio-real-eclat-count','studio-real-eclat-grid'])make(id);
+  'studio-real-eclat-progress','studio-real-eclat-count','studio-real-eclat-grid',
+  'studio-venice-status','studio-venice-cards',
+  'studio-venice-status-button','studio-venice-latest','studio-venice-generate'])make(id);
  for(const s of ['A','B']){
   const title=new Element('div');title.classList.add('studio-real-frame-label');
   nodes.get('studio-real-frame-'+s).append(title);
@@ -174,6 +176,34 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
   nodes.get('studio-real-jump-A').value='delete';
   nodes.get('studio-real-jump-A').handlers.change();
   assert.equal(sent.length,5,'navigation must allow only official harmless tab routes');
+  // Read-only Venice requests must be correlated to the exact genuine A
+  // iframe, never expose a JWT and never accept a stale preview response.
+  assert.equal(nodes.get('studio-venice-latest').disabled,false);
+  const beforeVenice=sent.length;
+  await nodes.get('studio-venice-latest').click();
+  const veniceRequest=sent.at(-1);
+  assert.equal(sent.length,beforeVenice+1);
+  assert.equal(veniceRequest.message.action,'get_latest_preview');
+  assert.match(veniceRequest.message.request_id,
+   /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/);
+  await nodes.get('studio-venice-latest').click();
+  assert.equal(sent.length,beforeVenice+1,'no duplicate Venice request while pending');
+  const forged={type:'loveroll-studio-venice-result',seat:'A',
+   action:'get_latest_preview',request_id:'00000000-0000-4000-8000-000000000001',
+   data:{ok:true,result:{preview:{cards:[{title:'FAKE'}]}}}};
+  await announce(a.contentWindow,forged);
+  assert.equal(nodes.get('studio-venice-cards').children.length,0,
+   'late or forged request ID cannot replace existing draft cards');
+  await announce(a.contentWindow,{...forged,request_id:veniceRequest.message.request_id,
+   data:{ok:true,result:{preview:{cards:[{style:'soft',timer_minutes:3,
+    title:'<script>Do not render HTML</script>',text_short:'Official draft only',
+    text_detailed:'Private draft content'}]}}}});
+  assert.equal(nodes.get('studio-venice-cards').children.length,1);
+  assert.equal(nodes.get('studio-venice-cards').children[0].children[0].textContent,
+   '<script>Do not render HTML</script>');
+  assert.match(nodes.get('studio-venice-status').textContent,/Derniers brouillons lus/);
+  assert.equal(calls.includes('venice_preview_authorize'),false,
+   'reading Venice drafts must never spend credits');
   nodes.get('studio-real-expand-A').click();
   assert.equal(html.classList.contains('studio-real-fullscreen'),true);
   assert.equal(nodes.get('studio-real-frame-A').classList.contains('studio-real-maximized'),true);
