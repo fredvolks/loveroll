@@ -33,8 +33,8 @@ CREATE POLICY love_adaptations_pair_read ON public.love_challenge_adaptations
       AND q.couple_id=love_challenge_adaptations.couple_id
       AND q.session_id=love_challenge_adaptations.session_id
       AND (q.offered_by=(select auth.uid()) OR q.recipient=(select auth.uid()))
-      AND EXISTS (SELECT 1 FROM public.couple_members m WHERE m.couple_id=couple_id AND m.user_id=q.offered_by)
-      AND EXISTS (SELECT 1 FROM public.couple_members m WHERE m.couple_id=couple_id AND m.user_id=q.recipient))
+      AND EXISTS (SELECT 1 FROM public.couple_members m WHERE m.couple_id=love_challenge_adaptations.couple_id AND m.user_id=q.offered_by)
+      AND EXISTS (SELECT 1 FROM public.couple_members m WHERE m.couple_id=love_challenge_adaptations.couple_id AND m.user_id=q.recipient))
  );
 REVOKE ALL ON public.love_challenge_adaptations FROM public,anon,authenticated;
 GRANT SELECT ON public.love_challenge_adaptations TO authenticated;
