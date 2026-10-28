@@ -228,3 +228,14 @@ test('history inspector fetches real server cards, rejects stale responses and c
  assert.ok(src.includes("description.textContent=String(card.description||'Aucune consigne enregistrée')"));
  assert.ok(!src.includes("article.innerHTML"));
 });
+
+
+test('an external reset cannot leave previous Auth seats or private challenge history mounted',()=>{
+ assert.ok(src.includes("const pairSignature=entry=>Array.isArray(entry?.seats)"));
+ assert.ok(src.includes("entry.seats.map(row=>row.seat+':'+row.user_id).sort().join('|')"));
+ assert.ok(src.includes("if(status?.ready&&value?.ready&&pairSignature(status)!==pairSignature(value))"));
+ assert.ok(src.includes("closeFrames();\n   status=value;"));
+ assert.ok(src.includes("historyGeneration++"));
+ assert.ok(src.includes("historyCards=null"));
+ assert.ok(src.includes("authenticatedSeats.delete(seat)"));
+});
