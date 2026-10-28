@@ -143,6 +143,11 @@ BEGIN
   NOT EXISTS(SELECT 1 FROM public.couple_sessions s
    WHERE s.id=v_q.session_id AND s.couple_id=v_couple AND s.finished_at IS NULL) THEN
   RAISE EXCEPTION 'Le défi ou la soirée n’est plus disponible'; END IF;
+ -- Serialize consent against a concurrent session close: couple -> challenge
+ -- -> session, the same ordering used by the official challenge actions.
+ PERFORM 1 FROM public.couple_sessions
+  WHERE id=v_q.session_id AND couple_id=v_couple AND finished_at IS NULL FOR UPDATE;
+ IF NOT FOUND THEN RAISE EXCEPTION 'Cette soirée est clôturée'; END IF;
  SELECT * INTO v_adaptation FROM public.love_challenge_adaptations
   WHERE challenge_id=p_challenge AND couple_id=v_couple FOR UPDATE;
  IF NOT FOUND OR NOT (v_actor IN (v_q.offered_by,v_q.recipient))
