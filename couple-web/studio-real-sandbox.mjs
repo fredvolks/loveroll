@@ -11,7 +11,7 @@ export function createStudioRealSandbox({client}){
  const frames={A:null,B:null};
  let status=null,tab='A',busy=false,tearingDown=false,initialized=false,loginInFlight=new Set(),expandedSeat=null;
  let veniceBusy=false,veniceData=null,veniceMessage='Connecte le joueur A pour accéder aux brouillons.';
- let veniceWatch=null;
+ let veniceWatch=null,veniceActiveRequest=null;
  const authenticatedSeats=new Set();
  const label=s=>s==='A'?'Joueur A':'Joueur B';
  const say=(message)=>{const node=$('studio-real-status');if(node)node.textContent=message;};
@@ -67,7 +67,7 @@ export function createStudioRealSandbox({client}){
  }
  function closeFrames(){
   if(veniceWatch!==null)clearTimeout(veniceWatch);
-  veniceWatch=null;
+  veniceWatch=null;veniceActiveRequest=null;
   veniceBusy=false;veniceData=null;
   veniceMessage='Le joueur A doit être reconnecté pour accéder à Venice.';
   renderVenice();
@@ -284,8 +284,11 @@ export function createStudioRealSandbox({client}){
   if(!seat||event.data?.seat!==seat)return;
   const msg=event.data;
   if(msg.type==='loveroll-studio-venice-result'&&seat==='A'&&veniceBusy){
+   // Ignore a delayed response from an old paid preview or a new frame.
+   if(!veniceActiveRequest||msg.request_id!==veniceActiveRequest.id||
+      msg.action!==veniceActiveRequest.action)return;
    if(veniceWatch!==null)clearTimeout(veniceWatch);
-   veniceWatch=null;veniceBusy=false;
+   veniceWatch=null;veniceActiveRequest=null;veniceBusy=false;
    if(msg.data?.ok===true){
     veniceData=msg.data.result||null;
     veniceMessage=msg.action==='status'
@@ -415,17 +418,20 @@ export function createStudioRealSandbox({client}){
     if(!confirm('Venice utilisera de vrais crédits d’IA pour générer 3 brouillons. Continuer ?'))return;
     if(!confirm('Confirmer : une seule génération par jour UTC et par Super Admin, même après réinitialisation A+B. Cette action pourrait être facturée par Venice.'))return;
    }
-   veniceBusy=true;veniceMessage='Préparation de l’atelier Venice…';
+   veniceBusy=true;
+   veniceActiveRequest={id:crypto.randomUUID(),action};
+   veniceMessage='Préparation de l’atelier Venice…';
    renderVenice();
    try{
     if(action==='preview_three')await request('venice_preview_authorize');
     if(!frames.A?.contentWindow||tearingDown)throw Error('Joueur A indisponible');
     frames.A.contentWindow.postMessage({
-     type:'loveroll-studio-venice',seat:'A',action
+     type:'loveroll-studio-venice',seat:'A',action,
+     request_id:veniceActiveRequest.id
     },location.origin);
     veniceMessage='En attente du service officiel Venice via le joueur A…';
     veniceWatch=setTimeout(()=>{
-     veniceWatch=null;veniceBusy=false;
+     veniceWatch=null;veniceBusy=false;veniceActiveRequest=null;
      veniceMessage='Réponse Venice non reçue. Vérifie les derniers brouillons avant de recommencer; la génération peut déjà avoir consommé le quota.';
      renderVenice();
     },60000);
@@ -433,7 +439,7 @@ export function createStudioRealSandbox({client}){
     renderVenice();
    }catch(err){
     if(veniceWatch!==null)clearTimeout(veniceWatch);
-    veniceWatch=null;veniceBusy=false;
+    veniceWatch=null;veniceBusy=false;veniceActiveRequest=null;
     veniceMessage=err instanceof Error?err.message:'Erreur Venice';
     renderVenice();
    }
