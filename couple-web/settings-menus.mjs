@@ -11,6 +11,16 @@ export function organizeSettingsMenus(root){
  if(body.dataset.menusReady)return;
  body.dataset.menusReady='true';body.classList.add('settings-detail-body');
  const route=body.dataset.settingsPage||root.querySelector('.editorial-title h1')?.textContent||'';
+ // Alerts are one cohesive device-level task, not three disconnected
+ // destinations. Keep preference switches beside actual Android permission,
+ // activation, local reminder, feedback and the personal test button.
+ // A disabled receiver never prevents editing account-level preferences.
+ if(route==='notifications'){
+  body.classList.add('settings-notifications-unified');
+  previousRoute=route;previousPath=[];
+  root._settingsMenuBack=()=>false;
+  return;
+ }
  const find=s=>q(body,s),f=id=>field(body,id),a=name=>body.querySelector('[data-action="'+name+'"]');
  const entry=(key,label,items,extra={})=>({key,label,nodes:nodes(items),...extra});
  const link=(selector)=>{const node=body.querySelector(selector);return node?{key:'',label:node.innerText,node}:null;};
@@ -46,11 +56,6 @@ export function organizeSettingsMenus(root){
   // otherwise the button exists in DOM but cannot be tapped on mobile.
   link('.settings-advanced [data-action="settings-page:excluded-cards"]'),
   link('.settings-advanced [data-action="settings-page:admin"]')
- ];
- else if(route==='notifications')tree=[
-  entry('appareil','Sur cet appareil',[find('.notification-summary,.notification-actions,.notification-feedback,.notification-privacy')]),
-  entry('alertes','Choisir mes alertes',find('.notification-choices,.notification-feedback')),
-  entry('rappel','Rappel du lundi',find('.notification-local'))
  ];
  else if(route==='application')tree=[
   entry('application','Application et mises à jour',find('.settings-app-group:first-child')),
