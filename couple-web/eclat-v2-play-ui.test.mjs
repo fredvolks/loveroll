@@ -450,7 +450,7 @@ test('09 optional phrase only displays once both approve, never exposes one priv
 });
 
 test('10 V1 scene 4 has separate 90-second A/B turns, with B starting voluntarily',()=>{
- const s=status(10,3,90,4,{variant:1,timer_mode:'with',timer_turn:1,
+ const s=status(10,1,90,4,{timer_mode:'with',timer_turn:1,
   timer_remaining_seconds:null,timer_running:false});
  const a=renderEclatV2PlayA({status:s,viewerId:aid});
  const b=renderEclatV2PlayA({status:s,viewerId:bid});
