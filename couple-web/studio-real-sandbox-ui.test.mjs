@@ -51,6 +51,8 @@ test('Studio real sandbox uses existing secure platform gate and no standalone f
  for(const route of ['journal','personal-journal','occasions']){
   assert.equal((html.match(new RegExp('<option value="'+route+'">','g'))||[]).length,2,route+' appears on both real seats');
   assert.match(js,/createStudioRealSandbox/);
+ assert.match(js,/btn\.closest\('\.studio-mobile-shortcuts'\)/);
+ assert.match(js,/scrollIntoView\(\{behavior:'smooth',block:'start'\}\)/);
  }
  for(const seat of ['A','B'])assert.match(html,new RegExp('id="studio-real-seat-state-'+seat+'"'));
  assert.match(sandbox,/authenticatedSeats\.size===2/);
