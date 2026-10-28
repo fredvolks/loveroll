@@ -14,6 +14,10 @@ BEGIN
  v:=public.love_adaptation_propose(first,'Version plus douce',12);
  IF v->>'status'<>'pending' OR v->>'created'<>'true' THEN
   RAISE EXCEPTION 'A did not propose: %',v; END IF;
+ IF (SELECT count(*) FROM public.couple_challenges WHERE id=first)<>0 THEN
+  RAISE EXCEPTION 'Recipient-only challenge RLS must hide that private card from A';END IF;
+ IF (SELECT count(*) FROM public.love_challenge_adaptations WHERE challenge_id=first)<>1 THEN
+  RAISE EXCEPTION 'Proposer A cannot view their proposal without revealing the private challenge';END IF;
  v:=public.love_adaptation_propose(first,'Version plus douce',12);
  IF v->>'created'<>'false' THEN RAISE EXCEPTION 'Double click was not idempotent'; END IF;
  BEGIN
