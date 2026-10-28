@@ -36,7 +36,7 @@ Code : `couple-web/studio-authenticated-e2e.cjs`.
 Workflow manuel : `.github/workflows/studio-authenticated-staging.yml`.
 
 **Contrôle bloquant ajouté :** `couple-web/studio-staging-preflight.mjs` vérifie
-la référence Supabase, huit tables essentielles et l'existence des deux Edge
+la référence Supabase, quinze tables indispensables (vrais dés, cartes, soirées, accès Éclat et registre privé) et l'existence des deux Edge
 Functions **avant** de créer le moindre compte de test. Toutes les requêtes du
 contrôle sont en lecture seule (sans RPC de jeu). Les réponses 404, erreurs
 serveur, clés incorrectes ou fonctions non protégées bloquent la recette.
@@ -97,3 +97,9 @@ La PR ne peut devenir non-brouillon et être publiée qu'une fois : branche à j
 - **Verrou de publication maintenu :** l'authentification réelle A/B, les lancers D6/D100, les réponses et la purge Auth sur un **projet Supabase de préproduction** distinct demeurent sans preuve finale; la PR #97 reste en brouillon et la fonction Studio n'est pas déployée en production.
 
 Prochain passage impératif : disposer d'un backend staging équipé des RPC LoveRoll, des migrations Studio et d'un administrateur de staging confirmé, puis exécuter la recette authentifiée manuelle sur le **SHA exact à publier**. Ne pas déclencher de dépenses Venice lors du test automatique. Ne jamais importer de comptes/paiements clients en staging.
+
+### Renforcement de la recette du 28 octobre — garde-fous sur le staging
+
+- Le précontrôle exige désormais les tables nécessaires aux **véritables D6, D100, cartes et soirées**, aux exemptions techniques Base/Éclat et au registre Studio, soit 15 tables au total. Un schéma contenant seulement les tables administratives n'est plus éligible.
+- La recette de suppression ne se contente plus de revoir le bouton « Créer » : elle attend l'**audit serveur de suppression terminée**, la disparition des deux iframes authentifiées et le retour du compteur de validation à **0/9**. C'est un contrôle de staging, pas une preuve actuellement exécutée.
+- Ne jamais assimiler les tests SQL/Node verts à une recette Supabase Auth A/B réellement passée.
