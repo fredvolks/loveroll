@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {studioSeat,studioAuthOptions,startStudioSeatLogin} from './studio-seat-auth.mjs';
 const src=readFileSync(new URL('studio-real-sandbox.mjs',import.meta.url),'utf8');
+const server=readFileSync(new URL('../supabase/functions/love-studio-sandbox/index.ts',import.meta.url),'utf8');
 test('seat must be an embedded A/B viewer',()=>{
  assert.equal(studioSeat('?studio_seat=A',true),'A');
  assert.equal(studioSeat('?studio_seat=B',true),'B');
@@ -171,4 +172,18 @@ test('nonowner seat B cannot invoke the couple-owned Venice provider',async()=>{
   type:'loveroll-studio-venice',seat:'B',action:'preview_three'
  }});
  assert.equal(called,false);
+});
+
+test('Studio Éclat progress comes from the real technical couple, not local browser state',()=>{
+ const queryStart=server.indexOf(".select('coffret_id,minutes,chapter_index,chapter_plan,started_at')");
+ assert.ok(queryStart>0,'official active Éclat columns must be queried');
+ const query=server.slice(queryStart,queryStart+300);
+ assert.ok(query.includes(".eq('couple_id',pool.couple_id)"));
+ assert.ok(query.includes(".eq('cancelled',false)"));
+ assert.ok(query.includes(".is('ended_at',null)"));
+ assert.ok(server.includes('eclat_active:eclatActive?'));
+ assert.ok(server.includes('eclatActive.chapter_plan.length'));
+ assert.ok(src.includes("studioEclatOverview(status,ECLAT_COFFRETS)"));
+ assert.ok(src.includes("item.dataset.state=coffret.state"));
+ assert.ok(!src.includes("localStorage.getItem('studio-eclat-progress'"));
 });
