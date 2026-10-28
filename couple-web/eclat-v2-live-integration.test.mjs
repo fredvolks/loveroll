@@ -12,7 +12,9 @@ test('all official 12 coffrets open in the real LoveRoll through a server-confir
  assert.match(app,/import \{createEclatV2PlayController\}/);
  assert.match(app,/const eclatV2Api=client\?createEclatV2SessionApi\(client\):null/);
  assert.match(app,/const value=await eclatV2Api\.status\(\)/);
- assert.match(app,/if\(\['PGRST202','42883'\]\.includes\(error\?\.code\)\)state\.eclatV2Status=null/);
+ assert.match(app,/if\(\['PGRST202','42883'\]\.includes\(error\?\.code\)\)\{/);
+ assert.match(app,/state\.eclatV2Status=null;state\.eclatV2OwnerId=null;state\.eclatV2CoupleId=null/);
+ assert.match(app,/disposeEclatV2Player\(\)/);
  assert.match(app,/if\(state\.eclatV2Status\?\.access===true&&!state\.eclat\?\.active\)\{/);
  assert.match(app,/const result=await eclatV2Api\.start\(\{coffretId:num,minutes:state\.eclatMinutes,/);
  assert.match(app,/result\.content_version!==2/);
@@ -37,7 +39,9 @@ test('two devices or one shared device are selectable, and leaving does not leak
  assert.match(app,/button\('eclat-v2:mode:two'/);
  assert.match(app,/button\('eclat-v2:mode:one'/);
  assert.match(app,/deviceMode:state\.eclatV2DeviceMode/);
- assert.match(app,/if\(state\.tab!=='eclat'\|\|!state\.user\|\|state\.passwordRecovery\)disposeEclatV2Player\(\)/);
+ assert.match(app,/if\(state\.tab!=='eclat'\|\|!state\.user\|\|state\.passwordRecovery\|\|/);
+ assert.match(app,/!verifiedLoveEmail\(state\.user\)\|\|!state\.profile\?\.birthday_md/);
+ assert.match(app,/!isSharedCoupleReady\(state\.coupleId,state\.members\)\)disposeEclatV2Player\(\)/);
  assert.match(app,/if\(state\.tab!=='eclat'\)\{disposeEclatV2Player\(\)/);
  assert.match(app,/if\(eclatV2Player\)\{eclatV2Player\.destroy\(\)/);
  assert.match(app,/eclatV2Poll=setInterval/);
