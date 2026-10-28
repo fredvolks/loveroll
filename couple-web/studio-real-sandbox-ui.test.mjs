@@ -19,6 +19,11 @@ test('Studio real sandbox uses existing secure platform gate and no standalone f
   assert.match(html,new RegExp('id="studio-real-jump-'+seat+'"'));
  }
  assert.match(css,/\.studio-real-jump/);
+ for(const seat of ['A','B'])assert.match(html,new RegExp('id="studio-real-seat-state-'+seat+'"'));
+ assert.match(js,/authenticatedSeats\.size===2/);
+ assert.match(js,/authenticatedSeats\.delete\(seat\)/);
+ assert.match(js,/showSeatConnection\(seat,'connected'\)/);
+ assert.doesNotMatch(js,/say\('Vraies sessions LoveRoll A et B disponibles/);
  assert.match(js,/createStudioRealSandbox/);
  assert.match(js,/realSandbox\.init/);
  assert.doesNotMatch(html,/id="sim-d100"|id="sim-d6-face-0"/);
