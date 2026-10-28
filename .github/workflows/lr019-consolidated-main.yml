@@ -1,4 +1,4 @@
-name: LR-019 consolidated five personal favorites (UI and PostgreSQL)
+name: LR-019 — cinq favoris communs et remplacement atomique (UI / PostgreSQL)
 on:
   pull_request:
     branches: [main]
