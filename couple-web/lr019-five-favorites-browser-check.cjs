@@ -55,7 +55,7 @@ const {revealSetting}=require('./settings-test-navigation.cjs');
    await page.locator('[data-action="favorite-toggle:SENSUEL:6"]').click();
    const modal=page.locator('.lr-favorite-cap-dialog');
    await modal.waitFor();
-   assert.match(await modal.locator('h2').innerText(),/déjà 5/);
+   assert.match(await modal.locator('h2').innerText(),/déjà 5/i);
    assert.equal(await modal.locator('.lr-favorite-cap-list li').count(),5);
    assert.equal(hearts.length,5,'sixth favorite not added');
    await modal.locator('[data-action="favorite-limit-replace:SENSUEL:2"]').click();
