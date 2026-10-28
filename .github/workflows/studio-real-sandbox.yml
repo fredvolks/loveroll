@@ -20,6 +20,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.5.6
+      - name: Type-check privileged Studio Supabase Edge Function
+        run: deno check supabase/functions/love-studio-sandbox/index.ts
       - name: All test app JavaScript syntax
         run: |
           node --check couple-web/app.js
