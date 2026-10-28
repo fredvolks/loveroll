@@ -9,6 +9,10 @@ declare
  session_id uuid;
 begin
  perform set_config('request.jwt.claim.sub',a::text,true);
+ update public.couples set challenge_cycle_pending=true where id=couple;
+ if (public.love_evening_invite_status(couple)->>'available')<>'false' then
+  raise exception 'Pending mandatory 200-card questionnaire must block invitation'; end if;
+ update public.couples set challenge_cycle_pending=false where id=couple;
  status_a:=public.love_evening_invite_status(couple);
  if status_a->>'state'<>'none' or status_a->>'available'<>'true' then
   raise exception 'A is eligible to invite: %',status_a;end if;
