@@ -35,6 +35,16 @@
 Code : `couple-web/studio-authenticated-e2e.cjs`.
 Workflow manuel : `.github/workflows/studio-authenticated-staging.yml`.
 
+**Contrôle bloquant ajouté :** `couple-web/studio-staging-preflight.mjs` vérifie
+la référence Supabase, huit tables essentielles et l'existence des deux Edge
+Functions **avant** de créer le moindre compte de test. Toutes les requêtes du
+contrôle sont en lecture seule (sans RPC de jeu). Les réponses 404, erreurs
+serveur, clés incorrectes ou fonctions non protégées bloquent la recette.
+Le projet Supabase distinct intitulé « Test » vérifié le 28 octobre contient
+uniquement des tables d'organisations, **pas** les RPC/tables LoveRoll : il ne
+suffit pas actuellement à la recette A/B. Ne pas y restaurer de données clients
+ni y exécuter de scripts de production sans configuration explicitement dédiée.
+
 Préparer un projet Supabase **distinct** de production : schéma LoveRoll compatible avec les vraies RPC, les migrations de base du Studio, `love_platform_admins`, la fonction `love-studio-sandbox`, l'administrateur de préproduction réellement confirmé et les restrictions RLS usuelles. **Ne jamais restaurer de comptes ou paiements clients dans ce projet.**
 
 Le backend de staging autorise l'origine `http://127.0.0.1:8765` seulement avec
