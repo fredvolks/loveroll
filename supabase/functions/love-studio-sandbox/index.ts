@@ -411,6 +411,12 @@ Deno.serve(async(req:Request)=>{
       return response({error:'Protection : suppression identité non-test interdite'},403);
     const {error:delError}=await service.auth.admin.deleteUser(id);
     if(delError)return response({error:'Suppression partielle, relancer la suppression de ce banc'},503);
+    // Never announce "deleted" based solely on deleteUser's HTTP 2xx.
+    // Verify absence in Auth; any unexpected response keeps the registry
+    // available for privileged recovery and cannot touch real customers.
+    const verified=await service.auth.admin.getUserById(id);
+    if(!canSkipAlreadyDeletedStudioUser(verified.error,'deleting',null))
+      return response({error:'Suppression Auth non confirmée; registre conservé'},503);
   }
   const {error:clearError}=await service.from('love_studio_test_pools')
     .delete().eq('admin_id',adminId);
