@@ -41,8 +41,11 @@ test('Rejects malformed references and supports legacy token links',()=>{
 
 test('Client guards against premature sign-in and wrong-account pairing',()=>{
  const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
- assert.ok(app.indexOf('if(!state.passwordRecovery&&(state.showDiscover||(pendingInvite&&!state.inviteAccepted)))')<
-  app.indexOf('if(!state.user||state.passwordRecovery){',app.indexOf('function render(){')));
+ const renderStart=app.indexOf('function render(){');
+ const invitationGate=app.indexOf('if(!state.passwordRecovery&&(state.showDiscover||(pendingInvite&&!state.inviteAccepted)))',renderStart);
+ const authUiGate=app.indexOf('if(!state.user||state.passwordRecovery){',invitationGate);
+ assert.ok(renderStart>=0&&invitationGate>renderStart&&authUiGate>invitationGate);
+ assert.doesNotMatch(app.slice(renderStart,invitationGate),/root\.innerHTML\s*=\s*authHtml\(/);
  assert.match(app,/if\(pendingInvite&&state\.user&&state\.coupleId\)/);
  assert.match(app,/verb==='switch-account-invite'/);
  assert.match(app,/accept_love_match_by_id/);
