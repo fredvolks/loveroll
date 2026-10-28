@@ -283,8 +283,10 @@ async function main(){
   const officialTitle=await page.locator(
    '#studio-real-challenge-list .studio-real-challenge-card h4').first().innerText();
   await page.locator('#studio-real-history-open').click();
-  await page.locator('#studio-real-history-count').getByText(/\\d+–\\d+ sur \\d+ défis/)
-   .waitFor({timeout:30000});
+  await page.waitForFunction(()=>{
+   const count=document.getElementById('studio-real-history-count')?.textContent||'';
+   return /^[0-9]+–[0-9]+ sur [0-9]+ défis$/.test(count.trim());
+  },null,{timeout:30000});
   assert.equal(await page.locator('#studio-real-challenge-list .studio-real-challenge-card h4')
    .first().innerText(),officialTitle,
    'full server history must display the already-confirmed real D100 card');
