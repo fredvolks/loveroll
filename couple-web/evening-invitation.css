@@ -1,0 +1,20 @@
+/* LR-028 · compact pearl/ruby invite, ahead of the real D6 and not a new game. */
+.lr-evening-invite{box-sizing:border-box;width:min(100% - 24px,600px);margin:10px auto 12px;
+ padding:14px 18px;border-radius:20px;
+ border:1px solid rgba(255,215,225,.42);
+ background:linear-gradient(135deg,rgba(81,16,43,.92),rgba(124,33,65,.9));
+ box-shadow:0 6px 22px rgba(25,0,10,.17);color:#fff8f6;text-align:center;
+ position:relative;z-index:2}
+.lr-evening-invite-label{display:block;font-size:.68rem;letter-spacing:.15em;font-weight:700;opacity:.9}
+.lr-evening-invite p{font-size:clamp(.98rem,2vw,1.18rem);font-weight:650;margin:7px auto;line-height:1.3}
+.lr-evening-invite small{display:block;font-size:.79rem;opacity:.9;line-height:1.45}
+.lr-evening-invite-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:11px 0 4px}
+.lr-evening-invite button{appearance:none;cursor:pointer;min-height:44px;border-radius:999px;
+ padding:9px 16px;font-size:.9rem;font-weight:700;line-height:1.25;max-width:100%;white-space:normal}
+.lr-evening-invite-primary{color:#641c36;background:#ffe0e6;border:1px solid #ffe8ed}
+.lr-evening-invite-secondary{background:transparent;border:1px solid rgba(255,233,236,.67);color:#fff}
+.lr-evening-invite button:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.lr-evening-invite button:disabled{opacity:.62;cursor:progress}
+@media(max-width:540px){.lr-evening-invite{padding:11px 12px;margin:8px auto;width:calc(100% - 18px)}
+ .lr-evening-invite-actions{gap:7px}.lr-evening-invite button{flex:1 1 42%;font-size:.83rem}}
+@media(prefers-reduced-motion:reduce){.lr-evening-invite *{animation:none!important;transition:none!important}}
