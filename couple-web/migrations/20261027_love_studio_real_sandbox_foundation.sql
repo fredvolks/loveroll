@@ -1,7 +1,9 @@
 -- LoveRoll • two real Supabase Auth sandbox accounts per authorized platform admin.
 -- This is FOUNDATION ONLY: no users are created by this migration.
 CREATE TABLE IF NOT EXISTS public.love_studio_test_pools (
-  admin_id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  -- Prevent orphan A/B Auth users if a platform administrator is removed.
+  -- The technical pair must be explicitly purged before deleting the owner.
+  admin_id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE RESTRICT,
   couple_id uuid UNIQUE REFERENCES public.couples(id) ON DELETE SET NULL,
   state text NOT NULL DEFAULT 'creating'
     CHECK (state IN ('creating','ready','deleting')),
