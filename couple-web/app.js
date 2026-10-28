@@ -2760,12 +2760,17 @@ async function handle(action,element){
    if(!Number.isInteger(num)||num<1||num>12)throw Error('Coffret inconnu');
    if(state.eclatV2OwnerId===state.user?.id&&state.eclatV2CoupleId===state.coupleId&&
       state.eclatV2Status?.access===true&&!state.eclat?.active){
+    // A genuine start may finish after an Auth account/couple switch.
+    // Never attach A's privileged session to B's new client-side identity.
+    const actorAtStart=state.user.id,coupleAtStart=state.coupleId;
     const result=await eclatV2Api.start({coffretId:num,minutes:state.eclatMinutes,
      deviceMode:state.eclatV2DeviceMode});
+    if(state.user?.id!==actorAtStart||state.coupleId!==coupleAtStart)
+     return; // discard the old account's late server response
     if(!result?.access||!result.active||result.content_version!==2)
      throw Error('Le serveur n’a pas ouvert de séance Éclat V2 officielle.');
     eclatV2StatusFence.invalidate();
-    state.eclatV2Status=result;state.eclatV2OwnerId=state.user.id;state.eclatV2CoupleId=state.coupleId;
+    state.eclatV2Status=result;state.eclatV2OwnerId=actorAtStart;state.eclatV2CoupleId=coupleAtStart;
     state.eclatBrowse=false;state.eclatDetails=false;state.eclatFinished=null;
     state.eclatV2FinaleDismissed=null;
     render();return;
