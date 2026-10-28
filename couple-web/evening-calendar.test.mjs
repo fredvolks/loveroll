@@ -183,22 +183,22 @@ test('LR-003 monthly headline counts only CLOSED evenings in the selected Toront
   sessions:entries,members:[{user_id:'a',name:'Partenaire'}],stats:outcomes,
   me:'a',month,selectedDate});
  const headline=html=>{
-  const match=html.match(/<div class="evening-cal-stats" aria-label="Bilan du mois affiché">([\\s\\S]*?)<\\/div>/);
+  const match=html.match(/<div class="evening-cal-stats" aria-label="Bilan du mois affiché">([\s\S]*?)<\/div>/);
   assert.ok(match,'headline totals are month-scoped and clearly labelled');
   return match[1];
  };
  const oct=headline(show('2026-10','2026-10-15'));
- assert.match(oct,/<strong>2<\\/strong> soirées clôturées ce mois/);
- assert.match(oct,/<strong>3<\\/strong> défis réalisés ce mois/);
- assert.match(oct,/<strong>1<\\/strong> non réalisés ce mois/);
+ assert.match(oct,/<strong>2<\/strong> soirées clôturées ce mois/);
+ assert.match(oct,/<strong>3<\/strong> défis réalisés ce mois/);
+ assert.match(oct,/<strong>1<\/strong> non réalisés ce mois/);
  // The open October evening is not a failure, and September is not October.
- assert.doesNotMatch(oct,/>12<\\/strong> défis réalisés/);
+ assert.doesNotMatch(oct,/>12<\/strong> défis réalisés/);
  const sep=headline(show('2026-09','2026-09-25'));
- assert.match(sep,/<strong>1<\\/strong> soirées clôturées ce mois/);
- assert.match(sep,/<strong>7<\\/strong> défis réalisés ce mois/);
- assert.match(sep,/<strong>2<\\/strong> non réalisés ce mois/);
+ assert.match(sep,/<strong>1<\/strong> soirées clôturées ce mois/);
+ assert.match(sep,/<strong>7<\/strong> défis réalisés ce mois/);
+ assert.match(sep,/<strong>2<\/strong> non réalisés ce mois/);
  const nov=headline(show('2026-11','2026-11-01'));
- assert.match(nov,/<strong>0<\\/strong> soirées clôturées ce mois/);
- assert.match(nov,/<strong>0<\\/strong> défis réalisés ce mois/);
- assert.match(nov,/<strong>0<\\/strong> non réalisés ce mois/);
+ assert.match(nov,/<strong>0<\/strong> soirées clôturées ce mois/);
+ assert.match(nov,/<strong>0<\/strong> défis réalisés ce mois/);
+ assert.match(nov,/<strong>0<\/strong> non réalisés ce mois/);
 });
