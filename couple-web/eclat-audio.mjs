@@ -12,7 +12,7 @@ const NOTES={
  finale:[220,293.66,369.99,440]
 };
 export function createEclatAudio(win=window){
- let ctx=null,master=null,tick=null,playing=false,mood='romantique',beat=0;
+ let ctx=null,master=null,tick=null,playing=false,mood='romantique',beat=0,generation=0;
  const AC=win.AudioContext||win.webkitAudioContext;
  function tone(freq,delay=0,duration=4.8,volume=.18){
   if(!ctx||!master)return;
@@ -38,7 +38,8 @@ export function createEclatAudio(win=window){
  return {
   isPlaying:()=>playing,
   async start(nextMood='romantique'){
-   if(!AC)return false;
+   if(!AC||win.document?.documentElement?.classList?.contains('lr-privacy-active'))return false;
+   const request=++generation;
    mood=nextMood;
    try{
     ctx=ctx||new AC();master=master||ctx.createGain();
@@ -46,12 +47,16 @@ export function createEclatAudio(win=window){
     if(!master.__connected){master.connect(ctx.destination);master.__connected=true;}
     master.gain.value=.12;
     await ctx.resume();
+    // A privacy mask/stop may occur while resume() waits on browser permission.
+    // Never restart a stopped or masked soundtrack after that asynchronous gap.
+    if(request!==generation||!ctx||win.document?.documentElement?.classList?.contains('lr-privacy-active'))return false;
     if(!playing){playing=true;beat=0;loop();tick=win.setInterval(loop,4200);}
     return true;
-   }catch{this.stop();return false;}
+   }catch{if(request===generation)this.stop();return false;}
   },
   setMood(next){if(NOTES[next])mood=next;},
   stop(){
+   generation++;
    playing=false;if(tick!==null){win.clearInterval(tick);tick=null;}
    try{if(master&&ctx){master.gain.setTargetAtTime(0,ctx.currentTime,.15);}}catch{}
    try{ctx?.close();}catch{}

@@ -29,6 +29,9 @@ export function startLoveRollPrivacy({doc=globalThis.document,storage=globalThis
   html.classList.toggle('lr-privacy-active',masked);
   if(masked){
    shield.removeAttribute('aria-hidden');
+   // Synchronous local signal: silence current Web Audio before the overlay takes focus.
+   // The timer, card and server state are never affected by this presentation event.
+   doc.dispatchEvent?.(new Event('loveroll:privacy-mask'));
    previousTitle=doc.title==='LoveRoll'?previousTitle:doc.title;
    doc.title='LoveRoll';
    if(app){app.inert=true;app.setAttribute('aria-hidden','true');}

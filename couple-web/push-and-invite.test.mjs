@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
 import {normalizeInviteEmail,composeInviteEmail} from './invite-email.mjs';
 import {notificationSettingsMarkup} from './push-notifications.mjs';
 
@@ -57,4 +58,30 @@ test('Native APK uses optional local weekly reminder, not unsupported WebView pu
  assert.match(java,/setAndAllowWhileIdle/);
  assert.match(manifest,/android\.permission\.POST_NOTIFICATIONS/);
  assert.match(manifest,/android\.permission\.RECEIVE_BOOT_COMPLETED/);
+});
+
+
+test('A malicious or erroneous push payload cannot expose private cards on lock screens',async()=>{
+ const sw=readFileSync(new URL('./service-worker.js',import.meta.url),'utf8');
+ const listeners={},shown=[];
+ const self={registration:{scope:'https://example.test/loveroll/',
+  showNotification:(title,options)=>{shown.push({title,options});return Promise.resolve();}},
+  addEventListener:(name,callback)=>{listeners[name]=callback;}};
+ vm.runInNewContext(sw,{self,URL});
+ for(const [tag,expectedBody] of [
+  ['weekly','Votre rituel de la semaine vous attend.'],
+  ['monthly','Une surprise à deux vous attend.'],
+  ['dangerous-private-tag','Votre espace à deux vous attend.']
+ ]){
+  let pending;
+  listeners.push({data:{json:()=>({tag,title:'Défi privé : valeur 42',
+   body:'Instructions sexuelles confidentielles du partenaire'})},waitUntil:promise=>{pending=promise;}});
+  await pending;
+  const shownPush=shown.at(-1);
+  assert.equal(shownPush.title,'LoveRoll ❤️');
+  assert.equal(shownPush.options.body,expectedBody);
+  assert.ok(!JSON.stringify(shownPush).includes('confidentielles'));
+  assert.ok(!JSON.stringify(shownPush).includes('valeur 42'));
+  assert.ok(shownPush.options.tag.startsWith('loveroll-'));
+ }
 });
