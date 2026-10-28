@@ -135,9 +135,7 @@ async function main(){
   await page.locator('#studio-venice-status-button').click();
   await page.waitForFunction(()=>{
    const text=document.querySelector('#studio-venice-status')?.textContent||'';
-   return !text.includes('Requête Venice en cours')&&
-    !text.includes('En attente du service officiel')&&
-    text.length>10;
+   return /Clé enregistrée|Ajoutez VENICE_API_KEY/.test(text);
   },null,{timeout:35000});
   assert.equal(await page.locator('#studio-venice-generate').isDisabled(),false,
    'paid Venice button exists but automated QA must not click it');
