@@ -100,6 +100,23 @@ BEGIN
  THEN
   RAISE EXCEPTION 'Private Studio audit ACL is unsafe';
  END IF;
+ IF has_table_privilege('anon','public.love_studio_test_pools','SELECT')
+ OR has_table_privilege('authenticated','public.love_studio_test_pools','UPDATE')
+ OR has_table_privilege('anon','public.love_studio_test_seats','SELECT')
+ OR has_table_privilege('authenticated','public.love_studio_test_seats','DELETE')
+ OR NOT has_table_privilege('service_role','public.love_studio_test_pools','DELETE')
+ THEN
+  RAISE EXCEPTION 'Private test identity registry grants are unsafe';
+ END IF;
+ IF has_function_privilege('anon',
+       'public.love_studio_purge_test_couple(uuid)','EXECUTE')
+ OR has_function_privilege('authenticated',
+       'public.love_studio_purge_test_couple(uuid)','EXECUTE')
+ OR NOT has_function_privilege('service_role',
+       'public.love_studio_purge_test_couple(uuid)','EXECUTE')
+ THEN
+  RAISE EXCEPTION 'Private purge may be invoked by a customer';
+ END IF;
 END $audit_security$;
 SELECT set_config('studio.test_role','service_role',false);
 INSERT INTO auth.users(id) VALUES
