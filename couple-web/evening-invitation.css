@@ -25,8 +25,8 @@
  background:#ffdae5;color:#68243f;font:700 .85rem system-ui,sans-serif;cursor:pointer}
 .lr-evening-inbox-open:focus-visible{outline:3px solid #fff;outline-offset:2px}
 @media(max-width:530px){.lr-evening-inbox{width:calc(100% - 16px);max-width:460px;gap:7px;padding:6px 7px 6px 10px;font-size:.77rem;
- bottom:calc(62px + env(safe-area-inset-bottom,0px))}.lr-evening-inbox-open{padding:7px 10px}}
-@media(max-width:530px) and (max-height:680px){.lr-evening-inbox{bottom:calc(57px + env(safe-area-inset-bottom,0px))}}
+ bottom:calc(70px + env(safe-area-inset-bottom,0px))}.lr-evening-inbox-open{padding:7px 10px}}
+@media(max-width:530px) and (max-height:680px){.lr-evening-inbox{bottom:calc(66px + env(safe-area-inset-bottom,0px))}}
 .lr-evening-invite-dot{display:inline-block;margin-inline-start:3px;color:#ffe6ee;font-size:.85em;vertical-align:middle}
 @media(max-width:540px){.lr-evening-invite{padding:11px 12px;margin:8px auto;width:calc(100% - 18px)}
  .lr-evening-invite-actions{gap:7px}.lr-evening-invite button{flex:1 1 42%;font-size:.83rem}}
