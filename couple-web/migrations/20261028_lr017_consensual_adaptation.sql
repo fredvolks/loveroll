@@ -5,6 +5,7 @@ BEGIN;
 CREATE TABLE IF NOT EXISTS public.love_challenge_adaptations(
  challenge_id uuid PRIMARY KEY REFERENCES public.couple_challenges(id) ON DELETE CASCADE,
  couple_id uuid NOT NULL REFERENCES public.couples(id) ON DELETE CASCADE,
+ session_id uuid NOT NULL REFERENCES public.couple_sessions(id) ON DELETE CASCADE,
  proposed_by uuid NOT NULL REFERENCES auth.users(id),
  proposed_text text,
  proposed_minutes integer,
@@ -21,14 +22,15 @@ CREATE TABLE IF NOT EXISTS public.love_challenge_adaptations(
   CHECK (proposed_minutes IS NULL OR proposed_minutes BETWEEN 1 AND 360)
 );
 CREATE INDEX IF NOT EXISTS love_adaptations_couple_created_idx
- ON public.love_challenge_adaptations(couple_id,created_at DESC);
+ ON public.love_challenge_adaptations(couple_id,session_id,created_at DESC);
 ALTER TABLE public.love_challenge_adaptations ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS love_adaptations_pair_read ON public.love_challenge_adaptations;
 CREATE POLICY love_adaptations_pair_read ON public.love_challenge_adaptations
  FOR SELECT TO authenticated USING (
    couple_private.is_member(couple_id)
    AND EXISTS (SELECT 1 FROM public.couple_challenges q
-    WHERE q.id=challenge_id AND q.couple_id=couple_id)
+    WHERE q.id=challenge_id AND q.couple_id=couple_id
+     AND q.session_id=session_id)
  );
 REVOKE ALL ON public.love_challenge_adaptations FROM public,anon,authenticated;
 GRANT SELECT ON public.love_challenge_adaptations TO authenticated;
@@ -79,8 +81,8 @@ BEGIN
   RAISE EXCEPTION 'Une proposition existe déjà pour ce défi';
  END IF;
  INSERT INTO public.love_challenge_adaptations(
-  challenge_id,couple_id,proposed_by,proposed_text,proposed_minutes)
- VALUES(p_challenge,v_couple,v_actor,v_text,p_minutes);
+  challenge_id,couple_id,session_id,proposed_by,proposed_text,proposed_minutes)
+ VALUES(p_challenge,v_couple,v_q.session_id,v_actor,v_text,p_minutes);
  RETURN jsonb_build_object('status','pending','created',true);
 END
 $fn$;
