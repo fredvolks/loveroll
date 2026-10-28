@@ -218,7 +218,7 @@ export function createStudioRealSandbox({client}){
    const last=Math.min((historyPage+1)*10,historyTotal);
    count.textContent=historyBusy?'Lecture des défis officiels…':
     historyError?'Lecture impossible : '+historyError:
-    first+'–'+last+' sur '+historyTotal+' défis';
+    first+'–'+last+' sur '+historyTotal+' défi'+(historyTotal===1?'':'s');
   }
   const previous=$('studio-real-history-prev'),next=$('studio-real-history-next');
   if(previous)previous.disabled=historyBusy||historyPage===0;
