@@ -26,7 +26,7 @@ const origin='http://127.0.0.1:8765';
      '<script type="module">import {adaptationPanelHtml,pendingAdaptationsHtml,acceptedAdaptationText} from "'+origin+'/challenge-adaptation.mjs";'+
      'const challenge={id:"challenge-1",status:"proposed"};'+
      'window.__clicked=[];document.addEventListener("click",e=>{const b=e.target.closest("[data-action]");if(b)window.__clicked.push(b.dataset.action)});'+
-     'window.__show=state=>{document.querySelector("#panel").innerHTML=adaptationPanelHtml(challenge,null,{open:state==="edit"});'+
+     'window.__show=state=>{document.querySelector("#panel").innerHTML=adaptationPanelHtml(challenge,null,{open:state==="edit",originalText:"Consigne originale à conserver entre nous, sans modification automatique.",originalMinutes:5});'+
      'document.querySelector("#inbox").innerHTML=pendingAdaptationsHtml(state==="pending"?[{challenge_id:"challenge-1",proposed_by:"alice",status:"pending",proposed_text:"Une variante douce à deux",proposed_minutes:20}]:[],"bob");'+
      'document.body.dataset.approved=acceptedAdaptationText("Original",state==="accepted"?{status:"accepted",proposed_text:"Approuvée"}:null)};'+
      'window.__show("edit");</script></body></html>'
@@ -35,6 +35,7 @@ const origin='http://127.0.0.1:8765';
    await page.waitForFunction(()=>typeof window.__show==='function');
    const panel=page.locator('.lr-adapt-panel');
    await panel.waitFor({state:'visible'});
+   assert.match(await panel.locator('.lr-adapt-original').innerText(),/Consigne originale à conserver/);
    const field=panel.locator('textarea');await field.fill('Une idée libre, à confirmer ensemble');
    const input=panel.locator('input');await input.fill('15');
    const metrics=await page.evaluate(()=>{
