@@ -17,7 +17,7 @@ export function studioAuthOptions(base,seat,storage){
 }
 export function startStudioSeatLogin(client,seat,{selfWindow,origin,reload=()=>selfWindow.location.reload(),navigate=()=>{}}={}){
  if(!seat||!selfWindow||selfWindow.parent===selfWindow)return ()=>{};
- let disposed=false,signingIn=false;
+ let disposed=false,signingIn=false,veniceRunning=false;
  const postSeatState=session=>{
   if(disposed)return;
   const user=session?.user;
@@ -52,6 +52,38 @@ export function startStudioSeatLogin(client,seat,{selfWindow,origin,reload=()=>s
    }catch{
     selfWindow.parent.postMessage({type:'loveroll-studio-navigate-error',seat},origin);
    }
+   return;
+  }
+  if(message.type==='loveroll-studio-venice'&&seat==='A'&&!veniceRunning){
+   const action=message.action;
+   if(!['status','get_latest_preview','preview_three'].includes(action))return;
+   veniceRunning=true;
+   const send=(data)=>selfWindow.parent.postMessage({
+    type:'loveroll-studio-venice-result',seat:'A',action,data
+   },origin);
+   try{
+    const {data:auth,error:authError}=await client.auth.getUser();
+    const user=auth?.user;
+    // Only the exact original technical owner seat may call the deployed
+    // couple-owned Venice bridge. No service role or JWT leaves the iframe.
+    if(authError||!user?.id||
+       user.app_metadata?.love_studio_test!==true||
+       !user.app_metadata?.love_studio_admin)
+      throw Error('Compte technique Venice non vérifié');
+    const {data:membership,error:membershipError}=await client
+      .from('couple_members').select('couple_id')
+      .eq('user_id',user.id).maybeSingle();
+    if(membershipError||!membership?.couple_id)
+      throw Error('Couple Venice technique introuvable');
+    const {data,error}=await client.functions.invoke('love-venice-bridge',{
+     body:{action,couple_id:membership.couple_id}
+    });
+    if(error||data?.error)throw Error(typeof data?.error==='string'
+     ?data.error:'Atelier Venice temporairement indisponible');
+    send({ok:true,result:data});
+   }catch(err){
+    send({ok:false,error:err instanceof Error?err.message:'Échec Venice'});
+   }finally{veniceRunning=false}
    return;
   }
   if(message.type!=='loveroll-studio-login'||typeof message.token_hash!=='string'||
