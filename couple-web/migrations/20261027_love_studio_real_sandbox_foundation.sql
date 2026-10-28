@@ -177,13 +177,19 @@ BEGIN
       ('couple_events','actor_id'),('couple_feedback','author_id'),
       ('couple_intimacy','author_id'),('couple_invitations','created_by'),
       ('couple_occasion_rolls','actor'),
+      ('love_all_dice_reset_audit','actor_id'),
       ('love_card_draw_history','recipient_user_id'),
       ('love_challenge_redraws','actor_id'),
+      ('love_cycle_excluded_cards','excluded_by'),
       ('love_custom_challenges','drawer_user_id'),
       ('love_custom_challenges','recipient_user_id'),
       ('love_cycle_responses','user_id'),
       ('love_eclat_sessions','started_by'),
-      ('love_monthly_reservations','host_user_id')
+      ('love_monthly_reservations','host_user_id'),
+      ('love_personal_sexual_cards','drawer_user_id'),
+      ('love_personal_sexual_cards','recipient_user_id'),
+      ('love_venice_preview_trials','requested_by'),
+      ('love_weekly_reset_audit','actor_id')
     ) AS known(table_name,actor_column) LOOP
       EXECUTE format(
         'SELECT EXISTS(
@@ -199,6 +205,24 @@ BEGIN
         RAISE EXCEPTION 'Auteur externe dans les données du jeu : suppression du banc interdite';
       END IF;
     END LOOP;
+    -- RESTRICT references also must never remove a real first or second
+    -- user from a paid-trial identity trail.
+    IF EXISTS (
+      SELECT 1 FROM public.love_couple_free_trials t
+      WHERE t.couple_id=v_pool.couple_id AND (
+       (t.first_user_id IS NOT NULL AND NOT EXISTS (
+         SELECT 1 FROM public.love_studio_test_seats s
+         WHERE s.admin_id=p_admin AND s.user_id=t.first_user_id
+       ))
+       OR (t.second_user_id IS NOT NULL AND NOT EXISTS (
+         SELECT 1 FROM public.love_studio_test_seats s
+         WHERE s.admin_id=p_admin AND s.user_id=t.second_user_id
+       ))
+      )
+    ) THEN
+      RAISE EXCEPTION 'Essai lié à un utilisateur réel : purge interdite'
+       USING ERRCODE='42501';
+    END IF;
     -- This NO ACTION FK must be cleared ONLY for registered synthetic users.
     DELETE FROM public.love_user_library_backup x
     WHERE x.source_couple_id=v_pool.couple_id AND EXISTS (
