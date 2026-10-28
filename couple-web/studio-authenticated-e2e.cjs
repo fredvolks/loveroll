@@ -278,6 +278,21 @@ async function main(){
   await page.locator('#studio-real-challenge-list .studio-real-card-meta')
    .filter({hasText:'accepted'}).first().waitFor({state:'visible',timeout:60000});
   console.log('Official challenge received and ACCEPTED by the true partner: PASS');
+  // Inspect the SAME persisted challenge through the full, read-only
+  // Super Admin history. This must NOT create another card or dice result.
+  const officialTitle=await page.locator(
+   '#studio-real-challenge-list .studio-real-challenge-card h4').first().innerText();
+  await page.locator('#studio-real-history-open').click();
+  await page.locator('#studio-real-history-count').getByText(/\\d+–\\d+ sur \\d+ défis/)
+   .waitFor({timeout:30000});
+  assert.equal(await page.locator('#studio-real-challenge-list .studio-real-challenge-card h4')
+   .first().innerText(),officialTitle,
+   'full server history must display the already-confirmed real D100 card');
+  await page.screenshot({
+   path:'studio-authenticated-e2e-proof/real-server-challenge-history.png',fullPage:true
+  });
+  await page.locator('#studio-real-history-close').click();
+  console.log('Official read-only challenge history matches the drawn real card: PASS');
   await page.selectOption('#studio-real-jump-A','special');
   await a.locator('[data-action="roll:monthly_activity"]').first().click({timeout:25000});
   await verified(4).waitFor({timeout:60000});
