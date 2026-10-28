@@ -53,3 +53,19 @@ test('LoveRoll app uses guard for both successful and refused Supabase V2 respon
  assert.match(app,/eclatV2StatusFence\.invalidate\(\);\s*state\.eclatV2Status=result/);
  assert.match(app,/eclatV2StatusFence\.invalidate\(\);\s*disposeEclatV2Player\(\);state\.eclatV2Status=null/);
 });
+
+
+test('switching Supabase accounts immediately removes the previous Premium player and sensitive state',()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const auth=app.slice(app.indexOf('client.auth.onAuthStateChange((event,session)=>{'),
+   app.indexOf('// Version probe bypasses'));
+ assert.match(auth,/state\.user\?\.id!==session\.user\.id/);
+ assert.match(auth,/eclatV2StatusFence\.invalidate\(\);\s*disposeEclatV2Player\(\)/);
+ assert.match(auth,/state\.eclatV2Status=null;state\.eclatV2OwnerId=null;state\.eclatV2CoupleId=null/);
+ assert.match(auth,/state\.coupleId=null;state\.couple=null;state\.members=\[\]/);
+ assert.match(auth,/state\.unlockKey=null;state\.personalPass=null;state\.personalJournal=\[\]/);
+ assert.match(auth,/root\.replaceChildren\(\)/);
+ assert.match(auth,/setTimeout\(\(\)=>reload\(\)\.catch\(fail\),0\)/);
+ assert.match(auth,/if\(event==='SIGNED_OUT'\)/);
+ assert.match(auth,/if\(event==='PASSWORD_RECOVERY'\)/);
+});
