@@ -70,6 +70,35 @@ export function createStudioRealSandbox({client}){
    try{sessionStorage.removeItem('loveroll-studio-auth-v1-'+seat)}catch{}
   }
  }
+ function renderAudit(){
+  const section=$('studio-real-audit'),list=$('studio-real-audit-list');
+  if(!section||!list)return;
+  const rows=Array.isArray(status?.audit)?status.audit.slice(0,8):[];
+  list.replaceChildren();
+  section.hidden=rows.length===0;
+  const titles={
+   create_requested:'Création du duo demandée',
+   create_succeeded:'Duo de test créé',
+   create_failed:'Création incomplète',
+   login_requested:'Connexion technique demandée',
+   delete_requested:'Suppression sécurisée demandée',
+   delete_completed:'Suppression du duo terminée',
+   delete_failed:'Suppression interrompue'
+  };
+  for(const event of rows){
+   const item=document.createElement('li');
+   const title=document.createElement('strong');
+   title.textContent=titles[event.action]||'Opération technique';
+   const time=document.createElement('time');
+   const date=new Date(event.created_at);
+   time.textContent=Number.isFinite(date.getTime())
+    ?new Intl.DateTimeFormat('fr-CA',{
+      timeZone:'America/Toronto',dateStyle:'short',timeStyle:'short'
+     }).format(date):'Date non disponible';
+   item.append(title,time);
+   list.append(item);
+  }
+ }
  function renderChallengeCards(){
   const section=$('studio-real-challenge-cards'),list=$('studio-real-challenge-list');
   if(!section||!list)return;
@@ -128,6 +157,7 @@ export function createStudioRealSandbox({client}){
    }
   }
   renderChallengeCards();
+  renderAudit();
   if(!isReady){closeFrames();return;}
   for(const seat of validSeats){
    const container=$('studio-real-frame-'+seat);
