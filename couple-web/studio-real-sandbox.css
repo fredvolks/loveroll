@@ -168,6 +168,16 @@ html.studio-real-fullscreen,html.studio-real-fullscreen body{overflow:hidden!imp
   border:1px solid #a76a84;border-radius:11px;color:#ffe2ed;
   font:600 12px/1.4 system-ui,sans-serif;background:#54263e
  }
+ .studio-layout .studio-mobile-shortcuts a{
+  display:flex;align-items:center;justify-content:center;text-align:center;
+  min-height:45px;min-width:0;padding:10px 7px;box-sizing:border-box;
+  border:1px solid #a76a84;border-radius:11px;color:#ffe2ed;
+  font:600 12px/1.4 system-ui,sans-serif;background:#54263e;
+  text-decoration:none;overflow-wrap:anywhere
+ }
+ .studio-layout .studio-mobile-shortcuts :is(button,a):focus-visible{
+  outline:2px solid #ffe6ad;outline-offset:2px
+ }
  .studio-layout .studio-mobile-shortcuts button.active{
   background:#8c405f;border-color:#f2b2ce;color:#fff
  }
