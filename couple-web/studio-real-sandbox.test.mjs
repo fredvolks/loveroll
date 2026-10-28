@@ -370,3 +370,87 @@ test('failed local Studio seat sign-out never reloads a still-authenticated ifra
   'owner console must be told that the technical sign-out failed');
  dispose();
 });
+
+
+test('Venice responses in flight never escape a disposed Studio seat or start late paid calls',async()=>{
+ const origin='https://fredvolks.github.io';
+ const adminUser={id:'technical-a',app_metadata:{
+  love_studio_test:true,love_studio_admin:'admin'
+ }};
+ const request_id='aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
+ for(const phase of ['auth','membership','bridge']){
+  let listener,release,entered,bridgeCalls=0;
+  const reached=new Promise(resolve=>{entered=resolve});
+  const pending=new Promise(resolve=>{release=resolve});
+  const results=[],parent={postMessage:message=>results.push(message)};
+  const selfWindow={
+   parent,location:{reload(){}},
+   addEventListener:(type,fn)=>{if(type==='message')listener=fn},
+   removeEventListener(){}
+  };
+  const gate=(at,normal)=>{
+   if(phase!==at)return Promise.resolve(normal);
+   entered();
+   return pending;
+  };
+  const client={
+   auth:{
+    getSession:async()=>({data:{session:null}}),
+    getUser:()=>gate('auth',{data:{user:adminUser},error:null})
+   },
+   from:table=>{
+    assert.equal(table,'couple_members');
+    return {select:()=>({eq:()=>({
+     maybeSingle:()=>gate('membership',{data:{couple_id:'qa-couple'},error:null})
+    })})};
+   },
+   functions:{invoke:async(name)=>{
+    assert.equal(name,'love-venice-bridge');
+    bridgeCalls++;
+    return gate('bridge',{data:{cards:[{title:'Private preview'}]},error:null});
+   }}
+  };
+  const dispose=startStudioSeatLogin(client,'A',{selfWindow,origin});
+  const request=listener({source:parent,origin,data:{
+   type:'loveroll-studio-venice',seat:'A',
+   action:'preview_three',request_id
+  }});
+  await reached;
+  dispose();
+  release(phase==='auth'?{data:{user:adminUser},error:null}:
+   phase==='membership'?{data:{couple_id:'qa-couple'},error:null}:
+    {data:{cards:[{title:'Private preview'}]},error:null});
+  await request;
+  assert.equal(bridgeCalls,phase==='bridge'?1:0,
+   'closing Studio before the bridge must prevent charging Venice');
+  assert.equal(results.some(item=>item.type==='loveroll-studio-venice-result'),false,
+   'private preview and old errors must not reach a closed admin seat');
+ }
+});
+
+test('teardown during a delayed navigation Auth read never activates the old game',async()=>{
+ const origin='https://fredvolks.github.io';
+ let listener,resolveAuth,navigations=0,calls=0;
+ const gate=new Promise(resolve=>{resolveAuth=resolve});
+ const parent={postMessage(){}};
+ const selfWindow={
+  parent,location:{reload(){}},
+  addEventListener:(name,handler)=>{if(name==='message')listener=handler},
+  removeEventListener(){}
+ };
+ const client={auth:{
+  getSession:()=>++calls===1?Promise.resolve({data:{session:null}}):gate
+ }};
+ const dispose=startStudioSeatLogin(client,'B',{selfWindow,origin,
+  navigate:async()=>{navigations++}
+ });
+ const request=listener({source:parent,origin,data:{
+  type:'loveroll-studio-navigate',seat:'B',tab:'session'
+ }});
+ dispose();
+ resolveAuth({data:{session:{user:{
+  id:'technical-b',app_metadata:{love_studio_test:true}
+ }}}});
+ await request;
+ assert.equal(navigations,0,'stale Auth callbacks must never navigate a closed game');
+});
