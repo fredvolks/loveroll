@@ -241,7 +241,7 @@ BEGIN
  insert into public.couple_events(couple_id,event_type,actor_id,title)
  values(s.couple_id,'challenge',auth.uid(),'Défi offert');
  return rowout;
-end;$function$
+end;$function$;
 
 CREATE OR REPLACE FUNCTION public.love_respond_and_redraw(p_challenge uuid, p_action text, p_exclude boolean DEFAULT false)
  RETURNS jsonb
@@ -443,6 +443,6 @@ BEGIN
   'already_processed',false
  );
 END;
-$function$
+$function$;
 
 COMMIT;
