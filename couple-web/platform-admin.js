@@ -2,7 +2,7 @@
 // Admin rights are verified by Supabase security-definer RPC on every write.
 import {createClient} from 'https://esm.sh/@supabase/supabase-js@2.57.0';
 import {CONFIG} from './config.js';
-import {createStudioRealSandbox} from './studio-real-sandbox.mjs?v=20261028-real288';
+import {createStudioRealSandbox} from './studio-real-sandbox.mjs?v=20261028-real289';
 import {createPromoAdmin} from './platform-promos.mjs?v=20261019-promo161';
 import {createGeoUsageAdmin} from './platform-geo-usage.mjs?v=20261019-geo165';
 const $=id=>document.getElementById(id);
