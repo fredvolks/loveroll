@@ -21,7 +21,6 @@ if(!/^[a-z0-9]{20}$/.test(params.ref)||params.ref===productionRef||
  throw Error('REFUSED: staging ref must be explicit and NEVER LoveRoll production');
 }
 const localApp='http://127.0.0.1:8765';
-const failOnError=()=>{};
 async function main(){
  const browser=await chromium.launch({headless:true});
  let page=null,created=false,cleanupSuccessful=false;
@@ -93,9 +92,25 @@ async function main(){
   await b.locator('[data-action="my-d6"]').first().click({timeout:25000});
   await verified(7).waitFor({timeout:60000});
   console.log('Real couple Soirée created, official D6 of both A/B: PASS');
-  await a.locator('[data-action="category:HASARD"]').first().click({timeout:25000});
-  await a.locator('[data-action="new-challenge"]').first().click({timeout:25000});
-  await a.locator('[data-confirm-action="yes"]').click({timeout:10000});
+  // The official paired-turn engine chooses WHO draws first. It might be
+  // B, never assume the owner A has the first card to give. Only an enabled
+  // official category control qualifies as evidence of whose turn it is.
+  const candidates=[a,b];
+  const firstTurn=await Promise.any(candidates.map(async (frame,index)=>{
+   await frame.locator('[data-action="category:HASARD"]:not([disabled])')
+    .first().waitFor({state:'visible',timeout:60000});
+   return index;
+  }));
+  const drawer=candidates[firstTurn];
+  await drawer.locator('[data-action="category:HASARD"]:not([disabled])')
+   .first().click({timeout:12000});
+  await drawer.locator('[data-action="new-challenge"]:not([disabled])')
+   .first().click({timeout:25000});
+  // Real D100 category confirmation is an actual <dialog>, which may
+  // disappear when the player has opted out in the true settings.
+  const confirmation=drawer.locator('dialog.lr-evening-category-dialog[open] [data-confirm-action="yes"]');
+  if(await confirmation.isVisible().catch(()=>false))
+   await confirmation.click({timeout:10000});
   await verified(8).waitFor({timeout:60000});
   console.log('Real Soirée D100 and official challenge server record: PASS');
   await page.selectOption('#studio-real-jump-A','special');
