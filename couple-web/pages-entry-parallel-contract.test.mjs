@@ -30,5 +30,5 @@ test('No formerly mandatory entry functional checks are skipped or duplicated',(
  assert.match(layout,/if ! node couple-web\/mobile-entry-visual-check\.cjs/);
  assert.doesNotMatch(core,/if ! node couple-web/);
  // The optional layout-only diagnostic does NOT mask other functional failures.
- assert.equal(layout.split('if ! node couple-web/).length-1,1);
+ assert.equal(layout.split('if ! node couple-web/').length-1,1);
 });
