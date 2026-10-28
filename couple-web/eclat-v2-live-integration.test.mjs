@@ -15,7 +15,8 @@ test('all official 12 coffrets open in the real LoveRoll through a server-confir
  assert.match(app,/if\(\['PGRST202','42883'\]\.includes\(error\?\.code\)\)\{/);
  assert.match(app,/state\.eclatV2Status=null;state\.eclatV2OwnerId=null;state\.eclatV2CoupleId=null/);
  assert.match(app,/disposeEclatV2Player\(\)/);
- assert.match(app,/if\(state\.eclatV2Status\?\.access===true&&!state\.eclat\?\.active\)\{/);
+ assert.match(app,/if\(state\.eclatV2OwnerId===state\.user\?\.id&&state\.eclatV2CoupleId===state\.coupleId&&/);
+ assert.match(app,/state\.eclatV2Status\?\.access===true&&!state\.eclat\?\.active\)\{/);
  assert.match(app,/const result=await eclatV2Api\.start\(\{coffretId:num,minutes:state\.eclatMinutes,/);
  assert.match(app,/result\.content_version!==2/);
  assert.match(app,/state\.eclat=await rpc\('love_eclat_start'/,
