@@ -1,6 +1,10 @@
 /* LR-017: a secondary, consent-first panel inside the real Soirée. */
 .lr-adapt-panel,.lr-adapt-inbox{box-sizing:border-box;color:#fff5f6;background:#4a1d30eb;
  border:1px solid #d5a2b3;border-radius:16px;padding:12px;margin:12px auto;line-height:1.4}
+.lr-adapt-original{max-height:36dvh;overflow-y:auto;padding:9px 10px;margin:8px 0;
+ border:1px solid #ffffff48;border-radius:12px;background:#270e19a8}
+.lr-adapt-original strong{font-size:.85rem}
+.lr-adapt-original p{white-space:pre-wrap;overflow-wrap:anywhere}
 .lr-adapt-panel h3{margin:0 0 8px;font-size:1.05rem}
 .lr-adapt-panel p,.lr-adapt-inbox p{margin:7px 0;font-size:.9rem}
 .lr-adapt-panel label{display:block;font-size:.85rem;margin:8px 0 4px}
