@@ -82,7 +82,8 @@ test('Editorial layout owns a fixed viewport with square personal dice and a par
 test('Two-step design locks challenges until both D6 and retains the ORIGINAL 3D engines',()=>{
  const wait=premiumEveningHtml({...base,status:{both_ready:false}});
  assert.match(wait,/Compléter l’étape 1 pour brasser le dé/);
- assert.match(wait,/data-action="new-challenge"[^>]*disabled/);
+ assert.doesNotMatch(wait,/data-action="new-challenge"/);
+ assert.match(wait,/class="evening-primary-status" role="status">Lance ton D6 pour continuer/);
  assert.equal((wait.match(/data-dice-sides="6"/g)||[]).length,1);
  const ready=premiumEveningHtml({...base,status:{both_ready:true,my_rolled:true,partner_rolled:true},
   rolls:[{user_id:'one',face:3},{user_id:'two',face:6}],
@@ -109,7 +110,8 @@ test('Step 1 shows partner D6 before mine and keeps Step 2 locked',()=>{
  assert.match(html,/class="evening-partner-result"/);
  assert.match(html,/<strong>5<\/strong>/);
  assert.match(html,/data-action="my-d6"/);
- assert.match(html,/data-action="new-challenge"[^>]*disabled/);
+ assert.doesNotMatch(html,/data-action="new-challenge"/);
+ assert.match(html,/class="evening-primary-status" role="status">Lance ton D6 pour continuer/);
  assert.doesNotMatch(html,/MON DÉ ·|evening-person/);
  assert.equal((html.match(/data-dice-sides="6"/g)||[]).length,2);
 });
