@@ -25,7 +25,8 @@ class Element {
  getAttribute(name){return this.attrs.get(name)||null;}
  addEventListener(name,callback){this.handlers[name]=callback;}
  click(){return this.handlers.click?.({preventDefault(){}});}
- append(child){child.parent=this;this.children.push(child);}
+ append(...children){for(const child of children){child.parent=this;this.children.push(child);}}
+ replaceChildren(...children){this.children=[];this.append(...children);}
  querySelector(tag){return this.children.find(node=>node.tagName===tag.toUpperCase())||null;}
  remove(){
   if(this.parent)this.parent.children=this.parent.children.filter(n=>n!==this);
@@ -45,7 +46,8 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
   'studio-real-delete','studio-real-refresh','studio-real-reset',
   'studio-show-seat-A','studio-show-seat-B','studio-real-expand-A','studio-real-expand-B',
   'studio-real-jump-A','studio-real-jump-B',
-  'studio-real-frame-A','studio-real-frame-B','studio-real-seat-state-A','studio-real-seat-state-B'])make(id);
+  'studio-real-frame-A','studio-real-frame-B','studio-real-seat-state-A','studio-real-seat-state-B',
+  'studio-real-challenge-cards','studio-real-challenge-list'])make(id);
  for(const s of ['A','B']){
   const title=new Element('div');title.classList.add('studio-real-frame-label');
   nodes.get('studio-real-frame-'+s).append(title);
@@ -78,8 +80,12 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
   assert.ok(a&&b,'two independent official LoveRoll iframes');
   assert.match(nodes.get('studio-real-diagnostics').textContent,/D6 Soirée A : 2/);
   assert.match(nodes.get('studio-real-diagnostics').textContent,/D100 Surprise : 47/);
-  assert.match(nodes.get('studio-real-diagnostics').textContent,/Joueur B · SENSUEL · D100 42/);
-  assert.match(nodes.get('studio-real-diagnostics').textContent,/Consigne issue de la base/);
+  const officialCards=nodes.get('studio-real-challenge-list').children;
+  assert.equal(nodes.get('studio-real-challenge-cards').hidden,false);
+  assert.equal(officialCards.length,1,'only actually saved cards are presented');
+  assert.match(officialCards[0].children[0].textContent,/Joueur B · SENSUEL · D100 42/);
+  assert.equal(officialCards[0].children[1].textContent,'Vraie carte de test');
+  assert.equal(officialCards[0].children[2].textContent,'Consigne issue de la base');
   assert.match(a.src,/studio_seat=A/);
   assert.match(b.src,/studio_seat=B/);
   assert.notEqual(a.src,b.src);
