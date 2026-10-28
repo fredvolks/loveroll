@@ -19,3 +19,32 @@ export function studioTestProgress(status,connectedSeats){
  const completed=steps.filter(step=>step.done).length;
  return {steps,completed,total:steps.length};
 }
+
+
+// Derived ONLY from the verified technical couple's official database status.
+// A completed coffret may be replayed, so "active" takes visual precedence.
+export function studioEclatOverview(status,coffrets){
+ const game=status?.ready===true&&!status?.game?.error?status.game:null;
+ const ids=new Set(coffrets.map(c=>c.id));
+ const completed=new Set((Array.isArray(game?.eclat_completed_coffrets)
+  ?game.eclat_completed_coffrets:[]).filter(id=>Number.isInteger(id)&&ids.has(id)));
+ const candidate=game?.eclat_active;
+ const activeId=Number.isInteger(candidate?.coffret_id)&&ids.has(candidate.coffret_id)
+  ?candidate.coffret_id:null;
+ const total=Number.isInteger(candidate?.chapter_total)&&candidate.chapter_total>=1&&candidate.chapter_total<=8
+  ?candidate.chapter_total:null;
+ const chapter=total!==null&&Number.isInteger(candidate?.chapter_index)&&
+  candidate.chapter_index>=1&&candidate.chapter_index<=total
+  ?candidate.chapter_index:null;
+ const minutes=[30,60,90].includes(candidate?.minutes)?candidate.minutes:null;
+ return {
+  verified:completed.size,activeId,
+  rows:coffrets.map(c=>{
+   const state=activeId===c.id?'active':completed.has(c.id)?'verified':'pending';
+   return {id:c.id,title:c.title,state,
+    chapter:state==='active'?chapter:null,
+    chapterTotal:state==='active'?total:null,
+    minutes:state==='active'?minutes:null};
+  })
+ };
+}
