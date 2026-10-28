@@ -40,7 +40,16 @@ export function startStudioSeatLogin(client,seat,{selfWindow,origin,reload=()=>s
   const message=event.data;
   if(!message||message.seat!==seat)return;
   if(message.type==='loveroll-studio-clear-seat'){
-   signingIn=true;await client.auth.signOut({scope:'local'});reload();return;
+   signingIn=true;
+   try{await client.auth.signOut({scope:'local'})}
+   catch{
+    // A failed local sign-out must never reload an old technical session.
+    signingIn=false;
+    if(!disposed)selfWindow.parent.postMessage({type:'loveroll-studio-seat-error',seat},origin);
+    return;
+   }
+   if(!disposed)reload();
+   return;
   }
   if(message.type==='loveroll-studio-navigate'){
    if(!['home','session','special','eclat','advent','settings','journal','personal-journal','occasions'].includes(message.tab))return;
@@ -102,6 +111,13 @@ export function startStudioSeatLogin(client,seat,{selfWindow,origin,reload=()=>s
    const {data,error}=await client.auth.verifyOtp({
     token_hash:message.token_hash,type:'magiclink'
    });
+   // The backend can finish verifying a one-time token after the operator
+   // has closed this seat, deleted the technical duo or signed out.
+   // Revoke its newly installed Auth session rather than resurrect the game.
+   if(disposed){
+    try{await client.auth.signOut({scope:'local'})}catch{}
+    return;
+   }
    // A valid OTP alone is not enough: never retain a regular customer's
    // Auth session in an administrator-controlled technical game iframe.
    if(error||!data?.session?.user?.id||
@@ -114,7 +130,7 @@ export function startStudioSeatLogin(client,seat,{selfWindow,origin,reload=()=>s
    // Always clear it locally before reporting an authentication failure.
    try{await client.auth.signOut({scope:'local'})}catch{}
    signingIn=false;
-   selfWindow.parent.postMessage({type:'loveroll-studio-seat-error',seat},origin);
+   if(!disposed)selfWindow.parent.postMessage({type:'loveroll-studio-seat-error',seat},origin);
   }
  };
  selfWindow.addEventListener('message',receive);
