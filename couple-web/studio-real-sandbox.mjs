@@ -129,7 +129,9 @@ export function createStudioRealSandbox({client}){
   const progress=studioEclatOverview(status,ECLAT_COFFRETS);
   grid.replaceChildren();
   counter.textContent=progress.verified+'/12 terminés'+
-   (progress.activeId?' · 1 en cours':'');
+   (progress.activeId?' · 1 en cours':'')+
+   (status?.game?.eclat_v2_unavailable?' · Lecture V2 indisponible':
+    status?.game?.eclat_v2_installed?' · Séances V2 connectées':'');
   for(const coffret of progress.rows){
    const item=document.createElement('div');
    item.classList.add('studio-real-eclat-coffret');
