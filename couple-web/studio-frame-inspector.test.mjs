@@ -43,7 +43,7 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
  const nodes=new Map();
  const make=id=>{const node=new Element('div',id);nodes.set(id,node);return node;};
  for(const id of ['studio-real-status','studio-real-views','studio-real-diagnostics','studio-real-check','studio-real-create',
-  'studio-real-delete','studio-real-refresh','studio-real-reset',
+  'studio-real-delete','studio-real-refresh','studio-real-reconnect','studio-real-reset',
   'studio-show-seat-A','studio-show-seat-B','studio-real-expand-A','studio-real-expand-B',
   'studio-real-jump-A','studio-real-jump-B',
   'studio-real-frame-A','studio-real-frame-B','studio-real-seat-state-A','studio-real-seat-state-B',
@@ -231,6 +231,14 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
    assert.equal(nodes.get('studio-real-frame-'+s).children.length,2,
     'the permanent header and full-screen control must survive refresh');
   }
+  // Explicit repair is different: it remounts actual client windows
+  // without touching the official server accounts or rolls.
+  nodes.get('studio-real-reconnect').click();
+  await wait();
+  assert.notEqual(getFrame('A'),a,'explicit reconnection remounts A only on request');
+  assert.notEqual(getFrame('B'),b,'explicit reconnection remounts B only on request');
+  assert.equal(nodes.get('studio-real-seat-state-A').dataset.state,'pending');
+  assert.equal(nodes.get('studio-real-seat-state-B').dataset.state,'pending');
   assert.ok(calls.filter(x=>x==='status').length>=2);
   assert.ok(!calls.includes('create')&&!calls.includes('delete'),
    'visual inspection and refresh must not alter live Supabase test accounts');
