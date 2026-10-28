@@ -8,6 +8,7 @@ DECLARE
  first uuid:='11111111-1111-4111-8111-111111111111';
  second uuid:='22222222-2222-4222-8222-222222222222';
  third uuid:='33333333-3333-4333-8333-333333333333';
+ fourth uuid:='44444444-4444-4444-8444-444444444444';
  v jsonb;
 BEGIN
  PERFORM set_config('request.jwt.claim.sub',a::text,true);
@@ -43,16 +44,47 @@ BEGIN
   RAISE EXCEPTION 'Other partner failed to approve: %',v;END IF;
  v:=public.love_adaptation_respond(first,true);
  IF v->>'updated'<>'false' THEN RAISE EXCEPTION 'Approval must be idempotent';END IF;
- -- B proposes plain text on a running challenge; no duration replacement.
+ -- B may propose TEXT ONLY on a started challenge. A duration change is
+ -- forbidden even when the other person would otherwise be able to accept.
  PERFORM set_config('request.jwt.claim.sub',b::text,true);
+ BEGIN
+  PERFORM public.love_adaptation_propose(second,'Minuterie modifiée',30);
+  RAISE EXCEPTION 'Unexpected permission to propose a new timer after start';
+ EXCEPTION WHEN others THEN
+  IF SQLERRM NOT LIKE 'La durée ne peut être adaptée%' THEN RAISE; END IF;
+ END;
  v:=public.love_adaptation_propose(second,'Autre texte',NULL);
  IF v->>'created'<>'true' THEN RAISE EXCEPTION 'Text-only proposal failed'; END IF;
  PERFORM set_config('request.jwt.claim.sub',a::text,true);
  v:=public.love_adaptation_respond(second,false);
  IF v->>'status'<>'declined' THEN RAISE EXCEPTION 'Declining must be free';END IF;
- -- A creates a new pending proposal to validate membership changes later.
+ -- A creates pending proposals for membership replacement and for an
+ -- interrupted consent: the partner must not approve a modified duration
+ -- after the official challenge has already started.
  PERFORM public.love_adaptation_propose(third,'Consentement privé',NULL);
-END $$;
+ PERFORM public.love_adaptation_propose(fourth,'Durée souhaitée',25);
+END $;
+RESET ROLE;
+-- Synthetic server transition: the challenge starts before B has approved.
+UPDATE public.couple_challenges SET status='accepted'
+ WHERE id='44444444-4444-4444-8444-444444444444';
+SET ROLE authenticated;
+DO $
+DECLARE
+ fourth uuid:='44444444-4444-4444-8444-444444444444';
+BEGIN
+ PERFORM set_config('request.jwt.claim.sub','bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb',true);
+ PERFORM set_config('request.jwt.claim.email_verified','true',true);
+ BEGIN
+  PERFORM public.love_adaptation_respond(fourth,true);
+  RAISE EXCEPTION 'Unexpected approval of timer changed after start';
+ EXCEPTION WHEN others THEN
+  IF SQLERRM NOT LIKE 'Impossible de modifier la minuterie%' THEN RAISE; END IF;
+ END;
+ IF (SELECT status FROM public.love_challenge_adaptations WHERE challenge_id=fourth)<>'pending' THEN
+  RAISE EXCEPTION 'Rejected mid-game timer approval mutated consent state';
+ END IF;
+END $;
 RESET ROLE;
 -- The original card is byte-for-byte unchanged, including its duration.
 DO $$
@@ -60,7 +92,7 @@ BEGIN
  IF EXISTS (SELECT 1 FROM public.couple_challenges WHERE
   card_description<>'Consigne officielle originale' OR card_timer_minutes<>5) THEN
   RAISE EXCEPTION 'A proposal or approval changed the original card';END IF;
- IF (SELECT count(*) FROM public.couple_challenges)<>3 OR
+ IF (SELECT count(*) FROM public.couple_challenges)<>4 OR
     (SELECT count(*) FROM public.couple_sessions)<>1 THEN
   RAISE EXCEPTION 'An adaptation created a new card/session';END IF;
 END $$;
