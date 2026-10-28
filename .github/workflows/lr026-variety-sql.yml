@@ -1,0 +1,52 @@
+name: LR-026 safe card variety — PostgreSQL 17
+on:
+  pull_request:
+    paths:
+      - 'couple-web/migrations/20261028_lr026_*.sql'
+      - 'couple-web/qa/lr026-*.sql'
+      - 'couple-web/qa/lr026-parse-generated.cjs'
+      - 'couple-web/lr026-variety-contract.test.mjs'
+      - '.github/workflows/lr026-variety-sql.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  isolated-variety-sql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: test-only
+          POSTGRES_DB: loveroll_lr026
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d loveroll_lr026"
+          --health-interval 5s
+          --health-timeout 4s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check source-preserved game contracts
+        run: node --test couple-web/lr026-variety-contract.test.mjs
+      - name: Verify actual PostgreSQL similarity, fallback and private permissions
+        env:
+          PGPASSWORD: test-only
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d loveroll_lr026 \
+            -f couple-web/qa/lr026-fixture.sql \
+            -f couple-web/migrations/20261028_lr026_variety_helper.sql \
+            -f couple-web/qa/lr026-acceptance.sql
+      - name: Parse BOTH real D100 / replacement PL/pgSQL function definitions
+        env:
+          PGPASSWORD: test-only
+        run: |
+          set -euo pipefail
+          node couple-web/qa/lr026-parse-generated.cjs |
+            psql -X -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d loveroll_lr026
