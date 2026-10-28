@@ -7,6 +7,8 @@ const workflow=readFileSync(new URL('../.github/workflows/studio-authenticated-s
 test('real A/B E2E cannot use production, requires a manual isolated staging project',()=>{
  assert.match(script,/const productionRef='ejsrqfpkgwraorrznjpm'/);
  assert.match(script,/params\.ref===productionRef/);
+ assert.ok(script.includes("!/^sb_publishable_[A-Za-z0-9_-]{12,}$/.test(params.key)"),
+  'the browser must never receive a secret or service-role key');
  assert.ok(script.includes('params.url!==`https://${params.ref}.supabase.co`'),
   'staging host must match the isolated project reference');
  assert.match(workflow,/workflow_dispatch/);
