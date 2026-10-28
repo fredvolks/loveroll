@@ -33,7 +33,7 @@ test('two real Auth users are generated without pre-known credentials',()=>{
  assert.doesNotMatch(source,/stripe\.checkout|payment_intent\.succeeded|fakePayment/);
 });
 test('seat auth uses official one-time magiclink and fixed registry',()=>{
- assert.match(source,/\.eq\('seat',seat\)\.maybeSingle\(\)/);
+ assert.match(source,/rows\?\.find\(r=>r\.seat===seat\)/);
  assert.match(source,/type:'magiclink'/);
  assert.match(source,/link\.properties\.hashed_token/);
  assert.match(source,/love_studio_admin!==adminId/);
