@@ -36,6 +36,10 @@
 .studio-real-frame{min-width:0;overflow:hidden;border:1px solid #a16784;background:#1e0c19;
  border-radius:16px;box-shadow:0 10px 25px #0003}
 .studio-real-frame-label{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:7px 13px;font-size:12px;font-weight:700;color:#ffd5e6}
+.studio-real-seat-state{border:1px solid #946279;border-radius:999px;padding:4px 9px;
+ color:#f6cfdf;background:#412338;font:600 11px/1.2 system-ui,sans-serif;white-space:nowrap}
+.studio-real-seat-state[data-state="connected"]{border-color:#7cbb9e;color:#d3f3e4;background:#1f493c}
+.studio-real-seat-state[data-state="error"]{border-color:#d9a37c;color:#ffe3c5;background:#573421}
 .studio-real-jump{flex:0 1 145px;min-width:105px;max-width:180px;min-height:38px;padding:6px 9px;border:1px solid #b47794;border-radius:9px;background:#3d2032;color:#ffe6f0;font:600 13px/1.2 system-ui,sans-serif}
 .studio-real-jump:focus-visible{outline:2px solid #ffe2b1;outline-offset:2px}
 .studio-real-frame-label{flex-wrap:wrap}
