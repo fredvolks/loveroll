@@ -282,7 +282,7 @@ export function createStudioRealSandbox({client}){
    if(!confirm('Supprimer les deux comptes techniques et toutes leurs données de test ? AUCUN compte réel ne sera touché.'))return;
    if(!confirm('Confirmer la suppression DÉFINITIVE du banc de test uniquement ?'))return;
    busy=true;say('Suppression sécurisée en cours…');closeFrames();
-   try{await request('delete');status={state:'missing',ready:false};display();say('Banc de test supprimé.')}
+   try{await request('delete');await refresh();say('Banc de test supprimé. Journal de sécurité à jour.')}
    catch(err){say(err.message);}
    finally{busy=false}
   });
