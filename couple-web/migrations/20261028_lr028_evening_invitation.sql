@@ -99,6 +99,11 @@ begin
  select * into row_inv from public.love_evening_invitations
   where couple_id=p_couple and local_day=today_qc;
  if found then
+  -- A member replaced during the same day must never obtain the former
+  -- couple's private invitation ID or response by invoking this RPC.
+  if sender not in (row_inv.sender_id,row_inv.recipient_id) then
+   raise exception 'Une invitation antérieure existe pour ce jour';
+  end if;
   return jsonb_build_object('id',row_inv.id,'status',row_inv.status,
    'created',false);
  end if;
@@ -183,10 +188,13 @@ begin
   available:=public.love_evening_invite_available(p_couple,partner);
   return jsonb_build_object('available',available,'state','none');
  end if;
+ -- SECURITY DEFINER bypasses RLS: verify this user's exact ownership.
+ if me not in (inv.sender_id,inv.recipient_id) then
+  return jsonb_build_object('available',false,'state','none');
+ end if;
  state_now:=inv.status;
  if inv.expires_at<=now() then state_now:='expired';
- elsif inv.status in ('pending','maybe','yes') and
-  not public.love_evening_invite_available(p_couple,inv.recipient_id)
+ elsif not public.love_evening_invite_available(p_couple,inv.recipient_id)
  then state_now:='obsolete';
  end if;
  return jsonb_build_object('available',false,'state',state_now,
