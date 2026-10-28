@@ -564,6 +564,16 @@ jobs:
             design-captures/coffrets-v184-*.png
             design-captures/coffrets-v184-*.json
           if-no-files-found: warn
+      - name: LR-028 — invitation and in-app fallback fit Android, iPad and PC
+        if: matrix.group == 'experience'
+        run: node couple-web/evening-invitation-browser-check.cjs
+      - name: Archive LR-028 invitation screenshots
+        if: always() && matrix.group == 'experience'
+        uses: actions/upload-artifact@v4
+        with:
+          name: LoveRoll-LR028-invite-${{ github.run_number }}
+          path: design-captures/lr028-*.png
+          if-no-files-found: warn
       - name: Verify end-of-evening 5-heart review on phone tablet and desktop
         if: matrix.group == 'experience'
         run: node couple-web/evening-review-browser-check.cjs
