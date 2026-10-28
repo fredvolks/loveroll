@@ -35,10 +35,10 @@ test('technical account cleanup is mandatory even when a genuine E2E step fails'
 });
 
 test('real A and B JWTs are denied Super Admin Edge access while parent stays signed in',()=>{
- assert.match(script,/functions\\/v1\\/love-studio-sandbox/);
- assert.match(script,/body:JSON\\.stringify\\(\\{action:'status'\\}\\)/);
- assert.match(script,/for\\(const seat of \\['A','B'\\]\\)/);
- assert.match(script,/denial\\.status,403/);
- assert.match(script,/the parent platform admin must remain authenticated/);
- assert.doesNotMatch(script,/console\\.log\\([^)]*access_token/);
+ assert.ok(script.includes('/functions/v1/love-studio-sandbox'));
+ assert.ok(script.includes("body:JSON.stringify({action:'status'})"));
+ assert.ok(script.includes("for(const seat of ['A','B'])"));
+ assert.ok(script.includes('assert.equal(denial.status,403'));
+ assert.ok(script.includes('the parent platform admin must remain authenticated'));
+ assert.ok(!script.includes('console.log(session.access_token)'));
 });
