@@ -1,5 +1,21 @@
 # LoveRoll — SUIVI OFFICIEL DU PROMPT MAÎTRE
 
+
+## Mise à jour vérifiée — travaux des 27–28 octobre 2026
+
+> **Attention :** les chantiers ci-dessous sont en **PR brouillon, pas publiés**. Les suites CI et les captures de navigateur ne remplacent pas une recette avec deux vrais comptes Supabase sur appareil réel. Ce résumé actualise les passages historiques plus bas; il ne modifie pas leurs cases de recette physique.
+
+| Chantier prioritaire | Travail réellement dans GitHub | Reste impératif avant « terminé » |
+| --- | --- | --- |
+| **LR-STUDIO-001 · Super Admin vrai jeu A/B** | [PR #97](https://github.com/fredvolks/loveroll/pull/97), deux comptes Supabase Auth indépendants et jetables, deux fenêtres du même LoveRoll, création/reprise/nouveau cycle/purge sécurisée en code, vrais états D6/D100/défis, 12 compteurs Éclat, atelier Venice, **historique complet des cartes officielles par pages de 10 et filtre A/B**. Contrôles Studio (SQL, contrats, captures synthétiques) et Venice verts au SHA `69b085f7`. | **Aucune recette authentifiée réelle staging exécutée**. Obtenir un projet de préproduction LoveRoll désigné (le projet nommé « Test » n'est pas un staging LoveRoll), installer la base et les Edge Functions, tester A/B/iPad/PC/mobile, abandon/reprise, facturation sandbox et suppression Auth/SQL puis intégrer/publier. |
+| **LR-ECLAT-001 · 12 coffrets Premium** | [PR #92](https://github.com/fredvolks/loveroll/pull/92), **12 coffrets × 8 scènes × 2 variantes codés en V2 isolé**, moteur, interface, contrôleur A/B et tests éditoriaux/PostgreSQL sur base éphémère verts au SHA `c1aa0833`. | V2 **non branché dans le vrai app.js**, migrations non installées sur LoveRoll production; essais réels A/B des 12 parcours et toutes leurs finales, accès Premium, esthétique, consentements, appareils et rollout réversible. |
+| **Android / mises à jour natives** | [PR #91](https://github.com/fredvolks/loveroll/pull/91), vérifications natives Android réussies; contrôle de signature **en échec** car `LOVEROLL_ANDROID_SIGNING` n'est pas un JSON valide dans GitHub Actions. | Remettre un secret structuré correct **sans l'afficher ni le committer**; surtout ne pas publier une APK sous un certificat neuf comme mise à jour silencieuse d'une ancienne signature. Vérifier la continuité et les appareils physiques. |
+| **LR-001 · D100 Soirée / Surprise** | [PR #101](https://github.com/fredvolks/loveroll/pull/101) déjà fusionnée/publiée, caméra ajustée pour parité visuelle ±3 %, tests automatiques Android/iPad réussis. | Vérification physique finale des dimensions, du socle et de la lisibilité de toutes les faces. |
+| **LR-019 · favoris et quotas** | PR empilées [#56 à #60](https://github.com/fredvolks/loveroll/pulls) encore en brouillon et non intégrées. | Réconcilier le texte historique « 5 communs » avec la directive plus récente **5 par personne**, puis sécuriser SQL, remplacements et historique avant fusion. |
+
+**Autres exigences à développer ou clôturer après ces lots :** Soirée temporaire Soft/Medium/Intense, 300 cartes et régénération Venice/quotas/paiement, LR-002/003 minuteries/calendrier, LR-016/017/018/026/027/028, Soirée Extra LR-045, Surprise/Geoapify, ambiance musicale, réglages/notifications Android, audit UX iPad/Android/iPhone/PC, matrices de tests et déploiements. Une PR ou une section écrite ne représente pas une livraison client.
+
+
 ## LR-001 — Régression : D100 Soirée plus petit que Surprise (27 octobre 2026)
 
 - **État : correction Web 247 fusionnée et publiée; tests Chromium de parité réussis sur Android et iPad. Essais physiques non réalisés.**
