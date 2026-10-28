@@ -1,7 +1,10 @@
 -- PostgreSQL 17 isolated fixture: no production user data or secrets.
 \set ON_ERROR_STOP on
-CREATE ROLE anon NOLOGIN;
-CREATE ROLE authenticated NOLOGIN;
+DO $roles$
+BEGIN
+ IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='anon') THEN CREATE ROLE anon NOLOGIN; END IF;
+ IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN CREATE ROLE authenticated NOLOGIN; END IF;
+END $roles$;
 CREATE SCHEMA auth;
 CREATE SCHEMA couple_private;
 CREATE TABLE auth.users(id uuid PRIMARY KEY);
