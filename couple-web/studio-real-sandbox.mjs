@@ -317,10 +317,12 @@ export function createStudioRealSandbox({client}){
     status={state:'missing',ready:false};
     display();
     await request('create');
+    statusSync.invalidate();
     tearingDown=false;
     await refresh();
     say('Nouveau couple de test A+B prêt. Les vrais dés et les quotas officiels repartent sur une nouvelle paire.');
    }catch(err){
+    statusSync.invalidate();
     tearingDown=false;
     say('Nouvel essai interrompu : '+err.message+' — vérifier le banc avant de recommencer.');
     try{await refresh()}catch{/* Preserve the error above. */}
@@ -333,10 +335,12 @@ export function createStudioRealSandbox({client}){
    busy=true;tearingDown=true;say('Suppression sécurisée en cours…');closeFrames();
    try{
     await request('delete');
+    statusSync.invalidate();
     tearingDown=false;
     await refresh();
     say('Banc de test supprimé. Journal de sécurité à jour.');
    }catch(err){
+    statusSync.invalidate();
     tearingDown=false;
     say(err.message);
     try{await refresh()}catch{/* Keep original deletion error. */}
