@@ -4,6 +4,8 @@ import {eveningInviteHtml,isEveningInviteAction,eveningInviteChanged} from './ev
 test('discreet invite only offered when verified server says available',()=>{
  assert.equal(eveningInviteHtml({state:'none',available:false}),'');
  assert.equal(eveningInviteHtml(null),'');
+ assert.equal(eveningInviteHtml({state:'obsolete',direction:'received'}),'');
+ assert.equal(eveningInviteHtml({state:'obsolete',direction:'sent'}),'');
  const html=eveningInviteHtml({state:'none',available:true});
  assert.match(html,/As-tu envie de jouer ce soir/);
  assert.match(html,/data-action="evening-invite:send"/);
@@ -26,7 +28,7 @@ test('escaping names and user feedback, no direct card text in invitation',()=>{
  assert.match(html,/&lt;img/);
 });
 test('sender sees polite response states with no resend button',()=>{
- for(const status of ['pending','yes','no','maybe','expired','obsolete','ignored']){
+ for(const status of ['pending','yes','no','maybe','expired','ignored']){
   const html=eveningInviteHtml({state:status,direction:'sent'},{partnerName:'Alex'});
   assert.ok(html.includes('lr-evening-invite'));
   assert.doesNotMatch(html,/evening-invite:send/);
