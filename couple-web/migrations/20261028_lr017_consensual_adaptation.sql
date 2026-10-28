@@ -31,6 +31,7 @@ CREATE OR REPLACE FUNCTION public.love_adaptation_pair_allowed(
 ) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=''
 AS $pair$
  SELECT auth.uid() IS NOT NULL
+  AND public.love_verified_identity()
   AND couple_private.is_member(p_couple)
   AND (SELECT count(*) FROM public.couple_members WHERE couple_id=p_couple)=2
   AND EXISTS(
