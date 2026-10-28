@@ -134,3 +134,18 @@ test('only a server-confirmed, completed V2 session keeps its finale after a red
  // A stopped/denied or V1 session is never promoted to a completed finale.
  assert.doesNotMatch(app,/v2\?\.active===false\?renderEclatV2PlayA/);
 });
+
+
+test('returning from Android/iPad background refreshes genuine server state at once, without polling while hidden',()=>{
+ const main=app.slice(app.indexOf('function renderEclat(){'),app.indexOf('function renderHome(){'));
+ assert.match(main,/const syncVisibleEclatV2=\(\)=>\{/);
+ assert.match(main,/if\(document\.hidden\|\|state\.tab!=='eclat'\|\|eclatV2Player!==currentPlayer\)return/);
+ assert.match(main,/currentPlayer\.refresh\(\)\.then\(refreshed=>/);
+ assert.match(main,/eclatV2Resume=\(\)=>\{if\(!document\.hidden\)syncVisibleEclatV2\(\);\}/);
+ assert.match(main,/document\.addEventListener\('visibilitychange',eclatV2Resume\)/);
+ assert.match(main,/eclatV2Poll=setInterval\(syncVisibleEclatV2,5000\)/);
+ assert.match(app,/if\(eclatV2Resume\)\{document\.removeEventListener\('visibilitychange',eclatV2Resume\);eclatV2Resume=null;\}/);
+ assert.match(main,/if\(!latest\.active\)\{[\s\S]*?document\.removeEventListener\('visibilitychange',eclatV2Resume\)/);
+ assert.match(main,/if\(state\.eclatV2OwnerId!==state\.user\?\.id\|\|\s*state\.eclatV2CoupleId!==state\.coupleId\)/);
+ assert.match(main,/if\(!latest\?\.access\)\{/);
+});
