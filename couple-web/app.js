@@ -1302,6 +1302,7 @@ function renderEclat(){
   }
   frame('<section class="eclat-v2-live" aria-label="Vrai coffret Éclat V2">'+
    '<div id="eclat-v2-live-player"></div>'+
+   '<p id="eclat-v2-sync-feedback" role="status" aria-live="polite" hidden></p>'+
    '<div class="eclat-v2-live-footer">'+
    button('tab:home','Retour à l’accueil · séance reprenable','class="subtle"')+
    '<span id="eclat-v2-finished-return" hidden>'+
@@ -1321,6 +1322,8 @@ function renderEclat(){
    if(document.hidden||state.tab!=='eclat'||eclatV2Player!==currentPlayer)return;
    currentPlayer.refresh().then(refreshed=>{
     if(!refreshed||eclatV2Player!==currentPlayer)return;
+    const feedback=root.querySelector('#eclat-v2-sync-feedback');
+    if(feedback){feedback.textContent='';feedback.hidden=true;}
     const latest=currentPlayer.getStatus();
     // The parent app is not allowed to resurrect an older chapter the next
     // time its ordinary navigation/settings renderer runs.
@@ -1349,6 +1352,11 @@ function renderEclat(){
      // app-level redraw can mount the previously cached Premium scene.
      state.eclatV2Status={access:false,active:false};
      disposeEclatV2Player();render();return;
+    }
+    const feedback=root.querySelector('#eclat-v2-sync-feedback');
+    if(feedback){
+     feedback.textContent='Connexion momentanément interrompue. La progression du partenaire sera revérifiée automatiquement.';
+     feedback.hidden=false;
     }
     console.warn('Actualisation Éclat V2',error?.code||'');
    });
