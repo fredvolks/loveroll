@@ -180,3 +180,19 @@ test('LoveRoll 184 loads the final coffret visual fidelity skin',()=>{
  assert.ok(layer.includes('eclat-tile-arrow'));
  assert.ok(layer.includes('ritual-mode-premium'));
 });
+
+
+test('LR-019 preserves the shipped Android notification handling and D100 parity while refreshing their caches',()=>{
+ assert.ok(app.includes('push-notifications.mjs?v='+appTag),
+  'current notification logic must remain imported and receive a fresh cache key');
+ assert.ok(app.includes('dice3d.js?v='+appTag),
+  'official D100 camera/face renderer must remain imported with a fresh cache key');
+ assert.ok(html.includes('lr001-d100-entry-parity-v244.css?v=20261027-lr001-parity247'),
+  'preserve published equality of Soirée and Surprise D100 sizes');
+ assert.ok(sw.includes('./lr001-d100-entry-parity-v244.css'),
+  'preserve the D100 asset in the offline shell');
+ assert.ok(app.includes('love_favorites_capabilities'),
+  'five personal hearts require actual server capabilities');
+ assert.ok(app.includes('favorite-limit-add'),
+  'sixth heart must use the official server-guarded replacement path');
+});
