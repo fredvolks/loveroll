@@ -51,3 +51,16 @@ test('client can safely run against old servers; two devices refresh without mod
  assert.match(sync,/query\('love_challenge_adaptations'/);
  assert.match(sync,/state\.adaptOpen/);
 });
+
+test('LR-002 timer deadline cannot auto-complete after an agreed changed duration',()=>{
+ assert.match(app,/function resetStaleAdaptationTimer\(challengeId,saved=undefined\)/);
+ assert.match(app,/adaptedTimerDurationMs\(row\)/);
+ assert.match(app,/needsAdaptedTimerReset\(row,stored\.durationMs\)/);
+ assert.match(app,/writeSavedChallengeTimer\(key,fresh\)/);
+ assert.match(app,/autoCompletePending:false/);
+ assert.match(app,/if\(resetStaleAdaptationTimer\(id\)\)return; \/\/ Old expiry/);
+ assert.match(app,/if\(resetStaleAdaptationTimer\(item\.id,saved\)\)continue;/);
+ assert.match(app,/function endSignal\(\)\{\s*if\(resetStaleAdaptationTimer\(challengeTimer\.id\)\)return;/);
+ assert.match(app,/function activeTimer\(challenge,minutes\)\{\s*resetStaleAdaptationTimer\(challenge\.id\);/);
+ assert.match(app,/function updateChallengeClock\(\)[\s\S]*?if\(resetStaleAdaptationTimer\(challengeTimer\.id\)\)return;/);
+});
