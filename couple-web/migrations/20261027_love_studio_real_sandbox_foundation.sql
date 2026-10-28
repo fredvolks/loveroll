@@ -55,6 +55,19 @@ BEGIN
       RAISE EXCEPTION 'Propriétaire ou duo test non vérifié : suppression bloquée'
        USING ERRCODE='42501';
     END IF;
+    -- The Studio is billing-exempt and must never initiate a real Stripe
+    -- charge. Retain any unexpected provider-backed financial record for
+    -- manual investigation rather than silently cascade-delete evidence.
+    IF EXISTS (SELECT 1 FROM public.love_monthly_paid_entitlements p
+       WHERE p.couple_id=v_pool.couple_id)
+     OR EXISTS (SELECT 1 FROM public.love_annual_discount_settlements p
+       WHERE p.couple_id=v_pool.couple_id)
+     OR EXISTS (SELECT 1 FROM public.love_promo_redemptions p
+       WHERE p.couple_id=v_pool.couple_id)
+    THEN
+      RAISE EXCEPTION 'Écriture financière détectée : purge de test bloquée'
+       USING ERRCODE='42501';
+    END IF;
     IF EXISTS(
       SELECT 1 FROM public.couple_members cm
       WHERE cm.couple_id=v_pool.couple_id AND NOT EXISTS(
@@ -169,6 +182,7 @@ BEGIN
       ('love_custom_challenges','drawer_user_id'),
       ('love_custom_challenges','recipient_user_id'),
       ('love_cycle_responses','user_id'),
+      ('love_eclat_sessions','started_by'),
       ('love_monthly_reservations','host_user_id')
     ) AS known(table_name,actor_column) LOOP
       EXECUTE format(
