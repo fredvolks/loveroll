@@ -66,3 +66,17 @@ Le contrôleur `eclat-v2-play-controller.mjs` purge désormais les données **é
 Les erreurs de réseau transitoires (p. ex. HTTP 503) ne sont **pas** interprétées comme une révocation : elles laissent la séance et les saisies locales intactes pour permettre une reprise. Une réponse de polling périmée ne peut pas supplanter une action serveur plus récente.
 
 Tests de régression ajoutés pour ces scénarios au fichier `eclat-v2-play-controller.test.mjs`. **Leurs résultats CI doivent être vérifiés au dernier SHA**; cela ne constitue toujours pas une preuve de recette réelle A/B sur préproduction ni une autorisation de déployer V2.
+
+
+## Nouvelle passerelle V2 dans l'application officielle — Web 251 (28 octobre)
+
+**Codé en PR, non fusionné, non publié :**
+
+- `couple-web/app.js` charge maintenant l'API et le contrôleur **réels** des 12 coffrets V2; une interrogation authentifiée `love_eclat_v2_status` décide si le moteur V2 est disponible au couple. Si la fonction manque (PGRST202/42883), le jeu actuel V1 et son RPC `love_eclat_start` restent inchangés. **Aucun droit Premium n'est fabriqué par le navigateur ou par le mode de test.**
+- Une fiche de coffret V1 existante affiche la sélection claire **« Deux téléphones · A et B » / « Un téléphone partagé »** uniquement si le serveur a autorisé V2; le bouton officiel de démarrage route alors vers `love_eclat_v2_start` avec le coffret, la durée et le mode sélectionnés. Le serveur reste seul juge des droits, du démarrage, des variantes et des actions.
+- Une séance V2 active est rendue dans **la même navigation LoveRoll** avec `createEclatV2PlayController`, ses véritables actions RPC et une actualisation distante toutes les 5 secondes. Le contrôleur est détruit à la sortie de l'écran, à la déconnexion et lorsque la séance se termine : pas de compteur fictif ni de secret partenaire conservé.
+- En mode un téléphone, seul le compte ayant lancé la séance peut afficher les deux faces avec l'écran de passation volontaire; le compte B voit un message sans mission privée et n'est jamais usurpé. Une V1 déjà active conserve la priorité pour que les défis en cours restent terminables avant tout démarrage V2.
+- L'index original charge les styles `eclat-v2-stage.css`. Les étiquettes d'assets, `web-version.json`, `app.js`, `index.html` et le cache service worker sont alignés sur **Web 251** sur cette branche.
+- Test `eclat-v2-live-integration.test.mjs` ajouté au workflow Éclat V2 pour empêcher la disparition du repli V1, le contournement des droits, les faux statuts et les divergences de version.
+
+**Étapes encore indispensables :** validation des nouveaux jobs GitHub **sur le SHA exact**, migration V2 sur un Supabase LoveRoll *staging* séparé, vrais tests A/B 12 coffrets à 30/60/90 minutes, reprise avec deux appareils/partage, paiement Stripe test, contrôle UX sur iPad/Android/PC. Ne pas passer cette PR à « prêt à publier » ni appliquer SQL en production sans ces preuves. La version Web 251 en branche doit être réconciliée avec le main actuel et l'autre PR de rotation PWA (#105).
