@@ -158,7 +158,7 @@ Deno.serve(async(req:Request)=>{
      })),
      eclat_enabled:entitlement?.enabled===true&&
        (!entitlement.ends_at||new Date(entitlement.ends_at).getTime()>Date.now()),
-     eclat_completed_coffrets:[...new Set((eclatFinished||[])
+     eclat_completed_coffrets:[...new Set<number>((eclatFinished||[])
        .map((r:{coffret_id:number})=>r.coffret_id)
        .filter((id:number)=>Number.isInteger(id)&&id>=1&&id<=12))]
        .sort((a,b)=>a-b)
