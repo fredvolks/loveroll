@@ -80,3 +80,12 @@ Tests de régression ajoutés pour ces scénarios au fichier `eclat-v2-play-cont
 - Test `eclat-v2-live-integration.test.mjs` ajouté au workflow Éclat V2 pour empêcher la disparition du repli V1, le contournement des droits, les faux statuts et les divergences de version.
 
 **Étapes encore indispensables :** validation des nouveaux jobs GitHub **sur le SHA exact**, migration V2 sur un Supabase LoveRoll *staging* séparé, vrais tests A/B 12 coffrets à 30/60/90 minutes, reprise avec deux appareils/partage, paiement Stripe test, contrôle UX sur iPad/Android/PC. Ne pas passer cette PR à « prêt à publier » ni appliquer SQL en production sans ces preuves. La version Web 251 en branche doit être réconciliée avec le main actuel et l'autre PR de rotation PWA (#105).
+
+
+## Raccordement au véritable jeu et sécurité des rafraîchissements — 28 octobre, Web 251
+
+- Le fichier principal `couple-web/app.js` utilise maintenant les **vrais** contrôleurs `createEclatV2SessionApi` et `createEclatV2PlayController` lorsqu'une réponse **authentifiée du serveur** confirme `access:true` pour V2. Les 12 fiches, durées 30/60/90 et modes deux téléphones / un téléphone sont accessibles depuis la galerie d'origine. En l'absence de la RPC V2, la version V1 conserve ses fonctions et son chemin officiel.
+- Le parent conserve un éditeur V2 authentifié déjà monté lorsque le **même utilisateur, le même couple et le même identifiant de séance** sont présents. Un rerender non pertinent ne détruit donc plus les saisies privées en cours. La garde pure est dans `eclat-v2-live-ownership.mjs`, couverte par des tests Node.
+- Un refus d'autorisation ou le remplacement de la séance efface les données privées du contrôleur **et l'état V2 mis en cache dans le parent**. La fermeture est aussi forcée en cas de perte d'identité vérifiée ou de duo incomplet. Les erreurs réseau temporaires ne sont pas traitées comme des révocations.
+- Le manifeste, les imports, la feuille CSS, la page d'entrée et le cache PWA sont alignés sur Web 251 **dans cette branche**, qui n'est pas fusionnée.
+- **Reste bloqué avant publication :** la PR #92 est actuellement non fusionnable avec `main` (modifications nouvelles depuis le départ de la branche), le dernier SHA n'a pas encore de preuve CI complète, les fonctions PostgreSQL V2 ne sont pas installées sur un environnement de préproduction LoveRoll dédié, et la recette deux comptes Auth / appareils physiques n'a pas eu lieu. Ne pas forcer le merge ou la migration de production.
