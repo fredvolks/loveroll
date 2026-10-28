@@ -96,6 +96,7 @@ SET ROLE authenticated;
 DO $$
 DECLARE
  self_draw uuid:='55555555-5555-4555-8555-555555555555';
+ unapproved_self_draw uuid:='66666666-6666-4666-8666-666666666666';
  v jsonb;
 BEGIN
  PERFORM set_config('request.jwt.claim.sub','aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',true);
@@ -113,6 +114,13 @@ BEGIN
   RAISE EXCEPTION 'Second partner cannot approve self-drawn adaptation'; END IF;
  IF (SELECT count(*) FROM public.couple_challenges WHERE id=self_draw)<>0 THEN
   RAISE EXCEPTION 'Adaptation approval revealed private self-drawn challenge'; END IF;
+ PERFORM set_config('request.jwt.claim.sub','aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',true);
+ PERFORM public.love_adaptation_propose(unapproved_self_draw,'Accord uniquement avec B',NULL);
+ -- The second self-drawn proposal stays pending until after B is replaced.
+ IF (SELECT consent_partner_id FROM public.love_challenge_adaptations
+     WHERE challenge_id=unapproved_self_draw)
+    IS DISTINCT FROM 'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb'::uuid THEN
+  RAISE EXCEPTION 'Consent must be pinned to original member B'; END IF;
 END $$;
 RESET ROLE;
 -- The original card is byte-for-byte unchanged, including its duration.
@@ -121,13 +129,14 @@ BEGIN
  IF EXISTS (SELECT 1 FROM public.couple_challenges WHERE
   card_description<>'Consigne officielle originale' OR card_timer_minutes<>5) THEN
   RAISE EXCEPTION 'A proposal or approval changed the original card';END IF;
- IF (SELECT count(*) FROM public.couple_challenges)<>5 OR
+ IF (SELECT count(*) FROM public.couple_challenges)<>6 OR
     (SELECT count(*) FROM public.couple_sessions)<>2 THEN
   RAISE EXCEPTION 'An adaptation created a new card/session';END IF;
 END $$;
 -- A closed evening must reject even a previously pending proposal.
 -- The respondent RPC holds the active session row until its decision commits.
-UPDATE public.couple_sessions SET finished_at=now();
+UPDATE public.couple_sessions SET finished_at=now()
+ WHERE id='eeeeeeee-eeee-4eee-eeee-eeeeeeeeeeee';
 SET ROLE authenticated;
 DO $$
 DECLARE
@@ -158,10 +167,18 @@ DECLARE
  a uuid:='aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa';
  c uuid:='cccccccc-cccc-4ccc-cccc-cccccccccccc';
  third uuid:='33333333-3333-4333-8333-333333333333';
+ unapproved_self_draw uuid:='66666666-6666-4666-8666-666666666666';
 BEGIN
  PERFORM set_config('request.jwt.claim.sub',c::text,true);
  IF (SELECT count(*) FROM public.love_challenge_adaptations)<>0 THEN
   RAISE EXCEPTION 'Replacement partner can read prior private proposal';END IF;
+ IF (SELECT count(*) FROM public.love_challenge_adaptations
+    WHERE challenge_id=unapproved_self_draw)<>0 THEN
+  RAISE EXCEPTION 'Replacement partner read self-drawn adaptation';END IF;
+ BEGIN
+  PERFORM public.love_adaptation_respond(unapproved_self_draw,true);
+  RAISE EXCEPTION 'Replacement partner approved self-drawn adaptation';
+ EXCEPTION WHEN insufficient_privilege THEN NULL; END;
  BEGIN
   PERFORM public.love_adaptation_respond(third,true);
   RAISE EXCEPTION 'Replacement partner accepted a former pair proposal';
