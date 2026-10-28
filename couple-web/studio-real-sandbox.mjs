@@ -202,7 +202,10 @@ export function createStudioRealSandbox({client}){
   const section=$('studio-real-challenge-cards'),list=$('studio-real-challenge-list');
   if(!section||!list)return;
   const game=status?.game;
-  const available=status?.ready===true&&!game?.error&&Array.isArray(game?.challenge_preview);
+  // Historical retrieval remains usable when an unrelated dice/Éclat
+  // snapshot is temporarily unavailable. Its own privileged endpoint
+  // independently verifies the registered A/B pair.
+  const available=status?.ready===true;
   section.hidden=!available;
   const openButton=$('studio-real-history-open'),nav=$('studio-real-history-nav');
   if(openButton){openButton.hidden=!available||historyOpen;openButton.disabled=historyBusy;}
@@ -222,13 +225,16 @@ export function createStudioRealSandbox({client}){
   if(next)next.disabled=historyBusy||(historyPage+1)*10>=historyTotal||historyPage>=999;
   list.replaceChildren();
   if(!available)return;
-  const cards=historyOpen?historyCards:game.challenge_preview.slice(0,3);
+  const cards=historyOpen?historyCards:
+   (Array.isArray(game?.challenge_preview)?game.challenge_preview.slice(0,3):[]);
   if(!cards?.length){
    const empty=document.createElement('p');
    empty.classList.add('studio-real-card-empty');
    empty.textContent=historyBusy?'Lecture de l’historique réel…':
     historyError?'Historique indisponible. Réessaie.':
-    historyOpen?'Aucun défi dans cette page.':'Aucun défi tiré dans la dernière soirée.';
+    historyOpen?'Aucun défi dans cette page.':game?.error?
+    'Résumé des défis indisponible : ouvre l’historique officiel ci-dessus.':
+    'Aucun défi tiré dans la dernière soirée.';
    list.append(empty);return;
   }
   for(const card of cards){
