@@ -17,8 +17,6 @@ import java.net.URL;
 import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.time.LocalDate;
-import java.time.ZoneId;
 import java.util.Locale;
 
 public final class UpdateManager {
@@ -27,11 +25,17 @@ public final class UpdateManager {
  // in a separate lineage so old users do not receive an incompatible APK.
  private static final String PREFIX="loveroll-newsign-v";
  private static final String API="https://api.github.com/repos/"+REPO+"/releases?per_page=50";
- private static boolean working=false;
+ // A short, successful-check cooldown prevents GitHub API bursts while
+ // still discovering a native release published later on the same day.
+ private static final long CHECK_INTERVAL_MS=30L*60L*1000L;
+ private static volatile boolean working=false;
  public static void check(Activity a,boolean quiet){
   SharedPreferences prefs=a.getSharedPreferences("des_a_deux_game",Activity.MODE_PRIVATE);
-  String today=LocalDate.now(ZoneId.of("America/Montreal")).toString();
-  if(quiet&&today.equals(prefs.getString("last_success","")))return;
+  long now=System.currentTimeMillis();
+  long last=prefs.getLong("last_success_ms",0L);
+  // Manual "Check updates" always bypasses this silent cooldown. A clock
+  // correction backwards never blocks updates indefinitely.
+  if(quiet&&last>0L&&now>=last&&now-last<CHECK_INTERVAL_MS)return;
   if(working)return;
   working=true;
   new Thread(()->{
@@ -54,7 +58,7 @@ public final class UpdateManager {
       if(best==null||compare(current,version)>0){best=release;asset=item;version=current;}
      }
     }
-    prefs.edit().putString("last_success",today).apply();
+    prefs.edit().putLong("last_success_ms",System.currentTimeMillis()).apply();
     if(best==null||asset==null){if(!quiet)toast(a,"Aucune version publiée pour LoveRoll.");return;}
     if(compare(version,BuildConfig.VERSION_NAME)<=0){
      if(!quiet)toast(a,"LoveRoll est à jour (v"+BuildConfig.VERSION_NAME+").");return;
