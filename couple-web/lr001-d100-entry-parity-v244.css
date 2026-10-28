@@ -58,3 +58,21 @@
     }
   }
 }
+
+/* LR-001 PHONE CENTRING: Soirée's page inset is 14px while Surprise's
+   WebGL scene uses the full viewport. The oversized canvas formerly
+   overflowed from the inset's left edge, placing its Ruby centre at x+14.
+   Expand the existing die host to viewport width and centre it without
+   adding any transform to .love3d-stage (the real 3D marble contact owns
+   stage.style.transform=translateY from dice3d.js). */
+@layer loveroll-soiree-template {
+ @media (max-width:767px) {
+  #app.loveroll-evening-page .evening-premium-view.is-inactive.has-home-soiree-template
+  .evening-finale-dice>.love3d {
+   position:relative!important;
+   width:100vw!important;
+   max-width:none!important;
+   left:calc(50% - 50vw)!important;
+  }
+ }
+}
