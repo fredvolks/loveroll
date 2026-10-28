@@ -234,8 +234,8 @@ export function createStudioRealSandbox({client}){
    meta.classList.add('studio-real-card-meta');
    const face=Number.isInteger(card.face)?String(card.face):'—';
    const seat=validSeats.includes(card.seat)?card.seat:'?';
-   const date=new Date(card.created_at);
-   const at=historyOpen&&Number.isFinite(date.getTime())
+   const date=typeof card.created_at==='string'?new Date(card.created_at):null;
+   const at=historyOpen&&date&&Number.isFinite(date.getTime())
     ?' · '+new Intl.DateTimeFormat('fr-CA',{
       timeZone:'America/Toronto',dateStyle:'short',timeStyle:'short'
      }).format(date):'';
@@ -331,6 +331,9 @@ export function createStudioRealSandbox({client}){
     status.state==='invalid'?'Sécurité : les comptes de test ne correspondent plus au duo enregistré. Connexion et lecture des cartes bloquées; supprimer ce banc avec précaution.':
     'Suppression de banc de test à terminer.');
    display();
+   // When a real game RPC writes a new challenge, keep an already-open
+   // history synchronized with the fresh server snapshot.
+   if(historyOpen&&!historyBusy)loadChallengeHistory(historyPage);
   }
  );
  const refresh=()=>statusSync.refresh();
