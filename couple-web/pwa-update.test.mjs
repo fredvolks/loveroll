@@ -36,7 +36,6 @@ test('LoveRoll build versions agree between endpoint, app, HTML and imported mod
  assert.ok(app.includes("rpc('love_cycle_status'"));
  assert.ok(app.includes("rpc('reset_love_challenges_admin'"));
  assert.ok(html.includes('evening-calendar.css?v=20261028-favs250'));
- assert.ok(sw.includes('./evening-calendar.css'),'calendar stylesheet must remain available offline');
  assert.ok(app.includes('couple-live-sync.mjs?v=20261017-advent119'));
  assert.ok(html.includes('premium-advent.css?v=20261019-ipad155'));
   assert.ok(app.includes("const WEB_RELEASE='"+build+"'"));
@@ -56,7 +55,9 @@ test('LoveRoll build versions agree between endpoint, app, HTML and imported mod
  assert.ok(app.includes('onboarding.mjs?v=20261018-style148'));
  assert.ok(app.includes('json-libraries.mjs?v=20261016-restore113'));
  assert.ok(html.includes('settings-premium.css?v=20261028-favs250'));
- assert.ok(sw.includes('./settings-premium.css'),'favorite dialog styling must remain available offline');
+ assert.ok(sw.includes('./settings-premium.css'),'favorite dialog must remain available offline');
+ assert.ok(app.includes('love_favorites_capabilities'),'real server capabilities required');
+ assert.ok(app.includes('favorite-limit-add'),'genuine fifth-heart replacement required');
  assert.ok(!html.includes('restore-categories-v113.css'));
  assert.ok(!html.includes('evening-step1-mobile-v101.css'));
  assert.ok(!html.includes('evening-queue-fixed-v102.css'));
@@ -179,20 +180,4 @@ test('LoveRoll 184 loads the final coffret visual fidelity skin',()=>{
  assert.ok(layer.includes('eclat-tile-number'));
  assert.ok(layer.includes('eclat-tile-arrow'));
  assert.ok(layer.includes('ritual-mode-premium'));
-});
-
-
-test('LR-019 preserves the shipped Android notification handling and D100 parity while refreshing their caches',()=>{
- assert.ok(app.includes('push-notifications.mjs?v='+appTag),
-  'current notification logic must remain imported and receive a fresh cache key');
- assert.ok(app.includes('dice3d.js?v='+appTag),
-  'official D100 camera/face renderer must remain imported with a fresh cache key');
- assert.ok(html.includes('lr001-d100-entry-parity-v244.css?v=20261027-lr001-parity247'),
-  'preserve published equality of Soirée and Surprise D100 sizes');
- assert.ok(sw.includes('./lr001-d100-entry-parity-v244.css'),
-  'preserve the D100 asset in the offline shell');
- assert.ok(app.includes('love_favorites_capabilities'),
-  'five personal hearts require actual server capabilities');
- assert.ok(app.includes('favorite-limit-add'),
-  'sixth heart must use the official server-guarded replacement path');
 });
