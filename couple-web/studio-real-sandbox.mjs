@@ -334,6 +334,13 @@ export function createStudioRealSandbox({client}){
    // A pre-delete diagnostic must never resurrect an old pair while the
    // authorized SQL/Auth cleanup or replacement is still in flight.
    if(tearingDown||!active)return;
+   // A second admin tab can replace the same technical pair. An old
+   // authenticated A/B iframe must NEVER be re-labelled as the new pair,
+   // nor retain challenge history from the previous technical identities.
+   const pairSignature=entry=>Array.isArray(entry?.seats)&&entry.seats.length===2
+    ?entry.seats.map(row=>row.seat+':'+row.user_id).sort().join('|'):null;
+   if(status?.ready&&value?.ready&&pairSignature(status)!==pairSignature(value))
+    closeFrames();
    status=value;
    say(status.ready?(authenticatedSeats.size===2?'Joueurs A et B connectés au vrai LoveRoll.':'Couple de test prêt. Connexion des joueurs A et B en cours…'):
     status.state==='missing'?'Aucun couple de test. Crée un duo pour jouer.':
