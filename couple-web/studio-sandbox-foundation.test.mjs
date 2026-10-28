@@ -48,7 +48,11 @@ test('only registered test couples and identities are eligible for deletion',()=
  assert.match(schema,/public\.love_studio_test_pools/);
  assert.match(schema,/public\.love_studio_test_seats/);
  assert.match(schema,/auth\.role\(\) IS DISTINCT FROM 'service_role'/);
- assert.match(schema,/Membre réel détecté/);
+ assert.match(schema,/owner_seat\.seat='A'/);
+ assert.match(schema,/owner_seat\.user_id=c\.owner_user_id/);
+ assert.match(schema,/count\(\*\) FROM public\.love_studio_test_seats s/);
+ assert.match(schema,/Propriétaire ou duo test non vérifié : suppression bloquée/);
+  assert.match(schema,/Membre réel détecté/);
  assert.match(schema,/public\.love_user_library_backup/);
  assert.match(schema,/Lien vers un utilisateur ou un couple réel/);
  assert.match(schema,/public\.couple_rolls r/);
