@@ -25,7 +25,6 @@ function serviceKey(){
   return typeof value==='string'?value:''}catch{return ''}
 }
 type Seat='A'|'B';
-type RegistrySeat={seat:Seat,user_id:string|null,synthetic_email:string};
 const seatName=(value:unknown):Seat|null=>value==='A'||value==='B'?value:null;
 Deno.serve(async(req:Request)=>{
  if(req.method==='OPTIONS')return new Response(null,{status:204,headers});
@@ -247,9 +246,14 @@ Deno.serve(async(req:Request)=>{
     ?'Un banc de test existe déjà pour ce Super Admin':'Réservation impossible'},reservationError.code==='23505'?409:503);
   const ids:string[]=[];let newCouple:string|null=null;
   try{
-    const rows:RegistrySeat[]=[];
     for(const s of ['A','B'] as Seat[]){
       const email='loveroll-studio-'+crypto.randomUUID()+'@example.invalid';
+      // Durable reservation precedes Auth: if the Auth API succeeds but the
+      // following DB update fails, a service-only SQL recovery can find ONLY
+      // this exact synthetic email + immutable admin-owned Auth app metadata.
+      const {error:reserveSeatError}=await service.from('love_studio_test_seats')
+        .insert({admin_id:adminId,seat:s,user_id:null,synthetic_email:email});
+      if(reserveSeatError)throw Error('Réservation du joueur test impossible');
       const {data:created,error:authError}=await service.auth.admin.createUser({
         email,email_confirm:true,
         password:crypto.randomUUID()+'!'+crypto.randomUUID(),
@@ -258,10 +262,11 @@ Deno.serve(async(req:Request)=>{
       });
       if(authError||!created.user)throw Error('Création du compte technique indisponible');
       ids.push(created.user.id);
-      rows.push({seat:s,user_id:created.user.id,synthetic_email:email});
-      const {error:seatError}=await service.from('love_studio_test_seats')
-        .insert({admin_id:adminId,...rows.at(-1)});
-      if(seatError)throw Error('Inscription du joueur test impossible');
+      const {data:registered,error:seatError}=await service.from('love_studio_test_seats')
+        .update({user_id:created.user.id}).eq('admin_id',adminId).eq('seat',s)
+        .eq('synthetic_email',email).is('user_id',null).select('user_id').single();
+      if(seatError||registered?.user_id!==created.user.id)
+        throw Error('Inscription du joueur test impossible');
     }
     const {data:couple,error:coupleError}=await service.from('couples')
       .insert({owner_user_id:ids[0]}).select('id').single();
@@ -302,7 +307,8 @@ Deno.serve(async(req:Request)=>{
     if(eclatError)throw Error('Accès Éclat de test indisponible');
     const {error:finishError}=await service.from('love_studio_test_pools')
       .update({couple_id:newCouple,state:'ready',updated_at:new Date().toISOString()})
-      .eq('admin_id',adminId);
+      .eq('admin_id',adminId).eq('state','creating')
+      .select('state').single();
     if(finishError)throw Error('Finalisation du duo test impossible');
     try{await auditStudio('create_succeeded')}catch{/* Requested event retained. */}
     return response({ready:true,state:'ready',seats:[{seat:'A',ready:true},{seat:'B',ready:true}]});
@@ -322,12 +328,17 @@ Deno.serve(async(req:Request)=>{
           if(orphanError)throw orphanError;
         }
       }
+      const recovered=await service.rpc('love_studio_recover_pending_seats',{p_admin:adminId});
+      if(recovered.error)throw Error('Identités de test en attente : registre conservé');
       const purge=await service.rpc('love_studio_purge_test_couple',{p_admin:adminId});
       if(!purge.error){
         // Never erase the registry while a technical Auth identity might
         // still exist. Keeping it allows retry by this exact Super Admin.
         let identitiesClean=true;
-        for(const id of ids){
+        const cleanupIds=new Set([...ids,...(Array.isArray(recovered.data)
+          ?recovered.data.map((row:{user_id:string|null})=>row.user_id).filter(Boolean) as string[]
+          :[])]);
+        for(const id of cleanupIds){
           const result=await service.auth.admin.getUserById(id);
           if(result.error){identitiesClean=false;continue;}
           if(!result.data?.user)continue;
@@ -351,9 +362,20 @@ Deno.serve(async(req:Request)=>{
  // really belong to this studio sandbox. A corrupted registry must never
  // initiate any deletion (including a database-level cascade).
  const {data:deletePool,error:deletePoolError}=await service.from('love_studio_test_pools')
-  .select('state,couple_id').eq('admin_id',adminId).maybeSingle();
+  .select('state,couple_id,created_at').eq('admin_id',adminId).maybeSingle();
  if(deletePoolError)return response({error:'Banc de test indisponible'},503);
  if(!deletePool)return response({error:'Aucun banc de test à supprimer'},404);
+ // An Auth createUser request can still be in flight, so never delete a fresh
+ // 'creating' registry out from under it: that would orphan a brand-new user.
+ const createdAt=Date.parse(deletePool.created_at);
+ if(deletePool.state==='creating'&&
+    (!Number.isFinite(createdAt)||Date.now()-createdAt<5*60*1000))
+   return response({error:'Création technique en cours : nettoyage refusé tant que l’opération peut être active'},409);
+ if(deletePool.state==='creating'||deletePool.state==='deleting'){
+   const {error:recoveryError}=await service.rpc(
+    'love_studio_recover_pending_seats',{p_admin:adminId});
+   if(recoveryError)return response({error:'Récupération des identités techniques impossible : registre conservé'},503);
+ }
  const {data:registered,error:registeredError}=await service.from('love_studio_test_seats')
   .select('seat,user_id').eq('admin_id',adminId);
  if(registeredError)return response({error:'Registre de test indisponible'},503);
