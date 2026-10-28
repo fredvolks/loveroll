@@ -17,7 +17,8 @@ if(!params.ref||!params.url||!params.key||!params.email||!params.password){
  throw Error('Staging Supabase, publishable key and staging platform-admin credentials are required');
 }
 if(!/^[a-z0-9]{20}$/.test(params.ref)||params.ref===productionRef||
-   params.url!==`https://${params.ref}.supabase.co`){
+   params.url!==`https://${params.ref}.supabase.co`||
+   !/^sb_publishable_[A-Za-z0-9_-]{12,}$/.test(params.key)){ 
  throw Error('REFUSED: staging ref must be explicit and NEVER LoveRoll production');
 }
 // Hard-block production before loading a browser dependency or making a request.
