@@ -1,12 +1,13 @@
 // Read-only QA milestones; derived exclusively from server-provided game state.
 // Never fabricate rolls/cards or mark a scenario as passed from navigation alone.
 export function studioTestProgress(status,connectedSeats){
- const game=status?.ready?status.game:null;
+ const validPair=status?.ready===true;
+ const game=validPair&&!status.game?.error?status.game:null;
  const hasFace=value=>Number.isInteger(value)&&value>=1&&value<=100;
  const logged=seat=>connectedSeats?.has?.(seat)===true;
  const steps=[
   {key:'pair',title:'Duo technique A+B créé',done:status?.ready===true},
-  {key:'auth',title:'Les deux vrais joueurs connectés',done:logged('A')&&logged('B')},
+  {key:'auth',title:'Les deux vrais joueurs connectés',done:validPair&&logged('A')&&logged('B')},
   {key:'weekly',title:'D6 hebdomadaire enregistré',done:hasFace(game?.weekly_face)&&game.weekly_face<=6},
   {key:'surprise',title:'D100 Surprise enregistré',done:hasFace(game?.monthly_face)},
   {key:'evening',title:'Soirée officielle démarrée',done:game?.session==='open'||game?.session==='finished'},
