@@ -1,6 +1,9 @@
 import {readFileSync} from 'node:fs';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
+// CI's established Settings suite also executes the unified notifications
+// behavior tests, so this Web-only fix cannot pass via skipped test files.
+import './notification-unified-settings.test.mjs';
 
 const read=name=>readFileSync(new URL(name,import.meta.url),'utf8');
 const app=read('./app.js');
