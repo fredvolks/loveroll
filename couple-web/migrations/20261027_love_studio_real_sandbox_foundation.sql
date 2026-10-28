@@ -21,6 +21,21 @@ REVOKE ALL ON public.love_studio_test_pools FROM PUBLIC,anon,authenticated;
 REVOKE ALL ON public.love_studio_test_seats FROM PUBLIC,anon,authenticated;
 GRANT SELECT,INSERT,UPDATE,DELETE ON public.love_studio_test_pools,public.love_studio_test_seats TO service_role;
 
+-- Separate private audit, retained after technical pairs are deleted.
+-- Only structured action names: no customer data, emails, token hashes, or passwords.
+CREATE TABLE IF NOT EXISTS public.love_studio_test_audit (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  admin_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  action text NOT NULL CHECK (action IN (
+    'create_requested','create_succeeded','create_failed',
+    'login_requested','delete_requested','delete_completed','delete_failed'
+  )),
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE public.love_studio_test_audit ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.love_studio_test_audit FROM PUBLIC,anon,authenticated;
+GRANT SELECT,INSERT ON public.love_studio_test_audit TO service_role;
+
 -- Entirely privileged deletion: the service backend supplies its VERIFIED admin id;
 -- direct browser access is revoked. All target IDs come from the registry.
 CREATE OR REPLACE FUNCTION public.love_studio_purge_test_couple(p_admin uuid)
