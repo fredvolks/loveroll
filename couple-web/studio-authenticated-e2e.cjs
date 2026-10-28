@@ -58,6 +58,40 @@ async function main(){
   await page.locator('#dashboard').waitFor({state:'visible',timeout:25000});
   assert.equal(await page.locator('#gate').isVisible(),false,
    'only a real platform admin may enter the dashboard');
+  // Check REAL V1 RPC availability as the signed-in staging admin before
+  // creating even one disposable Auth account. Table presence alone is not
+  // sufficient: partial staging restores frequently omit gameplay functions.
+  // Only read-only RPCs; never invoke start/roll/paid provider during preflight.
+  const rpcReadiness=await page.evaluate(async probe=>{
+   const stored=localStorage.getItem('sb-'+probe.ref+'-auth-token');
+   let session=null;
+   try{session=JSON.parse(stored||'null')}catch{}
+   if(!session?.access_token)return [{name:'admin-session',status:0,valid:false}];
+   const tests=[
+    {name:'love_eclat_status',valid:data=>data&&typeof data.access==='boolean'},
+    {name:'love_test_mode_allowed',valid:data=>typeof data==='boolean'}
+   ];
+   const result=[];
+   for(const rpc of tests){
+    const response=await fetch(probe.url+'/rest/v1/rpc/'+rpc.name,{
+     method:'POST',cache:'no-store',headers:{
+      apikey:probe.key,Authorization:'Bearer '+session.access_token,
+      'Content-Type':'application/json'
+     },body:'{}'
+    });
+    let data=null;
+    try{data=await response.json()}catch{}
+    result.push({name:rpc.name,status:response.status,
+     valid:response.ok&&rpc.valid(data)});
+   }
+   return result;
+  },{ref:params.ref,url:params.url,key:params.key});
+  assert.equal(rpcReadiness.length,2,'staging admin must retain its true Auth session');
+  for(const rpc of rpcReadiness){
+   assert.equal(rpc.valid,true,
+    'STAGING NOT READY: genuine read-only '+rpc.name+' unavailable (HTTP '+rpc.status+')');
+  }
+  console.log('Staging admin Auth + read-only Éclat and test-mode RPCs: PASS');
   await page.locator('#studio-real-create').waitFor({state:'visible',timeout:30000});
   await page.locator('#studio-real-create').click();
   created=true;
