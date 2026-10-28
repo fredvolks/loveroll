@@ -10,6 +10,9 @@ const requiredTables=[
  // neither Stripe nor the browser may fabricate access to paid coffrets.
  'love_account_premium_exemptions','love_eclat_entitlements',
  'love_eclat_sessions',
+ // Official Éclat start/status/next RPCs also require these base tables;
+ // checking the sessions table alone can leave a false-green staging.
+ 'love_eclat_scene_uses','love_eclat_private_choices','love_platform_settings',
  // Studio service registry/audit: never readable by regular players.
  'love_studio_test_pools','love_studio_test_seats','love_studio_test_audit',
  'love_studio_venice_daily_quota'
