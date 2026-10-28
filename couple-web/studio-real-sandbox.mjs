@@ -159,6 +159,14 @@ export function createStudioRealSandbox({client}){
   const seat=validSeats.find(s=>frames[s]?.contentWindow===event.source);
   if(!seat||event.data?.seat!==seat)return;
   const msg=event.data;
+  if(msg.type==='loveroll-studio-game-updated'){
+   // The official child has completed a real server RPC. Re-read its cards
+   // through the authorized backend; never accept content or dice from frames.
+   if(authenticatedSeats.has(seat)){
+    try{await refresh()}catch(err){say('État du jeu à actualiser : '+err.message)}
+   }
+   return;
+  }
   if(msg.type==='loveroll-studio-navigate-error'){
    say(label(seat)+' : ouverture refusée par le vrai jeu. Vérifie ses conditions d’accès.');
    return;
