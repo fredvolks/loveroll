@@ -25,7 +25,8 @@ export function eveningChallengeStatusLabel(status,closed=false){
 const monthLabel=mo=>new Intl.DateTimeFormat('fr-CA',{month:'long',year:'numeric',timeZone:'UTC'})
  .format(new Date(mo+'-15T12:00:00Z'));
 export function eveningHistoryMarkup({sessions=[],members=[],stats=[],historyChallenges=[],reviews=[],me,month,selectedDate,
- weeklyRolls=[],passQuota=[],backAction='tab:session',backLabel='Retour à Soirée'}={}){
+ weeklyRolls=[],passQuota=[],favorites=[],favoriteControlsEnabled=false,favoriteControlsBusy=false,
+ backAction='tab:session',backLabel='Retour à Soirée'}={}){
  // The calendar's fallback month follows the couple's Toronto timezone.
  // Previously it was frozen to October 2026, including in future years.
  const current=isoMonth(month)||eveningLocalDay(new Date().toISOString()).slice(0,7);
@@ -89,13 +90,23 @@ export function eveningHistoryMarkup({sessions=[],members=[],stats=[],historyCha
      (closed&&countOutstanding>1?'s':'')+'</span>'
     :'<span>Bilan indisponible</span>';
    const picked=cards.map(c=>{
-    const card=resolvedCard(c);
+    const card=resolvedCard(c),cardId=Number(c.card_id);
+    const canHeart=favoriteControlsEnabled&&closed&&
+     ['SENSUEL','SEXUEL'].includes(c.category)&&Number.isInteger(cardId)&&cardId>=1&&cardId<=100;
+    const mineHeart=canHeart&&favorites.some(f=>
+      f.category===c.category&&Number(f.card_id)===cardId&&f.marked_by===me);
+    const heart=canHeart?
+      '<button type="button" class="evening-cal-favorite" data-action="favorite-toggle:'+
+       safe(c.category)+':'+cardId+'" aria-pressed="'+mineHeart+'" '+
+       'aria-label="'+(mineHeart?'Retirer mon coup de cœur':'Ajouter à mes coups de cœur')+'"'+
+       (favoriteControlsBusy?' disabled':'')+'>'+
+       (mineHeart?'♥ Mon coup de cœur':'♡ Coup de cœur')+'</button>':'';
     return '<li class="evening-cal-challenge '+(c.status==='completed'?'is-done':'is-open')+'">'+
       '<span>'+safe(c.status==='passed'?
        (freeByChallenge.has(c.id)?'↷ Passé sans pénalité':
         chargedByChallenge.has(c.id)?'↷ Passé, comptabilisé':eveningChallengeStatusLabel(c.status,closed)):
        eveningChallengeStatusLabel(c.status,closed))+'</span><strong>'+safe(card.title)+'</strong>'+
-      '<small>'+safe(c.category==='SEXUEL'?'Sexuel':'Sensuel')+'</small></li>';
+      '<small>'+safe(c.category==='SEXUEL'?'Sexuel':'Sensuel')+'</small>'+heart+'</li>';
    }).join('');
    const unpicked=row?.target==null?0:Math.max(0,Number(row.target)-Number(row.drawn||cards.length));
    const extras=unpicked?'<p class="evening-cal-unpicked">♡ '+unpicked+
