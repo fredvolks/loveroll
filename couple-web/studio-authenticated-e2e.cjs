@@ -420,6 +420,52 @@ async function main(){
    fullPage:true
   });
   console.log('Both authentic A/B Éclat seats skipped by choice and jointly advanced to chapter 2: PASS');
+  // Exercise the rest of ONE complete real 30-minute coffret using the
+  // official, voluntary "Passer" path on both technical devices. This
+  // validates all server transitions and the finale, NOT the emotional
+  // quality or human completion of the activities. No local stage counters
+  // are written and no paid provider is invoked.
+  for(let chapter=2;chapter<=4;chapter++){
+   await guidedA.locator('[data-action="eclat:choose:0"]')
+    .click({timeout:20000});
+   await guidedB.locator('[data-action="eclat:choose:0"]')
+    .click({timeout:20000});
+   await page.selectOption('#studio-real-jump-A','eclat');
+   await a.locator('.eclat-guided[data-eclat-coffret="1"][data-eclat-phase="reveal"]')
+    .waitFor({timeout:30000});
+   await b.locator('.eclat-guided[data-eclat-coffret="1"][data-eclat-phase="reveal"]')
+    .waitFor({timeout:30000});
+   await guidedA.locator('[data-action="eclat:next"]:not([disabled])')
+    .click({timeout:20000});
+   await guidedA.locator('[data-action="eclat:next"][disabled]')
+    .waitFor({timeout:20000});
+   await guidedB.locator('[data-action="eclat:next"]:not([disabled])')
+    .click({timeout:20000});
+   if(chapter<4){
+    await b.locator('.eclat-guided-heading')
+     .getByText('Étape '+(chapter+1)+' / 4 · Environ 30 min')
+     .waitFor({timeout:45000});
+    await page.selectOption('#studio-real-jump-A','eclat');
+    await a.locator('.eclat-guided-heading')
+     .getByText('Étape '+(chapter+1)+' / 4 · Environ 30 min')
+     .waitFor({timeout:45000});
+   }
+  }
+  // The real partner's final RPC ends the actual Éclat session. The Studio
+  // must count exactly one distinct completed coffret from read-only SQL.
+  await page.locator('#studio-real-check').click();
+  const completedCoffret=page.locator(
+   '#studio-real-eclat-grid .studio-real-eclat-coffret[data-state="verified"]');
+  await completedCoffret.getByText(/Coffret 1.*Les cinq secrets/).first()
+   .waitFor({timeout:45000});
+  assert.match(await page.locator('#studio-real-eclat-count').innerText(),
+   /^1\/12 terminés/,
+   'the real, non-cancelled official Éclat session must count exactly once');
+  await page.screenshot({
+   path:'studio-authenticated-e2e-proof/real-eclat-complete-server-verified.png',
+   fullPage:true
+  });
+  console.log('One complete real Éclat coffret skip-path with both Auth users and server finale: PASS');
   await page.screenshot({path:'studio-authenticated-e2e-proof/official-rolled-dice-and-cards.png',fullPage:true});
   // The private Venice section can inspect provider status without spending
   // inference credits. NEVER trigger preview_three in an automated QA run.
