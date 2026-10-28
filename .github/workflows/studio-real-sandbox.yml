@@ -38,6 +38,8 @@ jobs:
           node --check couple-web/platform-admin.js
           node --check couple-web/studio-seat-auth.mjs
           node --check couple-web/studio-real-sandbox.mjs
+          node --check couple-web/studio-authenticated-e2e.cjs
+          node --check couple-web/studio-visual-check.cjs
           node --check couple-web/studio-status-sync.mjs
           node --check couple-web/studio-test-progress.mjs
       - name: Verify real dual-account architecture, security, responsive layout
@@ -50,6 +52,7 @@ jobs:
            couple-web/studio-status-sync.test.mjs \
            couple-web/studio-test-progress.test.mjs \
            couple-web/studio-venice-workshop.test.mjs \
+           couple-web/studio-authenticated-e2e-contract.test.mjs \
            couple-web/studio-authenticated-e2e-guard.test.mjs
 
   postgres-purge:
