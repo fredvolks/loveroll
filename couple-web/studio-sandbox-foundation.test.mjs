@@ -18,6 +18,12 @@ test('two real Auth users are generated without pre-known credentials',()=>{
  assert.match(source,/service\.from\('couple_profiles'\)\.insert/);
  assert.match(source,/service\.from\('couples'\)/);
  assert.doesNotMatch(source,/Math\.random\(/);
+ assert.match(source,/love_account_premium_exemptions/);
+ assert.match(source,/love_eclat_entitlements/);
+ assert.match(source,/studio_synthetic_qa_only/);
+ assert.match(source,/source:'studio_test_only'/);
+ assert.match(source,/monthly_d100_limit:12/);
+ assert.doesNotMatch(source,/stripe\.checkout|payment_intent\.succeeded|fakePayment/);
 });
 test('seat auth uses official one-time magiclink and fixed registry',()=>{
  assert.match(source,/\.eq\('seat',seat\)\.maybeSingle\(\)/);

@@ -162,6 +162,20 @@ Deno.serve(async(req:Request)=>{
       {couple_id:newCouple,user_id:ids[1]}
     ]);
     if(membersError)throw Error('Appariement du duo test impossible');
+    // Studio entitlements are genuine server-side exemptions for ONLY these
+    // two newly created synthetic Auth users. They are NOT Stripe payments,
+    // provider grants, customer revenue, or a browser-side bypass.
+    const {error:accessError}=await service.from('love_account_premium_exemptions').insert(
+      ids.map(id=>({
+        user_id:id,premium_lifetime:true,monthly_d100_limit:12,
+        all_features:true,reason:'studio_synthetic_qa_only'
+      }))
+    );
+    if(accessError)throw Error('Accès de test du jeu de base indisponible');
+    const {error:eclatError}=await service.from('love_eclat_entitlements').insert({
+      couple_id:newCouple,enabled:true,ends_at:null,source:'studio_test_only'
+    });
+    if(eclatError)throw Error('Accès Éclat de test indisponible');
     const {error:finishError}=await service.from('love_studio_test_pools')
       .update({couple_id:newCouple,state:'ready',updated_at:new Date().toISOString()})
       .eq('admin_id',adminId);
