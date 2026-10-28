@@ -1,6 +1,7 @@
 // Real dual-account sandbox inside Super Admin. No local card/dice fabrication.
 import {createStudioStatusSync} from './studio-status-sync.mjs';
 import {studioTestProgress} from './studio-test-progress.mjs';
+import {ECLAT_COFFRETS} from './eclat-catalog.mjs';
 
 export function createStudioRealSandbox({client}){
  const $=id=>document.getElementById(id);
@@ -87,6 +88,24 @@ export function createStudioRealSandbox({client}){
    item.dataset.state=step.done?'verified':'pending';
    item.textContent=(step.done?'✓ ':'○ ')+step.title;
    list.append(item);
+  }
+ }
+ function renderEclatProgress(){
+  const grid=$('studio-real-eclat-grid'),counter=$('studio-real-eclat-count');
+  if(!grid||!counter)return;
+  grid.replaceChildren();
+  const completed=Array.isArray(status?.game?.eclat_completed_coffrets)
+   ?new Set(status.game.eclat_completed_coffrets.filter(x=>Number.isInteger(x)&&x>=1&&x<=12))
+   :new Set();
+  const verified=ECLAT_COFFRETS.filter(x=>completed.has(x.id)).length;
+  counter.textContent=verified+'/12 terminés';
+  for(const coffret of ECLAT_COFFRETS){
+   const item=document.createElement('div');
+   const done=completed.has(coffret.id);
+   item.classList.add('studio-real-eclat-coffret');
+   item.dataset.state=done?'verified':'pending';
+   item.textContent=(done?'✓ ':'○ ')+'Coffret '+coffret.id+' · '+coffret.title;
+   grid.append(item);
   }
  }
  function renderAudit(){
@@ -177,6 +196,7 @@ export function createStudioRealSandbox({client}){
   }
   renderChallengeCards();
   renderProgress();
+  renderEclatProgress();
   renderAudit();
   if(!isReady){closeFrames();return;}
   for(const seat of validSeats){
