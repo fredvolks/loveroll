@@ -23,6 +23,7 @@ export function createStudioRealSandbox({client}){
   node.dataset.state=state;
   node.textContent=state==='connected'?'Connecté':state==='error'?'Connexion à vérifier':'À connecter';
   renderProgress();
+  renderEclatProgress();
   renderVenice();
  }
  async function request(action,seat,parameters=null){
@@ -110,6 +111,18 @@ export function createStudioRealSandbox({client}){
    list.append(item);
   }
  }
+ function openRealCoffret(seat,coffretId){
+  if(!active||tearingDown||busy||!status?.ready||
+     !validSeats.includes(seat)||!authenticatedSeats.has(seat)||
+     !Number.isInteger(coffretId)||coffretId<1||coffretId>12||
+     !frames[seat]?.contentWindow)return;
+  // Select the mounted real player view on narrow iPad/Android.
+  // The child invokes the existing production tab and detail handlers.
+  showSeat(seat);
+  frames[seat].contentWindow.postMessage({
+   type:'loveroll-studio-navigate',seat,tab:'eclat',coffret_id:coffretId
+  },location.origin);
+ }
  function renderEclatProgress(){
   const grid=$('studio-real-eclat-grid'),counter=$('studio-real-eclat-count');
   if(!grid||!counter)return;
@@ -126,8 +139,25 @@ export function createStudioRealSandbox({client}){
     (coffret.chapter!==null&&coffret.chapterTotal!==null
      ?' · étape '+coffret.chapter+'/'+coffret.chapterTotal:'')+
     (coffret.minutes!==null?' · '+coffret.minutes+' min':''):'';
-   item.textContent=(running?'◉ ':coffret.state==='verified'?'✓ ':'○ ')+
+   const heading=document.createElement('span');
+   heading.classList.add('studio-real-eclat-name');
+   heading.textContent=(running?'◉ ':coffret.state==='verified'?'✓ ':'○ ')+
     'Coffret '+coffret.id+' · '+coffret.title+phase;
+   const actions=document.createElement('div');
+   actions.classList.add('studio-real-eclat-actions');
+   for(const seat of validSeats){
+    const button=document.createElement('button');
+    button.type='button';
+    button.classList.add('studio-real-eclat-open');
+    button.dataset.seat=seat;button.dataset.coffretId=String(coffret.id);
+    button.textContent='Ouvrir dans '+seat;
+    button.setAttribute('aria-label','Ouvrir le vrai coffret '+
+      coffret.id+' · '+coffret.title+' dans le jeu du joueur '+seat);
+    button.disabled=!active||tearingDown||busy||!authenticatedSeats.has(seat);
+    button.addEventListener('click',()=>openRealCoffret(seat,coffret.id));
+    actions.append(button);
+   }
+   item.append(heading,actions);
    grid.append(item);
   }
  }
