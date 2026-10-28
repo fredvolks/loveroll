@@ -127,7 +127,40 @@ async function main(){
   await verified(4).waitFor({timeout:60000});
   console.log('Official Surprise D100 from real A: PASS');
   await page.screenshot({path:'studio-authenticated-e2e-proof/official-rolled-dice-and-cards.png',fullPage:true});
-  console.log('Authenticated real A/B sessions + weekly, evening, challenge, surprise: PASS');
+  // The private Venice section can inspect provider status without spending
+  // inference credits. NEVER trigger preview_three in an automated QA run.
+  await page.locator('#tabs button[data-pane="venice"]').click();
+  await page.locator('#studio-venice-status-button').click();
+  await page.waitForFunction(()=>{
+   const text=document.querySelector('#studio-venice-status')?.textContent||'';
+   return !text.includes('Requête Venice en cours')&&
+    !text.includes('En attente du service officiel')&&
+    text.length>10;
+  },null,{timeout:35000});
+  assert.equal(await page.locator('#studio-venice-generate').isDisabled(),false,
+   'paid Venice button exists but automated QA must not click it');
+  await page.screenshot({path:'studio-authenticated-e2e-proof/venice-read-only-workshop.png',fullPage:true});
+  await page.locator('#tabs button[data-pane="realtest"]').click();
+  // Resize the exact authenticated browser to validate the real paired game
+  // layout, rather than just blank static fixture windows.
+  for(const viewport of [
+   {name:'ipad-landscape',width:1180,height:820},
+   {name:'ipad-portrait',width:820,height:1180},
+   {name:'mobile',width:390,height:844}
+  ]){
+   await page.setViewportSize({width:viewport.width,height:viewport.height});
+   const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth);
+   assert.ok(overflow<=2,viewport.name+' horizontal overflow '+overflow);
+   assert.equal(await page.locator('#studio-real-seat-state-A').getAttribute('data-state'),'connected');
+   assert.equal(await page.locator('#studio-real-seat-state-B').getAttribute('data-state'),'connected');
+   await page.screenshot({path:'studio-authenticated-e2e-proof/real-'+viewport.name+'.png',fullPage:true});
+  }
+  // On 390px both actual clients remain alive while the user switches seats.
+  await page.locator('#studio-show-seat-B').click();
+  assert.equal(await page.locator('#studio-real-frame-B iframe').count(),1);
+  await page.locator('#studio-show-seat-A').click();
+  assert.equal(await page.locator('#studio-real-frame-A iframe').count(),1);
+  console.log('Authenticated real A/B sessions + official dice/cards + responsive layouts: PASS');
  }finally{
   if(page&&created){
    try{
