@@ -106,6 +106,9 @@ function render(){
 function choosePane(name){
  if(!panes.has(name))return;
  pane=name;
+ // Game-first Studio: hide the marketing/dashboard summary while the owner
+ // is actively playing A/B. All other admin sections retain their KPIs.
+ $('dashboard').classList.toggle('studio-test-focus',name==='realtest');
  document.querySelectorAll('[data-panel]').forEach(el=>el.hidden=el.dataset.panel!==name);
  document.querySelectorAll('button[data-pane]').forEach(el=>{
   el.classList.toggle('active',el.dataset.pane===name);
