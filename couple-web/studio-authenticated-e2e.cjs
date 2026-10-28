@@ -376,6 +376,50 @@ async function main(){
    'official Supabase Éclat session must be reflected in Studio diagnostics');
   await page.screenshot({path:'studio-authenticated-e2e-proof/real-eclat-started.png',fullPage:true});
   console.log('Real Éclat chapter 1 started and confirmed by the privileged read-only backend: PASS');
+  // Prove the genuinely shared Éclat session reaches the OTHER signed-in
+  // technical user. The other player may still be looking at coffret 3.
+  // Navigate using the official real game route; do not read admin session
+  // state or inject any fake status into the iframe.
+  await page.selectOption('#studio-real-jump-B','eclat');
+  const guidedA=a.locator('.eclat-guided[data-eclat-coffret="1"]');
+  const guidedB=b.locator('.eclat-guided[data-eclat-coffret="1"]');
+  await guidedA.waitFor({state:'visible',timeout:30000});
+  await guidedB.waitFor({state:'visible',timeout:45000});
+  assert.match(await guidedB.locator('.eclat-guided-heading').innerText(),
+   /Étape 1 \/ 4.*30 min/s,
+   'real partner B must receive A\'s official session and duration');
+
+  // Official skip/consent flow: both players can freely pass a stage.
+  // eclat:choose:0 calls the actual love_eclat_choose RPC; it is never
+  // interpreted as acceptance of a practice or a fabricated completion.
+  await guidedA.locator('[data-action="eclat:choose:0"]').click({timeout:20000});
+  await guidedB.locator('[data-action="eclat:choose:0"]').click({timeout:20000});
+  await page.selectOption('#studio-real-jump-A','eclat');
+  await guidedA.locator('[data-eclat-phase="reveal"]').waitFor({timeout:30000});
+  await guidedB.locator('[data-eclat-phase="reveal"]').waitFor({timeout:30000});
+  // Next chapter requires BOTH true player confirmations. A alone must not
+  // advance the session on the server; it should wait for real partner B.
+  await guidedA.locator('[data-action="eclat:next"]:not([disabled])')
+   .click({timeout:20000});
+  await guidedA.locator('[data-action="eclat:next"][disabled]')
+   .waitFor({timeout:20000});
+  await guidedB.locator('[data-action="eclat:next"]:not([disabled])')
+   .click({timeout:20000});
+  await guidedB.locator('.eclat-guided-heading').getByText(/Étape 2 \/ 4.*30 min/)
+   .waitFor({timeout:45000});
+  await page.selectOption('#studio-real-jump-A','eclat');
+  await guidedA.locator('.eclat-guided-heading').getByText(/Étape 2 \/ 4.*30 min/)
+   .waitFor({timeout:45000});
+  await page.locator('#studio-real-check').click();
+  await page.locator(
+   '#studio-real-eclat-grid .studio-real-eclat-coffret[data-state="active"]')
+   .getByText(/Coffret 1.*étape 2\/4.*30 min/)
+   .waitFor({timeout:45000});
+  await page.screenshot({
+   path:'studio-authenticated-e2e-proof/real-eclat-two-player-stage-2.png',
+   fullPage:true
+  });
+  console.log('Both authentic A/B Éclat seats skipped by choice and jointly advanced to chapter 2: PASS');
   await page.screenshot({path:'studio-authenticated-e2e-proof/official-rolled-dice-and-cards.png',fullPage:true});
   // The private Venice section can inspect provider status without spending
   // inference credits. NEVER trigger preview_three in an automated QA run.
