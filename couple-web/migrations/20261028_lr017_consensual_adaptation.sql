@@ -28,7 +28,20 @@ CREATE TABLE IF NOT EXISTS public.love_challenge_adaptations(
 );
 ALTER TABLE public.love_challenge_adaptations
  ADD COLUMN IF NOT EXISTS original_text text,
- ADD COLUMN IF NOT EXISTS original_minutes integer;
+ ADD COLUMN IF NOT EXISTS original_minutes integer,
+ ADD COLUMN IF NOT EXISTS consent_partner_id uuid REFERENCES auth.users(id);
+-- A previously created *draft* schema must not invent which person consented.
+-- If old rows exist, abort atomically and repair them under explicit review.
+DO $consent_guard$
+BEGIN
+ IF EXISTS (SELECT 1 FROM public.love_challenge_adaptations
+            WHERE consent_partner_id IS NULL) THEN
+  RAISE EXCEPTION 'LR-017 requires an explicit original consent partner for existing proposals';
+ END IF;
+END
+$consent_guard$;
+ALTER TABLE public.love_challenge_adaptations
+ ALTER COLUMN consent_partner_id SET NOT NULL;
 CREATE INDEX IF NOT EXISTS love_adaptations_couple_created_idx
  ON public.love_challenge_adaptations(couple_id,session_id,created_at DESC);
 -- Challenges are recipient-private: a normal RLS subquery could not see the
