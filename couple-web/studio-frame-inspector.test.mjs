@@ -73,6 +73,7 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
   if(body.action==='delete')return new Promise(resolve=>{
    finishDeletion=()=>{simulatedDeletion=true;resolve({data:{deleted:true}})};
   });
+  if(body.action==='create'){simulatedDeletion=false;return {data:{ready:true}};}
   if(body.action==='status'&&simulatedDeletion)return {data:{
    ready:false,state:'missing',seats:[],audit:[
     {action:'delete_completed',created_at:'2026-10-27T23:00:00Z'},
@@ -203,6 +204,25 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
   assert.ok(calls.filter(x=>x==='status').length>=2);
   assert.ok(!calls.includes('create')&&!calls.includes('delete'),
    'visual inspection and refresh must not alter live Supabase test accounts');
+  // Replacement is destructive: old A/B must stay absent while DB delete
+  // resolves, then ONLY fresh official frames may be mounted for a new pair.
+  const previousA=getFrame('A'),previousB=getFrame('B');
+  const resetting=nodes.get('studio-real-reset').click();
+  assert.equal(getFrame('A'),null,'old A removed before replacement starts');
+  assert.equal(getFrame('B'),null,'old B removed before replacement starts');
+  await studio.refresh();
+  assert.equal(getFrame('A'),null,'stale status cannot remount A during reset');
+  assert.equal(getFrame('B'),null,'stale status cannot remount B during reset');
+  finishDeletion();
+  await resetting;
+  assert.equal(calls.filter(x=>x==='create').length,1,'new A/B truly provisioned');
+  assert.equal(calls.filter(x=>x==='delete').length,1,'old A/B truly deleted');
+  assert.ok(getFrame('A')&&getFrame('A')!==previousA,
+   'replacement remounts new official player A');
+  assert.ok(getFrame('B')&&getFrame('B')!==previousB,
+   'replacement remounts new official player B');
+  assert.equal(nodes.get('studio-real-progress-count').textContent,'7/9',
+   'the new test follows fresh server evidence, not a simulated dice reset');
   const deleting=nodes.get('studio-real-delete').click();
   assert.ok(calls.includes('delete'),'the actual deletion request was issued');
   assert.equal(getFrame('A'),null,'A removed immediately when deletion starts');
