@@ -239,3 +239,44 @@ test('an external reset cannot leave previous Auth seats or private challenge hi
  assert.ok(src.includes("historyCards=null"));
  assert.ok(src.includes("authenticatedSeats.delete(seat)"));
 });
+
+
+test('real Éclat seat shortcuts are origin-, seat- and user-verified; reject fake/invalid destinations',async()=>{
+ const origin='https://fredvolks.github.io',messages=[],navigation=[];
+ let listener;
+ const parent={postMessage:(message,at)=>messages.push({message,at})};
+ const selfWindow={parent,location:{reload(){}},
+  addEventListener:(type,fn)=>{if(type==='message')listener=fn},
+  removeEventListener(){}};
+ let accountIsTechnical=true;
+ const client={auth:{
+  getSession:async()=>({data:{session:{user:{
+   id:'seat-A-real',app_metadata:{love_studio_test:accountIsTechnical}
+  }}}}),
+  onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}})
+ }};
+ const cleanup=startStudioSeatLogin(client,'A',{
+  selfWindow,origin,navigate:async(tab,id)=>navigation.push([tab,id])
+ });
+ const send=async(data,at=origin,source=parent)=>listener({data,origin:at,source});
+ const valid={type:'loveroll-studio-navigate',seat:'A',tab:'eclat',coffret_id:3};
+ await send(valid);
+ assert.deepEqual(navigation,[['eclat',3]]);
+ for(const id of [-1,0,13,1.5,'1',null]){
+  await send({...valid,coffret_id:id});
+ }
+ await send({...valid,tab:'session'});
+ await send({...valid,seat:'B'});
+ await send(valid,'https://attacker.invalid');
+ await send(valid,origin,{});
+ assert.equal(navigation.length,1,'malformed, wrong-seat and foreign navigation must be ignored');
+ await send({type:'loveroll-studio-navigate',seat:'A',tab:'home'});
+ assert.deepEqual(navigation.at(-1),['home',undefined],'ordinary shortcuts still navigate');
+ accountIsTechnical=false;
+ await send(valid);
+ assert.equal(navigation.length,2,'a normal real customer cannot be navigated by Studio');
+ assert.equal(messages.some(e=>e.message.type==='loveroll-studio-seat-error'),false);
+ cleanup();
+ await send(valid);
+ assert.equal(navigation.length,2,'a disposed Studio must ignore all shortcuts');
+});
