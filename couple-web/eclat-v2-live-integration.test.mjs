@@ -187,3 +187,17 @@ test('Éclat V2 preserves published privacy mask, silent music and generic notif
  assert.doesNotMatch(sw,/const body=typeof message\.body/);
  assert.match(sw,/const CACHE='loveroll-static-v251'/);
 });
+
+
+test('Web 251 preloads every real V2 coffret module and its styles without dropping safe notifications',()=>{
+ const sw=readFileSync(new URL('./service-worker.js',import.meta.url),'utf8');
+ for(const moduleName of [
+  'eclat-v2-stage.css','eclat-v2-play-ui.mjs','eclat-v2-play-controller.mjs',
+  'eclat-v2-session.mjs','eclat-v2-contract.mjs','eclat-v2-editorial.mjs',
+  'eclat-v2-coffrets-a.mjs','eclat-v2-coffrets-b.mjs',
+  'eclat-v2-coffrets-c.mjs','eclat-v2-latest-read.mjs',
+  'eclat-v2-live-ownership.mjs'
+ ])assert.ok(sw.includes("'./"+moduleName+"'"),moduleName+' missing from PWA shell');
+ assert.match(sw,/const safeBodies=\{/);
+ assert.match(sw,/const CACHE='loveroll-static-v251'/);
+});
