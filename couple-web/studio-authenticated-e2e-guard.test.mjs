@@ -62,3 +62,11 @@ test('manual test uses a real signed-in app, not just a splash or fake locally d
  assert.match(workflow,/LOVEROLL_STUDIO_E2E_ADMIN_EMAIL/);
  assert.match(workflow,/LOVEROLL_STUDIO_E2E_ADMIN_PASSWORD/);
 });
+
+test('D100 staging checks select a real category before the conditional roll button exists',()=>{
+ const categorySelection=e2e.indexOf('await drawer.locator(\'[data-action="category:SENSUEL"]');
+ const realDraw=e2e.indexOf('await drawer.locator(\'[data-action="new-challenge"]');
+ assert.ok(categorySelection>=0&&realDraw>categorySelection,
+  'official Soirée hides its D100 action until the current drawer chooses a category');
+ assert.match(e2e,/await frame\.locator\('\[data-action="category:SENSUEL"\]:not\(\[disabled\]\)'\)/);
+});
