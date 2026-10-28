@@ -95,7 +95,7 @@ test('real Éclat stage cannot advance without BOTH signed-in partner choices an
  assert.ok(script.includes('for(let chapter=2;chapter<=4;chapter++)'));
  assert.ok(script.includes('real-eclat-complete-server-verified.png'));
  assert.ok(script.includes("const completedCoffret=page.locator("));
- assert.ok(script.includes("1/12 terminés"));
+ assert.ok(script.includes("1\\/12 terminés"));
  assert.ok(script.includes('One complete real Éclat coffret skip-path with both Auth users'));
  assert.ok(script.includes('Both authentic A/B Éclat seats skipped by choice'));
  assert.doesNotMatch(script,/admin\.rpc\('love_eclat_(choose|next)'/);
