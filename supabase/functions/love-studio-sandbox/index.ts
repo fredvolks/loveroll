@@ -107,14 +107,20 @@ Deno.serve(async(req:Request)=>{
      checked(service.from('love_eclat_entitlements').select('enabled,ends_at')
       .eq('couple_id',pool.couple_id).maybeSingle())
     ]);
-    const [personal,challenges]=latest?.id?await Promise.all([
+    // Count is exact; retrieve only three cards. Never silently truncate
+    // challenge totals at Supabase's Data API row limit (often 1,000).
+    const [personal,challengeResult]=latest?.id?await Promise.all([
      checked(service.from('couple_personal_rolls').select('user_id,face')
       .eq('session_id',latest.id)),
-     checked(service.from('couple_challenges')
-      .select('status,recipient,card_title,card_description,category,face,created_at')
+     service.from('couple_challenges')
+      .select('status,recipient,card_title,card_description,category,face,created_at',
+       {count:'exact'})
       .eq('couple_id',pool.couple_id).eq('session_id',latest.id)
-      .order('created_at',{ascending:false}))
-    ]):[[],[]];
+      .order('created_at',{ascending:false}).limit(3)
+    ]):[[],{data:[],count:0,error:null}];
+    if(challengeResult.error||typeof challengeResult.count!=='number')
+     throw Error('Diagnostic du jeu indisponible');
+    const challenges=challengeResult.data||[];
     const seatFace=(s:Seat)=>personal.find((r:{user_id:string})=>
      r.user_id===seats.find(x=>x.seat===s)?.user_id)?.face??null;
     game={
@@ -122,9 +128,9 @@ Deno.serve(async(req:Request)=>{
      monthly_face:monthly?.[0]?.face??null,
      session:latest?(latest.finished_at?'finished':'open'):'not_started',
      personal_faces:{A:seatFace('A'),B:seatFace('B')},
-     challenges_total:challenges.length,
+     challenges_total:challengeResult.count,
      // Only actual cards stored by official drawing RPCs, latest first.
-     challenge_preview:challenges.slice(0,3).map((row:{
+     challenge_preview:challenges.map((row:{
       recipient:string|null,card_title:string|null,card_description:string|null,
       category:string|null,face:number|null,status:string|null
      })=>({
