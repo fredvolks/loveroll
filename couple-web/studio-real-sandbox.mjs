@@ -70,6 +70,38 @@ export function createStudioRealSandbox({client}){
    try{sessionStorage.removeItem('loveroll-studio-auth-v1-'+seat)}catch{}
   }
  }
+ function renderChallengeCards(){
+  const section=$('studio-real-challenge-cards'),list=$('studio-real-challenge-list');
+  if(!section||!list)return;
+  const game=status?.game;
+  const available=status?.ready===true&&!game?.error&&Array.isArray(game?.challenge_preview);
+  section.hidden=!available;
+  list.replaceChildren();
+  if(!available)return;
+  const cards=game.challenge_preview.slice(0,3);
+  if(!cards.length){
+   const empty=document.createElement('p');
+   empty.classList.add('studio-real-card-empty');
+   empty.textContent='Aucun défi tiré dans la dernière soirée.';
+   list.append(empty);return;
+  }
+  for(const card of cards){
+   const article=document.createElement('article');
+   article.classList.add('studio-real-challenge-card');
+   const meta=document.createElement('span');
+   meta.classList.add('studio-real-card-meta');
+   const face=Number.isInteger(card.face)?String(card.face):'—';
+   const seat=validSeats.includes(card.seat)?card.seat:'?';
+   meta.textContent='Joueur '+seat+' · '+String(card.category||'Sans catégorie')+
+    ' · D100 '+face+' · '+String(card.status||'État inconnu');
+   const title=document.createElement('h4');
+   title.textContent=String(card.title||'Défi');
+   const description=document.createElement('p');
+   description.textContent=String(card.description||'Aucune consigne enregistrée');
+   article.append(meta,title,description);
+   list.append(article);
+  }
+ }
  function display(){
   const isReady=status?.ready===true,section=$('studio-real-views');
   section.hidden=!isReady;
@@ -92,19 +124,10 @@ export function createStudioRealSandbox({client}){
       ' · D6 Soirée B : '+face(g.personal_faces?.B)+
       ' · Soirée : '+(g.session==='open'?'en cours':g.session==='finished'?'terminée':'non commencée')+
       ' · Défis : '+Number(g.challenges_total||0)+
-      ' · Éclat : '+(g.eclat_enabled?'test autorisé':'non actif')+
-       (Array.isArray(g.challenge_preview)&&g.challenge_preview.length
-        ?'\nTrois derniers défis réels :\n'+g.challenge_preview.map(card=>
-          'Joueur '+(card.seat==='A'||card.seat==='B'?card.seat:'?')+
-          ' · '+String(card.category||'Sans catégorie')+
-          ' · D100 '+face(card.face)+
-          ' · '+String(card.status||'')+
-          '\n'+String(card.title||'Défi')+
-          '\n'+String(card.description||'')
-         ).join('\n\n')
-        :'\nAucun défi tiré dans la dernière soirée.');
+      ' · Éclat : '+(g.eclat_enabled?'test autorisé':'non actif');
    }
   }
+  renderChallengeCards();
   if(!isReady){closeFrames();return;}
   for(const seat of validSeats){
    const container=$('studio-real-frame-'+seat);
