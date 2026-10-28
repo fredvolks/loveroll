@@ -1,7 +1,7 @@
 // LoveRoll Studio REAL dual-account sandbox. Never impersonate customer accounts.
 // Service role stays on server. Does not affect other couples or roll engines.
 import {createClient} from 'npm:@supabase/supabase-js@2.57.0';
-import {isRegisteredStudioIdentity} from './guards.ts';
+import {isRegisteredStudioIdentity,canSkipAlreadyDeletedStudioUser} from './guards.ts';
 
 const headers={
   'Content-Type':'application/json;charset=utf-8','Cache-Control':'no-store',
@@ -305,12 +305,18 @@ Deno.serve(async(req:Request)=>{
  // Before touching even one couple row, verify the two registered Auth users
  // really belong to this studio sandbox. A corrupted registry must never
  // initiate any deletion (including a database-level cascade).
+ const {data:deletePool,error:deletePoolError}=await service.from('love_studio_test_pools')
+  .select('state,couple_id').eq('admin_id',adminId).maybeSingle();
+ if(deletePoolError)return response({error:'Banc de test indisponible'},503);
+ if(!deletePool)return response({error:'Aucun banc de test à supprimer'},404);
  const {data:registered,error:registeredError}=await service.from('love_studio_test_seats')
   .select('seat,user_id').eq('admin_id',adminId);
  if(registeredError)return response({error:'Registre de test indisponible'},503);
  for(const row of registered||[]){
   if(!row.user_id)continue;
   const {data:u,error:lookupError}=await service.auth.admin.getUserById(row.user_id);
+  if(canSkipAlreadyDeletedStudioUser(lookupError,deletePool.state,deletePool.couple_id))
+   continue;
   if(lookupError||!u?.user||u.user.app_metadata?.love_studio_test!==true||
      u.user.app_metadata?.love_studio_admin!==adminId)
     return response({error:'Identité non-test détectée : aucune suppression effectuée'},403);
@@ -329,7 +335,7 @@ Deno.serve(async(req:Request)=>{
     // A network/Auth outage is NOT proof that the identity was removed.
     // Retain the private registry for a safe retry in that situation.
     if(lookupError){
-      if(lookupError.status===404||lookupError.code==='user_not_found')continue;
+      if(canSkipAlreadyDeletedStudioUser(lookupError,'deleting',null))continue;
       return response({error:'Identité Auth non vérifiable; registre conservé'},503);
     }
     if(!u?.user)return response({error:'Réponse Auth incomplète; registre conservé'},503);
