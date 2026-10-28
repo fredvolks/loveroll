@@ -18,6 +18,10 @@ BEGIN
   RAISE EXCEPTION 'Recipient-only challenge RLS must hide that private card from A';END IF;
  IF (SELECT count(*) FROM public.love_challenge_adaptations WHERE challenge_id=first)<>1 THEN
   RAISE EXCEPTION 'Proposer A cannot view their proposal without revealing the private challenge';END IF;
+ PERFORM set_config('request.jwt.claim.email_verified','false',true);
+ IF (SELECT count(*) FROM public.love_challenge_adaptations WHERE challenge_id=first)<>0 THEN
+  RAISE EXCEPTION 'Unverified member can read intimate adaptation';END IF;
+ PERFORM set_config('request.jwt.claim.email_verified','true',true);
  v:=public.love_adaptation_propose(first,'Version plus douce',12);
  IF v->>'created'<>'false' THEN RAISE EXCEPTION 'Double click was not idempotent'; END IF;
  BEGIN
