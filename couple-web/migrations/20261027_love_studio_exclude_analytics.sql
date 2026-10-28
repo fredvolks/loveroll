@@ -12,7 +12,9 @@ begin
  select jsonb_build_object(
  'config',(select to_jsonb(s)-'updated_by' from public.love_platform_settings s where s.id=1),
  'stats',jsonb_build_object(
-  'registered_users',(select count(*) from auth.users u where not exists(select 1 from public.love_studio_test_seats s where s.user_id=u.id)),
+  'registered_users',(select count(*) from auth.users u
+   where u.raw_app_meta_data->>'love_studio_test' IS DISTINCT FROM 'true'
+     and not exists(select 1 from public.love_studio_test_seats s where s.user_id=u.id)),
   'couples',(select count(*) from (select cm.couple_id from public.couple_members cm group by cm.couple_id having count(distinct cm.user_id)=2) paired where not exists(select 1 from public.love_studio_test_pools t where t.couple_id=paired.couple_id)),
   'monthly_draws',(select count(*) from public.couple_rolls r where r.kind='monthly_activity' and not exists(select 1 from public.love_studio_test_pools t where t.couple_id=r.couple_id)),
   'geo_ready',(select count(*) from public.love_monthly_places x where x.state='ready' and not exists(select 1 from public.love_studio_test_pools t where t.couple_id=x.couple_id)),
