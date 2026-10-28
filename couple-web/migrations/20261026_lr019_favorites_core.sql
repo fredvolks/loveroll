@@ -12,6 +12,20 @@ CREATE TABLE IF NOT EXISTS public.love_couple_favorites (
   marked_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   PRIMARY KEY (couple_id,category,card_id)
 );
+-- Never silently collapse older per-member rows if an experimental
+-- preproduction schema already exists. Keep every historical heart and stop
+-- until an explicit, reviewed consolidation of duplicates is performed.
+DO $schema$
+DECLARE key_definition text;
+BEGIN
+ SELECT pg_get_constraintdef(c.oid) INTO key_definition
+ FROM pg_constraint c WHERE c.conrelid='public.love_couple_favorites'::regclass
+  AND c.contype='p';
+ IF key_definition IS DISTINCT FROM 'PRIMARY KEY (couple_id, category, card_id)' THEN
+  RAISE EXCEPTION 'Ancien schéma de coups de cœur : migration supervisée nécessaire';
+ END IF;
+END
+$schema$;
 CREATE INDEX IF NOT EXISTS love_couple_favorites_pair
  ON public.love_couple_favorites(couple_id,category,card_id);
 ALTER TABLE public.love_couple_favorites ENABLE ROW LEVEL SECURITY;
@@ -104,6 +118,9 @@ BEGIN
  END IF;
  PERFORM 1 FROM public.couples WHERE id=p_couple FOR UPDATE;
  IF NOT FOUND THEN RAISE EXCEPTION 'Duo introuvable'; END IF;
+ IF (SELECT count(*) FROM public.love_couple_favorites WHERE couple_id=p_couple)>5 THEN
+  RAISE EXCEPTION 'Plus de 5 favoris historiques : retirez les excédents avant un remplacement';
+ END IF;
  -- Lost RPC reply: replacement was already committed; don't remove again.
  IF EXISTS(SELECT 1 FROM public.love_couple_favorites
     WHERE couple_id=p_couple AND category=p_new_category AND card_id=p_new_card_id)
