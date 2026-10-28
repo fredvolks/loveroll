@@ -73,7 +73,17 @@ const client=CONFIG.supabaseUrl&&CONFIG.supabasePublishableKey?
  createClient(CONFIG.supabaseUrl,CONFIG.supabasePublishableKey,opts):null;
 if(client&&studioSeatId)startStudioSeatLogin(client,studioSeatId,{
  selfWindow:window,origin:location.origin,
- navigate:tab=>handle('tab:'+tab).catch(error=>{fail(error);throw error;})
+ navigate:async(tab,coffretId)=>{
+  try{
+   await handle('tab:'+tab);
+   if(coffretId!==undefined){
+    if(tab!=='eclat'||!Number.isInteger(coffretId)||coffretId<1||
+       coffretId>12||state.tab!=='eclat')
+     throw Error('Le vrai coffret Éclat ne peut pas être ouvert actuellement.');
+    await handle('eclat:detail:'+coffretId);
+   }
+  }catch(error){fail(error);throw error;}
+ }
 });
 const launchParams=new URLSearchParams(location.search);
 const eclatAudio=createEclatAudio();
