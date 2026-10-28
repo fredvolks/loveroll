@@ -1,4 +1,6 @@
--- LR-019: private, per-member hearts. This does NOT yet alter D100 eligibility.
+-- LR-019: exactly five SHARED cards per couple across both partners/categories.
+-- The member who last added a card is attributed; either member may remove it.
+-- This does NOT yet alter D100 eligibility.
 -- Apply only with the companion draw-engine/UX release and an approved migration plan.
 BEGIN;
 
@@ -8,15 +10,14 @@ CREATE TABLE IF NOT EXISTS public.love_couple_favorites (
   card_id integer NOT NULL CHECK (card_id BETWEEN 1 AND 100),
   marked_by uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   marked_at timestamptz NOT NULL DEFAULT clock_timestamp(),
-  PRIMARY KEY (couple_id,category,card_id,marked_by)
+  PRIMARY KEY (couple_id,category,card_id)
 );
 CREATE INDEX IF NOT EXISTS love_couple_favorites_pair
  ON public.love_couple_favorites(couple_id,category,card_id);
 ALTER TABLE public.love_couple_favorites ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON TABLE public.love_couple_favorites FROM PUBLIC,anon,authenticated;
 
--- Each member owns their heart. Both members can see the collective set.
--- Another member's heart is never removed by unmarking one's own.
+-- One heart per card for the couple; authenticated members may edit the common set.
 CREATE OR REPLACE FUNCTION public.set_love_couple_favorite(
  p_couple uuid,p_category text,p_card_id integer,p_enabled boolean
 ) RETURNS boolean
@@ -50,27 +51,27 @@ BEGIN
    RAISE EXCEPTION 'Ce défi ne figure pas dans la bibliothèque ou les archives du duo';
   END IF;
   -- Couple-first FOR UPDATE above serializes both partners' concurrent taps.
-  -- The five-heart allowance belongs to the actor, across both categories.
-  -- Re-adding a heart already owned by this actor stays idempotent.
+  -- The five-card allowance belongs to the WHOLE COUPLE, not each actor.
+  -- A heart already in the common set stays idempotent.
   IF NOT EXISTS(
     SELECT 1 FROM public.love_couple_favorites f
     WHERE f.couple_id=p_couple AND f.category=p_category
-      AND f.card_id=p_card_id AND f.marked_by=v_actor
+      AND f.card_id=p_card_id
   ) AND (
     SELECT count(*) FROM public.love_couple_favorites f
-    WHERE f.couple_id=p_couple AND f.marked_by=v_actor
+    WHERE f.couple_id=p_couple
   )>=5 THEN
     RAISE EXCEPTION 'Maximum de 5 coups de cœur atteint. Retirez un favori pour en ajouter un nouveau.';
   END IF;
   INSERT INTO public.love_couple_favorites(couple_id,category,card_id,marked_by)
   VALUES(p_couple,p_category,p_card_id,v_actor)
-  ON CONFLICT(couple_id,category,card_id,marked_by) DO NOTHING;
+  ON CONFLICT(couple_id,category,card_id) DO NOTHING;
  ELSE
   DELETE FROM public.love_couple_favorites f
    WHERE f.couple_id=p_couple AND f.category=p_category
-    AND f.card_id=p_card_id AND f.marked_by=v_actor;
+    AND f.card_id=p_card_id;
  END IF;
- -- True if anyone in the couple still marks the card as a favorite.
+ -- True if this card is in the couple's one shared list.
  RETURN EXISTS(SELECT 1 FROM public.love_couple_favorites f
   WHERE f.couple_id=p_couple AND f.category=p_category AND f.card_id=p_card_id);
 END;
@@ -78,6 +79,63 @@ $favorite$;
 REVOKE ALL ON FUNCTION public.set_love_couple_favorite(uuid,text,integer,boolean)
  FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.set_love_couple_favorite(uuid,text,integer,boolean)
+ TO authenticated;
+
+-- One-click sixth-card replacement. A stale selection NEVER removes a
+-- different favorite, and an invalid new card leaves the existing five intact.
+-- Couple-first lock serializes both partners' simultaneous actions.
+CREATE OR REPLACE FUNCTION public.replace_love_couple_favorite(
+ p_couple uuid,p_old_category text,p_old_card_id integer,
+ p_new_category text,p_new_card_id integer
+) RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path=''
+AS $replace$
+DECLARE v_actor uuid:=(select auth.uid());
+BEGIN
+ PERFORM public.love_require_verified_identity();
+ IF v_actor IS NULL OR p_couple IS NULL OR NOT couple_private.is_member(p_couple) THEN
+  RAISE EXCEPTION 'Accès au duo refusé' USING errcode='42501';
+ END IF;
+ IF p_old_category IS NULL OR p_new_category IS NULL
+  OR p_old_category NOT IN ('SENSUEL','SEXUEL')
+  OR p_new_category NOT IN ('SENSUEL','SEXUEL')
+  OR p_old_card_id IS NULL OR p_old_card_id NOT BETWEEN 1 AND 100
+  OR p_new_card_id IS NULL OR p_new_card_id NOT BETWEEN 1 AND 100 THEN
+  RAISE EXCEPTION 'Paramètres des favoris invalides';
+ END IF;
+ PERFORM 1 FROM public.couples WHERE id=p_couple FOR UPDATE;
+ IF NOT FOUND THEN RAISE EXCEPTION 'Duo introuvable'; END IF;
+ -- Lost RPC reply: replacement was already committed; don't remove again.
+ IF EXISTS(SELECT 1 FROM public.love_couple_favorites
+    WHERE couple_id=p_couple AND category=p_new_category AND card_id=p_new_card_id)
+    AND NOT EXISTS(SELECT 1 FROM public.love_couple_favorites
+    WHERE couple_id=p_couple AND category=p_old_category AND card_id=p_old_card_id)
+ THEN RETURN true; END IF;
+ IF NOT EXISTS(SELECT 1 FROM public.love_couple_favorites
+    WHERE couple_id=p_couple AND category=p_old_category AND card_id=p_old_card_id)
+ THEN RAISE EXCEPTION 'Le favori choisi a changé; actualisez la liste'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM public.love_base_challenges
+    WHERE category=p_new_category AND card_id=p_new_card_id)
+  AND NOT EXISTS(SELECT 1 FROM public.love_custom_challenges
+    WHERE couple_id=p_couple AND category=p_new_category AND card_id=p_new_card_id)
+  AND NOT EXISTS(SELECT 1 FROM public.couple_challenges
+    WHERE couple_id=p_couple AND category=p_new_category AND card_id=p_new_card_id)
+ THEN RAISE EXCEPTION 'Nouveau défi indisponible dans votre bibliothèque et archives'; END IF;
+ IF p_old_category=p_new_category AND p_old_card_id=p_new_card_id THEN RETURN true; END IF;
+ -- If another member already starred this new card, it is already shared;
+ -- never discard a different original favorite in this case.
+ IF EXISTS(SELECT 1 FROM public.love_couple_favorites
+    WHERE couple_id=p_couple AND category=p_new_category AND card_id=p_new_card_id)
+ THEN RETURN true; END IF;
+ DELETE FROM public.love_couple_favorites
+ WHERE couple_id=p_couple AND category=p_old_category AND card_id=p_old_card_id;
+ INSERT INTO public.love_couple_favorites(couple_id,category,card_id,marked_by)
+ VALUES(p_couple,p_new_category,p_new_card_id,v_actor);
+ RETURN true;
+END;
+$replace$;
+REVOKE ALL ON FUNCTION public.replace_love_couple_favorite(uuid,text,integer,text,integer)
+ FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.replace_love_couple_favorite(uuid,text,integer,text,integer)
  TO authenticated;
 
 CREATE OR REPLACE FUNCTION public.my_love_couple_favorites(p_couple uuid)
