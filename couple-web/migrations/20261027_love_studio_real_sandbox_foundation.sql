@@ -36,6 +36,20 @@ ALTER TABLE public.love_studio_test_audit ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.love_studio_test_audit FROM PUBLIC,anon,authenticated;
 GRANT SELECT,INSERT ON public.love_studio_test_audit TO service_role;
 
+-- Venice is an optional PAID inference provider. A technical test couple
+-- can be reset at will, so its per-couple Venice daily limit alone is not enough.
+-- Enforce a second immutable one-trial-per-UTC-day budget per platform admin.
+-- This table is independent of pairs, and survives deleting/replacing A/B.
+CREATE TABLE IF NOT EXISTS public.love_studio_venice_daily_quota (
+ admin_id uuid NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+ utc_day date NOT NULL DEFAULT (now() AT TIME ZONE 'UTC')::date,
+ created_at timestamptz NOT NULL DEFAULT now(),
+ PRIMARY KEY(admin_id,utc_day)
+);
+ALTER TABLE public.love_studio_venice_daily_quota ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON public.love_studio_venice_daily_quota FROM PUBLIC,anon,authenticated;
+GRANT SELECT,INSERT ON public.love_studio_venice_daily_quota TO service_role;
+
 -- Entirely privileged deletion: the service backend supplies its VERIFIED admin id;
 -- direct browser access is revoked. All target IDs come from the registry.
 CREATE OR REPLACE FUNCTION public.love_studio_purge_test_couple(p_admin uuid)
