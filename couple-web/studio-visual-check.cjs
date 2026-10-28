@@ -77,6 +77,10 @@ const assert=require('node:assert/strict');
       .filter(node=>getComputedStyle(node).display!=='none')
       .map(node=>({pane:node.dataset.pane,height:node.getBoundingClientRect().height,
        visible:node.getBoundingClientRect().width>0})),
+     emergencyLinks:[...document.querySelectorAll('.studio-mobile-shortcuts a')]
+      .map(node=>({href:node.href,height:node.getBoundingClientRect().height,
+       visible:node.getBoundingClientRect().width>0,
+       target:node.target,rel:node.rel})),
      mobileNavVisible:getComputedStyle(document.querySelector('.studio-mobile-nav')).display!=='none',
      guide:box('#studio-real-progress'),eclat:box('#studio-real-eclat-progress')
     };
@@ -97,6 +101,11 @@ const assert=require('node:assert/strict');
      ['realtest','venice','notifications','audience','promos','geo']);
     assert.ok(layout.shortcuts.every(x=>x.visible&&x.height>=44),
      'every mobile emergency shortcut must be large enough to touch');
+    assert.equal(layout.emergencyLinks.length,2);
+    assert.ok(layout.emergencyLinks.every(x=>x.visible&&x.height>=44&&
+     x.target==='_blank'&&x.rel.includes('noopener')));
+    assert.ok(layout.emergencyLinks.some(x=>x.href.startsWith('https://github.com/fredvolks/loveroll/actions')));
+    assert.ok(layout.emergencyLinks.some(x=>x.href.startsWith('https://supabase.com/dashboard/project/ejsrqfpkgwraorrznjpm')));
    }
    if(preset.name==='PC-1440'||preset.name==='iPad-landscape'){
     assert.equal(layout.mobileNavVisible,false,
