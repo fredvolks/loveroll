@@ -14,7 +14,7 @@ create function auth.uid() returns uuid language sql stable as $$
  select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid;
 $$;
 create table auth.users(id uuid primary key);
-create table public.couples(id uuid primary key);
+create table public.couples(id uuid primary key, challenge_cycle_pending boolean not null default false);
 create table public.couple_members(
  couple_id uuid not null references public.couples(id),
  user_id uuid not null references auth.users(id),
