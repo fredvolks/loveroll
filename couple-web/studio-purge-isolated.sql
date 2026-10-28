@@ -81,7 +81,7 @@ CREATE TABLE public.love_world_experiences(face integer);
 CREATE TABLE public.love_platform_admin_audit(changed_at timestamptz,patch jsonb);
 CREATE TABLE public.love_monthly_places(couple_id uuid,state text);
 CREATE FUNCTION public.love_platform_is_admin() RETURNS boolean
-LANGUAGE sql STABLE AS $ SELECT true $;
+LANGUAGE sql STABLE AS 'SELECT true';
 CREATE TABLE public.love_referral_credit_usage(beneficiary_user_id uuid);
 CREATE TABLE public.love_personal_intimacy(user_id uuid,source_couple_id uuid);
 CREATE TABLE public.couple_evening_reviews(session_id uuid,author_id uuid);
