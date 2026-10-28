@@ -48,3 +48,35 @@ test('History hearts are available for both partners after closure and obey capa
  const openNight=eveningHistoryMarkup({...params,sessions:[{...params.sessions[0],finished_at:null}]});
  assert.doesNotMatch(openNight,/data-action="favorite-toggle:/);
 });
+
+
+test('LR-019 cannot regress the already published privacy mask or expose private notifications',()=>{
+ const sw=readFileSync(new URL('./service-worker.js',import.meta.url),'utf8');
+ const html=readFileSync(new URL('./index.html',import.meta.url),'utf8');
+ assert.match(app,/document\.addEventListener\('loveroll:privacy-mask'/);
+ assert.match(app,/if\(document\.documentElement\.classList\.contains\('lr-privacy-active'\)\)/);
+ assert.match(app,/eclatAudio\.stop\(\);state\.eclatMusic=false;return;/);
+ assert.match(sw,/const safeBodies=\{/);
+ assert.match(sw,/const body=safeBodies\[kind\]/);
+ assert.doesNotMatch(sw,/message\.body:\s*'Votre espace à deux vous attend'/);
+ assert.match(html,/privacy-screen\.mjs\?v=20261028-privacy250/);
+ assert.match(html,/evening-calendar\.css\?v=20261028-favs252/);
+ assert.match(html,/settings-premium\.css\?v=20261028-favs252/);
+});
+
+
+test('four original live SQL routines require an explicit non-mutating drift preflight',()=>{
+ const preflight=readFileSync(new URL('./qa/lr019-production-schema-preflight.sql',import.meta.url),'utf8');
+ for(const signature of [
+  'public.love_respond_and_redraw(uuid,text,boolean)',
+  'public.draw_for_partner(uuid,text,boolean)',
+  'public.love_cycle_status(uuid)',
+  'public.finish_couple_session(uuid,boolean)'
+ ])assert.ok(preflight.includes(signature),'missing protected live routine '+signature);
+ assert.match(preflight,/md5\(pg_get_functiondef\(p\.oid\)\)/);
+ assert.match(preflight,/changed: REVIEW BEFORE REPLACING/);
+ assert.match(preflight,/favorites_already_present/);
+ assert.match(preflight,/favorite_engine_already_active/);
+ assert.doesNotMatch(preflight,/^\s*(?:DROP|ALTER|UPDATE|DELETE|INSERT|TRUNCATE|CREATE\s+(?:TABLE|FUNCTION|INDEX))\s+/gmi,
+  'preflight must never mutate a couple or system schema');
+});
