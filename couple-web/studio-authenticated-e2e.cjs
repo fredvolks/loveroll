@@ -274,6 +274,18 @@ async function main(){
   }
   await page.screenshot({path:'studio-authenticated-e2e-proof/real-eclat-twelve-coffrets.png',fullPage:true});
   console.log('Both authenticated players may browse all 12 real Éclat coffrets: PASS');
+  // Start ONE real coffret through the shipped UI, then inspect the server's
+  // active-chapter record. No artificial RPC, scene advancement or mock state.
+  await a.locator('button[data-action="eclat:detail:1"]').click({timeout:15000});
+  await a.locator('button[data-action="eclat:start:1"]').click({timeout:25000});
+  await page.locator('#studio-real-check').click();
+  const activeCoffret=page.locator(
+   '#studio-real-eclat-grid .studio-real-eclat-coffret[data-state="active"]');
+  await activeCoffret.waitFor({state:'visible',timeout:60000});
+  assert.match(await activeCoffret.innerText(),/Coffret 1.*en cours.*30 min/,
+   'official Supabase Éclat session must be reflected in Studio diagnostics');
+  await page.screenshot({path:'studio-authenticated-e2e-proof/real-eclat-started.png',fullPage:true});
+  console.log('Real Éclat chapter 1 started and confirmed by the privileged read-only backend: PASS');
   await page.screenshot({path:'studio-authenticated-e2e-proof/official-rolled-dice-and-cards.png',fullPage:true});
   // The private Venice section can inspect provider status without spending
   // inference credits. NEVER trigger preview_three in an automated QA run.
