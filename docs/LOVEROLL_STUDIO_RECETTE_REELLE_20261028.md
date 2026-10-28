@@ -105,3 +105,12 @@ Prochain passage impératif : disposer d'un backend staging équipé des RPC Lov
 - Ne jamais assimiler les tests SQL/Node verts à une recette Supabase Auth A/B réellement passée.
 
 - La recette A/B authentifiée vérifie **avant toute création** deux RPC réellement exécutables sous le JWT du Super Admin de staging : `love_eclat_status` (lecture de l'accès Éclat) et `love_test_mode_allowed` (droit au mode essai). Elle s'arrête si le schéma de fonctions est incomplet, même si les tables existent. Aucun dé ni coffret n'est généré pendant ce précontrôle.
+
+
+### Inspection complète des vrais défis du duo technique — lot du 28 octobre
+
+- La rubrique « Défis officiels du duo de test » affiche les trois derniers défis de la dernière soirée, et possède maintenant **« Voir tout l’historique »** avec pagination de 10 défis par page. Elle couvre les soirées successives du même duo, pas seulement le dernier écran.
+- Filtres **A et B / Joueur A / Joueur B** exécutés **côté serveur** avec des comptes exacts, recherche de destinataire uniquement via les comptes `love_studio_test_seats` enregistrés; aucun UUID ou identifiant de couple arbitraire accepté du navigateur. Chaque lecture exige un vrai Super Admin et revalide le duo Auth technique A/B.
+- Résultats : **vraie valeur D100, catégorie, destinataire A/B, titre, consigne, statut et date d’enregistrement**, extraits de `couple_challenges` sans déclencher de tirage ou altérer les cartes. Aucune identité, email ou clé secrète transmis dans le résultat. Les données sont supprimées de la console à la fermeture de session admin ou au remplacement du duo.
+- La recette réelle sur staging comparera le défi accepté à sa fiche d’historique et vérifiera que le destinataire correct le voit, alors que l'autre joueur n’a pas de fausse attribution. **Cette recette n’est pas encore exécutée**; les tests de contrat sont la vérification disponible en branche.
+- La consultation des historiques reste offerte quand un autre diagnostic (Éclat ou dés) est momentanément indisponible. La section n'est pas une maquette : une panne SQL de l'historique affiche une erreur, jamais des cartes inventées.
