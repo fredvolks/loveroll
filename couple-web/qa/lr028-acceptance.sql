@@ -165,5 +165,5 @@ begin
   raise exception 'SECURITY FAILURE: recipient answered after sender was replaced';
  exception when sqlstate '42501' then null;
  end;
-end$;
+end$$;
 select 'LR-028: all isolated SQL A/B tests passed' as result;
