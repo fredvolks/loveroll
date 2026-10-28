@@ -30,6 +30,9 @@ test('staging browser test HARD REFUSES production before importing any browser 
  assert.notEqual(wrongURL.status,0);
  assert.match(wrongURL.stderr,/REFUSED: staging ref/);
  assert.match(e2e,/params\.ref===productionRef/);
+ assert.match(e2e,/serviceWorkers:'block'/);
+ assert.match(e2e,/https:\/\/ejsrqfpkgwraorrznjpm\.supabase\.co\/\*\*/);
+ assert.match(e2e,/blockedProductionRequests,0/);
  assert.match(e2e,/params\.url!==`https:\/\/${params.ref}\.supabase\.co`/);
  assert.match(workflow,/workflow_dispatch:/);
  assert.doesNotMatch(workflow,/pull_request:/);
