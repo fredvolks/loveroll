@@ -47,6 +47,12 @@ test('actual manual browser steps target official production markup, not guesses
  assert.match(e2e,/Promise\.any\(candidates\.map/);
  assert.match(e2e,/category:SENSUEL/);
  assert.match(e2e,/new-challenge/);
+ assert.match(e2e,/recipientSeat=firstTurn===0\?'B':'A'/);
+ assert.match(e2e,/evening-list/);
+ assert.match(e2e,/evening-open:/);
+ assert.match(e2e,/evening-start:/);
+ assert.match(e2e,/hasText:'accepted'/);
+ assert.ok(actions.includes('answer_challenge'),'the real recipient must persist accepted via official server RPC');
  assert.match(e2e,/studio-real-delete/);
  assert.match(e2e,/cleanupSuccessful/);
 });
