@@ -1,0 +1,46 @@
+name: LR-019 five hearts browser tests
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'couple-web/app.js'
+      - 'couple-web/evening-calendar.mjs'
+      - 'couple-web/evening-calendar-browser-check.cjs'
+      - 'couple-web/lr019-favorites-ui.test.mjs'
+      - 'couple-web/settings-premium.css'
+      - 'couple-web/lr019-five-favorites-browser-check.cjs'
+      - 'couple-web/lr019-favorites-couple-browser-check.cjs'
+      - '.github/workflows/lr019-five-favorites-browser.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  modal-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate syntax and current favorite UI contracts
+        run: |
+          node --check couple-web/app.js
+          node --check couple-web/lr019-five-favorites-browser-check.cjs
+          node --test couple-web/lr019-favorites-ui.test.mjs
+      - name: Confirm modal on real Chromium layouts
+        run: |
+          set -euo pipefail
+          npm install --no-save playwright@1.56.0
+          npx playwright install chromium
+          python3 -m http.server 8765 --bind 127.0.0.1 --directory couple-web >/tmp/lr019-five-hearts.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 40); do
+            if curl -fsS http://127.0.0.1:8765/ >/dev/null; then break; fi
+            sleep 0.25
+          done
+          curl -fsS http://127.0.0.1:8765/settings-premium.css >/dev/null
+          node couple-web/lr019-five-favorites-browser-check.cjs
+          node couple-web/lr019-favorites-couple-browser-check.cjs
+          node couple-web/evening-calendar-browser-check.cjs
