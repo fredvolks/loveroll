@@ -187,3 +187,41 @@ test('Studio Éclat progress comes from the real technical couple, not local bro
  assert.ok(src.includes("item.dataset.state=coffret.state"));
  assert.ok(!src.includes("localStorage.getItem('studio-eclat-progress'"));
 });
+
+
+test('full QA challenge history is scoped to the verified technical pair and paginated safely',()=>{
+ const index=server.indexOf("if(action==='challenge_history')");
+ assert.ok(index>0,'private history action exists');
+ const end=server.indexOf("if(action==='seat_login')",index);
+ assert.ok(end>index);
+ const route=server.slice(index,end);
+ assert.ok(server.includes("'status','challenge_history','create'"));
+ assert.ok(route.includes("Number.isSafeInteger(page)")&&route.includes("Number(page)>999"));
+ assert.ok(route.includes(".eq('admin_id',adminId).maybeSingle()"));
+ assert.ok(route.includes("await validRegisteredPair(pool.couple_id,seats||null)"));
+ assert.ok(route.includes("service.from('couple_challenges')"));
+ assert.ok(route.includes(".eq('couple_id',pool.couple_id)"));
+ assert.ok(route.includes(".range(Number(page)*limit,Number(page)*limit+limit-1)"));
+ assert.ok(route.includes("{count:'exact'}"));
+ assert.ok(route.includes("limit=10"));
+ assert.ok(!route.includes("body.couple_id"));
+ assert.ok(!route.includes("body.user_id"));
+ assert.ok(!route.includes("recipient:row.recipient"),
+  'authenticated customer UUID never crosses the admin history response');
+ assert.ok(!route.includes("service.auth.admin.deleteUser"));
+ assert.ok(!route.includes("roll_couple_once"));
+});
+
+test('history inspector fetches real server cards, rejects stale responses and clears private data on logout',()=>{
+ assert.ok(src.includes("await request('challenge_history',null,{page})"));
+ assert.ok(src.includes("result?.page!==page||result?.limit!==10"));
+ assert.ok(src.includes("requestGeneration!==historyGeneration"));
+ assert.ok(src.includes("if(!active||tearingDown||!status?.ready||historyBusy"));
+ assert.ok(src.includes("historyGeneration++"));
+ assert.ok(src.includes("function closeFrames(){\n  resetHistory();"));
+ assert.ok(src.includes("function deactivate(){"));
+ assert.ok(src.includes("historyCards=null"));
+ assert.ok(src.includes("title.textContent=String(card.title||'Défi')"));
+ assert.ok(src.includes("description.textContent=String(card.description||'Aucune consigne enregistrée')"));
+ assert.ok(!src.includes("article.innerHTML"));
+});
