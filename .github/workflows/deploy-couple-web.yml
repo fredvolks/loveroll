@@ -47,6 +47,7 @@ jobs:
           node --check couple-web/evening-redesign-browser-check.cjs
           node --check couple-web/surprise-desktop-v86-check.cjs
           node --test couple-web/challenge-adaptation.test.mjs
+          node --test couple-web/challenge-adaptation-contract.test.mjs
           node --test couple-web/evening-d100-template.test.mjs couple-web/surprise-minimal.test.mjs couple-web/evening-d6-template.test.mjs couple-web/eclat-guidance.test.mjs couple-web/monthly-invitation.test.mjs couple-web/signup-routing.test.mjs couple-web/stale-invitation-safari.test.mjs couple-web/dice-weighting.test.mjs couple-web/cycle-200.test.mjs couple-web/calendar-success-stats.test.mjs couple-web/love-category-style.test.mjs couple-web/dissociation-solo-admin.test.mjs couple-web/mobile-entry-screen.test.mjs couple-web/loveroll-splash.test.mjs couple-web/pwa-update.test.mjs couple-web/eclat.test.mjs couple-web/evening-finale-v99.test.mjs couple-web/premium-couple-pages.test.mjs couple-web/evening-redesign.test.mjs couple-web/surprise-v86.test.mjs couple-web/surprise-d100-budget.test.mjs couple-web/eclat-history.test.mjs couple-web/evening-queue-fixed-v102.test.mjs
       - name: Vérifier TOUS les scripts JavaScript livrés
         run: node couple-web/check-shipped-js.cjs
