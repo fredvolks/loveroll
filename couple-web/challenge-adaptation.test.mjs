@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {adaptationFor,acceptedAdaptationText,acceptedAdaptationMinutes,adaptationPanelHtml,pendingAdaptationsHtml} from './challenge-adaptation.mjs';
+import {adaptationFor,acceptedAdaptationText,acceptedAdaptationMinutes,adaptedTimerDurationMs,needsAdaptedTimerReset,adaptationPanelHtml,pendingAdaptationsHtml} from './challenge-adaptation.mjs';
 const card={id:'challenge-1',status:'proposed'};
 test('original instructions and timer win until explicit other-person acceptance',()=>{
  const row={challenge_id:'challenge-1',status:'pending',proposed_text:'Deux pas de danse',proposed_minutes:15};
@@ -29,4 +29,20 @@ test('one recipient approves or keeps original, user-supplied content is escaped
  assert.doesNotMatch(html,/<img/);
  assert.match(html,/&lt;img/);
  assert.equal(adaptationFor(rows,'challenge-1'),rows[0]);
+});
+
+test('accepted timer duration resets expired or running OLD client timer, never pending consent',()=>{
+ const proposal={challenge_id:'challenge-1',status:'pending',proposed_minutes:12};
+ const accepted={...proposal,status:'accepted'};
+ const declined={...proposal,status:'declined'};
+ assert.equal(adaptedTimerDurationMs(proposal),null);
+ assert.equal(adaptedTimerDurationMs(declined),null);
+ assert.equal(adaptedTimerDurationMs(accepted),720000);
+ assert.equal(needsAdaptedTimerReset(accepted,300000),true);
+ assert.equal(needsAdaptedTimerReset(accepted,undefined),true);
+ assert.equal(needsAdaptedTimerReset(accepted,720000),false);
+ assert.equal(needsAdaptedTimerReset(proposal,300000),false);
+ assert.equal(needsAdaptedTimerReset(declined,300000),false);
+ assert.equal(needsAdaptedTimerReset({...accepted,proposed_minutes:null},300000),false);
+ assert.equal(needsAdaptedTimerReset({...accepted,proposed_minutes:361},300000),false);
 });
