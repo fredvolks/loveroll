@@ -142,3 +142,33 @@ test('stop on the original device erases private role/drafts without waiting for
  assert.doesNotMatch(root.innerHTML,/ÉCLAT · COFFRET|Mission privée/);
  controller.destroy();
 });
+
+
+test('a rejected authorized action hides the old private Éclat scene immediately',async()=>{
+ const root=fakeRoot(),original=initial(),errors=[];
+ const controller=createEclatV2PlayController({
+  root,api:{act:async()=>{throw Object.assign(new Error('Permission retirée'),{code:'42501'});}},
+  viewerId:aid,initialStatus:original,onError:error=>errors.push(error)
+ });
+ assert.match(root.innerHTML,/ÉCLAT · COFFRET/);
+ const button={getAttribute:()=> 'act:pause'};
+ await root.handlers.click({target:{closest:()=>button}});
+ assert.equal(errors.length,1,'real server authorization error must be surfaced');
+ assert.deepEqual(controller.getStatus(),{access:false,active:false});
+ assert.match(root.innerHTML,/Accès Éclat requis/);
+ controller.destroy();
+});
+
+test('temporary action errors leave the Éclat scene available for retry',async()=>{
+ const root=fakeRoot(),original=initial(),errors=[];
+ const controller=createEclatV2PlayController({
+  root,api:{act:async()=>{throw Object.assign(new Error('Connexion momentanée'),{status:503});}},
+  viewerId:aid,initialStatus:original,onError:error=>errors.push(error)
+ });
+ const button={getAttribute:()=> 'act:pause'};
+ await root.handlers.click({target:{closest:()=>button}});
+ assert.equal(errors.length,1);
+ assert.equal(controller.getStatus().session_id,sid);
+ assert.match(root.innerHTML,/ÉCLAT · COFFRET/);
+ controller.destroy();
+});
