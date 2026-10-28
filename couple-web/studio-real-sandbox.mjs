@@ -10,6 +10,7 @@ export function createStudioRealSandbox({client}){
  const validRoutes=['home','session','special','eclat','advent','settings','journal','personal-journal','occasions'];
  const frames={A:null,B:null};
  let status=null,tab='A',busy=false,tearingDown=false,initialized=false,loginInFlight=new Set(),expandedSeat=null;
+ let veniceBusy=false,veniceData=null,veniceMessage='Connecte le joueur A pour accéder aux brouillons.';
  const authenticatedSeats=new Set();
  const label=s=>s==='A'?'Joueur A':'Joueur B';
  const say=(message)=>{const node=$('studio-real-status');if(node)node.textContent=message;};
@@ -19,6 +20,7 @@ export function createStudioRealSandbox({client}){
   node.dataset.state=state;
   node.textContent=state==='connected'?'Connecté':state==='error'?'Connexion à vérifier':'À connecter';
   renderProgress();
+  renderVenice();
  }
  async function request(action,seat){
   const {data,error}=await client.functions.invoke(uri,{body:{action,...(seat?{seat}:{})}});
@@ -63,6 +65,9 @@ export function createStudioRealSandbox({client}){
    button.focus({preventScroll:true});}
  }
  function closeFrames(){
+  veniceBusy=false;veniceData=null;
+  veniceMessage='Le joueur A doit être reconnecté pour accéder à Venice.';
+  renderVenice();
   // Late status responses must never remount an already-deleted test pair.
   statusSync.invalidate();
   collapseSeat();
@@ -106,6 +111,44 @@ export function createStudioRealSandbox({client}){
    item.dataset.state=done?'verified':'pending';
    item.textContent=(done?'✓ ':'○ ')+'Coffret '+coffret.id+' · '+coffret.title;
    grid.append(item);
+  }
+ }
+ function renderVenice(){
+  const region=$('studio-venice-cards'),note=$('studio-venice-status');
+  if(!region||!note)return;
+  const ready=status?.ready===true&&authenticatedSeats.has('A')&&!tearingDown;
+  for(const id of ['studio-venice-status-button','studio-venice-latest',
+   'studio-venice-generate']){
+   const button=$(id);
+   if(button)button.disabled=!ready||veniceBusy;
+  }
+  note.textContent=veniceBusy?'Requête Venice en cours — ne recharge pas cette fenêtre.'
+   :veniceMessage;
+  region.replaceChildren();
+  const payload=veniceData;
+  if(!payload)return;
+  const cards=Array.isArray(payload.cards)?payload.cards:
+   Array.isArray(payload.preview?.cards)?payload.preview.cards:[];
+  if(!cards.length){
+   const empty=document.createElement('p');
+   empty.textContent='Aucun brouillon Venice enregistré pour ce banc.';
+   region.append(empty);return;
+  }
+  for(const card of cards.slice(0,3)){
+   const article=document.createElement('article');
+   article.classList.add('studio-venice-card');
+   const title=document.createElement('h3');
+   title.textContent=String(card.title||'Brouillon en erreur').slice(0,130);
+   const meta=document.createElement('small');
+   const minutes=Number.isInteger(card.timer_minutes)?card.timer_minutes:'—';
+   meta.textContent='Style : '+String(card.style||'—').slice(0,24)+
+    ' · Durée : '+minutes+' min · Non publié';
+   const summary=document.createElement('p');
+   summary.textContent=String(card.text_short||card.error||'').slice(0,650);
+   const detailed=document.createElement('p');
+   detailed.textContent=String(card.text_detailed||'').slice(0,1000);
+   article.append(title,meta,summary,detailed);
+   region.append(article);
   }
  }
  function renderAudit(){
@@ -197,6 +240,7 @@ export function createStudioRealSandbox({client}){
   renderChallengeCards();
   renderProgress();
   renderEclatProgress();
+  renderVenice();
   renderAudit();
   if(!isReady){closeFrames();return;}
   for(const seat of validSeats){
@@ -236,6 +280,20 @@ export function createStudioRealSandbox({client}){
   const seat=validSeats.find(s=>frames[s]?.contentWindow===event.source);
   if(!seat||event.data?.seat!==seat)return;
   const msg=event.data;
+  if(msg.type==='loveroll-studio-venice-result'&&seat==='A'){
+   veniceBusy=false;
+   if(msg.data?.ok===true){
+    veniceData=msg.data.result||null;
+    veniceMessage=msg.action==='status'
+     ?(veniceData?.message||'État de la connexion Venice reçu.')
+     :msg.action==='preview_three'
+      ?'Brouillons Venice sauvegardés. Aucune carte officielle modifiée.'
+      :'Derniers brouillons lus. Aucune carte officielle modifiée.';
+   }else{
+    veniceMessage=String(msg.data?.error||'Réponse Venice indisponible').slice(0,240);
+   }
+   renderVenice();return;
+  }
   if(msg.type==='loveroll-studio-game-updated'){
    // The official child has completed a real server RPC. Re-read its cards
    // through the authorized backend; never accept content or dice from frames.
@@ -346,6 +404,34 @@ export function createStudioRealSandbox({client}){
     try{await refresh()}catch{/* Keep original deletion error. */}
    }finally{tearingDown=false;busy=false}
   });
+  async function veniceAction(action){
+   if(veniceBusy||tearingDown||!status?.ready||
+      !authenticatedSeats.has('A')||!frames.A?.contentWindow)return;
+   if(action==='preview_three'){
+    if(!confirm('Venice utilisera de vrais crédits d’IA pour générer 3 brouillons. Continuer ?'))return;
+    if(!confirm('Confirmer : une seule génération par jour UTC et par Super Admin, même après réinitialisation A+B. Cette action pourrait être facturée par Venice.'))return;
+   }
+   veniceBusy=true;veniceMessage='Préparation de l’atelier Venice…';
+   renderVenice();
+   try{
+    if(action==='preview_three')await request('venice_preview_authorize');
+    if(!frames.A?.contentWindow||tearingDown)throw Error('Joueur A indisponible');
+    frames.A.contentWindow.postMessage({
+     type:'loveroll-studio-venice',seat:'A',action
+    },location.origin);
+    veniceMessage='En attente du service officiel Venice via le joueur A…';
+    renderVenice();
+   }catch(err){
+    veniceBusy=false;
+    veniceMessage=err instanceof Error?err.message:'Erreur Venice';
+    renderVenice();
+   }
+  }
+  for(const [id,action] of [
+   ['studio-venice-status-button','status'],
+   ['studio-venice-latest','get_latest_preview'],
+   ['studio-venice-generate','preview_three']
+  ])$(id)?.addEventListener('click',()=>veniceAction(action));
   $('studio-real-check').addEventListener('click',()=>refresh().catch(e=>say(e.message)));
   $('studio-real-refresh').addEventListener('click',()=>{closeFrames();refresh().catch(e=>say(e.message))});
   try{await refresh()}catch(err){say(err.message)}
