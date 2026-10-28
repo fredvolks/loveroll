@@ -1269,6 +1269,15 @@ function renderEclat(){
  const v2=state.eclatV2OwnerId===state.user?.id&&
   state.eclatV2CoupleId===state.coupleId?state.eclatV2Status:null;
  if(v2?.access&&v2.active&&!e?.active){
+  // App-level refreshes happen frequently (live sync, settings, timers).
+  // Keep the same authenticated scene editor mounted for the same user,
+  // couple and server session: remounting here used to erase private drafts
+  // and momentarily expose the shared-phone handover on every refresh.
+  const mounted=eclatV2Player?.getStatus();
+  if(mounted?.access&&mounted.active&&mounted.session_id===v2.session_id&&
+     root.querySelector('#eclat-v2-live-player')&&
+     state.eclatV2OwnerId===state.user?.id&&
+     state.eclatV2CoupleId===state.coupleId)return;
   disposeEclatV2Player();
   eclatAudio.stop();state.eclatMusic=false;
   const sharedDevice=v2.device_mode==='one',isSharedHost=state.user?.id===v2.role_a;
