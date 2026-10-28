@@ -115,7 +115,7 @@ Deno.serve(async(req:Request)=>{
      if(error)throw Error('Diagnostic du jeu indisponible');
      return data;
     };
-    const [weekly,monthly,latest,entitlement,eclatFinished]=await Promise.all([
+    const [weekly,monthly,latest,entitlement,eclatFinished,eclatActive]=await Promise.all([
      checked(service.from('couple_rolls').select('face,created_at')
       .eq('couple_id',pool.couple_id).eq('kind','weekly')
       .order('created_at',{ascending:false}).limit(1)),
@@ -131,7 +131,14 @@ Deno.serve(async(req:Request)=>{
      // end()/abandon action sets cancelled=true and never counts as completed.
      checked(service.from('love_eclat_sessions').select('coffret_id')
       .eq('couple_id',pool.couple_id).eq('cancelled',false)
-      .not('ended_at','is',null).limit(1000))
+      .not('ended_at','is',null).limit(1000)),
+     // Active chapter comes ONLY from the authorized couple's real
+     // Éclat sessions. No scene content, account ids or paid claims returned.
+     checked(service.from('love_eclat_sessions')
+      .select('coffret_id,minutes,chapter_index,chapter_plan,started_at')
+      .eq('couple_id',pool.couple_id).eq('cancelled',false)
+      .is('ended_at',null).order('started_at',{ascending:false})
+      .limit(1).maybeSingle())
     ]);
     // Count is exact; retrieve only three cards. Never silently truncate
     // challenge totals at Supabase's Data API row limit (often 1,000).
@@ -167,6 +174,13 @@ Deno.serve(async(req:Request)=>{
      })),
      eclat_enabled:entitlement?.enabled===true&&
        (!entitlement.ends_at||new Date(entitlement.ends_at).getTime()>Date.now()),
+     eclat_active:eclatActive?{
+      coffret_id:eclatActive.coffret_id,
+      minutes:eclatActive.minutes,
+      chapter_index:eclatActive.chapter_index,
+      chapter_total:Array.isArray(eclatActive.chapter_plan)
+       ?eclatActive.chapter_plan.length:null
+     }:null,
      eclat_completed_coffrets:[...new Set<number>((eclatFinished||[])
        .map((r:{coffret_id:number})=>r.coffret_id)
        .filter((id:number)=>Number.isInteger(id)&&id>=1&&id<=12))]
