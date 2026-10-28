@@ -7,7 +7,7 @@ const html=read('index.html'),app=read('app.js'),sw=read('service-worker.js');
 const release=JSON.parse(read('web-version.json'));
 const appTag=release.build.replaceAll('-','').replace('.', '-web');
 test('LoveRoll build versions agree between endpoint, app, HTML and imported modules',()=>{
- const build=release.build,tag='20261015-no-toast87',inviteTag='20261018-safari150',controlsTag='20261017-controls141',diceTag='20261027-web245';
+ const build=release.build,tag='20261015-no-toast87',inviteTag='20261018-safari150',controlsTag='20261017-controls141',diceTag='20261027-web246';
  assert.match(build,/^\d{4}-\d{2}-\d{2}\.\d+$/);
  assert.ok(sw.includes("const CACHE='loveroll-static-v"+build.split('.')[1]+"'"));
  assert.ok(app.includes('invite-links.mjs?v='+inviteTag));

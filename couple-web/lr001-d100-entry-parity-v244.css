@@ -72,7 +72,9 @@
    position:relative!important;
    width:100vw!important;
    max-width:none!important;
-   left:calc(50% - 50vw)!important;
+   /* Half of the original inset correction: 360px WebGL measurement
+      gives x=166 for the full offset and x=194 without it; x=180 wins. */
+   left:calc(25% - 25vw)!important;
   }
  }
 }
