@@ -48,3 +48,31 @@ export function studioEclatOverview(status,coffrets){
   })
  };
 }
+
+
+// Shareable diagnostics intentionally contain NO user id, email, challenge
+// text, consent detail, Auth token or personal profile. Unverified data stays
+// labelled as unverified, not falsely marked as completed.
+export function studioTestReport(status,connectedSeats,coffrets){
+ const milestones=studioTestProgress(status,connectedSeats);
+ const premium=studioEclatOverview(status,coffrets);
+ return [
+  'LoveRoll · Rapport de recette du banc A/B',
+  'Source : lectures du vrai serveur et état Auth des deux fenêtres.',
+  'Ce rapport ne prouve PAS une validation sur appareils physiques.',
+  'Jalons officiels : '+milestones.completed+'/'+milestones.total,
+  ...milestones.steps.map(step=>(step.done?'[OK] ':'[NON VÉRIFIÉ] ')+step.title),
+  'Éclat · '+premium.verified+'/'+premium.rows.length+' coffrets terminés',
+  ...premium.rows.map(row=>{
+   const state=row.state==='verified'?'Terminé':
+    row.state==='active'?'En cours':'Non vérifié';
+   const step=row.state==='active'&&row.chapter!==null&&row.chapterTotal!==null
+    ?' · étape '+row.chapter+'/'+row.chapterTotal:'';
+   const duration=row.state==='active'&&row.minutes!==null
+    ?' · '+row.minutes+' min':'';
+   return String(row.id).padStart(2,'0')+' · '+row.title+
+    ' : '+state+step+duration;
+  }),
+  'Tests Auth sur préproduction et essais physiques : À CONFIRMER séparément.'
+ ].join('\n');
+}
