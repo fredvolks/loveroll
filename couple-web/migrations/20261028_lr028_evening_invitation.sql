@@ -44,6 +44,10 @@ begin
   or (select count(*) from public.couple_members where couple_id=p_couple)<>2
   or not exists(select 1 from public.couple_members
    where couple_id=p_couple and user_id=p_recipient) then return false; end if;
+ -- Mirror the real ensure_couple_session() gate: invitations must not
+ -- encourage a new evening during the required 200-challenge questionnaire.
+ if exists(select 1 from public.couples
+  where id=p_couple and challenge_cycle_pending=true) then return false; end if;
  monday_qc:=today_qc-(extract(isodow from today_qc)::int-1);
  select face,created_at into weekly_face,weekly_created
  from public.couple_rolls where couple_id=p_couple and kind='weekly'
