@@ -62,10 +62,10 @@ export function startStudioSeatLogin(client,seat,{selfWindow,origin,reload=()=>s
    try{
     const {data}=await client.auth.getSession();
     // Admin shortcuts never turn a normal signed-in user into a Studio seat.
-    if(data?.session?.user?.app_metadata?.love_studio_test!==true)return;
+    if(disposed||data?.session?.user?.app_metadata?.love_studio_test!==true)return;
     await navigate(message.tab,coffretId); // Production handler checks eligibility.
    }catch{
-    selfWindow.parent.postMessage({type:'loveroll-studio-navigate-error',seat},origin);
+    if(!disposed)selfWindow.parent.postMessage({type:'loveroll-studio-navigate-error',seat},origin);
    }
    return;
   }
@@ -75,13 +75,20 @@ export function startStudioSeatLogin(client,seat,{selfWindow,origin,reload=()=>s
       typeof message.request_id!=='string'||
       !/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(message.request_id))return;
    veniceRunning=true;
-   const send=(data)=>selfWindow.parent.postMessage({
-    type:'loveroll-studio-venice-result',seat:'A',action,
-    request_id:message.request_id,data
-   },origin);
+   const send=(data)=>{
+    // Never leak private previews into an admin window after its seat closed.
+    if(disposed)return;
+    selfWindow.parent.postMessage({
+     type:'loveroll-studio-venice-result',seat:'A',action,
+     request_id:message.request_id,data
+    },origin);
+   };
    try{
     const {data:auth,error:authError}=await client.auth.getUser();
     const user=auth?.user;
+    // Logout/teardown can happen while Auth is still resolving. No new paid
+    // Venice request may begin after this Studio seat has been destroyed.
+    if(disposed)return;
     // Only the exact original technical owner seat may call the deployed
     // couple-owned Venice bridge. No service role or JWT leaves the iframe.
     if(authError||!user?.id||
@@ -93,6 +100,7 @@ export function startStudioSeatLogin(client,seat,{selfWindow,origin,reload=()=>s
       .eq('user_id',user.id).maybeSingle();
     if(membershipError||!membership?.couple_id)
       throw Error('Couple Venice technique introuvable');
+    if(disposed)return;
     const {data,error}=await client.functions.invoke('love-venice-bridge',{
      body:{action,couple_id:membership.couple_id}
     });
