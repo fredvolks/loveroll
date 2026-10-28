@@ -13,6 +13,7 @@ test('LoveRoll build versions agree between endpoint, app, HTML and imported mod
  assert.ok(app.includes('invite-links.mjs?v='+inviteTag));
  assert.ok(sw.includes('./assets/loveroll-messenger-og-v142.jpg'));
  assert.ok(sw.includes('./lr001-d100-entry-parity-v244.css'));
+ assert.ok(sw.includes('./studio-seat-auth.mjs'),'normal LoveRoll app must cache its Studio Auth dependency for offline startup');
  assert.ok(html.includes('lr001-d100-entry-parity-v244.css?v=20261027-lr001-parity247'));
  assert.match(html,/og:image:type" content="image\/jpeg/);
  for(const css of ['controls-rose-v141.css','premium-theme.css','editorial-details.css','entry-ritual-v139.css']){
