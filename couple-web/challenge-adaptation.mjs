@@ -8,6 +8,16 @@ export function acceptedAdaptationText(original,row){
 export function acceptedAdaptationMinutes(original,row){
  return row?.status==='accepted'&&Number.isInteger(row.proposed_minutes)?row.proposed_minutes:original;
 }
+// A duration accepted before start invalidates any timer previously saved
+// for the original minutes (including an expired background timer).
+export function adaptedTimerDurationMs(row){
+ return row?.status==='accepted'&&Number.isInteger(row.proposed_minutes)&&
+  row.proposed_minutes>=1&&row.proposed_minutes<=360?row.proposed_minutes*60000:null;
+}
+export function needsAdaptedTimerReset(row,currentDurationMs){
+ const expected=adaptedTimerDurationMs(row);
+ return expected!==null&&Number.isFinite(currentDurationMs)&&currentDurationMs!==expected;
+}
 export function adaptationPanelHtml(card,row,{open=false,busy=false}={}){
  if(!card||!['proposed','accepted'].includes(card.status))return '';
  if(row){
