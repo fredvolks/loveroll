@@ -108,7 +108,9 @@ test('real history pagination is keyboard-accessible on iPad/PC/mobile, not a sy
  assert.match(css,/@media\(max-width:650px\)/);
  assert.match(sandbox,/function loadChallengeHistory\(page\)/);
  assert.match(sandbox,/await request\('challenge_history',historySeat==='all'\?null:historySeat,\{page\}\)/);
- assert.match(sandbox,/const cards=historyOpen\?historyCards:game\.challenge_preview\.slice\(0,3\)/);
+ assert.match(sandbox,/const cards=historyOpen\?historyCards:/);
+ assert.match(sandbox,/Array\.isArray\(game\?\.challenge_preview\)/);
+ assert.match(sandbox,/const available=status\?\.ready===true/);
  assert.match(sandbox,/historyBusy\|\|\(historyPage\+1\)\*10>=historyTotal/);
  assert.match(sandbox,/historyPage===0/);
  assert.match(sandbox,/const requestGeneration=historyGeneration/);
