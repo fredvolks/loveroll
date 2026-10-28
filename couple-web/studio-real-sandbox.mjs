@@ -1,6 +1,6 @@
 // Real dual-account sandbox inside Super Admin. No local card/dice fabrication.
 import {createStudioStatusSync} from './studio-status-sync.mjs';
-import {studioTestProgress,studioEclatOverview} from './studio-test-progress.mjs';
+import {studioTestProgress,studioEclatOverview} from './studio-test-progress.mjs?v=20261028-real288';
 import {ECLAT_COFFRETS} from './eclat-catalog.mjs';
 
 export function createStudioRealSandbox({client}){
