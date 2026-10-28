@@ -181,7 +181,8 @@ test('Studio Éclat progress comes from the real technical couple, not local bro
  assert.ok(query.includes(".eq('couple_id',pool.couple_id)"));
  assert.ok(query.includes(".eq('cancelled',false)"));
  assert.ok(query.includes(".is('ended_at',null)"));
- assert.ok(server.includes('eclat_active:eclatActive?'));
+ assert.ok(server.includes('eclat_active:v2Summary.active||(eclatActive?{'),
+  'verified V2 takes precedence only when available, otherwise V1 is preserved');
  assert.ok(server.includes('eclatActive.chapter_plan.length'));
  assert.ok(src.includes("studioEclatOverview(status,ECLAT_COFFRETS)"));
  assert.ok(src.includes("item.dataset.state=coffret.state"));
