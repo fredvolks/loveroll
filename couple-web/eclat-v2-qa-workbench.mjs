@@ -283,7 +283,11 @@ export function createEclatV2QaWorkbench({
  }
  async function refresh(){
   if(!sessionId)throw new Error('Commencez ou reprenez une séance QA');
-  await Promise.all([players.A.controller.refresh(),players.B.controller.refresh()]);
+  const read=await Promise.all([players.A.controller.refresh(),players.B.controller.refresh()]);
+  if(read.some(applied=>applied===false)){
+   feedback('Une action est en cours ou une lecture périmée a été ignorée. Réessayez Actualiser une fois les actions terminées.');
+   return;
+  }
   feedback('Deux écrans resynchronisés depuis les vrais états du serveur QA.');
  }
  async function onClick(event){
