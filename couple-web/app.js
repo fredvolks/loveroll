@@ -2540,6 +2540,7 @@ async function handle(action,element){
     });
    }
    if(state.coupleId!==couple||state.user?.id!==who)return;
+   state.eveningInviteBusy=false; // Refresh must render enabled controls.
    if(answer==='yes'){
     // Yes gives permission to open the real Soirée; never roll either D6.
     // The official session RPC still enforces day/week and partner rules.
