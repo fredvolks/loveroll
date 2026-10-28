@@ -42,6 +42,10 @@ CREATE TABLE public.couple_challenges(
 );
 -- The real Supabase schema already grants authorized member reads under RLS.
 GRANT SELECT ON public.couple_challenges,public.couple_members TO authenticated;
+-- Real LoveRoll only exposes the personal challenge to its recipient.
+ALTER TABLE public.couple_challenges ENABLE ROW LEVEL SECURITY;
+CREATE POLICY synthetic_recipient_cards ON public.couple_challenges
+ FOR SELECT TO authenticated USING (recipient=auth.uid() AND couple_private.is_member(couple_id));
 INSERT INTO auth.users VALUES
  ('aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa'),
  ('bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb'),
