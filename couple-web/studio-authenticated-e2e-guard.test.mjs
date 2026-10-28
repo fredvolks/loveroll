@@ -33,7 +33,8 @@ test('staging browser test HARD REFUSES production before importing any browser 
  assert.match(e2e,/serviceWorkers:'block'/);
  assert.match(e2e,/https:\/\/ejsrqfpkgwraorrznjpm\.supabase\.co\/\*\*/);
  assert.match(e2e,/blockedProductionRequests,0/);
- assert.match(e2e,/params\.url!==`https:\/\/${params.ref}\.supabase\.co`/);
+ assert.ok(e2e.includes('params.url!==`https://${params.ref}.supabase.co`'),
+  'real staging URL must correspond to configured staging reference');
  assert.match(workflow,/workflow_dispatch:/);
  assert.doesNotMatch(workflow,/pull_request:/);
  assert.doesNotMatch(workflow,/push:/);
@@ -75,18 +76,6 @@ test('D100 staging checks select a real category before the conditional roll but
  assert.ok(categorySelection>=0&&realDraw>categorySelection,
   'official Soirée hides its D100 action until the current drawer chooses a category');
  assert.match(e2e,/await frame\.locator\('\[data-action="category:SENSUEL"\]:not\(\[disabled\]\)'\)/);
-});
-
-test('both genuine staging seats must receive HTTP denial for all private Studio tables',()=>{
- for(const table of ['love_studio_test_pools','love_studio_test_seats',
-  'love_studio_test_audit','love_studio_venice_daily_quota']){
-  assert.ok(e2e.includes(table),table+' must be checked');
- }
- assert.match(e2e,/\[401,403,404\]\.includes\(result\.status\)/);
- assert.match(e2e,/sessionStorage\.getItem\('loveroll-studio-auth-v1-'\+probe\.seat\)/);
- assert.match(e2e,/method:'GET',cache:'no-store'/);
- assert.match(e2e,/for\(const seat of \['A','B'\]\)/);
- assert.doesNotMatch(e2e,/console\.log\([^\n]*access_token/);
 });
 
 test('both genuine staging seats must receive HTTP denial for all private Studio tables',()=>{
