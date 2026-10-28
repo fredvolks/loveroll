@@ -126,5 +126,5 @@ begin
  exception when raise_exception then
   if sqlerrm='SECURITY FAILURE: accepted expired invite' then raise;end if;
  end;
-end$;
+end$$;
 select 'LR-028: all isolated SQL A/B tests passed' as result;
