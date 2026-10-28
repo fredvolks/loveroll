@@ -23,8 +23,12 @@ SELECT signature,recorded_md5,detected_md5,
  CASE WHEN oid IS NULL THEN 'missing'
       WHEN recorded_md5<>detected_md5 THEN 'changed: REVIEW BEFORE REPLACING'
       WHEN prosecdef IS NOT TRUE THEN 'not-security-definer: REVIEW'
-      WHEN NOT ('search_path='=ANY(coalesce(proconfig,ARRAY[]::text[])))
-       THEN 'search_path changed: REVIEW'
+      -- PG exposes SET search_path='' as either search_path= or
+      -- search_path=""; both mean an intentionally EMPTY safe path.
+      WHEN NOT EXISTS (
+       SELECT 1 FROM unnest(coalesce(proconfig,ARRAY[]::text[])) AS cfg(value)
+       WHERE cfg.value IN ('search_path=','search_path=""')
+      ) THEN 'search_path changed: REVIEW'
       ELSE 'unchanged' END AS status
 FROM found ORDER BY signature;
 
