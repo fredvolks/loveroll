@@ -299,8 +299,14 @@ Deno.serve(async(req:Request)=>{
   for(const row of Array.isArray(seats)?seats:[]){
     const id=row.user_id;
     if(!id)continue;
-    const {data:u}=await service.auth.admin.getUserById(id);
-    if(!u?.user)continue; // Already deleted.
+    const {data:u,error:lookupError}=await service.auth.admin.getUserById(id);
+    // A network/Auth outage is NOT proof that the identity was removed.
+    // Retain the private registry for a safe retry in that situation.
+    if(lookupError){
+      if(lookupError.status===404||lookupError.code==='user_not_found')continue;
+      return response({error:'Identité Auth non vérifiable; registre conservé'},503);
+    }
+    if(!u?.user)return response({error:'Réponse Auth incomplète; registre conservé'},503);
     if(u.user.app_metadata?.love_studio_test!==true||
        u.user.app_metadata?.love_studio_admin!==adminId)
       return response({error:'Protection : suppression identité non-test interdite'},403);
