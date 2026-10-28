@@ -33,3 +33,12 @@ test('technical account cleanup is mandatory even when a genuine E2E step fails'
  assert.match(script,/real-ipad-portrait\.png|real-'\+viewport\.name/);
  assert.doesNotMatch(script,/preview_three\s*\)/);
 });
+
+test('real A and B JWTs are denied Super Admin Edge access while parent stays signed in',()=>{
+ assert.match(script,/functions\\/v1\\/love-studio-sandbox/);
+ assert.match(script,/body:JSON\\.stringify\\(\\{action:'status'\\}\\)/);
+ assert.match(script,/for\\(const seat of \\['A','B'\\]\\)/);
+ assert.match(script,/denial\\.status,403/);
+ assert.match(script,/the parent platform admin must remain authenticated/);
+ assert.doesNotMatch(script,/console\\.log\\([^)]*access_token/);
+});
