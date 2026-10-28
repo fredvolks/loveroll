@@ -44,6 +44,7 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
  const make=id=>{const node=new Element('div',id);nodes.set(id,node);return node;};
  for(const id of ['studio-real-status','studio-real-views','studio-real-diagnostics','studio-real-check','studio-real-create',
   'studio-real-delete','studio-real-refresh','studio-real-reconnect','studio-real-reset',
+  'studio-real-copy-report',
   'studio-show-seat-A','studio-show-seat-B','studio-real-expand-A','studio-real-expand-B',
   'studio-real-jump-A','studio-real-jump-B',
   'studio-real-frame-A','studio-real-frame-B','studio-real-seat-state-A','studio-real-seat-state-B',
@@ -99,6 +100,8 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
   const getFrame=s=>nodes.get('studio-real-frame-'+s).querySelector('iframe');
   const a=getFrame('A'),b=getFrame('B');
   assert.ok(a&&b,'two independent official LoveRoll iframes');
+  assert.equal(nodes.get('studio-real-copy-report').hidden,false,
+   'a ready genuine QA pair exposes the shareable report control');
   assert.match(nodes.get('studio-real-diagnostics').textContent,/D6 Soirée A : 2/);
   assert.match(nodes.get('studio-real-diagnostics').textContent,/D100 Surprise : 47/);
   assert.equal(nodes.get('studio-real-progress-count').textContent,'7/9');
