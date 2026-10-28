@@ -450,7 +450,11 @@ export function createStudioRealSandbox({client}){
    ['studio-venice-generate','preview_three']
   ])$(id)?.addEventListener('click',()=>veniceAction(action));
   $('studio-real-check').addEventListener('click',()=>refresh().catch(e=>say(e.message)));
-  $('studio-real-refresh').addEventListener('click',()=>{closeFrames();refresh().catch(e=>say(e.message))});
+  $('studio-real-refresh').addEventListener('click',()=>{
+   // Resume the SAME game; preserving iframe/OTP session is essential for
+   // official WebGL animation, timer and in-progress challenge continuity.
+   refresh().catch(e=>say(e.message));
+  });
   try{await refresh()}catch(err){say(err.message)}
  }
  return {init,refresh};
