@@ -13,6 +13,8 @@ test('Studio real sandbox uses existing secure platform gate and no standalone f
  assert.match(html,/studio-real-frame-B/);
  assert.match(html,/studio-real-delete/);
  assert.match(html,/id="studio-real-reset"/);
+ assert.match(html,/id="studio-real-reconnect"/);
+ assert.match(sandbox,/\$\('studio-real-reconnect'\)\.addEventListener/);
  assert.match(html,/id="studio-real-check"/);
  assert.match(html,/id="studio-real-diagnostics"/);
  assert.match(html,/id="studio-real-progress"/);
