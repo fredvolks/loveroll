@@ -48,6 +48,7 @@ test('client can safely run against old servers; two devices refresh without mod
  assert.match(app,/rpc\('love_adaptation_respond'/);
  assert.match(app,/acceptedAdaptationText/);
  assert.match(app,/acceptedAdaptationMinutes/);
+ assert.match(app,/state\.adaptations!==null\?adaptationPanelHtml\(/);
  assert.match(app,/data-action/);
  assert.match(sync,/query\('love_challenge_adaptations'/);
  assert.match(sync,/state\.adaptOpen/);
