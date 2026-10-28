@@ -32,7 +32,8 @@ $$;
 CREATE TABLE public.couple_sessions(
  id uuid PRIMARY KEY,
  couple_id uuid NOT NULL REFERENCES public.couples(id),
- finished_at timestamptz
+ finished_at timestamptz,
+ self_draws boolean NOT NULL DEFAULT false
 );
 CREATE TABLE public.couple_challenges(
  id uuid PRIMARY KEY,
@@ -61,6 +62,11 @@ INSERT INTO public.couple_members VALUES
  ('dddddddd-dddd-4ddd-dddd-dddddddddddd','bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb');
 INSERT INTO public.couple_sessions VALUES
  ('eeeeeeee-eeee-4eee-eeee-eeeeeeeeeeee','dddddddd-dddd-4ddd-dddd-dddddddddddd',NULL);
+-- Separate live self-draw evening: both official roles belong to A, but the
+-- second verified member B must still be able to accept or decline an adaptation.
+INSERT INTO public.couple_sessions(id,couple_id,finished_at,self_draws) VALUES
+ ('ffffffff-ffff-4fff-8fff-ffffffffffff',
+  'dddddddd-dddd-4ddd-dddd-dddddddddddd',NULL,true);
 INSERT INTO public.couple_challenges(id,couple_id,session_id,offered_by,recipient)
 VALUES
  ('11111111-1111-4111-8111-111111111111','dddddddd-dddd-4ddd-dddd-dddddddddddd',
@@ -75,6 +81,12 @@ VALUES
  ('44444444-4444-4444-8444-444444444444','dddddddd-dddd-4ddd-dddd-dddddddddddd',
   'eeeeeeee-eeee-4eee-eeee-eeeeeeeeeeee',
   'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa','bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb');
+INSERT INTO public.couple_challenges(id,couple_id,session_id,offered_by,recipient)
+VALUES ('55555555-5555-4555-8555-555555555555',
+ 'dddddddd-dddd-4ddd-dddd-dddddddddddd',
+ 'ffffffff-ffff-4fff-8fff-ffffffffffff',
+ 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',
+ 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa');
 -- A previously started challenge must reject a proposed duration (but allow text).
 UPDATE public.couple_challenges SET status='accepted'
 WHERE id='22222222-2222-4222-8222-222222222222';
