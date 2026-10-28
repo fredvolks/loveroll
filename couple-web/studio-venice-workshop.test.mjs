@@ -49,6 +49,6 @@ test('old Venice preview is read-only and draft-only; new inference must be expl
  assert.match(bridge,/example_only:true/);
  assert.match(bridge,/regeneration_quota_used:false/);
  assert.match(bridge,/Aucune carte active remplacée/);
- assert.match(parent,/studio-venice-generate'\]/);
+ assert.match(parent,/\['studio-venice-generate','preview_three'\]/);
  assert.doesNotMatch(parent,/init\(\)[\s\S]{0,100}preview_three/);
 });
