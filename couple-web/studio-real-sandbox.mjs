@@ -13,7 +13,7 @@ export function createStudioRealSandbox({client}){
  let veniceBusy=false,veniceData=null,veniceMessage='Connecte le joueur A pour accéder aux brouillons.';
  let veniceWatch=null,veniceActiveRequest=null;
  let historyOpen=false,historyPage=0,historyTotal=0,historyCards=null;
- let historyBusy=false,historyError='',historyGeneration=0,historySeat='all';
+ let historyBusy=false,historyError='',historyGeneration=0,historySeat='all',historyDirty=false;
  const authenticatedSeats=new Set();
  const label=s=>s==='A'?'Joueur A':'Joueur B';
  const say=(message)=>{const node=$('studio-real-status');if(node)node.textContent=message;};
@@ -73,7 +73,7 @@ export function createStudioRealSandbox({client}){
  function resetHistory(){
   historyGeneration++;
   historyOpen=false;historyPage=0;historyTotal=0;historyCards=null;
-  historyBusy=false;historyError='';historySeat='all';
+  historyBusy=false;historyError='';historySeat='all';historyDirty=false;
   const selector=$('studio-real-history-seat');
   if(selector)selector.value='all';
  }
@@ -307,7 +307,12 @@ export function createStudioRealSandbox({client}){
    if(requestGeneration!==historyGeneration)return;
    historyError=error instanceof Error?error.message:'Erreur de lecture';
   }finally{
-   if(requestGeneration===historyGeneration){historyBusy=false;renderChallengeCards();}
+   if(requestGeneration===historyGeneration){
+    historyBusy=false;renderChallengeCards();
+    // If A/B changed the real game during this read, re-fetch the latest
+    // official records instead of silently retaining stale challenge cards.
+    if(historyDirty){historyDirty=false;void loadChallengeHistory(historyPage);}
+   }
   }
  }
  function display(){
@@ -380,7 +385,10 @@ export function createStudioRealSandbox({client}){
    display();
    // When a real game RPC writes a new challenge, keep an already-open
    // history synchronized with the fresh server snapshot.
-   if(historyOpen&&!historyBusy)loadChallengeHistory(historyPage);
+   if(historyOpen){
+    if(historyBusy)historyDirty=true;
+    else void loadChallengeHistory(historyPage);
+   }
   }
  );
  const refresh=()=>statusSync.refresh();
