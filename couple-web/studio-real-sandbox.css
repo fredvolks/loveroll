@@ -93,6 +93,11 @@
 .studio-real-history-nav{display:flex;align-items:center;justify-content:flex-start;
  gap:8px;flex-wrap:wrap;margin:14px 0 5px}
 .studio-real-history-nav[hidden],#studio-real-history-open[hidden]{display:none!important}
+.studio-real-history-nav label{font:600 13px/1.4 system-ui,sans-serif;color:#f8dfea}
+.studio-real-history-nav select{min-height:42px;min-width:125px;max-width:100%;
+ padding:9px 12px;border:1px solid #b47794;border-radius:10px;
+ background:#30192a;color:#fff1f8;font:600 13px/1.4 system-ui,sans-serif}
+.studio-real-history-nav select:disabled{opacity:.55}
 .studio-real-history-nav button,#studio-real-history-open{min-height:42px;
  border-radius:10px;padding:9px 14px}
 .studio-real-history-nav button:disabled{opacity:.55;cursor:not-allowed}
