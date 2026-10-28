@@ -15,6 +15,12 @@ test('Studio real sandbox uses existing secure platform gate and no standalone f
  assert.match(html,/id="studio-real-reset"/);
  assert.match(html,/id="studio-real-check"/);
  assert.match(html,/id="studio-real-diagnostics"/);
+ assert.match(html,/id="studio-real-progress"/);
+ assert.match(html,/id="studio-real-progress-count"/);
+ assert.match(html,/id="studio-real-progress-list"/);
+ assert.match(css,/\.studio-real-progress/);
+ assert.match(sandbox,/function renderProgress\(/);
+ assert.match(sandbox,/studioTestProgress\(status,authenticatedSeats\)/);
  assert.match(html,/id="studio-real-audit"/);
  assert.match(html,/id="studio-real-audit-list"/);
  assert.match(css,/\.studio-real-audit/);
