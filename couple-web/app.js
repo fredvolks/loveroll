@@ -195,7 +195,24 @@ function refreshNativeNotificationSettings(){
  if(!isNotificationPage())return;
  render();
 }
-async function rpc(name,args={}){const {data,error}=await client.rpc(name,args);if(error)throw error;return data;}
+// Only report successful official gameplay writes. The Studio never creates
+// faces/cards and never sends private card contents through postMessage.
+const studioGameWriteRpcs=new Set([
+ 'roll_couple_once','ensure_couple_session','roll_my_evening_d6',
+ 'draw_for_partner','draw_for_partner_random','give_love_challenge',
+ 'answer_challenge','love_respond_and_redraw','finish_couple_session',
+ 'close_love_evening_preserve','roll_love_occasion_once',
+ 'love_eclat_start','love_eclat_choose','love_eclat_next','love_eclat_end'
+]);
+async function rpc(name,args={}){
+ const {data,error}=await client.rpc(name,args);
+ if(error)throw error;
+ if(studioSeatId&&studioGameWriteRpcs.has(name)){
+  window.parent.postMessage({type:'loveroll-studio-game-updated',seat:studioSeatId},
+   location.origin);
+ }
+ return data;
+}
 async function query(table,options={}){
  let q=client.from(table).select(options.columns||'*');
  for(const [column,value] of Object.entries(options.eq||{}))q=q.eq(column,value);
