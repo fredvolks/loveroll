@@ -29,6 +29,9 @@ test('two real Auth users are generated without pre-known credentials',()=>{
  assert.match(source,/source:'studio_test_only'/);
  assert.match(source,/monthly_d100_limit:12/);
  assert.match(source,/let identitiesClean=true/);
+ assert.match(source,/canSkipAlreadyDeletedStudioUser\(lookupError,deletePool\.state,deletePool\.couple_id\)/);
+ assert.match(source,/if\(!deletePool\)return response/);
+ assert.match(source,/canSkipAlreadyDeletedStudioUser\(lookupError,'deleting',null\)/);
  assert.match(source,/if\(deleteError\)identitiesClean=false/);
  assert.match(source,/if\(identitiesClean\)/);
  assert.doesNotMatch(source,/stripe\.checkout|payment_intent\.succeeded|fakePayment/);
