@@ -58,6 +58,8 @@ main#app.loveroll-editorial{--nav-space:66px;box-sizing:border-box;width:100%;ma
 #app .evening-d100-result[hidden]{display:grid;visibility:hidden;}
 #app .evening-play-state{display:grid;place-items:center;min-height:28px;color:var(--ritual-muted);font-size:11px;line-height:1.3;text-align:center;}
 #app .evening-roll-actions{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:8px;align-items:stretch;}
+#app .evening-roll-actions:has(> :only-child){grid-template-columns:minmax(0,1fr);}
+#app .evening-primary-status{display:grid;place-items:center;min-height:46px;margin:0;padding:8px 12px;border:1px solid var(--ritual-border);border-radius:16px;background:var(--ritual-card);color:var(--ritual-muted);font-size:13px;line-height:1.35;text-align:center;}
 #app .evening-progress{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:8px 0 0;order:2;border:1px solid var(--ritual-border);border-radius:16px;background:var(--ritual-card);}
 #app .evening-progress>span{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:4px 8px;color:var(--ritual-muted);font-size:11px;line-height:1.2;padding:8px;min-width:0;}
 #app .evening-progress small{grid-column:1/-1;color:var(--ritual-muted);font-size:10px;}
