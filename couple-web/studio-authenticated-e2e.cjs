@@ -195,6 +195,25 @@ async function main(){
   }
   await verified(8).waitFor({timeout:60000});
   console.log('Real Soirée D100 and official challenge server record: PASS');
+
+  // The official draw is delivered to the OTHER registered seat.
+  // Verify that the server's recorded recipient matches the paired turn,
+  // then accept through that person's genuine challenge buttons.
+  const recipientSeat=firstTurn===0?'B':'A';
+  const recipient=candidates[1-firstTurn];
+  const cardMeta=page.locator('#studio-real-challenge-list .studio-real-card-meta').first();
+  await cardMeta.waitFor({state:'visible',timeout:60000});
+  assert.match(await cardMeta.innerText(),
+   new RegExp('Joueur '+recipientSeat+' \\u00b7'),
+   'the server-confirmed official card must be sent to the OTHER test account');
+  await page.selectOption('#studio-real-jump-'+recipientSeat,'session');
+  await recipient.locator('[data-action="evening-list"]').first().click({timeout:60000});
+  await recipient.locator('[data-action^="evening-open:"]').first().click({timeout:25000});
+  await recipient.locator('[data-action^="evening-start:"]').first().click({timeout:25000});
+  // A/B client completed the ACTUAL answer_challenge RPC; Studio only re-reads.
+  await page.locator('#studio-real-challenge-list .studio-real-card-meta')
+   .filter({hasText:'accepted'}).first().waitFor({state:'visible',timeout:60000});
+  console.log('Official challenge received and ACCEPTED by the true partner: PASS');
   await page.selectOption('#studio-real-jump-A','special');
   await a.locator('[data-action="roll:monthly_activity"]').first().click({timeout:25000});
   await verified(4).waitFor({timeout:60000});
