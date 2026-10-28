@@ -1,0 +1,38 @@
+name: LR-028 invitation — PostgreSQL 17 A/B contract
+on:
+  pull_request:
+    paths:
+      - 'couple-web/migrations/20261028_lr028_evening_invitation.sql'
+      - 'couple-web/qa/lr028-*.sql'
+      - '.github/workflows/lr028-invitation-sql.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  isolated-invitation-sql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: test-only
+          POSTGRES_DB: loveroll_lr028
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d loveroll_lr028"
+          --health-interval 5s
+          --health-timeout 4s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify actual SQL functions with two JWT identities and an outsider
+        env:
+          PGPASSWORD: test-only
+        run: |
+          set -euo pipefail
+          psql -X -v ON_ERROR_STOP=1 -h 127.0.0.1 -U postgres -d loveroll_lr028 \
+            -f couple-web/qa/lr028-fixture.sql \
+            -f couple-web/migrations/20261028_lr028_evening_invitation.sql \
+            -f couple-web/qa/lr028-acceptance.sql
