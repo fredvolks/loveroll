@@ -571,6 +571,16 @@ jobs:
             design-captures/coffrets-v184-*.png
             design-captures/coffrets-v184-*.json
           if-no-files-found: warn
+      - name: LR-017 — verify consent dialogs and safe responsive controls on five devices
+        if: matrix.group == 'experience'
+        run: node couple-web/challenge-adaptation-browser-check.cjs
+      - name: Archive LR-017 captures
+        if: always() && matrix.group == 'experience'
+        uses: actions/upload-artifact@v4
+        with:
+          name: LoveRoll-LR017-adaptation-${{ github.run_number }}
+          path: design-captures/lr017-*.png
+          if-no-files-found: warn
       - name: LR-028 — invitation and in-app fallback fit Android, iPad and PC
         if: matrix.group == 'experience'
         run: node couple-web/evening-invitation-browser-check.cjs
