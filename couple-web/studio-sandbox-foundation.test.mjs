@@ -187,3 +187,10 @@ test('staging A/B recipe clicks only controls shipped by the real production gam
  assert.doesNotMatch(recipe,/category:HASARD|lr-dialog-accept/,
   'staging must not click fictional controls absent from real LoveRoll');
 });
+
+test('destructive Auth deletion is bound to exact synthetic email as well as user UUID and admin tag',()=>{
+ assert.match(source,/\.select\('seat,user_id,synthetic_email'\)\.eq\('admin_id',adminId\)/);
+ assert.match(source,/isRegisteredStudioIdentity\(u\?\.user,row,adminId\)/);
+ assert.match(source,/registered\?\.find\(s=>s\.seat===row\.seat&&s\.user_id===id\)/);
+ assert.match(source,/isRegisteredStudioIdentity\(u\.user,expectedSeat,adminId\)/);
+});
