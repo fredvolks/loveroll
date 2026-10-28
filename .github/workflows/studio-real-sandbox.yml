@@ -28,6 +28,8 @@ jobs:
           deno-version: v2.5.6
       - name: Type-check privileged Studio Supabase Edge Function
         run: deno check supabase/functions/love-studio-sandbox/index.ts
+      - name: Type-check existing Venice bridge with Studio cost guard
+        run: deno check supabase/functions/love-venice-bridge/index.ts
       - name: Exercise pure Auth and OTP authorization guards in Deno
         run: deno test supabase/functions/love-studio-sandbox/guards_test.ts
       - name: All test app JavaScript syntax
@@ -46,7 +48,8 @@ jobs:
            couple-web/studio-frame-inspector.test.mjs \
            couple-web/studio-analytics-isolation.test.mjs \
            couple-web/studio-status-sync.test.mjs \
-           couple-web/studio-test-progress.test.mjs
+           couple-web/studio-test-progress.test.mjs \
+           couple-web/studio-venice-workshop.test.mjs
 
   postgres-purge:
     runs-on: ubuntu-latest
