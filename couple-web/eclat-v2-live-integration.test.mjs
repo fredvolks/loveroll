@@ -88,3 +88,11 @@ test('ordinary redraw preserves same real editor; identity loss or server denial
  assert.match(app,/\['42501','28000'\]\.includes\(error\?\.code\)/);
  assert.match(app,/state\.eclatV2Status=\{access:false,active:false\};\s*disposeEclatV2Player\(\)/);
 });
+
+
+test('revoked child status cannot be remounted by an unrelated app-level update',()=>{
+ assert.match(app,/\}\)\.catch\(error=>\{\s*if\(eclatV2Player!==currentPlayer\)return;/);
+ assert.match(app,/const latest=currentPlayer\.getStatus\(\);\s*if\(latest\?\.access===false\)/);
+ assert.match(app,/state\.eclatV2Status=\{access:false,active:false\};\s*disposeEclatV2Player\(\);render\(\);return;/);
+ assert.match(app,/if\(canReuseEclatV2Editor\(\{/);
+});
