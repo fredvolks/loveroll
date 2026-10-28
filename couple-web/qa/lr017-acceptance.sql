@@ -100,6 +100,28 @@ BEGIN
     (SELECT count(*) FROM public.couple_sessions)<>1 THEN
   RAISE EXCEPTION 'An adaptation created a new card/session';END IF;
 END $$;
+-- A closed evening must reject even a previously pending proposal.
+-- The respondent RPC holds the active session row until its decision commits.
+UPDATE public.couple_sessions SET finished_at=now();
+SET ROLE authenticated;
+DO $
+DECLARE
+ third uuid:='33333333-3333-4333-8333-333333333333';
+BEGIN
+ PERFORM set_config('request.jwt.claim.sub','bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb',true);
+ PERFORM set_config('request.jwt.claim.email_verified','true',true);
+ BEGIN
+  PERFORM public.love_adaptation_respond(third,true);
+  RAISE EXCEPTION 'A closed evening unexpectedly accepted an adaptation';
+ EXCEPTION WHEN others THEN
+  IF SQLERRM NOT LIKE 'Le défi ou la soirée n’est plus disponible%' AND
+     SQLERRM NOT LIKE 'Cette soirée est clôturée%' THEN RAISE; END IF;
+ END;
+ IF (SELECT status FROM public.love_challenge_adaptations WHERE challenge_id=third)<>'pending' THEN
+  RAISE EXCEPTION 'Closed-evening rejection modified a pending adaptation';
+ END IF;
+END $;
+RESET ROLE;
 -- A partner is replaced: the new C must not see or approve A/B's proposals.
 DELETE FROM public.couple_members
 WHERE user_id='bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb';
