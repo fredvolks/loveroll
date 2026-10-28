@@ -9,6 +9,10 @@ CREATE TABLE IF NOT EXISTS public.love_challenge_adaptations(
  proposed_by uuid NOT NULL REFERENCES auth.users(id),
  proposed_text text,
  proposed_minutes integer,
+ -- Immutable context visible only to the exact pair: consent requires knowing
+ -- which original instruction the proposed replacement would modify.
+ original_text text,
+ original_minutes integer,
  status text NOT NULL DEFAULT 'pending'
   CHECK (status IN ('pending','accepted','declined')),
  created_at timestamptz NOT NULL DEFAULT now(),
@@ -104,8 +108,10 @@ BEGIN
   RAISE EXCEPTION 'Une proposition existe déjà pour ce défi';
  END IF;
  INSERT INTO public.love_challenge_adaptations(
-  challenge_id,couple_id,session_id,proposed_by,proposed_text,proposed_minutes)
- VALUES(p_challenge,v_couple,v_q.session_id,v_actor,v_text,p_minutes);
+  challenge_id,couple_id,session_id,proposed_by,proposed_text,proposed_minutes,
+  original_text,original_minutes)
+ VALUES(p_challenge,v_couple,v_q.session_id,v_actor,v_text,p_minutes,
+  v_q.card_description,v_q.card_timer_minutes);
  RETURN jsonb_build_object('status','pending','created',true);
 END
 $fn$;
