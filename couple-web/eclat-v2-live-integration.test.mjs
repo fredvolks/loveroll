@@ -161,3 +161,13 @@ test('a real Éclat reconnecting on mobile shows a calm, non-blocking sync messa
   'a real authorization refusal still revokes the Premium display rather than disguising it as offline');
  assert.doesNotMatch(live,/setTimeout\(.*fake|fakeStage|mockStatus/);
 });
+
+
+test('the Premium Éclat stop action uses the official styled LoveRoll confirmation, not a raw Android alert',()=>{
+ const live=app.slice(app.indexOf('function renderEclat(){'),app.indexOf('function renderHome(){'));
+ assert.match(live,/confirmStop:\(\)=>premiumConfirm\('Arrêter ce coffret maintenant \?/);
+ assert.match(live,/kind:'library',title:'Arrêter ce coffret Éclat \?'/);
+ assert.match(live,/accept:'Arrêter la séance',cancel:'Continuer le jeu'/);
+ assert.match(live,/eclatV2Player=createEclatV2PlayController/);
+ assert.doesNotMatch(live,/confirmStop:\(\)=>globalThis\.confirm/);
+});
