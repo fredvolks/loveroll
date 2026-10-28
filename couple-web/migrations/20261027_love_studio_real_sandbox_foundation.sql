@@ -52,6 +52,15 @@ BEGIN
   WHERE admin_id=p_admin FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'Banc de test introuvable'; END IF;
   IF v_pool.couple_id IS NOT NULL THEN
+    -- Serialize test roll/session FK inserts against the purge. Row lock
+    -- is held until all preflight checks and the couple deletion complete.
+    -- Otherwise a client could add a challenge after the checks but
+    -- before the ON DELETE CASCADE.
+    PERFORM 1 FROM public.couples c WHERE c.id=v_pool.couple_id FOR UPDATE;
+    IF NOT FOUND THEN
+      RAISE EXCEPTION 'Couple enregistré absent : purge interrompue'
+       USING ERRCODE='42501';
+    END IF;
     -- A stale/corrupted pool ID must NEVER cause deletion of an unrelated
     -- couple, including an empty real couple without any members yet.
     -- A real Studio couple is only created AFTER both seats were registered.
