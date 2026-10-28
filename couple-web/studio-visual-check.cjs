@@ -23,6 +23,7 @@ const assert=require('node:assert/strict');
    await page.evaluate(async()=>{
     document.querySelector('#gate').hidden=true;
     document.querySelector('#dashboard').hidden=false;
+    document.querySelector('#dashboard').classList.add('studio-test-focus');
     document.querySelector('#settings').hidden=true;
     document.querySelector('#studio-real-game').hidden=false;
     document.querySelector('#studio-real-views').hidden=false;
@@ -115,6 +116,8 @@ const assert=require('node:assert/strict');
     const [a,b]=layout.frames;
     assert.ok(b.x>a.x+a.width-3,
      preset.name+' real player frames overlap');
+    assert.ok(a.y<=preset.height+30,
+     preset.name+' owner cannot reach genuine gameplay without unnecessary scrolling: y='+a.y);
    }
    await page.screenshot({path:'studio-visual-captures/'+preset.name+'.png',fullPage:true});
    console.log(preset.name,'Studio layout accepted',JSON.stringify(layout));
