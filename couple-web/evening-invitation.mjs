@@ -3,7 +3,7 @@ const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,c=>({
  '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
 })[c]);
 export function eveningInviteHtml(invite,{partnerName='Ton partenaire',busy=false}={}){
- if(!invite||invite.state==='unpaired'||invite.state==='none'&&!invite.available)return '';
+ if(!invite||['unpaired','obsolete'].includes(invite.state)||invite.state==='none'&&!invite.available)return '';
  const isSent=invite.direction==='sent',received=invite.direction==='received';
  const state=invite.state;
  const heading='<span class="lr-evening-invite-label">♥ UNE INVITATION À DEUX</span>';
