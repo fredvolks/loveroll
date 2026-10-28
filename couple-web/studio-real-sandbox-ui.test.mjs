@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 const html=readFileSync(new URL('admin.html',import.meta.url),'utf8');
 const css=readFileSync(new URL('studio-real-sandbox.css',import.meta.url),'utf8');
 const js=readFileSync(new URL('platform-admin.js',import.meta.url),'utf8');
+const sandbox=readFileSync(new URL('studio-real-sandbox.mjs',import.meta.url),'utf8');
 test('Studio real sandbox uses existing secure platform gate and no standalone fake dice',()=>{
  assert.match(html,/id="gate"/);
  assert.match(html,/data-panel="realtest"/);
@@ -20,10 +21,10 @@ test('Studio real sandbox uses existing secure platform gate and no standalone f
  }
  assert.match(css,/\.studio-real-jump/);
  for(const seat of ['A','B'])assert.match(html,new RegExp('id="studio-real-seat-state-'+seat+'"'));
- assert.match(js,/authenticatedSeats\.size===2/);
- assert.match(js,/authenticatedSeats\.delete\(seat\)/);
- assert.match(js,/showSeatConnection\(seat,'connected'\)/);
- assert.doesNotMatch(js,/say\('Vraies sessions LoveRoll A et B disponibles/);
+ assert.match(sandbox,/authenticatedSeats\.size===2/);
+ assert.match(sandbox,/authenticatedSeats\.delete\(seat\)/);
+ assert.match(sandbox,/showSeatConnection\(seat,'connected'\)/);
+ assert.doesNotMatch(sandbox,/say\('Vraies sessions LoveRoll A et B disponibles/);
  assert.match(js,/createStudioRealSandbox/);
  assert.match(js,/realSandbox\.init/);
  assert.doesNotMatch(html,/id="sim-d100"|id="sim-d6-face-0"/);
