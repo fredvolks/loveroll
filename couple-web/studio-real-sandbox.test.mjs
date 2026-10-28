@@ -201,6 +201,9 @@ test('full QA challenge history is scoped to the verified technical pair and pag
  assert.ok(route.includes("await validRegisteredPair(pool.couple_id,seats||null)"));
  assert.ok(route.includes("service.from('couple_challenges')"));
  assert.ok(route.includes(".eq('couple_id',pool.couple_id)"));
+ assert.ok(route.includes("query=query.eq('recipient',target)"));
+ assert.ok(route.includes("body.seat!=='A'&&body.seat!=='B'"));
+ assert.ok(route.includes("filter:seat||'all'"));
  assert.ok(route.includes(".range(Number(page)*limit,Number(page)*limit+limit-1)"));
  assert.ok(route.includes("{count:'exact'}"));
  assert.ok(route.includes("limit=10"));
@@ -213,7 +216,7 @@ test('full QA challenge history is scoped to the verified technical pair and pag
 });
 
 test('history inspector fetches real server cards, rejects stale responses and clears private data on logout',()=>{
- assert.ok(src.includes("await request('challenge_history',null,{page})"));
+ assert.ok(src.includes("await request('challenge_history',historySeat==='all'?null:historySeat,{page})"));
  assert.ok(src.includes("result?.page!==page||result?.limit!==10"));
  assert.ok(src.includes("requestGeneration!==historyGeneration"));
  assert.ok(src.includes("if(!active||tearingDown||!status?.ready||historyBusy"));
