@@ -66,11 +66,13 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
  globalThis.location={origin:'https://fredvolks.github.io',href:'https://fredvolks.github.io/loveroll/admin.html'};
  globalThis.sessionStorage={removeItem(){}};
  globalThis.confirm=()=>true;
- let simulatedDeletion=false;
+ let simulatedDeletion=false,finishDeletion;
  const calls=[];
  const client={functions:{invoke:async(name,{body})=>{
   calls.push(body.action);
-  if(body.action==='delete'){simulatedDeletion=true;return {data:{deleted:true}};}
+  if(body.action==='delete')return new Promise(resolve=>{
+   finishDeletion=()=>{simulatedDeletion=true;resolve({data:{deleted:true}})};
+  });
   if(body.action==='status'&&simulatedDeletion)return {data:{
    ready:false,state:'missing',seats:[],audit:[
     {action:'delete_completed',created_at:'2026-10-27T23:00:00Z'},
@@ -201,8 +203,17 @@ test('Studio A/B fullscreen and refresh keep genuine iframe identities isolated'
   assert.ok(calls.filter(x=>x==='status').length>=2);
   assert.ok(!calls.includes('create')&&!calls.includes('delete'),
    'visual inspection and refresh must not alter live Supabase test accounts');
-  await nodes.get('studio-real-delete').click();
+  const deleting=nodes.get('studio-real-delete').click();
   assert.ok(calls.includes('delete'),'the actual deletion request was issued');
+  assert.equal(getFrame('A'),null,'A removed immediately when deletion starts');
+  assert.equal(getFrame('B'),null,'B removed immediately when deletion starts');
+  await studio.refresh();
+  assert.equal(getFrame('A'),null,
+   'a stale official status may not remount A while delete is pending');
+  assert.equal(getFrame('B'),null,
+   'a stale official status may not remount B while delete is pending');
+  finishDeletion();
+  await deleting;
   assert.equal(getFrame('A'),null,'deleted sandbox never displays a stale logged-in seat');
   assert.equal(getFrame('B'),null,'deleted sandbox closes the partner game too');
   assert.equal(nodes.get('studio-real-progress-count').textContent,'0/9',
