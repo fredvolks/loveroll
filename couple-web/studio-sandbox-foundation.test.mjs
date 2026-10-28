@@ -135,7 +135,7 @@ test('only registered test couples and identities are eligible for deletion',()=
  assert.match(source,/Diagnostic temporairement indisponible/);
  assert.match(source,/service\.rpc\('love_studio_purge_test_couple'/);
  assert.match(source,/service\.auth\.admin\.deleteUser/);
- assert.match(source,/lookupError\.status===404\|\|lookupError\.code==='user_not_found'/);
+ assert.match(guard,/error\?\.status===404\|\|error\?\.code==='user_not_found'/);
  assert.match(source,/Identité Auth non vérifiable; registre conservé/);
  assert.match(source,/Réponse Auth incomplète; registre conservé/);
  assert.match(schema,/REVOKE ALL ON public\.love_studio_test_pools FROM PUBLIC,anon,authenticated/);
