@@ -215,7 +215,8 @@ Deno.serve(async(req:Request)=>{
   if(rowsError||!await validRegisteredPair(pool.couple_id,rows||null))
    return response({error:'Joueurs techniques non vérifiés : Venice refusé'},403);
   const {error:quotaError}=await service.from('love_studio_venice_daily_quota')
-   .insert({admin_id:adminId,utc_day:new Date().toISOString().slice(0,10)});
+   .insert({admin_id:adminId,couple_id:pool.couple_id,
+    utc_day:new Date().toISOString().slice(0,10)});
   if(quotaError)return response({error:quotaError.code==='23505'
    ?'Limite atteinte : une génération Venice réelle par Super Admin et par jour UTC.'
    :'Vérification du budget Venice indisponible'},quotaError.code==='23505'?429:503);
