@@ -94,13 +94,13 @@ export function eveningHistoryMarkup({sessions=[],members=[],stats=[],historyCha
     const canHeart=favoriteControlsEnabled&&closed&&
      ['SENSUEL','SEXUEL'].includes(c.category)&&Number.isInteger(cardId)&&cardId>=1&&cardId<=100;
     const mineHeart=canHeart&&favorites.some(f=>
-      f.category===c.category&&Number(f.card_id)===cardId&&f.marked_by===me);
+      f.category===c.category&&Number(f.card_id)===cardId);
     const heart=canHeart?
       '<button type="button" class="evening-cal-favorite" data-action="favorite-toggle:'+
        safe(c.category)+':'+cardId+'" aria-pressed="'+mineHeart+'" '+
-       'aria-label="'+(mineHeart?'Retirer mon coup de cœur':'Ajouter à mes coups de cœur')+'"'+
+       'aria-label="'+(mineHeart?'Retirer des coups de cœur':'Ajouter aux coups de cœur')+'"'+
        (favoriteControlsBusy?' disabled':'')+'>'+
-       (mineHeart?'♥ Mon coup de cœur':'♡ Coup de cœur')+'</button>':'';
+       (mineHeart?'♥ Coup de cœur':'♡ Coup de cœur')+'</button>':'';
     return '<li class="evening-cal-challenge '+(c.status==='completed'?'is-done':'is-open')+'">'+
       '<span>'+safe(c.status==='passed'?
        (freeByChallenge.has(c.id)?'↷ Passé sans pénalité':
