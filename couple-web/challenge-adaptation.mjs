@@ -50,8 +50,10 @@ export function pendingAdaptationsHtml(rows,userId){
  return '<section class="lr-adapt-inbox" aria-label="Adaptations à approuver">'+
   '<strong>♡ Propositions à deux</strong>'+
   pending.map(x=>'<div class="lr-adapt-request">'+
-   '<p>Ton partenaire propose une adaptation facultative. Aucun défi n’a été modifié.</p>'+
+   '<p>Ton partenaire propose une adaptation facultative. Aucun défi n’a été modifié.</p>'+ 
+   (x.original_text?'<div class="lr-adapt-original"><strong>Consigne originale</strong><p>'+safe(x.original_text)+'</p></div>':'')+
    (x.proposed_text?'<p class="lr-adapt-proposal">'+safe(x.proposed_text)+'</p>':'')+
+   (Number.isInteger(x.original_minutes)?'<small>Durée originale : '+safe(x.original_minutes)+' minutes</small>':'')+
    (Number.isInteger(x.proposed_minutes)?'<small>Durée proposée : '+safe(x.proposed_minutes)+' minutes</small>':'')+
    '<div class="lr-adapt-actions">'+
    '<button type="button" data-action="adapt-answer:'+safe(x.challenge_id)+':yes">Accepter</button>'+
