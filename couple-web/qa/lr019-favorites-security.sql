@@ -88,17 +88,19 @@ DECLARE p uuid:='dddddddd-dddd-4ddd-8ddd-dddddddddddd'; n integer;
 BEGIN
  SELECT count(*) INTO n FROM public.my_love_couple_favorites(p);
  IF n<>3 THEN RAISE EXCEPTION 'partner cannot see collective favorites: %',n; END IF;
- IF NOT public.set_love_couple_favorite(p,'SENSUEL',1,true) THEN RAISE EXCEPTION 'partner mark failed'; END IF;
+ IF NOT public.set_love_couple_favorite(p,'SENSUEL',1,true) THEN RAISE EXCEPTION 'existing common heart should be idempotent'; END IF;
+ IF (SELECT count(*) FROM public.my_love_couple_favorites(p))<>3 THEN
+  RAISE EXCEPTION 'partner duplicated the shared heart'; END IF;
 END $test$;
 SELECT set_config('request.jwt.claim.sub','aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',false);
 DO $test$
 DECLARE p uuid:='dddddddd-dddd-4ddd-8ddd-dddddddddddd'; n integer;
 BEGIN
- IF NOT public.set_love_couple_favorite(p,'SENSUEL',1,false) THEN
-   RAISE EXCEPTION 'one person removed the other member heart';
+ IF public.set_love_couple_favorite(p,'SENSUEL',1,false) THEN
+   RAISE EXCEPTION 'common heart not removed by couple member';
  END IF;
  SELECT count(*) INTO n FROM public.my_love_couple_favorites(p) WHERE category='SENSUEL' AND card_id=1;
- IF n<>1 THEN RAISE EXCEPTION 'partner heart not retained'; END IF;
+ IF n<>0 THEN RAISE EXCEPTION 'shared heart survived explicit removal'; END IF;
  IF public.set_love_couple_favorite(p,'SEXUEL',41,false) THEN
    RAISE EXCEPTION 'removed heart remains set';
  END IF;
@@ -125,4 +127,4 @@ BEGIN
  END;
 END $test$;
 ROLLBACK;
-SELECT 'LR019_POSTGRES_OK private hearts, partner visibility, archive, idempotence, ACL' AS result;
+SELECT 'LR019_POSTGRES_OK shared hearts, partner visibility, archive, idempotence, ACL' AS result;
