@@ -41,7 +41,7 @@ Deno.serve(async(req:Request)=>{
  try{body=await req.json()}catch{return response({error:'JSON invalide'},400)}
  const action=body.action;
  const seat=seatName(body.seat);
- if(!['status','create','seat_login','delete'].includes(String(action)))
+ if(!['status','create','seat_login','delete','venice_preview_authorize'].includes(String(action)))
   return response({error:'Action interdite'},400);
 
  // Defense in depth: never fetch another couple's private cards, or issue an
@@ -74,7 +74,8 @@ Deno.serve(async(req:Request)=>{
 
  async function auditStudio(event:
   'create_requested'|'create_succeeded'|'create_failed'|
-  'login_requested'|'delete_requested'|'delete_completed'|'delete_failed'){
+  'login_requested'|'delete_requested'|'delete_completed'|'delete_failed'|
+  'venice_preview_requested'){
   // No request body, emails, OTP hashes, Auth IDs or card data in this log.
   const {error}=await service.from('love_studio_test_audit').insert({
    admin_id:adminId,action:event
@@ -201,6 +202,27 @@ Deno.serve(async(req:Request)=>{
     return response({error:'Lien Auth non conforme au joueur technique enregistré'},409);
   // One-time Auth verification token: returned ONLY to this verified platform admin.
   return response({seat,token_hash:link.properties.hashed_token,user_id:row.user_id});
+ }
+ if(action==='venice_preview_authorize'){
+  // This endpoint ONLY reserves a one-time real-inference budget. It does
+  // not call Venice, expose credentials, or insert cards into the game.
+  const {data:pool,error:poolError}=await service.from('love_studio_test_pools')
+   .select('state,couple_id').eq('admin_id',adminId).maybeSingle();
+  if(poolError||pool?.state!=='ready'||!pool.couple_id)
+   return response({error:'Duo technique vérifié requis pour Venice'},409);
+  const {data:rows,error:rowsError}=await service.from('love_studio_test_seats')
+   .select('seat,user_id,synthetic_email').eq('admin_id',adminId);
+  if(rowsError||!await validRegisteredPair(pool.couple_id,rows||null))
+   return response({error:'Joueurs techniques non vérifiés : Venice refusé'},403);
+  const {error:quotaError}=await service.from('love_studio_venice_daily_quota')
+   .insert({admin_id:adminId,utc_day:new Date().toISOString().slice(0,10)});
+  if(quotaError)return response({error:quotaError.code==='23505'
+   ?'Limite atteinte : une génération Venice réelle par Super Admin et par jour UTC.'
+   :'Vérification du budget Venice indisponible'},quotaError.code==='23505'?429:503);
+  // Even a failed Venice request consumes this limit, intentionally avoiding
+  // retry storms and surprise third-party charges.
+  try{await auditStudio('venice_preview_requested')}catch{}
+  return response({authorized:true,limited_to:'three_drafts',quota:'1_per_admin_utc_day'});
  }
  if(action==='create'){
   try{await auditStudio('create_requested')}
