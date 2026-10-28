@@ -79,6 +79,19 @@ CREATE TABLE public.couple_evening_reviews(session_id uuid,author_id uuid);
 CREATE TABLE public.love_eclat_private_notes(session_id uuid,user_id uuid);
 -- The migration is the exact file proposed for LoveRoll (not a reimplementation).
 \i couple-web/migrations/20261027_love_studio_real_sandbox_foundation.sql
+DO $audit_security$
+BEGIN
+ IF NOT (SELECT relrowsecurity FROM pg_class
+   WHERE oid='public.love_studio_test_audit'::regclass) THEN
+  RAISE EXCEPTION 'Private Studio audit does not use RLS';
+ END IF;
+ IF has_table_privilege('anon','public.love_studio_test_audit','SELECT')
+ OR has_table_privilege('authenticated','public.love_studio_test_audit','INSERT')
+ OR NOT has_table_privilege('service_role','public.love_studio_test_audit','INSERT')
+ THEN
+  RAISE EXCEPTION 'Private Studio audit ACL is unsafe';
+ END IF;
+END $audit_security$;
 SELECT set_config('studio.test_role','service_role',false);
 INSERT INTO auth.users(id) VALUES
  ('00000000-0000-0000-0000-000000000001'),
@@ -88,6 +101,8 @@ INSERT INTO auth.users(id) VALUES
 INSERT INTO public.couples(id,owner_user_id) VALUES
  ('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-00000000000a'),
  ('10000000-0000-0000-0000-000000000002','00000000-0000-0000-0000-00000000000f');
+INSERT INTO public.love_studio_test_audit(admin_id,action) VALUES
+ ('00000000-0000-0000-0000-000000000001','create_requested');
 INSERT INTO public.love_studio_test_pools(admin_id,couple_id,state)
 VALUES('00000000-0000-0000-0000-000000000001',
 '10000000-0000-0000-0000-000000000001','ready');
@@ -210,6 +225,10 @@ BEGIN
  IF NOT EXISTS(SELECT 1 FROM public.love_studio_test_pools
   WHERE state='deleting' AND couple_id IS NULL) THEN
   RAISE EXCEPTION 'Auth cleanup recovery registry was not retained';
+ END IF;
+ IF (SELECT count(*) FROM public.love_studio_test_audit
+     WHERE action='create_requested')<>1 THEN
+  RAISE EXCEPTION 'Private audit must remain after the synthetic couple is purged';
  END IF;
 END $assert$;
 SELECT 'LoveRoll Studio isolated PostgreSQL purge: ALL SECURITY ASSERTIONS PASSED' AS result;
