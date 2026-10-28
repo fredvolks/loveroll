@@ -58,6 +58,8 @@
  border:1px solid #71465e;border-radius:10px;overflow-wrap:anywhere}
 .studio-real-eclat-coffret[data-state="verified"]{
  border-color:#77aa91;background:#204334;color:#d7f4e7}
+.studio-real-eclat-coffret[data-state="active"]{
+ border-color:#e0ac81;background:#463024;color:#fff1dd}
 .studio-venice-workshop{padding:4px 0 22px}
 .studio-venice-panel{border:1px solid #98647e;border-radius:15px;
  padding:18px;background:#261321;color:#fde8f2}
