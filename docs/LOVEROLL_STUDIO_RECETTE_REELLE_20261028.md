@@ -76,3 +76,14 @@ Le navigateur bloque explicitement les service workers et toute requête dirigé
 ## Règle de fusion
 
 La PR ne peut devenir non-brouillon et être publiée qu'une fois : branche à jour sur `main`, toutes les CI pertinentes au vert, preuves A/B réelles et tests RLS intercomptes, revue de sécurité de la purge/Authentification, absence de divergence Android/iPad, fonctionnalités absentes identifiées comme « En développement ». Ne pas contourner ce verrou par une démonstration statique ou un nombre élevé de commits.
+
+## Revue technique du 28 octobre — correctifs de fin de lot (non fusionnés)
+
+- **Recette A/B :** les contrats des sélecteurs D100 et de la référence Supabase de staging ont été réalignés sur le code exécuté. En cas d'échec du scénario alors qu'on se trouve sur Venice ou mobile, la recette revient à l'onglet A/B en vue PC avant la purge obligatoire. Un échec de cette purge est **bloquant**, pas comptabilisé comme succès.
+- **Venice :** les échanges entre console et vrai compte A utilisent un UUID de requête, vérifié et renvoyé à l'identique; une réponse ancienne ou sans identifiant est rejetée. Après 60 secondes sans réponse, l'interface cesse de bloquer, avertit que les crédits peuvent déjà avoir été consommés, **sans** rejouer la génération automatiquement.
+- **Revue visuelle réelle des preuves de CI :** captures d'écran PC, iPad paysage/portrait et mobile inspectées. Le jeu A/B apparaît maintenant avant les étapes de recette et les 12 coffrets; le bandeau marketing est masqué pendant le test. Assertions Chromium ajoutées afin de bloquer toute régression d'ordre et d'accessibilité.
+- **Honnêteté des preuves :** le banc visuel sans authentification n'affiche plus artificiellement « 7/9 »; il affiche « 0/9 ». Les cartes et dés de cet environnement sont absents volontairement. **Ces captures ne sont pas des preuves de jeu connecté.**
+- **CI spécialisée vérifiée :** [exécution 40632258572](https://github.com/fredvolks/loveroll/actions/runs/40632258572), **trois jobs réussis** sur `b94e362` : serveur/identités, PostgreSQL 17, Chromium responsive. Le contrôle Venice du même SHA est également vert. Les commits postérieurs, dont `847d209`, ne sont **pas** déclarés vérifiés par cette exécution.
+- **Verrou de publication maintenu :** l'authentification réelle A/B, les lancers D6/D100, les réponses et la purge Auth sur un **projet Supabase de préproduction** distinct demeurent sans preuve finale; la PR #97 reste en brouillon et la fonction Studio n'est pas déployée en production.
+
+Prochain passage impératif : disposer d'un backend staging équipé des RPC LoveRoll, des migrations Studio et d'un administrateur de staging confirmé, puis exécuter la recette authentifiée manuelle sur le **SHA exact à publier**. Ne pas déclencher de dépenses Venice lors du test automatique. Ne jamais importer de comptes/paiements clients en staging.
