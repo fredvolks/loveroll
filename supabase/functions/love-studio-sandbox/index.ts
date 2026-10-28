@@ -43,18 +43,49 @@ Deno.serve(async(req:Request)=>{
  if(!['status','create','seat_login','delete'].includes(String(action)))
   return response({error:'Action interdite'},400);
 
+ // Defense in depth: never fetch another couple's private cards, or issue an
+ // Auth token, merely because a stale/corrupted Studio registry says "ready".
+ // Cross-check both genuine Auth identities, their private synthetic tags,
+ // exact pair membership and the couple's registered owner on every use.
+ async function validRegisteredPair(coupleId:string|null,seats:Array<{
+  seat:string,user_id:string|null,synthetic_email:string
+ }>|null):Promise<boolean>{
+  if(!coupleId||seats?.length!==2)return false;
+  const a=seats.find(s=>s.seat==='A'),b=seats.find(s=>s.seat==='B');
+  if(!a?.user_id||!b?.user_id||a.user_id===b.user_id||
+     !a.synthetic_email||!b.synthetic_email)return false;
+  try{
+   const [couple,members,authA,authB]=await Promise.all([
+    service.from('couples').select('owner_user_id').eq('id',coupleId).maybeSingle(),
+    service.from('couple_members').select('user_id').eq('couple_id',coupleId).limit(3),
+    service.auth.admin.getUserById(a.user_id),
+    service.auth.admin.getUserById(b.user_id)
+   ]);
+   if(couple.error||couple.data?.owner_user_id!==a.user_id||
+      members.error||members.data?.length!==2||
+      !members.data.some(m=>m.user_id===a.user_id)||
+      !members.data.some(m=>m.user_id===b.user_id))return false;
+   const validAuth=(record:typeof authA,seat:typeof a)=>
+    !record.error&&record.data?.user?.id===seat.user_id&&
+    record.data.user.app_metadata?.love_studio_test===true&&
+    record.data.user.app_metadata?.love_studio_admin===adminId&&
+    record.data.user.email===seat.synthetic_email;
+   return validAuth(authA,a)&&validAuth(authB,b);
+  }catch{return false}
+ }
+
  async function status(){
   const {data:pool,error:poolError}=await service.from('love_studio_test_pools')
     .select('couple_id,state,created_at').eq('admin_id',adminId).maybeSingle();
   if(poolError)throw Error('État de test indisponible');
   if(!pool)return {ready:false,state:'missing',seats:[]};
   const {data:seats,error:seatError}=await service.from('love_studio_test_seats')
-    .select('seat,user_id').eq('admin_id',adminId).order('seat');
+    .select('seat,user_id,synthetic_email').eq('admin_id',adminId).order('seat');
   if(seatError)throw Error('Profils de test indisponibles');
   // All QA diagnostics are read-only, scoped to this verified admin's
   // registered technical couple. Never touch customer rolls or create faces.
-  const ready=pool.state==='ready'&&!!pool.couple_id&&seats?.length===2&&
-   seats.every(x=>x.user_id&&seatName(x.seat));
+  const ready=pool.state==='ready'&&
+   await validRegisteredPair(pool.couple_id,seats||null);
   let game:null|Record<string,unknown>=null;
   if(ready){
    try{
@@ -109,8 +140,8 @@ Deno.serve(async(req:Request)=>{
     game={error:'Diagnostic temporairement indisponible'};
    }
   }
-  return {ready,state:pool.state,
-    seats:(seats||[]).map(x=>({seat:x.seat,ready:Boolean(x.user_id),user_id:x.user_id})),
+  return {ready,state:pool.state==='ready'&&!ready?'invalid':pool.state,
+    seats:ready?(seats||[]).map(x=>({seat:x.seat,ready:true,user_id:x.user_id})):[],
     created_at:pool.created_at,game};
  }
  if(action==='status'){
@@ -122,13 +153,12 @@ Deno.serve(async(req:Request)=>{
   const {data:pool}=await service.from('love_studio_test_pools')
    .select('state,couple_id').eq('admin_id',adminId).maybeSingle();
   if(pool?.state!=='ready'||!pool.couple_id)return response({error:'Créer le duo test avant de jouer'},409);
-  const {data:row}=await service.from('love_studio_test_seats')
-   .select('seat,user_id,synthetic_email').eq('admin_id',adminId).eq('seat',seat).maybeSingle();
+  const {data:rows,error:rowsError}=await service.from('love_studio_test_seats')
+   .select('seat,user_id,synthetic_email').eq('admin_id',adminId);
+  if(rowsError||!await validRegisteredPair(pool.couple_id,rows||null))
+   return response({error:'Identités du couple de test non vérifiées'},403);
+  const row=rows?.find(r=>r.seat===seat);
   if(!row?.user_id||!row.synthetic_email)return response({error:'Joueur de test absent'},409);
-  const {data:user,error:userError}=await service.auth.admin.getUserById(row.user_id);
-  if(userError||!user?.user||user.user.app_metadata?.love_studio_test!==true||
-      user.user.app_metadata?.love_studio_admin!==adminId)
-    return response({error:'Identité de test incohérente'},403);
   const {data:link,error:linkError}=await service.auth.admin.generateLink({
     type:'magiclink',email:row.synthetic_email
   });
