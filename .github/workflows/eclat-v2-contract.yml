@@ -3,6 +3,11 @@ on:
   pull_request:
     paths:
       - "couple-web/eclat-v2-*.mjs"
+      - "couple-web/app.js"
+      - "couple-web/index.html"
+      - "couple-web/eclat-v2-stage.css"
+      - "couple-web/web-version.json"
+      - "couple-web/service-worker.js"
       - "couple-web/soiree-qa-*.mjs"
       - "couple-web/admin.html"
       - "couple-web/eclat-v2-qa-workbench.css"
@@ -38,9 +43,10 @@ jobs:
           node --check couple-web/eclat-v2-coffrets-c.mjs
           node --check couple-web/eclat-v2-play-ui.mjs
           node --check couple-web/eclat-v2-play-controller.mjs
+          node --check couple-web/app.js
           node --check couple-web/eclat-v2-qa-workbench.mjs
           node --check couple-web/soiree-qa-gateway.mjs
           node --check couple-web/soiree-qa-lab.mjs
           node --check couple-web/eclat-v2-qa-accounts-guards.mjs
           node --check couple-web/platform-admin.js
-          node --test --test-timeout=90000 --test-force-exit couple-web/soiree-qa-gateway.test.mjs couple-web/soiree-qa-lab.test.mjs couple-web/eclat-v2-qa-accounts-edge.test.mjs couple-web/eclat-v2-qa-accounts-guards.test.mjs couple-web/eclat-v2-qa-admin-contract.test.mjs couple-web/eclat-v2-admin-pair.test.mjs couple-web/eclat-v2-qa-workbench.test.mjs couple-web/eclat-v2-contract.test.mjs couple-web/eclat-v2-session.test.mjs couple-web/eclat-v2-coffrets-a.test.mjs couple-web/eclat-v2-coffrets-b.test.mjs couple-web/eclat-v2-coffrets-c.test.mjs couple-web/eclat-v2-play-controller.test.mjs couple-web/eclat-v2-play-ui.test.mjs
+          node --test --test-timeout=90000 --test-force-exit couple-web/soiree-qa-gateway.test.mjs couple-web/soiree-qa-lab.test.mjs couple-web/eclat-v2-qa-accounts-edge.test.mjs couple-web/eclat-v2-qa-accounts-guards.test.mjs couple-web/eclat-v2-qa-admin-contract.test.mjs couple-web/eclat-v2-admin-pair.test.mjs couple-web/eclat-v2-qa-workbench.test.mjs couple-web/eclat-v2-contract.test.mjs couple-web/eclat-v2-session.test.mjs couple-web/eclat-v2-coffrets-a.test.mjs couple-web/eclat-v2-coffrets-b.test.mjs couple-web/eclat-v2-coffrets-c.test.mjs couple-web/eclat-v2-play-controller.test.mjs couple-web/eclat-v2-play-ui.test.mjs couple-web/eclat-v2-live-integration.test.mjs
