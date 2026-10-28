@@ -10,6 +10,9 @@ const esc =value=>String(value??'').replace(/[&<>"']/g,ch=>
 const btn=(action,label,style='')=>'<button type="button" class="eclat-v2-btn '+style+'" data-eclat-v2-action="'+esc(action)+'">'+esc(label)+'</button>';
 const paragraph=s=>'<p>'+esc(s)+'</p>';
 function mainContent(view,status,predictionDraft={},puzzleDraft={},puzzleAttempt=null,sharedAnswers={},sharedConfirmed=[],sharedReveal=null,musicDraft={},sharedMusicNotes={},sharedRevealedMusic=[],cardDraft=[],sharedCardDraft={},sharedCardConfirmed=[],playlistDraft=[],wishPhraseDraft=null){
+ // QA displays two distinct authenticated players in one document.
+ // Role-scoped IDs prevent B's label from focusing A's private text field.
+ const fieldId=name=>'eclat-v2-'+name+'-'+(view.role==='B'?'B':'A');
  let html='<h2>'+esc(view.title)+'</h2>'+
   '<p class="eclat-v2-instruction">'+esc(view.instruction)+'</p>';
  if(view.substepTotal)html+='<p class="eclat-v2-muted">'+(view.coffretId===1?'Enveloppe':view.coffretId===5?'Tour':'Partie')+
@@ -177,8 +180,8 @@ function mainContent(view,status,predictionDraft={},puzzleDraft={},puzzleAttempt
      html+='<p>Une petite phrase commune est facultative : terminer sans l’écrire reste une vraie finale.</p>';
      if(roleCanAct){
       const value=wishPhraseDraft??status.my_wish_phrase??'';
-      html+='<label for="eclat-v2-wish-phrase">Notre phrase commune (facultative)</label>'+
-       '<textarea id="eclat-v2-wish-phrase" data-eclat-v2-input="wish-phrase" maxlength="240" rows="3" autocomplete="off">'+esc(value)+'</textarea>';
+      html+='<label for="'+fieldId('wish-phrase')+'">Notre phrase commune (facultative)</label>'+
+       '<textarea id="'+fieldId('wish-phrase')+'" data-eclat-v2-input="wish-phrase" maxlength="240" rows="3" autocomplete="off">'+esc(value)+'</textarea>';
       if(value.trim())html+=btn('wish-phrase-save','Proposer cette phrase pour approbation','primary');
       if(status.my_wish_phrase)
        html+='<p role="status">Votre phrase a été enregistrée en privé; l’autre partenaire doit proposer exactement la même pour la partager.</p>';
@@ -367,11 +370,11 @@ function mainContent(view,status,predictionDraft={},puzzleDraft={},puzzleAttempt
    paragraph(theme.theme)+
    '<p>Trois indices maximum et deux propositions maximum, à tour de rôle. Vous pouvez simplement raconter sans jouer de musique.</p>'+
    '<fieldset class="eclat-v2-door"><legend>Mon titre privé (facultatif)</legend>'+
-   '<label for="eclat-v2-song-title">Titre</label>'+
-   '<input id="eclat-v2-song-title" data-eclat-v2-input="music-title" type="text" maxlength="120" autocomplete="off"'+
+   '<label for="'+fieldId('song-title')+'">Titre</label>'+
+   '<input id="'+fieldId('song-title')+'" data-eclat-v2-input="music-title" type="text" maxlength="120" autocomplete="off"'+
     (alreadyRevealed?' disabled':'')+' value="'+esc(draftTitle)+'">'+
-   '<label for="eclat-v2-song-artist">Artiste (facultatif)</label>'+
-   '<input id="eclat-v2-song-artist" data-eclat-v2-input="music-artist" type="text" maxlength="120" autocomplete="off"'+
+   '<label for="'+fieldId('song-artist')+'">Artiste (facultatif)</label>'+
+   '<input id="'+fieldId('song-artist')+'" data-eclat-v2-input="music-artist" type="text" maxlength="120" autocomplete="off"'+
     (alreadyRevealed?' disabled':'')+' value="'+esc(draftArtist)+'">';
   if(alreadyRevealed)html+='<p role="status">Ce titre a été révélé volontairement.</p>';
   else{
