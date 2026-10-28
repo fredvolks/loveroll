@@ -43,7 +43,7 @@ test('operator and players stay distinct; premium is never granted by the test c
  assert.match(qa,/operatorId===data\.user\.id/);
  assert.match(qa,/players\[role\]\.user\?\.id===data\.user\.id/);
  assert.match(qa,/bothPremium/);
- assert.match(qa,/show('game',!!bothPremium)/);
+ assert.match(qa,/show\('game',!!bothPremium\)/);
  assert.match(qa,/eclatAccess=premium/);
  assert.match(qa,/players\[role\]\.api\.status\(\)/);
  assert.match(qa,/await client\.auth\.signOut\(\{scope:'local'\}\)\.catch/);
