@@ -1,5 +1,5 @@
 {
-  "build": "2026-10-28.254",
-  "label": "LR-027 : une seule action principale par étape Soirée, sans bouton fictif",
+  "build": "2026-10-28.255",
+  "label": "LR-003 : bilans mensuels cohérents avec le mois choisi, sans pénaliser une soirée en cours",
   "released_at": "2026-10-28"
 }

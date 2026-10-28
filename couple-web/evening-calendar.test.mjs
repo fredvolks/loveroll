@@ -163,3 +163,42 @@ test('LR-003 calendar rejects stale, malformed and impossible selected dates',()
  const notLeap=eveningHistoryMarkup({month:'2027-02',selectedDate:'2027-02-29'});
  assert.match(notLeap,/2027-02-01 · Historique/);
 });
+
+test('LR-003 monthly headline counts only CLOSED evenings in the selected Toronto month',()=>{
+ const entries=[
+  {id:'sep',started_at:'2026-09-25T20:00:00Z',finished_at:'2026-09-25T21:00:00Z',counted:true},
+  {id:'oct',started_at:'2026-10-15T20:00:00Z',finished_at:'2026-10-15T22:00:00Z',counted:true},
+  {id:'open',started_at:'2026-10-20T20:00:00Z',finished_at:null,counted:false},
+  // UTC November 1 is still October 31 in Québec.
+  {id:'utc-boundary',started_at:'2026-11-01T02:00:00Z',
+   finished_at:'2026-11-01T03:00:00Z',counted:true}
+ ];
+ const outcomes=[
+  {session_id:'sep',user_id:'a',target:9,completed:7},
+  {session_id:'oct',user_id:'a',target:3,completed:2},
+  {session_id:'open',user_id:'a',target:5,completed:0},
+  {session_id:'utc-boundary',user_id:'a',target:1,completed:1}
+ ];
+ const show=(month,selectedDate)=>eveningHistoryMarkup({
+  sessions:entries,members:[{user_id:'a',name:'Partenaire'}],stats:outcomes,
+  me:'a',month,selectedDate});
+ const headline=html=>{
+  const match=html.match(/<div class="evening-cal-stats">([\s\S]*?)<\/div>/);
+  assert.ok(match,'headline totals are month-scoped and clearly labelled');
+  return match[1];
+ };
+ const oct=headline(show('2026-10','2026-10-15'));
+ assert.match(oct,/<strong>2<\/strong> soirées clôturées ce mois/);
+ assert.match(oct,/<strong>3<\/strong> défis réalisés ce mois/);
+ assert.match(oct,/<strong>1<\/strong> non réalisés ce mois/);
+ // The open October evening is not a failure, and September is not October.
+ assert.doesNotMatch(oct,/>12<\/strong> défis réalisés/);
+ const sep=headline(show('2026-09','2026-09-25'));
+ assert.match(sep,/<strong>1<\/strong> soirées clôturées ce mois/);
+ assert.match(sep,/<strong>7<\/strong> défis réalisés ce mois/);
+ assert.match(sep,/<strong>2<\/strong> non réalisés ce mois/);
+ const nov=headline(show('2026-11','2026-11-01'));
+ assert.match(nov,/<strong>0<\/strong> soirées clôturées ce mois/);
+ assert.match(nov,/<strong>0<\/strong> défis réalisés ce mois/);
+ assert.match(nov,/<strong>0<\/strong> non réalisés ce mois/);
+});
