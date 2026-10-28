@@ -71,6 +71,37 @@ BEGIN
       RAISE EXCEPTION 'Identité test utilisée dans un autre couple : purge interdite'
        USING ERRCODE='42501';
     END IF;
+    -- Removing a technical Auth user cascades user-scoped data even beyond
+    -- the couple FK. Never erase provider-backed credit use or foreign
+    -- personal/review/Éclat contents as a side effect.
+    IF EXISTS (
+      SELECT 1 FROM public.love_referral_credit_usage u
+      JOIN public.love_studio_test_seats s
+        ON s.user_id=u.beneficiary_user_id
+      WHERE s.admin_id=p_admin
+    ) THEN
+      RAISE EXCEPTION 'Crédit payé lié au banc : suppression bloquée'
+       USING ERRCODE='42501';
+    END IF;
+    IF EXISTS (
+      SELECT 1 FROM public.love_personal_intimacy x
+      JOIN public.love_studio_test_seats s ON s.user_id=x.user_id
+      WHERE s.admin_id=p_admin AND x.source_couple_id IS NOT NULL
+        AND x.source_couple_id<>v_pool.couple_id
+    ) OR EXISTS (
+      SELECT 1 FROM public.couple_evening_reviews x
+      JOIN public.couple_sessions cs ON cs.id=x.session_id
+      JOIN public.love_studio_test_seats s ON s.user_id=x.author_id
+      WHERE s.admin_id=p_admin AND cs.couple_id<>v_pool.couple_id
+    ) OR EXISTS (
+      SELECT 1 FROM public.love_eclat_private_notes x
+      JOIN public.love_eclat_sessions es ON es.id=x.session_id
+      JOIN public.love_studio_test_seats s ON s.user_id=x.user_id
+      WHERE s.admin_id=p_admin AND es.couple_id<>v_pool.couple_id
+    ) THEN
+      RAISE EXCEPTION 'Historique personnel extérieur au banc : purge interdite'
+       USING ERRCODE='42501';
+    END IF;
     -- The Studio is billing-exempt and must never initiate a real Stripe
     -- charge. Retain any unexpected provider-backed financial record for
     -- manual investigation rather than silently cascade-delete evidence.
