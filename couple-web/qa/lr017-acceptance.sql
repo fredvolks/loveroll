@@ -67,13 +67,13 @@ BEGIN
  -- after the official challenge has already started.
  PERFORM public.love_adaptation_propose(third,'Consentement privé',NULL);
  PERFORM public.love_adaptation_propose(fourth,'Durée souhaitée',25);
-END $;
+END $$;
 RESET ROLE;
 -- Synthetic server transition: the challenge starts before B has approved.
 UPDATE public.couple_challenges SET status='accepted'
  WHERE id='44444444-4444-4444-8444-444444444444';
 SET ROLE authenticated;
-DO $
+DO $$
 DECLARE
  fourth uuid:='44444444-4444-4444-8444-444444444444';
 BEGIN
@@ -88,7 +88,7 @@ BEGIN
  IF (SELECT status FROM public.love_challenge_adaptations WHERE challenge_id=fourth)<>'pending' THEN
   RAISE EXCEPTION 'Rejected mid-game timer approval mutated consent state';
  END IF;
-END $;
+END $$;
 RESET ROLE;
 -- The original card is byte-for-byte unchanged, including its duration.
 DO $$
@@ -104,7 +104,7 @@ END $$;
 -- The respondent RPC holds the active session row until its decision commits.
 UPDATE public.couple_sessions SET finished_at=now();
 SET ROLE authenticated;
-DO $
+DO $$
 DECLARE
  third uuid:='33333333-3333-4333-8333-333333333333';
 BEGIN
@@ -120,7 +120,7 @@ BEGIN
  IF (SELECT status FROM public.love_challenge_adaptations WHERE challenge_id=third)<>'pending' THEN
   RAISE EXCEPTION 'Closed-evening rejection modified a pending adaptation';
  END IF;
-END $;
+END $$;
 RESET ROLE;
 -- A partner is replaced: the new C must not see or approve A/B's proposals.
 DELETE FROM public.couple_members
