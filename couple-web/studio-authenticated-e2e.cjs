@@ -347,6 +347,18 @@ async function main(){
   }
   await page.screenshot({path:'studio-authenticated-e2e-proof/real-eclat-twelve-coffrets.png',fullPage:true});
   console.log('Both authenticated players may browse all 12 real Éclat coffrets: PASS');
+
+  // An admin shortcut must navigate the shipped application in its real
+  // technical Auth seat, not render a fabricated Premium scene in the admin.
+  await page.locator(
+   '#studio-real-eclat-grid button[data-seat="A"][data-coffret-id="2"]').click();
+  await a.locator('.eclat-detail[data-coffret-id="2"]')
+   .waitFor({state:'visible',timeout:30000});
+  await page.locator(
+   '#studio-real-eclat-grid button[data-seat="B"][data-coffret-id="3"]').click();
+  await b.locator('.eclat-detail[data-coffret-id="3"]')
+   .waitFor({state:'visible',timeout:30000});
+  console.log('Direct A/B coffret shortcuts opened genuine authenticated game details: PASS');
   // Start ONE real coffret through the shipped UI, then inspect the server's
   // active-chapter record. No artificial RPC, scene advancement or mock state.
   await a.locator('button[data-action="eclat:detail:1"]').click({timeout:15000});
