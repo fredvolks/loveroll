@@ -65,7 +65,7 @@ Deno.serve(async(req:Request)=>{
       members.error||members.data?.length!==2||
       !members.data.some(m=>m.user_id===a.user_id)||
       !members.data.some(m=>m.user_id===b.user_id))return false;
-   const validAuth=(record:typeof authA,seat:typeof a)=>
+   const validAuth=(record:typeof authA,seat:{user_id:string|null;synthetic_email:string})=>
     !record.error&&record.data?.user?.id===seat.user_id&&
     record.data.user.app_metadata?.love_studio_test===true&&
     record.data.user.app_metadata?.love_studio_admin===adminId&&
