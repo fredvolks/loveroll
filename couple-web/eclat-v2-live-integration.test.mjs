@@ -65,7 +65,7 @@ test('cached V2 status belongs only to the exact signed-in user and original cou
  assert.match(app,/state\.eclatV2CoupleId===state\.coupleId\?state\.eclatV2Status:null/);
  assert.match(app,/state\.eclatV2OwnerId=userId;state\.eclatV2CoupleId=coupleId/);
  assert.match(app,/state\.eclatV2OwnerId=state\.user\.id;state\.eclatV2CoupleId=state\.coupleId/);
- assert.match(app,/if\(!state\.user\|\|state\.passwordRecovery\)\{state\.eclatV2Status=null/);
+ assert.match(app,/if\(!state\.user\?\.id\|\|state\.passwordRecovery\)\{state\.eclatV2Status=null/);
  assert.match(app,/if\(state\.eclatV2OwnerId!==state\.user\?\.id\|\|state\.eclatV2CoupleId!==state\.coupleId/);
 });
 
