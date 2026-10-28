@@ -22,6 +22,7 @@ import {saveEveningSelection,restoreEveningSelection,clearEveningSelection} from
 import {eclatHtml} from './eclat-ui.mjs?v=20261027-web242';
 import {createEclatV2SessionApi} from './eclat-v2-session.mjs?v=20261028-v2-live251';
 import {createEclatV2PlayController} from './eclat-v2-play-controller.mjs?v=20261028-v2-live251';
+import {canReuseEclatV2Editor} from './eclat-v2-live-ownership.mjs?v=20261028-v2-live251';
 import {previewMode,previewCanEdit,previewEclatStatus} from './account-preview-mode.mjs?v=20261020-test180';
 import {eclatStage} from './eclat-catalog.mjs?v=20261019-eclat174';
 import {createEclatAudio} from './eclat-audio.mjs?v=20261019-eclat174';
@@ -1274,10 +1275,12 @@ function renderEclat(){
   // couple and server session: remounting here used to erase private drafts
   // and momentarily expose the shared-phone handover on every refresh.
   const mounted=eclatV2Player?.getStatus();
-  if(mounted?.access&&mounted.active&&mounted.session_id===v2.session_id&&
-     root.querySelector('#eclat-v2-live-player')&&
-     state.eclatV2OwnerId===state.user?.id&&
-     state.eclatV2CoupleId===state.coupleId)return;
+  if(canReuseEclatV2Editor({
+    server:v2,player:mounted,userId:state.user?.id,
+    ownerId:state.eclatV2OwnerId,coupleId:state.coupleId,
+    lockedCoupleId:state.eclatV2CoupleId,
+    hasMountedHost:!!root.querySelector('#eclat-v2-live-player')
+  }))return;
   disposeEclatV2Player();
   eclatAudio.stop();state.eclatMusic=false;
   const sharedDevice=v2.device_mode==='one',isSharedHost=state.user?.id===v2.role_a;
