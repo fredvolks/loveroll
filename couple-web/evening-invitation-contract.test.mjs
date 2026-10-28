@@ -46,6 +46,8 @@ test('Yes only navigates and optionally starts real server session; D6 still by 
  assert.doesNotMatch(block,/roll_my_evening_d6|animateRoll|new-challenge/);
  assert.match(stage,/invitationHtml/);
  assert.match(sync,/love_evening_invite_status/);
+ assert.match(app,/eveningInviteInboxHtml\(state\.eveningInvite/);
+ assert.match(app,/table:'love_evening_invitations',filter:'couple_id=eq.'/);
  assert.match(app,/eveningInviteHtml\(state\.eveningInvite/);
 });
 test('private read has realtime/polling fallback and no forced Push permission',()=>{
