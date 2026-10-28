@@ -61,3 +61,14 @@ test('Surprise D20 and D6 stay inside the scene, not over their buttons',()=>{
  assert.match(visual,/surpriseDice/);
  assert.match(visual,/noButtonOverlap/);
 });
+
+
+test('D6 ruby reflections are softer on Android, iPad and Soirée without altering D100',()=>{
+ assert.match(engine,/if\(sides===6\)\{\s*built\.material\.roughness=\.075;/);
+ assert.match(engine,/built\.material\.clearcoatRoughness=\.085;/);
+ assert.match(engine,/renderer\.toneMappingExposure=referenceRuby\?1\.03:1\.14;/);
+ assert.doesNotMatch(engine,/if\(flatHome&&window\.matchMedia/);
+ assert.match(engine,/const orientationFor=face=>/);
+ assert.match(engine,/const normal=built\.normals\.get\(Number\(face\)\)/);
+ assert.match(engine,/let target=orientationFor\(value\)/); // server-owned result
+});
