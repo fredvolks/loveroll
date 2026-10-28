@@ -6,6 +6,9 @@ on:
       - "couple-web/qa/eclat-v2-*"
       - ".github/workflows/eclat-v2-postgres.yml"
   workflow_dispatch:
+concurrency:
+  group: eclat-v2-postgres-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 jobs:
   postgres-v2:
     runs-on: ubuntu-latest
