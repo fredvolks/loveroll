@@ -1,7 +1,7 @@
 import {organizeSettingsMenus} from './settings-menus.mjs?v=20261022-home228';
 import {showEveningCategoryReminder} from './evening-d100-template.mjs?v=20261027-web237';
 import {askEveningCategoryConfirmation,categoryConfirmEnabled,saveCategoryConfirmLocal} from './evening-category-confirm.mjs?v=20261027-web238';
-import {soundEnabled,setSoundEnabled,setLoveRollSoundUser,unlockLoveRollSounds,playLoveRollSound,soundSettingsHtml} from './loveroll-sounds.mjs?v=20261026-web233';
+import {soundEnabled,setSoundEnabled,setLoveRollSoundUser,unlockLoveRollSounds,playLoveRollSound,soundSettingsHtml} from './loveroll-sounds.mjs?v=20261028-privacy250';
 import {isAcceptedTimedEveningChallenge,completeTimedEveningChallenge} from './timed-evening-completion.mjs?v=20261027-web240';
 import {fitSurpriseMinimal} from './surprise-minimal.mjs?v=20261022-home228';
 import {eclatNoteKey,loadEclatNote,saveEclatNote} from './eclat-guidance.mjs?v=20261022-home228';
@@ -22,7 +22,7 @@ import {saveEveningSelection,restoreEveningSelection,clearEveningSelection} from
 import {eclatHtml} from './eclat-ui.mjs?v=20261027-web242';
 import {previewMode,previewCanEdit,previewEclatStatus} from './account-preview-mode.mjs?v=20261020-test180';
 import {eclatStage} from './eclat-catalog.mjs?v=20261019-eclat174';
-import {createEclatAudio} from './eclat-audio.mjs?v=20261019-eclat174';
+import {createEclatAudio} from './eclat-audio.mjs?v=20261028-privacy250';
 import {futureCoupleStyleMix,playStyleLabel} from './play-style.mjs?v=20261018-styles149';
 import {cycleIntensityQuestionnaireHtml} from './cycle-questionnaire.mjs?v=20261018-cycle149';
 import {DICE_WEIGHT_CONFIG,configuredDiceWeights,parseDiceWeightInputs} from './dice-weighting.mjs?v=20261018-weights146';
@@ -69,6 +69,11 @@ const client=CONFIG.supabaseUrl&&CONFIG.supabasePublishableKey?
  createClient(CONFIG.supabaseUrl,CONFIG.supabasePublishableKey,opts):null;
 const launchParams=new URLSearchParams(location.search);
 const eclatAudio=createEclatAudio();
+// Masking a LoveRoll card must also silence locally playing Éclat audio.
+document.addEventListener('loveroll:privacy-mask',()=>{
+ eclatAudio.stop();
+ state.eclatMusic=false;
+});
 function pendingReferralCode(){
  try{const value=String(sessionStorage.getItem(REFERRAL_PENDING_STORAGE_KEY)||'').trim().toLowerCase();
  return REFERRAL_CODE_PATTERN.test(value)?value:null;}catch{return null;}
@@ -2597,6 +2602,9 @@ async function handle(action,element){
   }
   if(kind==='back'){await handle('tab:session',element);return;}
   if(kind==='music'){
+   if(document.documentElement.classList.contains('lr-privacy-active')){
+    eclatAudio.stop();state.eclatMusic=false;return;
+   }
    if(!state.eclat?.active){eclatAudio.stop();state.eclatMusic=false;return;}
    if(state.eclatMusic){eclatAudio.stop();state.eclatMusic=false;}
    else{
