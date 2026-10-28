@@ -37,6 +37,7 @@ jobs:
           node --check couple-web/studio-seat-auth.mjs
           node --check couple-web/studio-real-sandbox.mjs
           node --check couple-web/studio-status-sync.mjs
+          node --check couple-web/studio-test-progress.mjs
       - name: Verify real dual-account architecture, security, responsive layout
         run: |
           node --test couple-web/studio-sandbox-foundation.test.mjs \
@@ -44,7 +45,8 @@ jobs:
            couple-web/studio-real-sandbox-ui.test.mjs \
            couple-web/studio-frame-inspector.test.mjs \
            couple-web/studio-analytics-isolation.test.mjs \
-           couple-web/studio-status-sync.test.mjs
+           couple-web/studio-status-sync.test.mjs \
+           couple-web/studio-test-progress.test.mjs
 
   postgres-purge:
     runs-on: ubuntu-latest
