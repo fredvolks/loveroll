@@ -94,6 +94,13 @@ async function snapshot(page,layout,key){
       new URL(e.getAttribute('href'),location.href).origin===location.origin?'internal':'external'):null,
     minTouch44:bounds.width>=44&&bounds.height>=44,
     inViewport,hitAtCenter:!inViewport?null:point===e||e.contains(point),
+    // Describe the blocking surface only; never record DOM content, hrefs,
+    // private fields or account values in UX evidence.
+    blocker:inViewport&&point!==e&&!e.contains(point)?{
+     tag:point?.tagName?.toLowerCase()||null,
+     className:typeof point?.className==='string'?point.className.slice(0,100):null,
+     action:point?.dataset?.action||null
+    }:null,
     bounds};
   });
   return {
