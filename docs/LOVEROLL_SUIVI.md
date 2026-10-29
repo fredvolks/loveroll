@@ -2,13 +2,20 @@
 
 ## Priorité immédiate ordonnée — audit global client/design/ergonomie/responsive (28 octobre 2026)
 
-**LR-AUDIT-GLOBAL-20261028 — À EXÉCUTER.** Le propriétaire demande que l'audit de **toutes les pages, sous-pages, états et boutons**, ses corrections et les protections permanentes passent avant les nouveaux développements. Le bloc en tête du [prompt maître](LOVEROLL_MASTER_PROMPT.md), le [démarrage Work](LOVEROLL_WORK_START.md) et le [protocole complet](LOVEROLL_UX_UI_AUTONOME_WORKFLOW.md) décrivent ce mandat.
+**LR-AUDIT-GLOBAL-20261028 — EN COURS, intégration progressive et preuves CI.** Le propriétaire demande que l'audit de **toutes les pages, sous-pages, états et boutons**, ses corrections et les protections permanentes passent avant les nouveaux développements. Le bloc en tête du [prompt maître](LOVEROLL_MASTER_PROMPT.md), le [démarrage Work](LOVEROLL_WORK_START.md) et le [protocole complet](LOVEROLL_UX_UI_AUTONOME_WORKFLOW.md) décrivent ce mandat.
 
 - **Décision enregistrée :** un pilote intégrateur et **six spécialités en lecture seule** dès le départ : direction artistique, **gardien du système de design visuel** (placé immédiatement après elle : tokens, composants, cohérence inter-pages et preuves), UX/ergonomie/accessibilité, responsive, client/couple dont un joueur peu technophile et QA ; un seul intégrateur applique les corrections.
-- **Avancement applicatif :** aucune page nouvellement auditée, correction visuelle ou protection CI livrée par cette modification documentaire. Les preuves des chantiers antérieurs ci-dessous restent distinctes.
-- **Prochaine action exacte :** relever la version réellement publiée et ses sources, établir/reprendre dans ce suivi l'inventaire page/état/rôle/format/objectif client/défaut/priorité/correction/preuve/statut, puis traiter les défauts bloquants et les composants communs avant les autres pages. Le gardien du système visuel relève les écarts et protections manquantes ; leur inscription ici ne signifie pas que les checks sont déjà installés ou exécutés. Vérifier les formats téléphone/tablette/PC et conserver les entrées non vérifiées comme telles.
+- **Avancement applicatif réel (29 octobre) :** les PR #140 et #145 à #150 ont été fusionnées : audit des 12 coffrets Éclat et de leurs formats, contrôles visibles/menus, Soirée/Accueil et « As-tu envie de jouer ce soir ? », navigation des Réglages sur petits écrans, retour de focus, texte agrandi et confirmations tactiles. La PR #152 a ensuite corrigé la fraîcheur des fichiers Web hors ligne. Ne pas transformer ces parcours partiels en validation de toutes les pages ou en recette physique.
+- **Prochaine action exacte :** poursuivre l'inventaire et la recette de **chaque** page, état, rôle, format et bouton non encore couvert. Priorité à la PR #151 (lancer WebGL hors champ et silhouette du D100 pendant sa rotation) : elle reste brouillon avec sa propre suite CI tant que tous les jobs ne sont pas verts. Conserver le SHA, les preuves par format, les défauts corrigés et les régressions; les comptes et appareils physiques ne sont pas validés par des simulations.
 
 
+
+## Jalons vérifiés depuis le lancement de l'audit — 29 octobre 2026
+
+- **`main` vérifiée :** `7b7d4e6393d52e1a9b58eb2cad3e8ac27f6d4ba6` (PR #152 après #150). Le workflow **GitHub Pages #40876781139** est terminé avec résultat **success** sur ce même SHA ; lien : https://github.com/fredvolks/loveroll/actions/runs/40876781139. Ceci prouve la publication Web de ce commit, **pas** une validation sur des téléphones physiques.
+- **Correctifs déjà publiés :** #145 contrôles et visibilité petits écrans, #146 sous-menus Réglages téléphone court, #147 invitation « jouer ce soir » (parcours multi-formats), #148 focus/retour dans les sous-menus, #149 texte agrandi, #150 annulation et fermeture tactile, #152 fichiers de la PWA actualisés hors ligne. #140 audite les 12 coffrets Éclat, sans prétendre que les recettes réelles du produit premium sont terminées.
+- **Correctif NON publié :** #151, https://github.com/fredvolks/loveroll/pull/151 ; blocage repéré par Chromium : la silhouette du D100 débordait par le haut du théâtre sur **360 × 640** durant certaines rotations officielles. Correctif de continuité d'animation, trajectoire et confinement visuel en cours de CI. Ne fusionner qu'avec toutes les suites vertes, puis vérifier un nouveau déploiement Pages sur le SHA résultant.
+- **Toujours non prouvé :** contrôle visuel exhaustif de toutes les routes/états, comparaison Android réel ↔ iPad physique et PC, comptes réels A/B, et essais physiques des gestes, notifications, authentification et paiement. Ne pas marquer ces items « terminés » sur la seule base de Chromium synthétique.
 
 ## Mise à jour vérifiée — travaux des 27–28 octobre 2026
 
