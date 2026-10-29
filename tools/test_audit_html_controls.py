@@ -122,6 +122,12 @@ class ControlsAuditTests(unittest.TestCase):
     def test_empty_title_does_not_name_button(self):
         self.assertEqual(len(analyze("<button title=' '><svg aria-hidden='true'></svg></button>")), 1)
 
+    def test_image_input_value_is_not_accessible_name(self):
+        self.assertEqual(len(analyze("<input type='image' value='Jouer' src='play.png'>")), 1)
+
+    def test_image_input_aria_label_is_accessible(self):
+        self.assertEqual(analyze("<input type='image' aria-label='Jouer' src='play.png'>"), [])
+
     def test_no_false_positive_on_void_elements(self):
         self.assertEqual(analyze("<button><img src='icon.png'><span>Oui</span></button>"), [])
 
