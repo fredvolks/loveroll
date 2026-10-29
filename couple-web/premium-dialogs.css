@@ -36,7 +36,7 @@
  margin:0 auto 18px;max-width:38ch;white-space:pre-line;overflow-wrap:anywhere;
 }
 .lr-dialog-close{
- position:absolute;top:15px;right:15px;width:39px;height:39px;min-height:39px;
+ position:absolute;top:12px;right:12px;width:44px;height:44px;min-width:44px;min-height:44px;
  display:grid;place-items:center;padding:0;border:1px solid #ff6cafb0;
  border-radius:50%;color:#ffc2df;background:#350d29;font-size:27px;line-height:1;
 }
