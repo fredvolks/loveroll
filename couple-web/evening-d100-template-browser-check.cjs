@@ -104,8 +104,29 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   // A server-confirmed result may return directly to the partner's turn or
   // open this user's private challenge queue. The turn is authoritative;
   // never fail simply because no optional queue popup was opened.
-  await page.waitForFunction(()=>/En attente du tour de ton partenaire/.test(
-   document.querySelector('.evening-primary-status')?.textContent||''),null,{timeout:20000});
+  // A modal for the recipient can precede the "partner's turn" status:
+  // dismiss it first when present, rather than waiting on hidden/old content.
+  // This does NOT skip the official turn assertion after dismissal.
+  try{
+   await page.waitForFunction(()=>
+    !!document.querySelector('.evening-queue-modal [data-action="evening-close"]')||
+    /En attente du tour de ton partenaire/.test(
+     document.querySelector('.evening-primary-status')?.textContent||''),
+    null,{timeout:20000});
+  }catch(error){
+   const state=await page.evaluate(()=>{
+    const c=document.querySelector('.evening-d35-col canvas');
+    return {face:c?.dataset.face,spinning:c?.loveRollDie?.readState()?.spinning,
+     result:document.querySelector('.evening-d100-result')?.textContent,
+     primary:document.querySelector('.evening-primary-status')?.textContent,
+     overlays:[...document.querySelectorAll('.evening-queue-modal')].map(e=>({
+      className:e.className,closeCount:e.querySelectorAll('[data-action="evening-close"]').length})),
+     bodyBusy:document.querySelector('[aria-busy="true"]')?.className||null};
+   });
+   console.error('LR_D100_POST_ROLL_DIAGNOSTIC',JSON.stringify({width,height,state,
+    draws:world.calls.filter(c=>c.name?.startsWith('draw_for_partner')).map(c=>c.name)}));
+   throw error;
+  }
   const queueModal=page.locator('.evening-queue-modal');
   if(await queueModal.count()){
    const close=queueModal.locator('[data-action="evening-close"]');
