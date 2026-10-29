@@ -1,0 +1,178 @@
+#!/usr/bin/env python3
+"""Audit statique, lecture seule, des commandes HTML LoveRoll.
+
+python3 tools/audit_html_controls.py [chemin]
+N'analyse ni DOM créé par JavaScript ni interactions, tailles ou responsive.
+"""
+from __future__ import annotations
+
+import argparse
+from html.parser import HTMLParser
+from pathlib import Path
+import sys
+
+SKIP_DIRS = {".git", "node_modules", "dist", "build", "coverage", ".next", "vendor"}
+HTML_EXTENSIONS = {".html", ".htm"}
+INPUT_BUTTON_TYPES = {"button", "submit", "reset", "image"}
+VOID_TAGS = {"area", "base", "br", "col", "embed", "hr", "img", "input", "link",
+             "meta", "param", "source", "track", "wbr"}
+
+
+def has_aria_name(attrs: dict[str, str]) -> bool:
+    return bool(attrs.get("aria-label", "").strip() or attrs.get("aria-labelledby", "").strip())
+
+
+class ControlsAudit(HTMLParser):
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.ids: dict[str, int] = {}
+        self.issues: list[tuple[int, str]] = []
+        self.button_stack: list[dict] = []
+        self.link_stack: list[dict] = []
+        self.pending_references: list[tuple[int, str, str]] = []
+        self.hidden_depth = 0
+        self.element_stack: list[tuple[str, bool]] = []
+
+    def handle_starttag(self, tag: str, attributes: list[tuple[str, str | None]]) -> None:
+        attrs = {k: (v or "") for k, v in attributes}
+        line = self.getpos()[0]
+        element_id = attrs.get("id", "").strip()
+        if element_id:
+            if element_id in self.ids:
+                self.issues.append((line, f"id HTML en double: {element_id!r} (premier: ligne {self.ids[element_id]})"))
+            else:
+                self.ids[element_id] = line
+
+        inline_style = "".join(attrs.get("style", "").lower().split())
+        css_hidden = "display:none" in inline_style or "visibility:hidden" in inline_style
+        hidden = (self.hidden_depth > 0 or attrs.get("aria-hidden", "").lower() == "true"
+                  or "hidden" in attrs or css_hidden)
+        if tag not in VOID_TAGS:
+            self.element_stack.append((tag, hidden))
+            if hidden:
+                self.hidden_depth += 1
+
+        if (tag in {"button", "a", "input", "area"} or attrs.get("role", "").lower() == "button") and attrs.get("aria-labelledby", "").strip() and not hidden:
+            self.pending_references.append((line, tag, attrs["aria-labelledby"]))
+
+        if tag == "a" and "href" in attrs and attrs.get("role", "").lower() != "button":
+            self.link_stack.append({"line": line, "attrs": attrs, "text": [], "has_image_alt": False, "hidden": hidden})
+        if tag == "button" or (tag not in VOID_TAGS and attrs.get("role", "").lower() == "button"):
+            self.button_stack.append({"line": line, "attrs": attrs, "text": [], "has_image_alt": False, "hidden": hidden, "tag": tag})
+        elif (tag == "img" and not hidden and attrs.get("alt", "").strip()
+              and attrs.get("role", "").lower() not in {"presentation", "none"}
+              and attrs.get("aria-hidden", "").lower() != "true"):
+            if self.button_stack:
+                self.button_stack[-1]["has_image_alt"] = True
+            if self.link_stack:
+                self.link_stack[-1]["has_image_alt"] = True
+
+        if attrs.get("role", "").lower() == "button" and tag not in {"button", "input"} and not hidden:
+            # Les commandes personnalisées doivent pouvoir recevoir le focus au clavier.
+            try:
+                focusable = int(attrs.get("tabindex", "-1")) >= 0
+            except ValueError:
+                focusable = False
+            native_focus = (tag == "a" and "href" in attrs and "tabindex" not in attrs) or (tag == "summary" and "tabindex" not in attrs)
+            if not focusable and not native_focus:
+                self.issues.append((line, "bouton personnalisé sans tabindex accessible"))
+
+        if tag == "area" and "href" in attrs and not hidden:
+            if not has_aria_name(attrs) and not attrs.get("alt", "").strip() and not attrs.get("title", "").strip():
+                self.issues.append((line, "zone de carte image sans nom accessible statique"))
+
+        if tag == "input" and attrs.get("type", "text").lower() in INPUT_BUTTON_TYPES:
+            input_type = attrs.get("type", "text").lower()
+            # Submit et reset ont des libellés natifs même sans attribut value.
+            native_label = input_type in {"submit", "reset"}
+            # Un input image reçoit son nom de alt, title ou ARIA, pas de value.
+            value_label = input_type != "image" and attrs.get("value", "").strip()
+            if (not hidden and not native_label and not has_aria_name(attrs)
+                    and not attrs.get("title", "").strip()
+                    and not value_label
+                    and not attrs.get("alt", "").strip()):
+                self.issues.append((line, "commande input sans nom accessible statique"))
+
+    def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self.handle_starttag(tag, attrs)
+        if tag not in VOID_TAGS:
+            self.handle_endtag(tag)
+
+    def handle_data(self, data: str) -> None:
+        if self.hidden_depth == 0:
+            if self.button_stack:
+                self.button_stack[-1]["text"].append(data)
+            if self.link_stack:
+                self.link_stack[-1]["text"].append(data)
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag == "a" and self.link_stack:
+            link = self.link_stack.pop()
+            if not link["hidden"] and not has_aria_name(link["attrs"]) and not link["attrs"].get("title", "").strip() and not "".join(link["text"]).strip() and not link["has_image_alt"]:
+                self.issues.append((link["line"], "lien sans nom accessible statique"))
+        if self.button_stack and self.button_stack[-1]["tag"] == tag:
+            button = self.button_stack.pop()
+            if not button["hidden"] and not has_aria_name(button["attrs"]) and not button["attrs"].get("title", "").strip() and not "".join(button["text"]).strip() and not button["has_image_alt"]:
+                self.issues.append((button["line"], "bouton sans nom accessible statique"))
+        if tag not in VOID_TAGS:
+            # Fermer le bon ancêtre, même si des balises sont mal imbriquées.
+            match = next((i for i in range(len(self.element_stack) - 1, -1, -1)
+                          if self.element_stack[i][0] == tag), None)
+            if match is not None:
+                popped = self.element_stack[match:]
+                del self.element_stack[match:]
+                self.hidden_depth = max(0, self.hidden_depth - sum(hidden for _, hidden in popped))
+
+
+    def check_references(self) -> None:
+        """Resolve references only after the whole document is parsed."""
+        for line, tag, references in self.pending_references:
+            missing = sorted({name for name in references.split() if name not in self.ids})
+            if missing:
+                self.issues.append((line, f"{tag}: aria-labelledby cible absente: {', '.join(missing)}"))
+
+
+def discover(root: Path):
+    if root.is_file():
+        if root.suffix.lower() in HTML_EXTENSIONS:
+            yield root
+        return
+    for path in sorted(root.rglob("*")):
+        if path.suffix.lower() in HTML_EXTENSIONS and not any(p in SKIP_DIRS for p in path.parts):
+            yield path
+
+
+def main() -> int:
+    cli = argparse.ArgumentParser(description=__doc__)
+    cli.add_argument("path", nargs="?", default=".")
+    args = cli.parse_args()
+    root = Path(args.path)
+    if not root.exists():
+        print(f"Chemin introuvable: {root}", file=sys.stderr)
+        return 2
+    files = list(discover(root))
+    if not files:
+        print(f"Aucun fichier HTML trouvé sous {root}; audit non exécuté.", file=sys.stderr)
+        return 2
+    errors = 0
+    for path in files:
+        parser = ControlsAudit()
+        try:
+            parser.feed(path.read_text(encoding="utf-8"))
+            parser.close()
+        except (UnicodeError, OSError, ValueError) as exc:
+            print(f"{path}: impossible d'analyser: {exc}", file=sys.stderr)
+            errors += 1
+            continue
+        parser.check_references()
+
+        for line, problem in parser.issues:
+            print(f"{path}:{line}: {problem}")
+            errors += 1
+    print(f"Audit HTML statique : {len(files)} fichier(s), {errors} anomalie(s).")
+    print("DOM JS/WebGL, dimensions tactiles et responsive : recette navigateur requise.")
+    return 1 if errors else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
