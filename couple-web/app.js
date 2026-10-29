@@ -9,7 +9,7 @@ import {fitSurpriseMinimal} from './surprise-minimal.mjs?v=20261022-home228';
 import {eclatNoteKey,loadEclatNote,saveEclatNote} from './eclat-guidance.mjs?v=20261022-home228';
 import {loadEclatHistory} from './eclat-history.mjs?v=20261022-home228';
 import {enhanceGoldBacks} from './gold-arrows.mjs?v=20261022-home228';
-import {fitSoireeHomeTemplate,fitRubyCalendar} from './soiree-home-template.mjs?v=20261028-web255';
+import {fitSoireeHomeTemplate,fitRubyCalendar} from './soiree-home-template.mjs?v=20261028-web256';
 import { marketingHtml,authHtml,profileHtml,inviteProfileHtml,emailConfirmationHtml,profileGenderSelect,profilePlayStyleSelect,matchHtml,parseMonthDay,monthDayInputs } from './onboarding.mjs?v=20261018-style148';
 import {editorialHeader,editorialRow,editorialIcon} from './editorial-ui.mjs?v=20261017-ritual130';
 import {cardLibraryHtml,monthlyEditorHtml,adventEditorHtml,specialEditorHtml,importEditorHtml} from './editorial-editors.mjs?v=20261017-ritual130';
@@ -19,7 +19,7 @@ import {createCoupleLiveSync} from './couple-live-sync.mjs?v=20261017-advent119'
 import {playableSessionForWeekly} from './couple-reset-view.mjs';
 import {eveningDailyAccess} from './evening-daily-policy.mjs?v=20261016-daily100';
 import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw} from './evening-private-queue.mjs';
-import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261028-web255';
+import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261028-web256';
 import {saveEveningSelection,restoreEveningSelection,clearEveningSelection} from './evening-resume.mjs?v=20261027-web240';
 import {eclatHtml} from './eclat-ui.mjs?v=20261027-web242';
 import {previewMode,previewCanEdit,previewEclatStatus} from './account-preview-mode.mjs?v=20261020-test180';
@@ -29,7 +29,7 @@ import {futureCoupleStyleMix,playStyleLabel} from './play-style.mjs?v=20261018-s
 import {cycleIntensityQuestionnaireHtml} from './cycle-questionnaire.mjs?v=20261018-cycle149';
 import {DICE_WEIGHT_CONFIG,configuredDiceWeights,parseDiceWeightInputs} from './dice-weighting.mjs?v=20261018-weights146';
 import {premiumEveningHtml,updateEveningCategoryUi} from './premium-evening.mjs?v=20261028-lr027-web254';
-import {eveningHistoryMarkup,eveningLocalDay} from './evening-calendar.mjs?v=20261028-web255';
+import {eveningHistoryMarkup,eveningLocalDay} from './evening-calendar.mjs?v=20261028-web256';
 import {eveningReviewModal,validEveningReview} from './evening-review.mjs?v=20261016-person-review97';
 import {premiumSurpriseHtml,sixSpecialEvents} from './premium-surprise.mjs?v=20261022-home228';
 import {surpriseSlot,surpriseCustom,surpriseTitle,formatSurpriseDateInput,parseSurpriseDateInput} from './surprise-event-config.mjs?v=20261016-surprise109';
