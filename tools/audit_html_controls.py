@@ -58,6 +58,10 @@ class ControlsAudit(HTMLParser):
             if self.link_stack:
                 self.link_stack[-1]["has_image_alt"] = True
 
+        if tag == "area" and "href" in attrs and not hidden:
+            if not has_aria_name(attrs) and not attrs.get("alt", "").strip() and not attrs.get("title", "").strip():
+                self.issues.append((line, "zone de carte image sans nom accessible statique"))
+
         if tag == "input" and attrs.get("type", "text").lower() in INPUT_BUTTON_TYPES:
             input_type = attrs.get("type", "text").lower()
             # Submit et reset ont des libellés natifs même sans attribut value.
