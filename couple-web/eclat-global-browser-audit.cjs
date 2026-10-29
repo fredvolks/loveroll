@@ -26,7 +26,17 @@ async function snapshot(page,stage,format){
  return page.evaluate(({stage,format})=>{
   const root=document.querySelector('main#app');
   const nav=document.querySelector('.nav');
-  const visible=e=>{if(!e)return false;const s=getComputedStyle(e),r=e.getBoundingClientRect();return s.visibility!=='hidden'&&s.display!=='none'&&r.width>0&&r.height>0;};
+  const visible=e=>{
+   if(!e)return false;
+   // Closed <details> descendants are not keyboard or screen-reader controls,
+   // even if an author stylesheet gives them nonzero layout boxes.
+   for(let current=e;current&&current!==root;current=current.parentElement){
+    const parent=current.parentElement;
+    if(parent?.matches('details:not([open])') && current!==parent.querySelector(':scope > summary'))return false;
+   }
+   const s=getComputedStyle(e),r=e.getBoundingClientRect();
+   return s.visibility!=='hidden'&&s.display!=='none'&&r.width>0&&r.height>0;
+  };
   const bounds=e=>{if(!e)return null;const r=e.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height};};
   const buttons=[...root.querySelectorAll('button,[role="button"],input,textarea,summary')].filter(visible);
   const unnamed=buttons.filter(e=>!e.disabled&&!(e.getAttribute('aria-label')||e.getAttribute('title')||e.innerText||e.labels?.[0]?.textContent)?.trim()).map(e=>e.dataset.action||e.className).slice(0,10);
@@ -137,6 +147,17 @@ async function main(){
      }else{
       await page.locator('.eclat-guided[data-eclat-phase="prepare"]').waitFor({state:'visible',timeout:12000});
       const s=await snapshot(page,'guided-prepare',format.name);validate(s);
+      // The private Save action must be fully visible without scrolling, including
+      // on the smallest Android, before the optional clue can expand.
+      const noteSave=await page.evaluate(()=>{
+       const pane=document.querySelector('.eclat-guided-content');
+       const button=document.querySelector('[data-action="eclat:note-save"]');
+       if(!pane||!button)return {visible:false,reason:'missing'};
+       const area=pane.getBoundingClientRect(),target=button.getBoundingClientRect();
+       return {visible:target.top>=area.top-1&&target.bottom<=area.bottom+1,
+        buttonTop:target.top,buttonBottom:target.bottom,paneTop:area.top,paneBottom:area.bottom};
+      });
+      assert.ok(noteSave.visible,format.name+' Save note clipped under scroll viewport: '+JSON.stringify(noteSave));
       assert.ok(s.cta&&s.cta.bottom<=s.nav.top+2,format.name+' guided CTA overlaps navigation');
       assert.equal(s.duplicatedGuidedTitle,false,format.name+' duplicates the coffret title above its step');
       assert.deepEqual(s.guidedProgress,{label:'Progression du coffret',min:'0',max:'6',now:'1',text:'Étape 1 sur 6'},format.name+' progress inaccessible');
