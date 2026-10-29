@@ -31,3 +31,33 @@ test('The active Soirée styles must be available in the PWA offline shell',()=>
  assert.ok(sw.includes("'./evening-editorial.css'"),'Editorial private card CSS must remain cached offline');
  assert.ok(sw.includes("'./soiree-home-template.css'"),'Active Soirée responsive CSS must remain cached offline');
 });
+
+const shellMatch=sw.match(/const SHELL=\[([\s\S]*?)\];/);
+const shell=shellMatch
+ ? [...shellMatch[1].matchAll(/'(\.\/[^']*)'/g)].map(m=>m[1])
+ : [];
+
+test('Every offline PWA shell entry exists, stays inside the Web root and is unique',()=>{
+ assert.ok(shellMatch,'A real offline Service Worker SHELL is mandatory');
+ assert.ok(shell.length>=150,'Audit the full LoveRoll offline shell, not a fixture');
+ assert.equal(new Set(shell).size,shell.length,
+  'Duplicate PWA shell paths waste cache space and may break offline updates');
+ const root=new URL('./',import.meta.url).pathname;
+ for(const path of shell){
+  const file=new URL(path,import.meta.url);
+  assert.ok(file.pathname.startsWith(root),'Offline asset leaves the LoveRoll Web root: '+path);
+  assert.ok(existsSync(file),'PWA will fail to precache a missing asset: '+path);
+ }
+});
+
+test('Every linked stylesheet and JavaScript entrypoint remains accessible offline',()=>{
+ const scripts=[...html.matchAll(/<script\b[^>]*\bsrc="(\.\/[^"?#]+)(?:\?[^"]*)?"/g)]
+  .map(m=>m[1]);
+ assert.ok(styles.length>=35&&scripts.length>=4,
+  'Protect the real production styles and JavaScript entrypoints');
+ const offline=new Set(shell);
+ for(const asset of [...styles,...scripts]){
+  assert.ok(offline.has(asset),
+   'Web resource not declared in PWA offline shell: '+asset);
+ }
+});
