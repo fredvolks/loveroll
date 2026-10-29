@@ -59,7 +59,13 @@ class ControlsAudit(HTMLParser):
                 self.link_stack[-1]["has_image_alt"] = True
 
         if tag == "input" and attrs.get("type", "text").lower() in INPUT_BUTTON_TYPES:
-            if not hidden and not has_aria_name(attrs) and not attrs.get("title", "").strip() and not attrs.get("value", "").strip() and not attrs.get("alt", "").strip():
+            input_type = attrs.get("type", "text").lower()
+            # Submit et reset ont des libellés natifs même sans attribut value.
+            native_label = input_type in {"submit", "reset"}
+            if (not hidden and not native_label and not has_aria_name(attrs)
+                    and not attrs.get("title", "").strip()
+                    and not attrs.get("value", "").strip()
+                    and not attrs.get("alt", "").strip()):
                 self.issues.append((line, "commande input sans nom accessible statique"))
 
     def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
