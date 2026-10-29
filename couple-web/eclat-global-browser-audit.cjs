@@ -30,7 +30,8 @@ async function snapshot(page,stage,format){
   const bounds=e=>{if(!e)return null;const r=e.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height};};
   const buttons=[...root.querySelectorAll('button,[role="button"],input,textarea,summary')].filter(visible);
   const unnamed=buttons.filter(e=>!e.disabled&&!(e.getAttribute('aria-label')||e.getAttribute('title')||e.innerText||e.labels?.[0]?.textContent)?.trim()).map(e=>e.dataset.action||e.className).slice(0,10);
-  const offscreen=buttons.filter(e=>{const r=e.getBoundingClientRect();return r.left<-2||r.right>innerWidth+2;}).map(e=>({action:e.dataset.action||'',text:e.textContent.slice(0,35)})).slice(0,8);
+  const insideScrollArea=e=>{let parent=e.parentElement;while(parent&&parent!==root){const st=getComputedStyle(parent);if(/auto|scroll/.test(st.overflowX)&&parent.scrollWidth>parent.clientWidth+1)return true;parent=parent.parentElement;}return false;};
+  const offscreen=buttons.filter(e=>{const r=e.getBoundingClientRect();return (r.left<-2||r.right>innerWidth+2)&&!insideScrollArea(e);}).map(e=>({action:e.dataset.action||'',text:e.textContent.slice(0,35)})).slice(0,8);
   const navRect=bounds(nav),detail=root.querySelector('.eclat-detail'),grid=root.querySelector('.eclat-photo-grid');
   const detailRect=bounds(detail),detailChildren=detail?[...detail.children].filter(visible).map(e=>({cls:e.className,rect:bounds(e)})):[];
   return {format,stage,mainClass:root.className,horizontalOverflow:document.documentElement.scrollWidth>innerWidth+1,
@@ -71,6 +72,12 @@ async function main(){
       assert.equal(s.grid.count,12);
       assert.ok(s.grid.bounds.bottom<=s.nav.top+2,format.name+' gallery overlaps nav');
       report.push(s);
+      const lastFilter=page.locator('[data-action="eclat:intent:all"]');
+      await lastFilter.click();
+      assert.equal(await page.locator('.eclat-tile').count(),12,format.name+' All coffrets chip could not restore all 12');
+      const access=await lastFilter.evaluate(el=>{const r=el.getBoundingClientRect(),p=el.closest('.eclat-intents')?.getBoundingClientRect();return {visible:!!p&&r.left>=p.left-2&&r.right<=p.right+2,width:r.width,height:r.height};});
+      assert.ok(access.visible,format.name+' horizontally scrolled chip cannot be reached by user');
+      assert.ok(access.height>=40,format.name+' filter chip too small for touch');
       await page.screenshot({path:path.join(output,'lr-eclat-global-'+format.name+'-gallery.png')});
       for(let id=1;id<=12;id++){
        const card=page.locator('[data-action="eclat:detail:'+id+'"]');
