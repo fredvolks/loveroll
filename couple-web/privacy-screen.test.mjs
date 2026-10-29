@@ -38,7 +38,6 @@ test('Removed privacy overlay no longer boots or restores itself on first paint'
  assert.doesNotMatch(index,/localStorage\.getItem\('loveroll-privacy-mask-v1'\)/);
  assert.doesNotMatch(index,/privacy-screen\.mjs\?v=/);
  assert.doesNotMatch(index,/privacy-screen\.css\?v=/);
- assert.match(index,/privacy-screen\.css\?v=/);
  assert.doesNotMatch(sw,/\.\/privacy-screen\.mjs/);
  assert.doesNotMatch(sw,/\.\/privacy-screen\.css/);
  assert.match(code,/doc\.title='LoveRoll'/);
