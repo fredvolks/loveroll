@@ -77,6 +77,21 @@ class ControlsAuditTests(unittest.TestCase):
                 with contextlib.redirect_stdout(io.StringIO()):
                     self.assertEqual(main(), 0)
 
+    def test_empty_anchor_is_reported(self):
+        self.assertEqual(len(analyze("<a href='/home'><svg aria-hidden='true'></svg></a>")), 1)
+
+    def test_anchor_with_visible_label_is_valid(self):
+        self.assertEqual(analyze("<a href='/home'><span>Accueil</span></a>"), [])
+
+    def test_anchor_with_image_alt_is_valid(self):
+        self.assertEqual(analyze("<a href='/home'><img alt='Accueil' src='home.png'></a>"), [])
+
+    def test_anchor_with_aria_label_is_valid(self):
+        self.assertEqual(analyze("<a href='/home' aria-label='Accueil'><svg></svg></a>"), [])
+
+    def test_anchor_without_href_is_not_interactive(self):
+        self.assertEqual(analyze("<a id='marker'></a>"), [])
+
     def test_no_false_positive_on_void_elements(self):
         self.assertEqual(analyze("<button><img src='icon.png'><span>Oui</span></button>"), [])
 
