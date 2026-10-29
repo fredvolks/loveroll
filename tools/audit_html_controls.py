@@ -54,8 +54,8 @@ class ControlsAudit(HTMLParser):
 
         if tag == "a" and "href" in attrs:
             self.link_stack.append({"line": line, "attrs": attrs, "text": [], "has_image_alt": False, "hidden": hidden})
-        if tag == "button":
-            self.button_stack.append({"line": line, "attrs": attrs, "text": [], "has_image_alt": False, "hidden": hidden})
+        if tag == "button" or attrs.get("role", "").lower() == "button":
+            self.button_stack.append({"line": line, "attrs": attrs, "text": [], "has_image_alt": False, "hidden": hidden, "tag": tag})
         elif tag == "img" and not hidden and attrs.get("alt", "").strip():
             if self.button_stack:
                 self.button_stack[-1]["has_image_alt"] = True
@@ -95,7 +95,7 @@ class ControlsAudit(HTMLParser):
             link = self.link_stack.pop()
             if not link["hidden"] and not has_aria_name(link["attrs"]) and not link["attrs"].get("title", "").strip() and not "".join(link["text"]).strip() and not link["has_image_alt"]:
                 self.issues.append((link["line"], "lien sans nom accessible statique"))
-        if tag == "button" and self.button_stack:
+        if self.button_stack and self.button_stack[-1]["tag"] == tag:
             button = self.button_stack.pop()
             if not button["hidden"] and not has_aria_name(button["attrs"]) and not button["attrs"].get("title", "").strip() and not "".join(button["text"]).strip() and not button["has_image_alt"]:
                 self.issues.append((button["line"], "bouton sans nom accessible statique"))
