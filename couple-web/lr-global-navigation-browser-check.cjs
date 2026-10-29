@@ -10,6 +10,9 @@ const {chromium}=require('playwright');
 const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
 
 const layouts=[
+ // Short and narrow phones must remain navigable without hiding actions.
+ {name:'compact-phone',width:320,height:568},
+ {name:'short-phone',width:412,height:650},
  {name:'small-phone',width:360,height:740},
  {name:'s25-viewport',width:412,height:915},
  {name:'ipad-portrait',width:820,height:1180},
@@ -40,8 +43,22 @@ async function select(page,key){
 }
 async function snapshot(page,layout,key){
  return page.evaluate(({width,height,key})=>{
-  const visible=e=>{const s=getComputedStyle(e),r=e.getBoundingClientRect();
-   return s.display!=='none'&&s.visibility!=='hidden'&&r.width>0&&r.height>0;};
+  const visible=e=>{
+   if(!e)return false;
+   // A closed disclosure hides every control except its direct summary.
+   // A nonzero bounding rect alone does not make its descendants usable.
+   for(let p=e;p;p=p.parentElement){
+    if(p.hidden||p.inert)return false;
+    const s=getComputedStyle(p);
+    if(s.display==='none'||s.visibility==='hidden'||s.visibility==='collapse')return false;
+    if(p.matches('details:not([open])')){
+     const summary=p.querySelector(':scope > summary');
+     if(e!==summary&&!summary?.contains(e))return false;
+    }
+   }
+   const r=e.getBoundingClientRect();
+   return r.width>0&&r.height>0;
+  };
   const rect=e=>{const r=e.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height};};
   const nav=document.querySelector('nav.lr-ruby-nav');
   if(!nav)throw Error('Missing shared bottom navigation on '+key);
@@ -58,6 +75,7 @@ async function snapshot(page,layout,key){
    tabs:tabs.map(e=>({action:e.dataset.action,label:(e.getAttribute('aria-label')||e.innerText||'').trim(),active:e.classList.contains('active'),current:e.getAttribute('aria-current'),iconHidden:e.querySelector(':scope > span')?.getAttribute('aria-hidden'),disabled:e.disabled,rect:rect(e)})),
    nav:rect(nav),navLabel:nav.getAttribute('aria-label'),horizontalOverflow:document.documentElement.scrollWidth>innerWidth+1,
    visibleControls:inputs.length,unnamed,offscreenControls:overflow,
+   closedDisclosureControls:[...main.querySelectorAll('details:not([open]) button,details:not([open]) input,details:not([open]) textarea')].filter(visible).length,
    meaningfulContent:(main.innerText||'').trim().length,
    renderedError:[...document.querySelectorAll('.toast.visible,[role="alert"]')].map(e=>(e.innerText||'').trim()).filter(Boolean).slice(0,5)
   };
@@ -95,6 +113,8 @@ async function main(){
      assert.equal(data.horizontalOverflow,false,layout.name+' '+destination.key+' horizontal overflow');
      assert.ok(data.nav.bottom>=layout.height-2&&data.nav.bottom<=layout.height+2,layout.name+' '+destination.key+' navigation not anchored to bottom');
      assert.ok(data.meaningfulContent>20,layout.name+' '+destination.key+' content unexpectedly empty');
+     assert.equal(data.closedDisclosureControls,0,
+      layout.name+' '+destination.key+' incorrectly counts inaccessible controls inside closed disclosures');
      assert.equal(data.offscreenControls.length,0,layout.name+' '+destination.key+' controls clipped horizontally: '+JSON.stringify(data.offscreenControls));
      assert.equal(data.unnamed.length,0,layout.name+' '+destination.key+' visible controls lacking accessible names: '+JSON.stringify(data.unnamed));
      assert.equal(data.renderedError.length,0,layout.name+' '+destination.key+' unexpected visible errors: '+JSON.stringify(data.renderedError));
