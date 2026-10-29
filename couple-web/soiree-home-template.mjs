@@ -1,4 +1,4 @@
-import {fitSharedStage,fitTabletRomanceStage} from './shared-stage.mjs?v=20261027-web237';
+import {fitSharedStage,fitTabletRomanceStage} from './shared-stage.mjs?v=20261029-ipad258';
 import {fitEveningD100} from './evening-d100-template.mjs?v=20261029-ipad258';
 import {fitEveningD6} from './evening-d6-template.mjs?v=20261027-web237';
 // Apply the selected Home-based Soirée presentation without changing actions,
