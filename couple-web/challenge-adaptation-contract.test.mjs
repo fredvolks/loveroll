@@ -123,9 +123,9 @@ test('LR-017 adaptation never consumes monthly passes or alters official card ou
   sql.indexOf('CREATE OR REPLACE FUNCTION public.love_adaptation_respond('));
  const answer=sql.slice(sql.indexOf('CREATE OR REPLACE FUNCTION public.love_adaptation_respond('));
  for(const fn of [proposal,answer]){
-  assert.doesNotMatch(fn,/UPDATE\\s+public\\.couple_challenges|INSERT\\s+INTO\\s+public\\.couple_challenges/i);
-  assert.doesNotMatch(fn,/love_respond_and_redraw\\s*\\(|answer_challenge\\s*\\(/i);
-  assert.doesNotMatch(fn,/monthly_pass_limit|my_love_monthly_pass_quota|passed_at\\s*=/i);
-  assert.doesNotMatch(fn,/INSERT\\s+INTO\\s+public\\.couple_sessions|INSERT\\s+INTO\\s+public\\.couple_rolls/i);
+  assert.doesNotMatch(fn,/UPDATE\s+public\.couple_challenges|INSERT\s+INTO\s+public\.couple_challenges/i);
+  assert.doesNotMatch(fn,/love_respond_and_redraw\s*\(|answer_challenge\s*\(/i);
+  assert.doesNotMatch(fn,/monthly_pass_limit|my_love_monthly_pass_quota|passed_at\s*=/i);
+  assert.doesNotMatch(fn,/INSERT\s+INTO\s+public\.couple_sessions|INSERT\s+INTO\s+public\.couple_rolls/i);
  }
 });
