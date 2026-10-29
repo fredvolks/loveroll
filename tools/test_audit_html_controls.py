@@ -92,6 +92,12 @@ class ControlsAuditTests(unittest.TestCase):
     def test_anchor_without_href_is_not_interactive(self):
         self.assertEqual(analyze("<a id='marker'></a>"), [])
 
+    def test_hidden_link_does_not_hide_visible_link(self):
+        self.assertEqual(len(analyze("<div hidden><a href='/hidden'></a></div><a href='/visible'></a>")), 1)
+
+    def test_hidden_link_followed_by_named_link(self):
+        self.assertEqual(analyze("<div aria-hidden='true'><a href='/hidden'></a></div><a href='/home'>Accueil</a>"), [])
+
     def test_no_false_positive_on_void_elements(self):
         self.assertEqual(analyze("<button><img src='icon.png'><span>Oui</span></button>"), [])
 
