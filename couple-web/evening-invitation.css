@@ -11,19 +11,19 @@
 .lr-evening-invite-actions{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:11px 0 4px}
 .lr-evening-invite button{appearance:none;cursor:pointer;min-height:44px;border-radius:999px;
  padding:9px 16px;font-size:.9rem;font-weight:700;line-height:1.25;max-width:100%;white-space:normal}
-.lr-evening-invite-primary{color:#641c36;background:#ffe0e6;border:1px solid #ffe8ed}
-.lr-evening-invite-secondary{background:transparent;border:1px solid rgba(255,233,236,.67);color:#fff}
-.lr-evening-invite button:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.lr-evening-invite-primary{color:var(--control-text);background:var(--control-primary);border:1px solid var(--control-border);box-shadow:var(--control-shadow)}
+.lr-evening-invite-secondary{background:var(--control-secondary);border:1px solid var(--control-secondary-border);color:var(--control-secondary-text);box-shadow:none}
+.lr-evening-invite button:focus-visible{outline:3px solid var(--ritual-text);outline-offset:2px}
 .lr-evening-invite button:disabled{opacity:.62;cursor:progress}
 .lr-evening-inbox{position:fixed;z-index:4100;bottom:calc(76px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);
  box-sizing:border-box;max-width:min(92vw,520px);width:max-content;display:flex;align-items:center;gap:10px;padding:8px 10px 8px 13px;
- border:1px solid #e5a7b8b3;border-radius:19px;background:#351622f5;
+ border:1px solid var(--ritual-border);border-radius:19px;background:#351622f5;
  box-shadow:0 8px 28px #15040c88;color:#fff5f5;font-size:.86rem;line-height:1.25}
 .lr-evening-inbox-heart{color:#ffd0e0;font-size:1.35rem;flex:none}
 .lr-evening-inbox-copy{flex:1;min-width:0}
-.lr-evening-inbox-open{flex:none;min-height:44px;padding:7px 12px;border:1px solid #ffe1e9;border-radius:14px;
- background:#ffdae5;color:#68243f;font:700 .85rem system-ui,sans-serif;cursor:pointer}
-.lr-evening-inbox-open:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.lr-evening-inbox-open{flex:none;min-height:44px;padding:7px 12px;border:1px solid var(--control-border);border-radius:14px;
+ background:var(--control-primary);color:var(--control-text);box-shadow:var(--control-shadow);font:700 .85rem system-ui,sans-serif;cursor:pointer}
+.lr-evening-inbox-open:focus-visible{outline:3px solid var(--ritual-text);outline-offset:2px}
 @media(max-width:530px){.lr-evening-inbox{width:calc(100% - 16px);max-width:460px;gap:7px;padding:6px 7px 6px 10px;font-size:.77rem;
  bottom:calc(70px + env(safe-area-inset-bottom,0px))}.lr-evening-inbox-open{padding:7px 10px}}
 @media(max-width:530px) and (max-height:680px){.lr-evening-inbox{bottom:calc(66px + env(safe-area-inset-bottom,0px))}}
