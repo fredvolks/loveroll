@@ -56,7 +56,9 @@ class ControlsAudit(HTMLParser):
             self.link_stack.append({"line": line, "attrs": attrs, "text": [], "has_image_alt": False, "hidden": hidden})
         if tag == "button" or (tag not in VOID_TAGS and attrs.get("role", "").lower() == "button"):
             self.button_stack.append({"line": line, "attrs": attrs, "text": [], "has_image_alt": False, "hidden": hidden, "tag": tag})
-        elif tag == "img" and not hidden and attrs.get("alt", "").strip():
+        elif (tag == "img" and not hidden and attrs.get("alt", "").strip()
+              and attrs.get("role", "").lower() not in {"presentation", "none"}
+              and attrs.get("aria-hidden", "").lower() != "true"):
             if self.button_stack:
                 self.button_stack[-1]["has_image_alt"] = True
             if self.link_stack:
