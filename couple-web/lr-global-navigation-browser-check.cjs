@@ -152,6 +152,32 @@ async function main(){
   }
  }finally{
   fs.writeFileSync('design-captures/lr-global-navigation-inventory.json',JSON.stringify(report,null,2)+'\n');
+  // An actionable queue, derived from measured real controls. Read-only:
+  // a scrollable control outside the viewport is not automatically broken.
+  // The evidence remains labelled "review" rather than a false pass.
+  const issues=[];
+  for(const screen of report){
+   for(const control of screen.controlInventory){
+    const problems=[];
+    if(!control.name&&!control.disabled)problems.push('accessible-name-missing');
+    if(!control.minTouch44&&!control.disabled)problems.push('touch-target-below-44px');
+    if(control.hitAtCenter===false&&!control.disabled)problems.push('center-hit-obstructed');
+    if(!control.inViewport&&!control.disabled)problems.push('requires-viewport-or-scroll-review');
+    if(problems.length)issues.push({
+     layout:screen.viewport,page:screen.page,
+     action:control.action,controlName:control.name,
+     controlIndex:control.index,tag:control.tag,problems,
+     bounds:control.bounds
+    });
+   }
+  }
+  const summary={screensAudited:report.length,controlsAudited:report.reduce((sum,s)=>sum+s.visibleControls,0),
+   requiresHumanReview:issues.length,
+   counts:Object.fromEntries(['accessible-name-missing','touch-target-below-44px','center-hit-obstructed','requires-viewport-or-scroll-review']
+    .map(type=>[type,issues.filter(issue=>issue.problems.includes(type)).length])),
+   issues};
+  fs.writeFileSync('design-captures/lr-global-navigation-ux-issues.json',JSON.stringify(summary,null,2)+'\n');
+  console.log('LR_NAV_ISSUE_QUEUE',JSON.stringify({...summary,issues:undefined}));
   await browser.close();
  }
 }
