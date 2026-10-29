@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {fitTabletRomanceStage} from './shared-stage.mjs';
 const read=file=>readFileSync(new URL('./'+file,import.meta.url),'utf8');
 const app=read('app.js'),dice=read('dice3d.js'),style=read('surprise-dice-layout-v73.css');
 const index=read('index.html'),worker=read('service-worker.js');
@@ -54,4 +55,40 @@ test('Active Soirée does not pass an unbound pending challenge into premiumEven
  assert.match(app,/showSensuel:state\.couple\?\.show_sensuel_button!==false/);
  assert.match(app,/giftCount,rolling:state\.diceStatus==='rolling'\|\|state\.diceStatus==='pending'/);
  assert.match(app,/pendingInviteReference\(sessionStorage\)/);
+});
+
+test('Real playable iPad D100 lowers ONE photo marble enough for the WebGL mesh',()=>{
+ const inspect=(width,height,heroTop,stageWidth,landscape)=>{
+  const vars={};
+  const stage={getBoundingClientRect:()=>({width:stageWidth})};
+  const hero={
+   getBoundingClientRect:()=>({top:heroTop}),
+   querySelector:selector=>selector==='.love3d-stage'?stage:null
+  };
+  const root={
+   ownerDocument:{defaultView:{
+    innerWidth:width,innerHeight:height,
+    matchMedia:query=>({matches:query==='(min-width:768px)'?true:
+     query==='(orientation:landscape)'?landscape:false})
+   }},
+   getBoundingClientRect:()=>({width}),
+   classList:{contains:key=>key==='loveroll-evening-page'},
+   querySelector:selector=>selector==='.evening-premium-view.has-evening-d100-template'?{}:
+    selector==='.evening-d100-theater'?hero:null,
+   style:{setProperty:(key,value)=>{vars[key]=Number.parseFloat(value);}}
+  };
+  fitTabletRomanceStage(root);
+  return vars;
+ };
+ const portrait=inspect(820,1180,267,440,false);
+ assert.ok(portrait['--home-scene-contact']>=590,
+  'Playable portrait D100 needs real silhouette room below the category row');
+ assert.ok(portrait['--home-scene-top-image-height']>=
+  portrait['--home-scene-contact']/.342-1);
+ const landscape=inspect(1180,820,255,352,true);
+ assert.ok(landscape['--home-scene-contact']>=515,
+  'Playable landscape D100 must not remain pinned at the old 56dvh contact');
+ const photoCss=read('ipad-soiree-one-photo-v237.css');
+ assert.match(photoCss,/auto var\(--home-scene-top-image-height\) no-repeat!important/,
+  'Zoom/crop the same HD photo without stretching it vertically');
 });
