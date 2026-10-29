@@ -67,6 +67,45 @@ for(const route of ['compte','couple','jeu','notifications','monde','confidentia
   assert.equal(await page.locator('[data-settings-open]').count(),0);
  }
  await walk();
+ // Exercise large-text and long-translation accessibility, not only viewport
+ // presets. Enlarged real controls must remain scrollable above fixed nav.
+ if((width===412&&height===824)||(width===820&&height===1180)){
+  const panel=page.locator('.settings-detail-body');
+  if(route==='jeu'){
+   await page.locator('.settings-submenu-list :is(button,.settings-link-row)')
+    .evaluateAll(els=>els.forEach(el=>{
+     el.style.setProperty('min-height','240px','important');
+     el.style.setProperty('font-size','34px','important');
+    }));
+   const g=await panel.evaluate(el=>({overflow:el.scrollHeight-el.clientHeight,
+    overflowY:getComputedStyle(el).overflowY,doc:document.documentElement.scrollHeight-innerHeight}));
+   assert.ok(g.overflow>0&&['auto','scroll'].includes(g.overflowY)&&g.doc<=2,
+    'Large-text game menu must scroll within the panel: '+JSON.stringify(g));
+   const dest=page.locator('[data-settings-open="categories"]');
+   await dest.scrollIntoViewIfNeeded();
+   const item=await dest.boundingBox(),nav=await page.locator('.nav').boundingBox(),pane=await panel.boundingBox();
+   assert.ok(item&&nav&&pane&&item.y>=pane.y-2&&
+    item.y+item.height<=Math.min(nav.y,pane.y+pane.height)+2,
+    'Large-text category control must remain reachable above navigation');
+   await dest.click();
+   assert.equal(await panel.getAttribute('data-settings-location'),'categories');
+   await page.locator('.settings-back').click();
+  }
+  if(route==='compte'){
+   const group=page.locator('.settings-account-overview .settings-premium-glass-group').first();
+   await group.evaluate(el=>el.style.setProperty('min-height','1450px','important'));
+   const g=await panel.evaluate(el=>({overflow:el.scrollHeight-el.clientHeight,
+    overflowY:getComputedStyle(el).overflowY,doc:document.documentElement.scrollHeight-innerHeight}));
+   assert.ok(g.overflow>0&&['auto','scroll'].includes(g.overflowY)&&g.doc<=2,
+    'Large-text account form must scroll within the panel: '+JSON.stringify(g));
+   const action=page.locator('[data-action="signout"]').first();
+   await action.scrollIntoViewIfNeeded();
+   const item=await action.boundingBox(),nav=await page.locator('.nav').boundingBox(),pane=await panel.boundingBox();
+   assert.ok(item&&nav&&pane&&item.y>=pane.y-2&&
+    item.y+item.height<=Math.min(nav.y,pane.y+pane.height)+2,
+    'Sign-out must stay reachable with enlarged account text, without clicking it');
+  }
+ }
 }
 assert.deepEqual(errors,[]);await context.close();console.log('MENUS_OK',width,height);
 }}finally{await browser.close()}})().catch(e=>{console.error(e);process.exit(1)});
