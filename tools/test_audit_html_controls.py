@@ -175,7 +175,6 @@ class ControlsAuditTests(unittest.TestCase):
 
     def test_void_role_button_does_not_capture_later_text(self):
         self.assertEqual(analyze("<input role='button' type='button'><button></button>"),
-                         [(1, "bouton sans nom accessible statique")][0:0] if False else
                          ["commande input sans nom accessible statique",
                           "bouton sans nom accessible statique"])
 
