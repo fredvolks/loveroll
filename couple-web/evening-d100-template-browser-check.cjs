@@ -13,6 +13,9 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   console.log('EVENING_D100_VIEWPORT_START',width,height);
   // Keep the original viewport loop intact: its diagnostic branch uses break.
   // An explicit process exit is intentional: it also stops stalled Playwright calls.
+  const heartbeat=setInterval(()=>{
+   console.log('D100_VIEWPORT_HEARTBEAT',width,height,'stage='+stage,'elapsed_ms='+(Date.now()-started));
+  },30000);
   const watchdog=setTimeout(()=>{
    console.error('D100_VIEWPORT_TIMEOUT',width,height,'stage='+stage,'after 180000ms');
    process.exit(1);
@@ -203,6 +206,7 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   await capture('recorded');
   assert.deepEqual(errors,[]);await context.close();console.log('EVENING_D100_TEMPLATE_OK',width,height);
   }finally{
+   clearInterval(heartbeat);
    clearTimeout(watchdog);
    console.log('EVENING_D100_VIEWPORT_DURATION_MS',width,height,Date.now()-started);
   }
