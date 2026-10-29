@@ -66,9 +66,11 @@ class ControlsAudit(HTMLParser):
             input_type = attrs.get("type", "text").lower()
             # Submit et reset ont des libellés natifs même sans attribut value.
             native_label = input_type in {"submit", "reset"}
+            # Un input image reçoit son nom de alt, title ou ARIA, pas de value.
+            value_label = input_type != "image" and attrs.get("value", "").strip()
             if (not hidden and not native_label and not has_aria_name(attrs)
                     and not attrs.get("title", "").strip()
-                    and not attrs.get("value", "").strip()
+                    and not value_label
                     and not attrs.get("alt", "").strip()):
                 self.issues.append((line, "commande input sans nom accessible statique"))
 
