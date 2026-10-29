@@ -207,6 +207,15 @@ class ControlsAuditTests(unittest.TestCase):
         self.assertEqual(analyze("<span role='button' tabindex='-1' aria-label='Jouer'></span>"),
                          ["bouton personnalisé sans tabindex accessible"])
 
+    def test_inline_display_none_controls_ignored(self):
+        self.assertEqual(analyze("<div style='display: none'><button></button></div>"), [])
+
+    def test_inline_visibility_hidden_controls_ignored(self):
+        self.assertEqual(analyze("<div style='visibility: hidden'><a href='/x'></a></div>"), [])
+
+    def test_inline_css_hidden_does_not_mask_next_button(self):
+        self.assertEqual(len(analyze("<div style='display:none'><button></button></div><button></button>")), 1)
+
     def test_no_false_positive_on_void_elements(self):
         self.assertEqual(analyze("<button><img src='icon.png'><span>Oui</span></button>"), [])
 
