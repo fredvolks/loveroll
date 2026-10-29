@@ -49,7 +49,7 @@ class ControlsAudit(HTMLParser):
             if hidden:
                 self.hidden_depth += 1
 
-        if tag in {"button", "a", "input", "area"} and attrs.get("aria-labelledby", "").strip():
+        if tag in {"button", "a", "input", "area"} and attrs.get("aria-labelledby", "").strip() and not hidden:
             self.pending_references.append((line, tag, attrs["aria-labelledby"]))
 
         if tag == "a" and "href" in attrs:
@@ -109,6 +109,13 @@ class ControlsAudit(HTMLParser):
                 self.hidden_depth = max(0, self.hidden_depth - sum(hidden for _, hidden in popped))
 
 
+    def check_references(self) -> None:
+        """Resolve references only after the whole document is parsed."""
+        for line, tag, references in self.pending_references:
+            missing = sorted({name for name in references.split() if name not in self.ids})
+            if missing:
+                self.issues.append((line, f"{tag}: aria-labelledby cible absente: {', '.join(missing)}"))
+
 
 def discover(root: Path):
     if root.is_file():
@@ -142,10 +149,8 @@ def main() -> int:
             print(f"{path}: impossible d'analyser: {exc}", file=sys.stderr)
             errors += 1
             continue
-        for line, tag, references in parser.pending_references:
-            missing = [name for name in references.split() if name not in parser.ids]
-            if missing:
-                parser.issues.append((line, f"{tag}: aria-labelledby cible absente: {', '.join(missing)}"))
+        parser.check_references()
+
         for line, problem in parser.issues:
             print(f"{path}:{line}: {problem}")
             errors += 1
