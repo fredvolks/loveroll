@@ -114,7 +114,13 @@ test('Photographic Éclat shows exactly 12 clickable matching coffret pictures',
  assert.match(gallery,/--photo-y:0\.00000%/);
  assert.match(gallery,/--photo-y:100\.00000%/);
  // The discovery recommendation opens a detail too, but is not a thirteenth coffret.
- assert.equal((gallery.match(/<button role="listitem" type="button" class="eclat-tile" data-action="eclat:detail:/g)||[]).length,12);
+ // Match semantic list items without freezing unrelated attribute order.
+ assert.equal((gallery.match(/<button\b[^>]*\bclass="eclat-tile"[^>]*\bdata-action="eclat:detail:\d+"[^>]*\baria-label="Ouvrir le coffret \d{2} :/g)||[]).length,12);
+ assert.match(gallery,/data-action="eclat:intent:all"[^>]*aria-pressed="true"/,'Default filter is conveyed to screen readers');
+ assert.equal((gallery.match(/data-action="eclat:intent:[^"]+"[^>]*aria-pressed="true"/g)||[]).length,1,'Exactly one filter is selected');
+ const detail=eclatHtml({status:{access:true},details:true,selected:12,minutes:90});
+ assert.match(detail,/data-action="eclat:minutes:90"[^>]*aria-pressed="true"/,'Chosen duration is accessible');
+ assert.equal((detail.match(/data-action="eclat:minutes:\d+"[^>]*aria-pressed="true"/g)||[]).length,1,'Exactly one duration is selected');
  assert.doesNotMatch(gallery,/<div class="eclat-intro">/);
  const style=read('./eclat-photo-gallery-v179.css');
  assert.match(style,/eclat-photo-strip\.webp/);
@@ -153,4 +159,32 @@ test('Éclat approved intents and history suggestion work without sharing privat
  assert.match(eclatHtml({status,history:allStarted}),/À retrouver/);
  assert.match(eclatHtml({status,history:allStarted}),/Voir notre suggestion : Les cinq secrets/);
  assert.doesNotMatch(eclatHtml({status,historyError:true}),/eclat-recommendation/);
+});
+
+test('Éclat guided progress is announced and secondary controls stay touch accessible',()=>{
+ const active={access:true,active:true,coffret_id:1,minutes:60,chapter_index:1,chapter_number:1,chapter_total:6,variant_number:0,session_id:'progress-test',my_choice:null,both_chosen:false};
+ const html=eclatHtml({status:active,userId:'a',members:people});
+ assert.match(html,/role="progressbar" aria-label="Progression du coffret" aria-valuemin="0" aria-valuemax="6" aria-valuenow="1" aria-valuetext="Étape 1 sur 6"/);
+ assert.match(html,/data-action="eclat:choose:0"/);
+ const css=read('./eclat-guided.css');
+ assert.match(css,/button\.eclat-skip,button\.eclat-link,button\.eclat-note-save,summary/);
+ assert.match(css,/min-height:44px!important/);
+});
+
+test('Éclat regroupe clairement les trois choix privés pour lecteurs d’écran',()=>{
+ const status={access:true,active:true,coffret_id:1,minutes:90,chapter_index:3,
+  chapter_number:3,chapter_total:8,variant_number:0,session_id:'a11y-choice',
+  my_choice:null,both_chosen:false,my_ready:false};
+ const prepare=eclatHtml({status,userId:'a',members:people});
+ const choose=eclatHtml({status,userId:'a',members:people,noteState:{moment_done:true}});
+ const waiting=eclatHtml({status:{...status,my_choice:1},userId:'a',members:people});
+ const revealed=eclatHtml({status:{...status,my_choice:1,both_chosen:true,outcome:2},userId:'a',members:people});
+ assert.match(choose,/class="eclat-choices" role="group" aria-label="Choix privé pour cette étape"/);
+ assert.equal((choose.match(/class="eclat-choice"/g)||[]).length,3);
+ assert.match(choose,/aria-valuemax="8" aria-valuenow="3" aria-valuetext="Étape 3 sur 8"/);
+ assert.doesNotMatch(prepare,/class="eclat-choices"/);
+ assert.doesNotMatch(waiting,/class="eclat-choices"/);
+ assert.doesNotMatch(revealed,/class="eclat-choices"/);
+ assert.match(waiting,/On attend ton partenaire/);
+ assert.match(revealed,/VOTRE SUITE COMMUNE/);
 });

@@ -1,0 +1,42 @@
+name: LoveRoll global Éclat visual and interaction audit
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'couple-web/eclat-*.css'
+      - 'couple-web/eclat-*.mjs'
+      - 'couple-web/eclat-global-browser-audit.cjs'
+      - '.github/workflows/loveroll-eclat-global-audit.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'couple-web/eclat-*.css'
+      - 'couple-web/eclat-*.mjs'
+      - 'couple-web/eclat-global-browser-audit.cjs'
+      - '.github/workflows/loveroll-eclat-global-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  eclat-responsive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned Chromium
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.56.0
+          npx playwright install --with-deps chromium
+      - name: Inspect all twelve coffrets, locked and guided states on five sizes
+        run: node couple-web/eclat-global-browser-audit.cjs
+      - name: Archive full UX evidence even if checks fail
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LoveRoll-ECLAT-global-visual-audit
+          path: |
+            design-captures/lr-eclat-global-*
+          if-no-files-found: ignore
