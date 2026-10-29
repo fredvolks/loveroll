@@ -165,13 +165,13 @@ class ControlsAuditTests(unittest.TestCase):
         self.assertEqual(parser.issues, [])
 
     def test_role_button_without_name_is_reported(self):
-        self.assertEqual(len(analyze("<div role='button'><svg aria-hidden='true'></svg></div>")), 1)
+        self.assertEqual(len(analyze("<div role='button' tabindex='0'><svg aria-hidden='true'></svg></div>")), 1)
 
     def test_role_button_with_label_passes(self):
-        self.assertEqual(analyze("<span role='button' aria-label='Ouvrir'></span>"), [])
+        self.assertEqual(analyze("<span role='button' tabindex='0' aria-label='Ouvrir'></span>"), [])
 
     def test_role_button_with_text_passes(self):
-        self.assertEqual(analyze("<div role='button'>Continuer</div>"), [])
+        self.assertEqual(analyze("<div role='button' tabindex='0'>Continuer</div>"), [])
 
     def test_void_role_button_does_not_capture_later_text(self):
         self.assertEqual(analyze("<input role='button' type='button'><button></button>"),
@@ -180,13 +180,13 @@ class ControlsAuditTests(unittest.TestCase):
 
     def test_custom_role_button_checks_missing_label_reference(self):
         parser = ControlsAudit()
-        parser.feed("<div role='button' aria-labelledby='missing'></div>")
+        parser.feed("<div role='button' tabindex='0' aria-labelledby='missing'></div>")
         parser.check_references()
         self.assertTrue(any("cible absente" in issue for _, issue in parser.issues))
 
     def test_custom_role_button_accepts_forward_label_reference(self):
         parser = ControlsAudit()
-        parser.feed("<div role='button' aria-labelledby='help'></div><span id='help'>Aide</span>")
+        parser.feed("<div role='button' tabindex='0' aria-labelledby='help'></div><span id='help'>Aide</span>")
         parser.check_references()
         self.assertEqual(parser.issues, [])
 
@@ -195,6 +195,17 @@ class ControlsAuditTests(unittest.TestCase):
 
     def test_presentational_image_alt_cannot_name_link(self):
         self.assertEqual(len(analyze("<a href='/next'><img role='none' alt='Suivant'></a>")), 1)
+
+    def test_custom_button_without_keyboard_focus_is_detected(self):
+        self.assertEqual(analyze("<div role='button' aria-label='Jouer'></div>"),
+                         ["bouton personnalisé sans tabindex accessible"])
+
+    def test_custom_button_with_tabindex_is_valid(self):
+        self.assertEqual(analyze("<div role='button' tabindex='0' aria-label='Jouer'></div>"), [])
+
+    def test_custom_button_with_negative_tabindex_is_detected(self):
+        self.assertEqual(analyze("<span role='button' tabindex='-1' aria-label='Jouer'></span>"),
+                         ["bouton personnalisé sans tabindex accessible"])
 
     def test_no_false_positive_on_void_elements(self):
         self.assertEqual(analyze("<button><img src='icon.png'><span>Oui</span></button>"), [])
