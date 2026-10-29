@@ -64,6 +64,15 @@ class ControlsAudit(HTMLParser):
             if self.link_stack:
                 self.link_stack[-1]["has_image_alt"] = True
 
+        if attrs.get("role", "").lower() == "button" and tag not in {"button", "input"} and not hidden:
+            # Les commandes personnalisées doivent pouvoir recevoir le focus au clavier.
+            try:
+                focusable = int(attrs.get("tabindex", "-1")) >= 0
+            except ValueError:
+                focusable = False
+            if not focusable and tag not in {"a", "summary"}:
+                self.issues.append((line, "bouton personnalisé sans tabindex accessible"))
+
         if tag == "area" and "href" in attrs and not hidden:
             if not has_aria_name(attrs) and not attrs.get("alt", "").strip() and not attrs.get("title", "").strip():
                 self.issues.append((line, "zone de carte image sans nom accessible statique"))
