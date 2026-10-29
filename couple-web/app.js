@@ -2885,6 +2885,51 @@ async function handle(action,element){
   saveEveningSelection(localStorage,state.user.id,state.session.id,parts[0]);
   render();return;
  }
+ if(verb.startsWith('evening-adapt-')){
+  const action=verb.slice('evening-adapt-'.length),challengeId=parts[0];
+  if(state.adaptBusy)return;
+  if(state.adaptations===null)throw Error('Adapter le défi est indisponible sur ce serveur.');
+  const card=state.challenges.find(c=>c.id===challengeId);
+  const proposal=state.adaptations.find(a=>a.challenge_id===challengeId);
+  if(action==='open'||action==='dismiss'){
+   if(action==='open'&&(!card||card.status!=='proposed'))
+    throw Error('Ce défi ne peut pas être adapté.');
+   state.adaptEditingId=action==='open'?challengeId:null;render();return;
+  }
+  if(action==='propose'&&(!card||card.status!=='proposed'||state.adaptEditingId!==challengeId))
+   throw Error('Ouvre d’abord une proposition sur ton défi.');
+  if(['accept','decline'].includes(action)&&proposal?.approver_id!==state.user?.id)
+   throw Error('Cette proposition appartient à ton partenaire.');
+  if(action==='cancel'&&proposal?.proposer_id!==state.user?.id)
+   throw Error('Seul l’auteur peut annuler sa proposition.');
+  let description=null,minutes=null;
+  if(action==='propose'){
+   description=id('lr-adapt-text')?.value?.trim()||null;
+   const raw=id('lr-adapt-minutes')?.value?.trim()||'';
+   if(raw){
+    minutes=Number(raw);
+    if(!Number.isInteger(minutes)||minutes<1||minutes>120)
+     throw Error('Choisis une durée entière de 1 à 120 minutes.');
+   }
+   if(!description&&!minutes)throw Error('Propose une nouvelle consigne ou une durée.');
+   if(description?.length>1200)throw Error('La consigne ne peut pas dépasser 1200 caractères.');
+  }
+  state.adaptBusy=true;render();
+  try{
+   if(action==='propose')await rpc('love_adaptation_propose',{
+    p_challenge:challengeId,p_description:description,p_minutes:minutes});
+   else if(action==='cancel')await rpc('love_adaptation_cancel',{p_challenge:challengeId});
+   else if(action==='accept'||action==='decline')
+    await rpc('love_adaptation_respond',{p_challenge:challengeId,p_accept:action==='accept'});
+   else throw Error('Action d’adaptation inconnue.');
+   state.adaptEditingId=null;
+   await refreshAndShow();
+   notify(action==='propose'?'Proposition envoyée à ton partenaire.':
+    action==='accept'?'Adaptation acceptée pour ce défi seulement.':
+    action==='decline'?'Vous gardez le défi original.':'Proposition annulée.');
+  }finally{state.adaptBusy=false;render();}
+  return;
+ }
  if(verb==='evening-refuse'){
   if(!state.redrawReady)throw Error('La repige sécurisée n’est pas encore disponible sur ce serveur.');
   const item=ownEveningChallenges(state.challenges,state.user?.id,state.session?.id).find(x=>x.id===parts[0]);
