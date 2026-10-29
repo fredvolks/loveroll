@@ -580,10 +580,11 @@ export function dieOn(canvas,sides,value,rolling){
    // The 3D mesh is already the correct size on a tall 412x915 phone, but
    // needs a smaller fit on short phones. A fixed .929 multiplier shrinks
    // the tall-phone mesh by 7.1%. Interpolate smoothly by available height:
-   // measured parity references: 360x740, 412x824 and 412x915.
+   // After the mode tabs reached 44px, 360x740 measured 0.9649 parity.
+   // Restore the D100 to >=0.97 parity without changing the tall-phone endpoint.
    if(idleEveningD100&&window.matchMedia?.('(max-width:767px)').matches){
     const t=Math.max(0,Math.min(1,(window.innerHeight-740)/175));
-    camera.zoom*=.929+.071*t*t;
+    camera.zoom*=.936+.064*t*t;
    }
    camera.updateProjectionMatrix();
   }

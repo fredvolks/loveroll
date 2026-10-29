@@ -99,6 +99,17 @@
   #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template .evening-finale-dice>.love3d{
    width:min(52vw,39dvh,340px)!important;height:auto!important;aspect-ratio:1!important;
   }
+  /* The real D100 stage can extend outside its hero for the photo/marble
+     alignment. On iPad landscape that transparent .love3d region used to
+     intercept taps on the calendar below. Raise the actual aftercare panel
+     above the decorative stage, while preserving all die drag interactions
+     in the visible hero and the original single HD photograph. */
+  #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template .evening-finale-hero{
+   position:relative!important;z-index:1!important;
+  }
+  #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template .evening-aftercare{
+   position:relative!important;z-index:3!important;
+  }
   #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template .evening-finale-actions{
    display:grid!important;gap:8px!important;align-items:center!important;
   }

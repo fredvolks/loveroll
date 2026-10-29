@@ -13,7 +13,8 @@
 #app.loveroll-settings-page:is(.loveroll-settings-menu,.loveroll-settings-detail,.loveroll-library-page) .settings-premium-section-head h2{font:600 25px/1.1 var(--lr-control-font,Georgia,serif)!important;margin:5px 0!important;}
 #app.loveroll-settings-page:is(.loveroll-settings-menu,.loveroll-settings-detail,.loveroll-library-page) :is(p,small){line-height:1.35!important;}
 #app.loveroll-settings-menu .settings-sections{grid-template-rows:none!important;grid-auto-rows:minmax(0,1fr)!important;max-height:none!important;gap:7px!important;}
-#app.loveroll-settings-menu :is(.settings-section-row,.settings-profile-row){min-height:0!important;padding:8px 12px!important;}
+/* Layered !important outranks the later unlayered skins: preserve a true 44px target on all Settings destinations. */
+#app.loveroll-settings-menu :is(.settings-section-row,.settings-profile-row){min-height:44px!important;padding:8px 12px!important;}
 #app.loveroll-settings-menu .settings-profile-row{flex:none;min-height:58px!important;}
 #app.loveroll-settings-menu .settings-initial{width:38px;height:38px;font-size:24px;}
 @media(max-height:720px){#app.loveroll-settings-menu .settings-section-row small{display:none;}#app.loveroll-settings-page:is(.loveroll-settings-menu,.loveroll-settings-detail,.loveroll-library-page) .settings-editorial{grid-template-rows:65px minmax(0,1fr)!important;}#app.loveroll-settings-page:is(.loveroll-settings-menu,.loveroll-settings-detail,.loveroll-library-page) .settings-detail-body{padding:10px!important;}}
