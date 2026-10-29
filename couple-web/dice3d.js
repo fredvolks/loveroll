@@ -629,7 +629,11 @@ export function dieOn(canvas,sides,value,rolling){
  alignPodium();podiumObserver?.observe(podium||canvas);
  if(duration)prepareMotion();
  function step(now){
-  frame=0;if(!shown||document.hidden)return;
+  // A confirmed throw must not freeze when a modal transition or viewport
+  // intersection update briefly declares this canvas offscreen. Continue the
+  // finite official animation in the active document; idle/offscreen dice
+  // still stop rendering, and hidden tabs remain paused.
+  frame=0;if(document.hidden||(!shown&&!duration))return;
   const dt=lastFrame?Math.min(.05,Math.max(0,(now-lastFrame)/1000)):0;
   lastFrame=now;
   const elapsed=duration?Math.min(duration,Math.max(0,now-start)):0;
@@ -711,6 +715,7 @@ export function dieOn(canvas,sides,value,rolling){
   const engravingUpright=engravedUp?engravedUp.dot(cameraUp):null;
   return {face:Number(canvas.dataset.face),frontFace,faceFacing,engravingUpright,
    quaternion:built.group.quaternion.toArray(),renderedFrames,
+   observerVisible:shown,documentVisible:!document.hidden,frameScheduled:!!frame,
    modelId:built.group.uuid,model:flatHome?'ruby-reference-205':'rose-crystal',
    support:flatHome?projectedSupport():null,
    restingUp:flatHome?upNormal.toArray():null,upFace,
