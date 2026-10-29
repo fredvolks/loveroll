@@ -24,3 +24,18 @@ jobs:
         run: python -m compileall -q tools/audit_html_controls.py tools/test_audit_html_controls.py
       - name: Accessibility parser unit tests
         run: python -m unittest discover -s tools -p 'test_audit_html_controls.py' -v
+      - name: Audit repository HTML (informational)
+        id: html_audit
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          python tools/audit_html_controls.py . 2>&1 | tee html-accessibility-audit.txt
+      - name: Upload HTML audit findings
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: loveroll-html-accessibility-findings
+          path: html-accessibility-audit.txt
+          if-no-files-found: warn
+          retention-days: 14
