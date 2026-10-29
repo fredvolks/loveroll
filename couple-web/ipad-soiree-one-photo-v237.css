@@ -97,7 +97,7 @@
    width:100%!important;height:100%!important;display:grid!important;place-items:center!important;
   }
   #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template .evening-finale-dice>.love3d{
-   width:min(52vw,39dvh,340px)!important;height:auto!important;aspect-ratio:1!important;
+   width:min(82%,43dvh,440px)!important;height:auto!important;aspect-ratio:1!important;
   }
   /* The real D100 stage can extend outside its hero for the photo/marble
      alignment. On iPad landscape that transparent .love3d region used to
