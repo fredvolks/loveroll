@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {premiumEveningHtml} from './premium-evening.mjs';
-import {eveningPlayInfoHtml} from './evening-d100-template.mjs';
+import {eveningPlayInfoHtml,calculateEveningD100StageSize} from './evening-d100-template.mjs';
 const ready={session:{id:'s',paired_turns:true,self_draws:true},members:[{user_id:'a',name:'Fred'},{user_id:'b',name:'Émilie'}],me:'a',status:{both_ready:true},turn:{ready:true,next:'a',remaining:{a:2,b:3}}};
 test('No category is preselected; an eligible player can press roll to receive guidance',()=>{
  const html=premiumEveningHtml(ready);
@@ -44,4 +44,15 @@ test('The D100 information button also exists on desktop, without rolling the di
  assert.match(css,/@media \(min-width:1200px\) and \(pointer:fine\)/);
  assert.match(css,/\.evening-step\.two \.evening-die-row>\.home-odds-info/);
  assert.doesNotMatch(source.slice(source.indexOf('function installDesktopEveningInfo'),source.indexOf('let observer;')),/rollTo\(|give_love_challenge|Math\.random/);
+});
+
+test('Live D100 matches Surprise on iPad without changing the small-phone clamp',()=>{
+ const at=(viewportWidth,viewportHeight,heroWidth,heroHeight)=>
+  calculateEveningD100StageSize({viewportWidth,viewportHeight,heroWidth,heroHeight});
+ assert.equal(at(393,852,393,480),322,'Android phone remains at 82vw / 41dvh');
+ assert.equal(at(320,568,320,100),136,'Short phones retain the self-shrinking stage guard');
+ assert.equal(at(768,1024,650,550),440,'Portrait iPad uses the Surprise 440px cap');
+ assert.equal(at(1180,820,660,276),352,'Playable landscape iPad uses the 43dvh cap even with a short theater');
+ assert.equal(at(1024,768,640,490),330,'Landscape iPad uses the Surprise 43dvh cap');
+ assert.equal(at(1024,600,620,200),258,'Landscape tablet never shrinks to the grid-row height');
 });

@@ -107,9 +107,10 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
      fs.mkdirSync('design-captures',{recursive:true});
      await page.screenshot({path:path.join('design-captures',
       'ipad-romance-'+step+'-'+width+'x'+height+'.png')});
-     if(step==='inactive'){
-      // Same viewport, same actual 3D mesh: the old iPad Soirée parent
-      // imposed 52vw before its child imposed a further 55vw cap.
+     if(step==='inactive'||step==='ready'){
+      // Compare the actual projected WebGL mesh against Surprise in BOTH
+      // inactive/final and playable D100 states, on portrait and landscape iPad.
+      // Comparing CSS alone cannot catch a stale JavaScript size cap.
       await page.locator('.nav [data-action="tab:special"]').click();
       await page.waitForFunction(()=>
        !!document.querySelector('.surprise-main-die-scene canvas')?.loveRollDie?.readState()?.optics?.loaded);
@@ -121,13 +122,13 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
       for(const dimension of ['width','height']){
        const ratio=scene['mesh'+dimension[0].toUpperCase()+dimension.slice(1)]/reference[dimension];
        assert.ok(ratio>=.97&&ratio<=1.03,
-        'LR-001 iPad Soirée D100 must match Surprise projected '+dimension+' (±3 %): '+
+        'LR-001 iPad Soirée '+step+' D100 must match Surprise projected '+dimension+' (±3 %): '+
          JSON.stringify({width,height,ratio,scene,reference}));
       }
-      console.log('IPAD_LR001_D100_PARITY_OK',width,height,JSON.stringify({
+      console.log('IPAD_LR001_D100_PARITY_OK',step,width,height,JSON.stringify({
        soiree:{width:scene.meshWidth,height:scene.meshHeight},surprise:reference}));
       await page.screenshot({path:path.join('design-captures',
-       'ipad-romance-surprise-reference-'+width+'x'+height+'.png')});
+       'ipad-romance-surprise-reference-'+step+'-'+width+'x'+height+'.png')});
      }
     }finally{await context.close();}
    }

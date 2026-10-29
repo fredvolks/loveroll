@@ -32,7 +32,8 @@ test('photo owns the ONLY marble pedestal; no second image nor frame on iPad',()
  assert.match(evening,/fitTabletRomanceStage\(root\)/);
  assert.match(evening,/hero\.insertAdjacentHTML\('beforeend'/);
  assert.match(js,/basePhotoHeight=width\*1672\/941/);
- assert.match(js,/photoHeight=inactiveEvening\?Math\.max\(basePhotoHeight,contact\/\.342\):basePhotoHeight/);
+ assert.match(js,/const alignedEveningD100=inactiveEvening\|\|activeEveningD100/);
+ assert.match(js,/photoHeight=alignedEveningD100\?Math\.max\(basePhotoHeight,contact\/\.342\):basePhotoHeight/);
  assert.match(js,/contact-photoHeight\*\.342/);
 });
 

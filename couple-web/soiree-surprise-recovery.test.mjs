@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {fitTabletRomanceStage} from './shared-stage.mjs';
 const read=file=>readFileSync(new URL('./'+file,import.meta.url),'utf8');
 const app=read('app.js'),dice=read('dice3d.js'),style=read('surprise-dice-layout-v73.css');
 const index=read('index.html'),worker=read('service-worker.js');
@@ -21,6 +22,19 @@ test('Surprise monthly D100 and host D6 own separate centered 3D stages and neve
  assert.match(style,/grid-template-rows:minmax\(49px,auto\) minmax\(230px,auto\)/);
  assert.match(style,/max-width:767px/);
  assert.match(style,/min-width:768px/);
+});
+test('iPad final Soirée die shares the actual Surprise D100 size limits',()=>{
+ const eveningIpad=read('ipad-soiree-one-photo-v237.css');
+ const surprise=read('surprise-d100-v151.css');
+ const eveningWidth=/\.evening-finale-dice>\.love3d\{\s*width:([^;]+);/.exec(eveningIpad)?.[1];
+ const surpriseTablet=/@media\(min-width:768px\)\{[\s\S]*?\.surprise-main-die-scene>\.love3d-100\{\s*width:([^;]+);/.exec(surprise)?.[1];
+ assert.equal(eveningWidth?.replace('!important',''),surpriseTablet,
+  'Soirée and Surprise must use the same D100 iPad size limits');
+ assert.equal(eveningWidth?.replace('!important',''),'min(82%,43dvh,440px)');
+ assert.match(eveningIpad,/\.evening-d100-theater \.love3d-stage\s*\{\s*max-height:none!important/,
+  'The landscape WebGL canvas must remain square even beyond its grid row');
+ assert.doesNotMatch(eveningIpad,/min\(52vw,39dvh,340px\)/,
+  'Do not restore the undersized Soirée die');
 });
 test('Renderer resizes to live scene with WebGL camera correctly, also after orientation switch',()=>{
  assert.match(dice,/const layoutSize=\(\)=>/);
@@ -43,4 +57,40 @@ test('Active Soirée does not pass an unbound pending challenge into premiumEven
  assert.match(app,/showSensuel:state\.couple\?\.show_sensuel_button!==false/);
  assert.match(app,/giftCount,rolling:state\.diceStatus==='rolling'\|\|state\.diceStatus==='pending'/);
  assert.match(app,/pendingInviteReference\(sessionStorage\)/);
+});
+
+test('Real playable iPad D100 lowers ONE photo marble enough for the WebGL mesh',()=>{
+ const inspect=(width,height,heroTop,stageWidth,landscape)=>{
+  const vars={};
+  const stage={getBoundingClientRect:()=>({width:stageWidth})};
+  const hero={
+   getBoundingClientRect:()=>({top:heroTop}),
+   querySelector:selector=>selector==='.love3d-stage'?stage:null
+  };
+  const root={
+   ownerDocument:{defaultView:{
+    innerWidth:width,innerHeight:height,
+    matchMedia:query=>({matches:query==='(min-width:768px)'?true:
+     query==='(orientation:landscape)'?landscape:false})
+   }},
+   getBoundingClientRect:()=>({width}),
+   classList:{contains:key=>key==='loveroll-evening-page'},
+   querySelector:selector=>selector==='.evening-premium-view.has-evening-d100-template'?{}:
+    selector==='.evening-d100-theater'?hero:null,
+   style:{setProperty:(key,value)=>{vars[key]=Number.parseFloat(value);}}
+  };
+  fitTabletRomanceStage(root);
+  return vars;
+ };
+ const portrait=inspect(820,1180,267,440,false);
+ assert.ok(portrait['--home-scene-contact']>=590,
+  'Playable portrait D100 needs real silhouette room below the category row');
+ assert.ok(portrait['--home-scene-top-image-height']>=
+  portrait['--home-scene-contact']/.342-1);
+ const landscape=inspect(1180,820,255,352,true);
+ assert.ok(landscape['--home-scene-contact']>=515,
+  'Playable landscape D100 must not remain pinned at the old 56dvh contact');
+ const photoCss=read('ipad-soiree-one-photo-v237.css');
+ assert.match(photoCss,/auto var\(--home-scene-top-image-height\) no-repeat!important/,
+  'Zoom/crop the same HD photo without stretching it vertically');
 });

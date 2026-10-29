@@ -8,11 +8,13 @@
    padding:9px 14px calc(75px + env(safe-area-inset-bottom,0px))!important;
    overflow:hidden!important;isolation:isolate!important;
   }
+  /* When the marble moves lower, crop the same photograph horizontally instead
+     of stretching its 941:1672 source ratio or adding a second layer. */
   main#app.loveroll-evening-page:has(.evening-premium-view.has-home-soiree-template)::before{
    content:""!important;display:block!important;position:fixed!important;
    inset:0!important;width:100%!important;height:100dvh!important;
    background:#240208 url('./assets/loveroll-home-portrait-v202.webp')
-    center var(--lr-ipad-scene-offset) / 100% var(--home-scene-top-image-height) no-repeat!important;
+    center var(--lr-ipad-scene-offset) / auto var(--home-scene-top-image-height) no-repeat!important;
    opacity:1!important;filter:none!important;box-shadow:none!important;
    border:0!important;pointer-events:none!important;z-index:-1!important;
   }
@@ -97,7 +99,7 @@
    width:100%!important;height:100%!important;display:grid!important;place-items:center!important;
   }
   #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template .evening-finale-dice>.love3d{
-   width:min(52vw,39dvh,340px)!important;height:auto!important;aspect-ratio:1!important;
+   width:min(82%,43dvh,440px)!important;height:auto!important;aspect-ratio:1!important;
   }
   /* The real D100 stage can extend outside its hero for the photo/marble
      alignment. On iPad landscape that transparent .love3d region used to
@@ -133,6 +135,14 @@
    .evening-d100-quota
   ){
    grid-column:1/-1!important;min-width:0!important;
+  }
+  /* In landscape the category row leaves a 276px theater. The REAL 352px
+     D100 can extend past that layout row; its projected mesh stays between
+     the category controls and the photographed marble after camera fitting.
+     A max-height:100% constraint made its WebGL canvas non-square. */
+  #app.has-evening-d100-template .evening-premium-view.has-evening-d100-template
+  .evening-d100-theater .love3d-stage{
+   max-height:none!important;
   }
   #app.has-evening-d100-template .evening-premium-view.has-evening-d100-template .evening-choice{
    grid-auto-flow:row!important;

@@ -1,5 +1,19 @@
 import {fitSharedStage,fitTabletRomanceStage} from './shared-stage.mjs?v=20261027-web237';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// Use the same portrait-tablet D100 envelope as Surprise while respecting
+// the real Soirée theater height. Phone sizing is deliberately unchanged.
+export function calculateEveningD100StageSize({viewportWidth,viewportHeight,heroWidth,heroHeight}){
+ const tablet=viewportWidth>=768;
+ const reference=tablet
+  ?Math.min(heroWidth*.82,viewportHeight*.43,440)
+  :Math.min(viewportWidth*.82,viewportHeight*.41,390);
+ // The tablet theater is shorter than Surprise because it also holds the
+ // category controls. Its 276px grid row must not reduce a 352px WebGL die.
+ // fitTabletRomanceStage moves the SAME photographed marble to keep the mesh
+ // below those controls. Keep the original strict height cap on phones.
+ const available=tablet?reference:Math.max(heroHeight*.94,viewportHeight*.24);
+ return Math.floor(Math.max(1,Math.min(reference,heroWidth*.96,available)));
+}
 export function eveningPlayInfoHtml(percent=88){
  const preferred=Math.min(100,Math.max(0,Number(percent)||0));
  return '<dialog id="evening-play-info" class="evening-play-dialog lr-surface" aria-labelledby="evening-play-info-title"><button type="button" class="evening-play-close" aria-label="Fermer les informations">×</button>'+
@@ -100,17 +114,16 @@ export function fitEveningD100(root){
   // actual, height-constrained Soirée theater (including safe-area/nav).
   const bounds=hero.getBoundingClientRect();
   if(bounds.width>0&&bounds.height>0){
-   const size=Math.floor(Math.max(1,Math.min(
-    window.innerWidth*.82,window.innerHeight*.41,390,
-    bounds.width*.96,
-    // Never clamp to the stage's OWN computed height: the grid stage
-    // follows the canvas and the feedback loop shrank a small phone to 53px.
-    Math.max(bounds.height*.94,window.innerHeight*.24)
-   )));
+   const size=calculateEveningD100StageSize({
+    viewportWidth:window.innerWidth,viewportHeight:window.innerHeight,
+    heroWidth:bounds.width,heroHeight:bounds.height
+   });
    const previous=hero.style.getPropertyValue('--evening-d100-stage-size');
    const next=size+'px';
    if(previous!==next){
     hero.style.setProperty('--evening-d100-stage-size',next);
+    // Measure the new LIVE square before aligning its photographed contact.
+    if(window.innerWidth>=768)fitTabletRomanceStage(root);
     hero.querySelector('canvas')?.loveRollDie?.refresh?.();
    }
   }

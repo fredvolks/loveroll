@@ -30,22 +30,26 @@ export function fitTabletRomanceStage(root){
  // The decorative D100 now uses centered-photo camera fitting, so keep
  // the photographed marble ABOVE the start/summary controls in landscape.
  const inactiveEvening=isEvening&&!!root.querySelector('.evening-premium-view.is-inactive');
+ const activeEveningD100=isEvening&&!!root.querySelector('.evening-premium-view.has-evening-d100-template');
+ const alignedEveningD100=inactiveEvening||activeEveningD100;
  const contactRatio=landscape?(inactiveEvening?.49:isEvening?.56:.45):.405;
- // Inactive Soirée must show the SAME apparent D100 size as Surprise.
- // Its marble may need to sit lower than the default Android contact:
- // the separate Soirée header must not overlap the top of the 3D mesh.
- // Use the measured *actual stage width*, not another guessed D100 scale.
- const hero=inactiveEvening?root.querySelector('.evening-finale-hero'):null;
+ // The active D100 has a category row ABOVE the theater, unlike Surprise.
+ // Its former 40.5dvh photo contact left only 211px for a 440px stage:
+ // the actual ruby mesh shrank to 207px, against Surprise's 321px.
+ // Lower the SAME photographed marble enough for the real WebGL silhouette,
+ // both before the soirée starts and while the D100 is playable.
+ const hero=inactiveEvening?root.querySelector('.evening-finale-hero'):
+  activeEveningD100?root.querySelector('.evening-d100-theater'):null;
  const stage=hero?.querySelector('.love3d-stage');
  const heroBounds=hero?.getBoundingClientRect();
  const stageBounds=stage?.getBoundingClientRect();
  const neededContact=heroBounds&&stageBounds?.width>0?
   heroBounds.top+stageBounds.width*.735+8:0;
- const contact=inactiveEvening?Math.max(height*contactRatio,
+ const contact=alignedEveningD100?Math.max(height*contactRatio,
   Math.min(height*.70,neededContact)):height*contactRatio;
- // Preserve original 941:1672 photo aspect ratio if the marble moves
- // below its base position: cover/crop the same HD asset, never stretch.
- const photoHeight=inactiveEvening?Math.max(basePhotoHeight,contact/.342):basePhotoHeight;
+ // Extend the same HD photo behind the lowered marble, never add a second
+ // scenic layer or move the WebGL die independently of its photographed base.
+ const photoHeight=alignedEveningD100?Math.max(basePhotoHeight,contact/.342):basePhotoHeight;
  const offset=contact-photoHeight*.342;
  root.style.setProperty('--home-scene-top-image-height',photoHeight+'px');
  root.style.setProperty('--home-scene-contact',contact+'px');
