@@ -71,11 +71,13 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   assert.equal(await page.locator('.evening-choice [aria-pressed=true]').count(),0);assert.equal(await page.locator('.evening-choice-odds').count(),0);
   assert.equal(await page.locator('[data-action="new-challenge"]').isDisabled(),false);await capture('initial');
   await page.evaluate(()=>window.__eveningD100=document.querySelector('.evening-d35-col canvas'));
+  checkpoint('category-reminder');
   await page.locator('[data-action="new-challenge"]').click();await page.waitForSelector('.evening-category-reminder[open]');
   assert.match(await page.locator('.evening-category-reminder').innerText(),/Choisis une catégorie avant de brasser le dé/);
   assert.equal(world.calls.filter(c=>c.name?.startsWith('draw_for_partner')).length,0);await capture('choose-category');
   await page.locator('.evening-category-reminder button').click();
   assert.equal(await page.locator('.evening-choice [aria-pressed=true]').count(),0);
+  checkpoint('category-selection');
   await page.locator('[data-action="category:SENSUEL"]').click();assert.equal(await page.locator('[data-action="category:SENSUEL"]').getAttribute('aria-pressed'),'true');
   assert.match(await page.locator('.evening-choice-odds').innerText(),new RegExp(world.couple.category_preference_percent+' %'));
   assert.equal(await page.evaluate(()=>window.__eveningD100===document.querySelector('.evening-d35-col canvas')),true);
@@ -92,6 +94,7 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   await page.locator('[data-action="new-challenge"]').click();
   // LR-014: the old browser contract now confirms the selected category first.
   const categoryDialog=page.locator('dialog.lr-evening-category-dialog[open]');
+  checkpoint('confirm-official-draw');
   await categoryDialog.waitFor({state:'visible',timeout:10000});
   assert.equal(world.calls.filter(c=>c.name?.startsWith('draw_for_partner')).length,0);
   await categoryDialog.locator('[data-confirm-action="yes"]').click();
@@ -119,6 +122,7 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
     'LR-001: animated D100 geometry exits its theater: '+JSON.stringify({width,height,scene}));
   }
   assert.ok(animatedSamples>0,'LR-001: animation stage was never sampled');
+  checkpoint('await-official-result');
   await page.waitForFunction(()=>document.querySelector('.evening-d100-result')?.textContent==='Résultat : 17',null,{timeout:16000,polling:150});
   // A server-confirmed result may return directly to the partner's turn or
   // open this user's private challenge queue. The turn is authoritative;
@@ -153,6 +157,7 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   assert.ok(postRoll?.hasClose||postRoll?.partnerTurn,
    'Official D100 draw must open a private challenge or display the partner turn: '+JSON.stringify({width,height,postRoll}));
   const queueModal=page.locator('.evening-queue-modal');
+  checkpoint('challenge-modal');
   if(await queueModal.count()){
    const close=queueModal.locator('[data-action="evening-close"]');
    if(await close.count()!==1||!(await close.isVisible())){
