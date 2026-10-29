@@ -55,7 +55,7 @@ class ControlsAudit(HTMLParser):
         if (tag in {"button", "a", "input", "area"} or attrs.get("role", "").lower() == "button") and attrs.get("aria-labelledby", "").strip() and not hidden:
             self.pending_references.append((line, tag, attrs["aria-labelledby"]))
 
-        if tag == "a" and "href" in attrs:
+        if tag == "a" and "href" in attrs and attrs.get("role", "").lower() != "button":
             self.link_stack.append({"line": line, "attrs": attrs, "text": [], "has_image_alt": False, "hidden": hidden})
         if tag == "button" or (tag not in VOID_TAGS and attrs.get("role", "").lower() == "button"):
             self.button_stack.append({"line": line, "attrs": attrs, "text": [], "has_image_alt": False, "hidden": hidden, "tag": tag})
