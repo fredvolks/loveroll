@@ -1631,6 +1631,8 @@ function renderSession(){
  const selected=mineCards.find(c=>c.id===state.selectedEveningChallengeId);
  if(session&&state.showEveningChallenges){
   const view=selected;
+  const adapted=view?acceptedAdaptation(state.adaptations,view.id):null;
+  const proposal=view?state.adaptations?.find(a=>a.challenge_id===view.id):null;
   const idx=view?queuePosition(mineCards,view.id):-1;
   overlay='<div class="surprise-modal evening-queue-modal'+(view?' is-detail':'')+'" role="dialog" aria-modal="true" aria-label="Mes défis de ce soir">'+
    '<article class="surprise-modal-content evening-queue-content'+(view?' is-detail':'')+'">'+
@@ -1647,10 +1649,11 @@ function renderSession(){
       ' · Résultat : '+safe(view.face)+' · '+safe(queueLabel(view.status))+'</div>'+
      '<h2>'+safe(resolvedCard(view).title)+'</h2>'+
      '<div class="evening-challenge-scene" aria-hidden="true"></div>'+
-     '<p class="evening-challenge-instructions" role="region" aria-label="Consigne du défi" tabindex="0">'+safe(resolvedCard(view).description)+'</p>'+
+     '<p class="evening-challenge-instructions" role="region" aria-label="Consigne du défi" tabindex="0">'+safe(adapted?.proposed_description||resolvedCard(view).description)+'</p>'+
      (['proposed','accepted'].includes(view.status)?
-       timerWidget(view,resolvedCard(view).minutes):
+       timerWidget(view,adapted?.proposed_minutes??resolvedCard(view).minutes):
        '<p class="tiny-note">Ce défi est archivé dans votre historique.</p>')+
+     (state.adaptations!==null?adaptationHtml(view,{adaptation:proposal,viewerId:uid,editing:state.adaptEditingId===view.id,busy:state.adaptBusy}):'')+
      (view.status==='proposed'?
        button('evening-start:'+view.id,'▶ Commencer ce défi','class="evening-primary"'):'')+
      (view.status==='accepted'?
@@ -1695,7 +1698,8 @@ function renderSession(){
  }
  frame(premiumEveningHtml({
    session,members:state.members,me:uid,rolls:state.personal,status:state.rollStatus,
-   invitationHtml:eveningInviteHtml(state.eveningInvite,{partnerName:partner?.name,busy:state.eveningInviteBusy}),
+   invitationHtml:eveningInviteHtml(state.eveningInvite,{partnerName:partner?.name,busy:state.eveningInviteBusy})+
+     adaptationInboxHtml(state.adaptations,uid,{busy:state.adaptBusy}),
    turn,category:state.category,eveningWeights:state.couple?.evening_face_weights,eveningWeightsEnabled:state.couple?.evening_weights_enabled!==false,
    showSensuel:state.couple?.show_sensuel_button!==false,
    showSexuel:state.couple?.show_sexuel_button!==false,
