@@ -1,5 +1,14 @@
 # LoveRoll — SUIVI OFFICIEL DU PROMPT MAÎTRE
 
+## Priorité immédiate ordonnée — audit global client/design/ergonomie (28 octobre 2026)
+
+**LR-AUDIT-GLOBAL-20261028 — À EXÉCUTER.** Le propriétaire demande que l'audit de **toutes les pages, sous-pages, états et boutons**, ses corrections et les protections permanentes passent avant les nouveaux développements. Le bloc en tête du [prompt maître](LOVEROLL_MASTER_PROMPT.md), le [démarrage Work](LOVEROLL_WORK_START.md) et le [protocole complet](LOVEROLL_UX_UI_AUTONOME_WORKFLOW.md) décrivent ce mandat.
+
+- **Décision enregistrée :** audits direction artistique, UX/ergonomie/accessibilité, client payant/couple dont un joueur peu technophile et QA ; un seul intégrateur applique les corrections.
+- **Avancement applicatif :** aucune page nouvellement auditée, correction visuelle ou protection CI livrée par cette modification documentaire. Les preuves des chantiers antérieurs ci-dessous restent distinctes.
+- **Prochaine action exacte :** relever la version réellement publiée et ses sources, établir/reprendre dans ce suivi l'inventaire page/état/objectif client/défaut/priorité/correction/preuve/statut, puis traiter les défauts bloquants et les composants communs avant les autres pages. Vérifier les formats téléphone/tablette/PC et conserver les entrées non vérifiées comme telles.
+
+
 
 ## Mise à jour vérifiée — travaux des 27–28 octobre 2026
 
