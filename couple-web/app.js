@@ -241,6 +241,16 @@ function backFromLoveRoll(){
   return true;
  }
  if(state.eveningRefusalId){state.eveningRefusalId=null;render();return true;}
+ // The recipient's private challenge card is an actual modal. Native Back
+ // and Escape must close it BEFORE leaving Soirée or switching tabs.
+ if(state.showEveningChallenges){
+  if(state.user?.id&&state.session?.id)
+   clearEveningSelection(localStorage,state.user.id,state.session.id);
+  state.showEveningChallenges=false;state.selectedEveningChallengeId=null;
+  render();
+  root.querySelector('[data-action="evening-list"]')?.focus();
+  return true;
+ }
  if(state.installModalOpen||state.forceInstallGuide){handle('install-later').catch(fail);return true;}
  if(state.reviewModalSessionId){state.reviewDismissedSessionId=state.reviewModalSessionId;state.reviewModalSessionId=null;state.reviewDraft={};render();return true;}
  if(allowBackExit){allowBackExit=false;return false;}

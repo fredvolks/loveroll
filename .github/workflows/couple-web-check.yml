@@ -591,6 +591,10 @@ jobs:
         if: matrix.group == 'experience'
         run: node couple-web/evening-queue-fixed-v102-browser-check.cjs
 
+      - name: Verify native Back and Escape close the real private Soirée challenge
+        if: matrix.group == 'experience'
+        run: node couple-web/evening-queue-back-browser-check.cjs
+
       - name: Verify end-of-evening 5-heart review on phone tablet and desktop
         if: matrix.group == 'experience'
         run: node couple-web/evening-review-browser-check.cjs
