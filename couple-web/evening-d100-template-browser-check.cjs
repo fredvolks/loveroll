@@ -4,6 +4,12 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
 (async()=>{
  const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
  try{for(const [width,height] of [[320,568],[360,640],[360,740],[393,852],[412,824],[412,915],[430,932]]){
+  const started=Date.now();
+  console.log('EVENING_D100_VIEWPORT_START',width,height);
+  let watchdog;
+  try{
+   await Promise.race([
+    (async()=>{
   const world=createWorld();world.enableEveningD6=world.enableEveningDraw=true;
   world.profiles[0].display_name='Fred';world.profiles[1].display_name='Émilie';
   world.couple.category_preference_percent=height===824?74:88;
@@ -177,5 +183,13 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   assert.match(await page.locator('.evening-primary-status').textContent(),/En attente du tour de ton partenaire/);
   await capture('recorded');
   assert.deepEqual(errors,[]);await context.close();console.log('EVENING_D100_TEMPLATE_OK',width,height);
+    })(),
+    new Promise((_,reject)=>{watchdog=setTimeout(()=>reject(new Error(
+      'D100 viewport timeout after 180s: '+width+'x'+height)),180000);})
+   ]);
+  }finally{
+   clearTimeout(watchdog);
+   console.log('EVENING_D100_VIEWPORT_DURATION_MS',width,height,Date.now()-started);
+  }
  }}finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exit(1)});
