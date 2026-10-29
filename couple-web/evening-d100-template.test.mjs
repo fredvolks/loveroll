@@ -52,6 +52,7 @@ test('Live D100 matches Surprise on iPad without changing the small-phone clamp'
  assert.equal(at(393,852,393,480),322,'Android phone remains at 82vw / 41dvh');
  assert.equal(at(320,568,320,100),136,'Short phones retain the self-shrinking stage guard');
  assert.equal(at(768,1024,650,550),440,'Portrait iPad uses the Surprise 440px cap');
+ assert.equal(at(1180,820,660,276),352,'Playable landscape iPad uses the 43dvh cap even with a short theater');
  assert.equal(at(1024,768,640,490),330,'Landscape iPad uses the Surprise 43dvh cap');
- assert.equal(at(1024,600,620,200),188,'Short iPad theater remains height-safe');
+ assert.equal(at(1024,600,620,200),258,'Landscape tablet never shrinks to the grid-row height');
 });
