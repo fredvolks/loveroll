@@ -116,6 +116,12 @@ class ControlsAuditTests(unittest.TestCase):
     def test_image_map_area_without_href(self):
         self.assertEqual(analyze("<area alt='Décoration'>"), [])
 
+    def test_button_with_title_fallback_is_named(self):
+        self.assertEqual(analyze("<button title='Fermer'><svg aria-hidden='true'></svg></button>"), [])
+
+    def test_empty_title_does_not_name_button(self):
+        self.assertEqual(len(analyze("<button title=' '><svg aria-hidden='true'></svg></button>")), 1)
+
     def test_no_false_positive_on_void_elements(self):
         self.assertEqual(analyze("<button><img src='icon.png'><span>Oui</span></button>"), [])
 
