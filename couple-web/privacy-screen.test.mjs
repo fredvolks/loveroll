@@ -40,6 +40,9 @@ test('Removed privacy overlay no longer boots or restores itself on first paint'
  assert.doesNotMatch(index,/privacy-screen\.css\?v=/);
  assert.doesNotMatch(sw,/\.\/privacy-screen\.mjs/);
  assert.doesNotMatch(sw,/\.\/privacy-screen\.css/);
+ const offlineCache=/const CACHE='loveroll-static-v(\d+)'/.exec(sw);
+ assert.ok(offlineCache && Number(offlineCache[1])>=257,
+  'Retired privacy resources must not survive in the previous offline cache');
  assert.match(code,/doc\.title='LoveRoll'/);
 });
 
