@@ -143,7 +143,7 @@ async function main(){
       if(format.name==='android-small'&&s.guidedTouchTargets.some(t=>t.width<44||t.height<44)){
        const cascade=await page.evaluate(()=>{
         const selectors=['.eclat-guided button.eclat-skip','.eclat-guided .eclat-play-footer button.eclat-link','.eclat-guided .eclat-rules summary'];
-        const scan=(rules,href,el,result,layer='')=>{for(const rule of rules){if(rule.cssRules){scan(rule.cssRules,href,el,result,layer+' '+(rule.name||rule.conditionText||''));continue;}if(!rule.selectorText||!rule.style)continue;try{if(!el.matches(rule.selectorText))continue;}catch{continue;}
+        const scan=(rules,href,el,result,layer='')=>{for(const rule of rules){if(rule.cssRules?.length){scan(rule.cssRules,href,el,result,layer+' '+(rule.name||rule.conditionText||''));continue;}if(!rule.selectorText||!rule.style)continue;try{if(!el.matches(rule.selectorText))continue;}catch{continue;}
          const props=['min-height','height','max-height','padding','padding-block','padding-block-start','padding-block-end','display'];const active=props.filter(k=>rule.style.getPropertyValue(k));
          if(active.length)result.push({from:href.split('/').pop(),layer,selector:rule.selectorText,style:Object.fromEntries(active.map(k=>[k,rule.style.getPropertyValue(k)+(rule.style.getPropertyPriority(k)?' !important':'')]))});
         }};
