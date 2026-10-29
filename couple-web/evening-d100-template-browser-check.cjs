@@ -101,7 +101,27 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   }
   assert.ok(animatedSamples>0,'LR-001: animation stage was never sampled');
   await page.waitForFunction(()=>document.querySelector('.evening-d100-result')?.textContent==='Résultat : 17',{timeout:16000});
-  await page.waitForSelector('[data-action="evening-close"]',{timeout:16000});await page.locator('[data-action="evening-close"]').click();
+  // Diagnose late post-roll queue rendering on real 393px WebGL stages.
+  // Preserve the strict assertion; never manufacture a challenge or skip it.
+  try{
+   await page.waitForSelector('[data-action="evening-close"]',{timeout:16000});
+  }catch(error){
+   const view=await page.evaluate(()=>{
+    const die=document.querySelector('.evening-d35-col canvas');
+    return {face:die?.dataset.face,spinning:die?.loveRollDie?.readState()?.spinning,
+     result:document.querySelector('.evening-d100-result')?.textContent,
+     primary:document.querySelector('.evening-primary-status')?.textContent,
+     dialogs:[...document.querySelectorAll('[role="dialog"]')].filter(e=>e.getBoundingClientRect().width>0)
+      .map(e=>({className:e.className,text:(e.getAttribute('aria-label')||'').slice(0,60)})),
+     queueCount:document.querySelectorAll('.evening-queue-modal').length,
+     bodyBusy:document.querySelector('[aria-busy="true"]')?.getAttribute('class')||null};
+   });
+   console.error('LR_D100_POST_ROLL_DIAGNOSTIC',JSON.stringify({width,height,view,
+    draws:world.calls.filter(c=>c.name?.startsWith('draw_for_partner')).map(c=>c.name),
+    created:world.challenges?.map(c=>({id:c.id,recipient:c.recipient,status:c.status,face:c.face}))}));
+   throw error;
+  }
+  await page.locator('[data-action="evening-close"]').click();
   assert.equal(world.calls.filter(c=>c.name?.startsWith('draw_for_partner')).length,1);
   assert.equal(world.calls.find(c=>c.name?.startsWith('draw_for_partner')).name,width===360?'draw_for_partner_random':'draw_for_partner');
   assert.equal(await page.evaluate(()=>window.__eveningD100===document.querySelector('.evening-d35-col canvas')),true,'Official draw keeps the same model');
