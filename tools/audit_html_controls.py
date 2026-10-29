@@ -43,7 +43,10 @@ class ControlsAudit(HTMLParser):
             else:
                 self.ids[element_id] = line
 
-        hidden = self.hidden_depth > 0 or attrs.get("aria-hidden", "").lower() == "true" or "hidden" in attrs
+        inline_style = "".join(attrs.get("style", "").lower().split())
+        css_hidden = "display:none" in inline_style or "visibility:hidden" in inline_style
+        hidden = (self.hidden_depth > 0 or attrs.get("aria-hidden", "").lower() == "true"
+                  or "hidden" in attrs or css_hidden)
         if tag not in VOID_TAGS:
             self.element_stack.append((tag, hidden))
             if hidden:
