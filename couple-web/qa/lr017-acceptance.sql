@@ -95,7 +95,15 @@ BEGIN
   RAISE EXCEPTION 'SECURITY FAILURE: nonauthor cancelled';
  EXCEPTION WHEN SQLSTATE '42501' THEN NULL;
  END;
+ -- A proposal becomes obsolete if the official challenge starts first.
+ PERFORM public.love_adaptation_propose(z,'Avant le démarrage',8);
  UPDATE public.couple_challenges SET status='accepted' WHERE id=z;
+ PERFORM set_config('request.jwt.claim.sub',b::text,true);
+ IF NOT EXISTS(SELECT 1 FROM jsonb_array_elements(
+   public.my_love_challenge_adaptations(s)) proposal
+   WHERE proposal->>'challenge_id'=z::text AND proposal->>'status'='obsolete') THEN
+  RAISE EXCEPTION 'Pending proposal must disappear after challenge start';END IF;
+ PERFORM set_config('request.jwt.claim.sub',a::text,true);
  BEGIN
   PERFORM public.love_adaptation_propose(z,'Started card',10);
   RAISE EXCEPTION 'SECURITY FAILURE: adapted a started challenge';
