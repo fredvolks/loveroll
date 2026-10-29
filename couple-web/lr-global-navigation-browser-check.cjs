@@ -91,6 +91,8 @@ async function main(){
      assert.ok(data.nav.bottom>=layout.height-2&&data.nav.bottom<=layout.height+2,layout.name+' '+destination.key+' navigation not anchored to bottom');
      assert.ok(data.meaningfulContent>20,layout.name+' '+destination.key+' content unexpectedly empty');
      assert.equal(data.offscreenControls.length,0,layout.name+' '+destination.key+' controls clipped horizontally: '+JSON.stringify(data.offscreenControls));
+     assert.equal(data.unnamed.length,0,layout.name+' '+destination.key+' visible controls lacking accessible names: '+JSON.stringify(data.unnamed));
+     assert.equal(data.renderedError.length,0,layout.name+' '+destination.key+' unexpected visible errors: '+JSON.stringify(data.renderedError));
      await page.screenshot({path:path.join('design-captures','lr-global-nav-'+layout.name+'-'+destination.key+'.png')});
      console.log('LR_NAV_OK',layout.name,destination.key,'visible controls',data.visibleControls,'unnamed',data.unnamed.length);
     }
