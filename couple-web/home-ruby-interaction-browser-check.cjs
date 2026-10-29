@@ -87,7 +87,10 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
    if(observedFrames>1)advancedFrames=true;
    if(advancedFrames&&moved)break;
   }
-  const evidence=JSON.stringify({observedFrames,moved,lastSpinning});
+  const last=await read();
+  const evidence=JSON.stringify({observedFrames,moved,lastSpinning,
+   observerVisible:last.observerVisible,documentVisible:last.documentVisible,
+   frameScheduled:last.frameScheduled});
   assert.ok(advancedFrames,'The official roll must render new WebGL frames: '+evidence);
   assert.ok(moved,'The same geometry must visibly tumble during the throw: '+evidence);
   if(process.env.LOVEROLL_CAPTURE_DIR)await page.screenshot({path:path.join(process.env.LOVEROLL_CAPTURE_DIR,'ruby-throw.png')});
