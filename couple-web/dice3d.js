@@ -647,6 +647,30 @@ export function dieOn(canvas,sides,value,rolling){
    built.group.quaternion.setFromEuler(euler);
    const offset=rollOffset(trajectory,elapsed);
    built.group.position.set(offset.x,offset.y,0);
+   // A D100 at 360x640 has only ~5px of air above its resting mesh.
+   // Random tumbling and the launch hop may project outside the theater.
+   // Retain real WebGL size, original roll angles and the confirmed face.
+   // Only the moving model shifts into the available photographed scene.
+   if(sides===100&&canvas.closest('.evening-d35-col')){
+    const hero=canvas.closest('.evening-d100-theater');
+    if(hero){
+     const rect=canvas.getBoundingClientRect(),region=hero.getBoundingClientRect();
+     if(rect.height>0&&region.height>0){
+      const bounds=projectedBounds();
+      const top=rect.top+bounds.top*rect.height;
+      const bottom=rect.top+bounds.bottom*rect.height;
+      let correction=0;
+      if(top<region.top+3)correction=region.top+3-top;
+      if(bottom+correction>region.bottom-3)correction=region.bottom-3-bottom;
+      if(Math.abs(correction)>.1){
+       const origin=new THREE.Vector3(0,0,0).project(camera);
+       const raised=new THREE.Vector3(0,1,0).project(camera);
+       const pixelsPerUnit=(raised.y-origin.y)*rect.height/2;
+       if(pixelsPerUnit>1)built.group.position.y-=correction/pixelsPerUnit;
+      }
+     }
+    }
+   }
   }else if(duration){
    // Keep the official 3D face locked after its last animation frame.
    built.group.quaternion.copy(target);built.group.position.set(0,0,0);
