@@ -30,6 +30,7 @@ Si les sous-agents sont disponibles, déléguer les audits indépendants en lect
 |---|---|
 | **Pilote / développeur intégrateur** | Organiser le lot, préserver l'architecture et les droits, consolider les constats, appliquer seul les modifications et livrer. |
 | **Direction artistique** | Couleurs, images, typographie, proportions, hiérarchie visuelle et cohérence de la marque. |
+| **Gardien du système de design visuel** | Assurer la fidélité durable à la référence Android approuvée : tokens sémantiques, vrais composants, variantes et états, absence de CSS concurrent et de styles inventés; examiner captures et régressions sur toutes les pages/formats. Signaler les écarts avec preuves et correctifs à l'intégrateur. |
 | **UX / ergonomie / accessibilité** | Navigation, ordre des actions, lisibilité, vocabulaire, confort tactile et clavier. |
 | **Responsive** | Examiner dès le départ téléphone, tablette et PC, orientations, contenu long, zoom, clavier et adaptations de disposition. |
 | **Client / utilisateur final** | Comprendre et terminer le vrai parcours, relever ambiguïtés, efforts inutiles, frustrations et valeur perçue. |
@@ -41,7 +42,7 @@ Si les sous-agents sont indisponibles, exercer explicitement ces regards sans pr
 
 ## 2 bis. Responsive dès le départ et après chaque changement
 
-L'expert responsive examine l'état initial en même temps que design, UX, client et QA. Définir pour chaque famille d'écran une disposition lisible sur petit/grand téléphone, tablette portrait/paysage et ordinateur, selon le rôle et son usage : jeu sur téléphone, Studio d'abord iPad/PC. Garder une identité commune avec des compositions adaptées à l'espace disponible.
+L'expert responsive examine l'état initial en même temps que direction artistique, gardien du design visuel, UX, client et QA. Définir pour chaque famille d'écran une disposition lisible sur petit/grand téléphone, tablette portrait/paysage et ordinateur, selon le rôle et son usage : jeu sur téléphone, Studio d'abord iPad/PC. Garder une identité commune avec des compositions adaptées à l'espace disponible.
 
 Vérifier navigation, proportions, zones tactiles, safe areas, faible hauteur, clavier virtuel, zoom/texte agrandi, contenu long, focus et défilement utile. Tester tôt un vrai écran représentatif puis formulaires, menus et modales ; une modification partagée exige de revoir ses consommateurs. Le responsive demeure un contrôle de chaque ajout, avec preuves par format et distinction appareil physique/émulation.
 
@@ -95,6 +96,18 @@ Nettoyer les causes des écarts : anciens thèmes encore chargés, sélecteurs c
 
 Aucune couleur de commande inventée au détour d'une page. Une nouvelle variante se définit dans le système commun avec son usage. Préserver les couleurs propres aux images, aux contenus métier et au moteur 3D lorsqu'elles sont nécessaires.
 
+## 5 bis. Gardien du système de design visuel — contrôle permanent
+
+**Position :** immédiatement après la direction artistique dans les sept rôles (un intégrateur et six spécialistes). La direction artistique décide **comment l'expérience doit paraître** conformément à l'Accueil Android validé ; le gardien contrôle **comment cet aspect se maintient sans dériver** lorsque des écrans et fonctions s'ajoutent. Il ne réinvente ni la charte ni le jeu et ne crée pas une étape d'approbation humaine supplémentaire.
+
+**Avant de modifier une interface :** relever sur le code réellement servi les couleurs, polices, dimensions, espacements, matériaux, assets HD, socles, icônes, composants et leurs états ; retrouver la variante commune appropriée. Repérer CSS dupliqué, `!important` concurrents, styles en ligne, ruptures de proportions, images superposées, couleurs ou boutons improvisés. Ne jamais prendre une capture ou un design de branche non publié pour une référence approuvée sans vérifier sa provenance.
+
+**Pendant l'intégration :** l'unique intégrateur réutilise les tokens et composants partagés, étend les variantes au niveau commun lorsque nécessaire, et examine leurs consommateurs. Le gardien relève toute déviation par écran et état, y compris différentiels Android/iPad/PC, boutons, cartes, navigation, dialogues, D6/D100, socle et décors. Une exception utile au gameplay ou aux médias doit être documentée ; ne pas forcer les vrais dés WebGL à utiliser le style d'un bouton.
+
+**Après le changement :** comparer le rendu réellement exécuté aux références et aux pages sœurs, sur petit/grand téléphone, iPad portrait/paysage et PC, avec interaction, texte long, états chargement/erreur/succès/désactivé et clavier. Fournir pour chaque écart : `page / composant / état / format / symptôme côté client / référence / correctif / capture / statut`. Verdict **CONFORME**, **À CORRIGER** ou **NON VÉRIFIÉ** (une preuve manquante ne vaut jamais conformité). Le pilote corrige jusqu'aux critères du lot ; pas de veto d'agent ni de six rapports en série.
+
+**Protection future :** exécuter en CI les gardes contre styles arbitraires ou couleurs non tokenisées dans les ajouts, les tests des composants partagés et les contrôles visuels multi-formats sur les pages touchées. Vérifier que la CI concerne le **SHA final**, examiner réellement les captures et ne jamais approuver automatiquement une nouvelle baseline pour masquer une régression. Si un contrôle n'est pas encore implanté, le marquer **à faire** ; l'inscription du rôle dans les documents ne prouve pas la protection installée. Conserver le protocole présent comme seule source détaillée, sans copier ce contrat dans chaque sous-prompt.
+
 ## 6. Préserver les décisions LoveRoll
 
 - Conserver les vrais dés WebGL, les faces officielles, animations et résultats serveur.
@@ -133,7 +146,7 @@ La revue UX se déclenche à chaque ajout ou modification visible pendant la ses
 
 Aucun outil de design payant, abonnement ou service externe obligatoire. Les outils visuels facultatifs respectent les connexions, quotas et autorisations existants ; à défaut, comparer le rendu réel et corriger directement le code.
 
-Cette partie doit être implémentée dans le dépôt et exécutée par la CI. Chaque ajout réutilise les composants communs et reçoit les regards design, UX, responsive, client et QA pendant le lot ; l'examen réel du rendu complète les contrôles automatiques.
+Cette partie doit être implémentée dans le dépôt et exécutée par la CI. Chaque ajout réutilise les composants communs et reçoit les regards direction artistique, gardien du design visuel, UX, responsive, client et QA pendant le lot ; l'examen réel du rendu complète les contrôles automatiques.
 
 - Toute nouvelle interface réutilise les tokens et composants communs.
 - Installer des vérifications ciblées empêchant de nouvelles couleurs arbitraires et des styles de commandes dupliqués dans les fichiers modifiés. Prévoir des exceptions explicites pour les besoins légitimes.
