@@ -3,6 +3,8 @@ name: LoveRoll HTML accessibility audit tests
 on:
   pull_request:
     paths:
+      - '**/*.html'
+      - '**/*.htm'
       - 'tools/audit_html_controls.py'
       - 'tools/test_audit_html_controls.py'
       - '.github/workflows/html-accessibility-audit.yml'
