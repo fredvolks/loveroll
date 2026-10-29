@@ -178,6 +178,18 @@ class ControlsAuditTests(unittest.TestCase):
                          ["commande input sans nom accessible statique",
                           "bouton sans nom accessible statique"])
 
+    def test_custom_role_button_checks_missing_label_reference(self):
+        parser = ControlsAudit()
+        parser.feed("<div role='button' aria-labelledby='missing'></div>")
+        parser.check_references()
+        self.assertTrue(any("cible absente" in issue for _, issue in parser.issues))
+
+    def test_custom_role_button_accepts_forward_label_reference(self):
+        parser = ControlsAudit()
+        parser.feed("<div role='button' aria-labelledby='help'></div><span id='help'>Aide</span>")
+        parser.check_references()
+        self.assertEqual(parser.issues, [])
+
     def test_no_false_positive_on_void_elements(self):
         self.assertEqual(analyze("<button><img src='icon.png'><span>Oui</span></button>"), [])
 
