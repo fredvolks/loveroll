@@ -187,6 +187,14 @@ async function main(){
    issues};
   fs.writeFileSync('design-captures/lr-global-navigation-ux-issues.json',JSON.stringify(summary,null,2)+'\n');
   console.log('LR_NAV_ISSUE_QUEUE',JSON.stringify({...summary,issues:undefined}));
+  // CI log is useful before opening the large screenshot ZIP. Synthetic
+  // fixtures only; never print input values, hrefs or partner private data.
+  console.log('LR_NAV_ISSUE_ACTIONS',JSON.stringify(issues.map(issue=>({
+   viewport:issue.layout.width+'x'+issue.layout.height,page:issue.page,
+   action:issue.action,name:issue.controlName.slice(0,45),
+   issues:issue.problems,width:Math.round(issue.bounds.width),
+   height:Math.round(issue.bounds.height)
+  }))));
   await browser.close();
  }
 }
