@@ -36,4 +36,5 @@ jobs:
           path: |
             design-captures/lr-global-nav-*
             design-captures/lr-global-navigation-inventory.json
+            design-captures/lr-global-navigation-ux-issues.json
           if-no-files-found: ignore
