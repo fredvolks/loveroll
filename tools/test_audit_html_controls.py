@@ -98,6 +98,15 @@ class ControlsAuditTests(unittest.TestCase):
     def test_hidden_link_followed_by_named_link(self):
         self.assertEqual(analyze("<div aria-hidden='true'><a href='/hidden'></a></div><a href='/home'>Accueil</a>"), [])
 
+    def test_native_submit_and_reset_inputs_have_names(self):
+        self.assertEqual(analyze("<input type='submit'><input type='reset'>"), [])
+
+    def test_image_input_without_alt_is_reported(self):
+        self.assertEqual(len(analyze("<input type='image' src='play.png'>")), 1)
+
+    def test_image_input_with_alt_has_name(self):
+        self.assertEqual(analyze("<input type='image' alt='Jouer' src='play.png'>"), [])
+
     def test_no_false_positive_on_void_elements(self):
         self.assertEqual(analyze("<button><img src='icon.png'><span>Oui</span></button>"), [])
 
