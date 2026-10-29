@@ -1,5 +1,5 @@
 {
-  "build": "2026-10-29.256",
-  "label": "LR-AUDIT-GLOBAL : fiches de défis accessibles et chargées en ligne et hors ligne",
+  "build": "2026-10-29.257",
+  "label": "LR-AUDIT-GLOBAL : retrait du masque obsolète et renouvellement du cache PWA",
   "released_at": "2026-10-29"
 }
