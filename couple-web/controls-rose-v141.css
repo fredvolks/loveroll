@@ -4,6 +4,7 @@
  .home-roll-button,.evening-primary,.evening-small-roll,.evening-finale-start,
  .evening-locked-cta,.surprise-primary,.surprise-invite-button,.advent-primary,
  .settings-primary,.auth-primary,.entry-auth-submit,.discover-accept,
+ .lr-evening-invite-primary,.lr-evening-inbox-open,
  .lr-review-save,.love-dialog-confirm,.landing-cta,.love-cta-primary,
  .loveroll-invite-cta,.install-primary,
  .push-actions>button,.notification-action:not(.settings-signout),
@@ -40,6 +41,7 @@
 
 /* Neutral actions retain a different weight from the primary CTA. */
 #app :is(.settings-secondary,.entry-auth-provider,.auth-secondary,
+ .lr-evening-invite-secondary,
  .love-cta-secondary,.profile-switch-account,.invite-confirm-resend,
  .evening-cal-return,.evening-cal-toolbar button:not([aria-pressed="true"])),
 #app .install-modal .install-actions .subtle,
