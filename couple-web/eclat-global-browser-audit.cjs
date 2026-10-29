@@ -38,6 +38,8 @@ async function snapshot(page,stage,format){
    controls:buttons.length,unnamed,offscreen,nav:navRect,detail:detailRect,detailChildren,
    grid:grid?{count:grid.querySelectorAll('.eclat-tile').length,scrollable:grid.scrollHeight>grid.clientHeight+1,bounds:bounds(grid)}:null,
    cta:bounds(root.querySelector('.eclat-primary')),
+   guidedActions:bounds(root.querySelector('.eclat-guided-actions')),
+   duplicatedGuidedTitle:visible(root.querySelector('.eclat-guided-heading strong')),
    selected:[...root.querySelectorAll('.eclat-duration-choice.is-selected')].map(e=>e.dataset.action),
    bodyText:root.innerText.trim().length};
  },{stage,format});
@@ -106,6 +108,8 @@ async function main(){
       await page.locator('.eclat-guided[data-eclat-phase="prepare"]').waitFor({state:'visible',timeout:12000});
       const s=await snapshot(page,'guided-prepare',format.name);validate(s);
       assert.ok(s.cta&&s.cta.bottom<=s.nav.top+2,format.name+' guided CTA overlaps navigation');
+      assert.equal(s.duplicatedGuidedTitle,false,format.name+' duplicates the coffret title above its step');
+      assert.ok(s.guidedActions&&Math.abs((s.cta.left+s.cta.right-s.guidedActions.left-s.guidedActions.right)/2)<=3,format.name+' guided primary CTA is not horizontally centered');
       report.push(s);
       await page.screenshot({path:path.join(output,'lr-eclat-global-'+format.name+'-guided.png')});
      }
