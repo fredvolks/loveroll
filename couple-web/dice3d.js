@@ -652,12 +652,17 @@ export function dieOn(canvas,sides,value,rolling){
    // stays inside the photograph (the idle and final poses are unchanged).
    const shortD100Theater=sides===100&&photoSoiree&&
     window.innerWidth<=360&&window.innerHeight<=740;
-   // Computing the complete D100 high-polyhedron bounds on every WebGL
-   // frame makes otherwise comfortable phones unresponsive. Only the
-   // documented 320/360px short theaters need this expensive projection.
-   // The taller 393/412/430px stages retain their natural native roll.
+   // The 393-430px theaters have room below the moving die but only
+   // ~5px above its resting mesh. Avoid expensive full-mesh projections
+   // on these phones: soften the upward hop and use a short, smooth
+   // downward clearance during the real tumbling pose. Both terms vanish
+   // at the end so the official result lands at its original photo contact.
+   const widerD100Theater=sides===100&&photoSoiree&&
+    window.innerWidth>360&&window.innerWidth<=430;
    const phoneD100Theater=shortD100Theater;
-   built.group.position.set(offset.x,offset.y*(shortD100Theater?.24:1),0);
+   const hopScale=shortD100Theater?.24:widerD100Theater?.18:1;
+   const clearance=widerD100Theater?.18*Math.min(1,t*20,(1-t)*20):0;
+   built.group.position.set(offset.x,offset.y*hopScale-clearance,0);
    // A D100 at 360x640 has only ~5px of air above its resting mesh.
    // Random tumbling and the launch hop may project outside the theater.
    // Retain real WebGL size, original roll angles and the confirmed face.
