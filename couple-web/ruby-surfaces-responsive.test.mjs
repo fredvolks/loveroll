@@ -50,3 +50,12 @@ test('LR-AUDIT-GLOBAL: tablet and desktop Home controls reuse ruby materials',()
  assert.match(shared,/#app \.lr-surface:not\(\.lr-ruby-control\)/);
  assert.match(shared,/background:var\(--lr-surface-fill\)/);
 });
+
+test('LR-AUDIT-GLOBAL: HTML requests the fresh shared iPad and mobile styles',()=>{
+ const entry=readFileSync(new URL('./index.html',import.meta.url),'utf8');
+ for(const name of ['ruby-surfaces','ruby-controls']){
+  assert.match(entry,new RegExp(name+'\\.css\\?v=20261028-lr-global-ux136'));
+ }
+ assert.ok(entry.indexOf('ruby-surfaces.css?v=') < entry.indexOf('ruby-controls.css?v='),
+  'Shared surfaces must be loaded before shared controls');
+});
