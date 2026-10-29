@@ -82,12 +82,17 @@ async function main(){
       assert.equal(s.grid.count,12);
       assert.ok(s.grid.bounds.bottom<=s.nav.top+2,format.name+' gallery overlaps nav');
       report.push(s);
-      const lastFilter=page.locator('[data-action="eclat:intent:all"]');
-      await lastFilter.click();
-      assert.equal(await page.locator('.eclat-tile').count(),12,format.name+' All coffrets chip could not restore all 12');
-      const access=await lastFilter.evaluate(el=>{const r=el.getBoundingClientRect(),p=el.closest('.eclat-intents')?.getBoundingClientRect();return {visible:!!p&&r.left>=p.left-2&&r.right<=p.right+2,width:r.width,height:r.height};});
-      assert.ok(access.visible,format.name+' horizontally scrolled chip cannot be reached by user');
-      assert.ok(access.height>=40,format.name+' filter chip too small for touch');
+      for(const [intent,count] of [['together',7],['reconnect',3],['closer',3],['all',12]]){
+       const filter=page.locator('[data-action="eclat:intent:'+intent+'"]');
+       await filter.click();
+       await page.waitForFunction(expected=>document.querySelectorAll('.eclat-tile').length===expected,count);
+       assert.equal(await filter.getAttribute('aria-pressed'),'true',format.name+' intent '+intent+' is not accessible as selected');
+       assert.equal(await page.locator('.eclat-intents [aria-pressed="true"]').count(),1,format.name+' multiple intent selections');
+      }
+      if(format.width<=600){
+       const access=await page.locator('.eclat-intents button').evaluateAll(nodes=>nodes.map(el=>{const r=el.getBoundingClientRect(),p=el.parentElement.getBoundingClientRect();return {visible:r.left>=p.left-2&&r.right<=p.right+2&&r.top>=p.top-2&&r.bottom<=p.bottom+2,width:r.width,height:r.height};}));
+       assert.ok(access.length===4&&access.every(el=>el.visible&&el.width>=44&&el.height>=44),format.name+' requires swiping or has undersized intent controls');
+      }
       await page.screenshot({path:path.join(output,'lr-eclat-global-'+format.name+'-gallery.png')});
       for(let id=1;id<=12;id++){
        const card=page.locator('[data-action="eclat:detail:'+id+'"]');
@@ -107,6 +112,8 @@ async function main(){
         s=await snapshot(page,'detail-'+id+'-'+minutes,format.name);
         validate(s);
         assert.deepEqual(s.selected,['eclat:minutes:'+minutes],format.name+' '+id+' duration selection');
+        assert.equal(await page.locator('[data-action="eclat:minutes:'+minutes+'"]').getAttribute('aria-pressed'),'true',format.name+' '+id+' '+minutes+' duration not announced');
+        assert.equal(await page.locator('.eclat-duration [aria-pressed="true"]').count(),1,format.name+' '+id+' ambiguous duration selection');
         assert.ok(s.cta&&s.cta.width>=44&&s.cta.height>=44,format.name+' '+id+' primary CTA missing');
         assert.ok(s.cta.bottom<=s.nav.top+2,format.name+' '+id+' CTA obscured by navigation');
         report.push({...s,detailChildren:undefined});
