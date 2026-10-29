@@ -216,6 +216,13 @@ class ControlsAuditTests(unittest.TestCase):
     def test_inline_css_hidden_does_not_mask_next_button(self):
         self.assertEqual(len(analyze("<div style='display:none'><button></button></div><button></button>")), 1)
 
+    def test_anchor_role_button_reports_only_once(self):
+        self.assertEqual(analyze("<a href='/go' role='button'></a>"),
+                         ["bouton sans nom accessible statique"])
+
+    def test_anchor_role_button_with_name_passes(self):
+        self.assertEqual(analyze("<a href='/go' role='button' aria-label='Jouer'></a>"), [])
+
     def test_no_false_positive_on_void_elements(self):
         self.assertEqual(analyze("<button><img src='icon.png'><span>Oui</span></button>"), [])
 
