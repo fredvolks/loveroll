@@ -1,0 +1,37 @@
+name: LoveRoll global navigation and responsive audit
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'couple-web/**'
+      - '.github/workflows/loveroll-navigation-audit.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'couple-web/**'
+      - '.github/workflows/loveroll-navigation-audit.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-navigation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned browser
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.56.0
+          npx playwright install --with-deps chromium
+      - name: Walk five real destinations at five screen sizes with a synthetic couple
+        run: node couple-web/lr-global-navigation-browser-check.cjs
+      - name: Preserve screenshots and controls inventory even after failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LoveRoll-LR-AUDIT-GLOBAL-navigation
+          path: design-captures/lr-global-nav-*
+          if-no-files-found: ignore
