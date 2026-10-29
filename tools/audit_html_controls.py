@@ -49,7 +49,7 @@ class ControlsAudit(HTMLParser):
             if hidden:
                 self.hidden_depth += 1
 
-        if tag in {"button", "a", "input", "area"} and attrs.get("aria-labelledby", "").strip() and not hidden:
+        if (tag in {"button", "a", "input", "area"} or attrs.get("role", "").lower() == "button") and attrs.get("aria-labelledby", "").strip() and not hidden:
             self.pending_references.append((line, tag, attrs["aria-labelledby"]))
 
         if tag == "a" and "href" in attrs:
