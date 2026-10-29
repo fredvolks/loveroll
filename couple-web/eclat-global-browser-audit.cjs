@@ -70,6 +70,14 @@ async function main(){
       await page.locator('.eclat-photo-grid').waitFor({state:'visible',timeout:12000});
       const all=page.locator('.eclat-tile');
       assert.equal(await all.count(),12,format.name+' not twelve coffrets');
+      // Conserver de VRAIS boutons natifs, identifiables par un lecteur d'écran.
+      assert.equal(await page.locator('.eclat-photo-grid[role="group"]').count(),1,
+       format.name+' gallery needs an accessible group');
+      for(let id=1;id<=12;id++){
+       const name=new RegExp('^Ouvrir le coffret '+String(id).padStart(2,'0')+' :');
+       assert.equal(await page.getByRole('button',{name}).count(),1,
+        format.name+' coffret '+id+' is not exposed as a named button');
+      }
       let s=await snapshot(page,'gallery',format.name);validate(s);
       assert.equal(s.grid.count,12);
       assert.ok(s.grid.bounds.bottom<=s.nav.top+2,format.name+' gallery overlaps nav');
@@ -83,7 +91,16 @@ async function main(){
       await page.screenshot({path:path.join(output,'lr-eclat-global-'+format.name+'-gallery.png')});
       for(let id=1;id<=12;id++){
        const card=page.locator('[data-action="eclat:detail:'+id+'"]');
-       await card.click();
+       const cardBox=await card.boundingBox();
+       assert.ok(cardBox&&cardBox.width>=44&&cardBox.height>=44,
+        format.name+' coffret '+id+' is too small to tap');
+       if(id===1){
+        // Le premier coffret doit s'ouvrir au clavier comme au toucher.
+        await card.focus();
+        assert.equal(await card.evaluate(el=>document.activeElement===el),true,
+         format.name+' coffret button cannot receive keyboard focus');
+        await page.keyboard.press('Enter');
+       }else await card.click();
        await page.locator('.eclat-detail[data-coffret-id="'+id+'"]').waitFor({state:'visible',timeout:12000});
        for(const minutes of [30,60,90]){
         await page.locator('[data-action="eclat:minutes:'+minutes+'"]').click();
