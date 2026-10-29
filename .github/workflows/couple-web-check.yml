@@ -587,6 +587,10 @@ jobs:
           name: LoveRoll-LR028-invite-${{ github.run_number }}
           path: design-captures/lr028-*.png
           if-no-files-found: warn
+      - name: Audit personal challenge detail, 44px targets and reachable instructions
+        if: matrix.group == 'experience'
+        run: node couple-web/evening-queue-fixed-v102-browser-check.cjs
+
       - name: Verify end-of-evening 5-heart review on phone tablet and desktop
         if: matrix.group == 'experience'
         run: node couple-web/evening-review-browser-check.cjs

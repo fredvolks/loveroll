@@ -100,7 +100,7 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
     'LR-001: animated D100 geometry exits its theater: '+JSON.stringify({width,height,scene}));
   }
   assert.ok(animatedSamples>0,'LR-001: animation stage was never sampled');
-  await page.waitForFunction(()=>document.querySelector('.evening-d100-result')?.textContent==='Résultat : 17',{timeout:16000});
+  await page.waitForFunction(()=>document.querySelector('.evening-d100-result')?.textContent==='Résultat : 17',null,{timeout:16000,polling:150});
   // A server-confirmed result may return directly to the partner's turn or
   // open this user's private challenge queue. The turn is authoritative;
   // never fail simply because no optional queue popup was opened.
@@ -112,7 +112,7 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
     !!document.querySelector('.evening-queue-modal [data-action="evening-close"]')||
     /En attente du tour de ton partenaire/.test(
      document.querySelector('.evening-primary-status')?.textContent||''),
-    null,{timeout:20000});
+    null,{timeout:20000,polling:150});
   }catch(error){
    const state=await page.evaluate(()=>{
     const c=document.querySelector('.evening-d35-col canvas');
@@ -145,7 +145,21 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
    }
    assert.equal(await close.count(),1,'Private challenge popup needs one Close control');
    assert.equal(await close.isVisible(),true,'Private challenge popup Close must be visible');
-   await close.click();
+   // Software WebGL may not request more rAF frames while the official die is idle.
+   // Send a REAL pointer tap on the verified unobstructed button center instead
+   // of awaiting an animation-frame-based "stable" state indefinitely.
+   const hit=await close.evaluate(button=>{
+    button.scrollIntoView({block:'nearest',inline:'nearest',behavior:'instant'});
+    const rect=button.getBoundingClientRect(),x=rect.left+rect.width/2,y=rect.top+rect.height/2;
+    const target=document.elementFromPoint(x,y);
+    return {x,y,width:rect.width,height:rect.height,visible:getComputedStyle(button).visibility==='visible',
+     onScreen:x>=0&&y>=0&&x<innerWidth&&y<innerHeight,
+     receivesTap:button===target||button.contains(target),
+     blocker:typeof target?.className==='string'?target.className.slice(0,100):target?.tagName||null};
+   });
+   assert.ok(hit.visible&&hit.onScreen&&hit.width>=44&&hit.height>=44&&hit.receivesTap,
+    'Private challenge Close must accept real pointer tap: '+JSON.stringify({width,height,hit}));
+   await page.mouse.click(hit.x,hit.y);
    await queueModal.waitFor({state:'detached',timeout:5000});
   }
   assert.equal(world.calls.filter(c=>c.name?.startsWith('draw_for_partner')).length,1);
