@@ -107,6 +107,15 @@ class ControlsAuditTests(unittest.TestCase):
     def test_image_input_with_alt_has_name(self):
         self.assertEqual(analyze("<input type='image' alt='Jouer' src='play.png'>"), [])
 
+    def test_image_map_area_missing_label(self):
+        self.assertEqual(len(analyze("<map><area href='/go' shape='rect' coords='0,0,2,2'></map>")), 1)
+
+    def test_image_map_area_with_alt(self):
+        self.assertEqual(analyze("<area href='/go' alt='Aller au jeu'>"), [])
+
+    def test_image_map_area_without_href(self):
+        self.assertEqual(analyze("<area alt='Décoration'>"), [])
+
     def test_no_false_positive_on_void_elements(self):
         self.assertEqual(analyze("<button><img src='icon.png'><span>Oui</span></button>"), [])
 
