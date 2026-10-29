@@ -6,6 +6,8 @@ const read=path=>readFileSync(new URL(path,import.meta.url),'utf8');
 const evening=read('./premium-evening.mjs');
 const app=read('./app.js');
 const templateCss=read('./soiree-home-template.css');
+const d100Css=read('./evening-d100-template.css');
+const ipadCss=read('./ipad-soiree-one-photo-v237.css');
 const privacyCss=read('./privacy-screen.css');
 const ci=read('../.github/workflows/couple-web-check.yml');
 
@@ -20,4 +22,6 @@ test('LR-025: Soirée entry header must never display the floating Masquer butto
 test('LR-025: challenge cards no longer expose the obsolete Masquer control',()=>{
  assert.doesNotMatch(app,/data-lr-privacy-hide|lr-privacy-challenge-button/);
  assert.doesNotMatch(read('./index.html'),/privacy-screen\.(?:mjs|css)\?v=/);
+ assert.doesNotMatch(d100Css,/data-lr-privacy-hide|lr-privacy-quick-button/);
+ assert.doesNotMatch(ipadCss,/data-lr-privacy-hide|lr-privacy-quick-button/);
 });
