@@ -31,6 +31,8 @@ test('iPad final Soirée die shares the actual Surprise D100 size limits',()=>{
  assert.equal(eveningWidth?.replace('!important',''),surpriseTablet,
   'Soirée and Surprise must use the same D100 iPad size limits');
  assert.equal(eveningWidth?.replace('!important',''),'min(82%,43dvh,440px)');
+ assert.match(eveningIpad,/\.evening-d100-theater \.love3d-stage\s*\{\s*max-height:none!important/,
+  'The landscape WebGL canvas must remain square even beyond its grid row');
  assert.doesNotMatch(eveningIpad,/min\(52vw,39dvh,340px\)/,
   'Do not restore the undersized Soirée die');
 });
