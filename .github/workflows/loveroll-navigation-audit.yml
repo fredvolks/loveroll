@@ -33,5 +33,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: LoveRoll-LR-AUDIT-GLOBAL-navigation
-          path: design-captures/lr-global-nav-*
+          path: |
+            design-captures/lr-global-nav-*
+            design-captures/lr-global-navigation-inventory.json
           if-no-files-found: ignore
