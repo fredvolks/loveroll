@@ -187,6 +187,8 @@ jobs:
 
       - name: Fail on syntax errors in any shipped JS file
         run: node couple-web/check-shipped-js.cjs
+      - name: Verify every HTML-linked Web asset exists and CSS is unique
+        run: node --test couple-web/shipped-referenced-assets.test.mjs
 
   browser-tests:
     needs: changes
