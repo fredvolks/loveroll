@@ -54,7 +54,7 @@ class ControlsAudit(HTMLParser):
 
         if tag == "a" and "href" in attrs:
             self.link_stack.append({"line": line, "attrs": attrs, "text": [], "has_image_alt": False, "hidden": hidden})
-        if tag == "button" or attrs.get("role", "").lower() == "button":
+        if tag == "button" or (tag not in VOID_TAGS and attrs.get("role", "").lower() == "button"):
             self.button_stack.append({"line": line, "attrs": attrs, "text": [], "has_image_alt": False, "hidden": hidden, "tag": tag})
         elif tag == "img" and not hidden and attrs.get("alt", "").strip():
             if self.button_stack:
