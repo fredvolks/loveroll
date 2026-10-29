@@ -95,7 +95,10 @@
   display:none!important;
  }
  #app.has-night-gallery:has(.eclat-guided) .eclat-page-title{
-  margin:3px 0!important;
+  margin:0!important;
+ }
+ #app.has-night-gallery:has(.eclat-guided){
+  padding-top:5px!important;
  }
 }
 @layer loveroll-guided-play {
