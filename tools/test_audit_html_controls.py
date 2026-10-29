@@ -164,6 +164,15 @@ class ControlsAuditTests(unittest.TestCase):
         parser.check_references()
         self.assertEqual(parser.issues, [])
 
+    def test_role_button_without_name_is_reported(self):
+        self.assertEqual(len(analyze("<div role='button'><svg aria-hidden='true'></svg></div>")), 1)
+
+    def test_role_button_with_label_passes(self):
+        self.assertEqual(analyze("<span role='button' aria-label='Ouvrir'></span>"), [])
+
+    def test_role_button_with_text_passes(self):
+        self.assertEqual(analyze("<div role='button'>Continuer</div>"), [])
+
     def test_no_false_positive_on_void_elements(self):
         self.assertEqual(analyze("<button><img src='icon.png'><span>Oui</span></button>"), [])
 
