@@ -1653,9 +1653,9 @@ function renderSession(){
    (view?
     '<div class="evening-queue-nav">'+
      button('evening-list','← Mes défis ('+mineCards.length+')','class="subtle"')+
-     '<button type="button" class="lr-privacy-challenge-button" data-lr-privacy-hide>Masquer</button>'+button('evening-close','✕ Fermer','class="subtle"')+'</div>':
+     button('evening-close','✕ Fermer','class="subtle"')+'</div>':
     '<div class="evening-queue-heading"><h2>Mes '+mineCards.length+' défis</h2>'+
-     '<button type="button" class="lr-privacy-challenge-button" data-lr-privacy-hide>Masquer</button>'+button('evening-close','✕ Fermer','class="subtle"')+'</div>')+
+     button('evening-close','✕ Fermer','class="subtle"')+'</div>')+
    (view?
     '<div class="evening-queue-detail">'+
      '<div class="evening-challenge-badge">♥ '+safe(names[view.category]||view.category)+
