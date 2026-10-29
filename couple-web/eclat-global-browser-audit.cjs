@@ -49,6 +49,7 @@ async function snapshot(page,stage,format){
    grid:grid?{count:grid.querySelectorAll('.eclat-tile').length,scrollable:grid.scrollHeight>grid.clientHeight+1,bounds:bounds(grid)}:null,
    cta:bounds(root.querySelector('.eclat-primary')),
    guidedActions:bounds(root.querySelector('.eclat-guided-actions')),
+   guidedContent:bounds(root.querySelector('.eclat-guided-content')),
    duplicatedGuidedTitle:visible(root.querySelector('.eclat-guided-heading strong')),
    guidedTouchTargets:[...root.querySelectorAll('.eclat-guided button,.eclat-guided summary')].filter(visible).map(el=>{const st=getComputedStyle(el),r=bounds(el);return {name:el.dataset.action||el.textContent.trim().slice(0,40),width:r.width,height:r.height,minHeight:st.minHeight,heightCss:st.height,transform:st.transform,visibility:st.visibility};}),
    guidedStylesheets:[...document.styleSheets].map(s=>s.href).filter(h=>h&&/eclat-(guided|night-gallery)\.css/.test(h)),
@@ -174,6 +175,10 @@ async function main(){
       }
       assert.ok(s.guidedTouchTargets.length>0&&s.guidedTouchTargets.every(t=>t.width>=44&&t.height>=44),format.name+' undersized guided controls: '+JSON.stringify({targets:s.guidedTouchTargets.filter(t=>t.width<44||t.height<44),stylesheets:s.guidedStylesheets}));
       assert.ok(s.guidedActions&&Math.abs((s.cta.left+s.cta.right-s.guidedActions.left-s.guidedActions.right)/2)<=3,format.name+' guided primary CTA is not horizontally centered');
+      if(format.width>=768&&format.height>=700){
+       assert.ok(s.guidedContent&&s.cta.top-s.guidedContent.bottom<=54,
+        format.name+' activity and primary CTA separated by too much blank space');
+      }
       report.push(s);
       await page.screenshot({path:path.join(output,'lr-eclat-global-'+format.name+'-guided.png')});
 
@@ -184,6 +189,10 @@ async function main(){
        const state=await snapshot(page,'guided-'+phase,format.name);
        validate(state);
        assert.deepEqual(state.guidedProgress,s.guidedProgress,format.name+' '+phase+' unexpectedly changed the official stage');
+       if(format.width>=768&&format.height>=700&&state.cta){
+        assert.ok(state.guidedContent&&state.cta.top-state.guidedContent.bottom<=54,
+         format.name+' '+phase+' CTA is disconnected from activity');
+       }
        assert.ok(state.guidedTouchTargets.length>0&&state.guidedTouchTargets.every(t=>t.width>=44&&t.height>=44),
         format.name+' '+phase+' undersized controls: '+JSON.stringify(state.guidedTouchTargets.filter(t=>t.width<44||t.height<44)));
        report.push(state);

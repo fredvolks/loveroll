@@ -51,6 +51,13 @@
  #app .eclat-guided :is(.eclat-rules,.eclat-clue-field) summary{min-height:44px!important;padding-block:14px!important;line-height:18px!important;box-sizing:border-box!important;}
  #app .eclat-guided button.eclat-skip{padding-block:14px!important;line-height:18px!important;}
  #app .eclat-guided .eclat-play-footer button.eclat-link{padding-block:14px!important;line-height:16px!important;}
+ /* On tablets and desktop, don't separate the activity from its primary action
+    with a giant empty scrollpane. Keep the footer at the bottom and let the
+    activity itself scroll only when its contents actually need the room. */
+ @media (min-width:768px) and (min-height:700px){
+  #app .eclat-guided-content{flex:0 1 auto!important;}
+  #app .eclat-guided .eclat-play-footer{margin-top:auto!important;}
+ }
  /* Android's resizes-content keyboard leaves a short viewport. Keep the
     writing area usable; ordinary portrait layout returns when it closes.
     focus-within also covers the save button, avoiding a moving click target. */
