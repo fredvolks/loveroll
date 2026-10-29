@@ -55,8 +55,8 @@ async function snapshot(page,layout,key){
    .slice(0,10).map(e=>({action:e.dataset.action||'',text:e.textContent.slice(0,40)}));
   return {
    viewport:{width,height},page:key,mainClass:main.className,
-   tabs:tabs.map(e=>({action:e.dataset.action,label:(e.getAttribute('aria-label')||e.innerText||'').trim(),active:e.classList.contains('active'),disabled:e.disabled,rect:rect(e)})),
-   nav:rect(nav),horizontalOverflow:document.documentElement.scrollWidth>innerWidth+1,
+   tabs:tabs.map(e=>({action:e.dataset.action,label:(e.getAttribute('aria-label')||e.innerText||'').trim(),active:e.classList.contains('active'),current:e.getAttribute('aria-current'),iconHidden:e.querySelector(':scope > span')?.getAttribute('aria-hidden'),disabled:e.disabled,rect:rect(e)})),
+   nav:rect(nav),navLabel:nav.getAttribute('aria-label'),horizontalOverflow:document.documentElement.scrollWidth>innerWidth+1,
    visibleControls:inputs.length,unnamed,offscreenControls:overflow,
    meaningfulContent:(main.innerText||'').trim().length,
    renderedError:[...document.querySelectorAll('.toast.visible,[role="alert"]')].map(e=>(e.innerText||'').trim()).filter(Boolean).slice(0,5)
@@ -82,7 +82,12 @@ async function main(){
      assert.equal(data.tabs.length,5,layout.name+' '+destination.key+' missing one of the 5 destinations');
      assert.equal(data.tabs.filter(t=>t.active).length,1,layout.name+' '+destination.key+' has an ambiguous active tab');
      assert.equal(data.tabs.find(t=>t.active).action,'tab:'+destination.key,layout.name+' wrong destination selected');
+     assert.equal(data.navLabel,'Navigation principale',layout.name+' '+destination.key+' main navigation lacks a landmark name');
+     assert.equal(data.tabs.filter(t=>t.current==='page').length,1,layout.name+' '+destination.key+' ambiguous or missing aria-current');
+     assert.equal(data.tabs.find(t=>t.current==='page').action,'tab:'+destination.key,layout.name+' '+destination.key+' active page not announced to screen readers');
      for(const tab of data.tabs){
+      assert.equal(tab.iconHidden,'true',layout.name+' '+destination.key+' decorative icon is spoken by assistive technology');
+      assert.equal(tab.current,tab.active?'page':null,layout.name+' '+destination.key+' aria-current disagrees with visual active tab '+tab.action);
       assert.ok(tab.label.length>=2,layout.name+' '+destination.key+' has an unnamed navigation tab');
       assert.ok(tab.rect.width>=44&&tab.rect.height>=44,layout.name+' '+destination.key+' has undersized navigation target '+tab.action);
       assert.ok(tab.rect.left>=-1&&tab.rect.right<=layout.width+1,layout.name+' '+destination.key+' tab outside viewport '+tab.action);
