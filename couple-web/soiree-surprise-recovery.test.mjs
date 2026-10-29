@@ -22,6 +22,17 @@ test('Surprise monthly D100 and host D6 own separate centered 3D stages and neve
  assert.match(style,/max-width:767px/);
  assert.match(style,/min-width:768px/);
 });
+test('iPad final Soirée die shares the actual Surprise D100 size limits',()=>{
+ const eveningIpad=read('ipad-soiree-one-photo-v237.css');
+ const surprise=read('surprise-d100-v151.css');
+ const eveningWidth=/\.evening-finale-dice>\.love3d\{\s*width:([^;]+);/.exec(eveningIpad)?.[1];
+ const surpriseTablet=/@media\(min-width:768px\)\{[\s\S]*?\.surprise-main-die-scene>\.love3d-100\{\s*width:([^;]+);/.exec(surprise)?.[1];
+ assert.equal(eveningWidth?.replace('!important',''),surpriseTablet,
+  'Soirée and Surprise must use the same D100 iPad size limits');
+ assert.equal(eveningWidth?.replace('!important',''),'min(82%,43dvh,440px)');
+ assert.doesNotMatch(eveningIpad,/min\(52vw,39dvh,340px\)/,
+  'Do not restore the undersized Soirée die');
+});
 test('Renderer resizes to live scene with WebGL camera correctly, also after orientation switch',()=>{
  assert.match(dice,/const layoutSize=\(\)=>/);
  assert.match(dice,/canvas\.getBoundingClientRect\(\)/);
