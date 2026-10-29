@@ -12,7 +12,7 @@ assert.ok(sheets.some(x=>x.includes('ruby-controls.css')));
 assert.ok(sheets.some(x=>x.includes('ruby-surfaces.css')));
 const fixture='<!DOCTYPE html><html lang="fr-CA"><head><meta charset="utf-8">'+
  '<meta name="viewport" content="width=device-width,initial-scale=1">'+sheets.join('')+
- '<style>body{margin:0}#app{padding:24px;min-height:100dvh;max-width:850px;margin:auto;box-sizing:border-box;display:grid;align-content:start;gap:18px}.lr-ui-fixture-title{font:20px Georgia;color:#fff}.lr-ui-fixture-area{display:grid;gap:14px}#feature{width:100%}</style>'+
+ '<style>body{margin:0}#app{padding:24px;min-height:100dvh;max-width:850px;margin:auto;box-sizing:border-box;display:grid;align-content:start;gap:18px}.lr-ui-fixture-title{font:20px Georgia;color:#fff}.lr-ui-fixture-area{display:grid;gap:14px}#feature{width:100%}#surface{padding:18px!important}</style>'+
  '</head><body><main id="app" class="loveroll-home-page">'+
  '<h1 class="lr-ui-fixture-title">LoveRoll — contrôles partagés</h1>'+
  '<section class="lr-ui-fixture-area">'+
@@ -55,6 +55,16 @@ async function main(){
     assert.notEqual(styles[key].bg,'none',d.name+' '+key+' lost its shared glass material');
    assert.ok(styles.action.height>=44,d.name+' action below accessible touch target');
    assert.ok(styles.feature.height>=44,d.name+' feature below accessible touch target');
+   const typography=await page.locator('#feature').evaluate(el=>{
+    const title=el.querySelector('.lr-ruby-title'),caption=el.querySelector('.lr-ruby-caption');
+    const t=title.getBoundingClientRect(),c=caption.getBoundingClientRect();
+    return {titleTop:t.top,captionTop:c.top,titleFont:parseFloat(getComputedStyle(title).fontSize),
+      titleRight:t.right,featureRight:el.getBoundingClientRect().right};
+   });
+   assert.ok(typography.captionTop>typography.titleTop+8,
+    d.name+' feature title and caption overlap or collapse to one line');
+   assert.ok(typography.titleFont>=19,d.name+' feature title too small');
+   assert.ok(typography.titleRight<=typography.featureRight-4,d.name+' feature text clipped');
    assert.ok(!styles.overflow,d.name+' horizontal scroll');
    assert.ok(styles.disabled.opacity<1 || styles.disabled.bg!==styles.action.bg,d.name+' no disabled appearance');
    assert.match(styles.action.font,/LoveRoll Cormorant|Cormorant/i,d.name+' missing common font');
