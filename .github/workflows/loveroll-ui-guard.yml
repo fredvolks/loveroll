@@ -1,0 +1,43 @@
+name: LoveRoll UI consistency guard
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'couple-web/**'
+      - 'scripts/loveroll-ui-guard*'
+      - '.github/workflows/loveroll-ui-guard.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'couple-web/**'
+      - 'scripts/loveroll-ui-guard*'
+      - '.github/workflows/loveroll-ui-guard.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ui-guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify UI guard rules
+        run: node --test scripts/loveroll-ui-guard.test.cjs
+      - name: Check the PR's changed UI styles
+        if: github.event_name == 'pull_request'
+        run: node scripts/loveroll-ui-guard.cjs --base "origin/${{ github.base_ref }}"
+      - name: Check newly pushed UI styles
+        if: github.event_name == 'push'
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          if [[ "$BEFORE_SHA" =~ ^[0-9a-f]{40}$ && "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ]]; then
+            node scripts/loveroll-ui-guard.cjs --base "$BEFORE_SHA"
+          else
+            echo 'No previous SHA: rule tests passed; no diff available.'
+          fi
