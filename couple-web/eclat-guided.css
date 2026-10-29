@@ -48,7 +48,9 @@
  /* Buttons and disclosures are touch targets, including secondary actions.
     Leave the central content scrollable instead of shrinking targets on phones. */
  #app .eclat-guided :is(button.eclat-skip,button.eclat-link,button.eclat-note-save,summary){min-height:44px!important;box-sizing:border-box!important;}
- #app .eclat-guided :is(.eclat-rules,.eclat-clue-field) summary{min-height:44px!important;padding-block:10px!important;box-sizing:border-box!important;}
+ #app .eclat-guided :is(.eclat-rules,.eclat-clue-field) summary{min-height:44px!important;padding-block:14px!important;line-height:18px!important;box-sizing:border-box!important;}
+ #app .eclat-guided button.eclat-skip{padding-block:14px!important;line-height:18px!important;}
+ #app .eclat-guided .eclat-play-footer button.eclat-link{padding-block:14px!important;line-height:16px!important;}
  /* Android's resizes-content keyboard leaves a short viewport. Keep the
     writing area usable; ordinary portrait layout returns when it closes.
     focus-within also covers the save button, avoiding a moving click target. */
