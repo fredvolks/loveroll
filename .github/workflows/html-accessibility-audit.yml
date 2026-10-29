@@ -26,13 +26,29 @@ jobs:
         run: python -m compileall -q tools/audit_html_controls.py tools/test_audit_html_controls.py
       - name: Accessibility parser unit tests
         run: python -m unittest discover -s tools -p 'test_audit_html_controls.py' -v
-      - name: Audit repository HTML (informational)
+      - name: Audit repository HTML (required)
         id: html_audit
-        continue-on-error: true
         shell: bash
         run: |
           set -o pipefail
           python tools/audit_html_controls.py . 2>&1 | tee html-accessibility-audit.txt
+      - name: Publish audit summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo '### LoveRoll — contrôle accessibilité HTML'
+            echo ''
+            echo '```text'
+            if [ -f html-accessibility-audit.txt ]; then
+              cat html-accessibility-audit.txt
+            else
+              echo 'Rapport absent : vérifier les étapes précédentes.'
+            fi
+            echo '```'
+            echo ''
+            echo 'Contrôle statique seulement ; le rendu JS, les interactions tactiles et les dimensions responsive doivent être vérifiés dans un navigateur.'
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Upload HTML audit findings
         if: always()
         uses: actions/upload-artifact@v4
