@@ -29,6 +29,7 @@ class ControlsAudit(HTMLParser):
         self.issues: list[tuple[int, str]] = []
         self.button_stack: list[dict] = []
         self.link_stack: list[dict] = []
+        self.pending_references: list[tuple[int, str, str]] = []
         self.hidden_depth = 0
         self.element_stack: list[tuple[str, bool]] = []
 
@@ -47,6 +48,9 @@ class ControlsAudit(HTMLParser):
             self.element_stack.append((tag, hidden))
             if hidden:
                 self.hidden_depth += 1
+
+        if tag in {"button", "a", "input", "area"} and attrs.get("aria-labelledby", "").strip():
+            self.pending_references.append((line, tag, attrs["aria-labelledby"]))
 
         if tag == "a" and "href" in attrs:
             self.link_stack.append({"line": line, "attrs": attrs, "text": [], "has_image_alt": False, "hidden": hidden})
@@ -138,6 +142,10 @@ def main() -> int:
             print(f"{path}: impossible d'analyser: {exc}", file=sys.stderr)
             errors += 1
             continue
+        for line, tag, references in parser.pending_references:
+            missing = [name for name in references.split() if name not in parser.ids]
+            if missing:
+                parser.issues.append((line, f"{tag}: aria-labelledby cible absente: {', '.join(missing)}"))
         for line, problem in parser.issues:
             print(f"{path}:{line}: {problem}")
             errors += 1
