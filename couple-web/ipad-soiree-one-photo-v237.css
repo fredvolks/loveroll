@@ -50,10 +50,6 @@
    grid-column:1!important;grid-row:1!important;display:block!important;
    position:relative!important;height:80px!important;min-height:0!important;
   }
-  #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template .evening-toolbar [data-lr-privacy-hide]{
-   position:absolute!important;inset:15px auto auto 0!important;z-index:10!important;
-   min-height:44px!important;
-  }
   #app.loveroll-evening-page .evening-premium-view.has-home-soiree-template .evening-toolbar .ritual-heading{
    display:flex!important;flex-direction:column!important;align-items:center!important;
    justify-content:flex-start!important;height:80px!important;
