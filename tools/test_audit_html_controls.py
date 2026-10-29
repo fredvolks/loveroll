@@ -49,6 +49,15 @@ class ControlsAuditTests(unittest.TestCase):
     def test_unclosed_nested_tag_does_not_hide_next_button(self):
         self.assertEqual(analyze("<div aria-hidden='true'><span>secret</div><button>OK</button>"), [])
 
+    def test_control_inside_hidden_section_is_ignored(self):
+        self.assertEqual(analyze("<section hidden><button><svg></svg></button><input type='button'></section>"), [])
+
+    def test_control_inside_aria_hidden_section_is_ignored(self):
+        self.assertEqual(analyze("<div aria-hidden='true'><button></button></div>"), [])
+
+    def test_visible_button_after_hidden_section_is_reported(self):
+        self.assertEqual(len(analyze("<div hidden><button></button></div><button></button>")), 1)
+
     def test_no_false_positive_on_void_elements(self):
         self.assertEqual(analyze("<button><img src='icon.png'><span>Oui</span></button>"), [])
 
