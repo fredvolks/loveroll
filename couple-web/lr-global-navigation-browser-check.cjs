@@ -88,7 +88,10 @@ async function snapshot(page,layout,key){
     name,role:e.getAttribute('role')||null,disabled:!!e.disabled||e.getAttribute('aria-disabled')==='true',
     expanded:e.getAttribute('aria-expanded'),pressed:e.getAttribute('aria-pressed'),
     checked:e.getAttribute('aria-checked')??(typeof e.checked==='boolean'?e.checked:null),
-    href:e.matches('a[href]')?new URL(e.getAttribute('href'),location.href).pathname:null,
+    // Classify links without storing URL paths, query tokens or user data.
+    hrefKind:e.matches('a[href]')?
+     (e.getAttribute('href')?.startsWith('#')?'in-page':
+      new URL(e.getAttribute('href'),location.href).origin===location.origin?'internal':'external'):null,
     minTouch44:bounds.width>=44&&bounds.height>=44,
     inViewport,hitAtCenter:!inViewport?null:point===e||e.contains(point),
     bounds};
