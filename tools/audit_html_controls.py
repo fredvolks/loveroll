@@ -91,7 +91,7 @@ class ControlsAudit(HTMLParser):
                 self.issues.append((link["line"], "lien sans nom accessible statique"))
         if tag == "button" and self.button_stack:
             button = self.button_stack.pop()
-            if not button["hidden"] and not has_aria_name(button["attrs"]) and not "".join(button["text"]).strip() and not button["has_image_alt"]:
+            if not button["hidden"] and not has_aria_name(button["attrs"]) and not button["attrs"].get("title", "").strip() and not "".join(button["text"]).strip() and not button["has_image_alt"]:
                 self.issues.append((button["line"], "bouton sans nom accessible statique"))
         if tag not in VOID_TAGS:
             # Fermer le bon ancêtre, même si des balises sont mal imbriquées.
