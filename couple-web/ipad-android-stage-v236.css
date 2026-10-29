@@ -119,3 +119,56 @@
     filter:brightness(.94) saturate(.96)!important;
   }
 }
+
+
+/* LR-AUDIT-SURPRISE-ONE-PHOTO: the approved Android v202 photograph owns
+   all rose/velvet/marble scenery on iPad and desktop as it does on Soirée.
+   Do not introduce another scenic panel, satin texture, marble or frame.
+   The actual D100/D6 WebGL mesh and official game actions are unchanged. */
+@media (min-width:768px) {
+ main#app.loveroll-surprise-ecrin {
+  position:relative!important;
+  isolation:isolate!important;
+  background:#240208!important;
+  background-image:none!important;
+  --home-scene-top-image-height:calc(100vw * 1.776833);
+  /* Photograph marble at 34.2% of source height, like the existing
+     shared-stage calculation for portrait iPad. */
+  --lr-ipad-scene-offset:calc(40.5dvh - 60.768vw);
+ }
+ main#app.loveroll-surprise-ecrin::before {
+  content:""!important;display:block!important;position:fixed!important;
+  inset:0!important;width:100%!important;height:100dvh!important;
+  z-index:-1!important;pointer-events:none!important;
+  opacity:1!important;filter:none!important;
+  background:#240208 url('./assets/loveroll-home-portrait-v202.webp')
+   center var(--lr-ipad-scene-offset) / 100% var(--home-scene-top-image-height)
+   no-repeat!important;
+  border:0!important;box-shadow:none!important;
+  mask-image:none!important;-webkit-mask-image:none!important;
+ }
+ main#app.loveroll-surprise-ecrin::after {
+  content:none!important;display:none!important;
+ }
+ main#app.loveroll-surprise-ecrin :is(
+  .surprise-premium-view,.surprise-gallery,.surprise-month,
+  .surprise-d100-scene,.surprise-main-die-scene
+ ) {
+  background:none!important;background-image:none!important;
+  border:0!important;border-radius:0!important;box-shadow:none!important;
+  mask-image:none!important;-webkit-mask-image:none!important;
+ }
+ main#app.loveroll-surprise-ecrin :is(
+  .surprise-gallery,.surprise-main-die-scene
+ )::before,
+ main#app.loveroll-surprise-ecrin :is(
+  .surprise-gallery,.surprise-main-die-scene
+ )::after {
+  content:none!important;display:none!important;
+ }
+}
+@media (min-width:768px) and (orientation:landscape) {
+ main#app.loveroll-surprise-ecrin {
+  --lr-ipad-scene-offset:calc(45dvh - 60.768vw);
+ }
+}
