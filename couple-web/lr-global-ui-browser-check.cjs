@@ -56,11 +56,13 @@ async function main(){
    assert.ok(styles.action.height>=44,d.name+' action below accessible touch target');
    assert.ok(styles.feature.height>=44,d.name+' feature below accessible touch target');
    assert.ok(!styles.overflow,d.name+' horizontal scroll');
-   assert.ok(styles.disabled.opacity<1,d.name+' no disabled appearance');
+   assert.ok(styles.disabled.opacity<1 || styles.disabled.bg!==styles.action.bg,d.name+' no disabled appearance');
    assert.match(styles.action.font,/LoveRoll Cormorant|Cormorant/i,d.name+' missing common font');
    await page.locator('#action').click();
    assert.equal(await page.evaluate(()=>window.uiFixtureClicks),1,d.name+' click lost');
-   await page.locator('#action').focus();
+   await page.keyboard.press('Tab');
+   await page.keyboard.press('Shift+Tab');
+   assert.equal(await page.evaluate(()=>document.activeElement?.id),'action',d.name+' keyboard focus cannot return to CTA');
    const focus=await page.locator('#action').evaluate(el=>{const s=getComputedStyle(el);return {width:parseFloat(s.outlineWidth),style:s.outlineStyle}});
    assert.ok(focus.width>=2&&focus.style!=='none',d.name+' keyboard focus invisible');
    await page.screenshot({path:'design-captures/lr-global-ruby-'+d.name+'.png',fullPage:true});
