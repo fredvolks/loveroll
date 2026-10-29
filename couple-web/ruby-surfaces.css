@@ -3,6 +3,7 @@
 @layer loveroll-surfaces{
  :root{
    --lr-surface-radius:18px;
+   --lr-surface-edge:#d56a7c;
    --lr-surface-fill:radial-gradient(ellipse 3% 10% at 96% 3%,#fff0dc99,transparent),radial-gradient(ellipse 70% 18% at 35% 0%,#ed375447,transparent),linear-gradient(155deg,#650016ed,#310009f2 68%,#550011ed);
    --lr-surface-shadow:inset 0 1px 2px #ffe4d680,inset 0 -1px 3px #e3274b66,0 3px 7px #16000480;
   }
@@ -34,6 +35,21 @@
    display:-webkit-box!important;-webkit-line-clamp:2;-webkit-box-orient:vertical;
    white-space:normal!important;overflow:hidden!important;
    font-size:clamp(17px,4.7vw,20px)!important;line-height:1!important;
+  }
+ }
+}
+
+
+/* Use the shared material for non-button glass panels on larger screens.
+   Buttons keep their ruby control styling, not an overlapping surface skin. */
+@layer loveroll-surfaces {
+ @media (min-width:768px) {
+  #app .lr-surface:not(.lr-ruby-control) {
+   box-sizing:border-box!important;
+   background:var(--lr-surface-fill)!important;
+   border:1px solid var(--lr-surface-edge)!important;
+   border-radius:var(--lr-surface-radius)!important;
+   box-shadow:var(--lr-surface-shadow)!important;
   }
  }
 }

@@ -9,6 +9,11 @@
  :root{
    --lr-control-font:'LoveRoll Cormorant',Georgia,serif;
    --lr-control-ink:#fff8ed;
+   --lr-control-edge-solid:#e4234e;
+   --lr-control-focus:#fff1dd;
+   --lr-control-radius:18px;
+   --lr-control-disabled-surface:linear-gradient(180deg,#4f0012,#230008 75%,#44000f);
+   --lr-control-feature-surface:linear-gradient(145deg,#58000d 0%,#3b0009 40%,#65000d 78%,#310005 100%);
    --lr-control-glass:
     radial-gradient(ellipse 2.2% 9% at 5% 9%,#fff9f1 0%,#ffdfdfc9 38%,#ff335e00 100%),
     radial-gradient(ellipse 2.2% 9% at 95% 9%,#fff9f1 0%,#ffdfdfbf 38%,#ff335e00 100%),
@@ -177,6 +182,42 @@
    width:100%!important;height:100%!important;min-height:0!important;min-width:0!important;
    margin:0!important;padding:1px!important;font:500 10px/1.1 Arial,sans-serif!important;
    gap:3px!important;letter-spacing:normal!important;text-transform:none!important;
+  }
+ }
+}
+
+
+/* LR-AUDIT-GLOBAL-20261028: use the same Home ruby materials on iPad/PC.
+   Preserve the existing desktop geometry, game rules and WebGL stages. */
+@layer loveroll-ruby-controls {
+ @media (min-width:768px) {
+  #app .lr-ruby-control {
+   appearance:none!important;
+   color:var(--lr-control-ink)!important;
+   background:var(--lr-control-glass)!important;
+   border:1px solid var(--lr-control-edge-solid)!important;
+   border-radius:var(--lr-control-radius)!important;
+   box-shadow:var(--lr-control-shadow)!important;
+   font-family:var(--lr-control-font)!important;
+   touch-action:manipulation!important;
+  }
+  #app .lr-ruby-action {border-radius:999px!important;}
+  #app .lr-ruby-feature {background:var(--lr-control-feature-surface)!important;}
+  #app .lr-ruby-feature .lr-ruby-title {
+   font-family:var(--lr-control-font)!important;
+   color:var(--lr-control-ink)!important;
+  }
+  #app .lr-ruby-control:focus-visible {
+   outline:2px solid var(--lr-control-focus)!important;
+   outline-offset:3px!important;
+  }
+  #app .lr-ruby-control:disabled {
+   background:var(--lr-control-disabled-surface)!important;
+   opacity:.76!important;cursor:not-allowed!important;
+  }
+  #app .lr-ruby-control:not(:disabled):active {
+   box-shadow:var(--lr-control-pressed)!important;
+   transform:translateY(2px)!important;
   }
  }
 }
