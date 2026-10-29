@@ -7,11 +7,12 @@ export function calculateEveningD100StageSize({viewportWidth,viewportHeight,hero
  const reference=tablet
   ?Math.min(heroWidth*.82,viewportHeight*.43,440)
   :Math.min(viewportWidth*.82,viewportHeight*.41,390);
- return Math.floor(Math.max(1,Math.min(
-  reference,heroWidth*.96,
-  // Do not use heroHeight alone: it can shrink with its own canvas.
-  Math.max(heroHeight*.94,viewportHeight*.24)
- )));
+ // The tablet theater is shorter than Surprise because it also holds the
+ // category controls. Its 276px grid row must not reduce a 352px WebGL die.
+ // fitTabletRomanceStage moves the SAME photographed marble to keep the mesh
+ // below those controls. Keep the original strict height cap on phones.
+ const available=tablet?reference:Math.max(heroHeight*.94,viewportHeight*.24);
+ return Math.floor(Math.max(1,Math.min(reference,heroWidth*.96,available)));
 }
 export function eveningPlayInfoHtml(percent=88){
  const preferred=Math.min(100,Math.max(0,Number(percent)||0));
@@ -121,6 +122,8 @@ export function fitEveningD100(root){
    const next=size+'px';
    if(previous!==next){
     hero.style.setProperty('--evening-d100-stage-size',next);
+    // Measure the new LIVE square before aligning its photographed contact.
+    if(window.innerWidth>=768)fitTabletRomanceStage(root);
     hero.querySelector('canvas')?.loveRollDie?.refresh?.();
    }
   }
