@@ -64,7 +64,11 @@ async function snapshot(page,layout,key){
   if(!nav)throw Error('Missing shared bottom navigation on '+key);
   const main=document.querySelector('#app');
   const tabs=[...nav.querySelectorAll('[data-action^="tab:"]')].filter(visible);
-  const inputs=[...main.querySelectorAll('button,[role="button"],input,select,textarea,summary')].filter(visible);
+  // Include real links and WAI-ARIA interactive controls; checking only
+  // <button> misses navigable cards and accessible custom inputs.
+  const inputs=[...main.querySelectorAll(
+   'button,a[href],[role="button"],[role="link"],[role="tab"],[role="switch"],[role="checkbox"],[role="radio"],input,select,textarea,summary'
+  )].filter(visible);
   const unnamed=inputs.filter(e=>!e.disabled&&!e.matches('input[type="hidden"]')&&
    !(e.getAttribute('aria-label')||e.getAttribute('title')||e.innerText||e.labels?.[0]?.textContent||e.getAttribute('aria-labelledby'))?.trim())
    .slice(0,12).map(e=>({tag:e.tagName,action:e.dataset.action||'',className:typeof e.className==='string'?e.className:''}));
@@ -83,6 +87,8 @@ async function snapshot(page,layout,key){
    return {index,tag:e.tagName.toLowerCase(),action:e.dataset.action||null,
     name,role:e.getAttribute('role')||null,disabled:!!e.disabled||e.getAttribute('aria-disabled')==='true',
     expanded:e.getAttribute('aria-expanded'),pressed:e.getAttribute('aria-pressed'),
+    checked:e.getAttribute('aria-checked')??(typeof e.checked==='boolean'?e.checked:null),
+    href:e.matches('a[href]')?new URL(e.getAttribute('href'),location.href).pathname:null,
     minTouch44:bounds.width>=44&&bounds.height>=44,
     inViewport,hitAtCenter:!inViewport?null:point===e||e.contains(point),
     bounds};
