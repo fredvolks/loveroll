@@ -140,6 +140,17 @@ async function main(){
       assert.ok(s.cta&&s.cta.bottom<=s.nav.top+2,format.name+' guided CTA overlaps navigation');
       assert.equal(s.duplicatedGuidedTitle,false,format.name+' duplicates the coffret title above its step');
       assert.deepEqual(s.guidedProgress,{label:'Progression du coffret',min:'0',max:'6',now:'1',text:'Étape 1 sur 6'},format.name+' progress inaccessible');
+      if(format.name==='android-small'&&s.guidedTouchTargets.some(t=>t.width<44||t.height<44)){
+       const cascade=await page.evaluate(()=>{
+        const selectors=['.eclat-guided button.eclat-skip','.eclat-guided .eclat-play-footer button.eclat-link','.eclat-guided .eclat-rules summary'];
+        const scan=(rules,href,el,result,layer='')=>{for(const rule of rules){if(rule.cssRules){scan(rule.cssRules,href,el,result,layer+' '+(rule.name||rule.conditionText||''));continue;}if(!rule.selectorText||!rule.style)continue;try{if(!el.matches(rule.selectorText))continue;}catch{continue;}
+         const props=['min-height','height','max-height','padding','padding-block','padding-block-start','padding-block-end','display'];const active=props.filter(k=>rule.style.getPropertyValue(k));
+         if(active.length)result.push({from:href.split('/').pop(),layer,selector:rule.selectorText,style:Object.fromEntries(active.map(k=>[k,rule.style.getPropertyValue(k)+(rule.style.getPropertyPriority(k)?' !important':'')]))});
+        }};
+        return selectors.map(selector=>{const el=document.querySelector(selector);if(!el)return {selector,missing:true};const cs=getComputedStyle(el),matched=[];for(const sheet of document.styleSheets){try{scan(sheet.cssRules,sheet.href||'inline',el,matched);}catch{}}return {selector,computed:{minHeight:cs.minHeight,height:cs.height,maxHeight:cs.maxHeight,padding:cs.padding,display:cs.display},matched:matched.slice(-55)};});
+       });
+       console.log('ECLAT_CASCADE_DEBUG',JSON.stringify(cascade));
+      }
       assert.ok(s.guidedTouchTargets.length>0&&s.guidedTouchTargets.every(t=>t.width>=44&&t.height>=44),format.name+' undersized guided controls: '+JSON.stringify({targets:s.guidedTouchTargets.filter(t=>t.width<44||t.height<44),stylesheets:s.guidedStylesheets}));
       assert.ok(s.guidedActions&&Math.abs((s.cta.left+s.cta.right-s.guidedActions.left-s.guidedActions.right)/2)<=3,format.name+' guided primary CTA is not horizontally centered');
       report.push(s);
