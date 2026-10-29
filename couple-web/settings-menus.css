@@ -132,4 +132,38 @@
 
 #app.settings-account-full .settings-account-overview .date-fields .lr-premium-picker-trigger{gap:2px!important;padding:6px!important;}
 #app.settings-account-full .settings-account-overview .date-fields .lr-premium-picker-chevron{font-size:16px!important;flex:none!important;}
+
+/* LR-AUDIT-GLOBAL: allow Settings menus to scroll within their pane when
+   six or more destinations exceed short Android viewports. No clipping and no
+   scroll behind the persistent ruby navigation; keep large-screen layout. */
+@media (max-height:720px){
+ #app.loveroll-settings-page:is(.loveroll-settings-menu,.loveroll-settings-detail,.loveroll-library-page)
+ .settings-detail-body.has-settings-menus{
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  overscroll-behavior-y:contain;
+  scroll-padding-block:10px 14px;
+  -webkit-overflow-scrolling:touch;
+ }
+}
+
+/* LR-AUDIT-GLOBAL: on short phones the complete account form can be taller
+   than the space above the fixed navigation. Scroll inside its real content
+   panel instead of shrinking, hiding or placing actions under the navbar. */
+@media (max-height:720px){
+ #app.loveroll-settings-page:is(.loveroll-settings-menu,.loveroll-settings-detail,.loveroll-library-page)
+ .settings-detail-body.settings-account-overview{
+  overflow-x:hidden!important;
+  overflow-y:auto!important;
+  overscroll-behavior-y:contain;
+  scroll-padding-block:10px 14px;
+  scrollbar-width:thin;
+  -webkit-overflow-scrolling:touch;
+ }
+ #app.settings-account-full .settings-account-overview .settings-account-form{
+  height:auto!important;
+  min-height:100%!important;
+ }
+}
+
 }
