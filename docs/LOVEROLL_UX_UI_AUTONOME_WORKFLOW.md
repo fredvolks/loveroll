@@ -26,15 +26,24 @@ Synchroniser la base, relever son SHA et préserver les travaux concurrents. Con
 
 Si les sous-agents sont disponibles, déléguer les audits indépendants en lecture seule, en parallèle quand utile. Un seul intégrateur modifie le code et consolide les décisions. Chaque spécialiste remet des constats concrets, pas un long rapport de rôle.
 
-1. **Direction artistique et design visuel** : identité LoveRoll, harmonie, couleurs, typographie, proportions, images, boutons, densité et qualité premium.
-2. **UX et ergonomie/accessibilité** : compréhension, ordre des actions, navigation, confort tactile/clavier, lisibilité et retours d'état.
-3. **Client payant et couple de joueurs** : valeur perçue, plaisir d'utilisation, frustrations et compréhension sans connaissance du code.
-4. **QA fonctionnelle et visuelle indépendante** : vrais parcours, boutons, états, formats, régressions et preuves.
-5. **Intégrateur frontend et système de composants** : causes techniques, composants communs, corrections et contrôles durables.
+| Rôle | Responsabilité |
+|---|---|
+| **Pilote / développeur intégrateur** | Organiser le lot, préserver l'architecture et les droits, consolider les constats, appliquer seul les modifications et livrer. |
+| **Direction artistique** | Couleurs, images, typographie, proportions, hiérarchie visuelle et cohérence de la marque. |
+| **UX / ergonomie / accessibilité** | Navigation, ordre des actions, lisibilité, vocabulaire, confort tactile et clavier. |
+| **Responsive** | Examiner dès le départ téléphone, tablette et PC, orientations, contenu long, zoom, clavier et adaptations de disposition. |
+| **Client / utilisateur final** | Comprendre et terminer le vrai parcours, relever ambiguïtés, efforts inutiles, frustrations et valeur perçue. |
+| **QA fonctionnelle et visuelle** | Vérifier commandes, états, erreurs, régressions, preuves et résultat effectivement publié. |
 
 Le rôle distinct de responsable sécurité reste en pause selon la décision existante ; les protections techniques en place restent applicables.
 
 Si les sous-agents sont indisponibles, exercer explicitement ces regards sans prétendre que plusieurs agents ont travaillé. L'expertise doit se voir dans les constats et les corrections, pas dans une déclaration « expert validé ».
+
+## 2 bis. Responsive dès le départ et après chaque changement
+
+L'expert responsive examine l'état initial en même temps que design, UX, client et QA. Définir pour chaque famille d'écran une disposition lisible sur petit/grand téléphone, tablette portrait/paysage et ordinateur, selon le rôle et son usage : jeu sur téléphone, Studio d'abord iPad/PC. Garder une identité commune avec des compositions adaptées à l'espace disponible.
+
+Vérifier navigation, proportions, zones tactiles, safe areas, faible hauteur, clavier virtuel, zoom/texte agrandi, contenu long, focus et défilement utile. Tester tôt un vrai écran représentatif puis formulaires, menus et modales ; une modification partagée exige de revoir ses consommateurs. Le responsive demeure un contrôle de chaque ajout, avec preuves par format et distinction appareil physique/émulation.
 
 ## 3. Se mettre réellement dans la peau du client
 
@@ -70,7 +79,7 @@ Couvrir notamment :
 
 Inclure les états initial, sélectionné, pressé, focus, désactivé, verrouillé, chargement, vide, erreur, succès et contenu long lorsqu'ils s'appliquent.
 
-Tableau minimal : écran/état, objectif client, défaut observé, priorité, correction, preuve, statut. Distinguer « à développer », « corrigé », « vérifié » et « non vérifié ». Aucun écran absent ou inaccessible ne compte comme audité.
+Tableau minimal : écran/état/rôle/format, objectif client, défaut observé, priorité, correction, preuve, statut. Distinguer « à développer », « corrigé », « vérifié » et « non vérifié ». Aucun écran absent ou inaccessible ne compte comme audité.
 
 ## 5. Fixer une identité unique et la coder
 
@@ -124,7 +133,7 @@ La revue UX se déclenche à chaque ajout ou modification visible pendant la ses
 
 Aucun outil de design payant, abonnement ou service externe obligatoire. Les outils visuels facultatifs respectent les connexions, quotas et autorisations existants ; à défaut, comparer le rendu réel et corriger directement le code.
 
-Cette partie doit être implémentée dans le dépôt et exécutée par la CI.
+Cette partie doit être implémentée dans le dépôt et exécutée par la CI. Chaque ajout réutilise les composants communs et reçoit les regards design, UX, responsive, client et QA pendant le lot ; l'examen réel du rendu complète les contrôles automatiques.
 
 - Toute nouvelle interface réutilise les tokens et composants communs.
 - Installer des vérifications ciblées empêchant de nouvelles couleurs arbitraires et des styles de commandes dupliqués dans les fichiers modifiés. Prévoir des exceptions explicites pour les besoins légitimes.
