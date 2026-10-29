@@ -4,6 +4,23 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
 (async()=>{
  const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
  try{for(const [width,height] of [[320,568],[360,640],[360,740],[393,852],[412,824],[412,915],[430,932]]){
+  const started=Date.now();
+  let stage='initialize';
+  const checkpoint=name=>{
+   stage=name;
+   console.log('EVENING_D100_CHECKPOINT',width,height,name,Date.now()-started);
+  };
+  console.log('EVENING_D100_VIEWPORT_START',width,height);
+  // Keep the original viewport loop intact: its diagnostic branch uses break.
+  // An explicit process exit is intentional: it also stops stalled Playwright calls.
+  const heartbeat=setInterval(()=>{
+   console.log('D100_VIEWPORT_HEARTBEAT',width,height,'stage='+stage,'elapsed_ms='+(Date.now()-started));
+  },30000);
+  const watchdog=setTimeout(()=>{
+   console.error('D100_VIEWPORT_TIMEOUT',width,height,'stage='+stage,'after 180000ms');
+   process.exit(1);
+  },180000);
+  try{
   const world=createWorld();world.enableEveningD6=world.enableEveningDraw=true;
   world.profiles[0].display_name='Fred';world.profiles[1].display_name='Émilie';
   world.couple.category_preference_percent=height===824?74:88;
@@ -12,10 +29,14 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   world.eveningSessions=[{id:'test-evening',couple_id:'c',started_at:new Date(Date.now()-60000).toISOString(),finished_at:null,paired_turns:true,self_draws:true,starting_user_id:'a'}];
   world.personalRolls=[{id:'d6-a',session_id:'test-evening',user_id:'a',face:2},{id:'d6-b',session_id:'test-evening',user_id:'b',face:3}];
   world.board={ready:true,next:'a',first:'a',remaining:{a:2,b:3},targets:{a:2,b:3},completed:{a:0,b:0},drawn:{a:0,b:0},drawsFinished:false,finished:false};
+  checkpoint('create-page');
   const {page,context,errors}=await setupEditorial(browser,world,{width,height,query:'open=home',motion:'no-preference'});
+  checkpoint('wait-home-die');
   await page.waitForFunction(()=>document.querySelector('.home-die-platform canvas')?.loveRollDie?.readState().optics.loaded);
   const metrics=()=>page.evaluate(()=>{const b=s=>{const n=document.querySelector(s),r=n.getBoundingClientRect(),c=getComputedStyle(n);return {x:r.x,y:r.y,w:r.width,h:r.height,font:c.font};};return {brand:b('.ritual-brand'),title:b('.ritual-page-title'),nav:b('.nav'),info:b('.home-odds-info')};});
+  checkpoint('navigate-evening');
   const home=await metrics();await page.locator('.nav [data-action="tab:session"]').click();
+  checkpoint('wait-evening-die');
   await page.waitForFunction(()=>document.querySelector('.has-evening-d100-template canvas')?.loveRollDie?.readState().optics.loaded);
   await page.evaluate(()=>document.fonts.ready);
   const evening=await metrics();console.log('D100_METRICS',width,{home,evening});
@@ -42,6 +63,7 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   assert.ok(evening.title.y+evening.title.h<=evening.nav.y,
    'Soirée heading leaves the visible screen');
   assert.equal(evening.info.w,home.info.w);assert.equal(evening.info.h,home.info.h);
+  checkpoint('measure-d100-layout');
   const layout=await page.evaluate(()=>{const c=document.querySelector('.evening-d35-col canvas'),r=c.getBoundingClientRect(),b=c.loveRollDie.projectedBounds();const bounds=s=>document.querySelector(s).getBoundingClientRect();return {scroll:document.documentElement.scrollHeight-innerHeight,horizontal:document.documentElement.scrollWidth-innerWidth,contact:bounds('.home-pedestal-contact').top,bottom:r.top+b.bottom*r.height,center:r.left+(b.left+b.right)*r.width/2,mesh:b,meshTop:r.top+b.top*r.height,stageSize:bounds('.love3d-stage').width,
    heroHeight:bounds('.evening-d100-theater').height,heroTop:bounds('.evening-d100-theater').top,statusTop:bounds('.evening-play-state').top,quotaBottom:bounds('.evening-d100-quota').bottom,navTop:bounds('.nav').top};});console.log('D100_LAYOUT',width,layout);
   assert.equal(layout.scroll,0);assert.equal(layout.horizontal,0);assert.ok(layout.quotaBottom<layout.navTop);assert.ok(Math.abs(layout.bottom-layout.contact)<2);assert.ok(Math.abs(layout.center-width/2)<3);assert.ok(layout.mesh.top>=0&&layout.mesh.bottom<=1);assert.ok(layout.meshTop>=layout.heroTop+3);assert.ok(layout.bottom<=layout.statusTop-2,'Dice must not overlap the status and action controls');
@@ -52,11 +74,13 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   assert.equal(await page.locator('.evening-choice [aria-pressed=true]').count(),0);assert.equal(await page.locator('.evening-choice-odds').count(),0);
   assert.equal(await page.locator('[data-action="new-challenge"]').isDisabled(),false);await capture('initial');
   await page.evaluate(()=>window.__eveningD100=document.querySelector('.evening-d35-col canvas'));
+  checkpoint('category-reminder');
   await page.locator('[data-action="new-challenge"]').click();await page.waitForSelector('.evening-category-reminder[open]');
   assert.match(await page.locator('.evening-category-reminder').innerText(),/Choisis une catégorie avant de brasser le dé/);
   assert.equal(world.calls.filter(c=>c.name?.startsWith('draw_for_partner')).length,0);await capture('choose-category');
   await page.locator('.evening-category-reminder button').click();
   assert.equal(await page.locator('.evening-choice [aria-pressed=true]').count(),0);
+  checkpoint('category-selection');
   await page.locator('[data-action="category:SENSUEL"]').click();assert.equal(await page.locator('[data-action="category:SENSUEL"]').getAttribute('aria-pressed'),'true');
   assert.match(await page.locator('.evening-choice-odds').innerText(),new RegExp(world.couple.category_preference_percent+' %'));
   assert.equal(await page.evaluate(()=>window.__eveningD100===document.querySelector('.evening-d35-col canvas')),true);
@@ -73,6 +97,7 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   await page.locator('[data-action="new-challenge"]').click();
   // LR-014: the old browser contract now confirms the selected category first.
   const categoryDialog=page.locator('dialog.lr-evening-category-dialog[open]');
+  checkpoint('confirm-official-draw');
   await categoryDialog.waitFor({state:'visible',timeout:10000});
   assert.equal(world.calls.filter(c=>c.name?.startsWith('draw_for_partner')).length,0);
   await categoryDialog.locator('[data-confirm-action="yes"]').click();
@@ -100,6 +125,7 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
     'LR-001: animated D100 geometry exits its theater: '+JSON.stringify({width,height,scene}));
   }
   assert.ok(animatedSamples>0,'LR-001: animation stage was never sampled');
+  checkpoint('await-official-result');
   await page.waitForFunction(()=>document.querySelector('.evening-d100-result')?.textContent==='Résultat : 17',null,{timeout:16000,polling:150});
   // A server-confirmed result may return directly to the partner's turn or
   // open this user's private challenge queue. The turn is authoritative;
@@ -134,6 +160,7 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   assert.ok(postRoll?.hasClose||postRoll?.partnerTurn,
    'Official D100 draw must open a private challenge or display the partner turn: '+JSON.stringify({width,height,postRoll}));
   const queueModal=page.locator('.evening-queue-modal');
+  checkpoint('challenge-modal');
   if(await queueModal.count()){
    const close=queueModal.locator('[data-action="evening-close"]');
    if(await close.count()!==1||!(await close.isVisible())){
@@ -175,7 +202,13 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   assert.equal(await page.locator('.evening-choice [aria-pressed=true]').count(),0,'Category resets after each official draw');
   assert.equal(await page.locator('[data-action="new-challenge"]').count(),0,'No fake disabled D100 during partner turn');
   assert.match(await page.locator('.evening-primary-status').textContent(),/En attente du tour de ton partenaire/);
+  checkpoint('capture-recorded');
   await capture('recorded');
   assert.deepEqual(errors,[]);await context.close();console.log('EVENING_D100_TEMPLATE_OK',width,height);
+  }finally{
+   clearInterval(heartbeat);
+   clearTimeout(watchdog);
+   console.log('EVENING_D100_VIEWPORT_DURATION_MS',width,height,Date.now()-started);
+  }
  }}finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exit(1)});
