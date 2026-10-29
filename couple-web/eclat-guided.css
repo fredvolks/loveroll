@@ -85,3 +85,27 @@
   #app.has-night-gallery:has(.eclat-guided:focus-within) .eclat-shell>:is(.eclat-top,.eclat-page-title,.ritual-mode-switcher){display:none!important;}
  }
 }
+
+/* LR-PAGES-20261029: while a guided coffret is in progress, the common bottom
+   navigation and explicit "Quitter le coffret" remain available. Hide the
+   redundant mode selector above the activity (it is available on return),
+   preserving full private-note, help and >=44px controls on short phones. */
+@layer loveroll-night-gallery {
+ #app.has-night-gallery:has(.eclat-guided) .eclat-shell>.ritual-mode-switcher{
+  display:none!important;
+ }
+ #app.has-night-gallery:has(.eclat-guided) .eclat-page-title{
+  margin:0!important;
+ }
+ #app.has-night-gallery:has(.eclat-guided){
+  padding-top:5px!important;
+ }
+}
+@layer loveroll-guided-play {
+ @media (max-width:600px) {
+  #app.has-night-gallery .eclat-guided-content{gap:2px!important;}
+  #app.has-night-gallery .eclat-guided[data-eclat-phase="prepare"] .eclat-personal{
+   padding:8px 12px!important;
+  }
+ }
+}
