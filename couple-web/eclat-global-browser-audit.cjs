@@ -147,7 +147,7 @@ async function main(){
          const props=['min-height','height','max-height','padding','padding-block','padding-block-start','padding-block-end','display'];const active=props.filter(k=>rule.style.getPropertyValue(k));
          if(active.length)result.push({from:href.split('/').pop(),layer,selector:rule.selectorText,style:Object.fromEntries(active.map(k=>[k,rule.style.getPropertyValue(k)+(rule.style.getPropertyPriority(k)?' !important':'')]))});
         }};
-        return selectors.map(selector=>{const el=document.querySelector(selector);if(!el)return {selector,missing:true};const cs=getComputedStyle(el),matched=[];for(const sheet of document.styleSheets){try{scan(sheet.cssRules,sheet.href||'inline',el,matched);}catch{}}return {selector,computed:{minHeight:cs.minHeight,height:cs.height,maxHeight:cs.maxHeight,padding:cs.padding,display:cs.display},matched:matched.slice(-55)};});
+        return selectors.map(selector=>{const el=document.querySelector(selector);if(!el)return {selector,missing:true};const cs=getComputedStyle(el),matched=[];for(const sheet of document.styleSheets){try{scan(sheet.cssRules,sheet.href||'inline',el,matched);}catch{}}return {selector,inlineStyle:el.getAttribute('style'),inlineMinHeight:el.style.getPropertyValue('min-height'),inlinePriority:el.style.getPropertyPriority('min-height'),computed:{minHeight:cs.minHeight,height:cs.height,maxHeight:cs.maxHeight,padding:cs.padding,display:cs.display},matched:matched.slice(-55)};});
        });
        console.log('ECLAT_CASCADE_DEBUG',JSON.stringify(cascade));
       }
