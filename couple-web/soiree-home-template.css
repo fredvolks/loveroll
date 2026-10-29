@@ -244,3 +244,28 @@
   outline:2px solid #ffe2b1!important;outline-offset:2px!important;
  }
 }
+
+/* LR-AUDIT-GLOBAL — keep the LR-012 active Soirée appearance: the
+   deprecated queue-v102 stylesheet is NOT shipped. Enforce touch targets
+   and safe scrolling in the existing active Soirée layer only. */
+@layer loveroll-soiree-readability {
+ @media(max-width:767px){
+  #app.loveroll-evening-page .evening-queue-modal.is-detail .evening-queue-content.is-detail{
+   -webkit-overflow-scrolling:touch;overflow-y:auto!important;overscroll-behavior:contain;
+  }
+  #app.loveroll-evening-page .evening-queue-modal.is-detail .evening-queue-detail{
+   min-height:0;overflow:visible;
+  }
+  #app.loveroll-evening-page .evening-queue-modal.is-detail
+  :is(.evening-queue-nav button,.timer-panel .actions button,.timer-panel .pill,
+      .evening-queue-detail>.evening-primary,.evening-queue-detail>.subtle){
+   min-height:44px!important;
+  }
+  #app.loveroll-evening-page .evening-queue-modal.is-detail .timer-panel .chipline{
+   flex-wrap:wrap!important;
+  }
+  #app.loveroll-evening-page .evening-queue-modal.is-detail .timer-panel>small{
+   display:block!important;white-space:normal;
+  }
+ }
+}

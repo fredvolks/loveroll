@@ -21,3 +21,16 @@ test('Private queue and full official card remain accessible in an independent d
  assert.match(read('index.html'),/evening-editorial\.css/);
  assert.match(read('service-worker.js'),/evening-editorial\.css/);
 });
+
+test('Private challenge 44px accessibility styles load without activating deprecated D100 skin',()=>{
+ const html=read('index.html'),sw=read('service-worker.js'),active=read('soiree-home-template.css');
+ assert.doesNotMatch(html,/evening-queue-fixed-v102\.css|evening-private-queue\.css/,
+  'Keep obsolete modal and D100 skin out of production');
+ assert.ok(html.includes('soiree-home-template.css?v='),'Load the approved Soirée stylesheet');
+ assert.ok(sw.includes("'./soiree-home-template.css'"),'Cache approved Soirée styles offline');
+ assert.ok(active.includes('LR-AUDIT-GLOBAL — keep the LR-012 active Soirée appearance'));
+ assert.match(active,/min-height:44px!important/,'Real Soirée challenge buttons use accessible touch targets');
+ assert.match(active,/-webkit-overflow-scrolling:touch/,'Short phones can scroll long challenge text');
+ assert.match(active,/\.timer-panel>small\{[\s\S]*?display:block!important/,
+  'Do not hide timer explanations on compact phones');
+});
