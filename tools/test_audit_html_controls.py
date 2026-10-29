@@ -40,6 +40,15 @@ class ControlsAuditTests(unittest.TestCase):
         self.assertEqual(len(analyze("<input type='button'>")), 1)
         self.assertEqual(analyze("<input type='button' value='Confirmer'>"), [])
 
+    def test_hidden_icon_followed_by_visible_label(self):
+        self.assertEqual(analyze("<button><span aria-hidden='true'>★</span><span>Choisir</span></button>"), [])
+
+    def test_hidden_icon_only_nested(self):
+        self.assertEqual(len(analyze("<button><span aria-hidden='true'><b>★</b></span></button>")), 1)
+
+    def test_unclosed_nested_tag_does_not_hide_next_button(self):
+        self.assertEqual(analyze("<div aria-hidden='true'><span>secret</div><button>OK</button>"), [])
+
     def test_no_false_positive_on_void_elements(self):
         self.assertEqual(analyze("<button><img src='icon.png'><span>Oui</span></button>"), [])
 
