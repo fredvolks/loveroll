@@ -170,3 +170,21 @@ test('Éclat guided progress is announced and secondary controls stay touch acce
  assert.match(css,/button\.eclat-skip,button\.eclat-link,button\.eclat-note-save,summary/);
  assert.match(css,/min-height:44px!important/);
 });
+
+test('Éclat regroupe clairement les trois choix privés pour lecteurs d’écran',()=>{
+ const status={access:true,active:true,coffret_id:1,minutes:90,chapter_index:3,
+  chapter_number:3,chapter_total:8,variant_number:0,session_id:'a11y-choice',
+  my_choice:null,both_chosen:false,my_ready:false};
+ const prepare=eclatHtml({status,userId:'a',members:people});
+ const choose=eclatHtml({status,userId:'a',members:people,noteState:{moment_done:true}});
+ const waiting=eclatHtml({status:{...status,my_choice:1},userId:'a',members:people});
+ const revealed=eclatHtml({status:{...status,my_choice:1,both_chosen:true,outcome:2},userId:'a',members:people});
+ assert.match(choose,/class="eclat-choices" role="group" aria-label="Choix privé pour cette étape"/);
+ assert.equal((choose.match(/class="eclat-choice"/g)||[]).length,3);
+ assert.match(choose,/aria-valuemax="8" aria-valuenow="3" aria-valuetext="Étape 3 sur 8"/);
+ assert.doesNotMatch(prepare,/class="eclat-choices"/);
+ assert.doesNotMatch(waiting,/class="eclat-choices"/);
+ assert.doesNotMatch(revealed,/class="eclat-choices"/);
+ assert.match(waiting,/On attend ton partenaire/);
+ assert.match(revealed,/VOTRE SUITE COMMUNE/);
+});
