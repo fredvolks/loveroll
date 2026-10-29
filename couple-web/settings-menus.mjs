@@ -153,7 +153,7 @@ export function organizeSettingsMenus(root){
  if(source.querySelector('.json-preview'))path=['apercu'];
  const back=root.querySelector('.settings-back'),backHtml=back?.innerHTML;
  function locate(){let items=tree,current=null,valid=[];for(const key of path){current=items.find(item=>item.key===key);if(!current)break;valid.push(key);items=current.children||[];}path=valid;return {current,items};}
- function show(){
+ function show({announce=false}={}){
   const {current,items}=locate();const leaf=current&&!current.children;
   previousRoute=route;previousPath=[...path];body.dataset.settingsLocation=path.join('/');
   if(title)title.textContent=current?.label||baseTitle;
@@ -165,12 +165,19 @@ export function organizeSettingsMenus(root){
     if(item.node){item.node.removeAttribute('data-menu-hidden');q(item.node,'[data-menu-hidden]').forEach(el=>el.removeAttribute('data-menu-hidden'));menu.append(item.node);continue;}
     const button=document.createElement('button');button.type='button';button.className='settings-submenu-row lr-surface';button.dataset.settingsOpen=item.key;
     const text=document.createElement('span');text.textContent=item.label;const arrow=document.createElement('b');arrow.setAttribute('aria-hidden','true');arrow.textContent='›';button.append(text,arrow);
-    button.addEventListener('click',()=>{path.push(item.key);show();});menu.append(button);
+    button.addEventListener('click',()=>{path.push(item.key);show({announce:true});});menu.append(button);
    }
   }
   if(back){if(path.length){back.innerHTML='<span aria-hidden="true">‹</span><span></span>';back.lastElementChild.textContent=path.length>1?tree.find(item=>item.key===path[0])?.label||baseTitle:baseTitle;}else back.innerHTML=backHtml;}
+  // Every destination uses the same scroll panel. A long menu/leaf must not
+  // leave the next screen halfway down and hide its first controls.
+  body.scrollTop=0;
+  if(announce&&title){
+   title.tabIndex=-1;
+   title.focus({preventScroll:true});
+  }
  }
- const goBack=()=>{if(!body.isConnected||!path.length)return false;path.pop();show();return true;};
+ const goBack=()=>{if(!body.isConnected||!path.length)return false;path.pop();show({announce:true});return true;};
  back?.addEventListener('click',event=>{if(path.length){event.preventDefault();event.stopImmediatePropagation();goBack();}},true);
  root._settingsMenuBack=goBack;show();
  // JSON validation may add content without rebuilding the editor.
