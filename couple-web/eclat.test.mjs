@@ -154,3 +154,13 @@ test('Éclat approved intents and history suggestion work without sharing privat
  assert.match(eclatHtml({status,history:allStarted}),/Voir notre suggestion : Les cinq secrets/);
  assert.doesNotMatch(eclatHtml({status,historyError:true}),/eclat-recommendation/);
 });
+
+test('Éclat guided progress is announced and secondary controls stay touch accessible',()=>{
+ const active={access:true,active:true,coffret_id:1,minutes:60,chapter_index:1,chapter_number:1,chapter_total:6,variant_number:0,session_id:'progress-test',my_choice:null,both_chosen:false};
+ const html=eclatHtml({status:active,userId:'a',members:people});
+ assert.match(html,/role="progressbar" aria-label="Progression du coffret" aria-valuemin="0" aria-valuemax="6" aria-valuenow="1" aria-valuetext="Étape 1 sur 6"/);
+ assert.match(html,/data-action="eclat:choose:0"/);
+ const css=read('./eclat-guided.css');
+ assert.match(css,/button\.eclat-skip,button\.eclat-link,button\.eclat-note-save,summary/);
+ assert.match(css,/min-height:44px!important/);
+});

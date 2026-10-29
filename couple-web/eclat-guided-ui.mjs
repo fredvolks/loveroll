@@ -12,6 +12,8 @@ export function eclatGuidedPlay({stage,status,members,userId,noteState={}}){
  const final=Number(status.chapter_index)===Number(status.chapter_total);
  const outcome=Math.min(3,Math.max(1,Number(status.outcome)||1));
  const phase=revealed?'reveal':chosen?'wait':noteState.moment_done?'choose':noteState.playing?'play':'prepare';
+ const progressTotal=Math.max(1,Number(status.chapter_total)||1);
+ const progressNow=Math.min(progressTotal,Math.max(0,Number(status.chapter_index)||0));
  const fieldKey=String(status.session_id)+'-'+status.chapter_index;
  const noteId='eclat-note-'+fieldKey,clueId='eclat-clue-'+fieldKey;
  const noteUnavailable=noteState.loading||noteState.error;
@@ -44,7 +46,7 @@ export function eclatGuidedPlay({stage,status,members,userId,noteState={}}){
  }
  return '<section class="eclat-play eclat-guided" data-eclat-coffret="'+esc(c.id)+'" data-eclat-phase="'+phase+'">'+
   '<div class="eclat-guided-heading"><strong>'+esc(c.title)+'</strong><span>Étape '+status.chapter_index+' / '+status.chapter_total+' · Environ '+status.minutes+' min</span></div>'+
-  '<div class="eclat-progress-track"><span style="width:'+(100*Number(status.chapter_index)/Number(status.chapter_total))+'%"></span></div>'+
+  '<div class="eclat-progress-track" role="progressbar" aria-label="Progression du coffret" aria-valuemin="0" aria-valuemax="'+progressTotal+'" aria-valuenow="'+progressNow+'" aria-valuetext="Étape '+progressNow+' sur '+progressTotal+'"><span style="width:'+(100*progressNow/progressTotal)+'%"></span></div>'+
   '<div class="eclat-guided-content">'+content+'</div><div class="eclat-guided-actions">'+actions+'</div>'+
   '<footer class="eclat-play-footer"><small>'+(['choose','wait','reveal'].includes(phase)?'Chacun choisit et confirme sur son téléphone.':'Ta note reste privée. Rien n’est transmis à l’autre.')+'</small><div>'+button('library','Voir les coffrets','eclat-link')+button('end','Quitter le coffret','eclat-link')+'</div></footer></section>';
 }
