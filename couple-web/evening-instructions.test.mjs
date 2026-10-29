@@ -8,7 +8,8 @@ const html=read('./index.html');
 
 test('LR-012: recipient instructions stay escaped and keyboard reachable',()=>{
  assert.match(source,/<p class="evening-challenge-instructions" role="region" aria-label="Consigne du défi" tabindex="0">/);
- assert.match(source,/safe\(resolvedCard\(view\)\.description\)/);
+ assert.match(source,/safe\(adapted\?\.proposed_description\|\|resolvedCard\(view\)\.description\)/);
+ assert.match(source,/acceptedAdaptation\(state\.adaptations,view\.id\)/);
  assert.match(style,/\.evening-queue-modal\.is-detail \.evening-queue-detail>\.evening-challenge-instructions\{/);
  assert.match(style,/max-height:min\(32dvh,240px\)!important/);
  assert.match(style,/overflow-x:hidden!important;overflow-y:auto!important/);

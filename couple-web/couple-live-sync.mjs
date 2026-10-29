@@ -22,6 +22,12 @@ export function coupleSyncChanged(local,remote,{week,month,tab}={}){
   }))return true;
  }
  if(remote.invitation&&JSON.stringify(remote.invitation)!==JSON.stringify(local.eveningInvite))return true;
+ if(Array.isArray(remote.adaptations)){
+  const sign=list=>JSON.stringify((list||[]).map(a=>[
+   a.challenge_id,a.status,a.proposed_description,a.proposed_minutes
+  ]).sort((a,b)=>String(a[0]).localeCompare(String(b[0]))));
+  if(sign(remote.adaptations)!==sign(local.adaptations))return true;
+ }
  if(remote.passQuota){
   const signature=q=>JSON.stringify([q?.month||null,Number(q?.used),Number(q?.limit),Boolean(q?.can_pass)]);
   if(signature(remote.passQuota)!==signature(local.monthlyPassQuota))return true;
@@ -55,7 +61,8 @@ function sharedSignature(state){
   state.monthly?.monthly_restaurant?.id,state.eveningBoard,
   state.eveningInvite?.id,state.eveningInvite?.state,state.eveningInvite?.available,
   state.monthlyPassQuota?.month,state.monthlyPassQuota?.used,
-  state.monthlyPassQuota?.limit,state.monthlyPassQuota?.can_pass
+  state.monthlyPassQuota?.limit,state.monthlyPassQuota?.can_pass,
+  (state.adaptations||[]).map(a=>[a.challenge_id,a.status,a.proposed_description,a.proposed_minutes])
  ]);
 }
 /** Realtime fast path + secure fallback for browsers with sleeping/blocked sockets.
@@ -63,7 +70,7 @@ function sharedSignature(state){
  */
 export function createCoupleLiveSync({state,query,rpc,refresh,render,ready,week,month,formDirty,
   visible=()=>!document.hidden,clock=()=>Date.now(),online=()=>navigator.onLine}){
- let inRefresh=false,inProbe=false,refreshAgain=false,lastProbe=0,lastQuotaProbe=0,debounce=null;
+ let inRefresh=false,inProbe=false,refreshAgain=false,lastProbe=0,lastQuotaProbe=0,lastAdaptProbe=0,debounce=null;
  const eligible=()=>visible()&&!!state.user&&ready(state.coupleId,state.members);
  function request(delay=180){
   if(debounce!==null)clearTimeout(debounce);
@@ -111,6 +118,11 @@ export function createCoupleLiveSync({state,query,rpc,refresh,render,ready,week,
    ]);
    if(state.coupleId!==couple||state.diceStatus)return;
    const active=sessions.find(s=>s.finished_at==null)||null;
+   const checkAdapt=tab==='session'&&active&&(force||now-lastAdaptProbe>=10000);
+   if(checkAdapt)lastAdaptProbe=now;
+   const adaptations=checkAdapt?
+    await rpc('my_love_challenge_adaptations',{p_session:active.id}).catch(()=>null):null;
+   if(state.coupleId!==couple||state.diceStatus)return;
    let rollStatus=null,challenges=null,board=null;
    if((tab==='session'||tab==='home')&&active){
     [rollStatus,challenges,board]=await Promise.all([
@@ -121,7 +133,7 @@ export function createCoupleLiveSync({state,query,rpc,refresh,render,ready,week,
     ]);
    }
    if(state.coupleId!==couple||state.diceStatus)return;
-   if(coupleSyncChanged(state,{rolls,sessions,rollStatus,challenges,board,reviews,advent,invitation,passQuota},
+   if(coupleSyncChanged(state,{rolls,sessions,rollStatus,challenges,board,reviews,advent,invitation,passQuota,adaptations},
     {week:week(),month:month(),tab}))request(0);
   }catch(e){
    if(online())console.warn('Statut des dés en direct',e?.code||e?.message);

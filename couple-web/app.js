@@ -1,6 +1,7 @@
 import {organizeSettingsMenus} from './settings-menus.mjs?v=20261022-home228';
 import {showEveningCategoryReminder} from './evening-d100-template.mjs?v=20261028-lr027-web254';
 import {eveningInviteHtml,eveningInviteInboxHtml,isEveningInviteAction} from './evening-invitation.mjs?v=20261028-web254';
+import {adaptationHtml,acceptedAdaptation,adaptationInboxHtml} from './evening-adaptation.mjs?v=20261028-lr017';
 import {askEveningCategoryConfirmation,categoryConfirmEnabled,saveCategoryConfirmLocal} from './evening-category-confirm.mjs?v=20261027-web238';
 import {soundEnabled,setSoundEnabled,setLoveRollSoundUser,unlockLoveRollSounds,playLoveRollSound,soundSettingsHtml} from './loveroll-sounds.mjs?v=20261028-privacy250';
 import {isAcceptedTimedEveningChallenge,completeTimedEveningChallenge} from './timed-evening-completion.mjs?v=20261027-web240';
@@ -8,7 +9,7 @@ import {fitSurpriseMinimal} from './surprise-minimal.mjs?v=20261022-home228';
 import {eclatNoteKey,loadEclatNote,saveEclatNote} from './eclat-guidance.mjs?v=20261022-home228';
 import {loadEclatHistory} from './eclat-history.mjs?v=20261022-home228';
 import {enhanceGoldBacks} from './gold-arrows.mjs?v=20261022-home228';
-import {fitSoireeHomeTemplate,fitRubyCalendar} from './soiree-home-template.mjs?v=20261028-web255';
+import {fitSoireeHomeTemplate,fitRubyCalendar} from './soiree-home-template.mjs?v=20261028-web256';
 import { marketingHtml,authHtml,profileHtml,inviteProfileHtml,emailConfirmationHtml,profileGenderSelect,profilePlayStyleSelect,matchHtml,parseMonthDay,monthDayInputs } from './onboarding.mjs?v=20261018-style148';
 import {editorialHeader,editorialRow,editorialIcon} from './editorial-ui.mjs?v=20261017-ritual130';
 import {cardLibraryHtml,monthlyEditorHtml,adventEditorHtml,specialEditorHtml,importEditorHtml} from './editorial-editors.mjs?v=20261017-ritual130';
@@ -18,7 +19,7 @@ import {createCoupleLiveSync} from './couple-live-sync.mjs?v=20261017-advent119'
 import {playableSessionForWeekly} from './couple-reset-view.mjs';
 import {eveningDailyAccess} from './evening-daily-policy.mjs?v=20261016-daily100';
 import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw} from './evening-private-queue.mjs';
-import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261028-web255';
+import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261028-web256';
 import {saveEveningSelection,restoreEveningSelection,clearEveningSelection} from './evening-resume.mjs?v=20261027-web240';
 import {eclatHtml} from './eclat-ui.mjs?v=20261027-web242';
 import {previewMode,previewCanEdit,previewEclatStatus} from './account-preview-mode.mjs?v=20261020-test180';
@@ -28,7 +29,7 @@ import {futureCoupleStyleMix,playStyleLabel} from './play-style.mjs?v=20261018-s
 import {cycleIntensityQuestionnaireHtml} from './cycle-questionnaire.mjs?v=20261018-cycle149';
 import {DICE_WEIGHT_CONFIG,configuredDiceWeights,parseDiceWeightInputs} from './dice-weighting.mjs?v=20261018-weights146';
 import {premiumEveningHtml,updateEveningCategoryUi} from './premium-evening.mjs?v=20261028-lr027-web254';
-import {eveningHistoryMarkup,eveningLocalDay} from './evening-calendar.mjs?v=20261028-web255';
+import {eveningHistoryMarkup,eveningLocalDay} from './evening-calendar.mjs?v=20261028-web256';
 import {eveningReviewModal,validEveningReview} from './evening-review.mjs?v=20261016-person-review97';
 import {premiumSurpriseHtml,sixSpecialEvents} from './premium-surprise.mjs?v=20261022-home228';
 import {surpriseSlot,surpriseCustom,surpriseTitle,formatSurpriseDateInput,parseSurpriseDateInput} from './surprise-event-config.mjs?v=20261016-surprise109';
@@ -61,7 +62,7 @@ import {invitationStatus,coupleStats,formatCoupleDate,invitationEmailText,invita
 import {premiumConfirm,premiumCopyLink,focusInlineLoveDialog} from './premium-dialogs.mjs?v=20261017-complete127';
 
 
-const WEB_RELEASE='2026-10-28.255';
+const WEB_RELEASE='2026-10-28.256';
 const root=document.querySelector('#app');
 const enc=new TextEncoder(),dec=new TextDecoder();
 let diceCleanup=[],renderToken=0;
@@ -103,7 +104,7 @@ const worldText=key=>worldT(worldLocale(),key);
 const state={user:null,profile:null,members:[],coupleId:null,couple:null,
  tab:launchParams.has('settings')?'settings':(['home','session','special','advent'].includes(launchParams.get('open'))?launchParams.get('open'):'home'),weekly:null,monthly:{},session:null,personal:[],challenges:[],gifts:[],rollStatus:null,customCards:[],customCategory:'SENSUEL',customSlot:1,customSearch:'',customFilter:'all',monthlyActivities:[],monthlySlot:1,libraryScreen:'list',libraryImportKind:null,specialEditorKey:null,specialEditorStage:'D6_activite',specialEditorFace:1,adventEditorDay:1,pushDevice:null,
  events:[],journal:[],advent:[],advent2026Config:null,advent2026Days:[],selectedDay:1,adventYear:null,adventSelected:null,adventHistory:false,adventOpening:null,adventRevealing:false,adventServerDate:null,unlockKey:null,channel:null,
- occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningRefusalId:null,redrawReady:false,redrawBusy:false,loveExcludedCards:[],eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],monthlyPassQuota:null,calendarPassMonth:null,cycleStatus:null,cycleDeferred:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,eveningInvite:null,eveningInviteBusy:false,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoBookingEdit:false,referral:null,eclat:null,eclatGalleryScroll:0,eclatHistory:[],eclatHistoryCouple:null,eclatBrowse:false,eclatHistoryError:false,eclatSelection:1,eclatMinutes:30,eclatIntent:'all',eclatDetails:false,eclatMusic:false,eclatFinished:null,testModeEligible:false,testMode:'real'};
+ occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningRefusalId:null,adaptations:null,adaptEditingId:null,adaptBusy:false,redrawReady:false,redrawBusy:false,loveExcludedCards:[],eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],monthlyPassQuota:null,calendarPassMonth:null,cycleStatus:null,cycleDeferred:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,eveningInvite:null,eveningInviteBusy:false,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoBookingEdit:false,referral:null,eclat:null,eclatGalleryScroll:0,eclatHistory:[],eclatHistoryCouple:null,eclatBrowse:false,eclatHistoryError:false,eclatSelection:1,eclatMinutes:30,eclatIntent:'all',eclatDetails:false,eclatMusic:false,eclatFinished:null,testModeEligible:false,testMode:'real'};
 const names={SENSUEL:'Sensuel',COQUIN:'Coquin',SEXUEL:'Sexuel'};
 function isSharedCoupleReady(coupleId,members){
  return !!coupleId&&Array.isArray(members)&&members.length===2;
@@ -416,7 +417,7 @@ function frame(body,title='LOVEROLL',subtitle='Un jeu intime, juste pour vous de
  // never a fabricated pip result. Actual face comes from Supabase after rolling.
  const canvases=[...root.querySelectorAll('canvas[data-dice-sides]')];
  if(canvases.length){
-  import('./dice3d.js?v=20261028-web255').then(({dieOn})=>{
+  import('./dice3d.js?v=20261028-web256').then(({dieOn})=>{
    if(token!==renderToken)return;
    for(const canvas of canvases){
     if(!canvas.isConnected||canvas.loveRollDie)continue;
@@ -844,7 +845,7 @@ async function reload(){
   state.couple=null;state.members=[];state.weekly=null;state.monthly={};state.customCards=[];state.monthlyActivities=[];state.rollStatus=null;state.gifts=[];
   state.session=null;state.sessions=[];state.events=[];state.journal=[];state.eveningHistoryStats=[];state.eveningCalendarChallenges=[];state.weeklyRollHistory=[];state.calendarPassQuota=[];state.monthlyPassQuota=null;state.calendarPassMonth=null;state.cycleStatus=null;state.cycleDeferred=null;state.eveningReviews=[];state.reviewModalSessionId=null;
   state.advent=[];state.adventYear=null;state.adventSelected=null;state.adventServerDate=null;state.advent2026Config=null;state.advent2026Days=[];state.specialEventsConfig=null;state.specialEventKeys=[];state.unlockKey=null;
-  state.invitations=[];state.inviteDraft=null;state.eveningInvite=null;state.challengesHistory=[];state.eveningHistoryStats=[];state.eveningCalendarChallenges=[];state.eveningReviews=[];state.reviewModalSessionId=null;state.reviewDraft={};
+  state.invitations=[];state.inviteDraft=null;state.eveningInvite=null;state.adaptations=null;state.adaptEditingId=null;state.challengesHistory=[];state.eveningHistoryStats=[];state.eveningCalendarChallenges=[];state.eveningReviews=[];state.reviewModalSessionId=null;state.reviewDraft={};
   state.tab=['settings','personal-journal'].includes(state.tab)?state.tab:'home';
   state.guidance=state.wellbeing?await rpc('get_love_guidance',{}):'gentle';
   render();return;
@@ -997,13 +998,15 @@ async function refreshShared(){
   state.reviewDraft={};
  }
  if(state.session){
-  const [personal,challenges,status,board]=await Promise.all([
+  const [personal,challenges,status,board,adaptations]=await Promise.all([
     query('couple_personal_rolls',{eq:{session_id:state.session.id}}),
     query('couple_challenges',{eq:{session_id:state.session.id},order:'created_at'}),
     rpc('my_love_roll_status',{p_session:state.session.id}),
-    rpc('my_love_evening_board',{p_session:state.session.id})
+    rpc('my_love_evening_board',{p_session:state.session.id}),
+   rpc('my_love_challenge_adaptations',{p_session:state.session.id}).catch(()=>null)
   ]);
   state.personal=personal;
+  state.adaptations=Array.isArray(adaptations)?adaptations:null; // Hidden until the migration is available.
   // The SELECT policy also restricts these rows, so a partner never gets
   // another person's challenge title, description or D100 face.
   state.challenges=ownEveningChallenges(challenges,state.user.id,state.session.id);
@@ -1018,7 +1021,7 @@ async function refreshShared(){
   }
   state.eveningQueueSeen={session:state.session.id,ids:ownIds};
  }else{
-  state.personal=[];state.challenges=[];state.rollStatus=null;
+  state.personal=[];state.challenges=[];state.rollStatus=null;state.adaptations=null;state.adaptEditingId=null;
   state.eveningBoard=null;state.eveningQueueSeen=null;
   state.selectedEveningChallengeId=null;state.showEveningChallenges=false;
  }
@@ -1628,6 +1631,8 @@ function renderSession(){
  const selected=mineCards.find(c=>c.id===state.selectedEveningChallengeId);
  if(session&&state.showEveningChallenges){
   const view=selected;
+  const adapted=view?acceptedAdaptation(state.adaptations,view.id):null;
+  const proposal=view?state.adaptations?.find(a=>a.challenge_id===view.id):null;
   const idx=view?queuePosition(mineCards,view.id):-1;
   overlay='<div class="surprise-modal evening-queue-modal'+(view?' is-detail':'')+'" role="dialog" aria-modal="true" aria-label="Mes défis de ce soir">'+
    '<article class="surprise-modal-content evening-queue-content'+(view?' is-detail':'')+'">'+
@@ -1644,10 +1649,12 @@ function renderSession(){
       ' · Résultat : '+safe(view.face)+' · '+safe(queueLabel(view.status))+'</div>'+
      '<h2>'+safe(resolvedCard(view).title)+'</h2>'+
      '<div class="evening-challenge-scene" aria-hidden="true"></div>'+
-     '<p class="evening-challenge-instructions" role="region" aria-label="Consigne du défi" tabindex="0">'+safe(resolvedCard(view).description)+'</p>'+
+     '<p class="evening-challenge-instructions" role="region" aria-label="Consigne du défi" tabindex="0">'+safe(adapted?.proposed_description||resolvedCard(view).description)+'</p>'+
      (['proposed','accepted'].includes(view.status)?
-       timerWidget(view,resolvedCard(view).minutes):
+       proposal?.status==='pending'?'<p class="tiny-note">♡ Proposition en attente : le minuteur peut démarrer après la réponse.</p>':
+        timerWidget(view,adapted?.proposed_minutes??resolvedCard(view).minutes):
        '<p class="tiny-note">Ce défi est archivé dans votre historique.</p>')+
+     (state.adaptations!==null?adaptationHtml(view,{adaptation:proposal,viewerId:uid,editing:state.adaptEditingId===view.id,busy:state.adaptBusy}):'')+
      (view.status==='proposed'?
        button('evening-start:'+view.id,'▶ Commencer ce défi','class="evening-primary"'):'')+
      (view.status==='accepted'?
@@ -1692,7 +1699,8 @@ function renderSession(){
  }
  frame(premiumEveningHtml({
    session,members:state.members,me:uid,rolls:state.personal,status:state.rollStatus,
-   invitationHtml:eveningInviteHtml(state.eveningInvite,{partnerName:partner?.name,busy:state.eveningInviteBusy}),
+   invitationHtml:eveningInviteHtml(state.eveningInvite,{partnerName:partner?.name,busy:state.eveningInviteBusy})+
+     adaptationInboxHtml(state.adaptations,uid,{busy:state.adaptBusy}),
    turn,category:state.category,eveningWeights:state.couple?.evening_face_weights,eveningWeightsEnabled:state.couple?.evening_weights_enabled!==false,
    showSensuel:state.couple?.show_sensuel_button!==false,
    showSexuel:state.couple?.show_sexuel_button!==false,
@@ -2878,6 +2886,51 @@ async function handle(action,element){
   saveEveningSelection(localStorage,state.user.id,state.session.id,parts[0]);
   render();return;
  }
+ if(verb.startsWith('evening-adapt-')){
+  const action=verb.slice('evening-adapt-'.length),challengeId=parts[0];
+  if(state.adaptBusy)return;
+  if(state.adaptations===null)throw Error('Adapter le défi est indisponible sur ce serveur.');
+  const card=state.challenges.find(c=>c.id===challengeId);
+  const proposal=state.adaptations.find(a=>a.challenge_id===challengeId);
+  if(action==='open'||action==='dismiss'){
+   if(action==='open'&&(!card||card.status!=='proposed'))
+    throw Error('Ce défi ne peut pas être adapté.');
+   state.adaptEditingId=action==='open'?challengeId:null;render();return;
+  }
+  if(action==='propose'&&(!card||card.status!=='proposed'||state.adaptEditingId!==challengeId))
+   throw Error('Ouvre d’abord une proposition sur ton défi.');
+  if(['accept','decline'].includes(action)&&proposal?.approver_id!==state.user?.id)
+   throw Error('Cette proposition appartient à ton partenaire.');
+  if(action==='cancel'&&proposal?.proposer_id!==state.user?.id)
+   throw Error('Seul l’auteur peut annuler sa proposition.');
+  let description=null,minutes=null;
+  if(action==='propose'){
+   description=id('lr-adapt-text')?.value?.trim()||null;
+   const raw=id('lr-adapt-minutes')?.value?.trim()||'';
+   if(raw){
+    minutes=Number(raw);
+    if(!Number.isInteger(minutes)||minutes<1||minutes>120)
+     throw Error('Choisis une durée entière de 1 à 120 minutes.');
+   }
+   if(!description&&!minutes)throw Error('Propose une nouvelle consigne ou une durée.');
+   if(description?.length>1200)throw Error('La consigne ne peut pas dépasser 1200 caractères.');
+  }
+  state.adaptBusy=true;render();
+  try{
+   if(action==='propose')await rpc('love_adaptation_propose',{
+    p_challenge:challengeId,p_description:description,p_minutes:minutes});
+   else if(action==='cancel')await rpc('love_adaptation_cancel',{p_challenge:challengeId});
+   else if(action==='accept'||action==='decline')
+    await rpc('love_adaptation_respond',{p_challenge:challengeId,p_accept:action==='accept'});
+   else throw Error('Action d’adaptation inconnue.');
+   state.adaptEditingId=null;
+   await refreshAndShow();
+   notify(action==='propose'?'Proposition envoyée à ton partenaire.':
+    action==='accept'?'Adaptation acceptée pour ce défi seulement.':
+    action==='decline'?'Vous gardez le défi original.':'Proposition annulée.');
+  }finally{state.adaptBusy=false;render();}
+  return;
+ }
  if(verb==='evening-refuse'){
   if(!state.redrawReady)throw Error('La repige sécurisée n’est pas encore disponible sur ce serveur.');
   const item=ownEveningChallenges(state.challenges,state.user?.id,state.session?.id).find(x=>x.id===parts[0]);
@@ -2953,7 +3006,7 @@ async function handle(action,element){
   state.showEveningChallenges=true;state.selectedEveningChallengeId=picked.id;
   await refreshAndShow();
   const active=state.challenges.find(c=>c.id===picked.id);
-  const minutes=resolvedCard(active||picked).minutes;
+  const minutes=acceptedAdaptation(state.adaptations,picked.id)?.proposed_minutes??resolvedCard(active||picked).minutes;
   if(minutes>0){
    activeTimer(active||picked,minutes);
    if(!challengeTimer.running&&challengeTimer.remainingMs>0){
@@ -4630,6 +4683,6 @@ start().catch(error=>{fail(error);window.LoveRollBoot?.showFailure();});
 
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   window.addEventListener('load', () =>
-    navigator.serviceWorker.register('./service-worker.js?v=20261028-web255',
+    navigator.serviceWorker.register('./service-worker.js?v=20261028-web256',
      {scope:'./',updateViaCache:'none'}).then(reg=>reg.update()).catch(console.warn));
 }
