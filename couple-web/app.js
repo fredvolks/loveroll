@@ -1651,7 +1651,8 @@ function renderSession(){
      '<div class="evening-challenge-scene" aria-hidden="true"></div>'+
      '<p class="evening-challenge-instructions" role="region" aria-label="Consigne du défi" tabindex="0">'+safe(adapted?.proposed_description||resolvedCard(view).description)+'</p>'+
      (['proposed','accepted'].includes(view.status)?
-       timerWidget(view,adapted?.proposed_minutes??resolvedCard(view).minutes):
+       proposal?.status==='pending'?'<p class="tiny-note">♡ Proposition en attente : le minuteur peut démarrer après la réponse.</p>':
+        timerWidget(view,adapted?.proposed_minutes??resolvedCard(view).minutes):
        '<p class="tiny-note">Ce défi est archivé dans votre historique.</p>')+
      (state.adaptations!==null?adaptationHtml(view,{adaptation:proposal,viewerId:uid,editing:state.adaptEditingId===view.id,busy:state.adaptBusy}):'')+
      (view.status==='proposed'?
@@ -3005,7 +3006,7 @@ async function handle(action,element){
   state.showEveningChallenges=true;state.selectedEveningChallengeId=picked.id;
   await refreshAndShow();
   const active=state.challenges.find(c=>c.id===picked.id);
-  const minutes=resolvedCard(active||picked).minutes;
+  const minutes=acceptedAdaptation(state.adaptations,picked.id)?.proposed_minutes??resolvedCard(active||picked).minutes;
   if(minutes>0){
    activeTimer(active||picked,minutes);
    if(!challengeTimer.running&&challengeTimer.remainingMs>0){
