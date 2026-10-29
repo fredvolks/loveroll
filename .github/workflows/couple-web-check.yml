@@ -608,6 +608,7 @@ jobs:
         run: |
           node couple-web/premium-settings-visual-check.cjs
           node couple-web/settings-menus-browser-check.cjs
+          node couple-web/settings-scroll-navigation-browser-check.cjs
           node couple-web/shared-stage-browser-check.cjs
 
       - name: Verify premium gift/couple dialogs and safe notifications on S25 Ultra
