@@ -223,6 +223,18 @@ class ControlsAuditTests(unittest.TestCase):
     def test_anchor_role_button_with_name_passes(self):
         self.assertEqual(analyze("<a href='/go' role='button' aria-label='Jouer'></a>"), [])
 
+    def test_anchor_role_button_with_negative_tabindex_is_reported(self):
+        self.assertEqual(
+            analyze("<a role='button' href='/play' tabindex='-1' aria-label='Jouer'></a>"),
+            ["bouton personnalisé sans tabindex accessible"],
+        )
+
+    def test_anchor_role_button_native_focus_is_valid(self):
+        self.assertEqual(
+            analyze("<a role='button' href='/play' aria-label='Jouer'></a>"),
+            [],
+        )
+
     def test_no_false_positive_on_void_elements(self):
         self.assertEqual(analyze("<button><img src='icon.png'><span>Oui</span></button>"), [])
 
