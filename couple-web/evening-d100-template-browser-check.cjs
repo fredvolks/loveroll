@@ -107,26 +107,32 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   // A modal for the recipient can precede the "partner's turn" status:
   // dismiss it first when present, rather than waiting on hidden/old content.
   // This does NOT skip the official turn assertion after dismissal.
-  try{
-   await page.waitForFunction(()=>
-    !!document.querySelector('.evening-queue-modal [data-action="evening-close"]')||
-    /En attente du tour de ton partenaire/.test(
-     document.querySelector('.evening-primary-status')?.textContent||''),
-    null,{timeout:20000,polling:150});
-  }catch(error){
-   const state=await page.evaluate(()=>{
-    const c=document.querySelector('.evening-d35-col canvas');
-    return {face:c?.dataset.face,spinning:c?.loveRollDie?.readState()?.spinning,
+  // A software-WebGL Chromium page may stop scheduling frames after the official
+  // D100 settles. Playwright waitForFunction can time out despite the modal
+  // already being present (verified by a direct diagnostic DOM evaluation).
+  // Poll the ACTUAL DOM in the regular execution context, independent of rAF,
+  // and keep the exact official result and turn assertions below.
+  let postRoll;
+  for(let attempt=0;attempt<80;attempt++){
+   postRoll=await page.evaluate(()=>{
+    const die=document.querySelector('.evening-d35-col canvas');
+    const close=document.querySelector('.evening-queue-modal [data-action="evening-close"]');
+    const status=document.querySelector('.evening-primary-status')?.textContent||'';
+    return {face:die?.dataset.face,spinning:die?.loveRollDie?.readState()?.spinning,
      result:document.querySelector('.evening-d100-result')?.textContent,
-     primary:document.querySelector('.evening-primary-status')?.textContent,
-     overlays:[...document.querySelectorAll('.evening-queue-modal')].map(e=>({
-      className:e.className,closeCount:e.querySelectorAll('[data-action="evening-close"]').length})),
-     bodyBusy:document.querySelector('[aria-busy="true"]')?.className||null};
+     primary:status,closeCount:document.querySelectorAll('.evening-queue-modal [data-action="evening-close"]').length,
+     hasClose:!!close,partnerTurn:/En attente du tour de ton partenaire/.test(status),
+     overlays:[...document.querySelectorAll('.evening-queue-modal')].map(e=>e.className)};
    });
-   console.error('LR_D100_POST_ROLL_DIAGNOSTIC',JSON.stringify({width,height,state,
-    draws:world.calls.filter(c=>c.name?.startsWith('draw_for_partner')).map(c=>c.name)}));
-   throw error;
+   if(postRoll.hasClose||postRoll.partnerTurn)break;
+   await page.waitForTimeout(250);
   }
+  if(!postRoll?.hasClose&&!postRoll?.partnerTurn){
+   console.error('LR_D100_POST_ROLL_DIAGNOSTIC',JSON.stringify({width,height,state:postRoll,
+    draws:world.calls.filter(c=>c.name?.startsWith('draw_for_partner')).map(c=>c.name)}));
+  }
+  assert.ok(postRoll?.hasClose||postRoll?.partnerTurn,
+   'Official D100 draw must open a private challenge or display the partner turn: '+JSON.stringify({width,height,postRoll}));
   const queueModal=page.locator('.evening-queue-modal');
   if(await queueModal.count()){
    const close=queueModal.locator('[data-action="evening-close"]');
