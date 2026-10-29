@@ -155,6 +155,39 @@ async function main(){
       assert.ok(s.guidedActions&&Math.abs((s.cta.left+s.cta.right-s.guidedActions.left-s.guidedActions.right)/2)<=3,format.name+' guided primary CTA is not horizontally centered');
       report.push(s);
       await page.screenshot({path:path.join(output,'lr-eclat-global-'+format.name+'-guided.png')});
+
+      // Follow the REAL application actions, not a static rendering of phases.
+      // The synthetic couple fixture never connects to production accounts.
+      const checkPhase=async phase=>{
+       await page.locator('.eclat-guided[data-eclat-phase="'+phase+'"]').waitFor({state:'visible',timeout:12000});
+       const state=await snapshot(page,'guided-'+phase,format.name);
+       validate(state);
+       assert.deepEqual(state.guidedProgress,s.guidedProgress,format.name+' '+phase+' unexpectedly changed the official stage');
+       assert.ok(state.guidedTouchTargets.length>0&&state.guidedTouchTargets.every(t=>t.width>=44&&t.height>=44),
+        format.name+' '+phase+' undersized controls: '+JSON.stringify(state.guidedTouchTargets.filter(t=>t.width<44||t.height<44)));
+       report.push(state);
+       return state;
+      };
+      await page.locator('[data-action="eclat:note-play"]:enabled').click();
+      const playing=await checkPhase('play');
+      assert.ok(playing.cta&&playing.cta.bottom<=playing.nav.top+2,format.name+' play action hidden by navigation');
+      assert.equal(await page.locator('[data-action="eclat:note-done"]').count(),1,format.name+' cannot finish the moment');
+      await page.locator('[data-action="eclat:note-done"]:enabled').click();
+      const choosing=await checkPhase('choose');
+      assert.equal(await page.getByRole('group',{name:'Choix privé pour cette étape'}).count(),1,
+       format.name+' private choices not announced as a group');
+      assert.equal(await page.locator('.eclat-choices [data-action^="eclat:choose:"]').count(),3,
+       format.name+' must show the three real private choices');
+      await page.screenshot({path:path.join(output,'lr-eclat-global-'+format.name+'-choosing.png')});
+      await page.locator('[data-action="eclat:choose:1"]').click();
+      const waiting=await checkPhase('wait');
+      assert.equal(await page.locator('.eclat-choices').count(),0,format.name+' private choices still exposed after submission');
+      assert.equal(await page.locator('.eclat-wait[role="status"]').count(),1,
+       format.name+' missing accessible partner-waiting state');
+      assert.equal(await page.locator('[data-action="eclat:next"]').count(),0,
+       format.name+' exposes next before both partners choose');
+      assert.equal(waiting.cta,null,format.name+' displays a primary action while awaiting the partner');
+      await page.screenshot({path:path.join(output,'lr-eclat-global-'+format.name+'-waiting.png')});
      }
      assert.deepEqual(errors,[],format.name+' '+mode+' browser exceptions');
      console.log('LR_ECLAT_GLOBAL_OK',format.name,mode);
