@@ -657,7 +657,10 @@ export function dieOn(canvas,sides,value,rolling){
    // Random tumbling and the launch hop may project outside the theater.
    // Retain real WebGL size, original roll angles and the confirmed face.
    // Only the moving model shifts into the available photographed scene.
-   if(sides===100&&canvas.closest('.evening-d35-col')){
+   // Projecting the complete high-polyhedron for every frame is expensive.
+   // Other screen sizes already fit the official scene; reserve this
+   // corrective guard for short phone theaters where overflow was observed.
+   if(shortD100Theater&&canvas.closest('.evening-d35-col')){
     const hero=canvas.closest('.evening-d100-theater');
     if(hero){
      const rect=canvas.getBoundingClientRect(),region=hero.getBoundingClientRect();
