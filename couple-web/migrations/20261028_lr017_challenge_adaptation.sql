@@ -167,11 +167,15 @@ BEGIN
  SELECT coalesce(jsonb_agg(jsonb_build_object(
   'challenge_id',a.challenge_id,'proposer_id',a.proposer_id,
   'approver_id',a.approver_id,'proposed_description',a.proposed_description,
-  'proposed_minutes',a.proposed_minutes,'status',a.status)
+  'proposed_minutes',a.proposed_minutes,
+  'status',CASE WHEN a.status='pending' AND
+   (c.status<>'proposed' OR session.finished_at IS NOT NULL)
+   THEN 'obsolete' ELSE a.status END)
   ORDER BY a.created_at),'[]'::jsonb)
  INTO v_rows
  FROM public.love_challenge_adaptations a
  JOIN public.couple_challenges c ON c.id=a.challenge_id
+ JOIN public.couple_sessions session ON session.id=c.session_id
  WHERE a.session_id=p_session AND a.couple_id=v_couple
   AND c.session_id=p_session AND c.couple_id=v_couple
   AND (a.proposer_id=auth.uid() OR a.approver_id=auth.uid());
