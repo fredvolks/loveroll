@@ -19,6 +19,10 @@
  border-radius:26px;background:linear-gradient(118deg,#ffbed315,transparent 33%,transparent 75%,#ff398117);
 }
 .lr-dialog-card>*{position:relative;z-index:1}
+/* The dismiss control must remain the topmost interactive element: the
+   following content layer previously intercepted taps on the visible ×. */
+.lr-dialog-card > .lr-dialog-close{z-index:3}
+
 .lr-dialog-icon{
  margin:2px auto 12px;width:76px;height:76px;display:grid;place-items:center;
  font-size:42px;color:#ff94c6;border-radius:50%;border:1px solid #f6539d;
