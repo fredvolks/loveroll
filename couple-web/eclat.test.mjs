@@ -114,7 +114,13 @@ test('Photographic Éclat shows exactly 12 clickable matching coffret pictures',
  assert.match(gallery,/--photo-y:0\.00000%/);
  assert.match(gallery,/--photo-y:100\.00000%/);
  // The discovery recommendation opens a detail too, but is not a thirteenth coffret.
- assert.equal((gallery.match(/<button type="button" class="eclat-tile" data-action="eclat:detail:\d+" aria-label="Ouvrir le coffret \d{2} :/g)||[]).length,12);
+ // Match semantic list items without freezing unrelated attribute order.
+ assert.equal((gallery.match(/<button\b[^>]*\bclass="eclat-tile"[^>]*\bdata-action="eclat:detail:\d+"[^>]*\baria-label="Ouvrir le coffret \d{2} :/g)||[]).length,12);
+ assert.match(gallery,/data-action="eclat:intent:all"[^>]*aria-pressed="true"/,'Default filter is conveyed to screen readers');
+ assert.equal((gallery.match(/data-action="eclat:intent:[^"]+"[^>]*aria-pressed="true"/g)||[]).length,1,'Exactly one filter is selected');
+ const detail=eclatHtml({status:{access:true},details:true,selected:12,minutes:90});
+ assert.match(detail,/data-action="eclat:minutes:90"[^>]*aria-pressed="true"/,'Chosen duration is accessible');
+ assert.equal((detail.match(/data-action="eclat:minutes:\d+"[^>]*aria-pressed="true"/g)||[]).length,1,'Exactly one duration is selected');
  assert.doesNotMatch(gallery,/<div class="eclat-intro">/);
  const style=read('./eclat-photo-gallery-v179.css');
  assert.match(style,/eclat-photo-strip\.webp/);
