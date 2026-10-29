@@ -53,12 +53,12 @@ class ControlsAudit(HTMLParser):
                 self.hidden_depth += 1
 
         if tag == "button":
-            self.button_stack.append({"line": line, "attrs": attrs, "text": [], "has_image_alt": False})
+            self.button_stack.append({"line": line, "attrs": attrs, "text": [], "has_image_alt": False, "hidden": hidden})
         elif tag == "img" and self.button_stack and not hidden and attrs.get("alt", "").strip():
             self.button_stack[-1]["has_image_alt"] = True
 
         if tag == "input" and attrs.get("type", "text").lower() in INPUT_BUTTON_TYPES:
-            if not has_aria_name(attrs) and not attrs.get("title", "").strip() and not attrs.get("value", "").strip() and not attrs.get("alt", "").strip():
+            if not hidden and not has_aria_name(attrs) and not attrs.get("title", "").strip() and not attrs.get("value", "").strip() and not attrs.get("alt", "").strip():
                 self.issues.append((line, "commande input sans nom accessible statique"))
         elif tag == "input":
             self.inputs.append((line, attrs))
@@ -75,7 +75,7 @@ class ControlsAudit(HTMLParser):
     def handle_endtag(self, tag: str) -> None:
         if tag == "button" and self.button_stack:
             button = self.button_stack.pop()
-            if not has_aria_name(button["attrs"]) and not "".join(button["text"]).strip() and not button["has_image_alt"]:
+            if not button["hidden"] and not has_aria_name(button["attrs"]) and not "".join(button["text"]).strip() and not button["has_image_alt"]:
                 self.issues.append((button["line"], "bouton sans nom accessible statique"))
         if tag not in VOID_TAGS:
             # Fermer le bon ancêtre, même si des balises sont mal imbriquées.
