@@ -29,7 +29,7 @@ class ControlsAudit(HTMLParser):
         self.issues: list[tuple[int, str]] = []
         self.button_stack: list[dict] = []
         self.hidden_depth = 0
-        self.hidden_stack: list[bool] = []
+        self.element_stack: list[tuple[str, bool]] = []
         self.labels_for: set[str] = set()
         self.inputs: list[tuple[int, dict[str, str]]] = []
 
@@ -48,7 +48,7 @@ class ControlsAudit(HTMLParser):
 
         hidden = self.hidden_depth > 0 or attrs.get("aria-hidden", "").lower() == "true" or "hidden" in attrs
         if tag not in VOID_TAGS:
-            self.hidden_stack.append(hidden)
+            self.element_stack.append((tag, hidden))
             if hidden:
                 self.hidden_depth += 1
 
@@ -77,9 +77,14 @@ class ControlsAudit(HTMLParser):
             button = self.button_stack.pop()
             if not has_aria_name(button["attrs"]) and not "".join(button["text"]).strip() and not button["has_image_alt"]:
                 self.issues.append((button["line"], "bouton sans nom accessible statique"))
-        if tag not in VOID_TAGS and self.hidden_stack:
-            if self.hidden_stack.pop():
-                self.hidden_depth = max(0, self.hidden_depth - 1)
+        if tag not in VOID_TAGS:
+            # Fermer le bon ancêtre, même si des balises sont mal imbriquées.
+            match = next((i for i in range(len(self.element_stack) - 1, -1, -1)
+                          if self.element_stack[i][0] == tag), None)
+            if match is not None:
+                popped = self.element_stack[match:]
+                del self.element_stack[match:]
+                self.hidden_depth = max(0, self.hidden_depth - sum(hidden for _, hidden in popped))
 
     def finish(self) -> None:
         for line, attrs in self.inputs:
