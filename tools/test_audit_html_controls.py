@@ -190,6 +190,12 @@ class ControlsAuditTests(unittest.TestCase):
         parser.check_references()
         self.assertEqual(parser.issues, [])
 
+    def test_presentational_image_alt_cannot_name_button(self):
+        self.assertEqual(len(analyze("<button><img role='presentation' alt='Décoration'></button>")), 1)
+
+    def test_presentational_image_alt_cannot_name_link(self):
+        self.assertEqual(len(analyze("<a href='/next'><img role='none' alt='Suivant'></a>")), 1)
+
     def test_no_false_positive_on_void_elements(self):
         self.assertEqual(analyze("<button><img src='icon.png'><span>Oui</span></button>"), [])
 
