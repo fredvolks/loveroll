@@ -17,7 +17,7 @@ test('LR-025: Soirée entry header must never display the floating Masquer butto
  assert.match(ci,/node --test couple-web\/pages-soiree-privacy-header\.test\.mjs/);
 });
 
-test('LR-025: challenge cards retain an accessible Masquer control',()=>{
- assert.match(app,/class="lr-privacy-challenge-button" data-lr-privacy-hide>Masquer<\/button>/);
- assert.match(privacyCss,/#app\.loveroll-evening-page \.evening-queue-modal button\.lr-privacy-challenge-button/);
+test('LR-025: challenge cards no longer expose the obsolete Masquer control',()=>{
+ assert.doesNotMatch(app,/data-lr-privacy-hide|lr-privacy-challenge-button/);
+ assert.doesNotMatch(read('./index.html'),/privacy-screen\.(?:mjs|css)\?v=/);
 });
