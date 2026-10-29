@@ -70,11 +70,28 @@ async function snapshot(page,layout,key){
    .slice(0,12).map(e=>({tag:e.tagName,action:e.dataset.action||'',className:typeof e.className==='string'?e.className:''}));
   const overflow=inputs.filter(e=>{const r=rect(e);return r.left<-1||r.right>innerWidth+1;})
    .slice(0,10).map(e=>({action:e.dataset.action||'',text:e.textContent.slice(0,40)}));
+  // Durable LR-AUDIT-GLOBAL control inventory for EVERY real routed page.
+  // Capture metadata only, never input values or private account data; the
+  // screenshot/JSON can be reviewed by UX, visual, responsive and client QA.
+  const controlInventory=inputs.map((e,index)=>{
+   const bounds=rect(e);
+   const name=(e.getAttribute('aria-label')||e.getAttribute('title')||
+    e.getAttribute('aria-labelledby')&&document.getElementById(e.getAttribute('aria-labelledby'))?.textContent||
+    e.labels?.[0]?.textContent||e.innerText||e.getAttribute('placeholder')||'').trim().slice(0,120);
+   const inViewport=bounds.top>=0&&bounds.bottom<=innerHeight&&bounds.left>=0&&bounds.right<=innerWidth;
+   const point=inViewport?document.elementFromPoint(bounds.left+bounds.width/2,bounds.top+bounds.height/2):null;
+   return {index,tag:e.tagName.toLowerCase(),action:e.dataset.action||null,
+    name,role:e.getAttribute('role')||null,disabled:!!e.disabled||e.getAttribute('aria-disabled')==='true',
+    expanded:e.getAttribute('aria-expanded'),pressed:e.getAttribute('aria-pressed'),
+    minTouch44:bounds.width>=44&&bounds.height>=44,
+    inViewport,hitAtCenter:!inViewport?null:point===e||e.contains(point),
+    bounds};
+  });
   return {
    viewport:{width,height},page:key,mainClass:main.className,
    tabs:tabs.map(e=>({action:e.dataset.action,label:(e.getAttribute('aria-label')||e.innerText||'').trim(),active:e.classList.contains('active'),current:e.getAttribute('aria-current'),iconHidden:e.querySelector(':scope > span')?.getAttribute('aria-hidden'),disabled:e.disabled,rect:rect(e)})),
    nav:rect(nav),navLabel:nav.getAttribute('aria-label'),horizontalOverflow:document.documentElement.scrollWidth>innerWidth+1,
-   visibleControls:inputs.length,unnamed,offscreenControls:overflow,
+   visibleControls:inputs.length,controlInventory,unnamed,offscreenControls:overflow,
    closedDisclosureControls:[...main.querySelectorAll('details:not([open]) button,details:not([open]) input,details:not([open]) textarea')].filter(visible).length,
    meaningfulContent:(main.innerText||'').trim().length,
    renderedError:[...document.querySelectorAll('.toast.visible,[role="alert"]')].map(e=>(e.innerText||'').trim()).filter(Boolean).slice(0,5)
@@ -97,6 +114,10 @@ async function main(){
      await page.evaluate(()=>document.fonts.ready);
      const data=await snapshot(page,layout,destination.key);
      report.push(data);
+     assert.equal(data.controlInventory.length,data.visibleControls,
+      layout.name+' '+destination.key+' incomplete button/field inventory');
+     assert.ok(data.controlInventory.every(c=>c.bounds.width>0&&c.bounds.height>0),
+      layout.name+' '+destination.key+' visible interactive element has no hit box');
      assert.equal(data.tabs.length,5,layout.name+' '+destination.key+' missing one of the 5 destinations');
      assert.equal(data.tabs.filter(t=>t.active).length,1,layout.name+' '+destination.key+' has an ambiguous active tab');
      assert.equal(data.tabs.find(t=>t.active).action,'tab:'+destination.key,layout.name+' wrong destination selected');
@@ -119,7 +140,7 @@ async function main(){
      assert.equal(data.unnamed.length,0,layout.name+' '+destination.key+' visible controls lacking accessible names: '+JSON.stringify(data.unnamed));
      assert.equal(data.renderedError.length,0,layout.name+' '+destination.key+' unexpected visible errors: '+JSON.stringify(data.renderedError));
      await page.screenshot({path:path.join('design-captures','lr-global-nav-'+layout.name+'-'+destination.key+'.png')});
-     console.log('LR_NAV_OK',layout.name,destination.key,'visible controls',data.visibleControls,'unnamed',data.unnamed.length);
+     console.log('LR_NAV_OK',layout.name,destination.key,'visible controls',data.visibleControls,'undersized',data.controlInventory.filter(c=>!c.minTouch44).length,'center-hit-blocked',data.controlInventory.filter(c=>c.hitAtCenter===false).length,'unnamed',data.unnamed.length);
     }
     const unsafe=world.calls.filter(c=>c.name&&forbidden.test(c.name));
     assert.deepEqual(unsafe,[],layout.name+' navigation triggered a mutating RPC');
