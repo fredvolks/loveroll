@@ -3,8 +3,14 @@
 python3 -m unittest discover -s tools -p 'test_audit_html_controls.py'
 """
 import unittest
+import contextlib
+import io
+import sys
+import tempfile
+from pathlib import Path
+from unittest.mock import patch
 
-from audit_html_controls import ControlsAudit
+from audit_html_controls import ControlsAudit, main
 
 
 def analyze(html):
@@ -57,6 +63,19 @@ class ControlsAuditTests(unittest.TestCase):
 
     def test_visible_button_after_hidden_section_is_reported(self):
         self.assertEqual(len(analyze("<div hidden><button></button></div><button></button>")), 1)
+
+    def test_empty_directory_cannot_pass_audit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.object(sys, "argv", ["audit", directory]):
+                with contextlib.redirect_stderr(io.StringIO()):
+                    self.assertEqual(main(), 2)
+
+    def test_html_directory_can_be_scanned(self):
+        with tempfile.TemporaryDirectory() as directory:
+            Path(directory, "screen.html").write_text("<button>Jouer</button>", encoding="utf-8")
+            with patch.object(sys, "argv", ["audit", directory]):
+                with contextlib.redirect_stdout(io.StringIO()):
+                    self.assertEqual(main(), 0)
 
     def test_no_false_positive_on_void_elements(self):
         self.assertEqual(analyze("<button><img src='icon.png'><span>Oui</span></button>"), [])
