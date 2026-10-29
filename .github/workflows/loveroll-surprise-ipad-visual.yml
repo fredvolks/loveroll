@@ -1,0 +1,37 @@
+name: LoveRoll Surprise iPad one-photo visual verification
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'couple-web/ipad-android-stage-v236.css'
+      - 'couple-web/ipad-android-stage-v236.test.mjs'
+      - 'couple-web/ipad-surprise-one-photo-browser-check.cjs'
+      - 'couple-web/index.html'
+      - '.github/workflows/loveroll-surprise-ipad-visual.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  photo-parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify HD artwork contract
+        run: node --test couple-web/ipad-android-stage-v236.test.mjs
+      - name: Install pinned Chromium
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.56.0
+          npx playwright install --with-deps chromium
+      - name: Inspect Surprise on Android, iPad and PC viewports
+        run: node couple-web/ipad-surprise-one-photo-browser-check.cjs
+      - name: Keep visual evidence after any outcome
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LoveRoll-Surprise-iPad-one-HD-photo
+          path: design-captures/lr-surprise-one-photo-*.png
+          if-no-files-found: ignore
