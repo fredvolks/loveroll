@@ -562,6 +562,9 @@ jobs:
       - name: Verify all Éclat gallery cards are reachable in the scroll container
         if: matrix.group == 'experience'
         run: node couple-web/eclat-browser-check.cjs
+      - name: Verify guided Éclat prepare and private note match Pages
+        if: matrix.group == 'experience'
+        run: node couple-web/eclat-guided-browser-check.cjs
       - name: Archiver la comparaison réelle des coffrets
         if: always() && matrix.group == 'experience'
         uses: actions/upload-artifact@v4
