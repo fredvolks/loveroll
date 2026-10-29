@@ -92,8 +92,8 @@ export function eclatHtml({status=null,selected=1,minutes=30,intent='all',discov
    (discovery?'<nav class="eclat-intents" aria-label="Explorer les coffrets selon notre envie">'+ECLAT_INTENTIONS.map(item=>btn('eclat:intent:'+item.id,esc(item.label),'eclat-intent'+(group.id===item.id?' is-selected':''))).join('')+'</nav>':'')+ 
    (suggestion?'<button type="button" class="eclat-recommendation" data-action="eclat:suggest:'+suggestion.coffret.id+'" aria-label="Voir notre suggestion : '+esc(suggestion.coffret.title)+'"><span><small>NOTRE SUGGESTION · '+esc(suggestion.reason)+'</small><strong>'+esc(suggestion.coffret.title)+'</strong></span><span aria-hidden="true">Voir le coffret ›</span></button>':'')+
    '<h3 class="eclat-gallery-a11y">'+esc(group.label)+' · '+visibleCoffrets.length+' coffrets</h3>'+
-   '<div class="eclat-grid eclat-photo-grid" role="list">'+visibleCoffrets.map(coff=>
-    '<button role="listitem" type="button" class="eclat-tile" data-action="eclat:detail:'+coff.id+'" aria-label="Ouvrir le coffret '+String(coff.id).padStart(2,'0')+' : '+esc(coff.title)+'">'+
+   '<div class="eclat-grid eclat-photo-grid" role="group" aria-label="Les coffrets Éclat">'+visibleCoffrets.map(coff=>
+    '<button type="button" class="eclat-tile" data-action="eclat:detail:'+coff.id+'" aria-label="Ouvrir le coffret '+String(coff.id).padStart(2,'0')+' : '+esc(coff.title)+'">'+
      '<span aria-hidden="true" class="eclat-tile-photo" style="'+atlasPosition(coff.id)+'--photo-y:'+(100*(Number(coff.id)-1)/11).toFixed(5)+'%"></span>'+
      '<span class="eclat-tile-number">'+String(coff.id).padStart(2,'0')+' / 12</span>'+
      '<strong>'+esc(coff.title)+'</strong>'+
