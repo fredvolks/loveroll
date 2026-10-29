@@ -103,11 +103,27 @@ async function snapshot(page,layout,key){
     }:null,
     bounds};
   });
+  // LR-AUDIT: guard the real controls fixed by PR #156 at all seven
+  // responsive viewports, not just the presence of the bottom navigation.
+  const selectors={
+   home:'.home-odds-info',
+   session:'.ritual-mode-switcher .ritual-mode-tab,.evening-finale-calendar',
+   special:'.home-odds-info',
+   advent:'.advent-history-trigger',
+   settings:'.settings-sections .settings-section-row'
+  };
+  const touchTargets=[...main.querySelectorAll(selectors[key])].filter(visible).map(e=>{
+   const r=rect(e),centerX=r.left+r.width/2,centerY=r.top+r.height/2;
+   const onScreen=centerX>=0&&centerX<innerWidth&&centerY>=0&&centerY<innerHeight;
+   const hit=onScreen?document.elementFromPoint(centerX,centerY):null;
+   return {action:e.dataset.action||null,className:typeof e.className==='string'?e.className.slice(0,70):'',
+    width:r.width,height:r.height,centerHit:!onScreen?null:hit===e||e.contains(hit)};
+  });
   return {
    viewport:{width,height},page:key,mainClass:main.className,
    tabs:tabs.map(e=>({action:e.dataset.action,label:(e.getAttribute('aria-label')||e.innerText||'').trim(),active:e.classList.contains('active'),current:e.getAttribute('aria-current'),iconHidden:e.querySelector(':scope > span')?.getAttribute('aria-hidden'),disabled:e.disabled,rect:rect(e)})),
    nav:rect(nav),navLabel:nav.getAttribute('aria-label'),horizontalOverflow:document.documentElement.scrollWidth>innerWidth+1,
-   visibleControls:inputs.length,controlInventory,unnamed,offscreenControls:overflow,
+   visibleControls:inputs.length,controlInventory,touchTargets,unnamed,offscreenControls:overflow,
    closedDisclosureControls:[...main.querySelectorAll('details:not([open]) button,details:not([open]) input,details:not([open]) textarea')].filter(visible).length,
    meaningfulContent:(main.innerText||'').trim().length,
    renderedError:[...document.querySelectorAll('.toast.visible,[role="alert"]')].map(e=>(e.innerText||'').trim()).filter(Boolean).slice(0,5)
@@ -146,6 +162,13 @@ async function main(){
       assert.ok(tab.label.length>=2,layout.name+' '+destination.key+' has an unnamed navigation tab');
       assert.ok(tab.rect.width>=44&&tab.rect.height>=44,layout.name+' '+destination.key+' has undersized navigation target '+tab.action);
       assert.ok(tab.rect.left>=-1&&tab.rect.right<=layout.width+1,layout.name+' '+destination.key+' tab outside viewport '+tab.action);
+     }
+     for(const target of data.touchTargets){
+      assert.ok(target.width>=43.75&&target.height>=43.75,
+       layout.name+' '+destination.key+' real touch target under 44 CSS px: '+JSON.stringify(target));
+      // Detect transparent WebGL or layout layers stealing actual taps.
+      assert.notEqual(target.centerHit,false,
+       layout.name+' '+destination.key+' real action blocked at center: '+JSON.stringify(target));
      }
      assert.equal(data.horizontalOverflow,false,layout.name+' '+destination.key+' horizontal overflow');
      assert.ok(data.nav.bottom>=layout.height-2&&data.nav.bottom<=layout.height+2,layout.name+' '+destination.key+' navigation not anchored to bottom');

@@ -1,5 +1,5 @@
 /* v178: photo unmasked, captions and titles retain their identical shared anchors. */
-:root{--ritual-mode-height:clamp(39px,5.3dvh,48px);}
+:root{--ritual-mode-height:clamp(52px,5.3dvh,60px);}
 main#app .ritual-mode-switcher{
  box-sizing:border-box;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
  gap:3px;width:min(100%,540px);height:var(--ritual-mode-height);min-height:0;
@@ -72,7 +72,8 @@ main#app.loveroll-eclat-page .eclat-page-title>.ritual-page-title{
 }
 main#app.loveroll-eclat-page .eclat-shell>.ritual-mode-switcher{flex:none;margin:4px auto 5px;}
 @media(max-height:700px){
- :root{--ritual-mode-height:37px;}
+ /* Keep at least 44 CSS px per mode tab even on the shortest phones. */
+ :root{--ritual-mode-height:52px;}
  main#app.loveroll-evening-page .evening-intro>.ritual-mode-switcher{margin-top:1px;}
  main#app.loveroll-eclat-page .eclat-shell>.ritual-mode-switcher{margin-top:1px;margin-bottom:2px;}
 }
