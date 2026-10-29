@@ -221,3 +221,23 @@ test('network-first shell asset refreshes canonical offline cache without touchi
  assert.deepEqual(touched.map(x=>x[1]),[appRoot+'premium-dialogs.css',appRoot+'premium-dialogs.css']);
  assert.ok(touched.every(x=>x[0]==='loveroll-static-v'+release.build.split('.')[1]));
 });
+
+test('PWA release refreshes the actual iPad D100 CSS and ONE shared stage module',()=>{
+ const ipadTag=release.build.replaceAll('-','').replace('.','-ipad');
+ const d100=read('evening-d100-template.mjs');
+ const home=read('premium-home.mjs');
+ const evening=read('soiree-home-template.mjs');
+ assert.ok(html.includes('ipad-soiree-one-photo-v237.css?v='+ipadTag));
+ assert.ok(app.includes('evening-d100-template.mjs?v='+ipadTag));
+ assert.ok(evening.includes('evening-d100-template.mjs?v='+ipadTag),
+  'Soirée and app must share exactly one D100 module instance');
+ for(const [source,name] of [[d100,'D100'],[home,'Accueil'],[evening,'Soirée']]){
+  assert.ok(source.includes('shared-stage.mjs?v='+ipadTag),name+' must use refreshed iPad scene');
+ }
+ assert.ok(sw.includes('./ipad-soiree-one-photo-v237.css'));
+ assert.ok(sw.includes('./shared-stage.mjs'));
+ assert.ok(sw.includes('./evening-d100-template.mjs'));
+ assert.ok(app.includes("const WEB_RELEASE='"+release.build+"'"));
+ assert.ok(html.includes('app.js?v='+appTag));
+ assert.ok(app.includes('service-worker.js?v='+appTag));
+});
