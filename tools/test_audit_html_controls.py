@@ -128,6 +128,17 @@ class ControlsAuditTests(unittest.TestCase):
     def test_image_input_aria_label_is_accessible(self):
         self.assertEqual(analyze("<input type='image' aria-label='Jouer' src='play.png'>"), [])
 
+    def test_existing_labelledby_target_not_missing(self):
+        parser = ControlsAudit()
+        parser.feed("<button aria-labelledby='label'></button><span id='label'>Jouer</span>")
+        self.assertEqual([name for _, _, refs in parser.pending_references for name in refs.split() if name not in parser.ids], [])
+
+    def test_missing_labelledby_target_is_detected(self):
+        parser = ControlsAudit()
+        parser.feed("<button aria-labelledby='missing'></button>")
+        missing = [name for _, _, refs in parser.pending_references for name in refs.split() if name not in parser.ids]
+        self.assertEqual(missing, ["missing"])
+
     def test_no_false_positive_on_void_elements(self):
         self.assertEqual(analyze("<button><img src='icon.png'><span>Oui</span></button>"), [])
 
