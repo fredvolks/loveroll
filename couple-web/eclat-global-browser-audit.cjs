@@ -115,6 +115,9 @@ async function main(){
         assert.equal(await page.locator('[data-action="eclat:minutes:'+minutes+'"]').getAttribute('aria-pressed'),'true',format.name+' '+id+' '+minutes+' duration not announced');
         assert.equal(await page.locator('.eclat-duration [aria-pressed="true"]').count(),1,format.name+' '+id+' ambiguous duration selection');
         assert.ok(s.cta&&s.cta.width>=44&&s.cta.height>=44,format.name+' '+id+' primary CTA missing');
+        assert.ok(s.detail&&Math.abs((s.cta.left+s.cta.right-s.detail.left-s.detail.right)/2)<=3,format.name+' '+id+' main CTA is off center');
+        const sizes=await page.locator('.eclat-duration-choice').evaluateAll(nodes=>nodes.map(el=>{const r=el.getBoundingClientRect();return [r.width,r.height];}));
+        assert.ok(sizes.length===3&&sizes.every(([w,h])=>w>=44&&h>=44),format.name+' '+id+' duration controls smaller than 44px');
         assert.ok(s.cta.bottom<=s.nav.top+2,format.name+' '+id+' CTA obscured by navigation');
         report.push({...s,detailChildren:undefined});
        }
