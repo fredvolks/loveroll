@@ -45,12 +45,24 @@ const layouts=[
       scene:summary(scene),gallery:summary(gallery),month:summary(month),
       overflow:document.documentElement.scrollWidth>innerWidth+1,
       die:rect?{width:rect.width,height:rect.height,top:rect.top,bottom:rect.bottom}:null,
-      buttons:[...root.querySelectorAll('button')].filter(e=>e.getBoundingClientRect().height>=1).length
+      buttons:[...root.querySelectorAll('button')].filter(e=>e.getBoundingClientRect().height>=1).length,
+      layout:(()=>{
+       const rect=e=>{if(!e)return null;const r=e.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height};};
+       return {scene:rect(scene),button:rect(month?.querySelector('.surprise-primary')),
+        special:rect(root.querySelector('.surprise-special'))};
+      })()
      };
     });
     assert.ok(data.die&&data.die.width>=80&&data.die.height>=80,layout.name+' 3D stage collapsed');
     assert.ok(data.buttons>1,layout.name+' controls missing');
     assert.equal(data.overflow,false,layout.name+' page overflows horizontally');
+    if(layout.width>=768&&layout.width>layout.height){
+     const {scene,button,special}=data.layout;
+     assert.ok(scene&&button&&special,layout.name+' missing Surprise layout regions');
+     assert.ok(button.top>=scene.bottom-2,layout.name+' primary action must follow the die vertically');
+     assert.ok(button.right<=special.left+2,layout.name+' action overlaps the events column');
+     assert.ok(special.top<=scene.top+12,layout.name+' events not aligned beside the die');
+    }
     if(layout.width>=768){
      assert.match(data.photo,/loveroll-home-portrait-v202\.webp/,layout.name+' uses a different photograph');
      for(const [part,style] of Object.entries({scene:data.scene,gallery:data.gallery,month:data.month})){
