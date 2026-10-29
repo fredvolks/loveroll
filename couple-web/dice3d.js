@@ -652,10 +652,11 @@ export function dieOn(canvas,sides,value,rolling){
    // stays inside the photograph (the idle and final poses are unchanged).
    const shortD100Theater=sides===100&&photoSoiree&&
     window.innerWidth<=360&&window.innerHeight<=740;
-   // The projected-mesh clamp also covers taller phones. It is a no-op
-   // whenever every real vertex already fits within the theater.
-   const phoneD100Theater=sides===100&&photoSoiree&&
-    window.innerWidth<=430;
+   // Computing the complete D100 high-polyhedron bounds on every WebGL
+   // frame makes otherwise comfortable phones unresponsive. Only the
+   // documented 320/360px short theaters need this expensive projection.
+   // The taller 393/412/430px stages retain their natural native roll.
+   const phoneD100Theater=shortD100Theater;
    built.group.position.set(offset.x,offset.y*(shortD100Theater?.24:1),0);
    // A D100 at 360x640 has only ~5px of air above its resting mesh.
    // Random tumbling and the launch hop may project outside the theater.
