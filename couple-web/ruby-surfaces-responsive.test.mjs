@@ -37,3 +37,25 @@ test('LR-010 Home Cormorant typography and control tokens are available to iPad 
  assert.match(theme,/LoveRoll Cormorant/);
  assert.match(controls.slice(mobile),/\.lr-ruby-control\{/);
 });
+
+test('LR-AUDIT-GLOBAL: tablet and desktop Home controls reuse ruby materials',()=>{
+ const desktop=controls.slice(controls.indexOf('/* LR-AUDIT-GLOBAL-20261028'));
+ assert.match(desktop,/@media \(min-width:768px\)/);
+ assert.match(desktop,/#app \.lr-ruby-control \{/);
+ for(const token of ['--lr-control-glass','--lr-control-ink','--lr-control-font','--lr-control-shadow'])
+  assert.ok(desktop.includes('var('+token+')'),token);
+ for(const state of [':focus-visible',':disabled',':not(:disabled):active'])
+  assert.ok(desktop.includes('.lr-ruby-control'+state),state);
+ const shared=surfaces.slice(surfaces.indexOf('/* Use the shared material'));
+ assert.match(shared,/#app \.lr-surface:not\(\.lr-ruby-control\)/);
+ assert.match(shared,/background:var\(--lr-surface-fill\)/);
+});
+
+test('LR-AUDIT-GLOBAL: HTML requests the fresh shared iPad and mobile styles',()=>{
+ const entry=readFileSync(new URL('./index.html',import.meta.url),'utf8');
+ for(const name of ['ruby-surfaces','ruby-controls']){
+  assert.match(entry,new RegExp(name+'\\.css\\?v=20261028-lr-global-ux136'));
+ }
+ assert.ok(entry.indexOf('ruby-surfaces.css?v=') < entry.indexOf('ruby-controls.css?v='),
+  'Shared surfaces must be loaded before shared controls');
+});

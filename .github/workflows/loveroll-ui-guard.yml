@@ -1,0 +1,72 @@
+name: LoveRoll UI consistency guard
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'couple-web/**'
+      - 'scripts/loveroll-ui-guard*'
+      - '.github/workflows/loveroll-ui-guard.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'couple-web/**'
+      - 'scripts/loveroll-ui-guard*'
+      - '.github/workflows/loveroll-ui-guard.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ui-guard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify UI guard rules
+        run: node --test scripts/loveroll-ui-guard.test.cjs
+      - name: Check the PR's changed UI styles
+        if: github.event_name == 'pull_request'
+        run: node scripts/loveroll-ui-guard.cjs --base "origin/${{ github.base_ref }}"
+      - name: Check newly pushed UI styles
+        if: github.event_name == 'push'
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          if [[ "$BEFORE_SHA" =~ ^[0-9a-f]{40}$ && "$BEFORE_SHA" != "0000000000000000000000000000000000000000" ]]; then
+            node scripts/loveroll-ui-guard.cjs --base "$BEFORE_SHA"
+          else
+            echo 'No previous SHA: rule tests passed; no diff available.'
+          fi
+
+  visual-parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prepare synthetic visual checks
+        run: |
+          npm install --no-save --no-audit --no-fund playwright@1.56.0
+          npx playwright install --with-deps chromium
+          python3 -m http.server 8765 -d couple-web >/tmp/loveroll-ui-http.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8765/web-version.json >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/loveroll-ui-http.log
+          exit 1
+      - name: Check actual CSS material and focus at five screen widths
+        run: node couple-web/lr-global-ui-browser-check.cjs
+      - name: Preserve responsive visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: LoveRoll-LR-AUDIT-GLOBAL-ruby-controls
+          path: design-captures/lr-global-ruby-*.png
+          if-no-files-found: ignore
