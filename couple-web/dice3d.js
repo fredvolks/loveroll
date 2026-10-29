@@ -646,7 +646,13 @@ export function dieOn(canvas,sides,value,rolling){
    euler.set(angles[0],angles[1],angles[2]);
    built.group.quaternion.setFromEuler(euler);
    const offset=rollOffset(trajectory,elapsed);
-   built.group.position.set(offset.x,offset.y,0);
+   // On extra-short phones the marble theater is shallower than the physical
+   // D100's tumbling envelope. Preserve its real 3D rotation, server result and
+   // full-duration roll; only soften the *vertical hop* so the visible solid
+   // stays inside the photograph (the idle and final poses are unchanged).
+   const shortD100Theater=sides===100&&photoSoiree&&
+    window.innerWidth<=390&&window.innerHeight<=700;
+   built.group.position.set(offset.x,offset.y*(shortD100Theater?.24:1),0);
    // A D100 at 360x640 has only ~5px of air above its resting mesh.
    // Random tumbling and the launch hop may project outside the theater.
    // Retain real WebGL size, original roll angles and the confirmed face.
