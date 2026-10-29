@@ -651,7 +651,11 @@ export function dieOn(canvas,sides,value,rolling){
    // full-duration roll; only soften the *vertical hop* so the visible solid
    // stays inside the photograph (the idle and final poses are unchanged).
    const shortD100Theater=sides===100&&photoSoiree&&
-    window.innerWidth<=390&&window.innerHeight<=700;
+    window.innerWidth<=360&&window.innerHeight<=740;
+   // The projected-mesh clamp also covers taller phones. It is a no-op
+   // whenever every real vertex already fits within the theater.
+   const phoneD100Theater=sides===100&&photoSoiree&&
+    window.innerWidth<=430;
    built.group.position.set(offset.x,offset.y*(shortD100Theater?.24:1),0);
    // A D100 at 360x640 has only ~5px of air above its resting mesh.
    // Random tumbling and the launch hop may project outside the theater.
@@ -660,7 +664,7 @@ export function dieOn(canvas,sides,value,rolling){
    // Projecting the complete high-polyhedron for every frame is expensive.
    // Other screen sizes already fit the official scene; reserve this
    // corrective guard for short phone theaters where overflow was observed.
-   if(shortD100Theater&&canvas.closest('.evening-d35-col')){
+   if(phoneD100Theater&&canvas.closest('.evening-d35-col')){
     const hero=canvas.closest('.evening-d100-theater');
     if(hero){
      const rect=canvas.getBoundingClientRect(),region=hero.getBoundingClientRect();
