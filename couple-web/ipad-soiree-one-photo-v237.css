@@ -136,6 +136,14 @@
   ){
    grid-column:1/-1!important;min-width:0!important;
   }
+  /* In landscape the category row leaves a 276px theater. The REAL 352px
+     D100 can extend past that layout row; its projected mesh stays between
+     the category controls and the photographed marble after camera fitting.
+     A max-height:100% constraint made its WebGL canvas non-square. */
+  #app.has-evening-d100-template .evening-premium-view.has-evening-d100-template
+  .evening-d100-theater .love3d-stage{
+   max-height:none!important;
+  }
   #app.has-evening-d100-template .evening-premium-view.has-evening-d100-template .evening-choice{
    grid-auto-flow:row!important;
    grid-template-columns:repeat(3,minmax(0,1fr))!important;
