@@ -139,6 +139,31 @@ class ControlsAuditTests(unittest.TestCase):
         missing = [name for _, _, refs in parser.pending_references for name in refs.split() if name not in parser.ids]
         self.assertEqual(missing, ["missing"])
 
+    def test_cli_missing_labelledby_fails(self):
+        with tempfile.TemporaryDirectory() as directory:
+            Path(directory, "screen.html").write_text(
+                "<button aria-labelledby='absent'></button>", encoding="utf-8")
+            with patch.object(sys, "argv", ["audit", directory]):
+                output = io.StringIO()
+                with contextlib.redirect_stdout(output):
+                    self.assertEqual(main(), 1)
+                self.assertIn("aria-labelledby cible absente", output.getvalue())
+
+    def test_cli_forward_reference_passes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            Path(directory, "screen.html").write_text(
+                "<button aria-labelledby='label'></button><span id='label'>Jouer</span>",
+                encoding="utf-8")
+            with patch.object(sys, "argv", ["audit", directory]):
+                with contextlib.redirect_stdout(io.StringIO()):
+                    self.assertEqual(main(), 0)
+
+    def test_hidden_control_missing_reference_ignored(self):
+        parser = ControlsAudit()
+        parser.feed("<div hidden><button aria-labelledby='absent'></button></div>")
+        parser.check_references()
+        self.assertEqual(parser.issues, [])
+
     def test_no_false_positive_on_void_elements(self):
         self.assertEqual(analyze("<button><img src='icon.png'><span>Oui</span></button>"), [])
 
