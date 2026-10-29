@@ -118,6 +118,9 @@ def main() -> int:
         print(f"Chemin introuvable: {root}", file=sys.stderr)
         return 2
     files = list(discover(root))
+    if not files:
+        print(f"Aucun fichier HTML trouvé sous {root}; audit non exécuté.", file=sys.stderr)
+        return 2
     errors = 0
     for path in files:
         parser = ControlsAudit()
