@@ -178,3 +178,46 @@ test('LoveRoll 184 loads the final coffret visual fidelity skin',()=>{
  assert.ok(layer.includes('eclat-tile-arrow'));
  assert.ok(layer.includes('ritual-mode-premium'));
 });
+
+// Real service-worker fetch event: an online CSS fix must replace its offline
+// fallback, even when the public page used a versioned query-string URL.
+test('network-first shell asset refreshes canonical offline cache without touching API or other apps',async()=>{
+ const events={},stored=new Map(),touched=[],bg=[];
+ const appRoot='https://test.invalid/loveroll/';
+ const self={registration:{scope:appRoot},addEventListener:(name,handler)=>{events[name]=handler;}};
+ let online=true,body='version a';
+ const makeResponse=content=>({ok:true,body:content,clone:()=>makeResponse(content)});
+ const caches={open:async name=>({
+  put:async(key,response)=>{touched.push([name,key]);stored.set(key,response);},
+  match:async key=>stored.get(key)||undefined
+ })};
+ const ctx={URL,self,caches,
+  fetch:async()=>{if(!online)throw Error('offline');return makeResponse(body);},
+  Response:{error:()=>({error:true})}};
+ vm.runInNewContext(sw,ctx);
+ const run=async(url,method='GET')=>{
+  let promise=null;bg.length=0;
+  events.fetch({request:{url,method,mode:'cors'},respondWith:p=>{promise=p;},
+   waitUntil:p=>bg.push(p)});
+  if(!promise)return null;
+  const result=await promise;await Promise.all(bg);return result;
+ };
+ const url=appRoot+'premium-dialogs.css?v=20261029-touch';
+ const first=await run(url);
+ assert.equal(first.body,'version a');
+ assert.equal(stored.get(appRoot+'premium-dialogs.css').body,'version a',
+  'PWA must refresh the unversioned key the offline fallback reads');
+ body='version b';
+ await run(url);
+ assert.equal(stored.get(appRoot+'premium-dialogs.css').body,'version b',
+  'The latest online CSS must replace stale offline styles');
+ online=false;
+ const fallback=await run(url);
+ assert.equal(fallback.body,'version b');
+ assert.equal(await run(appRoot+'api/private'),null,
+  'Private API calls must bypass the application asset cache');
+ assert.equal(await run('https://other.test/mon-wallet-android/app.js'),null,
+  'Other origins and applications must remain untouched');
+ assert.deepEqual(touched.map(x=>x[1]),[appRoot+'premium-dialogs.css',appRoot+'premium-dialogs.css']);
+ assert.ok(touched.every(x=>x[0]==='loveroll-static-v'+release.build.split('.')[1]));
+});

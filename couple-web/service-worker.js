@@ -18,6 +18,15 @@ self.addEventListener('fetch',e=>{
  // stale HTTP cache; app assets are pre-cached strictly for offline fallback.
  e.respondWith(fetch(req,{cache:'no-store'}).then(response=>{
   if(!response.ok)throw Error('Asset temporarily unavailable: '+response.status);
+  // Network-first must also update the *offline* copy. Otherwise a CSS/JS
+  // correction displays online but reverts to its old appearance without
+  // network access, even after the user explicitly refreshed LoveRoll.
+  // Cache the same canonical path used by the offline fallback (no ?v=).
+  // Only known same-origin SHELL assets enter the cache, never API requests.
+  const fallback=new URL(isHome?'./index.html':u.pathname,root);
+  const offlineCopy=response.clone();
+  e.waitUntil(caches.open(CACHE).then(cache=>cache.put(fallback.href,offlineCopy))
+   .catch(()=>{})); // Full/disabled storage must never break online play.
   return response;
  }).catch(async()=>{
   const fallback=new URL(isHome?'./index.html':u.pathname,root);
