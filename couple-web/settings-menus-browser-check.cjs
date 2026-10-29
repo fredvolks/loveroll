@@ -1,5 +1,5 @@
 const {chromium}=require('playwright'),assert=require('node:assert/strict'),{createWorld,setupEditorial}=require('./editorial-fixture.cjs');
-(async()=>{const browser=await chromium.launch({headless:true});try{for(const [width,height] of [[360,640],[412,824],[393,852],[820,1180],[1366,768]]){
+(async()=>{const browser=await chromium.launch({headless:true});try{for(const [width,height] of [[320,568],[360,640],[412,650],[412,824],[393,852],[820,1180],[1366,768]]){
 const world=createWorld();world.testModeEligible=true;world.referral={enabled:true,couple_ready:true,code:'0123456789abcdef01234567',available_cad_cents:1500,annual_renewal_cad_cents:4999};
 const {page,context,errors}=await setupEditorial(browser,world,{width,height});
 for(const route of ['compte','couple','jeu','notifications','monde','confidentialite','application','admin','aide-des','parrainage']){
@@ -19,9 +19,15 @@ for(const route of ['compte','couple','jeu','notifications','monde','confidentia
   // It must scroll INSIDE the panel (accessible at zoom), not clip the last
   // preference and button, overflow horizontally or push the fixed app nav.
   const notifications=route==='notifications';
-  const scrollable=notifications&&['auto','scroll'].includes(g.overflowY);
+  // All long Settings views may scroll internally on short phones; the app
+  // itself and the bottom navigation must stay fixed without clipping controls.
+  const scrollable=['auto','scroll'].includes(g.overflowY);
   if(g.document>2||g.horizontal>2||(g.overflow>2&&!scrollable))
    throw Error(JSON.stringify({width,route,path,g}));
+  const navigation=await page.locator('.nav').boundingBox();
+  const panel=await page.locator('.settings-detail-body').boundingBox();
+  assert.ok(navigation&&panel&&panel.height>0&&panel.y+panel.height<=navigation.y+3,
+   'Settings content must not overlap the navigation on '+width+'×'+height+' route '+route+' path '+path.join('/'));
   if(notifications){
    for(const selector of [
     '[data-push-option="weekly"]',
