@@ -441,10 +441,18 @@ function nav(){
   ['advent','🎁',worldText('advent')],['settings','⚙',worldText('settings')]]:
  [['home','⌂',worldText('home')],...(isLoveAdmin()?[['library','♡','Mes cartes']]:[]),
   ['personal-journal','♥','Calendrier'],['settings','⚙',worldText('settings')]];
- return '<nav class="nav lr-ruby-nav lr-surface"><div class="nav-inner" style="grid-template-columns:repeat('+tabs.length+',minmax(0,1fr))">'+tabs.map(([key,icon,label])=>
- '<button data-action="tab:'+key+'" class="lr-ruby-tab '+((state.tab===key||(['session','personal-journal'].includes(key)&&state.tab==='evening-calendar')||(key==='special'&&state.tab==='occasions')||(key==='session'&&state.tab==='eclat')||(key==='settings'&&!tabs.some(([tab])=>tab===state.tab)&&['library','monthly-library','advent-editor','special-editor','journal'].includes(state.tab)))?'active':'')+'"'+(state.diceStatus?' disabled':'')+'><span>'+navIcon(key,icon)+
- '</span>'+safe(label)+(key==='session'&&state.eveningInvite?.direction==='received'&&
-  ['pending','maybe'].includes(state.eveningInvite?.state)?'<span class="lr-evening-invite-dot" aria-label="Invitation reçue">♥</span>':'')+'</button>').join('')+'</div></nav>';
+ return '<nav class="nav lr-ruby-nav lr-surface" aria-label="Navigation principale"><div class="nav-inner" style="grid-template-columns:repeat('+tabs.length+',minmax(0,1fr))">'+tabs.map(([key,icon,label])=>{
+  const active=state.tab===key||
+   (['session','personal-journal'].includes(key)&&state.tab==='evening-calendar')||
+   (key==='special'&&state.tab==='occasions')||
+   (key==='session'&&state.tab==='eclat')||
+   (key==='settings'&&!tabs.some(([tab])=>tab===state.tab)&&
+    ['library','monthly-library','advent-editor','special-editor','journal'].includes(state.tab));
+  return '<button type="button" data-action="tab:'+key+'" class="lr-ruby-tab '+(active?'active':'')+'"'+
+   (active?' aria-current="page"':'')+(state.diceStatus?' disabled':'')+'><span aria-hidden="true">'+navIcon(key,icon)+
+   '</span>'+safe(label)+(key==='session'&&state.eveningInvite?.direction==='received'&&
+   ['pending','maybe'].includes(state.eveningInvite?.state)?'<span class="lr-evening-invite-dot" aria-label="Invitation reçue">♥</span>':'')+'</button>';
+ }).join('')+'</div></nav>';
 }
 function bindActions(){
  const categoryPref=root.querySelector('#evening-category-confirm-pref');
