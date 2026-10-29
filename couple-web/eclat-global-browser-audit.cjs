@@ -179,6 +179,27 @@ async function main(){
        assert.ok(s.guidedContent&&s.cta.top-s.guidedContent.bottom<=54,
         format.name+' activity and primary CTA separated by too much blank space');
       }
+      // On landscape tablets/desktop, the note and its optional disclosures
+      // must be visible at once, not cut off inside a hidden scroll region.
+      if(format.width>=1024&&format.height>=700){
+       const panels=await page.evaluate(()=>{
+        const container=document.querySelector('.eclat-guided-content');
+        const together=container?.querySelector(':scope > .eclat-together');
+        const personal=container?.querySelector(':scope > .eclat-personal');
+        const rules=container?.querySelector(':scope > .eclat-rules');
+        if(!container||!together||!personal||!rules)return null;
+        const rect=el=>{const r=el.getBoundingClientRect();return {top:r.top,bottom:r.bottom};};
+        return {layout:getComputedStyle(container).display,
+         container:rect(container),together:rect(together),personal:rect(personal),rules:rect(rules)};
+       });
+       assert.ok(panels&&panels.layout==='grid',
+        format.name+' prepare view should use two readable columns: '+JSON.stringify(panels));
+       assert.ok(Math.abs(panels.together.top-panels.personal.top)<=2,
+        format.name+' private note is not beside the shared moment: '+JSON.stringify(panels));
+       assert.ok(panels.personal.bottom<=panels.container.bottom+2&&
+        panels.rules.bottom<=panels.container.bottom+2,
+        format.name+' private notes/rules clipped inside the activity pane: '+JSON.stringify(panels));
+      }
       report.push(s);
       await page.screenshot({path:path.join(output,'lr-eclat-global-'+format.name+'-guided.png')});
 

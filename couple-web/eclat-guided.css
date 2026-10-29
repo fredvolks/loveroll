@@ -58,6 +58,26 @@
   #app .eclat-guided-content{flex:0 1 auto!important;}
   #app .eclat-guided .eclat-play-footer{margin-top:auto!important;}
  }
+ /* iPad landscape and PC: show the moment beside the private note instead
+    of hiding the note's lower edge behind an internal scrolling viewport. */
+ @media (min-width:1024px) and (min-height:700px){
+  #app .eclat-guided[data-eclat-phase="prepare"] .eclat-guided-content{
+   display:grid!important;
+   grid-template-columns:repeat(2,minmax(0,1fr))!important;
+   align-items:start!important;
+   align-content:start!important;
+   gap:10px 14px!important;
+  }
+  #app .eclat-guided[data-eclat-phase="prepare"] .eclat-guided-content>.eclat-together{
+   grid-column:1!important;grid-row:1!important;
+  }
+  #app .eclat-guided[data-eclat-phase="prepare"] .eclat-guided-content>.eclat-personal{
+   grid-column:2!important;grid-row:1!important;
+  }
+  #app .eclat-guided[data-eclat-phase="prepare"] .eclat-guided-content>.eclat-rules{
+   grid-column:1 / -1!important;
+  }
+ }
  /* Android's resizes-content keyboard leaves a short viewport. Keep the
     writing area usable; ordinary portrait layout returns when it closes.
     focus-within also covers the save button, avoiding a moving click target. */
