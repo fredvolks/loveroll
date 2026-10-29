@@ -562,6 +562,9 @@ jobs:
       - name: Verify all Éclat gallery cards are reachable in the scroll container
         if: matrix.group == 'experience'
         run: node couple-web/eclat-browser-check.cjs
+      - name: Verify Soirée/Éclat mode typography and gallery parity before Pages
+        if: matrix.group == 'experience'
+        run: node couple-web/eclat-night-browser-check.cjs
       - name: Verify guided Éclat prepare and private note match Pages
         if: matrix.group == 'experience'
         run: node couple-web/eclat-guided-browser-check.cjs
