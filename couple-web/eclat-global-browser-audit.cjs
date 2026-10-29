@@ -40,7 +40,8 @@ async function snapshot(page,stage,format){
    cta:bounds(root.querySelector('.eclat-primary')),
    guidedActions:bounds(root.querySelector('.eclat-guided-actions')),
    duplicatedGuidedTitle:visible(root.querySelector('.eclat-guided-heading strong')),
-   guidedTouchTargets:[...root.querySelectorAll('.eclat-guided button,.eclat-guided summary')].filter(visible).map(el=>({name:el.dataset.action||el.textContent.trim().slice(0,40),width:bounds(el).width,height:bounds(el).height})),
+   guidedTouchTargets:[...root.querySelectorAll('.eclat-guided button,.eclat-guided summary')].filter(visible).map(el=>{const st=getComputedStyle(el),r=bounds(el);return {name:el.dataset.action||el.textContent.trim().slice(0,40),width:r.width,height:r.height,minHeight:st.minHeight,heightCss:st.height,transform:st.transform,visibility:st.visibility};}),
+   guidedStylesheets:[...document.styleSheets].map(s=>s.href).filter(h=>h&&/eclat-(guided|night-gallery)\.css/.test(h)),
    guidedProgress:(()=>{const bar=root.querySelector('.eclat-guided [role="progressbar"]');return bar?{label:bar.getAttribute('aria-label'),min:bar.getAttribute('aria-valuemin'),max:bar.getAttribute('aria-valuemax'),now:bar.getAttribute('aria-valuenow'),text:bar.getAttribute('aria-valuetext')}:null;})(),
    selected:[...root.querySelectorAll('.eclat-duration-choice.is-selected')].map(e=>e.dataset.action),
    bodyText:root.innerText.trim().length};
@@ -139,7 +140,7 @@ async function main(){
       assert.ok(s.cta&&s.cta.bottom<=s.nav.top+2,format.name+' guided CTA overlaps navigation');
       assert.equal(s.duplicatedGuidedTitle,false,format.name+' duplicates the coffret title above its step');
       assert.deepEqual(s.guidedProgress,{label:'Progression du coffret',min:'0',max:'6',now:'1',text:'Étape 1 sur 6'},format.name+' progress inaccessible');
-      assert.ok(s.guidedTouchTargets.length>0&&s.guidedTouchTargets.every(t=>t.width>=44&&t.height>=44),format.name+' undersized guided controls: '+JSON.stringify(s.guidedTouchTargets.filter(t=>t.width<44||t.height<44)));
+      assert.ok(s.guidedTouchTargets.length>0&&s.guidedTouchTargets.every(t=>t.width>=44&&t.height>=44),format.name+' undersized guided controls: '+JSON.stringify({targets:s.guidedTouchTargets.filter(t=>t.width<44||t.height<44),stylesheets:s.guidedStylesheets}));
       assert.ok(s.guidedActions&&Math.abs((s.cta.left+s.cta.right-s.guidedActions.left-s.guidedActions.right)/2)<=3,format.name+' guided primary CTA is not horizontally centered');
       report.push(s);
       await page.screenshot({path:path.join(output,'lr-eclat-global-'+format.name+'-guided.png')});
