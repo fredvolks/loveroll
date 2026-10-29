@@ -73,7 +73,8 @@ class ControlsAudit(HTMLParser):
                 focusable = int(attrs.get("tabindex", "-1")) >= 0
             except ValueError:
                 focusable = False
-            if not focusable and tag not in {"a", "summary"}:
+            native_focus = (tag == "a" and "href" in attrs and "tabindex" not in attrs) or (tag == "summary" and "tabindex" not in attrs)
+            if not focusable and not native_focus:
                 self.issues.append((line, "bouton personnalisé sans tabindex accessible"))
 
         if tag == "area" and "href" in attrs and not hidden:
