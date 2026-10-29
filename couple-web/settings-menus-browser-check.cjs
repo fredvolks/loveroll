@@ -53,9 +53,16 @@ for(const route of ['compte','couple','jeu','notifications','monde','confidentia
  if(route==='compte'){
   for(const selector of ['#profile-name','#profile-gender','#profile-play-style','.settings-birthday-edit','input[readonly]','.account-test-modes','[data-action="profile"]','[data-action="signout"]']){
    assert.ok(await page.locator(selector).isVisible(),selector+' should be directly visible');
-   const box=await page.locator(selector).boundingBox();
-   const nav=await page.locator('.nav').boundingBox();
-   assert.ok(box.y+box.height<=nav.y,selector+' overlaps navigation');
+   const control=page.locator(selector).first();
+   await control.scrollIntoViewIfNeeded();
+   const [box,nav,panel]=await Promise.all([
+    control.boundingBox(),page.locator('.nav').boundingBox(),
+    page.locator('.settings-detail-body').boundingBox()
+   ]);
+   assert.ok(box&&nav&&panel&&box.y>=panel.y-2&&
+    box.y+box.height<=Math.min(nav.y,panel.y+panel.height)+2,
+    selector+' must scroll fully into the account panel above navigation on '+width+'×'+height+
+    ': '+JSON.stringify({box,nav,panel}));
   }
   assert.equal(await page.locator('[data-settings-open]').count(),0);
  }
