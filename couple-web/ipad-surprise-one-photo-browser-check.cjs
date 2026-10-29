@@ -11,7 +11,8 @@ const layouts=[
  {name:'android-control',width:412,height:915},
  {name:'ipad-portrait',width:820,height:1180},
  {name:'ipad-landscape',width:1180,height:820},
- {name:'desktop',width:1366,height:768}
+ {name:'desktop',width:1366,height:768},
+ {name:'ipad-landscape-host',width:1180,height:820,host:true}
 ];
 (async()=>{
  fs.mkdirSync('design-captures',{recursive:true});
@@ -21,6 +22,13 @@ const layouts=[
  try{
   for(const layout of layouts){
    const world=createWorld();
+   if(layout.host){
+    const key=new Intl.DateTimeFormat('en-CA',{
+     timeZone:'America/Toronto',year:'numeric',month:'2-digit'
+    }).format(new Date());
+    world.rolls.push({id:'synthetic-monthly-activity',couple_id:'c',
+     kind:'monthly_activity',key,face:12,created_at:new Date().toISOString()});
+   }
    const {page,context,errors}=await setupEditorial(browser,world,{
     width:layout.width,height:layout.height,query:'open=home',motion:'reduce'
    });
@@ -49,7 +57,8 @@ const layouts=[
       layout:(()=>{
        const rect=e=>{if(!e)return null;const r=e.getBoundingClientRect();return {left:r.left,right:r.right,top:r.top,bottom:r.bottom,width:r.width,height:r.height};};
        return {scene:rect(scene),button:rect(month?.querySelector('.surprise-primary')),
-        special:rect(root.querySelector('.surprise-special'))};
+        special:rect(root.querySelector('.surprise-special')),
+        legend:rect(root.querySelector('.surprise-host-legend'))};
       })()
      };
     });
@@ -62,6 +71,11 @@ const layouts=[
      assert.ok(button.top>=scene.bottom-2,layout.name+' primary action must follow the die vertically');
      assert.ok(button.right<=special.left+2,layout.name+' action overlaps the events column');
      assert.ok(special.top<=scene.top+12,layout.name+' events not aligned beside the die');
+     if(layout.host){
+      assert.ok(data.layout.legend,layout.name+' missing real D6 host legend');
+      assert.ok(data.layout.legend.bottom<=button.top+1,layout.name+' host legend overlaps button');
+      assert.ok(data.layout.legend.top>=scene.top-1,layout.name+' host legend outside content');
+     }
     }
     if(layout.width>=768){
      assert.match(data.photo,/loveroll-home-portrait-v202\.webp/,layout.name+' uses a different photograph');
