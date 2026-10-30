@@ -755,6 +755,62 @@ test('LR-026: stored D100 timer identity blocks cross-account restore without lo
  assert.equal(ownedSavedEveningTimerSnapshot(current,cardId,userId,''),null);
 });
 
+test('LR-026: real timer storage isolates two accounts switching on the same D100 card ID',()=>{
+ const source=app.slice(app.indexOf('function readSavedChallengeTimer('),
+  app.indexOf('function showTimerFinished(){'));
+ const memory=new Map();
+ const storage={getItem:key=>memory.get(key)??null,
+  setItem:(key,value)=>{memory.set(key,value);}};
+ const state={user:{id:'fred'},session:{id:'night-fred'},
+  redrawBusy:false,redrawBusyContext:null};
+ const clock={id:null,ownerUserId:null,ownerSessionId:null,durationMs:0,
+  remainingMs:0,deadline:0,running:false,notified:false,
+  autoCompletePending:false,decisionPending:false};
+ const runtime=Function('state','challengeTimer','localStorage','sessionStorage',
+  'ownedSavedEveningTimerSnapshot','ownsEveningTimerRecord',
+  source+';return {activeTimer,saveChallengeTimer,readSavedChallengeTimer};')(
+   state,clock,storage,storage,ownedSavedEveningTimerSnapshot,ownsEveningTimerRecord);
+ const card={id:'same-card'};
+ runtime.activeTimer(card,4);
+ assert.equal(clock.remainingMs,240000);
+ clock.remainingMs=160000;
+ runtime.saveChallengeTimer();
+ const fredKey='loveroll-challenge-clock:fred:same-card';
+ assert.equal(JSON.parse(memory.get(fredKey)).remainingMs,160000);
+ assert.equal(JSON.parse(memory.get(fredKey)).ownerSessionId,'night-fred');
+ state.user={id:'partner'};state.session={id:'night-partner'};
+ runtime.activeTimer(card,4);
+ assert.equal(clock.ownerUserId,'partner');
+ assert.equal(clock.ownerSessionId,'night-partner');
+ assert.equal(clock.remainingMs,240000,
+  'switching users cannot inherit the previous account countdown');
+ clock.remainingMs=110000;
+ runtime.saveChallengeTimer();
+ const partnerKey='loveroll-challenge-clock:partner:same-card';
+ assert.equal(JSON.parse(memory.get(partnerKey)).remainingMs,110000);
+ assert.equal(JSON.parse(memory.get(fredKey)).remainingMs,160000);
+ state.user={id:'fred'};state.session={id:'night-fred'};
+ runtime.activeTimer(card,4);
+ assert.equal(clock.remainingMs,160000,
+  'returning to the original user restores their own countdown');
+ state.user={id:'partner'};state.session={id:'night-other'};
+ runtime.activeTimer(card,4);
+ assert.equal(clock.remainingMs,240000,
+  'same account and challenge must not reuse a clock from a foreign evening');
+ // A clock saved by the old build (without tagged owner fields) is accepted.
+ state.user={id:'fred'};state.session={id:'night-fred'};
+ memory.set('loveroll-challenge-clock:fred:legacy',
+  JSON.stringify({durationMs:240000,remainingMs:90000,
+   deadline:0,running:false,notified:false,autoCompletePending:false}));
+ runtime.activeTimer({id:'legacy'},4);
+ assert.equal(clock.remainingMs,90000);
+ runtime.saveChallengeTimer();
+ const migrated=JSON.parse(memory.get('loveroll-challenge-clock:fred:legacy'));
+ assert.equal(migrated.cardId,'legacy');
+ assert.equal(migrated.ownerUserId,'fred');
+ assert.equal(migrated.ownerSessionId,'night-fred');
+});
+
 test('LR-026: timer restoration and expiry scanner reject mismatched stored owners',()=>{
  const saved=app.slice(app.indexOf('function saveChallengeTimer(){'),
   app.indexOf('function showTimerFinished(){'));
