@@ -14,6 +14,7 @@ on:
       - "couple-web/lr026-performance-profile.test.sql"
       - "couple-web/lr026-similarity-parity.test.sql"
       - "couple-web/lr026-eligible-performance.test.sql"
+      - "couple-web/lr026-live-pick-order.test.sql"
       - "couple-web/lr026-evening-flow.test.sql"
       - "couple-web/lr026-extract-helpers.cjs"
       - "couple-web/lr026-postgres-rpc-fixture.sql"
@@ -89,6 +90,8 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-performance-profile.test.sql
       - name: Benchmark realistic eligible D100 cards after 0, 20, 50 and 80 draws
         run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-eligible-performance.test.sql
+      - name: Prove D100 novel-first draw and all-similar random fallback with actual ORDER BY
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-live-pick-order.test.sql
       - name: Simulate an evening, two couples and a 200-card cycle
         run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-evening-flow.test.sql
       - name: Reject roles, cycle exclusions, bag history and favorite bypass
