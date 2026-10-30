@@ -227,12 +227,14 @@ test('LR-026: redraw success requires original decision and replacement in recip
  const original={id:'clicked-card',recipient:'fred',session_id:'s1',
   couple_id:'duo-1',offered_by:'partner',status:'passed',
   category:'SENSUEL',face:14,card_id:3,is_gifted:false,
-  created_at:'2026-10-30T12:00:00Z',
+  card_title:'Un défi douceur',card_description:'Partagez un moment de tendresse',
+  card_timer_minutes:null,created_at:'2026-10-30T12:00:00Z',
   passed_at:'2026-10-30T12:02:00Z',refused_at:null};
  const replacement={id:'new-card',recipient:'fred',session_id:'s1',
   couple_id:'duo-1',offered_by:'partner',status:'proposed',
   category:'SENSUEL',face:53,card_id:8,is_gifted:false,
-  created_at:'2026-10-30T12:02:00Z',
+  card_title:'Une activité nouvelle',card_description:'Choisissez une activité calme',
+  card_timer_minutes:5,created_at:'2026-10-30T12:02:00Z',
   replaces_challenge_id:'clicked-card'};
  const receipt={original_id:'clicked-card',replacement_id:'new-card',
   action:'pass',excluded:false,already_processed:false,
@@ -240,6 +242,19 @@ test('LR-026: redraw success requires original decision and replacement in recip
  const verify=(rows,reply=receipt,recipient='fred',session='s1')=>
   isPersistedEveningRedrawReceipt(reply,rows,recipient,session);
  assert.equal(verify([original,replacement]),true);
+ assert.equal(verify([{...original,card_timer_minutes:3},
+  {...replacement,card_timer_minutes:null}]),true,
+  'an eligible replacement without a timer must remain supported');
+ for(const bad of [null,undefined,'', '    ',false]){
+  assert.equal(verify([{...original,card_title:bad},replacement]),false,
+   'the first card cannot have an unreadable title');
+  assert.equal(verify([original,{...replacement,card_description:bad}]),false,
+   'the recipient must actually see meaningful replacement content');
+ }
+ for(const bad of [undefined,-1,0,2.5,'5',NaN]){
+  assert.equal(verify([original,{...replacement,card_timer_minutes:bad}]),false,
+   'timer must be absent (null) or a positive whole-minute duration');
+ }
  assert.equal(verify([replacement,original]),true,
   'server order must not affect the same physical D6 slot');
  assert.equal(verify([original,replacement,
