@@ -270,8 +270,10 @@ function mockSupabase(opts = {}) {
           (passCount > 1 && opts.replayWrongAction) ? 'declined' : action,
         excluded: (stale && opts.staleWrongExclusion) ||
           (passCount > 1 && opts.replayWrongExclusion) ? !excluded : excluded,
-        replacement_unavailable: Boolean(passCount === 1 &&
-          opts.firstResponseUnavailableFlag),
+        replacement_unavailable: Boolean(
+          (passCount === 1 && opts.firstResponseUnavailableFlag) ||
+          (passCount === 2 && opts.replayUnavailableFlag) ||
+          (passCount > 2 && opts.staleUnavailableFlag)),
         already_processed: passCount > 1});
     }
     throw new Error('Unexpected mocked endpoint ' + path);
@@ -987,7 +989,7 @@ for(const [options,reason] of [
 
 for(const options of [
  {staleWrongAction:true},{staleWrongExclusion:true},
- {staleWrongReplacement:true}
+ {staleWrongReplacement:true},{staleUnavailableFlag:true}
 ]){
  test('stale conflicting response must fail on changed server receipt: '+
   JSON.stringify(options),async()=>{
@@ -1032,6 +1034,13 @@ test('SEXUEL idempotent replay cannot silently change the replacement category',
     replayMutatesReplacementCategory: true});
   await assert.rejects(runStage({...env(), LR026_STAGING_PREFERENCE: 'SEXUEL'},
     'play', mock.fetchFn), /Only the two correct-category recipient challenges/);
+  assert.equal(mock.counters().drawCount, 1);
+  assert.equal(mock.counters().passCount, 2);
+});
+test('idempotent replay cannot switch a completed redraw to unavailable', async () => {
+  const mock = mockSupabase({replayUnavailableFlag: true});
+  await assert.rejects(runStage(env(), 'play', mock.fetchFn),
+    /Repeated response must return the exact persisted action, exclusion and replacement availability/);
   assert.equal(mock.counters().drawCount, 1);
   assert.equal(mock.counters().passCount, 2);
 });
