@@ -119,6 +119,12 @@ Un test de concurrence supplémentaire appelle **les vraies RPC PostgreSQL** sim
 
 Cette recette valide uniquement une base PostgreSQL 17 **isolée**, avec des identités synthétiques. Elle ne remplace pas les essais de deux appareils réellement connectés à des comptes Auth/Supabase en préproduction et n'effectue aucun changement en production.
 
+## Réponses D100 tardives : rester dans la bonne soirée, le bon compte et le bon onglet — 30 octobre 2026
+
+L'interface conserve maintenant **l'identité du joueur, l'identifiant de soirée et l'onglet** au moment d'appuyer sur `Passer` ou `Refuser`. Après la réponse Supabase, la sélection de la carte de remplacement et la fermeture du dialogue de refus ne sont appliquées que si **les trois valeurs** correspondent toujours au contexte actif. Après le rafraîchissement des données, le même contrôle empêche l'affichage d'une notification concernant une ancienne soirée ou un compte différent.
+
+Le reçu reste soumis au contrôle indépendant `isValidEveningRedrawReceipt` : même dans la bonne soirée, une carte de remplacement ne peut pas être sélectionnée si le serveur renvoie un identifiant de défi original différent ou un reçu mal formé. Les tests Node vérifient les changements de compte, de séance et d'onglet, puis assurent que le garde est appliqué **avant la navigation** et **après le rafraîchissement**. Les appels SQL et les historiques enregistrés sur le serveur restent autoritaires; seule la présentation de la réponse tardive est isolée.
+
 ## Refuser D100 : isolation stricte entre SENSUEL, SEXUEL et les partenaires — 30 octobre 2026
 
 Un test supplémentaire utilise les **vraies fonctions SQL LoveRoll** sur PostgreSQL 17 jetable : deux couples de test indépendants sont créés pour comparer un `Refuser(false)` à un `Refuser(true)`. Dans chaque couple, la carte `#1` apparaît simultanément dans les historiques **SENSUEL** et **SEXUEL** de A et de B. Seule la carte **SENSUEL #1 proposée à B** est refusée. Le tirage initial et la nouvelle carte sont contrôlés sous les identités A (lanceur) et B (destinataire).
