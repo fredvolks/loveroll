@@ -71,8 +71,26 @@ function mockSupabase(opts = {}) {
       return response(members);
     }
     if (path === '/rest/v1/couple_personal_rolls') {
-      if (opts.missingSecondD6) return response([{user_id: a, face: 2}]);
-      return response([{user_id: a, face: 2}, {user_id: b, face: 2}]);
+      const valid = [
+        {session_id: session, user_id: a, face: 2},
+        {session_id: session, user_id: b, face: 4}
+      ];
+      if (opts.d6HiddenFromB && who === 'b') return response([]);
+      if (opts.missingSecondD6) return response(valid.slice(0, 1));
+      if (opts.duplicateD6) return response([valid[0], {...valid[0]}]);
+      if (opts.d6WrongOwner) return response([
+        valid[0], {...valid[1], user_id: couple}
+      ]);
+      if (opts.d6WrongSession) return response([
+        valid[0], {...valid[1], session_id: couple}
+      ]);
+      if (opts.d6InvalidFace) return response([
+        valid[0], {...valid[1], face: 7}
+      ]);
+      if (opts.d6FractionalFace) return response([
+        valid[0], {...valid[1], face: 2.5}
+      ]);
+      return response(valid);
     }
     if (path === '/rest/v1/couple_challenges') {
       if (opts.existingChallengeForB) {
@@ -195,6 +213,10 @@ test('play mode runs exactly one normal D100 plus one pass and one idempotent re
   assert.equal(out.replacement_id, replacedId);
   assert.equal(out.persisted_challenges, 2);
   assert.equal(out.pass_replay_idempotent, true);
+  const d6Reads = mock.calls.filter(x => x.path === '/rest/v1/couple_personal_rolls');
+  assert.deepEqual(d6Reads.map(x => x.actorToken), [
+    'Bearer auth-token-for-a-test', 'Bearer auth-token-for-b-test'
+  ]);
   const finalViews = mock.calls.filter(x => x.path === '/rest/v1/couple_challenges');
   assert.deepEqual(finalViews.slice(-2).map(x => x.actorToken), [
     'Bearer auth-token-for-b-test', 'Bearer auth-token-for-a-test'
@@ -235,12 +257,27 @@ test('real RLS session/member denial fails before any gameplay writes', async ()
     assert.equal(mock.counters().passCount, 0);
   }
 });
-test('missing second D6 blocks real D100 before gameplay writes', async () => {
-  const mock = mockSupabase({missingSecondD6: true});
-  await assert.rejects(runStage(env(), 'play', mock.fetchFn), /Two D6 rolls/);
-  assert.equal(mock.counters().drawCount, 0);
-  assert.equal(mock.counters().passCount, 0);
-});
+for (const options of [
+  {missingSecondD6: true},
+  {d6HiddenFromB: true},
+  {duplicateD6: true},
+  {d6WrongOwner: true},
+  {d6WrongSession: true},
+  {d6InvalidFace: true},
+  {d6FractionalFace: true}
+]) {
+  test('malformed or B-invisible D6 blocks all gameplay writes: ' +
+    JSON.stringify(options), async () => {
+    const mock = mockSupabase(options);
+    await assert.rejects(runStage(env(), 'play', mock.fetchFn),
+      /Two valid D6 rolls for this session/);
+    assert.equal(mock.counters().drawCount, 0);
+    assert.equal(mock.counters().passCount, 0);
+    assert.equal(mock.calls.filter(x =>
+      x.path === '/rest/v1/rpc/draw_for_partner' ||
+      x.path === '/rest/v1/rpc/love_respond_and_redraw').length, 0);
+  });
+}
 
 test('real recipient-only RLS: recipient B already has a card invisible to drawer A, so writes are blocked', async () => {
   const mock = mockSupabase({existingChallengeForB: true});
