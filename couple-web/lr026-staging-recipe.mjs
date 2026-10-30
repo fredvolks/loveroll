@@ -35,7 +35,7 @@ function checkPublicKey(key) {
 }
 
 export function validateStage(env, mode) {
-  if (!['check', 'auth', 'audit', 'play'].includes(mode)) throw new Error('Unknown LR-026 mode');
+  if (!['check', 'auth', 'audit', 'ready', 'play'].includes(mode)) throw new Error('Unknown LR-026 mode');
   const ref = requireField(env.LR026_STAGING_REF, 'LR026_STAGING_REF');
   const confirmedRef = requireField(env.LR026_CONFIRM_STAGING_REF, 'LR026_CONFIRM_STAGING_REF');
   if (!REF.test(ref) || !REF.test(confirmedRef) || confirmedRef !== ref) {
@@ -225,6 +225,32 @@ async function verifyMatchingD6(client, sessionId, a, b, invalidFixtureMessage) 
   return baseline;
 }
 
+// Check the exact same preflight for read-only --ready and mutating --play.
+// A single shared contract avoids a green readiness check that does not
+// actually protect the real first D100 in --play.
+async function verifyFreshD100Session(client,config,a,b){
+  // Both tokens must see the same legacy partner-draw flags. A's view
+  // alone cannot prove that recipient B is in the correct session mode.
+  for(const actor of [a,b]){
+    const sessions=await client.rows('couple_sessions',
+      'select=id,paired_turns,self_draws&id=eq.'+config.sessionId,actor.token);
+    assert(sessions.length===1&&eq(sessions[0].id,config.sessionId)&&
+      sessions[0].paired_turns===false&&sessions[0].self_draws===false,
+      'Mutating recipe requires both partners to see a fresh legacy partner-draw session (paired_turns=false, self_draws=false)');
+  }
+  const faces=await verifyMatchingD6(client,config.sessionId,a,b,
+    'Two valid D6 rolls for this session must be readable by both partners before D100');
+  // A's recipient-only RLS view cannot prove B has no existing challenge;
+  // both clients must independently see a completely empty evening.
+  for(const actor of [a,b]){
+    const existing=await client.rows('couple_challenges',
+      'select=id,recipient,status&session_id=eq.'+config.sessionId,actor.token);
+    assert(existing.length===0,
+      'Play recipe requires a clean session visible to both recipients; never reset existing data');
+  }
+  return faces;
+}
+
 export async function runStage(env, mode, transport = fetch) {
   // Validate everything, including explicit write consent, BEFORE ANY network.
   const config = validateStage(env, mode);
@@ -339,19 +365,20 @@ export async function runStage(env, mode, transport = fetch) {
       rls_positive_d6_reads: 3, rls_cross_duo_denials: 12, game_writes: 0};
   }
 
+  if(mode==='ready'){
+    // No write acknowledgement, RPC or mutation is required here. This is
+    // a preflight, NOT a promise that a later D100 will have available cards.
+    await verifyFreshD100Session(client,config,a,b);
+    return {...result,mode:'ready',game_writes:0,
+      preflight:'fresh_legacy_duo_verified',rls_d6_views:2,
+      rls_empty_challenge_views:2};
+  }
+
   // Exercise either real direction without changing the two named accounts.
   // Each run still requires its own fresh, empty staging session.
   const giver = config.drawer === 'B' ? b : a;
   const recipient = config.drawer === 'B' ? a : b;
-  // A's session settings alone are not sufficient: check the same legacy
-  // partner-draw flags under both real Auth tokens before the first D100 RPC.
-  for (const actor of [a, b]) {
-    const sessionRows = await client.rows('couple_sessions',
-      'select=id,paired_turns,self_draws&id=eq.' + config.sessionId, actor.token);
-    assert(sessionRows.length === 1 && eq(sessionRows[0].id, config.sessionId) &&
-      sessionRows[0].paired_turns === false && sessionRows[0].self_draws === false,
-      'Mutating recipe requires both partners to see a fresh legacy partner-draw session (paired_turns=false, self_draws=false)');
-  }
+  const initialD6=await verifyFreshD100Session(client,config,a,b);
   // Check session lifecycle and complete duo membership again after each
   // mutating RPC. A valid preflight alone cannot detect a changed partner,
   // closed session, or changed game mode during the synthetic exercise.
@@ -373,28 +400,14 @@ export async function runStage(env, mode, transport = fetch) {
         'Staging duet membership changed ' + stage + '; stop further gameplay RPCs');
     }
   }
-  // Reject a malformed or RLS-invisible D6 fixture before calling the
-  // mutating D100 RPC. A-only visibility does NOT prove B can read both D6.
-  // Explicit session IDs, unique owners and faces 1..6 are mandatory.
-  const initialD6 = await verifyMatchingD6(client, config.sessionId, a, b,
-    'Two valid D6 rolls for this session must be readable by both partners before D100');
   async function assertD6Unchanged(stage) {
     const current = await verifyMatchingD6(client, config.sessionId, a, b,
       'Two valid D6 rolls must remain visible and valid ' + stage);
     assert(current.every((face, i) => face === initialD6[i]),
       'D6 snapshot changed ' + stage + '; do not continue mutating the staging game');
   }
-  // Real production RLS on couple_challenges only exposes each card
-  // to its RECIPIENT, not the person offering it. A's empty list alone
-  // can conceal B's existing card; require zero visible challenges for
-  // BOTH authenticated partners before making any mutating RPC.
-  for (const actor of [a, b]) {
-    const existing = await client.rows('couple_challenges',
-      'select=id,recipient,status&session_id=eq.' + config.sessionId, actor.token);
-    assert(existing.length === 0,
-      'Play recipe requires a clean session visible to both recipients; never reset existing data');
-  }
-
+  // verifyFreshD100Session already checked both D6 snapshots and the
+  // empty recipient-only challenge views before any mutating RPC.
   // Never retry mutations. On error the staging operator must inspect the
   // persisted state and provision a NEW fixture, not blindly replay.
   const challengeQuery =
