@@ -942,12 +942,18 @@ function isActiveEveningRedrawPending(){
 }
 async function refreshShared(expectedContext=null){
  const c=state.coupleId;
- // An in-flight redraw may outlive the account/session/tab that initiated
- // it. Ordinary shared refreshes keep their previous behavior.
+ // A server-confirmed completion may close the original evening DURING this
+ // scoped refresh. Permit that one transition, never a different session.
+ let legacyClosedDuringRefresh=false;
+ // In-flight requests cannot write a different account's or evening's UI.
  const current=()=>!expectedContext||(state.coupleId===c&&
-  isSameEveningResponseContext(state,expectedContext)&&
+  state.user?.id===expectedContext.userId&&state.tab===expectedContext.tab&&
+  (isSameEveningResponseContext(state,expectedContext)||
+   (legacyClosedDuringRefresh&&state.session===null&&
+    state.legacyAnswerContext===expectedContext))&&
   (state.redrawBusyContext===expectedContext||
-   state.eveningStartContext===expectedContext));
+   state.eveningStartContext===expectedContext||
+   state.legacyAnswerContext===expectedContext));
  if(!current())return;
  const [rolls,sessions,advents,events,diary,occasionSettings,occasionRolls,keys,challengeHistory,gifts,adventServerDate,eveningStats,calendarChallenges,eveningReviews,calendarPasses,monthlyPassQuota,cycleInfo]=await Promise.all([
  query('couple_rolls',{eq:{couple_id:c}}),
@@ -1020,7 +1026,12 @@ async function refreshShared(expectedContext=null){
   state.geoVenue=places[0]||null;state.geoReservation=bookings[0]||null;
   state.geoLookup=state.geoVenue?.state||'idle';
  }else{state.geoVenue=null;state.geoReservation=null;state.geoLookup='idle';state.geoBookingEdit=false;}
- state.session=sessions.find(s=>s.finished_at===null)||null;
+ const refreshedSession=sessions.find(s=>s.finished_at===null)||null;
+ legacyClosedDuringRefresh=!!(expectedContext&&
+  state.legacyAnswerContext===expectedContext&&
+  state.session?.id===expectedContext.sessionId&&refreshedSession===null&&
+  sessions.some(s=>s.id===expectedContext.sessionId&&s.finished_at));
+ state.session=refreshedSession;
  state.sessions=sessions;state.events=events;state.journal=diary;state.advent=advents;state.adventServerDate=adventServerDate;
  // After manual/automatic closure, both partners see their own review bubble.
  // A dismissed bubble stays dismissed in this tab; the calendar offers reopening.
@@ -4524,7 +4535,15 @@ async function handle(action,element){
    }
   }else{state.showEveningChallenges=true;state.selectedEveningChallengeId=item.id;}
   if(!ownsAnswer())return;
-  await refreshAndShow();return;
+  // The unscoped refreshAndShow() could overwrite a newly signed-in user's
+  // state while its requests were in flight. Refresh under this operation.
+  await refreshShared(answerContext);
+  if(state.legacyAnswerContext!==answerContext||
+     state.user?.id!==answerContext.userId||state.tab!==answerContext.tab||
+     !(state.session?.id===eveningId||
+       (state.session===null&&state.sessions?.some(s=>
+        s.id===eveningId&&s.finished_at))))return;
+  render();return;
   }finally{
    // An older promise cannot release the lock held by a newer request.
    if(state.legacyAnswerContext===answerContext)state.legacyAnswerContext=null;
