@@ -55,6 +55,36 @@ test('LR-026: malformed or contradictory RPC receipts never yield false confirma
  assert.match(unknown,/Vérifie la liste de tes défis/);
 });
 
+test('LR-026: first redraw requires explicit replacement availability before UI or timer success',()=>{
+ const valid={original_id:'clicked-card',replacement_id:'replacement-card',
+  action:'pass',excluded:false,already_processed:false,
+  replacement_unavailable:false};
+ // An incomplete first response may report a valid new UUID but is not
+ // proof of a committed redraw: only the SQL replay may omit the flag.
+ const partial={...valid};
+ delete partial.replacement_unavailable;
+ assert.equal(isValidEveningRedrawReceipt(valid,'clicked-card'),true);
+ assert.equal(isValidEveningRedrawReceipt(partial,'clicked-card'),false);
+ assert.match(eveningRedrawFeedback(partial,'clicked-card'),
+  /Vérifie la liste de tes défis/);
+ assert.equal(isValidEveningRedrawReceipt({...partial,already_processed:true},
+  'clicked-card'),true,
+  'production SQL omits replacement_unavailable only on idempotent replay');
+ assert.equal(isValidEveningRedrawReceipt({...valid,replacement_unavailable:null},
+  'clicked-card'),false);
+ assert.equal(isValidEveningRedrawReceipt({...valid,replacement_unavailable:'false'},
+  'clicked-card'),false);
+ const unavailable={...valid,action:'refuse',replacement_id:null,
+  replacement_unavailable:true};
+ assert.equal(isValidEveningRedrawReceipt(unavailable,'clicked-card'),true);
+ delete unavailable.replacement_unavailable;
+ assert.equal(isValidEveningRedrawReceipt(unavailable,'clicked-card'),false,
+  'missing flag and no replacement cannot be a valid first decision');
+ // Never show a successful toast or stop a live timer from a partial receipt.
+ const uncertain=eveningRedrawFeedback(partial,'clicked-card');
+ assert.doesNotMatch(uncertain,/Défi passé|Défi retiré|Défi conservé/);
+});
+
 test('LR-026: valid receipt allows a warning when the category has no replacement',()=>{
  const warning=eveningRedrawFeedback({
   original_id:'old',replacement_id:null,
