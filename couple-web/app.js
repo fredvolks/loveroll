@@ -935,8 +935,13 @@ async function reload(){
  subscribe();render();
  }finally{if(loaderTicket!=null)window.LoveRollLoader?.end(loaderTicket);}
 }
-async function refreshShared(){
+async function refreshShared(expectedContext=null){
  const c=state.coupleId;
+ // An in-flight redraw may outlive the account/session/tab that initiated
+ // it. Ordinary shared refreshes keep their previous behavior.
+ const current=()=>!expectedContext||(state.coupleId===c&&
+  isSameEveningResponseContext(state,expectedContext));
+ if(!current())return;
  const [rolls,sessions,advents,events,diary,occasionSettings,occasionRolls,keys,challengeHistory,gifts,adventServerDate,eveningStats,calendarChallenges,eveningReviews,calendarPasses,monthlyPassQuota,cycleInfo]=await Promise.all([
  query('couple_rolls',{eq:{couple_id:c}}),
  query('couple_sessions',{eq:{couple_id:c},order:'started_at'}),
@@ -956,24 +961,36 @@ async function refreshShared(){
  rpc('my_love_monthly_pass_quota',{p_couple:c}),
  rpc('love_cycle_status',{p_couple:c})
  ]);
+ if(!current())return;
  state.cycleStatus=cycleInfo;
  if(!cycleInfo?.pending)state.cycleDeferred=null;
  state.eveningHistoryStats=Array.isArray(eveningStats)?eveningStats:[];
  state.eveningCalendarChallenges=Array.isArray(calendarChallenges)?calendarChallenges:[];
  state.calendarPassQuota=Array.isArray(calendarPasses)?calendarPasses:[];
  state.monthlyPassQuota=monthlyPassQuota;
- try{state.redrawReady=(await rpc('love_redraw_capabilities',{p_couple:c}))===true;}catch{state.redrawReady=false;}
- if(state.redrawReady){try{const list=await rpc('my_love_cycle_exclusions',{p_couple:c});state.loveExcludedCards=Array.isArray(list)?list:[];}catch{state.loveExcludedCards=[];}}else state.loveExcludedCards=[];
+ try{
+  const available=await rpc('love_redraw_capabilities',{p_couple:c});
+  if(!current())return;
+  state.redrawReady=available===true;
+ }catch{if(!current())return;state.redrawReady=false;}
+ if(state.redrawReady){
+  try{
+   const list=await rpc('my_love_cycle_exclusions',{p_couple:c});
+   if(!current())return;
+   state.loveExcludedCards=Array.isArray(list)?list:[];
+  }catch{if(!current())return;state.loveExcludedCards=[];}
+ }else state.loveExcludedCards=[];
  if(state.redrawReady){
   try{
    const links=await rpc('love_evening_replacement_links',{p_couple:c});
+   if(!current())return;
    const byReplacement=new Map((Array.isArray(links)?links:[])
     .filter(link=>link?.replacement_id&&link?.origin_id)
     .map(link=>[link.replacement_id,link.origin_id]));
    state.eveningCalendarChallenges=state.eveningCalendarChallenges.map(challenge=>({
     ...challenge,replaces_challenge_id:byReplacement.get(challenge.id)||null
    }));
-  }catch(error){console.warn('Liens de repige du calendrier indisponibles',error?.code||'');}
+  }catch(error){if(!current())return;console.warn('Liens de repige du calendrier indisponibles',error?.code||'');}
  }
  state.calendarPassMonth=state.eveningCalendarMonth||month();
  state.eveningReviews=Array.isArray(eveningReviews)?eveningReviews:[];
@@ -992,6 +1009,7 @@ async function refreshShared(){
    query('love_monthly_places',{eq:{roll_id:activeMonthlyRoll.id}}),
    query('love_monthly_reservations',{eq:{roll_id:activeMonthlyRoll.id}})
   ]);
+  if(!current())return;
   state.geoVenue=places[0]||null;state.geoReservation=bookings[0]||null;
   state.geoLookup=state.geoVenue?.state||'idle';
  }else{state.geoVenue=null;state.geoReservation=null;state.geoLookup='idle';state.geoBookingEdit=false;}
@@ -1021,6 +1039,7 @@ async function refreshShared(){
     rpc('my_love_roll_status',{p_session:state.session.id}),
     rpc('my_love_evening_board',{p_session:state.session.id})
   ]);
+  if(!current())return;
   state.personal=personal;
   // The SELECT policy also restricts these rows, so a partner never gets
   // another person's challenge title, description or D100 face.
@@ -1043,12 +1062,21 @@ async function refreshShared(){
  // Only counts are revealed to the invited partner; titles remain owner-private.
  try{
   const totals=await rpc('my_love_evening_card_totals',{p_couple:c});
+  if(!current())return;
   state.playableCounts=Array.isArray(totals)?totals[0]||null:null;
- }catch(error){state.playableCounts=null;}
- try{await refreshEclatStatus();}catch(error){console.warn('Éclat temporairement indisponible',error?.code||'');}
+ }catch(error){if(!current())return;state.playableCounts=null;}
+ // The redraw's scoped refresh must not run unrelated Eclat work that can
+ // commit stale state while the active account is being switched.
+ if(!expectedContext){
+  try{await refreshEclatStatus();}catch(error){console.warn('Éclat temporairement indisponible',error?.code||'');}
+ }
+ if(!current())return;
  // A separate, private read: no partner's D6 face or challenge is revealed.
- try{state.eveningInvite=await rpc('love_evening_invite_status',{p_couple:c});}
- catch{state.eveningInvite=null;} // Feature hidden until its staging-approved migration exists.
+ try{
+  const invite=await rpc('love_evening_invite_status',{p_couple:c});
+  if(!current())return;
+  state.eveningInvite=invite;
+ }catch{if(!current())return;state.eveningInvite=null;} // Hidden until staging-approved migration exists.
 }
 const liveSync=createCoupleLiveSync({
  state,query,rpc,refresh:refreshShared,render,ready:isSharedCoupleReady,
@@ -2960,7 +2988,7 @@ async function handle(action,element){
    }
    // Refresh the recipient-only RLS rows WITHOUT rendering an intermediate
    // auto-selected card. The finally block paints the confirmed state once.
-   await refreshShared();
+   await refreshShared(responseContext);
    // A valid RPC JSON payload alone does not prove that the recipient can
    // render the committed replacement after RLS refresh. Do not announce a
    // successful repick or keep an invisible card selected in that case.
