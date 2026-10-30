@@ -300,6 +300,24 @@ export function redrawTimerRecovery(status,deadline,now){
 }
 
 /**
+ * Prevent an async, account-bound refresh from replacing its initiating
+ * evening with an unrelated night returned by a newer server query.
+ * Normal unspecific live-sync refreshes retain their existing behavior.
+ * Only a legacy completion response may accept its own confirmed closure.
+ */
+export function mayApplyScopedEveningRefresh(sessions,request,legacyOwner=false){
+ if(!request)return true;
+ if(!Array.isArray(sessions)||typeof request.sessionId!=='string'||!request.sessionId)
+  return false;
+ const active=sessions.filter(row=>row?.finished_at===null);
+ if(active.length>1)return false;
+ if(active.length===1)return active[0].id===request.sessionId;
+ return legacyOwner===true&&sessions.some(row=>
+  row?.id===request.sessionId&&typeof row.finished_at==='string'&&
+  row.finished_at.length>0);
+}
+
+/**
  * Derive confirmation from the stored decision, not the tap from this device.
  * When provided, expectedOriginalId also prevents a mismatched RPC receipt
  * from confirming or navigating to an unrelated challenge.
