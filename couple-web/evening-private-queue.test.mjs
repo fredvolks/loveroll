@@ -235,7 +235,7 @@ test('LR-026: redraw success requires original decision and replacement in recip
   category:'SENSUEL',face:53,card_id:8,is_gifted:false,
   card_title:'Une activité nouvelle',card_description:'Choisissez une activité calme',
   card_timer_minutes:5,created_at:'2026-10-30T12:02:00Z',
-  replaces_challenge_id:'clicked-card'};
+  passed_at:null,refused_at:null,replaces_challenge_id:'clicked-card'};
  const receipt={original_id:'clicked-card',replacement_id:'new-card',
   action:'pass',excluded:false,already_processed:false,
   replacement_unavailable:false};
@@ -257,6 +257,23 @@ test('LR-026: redraw success requires original decision and replacement in recip
  }
  assert.equal(verify([replacement,original]),true,
   'server order must not affect the same physical D6 slot');
+ const alreadyPassed={...replacement,status:'passed',
+  passed_at:'2026-10-30T12:05:00Z'};
+ const alreadyRefused={...replacement,status:'refused',
+  refused_at:'2026-10-30T12:05:00Z'};
+ assert.equal(verify([original,alreadyPassed]),true,
+  'the other device may already have passed the verified replacement');
+ assert.equal(verify([original,alreadyRefused]),true,
+  'the other device may already have refused the verified replacement');
+ assert.equal(verify([original,{...alreadyPassed,passed_at:null}]),false);
+ assert.equal(verify([original,{...alreadyRefused,refused_at:'broken'}]),false);
+ assert.equal(verify([original,{...alreadyPassed,refused_at:'2026-10-30T12:05:00Z'}]),false,
+  'both incompatible decision stamps must never be valid');
+ assert.equal(verify([original,{...replacement,passed_at:'2026-10-30T12:05:00Z'}]),false);
+ assert.equal(verify([original,{...replacement,status:'accepted',
+  refused_at:'2026-10-30T12:05:00Z'}]),false);
+ assert.equal(verify([original,{...replacement,status:'completed'}]),true);
+ assert.equal(verify([original,{...replacement,status:'unknown'}]),false);
  assert.equal(verify([original,replacement,
   {...replacement,id:'duplicate-device-replacement'}]),false,
   'two device replies must never create two direct replacements for the same D6 slot');
