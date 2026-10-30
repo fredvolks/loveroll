@@ -4345,9 +4345,12 @@ async function handle(action,element){
  }
  if(verb==='timer-toggle'){
    const timerUserId=state.user?.id,timerSessionId=state.session?.id,
-    timerChallengeId=challengeTimer.id;
-   const ownsClock=()=>ownsVisibleEveningTimer(timerChallengeId,timerUserId,timerSessionId);
+    timerChallengeId=challengeTimer.id,timerTab=state.tab;
+   const ownsClock=()=>ownsVisibleEveningTimer(timerChallengeId,timerUserId,timerSessionId)&&
+    state.tab===timerTab;
    if(!ownsClock())throw Error('Aucun minuteur actif pour cette soirée');
+   if(state.timerStartContext?.challengeId===timerChallengeId&&
+      isSameEveningResponseContext(state,state.timerStartContext))return;
    // Observe an already-expired deadline before a pause tap can zero out
    // the running state (timer ticks are only scheduled every 500ms).
    updateChallengeClock();
@@ -4358,24 +4361,44 @@ async function handle(action,element){
     challengeTimer.remainingMs=Math.max(0,challengeTimer.deadline-Date.now());
     challengeTimer.running=false;
    }else if(challengeTimer.remainingMs>0){
-    // The countdown can be launched without pressing « Commencer » first.
-    // Ensure the official card becomes accepted before the timer begins.
-    const current=timedEveningItem(challengeTimer.id);
-    if(current?.status==='proposed'){
-     if(challengeTimer.mode==='sound')void unlockLoveRollSounds();
-     await rpc('answer_challenge',{p_id:current.id,p_status:'accepted'});
-     if(!ownsClock())return;
+    // A timer may be launched without pressing Commencer first. Confirm the
+    // card's persisted accepted state via recipient-only RLS before starting.
+    const current=timedEveningItem(timerChallengeId);
+    if(!current||!['proposed','accepted'].includes(current.status))
+     throw Error('Ce défi ne peut pas démarrer. Actualise ta liste.');
+    const request={userId:timerUserId,sessionId:timerSessionId,
+     tab:timerTab,challengeId:timerChallengeId};
+    state.timerStartContext=request;
+    const ownsStart=()=>ownsClock()&&state.timerStartContext===request;
+    try{
+     if(current.status==='proposed'){
+      if(challengeTimer.mode==='sound')void unlockLoveRollSounds();
+      await rpc('answer_challenge',{p_id:current.id,p_status:'accepted'});
+      if(!ownsStart())return;
+     }
+     const saved=await query('couple_challenges',{
+      eq:{id:timerChallengeId,session_id:timerSessionId,recipient:timerUserId}
+     });
+     if(!ownsStart())return;
+     if(!Array.isArray(saved)||saved.length!==1||saved[0]?.status!=='accepted')
+      throw Error('Le serveur n’a pas confirmé le début de ce défi. Actualise ta liste.');
      current.status='accepted';
+     if(challengeTimer.mode==='sound'&&!await unlockLoveRollSounds()){
+      if(!ownsStart())return;
+      notify('Son non autorisé. Utilise le bouton ♫ Tester pour le débloquer.');
+     }
+     if(!ownsStart())return;
+     challengeTimer.deadline=Date.now()+challengeTimer.remainingMs;
+     challengeTimer.running=true;
+     challengeTimer.notified=false;
+    }catch(error){
+     if(!ownsStart())return;
+     throw error;
+    }finally{
+     if(state.timerStartContext===request)state.timerStartContext=null;
     }
-    if(challengeTimer.mode==='sound'&&!await unlockLoveRollSounds()){
-     if(!ownsClock())return;
-     notify('Son non autorisé. Utilise le bouton ♫ Tester pour le débloquer.');
-    }
-    if(!ownsClock())return;
-    challengeTimer.deadline=Date.now()+challengeTimer.remainingMs;
-    challengeTimer.running=true;
-    challengeTimer.notified=false;
    }
+   if(!ownsClock())return;
    saveChallengeTimer();updateChallengeClock();return;
  }
  if(verb==='give-challenge'){
