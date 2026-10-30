@@ -317,6 +317,58 @@ test('Auth mode verifies both real GoTrue sessions plus RLS reads, without RPC w
   assert.equal(mock.calls.filter(x => x.path === '/rest/v1/couple_members').length, 2);
   assert(!JSON.stringify(output).includes('auth-token'));
 });
+test('read-only --ready proves both A/B identities, D6 and an empty evening before gameplay', async () => {
+ const mock=mockSupabase();
+ const readOnlyEnv={...env(),LR026_STAGING_ALLOW_WRITES:'',
+  LR026_STAGING_WRITE_CONFIRM_REF:''};
+ const out=await runStage(readOnlyEnv,'ready',mock.fetchFn);
+ assert.equal(out.mode,'ready');
+ assert.equal(out.game_writes,0);
+ assert.equal(out.preflight,'fresh_legacy_duo_verified');
+ assert.equal(out.real_auth_accounts,2);
+ assert.equal(out.rls_d6_views,2);
+ assert.equal(out.rls_empty_challenge_views,2);
+ assert.equal(mock.counters().drawCount,0);
+ assert.equal(mock.counters().passCount,0);
+ const rpc=mock.calls.filter(c=>c.path.startsWith('/rest/v1/rpc/'));
+ assert.deepEqual(rpc,[],'ready must never call a game RPC');
+ const d6=mock.calls.filter(c=>c.path==='/rest/v1/couple_personal_rolls');
+ const cards=mock.calls.filter(c=>c.path==='/rest/v1/couple_challenges');
+ for(const reads of [d6,cards]){
+  assert.deepEqual(reads.map(c=>c.actorToken),
+   ['Bearer auth-token-for-a-test','Bearer auth-token-for-b-test']);
+  assert(reads.every(c=>c.method==='GET'));
+ }
+});
+
+for(const [name,opts,error] of [
+ ['session flags hidden on B',{pairedTurnsForB:true},/fresh legacy partner-draw/],
+ ['session self mode on B',{selfDrawsForB:true},/fresh legacy partner-draw/],
+ ['one D6 missing',{missingSecondD6:true},/Two valid D6 rolls/],
+ ['different D6 on B',{d6DifferentFaceForB:true},/D6 faces disagree/],
+ ['existing card for A',{existingChallengeForA:true},/Play recipe requires a clean session/],
+ ['existing card for B',{existingChallengeForB:true},/Play recipe requires a clean session/],
+ ['missing membership view',{hidePartnerFromA:true},/exactly A and B/]
+]){
+ test('read-only ready fails closed on '+name,async()=>{
+  const mock=mockSupabase(opts);
+  await assert.rejects(runStage({...env(),LR026_STAGING_ALLOW_WRITES:''},
+   'ready',mock.fetchFn),error);
+  assert.equal(mock.counters().drawCount,0);
+  assert.equal(mock.counters().passCount,0);
+  assert(!mock.calls.some(c=>c.path.startsWith('/rest/v1/rpc/')));
+ });
+}
+
+test('read-only --ready rejects the production project before any network',async()=>{
+ const mock=mockSupabase();
+ await assert.rejects(runStage({...env(),
+  LR026_STAGING_REF:'ejsrqfpkgwraorrznjpm',
+  LR026_CONFIRM_STAGING_REF:'ejsrqfpkgwraorrznjpm'},
+  'ready',mock.fetchFn),/Production Supabase project/);
+ assert.equal(mock.counters().count,0);
+});
+
 test('a mismatched account identity fails authentication/RLS recipe early', async () => {
   const mock = mockSupabase({wrongUser: true});
   await assert.rejects(runStage(env(), 'auth', mock.fetchFn), /Authenticated user ID/);
