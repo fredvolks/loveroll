@@ -428,7 +428,7 @@ export async function runStage(env, mode, transport = fetch) {
   // Never retry mutations. On error the staging operator must inspect the
   // persisted state and provision a NEW fixture, not blindly replay.
   const challengeQuery =
-    'select=id,session_id,couple_id,offered_by,recipient,category,face,card_id,card_title,card_description,card_timer_minutes,is_gifted,passed_at,refused_at,replaces_challenge_id,status' +
+    'select=id,session_id,couple_id,offered_by,recipient,category,face,card_id,card_title,card_description,card_timer_minutes,is_gifted,created_at,passed_at,refused_at,replaces_challenge_id,status' +
     '&session_id=eq.' + config.sessionId;
   const drawn = await client.rpc('draw_for_partner',
     {p_session: config.sessionId, p_preference: config.preference, p_random: config.random}, giver.token);
@@ -448,7 +448,9 @@ export async function runStage(env, mode, transport = fetch) {
     typeof drawn.card_description === 'string' && drawn.card_description.trim().length > 0 &&
     (drawn.card_timer_minutes === null ||
       (Number.isInteger(drawn.card_timer_minutes) && drawn.card_timer_minutes > 0)) &&
-    typeof drawn.is_gifted === 'boolean',
+    typeof drawn.is_gifted === 'boolean' &&
+    typeof drawn.created_at === 'string' &&
+    Number.isFinite(Date.parse(drawn.created_at)),
     'Real D100 returned invalid card content, timer or gifted flag');
   // Independently read the newly persisted row as the B recipient and A.
   // A successful RPC response alone is not proof that it was saved for B.
@@ -468,6 +470,7 @@ export async function runStage(env, mode, transport = fetch) {
     firstForRecipient[0].card_description === drawn.card_description &&
     firstForRecipient[0].card_timer_minutes === drawn.card_timer_minutes &&
     firstForRecipient[0].is_gifted === drawn.is_gifted &&
+    firstForRecipient[0].created_at === drawn.created_at &&
     Number.isInteger(firstForRecipient[0].face) && firstForRecipient[0].face >= 1 && firstForRecipient[0].face <= 100 &&
     Number.isInteger(firstForRecipient[0].card_id) && firstForRecipient[0].card_id >= 1 && firstForRecipient[0].card_id <= 100 &&
     firstForRecipient[0].status === 'proposed' &&
@@ -522,6 +525,8 @@ export async function runStage(env, mode, transport = fetch) {
       (c.card_timer_minutes === null ||
         (Number.isInteger(c.card_timer_minutes) && c.card_timer_minutes > 0)) &&
       c.is_gifted === drawn.is_gifted &&
+      typeof c.created_at === 'string' &&
+      Number.isFinite(Date.parse(c.created_at)) &&
       c.passed_at === null && c.refused_at === null).length === 1,
       'Exactly one valid same-category replacement offered by drawer must exist for recipient');
     const original = stored.find(c => eq(c.id, drawn.id));
@@ -535,8 +540,9 @@ export async function runStage(env, mode, transport = fetch) {
       original.card_description === drawn.card_description &&
       original.card_timer_minutes === drawn.card_timer_minutes &&
       original.is_gifted === drawn.is_gifted &&
+      original.created_at === drawn.created_at &&
       original.replaces_challenge_id == null,
-      'Responded original must preserve its D100 face, card ID, content, timer, gifting and provenance');
+      'Responded original must preserve its D100 face, card ID, content, timer, gifting, creation date and provenance');
     assert(original.card_id !== replacement.card_id && original.face !== replacement.face,
       'Replacement must not reuse the original card ID or D100 face in the same category/night');
     // Normalize row order, but compare every selected persisted field to
