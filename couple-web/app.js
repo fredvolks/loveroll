@@ -108,7 +108,7 @@ const names={SENSUEL:'Sensuel',COQUIN:'Coquin',SEXUEL:'Sexuel'};
 function isSharedCoupleReady(coupleId,members){
  return !!coupleId&&Array.isArray(members)&&members.length===2;
 }
-const challengeTimer={id:null,durationMs:0,remainingMs:0,deadline:0,running:false,notified:false,autoCompletePending:false,decisionPending:false,mode:'sound'};
+const challengeTimer={id:null,ownerUserId:null,ownerSessionId:null,durationMs:0,remainingMs:0,deadline:0,running:false,notified:false,autoCompletePending:false,decisionPending:false,mode:'sound'};
 let timerCompletionInFlight=null,timerCompletionRetryAt=0;
 try{const saved=localStorage.getItem('loveroll-timer-mode');if(saved==='vibrate'||saved==='sound')challengeTimer.mode=saved;}catch(e){}
 
@@ -1362,18 +1362,24 @@ function writeSavedChallengeTimer(key,value){
  try{sessionStorage.setItem(key,json);}catch{}
 }
 function saveChallengeTimer(){
- if(!challengeTimer.id||!state.user)return;
- writeSavedChallengeTimer('loveroll-challenge-clock:'+state.user.id+':'+challengeTimer.id,
+ // The active login may change while a previous timer is still mounted.
+ // Persist under its ORIGINAL owner, never under whichever account is now signed in.
+ if(!challengeTimer.id||!challengeTimer.ownerUserId)return;
+ writeSavedChallengeTimer('loveroll-challenge-clock:'+challengeTimer.ownerUserId+':'+challengeTimer.id,
   {durationMs:challengeTimer.durationMs,remainingMs:clockMs(),
    deadline:challengeTimer.deadline,running:challengeTimer.running,notified:challengeTimer.notified,
    autoCompletePending:challengeTimer.autoCompletePending});
 }
 function activeTimer(challenge,minutes){
  const millis=minutes*60000;
- if(challengeTimer.id!==challenge.id){
+ if(challengeTimer.id!==challenge.id||
+    challengeTimer.ownerUserId!==state.user.id||
+    challengeTimer.ownerSessionId!==state.session?.id){
   saveChallengeTimer();
   const stored=readSavedChallengeTimer('loveroll-challenge-clock:'+state.user.id+':'+challenge.id);
   challengeTimer.id=challenge.id;
+  challengeTimer.ownerUserId=state.user.id;
+  challengeTimer.ownerSessionId=state.session?.id||null;
   challengeTimer.durationMs=millis;
   challengeTimer.remainingMs=stored?.durationMs===millis&&Number.isFinite(stored.remainingMs)?
    Math.max(0,Math.min(millis,stored.remainingMs)):millis;
@@ -1400,7 +1406,9 @@ function showTimerFinished(){
  setTimeout(()=>notice.remove(),6500);
 }
 function timedEveningItem(timerId){
- if(!state.user||!state.session||!timerId)return null;
+ if(!state.user||!state.session||!timerId||
+    challengeTimer.ownerUserId!==state.user.id||
+    challengeTimer.ownerSessionId!==state.session.id)return null;
  return ownEveningChallenges(state.challenges,state.user.id,state.session.id)
   .find(item=>item.id===timerId)||null;
 }
