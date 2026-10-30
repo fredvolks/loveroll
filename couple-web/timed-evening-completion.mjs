@@ -2,15 +2,18 @@
 // A completed/expired timer must never display an inert "Reprendre" button.
 export function timedEveningTimerControl(timer){
  if(timer?.autoCompletePending)return {
-  label:'♡ Validation en cours',status:'Validation du défi en cours',disabled:true
+  label:'♡ Validation en cours',status:'Validation du défi en cours',
+  disabled:true,resetDisabled:true
  };
- if(timer?.running)return {label:'Ⅱ Pause',status:'En cours',disabled:false};
+ if(timer?.running)return {
+  label:'Ⅱ Pause',status:'En cours',disabled:false,resetDisabled:false
+ };
  if(!(Number(timer?.remainingMs)>0))return {
-  label:'♡ Terminé',status:'Terminé',disabled:true
+  label:'♡ Terminé',status:'Terminé',disabled:true,resetDisabled:false
  };
  const resumed=Number(timer?.remainingMs)<Number(timer?.durationMs);
  return {label:resumed?'▶ Reprendre':'▶ Démarrer',
-  status:'À votre rythme',disabled:false};
+  status:'À votre rythme',disabled:false,resetDisabled:false};
 }
 
 // A timed Soirée challenge counts as completed after the countdown reaches 00:00.
