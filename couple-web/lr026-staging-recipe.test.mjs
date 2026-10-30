@@ -185,8 +185,10 @@ function mockSupabase(opts = {}) {
           (!beforePass && opts.wrongOriginalCategory) ? otherCategory : category,
         status: beforePass ? opts.firstWrongStatus ? 'passed' : 'proposed'
           : (opts.expectedAction === 'refuse' ? 'refused' : 'passed'),
-        face: beforePass && opts.firstWrongFace ? 0 : 14,
-        card_id: beforePass && opts.firstWrongCardId ? 0 : 3,
+        face: beforePass && opts.firstWrongFace ? 0 :
+          !beforePass && opts.firstPassMutatesOriginalFace ? 22 : 14,
+        card_id: beforePass && opts.firstWrongCardId ? 0 :
+          !beforePass && opts.firstPassMutatesOriginalCardId ? 22 : 3,
         replaces_challenge_id: beforePass && opts.firstReplacesCard ? replacedId : null
       };
       if (beforePass) {
@@ -844,13 +846,15 @@ for (const options of [
   {firstPassDuplicateFace: true},
   {firstPassDuplicateCard: true},
   {firstPassWrongReplacementOfferer: true},
+  {firstPassMutatesOriginalFace: true},
+  {firstPassMutatesOriginalCardId: true},
   {firstPassCardForA: true}
 ]) {
   test('invalid first Passer state is never replayed: ' +
     JSON.stringify(options), async () => {
     const mock = mockSupabase(options);
     await assert.rejects(runStage(env(), 'play', mock.fetchFn),
-      /Unexpected challenge addressed to drawer|Only the two correct-category recipient challenges|Only one original responded|Exactly one valid same-category replacement|Replacement must not reuse/);
+      /Unexpected challenge addressed to drawer|Only the two correct-category recipient challenges|Only one original responded|Exactly one valid same-category replacement|Responded original must preserve|Replacement must not reuse/);
     assert.equal(mock.counters().drawCount, 1);
     assert.equal(mock.counters().passCount, 1,
       'A malformed persisted Passer must stop BEFORE a second RPC');
