@@ -142,7 +142,8 @@ test('LR-026: async D100 action checks same initiating context before selection 
  const branch=app.slice(start,end);
  assert.ok((branch.match(/isSameEveningResponseContext\(state,responseContext\)/g)||[]).length>=2,
   'must guard both UI navigation and notifications; additional timer/error checks are required');
- assert.match(branch,/if\(isSameEveningResponseContext\(state,responseContext\)\)\{[\s\S]*?state\.selectedEveningChallengeId=receiptValid\?outcome\.replacement_id:null/);
+ assert.match(branch,/const sameContext=isSameEveningResponseContext\(state,responseContext\)/);
+ assert.match(branch,/if\(sameContext\)\{\s+if\(receiptValid\)state\.eveningRefusalId=null;[\s\S]*?state\.selectedEveningChallengeId=receiptValid\?outcome\.replacement_id:null/);
  assert.match(branch,/await refreshAndShow\(\);[\s\S]*?if\(isSameEveningResponseContext\(state,responseContext\)\)\s+redrawFeedback=eveningRedrawFeedback\(outcome,challengeId\)/);
  assert.doesNotMatch(branch,/if\(state\.session\?\.id===sessionId\)/,
   'checking only the session leaves another account/tab exposed');
