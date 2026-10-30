@@ -1433,6 +1433,10 @@ function isVisibleEveningTimerActionPending(){
  const cardId=challengeTimer.id;
  if(!cardId||!ownsVisibleEveningTimer(cardId,state.user?.id,state.session?.id))return false;
  if(challengeTimer.decisionPending)return true;
+ // The completion RPC can finish before its private, scoped refresh has
+ // returned. Keep both timer controls locked until that refresh settles.
+ const completion=state.timerCompletionContext;
+ if(completion?.challengeId===cardId&&ownsTimerCompletionSession(completion))return true;
  if(isActiveEveningRedrawPending()&&state.redrawBusyContext?.challengeId===cardId)return true;
  return [state.timerStartContext,state.eveningStartContext].some(context=>
   context?.challengeId===cardId&&isSameEveningResponseContext(state,context));
@@ -1440,10 +1444,16 @@ function isVisibleEveningTimerActionPending(){
 function protectEveningTimerPresentation(presentation){
  // An already expired challenge awaiting validation takes precedence.
  if(challengeTimer.autoCompletePending)return;
- if(isVisibleEveningTimerActionPending())Object.assign(presentation,{
-  label:'♡ Réponse en cours',status:'Décision sur le défi en cours',
-  disabled:true,resetDisabled:true
- });
+ if(isVisibleEveningTimerActionPending()){
+  const completion=state.timerCompletionContext;
+  const finalizing=completion?.challengeId===challengeTimer.id&&
+   ownsTimerCompletionSession(completion);
+  Object.assign(presentation,{
+   label:finalizing?'♡ Validation en cours':'♡ Réponse en cours',
+   status:finalizing?'Validation du défi en cours':'Décision sur le défi en cours',
+   disabled:true,resetDisabled:true
+  });
+ }
 }
 function clockMs(){
  return challengeTimer.running?Math.max(0,challengeTimer.deadline-Date.now()):challengeTimer.remainingMs;
