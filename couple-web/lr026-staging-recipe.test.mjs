@@ -221,8 +221,8 @@ function mockSupabase(opts = {}) {
           (opts.expectedAction ?? 'pass'),
         excluded: passCount > 1 && opts.replayWrongExclusion ?
           !(opts.expectedExclude ?? false) : (opts.expectedExclude ?? false),
-        replacement_unavailable: passCount === 1 &&
-          opts.firstResponseUnavailableFlag,
+        replacement_unavailable: Boolean(passCount === 1 &&
+          opts.firstResponseUnavailableFlag),
         already_processed: passCount > 1});
     }
     throw new Error('Unexpected mocked endpoint ' + path);
