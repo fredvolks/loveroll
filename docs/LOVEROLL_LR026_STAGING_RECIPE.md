@@ -119,6 +119,12 @@ Ce prévol utilise **la même fonction de validation** que le début de `--play`
 
 Le résultat `preflight: fresh_legacy_duo_verified` ne garantit **pas** qu'une carte reste disponible ou qu'un D100 ultérieur réussira; `--play` revérifie tous ces critères juste avant son premier appel mutateur. Aucun projet, compte ni donnée n'est créé automatiquement.
 
+## Deux sessions Auth indépendantes pour simuler deux appareils — 30 octobre 2026
+
+Le contrôle optionnel `LR026_STAGING_STALE_REPLAY=true` **ne réutilise plus le même jeton de connexion** pour simuler une réponse tardive du deuxième appareil. Après vérification du premier Passer/Refuser et de son rejeu exact, il effectue un **nouveau login GoTrue pour le même destinataire**, contrôle à nouveau son identité avec `/auth/v1/user` et exige un `access_token` distinct. Les commandes contradictoires sont envoyées **uniquement avec cette deuxième session Auth**, tandis que les deux premières réponses restent associées à la première. Le résultat de la recette signale `distinct_stale_auth_session: true`.
+
+Les tests simulés couvrent les deux sens du duo (A offre à B, B offre à A), les trois choix de réponse, les jetons réutilisés à tort et une nouvelle session qui appartient à la mauvaise personne. Dans ces deux derniers cas, **aucune réponse contradictoire n'est envoyée**. Les lectures de persistance demeurent sous RLS et les écritures nécessitent toujours les confirmations explicites de `--play`. Ce test vérifie deux sessions authentifiées du **même destinataire**, pas deux comptes différents répondant à la place l'un de l'autre. Aucun projet Supabase hébergé n'a été contacté pour produire ces tests.
+
 ## Rejeu contradictoire sur deux comptes Auth réels — option explicite (30 octobre 2026)
 
 Le mode `--play` comprend désormais une **option désactivée par défaut** pour simuler une réponse tardive provenant d'un autre appareil sur le même défi :
