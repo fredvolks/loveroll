@@ -1482,6 +1482,11 @@ function updateChallengeClock(){
   button.disabled=presentation.disabled;
   button.setAttribute('aria-disabled',String(presentation.disabled));
  }
+ const reset=document.querySelector('[data-action="timer-reset"]');
+ if(reset){
+  reset.disabled=presentation.resetDisabled;
+  reset.setAttribute('aria-disabled',String(presentation.resetDisabled));
+ }
  const status=document.getElementById('challenge-timer-status');
  if(status)status.textContent=presentation.status;
 }
@@ -1513,7 +1518,8 @@ function timerWidget(challenge,minutes){
    '<div class="actions"><button id="challenge-timer-toggle" data-action="timer-toggle"'+
     (presentation.disabled?' disabled aria-disabled="true"':'')+'>'+
     presentation.label+'</button>'+
-   button('timer-reset','↻ Recommencer','class="subtle"')+'</div>'+
+   button('timer-reset','↻ Recommencer',
+    'class="subtle"'+(presentation.resetDisabled?' disabled aria-disabled="true"':''))+'</div>'+
    '<div class="chipline" style="margin-top:9px">'+
    '<button class="pill '+(challengeTimer.mode==='sound'?'selected':'')+'" data-action="timer-mode:sound">♫ Son doux</button>'+
    '<button class="pill '+(challengeTimer.mode==='vibrate'?'selected':'')+'" data-action="timer-mode:vibrate">〰 Vibration</button>'+
