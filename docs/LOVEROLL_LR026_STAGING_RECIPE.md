@@ -106,6 +106,14 @@ La recette `$lr026_real_roles# LoveRoll LR-026 — recette Supabase A/B (STAGING
 
 La seconde carte est d'abord exclue pour rendre le tirage initial déterministe, puis elle est rendue admissible juste avant le refus. Le test contrôle le `card_id`, l'auteur, le destinataire, la catégorie, la nouvelle face D100, le `replaces_challenge_id`, mais aussi **le titre, la description et les cinq minutes du minuteur personnalisés**. Un deuxième `Refuser` avec `exclude=true` doit rejouer le reçu `excluded=false`, sans duplication. Aucune donnée personnelle ou fonction hébergée n'est modifiée. Ces validations sont sur PostgreSQL 17 jetable avec transaction annulée.
 
+## Concurrence : deux choix opposés de Refuser — 30 octobre 2026
+
+Un test de concurrence supplémentaire appelle **les vraies RPC PostgreSQL** simultanément depuis deux clients sur **le même défi**, avec `Refuser(false)` (garder la carte dans le cycle) et `Refuser(true)` (l'exclure du cycle). Le script `couple-web/lr026-real-rpc-concurrent.test.sh` verrouille d'abord la ligne du duo, puis constate que les deux sessions attendent réellement le même verrou avant de les laisser continuer. Le nouvel ensemble de données jetables se trouve dans `couple-web/lr026-real-rpc-refuse-choices-race.seed.sql`.
+
+**Une seule décision doit gagner** : les deux clients reçoivent le `action='refuse'` et le même `excluded` réellement enregistré, avec un seul `already_processed=false` et un second appel `already_processed=true`. Le nombre de cartes, les événements, le reçu, le refus horodaté, l'absence de Passer et la présence/absence de l'exclusion de cycle sont tous contrôlés. La seconde réponse ne peut jamais transformer après coup un refus non excluant en refus excluant, ni l'inverse. Le fichier de fixture fait partie des chemins qui déclenchent la suite PostgreSQL GitHub Actions.
+
+Cette recette valide uniquement une base PostgreSQL 17 **isolée**, avec des identités synthétiques. Elle ne remplace pas les essais de deux appareils réellement connectés à des comptes Auth/Supabase en préproduction et n'effectue aucun changement en production.
+
 ## Historique indépendant pour chacun des deux partenaires — 30 octobre 2026
 
 Le nouveau scénario SQL isolé `$lr026_real_cross_recipient_refusal# LoveRoll LR-026 — recette Supabase A/B (STAGING SEULEMENT)
