@@ -82,6 +82,21 @@ export function isValidEveningRedrawReceipt(outcome,expectedOriginalId=null){
 }
 
 /**
+ * Capture an immutable snapshot synchronously before invoking a redraw RPC.
+ * A realtime handler can update the live card object while an await is in
+ * flight, so the persisted comparison must never hold that mutable reference.
+ * Deliberately include every field the persisted receipt later compares.
+ */
+export function snapshotEveningCardBeforeRedraw(card){
+ if(!card||typeof card!=='object'||Array.isArray(card))return null;
+ const fields=['id','session_id','couple_id','offered_by','recipient',
+  'category','face','card_id','card_title','card_description',
+  'card_timer_minutes','is_gifted','created_at','replaces_challenge_id'];
+ if(!fields.every(key=>Object.hasOwn(card,key)))return null;
+ return Object.freeze(Object.fromEntries(fields.map(key=>[key,card[key]])));
+}
+
+/**
  * A syntactically valid RPC receipt is not proof that the refreshed RLS
  * view actually contains the decision and its replacement. Verify both
  * persisted rows before showing a final confirmation to the player.
