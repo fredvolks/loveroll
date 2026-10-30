@@ -60,8 +60,8 @@ function mockSupabase(opts = {}) {
       return response([{id: isPlayFlagsRead && opts.wrongPlaySessionIdB && who === 'b' ?
         couple : session, couple_id: couple,
         finished_at: opts.finishedSession ? '2026-10-29T20:00:00Z' : null,
-        paired_turns: isPlayFlagsRead && opts.pairedTurnsForB && who === 'b',
-        self_draws: isPlayFlagsRead && opts.selfDrawsForB && who === 'b'}]);
+        paired_turns: Boolean(isPlayFlagsRead && opts.pairedTurnsForB && who === 'b'),
+        self_draws: Boolean(isPlayFlagsRead && opts.selfDrawsForB && who === 'b')}]);
     }
     if (path === '/rest/v1/couple_members') {
       if (opts.hideMemberB && who === 'b') return response([]);
