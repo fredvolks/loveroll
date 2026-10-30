@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isSameEveningResponseContext} from './evening-private-queue.mjs';
+import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isSameEveningResponseContext,redrawTimerRecovery} from './evening-private-queue.mjs';
 import {premiumEveningHtml} from './premium-evening.mjs';
 const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
 const migration=readFileSync(new URL('./migrations/20261015_evening_private_challenge_queue.sql',import.meta.url),'utf8');
@@ -146,6 +146,38 @@ test('LR-026: async D100 action checks same initiating context before selection 
  assert.match(branch,/await refreshAndShow\(\);[\s\S]*?if\(isSameEveningResponseContext\(state,responseContext\)\)\s+redrawFeedback=eveningRedrawFeedback\(outcome,challengeId\)/);
  assert.doesNotMatch(branch,/if\(state\.session\?\.id===sessionId\)/,
   'checking only the session leaves another account/tab exposed');
+});
+
+test('LR-026: uncertain redraw never completes a live accepted timer without server proof',()=>{
+ const due=Date.parse('2026-10-30T12:00:00Z');
+ for(const status of [undefined,null,'proposed','pending','invalid']){
+  assert.equal(redrawTimerRecovery(status,due,due+1000),'retain');
+ }
+ assert.equal(redrawTimerRecovery('accepted',due,due-1),'retain');
+ assert.equal(redrawTimerRecovery('accepted',due,due),'expire');
+ assert.equal(redrawTimerRecovery('accepted',due,due+1000),'expire');
+ assert.equal(redrawTimerRecovery('accepted',0,due+1000),'retain');
+ assert.equal(redrawTimerRecovery('accepted',Infinity,due+1000),'retain');
+ assert.equal(redrawTimerRecovery('accepted',due,NaN),'retain');
+ for(const status of ['passed','refused','completed']){
+  assert.equal(redrawTimerRecovery(status,0,due),'stop');
+ }
+});
+
+test('LR-026: redraw timer only stops on valid receipt or independently refreshed terminal status',()=>{
+ const start=app.indexOf("if(verb==='evening-pass'||verb==='evening-refuse-choice')");
+ const end=app.indexOf("if(verb==='evening-start')",start);
+ assert.ok(start>=0&&end>start);
+ const code=app.slice(start,end);
+ assert.match(code,/if\(receiptValid&&sameContext&&challengeTimer\.id===challengeId\)/);
+ assert.match(code,/const recovery=redrawTimerRecovery\(stored\?\.status,challengeTimer\.deadline,Date\.now\(\)\)/);
+ assert.match(code,/if\(recovery==='stop'\)/);
+ assert.match(code,/if\(recovery==='expire'\)/);
+ assert.match(code,/if\(receiptValid\)state\.eveningRefusalId=null/);
+ assert.match(code,/if\(isSameEveningResponseContext\(state,responseContext\)&&\s+challengeTimer\.id===challengeId&&challengeTimer\.decisionPending\)/);
+ assert.match(code,/else saveChallengeTimer\(\)/);
+ assert.doesNotMatch(code,/if\(challengeTimer\.id===challengeId\)\{\s+challengeTimer\.running=false/,
+  'timer must not stop unconditionally before receipt validation');
 });
 
 test('Each user sees ONLY their own challenge cards, sorted chronologically',()=>{
