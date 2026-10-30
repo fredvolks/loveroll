@@ -24,7 +24,10 @@ BEGIN
  IF couple_private.love_variety_rank(first_session,b,'SENSUEL',1)<>0 THEN
    RAISE EXCEPTION 'LR-026: leaked history between couples';
  END IF;
- -- Official category remains independent.
+ -- Official category remains independent, even for identical card titles.
+ IF couple_private.love_variety_rank(first_session,a,'SEXUEL',4)<>0 THEN
+   RAISE EXCEPTION 'LR-026: cross-category identical title biased a new card';
+ END IF;
  IF couple_private.love_variety_rank(first_session,a,'SEXUEL',1)<>0 THEN
    RAISE EXCEPTION 'LR-026: penalized unrelated category/activity';
  END IF;
