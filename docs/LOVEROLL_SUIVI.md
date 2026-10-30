@@ -325,3 +325,13 @@ Afficher près des catégories les cartes distinctes encore admissibles à la pr
 - **Sécurité :** contrôles de contexte utilisateur, séance, onglet et propriétaire de minuteur; ne pas interpréter une réponse RPC hors contexte comme permission de modifier l'écran. Aucune validation de vraie RLS GoTrue/Supabase staging réalisée par ce lot.
 - **Commits de ce lot :** `a0f507b`, `da8410b`, `a70270f`, `3a1cdf4`, `91623e8`, `13cadc1`, `16499d5`.
 - **Restant bloquant :** CI complète, deux/trois vrais comptes Auth sur staging distinct, recette Android/iPad/PC, revue de fusion, publication. Ne jamais déclarer LR-026 « livré » sur ces seuls tests statiques.
+
+### LR-026 — éviter l'écrasement par une soirée créée sur un autre appareil (30 octobre 2026)
+
+- **Constat :** un rafraîchissement ciblé peut recevoir une nouvelle séance active depuis le serveur alors que la réponse en cours concerne une séance précédente. L'ancien parcours pouvait modifier une partie de `state` avant d'abandonner le reste, provoquant un affichage mixte.
+- **Correctif :** `mayApplyScopedEveningRefresh` contrôle, immédiatement après la première lecture serveur et **avant toute écriture dans l'état client**, que la séance active correspond à celle de la requête. Une seule exception : le propriétaire de l'ancienne réponse peut constater la clôture effective de sa propre soirée, si aucune nouvelle séance n'est active.
+- **Compatibilité :** les synchronisations générales sans contexte gardent leur fonctionnement; la pige/repige, le début de carte et les minuteurs continuent à respecter les identités originales.
+- **Tests :** cas unitaires (séance conservée, fermée, absente, multiple et remplacée), test d'intégration simulée exécutant la fonction `refreshShared` réelle extraite du code et vérifiant l'absence de mutation d'état sur quatre réponses serveur invalides. Vérification ciblée isolée passée ; CI globale et vrais appareils/Supabase staging encore à confirmer.
+- **Révisions :** `9e0a8a4` (garde), `7fcb568` (connexion et précontrôle), `7b8e64a` (tests unitaires), `7ce3706` (test intégré simulé).
+- **Atelier Medium :** méthodes Architecture, Qualité et Sécurité consultées; l'application LoveRoll n'est pas encore enregistrée dans Atelier et le BOSS commun fait toujours l'objet de tâches de déploiement. Aucun résultat de mission BOSS autonome n'est revendiqué.
+- **Déploiement :** PR #176 toujours brouillon, aucune migration Supabase/production exécutée par ce lot.
