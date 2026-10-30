@@ -97,7 +97,8 @@ export function isPersistedEveningRedrawReceipt(outcome,rows,userId,sessionId){
  const original=mine.find(card=>card.id===outcome.original_id);
  if(original?.status!==(outcome.action==='pass'?'passed':'refused'))
   return false;
- if(outcome.replacement_id===null)return true;
+ if(outcome.replacement_id===null)
+  return !mine.some(card=>card.replaces_challenge_id===outcome.original_id);
  const replacement=mine.find(card=>card.id===outcome.replacement_id);
  return !!(replacement&&
   replacement.replaces_challenge_id===outcome.original_id&&
