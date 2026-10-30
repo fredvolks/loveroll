@@ -17,7 +17,7 @@ import {ROLL_TOTAL_MS} from './dice-roll-motion.mjs';
 import {createCoupleLiveSync} from './couple-live-sync.mjs?v=20261017-advent119';
 import {playableSessionForWeekly} from './couple-reset-view.mjs';
 import {eveningDailyAccess} from './evening-daily-policy.mjs?v=20261016-daily100';
-import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,snapshotEveningCardBeforeRedraw,isSameEveningResponseContext,isEveningRedrawBusyForCurrentView,ownsEveningRedrawRequest,ownsEveningTimerRecord,ownedSavedEveningTimerSnapshot,redrawTimerRecovery,mayApplyScopedEveningRefresh} from './evening-private-queue.mjs';
+import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,snapshotEveningCardBeforeRedraw,isSameEveningResponseContext,isEveningRedrawBusyForCurrentView,ownsEveningRedrawRequest,ownsEveningTimerRecord,ownedSavedEveningTimerSnapshot,redrawTimerRecovery,mayApplyScopedEveningRefresh,ownsCoupleAsyncRead} from './evening-private-queue.mjs';
 import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261029-web259';
 import {saveEveningSelection,restoreEveningSelection,clearEveningSelection} from './evening-resume.mjs?v=20261027-web240';
 import {eclatHtml} from './eclat-ui.mjs?v=20261027-web242';
@@ -103,7 +103,7 @@ const worldText=key=>worldT(worldLocale(),key);
 const state={user:null,profile:null,members:[],coupleId:null,couple:null,
  tab:launchParams.has('settings')?'settings':(['home','session','special','advent'].includes(launchParams.get('open'))?launchParams.get('open'):'home'),weekly:null,monthly:{},session:null,personal:[],challenges:[],gifts:[],rollStatus:null,customCards:[],customCategory:'SENSUEL',customSlot:1,customSearch:'',customFilter:'all',monthlyActivities:[],monthlySlot:1,libraryScreen:'list',libraryImportKind:null,specialEditorKey:null,specialEditorStage:'D6_activite',specialEditorFace:1,adventEditorDay:1,pushDevice:null,
  events:[],journal:[],advent:[],advent2026Config:null,advent2026Days:[],selectedDay:1,adventYear:null,adventSelected:null,adventHistory:false,adventOpening:null,adventRevealing:false,adventServerDate:null,unlockKey:null,channel:null,
- occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningRefusalId:null,redrawReady:false,redrawBusy:false,redrawBusyContext:null,eveningStartContext:null,timerStartContext:null,legacyAnswerContext:null,timerCompletionContext:null,timerCompletionRetryOwner:null,loveExcludedCards:[],eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],monthlyPassQuota:null,calendarPassMonth:null,cycleStatus:null,cycleDeferred:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,eveningInvite:null,eveningInviteBusy:false,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoBookingEdit:false,referral:null,eclat:null,eclatGalleryScroll:0,eclatHistory:[],eclatHistoryCouple:null,eclatBrowse:false,eclatHistoryError:false,eclatSelection:1,eclatMinutes:30,eclatIntent:'all',eclatDetails:false,eclatMusic:false,eclatFinished:null,testModeEligible:false,testMode:'real'};
+ occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningRefusalId:null,redrawReady:false,redrawBusy:false,redrawBusyContext:null,eveningStartContext:null,timerStartContext:null,legacyAnswerContext:null,timerCompletionContext:null,timerCompletionRetryOwner:null,loveExcludedCards:[],eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],monthlyPassQuota:null,calendarPassMonth:null,cycleStatus:null,cycleDeferred:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,eveningInvite:null,eveningInviteBusy:false,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoBookingEdit:false,referral:null,eclat:null,eclatGalleryScroll:0,eclatHistory:[],eclatHistoryCouple:null,eclatHistoryUserId:null,eclatBrowse:false,eclatHistoryError:false,eclatSelection:1,eclatMinutes:30,eclatIntent:'all',eclatDetails:false,eclatMusic:false,eclatFinished:null,testModeEligible:false,testMode:'real'};
 const names={SENSUEL:'Sensuel',COQUIN:'Coquin',SEXUEL:'Sexuel'};
 function isSharedCoupleReady(coupleId,members){
  return !!coupleId&&Array.isArray(members)&&members.length===2;
@@ -1334,21 +1334,42 @@ async function saveCurrentEclatNote(momentDone){
  }finally{draft.saving=false;}
  return key;
 }
+// Every Éclat response is tied to both the account and the couple.
+// Request tokens also stop an older poll from rolling back a newer status.
+let latestEclatHistoryRead=null,latestEclatStatusRead=null;
 async function refreshEclatHistory(){
- const coupleId=state.coupleId;
- if(!coupleId||!state.user)return;
- if(state.eclatHistoryCouple!==coupleId){state.eclatHistory=[];state.eclatHistoryCouple=coupleId;state.eclatGalleryScroll=0;}
+ const owner={userId:state.user?.id,coupleId:state.coupleId};
+ if(!ownsCoupleAsyncRead(state,owner))return;
+ const request={};latestEclatHistoryRead=request;
+ const current=()=>ownsCoupleAsyncRead(state,owner)&&
+  latestEclatHistoryRead===request;
+ if(state.eclatHistoryCouple!==owner.coupleId||
+    state.eclatHistoryUserId!==owner.userId){
+  state.eclatHistory=[];state.eclatHistoryCouple=owner.coupleId;
+  state.eclatHistoryUserId=owner.userId;state.eclatGalleryScroll=0;
+ }
  try{
-  const rows=await loadEclatHistory(client,coupleId);
-  if(state.coupleId===coupleId){state.eclatHistory=rows;state.eclatHistoryError=false;}
- }catch(error){if(state.coupleId===coupleId)state.eclatHistoryError=true;console.warn('Historique Éclat indisponible',error?.code||'');}
+  const rows=await loadEclatHistory(client,owner.coupleId);
+  if(!current())return;
+  state.eclatHistory=rows;state.eclatHistoryError=false;
+ }catch(error){
+  if(!current())return;
+  state.eclatHistoryError=true;
+  console.warn('Historique Éclat indisponible',error?.code||'');
+ }
 }
 async function refreshEclatStatus(){
- if(!state.user||!isSharedCoupleReady(state.coupleId,state.members))return null;
+ const owner={userId:state.user?.id,coupleId:state.coupleId};
+ if(!ownsCoupleAsyncRead(state,owner)||
+    !isSharedCoupleReady(owner.coupleId,state.members))return null;
+ const request={};latestEclatStatusRead=request;
+ const current=()=>ownsCoupleAsyncRead(state,owner)&&
+  latestEclatStatusRead===request;
  const value=await rpc('love_eclat_status');
- if(value&&state.coupleId)state.eclat=value;
+ if(!current())return null;
+ if(value)state.eclat=value;
  await refreshEclatHistory();
- return value;
+ return current()?value:null;
 }
 function renderEclat(){
  const e=previewEclatStatus(state.eclat,state.testMode,state.testModeEligible);
@@ -1358,7 +1379,8 @@ function renderEclat(){
  }else if(state.eclatMusic){eclatAudio.stop();state.eclatMusic=false;}
  frame(eclatHtml({status:e,selected:state.eclatSelection,minutes:state.eclatMinutes,
   details:state.eclatDetails,members:state.members,userId:state.user?.id,
-  music:state.eclatMusic,finished:state.eclatFinished,browse:state.eclatBrowse,intent:state.eclatIntent,noteState:e?.active&&!state.eclatBrowse?eclatNoteState():{},history:state.eclatHistoryCouple===state.coupleId?state.eclatHistory:[],historyError:state.eclatHistoryError}), 'Éclat','Notre expérience à deux');
+  music:state.eclatMusic,finished:state.eclatFinished,browse:state.eclatBrowse,intent:state.eclatIntent,noteState:e?.active&&!state.eclatBrowse?eclatNoteState():{},history:state.eclatHistoryCouple===state.coupleId&&
+   state.eclatHistoryUserId===state.user?.id?state.eclatHistory:[],historyError:state.eclatHistoryError}), 'Éclat','Notre expérience à deux');
 }
 function renderHome(){
  const members=state.members||[];
@@ -5002,7 +5024,9 @@ async function start(){
     state.passwordRecovery=true;state.showAuth=true;
     state.user=session?.user||state.user;render();
    }
-   if(event==='SIGNED_OUT'){eclatNoteDrafts.clear();state.user=null;state.profile=null;state.coupleId=null;state.wellbeing=null;state.personalPass=null;state.personalJournal=[];state.emailVerificationPending=false;render();}
+   if(event==='SIGNED_OUT'){eclatNoteDrafts.clear();state.eclat=null;
+   state.eclatHistory=[];state.eclatHistoryCouple=null;state.eclatHistoryUserId=null;
+   state.user=null;state.profile=null;state.coupleId=null;state.wellbeing=null;state.personalPass=null;state.personalJournal=[];state.emailVerificationPending=false;render();}
  });
 }
 // Version probe bypasses WebView/Chrome and service worker HTTP cache.
@@ -5124,12 +5148,22 @@ window.addEventListener('loveroll-native-google-result',async event=>{
 });
 
 setInterval(async()=>{
- if(document.hidden||state.tab!=='eclat'||!state.user||!isSharedCoupleReady(state.coupleId,state.members))return;
+ if(document.hidden||state.tab!=='eclat'||!state.user||
+    !isSharedCoupleReady(state.coupleId,state.members))return;
+ const owner={userId:state.user.id,coupleId:state.coupleId};
+ const request={};latestEclatStatusRead=request;
+ const current=()=>ownsCoupleAsyncRead(state,owner)&&
+  latestEclatStatusRead===request&&state.tab==='eclat';
  try{
   const prior=JSON.stringify(state.eclat);
   const value=await rpc('love_eclat_status');
-  if(state.tab==='eclat'&&JSON.stringify(value)!==prior){state.eclat=value;await refreshEclatHistory();render();}
- }catch(error){console.warn('Synchronisation Éclat',error?.code||'');}
+  if(!current())return;
+  if(JSON.stringify(value)!==prior){
+   state.eclat=value;
+   await refreshEclatHistory();
+   if(current())render();
+  }
+ }catch(error){if(current())console.warn('Synchronisation Éclat',error?.code||'');}
 },4500);
 start().catch(error=>{fail(error);window.LoveRollBoot?.showFailure();});
 
