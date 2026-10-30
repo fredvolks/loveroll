@@ -11,8 +11,11 @@ const COMMON=new Set([
  'mais','donc','sous','une','des','les','aux','sur','par','est','son',
  'ses','ton','tes','mes','mon','qui','que','quoi','avec'
 ]);
+// Keep French ligatures consistent with SQL love_variety_normalize.
+// NFKD removes accents but does NOT decompose œ or æ on JavaScript engines.
 const norm=value=>String(value??'').normalize('NFKD')
  .replace(/[\u0300-\u036f]/g,'').toLowerCase()
+ .replace(/œ/g,'oe').replace(/æ/g,'ae')
  .replace(/[^a-z0-9]+/g,' ').trim().replace(/\s+/g,' ');
 const tokens=value=>new Set(norm(value).split(' ').filter(w=>
  w.length>=3&&!COMMON.has(w)));
