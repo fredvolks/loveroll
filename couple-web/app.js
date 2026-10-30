@@ -2962,7 +2962,7 @@ async function handle(action,element){
    // successful repick or keep an invisible card selected in that case.
    const sameAfterRefresh=isSameEveningResponseContext(state,responseContext);
    const persistedReceiptValid=receiptValid&&sameAfterRefresh&&
-    isPersistedEveningRedrawReceipt(outcome,state.challenges,state.user.id,state.session.id);
+    isPersistedEveningRedrawReceipt(outcome,state.challenges,state.user.id,state.session.id,item);
    if(persistedReceiptValid){
     // A simultaneous second-device response can already have consumed the
     // replacement. Only focus it if it remains in the visible D6 queue.
