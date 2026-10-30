@@ -17,7 +17,7 @@ import {ROLL_TOTAL_MS} from './dice-roll-motion.mjs';
 import {createCoupleLiveSync} from './couple-live-sync.mjs?v=20261017-advent119';
 import {playableSessionForWeekly} from './couple-reset-view.mjs';
 import {eveningDailyAccess} from './evening-daily-policy.mjs?v=20261016-daily100';
-import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw} from './evening-private-queue.mjs';
+import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback} from './evening-private-queue.mjs';
 import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261029-web259';
 import {saveEveningSelection,restoreEveningSelection,clearEveningSelection} from './evening-resume.mjs?v=20261027-web240';
 import {eclatHtml} from './eclat-ui.mjs?v=20261027-web242';
@@ -2952,10 +2952,9 @@ async function handle(action,element){
    state.selectedEveningChallengeId=outcome?.replacement_id||null;
    if(state.session?.id===sessionId)state.showEveningChallenges=true;
    await refreshAndShow();
-   redrawFeedback=outcome?.replacement_unavailable?
-    'Aucun autre défi admissible dans cette catégorie pour ce soir. Tu peux réintégrer un défi retiré ou revenir plus tard.':
-    (refuse?(exclude?'Défi retiré du lot pour ce cycle.':'Défi conservé dans la pige.'):
-      'Défi passé — il pourra revenir plus tard.');
+   // A simultaneous device can win with a DIFFERENT action. The RPC's
+   // committed action/excluded flag is authoritative on every replay.
+   redrawFeedback=eveningRedrawFeedback(outcome);
   }catch(error){
    if(challengeTimer.id===challengeId&&challengeTimer.decisionPending){
     challengeTimer.decisionPending=false;
