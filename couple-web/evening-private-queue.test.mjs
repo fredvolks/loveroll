@@ -1195,23 +1195,23 @@ test('LR-026: legacy answer path ignores late responses and never stops a foreig
  const end=app.indexOf("if(verb==='finish-session')",begin);
  assert.ok(begin>0&&end>begin,'legacy response code exists');
  const handler=app.slice(begin,end);
- assert.match(handler,/const answerContext=\\{userId:state\\.user\\.id,sessionId:eveningId,tab:state\\.tab\\}/);
- assert.match(handler,/if\\(isSameEveningResponseContext\\(state,state\\.legacyAnswerContext\\)\\)return;/,
+ assert.match(handler,/const answerContext=\{userId:state\.user\.id,sessionId:eveningId,tab:state\.tab\}/);
+ assert.match(handler,/if\(isSameEveningResponseContext\(state,state\.legacyAnswerContext\)\)return;/,
   'duplicate taps on the same account and evening must not send overlapping answers');
- assert.match(handler,/const ownsAnswer=\\(\\)=>isSameEveningResponseContext\\(state,answerContext\\)&&/);
- assert.match(handler,/state\\.legacyAnswerContext===answerContext/);
- assert.match(handler,/const quota=await rpc\\('my_love_monthly_pass_quota'[\\s\\S]*?if\\(!ownsAnswer\\(\\)\\)return;[\\s\\S]*?state\\.monthlyPassQuota=quota/,
+ assert.match(handler,/const ownsAnswer=\(\)=>isSameEveningResponseContext\(state,answerContext\)&&/);
+ assert.match(handler,/state\.legacyAnswerContext===answerContext/);
+ assert.match(handler,/const quota=await rpc\('my_love_monthly_pass_quota'[\s\S]*?if\(!ownsAnswer\(\)\)return;[\s\S]*?state\.monthlyPassQuota=quota/,
   'a late quota lookup cannot overwrite the next account quota');
- assert.match(handler,/await rpc\\('answer_challenge'[\\s\\S]*?if\\(!ownsAnswer\\(\\)\\)return;/,
+ assert.match(handler,/await rpc\('answer_challenge'[\s\S]*?if\(!ownsAnswer\(\)\)return;/,
   'the response must still own its account and evening after the RPC');
- assert.match(handler,/ownsVisibleEveningTimer\\(parts\\[0\\],answerContext\\.userId,answerContext\\.sessionId\\)/,
+ assert.match(handler,/ownsVisibleEveningTimer\(parts\[0\],answerContext\.userId,answerContext\.sessionId\)/,
   'the old request may stop only its original timer');
- assert.doesNotMatch(handler,/if\\(challengeTimer\\.id===parts\\[0\\]&&/,
+ assert.doesNotMatch(handler,/if\(challengeTimer\.id===parts\[0\]&&/,
   'card ID alone is not proof of timer ownership');
- assert.match(handler,/const board=await rpc\\('my_love_evening_board'[\\s\\S]*?if\\(!ownsAnswer\\(\\)\\)return;/);
- assert.match(handler,/await rpc\\('finish_couple_session'[\\s\\S]*?if\\(!ownsAnswer\\(\\)\\)return;/);
- assert.match(handler,/const alreadyClosed=\\(await query\\('couple_sessions'[\\s\\S]*?if\\(!ownsAnswer\\(\\)\\)return;/);
- assert.match(handler,/finally\\{[\\s\\S]*?if\\(state\\.legacyAnswerContext===answerContext\\)state\\.legacyAnswerContext=null/,
+ assert.match(handler,/const board=await rpc\('my_love_evening_board'[\s\S]*?if\(!ownsAnswer\(\)\)return;/);
+ assert.match(handler,/await rpc\('finish_couple_session'[\s\S]*?if\(!ownsAnswer\(\)\)return;/);
+ assert.match(handler,/const alreadyClosed=\(await query\('couple_sessions'[\s\S]*?if\(!ownsAnswer\(\)\)return;/);
+ assert.match(handler,/finally\{[\s\S]*?if\(state\.legacyAnswerContext===answerContext\)state\.legacyAnswerContext=null/,
   'the old promise must not unlock a newer response');
  const origin={user:{id:'A'},session:{id:'night-1'},tab:'session'};
  const context={userId:'A',sessionId:'night-1',tab:'session'};
