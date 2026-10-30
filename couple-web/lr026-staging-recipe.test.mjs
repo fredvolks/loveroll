@@ -79,10 +79,22 @@ function mockSupabase(opts = {}) {
         return response(who === 'b' ? [{id: drawnId, recipient: b, status: 'proposed'}] : []);
       }
       if (opts.existingChallenge) return response([{id: drawnId}]);
-      if (!lastDraw || (opts.recipientOnlyRls && who === 'a')) return response([]);
+      if (!lastDraw) return response([]);
+      // Production RLS exposes challenges only to their recipient.
+      // Detect new wrong-recipient cards that B would never be able to read.
+      if (who === 'a') {
+        if (opts.unexpectedCardForA) return response([{
+          id: '99999999-1111-4111-8111-999999999999', session_id: session,
+          offered_by: b, status: 'proposed', recipient: a, category: 'SENSUEL'
+        }]);
+        if (!opts.leaksPartnerRowsToA) return response([]);
+      }
       return response([
-        {id: drawnId, status: 'passed', recipient: b, category: 'SENSUEL'},
-        {id: replacedId, status: 'proposed', recipient: b,
+        {id: drawnId, session_id: session, offered_by: a,
+          status: 'passed', recipient: opts.wrongOriginalRecipient ? a : b,
+          category: opts.wrongOriginalCategory ? 'SEXUEL' : 'SENSUEL'},
+        {id: replacedId, session_id: session, offered_by: a,
+          status: 'proposed', recipient: b,
           category: 'SENSUEL', replaces_challenge_id: drawnId}
       ]);
     }
@@ -183,6 +195,10 @@ test('play mode runs exactly one normal D100 plus one pass and one idempotent re
   assert.equal(out.replacement_id, replacedId);
   assert.equal(out.persisted_challenges, 2);
   assert.equal(out.pass_replay_idempotent, true);
+  const finalViews = mock.calls.filter(x => x.path === '/rest/v1/couple_challenges');
+  assert.deepEqual(finalViews.slice(-2).map(x => x.actorToken), [
+    'Bearer auth-token-for-b-test', 'Bearer auth-token-for-a-test'
+  ]);
   assert.equal(mock.counters().drawCount, 1);
   assert.equal(mock.counters().passCount, 2);
   assert(!JSON.stringify(out).includes('fake-password'));
@@ -245,9 +261,25 @@ test('real recipient-only RLS: a clean session can draw even if drawer A cannot 
   const challenges = mock.calls.filter(x => x.path === '/rest/v1/couple_challenges');
   assert.deepEqual(challenges.map(x => x.actorToken), [
     'Bearer auth-token-for-a-test', 'Bearer auth-token-for-b-test',
-    'Bearer auth-token-for-b-test'
+    'Bearer auth-token-for-b-test', 'Bearer auth-token-for-a-test'
   ]);
 });
+
+for (const options of [
+  {unexpectedCardForA: true},
+  {leaksPartnerRowsToA: true},
+  {wrongOriginalCategory: true},
+  {wrongOriginalRecipient: true}
+]) {
+  test('play postconditions detect cross-recipient or persisted-card corruption: ' +
+    JSON.stringify(options), async () => {
+    const mock = mockSupabase(options);
+    await assert.rejects(runStage(env(), 'play', mock.fetchFn),
+      /Unexpected challenge addressed to A|Only the two correct-category B challenges/);
+    assert.equal(mock.counters().drawCount, 1);
+    assert.equal(mock.counters().passCount, 2);
+  });
+}
 
 test('a third member or incomplete RLS membership view blocks every D100 before writes', async () => {
   for (const options of [{extraThirdMember: true}, {hidePartnerFromA: true}]) {
