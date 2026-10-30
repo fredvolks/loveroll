@@ -3,6 +3,55 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 const sql=readFileSync(new URL('./lr026-server-variety.sql',import.meta.url),'utf8');
 
+// Cross-file consistency guard for the disposable Refuser(false)/Refuser(true)
+// race. A broken reference previously made both calls fail with
+// "Défi inaccessible" instead of exercising concurrent locking.
+test('LR-026: Refuser-option race fixture IDs match the actual concurrent callers',()=>{
+ const seed=readFileSync(new URL(
+  './lr026-real-rpc-refuse-choices-race.seed.sql',import.meta.url),'utf8');
+ const script=readFileSync(new URL(
+  './lr026-real-rpc-concurrent.test.sh',import.meta.url),'utf8');
+ const uuid="[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}";
+ const extract=(table)=>{
+  const sql=new RegExp('INSERT INTO public\\.'+table+
+   '\\s*\\([\\s\\S]*?\\)\\s*VALUES\\s*\\(([\\s\\S]*?)\\);','i')
+   .exec(seed)?.[1];
+  assert.ok(sql,'missing fixture INSERT '+table);
+  return [...sql.matchAll(new RegExp("'("+uuid+")'","g"))].map(m=>m[1]);
+ };
+ const couples=extract('couples');
+ const members=extract('couple_members');
+ const sessions=extract('couple_sessions');
+ const challenges=extract('couple_challenges');
+ assert.equal(couples.length,1,'one race couple');
+ assert.equal(members.length,4,'two members must belong to the same couple');
+ assert.equal(sessions.length,3,'one session belongs to the race couple');
+ assert.equal(challenges.length,5,'one challenge, session, couple and two actors');
+ const [pair]=couples;
+ const [session,sessionPair,owner]=sessions;
+ const [origin,challengeSession,challengePair,giver,recipient]=challenges;
+ assert.equal(members[0],pair);
+ assert.equal(members[2],pair);
+ assert.equal(sessions[1],pair);
+ assert.equal(challengePair,pair);
+ assert.equal(challengeSession,session);
+ assert.equal(owner,giver);
+ assert.equal(members[1],giver);
+ assert.equal(members[3],recipient);
+ const raceSection=script.split(
+  '# Conflicting Refuser options from two devices:')[1];
+ assert.ok(raceSection,'concurrent test must invoke refusal-choice case');
+ assert.match(raceSection,/run_race refuse_without_versus_with_exclusion/);
+ assert.match(raceSection,/refuse_choices/);
+ assert.match(script,/refuse_no_exclude\) rpc=.*'refuse',false/);
+ assert.match(script,/refuse\) rpc=.*'refuse',true/);
+ const callerPair=raceSection.match(/^pair=([a-f0-9-]{36})$/m)?.[1];
+ const callerOrigin=raceSection.match(/^origin=([a-f0-9-]{36})$/m)?.[1];
+ assert.equal(callerPair,pair,'couple row lock must exist in the fixture');
+ assert.equal(callerOrigin,origin,'both Refuser callers need the seeded challenge');
+ assert.ok(callerPair!==callerOrigin,'couple and challenge UUIDs are distinct');
+});
+
 test('LR-026: live draw functions require reviewed fingerprints before replacement',()=>{
  assert.match(sql,/BEGIN;[\s\S]*?DO \$lr026_guard\$/);
  assert.match(sql,/b85aab4563ec7e04956bd059d91479fa/);
