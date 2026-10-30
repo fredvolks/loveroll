@@ -377,10 +377,16 @@ export async function runStage(env, mode, transport = fetch) {
     '&session_id=eq.' + config.sessionId;
   const drawn = await client.rpc('draw_for_partner',
     {p_session: config.sessionId, p_preference: config.preference, p_random: false}, a.token);
-  assert(UUID.test(drawn?.id || '') && eq(drawn.recipient, b.id) &&
-    eq(drawn.offered_by, a.id), 'Real D100 did not return a valid card offered by A to B');
+  assert(UUID.test(drawn?.id || '') &&
+    eq(drawn.session_id, config.sessionId) &&
+    eq(drawn.couple_id, config.coupleId) &&
+    eq(drawn.recipient, b.id) && eq(drawn.offered_by, a.id),
+    'Real D100 did not return a valid card in the correct session and duet from A to B');
   assert(['SENSUEL', 'SEXUEL'].includes(drawn.category),
     'Real D100 returned an unknown category');
+  assert(Number.isInteger(drawn.face) && drawn.face >= 1 && drawn.face <= 100 &&
+    Number.isInteger(drawn.card_id) && drawn.card_id >= 1 && drawn.card_id <= 100,
+    'Real D100 returned an invalid face or library card ID');
   // Independently read the newly persisted row as the B recipient and A.
   // A successful RPC response alone is not proof that it was saved for B.
   // NEVER run Passer if the first draw is missing, malformed or misrouted.
@@ -392,6 +398,8 @@ export async function runStage(env, mode, transport = fetch) {
     eq(firstForB[0].offered_by, a.id) &&
     eq(firstForB[0].recipient, b.id) &&
     firstForB[0].category === drawn.category &&
+    firstForB[0].face === drawn.face &&
+    firstForB[0].card_id === drawn.card_id &&
     Number.isInteger(firstForB[0].face) && firstForB[0].face >= 1 && firstForB[0].face <= 100 &&
     Number.isInteger(firstForB[0].card_id) && firstForB[0].card_id >= 1 && firstForB[0].card_id <= 100 &&
     firstForB[0].status === 'proposed' &&
@@ -405,6 +413,7 @@ export async function runStage(env, mode, transport = fetch) {
     {p_challenge: drawn.id, p_action: config.action, p_exclude: config.exclude}, b.token);
   assert(eq(response?.original_id, drawn.id) &&
     response.action === config.action && response.excluded === config.exclude &&
+    response.replacement_unavailable === false &&
     response.already_processed === false &&
     UUID.test(response.replacement_id || '') &&
     !eq(response.replacement_id, drawn.id),
