@@ -4691,6 +4691,7 @@ async function handle(action,element){
    const limit=Number(state.monthlyPassQuota.limit);
    state.monthlyPassQuota={...state.monthlyPassQuota,used,remaining:Math.max(0,limit-used),can_pass:used<limit};
   }
+  let completionClosedNight=false;
   if(parts[1]==='completed'){
    // Last completed challenge closes the shared night automatically.
    // The official server function checks BOTH adjusted D6 quotas atomically.
@@ -4708,11 +4709,11 @@ async function handle(action,element){
      if(!ownsAnswer())return;
      if(!alreadyClosed)throw error;
     }
-    state.showEveningChallenges=false;state.selectedEveningChallengeId=null;
-   }else{
-    state.showEveningChallenges=true;state.selectedEveningChallengeId=item.id;
+    // A successful RPC alone is not an authoritative refreshed closure.
+    // Keep the existing queue visible until the recipient-only read confirms.
+    completionClosedNight=true;
    }
-  }else{state.showEveningChallenges=true;state.selectedEveningChallengeId=item.id;}
+  }
   if(!ownsAnswer())return;
   // The unscoped refreshAndShow() could overwrite a newly signed-in user's
   // state while its requests were in flight. Refresh under this operation.
@@ -4726,6 +4727,16 @@ async function handle(action,element){
      !(state.session?.id===eveningId||
        (state.session===null&&state.sessions?.some(s=>
         s.id===eveningId&&s.finished_at))))return;
+  if(completionClosedNight){
+   if(state.session!==null||!state.sessions?.some(s=>
+      s.id===eveningId&&s.finished_at)){
+    notify('Fin de soirée envoyée, mais pas encore confirmée. Actualise tes défis.');
+    return;
+   }
+   state.showEveningChallenges=false;state.selectedEveningChallengeId=null;
+  }else{
+   state.showEveningChallenges=true;state.selectedEveningChallengeId=item.id;
+  }
   return;
   }finally{
    // Release the owner token BEFORE painting a final state. Otherwise the
