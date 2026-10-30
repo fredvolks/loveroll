@@ -76,6 +76,11 @@ function mockSupabase(opts = {}) {
         {session_id: session, user_id: b, face: 4}
       ];
       if (opts.d6HiddenFromB && who === 'b') return response([]);
+      if (opts.d6DifferentFaceForB && who === 'b')
+        return response([valid[0], {...valid[1], face: 5}]);
+      if (opts.d6SwappedFacesForB && who === 'b')
+        return response([{...valid[0], face: 4}, {...valid[1], face: 2}]);
+      if (opts.d6ReorderedForB && who === 'b') return response([...valid].reverse());
       if (opts.missingSecondD6) return response(valid.slice(0, 1));
       if (opts.duplicateD6) return response([valid[0], {...valid[0]}]);
       if (opts.d6WrongOwner) return response([
@@ -248,6 +253,28 @@ test('play mode runs exactly one normal D100 plus one pass and one idempotent re
   assert(!JSON.stringify(out).includes('fake-password'));
   assert(!JSON.stringify(out).includes('auth-token'));
 });
+for (const options of [
+  {d6DifferentFaceForB: true},
+  {d6SwappedFacesForB: true}
+]) {
+  test('mismatched D6 owner/face snapshot blocks any D100 or Passer: ' +
+    JSON.stringify(options), async () => {
+    const mock = mockSupabase(options);
+    await assert.rejects(runStage(env(), 'play', mock.fetchFn),
+      /D6 faces disagree between partner A and B/);
+    assert.equal(mock.counters().drawCount, 0);
+    assert.equal(mock.counters().passCount, 0);
+  });
+}
+
+test('D6 order differs across authenticated views without invalidating faces', async () => {
+  const mock = mockSupabase({d6ReorderedForB: true});
+  const out = await runStage(env(), 'play', mock.fetchFn);
+  assert.equal(out.pass_replay_idempotent, true);
+  assert.equal(mock.counters().drawCount, 1);
+  assert.equal(mock.counters().passCount, 2);
+});
+
 test('preexisting staged challenge prevents ANY additional D100 draw', async () => {
   const mock = mockSupabase({existingChallenge: true});
   await assert.rejects(runStage(env(), 'play', mock.fetchFn), /clean session/);
