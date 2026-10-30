@@ -53,3 +53,17 @@ test('LR-026: exact titles plus meaningful content similarity and non-blocking f
  assert.match(sql,/ASC, random\(\) LIMIT 1;/);
  assert.match(sql,/NE PAS appliquer en production/);
 });
+
+test('LR-026: post-installation verification aborts before commit if either RPC patch is missing',()=>{
+ assert.match(sql,/DO \\$lr026_postcheck\\$/);
+ assert.match(sql,/pg_catalog\\.strpos\\(v_normal,/);
+ assert.match(sql,/pg_catalog\\.strpos\\(v_replace,/);
+ assert.match(sql,/intégration RPC incomplète, rollback/);
+ assert.match(sql,/fonctions privées manquantes, rollback/);
+ assert.ok(sql.indexOf('DO $lr026_guard$') <
+           sql.indexOf('DO $lr026_apply$'));
+ assert.ok(sql.indexOf('DO $lr026_apply$') <
+           sql.indexOf('DO $lr026_postcheck$'));
+ assert.ok(sql.indexOf('DO $lr026_postcheck$') <
+           sql.lastIndexOf('COMMIT;'));
+});
