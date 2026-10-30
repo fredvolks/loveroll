@@ -81,6 +81,7 @@ DECLARE
  stamp timestamptz;
  passed integer;
  blocked boolean;
+ error_text text;
 BEGIN
  PERFORM pg_catalog.set_config('lr026.test_verified','yes',true);
  PERFORM pg_catalog.set_config('request.jwt.claim.sub',a::text,true);
@@ -90,7 +91,12 @@ BEGIN
  blocked:=false;
  BEGIN
   PERFORM public.draw_for_partner(s,'SENSUEL',false);
- EXCEPTION WHEN OTHERS THEN blocked:=true;
+ EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS error_text=MESSAGE_TEXT;
+    IF error_text<>'Soirée inaccessible' THEN
+      RAISE EXCEPTION 'REAL RPC: unexpected outsider rejection: %',error_text;
+    END IF;
+    blocked:=true;
  END;
  IF NOT blocked THEN RAISE EXCEPTION 'REAL RPC: outsider managed to draw';END IF;
 
@@ -126,7 +132,12 @@ BEGIN
  blocked:=false;
  BEGIN
   PERFORM public.draw_for_partner(s,'SENSUEL',false);
- EXCEPTION WHEN OTHERS THEN blocked:=true;
+ EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS error_text=MESSAGE_TEXT;
+    IF error_text<>'Attendre la réponse au défi précédent' THEN
+      RAISE EXCEPTION 'REAL RPC: unexpected repeat-draw rejection: %',error_text;
+    END IF;
+    blocked:=true;
  END;
  IF NOT blocked THEN RAISE EXCEPTION 'REAL RPC: overlapping open challenge'; END IF;
 
@@ -134,7 +145,12 @@ BEGIN
  blocked:=false;
  BEGIN
   PERFORM public.love_respond_and_redraw(drawn.id,'pass',false);
- EXCEPTION WHEN OTHERS THEN blocked:=true;
+ EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS error_text=MESSAGE_TEXT;
+    IF error_text<>'Seul le destinataire peut répondre' THEN
+      RAISE EXCEPTION 'REAL RPC: unexpected wrong-recipient rejection: %',error_text;
+    END IF;
+    blocked:=true;
  END;
  IF NOT blocked THEN RAISE EXCEPTION 'REAL RPC: wrong recipient passed'; END IF;
 
@@ -172,7 +188,12 @@ BEGIN
  blocked:=false;
  BEGIN
   PERFORM public.love_respond_and_redraw(replacement.id,'pass',false);
- EXCEPTION WHEN OTHERS THEN blocked:=true;
+ EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS error_text=MESSAGE_TEXT;
+    IF error_text NOT LIKE 'Limite mensuelle de passes atteinte%' THEN
+      RAISE EXCEPTION 'REAL RPC: unexpected quota rejection: %',error_text;
+    END IF;
+    blocked:=true;
  END;
  IF NOT blocked OR (SELECT status FROM public.couple_challenges
       WHERE id=replacement.id)<>'proposed' THEN
@@ -184,7 +205,12 @@ BEGIN
  blocked:=false;
  BEGIN
   PERFORM public.love_respond_and_redraw(replacement.id,'refuse',true);
- EXCEPTION WHEN OTHERS THEN blocked:=true;
+ EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS error_text=MESSAGE_TEXT;
+    IF error_text<>'Aucun autre défi admissible dans cette catégorie pour ce soir' THEN
+      RAISE EXCEPTION 'REAL RPC: unexpected refusal rollback error: %',error_text;
+    END IF;
+    blocked:=true;
  END;
  IF NOT blocked
     OR (SELECT status FROM public.couple_challenges WHERE id=replacement.id)
