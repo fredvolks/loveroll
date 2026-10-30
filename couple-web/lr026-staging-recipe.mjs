@@ -175,11 +175,18 @@ export async function runStage(env, mode, transport = fetch) {
     assert(session.length === 1 && eq(session[0].id, config.sessionId) &&
       eq(session[0].couple_id, config.coupleId) && session[0].finished_at === null,
       'Active staging session must be readable by both actors under RLS');
+    // The real member policy exposes the WHOLE duo to both members.
+    // Merely proving that A and B each see themselves misses a third or
+    // dangling membership. The production draw targets an arbitrary member
+    // other than auth.uid(); such a malformed fixture could mutate before
+    // the recipe notices a wrong recipient. Fail before any gameplay write.
     const members = await client.rows('couple_members',
-      'select=couple_id,user_id&couple_id=eq.' + config.coupleId + '&user_id=eq.' + actor.id,
+      'select=couple_id,user_id&couple_id=eq.' + config.coupleId,
       actor.token);
-    assert(members.length === 1 && eq(members[0].user_id, actor.id),
-      'Each actor must see their own membership through real RLS');
+    assert(members.length === 2 &&
+      members.every(m => eq(m.couple_id, config.coupleId)) &&
+      [a.id, b.id].every(id => members.filter(m => eq(m.user_id, id)).length === 1),
+      'Each actor must see exactly A and B as the two members, with no outsider');
   }
   const result = {stage_ref: config.ref, mode, safe: true,
     real_auth_accounts: 2, couple_id: config.coupleId, session_id: config.sessionId,
