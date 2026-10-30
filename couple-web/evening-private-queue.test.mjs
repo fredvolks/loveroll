@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,snapshotEveningCardBeforeRedraw,isSameEveningResponseContext,isEveningRedrawBusyForCurrentView,ownsEveningRedrawRequest,redrawTimerRecovery} from './evening-private-queue.mjs';
+import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,snapshotEveningCardBeforeRedraw,EVENING_REDRAW_IMMUTABLE_FIELDS,isSameEveningResponseContext,isEveningRedrawBusyForCurrentView,ownsEveningRedrawRequest,redrawTimerRecovery} from './evening-private-queue.mjs';
 import {premiumEveningHtml} from './premium-evening.mjs';
 const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
 const migration=readFileSync(new URL('./migrations/20261015_evening_private_challenge_queue.sql',import.meta.url),'utf8');
@@ -398,6 +398,25 @@ test('LR-026: redraw success requires original decision and replacement in recip
   'SQL idempotency receipt may omit availability only on replay');
 });
 
+test('LR-026: snapshot and persisted validation share the exact 14-field immutable contract',()=>{
+ assert.ok(Object.isFrozen(EVENING_REDRAW_IMMUTABLE_FIELDS));
+ assert.deepEqual([...EVENING_REDRAW_IMMUTABLE_FIELDS],[
+  'id','session_id','couple_id','offered_by','recipient','category',
+  'face','card_id','card_title','card_description','card_timer_minutes',
+  'is_gifted','created_at','replaces_challenge_id'
+ ]);
+ const helper=readFileSync(new URL('./evening-private-queue.mjs',import.meta.url),'utf8');
+ const captured=helper.slice(helper.indexOf('export function snapshotEveningCardBeforeRedraw'),
+  helper.indexOf('export function isPersistedEveningRedrawReceipt'));
+ const checked=helper.slice(helper.indexOf('export function isPersistedEveningRedrawReceipt'),
+  helper.indexOf('export function activeEveningRedrawReplacementId'));
+ assert.match(captured,/EVENING_REDRAW_IMMUTABLE_FIELDS\.every\(/);
+ assert.match(captured,/EVENING_REDRAW_IMMUTABLE_FIELDS\.map\(/);
+ assert.match(checked,/EVENING_REDRAW_IMMUTABLE_FIELDS\.every\(/);
+ assert.doesNotMatch(checked,/const immutableKeys=/,
+  'do not copy the field contract a second time');
+});
+
 test('LR-026: tap-time D100 snapshot survives in-place mutation during pending RPC',()=>{
  const item={id:'card1',recipient:'fred',session_id:'night1',
   couple_id:'duo1',offered_by:'partner',category:'SENSUEL',
@@ -470,9 +489,7 @@ test('LR-026: a response cannot rewrite the original D100 card shown at tap time
   refused_at:'2026-10-30T12:05:00Z'};
  assert.equal(check(refused,replacement,seen,{...receipt,action:'refuse'}),true,
   'Refuser must retain the same original identity');
- for(const key of ['id','session_id','couple_id','offered_by','recipient',
-  'category','face','card_id','card_title','card_description',
-  'card_timer_minutes','is_gifted','created_at','replaces_challenge_id']){
+ for(const key of EVENING_REDRAW_IMMUTABLE_FIELDS){
   const altered={...stored,[key]:key==='face'?18:
    key==='card_id'?10:key==='card_timer_minutes'?5:
    key==='is_gifted'?false:key==='replaces_challenge_id'?'other':
