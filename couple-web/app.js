@@ -4668,7 +4668,6 @@ async function handle(action,element){
   state.legacyAnswerContext=answerContext;
   const ownsAnswer=()=>isSameEveningResponseContext(state,answerContext)&&
    state.legacyAnswerContext===answerContext;
-  let responsePainted=false;
   try{
   // Surface the busy state BEFORE the server call, not only on completion.
   render();
@@ -4727,17 +4726,18 @@ async function handle(action,element){
      !(state.session?.id===eveningId||
        (state.session===null&&state.sessions?.some(s=>
         s.id===eveningId&&s.finished_at))))return;
-  responsePainted=true;render();return;
+  return;
   }finally{
-   // An older promise cannot release the lock held by a newer request.
+   // Release the owner token BEFORE painting a final state. Otherwise the
+   // completed D100 still renders the disabled "Réponse en cours" button.
    if(state.legacyAnswerContext===answerContext){
     state.legacyAnswerContext=null;
-    // On failure (or an unconfirmed refresh), restore controls immediately.
-    // A different account, tab or session must not be repainted here.
-    if(!responsePainted&&state.user?.id===answerContext.userId&&
-       state.coupleId===answerContext.coupleId&&
-       state.session?.id===answerContext.sessionId&&state.tab===answerContext.tab)
-     render();
+    const sameView=state.user?.id===answerContext.userId&&
+     state.coupleId===answerContext.coupleId&&state.tab===answerContext.tab;
+    const sameEvening=state.session?.id===answerContext.sessionId||
+     (state.session===null&&state.sessions?.some(entry=>
+      entry.id===answerContext.sessionId&&entry.finished_at));
+    if(sameView&&sameEvening)render();
    }
   }
  }
