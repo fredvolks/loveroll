@@ -3043,10 +3043,11 @@ async function handle(action,element){
      ?'Réponse reçue, mais la nouvelle carte n’est pas confirmée dans ta liste. Vérifie tes défis.'
      :eveningRedrawFeedback(outcome,challengeId);
   }catch(error){
-   // A rejected RPC may arrive after account / evening navigation; it
-   // must not save an old timer under the new account's storage key.
-   if(isSameEveningResponseContext(state,responseContext)&&
-      challengeTimer.id===challengeId&&challengeTimer.decisionPending){
+   // A failure from an old account/evening/tab must never surface an
+   // unrelated error on the screen now controlled by another session.
+   // finally still unlocks the action and renders the current account.
+   if(!isSameEveningResponseContext(state,responseContext))return;
+   if(challengeTimer.id===challengeId&&challengeTimer.decisionPending){
     challengeTimer.decisionPending=false;
     if(challengeTimer.deadline>0&&challengeTimer.deadline<=Date.now()){
      challengeTimer.running=false;challengeTimer.remainingMs=0;
