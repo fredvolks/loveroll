@@ -1367,7 +1367,9 @@ test('LR-026: legacy response refresh remains scoped across a night closure',()=
   'a late unscoped refresh must never mix the next account into this response');
  assert.match(legacy,/state\.legacyAnswerContext!==answerContext\|\|/);
  assert.match(legacy,/state\.session===null&&state\.sessions\?\.some\(s=>/);
- assert.match(legacy,/render\(\);return;/);
+ assert.match(legacy,/state\.legacyAnswerContext=null;/);
+ assert.match(legacy,/if\(sameView&&sameEvening\)render\(\);/,
+  'manual D100 must repaint only after clearing its owner lock');
 });
 
 test('LR-026: start, timer and redraw taps are serialized per recipient card',()=>{
