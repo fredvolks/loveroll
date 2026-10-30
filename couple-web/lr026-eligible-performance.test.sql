@@ -2,9 +2,54 @@
 -- Disposable PostgreSQL 17 ONLY. Real draw/repige SQL first EXCLUDES cards
 -- previously drawn in this session/category/recipient, so the 199-seen
 -- all-candidates microbenchmark is NOT representative of user latency.
--- Measure the unplayed set only, against identical already-played history.
+-- Measure the unplayed set only, against identical already-played history. The reference rank now invokes
+-- the frozen pre-optimization comparator, NOT the new comparator.
 -- Timings are diagnostic; CI asserts parity and eligibility, not wall time.
 BEGIN;
+
+-- Frozen PRE-OPTIMIZATION semantic comparator; same original logic as
+-- lr026-similarity-parity.test.sql. Compare actual old vs new CPU cost.
+CREATE FUNCTION couple_private.lr026_previous_near(
+ p_title text,p_description text,p_old_title text,p_old_description text
+) RETURNS boolean LANGUAGE sql IMMUTABLE SET search_path=''
+AS $lr026_previous$
+ WITH normalized AS (
+   SELECT couple_private.love_variety_normalize(p_title) AS a_title,
+          couple_private.love_variety_normalize(p_old_title) AS b_title,
+          couple_private.love_variety_normalize(p_description) AS a_desc,
+          couple_private.love_variety_normalize(p_old_description) AS b_desc
+ ), current_terms AS (
+   SELECT DISTINCT w.token
+   FROM normalized n,
+    LATERAL pg_catalog.regexp_split_to_table(n.a_desc,' ') AS w(token)
+   WHERE pg_catalog.length(w.token)>=4 AND w.token NOT IN (
+    'avec','comme','dans','pour','puis','sans','toute','tous','votre',
+    'notre','leurs','chez','avant','apres','pendant','entre','faire',
+    'faites','invite','invitez','propose','proposez','choisis',
+    'choisissez','partenaire','ensemble','quelques','minutes','minute',
+    'chaque','autre','vous','nous'
+   )
+ ), prior_terms AS (
+   SELECT DISTINCT w.token
+   FROM normalized n,
+    LATERAL pg_catalog.regexp_split_to_table(n.b_desc,' ') AS w(token)
+   WHERE pg_catalog.length(w.token)>=4 AND w.token NOT IN (
+    'avec','comme','dans','pour','puis','sans','toute','tous','votre',
+    'notre','leurs','chez','avant','apres','pendant','entre','faire',
+    'faites','invite','invitez','propose','proposez','choisis',
+    'choisissez','partenaire','ensemble','quelques','minutes','minute',
+    'chaque','autre','vous','nous'
+   )
+ ), scores AS (
+   SELECT
+    (SELECT pg_catalog.count(*) FROM current_terms JOIN prior_terms USING(token)) AS shared,
+    (SELECT pg_catalog.count(*) FROM current_terms) AS size_a,
+    (SELECT pg_catalog.count(*) FROM prior_terms) AS size_b
+ )
+ SELECT (a_title<>'' AND b_title<>'' AND a_title=b_title)
+   OR (shared>=5 AND shared*100 >= 68*(size_a+size_b-shared))
+ FROM normalized CROSS JOIN scores;
+$lr026_previous$;
 
 CREATE FUNCTION couple_private.lr026_eligible_reference_rank(
  p_session uuid,p_couple uuid,p_category text,p_card_id integer
@@ -26,7 +71,7 @@ AS $lr026_reference$
    WHERE seen.couple_id=p_couple AND seen.session_id=p_session
      AND seen.category=p_category
      AND (seen.card_id=p_card_id OR
-       couple_private.love_variety_near(
+       couple_private.lr026_previous_near(
         current_card.title,current_card.description,
         seen.card_title,seen.card_description))
  ) THEN 1 ELSE 0 END;
