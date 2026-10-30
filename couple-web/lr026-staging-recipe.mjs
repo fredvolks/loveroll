@@ -307,6 +307,27 @@ export async function runStage(env, mode, transport = fetch) {
       sessionRows[0].paired_turns === false && sessionRows[0].self_draws === false,
       'Mutating recipe requires both partners to see a fresh legacy partner-draw session (paired_turns=false, self_draws=false)');
   }
+  // Check session lifecycle and complete duo membership again after each
+  // mutating RPC. A valid preflight alone cannot detect a changed partner,
+  // closed session, or changed game mode during the synthetic exercise.
+  async function assertDuetUnchanged(stage) {
+    for (const actor of [a, b]) {
+      const sessions = await client.rows('couple_sessions',
+        'select=id,couple_id,finished_at,paired_turns,self_draws&id=eq.' +
+          config.sessionId, actor.token);
+      assert(sessions.length === 1 && eq(sessions[0].id, config.sessionId) &&
+        eq(sessions[0].couple_id, config.coupleId) &&
+        sessions[0].finished_at === null &&
+        sessions[0].paired_turns === false && sessions[0].self_draws === false,
+        'Staging session changed ' + stage + '; stop further gameplay RPCs');
+      const members = await client.rows('couple_members',
+        'select=couple_id,user_id&couple_id=eq.' + config.coupleId, actor.token);
+      assert(members.length === 2 &&
+        members.every(m => eq(m.couple_id, config.coupleId)) &&
+        [a.id, b.id].every(id => members.filter(m => eq(m.user_id, id)).length === 1),
+        'Staging duet membership changed ' + stage + '; stop further gameplay RPCs');
+    }
+  }
   // Reject a malformed or RLS-invisible D6 fixture before calling the
   // mutating D100 RPC. A-only visibility does NOT prove B can read both D6.
   // Explicit session IDs, unique owners and faces 1..6 are mandatory.
@@ -356,6 +377,7 @@ export async function runStage(env, mode, transport = fetch) {
     'First D100 must persist exactly one new A-to-B proposal before Passer');
   assert(firstForA.length === 0,
     'First D100 must not persist a proposal visible to A before Passer');
+  await assertDuetUnchanged('after D100, before Passer');
   await assertD6Unchanged('after D100, before Passer');
   const response = await client.rpc('love_respond_and_redraw',
     {p_challenge: drawn.id, p_action: 'pass', p_exclude: false}, b.token);
@@ -389,6 +411,7 @@ export async function runStage(env, mode, transport = fetch) {
     return JSON.stringify([...stored].sort((x, y) => x.id.localeCompare(y.id)));
   }
   const beforeReplay = await persistedPassSnapshot();
+  await assertDuetUnchanged('after the first Passer, before replay');
   await assertD6Unchanged('after the first Passer, before replay');
   const replay = await client.rpc('love_respond_and_redraw',
     {p_challenge: drawn.id, p_action: 'pass', p_exclude: false}, b.token);
@@ -400,6 +423,7 @@ export async function runStage(env, mode, transport = fetch) {
   const afterReplay = await persistedPassSnapshot();
   assert(afterReplay === beforeReplay,
     'Repeated Passer must not change any persisted challenge field');
+  await assertDuetUnchanged('after idempotent Passer replay');
   await assertD6Unchanged('after idempotent Passer replay');
   return {...result, draw_id: drawn.id, replacement_id: response.replacement_id,
     replacement_same_category: true, pass_replay_idempotent: true, persisted_challenges: 2};
