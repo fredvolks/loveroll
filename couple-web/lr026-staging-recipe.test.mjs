@@ -77,12 +77,17 @@ function mockSupabase(opts = {}) {
       if (opts.hideSessionB && who === 'b') return response([]);
       if (opts.duetSessionHiddenFromBAfterDraw && afterDraw && who === 'b')
         return response([]);
-      const isPlayFlagsRead = url.searchParams.get('select') === 'id,paired_turns,self_draws';
+      const isPlayFlagsRead = url.searchParams.get('select') ===
+        'id,couple_id,finished_at,paired_turns,self_draws' &&
+        drawCount === 0 && passCount === 0;
       return response([{
         id: (isPlayFlagsRead && opts.wrongPlaySessionIdB && who === 'b') ||
           (afterDraw && opts.duetWrongSessionAfterDraw) ? couple : session,
-        couple_id: afterDraw && opts.duetWrongCoupleAfterDraw ? a : couple,
+        couple_id: (afterDraw && opts.duetWrongCoupleAfterDraw) ||
+          (isPlayFlagsRead && opts.preflightWrongCoupleB && who === 'b')
+          ? a : couple,
         finished_at: opts.finishedSession ||
+          (isPlayFlagsRead && opts.preflightClosedSessionB && who === 'b') ||
           (afterDraw && opts.duetClosedAfterDraw) ||
           (afterFirstPass && opts.duetClosedAfterFirstPass) ||
           (afterReplay && opts.duetClosedAfterReplay)
