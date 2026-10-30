@@ -9,7 +9,7 @@ CREATE SCHEMA auth;
 CREATE FUNCTION auth.uid() RETURNS uuid
 LANGUAGE sql STABLE SET search_path=''
 AS $lr026_auth_uid$
- SELECT pg_catalog.nullif(
+ SELECT NULLIF(
    pg_catalog.current_setting('request.jwt.claim.sub',true),'')::uuid;
 $lr026_auth_uid$;
 REVOKE ALL ON SCHEMA auth FROM PUBLIC;
