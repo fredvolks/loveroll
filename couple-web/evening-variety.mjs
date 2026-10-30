@@ -49,6 +49,11 @@ function theme(card){
 }
 export function areNearDuplicateEveningCards(first,second){
  if(!first||!second)return false;
+ // Server-side LR-026 ranks previously seen cards ONLY inside the selected
+ // official D100 category. Identical titles across SENSUEL/SEXUEL must not
+ // suppress each other in the advisory client filter.
+ const firstCategory=norm(first.category),secondCategory=norm(second.category);
+ if(firstCategory&&secondCategory&&firstCategory!==secondCategory)return false;
  const aId=stableId(first),bId=stableId(second);
  if(aId&&bId&&aId===bId)return true;
  const aTitle=norm(cardTitle(first)),bTitle=norm(cardTitle(second));
