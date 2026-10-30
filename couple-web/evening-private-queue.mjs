@@ -89,7 +89,7 @@ export function isValidEveningRedrawReceipt(outcome,expectedOriginalId=null){
  * The replacement might already be accepted/completed by another device:
  * its presence and provenance matter, not its current action status.
  */
-export function isPersistedEveningRedrawReceipt(outcome,rows,userId,sessionId){
+export function isPersistedEveningRedrawReceipt(outcome,rows,userId,sessionId,originalBefore=null){
  if(!isValidEveningRedrawReceipt(outcome))return false;
  if(typeof userId!=='string'||!userId||typeof sessionId!=='string'||!sessionId)
   return false;
@@ -97,6 +97,18 @@ export function isPersistedEveningRedrawReceipt(outcome,rows,userId,sessionId){
  const original=mine.find(card=>card.id===outcome.original_id);
  if(original?.status!==(outcome.action==='pass'?'passed':'refused'))
   return false;
+ // After the tap the server may change only decision state and stamps.
+ // Compare the refreshed row against the exact card seen on this device.
+ if(originalBefore!==null){
+  if(!originalBefore||typeof originalBefore!=='object')return false;
+  const immutableKeys=['id','session_id','couple_id','offered_by',
+   'recipient','category','face','card_id','card_title',
+   'card_description','card_timer_minutes','is_gifted','created_at',
+   'replaces_challenge_id'];
+  if(!immutableKeys.every(key=>
+   Object.hasOwn(originalBefore,key)&&Object.hasOwn(original,key)&&
+   originalBefore[key]===original[key]))return false;
+ }
  // Supabase/PostgREST returns absolute RFC3339 timestamps. Date.parse
  // alone accepts ambiguous input such as '1' or a date without a timezone;
  // those are not trustworthy evidence of a committed database mutation.
