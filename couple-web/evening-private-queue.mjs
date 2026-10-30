@@ -133,6 +133,12 @@ export function isPersistedEveningRedrawReceipt(outcome,rows,userId,sessionId,or
  if(!validStamp(original.created_at)||!validCardContent(original)||
   typeof original.is_gifted!=='boolean'||!validDecisionStamps(original))
   return false;
+ const validD100=card=>Number.isInteger(card.face)&&card.face>=1&&card.face<=100&&
+  Number.isInteger(card.card_id)&&card.card_id>=1&&card.card_id<=100;
+ if(!validD100(original))return false;
+ // The decision must not predate the challenge it answered.
+ const actionStamp=outcome.action==='pass'?original.passed_at:original.refused_at;
+ if(Date.parse(actionStamp)<Date.parse(original.created_at))return false;
  // One answered card occupies precisely one D6 slot. Repeated device
  // responses must never create two direct replacements for the same origin.
  const replacements=mine.filter(card=>
@@ -142,11 +148,11 @@ export function isPersistedEveningRedrawReceipt(outcome,rows,userId,sessionId,or
  const replacement=replacements[0];
  if(!validStamp(replacement.created_at)||!validCardContent(replacement)||
   !validDecisionStamps(replacement))return false;
+ if(Date.parse(replacement.created_at)<Date.parse(original.created_at))
+  return false;
  // The official SQL chooses a different library card and D100 face
  // within the same category, recipient and evening. A stale or corrupted
  // response must not falsely confirm the same physical card again.
- const validD100=card=>Number.isInteger(card.face)&&card.face>=1&&card.face<=100&&
-  Number.isInteger(card.card_id)&&card.card_id>=1&&card.card_id<=100;
  return replacement.id===outcome.replacement_id&&
   replacement.category===original.category&&
   replacement.offered_by===original.offered_by&&
