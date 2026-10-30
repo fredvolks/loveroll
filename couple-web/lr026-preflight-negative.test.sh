@@ -4,7 +4,7 @@
 set -euo pipefail
 
 PREFLIGHT="couple-web/lr026-live-schema-preflight.sql"
-BASE_DB="${PGDATABASE:?Run only against GitHub's disposable LR-026 fixture}"
+BASE_DB="${PGDATABASE:?Run only against disposable GitHub LR-026 fixture}"
 
 check_fail_closed() {
   local db="$1" output
