@@ -17,6 +17,11 @@ CREATE TABLE lr026_race.challenges (
  passed_at timestamptz,
  CHECK(status IN ('proposed','passed'))
 );
+-- CI installs the EXACT production pass-stamp function first. No manual
+-- passed_at writes in the simulated quota RPC below.
+CREATE TRIGGER love_stamp_passed_at BEFORE UPDATE OF status
+ ON lr026_race.challenges FOR EACH ROW
+ EXECUTE FUNCTION couple_private.love_stamp_challenge_pass();
 INSERT INTO lr026_race.couples VALUES
  (1,'aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa',
     'bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb',1);
@@ -69,7 +74,7 @@ BEGIN
  END IF;
 
  UPDATE lr026_race.challenges
- SET status='passed',passed_at=pg_catalog.now() WHERE id=p_id;
+ SET status='passed' WHERE id=p_id;
  RETURN pg_catalog.jsonb_build_object(
    'already_processed',false,'id',p_id);
 END; $lr026_race_fn$;
