@@ -753,3 +753,50 @@ test('LR-026 retry backoff belongs to its original account, couple and card',asy
  assert.deepEqual(siblingCard.calls,['completion'],
   'a different card in the SAME evening must not inherit the original retry delay');
 });
+
+test("LR-026 an old account's in-flight completion never blocks or unlocks the new account",async()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const start=app.indexOf('function ownsTimerCompletionSession(context){');
+ const end=app.indexOf('// LR-002: recover ALL due challenge timers',start);
+ assert.ok(start>0&&end>start);
+ let finishOld,finishNew;
+ const oldNetwork=new Promise(resolve=>{finishOld=resolve;});
+ const newNetwork=new Promise(resolve=>{finishNew=resolve;});
+ const calls=[];
+ const state={user:{id:'alice'},coupleId:'couple-A',session:{id:'s-A'},
+  tab:'session',timerCompletionContext:null,timerCompletionRetryOwner:null};
+ const clock={id:'card-A',autoCompletePending:true,decisionPending:false};
+ const api=runInNewContext(app.slice(start,end)+
+  '; ({retry:retryExpiredTimedEvening,inFlight:()=>timerCompletionInFlight});',{
+  state,challengeTimer:clock,timerCompletionInFlight:null,
+  timerCompletionRetryAt:0,timerCompletionRetryOwner:null,
+  timedEveningItem:()=>({id:clock.id,recipient:state.user.id,
+   session_id:state.session.id,status:'accepted'}),
+  isAcceptedTimedEveningChallenge:()=>true,
+  completeTimedEveningChallenge:async ({challenge})=>{
+   calls.push(challenge.id);
+   await (challenge.id==='card-A'?oldNetwork:newNetwork);
+   return {outcome:'superseded',finished:false};
+  },
+  rpc:async()=>{},query:async()=>[],ownsVisibleEveningTimer:()=>false,
+  saveChallengeTimer:()=>{},refreshShared:async()=>true,
+  render:()=>{},notify:()=>{},console,document:{hidden:false},Date
+ });
+ const first=api.retry();
+ assert.deepEqual(calls,['card-A']);
+ state.user={id:'bob'};state.coupleId='couple-B';state.session={id:'s-B'};
+ clock.id='card-B';
+ const second=api.retry();
+ assert.deepEqual(calls,['card-A','card-B'],
+  'a previous account waiting on the network cannot block the new timer');
+ const newOwner=state.timerCompletionContext;
+ assert.equal(newOwner.userId,'bob');
+ finishOld();await first;
+ assert.equal(state.timerCompletionContext,newOwner,
+  'the old response cannot unlock the new account context');
+ assert.equal(api.inFlight(),newOwner,
+  'the old finally block cannot drop the new in-flight token');
+ finishNew();await second;
+ assert.equal(api.inFlight(),null);
+ assert.equal(state.timerCompletionContext,null);
+});
