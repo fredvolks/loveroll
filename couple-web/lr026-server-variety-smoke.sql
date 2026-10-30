@@ -22,6 +22,26 @@ BEGIN
       'epaules a deux' THEN
    RAISE EXCEPTION 'LR-026 : accents non normalisés';
  END IF;
+ -- Generic instructions alone must NOT create a false similarity.
+ IF couple_private.love_variety_near(
+    'Soirée parfum',
+    'Invitez votre partenaire pendant quelques minutes.',
+    'Boisson tranquille',
+    'Proposez avec votre partenaire pendant quelques minutes.') THEN
+   RAISE EXCEPTION 'LR-026 : faux doublon avec des consignes génériques';
+ END IF;
+ IF couple_private.love_variety_near(
+    'Sans information',null,
+    'Autre activité',null) THEN
+   RAISE EXCEPTION 'LR-026 : données vides traitées comme un doublon';
+ END IF;
+ -- Neither browser role may call the private helpers directly.
+ IF pg_catalog.has_function_privilege('anon',
+   'couple_private.love_variety_rank(uuid,uuid,text,integer)','EXECUTE')
+  OR pg_catalog.has_function_privilege('authenticated',
+   'couple_private.love_variety_rank(uuid,uuid,text,integer)','EXECUTE') THEN
+   RAISE EXCEPTION 'LR-026 : exécution du rang privé exposée au navigateur';
+ END IF;
  IF NOT EXISTS (
   SELECT 1 FROM pg_catalog.pg_proc p
   JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace
