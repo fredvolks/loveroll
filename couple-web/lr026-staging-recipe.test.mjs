@@ -109,6 +109,7 @@ function mockSupabase(opts = {}) {
       const beforePass = passCount === 0;
       if (who === 'a') {
         if ((beforePass && opts.firstCardForA) ||
+            (passCount === 1 && opts.firstPassCardForA) ||
             (!beforePass && opts.unexpectedCardForA)) return response([{
           id: '99999999-1111-4111-8111-999999999999', session_id: session,
           offered_by: b, status: 'proposed', recipient: a, category: 'SENSUEL'
@@ -131,11 +132,21 @@ function mockSupabase(opts = {}) {
         if (opts.firstExtraCard) return response([original, {...original,id:replacedId}]);
         return response([original]);
       }
-      return response([original, {
-        id: replacedId, session_id: session, offered_by: a,
-        status: 'proposed', recipient: b, category: 'SENSUEL',
-        replaces_challenge_id: drawnId
-      }]);
+      if (passCount === 1 && opts.firstPassMissingReplacement)
+        return response([original]);
+      const replacement = {
+        id: replacedId,
+        session_id: passCount === 1 && opts.firstPassWrongSession ? couple : session,
+        offered_by: passCount > 1 && opts.replayMutatesReplacementOfferer ? b : a,
+        status: 'proposed', recipient: b,
+        category: passCount === 1 && opts.firstPassWrongCategory ? 'SEXUEL' : 'SENSUEL',
+        replaces_challenge_id: passCount === 1 && opts.firstPassWrongReference ?
+          null : drawnId
+      };
+      if (passCount === 1 && opts.firstPassWrongStatus)
+        return response([{...original, status: 'proposed'}, replacement]);
+      const rows = [original, replacement];
+      return response(passCount > 1 && opts.replayReordersRows ? rows.reverse() : rows);
     }
     if (path === '/rest/v1/rpc/draw_for_partner') {
       assert.equal(who, 'a');
@@ -150,7 +161,8 @@ function mockSupabase(opts = {}) {
       assert.equal(payload.p_challenge, drawnId);
       passCount++;
       return response({original_id: drawnId, replacement_id: replacedId,
-        action: 'pass', already_processed: passCount > 1});
+        action: passCount > 1 && opts.replayWrongAction ? 'declined' : 'pass',
+        already_processed: passCount > 1});
     }
     throw new Error('Unexpected mocked endpoint ' + path);
   };
@@ -242,12 +254,23 @@ test('play mode runs exactly one normal D100 plus one pass and one idempotent re
   assert.deepEqual(finalViews.map(x => x.actorToken), [
     'Bearer auth-token-for-a-test', 'Bearer auth-token-for-b-test',
     'Bearer auth-token-for-b-test', 'Bearer auth-token-for-a-test',
+    'Bearer auth-token-for-b-test', 'Bearer auth-token-for-a-test',
     'Bearer auth-token-for-b-test', 'Bearer auth-token-for-a-test'
   ]);
   const firstRead = mock.calls.findIndex(x => x.path === '/rest/v1/couple_challenges' &&
     finalViews.indexOf(x) === 2);
   const passCall = mock.calls.findIndex(x => x.path === '/rest/v1/rpc/love_respond_and_redraw');
   assert(firstRead !== -1 && firstRead < passCall, 'The persisted first draw must be checked before Passer');
+  const passCalls = mock.calls.map((call, index) =>
+    call.path === '/rest/v1/rpc/love_respond_and_redraw' ? index : -1
+  ).filter(index => index !== -1);
+  const challengeReads = mock.calls.map((call, index) =>
+    call.path === '/rest/v1/couple_challenges' ? index : -1
+  ).filter(index => index !== -1);
+  assert(challengeReads[4] < passCalls[1] && challengeReads[5] < passCalls[1],
+    'The first Passer persistence must be checked before idempotent replay');
+  assert(challengeReads[6] > passCalls[1] && challengeReads[7] > passCalls[1],
+    'The replay must be followed by a new persisted-state comparison');
   assert.equal(mock.counters().drawCount, 1);
   assert.equal(mock.counters().passCount, 2);
   assert(!JSON.stringify(out).includes('fake-password'));
@@ -348,6 +371,7 @@ test('real recipient-only RLS: a clean session can draw even if drawer A cannot 
   assert.deepEqual(challenges.map(x => x.actorToken), [
     'Bearer auth-token-for-a-test', 'Bearer auth-token-for-b-test',
     'Bearer auth-token-for-b-test', 'Bearer auth-token-for-a-test',
+    'Bearer auth-token-for-b-test', 'Bearer auth-token-for-a-test',
     'Bearer auth-token-for-b-test', 'Bearer auth-token-for-a-test'
   ]);
 });
@@ -379,17 +403,43 @@ for (const options of [
   {unexpectedCardForA: true},
   {leaksPartnerRowsToA: true},
   {wrongOriginalCategory: true},
-  {wrongOriginalRecipient: true}
+  {wrongOriginalRecipient: true},
+  {firstPassMissingReplacement: true},
+  {firstPassWrongStatus: true},
+  {firstPassWrongReference: true},
+  {firstPassWrongSession: true},
+  {firstPassWrongCategory: true},
+  {firstPassCardForA: true}
 ]) {
-  test('play postconditions detect cross-recipient or persisted-card corruption: ' +
+  test('invalid first Passer state is never replayed: ' +
     JSON.stringify(options), async () => {
     const mock = mockSupabase(options);
     await assert.rejects(runStage(env(), 'play', mock.fetchFn),
-      /Unexpected challenge addressed to A|Only the two correct-category B challenges/);
+      /Unexpected challenge addressed to A|Only the two correct-category B challenges|Only one original passed|Exactly one same-category replacement/);
     assert.equal(mock.counters().drawCount, 1);
-    assert.equal(mock.counters().passCount, 2);
+    assert.equal(mock.counters().passCount, 1,
+      'A malformed persisted Passer must stop BEFORE a second RPC');
   });
 }
+
+test('idempotent replay can reorder rows but must not mutate their contents', async () => {
+  const mock = mockSupabase({replayReordersRows: true});
+  const out = await runStage(env(), 'play', mock.fetchFn);
+  assert.equal(out.pass_replay_idempotent, true);
+  assert.equal(mock.counters().passCount, 2);
+});
+test('idempotent replay cannot alter persisted replacement even when returning same ID', async () => {
+  const mock = mockSupabase({replayMutatesReplacementOfferer: true});
+  await assert.rejects(runStage(env(), 'play', mock.fetchFn),
+    /Repeated Passer must not change any persisted challenge field/);
+  assert.equal(mock.counters().passCount, 2);
+});
+test('idempotent replay must keep official Passer action', async () => {
+  const mock = mockSupabase({replayWrongAction: true});
+  await assert.rejects(runStage(env(), 'play', mock.fetchFn),
+    /Repeated Passer must return the exact persisted replacement/);
+  assert.equal(mock.counters().passCount, 2);
+});
 
 test('a third member or incomplete RLS membership view blocks every D100 before writes', async () => {
   for (const options of [{extraThirdMember: true}, {hidePartnerFromA: true}]) {
