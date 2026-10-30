@@ -110,6 +110,20 @@ La recette `$lr026_real_roles# LoveRoll LR-026 — recette Supabase A/B (STAGING
 
 La seconde carte est d'abord exclue pour rendre le tirage initial déterministe, puis elle est rendue admissible juste avant le refus. Le test contrôle le `card_id`, l'auteur, le destinataire, la catégorie, la nouvelle face D100, le `replaces_challenge_id`, mais aussi **le titre, la description et les cinq minutes du minuteur personnalisés**. Un deuxième `Refuser` avec `exclude=true` doit rejouer le reçu `excluded=false`, sans duplication. Aucune donnée personnelle ou fonction hébergée n'est modifiée. Ces validations sont sur PostgreSQL 17 jetable avec transaction annulée.
 
+## Rejeu contradictoire sur deux comptes Auth réels — option explicite (30 octobre 2026)
+
+Le mode `--play` comprend désormais une **option désactivée par défaut** pour simuler une réponse tardive provenant d'un autre appareil sur le même défi :
+
+```bash
+LR026_STAGING_STALE_REPLAY=true node couple-web/lr026-staging-verify.mjs --play
+```
+
+Les paramètres existants sont toujours obligatoires, notamment les **deux comptes Auth distincts** A/B, le projet Supabase de test explicitement confirmé et les deux confirmations d'écriture `LR026_STAGING_ALLOW_WRITES=I_ACCEPT_TEST_PROJECT_WRITES_ONLY` et `LR026_STAGING_WRITE_CONFIRM_REF`. **Ne pas utiliser la production.** La commande ci-dessus n'est qu'un exemple d'activation; elle ne crée ni comptes ni données et n'est pas exécutée automatiquement.
+
+Après la pige D100 et les vérifications RLS, la recette contrôle d'abord un Passer ou Refuser normal et son rejeu identique. *Seulement si ces contrôles passent*, elle envoie un appel contradictoire sous le vrai token du destinataire : `Passer` initial → `Refuser(true)`; `Refuser` initial → `Passer(false)`, puis `Refuser` avec le drapeau `exclude` inverse. Chaque réponse tardive doit restituer le **premier** `original_id`, `replacement_id`, `action` et `excluded` avec `already_processed=true`. Après chaque essai, la recette relit sous RLS les deux cartes persistées, l'état de la soirée, les adhésions A/B et les deux D6. Les lignes ne peuvent pas changer.
+
+Les tests Node en transport simulé couvrent les deux sens A→B et B→A, les trois décisions possibles, les drapeaux erronés, un remplacement substitué et une modification silencieuse de l'auteur de la carte de remplacement. Le paramètre accepte exclusivement `true` ou `false`; absent, il ne déclenche aucun appel supplémentaire. **Aucun accès à une préproduction hébergée n'est présumé** : la validation réelle de cette option exige toujours un projet de test explicitement mis à disposition.
+
 ## Reçus identiques et gagnant réel des courses SQL — 30 octobre 2026
 
 Deux protections supplémentaires dans `couple-web/lr026-real-rpc-concurrent.test.sh` vérifient les deux courses **Passer contre Refuser** et **Refuser sans exclusion contre Refuser avec exclusion** avec les véritables RPC sur PostgreSQL 17 jetable. L'assertion compare les JSON renvoyés aux **deux connexions** au reçu réellement enregistré, champ par champ : `original_id`, `replacement_id`, `action` et `excluded`. L'identifiant de remplacement doit aussi pointer vers **l'unique défi proposé correspondant à l'original**, pas simplement vers une ligne de plus.
