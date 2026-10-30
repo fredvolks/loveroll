@@ -17,7 +17,7 @@ import {ROLL_TOTAL_MS} from './dice-roll-motion.mjs';
 import {createCoupleLiveSync} from './couple-live-sync.mjs?v=20261017-advent119';
 import {playableSessionForWeekly} from './couple-reset-view.mjs';
 import {eveningDailyAccess} from './evening-daily-policy.mjs?v=20261016-daily100';
-import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isSameEveningResponseContext,redrawTimerRecovery} from './evening-private-queue.mjs';
+import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,isSameEveningResponseContext,redrawTimerRecovery} from './evening-private-queue.mjs';
 import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261029-web259';
 import {saveEveningSelection,restoreEveningSelection,clearEveningSelection} from './evening-resume.mjs?v=20261027-web240';
 import {eclatHtml} from './eclat-ui.mjs?v=20261027-web242';
@@ -2959,6 +2959,17 @@ async function handle(action,element){
     state.showEveningChallenges=true;
    }
    await refreshAndShow();
+   // A valid RPC JSON payload alone does not prove that the recipient can
+   // render the committed replacement after RLS refresh. Do not announce a
+   // successful repick or keep an invisible card selected in that case.
+   const sameAfterRefresh=isSameEveningResponseContext(state,responseContext);
+   const persistedReceiptValid=receiptValid&&sameAfterRefresh&&
+    isPersistedEveningRedrawReceipt(outcome,state.challenges,state.user.id,state.session.id);
+   if(receiptValid&&sameAfterRefresh&&!persistedReceiptValid){
+    state.selectedEveningChallengeId=null;
+    state.showEveningChallenges=true;
+    render();
+   }
    // On an ambiguous receipt, use the real persisted status before freeing
    // the timer's decision lock. A still-accepted challenge resumes its clock.
    if(!receiptValid&&isSameEveningResponseContext(state,responseContext)){
@@ -2984,7 +2995,9 @@ async function handle(action,element){
    // The persisted action is authoritative even if the other device sent
    // a different Passer/Refuser intent.
    if(isSameEveningResponseContext(state,responseContext))
-    redrawFeedback=eveningRedrawFeedback(outcome,challengeId);
+    redrawFeedback=receiptValid&&!persistedReceiptValid
+     ?'Réponse reçue, mais la nouvelle carte n’est pas confirmée dans ta liste. Vérifie tes défis.'
+     :eveningRedrawFeedback(outcome,challengeId);
   }catch(error){
    // A rejected RPC may arrive after account / evening navigation; it
    // must not save an old timer under the new account's storage key.
