@@ -13,6 +13,37 @@ test('LR-026: stable ID, accents and equivalent titles detect actual repeat',()=
  assert.equal(areNearDuplicateEveningCards(card(1,'Épaules douces','Un geste'),
   card(2,'Epaules douces','Autre geste')),true);
 });
+test('LR-026: cross-category matching titles, card ids and instructions are NOT duplicates',()=>{
+ const sensual=card(12,'Danse lente et douceur',
+  'Proposez une danse lente ensemble autour du salon.');
+ const sexual={...card(12,'Danse lente et douceur',
+  'Proposez une danse lente ensemble autour du salon.'),category:'SEXUEL'};
+ // The server's SQL helper only compares seen.category=p_category.
+ assert.equal(areNearDuplicateEveningCards(sensual,sexual),false);
+ assert.equal(areNearDuplicateEveningCards(sexual,sensual),false);
+ const sameCategory={...sensual,card_id:19};
+ assert.equal(areNearDuplicateEveningCards(sensual,sameCategory),true);
+ const candidate=card(12,'Danse lente et douceur',
+  'Proposez une danse lente ensemble autour du salon.');
+ const result=filterSimilarEveningCandidates({
+  eligibleCards:[candidate],recentInSession:[sexual],selectedCategory:'SENSUEL'
+ });
+ assert.deepEqual(result,{
+  candidates:[candidate],suppressedCount:0,fallbackUsed:false,
+  reason:'all-eligible'
+ });
+});
+test('LR-026: a second category in session history cannot erase a valid card',()=>{
+ const sensual=card(3,'Moment complice','Partagez un souvenir romantique.');
+ const sexual={...sensual,category:'SEXUEL',card_id:4};
+ const other=card(5,'Un autre moment','Profitez d’un moment détendu.');
+ const result=filterSimilarEveningCandidates({
+  eligibleCards:[sensual,other],recentInSession:[sexual],
+  selectedCategory:'SENSUEL'
+ });
+ assert.deepEqual(result.candidates,[sensual,other]);
+ assert.equal(result.reason,'all-eligible');
+});
 test('LR-026: generic overlaps never remove unrelated activities',()=>{
  const a=card(1,'Danser doucement','Invite ton partenaire à danser sur une musique.');
  const b=card(2,'Chocolat et confidences','Invite ton partenaire à manger du chocolat.');
