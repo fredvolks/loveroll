@@ -158,7 +158,32 @@ function apiClient(config, transport) {
   return {login, rows, rpc};
 }
 
-export async function runStage(env, mode, transport = fetch) {
+export // Validate the SAME physical D6 snapshot under both authenticated views.
+// Checking each view in isolation is insufficient: contradictory valid faces
+// can otherwise pass and make the subsequent D100 draw irreproducible.
+async function verifyMatchingD6(client, sessionId, a, b, invalidFixtureMessage) {
+  const query = 'select=session_id,user_id,face&session_id=eq.' + sessionId;
+  let baseline = null;
+  for (const actor of [a, b]) {
+    const rolls = await client.rows('couple_personal_rolls', query, actor.token);
+    assert(rolls.length === 2 &&
+      [a.id, b.id].every(id =>
+        rolls.filter(r => eq(r.user_id, id) && eq(r.session_id, sessionId) &&
+          Number.isInteger(r.face) && r.face >= 1 && r.face <= 6).length === 1),
+      invalidFixtureMessage);
+    // Compare by owner, not API row ordering.
+    const facesByOwner = [a.id, b.id].map(id =>
+      rolls.find(r => eq(r.user_id, id)).face);
+    if (baseline !== null) {
+      assert(facesByOwner.every((face, index) => face === baseline[index]),
+        'D6 faces disagree between partner A and B authenticated views');
+    } else {
+      baseline = facesByOwner;
+    }
+  }
+}
+
+async function runStage(env, mode, transport = fetch) {
   // Validate everything, including explicit write consent, BEFORE ANY network.
   const config = validateStage(env, mode);
   if (mode === 'check') {
@@ -211,15 +236,8 @@ export async function runStage(env, mode, transport = fetch) {
     // Both couples must have real synthetic D6 records. A complete absence
     // of rows would make a cross-couple RLS check vacuous. A/B must each see
     // the same two personal rolls; C must see their own roll in the other duo.
-    const abRollQuery = 'select=session_id,user_id,face&session_id=eq.' + config.sessionId;
-    for (const actor of [a, b]) {
-      const rolls = await client.rows('couple_personal_rolls', abRollQuery, actor.token);
-      assert(rolls.length === 2 &&
-        [a.id, b.id].every(id =>
-          rolls.filter(r => eq(r.user_id, id) && eq(r.session_id, config.sessionId) &&
-            Number.isInteger(r.face) && r.face >= 1 && r.face <= 6).length === 1),
-        'RLS audit needs both A/B D6 rolls readable by each partner');
-    }
+    await verifyMatchingD6(client, config.sessionId, a, b,
+      'RLS audit needs both A/B D6 rolls readable by each partner');
     const outsideRolls = await client.rows('couple_personal_rolls',
       'select=session_id,user_id,face&session_id=eq.' + config.otherSessionId,
       outsider.token);
@@ -287,16 +305,8 @@ export async function runStage(env, mode, transport = fetch) {
   // Reject a malformed or RLS-invisible D6 fixture before calling the
   // mutating D100 RPC. A-only visibility does NOT prove B can read both D6.
   // Explicit session IDs, unique owners and faces 1..6 are mandatory.
-  const d6Query = 'select=session_id,user_id,face&session_id=eq.' + config.sessionId;
-  for (const actor of [a, b]) {
-    const rolls = await client.rows('couple_personal_rolls', d6Query, actor.token);
-    assert(rolls.length === 2 &&
-      [a.id, b.id].every(id =>
-        rolls.filter(r => eq(r.user_id, id) &&
-          eq(r.session_id, config.sessionId) &&
-          Number.isInteger(r.face) && r.face >= 1 && r.face <= 6).length === 1),
-      'Two valid D6 rolls for this session must be readable by both partners before D100');
-  }
+  await verifyMatchingD6(client, config.sessionId, a, b,
+    'Two valid D6 rolls for this session must be readable by both partners before D100');
   // Real production RLS on couple_challenges only exposes each card
   // to its RECIPIENT, not the person offering it. A's empty list alone
   // can conceal B's existing card; require zero visible challenges for
