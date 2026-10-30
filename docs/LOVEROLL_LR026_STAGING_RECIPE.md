@@ -49,6 +49,14 @@
 
 **Important** : le script ne provisionne pas de comptes, ne restaure pas de soirée et ne répète pas automatiquement les mutations en cas d'échec. Il conserve les résultats de test sur le seul staging. S'il échoue en cours de route, inspecter la base puis utiliser une autre soirée fictive.
 
+## Parité stricte avec le moteur de similarité SQL — 30 octobre 2026
+
+Le comparateur **consultatif JavaScript** a été aligné sur `couple_private.love_variety_near`, et non uniquement sur sa normalisation. Le moteur SQL considère « semblables » deux cartes ayant **le même titre complet normalisé**, ou bien au moins **cinq mots significatifs distincts communs** (longueur minimale quatre lettres, mots fréquents de la liste SQL exclus) avec une **similarité de Jaccard d'au moins 68 %** dans leurs descriptions. Les champs `activity_tag`, `theme` et `tags`, ainsi qu'une simple intersection partielle des mots d'un titre, ne font pas partie de cette décision serveur. Ils ne doivent donc pas écarter une carte pourtant admissible ou classée nouvelle par le serveur.
+
+Le comparateur auxiliaire utilise désormais exactement la table française de translittération du SQL, y compris `œ/oe` et `æ/ae`, les mêmes mots exclus et les mêmes seuils. Les tests Node vérifient les cas limites de Jaccard à **5/7** (semblable) et **5/8** (différent), les titres partiellement semblables, les métadonnées d'activité divergentes et les cinq mots significatifs. Un contrôle statique lit le SQL réellement suivi dans la PR et compare les deux listes de mots et les correspondances d'accents pour bloquer une divergence future. Les règles d'identité de carte, de catégorie et de repli sur un lot entièrement semblable sont conservées.
+
+Il s'agit toujours d'un **outil auxiliaire**, pas d'une nouvelle sélection côté client. Le serveur décide seul du lot, des rôles, de la catégorie, des probabilités, des exclusions et du hasard. Aucun SQL de production, aucune carte utilisateur ni migration Supabase n'a été modifié par ce correctif.
+
 ## Parité des textes français et isolation de catégorie — correctif JavaScript (30 octobre 2026)
 
 La politique auxiliaire `couple-web/evening-variety.mjs` conserve le filtre des candidats **uniquement après sélection officielle de la catégorie D100**. Un écart vérifié entre JavaScript et `couple_private.love_variety_normalize` est maintenant corrigé : la normalisation Unicode `NFKD` n'expanse pas `œ` / `æ`, tandis que la fonction SQL les transforme déjà en `oe` / `ae`. Les titres « cœur/coeur » et « encyclopædie/encyclopaedie » sont désormais reconnus comme équivalents, y compris en majuscules; cela ne modifie aucune carte source ni les catégories.
