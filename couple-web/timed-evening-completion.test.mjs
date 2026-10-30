@@ -266,7 +266,7 @@ test('LR-002 live countdown and rerender cannot revive an inert Reprendre button
 
 test('LR-026 async completion ignores a result after switching account or evening',async()=>{
  const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
- const start=source.indexOf('function ownsTimerCompletionRefresh(context){');
+ const start=source.indexOf('function ownsTimerCompletionSession(context){');
  const end=source.indexOf('// LR-002: recover ALL due challenge timers',start);
  assert.ok(start>0&&end>start);
  const executable=source.slice(start,end)+'; retryExpiredTimedEvening;';
@@ -308,7 +308,7 @@ test('LR-026 async completion ignores a result after switching account or evenin
 
 test('LR-026 async completion refreshes only the confirmed original session',async()=>{
  const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
- const start=source.indexOf('function ownsTimerCompletionRefresh(context){');
+ const start=source.indexOf('function ownsTimerCompletionSession(context){');
  const end=source.indexOf('// LR-002: recover ALL due challenge timers',start);
  const executable=source.slice(start,end)+'; retryExpiredTimedEvening;';
  for(const closure of [false,true]){
@@ -349,7 +349,7 @@ test('LR-026 async completion refreshes only the confirmed original session',asy
 
 test('LR-026 a late scoped refresh cannot paint a replaced account or night',async()=>{
  const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
- const start=source.indexOf('function ownsTimerCompletionRefresh(context){');
+ const start=source.indexOf('function ownsTimerCompletionSession(context){');
  const end=source.indexOf('// LR-002: recover ALL due challenge timers',start);
  const executable=source.slice(start,end)+'; retryExpiredTimedEvening;';
  for(const moved of ['account','session','server-rejected']){
