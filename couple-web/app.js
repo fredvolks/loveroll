@@ -4473,14 +4473,26 @@ async function handle(action,element){
   const item=ownEveningChallenges(state.challenges,state.user.id,state.session?.id).find(c=>c.id===parts[0]);
   if(!item)throw Error('Ce défi n’est pas dans ta liste personnelle.');
   const eveningId=state.session.id;
+  // The legacy response path also needs a request-owned lock: a late RPC
+  // must not update a different account, evening, tab or timer.
+  const answerContext={userId:state.user.id,sessionId:eveningId,tab:state.tab};
+  if(isSameEveningResponseContext(state,state.legacyAnswerContext))return;
+  state.legacyAnswerContext=answerContext;
+  const ownsAnswer=()=>isSameEveningResponseContext(state,answerContext)&&
+   state.legacyAnswerContext===answerContext;
+  try{
   if(parts[1]==='passed'&&state.monthlyPassQuota?.can_pass===false)throw Error('Limite mensuelle de passes atteinte.');
   if(parts[1]==='passed'&&state.monthlyPassQuota==null){
-   state.monthlyPassQuota=await rpc('my_love_monthly_pass_quota',{p_couple:state.coupleId});
+   const quota=await rpc('my_love_monthly_pass_quota',{p_couple:state.coupleId});
+   if(!ownsAnswer())return;
+   state.monthlyPassQuota=quota;
    if(!state.monthlyPassQuota.can_pass)throw Error('Limite mensuelle de passes atteinte.');
   }
   if(parts[1]==='passed'&&state.session?.id!==eveningId)throw Error('La soirée a changé, veuillez réessayer.');
   await rpc('answer_challenge',{p_id:parts[0],p_status:parts[1]});
-  if(challengeTimer.id===parts[0]&&['completed','passed'].includes(parts[1])){
+  if(!ownsAnswer())return;
+  if(ownsVisibleEveningTimer(parts[0],answerContext.userId,answerContext.sessionId)&&
+     ['completed','passed'].includes(parts[1])){
    challengeTimer.running=false;challengeTimer.remainingMs=0;
    challengeTimer.autoCompletePending=false;saveChallengeTimer();
   }
@@ -4493,11 +4505,17 @@ async function handle(action,element){
    // Last completed challenge closes the shared night automatically.
    // The official server function checks BOTH adjusted D6 quotas atomically.
    const board=await rpc('my_love_evening_board',{p_session:eveningId});
+   if(!ownsAnswer())return;
    if(board?.finished){
-    try{await rpc('finish_couple_session',{p_session:eveningId,p_count:true});}
+    try{
+     await rpc('finish_couple_session',{p_session:eveningId,p_count:true});
+     if(!ownsAnswer())return;
+    }
     catch(error){
      // Partner may have closed the same session milliseconds earlier.
+     if(!ownsAnswer())return;
      const alreadyClosed=(await query('couple_sessions',{eq:{id:eveningId}}))[0]?.finished_at;
+     if(!ownsAnswer())return;
      if(!alreadyClosed)throw error;
     }
     state.showEveningChallenges=false;state.selectedEveningChallengeId=null;
@@ -4505,7 +4523,12 @@ async function handle(action,element){
     state.showEveningChallenges=true;state.selectedEveningChallengeId=item.id;
    }
   }else{state.showEveningChallenges=true;state.selectedEveningChallengeId=item.id;}
+  if(!ownsAnswer())return;
   await refreshAndShow();return;
+  }finally{
+   // An older promise cannot release the lock held by a newer request.
+   if(state.legacyAnswerContext===answerContext)state.legacyAnswerContext=null;
+  }
  }
  if(verb==='finish-session'){
   if(!state.session)return;
