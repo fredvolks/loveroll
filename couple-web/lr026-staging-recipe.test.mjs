@@ -181,3 +181,19 @@ test('preexisting staged challenge prevents ANY additional D100 draw', async () 
   assert.equal(mock.counters().drawCount, 0);
   assert.equal(mock.counters().passCount, 0);
 });
+
+test('remote Auth error cannot reveal credentials, arbitrary messages or access tokens', async () => {
+  const secret = 'test-password-never-echo';
+  const external = async () => new Response(
+    JSON.stringify({message: secret, error_description: 'Bearer secret-test-token',
+      code: 'invalid_credentials'}), {status: 400});
+  await assert.rejects(runStage({...env(),
+    LR026_STAGING_A_PASSWORD: secret}, 'auth', external), e => {
+    assert.match(e.message, /Supabase API 400/);
+    assert.match(e.message, /invalid_credentials/);
+    assert(!e.message.includes(secret));
+    assert(!e.message.includes('secret-test-token'));
+    assert(!e.message.includes('Bearer'));
+    return true;
+  });
+});
