@@ -563,6 +563,23 @@ test('LR-026: stale account or tab cannot refresh after an in-flight redraw RPC'
   'finally still releases the pending button lock when returning early');
 });
 
+test('LR-026: obsolete RPC errors do not escape into another account or tab',()=>{
+ const start=app.indexOf("if(verb==='evening-pass'||verb==='evening-refuse-choice')");
+ const end=app.indexOf("if(verb==='evening-start')",start);
+ const action=app.slice(start,end);
+ const failed=action.slice(action.indexOf('}catch(error){'),action.indexOf('}finally{'));
+ const stale=failed.indexOf('if(!isSameEveningResponseContext(state,responseContext))return;');
+ const timer=failed.indexOf('if(challengeTimer.id===challengeId&&challengeTimer.decisionPending)');
+ const rethrow=failed.indexOf('throw error;');
+ assert.ok(stale>=0&&timer>stale&&rethrow>timer,
+  'obsolete errors must return before timer mutation and before being thrown');
+ assert.doesNotMatch(failed.slice(0,stale),/saveChallengeTimer\(\)|render\(\)|throw error;/,
+  'stale RPC error cannot mutate or notify a switched account');
+ assert.match(action.slice(action.indexOf('}finally{')),
+  /state\.redrawBusy=false;[\s\S]*?render\(\)/,
+  'even a stale failure must release the pending action lock');
+});
+
 test('LR-026: uncertain redraw never completes a live accepted timer without server proof',()=>{
  const due=Date.parse('2026-10-30T12:00:00Z');
  for(const status of [undefined,null,'proposed','pending','invalid']){
@@ -591,7 +608,7 @@ test('LR-026: redraw timer only stops on valid receipt or independently refreshe
  assert.match(code,/if\(recovery==='stop'&&state\.eveningRefusalId===challengeId\)/);
  assert.match(code,/if\(challengeTimer\.id===challengeId&&challengeTimer\.decisionPending\)/);
  assert.match(code,/if\(receiptValid\)state\.eveningRefusalId=null/);
- assert.match(code,/if\(isSameEveningResponseContext\(state,responseContext\)&&\s+challengeTimer\.id===challengeId&&challengeTimer\.decisionPending\)/);
+ assert.match(code,/if\(!isSameEveningResponseContext\(state,responseContext\)\)return;[\s\S]*?if\(challengeTimer\.id===challengeId&&challengeTimer\.decisionPending\)/);
  assert.match(code,/else saveChallengeTimer\(\)/);
  assert.doesNotMatch(code,/if\(challengeTimer\.id===challengeId\)\{\s+challengeTimer\.running=false/,
   'timer must not stop unconditionally before receipt validation');
