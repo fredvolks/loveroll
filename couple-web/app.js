@@ -1469,7 +1469,8 @@ async function reconcileSavedEveningTimers(){
   if(!saved||!Number.isFinite(saved.durationMs)||saved.durationMs<=0)continue;
   const due=!!saved.autoCompletePending||
    (saved.running&&Number.isFinite(saved.deadline)&&saved.deadline>0&&saved.deadline<=now);
-  if(!due||challengeTimer.decisionPending&&challengeTimer.id===item.id)continue;
+  if(!due||challengeTimer.decisionPending&&
+     ownsVisibleEveningTimer(item.id,state.user.id,state.session.id))continue;
   if(['completed','passed','refused'].includes(item.status)){
    writeSavedChallengeTimer(key,{...saved,running:false,
     remainingMs:0,autoCompletePending:false});
@@ -1526,7 +1527,8 @@ function endSignal(){
 }
 function updateChallengeClock(){
  void reconcileSavedEveningTimers();
- if(!challengeTimer.id)return;
+ // Never play an expired previous account's sound or paint its countdown.
+ if(!ownsVisibleEveningTimer(challengeTimer.id,state.user?.id,state.session?.id))return;
  if(challengeTimer.running&&Date.now()>=challengeTimer.deadline){
   challengeTimer.running=false;challengeTimer.remainingMs=0;endSignal();saveChallengeTimer();
  }
@@ -4286,6 +4288,8 @@ async function handle(action,element){
    return;
  }
  if(verb==='timer-reset'){
+   if(!ownsVisibleEveningTimer(challengeTimer.id,state.user?.id,state.session?.id))
+    throw Error('Le minuteur appartient à une autre soirée. Actualise tes défis.');
    // Reject a reset after the real deadline, even between two clock ticks.
    if(challengeTimer.running&&challengeTimer.deadline>0&&Date.now()>=challengeTimer.deadline){
     challengeTimer.running=false;challengeTimer.remainingMs=0;endSignal();saveChallengeTimer();
@@ -4297,7 +4301,10 @@ async function handle(action,element){
    challengeTimer.notified=false;saveChallengeTimer();updateChallengeClock();return;
  }
  if(verb==='timer-toggle'){
-   if(!challengeTimer.id)throw Error('Aucun défi avec minuteur');
+   const timerUserId=state.user?.id,timerSessionId=state.session?.id,
+    timerChallengeId=challengeTimer.id;
+   const ownsClock=()=>ownsVisibleEveningTimer(timerChallengeId,timerUserId,timerSessionId);
+   if(!ownsClock())throw Error('Aucun minuteur actif pour cette soirée');
    // Observe an already-expired deadline before a pause tap can zero out
    // the running state (timer ticks are only scheduled every 500ms).
    updateChallengeClock();
@@ -4314,10 +4321,14 @@ async function handle(action,element){
     if(current?.status==='proposed'){
      if(challengeTimer.mode==='sound')void unlockLoveRollSounds();
      await rpc('answer_challenge',{p_id:current.id,p_status:'accepted'});
+     if(!ownsClock())return;
      current.status='accepted';
     }
-    if(challengeTimer.mode==='sound'&&!await unlockLoveRollSounds())
+    if(challengeTimer.mode==='sound'&&!await unlockLoveRollSounds()){
+     if(!ownsClock())return;
      notify('Son non autorisé. Utilise le bouton ♫ Tester pour le débloquer.');
+    }
+    if(!ownsClock())return;
     challengeTimer.deadline=Date.now()+challengeTimer.remainingMs;
     challengeTimer.running=true;
     challengeTimer.notified=false;
