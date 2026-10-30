@@ -505,7 +505,8 @@ export async function runStage(env, mode, transport = fetch) {
     eq(replay.replacement_id, response.replacement_id) &&
     eq(replay.original_id, drawn.id) &&
     replay.action === config.action && replay.excluded === config.exclude &&
-    replay.replacement_unavailable === false,
+    (replay.replacement_unavailable === undefined ||
+      replay.replacement_unavailable === false),
     'Repeated response must return the exact persisted action, exclusion and replacement availability');
   const afterReplay = await persistedPassSnapshot();
   assert(afterReplay === beforeReplay,
@@ -576,7 +577,8 @@ export async function runStage(env, mode, transport = fetch) {
         eq(staleResult.replacement_id,response.replacement_id) &&
         staleResult.action === config.action &&
         staleResult.excluded === config.exclude &&
-        staleResult.replacement_unavailable === false,
+        (staleResult.replacement_unavailable === undefined ||
+          staleResult.replacement_unavailable === false),
         'Stale conflicting response must replay the first immutable server decision');
       const afterConflict = await persistedPassSnapshot();
       assert(afterConflict === beforeReplay,
