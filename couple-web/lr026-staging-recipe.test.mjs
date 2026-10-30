@@ -197,10 +197,18 @@ function mockSupabase(opts = {}) {
       drawCount++;
       assert.equal(payload.p_preference, opts.expectedPreference ?? 'SENSUEL');
       assert.equal(payload.p_random, false);
-      lastDraw = {id: drawnId, offered_by: a, recipient: b,
+      lastDraw = {id: drawnId, session_id: session, couple_id: couple,
+        offered_by: a, recipient: b, face: 14, card_id: 3,
         category: opts.drawUnknownCategory ? 'INVALID' :
           opts.drawSexuel ? 'SEXUEL' : 'SENSUEL'};
-      return response(lastDraw);
+      return response({
+        ...lastDraw,
+        session_id: opts.drawRpcWrongSession ? couple : lastDraw.session_id,
+        couple_id: opts.drawRpcWrongCouple ? a : lastDraw.couple_id,
+        face: opts.drawRpcInvalidFace ? 0 : opts.drawRpcWrongFace ? 54 : lastDraw.face,
+        card_id: opts.drawRpcInvalidCardId ? 0 :
+          opts.drawRpcWrongCardId ? 9 : lastDraw.card_id
+      });
     }
     if (path === '/rest/v1/rpc/love_respond_and_redraw') {
       assert.equal(who, 'b');
@@ -213,6 +221,8 @@ function mockSupabase(opts = {}) {
           (opts.expectedAction ?? 'pass'),
         excluded: passCount > 1 && opts.replayWrongExclusion ?
           !(opts.expectedExclude ?? false) : (opts.expectedExclude ?? false),
+        replacement_unavailable: passCount === 1 &&
+          opts.firstResponseUnavailableFlag,
         already_processed: passCount > 1});
     }
     throw new Error('Unexpected mocked endpoint ' + path);
@@ -310,6 +320,31 @@ test('unexpected D100 preference is rejected before any request or mutation', as
     /Staging D100 preference must be SENSUEL or SEXUEL/);
     assert.equal(mock.counters().count, 0);
   }
+});
+
+for (const [options, expectedError] of [
+  [{drawRpcWrongSession: true}, /Real D100 did not return a valid card/],
+  [{drawRpcWrongCouple: true}, /Real D100 did not return a valid card/],
+  [{drawRpcInvalidFace: true}, /Real D100 returned an invalid face or library card ID/],
+  [{drawRpcInvalidCardId: true}, /Real D100 returned an invalid face or library card ID/],
+  [{drawRpcWrongFace: true}, /First D100 must persist/],
+  [{drawRpcWrongCardId: true}, /First D100 must persist/]
+]) {
+  test('D100 RPC response must match the stored challenge before any reply: ' +
+    JSON.stringify(options), async () => {
+    const mock = mockSupabase(options);
+    await assert.rejects(runStage(env(), 'play', mock.fetchFn), expectedError);
+    assert.equal(mock.counters().drawCount, 1);
+    assert.equal(mock.counters().passCount, 0);
+  });
+}
+
+test('a reported unavailable replacement cannot be accepted as a successful Passer', async () => {
+  const mock = mockSupabase({firstResponseUnavailableFlag: true});
+  await assert.rejects(runStage(env(), 'play', mock.fetchFn),
+    /Partner B response must create one new and distinct replacement/);
+  assert.equal(mock.counters().drawCount, 1);
+  assert.equal(mock.counters().passCount, 1);
 });
 
 test('a D100 response with an unsupported category cannot call Passer', async () => {
