@@ -246,18 +246,25 @@ test('PWA release refreshes the actual iPad D100 CSS and ONE shared stage module
  assert.ok(app.includes('service-worker.js?v='+appTag));
 });
 
-test('Web 259 never serves a stale countdown UI from an older PWA cache',()=>{
+test('Web 259 and later keep the repaired countdown UI without stale PWA assets',()=>{
  const build=release.build;
  const tag=build.replaceAll('-','').replace('.','-web');
- const timerTag=build.replaceAll('-','').replace('.','-timer');
- assert.equal(build,'2026-10-29.259','Expected the approved timer UI release');
+ const [releaseDay,releaseSeq]=build.split('.');
+ const day=Number(releaseDay.replaceAll('-',''));
+ assert.ok(day>20261029||(day===20261029&&Number(releaseSeq)>=259),
+  'The countdown fix first shipped with Web 259');
+ const timerImport=app.match(/timed-evening-completion[.]mjs[?]v=([0-9]{8})-timer([0-9]+)/);
+ assert.ok(timerImport,'The repaired timer needs a versioned module import');
+ const timerDay=Number(timerImport[1]),timerSeq=Number(timerImport[2]);
+ assert.ok(timerDay>20261029||(timerDay===20261029&&timerSeq>=259),
+  'Never import the pre-fix countdown module');
  assert.ok(html.includes('app.js?v='+tag));
  assert.ok(app.includes("const WEB_RELEASE='"+build+"'"));
  assert.ok(app.includes('service-worker.js?v='+tag));
  assert.ok(sw.includes("const CACHE='loveroll-static-v"+build.split('.')[1]+"'"));
  assert.ok(sw.includes('./timed-evening-completion.mjs'),
   'The offline shell must include the active timed completion module');
- assert.ok(app.includes('timed-evening-completion.mjs?v='+timerTag));
+ assert.doesNotMatch(app,/timed-evening-completion[.]mjs[?]v=20261027-web240/);
  const control=read('timed-evening-completion.mjs');
  assert.match(control,/export function timedEveningTimerControl\(timer\)/);
  assert.match(control,/Validation en cours/);
