@@ -12,6 +12,7 @@ on:
       - "couple-web/lr026-postgres-rank.test.sql"
       - "couple-web/lr026-exact-fast-path.test.sql"
       - "couple-web/lr026-performance-profile.test.sql"
+      - "couple-web/lr026-similarity-parity.test.sql"
       - "couple-web/lr026-eligible-performance.test.sql"
       - "couple-web/lr026-evening-flow.test.sql"
       - "couple-web/lr026-extract-helpers.cjs"
@@ -82,6 +83,8 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-exact-fast-path.test.sql
       - name: Test official category and couple/session scoping
         run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-postgres-rank.test.sql
+      - name: Compare original and optimized similarity over 415 synthetic text cases
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-similarity-parity.test.sql
       - name: Profile old and exact-first ranking over identical 200 cards
         run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-performance-profile.test.sql
       - name: Benchmark realistic eligible D100 cards after 0, 20, 50 and 80 draws
