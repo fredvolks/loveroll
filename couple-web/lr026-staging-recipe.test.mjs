@@ -56,9 +56,12 @@ function mockSupabase(opts = {}) {
     }
     if (path === '/rest/v1/couple_sessions') {
       if (opts.hideSessionB && who === 'b') return response([]);
-      return response([{id: session, couple_id: couple,
+      const isPlayFlagsRead = url.searchParams.get('select') === 'id,paired_turns,self_draws';
+      return response([{id: isPlayFlagsRead && opts.wrongPlaySessionIdB && who === 'b' ?
+        couple : session, couple_id: couple,
         finished_at: opts.finishedSession ? '2026-10-29T20:00:00Z' : null,
-        paired_turns: false, self_draws: false}]);
+        paired_turns: isPlayFlagsRead && opts.pairedTurnsForB && who === 'b',
+        self_draws: isPlayFlagsRead && opts.selfDrawsForB && who === 'b'}]);
     }
     if (path === '/rest/v1/couple_members') {
       if (opts.hideMemberB && who === 'b') return response([]);
@@ -137,7 +140,8 @@ function mockSupabase(opts = {}) {
       const replacement = {
         id: replacedId,
         session_id: passCount === 1 && opts.firstPassWrongSession ? couple : session,
-        offered_by: passCount > 1 && opts.replayMutatesReplacementOfferer ? b : a,
+        offered_by: (passCount === 1 && opts.firstPassWrongReplacementOfferer) ||
+          (passCount > 1 && opts.replayMutatesReplacementOfferer) ? b : a,
         status: 'proposed', recipient: b,
         category: passCount === 1 && opts.firstPassWrongCategory ? 'SEXUEL' : 'SENSUEL',
         replaces_challenge_id: passCount === 1 && opts.firstPassWrongReference ?
@@ -298,6 +302,29 @@ test('D6 order differs across authenticated views without invalidating faces', a
   assert.equal(mock.counters().passCount, 2);
 });
 
+for (const options of [
+  {pairedTurnsForB: true},
+  {selfDrawsForB: true},
+  {wrongPlaySessionIdB: true}
+]) {
+  test('B must also see correct partner-draw session flags before D100: ' +
+    JSON.stringify(options), async () => {
+    const mock = mockSupabase(options);
+    await assert.rejects(runStage(env(), 'play', mock.fetchFn),
+      /Mutating recipe requires both partners/);
+    assert.equal(mock.counters().drawCount, 0);
+    assert.equal(mock.counters().passCount, 0);
+  });
+}
+test('normal play validates feature flags under both authenticated accounts', async () => {
+  const mock = mockSupabase();
+  await runStage(env(), 'play', mock.fetchFn);
+  const specific = mock.calls.filter(c => c.path === '/rest/v1/couple_sessions');
+  assert.deepEqual(specific.map(c => c.actorToken), [
+    'Bearer auth-token-for-a-test', 'Bearer auth-token-for-b-test',
+    'Bearer auth-token-for-a-test', 'Bearer auth-token-for-b-test'
+  ]);
+});
 test('preexisting staged challenge prevents ANY additional D100 draw', async () => {
   const mock = mockSupabase({existingChallenge: true});
   await assert.rejects(runStage(env(), 'play', mock.fetchFn), /clean session/);
@@ -409,6 +436,7 @@ for (const options of [
   {firstPassWrongReference: true},
   {firstPassWrongSession: true},
   {firstPassWrongCategory: true},
+  {firstPassWrongReplacementOfferer: true},
   {firstPassCardForA: true}
 ]) {
   test('invalid first Passer state is never replayed: ' +
@@ -431,7 +459,7 @@ test('idempotent replay can reorder rows but must not mutate their contents', as
 test('idempotent replay cannot alter persisted replacement even when returning same ID', async () => {
   const mock = mockSupabase({replayMutatesReplacementOfferer: true});
   await assert.rejects(runStage(env(), 'play', mock.fetchFn),
-    /Repeated Passer must not change any persisted challenge field/);
+    /Repeated Passer must not change any persisted challenge field|Exactly one same-category replacement offered by A/);
   assert.equal(mock.counters().passCount, 2);
 });
 test('idempotent replay must keep official Passer action', async () => {
