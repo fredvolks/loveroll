@@ -721,12 +721,12 @@ test('LR-026 retry backoff belongs to its original account, couple and card',asy
  assert.ok(begin>0&&end>begin);
  const run=(person,session,couple,retryOwner)=>{
   const state={user:{id:person},session:{id:session},coupleId:couple,
-   tab:'session',timerCompletionContext:null};
+   tab:'session',timerCompletionContext:null,timerCompletionRetryOwner:retryOwner};
   const clock={id:'card-1',autoCompletePending:true,decisionPending:false};
   const calls=[];
   const retry=runInNewContext(app.slice(begin,end)+'; retryExpiredTimedEvening;',{
    state,challengeTimer:clock,timerCompletionInFlight:null,
-   timerCompletionRetryAt:Date.now()+60000,timerCompletionRetryOwner:retryOwner,
+   timerCompletionRetryAt:Date.now()+60000,
    timedEveningItem:()=>({id:'card-1',recipient:person,session_id:session,status:'accepted'}),
    isAcceptedTimedEveningChallenge:()=>true,
    completeTimedEveningChallenge:async()=>{calls.push('completion');return {outcome:'superseded',finished:false};},
