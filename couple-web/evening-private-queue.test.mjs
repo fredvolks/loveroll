@@ -287,7 +287,7 @@ test('LR-026: UI waits for persisted redraw before stopping a live timer or conf
  const start=app.indexOf("if(verb==='evening-pass'||verb==='evening-refuse-choice')");
  const end=app.indexOf("if(verb==='evening-start')",start);
  const code=app.slice(start,end);
- const refresh=code.indexOf('await refreshAndShow();');
+ const refresh=code.indexOf('await refreshShared();');
  const storedCheck=code.indexOf('const persistedReceiptValid=');
  const stop=code.indexOf('if(persistedReceiptValid&&challengeTimer.id===challengeId)');
  const select=code.indexOf('state.selectedEveningChallengeId=activeEveningRedrawReplacementId(');
@@ -300,6 +300,21 @@ test('LR-026: UI waits for persisted redraw before stopping a live timer or conf
  const early=code.slice(0,refresh);
  assert.doesNotMatch(early,/challengeTimer\.running=false;challengeTimer\.deadline=0/,
   'a valid but incomplete RPC response is not grounds for resetting the timer');
+});
+
+test('LR-026: no intermediate redraw render can flash an unrelated new card',()=>{
+ const begin=app.indexOf("if(verb==='evening-pass'||verb==='evening-refuse-choice')");
+ const end=app.indexOf("if(verb==='evening-start')",begin);
+ const branch=app.slice(begin,end);
+ const refresh=branch.indexOf('await refreshShared();');
+ const finallyBlock=branch.indexOf('}finally{');
+ assert.ok(refresh>=0&&finallyBlock>refresh);
+ assert.doesNotMatch(branch.slice(0,finallyBlock),/await refreshAndShow\(\)/,
+  'refresh must never render a temporary wrong D100 selection');
+ assert.match(branch.slice(0,finallyBlock),
+  /state\.selectedEveningChallengeId=activeEveningRedrawReplacementId\(/);
+ assert.match(branch.slice(finallyBlock),/state\.redrawBusy=false;[\s\S]*?render\(\);/,
+  'one final render shows the verified replacement or the recipient list');
 });
 
 test('LR-026: delayed redraw updates only the initiating authenticated evening and tab',()=>{
@@ -329,7 +344,7 @@ test('LR-026: async D100 action checks same initiating context before selection 
   'must guard both UI navigation and notifications; additional timer/error checks are required');
  assert.match(branch,/const sameContext=isSameEveningResponseContext\(state,responseContext\)/);
  assert.match(branch,/if\(sameContext\)\{\s+if\(receiptValid\)state\.eveningRefusalId=null;[\s\S]*?state\.selectedEveningChallengeId=null/);
- assert.match(branch,/await refreshAndShow\(\);[\s\S]*?const persistedReceiptValid=[\s\S]*?if\(isSameEveningResponseContext\(state,responseContext\)\)\s+redrawFeedback=receiptValid&&!persistedReceiptValid/);
+ assert.match(branch,/await refreshShared\(\);[\s\S]*?const persistedReceiptValid=[\s\S]*?if\(isSameEveningResponseContext\(state,responseContext\)\)\s+redrawFeedback=receiptValid&&!persistedReceiptValid/);
  assert.doesNotMatch(branch,/if\(state\.session\?\.id===sessionId\)/,
   'checking only the session leaves another account/tab exposed');
 });
