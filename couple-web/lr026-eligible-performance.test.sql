@@ -1,0 +1,134 @@
+-- LR-026: representative performance/parity profile for *eligible* D100 cards.
+-- Disposable PostgreSQL 17 ONLY. Real draw/repige SQL first EXCLUDES cards
+-- previously drawn in this session/category/recipient, so the 199-seen
+-- all-candidates microbenchmark is NOT representative of user latency.
+-- Measure the unplayed set only, against identical already-played history.
+-- Timings are diagnostic; CI asserts parity and eligibility, not wall time.
+BEGIN;
+
+CREATE FUNCTION couple_private.lr026_eligible_reference_rank(
+ p_session uuid,p_couple uuid,p_category text,p_card_id integer
+) RETURNS integer LANGUAGE sql STABLE SECURITY INVOKER SET search_path=''
+AS $lr026_reference$
+ WITH candidate AS (
+  SELECT coalesce(active.title,base.title) AS title,
+         coalesce(active.description,base.description) AS description
+  FROM (SELECT 1) seed
+  LEFT JOIN couple_private.love_active_challenges active
+    ON active.couple_id=p_couple AND active.category=p_category
+   AND active.card_id=p_card_id
+  LEFT JOIN public.love_base_challenges base
+    ON base.category=p_category AND base.card_id=p_card_id
+ )
+ SELECT CASE WHEN EXISTS (
+   SELECT 1 FROM public.couple_challenges seen
+   CROSS JOIN candidate current_card
+   WHERE seen.couple_id=p_couple AND seen.session_id=p_session
+     AND seen.category=p_category
+     AND (seen.card_id=p_card_id OR
+       couple_private.love_variety_near(
+        current_card.title,current_card.description,
+        seen.card_title,seen.card_description))
+ ) THEN 1 ELSE 0 END;
+$lr026_reference$;
+
+-- Exactly one category (100 cards), as in an actual D100 candidate pool.
+-- Use only fabricated cards, history and couple UUID. No fixture mutations
+-- survive ROLLBACK and no real user data is accessed.
+INSERT INTO public.love_base_challenges(category,card_id,title,description)
+SELECT 'SENSUEL',g,
+       CASE WHEN g=99 THEN 'Une activité à deux mémorable'
+            ELSE 'Scenario distinct '||g END,
+       'Etape numero '||g
+FROM pg_catalog.generate_series(3,100) g
+ON CONFLICT DO NOTHING;
+
+DO $lr026_eligible_profile$
+DECLARE
+ v_couple uuid:='dddddddd-dddd-4ddd-8ddd-dddddddddddd';
+ v_session uuid:='77777777-7777-4777-8777-777777777777';
+ n_seen integer;
+ older integer[];
+ newer integer[];
+ old_ms numeric;
+ new_ms numeric;
+ started timestamptz;
+ total integer;
+ expected_eligible integer;
+BEGIN
+ FOREACH n_seen IN ARRAY ARRAY[0,20,50,80] LOOP
+  DELETE FROM public.couple_challenges h
+  WHERE h.couple_id=v_couple AND h.session_id=v_session;
+
+  -- A real eligible pool excludes all drawn IDs BEFORE ranking.
+  INSERT INTO public.couple_challenges(
+    couple_id,session_id,category,card_id,card_title,card_description)
+  SELECT v_couple,v_session,'SENSUEL',g,
+         CASE WHEN g=1 THEN 'Une activité à deux mémorable'
+              ELSE 'Scenario distinct '||g END,
+         'Etape numero '||g
+  FROM pg_catalog.generate_series(1,n_seen) g;
+
+  IF EXISTS (
+    SELECT 1 FROM pg_catalog.generate_series(n_seen+1,100) eligible(card)
+    JOIN public.couple_challenges h
+      ON h.couple_id=v_couple AND h.session_id=v_session
+     AND h.category='SENSUEL' AND h.card_id=eligible.card
+  ) THEN
+    RAISE EXCEPTION 'LR-026 eligible profile incorrectly included played card';
+  END IF;
+
+  expected_eligible:=100-n_seen;
+  started:=pg_catalog.clock_timestamp();
+  SELECT pg_catalog.array_agg(
+     couple_private.lr026_eligible_reference_rank(
+       v_session,v_couple,'SENSUEL',eligible.card)
+     ORDER BY eligible.card)
+  INTO older
+  FROM pg_catalog.generate_series(n_seen+1,100) eligible(card);
+  old_ms:=EXTRACT(EPOCH FROM(pg_catalog.clock_timestamp()-started))*1000;
+
+  started:=pg_catalog.clock_timestamp();
+  SELECT pg_catalog.array_agg(
+     couple_private.love_variety_rank(
+       v_session,v_couple,'SENSUEL',eligible.card)
+     ORDER BY eligible.card)
+  INTO newer
+  FROM pg_catalog.generate_series(n_seen+1,100) eligible(card);
+  new_ms:=EXTRACT(EPOCH FROM(pg_catalog.clock_timestamp()-started))*1000;
+
+  IF older IS DISTINCT FROM newer
+     OR pg_catalog.array_length(newer,1) IS DISTINCT FROM expected_eligible
+  THEN
+    RAISE EXCEPTION 'LR-026 eligible history %: old/new rankings diverged',
+      n_seen;
+  END IF;
+
+  -- Even with a different ID, an equivalent title should be downgraded.
+  -- Candidate 99 exists in all four *eligible* sets, never in history.
+  IF n_seen>0 THEN
+    IF newer[99-n_seen] IS DISTINCT FROM 1 THEN
+      RAISE EXCEPTION 'LR-026 eligible history %: semantic twin not penalized',
+        n_seen;
+    END IF;
+    SELECT pg_catalog.count(*) INTO total
+      FROM pg_catalog.unnest(newer) r WHERE r=1;
+    IF total<>1 THEN
+      RAISE EXCEPTION 'LR-026 eligible history %: unrelated cards penalized (%)',
+        n_seen,total;
+    END IF;
+  ELSE
+    SELECT pg_catalog.count(*) INTO total
+      FROM pg_catalog.unnest(newer) r WHERE r=1;
+    IF total<>0 THEN
+      RAISE EXCEPTION 'LR-026 eligible history 0: unexpected penalization';
+    END IF;
+  END IF;
+
+  RAISE NOTICE
+    'LR-026 eligible category: % played, % eligible, old=% ms, new=% ms (CI diagnostic; not production SLA)',
+    n_seen,expected_eligible,
+    pg_catalog.round(old_ms,2),pg_catalog.round(new_ms,2);
+ END LOOP;
+END; $lr026_eligible_profile$;
+ROLLBACK;
