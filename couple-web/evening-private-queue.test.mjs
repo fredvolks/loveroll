@@ -827,6 +827,122 @@ test('LR-026: timer restoration and expiry scanner reject mismatched stored owne
  assert.match(scan,/ownerUserId:state\.user\.id,ownerSessionId:state\.session\.id,/);
 });
 
+test('LR-026: Commencer ignores a stale RPC or refresh after switching accounts',async()=>{
+ const begin=app.indexOf("if(verb==='evening-start')");
+ const finish=app.indexOf("if(verb==='surprise-activity')",begin);
+ const code=app.slice(begin,finish);
+ assert.ok(begin>=0&&finish>begin);
+ const factory=Function('state','challengeTimer','ownEveningChallenges',
+  'isSameEveningResponseContext','rpc','refreshShared','activeTimer',
+  'resolvedCard','saveChallengeTimer','updateChallengeClock','render',
+  'notify','unlockLoveRollSounds',
+  'return async function(verb,parts){'+code+'}');
+ const gate=()=>{let resolve,reject;
+  const promise=new Promise((ok,fail)=>{resolve=ok;reject=fail;});
+  return {promise,resolve,reject};
+ };
+ const card={id:'start-a',recipient:'fred',session_id:'night-a',status:'proposed'};
+ const state={user:{id:'fred'},session:{id:'night-a'},tab:'session',
+  challenges:[card],showEveningChallenges:false,selectedEveningChallengeId:null};
+ const clock={mode:'vibrate',remainingMs:0,running:false};
+ const rpcPending=gate(),callbacks={rpc:0,refresh:0,timer:0,render:0,notify:0};
+ const start=factory(state,clock,ownEveningChallenges,isSameEveningResponseContext,
+  async()=>{callbacks.rpc++;await rpcPending.promise;},
+  async()=>{callbacks.refresh++;},
+  ()=>{callbacks.timer++;},()=>({minutes:2}),()=>{},()=>{},
+  ()=>{callbacks.render++;},()=>{callbacks.notify++;},()=>{});
+ const first=start('evening-start',['start-a']);
+ assert.equal(callbacks.rpc,1);
+ // A stale A response must NOT refresh, start a countdown or select A in B.
+ state.user={id:'partner'};state.session={id:'night-b'};
+ state.challenges=[{id:'start-b',recipient:'partner',session_id:'night-b',
+  status:'accepted'}];
+ rpcPending.resolve();await first;
+ assert.equal(callbacks.refresh,0);
+ assert.equal(callbacks.timer,0);
+ assert.equal(callbacks.render,0);
+ assert.equal(callbacks.notify,0);
+ assert.equal(state.selectedEveningChallengeId,null);
+ assert.equal(state.eveningStartContext,null);
+
+ // Even after a successful RPC, a suspended refresh may outlive the view.
+ state.user={id:'fred'};state.session={id:'night-a'};
+ state.challenges=[{...card,status:'accepted'}];
+ const refreshPending=gate();
+ const refreshCallbacks={refresh:0,timer:0,render:0};
+ const delayed=factory(state,clock,ownEveningChallenges,isSameEveningResponseContext,
+  async()=>{throw Error('accepted card should skip RPC');},
+  async()=>{refreshCallbacks.refresh++;await refreshPending.promise;},
+  ()=>{refreshCallbacks.timer++;},()=>({minutes:2}),()=>{},()=>{},
+  ()=>{refreshCallbacks.render++;},()=>{},()=>{});
+ const second=delayed('evening-start',['start-a']);
+ assert.equal(refreshCallbacks.refresh,1);
+ state.user={id:'partner'};state.session={id:'night-b'};
+ refreshPending.resolve();await second;
+ assert.equal(refreshCallbacks.timer,0);
+ assert.equal(refreshCallbacks.render,0);
+ assert.equal(state.selectedEveningChallengeId,null);
+ assert.equal(state.eveningStartContext,null);
+});
+
+test('LR-026: Commencer starts only after verified recipient refresh and prevents double taps',async()=>{
+ const code=app.slice(app.indexOf("if(verb==='evening-start')"),
+  app.indexOf("if(verb==='surprise-activity')"));
+ const make=Function('state','challengeTimer','ownEveningChallenges',
+  'isSameEveningResponseContext','rpc','refreshShared','activeTimer',
+  'resolvedCard','saveChallengeTimer','updateChallengeClock','render',
+  'notify','unlockLoveRollSounds',
+  'return async function(verb,parts){'+code+'}');
+ const card={id:'active-card',recipient:'fred',session_id:'my-night',status:'proposed'};
+ const state={user:{id:'fred'},session:{id:'my-night'},tab:'session',
+  challenges:[card],showEveningChallenges:false,selectedEveningChallengeId:null};
+ const clock={mode:'vibrate',remainingMs:0,running:false};
+ let resolveRpc;const waitRpc=new Promise(ok=>{resolveRpc=ok;});
+ let calls=0,refreshes=0,rendered=0,timerStarts=0,notices=0;
+ const start=make(state,clock,ownEveningChallenges,isSameEveningResponseContext,
+  async()=>{calls++;await waitRpc;},
+  async context=>{
+   assert.equal(state.eveningStartContext,context,
+    'scoped refresh must use the initiating request token');
+   refreshes++;state.challenges=[{...card,status:'accepted'}];
+  },
+  ()=>{timerStarts++;clock.remainingMs=120000;},
+  ()=>({minutes:2}),()=>{},()=>{},
+  ()=>{rendered++;},()=>{notices++;},()=>{});
+ const first=start('evening-start',['active-card']);
+ await start('evening-start',['active-card']);
+ assert.equal(calls,1,'double taps must not launch duplicate acceptance RPCs');
+ resolveRpc();await first;
+ assert.equal(refreshes,1);
+ assert.equal(timerStarts,1);
+ assert.equal(rendered,1);
+ assert.equal(notices,0);
+ assert.equal(state.selectedEveningChallengeId,'active-card');
+ assert.equal(state.showEveningChallenges,true);
+ assert.equal(clock.running,true);
+ assert.equal(state.eveningStartContext,null);
+ // Another device may finish this card while the local refresh is in flight.
+ const terminal={...card,status:'passed'};
+ state.challenges=[terminal];
+ clock.running=false;timerStarts=0;rendered=0;notices=0;
+ const finished=make(state,clock,ownEveningChallenges,isSameEveningResponseContext,
+  async()=>{throw Error('passed cards should not be accepted');},
+  async()=>{},()=>{timerStarts++;},()=>({minutes:2}),()=>{},()=>{},
+  ()=>{rendered++;},()=>{notices++;},()=>{});
+ await assert.rejects(finished('evening-start',['active-card']),/ne peut pas être commencé/);
+ state.challenges=[{...card,status:'accepted'}];
+ const remoteFinished=make(state,clock,ownEveningChallenges,isSameEveningResponseContext,
+  async()=>{throw Error('no RPC needed');},
+  async()=>{state.challenges=[terminal];},
+  ()=>{timerStarts++;},()=>({minutes:2}),()=>{},()=>{},
+  ()=>{rendered++;},()=>{notices++;},()=>{});
+ await remoteFinished('evening-start',['active-card']);
+ assert.equal(timerStarts,0,'terminal cards cannot restart timers');
+ assert.equal(rendered,1);
+ assert.equal(notices,1);
+ assert.equal(state.selectedEveningChallengeId,null);
+});
+
 test('LR-026: a D100 timer belongs to one challenge, user and evening even when IDs are reused',()=>{
  const clock={id:'same-id',ownerUserId:'fred',ownerSessionId:'evening-1',
   decisionPending:true,running:true};
