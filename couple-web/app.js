@@ -2975,7 +2975,9 @@ async function handle(action,element){
     challengeTimer.notified=true;challengeTimer.autoCompletePending=false;
     challengeTimer.decisionPending=false;saveChallengeTimer();
    }
-   if(receiptValid&&sameAfterRefresh&&!persistedReceiptValid){
+   if(sameAfterRefresh&&!persistedReceiptValid){
+    // Even malformed/partial receipts must clear any automatic selection
+    // made by refreshShared; never open a different freshly offered card.
     state.selectedEveningChallengeId=null;
     state.showEveningChallenges=true;
    }
