@@ -78,6 +78,14 @@ function mockSupabase(opts = {}) {
         {session_id: session, user_id: a, face: 2},
         {session_id: session, user_id: b, face: 4}
       ];
+      // All three mutations preserve a valid two-roll snapshot under both
+      // users; only its timing is corrupt and must fail at the right gate.
+      if ((opts.d6MutatedAfterDraw && drawCount === 1) ||
+          (opts.d6MutatedAfterFirstPass && passCount === 1) ||
+          (opts.d6MutatedAfterReplay && passCount === 2))
+        return response([valid[0], {...valid[1], face: 5}]);
+      if (opts.d6DifferentFaceAfterDrawForB && drawCount === 1 && who === 'b')
+        return response([valid[0], {...valid[1], face: 5}]);
       if (opts.d6HiddenFromB && who === 'b') return response([]);
       if (opts.d6DifferentFaceForB && who === 'b')
         return response([valid[0], {...valid[1], face: 5}]);
@@ -251,9 +259,9 @@ test('play mode runs exactly one normal D100 plus one pass and one idempotent re
   assert.equal(out.persisted_challenges, 2);
   assert.equal(out.pass_replay_idempotent, true);
   const d6Reads = mock.calls.filter(x => x.path === '/rest/v1/couple_personal_rolls');
-  assert.deepEqual(d6Reads.map(x => x.actorToken), [
+  assert.deepEqual(d6Reads.map(x => x.actorToken), Array(4).fill([
     'Bearer auth-token-for-a-test', 'Bearer auth-token-for-b-test'
-  ]);
+  ]).flat(), 'The same pair of D6 rolls is read before, during and after gameplay');
   const finalViews = mock.calls.filter(x => x.path === '/rest/v1/couple_challenges');
   assert.deepEqual(finalViews.map(x => x.actorToken), [
     'Bearer auth-token-for-a-test', 'Bearer auth-token-for-b-test',
@@ -291,6 +299,22 @@ for (const options of [
       /D6 faces disagree between partner A and B/);
     assert.equal(mock.counters().drawCount, 0);
     assert.equal(mock.counters().passCount, 0);
+  });
+}
+
+for (const [options, expectedPasses, message] of [
+  [{d6MutatedAfterDraw: true}, 0, /D6 snapshot changed after D100/],
+  [{d6DifferentFaceAfterDrawForB: true}, 0, /D6 faces disagree between partner A and B/],
+  [{d6MutatedAfterFirstPass: true}, 1, /D6 snapshot changed after the first Passer/],
+  [{d6MutatedAfterReplay: true}, 2, /D6 snapshot changed after idempotent Passer replay/]
+]) {
+  test('D6 mutation is detected at the correct replay safety gate: ' +
+    JSON.stringify(options), async () => {
+    const mock = mockSupabase(options);
+    await assert.rejects(runStage(env(), 'play', mock.fetchFn), message);
+    assert.equal(mock.counters().drawCount, 1);
+    assert.equal(mock.counters().passCount, expectedPasses,
+      'Unexpected downstream Passer RPC after D6 mutation');
   });
 }
 
