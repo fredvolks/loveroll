@@ -481,6 +481,13 @@ export async function runStage(env, mode, transport = fetch) {
       'Exactly one valid same-category replacement offered by drawer must exist for recipient');
     const original = stored.find(c => eq(c.id, drawn.id));
     const replacement = stored.find(c => eq(c.id, response.replacement_id));
+    // A successful response may not silently rewrite the original library
+    // card or D100 result. The initial draw was validated before Passer,
+    // but the responded row must retain those exact values afterwards.
+    assert(original.face === drawn.face &&
+      original.card_id === drawn.card_id &&
+      original.replaces_challenge_id == null,
+      'Responded original must preserve its exact D100 face, card ID and provenance');
     assert(original.card_id !== replacement.card_id && original.face !== replacement.face,
       'Replacement must not reuse the original card ID or D100 face in the same category/night');
     // Normalize row order, but compare every selected persisted field to
