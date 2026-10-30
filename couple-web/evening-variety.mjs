@@ -17,10 +17,12 @@ const norm=value=>String(value??'').normalize('NFKD')
 const tokens=value=>new Set(norm(value).split(' ').filter(w=>
  w.length>=3&&!COMMON.has(w)));
 const stableId=card=>{
- const id=card?.card_id??card?.cardId??card?.library_card_id??card?.id;
+ const id=card?.card_id??card?.cardId??card?.library_card_id??card?.face??card?.id;
  if(id===null||id===undefined||String(id).trim()==='')return null;
  return norm(card?.category||'')+'|'+String(id);
 };
+const cardTitle=card=>card?.title??card?.card_title??'';
+const cardDescription=card=>card?.description??card?.card_description??card?.instructions??'';
 const intersection=(a,b)=>[...a].filter(x=>b.has(x)).length;
 const similarity=(a,b)=>{
  const size=a.size+b.size-intersection(a,b);
@@ -41,12 +43,12 @@ export function areNearDuplicateEveningCards(first,second){
  if(!first||!second)return false;
  const aId=stableId(first),bId=stableId(second);
  if(aId&&bId&&aId===bId)return true;
- const aTitle=norm(first.title),bTitle=norm(second.title);
+ const aTitle=norm(cardTitle(first)),bTitle=norm(cardTitle(second));
  if(aTitle&&bTitle&&aTitle===bTitle)return true;
- const at=tokens(first.title),bt=tokens(second.title);
+ const at=tokens(cardTitle(first)),bt=tokens(cardTitle(second));
  if(intersection(at,bt)>=2&&similarity(at,bt)>=0.8)return true;
- const ad=tokens(first.description??first.instructions);
- const bd=tokens(second.description??second.instructions);
+ const ad=tokens(cardDescription(first));
+ const bd=tokens(cardDescription(second));
  const common=intersection(ad,bd);
  if(common>=5&&similarity(ad,bd)>=0.68)return true;
  const actA=activity(first),actB=activity(second);
@@ -73,13 +75,13 @@ export function filterSimilarEveningCandidates({
   throw new TypeError('Expected an eligible pool and current-session history arrays');
  // A broad mixed-category pool could change the official category odds.
  // The server must choose the D100 category BEFORE invoking this helper.
- const poolCategories=new Set(eligibleCards.map(card=>norm(card?.category)));
- if(poolCategories.size>1||
+ if(eligibleCards.some(card=>!card||typeof card!=='object'||Array.isArray(card)))
+  throw new TypeError('Eligible cards must be valid card objects');
+ const poolCategories=new Set(eligibleCards.map(card=>norm(card.category)));
+ if(poolCategories.has('')||poolCategories.size>1||
   (selectedCategory!==null&&selectedCategory!==undefined&&
    eligibleCards.length>0&&!poolCategories.has(norm(selectedCategory))))
   throw new RangeError('Variety requires an eligible pool from one official D100 category');
- if(eligibleCards.some(card=>!card||typeof card!=='object'))
-  throw new TypeError('Eligible cards must be valid card objects');
  if(!eligibleCards.length)return {
   candidates:[],suppressedCount:0,fallbackUsed:false,reason:'no-eligible-cards'
  };
