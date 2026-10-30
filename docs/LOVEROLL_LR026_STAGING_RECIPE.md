@@ -124,6 +124,12 @@ Après la pige D100 et les vérifications RLS, la recette contrôle d'abord un P
 
 Les tests Node en transport simulé couvrent les deux sens A→B et B→A, les trois décisions possibles, les drapeaux erronés, un remplacement substitué et une modification silencieuse de l'auteur de la carte de remplacement. Le paramètre accepte exclusivement `true` ou `false`; absent, il ne déclenche aucun appel supplémentaire. **Aucun accès à une préproduction hébergée n'est présumé** : la validation réelle de cette option exige toujours un projet de test explicitement mis à disposition.
 
+## Interface Soirée : message de réponse fidèle au serveur — 30 octobre 2026
+
+**Correctif du jeu visible :** dans `couple-web/app.js`, après un clic sur **Passer** ou **Refuser** avec/sans exclusion, le message de confirmation n'est plus calculé à partir du **bouton cliqué localement**. Deux appareils peuvent prendre des décisions contradictoires sur un même défi, mais la RPC `love_respond_and_redraw` n'enregistre **qu'une seule décision**, puis renvoie `action`, `excluded` et `already_processed` sur le second appareil. Le message affiché suit toujours **ces valeurs serveur**, même si le deuxième appareil avait demandé autre chose.
+
+La fonction pure `eveningRedrawFeedback` dans `couple-web/evening-private-queue.mjs` affiche le résultat réel **Passé**, **Refusé avec exclusion** ou **Refusé sans exclusion**; lorsqu'un autre appareil a déjà répondu, elle indique que le défi avait déjà reçu une réponse. Un reçu incomplet ou contradictoire donne un message neutre demandant de vérifier les défis, pas une fausse confirmation. Les règles de rôle, de quota, de minuterie et de remplacement restent inchangées. Les tests `couple-web/evening-private-queue.test.mjs` couvrent les réponses gagnantes, les rejeux, les choix différents et les reçus mal formés, et vérifient que l'application utilise bien la décision serveur.
+
 ## Reçus identiques et gagnant réel des courses SQL — 30 octobre 2026
 
 Deux protections supplémentaires dans `couple-web/lr026-real-rpc-concurrent.test.sh` vérifient les deux courses **Passer contre Refuser** et **Refuser sans exclusion contre Refuser avec exclusion** avec les véritables RPC sur PostgreSQL 17 jetable. L'assertion compare les JSON renvoyés aux **deux connexions** au reçu réellement enregistré, champ par champ : `original_id`, `replacement_id`, `action` et `excluded`. L'identifiant de remplacement doit aussi pointer vers **l'unique défi proposé correspondant à l'original**, pas simplement vers une ligne de plus.
