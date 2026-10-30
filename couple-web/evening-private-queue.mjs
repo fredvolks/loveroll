@@ -52,8 +52,8 @@ export function isValidEveningRedrawReceipt(outcome,expectedOriginalId=null){
  if(!outcome||typeof outcome!=='object'||Array.isArray(outcome))return false;
  const original=outcome.original_id,replacement=outcome.replacement_id;
  const hasOriginal=typeof original==='string'&&original.trim().length>0;
- const hasReplacement=typeof replacement==='string'&&
-  replacement.trim().length>0&&replacement.trim()!==original?.trim();
+ const hasReplacement=hasOriginal&&typeof replacement==='string'&&
+  replacement.trim().length>0&&replacement.trim()!==original.trim();
  const unavailable=outcome.replacement_unavailable===true;
  return hasOriginal&&
   (expectedOriginalId==null||original===expectedOriginalId)&&
