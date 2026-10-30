@@ -947,6 +947,8 @@ async function refreshShared(expectedContext=null){
  let legacyClosedDuringRefresh=false;
  // In-flight requests cannot write a different account's or evening's UI.
  const current=()=>!expectedContext||(state.coupleId===c&&
+  // Older redraw contexts had no coupleId; timer-completion contexts do.
+  (expectedContext.coupleId===undefined||expectedContext.coupleId===c)&&
   state.user?.id===expectedContext.userId&&state.tab===expectedContext.tab&&
   (isSameEveningResponseContext(state,expectedContext)||
    (legacyClosedDuringRefresh&&state.session===null&&
