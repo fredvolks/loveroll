@@ -511,6 +511,14 @@ export async function runStage(env, mode, transport = fetch) {
   // idempotency check have passed.
   let staleReplayChecks = 0;
   if (config.staleReplay) {
+    // Reauthenticate the SAME recipient with GoTrue to obtain a distinct
+    // session. Reusing one bearer token twice cannot prove two-device
+    // replay safety. login() independently checks /auth/v1/user identity.
+    const secondDevice = await client.login(
+      config.drawer === 'B' ? config.a : config.b);
+    assert(eq(secondDevice.id, recipient.id) &&
+      secondDevice.token !== recipient.token,
+      'Stale response probe requires a second independent recipient Auth session');
     const contradictions = config.action === 'pass'
       ? [{action:'refuse',exclude:true}]
       : [{action:'pass',exclude:false},
@@ -518,7 +526,7 @@ export async function runStage(env, mode, transport = fetch) {
     for (const stale of contradictions) {
       const staleResult = await client.rpc('love_respond_and_redraw', {
         p_challenge: drawn.id,p_action:stale.action,p_exclude:stale.exclude
-      },recipient.token);
+      },secondDevice.token);
       assert(staleResult?.already_processed === true &&
         eq(staleResult.original_id,drawn.id) &&
         eq(staleResult.replacement_id,response.replacement_id) &&
@@ -538,6 +546,7 @@ export async function runStage(env, mode, transport = fetch) {
     drawer: config.drawer, random_category_mode: config.random,
     actual_draw_category: drawn.category, replacement_same_category: true, pass_replay_idempotent: true,
     stale_replay_checks: staleReplayChecks,
+    distinct_stale_auth_session: config.staleReplay,
     response_action: config.action, response_excluded: config.exclude,
     persisted_challenges: 2};
 }
