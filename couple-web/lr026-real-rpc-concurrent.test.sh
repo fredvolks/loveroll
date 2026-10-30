@@ -24,11 +24,17 @@ assert_count() {
  fi
 }
 launch() {
- local label="$1" actor="$2" challenge="$3"
+ local label="$1" actor="$2" challenge="$3" mode="${4:-pass}"
+ local rpc
+ case "$mode" in
+  pass) rpc="public.love_respond_and_redraw('$challenge'::uuid,'pass',false)" ;;
+  draw) rpc="public.draw_for_partner('$challenge'::uuid,'SENSUEL',false)" ;;
+  *) echo "::error::Unsupported RPC race mode $mode"; exit 1 ;;
+ esac
  (
    set +e
    psql -X -d "$DB" -At -v ON_ERROR_STOP=1 \
-     -c "SET statement_timeout='8s'; SET ROLE authenticated; SELECT pg_catalog.set_config('request.jwt.claim.sub','$actor',false); SELECT pg_catalog.set_config('lr026.test_verified','yes',false); SELECT public.love_respond_and_redraw('$challenge'::uuid,'pass',false);" \
+     -c "SET statement_timeout='8s'; SET ROLE authenticated; SELECT pg_catalog.set_config('request.jwt.claim.sub','$actor',false); SELECT pg_catalog.set_config('lr026.test_verified','yes',false); SELECT $rpc;" \
      >"$tmp/$label.log" 2>&1
    printf '%s\n' "$?" >"$tmp/$label.rc"
  ) &
@@ -39,8 +45,9 @@ launch() {
 # both were blocked on an actual PostgreSQL Lock rather than merely started
 # close together (a strict concurrency check).
 run_race() {
- local label="$1" couple="$2" actor1="$3" challenge1="$4" actor2="$5" challenge2="$6"
- local gate_pid saw1=0 saw2=0 waiting
+ local label="$1" couple="$2" actor1="$3" challenge1="$4" actor2="$5" challenge2="$6" mode="${7:-pass}"
+ local gate_pid saw1=0 saw2=0 waiting rpc_name=love_respond_and_redraw
+ if [[ "$mode" == draw ]]; then rpc_name=draw_for_partner; fi
  (
    psql -X -d "$DB" -q -At -v ON_ERROR_STOP=1 >"$tmp/$label.gate" 2>&1 <<SQL
 BEGIN;
@@ -67,15 +74,15 @@ SQL
    echo "::error::$label: couple lock gate never became ready"
    cat "$tmp/$label.gate"; exit 1
  fi
- launch "$label.1" "$actor1" "$challenge1"
- launch "$label.2" "$actor2" "$challenge2"
+ launch "$label.1" "$actor1" "$challenge1" "$mode"
+ launch "$label.2" "$actor2" "$challenge2" "$mode"
  # The two blocked backend sessions must overlap in time, not merely
  # produce serially correct outcomes by chance.
  for _ in $(seq 1 24); do
    waiting="$(psql -X -d "$DB" -At -v ON_ERROR_STOP=1 -c "
     SELECT count(*) FROM pg_catalog.pg_stat_activity
     WHERE datname=current_database() AND wait_event_type='Lock'
-      AND query LIKE '%love_respond_and_redraw%'
+      AND query LIKE '%$rpc_name%'
       AND query NOT LIKE '%pg_stat_activity%';")"
    if [[ "$waiting" -ge 2 ]]; then saw2=1; break; fi
    sleep 0.04
