@@ -3005,6 +3005,12 @@ async function handle(action,element){
   if(!state.redrawReady)throw Error('La repige sécurisée n’est pas encore disponible sur ce serveur.');
   if(isActiveEveningRedrawPending())return;
   const refuse=verb==='evening-refuse-choice',challengeId=parts[0];
+  // Commencer and the timer can be awaiting the acceptance RPC. Do not
+  // race their result with a Passer/Refuser of this SAME recipient card.
+  if(state.eveningStartContext?.challengeId===challengeId&&
+     isSameEveningResponseContext(state,state.eveningStartContext))return;
+  if(state.timerStartContext?.challengeId===challengeId&&
+     isSameEveningResponseContext(state,state.timerStartContext))return;
   if(refuse&&state.eveningRefusalId!==challengeId)throw Error('Confirme ton choix pour ce défi.');
   if(refuse&&!['yes','no'].includes(parts[1]))throw Error('Choix de refus non reconnu.');
   const item=ownEveningChallenges(state.challenges,state.user?.id,state.session?.id).find(x=>x.id===challengeId);
@@ -3130,12 +3136,15 @@ async function handle(action,element){
   return;
  }
  if(verb==='evening-start'){
-  // Prime WebAudio immediately on tap, before any awaited database request.
-  if(challengeTimer.mode==='sound')void unlockLoveRollSounds();
+  // A D100 decision has priority over stale start taps on the same card.
+  if(isActiveEveningRedrawPending()&&
+     state.redrawBusyContext?.challengeId===parts[0])return;
   if(isSameEveningResponseContext(state,state.eveningStartContext))return;
   // Timer lecture and Commencer must not both accept this same D100 card.
   if(state.timerStartContext?.challengeId===parts[0]&&
      isSameEveningResponseContext(state,state.timerStartContext))return;
+  // Prime WebAudio synchronously on an authorized user gesture only.
+  if(challengeTimer.mode==='sound')void unlockLoveRollSounds();
   const startContext={sessionId:state.session?.id,userId:state.user?.id,
    tab:state.tab,challengeId:parts[0]};
   const picked=ownEveningChallenges(state.challenges,startContext.userId,startContext.sessionId)
@@ -4364,6 +4373,9 @@ async function handle(action,element){
    const ownsClock=()=>ownsVisibleEveningTimer(timerChallengeId,timerUserId,timerSessionId)&&
     state.tab===timerTab;
    if(!ownsClock())throw Error('Aucun minuteur actif pour cette soirée');
+   // A timer tap cannot pause/restart while its challenge is being redrawn.
+   if(isActiveEveningRedrawPending()&&
+      state.redrawBusyContext?.challengeId===timerChallengeId)return;
    if(state.timerStartContext?.challengeId===timerChallengeId&&
       isSameEveningResponseContext(state,state.timerStartContext))return;
    if(state.eveningStartContext?.challengeId===timerChallengeId&&
