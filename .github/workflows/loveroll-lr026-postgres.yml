@@ -29,6 +29,10 @@ on:
       - "couple-web/lr026-staging-verify.mjs"
       - "couple-web/lr026-staging-recipe.test.mjs"
       - "couple-web/lr026-staging-audit.test.mjs"
+      - "couple-web/lr026-staging-readiness.sql"
+      - "couple-web/lr026-staging-rls-fixture.sql"
+      - "couple-web/lr026-staging-rls.test.sql"
+      - "couple-web/lr026-staging-rls.test.sh"
       - "couple-web/lr026-evening-flow.test.sql"
       - "couple-web/lr026-extract-helpers.cjs"
       - "couple-web/lr026-postgres-rpc-fixture.sql"
@@ -152,6 +156,10 @@ jobs:
         run: |
           bash -n couple-web/lr026-real-rpc.test.sh
           bash couple-web/lr026-real-rpc.test.sh
+      - name: Run actual PostgreSQL RLS under authenticated A/B/C and test fail-closed drift guards
+        run: |
+          bash -n couple-web/lr026-staging-rls.test.sh
+          bash couple-web/lr026-staging-rls.test.sh
       - name: Verify anon denial and authenticated server-side RPC execution
         run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-rpc-role-security.test.sql
       - name: Recheck rank and permissions after full migration
