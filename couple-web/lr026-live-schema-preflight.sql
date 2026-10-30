@@ -107,7 +107,7 @@ FROM checks c
 CROSS JOIN LATERAL (
  SELECT pg_catalog.array_remove(ARRAY[
    CASE WHEN c.signatures_unchanged IS TRUE THEN NULL ELSE 'RPC source MD5 drifted' END,
-   CASE WHEN c.both_rpcs_present IS TRUE THEN NULL ELSE 'Both RPCs missing' END,
+   CASE WHEN c.both_rpcs_present IS TRUE THEN NULL ELSE 'One or both RPCs missing' END,
    CASE WHEN c.rpc_permissions_preserved IS TRUE THEN NULL ELSE 'RPC ACL / SECURITY DEFINER / search_path drifted' END,
    CASE WHEN c.normal_draw_rules_present IS TRUE THEN NULL ELSE 'Normal D100 eligibility rules changed' END,
    CASE WHEN c.redraw_rules_present IS TRUE THEN NULL ELSE 'Refusal/quota/repige rules changed' END,
