@@ -1007,3 +1007,78 @@ test("LR-026 real D100 handlers reject clicks while automatic completion is pend
  assert.match(ui,/button\('evening-refuse-cancel','Annuler','class="subtle" '\+\(isActiveEveningRedrawPending\(\)\?'disabled':''\)/,
   'Cancel stays available so the player may dismiss the dialog');
 });
+
+test("LR-026 manual response takes priority over automatic timer completion",async()=>{
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const first=source.indexOf('function isEveningCardCompleting(cardId){');
+ const finish=source.indexOf('function clockMs(){',first);
+ const begin=source.indexOf('function ownsTimerCompletionSession(context){');
+ const end=source.indexOf('// LR-002: recover ALL due challenge timers',begin);
+ assert.ok(first>0&&finish>first&&begin>finish&&end>begin);
+ const state={user:{id:'alice'},coupleId:'couple-1',session:{id:'s1'},
+  tab:'session',timerCompletionContext:null,
+  legacyAnswerContext:{userId:'alice',sessionId:'s1',tab:'session',challengeId:'card-A'}};
+ const clock={id:'card-A',ownerUserId:'alice',ownerSessionId:'s1',
+  autoCompletePending:true,decisionPending:false,remainingMs:0};
+ let completions=0;
+ const context={
+  state,challengeTimer:clock,timerCompletionInFlight:null,timerCompletionRetryAt:0,
+  ownsVisibleEveningTimer:(id,u,s)=>id==='card-A'&&u==='alice'&&s==='s1',
+  isSameEveningResponseContext:(view,request)=>view.user?.id===request?.userId&&
+   view.session?.id===request?.sessionId&&view.tab===request?.tab,
+  isActiveEveningRedrawPending:()=>false,
+  timedEveningItem:()=>({id:'card-A',recipient:'alice',session_id:'s1',status:'accepted'}),
+  isAcceptedTimedEveningChallenge:()=>true,
+  completeTimedEveningChallenge:async()=>{completions++;return {outcome:'completed',finished:false};},
+  rpc:async()=>{},query:async()=>[],saveChallengeTimer:()=>{},
+  refreshShared:async()=>true,render:()=>{},notify:()=>{},
+  console,document:{hidden:false},Date
+ };
+ const guard=runInNewContext(source.slice(first,finish)+
+  '; ({busy:isEveningCardCompleting,controls:isVisibleEveningTimerActionPending});',context);
+ const retry=runInNewContext(source.slice(begin,end)+'; retryExpiredTimedEvening;',context);
+ assert.equal(guard.busy('card-A'),true,'manual decision must lock the same D100 card');
+ assert.equal(guard.controls(),true,'reset and pause stay disabled during manual reply');
+ assert.equal(guard.busy('card-B'),false,'another card remains independent');
+ await retry();
+ assert.equal(completions,0,'automatic answer_challenge cannot race the manual one');
+ assert.equal(clock.autoCompletePending,true,'expired timer waits for manual reply');
+ state.legacyAnswerContext=null;
+ assert.equal(guard.busy('card-A'),true,'expired timer remains locked until validated');
+ await retry();
+ assert.equal(completions,1,'automatic retry resumes after manual request settles');
+});
+
+test('LR-026 saved timers skip only the card with an active manual answer',async()=>{
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const first=source.indexOf('function ownsTimerCompletionSession(context){');
+ const end=source.indexOf('function endSignal(){',first);
+ assert.ok(first>0&&end>first);
+ const state={user:{id:'alice'},coupleId:'c1',session:{id:'s1'},tab:'session',
+  legacyAnswerContext:{userId:'alice',sessionId:'s1',tab:'session',challengeId:'card-A'},
+  timerCompletionContext:null,challenges:[
+   {id:'card-A',recipient:'alice',session_id:'s1',status:'accepted'},
+   {id:'card-B',recipient:'alice',session_id:'s1',status:'accepted'}]};
+ const calls=[],pendingWrites=[];
+ const api=runInNewContext(source.slice(first,end)+'; reconcileSavedEveningTimers;',{
+  state,challengeTimer:{id:'card-A',autoCompletePending:true,decisionPending:false},
+  timerCompletionInFlight:null,timerCompletionRetryAt:0,
+  readSavedChallengeTimer:key=>({cardId:key.split(':').at(-1),ownerUserId:'alice',
+   ownerSessionId:'s1',running:true,deadline:Date.now()-2000,durationMs:60000}),
+  ownedSavedEveningTimerSnapshot:saved=>saved,
+  writeSavedChallengeTimer:(key,saved)=>pendingWrites.push({key,saved}),
+  isSameEveningResponseContext:(view,request)=>view.user.id===request?.userId&&
+   view.session.id===request?.sessionId&&view.tab===request?.tab,
+  isAcceptedTimedEveningChallenge:()=>true,
+  completeTimedEveningChallenge:async({challenge})=>{
+   calls.push(challenge.id);return {outcome:'superseded',finished:false};
+  },
+  ownsVisibleEveningTimer:(id)=>id==='card-A',
+  saveChallengeTimer:()=>{},refreshShared:async()=>true,rpc:async()=>{},
+  query:async()=>[],render:()=>{},notify:()=>{},console,document:{hidden:false},Date
+ });
+ await api();
+ assert.deepEqual(calls,['card-B'],
+  'automatic recovery skips manually answered card A, not unrelated B');
+ assert.ok(pendingWrites.every(x=>x.key.endsWith(':card-B')));
+});
