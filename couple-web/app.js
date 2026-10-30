@@ -17,7 +17,7 @@ import {ROLL_TOTAL_MS} from './dice-roll-motion.mjs';
 import {createCoupleLiveSync} from './couple-live-sync.mjs?v=20261017-advent119';
 import {playableSessionForWeekly} from './couple-reset-view.mjs';
 import {eveningDailyAccess} from './evening-daily-policy.mjs?v=20261016-daily100';
-import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,isSameEveningResponseContext,redrawTimerRecovery} from './evening-private-queue.mjs';
+import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,isSameEveningResponseContext,isEveningRedrawBusyForCurrentView,ownsEveningRedrawRequest,redrawTimerRecovery} from './evening-private-queue.mjs';
 import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261029-web259';
 import {saveEveningSelection,restoreEveningSelection,clearEveningSelection} from './evening-resume.mjs?v=20261027-web240';
 import {eclatHtml} from './eclat-ui.mjs?v=20261027-web242';
@@ -938,8 +938,7 @@ async function reload(){
 // A redraw started under another account or tab cannot disable the buttons
 // of the currently visible evening. Each in-flight redraw has its own owner.
 function isActiveEveningRedrawPending(){
- return state.redrawBusy===true&&!!state.redrawBusyContext&&
-  isSameEveningResponseContext(state,state.redrawBusyContext);
+ return isEveningRedrawBusyForCurrentView(state);
 }
 async function refreshShared(expectedContext=null){
  const c=state.coupleId;
@@ -2983,7 +2982,7 @@ async function handle(action,element){
    // The player may have switched accounts, evenings or tabs during the
    // network request. An old response must not trigger a new account's RLS
    // refresh, selection or confirmation.
-   if(!sameContext||state.redrawBusyContext!==responseContext)return;
+   if(!sameContext||!ownsEveningRedrawRequest(state,responseContext))return;
    // A syntactically valid RPC receipt cannot stop a live timer by itself.
    // Wait for the recipient-only refreshed database view below.
    // The automatic queue refresh can discover a DIFFERENT newly offered
@@ -3001,7 +3000,7 @@ async function handle(action,element){
    // render the committed replacement after RLS refresh. Do not announce a
    // successful repick or keep an invisible card selected in that case.
    const sameAfterRefresh=isSameEveningResponseContext(state,responseContext)&&
-    state.redrawBusyContext===responseContext;
+    ownsEveningRedrawRequest(state,responseContext);
    const persistedReceiptValid=receiptValid&&sameAfterRefresh&&
     isPersistedEveningRedrawReceipt(outcome,state.challenges,state.user.id,state.session.id,item);
    if(persistedReceiptValid){
@@ -3056,7 +3055,7 @@ async function handle(action,element){
    // unrelated error on the screen now controlled by another session.
    // finally still unlocks the action and renders the current account.
    if(!isSameEveningResponseContext(state,responseContext)||
-      state.redrawBusyContext!==responseContext)return;
+      !ownsEveningRedrawRequest(state,responseContext))return;
    if(challengeTimer.id===challengeId&&challengeTimer.decisionPending){
     challengeTimer.decisionPending=false;
     if(challengeTimer.deadline>0&&challengeTimer.deadline<=Date.now()){
