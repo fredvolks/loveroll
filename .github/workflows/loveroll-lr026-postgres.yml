@@ -18,6 +18,7 @@ on:
       - "couple-web/lr026-real-rpc-schema.sql"
       - "couple-web/lr026-real-rpc-snapshot.sql"
       - "couple-web/lr026-real-rpc-e2e.test.sql"
+      - "couple-web/lr026-real-rpc-paired-turns.test.sql"
       - "couple-web/lr026-real-rpc.test.sh"
       - "couple-web/lr026-evening-flow.test.sql"
       - "couple-web/lr026-extract-helpers.cjs"
