@@ -25,7 +25,7 @@ test('LR-026: evening feedback shows committed RPC decision, not tapped button',
   'Défi conservé dans la pige.');
  assert.match(eveningRedrawFeedback({...refused,replacement_id:null,replacement_unavailable:true}),
   /avait déjà reçu une réponse.*Aucun autre défi admissible/);
- assert.match(app,/redrawFeedback=eveningRedrawFeedback\(outcome,challengeId\)/);
+ assert.match(app,/redrawFeedback=receiptValid&&!persistedReceiptValid/);
  assert.doesNotMatch(app,/redrawFeedback=outcome\?\.replacement_unavailable/);
 });
 
@@ -197,7 +197,7 @@ test('LR-026: receipt validator binds server decision to original clicked challe
 test('LR-026: app checks original ID before selecting and confirming a new D100 challenge',()=>{
  assert.match(app,/const receiptValid=isValidEveningRedrawReceipt\(outcome,challengeId\)/);
  assert.match(app,/state\.selectedEveningChallengeId=receiptValid\?outcome\.replacement_id:null/);
- assert.match(app,/redrawFeedback=eveningRedrawFeedback\(outcome,challengeId\)/);
+ assert.match(app,/redrawFeedback=receiptValid&&!persistedReceiptValid/);
  assert.doesNotMatch(app,/state\.selectedEveningChallengeId=outcome\?\.replacement_id\|\|null/);
 });
 
@@ -294,7 +294,7 @@ test('LR-026: async D100 action checks same initiating context before selection 
   'must guard both UI navigation and notifications; additional timer/error checks are required');
  assert.match(branch,/const sameContext=isSameEveningResponseContext\(state,responseContext\)/);
  assert.match(branch,/if\(sameContext\)\{\s+if\(receiptValid\)state\.eveningRefusalId=null;[\s\S]*?state\.selectedEveningChallengeId=receiptValid\?outcome\.replacement_id:null/);
- assert.match(branch,/await refreshAndShow\(\);[\s\S]*?if\(isSameEveningResponseContext\(state,responseContext\)\)\s+redrawFeedback=eveningRedrawFeedback\(outcome,challengeId\)/);
+ assert.match(branch,/await refreshAndShow\(\);[\s\S]*?const persistedReceiptValid=[\s\S]*?if\(isSameEveningResponseContext\(state,responseContext\)\)\s+redrawFeedback=receiptValid&&!persistedReceiptValid/);
  assert.doesNotMatch(branch,/if\(state\.session\?\.id===sessionId\)/,
   'checking only the session leaves another account/tab exposed');
 });
