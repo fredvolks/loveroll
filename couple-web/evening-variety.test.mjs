@@ -73,12 +73,18 @@ test('LR-026: favorites and custom cards remain available in a NEW session',()=>
  assert.deepEqual(result,{candidates:[replay,custom],suppressedCount:0,
   fallbackUsed:false,reason:'all-eligible'});
 });
-test('LR-026: MIXTE/history inputs cannot add candidates or change D100 category odds',()=>{
+test('LR-026: mixed categories fail closed to preserve official D100 odds',()=>{
  const sensual=card('S-2','Le massage','Propose un massage doux');
  const sexual={...card('X-9','Une idée intime','Une autre activité'),category:'SEXUEL'};
  const eligible=[sexual,sensual];
- const result=filterSimilarEveningCandidates({
+ assert.throws(()=>filterSimilarEveningCandidates({
   eligibleCards:eligible,recentInSession:[sensual]
+ }),/one official D100 category/);
+ assert.throws(()=>filterSimilarEveningCandidates({
+  eligibleCards:[sexual],recentInSession:[],selectedCategory:'SENSUEL'
+ }),/one official D100 category/);
+ const result=filterSimilarEveningCandidates({
+  eligibleCards:[sexual],recentInSession:[sensual],selectedCategory:'SEXUEL'
  });
  assert.deepEqual(result.candidates,[sexual]);
  assert.deepEqual(eligible,[sexual,sensual]);
@@ -89,5 +95,21 @@ test('LR-026: invalid history/pool is rejected instead of silently widening the 
  }),TypeError);
  assert.throws(()=>filterSimilarEveningCandidates({
   eligibleCards:[],recentInSession:null
+ }),TypeError);
+});
+
+test('LR-026: all eligible custom cards remain available when history has no similar card',()=>{
+ const custom=card('my-custom','Une longue promenade','Choisissez un endroit calme et marchez');
+ const old=card('historical','Le spa','Masser le dos doucement');
+ const result=filterSimilarEveningCandidates({
+  eligibleCards:[custom],recentInSession:[old],selectedCategory:'SENSUEL'
+ });
+ assert.equal(result.reason,'all-eligible');
+ assert.deepEqual(result.candidates,[custom]);
+});
+
+test('LR-026: malformed eligible items never become drawable cards',()=>{
+ assert.throws(()=>filterSimilarEveningCandidates({
+  eligibleCards:[null],recentInSession:[]
  }),TypeError);
 });
