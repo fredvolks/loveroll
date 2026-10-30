@@ -97,6 +97,15 @@ export function isPersistedEveningRedrawReceipt(outcome,rows,userId,sessionId){
  const original=mine.find(card=>card.id===outcome.original_id);
  if(original?.status!==(outcome.action==='pass'?'passed':'refused'))
   return false;
+ const validStamp=value=>typeof value==='string'&&
+  value.trim().length>0&&Number.isFinite(Date.parse(value));
+ // The real RPC and pass-stamp trigger commit exactly ONE decision date.
+ // Malformed or contradictory stamps are not enough to stop a live timer.
+ if(!validStamp(original.created_at)||
+  (outcome.action==='pass'
+   ?!validStamp(original.passed_at)||original.refused_at!==null
+   :!validStamp(original.refused_at)||original.passed_at!==null))
+  return false;
  // One answered card occupies precisely one D6 slot. Repeated device
  // responses must never create two direct replacements for the same origin.
  const replacements=mine.filter(card=>
@@ -104,6 +113,7 @@ export function isPersistedEveningRedrawReceipt(outcome,rows,userId,sessionId){
  if(outcome.replacement_id===null)return replacements.length===0;
  if(replacements.length!==1)return false;
  const replacement=replacements[0];
+ if(!validStamp(replacement.created_at))return false;
  // The official SQL chooses a different library card and D100 face
  // within the same category, recipient and evening. A stale or corrupted
  // response must not falsely confirm the same physical card again.
@@ -122,7 +132,8 @@ export function isPersistedEveningRedrawReceipt(outcome,rows,userId,sessionId){
   !mine.some(card=>card.id!==replacement.id&&
    card.category===replacement.category&&
    (card.face===replacement.face||card.card_id===replacement.card_id))&&
-  replacement.is_gifted===Boolean(original.is_gifted);
+  typeof original.is_gifted==='boolean'&&
+  replacement.is_gifted===original.is_gifted;
 }
 
 /**
