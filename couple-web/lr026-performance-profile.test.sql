@@ -67,7 +67,7 @@ BEGIN
        baseline_ranks,
        couple_private.lr026_baseline_rank(tonight,a,'SENSUEL',g));
   END LOOP;
-  old_ms := pg_catalog.extract(epoch FROM pg_catalog.clock_timestamp()-start_at)*1000;
+  old_ms := EXTRACT(EPOCH FROM (pg_catalog.clock_timestamp()-start_at))*1000;
 
   modern_ranks := ARRAY[]::integer[];
   start_at := pg_catalog.clock_timestamp();
@@ -76,7 +76,7 @@ BEGIN
        modern_ranks,
        couple_private.love_variety_rank(tonight,a,'SENSUEL',g));
   END LOOP;
-  new_ms := pg_catalog.extract(epoch FROM pg_catalog.clock_timestamp()-start_at)*1000;
+  new_ms := EXTRACT(EPOCH FROM (pg_catalog.clock_timestamp()-start_at))*1000;
 
   IF baseline_ranks IS DISTINCT FROM modern_ranks THEN
      RAISE EXCEPTION 'LR-026: fast path changed card ranking semantics';
