@@ -2946,10 +2946,12 @@ async function handle(action,element){
    const sameContext=isSameEveningResponseContext(state,responseContext);
    // A syntactically valid RPC receipt cannot stop a live timer by itself.
    // Wait for the recipient-only refreshed database view below.
-   // Keep modal selection strictly bound to the initiating evening/account.
+   // The automatic queue refresh can discover a DIFFERENT newly offered
+   // challenge. Never preselect the RPC replacement before verifying its
+   // authoritative recipient-only row; choose it after refresh instead.
    if(sameContext){
     if(receiptValid)state.eveningRefusalId=null;
-    state.selectedEveningChallengeId=receiptValid?outcome.replacement_id:null;
+    state.selectedEveningChallengeId=null;
     state.showEveningChallenges=true;
    }
    await refreshAndShow();
@@ -2959,6 +2961,15 @@ async function handle(action,element){
    const sameAfterRefresh=isSameEveningResponseContext(state,responseContext);
    const persistedReceiptValid=receiptValid&&sameAfterRefresh&&
     isPersistedEveningRedrawReceipt(outcome,state.challenges,state.user.id,state.session.id);
+   if(persistedReceiptValid){
+    // A simultaneous second-device response can already have consumed the
+    // replacement. Only focus it if it remains in the visible D6 queue.
+    const selected=state.challenges.find(card=>
+     card.id===outcome.replacement_id&&
+     !['passed','refused'].includes(card.status));
+    state.selectedEveningChallengeId=selected?.id||null;
+    state.showEveningChallenges=true;
+   }
    if(persistedReceiptValid&&challengeTimer.id===challengeId){
     challengeTimer.running=false;challengeTimer.deadline=0;challengeTimer.remainingMs=0;
     challengeTimer.notified=true;challengeTimer.autoCompletePending=false;
