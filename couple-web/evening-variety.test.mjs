@@ -278,6 +278,45 @@ test('LR-026: card_id identifies cards, never the die result face or draw row ID
  assert.equal(chosen.suppressedCount,1);
 });
 
+test('LR-026: a challenge row UUID is never an exact library-card ID',()=>{
+ const first={id:'same-persisted-row',category:'SENSUEL',
+  title:'Raconter un souvenir',description:'Un court souvenir au jardin'};
+ const second={id:'same-persisted-row',category:'SENSUEL',
+  title:'Préparer un dessert',description:'Une autre activité en cuisine'};
+ assert.equal(areNearDuplicateEveningCards(first,second),false,
+  'SQL compares library card_id, not a challenge row id');
+ const pool=filterSimilarEveningCandidates({
+  eligibleCards:[second],recentInSession:[first],selectedCategory:'SENSUEL'
+ });
+ assert.deepEqual(pool.candidates,[second]);
+ assert.equal(pool.reason,'all-eligible');
+ // A real library card ID is still an exact match even after title edits.
+ assert.equal(areNearDuplicateEveningCards(
+  {...first,card_id:24},{...second,card_id:24}),true);
+});
+
+test('LR-026: unknown official category fails closed even on an empty pool',()=>{
+ for(const unknown of ['MOYEN','INTENSE','',0,'SEXUELL']) {
+  assert.throws(()=>filterSimilarEveningCandidates({
+   eligibleCards:[],recentInSession:[],selectedCategory:unknown
+  }),/one official D100 category/);
+  assert.throws(()=>filterSimilarEveningCandidates({
+   eligibleCards:[{category:unknown,card_id:1,title:'Une carte'}],
+   recentInSession:[]
+  }),/one official D100 category/);
+ }
+ const validEmpty=filterSimilarEveningCandidates({
+  eligibleCards:[],selectedCategory:'SEXUEL'
+ });
+ assert.deepEqual(validEmpty,{candidates:[],suppressedCount:0,
+  fallbackUsed:false,reason:'no-eligible-cards'});
+ const valid=filterSimilarEveningCandidates({
+  eligibleCards:[card(3,'Une carte','Un petit jeu')],
+  recentInSession:[],selectedCategory:'SENSUEL'
+ });
+ assert.equal(valid.reason,'all-eligible');
+});
+
 test('LR-026: legacy RPC card text fields support title similarity',()=>{
  const descriptive={category:'SENSUEL',card_title:'La danse lente',
   card_description:'Proposez une danse lente ensemble'};
