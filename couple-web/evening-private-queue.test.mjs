@@ -1642,3 +1642,45 @@ test('LR-026: later unscoped refresh wins when older same-account network finish
  assert.equal(state.cycleStatus.generation,2,
   'older data cannot overwrite the newest same-account refreshed state');
 });
+
+test('LR-026: scoped D100 refresh supersedes older ordinary background request',async()=>{
+ const begin=app.indexOf('async function refreshShared(expectedContext=null){');
+ const end=app.indexOf('const liveSync=createCoupleLiveSync',begin);
+ assert.ok(begin>0&&end>begin);
+ let releaseOld;
+ const pending=new Promise(resolve=>{releaseOld=resolve;});
+ const action={userId:'alice',sessionId:'session-A',
+  coupleId:'couple-A',tab:'session',challengeId:'card-A'};
+ const state={user:{id:'alice'},coupleId:'couple-A',tab:'session',
+  session:{id:'session-A'},legacyAnswerContext:action,
+  cycleStatus:'initial',challenges:[],
+  reviewModalSessionId:null,reviewDismissedSessionId:null};
+ let sessionReads=0,cycleReads=0;
+ const refresh=runInNewContext(app.slice(begin,end)+'; refreshShared;',{
+  state,
+  query:async name=>{
+   if(name==='couple_sessions'){
+    sessionReads++;
+    if(sessionReads===1)await pending;
+    return [{id:'session-A',finished_at:null}];
+   }
+   return [];
+  },
+  rpc:async name=>{
+   if(name==='love_cycle_status')return {generation:++cycleReads,pending:false};
+   if(name==='love_redraw_capabilities')return false;
+   return [];
+  },
+  isSameEveningResponseContext,mayApplyScopedEveningRefresh,
+  ownEveningChallenges,month:()=>'2026-10',week:()=>'2026-W44',
+  refreshEclatStatus:async()=>{},console
+ });
+ const background=refresh();
+ const scoped=refresh(action);
+ assert.equal(await scoped,true,'the owned D100 refresh must complete');
+ assert.equal(state.cycleStatus.generation,2);
+ releaseOld();
+ assert.equal(await background,undefined,
+  'outdated background reads must yield to a later owned D100 request');
+ assert.equal(state.cycleStatus.generation,2);
+});
