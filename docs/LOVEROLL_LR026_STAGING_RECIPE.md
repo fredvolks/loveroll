@@ -6,6 +6,7 @@
 
 - `--check` : valide les paramètres, le domaine HTTPS exact, le projet distinct et la clé **publique**. Aucune requête réseau.
 - `--auth` : ouvre deux vraies sessions Supabase Auth distinctes, confirme les identités auprès de GoTrue, puis vérifie la lecture de la soirée et des adhésions au duo sous les vraies règles RLS. Aucune mutation du jeu.
+- `--ready` : vérifie la soirée vierge, les deux D6 et la cohérence des vues A/B sous RLS, sans RPC ni mutation, avant tout essai D100.
 - `--audit` : exige un troisième vrai compte Auth C qui appartient à **un autre duo** avec une séance distincte. Avant de tester les refus, A, B et C doivent **chacun voir au moins un défi dont ils sont le destinataire** dans leur propre soirée, sans voir la carte du partenaire. Cela évite un faux succès quand la table des défis est vide ou illisible pour tout le monde. Ensuite, il vérifie que C ne voit ni la séance, ni les adhésions, ni les défis A/B, et qu’A/B ne voient pas ceux de C. **Douze lectures inter-duos doivent être refusées par RLS** : pour chaque autre couple, séance, adhésions, défis destinataires et D6. Les partenaires A et B doivent lire chacun les deux D6 de leur duo, et C doit voir son propre D6 fictif; autrement, un refus sur une table vide ne prouve rien. Aucun appel RPC de jeu, aucune écriture.
 - `--play` : avec une confirmation d'écriture supplémentaire, teste une soirée **fictive et vierge** (deux D6 enregistrés, `paired_turns=false`, `self_draws=false`) : A pige un D100 réel, B passe, puis rejoue exactement cette demande. Le script confirme la seule nouvelle carte, l'identité du destinataire, la catégorie conservée et l'idempotence.
 
@@ -109,6 +110,14 @@ La recette `$lr026_real_roles# LoveRoll LR-026 — recette Supabase A/B (STAGING
  vérifie désormais **les deux vrais appels SQL** sur des cartes personnalisées : après la pige par A d'une carte autorisée uniquement à B, le partenaire B doit pouvoir effectuer `Refuser(false)` et recevoir **uniquement** une autre carte correspondant à ses droits. Des cartes interdites par les rôles `owner/partner`, le genre du destinataire, `recipient_user_id` et `drawer_user_id` restent présentes dans le catalogue de la base isolée : la repige doit les ignorer, pas simplement supposer un ensemble déjà filtré par l'interface.
 
 La seconde carte est d'abord exclue pour rendre le tirage initial déterministe, puis elle est rendue admissible juste avant le refus. Le test contrôle le `card_id`, l'auteur, le destinataire, la catégorie, la nouvelle face D100, le `replaces_challenge_id`, mais aussi **le titre, la description et les cinq minutes du minuteur personnalisés**. Un deuxième `Refuser` avec `exclude=true` doit rejouer le reçu `excluded=false`, sans duplication. Aucune donnée personnelle ou fonction hébergée n'est modifiée. Ces validations sont sur PostgreSQL 17 jetable avec transaction annulée.
+
+## Pré-vérification A/B sans écriture — mode `--ready` (30 octobre 2026)
+
+La commande `node couple-web/lr026-staging-verify.mjs --ready` vérifie **avant de jouer**, sans aucun RPC de jeu ni consentement aux écritures, qu'une soirée fictive distincte est prête pour les essais D100. Contrairement au simple `--auth`, ce mode lit **sous les deux vrais comptes Auth A et B** `paired_turns=false` et `self_draws=false`, les deux lancers D6 valides et identiques sous les deux vues RLS (faces 1–6), ainsi que l'absence de défis enregistrés visibles par chacun des destinataires. L'identité GoTrue, l'appartenance exacte au duo et l'état ouvert de la soirée restent vérifiés.
+
+Ce prévol utilise **la même fonction de validation** que le début de `--play` : un contrôle vert en lecture seule ne doit pas avoir des critères plus faibles que ceux utilisés avant le premier D100. Les tests Node vérifient `game_writes: 0`, aucune requête vers `/rest/v1/rpc/`, et l'arrêt sur une soirée déjà peuplée, un D6 manquant ou contradictoire, des modes divergents sous A/B, un membre manquant et un projet interdit. Le projet confirmé, les deux comptes, la soirée et la clé publique restent obligatoires; les deux confirmations d'écriture sont réservées à `--play`.
+
+Le résultat `preflight: fresh_legacy_duo_verified` ne garantit **pas** qu'une carte reste disponible ou qu'un D100 ultérieur réussira; `--play` revérifie tous ces critères juste avant son premier appel mutateur. Aucun projet, compte ni donnée n'est créé automatiquement.
 
 ## Rejeu contradictoire sur deux comptes Auth réels — option explicite (30 octobre 2026)
 
