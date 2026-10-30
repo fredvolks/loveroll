@@ -1,3 +1,18 @@
+// One actionable timer control across initial render and every clock tick.
+// A completed/expired timer must never display an inert "Reprendre" button.
+export function timedEveningTimerControl(timer){
+ if(timer?.autoCompletePending)return {
+  label:'♡ Validation en cours',status:'Validation du défi en cours',disabled:true
+ };
+ if(timer?.running)return {label:'Ⅱ Pause',status:'En cours',disabled:false};
+ if(!(Number(timer?.remainingMs)>0))return {
+  label:'♡ Terminé',status:'Terminé',disabled:true
+ };
+ const resumed=Number(timer?.remainingMs)<Number(timer?.durationMs);
+ return {label:resumed?'▶ Reprendre':'▶ Démarrer',
+  status:'À votre rythme',disabled:false};
+}
+
 // A timed Soirée challenge counts as completed after the countdown reaches 00:00.
 // Server remains authoritative. Surprise, Advent and Éclat timers are excluded.
 export function isAcceptedTimedEveningChallenge(challenge,userId,sessionId){
