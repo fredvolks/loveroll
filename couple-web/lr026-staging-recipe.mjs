@@ -310,12 +310,31 @@ export async function runStage(env, mode, transport = fetch) {
 
   // Never retry mutations. On error the staging operator must inspect the
   // persisted state and provision a NEW fixture, not blindly replay.
+  const challengeQuery =
+    'select=id,session_id,offered_by,recipient,category,replaces_challenge_id,status' +
+    '&session_id=eq.' + config.sessionId;
   const drawn = await client.rpc('draw_for_partner',
     {p_session: config.sessionId, p_preference: 'SENSUEL', p_random: false}, a.token);
   assert(UUID.test(drawn?.id || '') && eq(drawn.recipient, b.id) &&
     eq(drawn.offered_by, a.id), 'Real D100 did not return a valid card offered by A to B');
   assert(['SENSUEL', 'SEXUEL'].includes(drawn.category),
     'Real D100 returned an unknown category');
+  // Independently read the newly persisted row as the B recipient and A.
+  // A successful RPC response alone is not proof that it was saved for B.
+  // NEVER run Passer if the first draw is missing, malformed or misrouted.
+  const firstForB = await client.rows('couple_challenges', challengeQuery, b.token);
+  const firstForA = await client.rows('couple_challenges', challengeQuery, a.token);
+  assert(firstForB.length === 1 &&
+    eq(firstForB[0].id, drawn.id) &&
+    eq(firstForB[0].session_id, config.sessionId) &&
+    eq(firstForB[0].offered_by, a.id) &&
+    eq(firstForB[0].recipient, b.id) &&
+    firstForB[0].category === drawn.category &&
+    firstForB[0].status === 'proposed' &&
+    firstForB[0].replaces_challenge_id == null,
+    'First D100 must persist exactly one new A-to-B proposal before Passer');
+  assert(firstForA.length === 0,
+    'First D100 must not persist a proposal visible to A before Passer');
   const response = await client.rpc('love_respond_and_redraw',
     {p_challenge: drawn.id, p_action: 'pass', p_exclude: false}, b.token);
   assert(eq(response?.original_id, drawn.id) &&
@@ -332,9 +351,6 @@ export async function runStage(env, mode, transport = fetch) {
   // The real recipient-only RLS hides A's cards from B and vice versa.
   // Check BOTH authenticated recipients after the RPCs; a stray card for A
   // would otherwise remain invisible to the B-only verification.
-  const challengeQuery =
-    'select=id,session_id,offered_by,recipient,category,replaces_challenge_id,status' +
-    '&session_id=eq.' + config.sessionId;
   const stored = await client.rows('couple_challenges', challengeQuery, b.token);
   const forA = await client.rows('couple_challenges', challengeQuery, a.token);
   assert(forA.length === 0,
