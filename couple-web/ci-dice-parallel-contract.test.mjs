@@ -52,8 +52,12 @@ test('Seven real WebGL sizes run in two independently mandatory parallel lanes',
  const b=namedStep('Verify real D100 across mobile viewports B (412–430px)');
  assert.match(a,/LOVEROLL_D100_VIEWPORT_LANE: a/);
  assert.match(b,/LOVEROLL_D100_VIEWPORT_LANE: b/);
- const all=workflow.match(/node couple-web\/evening-d100-template-browser-check[.]cjs/g)||[];
- assert.equal(all.length,2,'No viewport size may be duplicated or omitted in CI');
+ // The separate dice-core HEADER_PROBE intentionally uses the same script.
+ // Count only full-viewport jobs, not that earlier compact diagnostic.
+ const fullRuns=steps.filter(step=>/^[ ]*run: node couple-web\/evening-d100-template-browser-check[.]cjs[ ]*$/m.test(step));
+ assert.equal(fullRuns.length,2,'Exactly two full-viewport jobs required');
+ assert.deepEqual(fullRuns.map(step=>step.includes("matrix.group == 'dice-mobile-a'")?'a':
+  step.includes("matrix.group == 'dice-mobile-b'")?'b':'unexpected'),['a','b']);
  assert.match(workflow,/node --test couple-web\/evening-d100-viewports[.]test[.]cjs/);
  assert.match(workflow,/needs: \[changes, static-tests, browser-tests\]/);
 });
