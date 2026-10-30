@@ -34,6 +34,7 @@ function mockSupabase(opts = {}) {
   let lastDraw = null;
   const loginCounts = {a:0,b:0};
   const sessionReadCounts = {a:0,b:0};
+  const memberReadCounts = {a:0,b:0};
   const calls = [];
   const fetchFn = async (uri, init) => {
     count++;
@@ -103,6 +104,11 @@ function mockSupabase(opts = {}) {
       }]);
     }
     if (path === '/rest/v1/couple_members') {
+      memberReadCounts[who]++;
+      const preflightMemberRead = memberReadCounts[who] === 2 &&
+        drawCount === 0 && passCount === 0;
+      if (preflightMemberRead && who === 'b' && opts.preflightHidesPartnerB)
+        return response([{couple_id: couple, user_id: b}]);
       if (secondDevice && opts.staleDeviceMissingMember)
         return response([{couple_id:couple,user_id:uid}]);
       if (opts.hideMemberB && who === 'b') return response([]);
@@ -110,7 +116,9 @@ function mockSupabase(opts = {}) {
         return response([{couple_id: couple, user_id: a}]);
       const members = [{couple_id: couple, user_id: a},
         {couple_id: couple, user_id: b}];
-      if (opts.extraThirdMember || (opts.duetThirdMemberAfterDraw &&
+      if (opts.extraThirdMember ||
+          (preflightMemberRead && who === 'b' && opts.preflightThirdMemberB) ||
+          (opts.duetThirdMemberAfterDraw &&
           drawCount === 1 && passCount === 0))
         members.push({couple_id: couple,
           user_id: 'cccccccc-1111-4111-8111-cccccccccccc'});
@@ -422,7 +430,9 @@ for(const [name,opts,error] of [
  ['different D6 on B',{d6DifferentFaceForB:true},/D6 faces disagree/],
  ['existing card for A',{existingChallengeForA:true},/Play recipe requires a clean session/],
  ['existing card for B',{existingChallengeForB:true},/Play recipe requires a clean session/],
- ['missing membership view',{hidePartnerFromA:true},/exactly A and B/]
+ ['missing membership view',{hidePartnerFromA:true},/exactly A and B/],
+ ['new third member since Auth',{preflightThirdMemberB:true},/still see exactly A and B/],
+ ['partner hidden since Auth',{preflightHidesPartnerB:true},/still see exactly A and B/]
 ]){
  test('read-only ready fails closed on '+name,async()=>{
   const mock=mockSupabase(opts);
@@ -450,6 +460,26 @@ for (const [name,opts] of [
       assert.equal(reads.length,4,
         'both accounts must complete initial Auth checks before detecting preflight drift');
     });
+  }
+}
+
+for (const [name,opts] of [
+  ['a third member joins the couple after Auth',{preflightThirdMemberB:true}],
+  ['B loses visibility of A after Auth',{preflightHidesPartnerB:true}]
+]) {
+  for (const drawer of ['A','B']) {
+    test('D100 refuses changed membership before writes: '+name+' (drawer '+drawer+')',
+      async () => {
+        const mock=mockSupabase({...opts,drawerB:drawer==='B'});
+        await assert.rejects(runStage({...env(),LR026_STAGING_DRAWER:drawer},
+          'play',mock.fetchFn),/still see exactly A and B/);
+        assert.equal(mock.counters().drawCount,0);
+        assert.equal(mock.counters().passCount,0);
+        assert.equal(mock.calls.filter(c=>c.path.startsWith('/rest/v1/rpc/')).length,0);
+        const memberReads=mock.calls.filter(c=>c.path==='/rest/v1/couple_members');
+        assert.equal(memberReads.length,4,
+          'the drift must be discovered at fresh preflight, not initial Auth');
+      });
   }
 }
 
@@ -771,7 +801,7 @@ test('normal play validates feature flags under both authenticated accounts', as
     'Bearer auth-token-for-a-test', 'Bearer auth-token-for-b-test'
   ]).flat());
   const memberReads = mock.calls.filter(c => c.path === '/rest/v1/couple_members');
-  assert.deepEqual(memberReads.map(c => c.actorToken), Array(4).fill([
+  assert.deepEqual(memberReads.map(c => c.actorToken), Array(5).fill([
     'Bearer auth-token-for-a-test', 'Bearer auth-token-for-b-test'
   ]).flat());
 });
