@@ -55,6 +55,38 @@ test('LR-026: malformed or contradictory RPC receipts never yield false confirma
  assert.match(unknown,/Vérifie la liste de tes défis/);
 });
 
+test('LR-026: client receipt rules track the two official PostgreSQL return shapes',()=>{
+ const sql=readFileSync(new URL('./lr026-real-rpc-snapshot.sql',import.meta.url),'utf8');
+ const start=sql.indexOf('-- love_respond_and_redraw');
+ assert(start>0,'official Refuser/Passer RPC snapshot must be present');
+ const redraw=sql.slice(start);
+ const replayStart=redraw.indexOf('IF FOUND THEN');
+ const replayEnd=redraw.indexOf('END IF;',replayStart);
+ assert(replayStart>=0&&replayEnd>replayStart,
+  'idempotent response branch must remain identifiable');
+ const idempotent=redraw.slice(replayStart,replayEnd);
+ assert.match(idempotent,/'already_processed',true/);
+ assert.match(idempotent,/'replacement_id',v_prior\.replacement_id/);
+ assert.doesNotMatch(idempotent,/replacement_unavailable/,
+  'production SQL replay deliberately omits availability');
+ const firstReceiptStart=redraw.lastIndexOf('RETURN jsonb_build_object(');
+ assert(firstReceiptStart>replayEnd,
+  'first decision must have its own receipt after idempotency check');
+ const firstReceipt=redraw.slice(firstReceiptStart);
+ assert.match(firstReceipt,/'replacement_unavailable',v_new_id IS NULL/);
+ assert.match(firstReceipt,/'already_processed',false/);
+ const first={original_id:'old',replacement_id:'new',
+  action:'refuse',excluded:false,already_processed:false,
+  replacement_unavailable:false};
+ assert.equal(isValidEveningRedrawReceipt(first,'old'),true);
+ assert.equal(isValidEveningRedrawReceipt({...first,replacement_unavailable:undefined},
+  'old'),false,'first SQL receipt cannot omit availability');
+ const replay={original_id:'old',replacement_id:'new',
+  action:'refuse',excluded:false,already_processed:true};
+ assert.equal(isValidEveningRedrawReceipt(replay,'old'),true,
+  'SQL idempotent branch must remain valid without that property');
+});
+
 test('LR-026: first redraw requires explicit replacement availability before UI or timer success',()=>{
  const valid={original_id:'clicked-card',replacement_id:'replacement-card',
   action:'pass',excluded:false,already_processed:false,
