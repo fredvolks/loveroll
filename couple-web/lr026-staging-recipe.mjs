@@ -108,6 +108,11 @@ export function validateStage(env, mode) {
       throw new Error('Staging D100 preference must be SENSUEL or SEXUEL');
     }
     result.preference = preference;
+    const drawer = env.LR026_STAGING_DRAWER ?? 'A';
+    if (!['A', 'B'].includes(drawer)) {
+      throw new Error('Staging D100 drawer must be A or B');
+    }
+    result.drawer = drawer;
     // The source RPC accepts pass (never exclude) or refuse with a
     // deliberate optional cycle exclusion; reject any other combination
     // before authentication or a mutating request is possible.
@@ -318,6 +323,10 @@ export async function runStage(env, mode, transport = fetch) {
       rls_positive_d6_reads: 3, rls_cross_duo_denials: 12, game_writes: 0};
   }
 
+  // Exercise either real direction without changing the two named accounts.
+  // Each run still requires its own fresh, empty staging session.
+  const giver = config.drawer === 'B' ? b : a;
+  const recipient = config.drawer === 'B' ? a : b;
   // A's session settings alone are not sufficient: check the same legacy
   // partner-draw flags under both real Auth tokens before the first D100 RPC.
   for (const actor of [a, b]) {
@@ -376,12 +385,12 @@ export async function runStage(env, mode, transport = fetch) {
     'select=id,session_id,offered_by,recipient,category,face,card_id,replaces_challenge_id,status' +
     '&session_id=eq.' + config.sessionId;
   const drawn = await client.rpc('draw_for_partner',
-    {p_session: config.sessionId, p_preference: config.preference, p_random: false}, a.token);
+    {p_session: config.sessionId, p_preference: config.preference, p_random: false}, giver.token);
   assert(UUID.test(drawn?.id || '') &&
     eq(drawn.session_id, config.sessionId) &&
     eq(drawn.couple_id, config.coupleId) &&
-    eq(drawn.recipient, b.id) && eq(drawn.offered_by, a.id),
-    'Real D100 did not return a valid card in the correct session and duet from A to B');
+    eq(drawn.recipient, recipient.id) && eq(drawn.offered_by, giver.id),
+    'Real D100 did not return a valid card in the correct session and duet from drawer to partner');
   assert(['SENSUEL', 'SEXUEL'].includes(drawn.category),
     'Real D100 returned an unknown category');
   assert(Number.isInteger(drawn.face) && drawn.face >= 1 && drawn.face <= 100 &&
@@ -390,27 +399,27 @@ export async function runStage(env, mode, transport = fetch) {
   // Independently read the newly persisted row as the B recipient and A.
   // A successful RPC response alone is not proof that it was saved for B.
   // NEVER run Passer if the first draw is missing, malformed or misrouted.
-  const firstForB = await client.rows('couple_challenges', challengeQuery, b.token);
-  const firstForA = await client.rows('couple_challenges', challengeQuery, a.token);
-  assert(firstForB.length === 1 &&
-    eq(firstForB[0].id, drawn.id) &&
-    eq(firstForB[0].session_id, config.sessionId) &&
-    eq(firstForB[0].offered_by, a.id) &&
-    eq(firstForB[0].recipient, b.id) &&
-    firstForB[0].category === drawn.category &&
-    firstForB[0].face === drawn.face &&
-    firstForB[0].card_id === drawn.card_id &&
-    Number.isInteger(firstForB[0].face) && firstForB[0].face >= 1 && firstForB[0].face <= 100 &&
-    Number.isInteger(firstForB[0].card_id) && firstForB[0].card_id >= 1 && firstForB[0].card_id <= 100 &&
-    firstForB[0].status === 'proposed' &&
-    firstForB[0].replaces_challenge_id == null,
-    'First D100 must persist exactly one new A-to-B proposal before Passer');
-  assert(firstForA.length === 0,
-    'First D100 must not persist a proposal visible to A before Passer');
+  const firstForRecipient = await client.rows('couple_challenges', challengeQuery, recipient.token);
+  const firstForGiver = await client.rows('couple_challenges', challengeQuery, giver.token);
+  assert(firstForRecipient.length === 1 &&
+    eq(firstForRecipient[0].id, drawn.id) &&
+    eq(firstForRecipient[0].session_id, config.sessionId) &&
+    eq(firstForRecipient[0].offered_by, giver.id) &&
+    eq(firstForRecipient[0].recipient, recipient.id) &&
+    firstForRecipient[0].category === drawn.category &&
+    firstForRecipient[0].face === drawn.face &&
+    firstForRecipient[0].card_id === drawn.card_id &&
+    Number.isInteger(firstForRecipient[0].face) && firstForRecipient[0].face >= 1 && firstForRecipient[0].face <= 100 &&
+    Number.isInteger(firstForRecipient[0].card_id) && firstForRecipient[0].card_id >= 1 && firstForRecipient[0].card_id <= 100 &&
+    firstForRecipient[0].status === 'proposed' &&
+    firstForRecipient[0].replaces_challenge_id == null,
+    'First D100 must persist exactly one drawer-to-recipient proposal before response');
+  assert(firstForGiver.length === 0,
+    'First D100 must not persist a proposal visible to drawer before response');
   await assertDuetUnchanged('after D100, before Passer');
   await assertD6Unchanged('after D100, before Passer');
   const response = await client.rpc('love_respond_and_redraw',
-    {p_challenge: drawn.id, p_action: config.action, p_exclude: config.exclude}, b.token);
+    {p_challenge: drawn.id, p_action: config.action, p_exclude: config.exclude}, recipient.token);
   assert(eq(response?.original_id, drawn.id) &&
     response.action === config.action && response.excluded === config.exclude &&
     response.replacement_unavailable === false &&
@@ -422,25 +431,25 @@ export async function runStage(env, mode, transport = fetch) {
   // deliberately repeating a mutating RPC as an idempotency probe, verify
   // the exact two committed rows under recipient B AND the empty A view.
   async function persistedPassSnapshot() {
-    const stored = await client.rows('couple_challenges', challengeQuery, b.token);
-    const forA = await client.rows('couple_challenges', challengeQuery, a.token);
-    assert(forA.length === 0,
-      'Unexpected challenge addressed to A after a partner B draw and Passer');
+    const stored = await client.rows('couple_challenges', challengeQuery, recipient.token);
+    const forGiver = await client.rows('couple_challenges', challengeQuery, giver.token);
+    assert(forGiver.length === 0,
+      'Unexpected challenge addressed to drawer after partner draw and response');
     assert(stored.length === 2 &&
       stored.every(c => eq(c.session_id, config.sessionId) &&
-        eq(c.recipient, b.id) && c.category === drawn.category),
-      'Only the two correct-category B challenges may exist');
+        eq(c.recipient, recipient.id) && c.category === drawn.category),
+      'Only the two correct-category recipient challenges may exist');
     assert(stored.filter(c =>
       eq(c.id, drawn.id) && c.status ===
         (config.action === 'pass' ? 'passed' : 'refused') &&
-      eq(c.offered_by, a.id) && c.replaces_challenge_id == null).length === 1,
-      'Only one original responded challenge offered by A may exist');
+      eq(c.offered_by, giver.id) && c.replaces_challenge_id == null).length === 1,
+      'Only one original responded challenge offered by drawer may exist');
     assert(stored.filter(c => eq(c.id, response.replacement_id) &&
       eq(c.replaces_challenge_id, drawn.id) && c.status === 'proposed' &&
-      eq(c.offered_by, a.id) &&
+      eq(c.offered_by, giver.id) &&
       Number.isInteger(c.face) && c.face >= 1 && c.face <= 100 &&
       Number.isInteger(c.card_id) && c.card_id >= 1 && c.card_id <= 100).length === 1,
-      'Exactly one valid same-category replacement offered by A must exist for recipient B');
+      'Exactly one valid same-category replacement offered by drawer must exist for recipient');
     const original = stored.find(c => eq(c.id, drawn.id));
     const replacement = stored.find(c => eq(c.id, response.replacement_id));
     assert(original.card_id !== replacement.card_id && original.face !== replacement.face,
@@ -453,7 +462,7 @@ export async function runStage(env, mode, transport = fetch) {
   await assertDuetUnchanged('after the first Passer, before replay');
   await assertD6Unchanged('after the first Passer, before replay');
   const replay = await client.rpc('love_respond_and_redraw',
-    {p_challenge: drawn.id, p_action: config.action, p_exclude: config.exclude}, b.token);
+    {p_challenge: drawn.id, p_action: config.action, p_exclude: config.exclude}, recipient.token);
   assert(replay.already_processed === true &&
     eq(replay.replacement_id, response.replacement_id) &&
     eq(replay.original_id, drawn.id) &&
@@ -465,6 +474,7 @@ export async function runStage(env, mode, transport = fetch) {
   await assertDuetUnchanged('after idempotent Passer replay');
   await assertD6Unchanged('after idempotent Passer replay');
   return {...result, draw_id: drawn.id, replacement_id: response.replacement_id,
+    drawer: config.drawer,
     replacement_same_category: true, pass_replay_idempotent: true,
     response_action: config.action, response_excluded: config.exclude,
     persisted_challenges: 2};
