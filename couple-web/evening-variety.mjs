@@ -101,8 +101,16 @@ export function filterSimilarEveningCandidates({
  if(!eligibleCards.length)return {
   candidates:[],suppressedCount:0,fallbackUsed:false,reason:'no-eligible-cards'
  };
+ // SQL considers only seen.category = selected D100 category. Legacy,
+ // incomplete or cross-category history must NOT suppress an eligible card.
+ // In particular, areNearDuplicateEveningCards accepts category-less pairs
+ // for direct comparisons; the candidate filter needs the stricter scope.
+ const officialCategory=poolCategories.values().next().value;
+ const historyInCategory=recentInSession.filter(previous=>
+  previous&&typeof previous==='object'&&!Array.isArray(previous)&&
+  norm(previous.category)===officialCategory);
  const candidates=eligibleCards.filter(card=>
-  !recentInSession.some(previous=>areNearDuplicateEveningCards(card,previous)));
+  !historyInCategory.some(previous=>areNearDuplicateEveningCards(card,previous)));
  if(!candidates.length)return {
   candidates:eligibleCards.slice(),suppressedCount:0,
   fallbackUsed:true,reason:'limited-variety-pool'
