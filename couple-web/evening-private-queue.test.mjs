@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,snapshotEveningCardBeforeRedraw,EVENING_REDRAW_IMMUTABLE_FIELDS,ownsEveningTimerRecord,ownedSavedEveningTimerSnapshot,isSameEveningResponseContext,isEveningRedrawBusyForCurrentView,ownsEveningRedrawRequest,redrawTimerRecovery} from './evening-private-queue.mjs';
+import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,snapshotEveningCardBeforeRedraw,EVENING_REDRAW_IMMUTABLE_FIELDS,ownsEveningTimerRecord,ownedSavedEveningTimerSnapshot,isSameEveningResponseContext,isEveningRedrawBusyForCurrentView,ownsEveningRedrawRequest,redrawTimerRecovery,mayApplyScopedEveningRefresh} from './evening-private-queue.mjs';
 import {premiumEveningHtml} from './premium-evening.mjs';
 const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
 const migration=readFileSync(new URL('./migrations/20261015_evening_private_challenge_queue.sql',import.meta.url),'utf8');
@@ -1219,6 +1219,37 @@ test('LR-026: legacy answer path ignores late responses and never stops a foreig
  assert.equal(isSameEveningResponseContext({...origin,user:{id:'B'}},context),false);
  assert.equal(isSameEveningResponseContext({...origin,session:{id:'night-2'}},context),false);
  assert.equal(isSameEveningResponseContext({...origin,tab:'home'},context),false);
+});
+
+test('LR-026: scoped refresh rejects a newer night BEFORE committing state',()=>{
+ const request={userId:'fred',sessionId:'night-1',tab:'session'};
+ const open={id:'night-1',finished_at:null};
+ const ended={id:'night-1',finished_at:'2026-10-30T20:00:00Z'};
+ const next={id:'night-2',finished_at:null};
+ assert.equal(mayApplyScopedEveningRefresh([open],request,false),true);
+ assert.equal(mayApplyScopedEveningRefresh([ended],request,true),true,
+  'a completed response may refresh its own confirmed finished night');
+ assert.equal(mayApplyScopedEveningRefresh([ended],request,false),false,
+  'ordinary D100/start must not silently close its night');
+ assert.equal(mayApplyScopedEveningRefresh([ended,next],request,true),false,
+  'another device creating a new night cannot replace this response state');
+ assert.equal(mayApplyScopedEveningRefresh([next],request,true),false);
+ assert.equal(mayApplyScopedEveningRefresh([],request,true),false,
+  'an absent session is not proof of its closure');
+ assert.equal(mayApplyScopedEveningRefresh([open,next],request,true),false,
+  'multiple active nights fail closed instead of using first match');
+ assert.equal(mayApplyScopedEveningRefresh(null,request,true),false);
+ assert.equal(mayApplyScopedEveningRefresh([next],null,false),true,
+  'the ordinary, unscoped live refresh remains backwards-compatible');
+ const begin=app.indexOf('async function refreshShared(expectedContext=null){');
+ const end=app.indexOf('const liveSync=createCoupleLiveSync',begin);
+ assert.ok(begin>0&&end>begin);
+ const refresh=app.slice(begin,end);
+ const guard=refresh.indexOf('if(!mayApplyScopedEveningRefresh(sessions,expectedContext,');
+ const firstWrite=refresh.indexOf('state.cycleStatus=cycleInfo;');
+ assert.ok(guard>0&&firstWrite>guard,
+  'the session preflight must execute before ANY shared state write');
+ assert.match(refresh,/state\.legacyAnswerContext===expectedContext\)\)return;/);
 });
 
 test('LR-026: legacy response refresh remains scoped across a night closure',()=>{
