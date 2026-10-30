@@ -13,6 +13,8 @@ on:
       - "couple-web/lr026-fixture-migration.cjs"
       - "couple-web/lr026-full-migration.test.sql"
       - "couple-web/lr026-rpc-role-security.test.sql"
+      - "couple-web/lr026-failed-migration-fixture.sql"
+      - "couple-web/lr026-atomic-rollback.test.sql"
       - ".github/workflows/loveroll-lr026-postgres.yml"
   workflow_dispatch:
 
@@ -94,3 +96,33 @@ jobs:
             exit 1
           }
           psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-full-migration.test.sql
+      - name: Prove transactional rollback if second RPC patch fails
+        run: |
+          set -euo pipefail
+          # Fully isolated DB: cannot affect the successful main fixture.
+          createdb lr026_rollback_test
+          psql -X -d lr026_rollback_test -v ON_ERROR_STOP=1 -f couple-web/lr026-postgres-fixture.sql
+          psql -X -d lr026_rollback_test -v ON_ERROR_STOP=1 -f couple-web/lr026-postgres-rpc-fixture.sql
+          psql -X -d lr026_rollback_test -v ON_ERROR_STOP=1 -f couple-web/lr026-failed-migration-fixture.sql
+          # Both expected MD5 values match the deliberately drifted fixture.
+          # The first CREATE OR REPLACE must run, then the second anchor
+          # must fail, forcing BEGIN's entire transaction to roll back.
+          BEFORE="$(psql -X -d lr026_rollback_test -At -v ON_ERROR_STOP=1 -c "SELECT md5(pg_get_functiondef('public.draw_for_partner(uuid,text,boolean)'::regprocedure)) || ',' || md5(pg_get_functiondef('public.love_respond_and_redraw(uuid,text,boolean)'::regprocedure))")"
+          DRAW_SHA="${BEFORE%%,*}"
+          REDRAW_SHA="${BEFORE##*,}"
+          node couple-web/lr026-fixture-migration.cjs "$DRAW_SHA" "$REDRAW_SHA" > "$RUNNER_TEMP/lr026-rollback-migration.sql"
+          if psql -X -d lr026_rollback_test -v ON_ERROR_STOP=1 -f "$RUNNER_TEMP/lr026-rollback-migration.sql" > "$RUNNER_TEMP/lr026-rollback-error.log" 2>&1; then
+            echo "::error::Partially broken RPC migration incorrectly committed."
+            exit 1
+          fi
+          grep -q 'point de branchement Passer/Refuser absent ou ambigu' "$RUNNER_TEMP/lr026-rollback-error.log" || {
+            echo "::error::Failed migration rejected for the wrong reason."
+            cat "$RUNNER_TEMP/lr026-rollback-error.log"
+            exit 1
+          }
+          AFTER="$(psql -X -d lr026_rollback_test -At -v ON_ERROR_STOP=1 -c "SELECT md5(pg_get_functiondef('public.draw_for_partner(uuid,text,boolean)'::regprocedure)) || ',' || md5(pg_get_functiondef('public.love_respond_and_redraw(uuid,text,boolean)'::regprocedure))")"
+          if [ "$BEFORE" != "$AFTER" ]; then
+            echo "::error::At least one RPC changed after failed migration."
+            exit 1
+          fi
+          psql -X -d lr026_rollback_test -v ON_ERROR_STOP=1 -f couple-web/lr026-atomic-rollback.test.sql
