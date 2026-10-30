@@ -17,7 +17,7 @@ import {ROLL_TOTAL_MS} from './dice-roll-motion.mjs';
 import {createCoupleLiveSync} from './couple-live-sync.mjs?v=20261017-advent119';
 import {playableSessionForWeekly} from './couple-reset-view.mjs';
 import {eveningDailyAccess} from './evening-daily-policy.mjs?v=20261016-daily100';
-import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt} from './evening-private-queue.mjs';
+import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isSameEveningResponseContext} from './evening-private-queue.mjs';
 import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261029-web259';
 import {saveEveningSelection,restoreEveningSelection,clearEveningSelection} from './evening-resume.mjs?v=20261027-web240';
 import {eclatHtml} from './eclat-ui.mjs?v=20261027-web242';
@@ -2933,7 +2933,8 @@ async function handle(action,element){
   if(!item||!['proposed','accepted'].includes(item.status))throw Error('Défi déjà répondu ou inaccessible.');
   if(!refuse&&state.monthlyPassQuota?.can_pass===false)
    throw Error('Limite mensuelle de passages atteinte. Tu peux toujours refuser un défi.');
-  const sessionId=state.session.id,exclude=refuse&&parts[1]==='yes';
+  const responseContext={sessionId:state.session.id,userId:state.user?.id,tab:state.tab};
+  const exclude=refuse&&parts[1]==='yes';
   state.redrawBusy=true;
   if(challengeTimer.id===challengeId)challengeTimer.decisionPending=true;
   render();
@@ -2952,7 +2953,7 @@ async function handle(action,element){
    // navigation only if the same evening remains active; otherwise do not
    // clear a new soirée's refusal dialog or select an unrelated challenge.
    const receiptValid=isValidEveningRedrawReceipt(outcome,challengeId);
-   if(state.session?.id===sessionId){
+   if(isSameEveningResponseContext(state,responseContext)){
     state.eveningRefusalId=null;
     state.selectedEveningChallengeId=receiptValid?outcome.replacement_id:null;
     state.showEveningChallenges=true;
@@ -2960,7 +2961,8 @@ async function handle(action,element){
    await refreshAndShow();
    // A simultaneous device can win with a DIFFERENT action. The RPC's
    // committed action/excluded flag is authoritative on every replay.
-   redrawFeedback=eveningRedrawFeedback(outcome,challengeId);
+   if(isSameEveningResponseContext(state,responseContext))
+    redrawFeedback=eveningRedrawFeedback(outcome,challengeId);
   }catch(error){
    if(challengeTimer.id===challengeId&&challengeTimer.decisionPending){
     challengeTimer.decisionPending=false;
