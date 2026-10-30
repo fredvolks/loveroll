@@ -265,6 +265,12 @@ test('LR-026: redraw success requires original decision and replacement in recip
   'the other device may already have passed the verified replacement');
  assert.equal(verify([original,alreadyRefused]),true,
   'the other device may already have refused the verified replacement');
+ assert.equal(verify([original,{...alreadyPassed,passed_at:'2026-10-30T12:01:59Z'}]),
+  false,'a second-device pass cannot precede the replacement creation');
+ assert.equal(verify([original,{...alreadyRefused,refused_at:'2026-10-30T12:01:59Z'}]),
+  false,'a second-device refusal cannot precede the replacement creation');
+ assert.equal(verify([original,{...alreadyPassed,passed_at:replacement.created_at}]),true,
+  'database transactions may use the same timestamp for creation and decision');
  assert.equal(verify([original,{...alreadyPassed,passed_at:null}]),false);
  assert.equal(verify([original,{...alreadyRefused,refused_at:'broken'}]),false);
  assert.equal(verify([original,{...alreadyPassed,refused_at:'2026-10-30T12:05:00Z'}]),false,
@@ -311,6 +317,8 @@ test('LR-026: redraw success requires original decision and replacement in recip
   'Passer cannot happen before the card was drawn');
  assert.equal(verify([original,{...replacement,created_at:'2026-10-30T11:59:59Z'}]),false,
   'a replacement cannot predate the challenge it replaces');
+ assert.equal(verify([original,{...replacement,created_at:'2026-10-30T12:01:59Z'}]),false,
+  'a replacement cannot predate the committed decision even when after the original');
  for(const badStamp of [null,undefined,'not-a-date','']){
   assert.equal(verify([{...original,passed_at:badStamp},replacement]),false,
    'a Passer without a valid persisted passed_at must not confirm the timer');
