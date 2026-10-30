@@ -26,15 +26,14 @@ const descriptionTokens=value=>new Set(norm(value).split(' ').filter(w=>
  w.length>=4&&!SQL_STOPWORDS.has(w)));
 // The die's face is NOT a card identifier: the official draw persists
 // face (the dice result) separately from card_id (the selected library card).
-// A challenge-row UUID is also kept in a distinct namespace.
+// A challenge-row UUID must NEVER stand in for a library card ID.
 const stableId=card=>{
  const category=norm(card?.category||'');
  const id=card?.card_id??card?.cardId??card?.library_card_id;
  if(id!==null&&id!==undefined&&String(id).trim()!=='')
   return 'card|'+category+'|'+String(id).trim();
- const rowId=card?.id;
- if(rowId!==null&&rowId!==undefined&&String(rowId).trim()!=='')
-  return 'draw|'+category+'|'+String(rowId).trim();
+ // SQL compares seen.card_id, not seen.id. A row UUID is only a draw
+ // instance, and cannot establish an exact library-card duplicate.
  return null;
 };
 const intersection=(a,b)=>[...a].filter(x=>b.has(x)).length;
@@ -82,9 +81,16 @@ export function filterSimilarEveningCandidates({
  if(eligibleCards.some(card=>!card||typeof card!=='object'||Array.isArray(card)))
   throw new TypeError('Eligible cards must be valid card objects');
  const poolCategories=new Set(eligibleCards.map(card=>norm(card.category)));
- if(poolCategories.has('')||poolCategories.size>1||
-  (selectedCategory!==null&&selectedCategory!==undefined&&
-   eligibleCards.length>0&&!poolCategories.has(norm(selectedCategory))))
+ const officialCategories=new Set(['sensuel','sexuel']);
+ const requested=selectedCategory===null||selectedCategory===undefined
+  ?null:norm(selectedCategory);
+ // The server's two official categories are the only legal input. Validate
+ // even an empty candidate pool, without treating an unknown category as
+ // a valid 'no cards' draw.
+ if((requested!==null&&!officialCategories.has(requested))||
+   [...poolCategories].some(category=>!officialCategories.has(category))||
+   poolCategories.size>1||
+   (requested!==null&&eligibleCards.length>0&&!poolCategories.has(requested)))
   throw new RangeError('Variety requires an eligible pool from one official D100 category');
  if(!eligibleCards.length)return {
   candidates:[],suppressedCount:0,fallbackUsed:false,reason:'no-eligible-cards'
