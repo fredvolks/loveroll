@@ -318,6 +318,17 @@ export function mayApplyScopedEveningRefresh(sessions,request,legacyOwner=false)
 }
 
 /**
+ * General background reads (Éclat, history and live sync) must never
+ * populate a different authenticated account, even when the couple ID
+ * stays identical (partners can sign in on the same device).
+ */
+export function ownsCoupleAsyncRead(view,owner){
+ return typeof owner?.userId==='string'&&owner.userId.length>0&&
+  typeof owner?.coupleId==='string'&&owner.coupleId.length>0&&
+  view?.user?.id===owner.userId&&view?.coupleId===owner.coupleId;
+}
+
+/**
  * Derive confirmation from the stored decision, not the tap from this device.
  * When provided, expectedOriginalId also prevents a mismatched RPC receipt
  * from confirming or navigating to an unrelated challenge.
