@@ -38,3 +38,31 @@ export function hasTurnToDraw(board,userId){
  return !!(board?.ready&&!board?.drawsFinished&&board?.next===userId&&
   Number(board?.remaining?.[userId]||0)>0);
 }
+
+/**
+ * Display only the decision persisted by love_respond_and_redraw.
+ * Competing devices may send different actions/exclusion choices on the
+ * same challenge. A replay returns the WINNER's action and excluded flag,
+ * not the losing device's requested buttons. Never infer from local intent.
+ */
+export function eveningRedrawFeedback(outcome){
+ const valid=outcome&&typeof outcome==='object'&&!Array.isArray(outcome)&&
+  (outcome.action==='pass'||outcome.action==='refuse')&&
+  typeof outcome.excluded==='boolean'&&
+  typeof outcome.already_processed==='boolean'&&
+  (outcome.action!=='pass'||outcome.excluded===false);
+ if(!valid)
+  return 'Réponse reçue. Vérifie la liste de tes défis pour confirmer le résultat.';
+ let detail;
+ if(outcome.replacement_unavailable===true)
+  detail='Aucun autre défi admissible dans cette catégorie pour ce soir. Tu peux réintégrer un défi retiré ou revenir plus tard.';
+ else if(outcome.action==='pass')
+  detail='Défi passé — il pourra revenir plus tard.';
+ else if(outcome.excluded)
+  detail='Défi retiré du lot pour ce cycle.';
+ else
+  detail='Défi conservé dans la pige.';
+ return outcome.already_processed
+  ?'Ce défi avait déjà reçu une réponse. '+detail
+  :detail;
+}
