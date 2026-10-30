@@ -74,6 +74,10 @@ export function isValidEveningRedrawReceipt(outcome,expectedOriginalId=null){
   (outcome.action==='pass'||outcome.action==='refuse')&&
   typeof outcome.excluded==='boolean'&&
   typeof outcome.already_processed==='boolean'&&
+  // The first successful SQL response always contains this boolean.
+  // Only an already_processed replay may legitimately omit it.
+  (outcome.already_processed===true||
+   typeof outcome.replacement_unavailable==='boolean')&&
   (outcome.action!=='pass'||outcome.excluded===false);
 }
 
