@@ -176,4 +176,78 @@ BEGIN
     pg_catalog.round(old_ms,2),pg_catalog.round(new_ms,2);
  END LOOP;
 END; $lr026_eligible_profile$;
+
+-- Additional worst-case profile: longer synthetic descriptions with distinct
+-- vocabulary per card. Unlike the short-text fixture, these 50 eligible
+-- candidates must be compared with genuinely long 50-card history.
+-- Run the optimized rank FIRST here to counter single-run cache-order bias;
+-- older reference rank second. Both result arrays must stay identical.
+DO $lr026_long_description_profile$
+DECLARE
+  v_couple uuid := 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
+  v_session uuid := '77777777-7777-4777-8777-777777777777';
+  old_result integer[];
+  new_result integer[];
+  old_ms numeric;
+  new_ms numeric;
+  started timestamptz;
+BEGIN
+  DELETE FROM public.couple_challenges h
+  WHERE h.couple_id=v_couple AND h.session_id=v_session;
+
+  UPDATE public.love_base_challenges b
+  SET description =
+    'Imaginez une aventure tendre et proposez une surprise originale '
+    || pg_catalog.substring(pg_catalog.md5(b.card_id::text),1,5)||' '
+    || pg_catalog.substring(pg_catalog.md5(b.card_id::text),6,5)||' '
+    || pg_catalog.substring(pg_catalog.md5(b.card_id::text),11,5)||' '
+    || pg_catalog.substring(pg_catalog.md5(b.card_id::text),16,5)||' '
+    || pg_catalog.substring(pg_catalog.md5(b.card_id::text),21,5)||' '
+    || pg_catalog.substring(pg_catalog.md5(b.card_id::text),26,5)
+  WHERE b.category='SENSUEL' AND b.card_id BETWEEN 1 AND 100;
+
+  INSERT INTO public.couple_challenges(
+    couple_id,session_id,category,card_id,card_title,card_description)
+  SELECT v_couple,v_session,'SENSUEL',g,
+         CASE WHEN g=1 THEN 'Une activité à deux mémorable'
+              ELSE 'Scenario distinct '||g END,
+         b.description
+  FROM pg_catalog.generate_series(1,50) g
+  LEFT JOIN public.love_base_challenges b
+     ON b.category='SENSUEL' AND b.card_id=g;
+
+  started:=pg_catalog.clock_timestamp();
+  SELECT pg_catalog.array_agg(
+    couple_private.love_variety_rank(
+      v_session,v_couple,'SENSUEL',eligible.card)
+    ORDER BY eligible.card)
+  INTO new_result
+  FROM pg_catalog.generate_series(51,100) eligible(card);
+  new_ms:=EXTRACT(EPOCH FROM (
+     pg_catalog.clock_timestamp()-started))*1000;
+
+  started:=pg_catalog.clock_timestamp();
+  SELECT pg_catalog.array_agg(
+    couple_private.lr026_eligible_reference_rank(
+      v_session,v_couple,'SENSUEL',eligible.card)
+    ORDER BY eligible.card)
+  INTO old_result
+  FROM pg_catalog.generate_series(51,100) eligible(card);
+  old_ms:=EXTRACT(EPOCH FROM (
+     pg_catalog.clock_timestamp()-started))*1000;
+
+  IF old_result IS DISTINCT FROM new_result
+     OR pg_catalog.array_length(new_result,1)<>50 THEN
+    RAISE EXCEPTION
+     'LR-026 long description eligible ranking disagrees with original';
+  END IF;
+  IF new_result[49] IS DISTINCT FROM 1 THEN
+    RAISE EXCEPTION
+     'LR-026 long descriptions lost title-equivalent candidate 99';
+  END IF;
+  RAISE NOTICE
+    'LR-026 long descriptions (new FIRST): 50 seen, 50 eligible, old=% ms, new=% ms; CI runner diagnostic only',
+    pg_catalog.round(old_ms,2),pg_catalog.round(new_ms,2);
+END; $lr026_long_description_profile$;
+
 ROLLBACK;
