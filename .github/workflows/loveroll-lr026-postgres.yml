@@ -6,6 +6,8 @@ on:
       - "couple-web/lr026-server-variety.sql"
       - "couple-web/lr026-server-variety-smoke.sql"
       - "couple-web/lr026-server-variety.test.mjs"
+      - "couple-web/lr026-live-schema-preflight.sql"
+      - "couple-web/lr026-preflight-negative.test.sh"
       - "couple-web/lr026-postgres-fixture.sql"
       - "couple-web/lr026-postgres-rank.test.sql"
       - "couple-web/lr026-evening-flow.test.sql"
@@ -141,3 +143,5 @@ jobs:
             exit 1
           fi
           psql -X -d lr026_rollback_test -v ON_ERROR_STOP=1 -f couple-web/lr026-atomic-rollback.test.sql
+      - name: Test live schema preflight fail-closed regressions
+        run: bash couple-web/lr026-preflight-negative.test.sh
