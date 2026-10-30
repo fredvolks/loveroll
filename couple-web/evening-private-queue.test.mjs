@@ -309,6 +309,17 @@ test('LR-026: redraw success requires original decision and replacement in recip
  for(const stamp of ['1','2026-10-30','2026-10-30T12:02:00']){
   assert.equal(verify([{...original,passed_at:stamp},replacement]),false);
  }
+ for(const invalid of ['2026-02-30T12:00:00Z','2026-11-31T12:00:00Z']){
+  assert.equal(verify([{...original,passed_at:invalid},replacement]),false,
+   'a normalized but impossible calendar date cannot be a committed stamp');
+  assert.equal(verify([{...original,created_at:invalid},replacement]),false,
+   'a fake creation date must never pass PostgreSQL timestamp validation');
+ }
+ assert.equal(verify([
+  {...original,created_at:'2024-02-29T12:00:00Z',
+   passed_at:'2024-02-29T12:01:00Z'},
+  {...replacement,created_at:'2024-02-29T12:01:00.123456+00:00'}
+ ]),true,'a real leap day and microsecond offset remain acceptable');
  assert.equal(verify([{...original,passed_at:'2026-10-30T08:02:00-04:00'},
   {...replacement,created_at:'2026-10-30T12:02:00.123456+00:00'}]),true);
  assert.equal(verify([{...original,passed_at:original.created_at},replacement]),true,
