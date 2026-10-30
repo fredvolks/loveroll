@@ -45,24 +45,34 @@ export function hasTurnToDraw(board,userId){
  * same challenge. A replay returns the WINNER's action and excluded flag,
  * not the losing device's requested buttons. Never infer from local intent.
  */
-export function eveningRedrawFeedback(outcome){
- // A button confirmation must correspond to a real, identifiable
- // server decision. Partial/garbled RPC payloads may still refresh the UI,
- // but must never be presented as a successful Passer/Refuser.
- const original=outcome?.original_id,replacement=outcome?.replacement_id;
+// A receipt cannot be trusted just because it claims Passer or Refuser.
+// Validate both IDs and the action from the server before selecting a new
+// card. The caller can bind it to the challenge that was actually answered.
+export function isValidEveningRedrawReceipt(outcome,expectedOriginalId=null){
+ if(!outcome||typeof outcome!=='object'||Array.isArray(outcome))return false;
+ const original=outcome.original_id,replacement=outcome.replacement_id;
  const hasOriginal=typeof original==='string'&&original.trim().length>0;
  const hasReplacement=typeof replacement==='string'&&
-  replacement.trim().length>0&&replacement!==original;
- const unavailable=outcome?.replacement_unavailable===true;
- const valid=outcome&&typeof outcome==='object'&&!Array.isArray(outcome)&&
-  hasOriginal&&(hasReplacement||(unavailable&&replacement==null))&&
+  replacement.trim().length>0&&replacement.trim()!==original?.trim();
+ const unavailable=outcome.replacement_unavailable===true;
+ return hasOriginal&&
+  (expectedOriginalId==null||original===expectedOriginalId)&&
+  (unavailable?replacement==null:hasReplacement)&&
   (outcome.replacement_unavailable===undefined||
    typeof outcome.replacement_unavailable==='boolean')&&
   (outcome.action==='pass'||outcome.action==='refuse')&&
   typeof outcome.excluded==='boolean'&&
   typeof outcome.already_processed==='boolean'&&
   (outcome.action!=='pass'||outcome.excluded===false);
- if(!valid)
+}
+
+/**
+ * Derive confirmation from the stored decision, not the tap from this device.
+ * When provided, expectedOriginalId also prevents a mismatched RPC receipt
+ * from confirming or navigating to an unrelated challenge.
+ */
+export function eveningRedrawFeedback(outcome,expectedOriginalId=null){
+ if(!isValidEveningRedrawReceipt(outcome,expectedOriginalId))
   return 'Réponse reçue. Vérifie la liste de tes défis pour confirmer le résultat.';
  let detail;
  if(outcome.replacement_unavailable===true)
