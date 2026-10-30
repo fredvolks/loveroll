@@ -383,6 +383,54 @@ BEGIN
  THEN
   RAISE EXCEPTION 'REAL RPC: reverse refusal consumed Passer quota or duplicated receipt';
  END IF;
+ -- The second direction has the same privacy boundary AFTER Refuser.
+ -- B offered this card to A but B must never retrieve A's private stored
+ -- refusal/exclusion receipt by replaying an already-completed challenge.
+ PERFORM pg_catalog.set_config('request.jwt.claim.sub',b::text,true);
+ blocked:=false;
+ BEGIN
+  PERFORM public.love_respond_and_redraw(a_replacement.id,'pass',false);
+ EXCEPTION WHEN OTHERS THEN
+  GET STACKED DIAGNOSTICS error_text=MESSAGE_TEXT;
+  IF error_text<>'Seul le destinataire peut répondre' THEN
+   RAISE EXCEPTION 'REAL RPC: offerer leaked A refusal receipt: %',error_text;
+  END IF;
+  blocked:=true;
+ END;
+ IF NOT blocked THEN
+  RAISE EXCEPTION 'REAL RPC: offerer replayed A refusal receipt';
+ END IF;
+ PERFORM pg_catalog.set_config('request.jwt.claim.sub',outsider::text,true);
+ blocked:=false;
+ BEGIN
+  PERFORM public.love_respond_and_redraw(a_replacement.id,'refuse',false);
+ EXCEPTION WHEN OTHERS THEN
+  GET STACKED DIAGNOSTICS error_text=MESSAGE_TEXT;
+  IF error_text<>'Défi inaccessible' THEN
+   RAISE EXCEPTION 'REAL RPC: outsider leaked A refusal receipt: %',error_text;
+  END IF;
+  blocked:=true;
+ END;
+ IF NOT blocked THEN
+  RAISE EXCEPTION 'REAL RPC: outsider replayed A refusal receipt';
+ END IF;
+ IF (SELECT count(*) FROM public.love_challenge_redraws
+     WHERE origin_id=a_replacement.id)<>1
+   OR (SELECT count(*) FROM public.couple_challenges
+       WHERE replaces_challenge_id=a_replacement.id)<>1
+   OR (SELECT status FROM public.couple_challenges
+       WHERE id=a_replacement.id)<>'refused'
+   OR NOT EXISTS (
+      SELECT 1 FROM public.love_cycle_excluded_cards
+      WHERE couple_id=drawn.couple_id
+        AND category=a_replacement.category
+        AND card_id=a_replacement.card_id
+        AND excluded_by=a)
+ THEN
+  RAISE EXCEPTION 'REAL RPC: unauthorized Refuser replay altered exclusion';
+ END IF;
+ PERFORM pg_catalog.set_config('request.jwt.claim.sub',a::text,true);
+
  RAISE NOTICE
  'LR-026 REAL RPC: both directions, pass/refuse with exclusion, category and face uniqueness, A/B quota, idempotency, rollback and identity passed';
 END; $lr026_real_e2e$;
