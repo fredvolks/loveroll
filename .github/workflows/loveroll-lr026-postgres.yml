@@ -74,3 +74,16 @@ jobs:
         run: |
           psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-server-variety-smoke.sql
           psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-postgres-rank.test.sql
+      - name: Reject a stale migration without changing the patched RPCs
+        run: |
+          set -euo pipefail
+          if psql -X -v ON_ERROR_STOP=1 -f "$RUNNER_TEMP/lr026-fixture-migration.sql" > "$RUNNER_TEMP/lr026-rejected.log" 2>&1; then
+            echo "::error::A stale SQL migration was unexpectedly accepted."
+            exit 1
+          fi
+          grep -q 'les fonctions de pige ont changé' "$RUNNER_TEMP/lr026-rejected.log" || {
+            echo "::error::The stale migration failed for the wrong reason."
+            cat "$RUNNER_TEMP/lr026-rejected.log"
+            exit 1
+          }
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-full-migration.test.sql
