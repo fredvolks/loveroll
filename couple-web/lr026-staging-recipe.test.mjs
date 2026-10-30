@@ -270,10 +270,12 @@ function mockSupabase(opts = {}) {
           (passCount > 1 && opts.replayWrongAction) ? 'declined' : action,
         excluded: (stale && opts.staleWrongExclusion) ||
           (passCount > 1 && opts.replayWrongExclusion) ? !excluded : excluded,
-        replacement_unavailable: Boolean(
-          (passCount === 1 && opts.firstResponseUnavailableFlag) ||
-          (passCount === 2 && opts.replayUnavailableFlag) ||
-          (passCount > 2 && opts.staleUnavailableFlag)),
+        // Official SQL returns this field only on first processing;
+        // subsequent already_processed receipts omit it entirely.
+        replacement_unavailable: passCount === 1
+          ? Boolean(opts.firstResponseUnavailableFlag)
+          : ((passCount === 2 && opts.replayUnavailableFlag) ||
+             (passCount > 2 && opts.staleUnavailableFlag) ? true : undefined),
         already_processed: passCount > 1});
     }
     throw new Error('Unexpected mocked endpoint ' + path);
