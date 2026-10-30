@@ -70,6 +70,28 @@ test('LR-026: valid receipt allows a warning when the category has no replacemen
  });
  assert.match(invalid,/Vérifie la liste de tes défis/);
 });
+test('LR-026: idempotent replay without available card accepts the real SQL receipt shape',()=>{
+ // Snapshot RPC replay sends original_id/action/excluded/replacement_id/
+ // already_processed but omits replacement_unavailable entirely.
+ const original={original_id:'clicked-card',replacement_id:null,
+  action:'refuse',excluded:true,already_processed:false,
+  replacement_unavailable:true};
+ const replay={original_id:'clicked-card',replacement_id:null,
+  action:'refuse',excluded:true,already_processed:true};
+ assert.equal(isValidEveningRedrawReceipt(original,'clicked-card'),true);
+ assert.equal(isValidEveningRedrawReceipt(replay,'clicked-card'),true);
+ assert.match(eveningRedrawFeedback(replay,'clicked-card'),
+  /avait déjà reçu une réponse.*Aucun autre défi admissible/);
+ assert.equal(isValidEveningRedrawReceipt(replay,'other-card'),false,
+  'replay must still match the original challenge');
+ assert.equal(isValidEveningRedrawReceipt({...replay,already_processed:false},'clicked-card'),false);
+ assert.equal(isValidEveningRedrawReceipt({...replay,replacement_unavailable:false},'clicked-card'),false);
+ assert.equal(isValidEveningRedrawReceipt({...replay,replacement_id:undefined},'clicked-card'),false);
+ assert.equal(isValidEveningRedrawReceipt({...replay,replacement_id:'new-card'},'clicked-card'),true,
+  'a successful replay with a real replacement stays valid');
+ assert.equal(isValidEveningRedrawReceipt({...original,replacement_id:undefined},'clicked-card'),false);
+});
+
 test('LR-026: ambiguous or missing receipts never congratulate a stale device',()=>{
  const ambiguous=[
   {original_id:'old',replacement_id:'',action:'pass',
