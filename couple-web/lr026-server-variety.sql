@@ -37,6 +37,10 @@ AS $lr026$
     '[^a-z0-9]+',' ','g'));
 $lr026$;
 
+-- Preserve semantic decisions, but reject impossible description overlap
+-- BEFORE building expensive token sets for every still-eligible D100 card.
+-- Five DISTINCT meaningful tokens (min four letters each) need at least
+-- 24 normalized characters and at least five whitespace-separated words.
 CREATE OR REPLACE FUNCTION couple_private.love_variety_near(
  p_title text, p_description text, p_old_title text, p_old_description text
 ) RETURNS boolean LANGUAGE sql IMMUTABLE SET search_path=''
@@ -46,37 +50,50 @@ AS $lr026$
           couple_private.love_variety_normalize(p_old_title) AS b_title,
           couple_private.love_variety_normalize(p_description) AS a_desc,
           couple_private.love_variety_normalize(p_old_description) AS b_desc
- ), current_terms AS (
-   SELECT DISTINCT w.token
-   FROM normalized n,
-    LATERAL pg_catalog.regexp_split_to_table(n.a_desc,' ') AS w(token)
-   WHERE pg_catalog.length(w.token)>=4 AND w.token NOT IN (
-    'avec','comme','dans','pour','puis','sans','toute','tous','votre',
-    'notre','leurs','chez','avant','apres','pendant','entre','faire',
-    'faites','invite','invitez','propose','proposez','choisis',
-    'choisissez','partenaire','ensemble','quelques','minutes','minute',
-    'chaque','autre','vous','nous'
-   )
- ), prior_terms AS (
-   SELECT DISTINCT w.token
-   FROM normalized n,
-    LATERAL pg_catalog.regexp_split_to_table(n.b_desc,' ') AS w(token)
-   WHERE pg_catalog.length(w.token)>=4 AND w.token NOT IN (
-    'avec','comme','dans','pour','puis','sans','toute','tous','votre',
-    'notre','leurs','chez','avant','apres','pendant','entre','faire',
-    'faites','invite','invitez','propose','proposez','choisis',
-    'choisissez','partenaire','ensemble','quelques','minutes','minute',
-    'chaque','autre','vous','nous'
-   )
- ), scores AS (
-   SELECT
-    (SELECT pg_catalog.count(*) FROM current_terms JOIN prior_terms USING(token)) AS shared,
-    (SELECT pg_catalog.count(*) FROM current_terms) AS size_a,
-    (SELECT pg_catalog.count(*) FROM prior_terms) AS size_b
  )
- SELECT (a_title<>'' AND b_title<>'' AND a_title=b_title)
-   OR (shared>=5 AND shared*100 >= 68*(size_a+size_b-shared))
- FROM normalized CROSS JOIN scores;
+ SELECT CASE
+   WHEN n.a_title<>'' AND n.b_title<>'' AND n.a_title=n.b_title
+     THEN true
+   WHEN pg_catalog.length(n.a_desc)<24 OR pg_catalog.length(n.b_desc)<24
+     THEN false
+   WHEN pg_catalog.cardinality(
+          pg_catalog.regexp_split_to_array(n.a_desc,' '))<5
+        OR pg_catalog.cardinality(
+          pg_catalog.regexp_split_to_array(n.b_desc,' '))<5
+     THEN false
+   ELSE (
+     WITH current_terms AS (
+       SELECT DISTINCT w.token
+       FROM pg_catalog.regexp_split_to_table(n.a_desc,' ') AS w(token)
+       WHERE pg_catalog.length(w.token)>=4 AND w.token NOT IN (
+         'avec','comme','dans','pour','puis','sans','toute','tous','votre',
+    'notre','leurs','chez','avant','apres','pendant','entre','faire',
+    'faites','invite','invitez','propose','proposez','choisis',
+    'choisissez','partenaire','ensemble','quelques','minutes','minute',
+    'chaque','autre','vous','nous'
+       )
+     ), prior_terms AS (
+       SELECT DISTINCT w.token
+       FROM pg_catalog.regexp_split_to_table(n.b_desc,' ') AS w(token)
+       WHERE pg_catalog.length(w.token)>=4 AND w.token NOT IN (
+         'avec','comme','dans','pour','puis','sans','toute','tous','votre',
+    'notre','leurs','chez','avant','apres','pendant','entre','faire',
+    'faites','invite','invitez','propose','proposez','choisis',
+    'choisissez','partenaire','ensemble','quelques','minutes','minute',
+    'chaque','autre','vous','nous'
+       )
+     ), scores AS (
+       SELECT
+         (SELECT pg_catalog.count(*)
+          FROM current_terms JOIN prior_terms USING(token)) AS shared,
+         (SELECT pg_catalog.count(*) FROM current_terms) AS size_a,
+         (SELECT pg_catalog.count(*) FROM prior_terms) AS size_b
+     )
+     SELECT shared>=5 AND shared*100 >= 68*(size_a+size_b-shared)
+     FROM scores
+   )
+ END
+ FROM normalized n;
 $lr026$;
 
 -- 0=nouveau, 1=semblable. Trie seulement les cartes DÉJÀ ADMISSIBLES.
