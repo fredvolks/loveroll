@@ -1467,11 +1467,13 @@ function timedEveningItem(timerId){
 }
 // A timer may finish while the player signs into a different account or
 // starts a new evening. Only the exact request owner may refresh or notify.
+function ownsTimerCompletionSession(context){
+ return state.user?.id===context.userId&&
+  state.coupleId===context.coupleId&&state.session?.id===context.sessionId;
+}
 function ownsTimerCompletionRefresh(context){
  return state.timerCompletionContext===context&&
-  state.user?.id===context.userId&&
-  state.coupleId===context.coupleId&&state.tab===context.tab&&
-  state.session?.id===context.sessionId;
+  ownsTimerCompletionSession(context)&&state.tab===context.tab;
 }
 async function refreshConfirmedTimedEvening(context){
  if(!ownsTimerCompletionRefresh(context))return false;
@@ -1505,7 +1507,8 @@ async function retryExpiredTimedEvening(){
   const result=await completeTimedEveningChallenge({challenge:item,userId,sessionId,rpc,query});
   if(result.outcome==='ineligible')return;
   timerCompletionRetryAt=0;
-  if(ownsVisibleEveningTimer(id,userId,sessionId)){
+  if(ownsTimerCompletionSession(context)&&
+     ownsVisibleEveningTimer(id,userId,sessionId)){
    challengeTimer.autoCompletePending=false;saveChallengeTimer();
   }
   await refreshConfirmedTimedEvening(context);
@@ -1513,7 +1516,7 @@ async function retryExpiredTimedEvening(){
   if(state.user?.id===userId&&state.session?.id===sessionId)
    timerCompletionRetryAt=Date.now()+15000;
   console.warn('Défi terminé : validation serveur en attente',error);
-  if(state.user?.id===userId&&state.session?.id===sessionId&&
+  if(ownsTimerCompletionRefresh(context)&&
      !document.hidden)notify('Le minuteur est terminé. Validation du défi en attente de connexion.');
  }finally{
   if(state.timerCompletionContext===context)state.timerCompletionContext=null;
@@ -1556,7 +1559,8 @@ async function reconcileSavedEveningTimers(){
    const result=await completeTimedEveningChallenge({challenge:item,userId,sessionId,rpc,query});
    if(result.outcome==='ineligible')return;
    writeSavedChallengeTimer(key,{...expired,autoCompletePending:false});
-   if(ownsVisibleEveningTimer(item.id,userId,sessionId)){
+   if(ownsTimerCompletionSession(context)&&
+      ownsVisibleEveningTimer(item.id,userId,sessionId)){
     challengeTimer.running=false;challengeTimer.remainingMs=0;
     challengeTimer.autoCompletePending=false;saveChallengeTimer();
    }
@@ -1565,7 +1569,7 @@ async function reconcileSavedEveningTimers(){
    if(state.user?.id===userId&&state.session?.id===sessionId)
     savedTimerScanAfter=Date.now()+15000;
    console.warn('Minuteur expiré : validation à reprendre après reconnexion',error);
-   if(state.user?.id===userId&&state.session?.id===sessionId&&
+   if(ownsTimerCompletionRefresh(context)&&
       !document.hidden)notify('Le minuteur est terminé. Validation du défi en attente de connexion.');
   }finally{
    if(state.timerCompletionContext===context)state.timerCompletionContext=null;
