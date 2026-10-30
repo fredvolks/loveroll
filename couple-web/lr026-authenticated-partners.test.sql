@@ -45,6 +45,11 @@ CREATE TABLE lr026_auth.exclusions(
  card_id integer NOT NULL,
  PRIMARY KEY(couple_id,category,card_id)
 );
+-- Same PostgreSQL trigger function as verified in live LoveRoll is loaded
+-- by CI from lr026-pass-stamp-fixture.sql before this transaction.
+CREATE TRIGGER love_stamp_passed_at
+ BEFORE UPDATE OF status ON lr026_auth.challenges
+ FOR EACH ROW EXECUTE FUNCTION couple_private.love_stamp_challenge_pass();
 ALTER TABLE lr026_auth.couples ENABLE ROW LEVEL SECURITY;
 ALTER TABLE lr026_auth.challenges ENABLE ROW LEVEL SECURITY;
 ALTER TABLE lr026_auth.exclusions ENABLE ROW LEVEL SECURITY;
@@ -144,10 +149,10 @@ BEGIN
   END IF;
 
   -- Change state BEFORE selecting: exhausted repige must roll this back.
+  -- Production RPC does NOT write passed_at. The reviewed BEFORE UPDATE
+  -- trigger stamps a new pass; quota accounting must use that real path.
   UPDATE lr026_auth.challenges SET
     status=CASE WHEN p_action='pass' THEN 'passed' ELSE 'refused' END,
-    passed_at=CASE WHEN p_action='pass' THEN pg_catalog.now()
-                   ELSE passed_at END,
     refused_at=CASE WHEN p_action='refuse' THEN pg_catalog.now()
                    ELSE refused_at END
   WHERE id=v_old.id;
@@ -252,6 +257,16 @@ BEGIN
   IF (first_result->>'card_id')::integer IS DISTINCT FROM 2 THEN
     RAISE EXCEPTION 'LR-026: A did not receive the unique new card: %',first_result;
   END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM lr026_auth.challenges
+    WHERE id=100 AND status='passed' AND passed_at IS NOT NULL
+      AND pg_catalog.date_trunc('month',
+           passed_at AT TIME ZONE 'America/Toronto')
+        = pg_catalog.date_trunc('month',
+           pg_catalog.now() AT TIME ZONE 'America/Toronto')
+  ) THEN
+    RAISE EXCEPTION 'LR-026: pass timestamp was NOT stamped by trigger';
+  END IF;
   again := lr026_auth.respond(100,'pass',false);
   IF (again->>'already_processed')::boolean IS DISTINCT FROM true
     OR again->>'replacement_id' IS DISTINCT FROM first_result->>'replacement_id' THEN
@@ -276,6 +291,10 @@ BEGIN
   SELECT status INTO last_status FROM lr026_auth.challenges WHERE id=101;
   IF last_status<>'refused' THEN
     RAISE EXCEPTION 'LR-026: A refusal was incorrectly blocked by pass quota';
+  END IF;
+  IF (SELECT passed_at IS NOT NULL FROM lr026_auth.challenges
+      WHERE id=101) THEN
+    RAISE EXCEPTION 'LR-026: refusal incorrectly stamped a monthly pass';
   END IF;
 END; $lr026_actor_a$;
 
