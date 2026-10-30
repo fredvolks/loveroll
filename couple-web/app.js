@@ -941,14 +941,18 @@ function isActiveEveningRedrawPending(){
  return isEveningRedrawBusyForCurrentView(state);
 }
 async function refreshShared(expectedContext=null){
- const c=state.coupleId;
+ const c=state.coupleId,requestUserId=state.user?.id;
+ // Even a normal background refresh is owned by the login and couple that
+ // started it. Its HTTP responses must never populate a replacement account.
+ // Tab changes are allowed here; scoped action refreshes remain tab-specific.
  // A server-confirmed completion may close the original evening DURING this
  // scoped refresh. Permit that one transition, never a different session.
  let legacyClosedDuringRefresh=false;
- // In-flight requests cannot write a different account's or evening's UI.
- const current=()=>!expectedContext||(state.coupleId===c&&
+ const current=()=>state.coupleId===c&&state.user?.id===requestUserId&&
+  (!expectedContext||(
   // Older redraw contexts had no coupleId; timer-completion contexts do.
   (expectedContext.coupleId===undefined||expectedContext.coupleId===c)&&
+  // Older redraw contexts had no coupleId; timer-completion contexts do.
   state.user?.id===expectedContext.userId&&state.tab===expectedContext.tab&&
   (isSameEveningResponseContext(state,expectedContext)||
    (legacyClosedDuringRefresh&&state.session===null&&
@@ -957,7 +961,7 @@ async function refreshShared(expectedContext=null){
   (state.redrawBusyContext===expectedContext||
    state.eveningStartContext===expectedContext||
    state.legacyAnswerContext===expectedContext||
-   state.timerCompletionContext===expectedContext));
+   state.timerCompletionContext===expectedContext)));
  if(!current())return;
  const [rolls,sessions,advents,events,diary,occasionSettings,occasionRolls,keys,challengeHistory,gifts,adventServerDate,eveningStats,calendarChallenges,eveningReviews,calendarPasses,monthlyPassQuota,cycleInfo]=await Promise.all([
  query('couple_rolls',{eq:{couple_id:c}}),
