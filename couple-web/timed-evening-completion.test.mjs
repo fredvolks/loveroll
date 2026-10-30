@@ -1127,3 +1127,75 @@ test("LR-026 real manual answer handler retains card and couple ownership during
  assert.deepEqual(paint,[]);
  assert.equal(state.legacyAnswerContext,null);
 });
+
+test('LR-026 manual D100 answer immediately renders busy state and restores controls after failed RPC',async()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const start=app.indexOf("if(verb==='answer'){");
+ const end=app.indexOf("if(verb==='finish-session')",start);
+ assert.ok(start>0&&end>start);
+ let fail;
+ const pending=new Promise((_,reject)=>{fail=reject;});
+ const state={user:{id:'alice'},session:{id:'s1'},coupleId:'c1',tab:'session',
+  legacyAnswerContext:null,showEveningChallenges:true,
+  challenges:[{id:'card-A',recipient:'alice',session_id:'s1',status:'accepted'}]};
+ const rendered=[],calls=[];
+ const handler=runInNewContext('(async function(verb,parts){'+app.slice(start,end)+'})',{
+  state,isEveningCardCompleting:()=>false,
+  ownEveningChallenges:r=>r,
+  isSameEveningResponseContext:(v,c)=>v.user?.id===c?.userId&&
+   v.session?.id===c?.sessionId&&v.tab===c?.tab,
+  rpc:async name=>{calls.push(name);return pending;},
+  query:async()=>[],ownsVisibleEveningTimer:()=>false,
+  refreshShared:async()=>true,render:()=>rendered.push(
+   state.legacyAnswerContext?.challengeId||'idle'),
+  saveChallengeTimer:()=>{},notify:()=>{},
+  console,document:{hidden:false}
+ });
+ const operation=handler('answer',['card-A','completed']);
+ assert.deepEqual(calls,['answer_challenge']);
+ assert.deepEqual(rendered,['card-A'],
+  'the same card must render busy state before the RPC response');
+ fail(Error('network unavailable'));
+ await assert.rejects(operation,/network unavailable/);
+ assert.equal(state.legacyAnswerContext,null);
+ assert.deepEqual(rendered,['card-A','idle'],
+  'failed answer must immediately restore usable controls');
+});
+
+test('LR-026 manual D100 completion cannot render an unconfirmed scoped refresh',async()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const start=app.indexOf("if(verb==='answer'){");
+ const end=app.indexOf("if(verb==='finish-session')",start);
+ assert.ok(start>0&&end>start);
+ const state={user:{id:'alice'},session:{id:'s1'},coupleId:'c1',
+  tab:'session',legacyAnswerContext:null,
+  challenges:[{id:'card-A',recipient:'alice',session_id:'s1',status:'accepted'}]};
+ const renders=[],notices=[],calls=[];
+ const handler=runInNewContext('(async function(verb,parts){'+app.slice(start,end)+'})',{
+  state,isEveningCardCompleting:()=>false,
+  ownEveningChallenges:r=>r,
+  isSameEveningResponseContext:(v,c)=>v.user?.id===c?.userId&&
+   v.session?.id===c?.sessionId&&v.tab===c?.tab,
+  rpc:async name=>{calls.push(name);return {finished:false};},
+  query:async()=>[],ownsVisibleEveningTimer:()=>false,
+  refreshShared:async()=>undefined,
+  render:()=>renders.push(state.legacyAnswerContext?.challengeId||'idle'),
+  notify:message=>notices.push(message),saveChallengeTimer:()=>{},
+  console,document:{hidden:false}
+ });
+ await handler('answer',['card-A','completed']);
+ assert.deepEqual(calls,['answer_challenge','my_love_evening_board']);
+ assert.deepEqual(renders,['card-A','idle'],
+  'no success render may follow an unconfirmed authoritative refresh');
+ assert.ok(notices.some(message=>/actualis|confirm|connexion/i.test(message)),
+  'give a truthful action to recover from an unconfirmed refresh');
+ assert.equal(state.legacyAnswerContext,null);
+});
+
+test('LR-026 D100 manual completion shows accessible disabled busy label',()=>{
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const queue=source.slice(source.indexOf('const mineCards=session?'),
+  source.indexOf('function renderLegacySession(){'));
+ assert.match(queue,/isEveningCardCompleting\(view\.id\)\?'♡ Réponse en cours':'✓ Défi réalisé'/);
+ assert.match(queue,/aria-busy="true"/);
+});
