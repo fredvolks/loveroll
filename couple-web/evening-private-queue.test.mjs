@@ -401,7 +401,7 @@ test('LR-026: a response cannot rewrite the original D100 card shown at tap time
    'missing or changed pre-action field must not be silently accepted: '+key);
  }
  assert.equal(check(stored,replacement,{}),false);
- assert.equal(check(stored,replacement,undefined),true,
+ assert.equal(check(stored,replacement,null),true,
   'the optional snapshot supports earlier independent receipt tests');
  const appBranch=app.slice(app.indexOf("if(verb==='evening-pass'||verb==='evening-refuse-choice')"),
   app.indexOf("if(verb==='evening-start')"));
