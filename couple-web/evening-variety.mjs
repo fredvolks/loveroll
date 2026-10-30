@@ -2,23 +2,28 @@
 // IMPORTANT: Call ONLY after the server has resolved the official D100
 // category, authorization, exclusions, recipient, quota and eligible pool.
 // This module never rolls a die, adds a candidate or adjusts category odds.
-const COMMON=new Set([
- 'avec','comme','dans','pour','puis','sans','tout','toute','tous','votre',
- 'votre','notre','leurs','chez','avant','apres','pendant','entre','faire',
- 'faites','invite','invitez','propose','proposez','choisis','choisissez',
- 'partenaire','ensemble','quelques','minutes','minute','chaque','autre',
- 'deux','trois','vous','nous','plus','cette','celui','celle','leurs','leur',
- 'mais','donc','sous','une','des','les','aux','sur','par','est','son',
- 'ses','ton','tes','mes','mon','qui','que','quoi','avec'
+// Match couple_private.love_variety_normalize and love_variety_near
+// (lr026-server-variety.sql). Never invent extra semantic bans client-side.
+// This helper remains ADVISORY: the real D100 eligibility and random draw
+// always come from the server.
+const SQL_STOPWORDS=new Set([
+ 'avec','comme','dans','pour','puis','sans','toute','tous','votre',
+ 'notre','leurs','chez','avant','apres','pendant','entre','faire',
+ 'faites','invite','invitez','propose','proposez','choisis',
+ 'choisissez','partenaire','ensemble','quelques','minutes','minute',
+ 'chaque','autre','vous','nous'
 ]);
-// Keep French ligatures consistent with SQL love_variety_normalize.
-// NFKD removes accents but does NOT decompose œ or æ on JavaScript engines.
-const norm=value=>String(value??'').normalize('NFKD')
- .replace(/[\u0300-\u036f]/g,'').toLowerCase()
+const SQL_DIACRITICS='àáâäãåçèéêëìíîïñòóôöõùúûüýÿ';
+const SQL_ASCII='aaaaaaceeeeiiiinooooouuuuyy';
+const SQL_TRANSLATE=Object.fromEntries(
+ [...SQL_DIACRITICS].map((letter,index)=>[letter,SQL_ASCII[index]])
+);
+const norm=value=>String(value??'').toLowerCase()
  .replace(/œ/g,'oe').replace(/æ/g,'ae')
- .replace(/[^a-z0-9]+/g,' ').trim().replace(/\s+/g,' ');
-const tokens=value=>new Set(norm(value).split(' ').filter(w=>
- w.length>=3&&!COMMON.has(w)));
+ .replace(/[àáâäãåçèéêëìíîïñòóôöõùúûüýÿ]/g,c=>SQL_TRANSLATE[c])
+ .replace(/[^a-z0-9]+/g,' ').trim();
+const descriptionTokens=value=>new Set(norm(value).split(' ').filter(w=>
+ w.length>=4&&!SQL_STOPWORDS.has(w)));
 // The die's face is NOT a card identifier: the official draw persists
 // face (the dice result) separately from card_id (the selected library card).
 // A challenge-row UUID is also kept in a distinct namespace.
@@ -32,24 +37,9 @@ const stableId=card=>{
   return 'draw|'+category+'|'+String(rowId).trim();
  return null;
 };
+const intersection=(a,b)=>[...a].filter(x=>b.has(x)).length;
 const cardTitle=card=>card?.title??card?.card_title??'';
 const cardDescription=card=>card?.description??card?.card_description??card?.instructions??'';
-const intersection=(a,b)=>[...a].filter(x=>b.has(x)).length;
-const similarity=(a,b)=>{
- const size=a.size+b.size-intersection(a,b);
- return size?intersection(a,b)/size:0;
-};
-function activity(card){
- const tags=card?.tags&&typeof card.tags==='object'&&!Array.isArray(card.tags)
-  ?card.tags:{};
- return norm(card?.activity_tag??card?.activity_type??card?.activityType??
-  tags.activity??tags.activity_type??'');
-}
-function theme(card){
- const tags=card?.tags&&typeof card.tags==='object'&&!Array.isArray(card.tags)
-  ?card.tags:{};
- return norm(card?.theme_tag??card?.theme??tags.theme??'');
-}
 export function areNearDuplicateEveningCards(first,second){
  if(!first||!second)return false;
  // Server-side LR-026 ranks previously seen cards ONLY inside the selected
@@ -61,17 +51,15 @@ export function areNearDuplicateEveningCards(first,second){
  if(aId&&bId&&aId===bId)return true;
  const aTitle=norm(cardTitle(first)),bTitle=norm(cardTitle(second));
  if(aTitle&&bTitle&&aTitle===bTitle)return true;
- const at=tokens(cardTitle(first)),bt=tokens(cardTitle(second));
- if(intersection(at,bt)>=2&&similarity(at,bt)>=0.8)return true;
- const ad=tokens(cardDescription(first));
- const bd=tokens(cardDescription(second));
- const common=intersection(ad,bd);
- if(common>=5&&similarity(ad,bd)>=0.68)return true;
- const actA=activity(first),actB=activity(second);
- const themeA=theme(first),themeB=theme(second);
- if(actA&&actA===actB&&themeA&&themeA===themeB&&
-  common>=2&&similarity(ad,bd)>=0.35)return true;
- return false;
+ // SQL compares DISTINCT meaningful description words of >=4 letters,
+ // excluding its exact stopword set: >=5 shared and >=68% Jaccard.
+ // Short titles that merely share two words do NOT trigger similarity.
+ // Client-only theme/activity tags must not shrink server-eligible cards.
+ const ad=descriptionTokens(cardDescription(first));
+ const bd=descriptionTokens(cardDescription(second));
+ if(ad.size<5||bd.size<5)return false;
+ const shared=intersection(ad,bd);
+ return shared>=5&&shared*100>=68*(ad.size+bd.size-shared);
 }
 
 /**
