@@ -251,6 +251,28 @@ BEGIN
  END IF;
  PERFORM pg_catalog.set_config('request.jwt.claim.sub',b::text,true);
 
+ -- Unlike a first-time response, a replay might appear harmless. It
+ -- still leaks the prior decision and replacement UUID. The SAME rightful
+ -- recipient B must lose that read access immediately when verification
+ -- is revoked; an existing idempotency receipt is not an Auth bypass.
+ PERFORM pg_catalog.set_config('request.jwt.claim.sub',b::text,true);
+ PERFORM pg_catalog.set_config('lr026.test_verified','no',true);
+ blocked:=false;
+ BEGIN
+  PERFORM public.love_respond_and_redraw(drawn.id,'pass',false);
+ EXCEPTION WHEN SQLSTATE '28000' THEN blocked:=true;
+ END;
+ IF NOT blocked THEN
+  RAISE EXCEPTION 'REAL RPC: unverified B replayed stored Passer receipt';
+ END IF;
+ PERFORM pg_catalog.set_config('lr026.test_verified','yes',true);
+ IF (SELECT count(*) FROM public.love_challenge_redraws
+      WHERE origin_id=drawn.id)<>1
+   OR (SELECT status FROM public.couple_challenges
+       WHERE id=drawn.id)<>'passed' THEN
+  RAISE EXCEPTION 'REAL RPC: unverified replay changed Passer state';
+ END IF;
+
  -- B has now used monthly pass 1/1. A has a distinct, independent quota.
  blocked:=false;
  BEGIN
@@ -430,6 +452,29 @@ BEGIN
   RAISE EXCEPTION 'REAL RPC: unauthorized Refuser replay altered exclusion';
  END IF;
  PERFORM pg_catalog.set_config('request.jwt.claim.sub',a::text,true);
+ -- The recipient A must also be verified to read A's own previously
+ -- committed Refuser/exclusion receipt; only current valid Auth can replay.
+ PERFORM pg_catalog.set_config('request.jwt.claim.sub',a::text,true);
+ PERFORM pg_catalog.set_config('lr026.test_verified','no',true);
+ blocked:=false;
+ BEGIN
+  PERFORM public.love_respond_and_redraw(a_replacement.id,'refuse',false);
+ EXCEPTION WHEN SQLSTATE '28000' THEN blocked:=true;
+ END;
+ IF NOT blocked THEN
+  RAISE EXCEPTION 'REAL RPC: unverified A replayed stored Refuser receipt';
+ END IF;
+ PERFORM pg_catalog.set_config('lr026.test_verified','yes',true);
+ IF (SELECT count(*) FROM public.love_challenge_redraws
+      WHERE origin_id=a_replacement.id)<>1
+    OR (SELECT status FROM public.couple_challenges
+       WHERE id=a_replacement.id)<>'refused'
+    OR NOT EXISTS(SELECT 1 FROM public.love_cycle_excluded_cards
+      WHERE couple_id=drawn.couple_id
+        AND category=a_replacement.category
+        AND card_id=a_replacement.card_id) THEN
+  RAISE EXCEPTION 'REAL RPC: unverified replay mutated Refuser exclusion';
+ END IF;
 
  RAISE NOTICE
  'LR-026 REAL RPC: both directions, pass/refuse with exclusion, category and face uniqueness, A/B quota, idempotency, rollback and identity passed';
