@@ -3141,11 +3141,16 @@ async function handle(action,element){
    if(!isCurrentStart())return;
    const active=ownEveningChallenges(state.challenges,startContext.userId,startContext.sessionId)
     .find(x=>x.id===picked.id);
-   if(!active||!['proposed','accepted'].includes(active.status)){
+   // Only an accepted row returned by the recipient-only RLS refresh may
+   // start a real timer. A stale "proposed" row is not proof that the
+   // acceptance RPC committed, even if its HTTP response was successful.
+   if(active?.status!=='accepted'){
     state.selectedEveningChallengeId=null;
     state.showEveningChallenges=true;
     render();
-    notify('Ce défi a déjà changé. Consulte ta liste pour voir son état.');
+    notify(active?.status==='proposed'
+     ?'Le serveur n’a pas encore confirmé le début du défi. Réessaie après l’actualisation.'
+     :'Ce défi a déjà changé. Consulte ta liste pour voir son état.');
     return;
    }
    state.showEveningChallenges=true;
