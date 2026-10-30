@@ -93,6 +93,64 @@ WITH expected AS (
       'couple_challenges','love_base_challenges','couples',
       'love_card_draw_history','love_cycle_excluded_cards')
       AND c.relkind='r') AS all_rls_tables_present,
+  -- RLS enabled alone is insufficient: permissive SELECT policies are
+  -- OR-combined. Assert the actual LoveRoll member/recipient guards and
+  -- fail closed if another browser-visible permissive read policy appears.
+  (SELECT pg_catalog.count(*)=2 FROM pg_catalog.pg_policy p
+   JOIN pg_catalog.pg_class c ON c.oid=p.polrelid
+   JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+   WHERE n.nspname='public' AND c.relname IN ('couple_challenges','couples')
+     AND p.polpermissive AND p.polcmd IN ('r','*')
+     AND (0::oid=ANY(p.polroles) OR EXISTS(
+       SELECT 1 FROM pg_catalog.pg_roles r
+       WHERE r.oid=ANY(p.polroles) AND r.rolname='authenticated'))
+     AND (
+       (c.relname='couple_challenges' AND p.polname='challenges_read'
+         AND p.polcmd='r'
+         AND pg_catalog.strpos(pg_catalog.pg_get_expr(p.polqual,p.polrelid),
+                               'recipient')>0
+         AND pg_catalog.strpos(pg_catalog.pg_get_expr(p.polqual,p.polrelid),
+                               'auth.uid()')>0
+         AND pg_catalog.strpos(pg_catalog.pg_get_expr(p.polqual,p.polrelid),
+                               'couple_private.is_member')>0)
+       OR
+       (c.relname='couples' AND p.polname='couples_read'
+         AND p.polcmd='r'
+         AND pg_catalog.strpos(pg_catalog.pg_get_expr(p.polqual,p.polrelid),
+                               'couple_private.is_member')>0)
+     )
+  ) AS browser_select_policies_scoped,
+  (SELECT pg_catalog.count(*)=2 FROM pg_catalog.pg_policy p
+   JOIN pg_catalog.pg_class c ON c.oid=p.polrelid
+   JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+   WHERE n.nspname='public' AND c.relname IN ('couple_challenges','couples')
+     AND p.polname='loveroll_confirmed_email_required'
+     AND NOT p.polpermissive AND p.polcmd='*'
+     AND EXISTS (SELECT 1 FROM pg_catalog.pg_roles r
+       WHERE r.oid=ANY(p.polroles) AND r.rolname='authenticated')
+     AND pg_catalog.strpos(pg_catalog.pg_get_expr(p.polqual,p.polrelid),
+                           'love_verified_identity')>0
+     AND pg_catalog.strpos(pg_catalog.pg_get_expr(p.polwithcheck,p.polrelid),
+                           'love_verified_identity')>0
+  ) AS verified_identity_is_restrictive,
+  (SELECT pg_catalog.count(*)=5
+          AND pg_catalog.bool_and(
+            NOT pg_catalog.has_table_privilege('anon',c.oid,'SELECT')
+            AND NOT pg_catalog.has_table_privilege('anon',c.oid,'INSERT')
+            AND NOT pg_catalog.has_table_privilege('anon',c.oid,'UPDATE')
+            AND NOT pg_catalog.has_table_privilege('anon',c.oid,'DELETE')
+            AND pg_catalog.has_table_privilege('authenticated',c.oid,'SELECT')
+              = (c.relname IN ('couple_challenges','couples'))
+            AND NOT pg_catalog.has_table_privilege('authenticated',c.oid,'INSERT')
+            AND NOT pg_catalog.has_table_privilege('authenticated',c.oid,'UPDATE')
+            AND NOT pg_catalog.has_table_privilege('authenticated',c.oid,'DELETE')
+          )
+   FROM pg_catalog.pg_class c
+   JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+   WHERE n.nspname='public' AND c.relkind='r' AND c.relname IN (
+      'couple_challenges','couples','love_base_challenges',
+      'love_card_draw_history','love_cycle_excluded_cards')
+  ) AS browser_table_permissions_safe,
   (SELECT pg_catalog.count(*)=0 FROM pg_catalog.pg_proc p
    JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace
    WHERE n.nspname='couple_private'
@@ -115,6 +173,9 @@ CROSS JOIN LATERAL (
    CASE WHEN c.required_columns_present IS TRUE THEN NULL ELSE 'Live card/history columns changed' END,
    CASE WHEN c.exposed_tables_have_rls IS TRUE THEN NULL ELSE 'RLS disabled on game tables' END,
    CASE WHEN c.all_rls_tables_present IS TRUE THEN NULL ELSE 'Expected RLS tables missing' END,
+   CASE WHEN c.browser_select_policies_scoped IS TRUE THEN NULL ELSE 'RLS SELECT policy scope widened' END,
+   CASE WHEN c.verified_identity_is_restrictive IS TRUE THEN NULL ELSE 'Verified identity RLS policy no longer restrictive' END,
+   CASE WHEN c.browser_table_permissions_safe IS TRUE THEN NULL ELSE 'Browser table GRANTs widened' END,
    CASE WHEN c.pending_migration_not_already_installed IS TRUE THEN NULL ELSE 'LR-026 helpers already present' END
  ],NULL::text) AS blockers
 ) result;
