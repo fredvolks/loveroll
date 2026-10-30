@@ -2,6 +2,8 @@
 -- Confirms that the FULL guarded migration successfully patched the two RPCs.
 DO $lr026_full_test$
 DECLARE official_sql text; replacement_sql text;
+        drawn public.couple_challenges;
+        redrawn jsonb;
 BEGIN
  official_sql := pg_catalog.pg_get_functiondef(
   'public.draw_for_partner(uuid,text,boolean)'::pg_catalog.regprocedure);
@@ -54,5 +56,24 @@ BEGIN
    )
  ) THEN
    RAISE EXCEPTION 'LR-026: redraw security-definer / search_path changed';
+ END IF;
+
+ -- Execute BOTH patched synthetic RPC bodies, not just their source text.
+ -- Current fixture: card 1 was seen, custom card 3 resembles it,
+ -- and card 2 is the only new, eligible card.
+ SELECT * INTO drawn
+ FROM public.draw_for_partner(
+   '11111111-1111-4111-8111-111111111111'::uuid,'SENSUEL',false);
+ IF drawn.card_id IS DISTINCT FROM 2 THEN
+   RAISE EXCEPTION 'LR-026: D100 RPC ignored variety ordering (got %)',
+     drawn.card_id;
+ END IF;
+
+ SELECT public.love_respond_and_redraw(
+   '33333333-3333-4333-8333-333333333333'::uuid,'pass',false)
+ INTO redrawn;
+ IF (redrawn->>'card_id')::integer IS DISTINCT FROM 2 THEN
+   RAISE EXCEPTION 'LR-026: repige RPC ignored variety ordering (got %)',
+     redrawn;
  END IF;
 END; $lr026_full_test$;
