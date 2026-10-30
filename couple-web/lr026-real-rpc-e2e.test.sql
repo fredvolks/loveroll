@@ -332,6 +332,8 @@ DECLARE
  b uuid:='bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb';
  s uuid:='bbbbbbbb-2222-4222-8222-bbbbbbbbbbbb';
  drawn public.couple_challenges%rowtype;
+ replacement public.couple_challenges%rowtype;
+ reply jsonb;
  blocked boolean:=false;
  rejection text;
 BEGIN
@@ -364,6 +366,19 @@ BEGIN
    'Excluded by drawer lock','both','both',b,b),
   (pair,'SENSUEL',30,'Allowed A to B',
    'Exactly one eligible gender-aware custom card','him','her',NULL,NULL);
+ -- The second authorized custom card starts excluded. Unblock it ONLY
+ -- after the real first draw to force a deterministic Refuser replacement.
+ INSERT INTO public.love_custom_challenges(
+  couple_id,category,card_id,title,description,timer_minutes,
+  drawer_role,recipient_role,recipient_user_id,drawer_user_id
+ ) VALUES(
+  pair,'SENSUEL',31,'Second custom A to B',
+  'A distinct authorized custom challenge',5,
+  'him','her',b,a
+ );
+ INSERT INTO public.love_cycle_excluded_cards(
+  couple_id,cycle_number,category,card_id
+ ) VALUES(pair,1,'SENSUEL',31);
  PERFORM pg_catalog.set_config('request.jwt.claim.sub',a::text,true);
  SELECT * INTO drawn FROM public.draw_for_partner(s,'SENSUEL',false);
  IF drawn.card_id IS DISTINCT FROM 30 OR
@@ -388,8 +403,60 @@ BEGIN
  IF NOT blocked THEN
   RAISE EXCEPTION 'REAL RPC: wrong-direction custom role restriction bypass';
  END IF;
+
+ -- After the drawn challenge is offered to B, allow #31. All the
+ -- unauthorized custom cards #26..29 remain technically present, so
+ -- the REAL Refuser RPC must preserve the original recipient/drawer locks
+ -- and return card #31, with its custom body and timer.
+ DELETE FROM public.love_cycle_excluded_cards
+ WHERE couple_id=pair AND cycle_number=1 AND category='SENSUEL'
+   AND card_id=31;
+ SELECT public.love_respond_and_redraw(drawn.id,'refuse',false) INTO reply;
+ IF reply->>'action'<>'refuse'
+   OR reply->>'excluded'<>'false'
+   OR reply->>'already_processed'<>'false'
+   OR reply->>'replacement_unavailable'<>'false'
+   OR reply->>'replacement_id' IS NULL THEN
+  RAISE EXCEPTION 'REAL RPC: custom recipient Refuser response invalid %',reply;
+ END IF;
+ SELECT * INTO replacement FROM public.couple_challenges
+ WHERE id=(reply->>'replacement_id')::uuid;
+ IF NOT FOUND OR replacement.card_id IS DISTINCT FROM 31
+   OR replacement.offered_by IS DISTINCT FROM a
+   OR replacement.recipient IS DISTINCT FROM b
+   OR replacement.category IS DISTINCT FROM 'SENSUEL'
+   OR replacement.replaces_challenge_id IS DISTINCT FROM drawn.id
+   OR replacement.face IS NOT DISTINCT FROM drawn.face
+   OR replacement.card_title IS DISTINCT FROM 'Second custom A to B'
+   OR replacement.card_description IS DISTINCT FROM
+      'A distinct authorized custom challenge'
+   OR replacement.card_timer_minutes IS DISTINCT FROM 5
+   OR replacement.status IS DISTINCT FROM 'proposed' THEN
+  RAISE EXCEPTION 'REAL RPC: custom Refuser bypassed rules/body/timer %',
+   replacement;
+ END IF;
+ IF (SELECT status FROM public.couple_challenges WHERE id=drawn.id)
+       IS DISTINCT FROM 'refused'
+   OR (SELECT refused_at FROM public.couple_challenges WHERE id=drawn.id)
+       IS NULL
+   OR EXISTS(
+    SELECT 1 FROM public.love_cycle_excluded_cards ex
+    WHERE ex.couple_id=pair AND ex.category='SENSUEL'
+      AND ex.card_id=30
+   ) THEN
+  RAISE EXCEPTION 'REAL RPC: custom Refuser incorrectly excluded original';
+ END IF;
+ SELECT public.love_respond_and_redraw(drawn.id,'refuse',true) INTO reply;
+ IF reply->>'already_processed'<>'true'
+   OR reply->>'excluded'<>'false'
+   OR (reply->>'replacement_id')::uuid IS DISTINCT FROM replacement.id
+   OR (SELECT count(*) FROM public.couple_challenges WHERE couple_id=pair)<>2
+   OR (SELECT count(*) FROM public.love_challenge_redraws WHERE couple_id=pair)<>1 THEN
+  RAISE EXCEPTION 'REAL RPC: custom Refuser replay changed persisted result %',
+   reply;
+ END IF;
  RAISE NOTICE
- 'LR-026 REAL RPC role assignment: gender, owner/partner and per-user custom-card locks passed';
+ 'LR-026 REAL RPC: custom A-to-B restrictions, Refuser replacement, custom text/timer and idempotency passed';
 END; $lr026_real_roles$;
 
 -- Cover the live SEXUEL category with the exact same two real SQL RPCs,
