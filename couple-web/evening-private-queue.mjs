@@ -251,6 +251,19 @@ export function ownsEveningRedrawRequest(view,request){
 }
 
 /**
+ * Timer updates from async actions must retain ownership of their original
+ * user, evening and challenge. Unlike the visible-view check, this helper
+ * may also safely clear an abandoned pending flag on an off-screen timer.
+ */
+export function ownsEveningTimerRecord(timer,cardId,userId,sessionId){
+ return typeof cardId==='string'&&cardId.length>0&&
+  typeof userId==='string'&&userId.length>0&&
+  typeof sessionId==='string'&&sessionId.length>0&&
+  timer?.id===cardId&&timer?.ownerUserId===userId&&
+  timer?.ownerSessionId===sessionId;
+}
+
+/**
  * Reconcile an uncertain Passer/Refuser receipt against an independently
  * refreshed challenge, never against the button the user tapped.
  * Keep the timer untouched when no reliable status is available.
