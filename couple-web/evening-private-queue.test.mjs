@@ -1775,3 +1775,52 @@ test('LR-026: delayed Éclat status cannot replace a different account or render
  assert.equal(state.eclat.id,'old');
  assert.equal(renderCount,0,'old poll must not repaint the new account');
 });
+
+test('LR-026: mutating Éclat responses belong to the initiating account, view and request',()=>{
+ const start=app.indexOf('let latestEclatHistoryRead=null,latestEclatStatusRead=null;');
+ const end=app.indexOf('function renderEclat(){',start);
+ assert.ok(start>=0&&end>start);
+ const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',eclat:{id:'before'}};
+ const scope=runInNewContext(app.slice(start,end)+
+  ';({beginEclatAction,ownsEclatAction,applyEclatActionResult})',{
+   state,ownsCoupleAsyncRead,console,
+   isSharedCoupleReady:()=>true,rpc:async()=>null,loadEclatHistory:async()=>[]
+  });
+ const old=scope.beginEclatAction();
+ assert.equal(scope.ownsEclatAction(old),true);
+ const newer=scope.beginEclatAction();
+ assert.equal(scope.ownsEclatAction(old),false,
+  'a second tap supersedes the previous pending action');
+ assert.equal(scope.applyEclatActionResult({id:'old-result'},old),false);
+ state.tab='home';
+ assert.equal(scope.applyEclatActionResult({id:'different-tab'},newer),false);
+ state.tab='eclat';state.user={id:'bob'};
+ assert.equal(scope.applyEclatActionResult({id:'alice-private'},newer),false);
+ state.user={id:'alice'};state.coupleId='another-duo';
+ assert.equal(scope.applyEclatActionResult({id:'old-duo'},newer),false);
+ assert.equal(state.eclat.id,'before');
+ state.coupleId='duo';
+ const latest=scope.beginEclatAction();
+ assert.equal(scope.applyEclatActionResult({id:'valid'},latest),true);
+ assert.equal(state.eclat.id,'valid');
+});
+
+test('LR-026: every Éclat mutation checks ownership before applying its response',()=>{
+ for(const [action,rpcName] of [
+  ['start','love_eclat_start'],['choose','love_eclat_choose'],
+  ['next','love_eclat_next'],['end','love_eclat_end']
+ ]){
+  const from=app.indexOf("if(kind==='"+action+"'){",app.indexOf("if(verb.startsWith('eclat:')"));
+  assert.ok(from>0,'Éclat action '+action+' must remain present');
+  const until=app.indexOf("if(kind==='",from+15);
+  const branch=app.slice(from,until<0?from+1200:until);
+  assert.match(branch,/beginEclatAction\(\)/,
+   action+' must snapshot the user before the RPC');
+  assert.match(branch,new RegExp("await rpc\\('"+rpcName+"'"),
+   action+' must keep using the official SQL RPC');
+  assert.match(branch,/if\(!applyEclatActionResult\(value,owner\)\)return;/,
+   action+' may apply only the request owner response');
+ }
+ assert.match(app,/if\(!yes\|\|!ownsEclatAction\(owner\)\)return;/,
+  'confirming Quitter under an old account must never send a mutation');
+});
