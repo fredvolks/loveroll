@@ -119,6 +119,14 @@ Un test de concurrence supplémentaire appelle **les vraies RPC PostgreSQL** sim
 
 Cette recette valide uniquement une base PostgreSQL 17 **isolée**, avec des identités synthétiques. Elle ne remplace pas les essais de deux appareils réellement connectés à des comptes Auth/Supabase en préproduction et n'effectue aucun changement en production.
 
+## Refuser D100 : isolation stricte entre SENSUEL, SEXUEL et les partenaires — 30 octobre 2026
+
+Un test supplémentaire utilise les **vraies fonctions SQL LoveRoll** sur PostgreSQL 17 jetable : deux couples de test indépendants sont créés pour comparer un `Refuser(false)` à un `Refuser(true)`. Dans chaque couple, la carte `#1` apparaît simultanément dans les historiques **SENSUEL** et **SEXUEL** de A et de B. Seule la carte **SENSUEL #1 proposée à B** est refusée. Le tirage initial et la nouvelle carte sont contrôlés sous les identités A (lanceur) et B (destinataire).
+
+Les assertions exigent que `Refuser(false)` libère uniquement l'ancienne entrée de B en SENSUEL, alors que `Refuser(true)` conserve l'entrée et ajoute uniquement l'exclusion **SENSUEL #1** pour le cycle. Les entrées **SEXUEL #1** de A/B et **SENSUEL #1** de A ne doivent jamais changer. Dans les deux cas, la carte de remplacement reste SENSUEL, destinée à B et offerte par A, et reçoit une nouvelle face D100. Un rejeu avec le drapeau d'exclusion inversé doit restituer le **reçu original** sans dupliquer les défis ni modifier les historiques.
+
+Cette régression est limitée à PostgreSQL local jetable, `ROLLBACK`, sans accès aux comptes Supabase hébergés et sans écriture en production.
+
 ## Historique indépendant pour chacun des deux partenaires — 30 octobre 2026
 
 Le nouveau scénario SQL isolé `$lr026_real_cross_recipient_refusal# LoveRoll LR-026 — recette Supabase A/B (STAGING SEULEMENT)
