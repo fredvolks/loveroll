@@ -12,6 +12,7 @@ on:
       - "couple-web/lr026-postgres-rpc-fixture.sql"
       - "couple-web/lr026-fixture-migration.cjs"
       - "couple-web/lr026-full-migration.test.sql"
+      - "couple-web/lr026-rpc-role-security.test.sql"
       - ".github/workflows/loveroll-lr026-postgres.yml"
   workflow_dispatch:
 
@@ -73,6 +74,8 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f "$RUNNER_TEMP/lr026-fixture-migration.sql"
       - name: Verify both patched RPCs and preserved execution rights
         run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-full-migration.test.sql
+      - name: Verify anon denial and authenticated server-side RPC execution
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-rpc-role-security.test.sql
       - name: Recheck rank and permissions after full migration
         run: |
           psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-server-variety-smoke.sql
