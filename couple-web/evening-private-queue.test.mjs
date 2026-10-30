@@ -204,10 +204,11 @@ test('LR-026: app checks original ID before selecting and confirming a new D100 
 test('LR-026: redraw success requires original decision and replacement in recipient RLS view',()=>{
  const original={id:'clicked-card',recipient:'fred',session_id:'s1',
   couple_id:'duo-1',offered_by:'partner',status:'passed',
-  category:'SENSUEL'};
+  category:'SENSUEL',face:14,card_id:3,is_gifted:false};
  const replacement={id:'new-card',recipient:'fred',session_id:'s1',
   couple_id:'duo-1',offered_by:'partner',status:'proposed',
-  category:'SENSUEL',replaces_challenge_id:'clicked-card'};
+  category:'SENSUEL',face:53,card_id:8,is_gifted:false,
+  replaces_challenge_id:'clicked-card'};
  const receipt={original_id:'clicked-card',replacement_id:'new-card',
   action:'pass',excluded:false,already_processed:false,
   replacement_unavailable:false};
@@ -234,6 +235,19 @@ test('LR-026: redraw success requires original decision and replacement in recip
  assert.equal(verify([original,{...replacement,category:'SEXUEL'}]),false);
  assert.equal(verify([original,{...replacement,offered_by:'other-giver'}]),false);
  assert.equal(verify([original,{...replacement,couple_id:'other-couple'}]),false);
+ assert.equal(verify([original,{...replacement,face:original.face}]),false,
+  'replacement must use a different official D100 face');
+ assert.equal(verify([original,{...replacement,card_id:original.card_id}]),false,
+  'replacement must use a different library card in the same category');
+ assert.equal(verify([original,{...replacement,face:101}]),false);
+ assert.equal(verify([original,{...replacement,card_id:0}]),false);
+ assert.equal(verify([{...original,face:null},replacement]),false);
+ assert.equal(verify([{...original,card_id:'3'},replacement]),false);
+ assert.equal(verify([original,{...replacement,is_gifted:true}]),false,
+  'replacement must keep the same gift transfer state');
+ assert.equal(verify([{...original,is_gifted:true},
+   {...replacement,is_gifted:true}]),true,
+  'a legitimate gifted D100 card remains supported');
  assert.equal(verify([original,{...replacement,recipient:'partner'}]),false,
   'never expose cards belonging to the other person');
  assert.equal(verify([original,{...replacement,session_id:'s2'}]),false);
