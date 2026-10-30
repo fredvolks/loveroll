@@ -297,11 +297,15 @@ export async function runStage(env, mode, transport = fetch) {
       rls_positive_d6_reads: 3, rls_cross_duo_denials: 12, game_writes: 0};
   }
 
-  const sessionRows = await client.rows('couple_sessions',
-    'select=id,paired_turns,self_draws&id=eq.' + config.sessionId, a.token);
-  assert(sessionRows.length === 1 && sessionRows[0].paired_turns === false &&
-    sessionRows[0].self_draws === false,
-    'Mutating recipe requires a fresh legacy partner-draw session (paired_turns=false, self_draws=false)');
+  // A's session settings alone are not sufficient: check the same legacy
+  // partner-draw flags under both real Auth tokens before the first D100 RPC.
+  for (const actor of [a, b]) {
+    const sessionRows = await client.rows('couple_sessions',
+      'select=id,paired_turns,self_draws&id=eq.' + config.sessionId, actor.token);
+    assert(sessionRows.length === 1 && eq(sessionRows[0].id, config.sessionId) &&
+      sessionRows[0].paired_turns === false && sessionRows[0].self_draws === false,
+      'Mutating recipe requires both partners to see a fresh legacy partner-draw session (paired_turns=false, self_draws=false)');
+  }
   // Reject a malformed or RLS-invisible D6 fixture before calling the
   // mutating D100 RPC. A-only visibility does NOT prove B can read both D6.
   // Explicit session IDs, unique owners and faces 1..6 are mandatory.
@@ -369,8 +373,9 @@ export async function runStage(env, mode, transport = fetch) {
       eq(c.offered_by, a.id) && c.replaces_challenge_id == null).length === 1,
       'Only one original passed challenge offered by A may exist');
     assert(stored.filter(c => eq(c.id, response.replacement_id) &&
-      eq(c.replaces_challenge_id, drawn.id) && c.status === 'proposed').length === 1,
-      'Exactly one same-category replacement must exist for recipient B');
+      eq(c.replaces_challenge_id, drawn.id) && c.status === 'proposed' &&
+      eq(c.offered_by, a.id)).length === 1,
+      'Exactly one same-category replacement offered by A must exist for recipient B');
     // Normalize row order, but compare every selected persisted field to
     // detect silent changes even when the replay returns the same ID.
     return JSON.stringify([...stored].sort((x, y) => x.id.localeCompare(y.id)));
