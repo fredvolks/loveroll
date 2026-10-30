@@ -99,7 +99,11 @@ export function isPersistedEveningRedrawReceipt(outcome,rows,userId,sessionId){
   return false;
  if(outcome.replacement_id===null)return true;
  const replacement=mine.find(card=>card.id===outcome.replacement_id);
- return !!(replacement&&replacement.replaces_challenge_id===outcome.original_id);
+ return !!(replacement&&
+  replacement.replaces_challenge_id===outcome.original_id&&
+  replacement.category===original.category&&
+  replacement.offered_by===original.offered_by&&
+  replacement.couple_id===original.couple_id);
 }
 
 /**
