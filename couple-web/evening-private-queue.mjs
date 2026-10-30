@@ -112,9 +112,16 @@ export function isPersistedEveningRedrawReceipt(outcome,rows,userId,sessionId,or
  // Supabase/PostgREST returns absolute RFC3339 timestamps. Date.parse
  // alone accepts ambiguous input such as '1' or a date without a timezone;
  // those are not trustworthy evidence of a committed database mutation.
- const validStamp=value=>typeof value==='string'&&
-  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(value)&&
-  Number.isFinite(Date.parse(value));
+ const validStamp=value=>{
+  if(typeof value!=='string')return false;
+  const parts=/^(\d{4})-(\d{2})-(\d{2})T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.exec(value);
+  if(!parts||!Number.isFinite(Date.parse(value)))return false;
+  // Date.parse normalizes impossible dates on some JS engines (Feb 30,
+  // Nov 31). PostgreSQL does not emit those; reject them explicitly.
+  const year=Number(parts[1]),month=Number(parts[2]),day=Number(parts[3]);
+  return year>=100&&month>=1&&month<=12&&day>=1&&
+   day<=new Date(Date.UTC(year,month,0)).getUTCDate();
+ };
  const validCardContent=card=>
   typeof card.card_title==='string'&&card.card_title.trim().length>0&&
   typeof card.card_description==='string'&&card.card_description.trim().length>0&&
