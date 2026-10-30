@@ -158,7 +158,7 @@ function apiClient(config, transport) {
   return {login, rows, rpc};
 }
 
-export // Validate the SAME physical D6 snapshot under both authenticated views.
+// Validate the SAME physical D6 snapshot under both authenticated views.
 // Checking each view in isolation is insufficient: contradictory valid faces
 // can otherwise pass and make the subsequent D100 draw irreproducible.
 async function verifyMatchingD6(client, sessionId, a, b, invalidFixtureMessage) {
@@ -183,7 +183,7 @@ async function verifyMatchingD6(client, sessionId, a, b, invalidFixtureMessage) 
   }
 }
 
-async function runStage(env, mode, transport = fetch) {
+export async function runStage(env, mode, transport = fetch) {
   // Validate everything, including explicit write consent, BEFORE ANY network.
   const config = validateStage(env, mode);
   if (mode === 'check') {
