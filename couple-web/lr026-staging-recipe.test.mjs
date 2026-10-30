@@ -55,13 +55,17 @@ function mockSupabase(opts = {}) {
         email_confirmed_at: '2026-10-10T00:00:00Z'});
     }
     if (path === '/rest/v1/couple_sessions') {
-      return response([{id: session, couple_id: couple, finished_at: null,
+      if (opts.hideSessionB && who === 'b') return response([]);
+      return response([{id: session, couple_id: couple,
+        finished_at: opts.finishedSession ? '2026-10-29T20:00:00Z' : null,
         paired_turns: false, self_draws: false}]);
     }
     if (path === '/rest/v1/couple_members') {
+      if (opts.hideMemberB && who === 'b') return response([]);
       return response([{couple_id: couple, user_id: uid}]);
     }
     if (path === '/rest/v1/couple_personal_rolls') {
+      if (opts.missingSecondD6) return response([{user_id: a, face: 2}]);
       return response([{user_id: a, face: 2}, {user_id: b, face: 2}]);
     }
     if (path === '/rest/v1/couple_challenges') {
@@ -196,4 +200,19 @@ test('remote Auth error cannot reveal credentials, arbitrary messages or access 
     assert(!e.message.includes('Bearer'));
     return true;
   });
+});
+
+test('real RLS session/member denial fails before any gameplay writes', async () => {
+  for (const opt of [{hideSessionB: true}, {hideMemberB: true}, {finishedSession: true}]) {
+    const mock = mockSupabase(opt);
+    await assert.rejects(runStage(env(), 'play', mock.fetchFn), /Active staging session|own membership/);
+    assert.equal(mock.counters().drawCount, 0);
+    assert.equal(mock.counters().passCount, 0);
+  }
+});
+test('missing second D6 blocks real D100 before gameplay writes', async () => {
+  const mock = mockSupabase({missingSecondD6: true});
+  await assert.rejects(runStage(env(), 'play', mock.fetchFn), /Two D6 rolls/);
+  assert.equal(mock.counters().drawCount, 0);
+  assert.equal(mock.counters().passCount, 0);
 });
