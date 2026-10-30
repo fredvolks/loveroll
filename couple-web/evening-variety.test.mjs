@@ -58,6 +58,29 @@ test('LR-026: cross-category matching titles, card ids and instructions are NOT 
   reason:'all-eligible'
  });
 });
+test('LR-026: incomplete history never silently changes selected-category candidates',()=>{
+ const candidate=card(25,'Le cœur des envies','Approche douce');
+ const distinct=card(26,'Une danse paisible','Musique tranquille');
+ const missingCategory={...candidate,card_id:9,category:undefined};
+ const wrongCategory={...candidate,card_id:10,category:'SEXUEL'};
+ const malformedHistory=[null,42,'not a card',missingCategory,wrongCategory];
+ const result=filterSimilarEveningCandidates({
+  eligibleCards:[candidate,distinct],recentInSession:malformedHistory,
+  selectedCategory:'SENSUEL'
+ });
+ assert.deepEqual(result.candidates,[candidate,distinct]);
+ assert.equal(result.suppressedCount,0);
+ assert.equal(result.reason,'all-eligible');
+ const officialHistory=card(11,'Le coeur des envies','Autre activité');
+ const filtered=filterSimilarEveningCandidates({
+  eligibleCards:[candidate,distinct],
+  recentInSession:[...malformedHistory,officialHistory],
+  selectedCategory:'SENSUEL'
+ });
+ assert.deepEqual(filtered.candidates,[distinct]);
+ assert.equal(filtered.suppressedCount,1);
+});
+
 test('LR-026: a second category in session history cannot erase a valid card',()=>{
  const sensual=card(3,'Moment complice','Partagez un souvenir romantique.');
  const sexual={...sensual,category:'SEXUEL',card_id:4};
