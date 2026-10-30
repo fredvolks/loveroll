@@ -300,6 +300,11 @@ test('LR-026: redraw success requires original decision and replacement in recip
  assert.equal(verify([replacement]),false,
   'replacement alone cannot prove the original Passer/Refuser decision');
  assert.equal(verify([{...original,status:'accepted'},replacement]),false);
+ for(const stamp of ['1','2026-10-30','2026-10-30T12:02:00']){
+  assert.equal(verify([{...original,passed_at:stamp},replacement]),false);
+ }
+ assert.equal(verify([{...original,passed_at:'2026-10-30T08:02:00-04:00'},
+  {...replacement,created_at:'2026-10-30T12:02:00.123456+00:00'}]),true);
  for(const badStamp of [null,undefined,'not-a-date','']){
   assert.equal(verify([{...original,passed_at:badStamp},replacement]),false,
    'a Passer without a valid persisted passed_at must not confirm the timer');
