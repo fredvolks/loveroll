@@ -229,14 +229,19 @@ async function verifyMatchingD6(client, sessionId, a, b, invalidFixtureMessage) 
 // A single shared contract avoids a green readiness check that does not
 // actually protect the real first D100 in --play.
 async function verifyFreshD100Session(client,config,a,b){
-  // Both tokens must see the same legacy partner-draw flags. A's view
-  // alone cannot prove that recipient B is in the correct session mode.
+  // Recheck lifecycle and ownership for BOTH token views immediately
+  // before the first D100, not only during initial Auth. The couple or
+  // finished_at may change between the first login and game preflight.
+  // A's valid view cannot prove that recipient B still sees the same mode.
   for(const actor of [a,b]){
     const sessions=await client.rows('couple_sessions',
-      'select=id,paired_turns,self_draws&id=eq.'+config.sessionId,actor.token);
+      'select=id,couple_id,finished_at,paired_turns,self_draws&id=eq.'+
+        config.sessionId,actor.token);
     assert(sessions.length===1&&eq(sessions[0].id,config.sessionId)&&
+      eq(sessions[0].couple_id,config.coupleId)&&
+      sessions[0].finished_at===null&&
       sessions[0].paired_turns===false&&sessions[0].self_draws===false,
-      'Mutating recipe requires both partners to see a fresh legacy partner-draw session (paired_turns=false, self_draws=false)');
+      'Mutating recipe requires both partners to see the same active, fresh legacy partner-draw session (paired_turns=false, self_draws=false)');
   }
   const faces=await verifyMatchingD6(client,config.sessionId,a,b,
     'Two valid D6 rolls for this session must be readable by both partners before D100');
