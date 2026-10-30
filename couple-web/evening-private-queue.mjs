@@ -104,12 +104,18 @@ export function isPersistedEveningRedrawReceipt(outcome,rows,userId,sessionId){
   typeof card.card_description==='string'&&card.card_description.trim().length>0&&
   (card.card_timer_minutes===null||
    (Number.isInteger(card.card_timer_minutes)&&card.card_timer_minutes>0));
- // The real RPC and pass-stamp trigger commit exactly ONE decision date.
- // Malformed or contradictory stamps are not enough to stop a live timer.
+ // New cards have neither decision stamp. A second device may have
+ // already acted on the replacement: accept a committed passed/refused
+ // state ONLY when its corresponding stamp is present and the other absent.
+ const validDecisionStamps=card=>{
+  if(card.status==='passed')return validStamp(card.passed_at)&&card.refused_at===null;
+  if(card.status==='refused')return validStamp(card.refused_at)&&card.passed_at===null;
+  return ['proposed','accepted','completed'].includes(card.status)&&
+   card.passed_at===null&&card.refused_at===null;
+ };
+ // A malformed historical row cannot confirm a new D100 challenge.
  if(!validStamp(original.created_at)||!validCardContent(original)||
-  (outcome.action==='pass'
-   ?!validStamp(original.passed_at)||original.refused_at!==null
-   :!validStamp(original.refused_at)||original.passed_at!==null))
+  typeof original.is_gifted!=='boolean'||!validDecisionStamps(original))
   return false;
  // One answered card occupies precisely one D6 slot. Repeated device
  // responses must never create two direct replacements for the same origin.
@@ -118,8 +124,8 @@ export function isPersistedEveningRedrawReceipt(outcome,rows,userId,sessionId){
  if(outcome.replacement_id===null)return replacements.length===0;
  if(replacements.length!==1)return false;
  const replacement=replacements[0];
- if(!validStamp(replacement.created_at)||!validCardContent(replacement))
-  return false;
+ if(!validStamp(replacement.created_at)||!validCardContent(replacement)||
+  !validDecisionStamps(replacement))return false;
  // The official SQL chooses a different library card and D100 face
  // within the same category, recipient and evening. A stale or corrupted
  // response must not falsely confirm the same physical card again.
@@ -138,7 +144,6 @@ export function isPersistedEveningRedrawReceipt(outcome,rows,userId,sessionId){
   !mine.some(card=>card.id!==replacement.id&&
    card.category===replacement.category&&
    (card.face===replacement.face||card.card_id===replacement.card_id))&&
-  typeof original.is_gifted==='boolean'&&
   replacement.is_gifted===original.is_gifted;
 }
 
