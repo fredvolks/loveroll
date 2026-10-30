@@ -1286,6 +1286,44 @@ test('LR-026: live refresh implementation aborts stale server evening without wr
  }
 });
 
+test('LR-026: full scoped refresh accepts timer closure but rejects another night',async()=>{
+ const start=app.indexOf('async function refreshShared(expectedContext=null){');
+ const end=app.indexOf('const liveSync=createCoupleLiveSync',start);
+ assert.ok(start>0&&end>start);
+ const code=app.slice(start,end)+'; refreshShared;';
+ const context={userId:'fred',sessionId:'s1',coupleId:'couple-1',
+  tab:'session',challengeId:'card-1'};
+ for(const scenario of ['closed','new-evening','missing-proof']){
+  const state={user:{id:'fred'},coupleId:'couple-1',tab:'session',
+   session:{id:'s1'},legacyAnswerContext:null,timerCompletionContext:context,
+   cycleStatus:'unchanged',monthlyPassQuota:'unchanged'};
+  const sessions=scenario==='new-evening'?[
+   {id:'s1',finished_at:'2026-10-30T20:00:00Z'},
+   {id:'s2',finished_at:null}
+  ]:scenario==='closed'?[
+   {id:'s1',finished_at:'2026-10-30T20:00:00Z'}
+  ]:[];
+  const refresh=runInNewContext(code,{
+   state,query:async table=>table==='couple_sessions'?sessions:[],
+   rpc:async name=>name==='love_redraw_capabilities'?false:
+    name==='love_cycle_status'?{pending:false}:[],
+   isSameEveningResponseContext,mayApplyScopedEveningRefresh,
+   ownEveningChallenges,month:()=>'2026-10',week:()=>'2026-W44',console
+  });
+  const returned=await refresh(context);
+  if(scenario==='closed'){
+   assert.equal(returned,true);
+   assert.equal(state.session,null);
+   assert.ok(state.cycleStatus?.pending===false);
+  }else{
+   assert.equal(returned,undefined,'unrelated or unconfirmed evening must abort');
+   assert.equal(state.session.id,'s1');
+   assert.equal(state.cycleStatus,'unchanged');
+   assert.equal(state.monthlyPassQuota,'unchanged');
+  }
+ }
+});
+
 test('LR-026: legacy response refresh remains scoped across a night closure',()=>{
  const start=app.indexOf('async function refreshShared(expectedContext=null){');
  const end=app.indexOf('const liveSync=createCoupleLiveSync',start);
