@@ -22,6 +22,7 @@ on:
       - "couple-web/lr026-eligibility-boundary.test.sql"
       - "couple-web/lr026-response-transaction.test.sql"
       - "couple-web/lr026-authenticated-partners.test.sql"
+      - "couple-web/lr026-pass-stamp-fixture.sql"
       - "couple-web/lr026-concurrent-pass-fixture.sql"
       - "couple-web/lr026-concurrent-pass.test.sh"
       - "couple-web/lr026-rpc-role-security.test.sql"
@@ -104,6 +105,14 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-source-preservation.test.sql
       - name: Verify both patched RPCs and preserved execution rights
         run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-full-migration.test.sql
+      - name: Install fingerprint-checked production pass stamp in throwaway PostgreSQL
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-pass-stamp-fixture.sql
+          TRIGGER_SHA="$(psql -X -At -v ON_ERROR_STOP=1 -c "SELECT pg_catalog.md5(pg_catalog.pg_get_functiondef('couple_private.love_stamp_challenge_pass()'::pg_catalog.regprocedure))")"
+          if [ "$TRIGGER_SHA" != "3241da749bd0647c6106c613c7e3615a" ]; then
+            echo "::error::Timestamp trigger does not match reviewed live function"
+            exit 1
+          fi
       - name: Test authenticated A/B and outsider isolation with RLS and pass quotas
         run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-authenticated-partners.test.sql
       - name: Prove concurrent same-player quotas, A/B independence and double-click idempotency
