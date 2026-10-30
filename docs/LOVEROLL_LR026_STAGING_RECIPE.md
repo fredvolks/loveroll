@@ -119,6 +119,12 @@ Ce prévol utilise **la même fonction de validation** que le début de `--play`
 
 Le résultat `preflight: fresh_legacy_duo_verified` ne garantit **pas** qu'une carte reste disponible ou qu'un D100 ultérieur réussira; `--play` revérifie tous ces critères juste avant son premier appel mutateur. Aucun projet, compte ni donnée n'est créé automatiquement.
 
+## Deuxième appareil : preuve positive RLS avant et après chaque réponse — 30 octobre 2026
+
+La deuxième session authentifiée n'est plus considérée comme opérationnelle sur la seule base d'un nouveau jeton : **avant d'envoyer le premier appel contradictoire**, elle doit relire elle-même, sous son propre token, la **séance active** (mode de jeu inchangé), les **deux membres du couple**, les **deux D6 identiques** aux valeurs lues au départ et les **deux défis D100 persistés** correspondant exactement au résultat validé par la première session. Ce contrôle échoue immédiatement si la deuxième session voit un défi manquant, un mauvais destinataire, une adhésion incomplète, un D6 divergent ou une séance fermée. Il ne crée aucun jeu.
+
+Le même prévol de lecture est répété **après chaque réponse contradictoire** avec la deuxième session, parallèlement aux contrôles historiques effectués avec les premières sessions A/B. Les tests Node injectent volontairement des lectures RLS vides, des cartes mal attribuées et des D6 différents; aucun appel contradictoire ne doit partir si la deuxième vue est incohérente. Ils simulent aussi une fermeture de soirée ou un D6 modifié *après* le premier appel : la recette s'arrête alors avant la prochaine réponse. Ces tests restent en mémoire, sans contacter Supabase hébergé.
+
 ## Deux sessions Auth indépendantes pour simuler deux appareils — 30 octobre 2026
 
 Le contrôle optionnel `LR026_STAGING_STALE_REPLAY=true` **ne réutilise plus le même jeton de connexion** pour simuler une réponse tardive du deuxième appareil. Après vérification du premier Passer/Refuser et de son rejeu exact, il effectue un **nouveau login GoTrue pour le même destinataire**, contrôle à nouveau son identité avec `/auth/v1/user` et exige un `access_token` distinct. Les commandes contradictoires sont envoyées **uniquement avec cette deuxième session Auth**, tandis que les deux premières réponses restent associées à la première. Le résultat de la recette signale `distinct_stale_auth_session: true`.
