@@ -203,7 +203,7 @@ function mockSupabase(opts = {}) {
       assert.equal(payload.p_session, session);
       drawCount++;
       assert.equal(payload.p_preference, opts.expectedPreference ?? 'SENSUEL');
-      assert.equal(payload.p_random, false);
+      assert.equal(payload.p_random, opts.expectedRandom ?? false);
       lastDraw = {id: drawnId, session_id: session, couple_id: couple,
         offered_by: giverId, recipient: recipientId, face: 14, card_id: 3,
         category: opts.drawUnknownCategory ? 'INVALID' :
@@ -449,6 +449,51 @@ test('B can draw for A and A can respond with recipient-only RLS', async () => {
       'Bearer auth-token-for-a-test', 'Bearer auth-token-for-b-test',
       'Bearer auth-token-for-a-test', 'Bearer auth-token-for-b-test'
     ]);
+  }
+});
+
+test('real D100 random mode preserves SERVER-selected category across both partners and redraws', async () => {
+  // The preferred category and the actual randomized category can differ.
+  // Neither the recipient nor the staging client may coerce the category.
+  for (const [drawer, preference, actualSexuel, action, excluded] of [
+    ['A', 'SENSUEL', true, 'pass', false],
+    ['B', 'SEXUEL', false, 'refuse', true]
+  ]) {
+    const mock = mockSupabase({
+      drawerB: drawer === 'B', expectedRandom: true,
+      expectedPreference: preference, drawSexuel: actualSexuel,
+      expectedAction: action, expectedExclude: excluded
+    });
+    const out = await runStage({
+      ...env(), LR026_STAGING_RANDOM: 'true',
+      LR026_STAGING_DRAWER: drawer,
+      LR026_STAGING_PREFERENCE: preference,
+      LR026_STAGING_ACTION: action,
+      LR026_STAGING_EXCLUDE: String(excluded)
+    }, 'play', mock.fetchFn);
+    assert.equal(out.random_category_mode, true);
+    assert.equal(out.actual_draw_category, actualSexuel ? 'SEXUEL' : 'SENSUEL');
+    assert.notEqual(out.actual_draw_category, preference,
+      'The random mode must accept a server category different from preference');
+    assert.equal(out.replacement_same_category, true);
+    assert.equal(out.response_action, action);
+    assert.equal(out.response_excluded, excluded);
+    assert.equal(out.pass_replay_idempotent, true);
+    assert.equal(mock.counters().drawCount, 1);
+    assert.equal(mock.counters().passCount, 2);
+  }
+});
+
+test('D100 random mode remains false by default and refuses invalid values before network', async () => {
+  const standard = mockSupabase();
+  const out = await runStage(env(), 'play', standard.fetchFn);
+  assert.equal(out.random_category_mode, false);
+  assert.equal(out.actual_draw_category, 'SENSUEL');
+  for (const random of ['', 'True', '1', 'false ', 'TRUE', true, 1]) {
+    const mock = mockSupabase();
+    await assert.rejects(runStage({...env(), LR026_STAGING_RANDOM: random},
+      'play', mock.fetchFn), /Staging D100 random mode must be true or false/);
+    assert.equal(mock.counters().count, 0);
   }
 });
 
