@@ -241,6 +241,8 @@ test('LR-026: redraw success requires original decision and replacement in recip
   replacement_unavailable:true};
  assert.equal(verify([refused],unavailable),true,
   'a confirmed server exhaustion must not invent a replacement');
+ assert.equal(verify([refused,replacement],unavailable),false,
+  'a server claiming exhausted cards must not conceal a committed replacement');
  assert.equal(verify([{...refused,status:'proposed'}],unavailable),false);
  assert.equal(verify([refused],{...unavailable,already_processed:true,
   replacement_unavailable:undefined}),true,
