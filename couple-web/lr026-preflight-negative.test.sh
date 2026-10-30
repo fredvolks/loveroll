@@ -75,6 +75,86 @@ SQL
 output="$(check_fail_closed lr026_preflight_mutation)"
 expect_no_blocker "$output" "RLS disabled on game tables"
 expect_no_blocker "$output" "Expected RLS tables missing"
+expect_blocker "$output" "RLS SELECT policy scope widened"
+expect_blocker "$output" "Verified identity RLS policy no longer restrictive"
+expect_blocker "$output" "Browser table GRANTs widened"
+
+# Add the expected production-style guards only to this synthetic DB.
+psql -X -d lr026_preflight_mutation -v ON_ERROR_STOP=1 >/dev/null <<'SQL'
+CREATE SCHEMA auth;
+CREATE FUNCTION auth.uid() RETURNS uuid
+ LANGUAGE sql STABLE AS 'SELECT NULL::uuid';
+CREATE FUNCTION couple_private.is_member(uuid) RETURNS boolean
+ LANGUAGE sql STABLE AS 'SELECT true';
+CREATE FUNCTION public.love_verified_identity() RETURNS boolean
+ LANGUAGE sql STABLE AS 'SELECT true';
+ALTER TABLE public.couple_challenges ADD COLUMN recipient uuid;
+CREATE POLICY challenges_read ON public.couple_challenges
+ FOR SELECT TO authenticated
+ USING ((recipient=(SELECT auth.uid())) AND couple_private.is_member(couple_id));
+CREATE POLICY couples_read ON public.couples
+ FOR SELECT TO authenticated USING (couple_private.is_member(id));
+CREATE POLICY loveroll_confirmed_email_required ON public.couple_challenges
+ AS RESTRICTIVE FOR ALL TO authenticated
+ USING ((SELECT public.love_verified_identity()))
+ WITH CHECK ((SELECT public.love_verified_identity()));
+CREATE POLICY loveroll_confirmed_email_required ON public.couples
+ AS RESTRICTIVE FOR ALL TO authenticated
+ USING ((SELECT public.love_verified_identity()))
+ WITH CHECK ((SELECT public.love_verified_identity()));
+GRANT SELECT ON public.couple_challenges,public.couples TO authenticated;
+SQL
+output="$(check_fail_closed lr026_preflight_mutation)"
+expect_no_blocker "$output" "RLS SELECT policy scope widened"
+expect_no_blocker "$output" "Verified identity RLS policy no longer restrictive"
+expect_no_blocker "$output" "Browser table GRANTs widened"
+
+# Postgres OR-combines permissive SELECT policies. A single new USAGE/SELECT
+# policy that allows everyone must invalidate the preflight.
+psql -X -d lr026_preflight_mutation -v ON_ERROR_STOP=1 \
+ -c 'CREATE POLICY accidental_public_read ON public.couple_challenges FOR SELECT TO authenticated USING (true)' >/dev/null
+output="$(check_fail_closed lr026_preflight_mutation)"
+expect_blocker "$output" "RLS SELECT policy scope widened"
+psql -X -d lr026_preflight_mutation -v ON_ERROR_STOP=1 \
+ -c 'DROP POLICY accidental_public_read ON public.couple_challenges' >/dev/null
+output="$(check_fail_closed lr026_preflight_mutation)"
+expect_no_blocker "$output" "RLS SELECT policy scope widened"
+
+# Changing the identity gate from RESTRICTIVE to default PERMISSIVE is unsafe.
+psql -X -d lr026_preflight_mutation -v ON_ERROR_STOP=1 >/dev/null <<'SQL'
+DROP POLICY loveroll_confirmed_email_required ON public.couple_challenges;
+CREATE POLICY loveroll_confirmed_email_required ON public.couple_challenges
+ FOR ALL TO authenticated
+ USING ((SELECT public.love_verified_identity()))
+ WITH CHECK ((SELECT public.love_verified_identity()));
+SQL
+output="$(check_fail_closed lr026_preflight_mutation)"
+expect_blocker "$output" "Verified identity RLS policy no longer restrictive"
+psql -X -d lr026_preflight_mutation -v ON_ERROR_STOP=1 >/dev/null <<'SQL'
+DROP POLICY loveroll_confirmed_email_required ON public.couple_challenges;
+CREATE POLICY loveroll_confirmed_email_required ON public.couple_challenges
+ AS RESTRICTIVE FOR ALL TO authenticated
+ USING ((SELECT public.love_verified_identity()))
+ WITH CHECK ((SELECT public.love_verified_identity()));
+SQL
+output="$(check_fail_closed lr026_preflight_mutation)"
+expect_no_blocker "$output" "Verified identity RLS policy no longer restrictive"
+
+# A user-facing grant escalation must fail even if RLS remains on.
+psql -X -d lr026_preflight_mutation -v ON_ERROR_STOP=1 \
+ -c 'GRANT SELECT ON public.couple_challenges TO anon' >/dev/null
+output="$(check_fail_closed lr026_preflight_mutation)"
+expect_blocker "$output" "Browser table GRANTs widened"
+psql -X -d lr026_preflight_mutation -v ON_ERROR_STOP=1 \
+ -c 'REVOKE SELECT ON public.couple_challenges FROM anon' >/dev/null
+psql -X -d lr026_preflight_mutation -v ON_ERROR_STOP=1 \
+ -c 'GRANT SELECT ON public.love_card_draw_history TO authenticated' >/dev/null
+output="$(check_fail_closed lr026_preflight_mutation)"
+expect_blocker "$output" "Browser table GRANTs widened"
+psql -X -d lr026_preflight_mutation -v ON_ERROR_STOP=1 \
+ -c 'REVOKE SELECT ON public.love_card_draw_history FROM authenticated' >/dev/null
+output="$(check_fail_closed lr026_preflight_mutation)"
+expect_no_blocker "$output" "Browser table GRANTs widened"
 
 # An RLS regression must be identified by name even if other independent
 # blockers (fixture MD5, missing active view) remain present.
