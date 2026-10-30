@@ -173,8 +173,9 @@ function mockSupabase(opts = {}) {
         offered_by: (passCount === 1 && opts.firstPassWrongReplacementOfferer) ||
           (passCount > 1 && opts.replayMutatesReplacementOfferer) ? b : a,
         status: 'proposed', recipient: b,
-        category: passCount === 1 && opts.firstPassWrongCategory ?
-          otherCategory : category,
+        category: (passCount === 1 && opts.firstPassWrongCategory) ||
+          (passCount > 1 && opts.replayMutatesReplacementCategory) ?
+            otherCategory : category,
         replaces_challenge_id: passCount === 1 && opts.firstPassWrongReference ?
           null : drawnId
       };
@@ -190,7 +191,8 @@ function mockSupabase(opts = {}) {
       assert.equal(payload.p_preference, opts.expectedPreference ?? 'SENSUEL');
       assert.equal(payload.p_random, false);
       lastDraw = {id: drawnId, offered_by: a, recipient: b,
-        category: opts.drawSexuel ? 'SEXUEL' : 'SENSUEL'};
+        category: opts.drawUnknownCategory ? 'INVALID' :
+          opts.drawSexuel ? 'SEXUEL' : 'SENSUEL'};
       return response(lastDraw);
     }
     if (path === '/rest/v1/rpc/love_respond_and_redraw') {
@@ -297,6 +299,23 @@ test('unexpected D100 preference is rejected before any request or mutation', as
     /Staging D100 preference must be SENSUEL or SEXUEL/);
     assert.equal(mock.counters().count, 0);
   }
+});
+
+test('a D100 response with an unsupported category cannot call Passer', async () => {
+  const mock = mockSupabase({drawUnknownCategory: true});
+  await assert.rejects(runStage(env(), 'play', mock.fetchFn),
+    /Real D100 returned an unknown category/);
+  assert.equal(mock.counters().drawCount, 1);
+  assert.equal(mock.counters().passCount, 0);
+});
+
+test('a SEXUEL draw stored as SENSUEL cannot call Passer', async () => {
+  const mock = mockSupabase({expectedPreference: 'SEXUEL', drawSexuel: true,
+    firstWrongCategory: true});
+  await assert.rejects(runStage({...env(), LR026_STAGING_PREFERENCE: 'SEXUEL'},
+    'play', mock.fetchFn), /First D100 must persist/);
+  assert.equal(mock.counters().drawCount, 1);
+  assert.equal(mock.counters().passCount, 0);
 });
 
 test('a SEXUEL card changing category after Passer is refused before replay', async () => {
@@ -567,6 +586,14 @@ test('idempotent replay cannot alter persisted replacement even when returning s
   const mock = mockSupabase({replayMutatesReplacementOfferer: true});
   await assert.rejects(runStage(env(), 'play', mock.fetchFn),
     /Repeated Passer must not change any persisted challenge field|Exactly one same-category replacement offered by A/);
+  assert.equal(mock.counters().passCount, 2);
+});
+test('SEXUEL idempotent replay cannot silently change the replacement category', async () => {
+  const mock = mockSupabase({expectedPreference: 'SEXUEL', drawSexuel: true,
+    replayMutatesReplacementCategory: true});
+  await assert.rejects(runStage({...env(), LR026_STAGING_PREFERENCE: 'SEXUEL'},
+    'play', mock.fetchFn), /Only the two correct-category B challenges/);
+  assert.equal(mock.counters().drawCount, 1);
   assert.equal(mock.counters().passCount, 2);
 });
 test('idempotent replay must keep official Passer action', async () => {
