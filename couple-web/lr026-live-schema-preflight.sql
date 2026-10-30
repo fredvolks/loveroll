@@ -152,6 +152,33 @@ WITH expected AS (
       'couple_challenges','couples','love_base_challenges',
       'love_card_draw_history','love_cycle_excluded_cards')
   ) AS browser_table_permissions_safe,
+  -- The real Passer/Refuser RPC updates only status. A production BEFORE
+  -- UPDATE OF status trigger must set passed_at, otherwise the monthly quota
+  -- query ignores every un-stamped pass. Fail closed on a missing/changed
+  -- trigger OR on drift in its function (fingerprint verified on 2026-10-30).
+  (SELECT pg_catalog.count(*)=1 AND pg_catalog.bool_and(
+      t.tgenabled='O' AND NOT t.tgisinternal AND
+      t.tgfoid=pg_catalog.to_regprocedure(
+        'couple_private.love_stamp_challenge_pass()') AND
+      pg_catalog.pg_get_triggerdef(t.oid)=
+        'CREATE TRIGGER love_stamp_passed_at BEFORE UPDATE OF status ON public.couple_challenges FOR EACH ROW EXECUTE FUNCTION couple_private.love_stamp_challenge_pass()'
+    )
+   FROM pg_catalog.pg_trigger t
+   JOIN pg_catalog.pg_class c ON c.oid=t.tgrelid
+   JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+   WHERE n.nspname='public' AND c.relname='couple_challenges'
+     AND t.tgname='love_stamp_passed_at'
+  ) AS pass_timestamp_trigger_intact,
+  (SELECT pg_catalog.count(*)=1 AND pg_catalog.bool_and(
+     NOT p.prosecdef AND
+     pg_catalog.md5(pg_catalog.pg_get_functiondef(p.oid))=
+       '3241da749bd0647c6106c613c7e3615a'
+   ) FROM pg_catalog.pg_proc p
+   JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace
+   WHERE n.nspname='couple_private'
+     AND p.proname='love_stamp_challenge_pass'
+     AND p.prorettype='pg_catalog.trigger'::pg_catalog.regtype
+  ) AS pass_timestamp_function_intact,
   (SELECT pg_catalog.count(*)=0 FROM pg_catalog.pg_proc p
    JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace
    WHERE n.nspname='couple_private'
@@ -177,6 +204,8 @@ CROSS JOIN LATERAL (
    CASE WHEN c.browser_select_policies_scoped IS TRUE THEN NULL ELSE 'RLS SELECT policy scope widened' END,
    CASE WHEN c.verified_identity_is_restrictive IS TRUE THEN NULL ELSE 'Verified identity RLS policy no longer restrictive' END,
    CASE WHEN c.browser_table_permissions_safe IS TRUE THEN NULL ELSE 'Browser table GRANTs widened' END,
+   CASE WHEN c.pass_timestamp_trigger_intact IS TRUE THEN NULL ELSE 'Pass timestamp trigger missing or disabled' END,
+   CASE WHEN c.pass_timestamp_function_intact IS TRUE THEN NULL ELSE 'Pass timestamp function drifted' END,
    CASE WHEN c.pending_migration_not_already_installed IS TRUE THEN NULL ELSE 'LR-026 helpers already present' END
  ],NULL::text) AS blockers
 ) result;
