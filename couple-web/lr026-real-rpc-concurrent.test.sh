@@ -29,6 +29,7 @@ launch() {
  case "$mode" in
   pass) rpc="public.love_respond_and_redraw('$challenge'::uuid,'pass',false)" ;;
   refuse) rpc="public.love_respond_and_redraw('$challenge'::uuid,'refuse',true)" ;;
+  refuse_no_exclude) rpc="public.love_respond_and_redraw('$challenge'::uuid,'refuse',false)" ;;
   draw) rpc="public.draw_for_partner('$challenge'::uuid,'SENSUEL',false)" ;;
   *) echo "::error::Unsupported RPC race mode $mode"; exit 1 ;;
  esac
@@ -56,6 +57,8 @@ run_race() {
    rpc_predicate="(query LIKE '%draw_for_partner%' OR query LIKE '%love_respond_and_redraw%')"
  elif [[ "$mode" == decisions ]]; then
    first_mode=pass; second_mode=refuse
+ elif [[ "$mode" == refuse_choices ]]; then
+   first_mode=refuse_no_exclude; second_mode=refuse
  fi
  (
    psql -X -d "$DB" -q -At -v ON_ERROR_STOP=1 >"$tmp/$label.gate" 2>&1 <<SQL
@@ -434,3 +437,67 @@ assert_count "Competing responses exclusion only on refusal" \
  "SELECT count(*) FROM public.love_cycle_excluded_cards WHERE couple_id='$pair'" \
  "$([[ "$recorded" == refuse ]] && echo 1 || echo 0)"
 echo "LR-026 real RPC: simultaneous Passer/Refuser recorded one $recorded decision, one replacement and idempotent replay"
+
+# Conflicting Refuser options from two devices: the first successful
+# transaction chooses whether card #1 is excluded from the cycle.
+# The other call MUST replay the winner's exclusion flag (not its own).
+psql -X -d "$DB" -v ON_ERROR_STOP=1 \
+ -f couple-web/lr026-real-rpc-refuse-choices-race.seed.sql >/dev/null
+pair=99999999-aaaa-4888-8888-999999999999
+origin=99999999-cccc-4888-8888-999999999999
+run_race refuse_without_versus_with_exclusion "$pair" \
+ "$B" "$origin" \
+ "$B" "$origin" refuse_choices
+recorded="$(psql -X -d "$DB" -At -v ON_ERROR_STOP=1 -c "
+ SELECT CASE WHEN excluded THEN 'true' ELSE 'false' END
+ FROM public.love_challenge_redraws WHERE origin_id='$origin'")"
+if [[ "$recorded" != true && "$recorded" != false ]]; then
+ echo "::error::Concurrent Refuser choices did not save an exclusion flag: $recorded"
+ exit 1
+fi
+fresh=0
+replayed=0
+for suffix in 1 2; do
+ label="refuse_without_versus_with_exclusion.$suffix"
+ assert_status "$label" 0
+ if ! grep -Fq '"action": "refuse"' "$tmp/$label.log" ||
+    ! grep -Fq "\"excluded\": $recorded" "$tmp/$label.log"; then
+   echo "::error::$label did not preserve committed Refuser action and exclusion"
+   cat "$tmp/$label.log"; exit 1
+ fi
+ if grep -q '"already_processed": false' "$tmp/$label.log"; then
+   fresh=$((fresh+1))
+ elif grep -q '"already_processed": true' "$tmp/$label.log"; then
+   replayed=$((replayed+1))
+ else
+   echo "::error::$label missing idempotency marker"
+   cat "$tmp/$label.log"; exit 1
+ fi
+done
+if [[ "$fresh" != 1 || "$replayed" != 1 ]]; then
+ echo "::error::Concurrent Refuser choices gave $fresh fresh, $replayed replayed"
+ exit 1
+fi
+assert_count "Refuser option race one immutable receipt" \
+ "SELECT count(*) FROM public.love_challenge_redraws WHERE origin_id='$origin' AND action='refuse'" 1
+assert_count "Refuser option race original timestamp and status" \
+ "SELECT count(*) FROM public.couple_challenges WHERE id='$origin'
+    AND status='refused' AND refused_at IS NOT NULL AND passed_at IS NULL" 1
+assert_count "Refuser option race exactly one replacement" \
+ "SELECT count(*) FROM public.couple_challenges WHERE couple_id='$pair'
+    AND replaces_challenge_id='$origin' AND recipient='$B'
+    AND category='SENSUEL' AND card_id<>1 AND face<>1 AND status='proposed'" 1
+assert_count "Refuser option race never duplicates challenges" \
+ "SELECT count(*) FROM public.couple_challenges WHERE couple_id='$pair'" 2
+assert_count "Refuser option race never consumes Passer" \
+ "SELECT count(*) FROM public.couple_challenges WHERE couple_id='$pair' AND status='passed'" 0
+assert_count "Refuser option race one event" \
+ "SELECT count(*) FROM public.couple_events WHERE couple_id='$pair' AND event_type='challenge'" 1
+assert_count "Refuser option race one active history card" \
+ "SELECT count(*) FROM public.love_card_draw_history WHERE couple_id='$pair'
+    AND recipient_user_id='$B'" 1
+assert_count "Refuser option race excludes only on winning choice" \
+ "SELECT count(*) FROM public.love_cycle_excluded_cards WHERE couple_id='$pair'
+    AND category='SENSUEL' AND card_id=1" \
+ "$([[ "$recorded" == true ]] && echo 1 || echo 0)"
+echo "LR-026 real RPC: simultaneous Refuser(false)/Refuser(true) preserved first exclusion=$recorded"
