@@ -10,6 +10,7 @@ on:
       - "couple-web/lr026-preflight-negative.test.sh"
       - "couple-web/lr026-postgres-fixture.sql"
       - "couple-web/lr026-postgres-rank.test.sql"
+      - "couple-web/lr026-exact-fast-path.test.sql"
       - "couple-web/lr026-evening-flow.test.sql"
       - "couple-web/lr026-extract-helpers.cjs"
       - "couple-web/lr026-postgres-rpc-fixture.sql"
@@ -71,6 +72,8 @@ jobs:
           psql -X -v ON_ERROR_STOP=1 -f "$RUNNER_TEMP/lr026-private.sql"
       - name: Smoke test helper functions and privileges
         run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-server-variety-smoke.sql
+      - name: Prove exact 200-card history skips expensive semantic comparison
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-exact-fast-path.test.sql
       - name: Test official category and couple/session scoping
         run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-postgres-rank.test.sql
       - name: Simulate an evening, two couples and a 200-card cycle
