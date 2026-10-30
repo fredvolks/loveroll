@@ -94,8 +94,10 @@ AS $lr026$
  SELECT CASE WHEN EXISTS (
    SELECT 1 FROM public.couple_challenges seen CROSS JOIN candidate current_card
    WHERE seen.couple_id=p_couple AND seen.session_id=p_session
+     -- Never let a card from another D100 category affect this draw.
+     AND seen.category=p_category
      AND (
-       (seen.category=p_category AND seen.card_id=p_card_id)
+       seen.card_id=p_card_id
        OR couple_private.love_variety_near(
          current_card.title,current_card.description,
          seen.card_title,seen.card_description)
