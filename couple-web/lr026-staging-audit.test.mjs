@@ -34,7 +34,7 @@ function config() {
 }
 function fakeStage({leak, hideCOwnSession, hideCOwnMember,
   hideCOwnChallenge, hideABOwnChallenge, leakPartnerChallenge,
-  hideCOwnRoll, hideABOwnRoll} = {}) {
+  hideCOwnRoll, hideABOwnRoll, differentABFaceForB, reorderABRollsForB} = {}) {
   const calls = [];
   const transport = async (urlString, options) => {
     const url = new URL(urlString);
@@ -92,7 +92,12 @@ function fakeStage({leak, hideCOwnSession, hideCOwnMember,
       const cRoll = {session_id: C_SESSION, user_id: C, face: 4};
       if (session === AB_SESSION) {
         if (actor === 'c') return data(leak === 'c-ab-roll' ? [abRolls[0]] : []);
-        return data(hideABOwnRoll === actor ? [] : abRolls);
+        if (hideABOwnRoll === actor) return data([]);
+        if (actor === 'b' && differentABFaceForB)
+          return data([abRolls[0], {...abRolls[1], face: 6}]);
+        if (actor === 'b' && reorderABRollsForB)
+          return data([...abRolls].reverse());
+        return data(abRolls);
       }
       if (session === C_SESSION) {
         if (actor === 'c') return data(hideCOwnRoll ? [] : [cRoll]);
@@ -145,6 +150,21 @@ test('audit mode is read-only, checks 3 real simulated Auth users and denies 12 
   assert(!JSON.stringify(result).includes('A-private'));
   assert(!JSON.stringify(result).includes('test-session-'));
 });
+test('RLS audit refuses two individually valid but inconsistent A/B D6 views', async () => {
+  const {transport, calls} = fakeStage({differentABFaceForB: true});
+  await assert.rejects(runStage(config(), 'audit', transport),
+    /D6 faces disagree between partner A and B/);
+  assert.equal(calls.filter(x => x.endpoint.includes('/rest/v1/rpc/')).length, 0);
+});
+
+test('RLS audit compares D6 by owner, not Supabase result order', async () => {
+  const {transport, calls} = fakeStage({reorderABRollsForB: true});
+  const out = await runStage(config(), 'audit', transport);
+  assert.equal(out.rls_positive_d6_reads, 3);
+  assert.equal(out.rls_cross_duo_denials, 12);
+  assert.equal(calls.filter(x => x.endpoint.includes('/rest/v1/rpc/')).length, 0);
+});
+
 for (const leak of ['c-ab-session','c-ab-member','c-ab-card',
   'ab-c-session','ab-c-member','ab-c-card',
   'c-ab-roll','ab-c-roll']) {
