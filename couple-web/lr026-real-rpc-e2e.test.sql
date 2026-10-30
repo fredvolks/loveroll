@@ -645,6 +645,133 @@ BEGIN
  'LR-026 REAL RPC FALLBACK: all eligible cards similar, D100 and Passer remain playable';
 END; $lr026_real_variety_fallback$;
 
+-- REAL RPC regression: Refuser WITHOUT cycle exclusion remains possible
+-- when Passer is disabled (monthly limit zero). A refused card stays in
+-- historical challenges, is released from the recipient's future-cycle bag,
+-- and cannot be redrawn inside the very same evening.
+DO $lr026_real_refuse_without_exclusion$
+DECLARE
+ pair uuid:='fefefefe-aaaa-4aaa-8aaa-fefefefefefe';
+ a uuid:='aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa';
+ b uuid:='bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb';
+ s uuid:='fefefefe-2222-4222-8222-fefefefefefe';
+ first_card public.couple_challenges%rowtype;
+ next_card public.couple_challenges%rowtype;
+ result jsonb;
+ rejected boolean:=false;
+ rejection text;
+BEGIN
+ INSERT INTO public.couples(
+  id,owner_user_id,category_preference_percent,monthly_pass_limit,
+  sexual_card_mode
+ ) VALUES(pair,a,100,0,'custom');
+ INSERT INTO public.couple_members(couple_id,user_id)
+ VALUES(pair,a),(pair,b);
+ INSERT INTO public.couple_sessions(id,couple_id,opened_by,paired_turns,self_draws)
+ VALUES(s,pair,a,false,false);
+ INSERT INTO public.couple_personal_rolls(session_id,user_id,face)
+ VALUES(s,a,2),(s,b,2);
+ -- Exactly 3 SENSUEL library cards are eligible (1..3); all unrelated
+ -- SEXUEL cards and other SENSUEL cards are excluded before the real RPC.
+ INSERT INTO public.love_cycle_excluded_cards(
+  couple_id,cycle_number,category,card_id
+ )
+ SELECT pair,1,cat.category,g
+ FROM (VALUES('SENSUEL'::text),('SEXUEL'::text)) cat(category)
+ CROSS JOIN pg_catalog.generate_series(1,25) g
+ WHERE cat.category='SEXUEL' OR g>3;
+
+ PERFORM pg_catalog.set_config('lr026.test_verified','yes',true);
+ PERFORM pg_catalog.set_config('request.jwt.claim.sub',a::text,true);
+ SELECT * INTO first_card FROM public.draw_for_partner(s,'SENSUEL',false);
+ IF first_card.offered_by IS DISTINCT FROM a
+   OR first_card.recipient IS DISTINCT FROM b
+   OR first_card.category IS DISTINCT FROM 'SENSUEL'
+   OR first_card.card_id NOT BETWEEN 1 AND 3
+   OR first_card.status IS DISTINCT FROM 'proposed'
+   OR NOT EXISTS(
+    SELECT 1 FROM public.love_card_draw_history h
+    WHERE h.couple_id=pair AND h.recipient_user_id=b
+      AND h.category='SENSUEL' AND h.card_id=first_card.card_id
+   ) THEN
+  RAISE EXCEPTION 'REAL RPC REFUSE FALSE: initial D100/bag invalid %',first_card;
+ END IF;
+ PERFORM pg_catalog.set_config('request.jwt.claim.sub',b::text,true);
+ -- The limit 0/0 must block Passer but never block Refuser.
+ BEGIN
+  PERFORM public.love_respond_and_redraw(first_card.id,'pass',false);
+ EXCEPTION WHEN OTHERS THEN
+  GET STACKED DIAGNOSTICS rejection=MESSAGE_TEXT;
+  IF rejection NOT LIKE 'Limite mensuelle de passes atteinte%' THEN
+   RAISE EXCEPTION 'REAL RPC REFUSE FALSE: unexpected pass denial %',rejection;
+  END IF;
+  rejected:=true;
+ END;
+ IF NOT rejected
+   OR (SELECT status FROM public.couple_challenges WHERE id=first_card.id)
+      <> 'proposed' THEN
+  RAISE EXCEPTION 'REAL RPC REFUSE FALSE: pass limit did not roll back';
+ END IF;
+ SELECT public.love_respond_and_redraw(first_card.id,'refuse',false) INTO result;
+ IF result->>'action'<>'refuse'
+   OR result->>'excluded'<>'false'
+   OR result->>'already_processed'<>'false'
+   OR result->>'replacement_unavailable'<>'false'
+   OR result->>'replacement_id' IS NULL THEN
+  RAISE EXCEPTION 'REAL RPC REFUSE FALSE: original response invalid %',result;
+ END IF;
+ SELECT * INTO next_card FROM public.couple_challenges
+ WHERE id=(result->>'replacement_id')::uuid;
+ IF NOT FOUND OR next_card.offered_by IS DISTINCT FROM a
+   OR next_card.recipient IS DISTINCT FROM b
+   OR next_card.category IS DISTINCT FROM 'SENSUEL'
+   OR next_card.card_id NOT BETWEEN 1 AND 3
+   OR next_card.card_id IS NOT DISTINCT FROM first_card.card_id
+   OR next_card.face IS NOT DISTINCT FROM first_card.face
+   OR next_card.replaces_challenge_id IS DISTINCT FROM first_card.id
+   OR next_card.status IS DISTINCT FROM 'proposed' THEN
+  RAISE EXCEPTION 'REAL RPC REFUSE FALSE: replacement incorrect %',next_card;
+ END IF;
+ IF (SELECT status FROM public.couple_challenges WHERE id=first_card.id)
+     <> 'refused'
+   OR (SELECT refused_at FROM public.couple_challenges WHERE id=first_card.id)
+      IS NULL
+   OR (SELECT passed_at FROM public.couple_challenges WHERE id=first_card.id)
+      IS NOT NULL
+   OR EXISTS(
+    SELECT 1 FROM public.love_cycle_excluded_cards ex
+    WHERE ex.couple_id=pair AND ex.cycle_number=1
+      AND ex.category='SENSUEL' AND ex.card_id=first_card.card_id
+   )
+   OR EXISTS(
+    SELECT 1 FROM public.love_card_draw_history h
+    WHERE h.couple_id=pair AND h.recipient_user_id=b
+      AND h.category='SENSUEL' AND h.card_id=first_card.card_id
+   )
+   OR NOT EXISTS(
+    SELECT 1 FROM public.love_card_draw_history h
+    WHERE h.couple_id=pair AND h.recipient_user_id=b
+      AND h.category='SENSUEL' AND h.card_id=next_card.card_id
+   ) THEN
+  RAISE EXCEPTION 'REAL RPC REFUSE FALSE: history, exclusion, or timestamps invalid';
+ END IF;
+ -- Even a replay using exclude=true must return the stored false receipt;
+ -- it must not change the original request after refresh/double-tap.
+ SELECT public.love_respond_and_redraw(first_card.id,'refuse',true) INTO result;
+ IF result->>'already_processed'<>'true'
+   OR result->>'action'<>'refuse'
+   OR result->>'excluded'<>'false'
+   OR (result->>'replacement_id')::uuid IS DISTINCT FROM next_card.id
+   OR (SELECT count(*) FROM public.couple_challenges WHERE couple_id=pair)<>2
+   OR (SELECT count(*) FROM public.love_challenge_redraws WHERE couple_id=pair)<>1
+   OR (SELECT count(*) FROM public.couple_challenges
+       WHERE couple_id=pair AND status='passed')<>0 THEN
+  RAISE EXCEPTION 'REAL RPC REFUSE FALSE: replay altered choice or quota %',result;
+ END IF;
+ RAISE NOTICE
+ 'LR-026 REAL RPC: zero Passer quota, Refuser(false), future-bag release, no exclusion and replay passed';
+END; $lr026_real_refuse_without_exclusion$;
+
 -- SQL ACL protection is preserved in the isolated snapshot.
 DO $lr026_real_rights$
 BEGIN
