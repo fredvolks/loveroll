@@ -1389,6 +1389,139 @@ BEGIN
  'LR-026 REAL RPC: same-cycle completion by A does not lock B on Refuser(false)';
 END; $lr026_real_cross_recipient_refusal$;
 
+-- Both Refuser choices must change only the recipient's original
+-- category. Identical card IDs also exist in SEXUEL and in A's independent
+-- SENSUEL/SEXUEL bags: those unrelated entries must never be released,
+-- excluded, or hidden when B refuses SENSUEL card #1.
+DO $lr026_real_category_isolation$
+DECLARE
+ pair uuid;
+ a uuid:='aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa';
+ b uuid:='bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb';
+ session_id uuid;
+ exclude_card boolean;
+ drawn public.couple_challenges%rowtype;
+ replacement public.couple_challenges%rowtype;
+ response jsonb;
+ replay jsonb;
+BEGIN
+ FOREACH exclude_card IN ARRAY ARRAY[false,true] LOOP
+  pair:=CASE WHEN exclude_card
+   THEN 'dededede-aaaa-4aaa-8aaa-dededededede'::uuid
+   ELSE 'dededede-bbbb-4bbb-8bbb-dededededede'::uuid END;
+  session_id:=CASE WHEN exclude_card
+   THEN 'dededede-1111-4111-8111-dededededede'::uuid
+   ELSE 'dededede-2222-4222-8222-dededededede'::uuid END;
+  INSERT INTO public.couples(
+   id,owner_user_id,category_preference_percent,monthly_pass_limit,
+   no_repeat_challenges,challenge_cycle_started_at,sexual_card_mode
+  ) VALUES(pair,a,100,0,false,now()-interval '5 days','custom');
+  INSERT INTO public.couple_members(couple_id,user_id)
+  VALUES(pair,a),(pair,b);
+  INSERT INTO public.couple_sessions(
+   id,couple_id,opened_by,paired_turns,self_draws
+  ) VALUES(session_id,pair,a,false,false);
+  INSERT INTO public.couple_personal_rolls(session_id,user_id,face)
+  VALUES(session_id,a,2),(session_id,b,3);
+  -- Every distinct combination is seeded, even when the card ID is the
+  -- same: refusing (B,SENSUEL,1) must never affect any other combination.
+  INSERT INTO public.love_card_draw_history(
+   couple_id,recipient_user_id,category,card_id
+  ) VALUES(pair,a,'SENSUEL',1),(pair,b,'SENSUEL',1),
+          (pair,a,'SEXUEL',1),(pair,b,'SEXUEL',1);
+  -- First SENSUEL draw is deterministic. Open cards 2 and 3 only
+  -- immediately before the refusal so a genuine redraw is available.
+  INSERT INTO public.love_cycle_excluded_cards(
+   couple_id,cycle_number,category,card_id
+  )
+  SELECT pair,1,'SENSUEL',g
+  FROM pg_catalog.generate_series(2,25) g;
+  PERFORM pg_catalog.set_config('lr026.test_verified','yes',true);
+  PERFORM pg_catalog.set_config('request.jwt.claim.sub',a::text,true);
+  SELECT * INTO drawn
+  FROM public.draw_for_partner(session_id,'SENSUEL',false);
+  IF drawn.card_id IS DISTINCT FROM 1 OR drawn.category<>'SENSUEL'
+    OR drawn.recipient IS DISTINCT FROM b OR drawn.offered_by IS DISTINCT FROM a
+  THEN
+   RAISE EXCEPTION 'REAL RPC CATEGORY: wrong initial draw %',drawn;
+  END IF;
+  UPDATE public.couples SET no_repeat_challenges=true WHERE id=pair;
+  DELETE FROM public.love_cycle_excluded_cards
+  WHERE couple_id=pair AND category='SENSUEL' AND card_id IN (2,3);
+  PERFORM pg_catalog.set_config('request.jwt.claim.sub',b::text,true);
+  SELECT public.love_respond_and_redraw(drawn.id,'refuse',exclude_card)
+  INTO response;
+  IF response->>'action'<>'refuse'
+    OR (response->>'excluded')::boolean IS DISTINCT FROM exclude_card
+    OR response->>'already_processed'<>'false'
+    OR response->>'replacement_id' IS NULL THEN
+   RAISE EXCEPTION 'REAL RPC CATEGORY: Refuser receipt invalid %',response;
+  END IF;
+  SELECT * INTO replacement FROM public.couple_challenges
+  WHERE id=(response->>'replacement_id')::uuid;
+  IF NOT FOUND OR replacement.card_id NOT IN (2,3)
+    OR replacement.category<>'SENSUEL'
+    OR replacement.recipient IS DISTINCT FROM b
+    OR replacement.offered_by IS DISTINCT FROM a
+    OR replacement.replaces_challenge_id IS DISTINCT FROM drawn.id
+    OR replacement.face=drawn.face
+    OR (SELECT status FROM public.couple_challenges
+        WHERE id=drawn.id)<>'refused' THEN
+   RAISE EXCEPTION 'REAL RPC CATEGORY: incorrect replacement %',replacement;
+  END IF;
+  IF NOT EXISTS(
+    SELECT 1 FROM public.love_card_draw_history
+    WHERE couple_id=pair AND recipient_user_id=a
+      AND category='SENSUEL' AND card_id=1
+  ) OR NOT EXISTS(
+    SELECT 1 FROM public.love_card_draw_history
+    WHERE couple_id=pair AND recipient_user_id=a
+      AND category='SEXUEL' AND card_id=1
+  ) OR NOT EXISTS(
+    SELECT 1 FROM public.love_card_draw_history
+    WHERE couple_id=pair AND recipient_user_id=b
+      AND category='SEXUEL' AND card_id=1
+  ) OR NOT EXISTS(
+    SELECT 1 FROM public.love_card_draw_history
+    WHERE couple_id=pair AND recipient_user_id=b
+      AND category='SENSUEL' AND card_id=replacement.card_id
+  ) OR EXISTS(
+    SELECT 1 FROM public.love_card_draw_history
+    WHERE couple_id=pair AND recipient_user_id=b
+      AND category='SENSUEL' AND card_id=1
+  ) IS DISTINCT FROM exclude_card
+  OR EXISTS(
+    SELECT 1 FROM public.love_cycle_excluded_cards
+    WHERE couple_id=pair AND cycle_number=1
+      AND category='SENSUEL' AND card_id=1
+  ) IS DISTINCT FROM exclude_card
+  OR EXISTS(
+    SELECT 1 FROM public.love_cycle_excluded_cards
+    WHERE couple_id=pair AND category='SEXUEL'
+  ) OR (SELECT count(*) FROM public.love_card_draw_history
+      WHERE couple_id=pair)<>(CASE WHEN exclude_card THEN 5 ELSE 4 END)
+  THEN
+   RAISE EXCEPTION 'REAL RPC CATEGORY: Refuser leaked across categories or recipients; excluded=%',exclude_card;
+  END IF;
+  SELECT public.love_respond_and_redraw(drawn.id,'refuse',NOT exclude_card)
+  INTO replay;
+  IF replay->>'already_processed'<>'true'
+    OR (replay->>'excluded')::boolean IS DISTINCT FROM exclude_card
+    OR (replay->>'replacement_id')::uuid IS DISTINCT FROM replacement.id
+    OR (SELECT count(*) FROM public.love_challenge_redraws
+        WHERE couple_id=pair)<>1
+    OR (SELECT count(*) FROM public.couple_challenges
+        WHERE couple_id=pair)<>2
+    OR (SELECT count(*) FROM public.love_card_draw_history
+        WHERE couple_id=pair)<>(CASE WHEN exclude_card THEN 5 ELSE 4 END)
+  THEN
+   RAISE EXCEPTION 'REAL RPC CATEGORY: stale Refuser inverted the original decision %',replay;
+  END IF;
+ END LOOP;
+ RAISE NOTICE
+ 'LR-026 REAL RPC: both refusal options preserve separate SENSUEL/SEXUEL and A/B histories';
+END; $lr026_real_category_isolation$;
+
 -- SQL ACL protection is preserved in the isolated snapshot.
 DO $lr026_real_rights$
 BEGIN
