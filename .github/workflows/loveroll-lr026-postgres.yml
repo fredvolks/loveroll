@@ -5,6 +5,7 @@ on:
     paths:
       - "couple-web/lr026-server-variety.sql"
       - "couple-web/lr026-server-variety-smoke.sql"
+      - "couple-web/lr026-server-variety.test.mjs"
       - "couple-web/lr026-postgres-fixture.sql"
       - "couple-web/lr026-postgres-rank.test.sql"
       - "couple-web/lr026-evening-flow.test.sql"
@@ -50,6 +51,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - name: Check LR-026 SQL patch contracts with Node tests
+        run: node --test couple-web/lr026-server-variety.test.mjs
       - name: Verify migration helper extraction syntax
         run: node --check couple-web/lr026-extract-helpers.cjs
       - name: Create isolated synthetic test schema
