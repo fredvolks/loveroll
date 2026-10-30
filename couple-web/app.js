@@ -1371,6 +1371,26 @@ async function refreshEclatStatus(){
  await refreshEclatHistory();
  return current()?value:null;
 }
+// A user may switch accounts or leave Éclat while a mutating RPC awaits.
+// Keep its response local to the exact initiating account, couple and view.
+let latestEclatActionRequest=null;
+function beginEclatAction(){
+ const owner={userId:state.user?.id,coupleId:state.coupleId,tab:state.tab,request:{}};
+ if(!ownsCoupleAsyncRead(state,owner))return null;
+ latestEclatActionRequest=owner.request;
+ return owner;
+}
+function ownsEclatAction(owner){
+ return !!owner&&ownsCoupleAsyncRead(state,owner)&&
+  state.tab===owner.tab&&latestEclatActionRequest===owner.request;
+}
+function applyEclatActionResult(value,owner){
+ if(!ownsEclatAction(owner))return false;
+ // A background status fetch launched before this action is now obsolete.
+ latestEclatStatusRead=null;
+ state.eclat=value;
+ return true;
+}
 function renderEclat(){
  const e=previewEclatStatus(state.eclat,state.testMode,state.testModeEligible);
  if(e?.active){
@@ -2932,32 +2952,54 @@ async function handle(action,element){
   if(kind==='start'){
    if(!Number.isInteger(num)||num<1||num>12)throw Error('Coffret inconnu');
    if(!previewEclatStatus(state.eclat,state.testMode,state.testModeEligible)?.access)throw Error('Ce coffret nécessite le forfait Éclat.');
-   state.eclat=await rpc('love_eclat_start',{p_coffret:num,p_minutes:state.eclatMinutes});
-   state.eclatBrowse=false;state.eclatDetails=false;state.eclatFinished=null;await refreshEclatHistory();render();return;
+   const owner=beginEclatAction();if(!owner)return;
+   const value=await rpc('love_eclat_start',{p_coffret:num,p_minutes:state.eclatMinutes});
+   if(!applyEclatActionResult(value,owner))return;
+   state.eclatBrowse=false;state.eclatDetails=false;state.eclatFinished=null;
+   await refreshEclatHistory();
+   if(ownsEclatAction(owner))render();
+   return;
   }
   if(kind==='choose'){
    if(!state.eclat?.active)throw Error('Aucun coffret actif');
    if(!Number.isInteger(num)||num<0||num>3)throw Error('Choix invalide');
    const draft=eclatNoteDrafts.get(eclatNoteKey(state.eclat,state.user?.id));
    if(num>0&&!draft?.moment_done)throw Error('Vivez d’abord le moment ensemble, puis confirme que tu as terminé.');
+   const owner=beginEclatAction();if(!owner)return;
    if(draft&&!draft.loading&&!draft.error)await saveCurrentEclatNote();
-   state.eclat=await rpc('love_eclat_choose',{p_choice:num});render();return;
+   if(!ownsEclatAction(owner))return;
+   const value=await rpc('love_eclat_choose',{p_choice:num});
+   if(!applyEclatActionResult(value,owner))return;
+   render();return;
   }
   if(kind==='next'){
    if(!state.eclat?.active)throw Error('Aucun coffret actif');
    const last=state.eclat.chapter_index===state.eclat.chapter_total;
    const title=last?eclatStage(state.eclat.coffret_id,8,0)?.coffret?.title:null;
-   state.eclat=await rpc('love_eclat_next');
-   if(last&&!state.eclat?.active){await refreshEclatHistory();state.eclatFinished=title||'Expérience terminée';state.eclatDetails=false;eclatAudio.stop();state.eclatMusic=false;}
+   const owner=beginEclatAction();if(!owner)return;
+   const value=await rpc('love_eclat_next');
+   if(!applyEclatActionResult(value,owner))return;
+   if(last&&!state.eclat?.active){
+    await refreshEclatHistory();
+    if(!ownsEclatAction(owner))return;
+    state.eclatFinished=title||'Expérience terminée';
+    state.eclatDetails=false;eclatAudio.stop();state.eclatMusic=false;
+   }
    render();return;
   }
   if(kind==='end'){
    if(!state.eclat?.active)return;
+   const owner=beginEclatAction();if(!owner)return;
    const yes=await premiumConfirm('Quitter ce coffret maintenant ? Les chapitres terminés restent dans votre historique de jeu, mais cette séance ne pourra pas être reprise.',{
     kind:'library',title:'Quitter Éclat ?',accept:'Quitter',cancel:'Continuer'
    });
-   if(!yes)return;
-   state.eclat=await rpc('love_eclat_end');await refreshEclatHistory();state.eclatDetails=false;state.eclatFinished=null;eclatAudio.stop();state.eclatMusic=false;render();return;
+   if(!yes||!ownsEclatAction(owner))return;
+   const value=await rpc('love_eclat_end');
+   if(!applyEclatActionResult(value,owner))return;
+   await refreshEclatHistory();
+   if(!ownsEclatAction(owner))return;
+   state.eclatDetails=false;state.eclatFinished=null;
+   eclatAudio.stop();state.eclatMusic=false;render();return;
   }
   throw Error('Commande Éclat inconnue');
  }
@@ -5024,7 +5066,9 @@ async function start(){
     state.passwordRecovery=true;state.showAuth=true;
     state.user=session?.user||state.user;render();
    }
-   if(event==='SIGNED_OUT'){eclatNoteDrafts.clear();state.eclat=null;
+   if(event==='SIGNED_OUT'){eclatNoteDrafts.clear();
+   latestEclatHistoryRead=null;latestEclatStatusRead=null;latestEclatActionRequest=null;
+   state.eclat=null;
    state.eclatHistory=[];state.eclatHistoryCouple=null;state.eclatHistoryUserId=null;
    state.user=null;state.profile=null;state.coupleId=null;state.wellbeing=null;state.personalPass=null;state.personalJournal=[];state.emailVerificationPending=false;render();}
  });
