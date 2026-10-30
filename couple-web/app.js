@@ -3,7 +3,7 @@ import {showEveningCategoryReminder} from './evening-d100-template.mjs?v=2026102
 import {eveningInviteHtml,eveningInviteInboxHtml,isEveningInviteAction} from './evening-invitation.mjs?v=20261028-web254';
 import {askEveningCategoryConfirmation,categoryConfirmEnabled,saveCategoryConfirmLocal} from './evening-category-confirm.mjs?v=20261027-web238';
 import {soundEnabled,setSoundEnabled,setLoveRollSoundUser,unlockLoveRollSounds,playLoveRollSound,soundSettingsHtml} from './loveroll-sounds.mjs?v=20261028-privacy250';
-import {isAcceptedTimedEveningChallenge,completeTimedEveningChallenge} from './timed-evening-completion.mjs?v=20261027-web240';
+import {isAcceptedTimedEveningChallenge,completeTimedEveningChallenge,timedEveningTimerControl} from './timed-evening-completion.mjs?v=20261029-timer-ui';
 import {fitSurpriseMinimal} from './surprise-minimal.mjs?v=20261022-home228';
 import {eclatNoteKey,loadEclatNote,saveEclatNote} from './eclat-guidance.mjs?v=20261022-home228';
 import {loadEclatHistory} from './eclat-history.mjs?v=20261022-home228';
@@ -1475,10 +1475,20 @@ function updateChallengeClock(){
  if(challengeTimer.autoCompletePending)void retryExpiredTimedEvening();
  const clock=document.getElementById('challenge-timer-clock');
  if(clock)clock.textContent=formatCountdown(clockMs());
+ const presentation=timedEveningTimerControl(challengeTimer);
  const button=document.getElementById('challenge-timer-toggle');
- if(button)button.textContent=challengeTimer.running?'Ⅱ Pause':'▶ '+(challengeTimer.remainingMs<challengeTimer.durationMs?'Reprendre':'Démarrer');
+ if(button){
+  button.textContent=presentation.label;
+  button.disabled=presentation.disabled;
+  button.setAttribute('aria-disabled',String(presentation.disabled));
+ }
+ const reset=document.querySelector('[data-action="timer-reset"]');
+ if(reset){
+  reset.disabled=presentation.resetDisabled;
+  reset.setAttribute('aria-disabled',String(presentation.resetDisabled));
+ }
  const status=document.getElementById('challenge-timer-status');
- if(status)status.textContent=challengeTimer.running?'En cours':challengeTimer.remainingMs===0?'Terminé':'À votre rythme';
+ if(status)status.textContent=presentation.status;
 }
 setInterval(updateChallengeClock,500);
 // Referral balances are updated while this Settings page is being viewed.
@@ -1501,12 +1511,15 @@ setInterval(async()=>{
 function timerWidget(challenge,minutes){
  if(minutes===null||minutes===undefined||minutes===0)return '<p class="tiny-note">♡ Sans minuteur · l’activité se termine quand vous le souhaitez.</p>';
  activeTimer(challenge,minutes);
+ const presentation=timedEveningTimerControl(challengeTimer);
  return '<div class="timer-panel"><div class="eyebrow">⏱ Minuteur du défi · '+minutes+' min</div>'+
    '<div id="challenge-timer-clock" class="timer-clock">'+formatCountdown(clockMs())+'</div>'+
-   '<p id="challenge-timer-status">'+(challengeTimer.running?'En cours':challengeTimer.remainingMs===0?'Terminé':'À votre rythme')+'</p>'+
-   '<div class="actions"><button id="challenge-timer-toggle" data-action="timer-toggle">'+
-    (challengeTimer.running?'Ⅱ Pause':'▶ Démarrer')+'</button>'+
-   button('timer-reset','↻ Recommencer','class="subtle"')+'</div>'+
+   '<p id="challenge-timer-status">'+presentation.status+'</p>'+
+   '<div class="actions"><button id="challenge-timer-toggle" data-action="timer-toggle"'+
+    (presentation.disabled?' disabled aria-disabled="true"':'')+'>'+
+    presentation.label+'</button>'+
+   button('timer-reset','↻ Recommencer',
+    'class="subtle"'+(presentation.resetDisabled?' disabled aria-disabled="true"':''))+'</div>'+
    '<div class="chipline" style="margin-top:9px">'+
    '<button class="pill '+(challengeTimer.mode==='sound'?'selected':'')+'" data-action="timer-mode:sound">♫ Son doux</button>'+
    '<button class="pill '+(challengeTimer.mode==='vibrate'?'selected':'')+'" data-action="timer-mode:vibrate">〰 Vibration</button>'+

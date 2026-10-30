@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {isAcceptedTimedEveningChallenge,isSameCompletedEveningChallenge,completeTimedEveningChallenge} from './timed-evening-completion.mjs';
+import {isAcceptedTimedEveningChallenge,isSameCompletedEveningChallenge,completeTimedEveningChallenge,timedEveningTimerControl} from './timed-evening-completion.mjs';
 const card={id:'card-a',recipient:'alice',session_id:'session-a',status:'accepted'};
 test('Only accepted, recipient-owned Soirée cards qualify; unrelated timers never count',()=>{
  assert.equal(isAcceptedTimedEveningChallenge(card,'alice','session-a'),true);
@@ -120,4 +120,43 @@ test('LR-002 rejects false idempotency across different sessions or partners',as
    query:async name=>name==='couple_challenges'?[wrong]:[]}),/Accès refusé/);
   assert.deepEqual(calls,['answer_challenge'],'A rejected completion must not close a different soirée');
  }
+});
+
+test('LR-002 countdown renders one truthful, actionable control at every phase',()=>{
+ const base={durationMs:240000,remainingMs:240000,running:false,autoCompletePending:false};
+ assert.deepEqual(timedEveningTimerControl(base),{
+  label:'▶ Démarrer',status:'À votre rythme',disabled:false,resetDisabled:false
+ });
+ assert.deepEqual(timedEveningTimerControl({...base,remainingMs:100000}),{
+  label:'▶ Reprendre',status:'À votre rythme',disabled:false,resetDisabled:false
+ });
+ assert.deepEqual(timedEveningTimerControl({...base,running:true}),{
+  label:'Ⅱ Pause',status:'En cours',disabled:false,resetDisabled:false
+ });
+ assert.deepEqual(timedEveningTimerControl({...base,remainingMs:0}),{
+  label:'♡ Terminé',status:'Terminé',disabled:true,resetDisabled:false
+ });
+ assert.deepEqual(timedEveningTimerControl({...base,remainingMs:0,autoCompletePending:true}),{
+  label:'♡ Validation en cours',status:'Validation du défi en cours',
+  disabled:true,resetDisabled:true
+ });
+ assert.equal(timedEveningTimerControl({...base,remainingMs:-1}).disabled,true);
+});
+
+test('LR-002 live countdown and rerender cannot revive an inert Reprendre button',()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const start=app.indexOf('function updateChallengeClock(){');
+ const end=app.indexOf('setInterval(updateChallengeClock,500)',start);
+ const clock=app.slice(start,end);
+ assert.match(clock,/timedEveningTimerControl\(challengeTimer\)/);
+ assert.match(clock,/button\.disabled=presentation\.disabled/);
+ assert.match(clock,/reset\.disabled=presentation\.resetDisabled/);
+ assert.match(clock,/status\.textContent=presentation\.status/);
+ const renderStart=app.indexOf('function timerWidget(challenge,minutes){');
+ const renderEnd=app.indexOf('function renderLegacySession()',renderStart);
+ const render=app.slice(renderStart,renderEnd);
+ assert.match(render,/const presentation=timedEveningTimerControl\(challengeTimer\)/);
+ assert.match(render,/presentation\.disabled\?' disabled aria-disabled="true"'/);
+ assert.match(render,/presentation\.resetDisabled\?' disabled aria-disabled="true"'/);
+ assert.match(render,/presentation\.label/);
 });
