@@ -10,6 +10,18 @@
 
 
 
+## Actualisation opérationnelle — fin du 29 octobre 2026
+
+| PR | État constaté dans GitHub | Travail restant |
+| --- | --- | --- |
+| [#164](https://github.com/fredvolks/loveroll/pull/164) | **Fusionnée**, nettoyage du vieux bouton Masquer, PWA Web 257 | Ne pas le réintroduire; vérification visuelle physique encore nécessaire |
+| [#165](https://github.com/fredvolks/loveroll/pull/165) | **Fusionnée**, correctif de taille WebGL D100 de Soirée sur iPad, tests portrait/paysage et formats mobiles verts | Essai physique iPad et Android |
+| [#166](https://github.com/fredvolks/loveroll/pull/166) | **Fusionnée**, nettoyage des sélecteurs CSS Masquer restants | Contrôle des régressions lors des ajouts |
+| [#167](https://github.com/fredvolks/loveroll/pull/167) | **Fusionnée**, Web/PWA 258, cohérence des imports D6/D100, cache hors ligne et photo iPad | Déploiement GitHub Pages du SHA fusionné et version réellement servie **non confirmés** |
+| [#168](https://github.com/fredvolks/loveroll/pull/168) | **PR brouillon**, minuteur : action Terminé/Validation en cours à 00:00, tests unitaires et garde UX | Attendre la fin du dernier groupe CI WebGL avant fusion, puis la recette physique |
+
+La vérification de chaque PR ne valide **pas** toute l'application, le jeu authentifié avec deux comptes, les appareils physiques ni la publication Pages. Le prochain intégrateur doit d'abord relire **les états GitHub réels** : ce tableau est un instantané de passation, non une automatisation.
+
 ## Jalons vérifiés depuis le lancement de l'audit — 29 octobre 2026
 
 - **`main` vérifiée :** `7b7d4e6393d52e1a9b58eb2cad3e8ac27f6d4ba6` (PR #152 après #150). Le workflow **GitHub Pages #40876781139** est terminé avec résultat **success** sur ce même SHA ; lien : https://github.com/fredvolks/loveroll/actions/runs/40876781139. Ceci prouve la publication Web de ce commit, **pas** une validation sur des téléphones physiques.
