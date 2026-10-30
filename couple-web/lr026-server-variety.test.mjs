@@ -52,10 +52,10 @@ test('LR-026: helper functions are private with no new client permissions',()=>{
 
 test('LR-026: exact titles plus meaningful content similarity and non-blocking fallback',()=>{
  assert.match(sql,/a_title=b_title/);
- assert.match(sql,/pg_catalog\\.length\\(a_desc\\)<24/);
+ assert.match(sql,/pg_catalog\.length\(a_desc\)<24/);
  assert.match(sql,/LANGUAGE plpgsql IMMUTABLE SET search_path=''/);
  assert.match(sql,/FOREACH word IN ARRAY a_tokens/);
- assert.match(sql,/pg_catalog\\.array_position\\(b_tokens,word\\)/);
+ assert.match(sql,/pg_catalog\.array_position\(b_tokens,word\)/);
  assert.match(sql,/pg_catalog\.cardinality\(/);
  assert.match(sql,/shared>=5 AND shared\*100 >= 68\*/);
  assert.match(sql,/THEN 1[\s\S]*?ELSE 0 END/);
