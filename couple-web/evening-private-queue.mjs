@@ -97,8 +97,12 @@ export function isPersistedEveningRedrawReceipt(outcome,rows,userId,sessionId){
  const original=mine.find(card=>card.id===outcome.original_id);
  if(original?.status!==(outcome.action==='pass'?'passed':'refused'))
   return false;
+ // Supabase/PostgREST returns absolute RFC3339 timestamps. Date.parse
+ // alone accepts ambiguous input such as '1' or a date without a timezone;
+ // those are not trustworthy evidence of a committed database mutation.
  const validStamp=value=>typeof value==='string'&&
-  value.trim().length>0&&Number.isFinite(Date.parse(value));
+  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(value)&&
+  Number.isFinite(Date.parse(value));
  const validCardContent=card=>
   typeof card.card_title==='string'&&card.card_title.trim().length>0&&
   typeof card.card_description==='string'&&card.card_description.trim().length>0&&
