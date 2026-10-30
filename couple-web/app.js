@@ -17,7 +17,7 @@ import {ROLL_TOTAL_MS} from './dice-roll-motion.mjs';
 import {createCoupleLiveSync} from './couple-live-sync.mjs?v=20261017-advent119';
 import {playableSessionForWeekly} from './couple-reset-view.mjs';
 import {eveningDailyAccess} from './evening-daily-policy.mjs?v=20261016-daily100';
-import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback} from './evening-private-queue.mjs';
+import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt} from './evening-private-queue.mjs';
 import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261029-web259';
 import {saveEveningSelection,restoreEveningSelection,clearEveningSelection} from './evening-resume.mjs?v=20261027-web240';
 import {eclatHtml} from './eclat-ui.mjs?v=20261027-web242';
@@ -2949,12 +2949,15 @@ async function handle(action,element){
     challengeTimer.decisionPending=false;saveChallengeTimer();
    }
    state.eveningRefusalId=null;
-   state.selectedEveningChallengeId=outcome?.replacement_id||null;
+   // Never navigate to an unverified, mismatched or malformed ID returned
+   // by a stale network response. The refreshed queue remains authoritative.
+   const receiptValid=isValidEveningRedrawReceipt(outcome,challengeId);
+   state.selectedEveningChallengeId=receiptValid?outcome.replacement_id:null;
    if(state.session?.id===sessionId)state.showEveningChallenges=true;
    await refreshAndShow();
    // A simultaneous device can win with a DIFFERENT action. The RPC's
    // committed action/excluded flag is authoritative on every replay.
-   redrawFeedback=eveningRedrawFeedback(outcome);
+   redrawFeedback=eveningRedrawFeedback(outcome,challengeId);
   }catch(error){
    if(challengeTimer.id===challengeId&&challengeTimer.decisionPending){
     challengeTimer.decisionPending=false;
