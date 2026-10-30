@@ -316,3 +316,12 @@ Afficher près des catégories les cartes distinctes encore admissibles à la pr
 | LR-ECLAT-10 | Le compte à rebours | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |
 | LR-ECLAT-11 | L’art de te séduire | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |
 | LR-ECLAT-12 | La nuit du hasard | Écrite — 8 scènes, 2 variantes, routes 30/60/90 | À faire | À réaliser et documenter |
+
+## LR-026 — réponses et minuteurs liés à leur soirée (revue Medium)
+
+- **Branche :** PR [#176](https://github.com/fredvolks/loveroll/pull/176), **en brouillon**; aucun déploiement Web/APK, migration ni modification de Supabase production.
+- **Architecture :** l'ancien chemin `answer_challenge` ne peut plus appliquer après une attente réseau une réponse, un quota, un arrêt de minuteur ou une navigation à un compte/onglet/soirée différente. La lecture `refreshShared(answerContext)` vérifie la propriété de la requête à chaque frontière asynchrone. Une clôture de soirée **confirmée dans la lecture serveur** reste autorisée sans autoriser une autre soirée.
+- **Qualité :** deux boutons « Commencer » et minuteur n'envoient plus une acceptation concurrente à « Passer/Refuser » pour **la même carte du même utilisateur et de la même soirée**. Un autre défi n'est pas bloqué globalement. Trois tests ciblés nouveaux couvrent le verrou, le rafraîchissement à la clôture et la réentrance; la syntaxe des quatre blocs modifiés et de ces trois tests a été contrôlée dans un moteur JavaScript isolé. Ces essais ciblés sont réussis; la **CI GitHub complète sur le HEAD reste à vérifier**.
+- **Sécurité :** contrôles de contexte utilisateur, séance, onglet et propriétaire de minuteur; ne pas interpréter une réponse RPC hors contexte comme permission de modifier l'écran. Aucune validation de vraie RLS GoTrue/Supabase staging réalisée par ce lot.
+- **Commits de ce lot :** `a0f507b`, `da8410b`, `a70270f`, `3a1cdf4`, `91623e8`, `13cadc1`, `16499d5`.
+- **Restant bloquant :** CI complète, deux/trois vrais comptes Auth sur staging distinct, recette Android/iPad/PC, revue de fusion, publication. Ne jamais déclarer LR-026 « livré » sur ces seuls tests statiques.
