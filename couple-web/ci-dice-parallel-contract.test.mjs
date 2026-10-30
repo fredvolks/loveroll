@@ -26,7 +26,7 @@ function namedStep(label){
  return matching[0];
 }
 test('All original D6/D100 checks plus desktop info run exactly once',()=>{
- assert.match(workflow,/group: \\[entry, dice-core, dice-stage, dice-faces, experience, dice-mobile-a, dice-mobile-b\\]/);
+ assert.match(workflow,/group: \[entry, dice-core, dice-stage, dice-faces, experience, dice-mobile-a, dice-mobile-b\]/);
  assert.doesNotMatch(workflow,/matrix\.group == 'dice'/);
  for(const [name,[group,command]] of expected){
   const step=namedStep(name);
