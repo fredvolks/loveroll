@@ -335,3 +335,12 @@ Afficher près des catégories les cartes distinctes encore admissibles à la pr
 - **Révisions :** `9e0a8a4` (garde), `7fcb568` (connexion et précontrôle), `7b8e64a` (tests unitaires), `7ce3706` (test intégré simulé).
 - **Atelier Medium :** méthodes Architecture, Qualité et Sécurité consultées; l'application LoveRoll n'est pas encore enregistrée dans Atelier et le BOSS commun fait toujours l'objet de tâches de déploiement. Aucun résultat de mission BOSS autonome n'est revendiqué.
 - **Déploiement :** PR #176 toujours brouillon, aucune migration Supabase/production exécutée par ce lot.
+
+### LR-026 — verrouillage du minuteur pendant Passer/Refuser et Commencer (30 octobre 2026)
+
+- **Défaut :** avant ce lot, le gestionnaire du bouton « Recommencer » pouvait remettre un compte à rebours à zéro pendant qu'une RPC `love_respond_and_redraw` ou `answer_challenge` attendait le serveur. Le rendu du bouton pouvait aussi rester cliquable lors de cette attente.
+- **Correction :** le composant `timedEveningTimerControl` désactive les deux boutons pour `decisionPending`. Dans `app.js`, un contrôle de propriété de la carte et de la soirée rend le verrouillage cohérent entre le rendu initial, les mises à jour du compte à rebours et les gestionnaires `timer-reset`/`timer-toggle`. Les réponses tardives d'un autre compte ne verrouillent pas sa carte.
+- **Vérification ciblée :** trois tests supplémentaires : état des boutons; réponses et changements d'identité; exécution du vrai bloc `timer-reset` avec serveur fictif, prouvant l'absence de mutation pendant le verrou et le retour normal après déverrouillage. Tests exécutés isolément avec JavaScript : **3/3 passent**.
+- **Commits :** `e61799f` (présentation), `46a7a70` (garde dans l'application), `40e0601` (tests).
+- **Revue Medium Atelier :** critères d'Architecture, Qualité et Sécurité applicables au périmètre; aucune modification des permissions Supabase. Le BOSS externe ne peut pas être déclaré lancé tant que l'application LoveRoll n'est pas enregistrée dans Atelier.
+- **À confirmer :** Node/CI complète, navigation navigateur et scénarios à deux appareils avec Supabase isolé. Aucun déploiement ou migration de production.
