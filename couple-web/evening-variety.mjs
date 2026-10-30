@@ -59,6 +59,7 @@ export function areNearDuplicateEveningCards(first,second){
 /**
  * Advisory only. eligibleCards MUST already be the authoritative, allowed
  * pool for one official category, including favorite/replay exceptions.
+ * Mixed-category pools are rejected to preserve official odds.
  * recentInSession MUST be limited to the same active session on the server.
  *
  * Stable input ordering is preserved. The caller/server must use its own
@@ -66,10 +67,19 @@ export function areNearDuplicateEveningCards(first,second){
  * If all eligible cards look similar, return ALL eligible cards unchanged.
  */
 export function filterSimilarEveningCandidates({
- eligibleCards=[],recentInSession=[]
+ eligibleCards=[],recentInSession=[],selectedCategory=null
 }={}){
  if(!Array.isArray(eligibleCards)||!Array.isArray(recentInSession))
   throw new TypeError('Expected an eligible pool and current-session history arrays');
+ // A broad mixed-category pool could change the official category odds.
+ // The server must choose the D100 category BEFORE invoking this helper.
+ const poolCategories=new Set(eligibleCards.map(card=>norm(card?.category)));
+ if(poolCategories.size>1||
+  (selectedCategory!==null&&selectedCategory!==undefined&&
+   eligibleCards.length>0&&!poolCategories.has(norm(selectedCategory))))
+  throw new RangeError('Variety requires an eligible pool from one official D100 category');
+ if(eligibleCards.some(card=>!card||typeof card!=='object'))
+  throw new TypeError('Eligible cards must be valid card objects');
  if(!eligibleCards.length)return {
   candidates:[],suppressedCount:0,fallbackUsed:false,reason:'no-eligible-cards'
  };
