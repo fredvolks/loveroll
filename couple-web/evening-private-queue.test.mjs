@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback} from './evening-private-queue.mjs';
+import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt} from './evening-private-queue.mjs';
 import {premiumEveningHtml} from './premium-evening.mjs';
 const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
 const migration=readFileSync(new URL('./migrations/20261015_evening_private_challenge_queue.sql',import.meta.url),'utf8');
@@ -23,9 +23,9 @@ test('LR-026: evening feedback shows committed RPC decision, not tapped button',
   'Ce défi avait déjà reçu une réponse. Défi passé — il pourra revenir plus tard.');
  assert.equal(eveningRedrawFeedback({...pass,action:'refuse',excluded:false}),
   'Défi conservé dans la pige.');
- assert.match(eveningRedrawFeedback({...refused,replacement_unavailable:true}),
+ assert.match(eveningRedrawFeedback({...refused,replacement_id:null,replacement_unavailable:true}),
   /avait déjà reçu une réponse.*Aucun autre défi admissible/);
- assert.match(app,/redrawFeedback=eveningRedrawFeedback\(outcome\)/);
+ assert.match(app,/redrawFeedback=eveningRedrawFeedback\(outcome,challengeId\)/);
  assert.doesNotMatch(app,/redrawFeedback=outcome\?\.replacement_unavailable/);
 });
 
@@ -78,6 +78,37 @@ test('LR-026: ambiguous or missing receipts never congratulate a stale device',(
  for(const receipt of ambiguous){
   assert.match(eveningRedrawFeedback(receipt),/Vérifie la liste de tes défis/);
  }
+});
+
+test('LR-026: receipt validator binds server decision to original clicked challenge',()=>{
+ const pass={original_id:'clicked-card',replacement_id:'next-card',
+  action:'pass',excluded:false,already_processed:false,
+  replacement_unavailable:false};
+ assert.equal(isValidEveningRedrawReceipt(pass,'clicked-card'),true);
+ assert.equal(isValidEveningRedrawReceipt({...pass,already_processed:true},'clicked-card'),true);
+ assert.equal(isValidEveningRedrawReceipt(pass,'different-card'),false);
+ assert.match(eveningRedrawFeedback(pass,'different-card'),/Vérifie la liste de tes défis/);
+ assert.equal(eveningRedrawFeedback(pass,'clicked-card'),
+  'Défi passé — il pourra revenir plus tard.');
+ assert.equal(isValidEveningRedrawReceipt({...pass,replacement_id:'clicked-card'},'clicked-card'),false);
+ assert.equal(isValidEveningRedrawReceipt({...pass,replacement_id:'  '},'clicked-card'),false);
+ assert.equal(isValidEveningRedrawReceipt({...pass,replacement_id:null,
+  replacement_unavailable:false},'clicked-card'),false);
+ assert.equal(isValidEveningRedrawReceipt({...pass,replacement_unavailable:true},'clicked-card'),false,
+  'a nonempty replacement contradicts the unavailable flag');
+ const unavailable={...pass,replacement_id:null,
+  action:'refuse',replacement_unavailable:true};
+ assert.equal(isValidEveningRedrawReceipt(unavailable,'clicked-card'),true);
+ assert.equal(isValidEveningRedrawReceipt({...unavailable,replacement_id:'next-card'},'clicked-card'),false);
+ assert.equal(isValidEveningRedrawReceipt({...pass,action:'pass',excluded:true},'clicked-card'),false);
+ assert.equal(isValidEveningRedrawReceipt({...pass,already_processed:'false'},'clicked-card'),false);
+});
+
+test('LR-026: app checks original ID before selecting and confirming a new D100 challenge',()=>{
+ assert.match(app,/const receiptValid=isValidEveningRedrawReceipt\(outcome,challengeId\)/);
+ assert.match(app,/state\.selectedEveningChallengeId=receiptValid\?outcome\.replacement_id:null/);
+ assert.match(app,/redrawFeedback=eveningRedrawFeedback\(outcome,challengeId\)/);
+ assert.doesNotMatch(app,/state\.selectedEveningChallengeId=outcome\?\.replacement_id\|\|null/);
 });
 
 test('Each user sees ONLY their own challenge cards, sorted chronologically',()=>{
