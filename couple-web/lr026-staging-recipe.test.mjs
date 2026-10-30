@@ -214,7 +214,7 @@ test('remote Auth error cannot reveal credentials, arbitrary messages or access 
 test('real RLS session/member denial fails before any gameplay writes', async () => {
   for (const opt of [{hideSessionB: true}, {hideMemberB: true}, {finishedSession: true}]) {
     const mock = mockSupabase(opt);
-    await assert.rejects(runStage(env(), 'play', mock.fetchFn), /Active staging session|own membership/);
+    await assert.rejects(runStage(env(), 'play', mock.fetchFn), /Active staging session|exactly A and B/);
     assert.equal(mock.counters().drawCount, 0);
     assert.equal(mock.counters().passCount, 0);
   }
