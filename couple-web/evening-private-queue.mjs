@@ -81,6 +81,14 @@ export function isValidEveningRedrawReceipt(outcome,expectedOriginalId=null){
   (outcome.action!=='pass'||outcome.excluded===false);
 }
 
+// One shared list protects BOTH the tap-time snapshot and the persisted
+// post-response comparison. Never permit their identity fields to drift.
+export const EVENING_REDRAW_IMMUTABLE_FIELDS=Object.freeze([
+ 'id','session_id','couple_id','offered_by','recipient',
+ 'category','face','card_id','card_title','card_description',
+ 'card_timer_minutes','is_gifted','created_at','replaces_challenge_id'
+]);
+
 /**
  * Capture an immutable snapshot synchronously before invoking a redraw RPC.
  * A realtime handler can update the live card object while an await is in
@@ -89,11 +97,10 @@ export function isValidEveningRedrawReceipt(outcome,expectedOriginalId=null){
  */
 export function snapshotEveningCardBeforeRedraw(card){
  if(!card||typeof card!=='object'||Array.isArray(card))return null;
- const fields=['id','session_id','couple_id','offered_by','recipient',
-  'category','face','card_id','card_title','card_description',
-  'card_timer_minutes','is_gifted','created_at','replaces_challenge_id'];
- if(!fields.every(key=>Object.hasOwn(card,key)))return null;
- return Object.freeze(Object.fromEntries(fields.map(key=>[key,card[key]])));
+ if(!EVENING_REDRAW_IMMUTABLE_FIELDS.every(key=>Object.hasOwn(card,key)))
+  return null;
+ return Object.freeze(Object.fromEntries(
+  EVENING_REDRAW_IMMUTABLE_FIELDS.map(key=>[key,card[key]])));
 }
 
 /**
@@ -116,11 +123,7 @@ export function isPersistedEveningRedrawReceipt(outcome,rows,userId,sessionId,or
  // Compare the refreshed row against the exact card seen on this device.
  if(originalBefore!==null){
   if(!originalBefore||typeof originalBefore!=='object')return false;
-  const immutableKeys=['id','session_id','couple_id','offered_by',
-   'recipient','category','face','card_id','card_title',
-   'card_description','card_timer_minutes','is_gifted','created_at',
-   'replaces_challenge_id'];
-  if(!immutableKeys.every(key=>
+  if(!EVENING_REDRAW_IMMUTABLE_FIELDS.every(key=>
    Object.hasOwn(originalBefore,key)&&Object.hasOwn(original,key)&&
    originalBefore[key]===original[key]))return false;
  }
