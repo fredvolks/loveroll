@@ -174,7 +174,7 @@ BEGIN
      INTO draw_count,distinct_count
    FROM public.couple_challenges
    WHERE couple_id=pair AND recipient=sid AND category='SENSUEL';
-   IF draw_count<>(CASE WHEN sid=a THEN 4 ELSE 2 END)
+   IF draw_count<>3
       OR draw_count<>distinct_count THEN
      RAISE EXCEPTION 'LR-026 actual history repeats for recipient % (% vs %)',
        sid,draw_count,distinct_count;
