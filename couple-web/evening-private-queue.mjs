@@ -116,6 +116,12 @@ export function isPersistedEveningRedrawReceipt(outcome,rows,userId,sessionId){
   validD100(original)&&validD100(replacement)&&
   replacement.face!==original.face&&
   replacement.card_id!==original.card_id&&
+  // The official redraw RPC excludes a face AND a library card already
+  // seen by this recipient in the selected category during this evening.
+  // This must include past cards, not only the previous original.
+  !mine.some(card=>card.id!==replacement.id&&
+   card.category===replacement.category&&
+   (card.face===replacement.face||card.card_id===replacement.card_id))&&
   replacement.is_gifted===Boolean(original.is_gifted);
 }
 
