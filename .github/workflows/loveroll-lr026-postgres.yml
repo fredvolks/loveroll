@@ -15,6 +15,7 @@ on:
       - "couple-web/lr026-full-migration.test.sql"
       - "couple-web/lr026-capture-original-rpcs.sql"
       - "couple-web/lr026-source-preservation.test.sql"
+      - "couple-web/lr026-eligibility-boundary.test.sql"
       - "couple-web/lr026-rpc-role-security.test.sql"
       - "couple-web/lr026-failed-migration-fixture.sql"
       - "couple-web/lr026-atomic-rollback.test.sql"
@@ -69,6 +70,8 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-postgres-rank.test.sql
       - name: Simulate an evening, two couples and a 200-card cycle
         run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-evening-flow.test.sql
+      - name: Reject roles, cycle exclusions, bag history and favorite bypass
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-eligibility-boundary.test.sql
       - name: Create synthetic normal and replacement RPCs
         run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-postgres-rpc-fixture.sql
       - name: Save exact unpatched RPC code for invariant verification
