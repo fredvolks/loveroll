@@ -1,14 +1,16 @@
 #!/usr/bin/env node
 // Execute from a shell with ephemeral environment variables ONLY.
 // Modes: --check (offline guards), --auth (real Auth + RLS, read-only),
+// --ready (A/B Auth+RLS+D6+empty evening preflight, zero writes),
 // --play (one mutating D100/Passer scenario, staging only, explicit opt-in).
 import {runStage} from './lr026-staging-recipe.mjs';
 
-const modes = {'--check': 'check', '--auth': 'auth', '--audit': 'audit', '--play': 'play'};
+const modes = {'--check': 'check', '--auth': 'auth', '--audit': 'audit',
+  '--ready': 'ready', '--play': 'play'};
 const mode = modes[process.argv[2]];
 if (!mode || process.argv.length !== 3) {
   process.stderr.write(
-    'Usage: node couple-web/lr026-staging-verify.mjs --check|--auth|--audit|--play\n');
+    'Usage: node couple-web/lr026-staging-verify.mjs --check|--auth|--audit|--ready|--play\n');
   process.exitCode = 2;
 } else {
   try {
