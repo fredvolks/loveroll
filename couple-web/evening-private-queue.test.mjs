@@ -1221,6 +1221,29 @@ test('LR-026: legacy answer path ignores late responses and never stops a foreig
  assert.equal(isSameEveningResponseContext({...origin,tab:'home'},context),false);
 });
 
+test('LR-026: legacy response refresh remains scoped across a night closure',()=>{
+ const start=app.indexOf('async function refreshShared(expectedContext=null){');
+ const end=app.indexOf('const liveSync=createCoupleLiveSync',start);
+ assert.ok(start>=0&&end>start);
+ const refresh=app.slice(start,end);
+ const legacyStart=app.indexOf("if(verb==='answer'){");
+ const legacyEnd=app.indexOf("if(verb==='finish-session')",legacyStart);
+ const legacy=app.slice(legacyStart,legacyEnd);
+ assert.match(refresh,/let legacyClosedDuringRefresh=false;/);
+ assert.match(refresh,/state\.user\?\.id===expectedContext\.userId&&state\.tab===expectedContext\.tab/);
+ assert.match(refresh,/state\.legacyAnswerContext===expectedContext/);
+ assert.match(refresh,/legacyClosedDuringRefresh&&state\.session===null/);
+ assert.match(refresh,/legacyClosedDuringRefresh=!!\(expectedContext&&/);
+ assert.match(refresh,/state\.session\?\.id===expectedContext\.sessionId&&refreshedSession===null/);
+ assert.match(refresh,/sessions\.some\(s=>s\.id===expectedContext\.sessionId&&s\.finished_at\)/);
+ assert.match(legacy,/await refreshShared\(answerContext\)/);
+ assert.doesNotMatch(legacy,/await refreshAndShow\(\)/,
+  'a late unscoped refresh must never mix the next account into this response');
+ assert.match(legacy,/state\.legacyAnswerContext!==answerContext\|\|/);
+ assert.match(legacy,/state\.session===null&&state\.sessions\?\.some\(s=>/);
+ assert.match(legacy,/render\(\);return;/);
+});
+
 test('Each user sees ONLY their own challenge cards, sorted chronologically',()=>{
  assert.deepEqual(ownEveningChallenges([c,b,a],'fred','s1').map(x=>x.id),['challenge-a','challenge-c']);
  assert.deepEqual(ownEveningChallenges([c,b,a],'partner','s1').map(x=>x.id),['challenge-b']);
