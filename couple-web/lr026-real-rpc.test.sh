@@ -52,4 +52,10 @@ psql -X -d "$DB" -v ON_ERROR_STOP=1 \
  -f couple-web/lr026-real-rpc-e2e.test.sql
 psql -X -d "$DB" -v ON_ERROR_STOP=1 \
  -f couple-web/lr026-real-rpc-paired-turns.test.sql
+# Independent SQL clients must observe each other's commits. This suite
+# uses exactly these two fingerprint-checked real server functions.
+psql -X -d "$DB" -v ON_ERROR_STOP=1 \
+ -f couple-web/lr026-real-rpc-race.seed.sql >/dev/null
+bash -n couple-web/lr026-real-rpc-concurrent.test.sh
+bash couple-web/lr026-real-rpc-concurrent.test.sh
 echo "LR-026: actual production D100 and redraw RPC bodies passed isolated A/B integration"
