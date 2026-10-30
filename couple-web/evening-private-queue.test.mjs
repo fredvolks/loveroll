@@ -569,13 +569,36 @@ test('LR-026: scoped refresh refuses stale account writes at every awaited stage
   'unscoped refresh should preserve normal screens');
 });
 
+test('LR-026: pending redraw belongs to its initiating account and cannot unlock another action',()=>{
+ const start=app.indexOf("if(verb==='evening-pass'||verb==='evening-refuse-choice')");
+ const end=app.indexOf("if(verb==='evening-start')",start);
+ const action=app.slice(start,end);
+ const helper=app.slice(app.indexOf('function isActiveEveningRedrawPending(){'),
+  app.indexOf('async function refreshShared(expectedContext=null){'));
+ assert.match(helper,/state\.redrawBusy===true&&!!state\.redrawBusyContext&&/);
+ assert.match(helper,/isSameEveningResponseContext\(state,state\.redrawBusyContext\)/);
+ assert.match(action,/if\(isActiveEveningRedrawPending\(\)\)return;/);
+ assert.match(action,/state\.redrawBusyContext=responseContext;\s+state\.redrawBusy=true;/);
+ assert.match(action,/if\(!sameContext\|\|state\.redrawBusyContext!==responseContext\)return;/,
+  'old account response must not refresh the new owner');
+ assert.match(action,/const sameAfterRefresh=isSameEveningResponseContext\(state,responseContext\)&&\s+state\.redrawBusyContext===responseContext/);
+ assert.match(action,/if\(state\.redrawBusyContext===responseContext\)\{[\s\S]*?state\.redrawBusyContext=null;\s+state\.redrawBusy=false;\s+render\(\)/,
+  'only the current ticket may unlock its controls');
+ assert.match(app,/state\.redrawBusyContext===expectedContext/,
+  'stale asynchronous refresh must also check the owner ticket');
+ assert.match(app,/if\(!isActiveEveningRedrawPending\(\)\)\{state\.eveningRefusalId=null;render\(\)/,
+  'a stale lock must not prevent canceling on a different account');
+ assert.doesNotMatch(action,/if\(state\.redrawBusy\)return;/,
+  'global pending flag would block a different account');
+});
+
 test('LR-026: stale account or tab cannot refresh after an in-flight redraw RPC',()=>{
  const start=app.indexOf("if(verb==='evening-pass'||verb==='evening-refuse-choice')");
  const end=app.indexOf("if(verb==='evening-start')",start);
  const branch=app.slice(start,end);
  const response=branch.indexOf("const outcome=await rpc('love_respond_and_redraw'");
  const context=branch.indexOf('const sameContext=isSameEveningResponseContext(state,responseContext)');
- const reject=branch.indexOf('if(!sameContext)return;');
+ const reject=branch.indexOf('if(!sameContext||state.redrawBusyContext!==responseContext)return;');
  const refresh=branch.indexOf('await refreshShared(responseContext);');
  const done=branch.indexOf('}finally{');
  assert.ok(response>=0&&context>response&&reject>context&&refresh>reject&&done>refresh,
@@ -591,7 +614,7 @@ test('LR-026: obsolete RPC errors do not escape into another account or tab',()=
  const end=app.indexOf("if(verb==='evening-start')",start);
  const action=app.slice(start,end);
  const failed=action.slice(action.indexOf('}catch(error){'),action.indexOf('}finally{'));
- const stale=failed.indexOf('if(!isSameEveningResponseContext(state,responseContext))return;');
+ const stale=failed.indexOf('if(!isSameEveningResponseContext(state,responseContext)||');
  const timer=failed.indexOf('if(challengeTimer.id===challengeId&&challengeTimer.decisionPending)');
  const rethrow=failed.indexOf('throw error;');
  assert.ok(stale>=0&&timer>stale&&rethrow>timer,
@@ -631,7 +654,7 @@ test('LR-026: redraw timer only stops on valid receipt or independently refreshe
  assert.match(code,/if\(recovery==='stop'&&state\.eveningRefusalId===challengeId\)/);
  assert.match(code,/if\(challengeTimer\.id===challengeId&&challengeTimer\.decisionPending\)/);
  assert.match(code,/if\(receiptValid\)state\.eveningRefusalId=null/);
- assert.match(code,/if\(!isSameEveningResponseContext\(state,responseContext\)\)return;[\s\S]*?if\(challengeTimer\.id===challengeId&&challengeTimer\.decisionPending\)/);
+ assert.match(code,/if\(!isSameEveningResponseContext\(state,responseContext\)\|\|[\s\S]*?state\.redrawBusyContext!==responseContext\)return;[\s\S]*?if\(challengeTimer\.id===challengeId&&challengeTimer\.decisionPending\)/);
  assert.match(code,/else saveChallengeTimer\(\)/);
  assert.doesNotMatch(code,/if\(challengeTimer\.id===challengeId\)\{\s+challengeTimer\.running=false/,
   'timer must not stop unconditionally before receipt validation');
@@ -752,8 +775,8 @@ test('LR-016 quota UX states used/limit, explains next month, never disables unl
  assert.match(source,/state\.monthlyPassQuota\?\.limit/);
  assert.match(source,/Tu pourras passer à nouveau le 1er du mois prochain, ou choisir Refuser/);
  assert.match(source,/Refuser reste permis, sans limite/);
- assert.match(source,/state\.redrawBusy\|\|state\.monthlyPassQuota\?\.can_pass===false\?'disabled'/);
- assert.match(source,/state\.redrawBusy\?'disabled'/);
+ assert.match(source,/isActiveEveningRedrawPending\(\)\|\|state\.monthlyPassQuota\?\.can_pass===false\?'disabled'/);
+ assert.match(source,/isActiveEveningRedrawPending\(\)\?'disabled'/);
 });
 
 test('LR-015 keeps old queue CSS disabled and loads targeted mobile decision styling',()=>{
