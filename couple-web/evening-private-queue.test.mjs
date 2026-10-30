@@ -520,6 +520,23 @@ test('LR-026: async D100 action checks same initiating context before selection 
   'checking only the session leaves another account/tab exposed');
 });
 
+test('LR-026: stale account or tab cannot refresh after an in-flight redraw RPC',()=>{
+ const start=app.indexOf("if(verb==='evening-pass'||verb==='evening-refuse-choice')");
+ const end=app.indexOf("if(verb==='evening-start')",start);
+ const branch=app.slice(start,end);
+ const response=branch.indexOf("const outcome=await rpc('love_respond_and_redraw'");
+ const context=branch.indexOf('const sameContext=isSameEveningResponseContext(state,responseContext)');
+ const reject=branch.indexOf('if(!sameContext)return;');
+ const refresh=branch.indexOf('await refreshShared();');
+ const done=branch.indexOf('}finally{');
+ assert.ok(response>=0&&context>response&&reject>context&&refresh>reject&&done>refresh,
+  'stale RPC must return before it can refresh any other account or evening');
+ assert.doesNotMatch(branch.slice(reject,refresh),/render\(\)|saveChallengeTimer\(\)/,
+  'a stale response must not modify the new account timer or render state');
+ assert.match(branch.slice(done),/state\.redrawBusy=false;[\s\S]*?render\(\)/,
+  'finally still releases the pending button lock when returning early');
+});
+
 test('LR-026: uncertain redraw never completes a live accepted timer without server proof',()=>{
  const due=Date.parse('2026-10-30T12:00:00Z');
  for(const status of [undefined,null,'proposed','pending','invalid']){
