@@ -208,6 +208,27 @@ export async function runStage(env, mode, transport = fetch) {
     assert(otherMembership.length === 1 &&
       eq(otherMembership[0].user_id, outsider.id),
       'Outsider C must see their own membership, not be an unauthenticated guest');
+    // Both couples must have real synthetic D6 records. A complete absence
+    // of rows would make a cross-couple RLS check vacuous. A/B must each see
+    // the same two personal rolls; C must see their own roll in the other duo.
+    const abRollQuery = 'select=session_id,user_id,face&session_id=eq.' + config.sessionId;
+    for (const actor of [a, b]) {
+      const rolls = await client.rows('couple_personal_rolls', abRollQuery, actor.token);
+      assert(rolls.length === 2 &&
+        [a.id, b.id].every(id =>
+          rolls.filter(r => eq(r.user_id, id) && eq(r.session_id, config.sessionId) &&
+            Number.isInteger(r.face) && r.face >= 1 && r.face <= 6).length === 1),
+        'RLS audit needs both A/B D6 rolls readable by each partner');
+    }
+    const outsideRolls = await client.rows('couple_personal_rolls',
+      'select=session_id,user_id,face&session_id=eq.' + config.otherSessionId,
+      outsider.token);
+    assert(outsideRolls.length >= 1 &&
+      outsideRolls.every(r => eq(r.session_id, config.otherSessionId) &&
+        Number.isInteger(r.face) && r.face >= 1 && r.face <= 6) &&
+      outsideRolls.some(r => eq(r.user_id, outsider.id)),
+      'RLS audit needs outsider C to see their own valid D6 roll');
+
     // A zero-card result on both couples means nothing if no challenge
     // was seeded or if the recipient-specific SELECT policy is broken.
     // Prove positive visibility for every recipient before testing denials.
@@ -234,8 +255,10 @@ export async function runStage(env, mode, transport = fetch) {
       'select=couple_id,user_id&couple_id=eq.' + config.coupleId, outsider.token);
     const privateCards = await client.rows('couple_challenges',
       'select=id&session_id=eq.' + config.sessionId, outsider.token);
+    const privateRolls = await client.rows('couple_personal_rolls',
+      'select=user_id&session_id=eq.' + config.sessionId, outsider.token);
     assert(privateSession.length === 0 && privateMembership.length === 0 &&
-      privateCards.length === 0,
+      privateCards.length === 0 && privateRolls.length === 0,
       'RLS isolation failed: outside account C can see duo A/B data');
 
     for (const actor of [a, b]) {
@@ -245,12 +268,15 @@ export async function runStage(env, mode, transport = fetch) {
         'select=couple_id,user_id&couple_id=eq.' + config.otherCoupleId, actor.token);
       const cards = await client.rows('couple_challenges',
         'select=id&session_id=eq.' + config.otherSessionId, actor.token);
-      assert(s.length === 0 && m.length === 0 && cards.length === 0,
+      const rolls = await client.rows('couple_personal_rolls',
+        'select=user_id&session_id=eq.' + config.otherSessionId, actor.token);
+      assert(s.length === 0 && m.length === 0 && cards.length === 0 &&
+        rolls.length === 0,
         'RLS isolation failed: duo A/B can see outside duo C data');
     }
     return {...result, mode: 'audit', real_auth_accounts: 3,
       rls_outside_own_session_reads: 1, rls_positive_challenge_reads: 3,
-      rls_cross_duo_denials: 9, game_writes: 0};
+      rls_positive_d6_reads: 3, rls_cross_duo_denials: 12, game_writes: 0};
   }
 
   const sessionRows = await client.rows('couple_sessions',
