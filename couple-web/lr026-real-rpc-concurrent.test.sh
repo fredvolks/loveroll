@@ -46,8 +46,14 @@ launch() {
 # close together (a strict concurrency check).
 run_race() {
  local label="$1" couple="$2" actor1="$3" challenge1="$4" actor2="$5" challenge2="$6" mode="${7:-pass}"
- local gate_pid saw1=0 saw2=0 waiting rpc_name=love_respond_and_redraw
- if [[ "$mode" == draw ]]; then rpc_name=draw_for_partner; fi
+ local gate_pid saw1=0 saw2=0 waiting rpc_predicate="query LIKE '%love_respond_and_redraw%'"
+ local first_mode="$mode" second_mode="$mode"
+ if [[ "$mode" == draw ]]; then
+   rpc_predicate="query LIKE '%draw_for_partner%'"
+ elif [[ "$mode" == mixed ]]; then
+   first_mode=draw; second_mode=pass
+   rpc_predicate="(query LIKE '%draw_for_partner%' OR query LIKE '%love_respond_and_redraw%')"
+ fi
  (
    psql -X -d "$DB" -q -At -v ON_ERROR_STOP=1 >"$tmp/$label.gate" 2>&1 <<SQL
 BEGIN;
@@ -74,17 +80,32 @@ SQL
    echo "::error::$label: couple lock gate never became ready"
    cat "$tmp/$label.gate"; exit 1
  fi
- launch "$label.1" "$actor1" "$challenge1" "$mode"
- launch "$label.2" "$actor2" "$challenge2" "$mode"
+ launch "$label.1" "$actor1" "$challenge1" "$first_mode"
+ launch "$label.2" "$actor2" "$challenge2" "$second_mode"
  # The two blocked backend sessions must overlap in time, not merely
  # produce serially correct outcomes by chance.
  for _ in $(seq 1 24); do
    waiting="$(psql -X -d "$DB" -At -v ON_ERROR_STOP=1 -c "
     SELECT count(*) FROM pg_catalog.pg_stat_activity
     WHERE datname=current_database() AND wait_event_type='Lock'
-      AND query LIKE '%$rpc_name%'
+      AND $rpc_predicate
       AND query NOT LIKE '%pg_stat_activity%';")"
-   if [[ "$waiting" -ge 2 ]]; then saw2=1; break; fi
+   if [[ "$waiting" -ge 2 ]]; then
+      if [[ "$mode" != mixed ]]; then saw2=1; break; fi
+      # Both *different* actual RPC bodies must be waiting, not a
+      # repeated call to the same function or an unrelated backend.
+      local kinds
+      kinds="$(psql -X -d "$DB" -At -v ON_ERROR_STOP=1 -c "
+        SELECT count(DISTINCT CASE
+          WHEN query LIKE '%draw_for_partner%' THEN 'draw'
+          WHEN query LIKE '%love_respond_and_redraw%' THEN 'pass'
+          ELSE NULL END)
+        FROM pg_catalog.pg_stat_activity
+        WHERE datname=current_database() AND wait_event_type='Lock'
+          AND $rpc_predicate
+          AND query NOT LIKE '%pg_stat_activity%';")"
+      if [[ "$kinds" == 2 ]]; then saw2=1; break; fi
+    fi
    sleep 0.04
  done
  if [[ "$saw2" != "1" ]]; then
