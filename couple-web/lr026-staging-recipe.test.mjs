@@ -187,6 +187,17 @@ function mockSupabase(opts = {}) {
           (!beforePass && opts.wrongOriginalCategory) ? otherCategory : category,
         status: beforePass ? opts.firstWrongStatus ? 'passed' : 'proposed'
           : (opts.expectedAction === 'refuse' ? 'refused' : 'passed'),
+        passed_at: beforePass ? (opts.firstUnexpectedPassedAt ? '2026-10-30T12:00:00Z' : null)
+          : opts.expectedAction === 'refuse'
+            ? (opts.afterRefuseUnexpectedPassStamp ? '2026-10-30T12:00:00Z' : null)
+            : opts.afterPassMissingStamp ? null
+              : opts.afterPassInvalidStamp ? 'invalid-stamp'
+                : passCount > 1 && opts.replayMutatesPassedAt
+                  ? '2026-10-30T13:00:00Z' : '2026-10-30T12:00:00Z',
+        refused_at: beforePass ? (opts.firstUnexpectedRefusedAt ? '2026-10-30T12:00:00Z' : null)
+          : opts.expectedAction === 'refuse'
+            ? (opts.afterRefuseMissingStamp ? null : '2026-10-30T12:00:00Z')
+            : (opts.afterPassUnexpectedRefuseStamp ? '2026-10-30T12:00:00Z' : null),
         face: beforePass && opts.firstWrongFace ? 0 :
           !beforePass && opts.firstPassMutatesOriginalFace ? 22 : 14,
         card_id: beforePass && opts.firstWrongCardId ? 0 :
@@ -217,6 +228,8 @@ function mockSupabase(opts = {}) {
           (passCount > 2 && opts.staleMutatesReplacementOfferer)
             ? recipientId : giverId,
         status: 'proposed', recipient: recipientId,
+        passed_at: opts.replacementUnexpectedPassedAt ? '2026-10-30T12:00:00Z' : null,
+        refused_at: opts.replacementUnexpectedRefusedAt ? '2026-10-30T12:00:00Z' : null,
         face: (passCount === 1 && opts.firstPassDuplicateFace) ? 14 :
           (passCount === 1 && opts.firstPassInvalidFace) ? 101 : 53,
         card_id: (passCount === 1 && opts.firstPassDuplicateCard) ? 3 :
@@ -845,6 +858,8 @@ for (const options of [
   {firstWrongStoredDescription: true},
   {firstWrongStoredTimer: true},
   {firstWrongStoredGift: true},
+  {firstUnexpectedPassedAt: true},
+  {firstUnexpectedRefusedAt: true},
   {firstWrongStatus: true},
   {firstReplacesCard: true},
   {firstCardForA: true}
@@ -867,6 +882,11 @@ for (const options of [
   {wrongOriginalRecipient: true},
   {firstPassMissingReplacement: true},
   {firstPassWrongStatus: true},
+  {afterPassMissingStamp: true},
+  {afterPassInvalidStamp: true},
+  {afterPassUnexpectedRefuseStamp: true},
+  {replacementUnexpectedPassedAt: true},
+  {replacementUnexpectedRefusedAt: true},
   {firstPassWrongReference: true},
   {firstPassWrongSession: true},
   {afterResponseWrongOriginalCouple: true},
@@ -1049,6 +1069,26 @@ test('idempotent replay cannot alter persisted replacement even when returning s
     /Repeated Passer must not change any persisted challenge field|Exactly one valid same-category replacement offered by drawer/);
   assert.equal(mock.counters().passCount, 2);
 });
+test('idempotent replay cannot silently rewrite a pass timestamp', async () => {
+  const mock = mockSupabase({replayMutatesPassedAt: true});
+  await assert.rejects(runStage(env(), 'play', mock.fetchFn),
+    /Repeated Passer must not change any persisted challenge field/);
+  assert.equal(mock.counters().drawCount, 1);
+  assert.equal(mock.counters().passCount, 2);
+});
+for (const options of [
+  {afterRefuseMissingStamp: true},
+  {afterRefuseUnexpectedPassStamp: true}
+]) {
+  test('refusal must store only a valid refused_at stamp: ' +
+    JSON.stringify(options), async () => {
+    const mock = mockSupabase({...options, expectedAction: 'refuse'});
+    await assert.rejects(runStage({...env(), LR026_STAGING_ACTION: 'refuse'},
+      'play', mock.fetchFn), /Only one original responded challenge/);
+    assert.equal(mock.counters().drawCount, 1);
+    assert.equal(mock.counters().passCount, 1);
+  });
+}
 test('idempotent replay cannot silently rewrite a replacement description', async () => {
   const mock = mockSupabase({replayMutatesReplacementDescription: true});
   await assert.rejects(runStage(env(), 'play', mock.fetchFn),
