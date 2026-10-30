@@ -1434,6 +1434,10 @@ function ownsVisibleEveningTimer(cardId,userId,sessionId){
  // manual completion while its automatic completion is unresolved.
 function isEveningCardCompleting(cardId){
  if(!cardId||!state.user||!state.session)return false;
+ // A manual answer already sent to Supabase has priority over an
+ // automatic 00:00 completion for the SAME card.
+ if(state.legacyAnswerContext?.challengeId===cardId&&
+    isSameEveningResponseContext(state,state.legacyAnswerContext))return true;
  const completion=state.timerCompletionContext;
  if(completion?.challengeId===cardId&&ownsTimerCompletionSession(completion))
   return true;
@@ -1444,6 +1448,8 @@ function isVisibleEveningTimerActionPending(){
  const cardId=challengeTimer.id;
  if(!cardId||!ownsVisibleEveningTimer(cardId,state.user?.id,state.session?.id))return false;
  if(challengeTimer.decisionPending)return true;
+ if(state.legacyAnswerContext?.challengeId===cardId&&
+    isSameEveningResponseContext(state,state.legacyAnswerContext))return true;
  // The completion RPC can finish before its private, scoped refresh has
  // returned. Keep both timer controls locked until that refresh settles.
  const completion=state.timerCompletionContext;
@@ -1527,6 +1533,10 @@ async function retryExpiredTimedEvening(){
  // A stale account request must not monopolize the global UI timer worker.
  if(timerCompletionInFlight&&ownsTimerCompletionSession(timerCompletionInFlight))return;
  const id=challengeTimer.id;
+ // Wait for the in-flight manual decision. If it fails, the still-pending
+ // expired timer may safely retry on the next tick.
+ if(state.legacyAnswerContext?.challengeId===id&&
+    isSameEveningResponseContext(state,state.legacyAnswerContext))return;
  const retryOwner=JSON.stringify([state.user.id,state.coupleId,state.session.id,id]);
  // A previous account's retry delay never blocks the active account/card.
  if(state.timerCompletionRetryOwner===retryOwner&&Date.now()<timerCompletionRetryAt)return;
@@ -1594,8 +1604,11 @@ async function reconcileSavedEveningTimers(){
   if(!saved)continue;
   const due=!!saved.autoCompletePending||
    (saved.running&&Number.isFinite(saved.deadline)&&saved.deadline>0&&saved.deadline<=now);
-  if(!due||challengeTimer.decisionPending&&
-     ownsVisibleEveningTimer(item.id,state.user.id,state.session.id))continue;
+  if(!due||
+     (challengeTimer.decisionPending&&
+      ownsVisibleEveningTimer(item.id,state.user.id,state.session.id))||
+     (state.legacyAnswerContext?.challengeId===item.id&&
+      isSameEveningResponseContext(state,state.legacyAnswerContext)))continue;
   if(['completed','passed','refused'].includes(item.status)){
    writeSavedChallengeTimer(key,{...saved,cardId:item.id,
     ownerUserId:state.user.id,ownerSessionId:state.session.id,
@@ -4635,7 +4648,8 @@ async function handle(action,element){
   const eveningId=state.session.id;
   // The legacy response path also needs a request-owned lock: a late RPC
   // must not update a different account, evening, tab or timer.
-  const answerContext={userId:state.user.id,sessionId:eveningId,tab:state.tab};
+  const answerContext={userId:state.user.id,sessionId:eveningId,
+   tab:state.tab,challengeId:parts[0]};
   if(isSameEveningResponseContext(state,state.legacyAnswerContext))return;
   state.legacyAnswerContext=answerContext;
   const ownsAnswer=()=>isSameEveningResponseContext(state,answerContext)&&
