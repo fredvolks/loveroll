@@ -281,7 +281,7 @@ test('LR-026 async completion ignores a result after switching account or evenin
   const retry=runInNewContext(executable,{
    state,challengeTimer,timerCompletionInFlight:null,timerCompletionRetryAt:0,
    timedEveningItem:()=>({id:'card-1',status:'accepted',recipient:'alice',session_id:'s1'}),
-   isAcceptedTimedEveningChallenge:()=>true,
+   isAcceptedTimedEveningChallenge:()=>true,rpc:async()=>null,query:async()=>[],
    completeTimedEveningChallenge:async()=>{await server;return {outcome:'completed',finished:true};},
    ownsVisibleEveningTimer:(id,u,s)=>state.user?.id===u&&state.session?.id===s,
    saveChallengeTimer:()=>counters.saves++,
@@ -317,7 +317,7 @@ test('LR-026 async completion refreshes only the confirmed original session',asy
   const retry=runInNewContext(executable,{
    state,challengeTimer,timerCompletionInFlight:null,timerCompletionRetryAt:0,
    timedEveningItem:()=>({id:'card-1',status:'accepted',recipient:'alice',session_id:'s1'}),
-   isAcceptedTimedEveningChallenge:()=>true,
+   isAcceptedTimedEveningChallenge:()=>true,rpc:async()=>null,query:async()=>[],
    completeTimedEveningChallenge:async()=>({outcome:'completed',finished:closure}),
    ownsVisibleEveningTimer:(id,u,s)=>id==='card-1'&&u==='alice'&&s==='s1',
    saveChallengeTimer:()=>outputs.saves++,
@@ -360,7 +360,7 @@ test('LR-026 a late scoped refresh cannot paint a replaced account or night',asy
    state,challengeTimer:{id:'card-1',autoCompletePending:true,decisionPending:false},
    timerCompletionInFlight:null,timerCompletionRetryAt:0,
    timedEveningItem:()=>({id:'card-1',status:'accepted',recipient:'alice',session_id:'s1'}),
-   isAcceptedTimedEveningChallenge:()=>true,
+   isAcceptedTimedEveningChallenge:()=>true,rpc:async()=>null,query:async()=>[],
    completeTimedEveningChallenge:async()=>({outcome:'completed',finished:true}),
    ownsVisibleEveningTimer:()=>true,saveChallengeTimer:()=>{},
    refreshShared:async()=>{refreshed++;await refreshWait;return moved!=='server-rejected';},
