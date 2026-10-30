@@ -1599,3 +1599,46 @@ test('LR-026: unscoped refresh survives a harmless tab change on the same accoun
  assert.equal(state.tab,'settings');
  assert.equal(state.session.id,'session-A');
 });
+
+test('LR-026: later unscoped refresh wins when older same-account network finishes last',async()=>{
+ const begin=app.indexOf('async function refreshShared(expectedContext=null){');
+ const end=app.indexOf('const liveSync=createCoupleLiveSync',begin);
+ assert.ok(begin>0&&end>begin);
+ let releaseOld;
+ const firstPending=new Promise(resolve=>{releaseOld=resolve;});
+ const state={user:{id:'alice'},coupleId:'couple-A',tab:'session',
+  session:{id:'session-A'},eveningCalendarMonth:'2026-10',
+  cycleStatus:'initial',challenges:[{id:'original'}],
+  reviewModalSessionId:null,reviewDismissedSessionId:null};
+ let sessionReads=0,cycleReads=0;
+ const requestContext={
+  state,
+  query:async name=>{
+   if(name==='couple_sessions'){
+    sessionReads++;
+    if(sessionReads===1)await firstPending;
+    return [{id:'session-A',finished_at:null}];
+   }
+   return [];
+  },
+  rpc:async name=>{
+   if(name==='love_cycle_status')return {generation:++cycleReads,pending:false};
+   if(name==='love_redraw_capabilities')return false;
+   return [];
+  },
+  isSameEveningResponseContext,mayApplyScopedEveningRefresh,
+  ownEveningChallenges,refreshEclatStatus:async()=>{},
+  month:()=>'2026-10',week:()=>'2026-W44',console
+ };
+ const runtime={...requestContext};
+ const refresh=runInNewContext(app.slice(begin,end)+'; refreshShared;',runtime);
+ const older=refresh();
+ const newer=refresh();
+ assert.equal(await newer,true);
+ assert.equal(state.cycleStatus.generation,2);
+ releaseOld();
+ const stale=await older;
+ assert.equal(stale,undefined,'the earlier unscoped response must not commit');
+ assert.equal(state.cycleStatus.generation,2,
+  'older data cannot overwrite the newest same-account refreshed state');
+});
