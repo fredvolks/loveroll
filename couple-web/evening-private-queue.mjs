@@ -97,14 +97,17 @@ export function isPersistedEveningRedrawReceipt(outcome,rows,userId,sessionId){
  const original=mine.find(card=>card.id===outcome.original_id);
  if(original?.status!==(outcome.action==='pass'?'passed':'refused'))
   return false;
- if(outcome.replacement_id===null)
-  return !mine.some(card=>card.replaces_challenge_id===outcome.original_id);
- const replacement=mine.find(card=>card.id===outcome.replacement_id);
- return !!(replacement&&
-  replacement.replaces_challenge_id===outcome.original_id&&
+ // One answered card occupies precisely one D6 slot. Repeated device
+ // responses must never create two direct replacements for the same origin.
+ const replacements=mine.filter(card=>
+  card.replaces_challenge_id===outcome.original_id);
+ if(outcome.replacement_id===null)return replacements.length===0;
+ if(replacements.length!==1)return false;
+ const replacement=replacements[0];
+ return replacement.id===outcome.replacement_id&&
   replacement.category===original.category&&
   replacement.offered_by===original.offered_by&&
-  replacement.couple_id===original.couple_id);
+  replacement.couple_id===original.couple_id;
 }
 
 /**
