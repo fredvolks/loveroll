@@ -937,3 +937,43 @@ test("LR-026 an owned success clears its own expired retry delay",async()=>{
  assert.deepEqual(events,['render','notify']);
  assert.equal(clock.autoCompletePending,false);
 });
+
+test("LR-026 an expiring D100 card disables pass refuse start and manual completion",async()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const helper=app.indexOf('function isEveningCardCompleting(cardId){');
+ const next=app.indexOf('function isVisibleEveningTimerActionPending(){',helper);
+ assert.ok(helper>0&&next>helper,'one common per-card guard must exist');
+ const state={user:{id:'alice'},session:{id:'s1'},coupleId:'c1',
+  timerCompletionContext:null};
+ const timer={id:'card-A',autoCompletePending:true};
+ const completing=runInNewContext(app.slice(helper,next)+
+  ';isEveningCardCompleting;',{
+  state,challengeTimer:timer,
+  ownsVisibleEveningTimer:(id,u,s)=>id==='card-A'&&u==='alice'&&s==='s1',
+  ownsTimerCompletionSession:context=>state.user.id===context.userId&&
+   state.session.id===context.sessionId&&state.coupleId===context.coupleId
+ });
+ assert.equal(completing('card-A'),true);
+ assert.equal(completing('card-B'),false,'unrelated D100 card stays available');
+ timer.autoCompletePending=false;
+ state.timerCompletionContext={userId:'alice',coupleId:'c1',sessionId:'s1',
+  tab:'session',challengeId:'card-A'};
+ assert.equal(completing('card-A'),true,'RPC in progress also locks card A');
+ assert.equal(completing('card-B'),false);
+ state.user={id:'bob'};
+ assert.equal(completing('card-A'),false,'Alice must not lock Bob');
+ const passStart=app.indexOf("if(verb==='evening-pass'||verb==='evening-refuse-choice')");
+ const passEnd=app.indexOf("if(verb==='evening-start')",passStart);
+ const refuseStart=app.indexOf("if(verb==='evening-refuse'){");
+ const refuseEnd=app.indexOf("if(verb==='evening-refuse-cancel')",refuseStart);
+ const answerStart=app.indexOf("if(verb==='answer'){");
+ const answerEnd=app.indexOf("if(verb==='finish-session')",answerStart);
+ const startEnd=app.indexOf("if(verb==='surprise-activity')",passEnd);
+ assert.ok(passStart>0&&passEnd>passStart&&refuseEnd>refuseStart&&
+  answerEnd>answerStart&&startEnd>passEnd);
+ for(const code of [app.slice(passStart,passEnd),app.slice(refuseStart,refuseEnd),
+  app.slice(passEnd,startEnd),app.slice(answerStart,answerEnd)])
+  assert.match(code,/isEveningCardCompleting\(/);
+ const ui=app.slice(app.indexOf('const mineCards=session?'),answerStart);
+ assert.match(ui,/isEveningCardCompleting\(view\.id\)/);
+});
