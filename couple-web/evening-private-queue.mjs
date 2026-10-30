@@ -213,6 +213,26 @@ export function isSameEveningResponseContext(view,request){
 }
 
 /**
+ * One in-flight D100 decision belongs to a single authenticated account,
+ * evening, and tab. Another account must not be blocked by an older
+ * operation even if its network request is still pending.
+ */
+export function isEveningRedrawBusyForCurrentView(view){
+ return view?.redrawBusy===true&&!!view.redrawBusyContext&&
+  isSameEveningResponseContext(view,view.redrawBusyContext);
+}
+
+/**
+ * Ownership of a pending decision additionally requires the SAME request
+ * token object, not merely matching account/session strings. A stale
+ * second response must never clear a later lock in the same evening.
+ */
+export function ownsEveningRedrawRequest(view,request){
+ return isEveningRedrawBusyForCurrentView(view)&&
+  view.redrawBusyContext===request;
+}
+
+/**
  * Reconcile an uncertain Passer/Refuser receipt against an independently
  * refreshed challenge, never against the button the user tapped.
  * Keep the timer untouched when no reliable status is available.
