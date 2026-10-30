@@ -225,13 +225,14 @@ test('network-first shell asset refreshes canonical offline cache without touchi
 test('PWA release refreshes the actual iPad D100 CSS and ONE shared stage module',()=>{
  const ipadTag=release.build.replaceAll('-','').replace('.','-ipad');
  const d100=read('evening-d100-template.mjs');
+ const d6=read('evening-d6-template.mjs');
  const home=read('premium-home.mjs');
  const evening=read('soiree-home-template.mjs');
  assert.ok(html.includes('ipad-soiree-one-photo-v237.css?v='+ipadTag));
  assert.ok(app.includes('evening-d100-template.mjs?v='+ipadTag));
  assert.ok(evening.includes('evening-d100-template.mjs?v='+ipadTag),
   'Soirée and app must share exactly one D100 module instance');
- for(const [source,name] of [[d100,'D100'],[home,'Accueil'],[evening,'Soirée']]){
+ for(const [source,name] of [[d100,'D100'],[d6,'D6'],[home,'Accueil'],[evening,'Soirée']]){
   assert.ok(source.includes('shared-stage.mjs?v='+ipadTag),name+' must use refreshed iPad scene');
  }
  assert.ok(sw.includes('./ipad-soiree-one-photo-v237.css'));
