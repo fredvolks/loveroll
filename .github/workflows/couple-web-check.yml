@@ -83,6 +83,7 @@ jobs:
           node --check couple-web/evening-private-queue.mjs
           node --test couple-web/evening-instructions.test.mjs
           node --test couple-web/ci-dice-parallel-contract.test.mjs
+          node --test couple-web/evening-d100-viewports.test.cjs
           node --test couple-web/pages-entry-parallel-contract.test.mjs
           node --test couple-web/evening-private-queue.test.mjs couple-web/evening-redesign.test.mjs couple-web/evening-calendar.test.mjs couple-web/evening-category-v93.test.mjs couple-web/evening-review.test.mjs
           node --test couple-web/privacy-screen.test.mjs
@@ -202,7 +203,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        group: [entry, dice-core, dice-stage, dice-faces, experience]
+        group: [entry, dice-core, dice-stage, dice-faces, experience, dice-mobile-a, dice-mobile-b]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -536,8 +537,16 @@ jobs:
         if: matrix.group == 'dice-faces'
         run: node couple-web/dice-face-readability-browser-check.cjs
 
-      - name: Verify live D100 Soirée size and marble contact across seven mobile viewports
-        if: matrix.group == 'dice-stage'
+      - name: Verify real D100 across mobile viewports A (320–393px)
+        if: matrix.group == 'dice-mobile-a'
+        env:
+          LOVEROLL_D100_VIEWPORT_LANE: a
+        run: node couple-web/evening-d100-template-browser-check.cjs
+
+      - name: Verify real D100 across mobile viewports B (412–430px)
+        if: matrix.group == 'dice-mobile-b'
+        env:
+          LOVEROLL_D100_VIEWPORT_LANE: b
         run: node couple-web/evening-d100-template-browser-check.cjs
 
       - name: LR-014 — verify category modal on phone and iPad
