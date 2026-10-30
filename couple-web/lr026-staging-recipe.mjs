@@ -411,7 +411,7 @@ export async function runStage(env, mode, transport = fetch) {
   // Never retry mutations. On error the staging operator must inspect the
   // persisted state and provision a NEW fixture, not blindly replay.
   const challengeQuery =
-    'select=id,session_id,offered_by,recipient,category,face,card_id,replaces_challenge_id,status' +
+    'select=id,session_id,couple_id,offered_by,recipient,category,face,card_id,replaces_challenge_id,status' +
     '&session_id=eq.' + config.sessionId;
   const drawn = await client.rpc('draw_for_partner',
     {p_session: config.sessionId, p_preference: config.preference, p_random: config.random}, giver.token);
@@ -433,6 +433,7 @@ export async function runStage(env, mode, transport = fetch) {
   assert(firstForRecipient.length === 1 &&
     eq(firstForRecipient[0].id, drawn.id) &&
     eq(firstForRecipient[0].session_id, config.sessionId) &&
+    eq(firstForRecipient[0].couple_id, config.coupleId) &&
     eq(firstForRecipient[0].offered_by, giver.id) &&
     eq(firstForRecipient[0].recipient, recipient.id) &&
     firstForRecipient[0].category === drawn.category &&
@@ -466,6 +467,7 @@ export async function runStage(env, mode, transport = fetch) {
       'Unexpected challenge addressed to drawer after partner draw and response');
     assert(stored.length === 2 &&
       stored.every(c => eq(c.session_id, config.sessionId) &&
+        eq(c.couple_id, config.coupleId) &&
         eq(c.recipient, recipient.id) && c.category === drawn.category),
       'Only the two correct-category recipient challenges may exist');
     assert(stored.filter(c =>
