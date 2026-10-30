@@ -13,6 +13,8 @@
 
 **Protection contre les cartes invisibles au lanceur :** la RLS réelle `challenges_read` autorise un défi uniquement à son **destinataire**. Une liste de défis vide pour A ne démontre donc pas qu'aucune carte destinée à B n'existe. Le mode `--play` vérifie désormais **le même identifiant de soirée sous les comptes A et B séparément**, et abandonne avant le D100 si l'un des deux aperçoit un défi. Le résultat final est confirmé sous B, destinataire de la carte.
 
+**Contrôle final après D100 et Passer :** le script vérifie les cartes persistées séparément sous B **et** sous A, car la politique RLS ne permet pas à B de détecter une carte indue destinée à A. Le résultat attendu est exactement deux cartes sous B (originale passée et remplacement proposé), **zéro sous A**, les identifiants de séance et de destinataire corrects, la catégorie officielle conservée et l'émetteur A correct sur la carte originale. Quatre tests négatifs simulent une carte parasite destinée à A, une fuite RLS vers A, une catégorie corrompue et un destinataire incorrect; l'échec est signalé sans suppression ni répétition automatique des mutations.
+
 **Important** : le script ne provisionne pas de comptes, ne restaure pas de soirée et ne répète pas automatiquement les mutations en cas d'échec. Il conserve les résultats de test sur le seul staging. S'il échoue en cours de route, inspecter la base puis utiliser une autre soirée fictive.
 
 ## Prérequis
