@@ -35,7 +35,11 @@ BEGIN
   SELECT 1 FROM pg_catalog.pg_proc p JOIN pg_catalog.pg_namespace n
    ON n.oid=p.pronamespace
   WHERE n.nspname='public' AND p.proname='draw_for_partner'
-   AND p.prosecdef AND p.proconfig @> ARRAY['search_path=']
+   AND p.prosecdef AND EXISTS (
+      SELECT 1 FROM pg_catalog.unnest(p.proconfig) AS cfg(option)
+      WHERE cfg.option LIKE 'search_path=%'
+        AND pg_catalog.btrim(pg_catalog.split_part(cfg.option,'=',2),'"')=''
+   )
  ) THEN
    RAISE EXCEPTION 'LR-026: draw security-definer / search_path changed';
  END IF;
@@ -43,7 +47,11 @@ BEGIN
   SELECT 1 FROM pg_catalog.pg_proc p JOIN pg_catalog.pg_namespace n
    ON n.oid=p.pronamespace
   WHERE n.nspname='public' AND p.proname='love_respond_and_redraw'
-   AND p.prosecdef AND p.proconfig @> ARRAY['search_path=']
+   AND p.prosecdef AND EXISTS (
+      SELECT 1 FROM pg_catalog.unnest(p.proconfig) AS cfg(option)
+      WHERE cfg.option LIKE 'search_path=%'
+        AND pg_catalog.btrim(pg_catalog.split_part(cfg.option,'=',2),'"')=''
+   )
  ) THEN
    RAISE EXCEPTION 'LR-026: redraw security-definer / search_path changed';
  END IF;
