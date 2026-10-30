@@ -1465,6 +1465,30 @@ function timedEveningItem(timerId){
  return ownEveningChallenges(state.challenges,state.user.id,state.session.id)
   .find(item=>item.id===timerId)||null;
 }
+// A timer may finish while the player signs into a different account or
+// starts a new evening. Only the exact request owner may refresh or notify.
+function ownsTimerCompletionRefresh(context){
+ return state.timerCompletionContext===context&&
+  state.user?.id===context.userId&&
+  state.coupleId===context.coupleId&&state.tab===context.tab&&
+  state.session?.id===context.sessionId;
+}
+async function refreshConfirmedTimedEvening(context){
+ if(!ownsTimerCompletionRefresh(context))return false;
+ const refreshed=await refreshShared(context);
+ // refreshShared also checks server-side session ownership before writing.
+ // A confirmed session closure is the sole permitted transition to null.
+ if(refreshed!==true||state.timerCompletionContext!==context||
+    state.user?.id!==context.userId||state.coupleId!==context.coupleId||
+    state.tab!==context.tab||
+    (state.session!==null&&state.session?.id!==context.sessionId))return false;
+ if(!state.session){
+  state.showEveningChallenges=false;state.selectedEveningChallengeId=null;
+ }
+ render();
+ notify('♡ Défi accompli ♥');
+ return true;
+}
 async function retryExpiredTimedEvening(){
  if(!challengeTimer.autoCompletePending||challengeTimer.decisionPending||timerCompletionInFlight||
     Date.now()<timerCompletionRetryAt||!state.user||!state.session)return;
@@ -1475,7 +1499,8 @@ async function retryExpiredTimedEvening(){
  }
  if(!isAcceptedTimedEveningChallenge(item,state.user.id,state.session.id))return;
  const sessionId=state.session.id,userId=state.user.id;
- timerCompletionInFlight=id;
+ const context={userId,sessionId,coupleId:state.coupleId,tab:state.tab,challengeId:id};
+ timerCompletionInFlight=id;state.timerCompletionContext=context;
  try{
   const result=await completeTimedEveningChallenge({challenge:item,userId,sessionId,rpc,query});
   if(result.outcome==='ineligible')return;
@@ -1483,18 +1508,17 @@ async function retryExpiredTimedEvening(){
   if(ownsVisibleEveningTimer(id,userId,sessionId)){
    challengeTimer.autoCompletePending=false;saveChallengeTimer();
   }
-  if(state.user?.id===userId&&state.session?.id===sessionId){
-   if(result.finished){state.showEveningChallenges=false;state.selectedEveningChallengeId=null;}
-   notify('♡ Défi accompli ♥');
-   await refreshAndShow();
-  }
+  await refreshConfirmedTimedEvening(context);
  }catch(error){
   if(state.user?.id===userId&&state.session?.id===sessionId)
    timerCompletionRetryAt=Date.now()+15000;
   console.warn('Défi terminé : validation serveur en attente',error);
   if(state.user?.id===userId&&state.session?.id===sessionId&&
      !document.hidden)notify('Le minuteur est terminé. Validation du défi en attente de connexion.');
- }finally{timerCompletionInFlight=null;}
+ }finally{
+  if(state.timerCompletionContext===context)state.timerCompletionContext=null;
+  timerCompletionInFlight=null;
+ }
 }
 // LR-002: recover ALL due challenge timers from per-account session storage
 // after Safari/Android reload or suspension; do not require opening the card.
@@ -1521,7 +1545,9 @@ async function reconcileSavedEveningTimers(){
   }
   if(!isAcceptedTimedEveningChallenge(item,state.user.id,state.session.id))continue;
   const userId=state.user.id,sessionId=state.session.id;
+  const context={userId,sessionId,coupleId:state.coupleId,tab:state.tab,challengeId:item.id};
   savedTimerSyncInFlight=true;timerCompletionInFlight=item.id;
+  state.timerCompletionContext=context;
   const expired={...saved,cardId:item.id,ownerUserId:userId,
    ownerSessionId:sessionId,running:false,remainingMs:0,
    notified:true,autoCompletePending:true};
@@ -1534,18 +1560,17 @@ async function reconcileSavedEveningTimers(){
     challengeTimer.running=false;challengeTimer.remainingMs=0;
     challengeTimer.autoCompletePending=false;saveChallengeTimer();
    }
-   if(state.user?.id===userId&&state.session?.id===sessionId){
-    if(result.finished){state.showEveningChallenges=false;state.selectedEveningChallengeId=null;}
-    notify('♡ Défi accompli ♥');
-    await refreshAndShow();
-   }
+   await refreshConfirmedTimedEvening(context);
   }catch(error){
    if(state.user?.id===userId&&state.session?.id===sessionId)
     savedTimerScanAfter=Date.now()+15000;
    console.warn('Minuteur expiré : validation à reprendre après reconnexion',error);
    if(state.user?.id===userId&&state.session?.id===sessionId&&
       !document.hidden)notify('Le minuteur est terminé. Validation du défi en attente de connexion.');
-  }finally{timerCompletionInFlight=null;savedTimerSyncInFlight=false;}
+  }finally{
+   if(state.timerCompletionContext===context)state.timerCompletionContext=null;
+   timerCompletionInFlight=null;savedTimerSyncInFlight=false;
+  }
   return;
  }
 }
