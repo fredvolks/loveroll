@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {runInNewContext} from 'node:vm';
 import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,snapshotEveningCardBeforeRedraw,EVENING_REDRAW_IMMUTABLE_FIELDS,ownsEveningTimerRecord,ownedSavedEveningTimerSnapshot,isSameEveningResponseContext,isEveningRedrawBusyForCurrentView,ownsEveningRedrawRequest,redrawTimerRecovery,mayApplyScopedEveningRefresh} from './evening-private-queue.mjs';
 import {premiumEveningHtml} from './premium-evening.mjs';
 const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
@@ -1250,6 +1251,38 @@ test('LR-026: scoped refresh rejects a newer night BEFORE committing state',()=>
  assert.ok(guard>0&&firstWrite>guard,
   'the session preflight must execute before ANY shared state write');
  assert.match(refresh,/state\.legacyAnswerContext===expectedContext\)\)return;/);
+});
+
+test('LR-026: live refresh implementation aborts stale server evening without writing state',async()=>{
+ const start=app.indexOf('async function refreshShared(expectedContext=null){');
+ const end=app.indexOf('const liveSync=createCoupleLiveSync',start);
+ assert.ok(start>0&&end>start);
+ const source=app.slice(start,end);
+ const request={userId:'fred',sessionId:'original',tab:'session'};
+ for(const sessions of [
+  [{id:'original',finished_at:'2026-10-30T20:00:00Z'},{id:'new',finished_at:null}],
+  [{id:'new',finished_at:null}],
+  [{id:'original',finished_at:null},{id:'new',finished_at:null}],
+  []
+ ]){
+  const state={user:{id:'fred'},coupleId:'couple-1',session:{id:'original'},
+   tab:'session',legacyAnswerContext:request,
+   cycleStatus:'unchanged',monthlyPassQuota:'unchanged',
+   challenges:[{id:'existing'}]};
+  let readCount=0;
+  const query=async table=>{readCount++;return table==='couple_sessions'?sessions:[];};
+  const rpc=async()=>{readCount++;return null;};
+  const scoped=runInNewContext(source+'; refreshShared;',{
+   state,query,rpc,month:()=>'2026-10',
+   isSameEveningResponseContext,mayApplyScopedEveningRefresh
+  });
+  await scoped(request);
+  assert.ok(readCount>=17,'the integration scenario reached the server preflight');
+  assert.equal(state.cycleStatus,'unchanged');
+  assert.equal(state.monthlyPassQuota,'unchanged');
+  assert.equal(state.session.id,'original');
+  assert.deepEqual(state.challenges,[{id:'existing'}]);
+ }
 });
 
 test('LR-026: legacy response refresh remains scoped across a night closure',()=>{
