@@ -114,13 +114,15 @@ export function isPersistedEveningRedrawReceipt(outcome,rows,userId,sessionId,or
  // those are not trustworthy evidence of a committed database mutation.
  const validStamp=value=>{
   if(typeof value!=='string')return false;
-  const parts=/^(\d{4})-(\d{2})-(\d{2})T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.exec(value);
+  const parts=/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.exec(value);
   if(!parts||!Number.isFinite(Date.parse(value)))return false;
-  // Date.parse normalizes impossible dates on some JS engines (Feb 30,
-  // Nov 31). PostgreSQL does not emit those; reject them explicitly.
+  // Date.parse normalizes Feb 30 and 24:00:00 on some engines even though
+  // those cannot be the original timestamp returned by PostgreSQL.
   const year=Number(parts[1]),month=Number(parts[2]),day=Number(parts[3]);
+  const hour=Number(parts[4]),minute=Number(parts[5]),second=Number(parts[6]);
   return year>=100&&month>=1&&month<=12&&day>=1&&
-   day<=new Date(Date.UTC(year,month,0)).getUTCDate();
+   day<=new Date(Date.UTC(year,month,0)).getUTCDate()&&
+   hour<=23&&minute<=59&&second<=59;
  };
  const validCardContent=card=>
   typeof card.card_title==='string'&&card.card_title.trim().length>0&&
