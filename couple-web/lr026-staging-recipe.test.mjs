@@ -375,7 +375,7 @@ test('a SEXUEL card changing category after Passer is refused before replay', as
   const mock = mockSupabase({expectedPreference: 'SEXUEL', drawSexuel: true,
     firstPassWrongCategory: true});
   await assert.rejects(runStage({...env(), LR026_STAGING_PREFERENCE: 'SEXUEL'},
-    'play', mock.fetchFn), /Only the two correct-category B challenges/);
+    'play', mock.fetchFn), /Only the two correct-category recipient challenges/);
   assert.equal(mock.counters().drawCount, 1);
   assert.equal(mock.counters().passCount, 1);
 });
@@ -733,14 +733,14 @@ test('idempotent replay can reorder rows but must not mutate their contents', as
 test('idempotent replay cannot alter persisted replacement even when returning same ID', async () => {
   const mock = mockSupabase({replayMutatesReplacementOfferer: true});
   await assert.rejects(runStage(env(), 'play', mock.fetchFn),
-    /Repeated Passer must not change any persisted challenge field|Exactly one valid same-category replacement offered by A/);
+    /Repeated Passer must not change any persisted challenge field|Exactly one valid same-category replacement offered by drawer/);
   assert.equal(mock.counters().passCount, 2);
 });
 test('SEXUEL idempotent replay cannot silently change the replacement category', async () => {
   const mock = mockSupabase({expectedPreference: 'SEXUEL', drawSexuel: true,
     replayMutatesReplacementCategory: true});
   await assert.rejects(runStage({...env(), LR026_STAGING_PREFERENCE: 'SEXUEL'},
-    'play', mock.fetchFn), /Only the two correct-category B challenges/);
+    'play', mock.fetchFn), /Only the two correct-category recipient challenges/);
   assert.equal(mock.counters().drawCount, 1);
   assert.equal(mock.counters().passCount, 2);
 });
