@@ -81,7 +81,8 @@ test('LR-002 a reset after the real deadline cannot cancel automatic completion'
  const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
  assert.match(source,/if\(challengeTimer\.running&&challengeTimer\.deadline>0&&Date\.now\(\)>=challengeTimer\.deadline\)/);
  assert.match(source,/const autoComplete=!challengeTimer\.decisionPending&&isAcceptedTimedEveningChallenge\(item,state\.user\?\.id,state\.session\?\.id\)/);
- assert.match(source,/if\(!challengeTimer\.autoCompletePending\|\|challengeTimer\.decisionPending\|\|timerCompletionInFlight/);
+ assert.match(source,/if\(!challengeTimer\.autoCompletePending\|\|challengeTimer\.decisionPending\|\|\s*!state\.user\|\|!state\.session\)return;/);
+ assert.match(source,/if\(timerCompletionInFlight&&ownsTimerCompletionSession\(timerCompletionInFlight\)\)return;/);
  assert.match(source,/if\(\['completed','passed','refused'\]\.includes\(item\.status\)\)/);
  assert.match(source,/Validation automatique du défi en cours/);
  assert.doesNotMatch(source,/À vous de décider si le défi continue/);
@@ -799,4 +800,63 @@ test("LR-026 an old account's in-flight completion never blocks or unlocks the n
  finishNew();await second;
  assert.equal(api.inFlight(),null);
  assert.equal(state.timerCompletionContext,null);
+});
+
+test("LR-026 previous account's saved timer scan cannot monopolize a new account",async()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const start=app.indexOf('function ownsTimerCompletionSession(context){');
+ const end=app.indexOf('function endSignal(){',start);
+ assert.ok(start>0&&end>start);
+ let releaseOld,releaseNew;
+ const oldServer=new Promise(resolve=>{releaseOld=resolve;});
+ const newServer=new Promise(resolve=>{releaseNew=resolve;});
+ const state={user:{id:'alice'},coupleId:'couple-A',session:{id:'s-A'},
+  tab:'session',timerCompletionContext:null,challenges:[
+   {id:'card-A',recipient:'alice',session_id:'s-A',status:'accepted'}]};
+ const clock={id:'card-A',autoCompletePending:false,decisionPending:false};
+ const writes=[],calls=[];
+ const api=runInNewContext(app.slice(start,end)+
+  '; ({recover:reconcileSavedEveningTimers,active:()=>timerCompletionInFlight,'+
+  'saved:()=>savedTimerSyncInFlight});',{
+  state,challengeTimer:clock,timerCompletionInFlight:null,timerCompletionRetryAt:0,
+  readSavedChallengeTimer:key=>{
+   const parts=key.split(':');
+   return {cardId:parts.at(-1),ownerUserId:parts[1],
+    ownerSessionId:state.session.id,durationMs:60000,
+    deadline:Date.now()-2000,running:true,remainingMs:0};
+  },
+  ownedSavedEveningTimerSnapshot:saved=>saved,
+  writeSavedChallengeTimer:(key,value)=>writes.push({key,value}),
+  isAcceptedTimedEveningChallenge:()=>true,
+  completeTimedEveningChallenge:async({challenge})=>{
+   calls.push(challenge.id);
+   await (challenge.id==='card-A'?oldServer:newServer);
+   return {outcome:'superseded',finished:false};
+  },
+  ownsVisibleEveningTimer:()=>false,saveChallengeTimer:()=>{},
+  refreshShared:async()=>true,rpc:async()=>{},query:async()=>[],
+  render:()=>{},notify:()=>{},console,document:{hidden:false},Date
+ });
+ const first=api.recover();
+ assert.deepEqual(calls,['card-A']);
+ state.user={id:'bob'};state.coupleId='couple-B';state.session={id:'s-B'};
+ state.challenges=[{id:'card-B',recipient:'bob',session_id:'s-B',status:'accepted'}];
+ clock.id='card-B';
+ const second=api.recover();
+ assert.deepEqual(calls,['card-A','card-B'],
+  'the old pending RPC and its 4-second scan cooldown must not block the next account');
+ const newer=state.timerCompletionContext;
+ assert.equal(newer.challengeId,'card-B');
+ releaseOld();await first;
+ assert.equal(state.timerCompletionContext,newer);
+ assert.equal(api.active(),newer);
+ assert.equal(api.saved(),newer,'old scan may not release the new saved scan lock');
+ releaseNew();await second;
+ assert.equal(api.active(),null);
+ assert.equal(api.saved(),null);
+ assert.equal(state.timerCompletionContext,null);
+ assert.deepEqual(writes.map(x=>x.key),[
+  'loveroll-challenge-clock:alice:card-A',
+  'loveroll-challenge-clock:bob:card-B'
+ ]);
 });
