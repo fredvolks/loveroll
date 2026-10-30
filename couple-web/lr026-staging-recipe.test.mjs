@@ -32,6 +32,7 @@ function mockSupabase(opts = {}) {
   let drawCount = 0;
   let passCount = 0;
   let lastDraw = null;
+  const loginCounts = {a:0,b:0};
   const calls = [];
   const fetchFn = async (uri, init) => {
     count++;
@@ -45,16 +46,21 @@ function mockSupabase(opts = {}) {
     const response = (data, status = 200) => new Response(JSON.stringify(data), {status});
     if (path === '/auth/v1/token') {
       const who = payload.email === 'a@example.invalid' ? 'a' : 'b';
-      return response({access_token: 'auth-token-for-' + who + '-test'});
+      loginCounts[who]++;
+      const suffix = loginCounts[who] > 1 && !opts.staleReusesToken
+        ? '-device-' + loginCounts[who] : '';
+      return response({access_token: 'auth-token-for-' + who + '-test' + suffix});
     }
-    const who = actorToken === 'Bearer auth-token-for-a-test' ? 'a' : 'b';
+    const who = actorToken?.startsWith('Bearer auth-token-for-a-test') ? 'a' : 'b';
     const uid = who === 'a' ? a : b;
     const drawerWho = opts.drawerB ? 'b' : 'a';
     const recipientWho = opts.drawerB ? 'a' : 'b';
     const giverId = opts.drawerB ? b : a;
     const recipientId = opts.drawerB ? a : b;
     if (path === '/auth/v1/user') {
-      return response({id: opts.wrongUser && who === 'a' ? b : uid,
+      return response({id: (opts.wrongUser && who === 'a') ||
+        (opts.staleWrongUser && actorToken?.includes('-device-2'))
+          ? (who === 'a' ? b : a) : uid,
         email: who + '@example.invalid',
         email_confirmed_at: '2026-10-10T00:00:00Z'});
     }
@@ -867,7 +873,15 @@ for (const [action,excluded,extraCalls] of [
    x.payload.p_action,x.payload.p_exclude
   ]),action==='pass'
    ?[['refuse',true]]:[['pass',false],['refuse',!excluded]]);
-  assert(replies.every(x=>x.actorToken==='Bearer auth-token-for-b-test'));
+  assert.deepEqual(replies.map(x=>x.actorToken),[
+   'Bearer auth-token-for-b-test','Bearer auth-token-for-b-test',
+   ...Array(extraCalls).fill('Bearer auth-token-for-b-test-device-2')
+  ]);
+  assert.equal(out.distinct_stale_auth_session,true);
+  const logins=mock.calls.filter(x=>x.path==='/auth/v1/token');
+  assert.deepEqual(logins.map(x=>x.payload.email),[
+   'a@example.invalid','b@example.invalid','b@example.invalid'
+  ]);
  });
 }
 
@@ -882,8 +896,32 @@ test('stale-response staging probe works from B to A with recipient-only RLS', a
  assert.equal(out.stale_replay_checks,2);
  const replies=mock.calls.filter(x=>x.path===
   '/rest/v1/rpc/love_respond_and_redraw');
- assert(replies.every(x=>x.actorToken==='Bearer auth-token-for-a-test'));
+ assert.deepEqual(replies.map(x=>x.actorToken),[
+  'Bearer auth-token-for-a-test','Bearer auth-token-for-a-test',
+  'Bearer auth-token-for-a-test-device-2',
+  'Bearer auth-token-for-a-test-device-2'
+ ]);
+ const logins=mock.calls.filter(x=>x.path==='/auth/v1/token');
+ assert.deepEqual(logins.map(x=>x.payload.email),[
+  'a@example.invalid','b@example.invalid','a@example.invalid'
+ ]);
 });
+
+for(const options of [
+ {staleReusesToken:true},{staleWrongUser:true}
+]){
+ test('stale device needs a second valid and distinct GoTrue login: '+
+  JSON.stringify(options),async()=>{
+  const mock=mockSupabase({...options,expectStaleReplay:true});
+  await assert.rejects(runStage({...env(),
+   LR026_STAGING_STALE_REPLAY:'true'},'play',mock.fetchFn),
+   /Stale response probe requires a second independent recipient Auth session|Authenticated user ID does not match/);
+  assert.equal(mock.counters().drawCount,1);
+  assert.equal(mock.counters().passCount,2);
+  const logins=mock.calls.filter(c=>c.path==='/auth/v1/token');
+  assert.equal(logins.length,3);
+ });
+}
 
 for(const options of [
  {staleWrongAction:true},{staleWrongExclusion:true},
