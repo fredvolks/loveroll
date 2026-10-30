@@ -179,6 +179,37 @@ WITH expected AS (
      AND p.proname='love_stamp_challenge_pass'
      AND p.prorettype='pg_catalog.trigger'::pg_catalog.regtype
   ) AS pass_timestamp_function_intact,
+  -- Unique keys prevent the same D100 card, draw-bag identity, or
+  -- couple-cycle exclusion from silently duplicating under concurrent plays.
+  -- Assert validity and exact column/key order; checks are catalog-only.
+  (SELECT pg_catalog.count(*)=3 AND pg_catalog.bool_and(
+     ix.indisunique AND ix.indisvalid AND ix.indisready AND
+     CASE
+      WHEN tbl.relname='couple_challenges'
+       AND idx.relname='love_challenge_unique_card' THEN
+       pg_catalog.pg_get_indexdef(ix.indexrelid)=
+        'CREATE UNIQUE INDEX love_challenge_unique_card ON public.couple_challenges USING btree (session_id, recipient, category, card_id)'
+      WHEN tbl.relname='love_card_draw_history'
+       AND idx.relname='love_card_draw_history_pkey' THEN
+       pg_catalog.pg_get_indexdef(ix.indexrelid)=
+        'CREATE UNIQUE INDEX love_card_draw_history_pkey ON public.love_card_draw_history USING btree (couple_id, recipient_user_id, category, card_id)'
+      WHEN tbl.relname='love_cycle_excluded_cards'
+       AND idx.relname='love_cycle_excluded_cards_pkey' THEN
+       pg_catalog.pg_get_indexdef(ix.indexrelid)=
+        'CREATE UNIQUE INDEX love_cycle_excluded_cards_pkey ON public.love_cycle_excluded_cards USING btree (couple_id, cycle_number, category, card_id)'
+      ELSE false END
+   )
+   FROM pg_catalog.pg_index ix
+   JOIN pg_catalog.pg_class idx ON idx.oid=ix.indexrelid
+   JOIN pg_catalog.pg_class tbl ON tbl.oid=ix.indrelid
+   JOIN pg_catalog.pg_namespace ns ON ns.oid=tbl.relnamespace
+   WHERE ns.nspname='public'
+     AND (tbl.relname,idx.relname) IN (
+      ('couple_challenges','love_challenge_unique_card'),
+      ('love_card_draw_history','love_card_draw_history_pkey'),
+      ('love_cycle_excluded_cards','love_cycle_excluded_cards_pkey')
+     )
+  ) AS d100_uniqueness_indexes_intact,
   (SELECT pg_catalog.count(*)=0 FROM pg_catalog.pg_proc p
    JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace
    WHERE n.nspname='couple_private'
@@ -206,6 +237,7 @@ CROSS JOIN LATERAL (
    CASE WHEN c.browser_table_permissions_safe IS TRUE THEN NULL ELSE 'Browser table GRANTs widened' END,
    CASE WHEN c.pass_timestamp_trigger_intact IS TRUE THEN NULL ELSE 'Pass timestamp trigger missing or disabled' END,
    CASE WHEN c.pass_timestamp_function_intact IS TRUE THEN NULL ELSE 'Pass timestamp function drifted' END,
+   CASE WHEN c.d100_uniqueness_indexes_intact IS TRUE THEN NULL ELSE 'D100 identity unique indexes missing or changed' END,
    CASE WHEN c.pending_migration_not_already_installed IS TRUE THEN NULL ELSE 'LR-026 helpers already present' END
  ],NULL::text) AS blockers
 ) result;
