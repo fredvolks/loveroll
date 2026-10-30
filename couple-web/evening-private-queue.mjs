@@ -264,6 +264,30 @@ export function ownsEveningTimerRecord(timer,cardId,userId,sessionId){
 }
 
 /**
+ * A clock stored in the browser is not authoritative session state.
+ * Reject a snapshot tagged for a different user/evening/card BEFORE the
+ * UI restores it or the background expiry scanner acts on it.
+ *
+ * Older builds stored only a user+card-scoped localStorage key; accept that
+ * untagged legacy shape so an ongoing countdown survives this upgrade.
+ * A partially tagged snapshot, however, is corrupted and must not be used.
+ */
+export function ownedSavedEveningTimerSnapshot(saved,cardId,userId,sessionId){
+ if(!saved||typeof saved!=='object'||Array.isArray(saved)||
+    typeof cardId!=='string'||!cardId||
+    typeof userId!=='string'||!userId||
+    typeof sessionId!=='string'||!sessionId||
+    !Number.isFinite(saved.durationMs)||saved.durationMs<=0)return null;
+ const identity=['cardId','ownerUserId','ownerSessionId'];
+ const present=identity.map(key=>Object.hasOwn(saved,key));
+ if(present.some(Boolean)){
+  if(!present.every(Boolean)||saved.cardId!==cardId||
+     saved.ownerUserId!==userId||saved.ownerSessionId!==sessionId)return null;
+ }
+ return saved;
+}
+
+/**
  * Reconcile an uncertain Passer/Refuser receipt against an independently
  * refreshed challenge, never against the button the user tapped.
  * Keep the timer untouched when no reliable status is available.
