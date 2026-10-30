@@ -284,11 +284,19 @@ export async function runStage(env, mode, transport = fetch) {
   assert(sessionRows.length === 1 && sessionRows[0].paired_turns === false &&
     sessionRows[0].self_draws === false,
     'Mutating recipe requires a fresh legacy partner-draw session (paired_turns=false, self_draws=false)');
-  const rolls = await client.rows('couple_personal_rolls',
-    'select=user_id,face&session_id=eq.' + config.sessionId, a.token);
-  assert(rolls.length === 2 && rolls.some(x => eq(x.user_id, a.id) && x.face > 0) &&
-    rolls.some(x => eq(x.user_id, b.id) && x.face > 0),
-    'Two D6 rolls must exist before first D100 draw');
+  // Reject a malformed or RLS-invisible D6 fixture before calling the
+  // mutating D100 RPC. A-only visibility does NOT prove B can read both D6.
+  // Explicit session IDs, unique owners and faces 1..6 are mandatory.
+  const d6Query = 'select=session_id,user_id,face&session_id=eq.' + config.sessionId;
+  for (const actor of [a, b]) {
+    const rolls = await client.rows('couple_personal_rolls', d6Query, actor.token);
+    assert(rolls.length === 2 &&
+      [a.id, b.id].every(id =>
+        rolls.filter(r => eq(r.user_id, id) &&
+          eq(r.session_id, config.sessionId) &&
+          Number.isInteger(r.face) && r.face >= 1 && r.face <= 6).length === 1),
+      'Two valid D6 rolls for this session must be readable by both partners before D100');
+  }
   // Real production RLS on couple_challenges only exposes each card
   // to its RECIPIENT, not the person offering it. A's empty list alone
   // can conceal B's existing card; require zero visible challenges for
