@@ -67,3 +67,14 @@ test('LR-026: post-installation verification aborts before commit if either RPC 
  assert.ok(sql.indexOf('DO $lr026_postcheck$') <
            sql.lastIndexOf('COMMIT;'));
 });
+
+test('LR-026: each PL/pgSQL DO block closes with END; before its dollar delimiter',()=>{
+ const smoke=readFileSync(new URL('./lr026-server-variety-smoke.sql',import.meta.url),'utf8');
+ for(const tag of ['guard','apply','postcheck']){
+  assert.ok(sql.includes('END; $lr026_'+tag+'$;'),
+   'Missing END; on the '+tag+' block');
+  assert.ok(!sql.includes('END $lr026_'+tag+'$;'),
+   'Invalid END without semicolon on '+tag);
+ }
+ assert.ok(smoke.includes('END; $lr026_test$;'));
+});
