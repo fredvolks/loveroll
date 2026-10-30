@@ -242,3 +242,22 @@ test('PWA release refreshes the actual iPad D100 CSS and ONE shared stage module
  assert.ok(html.includes('app.js?v='+appTag));
  assert.ok(app.includes('service-worker.js?v='+appTag));
 });
+
+test('Web 259 never serves a stale countdown UI from an older PWA cache',()=>{
+ const build=release.build;
+ const tag=build.replaceAll('-','').replace('.','-web');
+ const timerTag=build.replaceAll('-','').replace('.','-timer');
+ assert.equal(build,'2026-10-29.259','Expected the approved timer UI release');
+ assert.ok(html.includes('app.js?v='+tag));
+ assert.ok(app.includes("const WEB_RELEASE='"+build+"'"));
+ assert.ok(app.includes('service-worker.js?v='+tag));
+ assert.ok(sw.includes("const CACHE='loveroll-static-v"+build.split('.')[1]+"'"));
+ assert.ok(sw.includes('./timed-evening-completion.mjs'),
+  'The offline shell must include the active timed completion module');
+ assert.ok(app.includes('timed-evening-completion.mjs?v='+timerTag));
+ const control=read('timed-evening-completion.mjs');
+ assert.match(control,/export function timedEveningTimerControl\(timer\)/);
+ assert.match(control,/Validation en cours/);
+ assert.match(app,/presentation\.disabled/);
+ assert.match(app,/presentation\.resetDisabled/);
+});
