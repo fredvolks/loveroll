@@ -114,14 +114,34 @@ test('LR-026: malformed eligible items never become drawable cards',()=>{
  }),TypeError);
 });
 
-test('LR-026: legacy RPC fields and canonical library face identify the same card',()=>{
+test('LR-026: card_id identifies cards, never the die result face or draw row ID',()=>{
  const fromDraw={
-  category:'SENSUEL',face:7,card_title:'Un moment en douceur',
+  id:'challenge-row-19',category:'SENSUEL',face:7,card_id:19,
+  card_title:'Un moment en douceur',
   card_description:'Propose un massage et une détente.'
  };
- const saved={category:'SENSUEL',card_id:7,title:'Titre édité',
-  description:'Consigne remplacée'};
- assert.equal(areNearDuplicateEveningCards(fromDraw,saved),true);
+ const sameCard={category:'SENSUEL',face:99,card_id:19,
+  title:'Titre édité',description:'Consigne remplacée'};
+ const differentCard={category:'SENSUEL',face:7,card_id:8,
+  title:'Une danse dans la cuisine',
+  description:'Écoutez un morceau puis dansez'};
+ assert.equal(areNearDuplicateEveningCards(fromDraw,sameCard),true);
+ assert.equal(areNearDuplicateEveningCards(fromDraw,differentCard),false);
+ assert.equal(areNearDuplicateEveningCards(
+  {category:'SENSUEL',face:19,title:'Lire un livre',description:'Lecture au calme'},
+  sameCard),false);
+ assert.equal(areNearDuplicateEveningCards(
+  {category:'SENSUEL',id:'19',title:'Pique-nique',description:'Prépare une collation'},
+  sameCard),false);
+ const chosen=filterSimilarEveningCandidates({
+  eligibleCards:[differentCard,sameCard],
+  recentInSession:[fromDraw],selectedCategory:'SENSUEL'
+ });
+ assert.deepEqual(chosen.candidates,[differentCard]);
+ assert.equal(chosen.suppressedCount,1);
+});
+
+test('LR-026: legacy RPC card text fields support title similarity',()=>{
  const descriptive={category:'SENSUEL',card_title:'La danse lente',
   card_description:'Proposez une danse lente ensemble'};
  const alternate={category:'SENSUEL',title:'La danse lente',
