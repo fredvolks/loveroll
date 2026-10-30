@@ -5,6 +5,12 @@ export function timedEveningTimerControl(timer){
   label:'♡ Validation en cours',status:'Validation du défi en cours',
   disabled:true,resetDisabled:true
  };
+ // A Passer/Refuser RPC is deciding this card's authoritative status.
+ // Keep the timer and its reset locked until server reconciliation completes.
+ if(timer?.decisionPending)return {
+  label:'♡ Réponse en cours',status:'Décision sur le défi en cours',
+  disabled:true,resetDisabled:true
+ };
  if(timer?.running)return {
   label:'Ⅱ Pause',status:'En cours',disabled:false,resetDisabled:false
  };
