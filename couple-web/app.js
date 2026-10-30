@@ -946,7 +946,8 @@ async function refreshShared(expectedContext=null){
  // it. Ordinary shared refreshes keep their previous behavior.
  const current=()=>!expectedContext||(state.coupleId===c&&
   isSameEveningResponseContext(state,expectedContext)&&
-  state.redrawBusyContext===expectedContext);
+  (state.redrawBusyContext===expectedContext||
+   state.eveningStartContext===expectedContext));
  if(!current())return;
  const [rolls,sessions,advents,events,diary,occasionSettings,occasionRolls,keys,challengeHistory,gifts,adventServerDate,eveningStats,calendarChallenges,eveningReviews,calendarPasses,monthlyPassQuota,cycleInfo]=await Promise.all([
  query('couple_rolls',{eq:{couple_id:c}}),
@@ -3118,24 +3119,53 @@ async function handle(action,element){
   return;
  }
  if(verb==='evening-start'){
-  // Prime WebAudio immediately during the user's tap, before awaiting the server.
+  // Prime WebAudio immediately on tap, before any awaited database request.
   if(challengeTimer.mode==='sound')void unlockLoveRollSounds();
-  const picked=ownEveningChallenges(state.challenges,state.user?.id,state.session?.id).find(x=>x.id===parts[0]);
-  if(!picked||!['proposed','accepted'].includes(picked.status))throw Error('Ce défi ne peut pas être commencé.');
-  if(picked.status==='proposed')
-   await rpc('answer_challenge',{p_id:picked.id,p_status:'accepted'});
-  state.showEveningChallenges=true;state.selectedEveningChallengeId=picked.id;
-  await refreshAndShow();
-  const active=state.challenges.find(c=>c.id===picked.id);
-  const minutes=resolvedCard(active||picked).minutes;
-  if(minutes>0){
-   activeTimer(active||picked,minutes);
-   if(!challengeTimer.running&&challengeTimer.remainingMs>0){
-    challengeTimer.deadline=Date.now()+challengeTimer.remainingMs;
-    challengeTimer.running=true;challengeTimer.notified=false;
-    saveChallengeTimer();
+  if(isSameEveningResponseContext(state,state.eveningStartContext))return;
+  const startContext={sessionId:state.session?.id,userId:state.user?.id,tab:state.tab};
+  const picked=ownEveningChallenges(state.challenges,startContext.userId,startContext.sessionId)
+   .find(x=>x.id===parts[0]);
+  if(!picked||!['proposed','accepted'].includes(picked.status))
+   throw Error('Ce défi ne peut pas être commencé.');
+  state.eveningStartContext=startContext;
+  const isCurrentStart=()=>isSameEveningResponseContext(state,startContext)&&
+   state.eveningStartContext===startContext;
+  try{
+   if(picked.status==='proposed'){
+    await rpc('answer_challenge',{p_id:picked.id,p_status:'accepted'});
+    // A late response from account A must never select or start B's timer.
+    if(!isCurrentStart())return;
    }
-   updateChallengeClock();
+   // Refresh without an intermediate render or an unscoped account write.
+   await refreshShared(startContext);
+   if(!isCurrentStart())return;
+   const active=ownEveningChallenges(state.challenges,startContext.userId,startContext.sessionId)
+    .find(x=>x.id===picked.id);
+   if(!active||!['proposed','accepted'].includes(active.status)){
+    state.selectedEveningChallengeId=null;
+    state.showEveningChallenges=true;
+    render();
+    notify('Ce défi a déjà changé. Consulte ta liste pour voir son état.');
+    return;
+   }
+   state.showEveningChallenges=true;
+   state.selectedEveningChallengeId=active.id;
+   const minutes=resolvedCard(active).minutes;
+   if(minutes>0){
+    activeTimer(active,minutes);
+    if(!challengeTimer.running&&challengeTimer.remainingMs>0){
+     challengeTimer.deadline=Date.now()+challengeTimer.remainingMs;
+     challengeTimer.running=true;challengeTimer.notified=false;
+     saveChallengeTimer();
+    }
+   }
+   render();
+   if(minutes>0)updateChallengeClock();
+  }catch(error){
+   if(!isCurrentStart())return;
+   throw error;
+  }finally{
+   if(state.eveningStartContext===startContext)state.eveningStartContext=null;
   }
   return;
  }
