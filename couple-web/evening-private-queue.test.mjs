@@ -885,6 +885,108 @@ test('LR-026: Commencer ignores a stale RPC or refresh after switching accounts'
  assert.equal(state.eveningStartContext,null);
 });
 
+test('LR-026: direct timer play needs authoritative accepted RLS row, not just a successful RPC',async()=>{
+ const begin=app.indexOf("if(verb==='timer-toggle')");
+ const end=app.indexOf("if(verb==='give-challenge')",begin);
+ const branch=app.slice(begin,end);
+ assert.ok(begin>=0&&end>begin);
+ const make=Function('state','challengeTimer','ownsVisibleEveningTimer',
+  'isSameEveningResponseContext','timedEveningItem','rpc','query',
+  'updateChallengeClock','saveChallengeTimer','notify','unlockLoveRollSounds',
+  'return async function(verb){'+branch+'}');
+ const card={id:'card-1',status:'proposed',recipient:'fred',session_id:'night-1'};
+ const state={user:{id:'fred'},session:{id:'night-1'},tab:'session'};
+ const clock={id:'card-1',ownerUserId:'fred',ownerSessionId:'night-1',
+  mode:'vibrate',running:false,remainingMs:180000,deadline:0,
+  notified:false,autoCompletePending:false};
+ const owns=(cardId,userId,sessionId)=>ownsEveningTimerRecord(clock,cardId,userId,sessionId)&&
+  state.user?.id===userId&&state.session?.id===sessionId;
+ let writes=0,rpcs=0,reads=0,seen=[],rows=[{...card}];
+ const play=make(state,clock,owns,isSameEveningResponseContext,
+  ()=>card,async()=>{rpcs++;},async(table,options)=>{
+   reads++;assert.equal(table,'couple_challenges');
+   assert.deepEqual(options.eq,{id:'card-1',session_id:'night-1',recipient:'fred'});
+   return rows;
+  },()=>{},()=>{writes++;},message=>seen.push(message),()=>true);
+ await assert.rejects(play('timer-toggle'),/pas confirmé/);
+ assert.equal(rpcs,1);
+ assert.equal(reads,1);
+ assert.equal(writes,0);
+ assert.equal(clock.running,false);
+ assert.equal(state.timerStartContext,null);
+ rows=[{...card,status:'passed'}];
+ await assert.rejects(play('timer-toggle'),/pas confirmé/);
+ assert.equal(clock.running,false,'a card passed on another device cannot start');
+ rows=[{...card,status:'accepted'}];
+ await play('timer-toggle');
+ assert.equal(clock.running,true);
+ assert.equal(writes,1);
+ assert.ok(clock.deadline>Date.now());
+ assert.equal(state.timerStartContext,null);
+ assert.equal(seen.length,0);
+});
+
+test('LR-026: late timer-play RPC cannot start or notify another account',async()=>{
+ const begin=app.indexOf("if(verb==='timer-toggle')");
+ const end=app.indexOf("if(verb==='give-challenge')",begin);
+ const make=Function('state','challengeTimer','ownsVisibleEveningTimer',
+  'isSameEveningResponseContext','timedEveningItem','rpc','query',
+  'updateChallengeClock','saveChallengeTimer','notify','unlockLoveRollSounds',
+  'return async function(verb){'+app.slice(begin,end)+'}');
+ const state={user:{id:'fred'},session:{id:'night-a'},tab:'session'};
+ const clock={id:'same',ownerUserId:'fred',ownerSessionId:'night-a',
+  mode:'vibrate',remainingMs:150000,running:false,deadline:0,
+  autoCompletePending:false,notified:false};
+ const owns=(cardId,userId,sessionId)=>ownsEveningTimerRecord(clock,cardId,userId,sessionId)&&
+  state.user?.id===userId&&state.session?.id===sessionId;
+ const card={id:'same',status:'proposed',session_id:'night-a',recipient:'fred'};
+ let resolveRpc,calls=0,queries=0,writes=0,notifies=0;
+ const pending=new Promise(done=>{resolveRpc=done;});
+ const play=make(state,clock,owns,isSameEveningResponseContext,
+  ()=>card,async()=>{calls++;await pending;},
+  async()=>{queries++;return [{...card,status:'accepted'}];},
+  ()=>{},()=>{writes++;},()=>{notifies++;},()=>true);
+ const first=play('timer-toggle');
+ await play('timer-toggle');
+ assert.equal(calls,1,'second tap cannot issue a duplicate acceptance RPC');
+ state.user={id:'partner'};state.session={id:'night-b'};
+ clock.ownerUserId='partner';clock.ownerSessionId='night-b';
+ resolveRpc();await first;
+ assert.equal(queries,0,'old user cannot query a newly signed-in account');
+ assert.equal(writes,0);assert.equal(notifies,0);
+ assert.equal(clock.running,false);
+ assert.equal(state.timerStartContext,null);
+});
+
+test('LR-026: pending timer-play RLS read cannot start a switched-account clock',async()=>{
+ const begin=app.indexOf("if(verb==='timer-toggle')");
+ const end=app.indexOf("if(verb==='give-challenge')",begin);
+ const make=Function('state','challengeTimer','ownsVisibleEveningTimer',
+  'isSameEveningResponseContext','timedEveningItem','rpc','query',
+  'updateChallengeClock','saveChallengeTimer','notify','unlockLoveRollSounds',
+  'return async function(verb){'+app.slice(begin,end)+'}');
+ const state={user:{id:'fred'},session:{id:'night-a'},tab:'session'};
+ const clock={id:'card',ownerUserId:'fred',ownerSessionId:'night-a',
+  mode:'vibrate',running:false,remainingMs:60000,autoCompletePending:false};
+ const owns=(id,u,s)=>ownsEveningTimerRecord(clock,id,u,s)&&
+  state.user?.id===u&&state.session?.id===s;
+ const card={id:'card',status:'accepted'};
+ let queryDone,reads=0,writes=0,notices=0;
+ const pending=new Promise(done=>{queryDone=done});
+ const play=make(state,clock,owns,isSameEveningResponseContext,
+  ()=>card,async()=>{throw Error('already accepted');},
+  async()=>{reads++;await pending;return [{...card,status:'accepted'}];},
+  ()=>{},()=>{writes++;},()=>{notices++;},()=>true);
+ const running=play('timer-toggle');
+ assert.equal(reads,1);
+ state.user={id:'partner'};state.session={id:'night-b'};
+ clock.ownerUserId='partner';clock.ownerSessionId='night-b';
+ queryDone();await running;
+ assert.equal(clock.running,false);
+ assert.equal(writes,0);assert.equal(notices,0);
+ assert.equal(state.timerStartContext,null);
+});
+
 test('LR-026: Commencer never starts a clock on an unconfirmed proposed row',async()=>{
  const code=app.slice(app.indexOf("if(verb==='evening-start')"),
   app.indexOf("if(verb==='surprise-activity')"));
@@ -1013,9 +1115,9 @@ test('LR-026: stale redraw, auto-completion and timer controls respect timer own
  const controls=app.slice(app.indexOf("if(verb==='timer-reset')"),
   app.indexOf("if(verb==='give-challenge')"));
  assert.match(controls,/if\(!ownsVisibleEveningTimer\(challengeTimer\.id,state\.user\?\.id,state\.session\?\.id\)\)/);
- assert.match(controls,/const ownsClock=\(\)=>ownsVisibleEveningTimer\(timerChallengeId,timerUserId,timerSessionId\)/);
- assert.match(controls,/await rpc\('answer_challenge',[\s\S]*?if\(!ownsClock\(\)\)return;/);
- assert.match(controls,/if\(!ownsClock\(\)\)return;\s+challengeTimer\.deadline=Date\.now\(\)/);
+ assert.match(controls,/const ownsClock=\(\)=>ownsVisibleEveningTimer\(timerChallengeId,timerUserId,timerSessionId\)&&/);
+ assert.match(controls,/await rpc\('answer_challenge',[\s\S]*?if\(!ownsStart\(\)\)return;/);
+ assert.match(controls,/if\(!ownsStart\(\)\)return;\s+challengeTimer\.deadline=Date\.now\(\)/);
 });
 
 test('LR-026: redraw timer only stops on valid receipt or independently refreshed terminal status',()=>{
