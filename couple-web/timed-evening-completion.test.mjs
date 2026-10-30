@@ -860,3 +860,52 @@ test("LR-026 previous account's saved timer scan cannot monopolize a new account
   'loveroll-challenge-clock:bob:card-B'
  ]);
 });
+
+test("LR-026 stale successful completion must not clear another account's retry delay",async()=>{
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const start=source.indexOf('function ownsTimerCompletionSession(context){');
+ const end=source.indexOf('// LR-002: recover ALL due challenge timers',start);
+ assert.ok(start>0&&end>start);
+ let releaseOld;
+ const pendingOld=new Promise(resolve=>{releaseOld=resolve;});
+ const state={user:{id:'alice'},coupleId:'couple-A',session:{id:'session-A'},
+  tab:'session',timerCompletionContext:null,timerCompletionRetryOwner:null};
+ const timer={id:'card-A',autoCompletePending:true,decisionPending:false};
+ const calls=[],notifications=[];
+ const api=runInNewContext(source.slice(start,end)+
+  '; ({retry:retryExpiredTimedEvening,backoff:()=>timerCompletionRetryAt});',{
+  state,challengeTimer:timer,timerCompletionInFlight:null,timerCompletionRetryAt:0,
+  timedEveningItem:()=>({id:timer.id,recipient:state.user.id,
+   session_id:state.session.id,status:'accepted'}),
+  isAcceptedTimedEveningChallenge:()=>true,
+  completeTimedEveningChallenge:async ({challenge})=>{
+   calls.push(challenge.id);
+   if(challenge.id==='card-A'){
+    await pendingOld;
+    return {outcome:'completed',finished:false};
+   }
+   throw Error('offline for Bob');
+  },
+  rpc:async()=>{},query:async()=>[],ownsVisibleEveningTimer:()=>false,
+  saveChallengeTimer:()=>{},refreshShared:async()=>true,
+  render:()=>{},notify:msg=>notifications.push(msg),
+  console:{warn:()=>{}},document:{hidden:false},Date
+ });
+ const oldRun=api.retry();
+ assert.deepEqual(calls,['card-A']);
+ state.user={id:'bob'};state.coupleId='couple-B';state.session={id:'session-B'};
+ timer.id='card-B';
+ const newRun=api.retry();
+ await newRun;
+ const bobOwner=JSON.stringify(['bob','couple-B','session-B','card-B']);
+ assert.equal(state.timerCompletionRetryOwner,bobOwner);
+ const deadline=api.backoff();
+ assert.ok(deadline>Date.now()+10000);
+ releaseOld();
+ await oldRun;
+ assert.deepEqual(calls,['card-A','card-B']);
+ assert.equal(state.timerCompletionRetryOwner,bobOwner,
+  'Alice must not erase Bob\'s scheduled offline retry');
+ assert.equal(api.backoff(),deadline,
+  'Alice must not shorten Bob\'s pending backoff');
+});
