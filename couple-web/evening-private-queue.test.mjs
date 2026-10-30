@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt} from './evening-private-queue.mjs';
+import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isSameEveningResponseContext} from './evening-private-queue.mjs';
 import {premiumEveningHtml} from './premium-evening.mjs';
 const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
 const migration=readFileSync(new URL('./migrations/20261015_evening_private_challenge_queue.sql',import.meta.url),'utf8');
@@ -109,6 +109,37 @@ test('LR-026: app checks original ID before selecting and confirming a new D100 
  assert.match(app,/state\.selectedEveningChallengeId=receiptValid\?outcome\.replacement_id:null/);
  assert.match(app,/redrawFeedback=eveningRedrawFeedback\(outcome,challengeId\)/);
  assert.doesNotMatch(app,/state\.selectedEveningChallengeId=outcome\?\.replacement_id\|\|null/);
+});
+
+test('LR-026: delayed redraw updates only the initiating authenticated evening and tab',()=>{
+ const request={userId:'partner',sessionId:'evening-1',tab:'session'};
+ const active={user:{id:'partner'},session:{id:'evening-1'},tab:'session'};
+ assert.equal(isSameEveningResponseContext(active,request),true);
+ assert.equal(isSameEveningResponseContext({...active,user:{id:'fred'}},request),false,
+  'switching accounts must not select a stale partner card');
+ assert.equal(isSameEveningResponseContext({...active,session:{id:'evening-2'}},request),false,
+  'starting a new evening must not select a card from an old evening');
+ assert.equal(isSameEveningResponseContext({...active,session:null},request),false);
+ assert.equal(isSameEveningResponseContext({...active,tab:'settings'},request),false,
+  'leaving the Soirée tab must suppress stale modal navigation');
+ assert.equal(isSameEveningResponseContext(active,{...request,sessionId:''}),false);
+ assert.equal(isSameEveningResponseContext(active,{...request,userId:''}),false);
+ assert.equal(isSameEveningResponseContext(active,{...request,tab:''}),false);
+ assert.equal(isSameEveningResponseContext(active,null),false);
+ assert.equal(isSameEveningResponseContext(null,request),false);
+});
+test('LR-026: async D100 action checks same initiating context before selection and after refresh',()=>{
+ assert.match(app,/const responseContext=\{sessionId:state\.session\.id,userId:state\.user\?\.id,tab:state\.tab\}/);
+ const start=app.indexOf("if(verb==='evening-pass'||verb==='evening-refuse-choice')");
+ const end=app.indexOf("if(verb==='evening-start')",start);
+ assert.ok(start>=0&&end>start);
+ const branch=app.slice(start,end);
+ assert.equal((branch.match(/isSameEveningResponseContext\(state,responseContext\)/g)||[]).length,2,
+  'must protect both UI navigation and notifications');
+ assert.match(branch,/if\(isSameEveningResponseContext\(state,responseContext\)\)\{[\s\S]*?state\.selectedEveningChallengeId=receiptValid\?outcome\.replacement_id:null/);
+ assert.match(branch,/await refreshAndShow\(\);[\s\S]*?if\(isSameEveningResponseContext\(state,responseContext\)\)\s+redrawFeedback=eveningRedrawFeedback\(outcome,challengeId\)/);
+ assert.doesNotMatch(branch,/if\(state\.session\?\.id===sessionId\)/,
+  'checking only the session leaves another account/tab exposed');
 });
 
 test('Each user sees ONLY their own challenge cards, sorted chronologically',()=>{
