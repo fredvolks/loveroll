@@ -40,8 +40,8 @@ function mockSupabase(opts = {}) {
     assert.equal(init.headers.apikey, env().LR026_STAGING_PUBLISHABLE_KEY);
     const path = url.pathname;
     const actorToken = init.headers.Authorization;
-    calls.push({method: init.method, path, actorToken});
     const payload = init.body ? JSON.parse(init.body) : undefined;
+    calls.push({method: init.method, path, actorToken, payload});
     const response = (data, status = 200) => new Response(JSON.stringify(data), {status});
     if (path === '/auth/v1/token') {
       const who = payload.email === 'a@example.invalid' ? 'a' : 'b';
@@ -181,7 +181,9 @@ function mockSupabase(opts = {}) {
         id: replacedId,
         session_id: passCount === 1 && opts.firstPassWrongSession ? couple : session,
         offered_by: (passCount === 1 && opts.firstPassWrongReplacementOfferer) ||
-          (passCount > 1 && opts.replayMutatesReplacementOfferer) ? recipientId : giverId,
+          (passCount > 1 && opts.replayMutatesReplacementOfferer) ||
+          (passCount > 2 && opts.staleMutatesReplacementOfferer)
+            ? recipientId : giverId,
         status: 'proposed', recipient: recipientId,
         face: (passCount === 1 && opts.firstPassDuplicateFace) ? 14 :
           (passCount === 1 && opts.firstPassInvalidFace) ? 101 : 53,
@@ -219,15 +221,28 @@ function mockSupabase(opts = {}) {
     }
     if (path === '/rest/v1/rpc/love_respond_and_redraw') {
       assert.equal(who, recipientWho);
-      assert.equal(payload.p_action, opts.expectedAction ?? 'pass');
-      assert.equal(payload.p_exclude, opts.expectedExclude ?? false);
+      const action = opts.expectedAction ?? 'pass';
+      const excluded = opts.expectedExclude ?? false;
+      let wanted = {action,exclude:excluded};
+      if (passCount >= 2 && opts.expectStaleReplay) {
+        const alternatives = action === 'pass'
+          ? [{action:'refuse',exclude:true}]
+          : [{action:'pass',exclude:false},{action:'refuse',exclude:!excluded}];
+        wanted = alternatives[passCount-2];
+        assert.ok(wanted,'the staging recipe may not issue extra RPC requests');
+      }
+      assert.equal(payload.p_action, wanted.action);
+      assert.equal(payload.p_exclude, wanted.exclude);
       assert.equal(payload.p_challenge, drawnId);
       passCount++;
-      return response({original_id: drawnId, replacement_id: replacedId,
-        action: passCount > 1 && opts.replayWrongAction ? 'declined' :
-          (opts.expectedAction ?? 'pass'),
-        excluded: passCount > 1 && opts.replayWrongExclusion ?
-          !(opts.expectedExclude ?? false) : (opts.expectedExclude ?? false),
+      const stale = passCount > 2;
+      return response({
+        original_id: drawnId,
+        replacement_id: stale && opts.staleWrongReplacement ? drawnId : replacedId,
+        action: (stale && opts.staleWrongAction) ||
+          (passCount > 1 && opts.replayWrongAction) ? 'declined' : action,
+        excluded: (stale && opts.staleWrongExclusion) ||
+          (passCount > 1 && opts.replayWrongExclusion) ? !excluded : excluded,
         replacement_unavailable: Boolean(passCount === 1 &&
           opts.firstResponseUnavailableFlag),
         already_processed: passCount > 1});
@@ -768,6 +783,78 @@ for (const options of [
       'A malformed persisted Passer must stop BEFORE a second RPC');
   });
 }
+
+test('stale-response staging probe rejects ambiguous options before network', async () => {
+ for (const value of ['TRUE','1','yes','',null]) {
+  const mock=mockSupabase();
+  await assert.rejects(runStage({...env(),LR026_STAGING_STALE_REPLAY:value},
+   'play',mock.fetchFn),/Stale-response replay switch must be true or false/);
+  assert.equal(mock.counters().count,0);
+ }
+});
+
+for (const [action,excluded,extraCalls] of [
+ ['pass',false,1],['refuse',false,2],['refuse',true,2]
+]) {
+ test('real-account staging stale replay returns immutable receipt for '+
+  action+' exclude='+excluded,async()=>{
+  const mock=mockSupabase({
+   expectedAction:action,expectedExclude:excluded,expectStaleReplay:true
+  });
+  const out=await runStage({...env(),
+   LR026_STAGING_ACTION:action,LR026_STAGING_EXCLUDE:String(excluded),
+   LR026_STAGING_STALE_REPLAY:'true'},'play',mock.fetchFn);
+  assert.equal(out.stale_replay_checks,extraCalls);
+  assert.equal(out.pass_replay_idempotent,true);
+  assert.equal(mock.counters().drawCount,1);
+  assert.equal(mock.counters().passCount,2+extraCalls);
+  const replies=mock.calls.filter(x=>x.path===
+   '/rest/v1/rpc/love_respond_and_redraw');
+  assert.equal(replies.length,2+extraCalls);
+  assert.deepEqual(replies.slice(2).map(x=>[
+   x.payload.p_action,x.payload.p_exclude
+  ]),action==='pass'
+   ?[['refuse',true]]:[['pass',false],['refuse',!excluded]]);
+  assert(replies.every(x=>x.actorToken==='Bearer auth-token-for-b-test'));
+ });
+}
+
+test('stale-response staging probe works from B to A with recipient-only RLS', async()=>{
+ const mock=mockSupabase({
+  drawerB:true,expectedAction:'refuse',expectedExclude:false,
+  expectStaleReplay:true
+ });
+ const out=await runStage({...env(),LR026_STAGING_DRAWER:'B',
+  LR026_STAGING_ACTION:'refuse',LR026_STAGING_STALE_REPLAY:'true'},
+ 'play',mock.fetchFn);
+ assert.equal(out.stale_replay_checks,2);
+ const replies=mock.calls.filter(x=>x.path===
+  '/rest/v1/rpc/love_respond_and_redraw');
+ assert(replies.every(x=>x.actorToken==='Bearer auth-token-for-a-test'));
+});
+
+for(const options of [
+ {staleWrongAction:true},{staleWrongExclusion:true},
+ {staleWrongReplacement:true}
+]){
+ test('stale conflicting response must fail on changed server receipt: '+
+  JSON.stringify(options),async()=>{
+  const mock=mockSupabase({...options,expectStaleReplay:true});
+  await assert.rejects(runStage({...env(),LR026_STAGING_STALE_REPLAY:'true'},
+   'play',mock.fetchFn),
+   /Stale conflicting response must replay the first immutable server decision/);
+  assert.equal(mock.counters().passCount,3);
+ });
+}
+test('stale replay that silently changes persisted rows is rejected',async()=>{
+ const mock=mockSupabase({
+  staleMutatesReplacementOfferer:true,expectStaleReplay:true
+ });
+ await assert.rejects(runStage({...env(),LR026_STAGING_STALE_REPLAY:'true'},
+  'play',mock.fetchFn),
+  /Exactly one valid same-category replacement offered by drawer|Stale conflicting response mutated a persisted challenge/);
+ assert.equal(mock.counters().passCount,3);
+});
 
 test('idempotent replay can reorder rows but must not mutate their contents', async () => {
   const mock = mockSupabase({replayReordersRows: true});
