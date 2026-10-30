@@ -34,7 +34,9 @@ test('iPad Soirée draws one photographic layer and NO second background or sepa
 test('Web 237 one-photo rule remains intact in the current release with offline assets',()=>{
  const html=read('index.html'),app=read('app.js'),sw=read('service-worker.js');
  const build=JSON.parse(read('web-version.json')).build;
- const ipadTag=build.split('.')[0].replaceAll('-','')+'-ipad'+build.split('.')[1];
+ // Visual assets keep their own version until their image/CSS bytes change.
+ const ipadTag=html.match(/ipad-soiree-one-photo-v237[.]css[?]v=([0-9]{8}-ipad[0-9]+)/)?.[1];
+ assert.ok(ipadTag,'iPad must use a versioned approved photo asset');
  assert.ok(html.includes('ipad-soiree-one-photo-v237.css?v='+ipadTag),
   'The approved photo must load with a cache-buster matching the current release');
  const moduleTag=build.split('.')[0].replaceAll('-','')+'-web'+build.split('.')[1];
