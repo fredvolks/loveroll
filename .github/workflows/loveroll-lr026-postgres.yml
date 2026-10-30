@@ -22,6 +22,8 @@ on:
       - "couple-web/lr026-eligibility-boundary.test.sql"
       - "couple-web/lr026-response-transaction.test.sql"
       - "couple-web/lr026-authenticated-partners.test.sql"
+      - "couple-web/lr026-concurrent-pass-fixture.sql"
+      - "couple-web/lr026-concurrent-pass.test.sh"
       - "couple-web/lr026-rpc-role-security.test.sql"
       - "couple-web/lr026-failed-migration-fixture.sql"
       - "couple-web/lr026-atomic-rollback.test.sql"
@@ -104,6 +106,10 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-full-migration.test.sql
       - name: Test authenticated A/B and outsider isolation with RLS and pass quotas
         run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-authenticated-partners.test.sql
+      - name: Prove concurrent same-player quotas, A/B independence and double-click idempotency
+        run: |
+          bash -n couple-web/lr026-concurrent-pass.test.sh
+          bash couple-web/lr026-concurrent-pass.test.sh
       - name: Verify anon denial and authenticated server-side RPC execution
         run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-rpc-role-security.test.sql
       - name: Recheck rank and permissions after full migration
