@@ -191,6 +191,13 @@ function mockSupabase(opts = {}) {
           !beforePass && opts.firstPassMutatesOriginalFace ? 22 : 14,
         card_id: beforePass && opts.firstWrongCardId ? 0 :
           !beforePass && opts.firstPassMutatesOriginalCardId ? 22 : 3,
+        card_title: beforePass && opts.firstWrongStoredTitle ? 'Incorrect title' :
+          !beforePass && opts.firstPassMutatesOriginalTitle ? 'Changed title' : 'First card',
+        card_description: beforePass && opts.firstWrongStoredDescription ?
+          'Incorrect description' : 'First description',
+        card_timer_minutes: beforePass && opts.firstWrongStoredTimer ? 6 :
+          !beforePass && opts.firstPassMutatesOriginalTimer ? 5 : 3,
+        is_gifted: Boolean(beforePass && opts.firstWrongStoredGift),
         replaces_challenge_id: beforePass && opts.firstReplacesCard ? replacedId : null
       };
       if (beforePass) {
@@ -214,6 +221,12 @@ function mockSupabase(opts = {}) {
           (passCount === 1 && opts.firstPassInvalidFace) ? 101 : 53,
         card_id: (passCount === 1 && opts.firstPassDuplicateCard) ? 3 :
           (passCount === 1 && opts.firstPassInvalidCardId) ? 0 : 8,
+        card_title: passCount === 1 && opts.firstPassBlankReplacementTitle ?
+          '' : 'Replacement card',
+        card_description: passCount > 1 && opts.replayMutatesReplacementDescription ?
+          'Changed description' : 'Replacement description',
+        card_timer_minutes: passCount === 1 && opts.firstPassInvalidReplacementTimer ? -5 : 4,
+        is_gifted: Boolean(passCount === 1 && opts.firstPassWrongReplacementGift),
         category: (passCount === 1 && opts.firstPassWrongCategory) ||
           (passCount > 1 && opts.replayMutatesReplacementCategory) ?
             otherCategory : category,
@@ -235,6 +248,9 @@ function mockSupabase(opts = {}) {
       assert.equal(payload.p_random, opts.expectedRandom ?? false);
       lastDraw = {id: drawnId, session_id: session, couple_id: couple,
         offered_by: giverId, recipient: recipientId, face: 14, card_id: 3,
+        card_title: opts.drawEmptyTitle ? '' : 'First card',
+        card_description: 'First description',
+        card_timer_minutes: 3, is_gifted: false,
         category: opts.drawUnknownCategory ? 'INVALID' :
           opts.drawSexuel ? 'SEXUEL' : 'SENSUEL'};
       return response({
@@ -825,6 +841,10 @@ for (const options of [
   {firstWrongCategory: true},
   {firstWrongFace: true},
   {firstWrongCardId: true},
+  {firstWrongStoredTitle: true},
+  {firstWrongStoredDescription: true},
+  {firstWrongStoredTimer: true},
+  {firstWrongStoredGift: true},
   {firstWrongStatus: true},
   {firstReplacesCard: true},
   {firstCardForA: true}
@@ -859,6 +879,11 @@ for (const options of [
   {firstPassWrongReplacementOfferer: true},
   {firstPassMutatesOriginalFace: true},
   {firstPassMutatesOriginalCardId: true},
+  {firstPassMutatesOriginalTitle: true},
+  {firstPassMutatesOriginalTimer: true},
+  {firstPassBlankReplacementTitle: true},
+  {firstPassInvalidReplacementTimer: true},
+  {firstPassWrongReplacementGift: true},
   {firstPassCardForA: true}
 ]) {
   test('invalid first Passer state is never replayed: ' +
@@ -1023,6 +1048,20 @@ test('idempotent replay cannot alter persisted replacement even when returning s
   await assert.rejects(runStage(env(), 'play', mock.fetchFn),
     /Repeated Passer must not change any persisted challenge field|Exactly one valid same-category replacement offered by drawer/);
   assert.equal(mock.counters().passCount, 2);
+});
+test('idempotent replay cannot silently rewrite a replacement description', async () => {
+  const mock = mockSupabase({replayMutatesReplacementDescription: true});
+  await assert.rejects(runStage(env(), 'play', mock.fetchFn),
+    /Repeated Passer must not change any persisted challenge field/);
+  assert.equal(mock.counters().drawCount, 1);
+  assert.equal(mock.counters().passCount, 2);
+});
+test('D100 response with blank title fails before Passer', async () => {
+  const mock = mockSupabase({drawEmptyTitle: true});
+  await assert.rejects(runStage(env(), 'play', mock.fetchFn),
+    /Real D100 returned invalid card content, timer or gifted flag/);
+  assert.equal(mock.counters().drawCount, 1);
+  assert.equal(mock.counters().passCount, 0);
 });
 test('idempotent replay cannot move a replacement into a different couple', async () => {
   const mock = mockSupabase({replayMutatesReplacementCouple: true});
