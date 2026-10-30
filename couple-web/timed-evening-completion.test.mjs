@@ -977,3 +977,33 @@ test("LR-026 an expiring D100 card disables pass refuse start and manual complet
  const ui=app.slice(app.indexOf('const mineCards=session?'),answerStart);
  assert.match(ui,/isEveningCardCompleting\(view\.id\)/);
 });
+
+test("LR-026 real D100 handlers reject clicks while automatic completion is pending",async()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const boundaries=[
+  ['evening-refuse','evening-refuse-cancel','evening-refuse'],
+  ["evening-pass'||verb==='evening-refuse-choice",'evening-start','evening-pass'],
+  ['evening-start','surprise-activity','evening-start'],
+  ['answer','finish-session','answer']
+ ];
+ for(const [startName,endName,verb] of boundaries){
+  const start=app.indexOf("if(verb==='"+startName+"')");
+  const end=app.indexOf("if(verb==='"+endName+"')",start+1);
+  assert.ok(start>0&&end>start,'find source handler for '+verb);
+  const action=runInNewContext('(async function(verb,parts){'+
+   app.slice(start,end)+'})',{
+   state:{redrawReady:true,user:{id:'alice'},session:{id:'s1'}},
+   isEveningCardCompleting:cardId=>cardId==='card-A',
+   isActiveEveningRedrawPending:()=>false,
+   rpc:async()=>{throw Error('Forbidden RPC while the timer is completing');}
+  });
+  await action(verb,['card-A','yes']);
+ }
+ const ui=app.slice(app.indexOf('const mineCards=session?'),
+  app.indexOf("if(verb==='evening-refuse')"));
+ for(const action of ['evening-start','evening-pass','evening-refuse','answer'])
+  assert.match(ui,new RegExp("button\\('"+action+":'\\+view\\.id[\\s\\S]*?isEveningCardCompleting\\(view\\.id\\)"),
+   'visible '+action+' button must disable for the completing card');
+ assert.match(ui,/button\('evening-refuse-cancel','Annuler','class="subtle" '\+\(isActiveEveningRedrawPending\(\)\?'disabled':''\)/,
+  'Cancel stays available so the player may dismiss the dialog');
+});
