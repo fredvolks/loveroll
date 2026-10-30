@@ -221,9 +221,21 @@ test('LR-026: redraw success requires original decision and replacement in recip
   {...replacement,id:'duplicate-device-replacement'}]),false,
   'two device replies must never create two direct replacements for the same D6 slot');
  assert.equal(verify([original,replacement,
-  {...replacement,id:'another-card',status:'completed',
+  {...replacement,id:'another-card',status:'completed',face:62,card_id:11,
    replaces_challenge_id:'another-original'}]),true,
   'a different legitimate D6 slot must not block this replacement');
+ assert.equal(verify([original,replacement,
+  {...replacement,id:'another-card',face:replacement.face,card_id:11,
+   replaces_challenge_id:'another-original'}]),false,
+  'the replacement cannot reuse a D100 face anywhere in this category and evening');
+ assert.equal(verify([original,replacement,
+  {...replacement,id:'another-card',face:62,card_id:replacement.card_id,
+   replaces_challenge_id:'another-original'}]),false,
+  'the replacement cannot reuse a same-night library card even if face differs');
+ assert.equal(verify([original,replacement,
+  {...replacement,id:'another-card',face:replacement.face,card_id:replacement.card_id,
+   category:'SEXUEL',replaces_challenge_id:'another-original'}]),true,
+  'history from another official D100 category must not change eligibility');
  assert.equal(verify([original,replacement],{...receipt,already_processed:true}),true,
   'a second-device replay with unchanged SQL receipt remains valid');
  assert.equal(verify([original]),false,
