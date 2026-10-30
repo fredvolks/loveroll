@@ -404,6 +404,26 @@ BEGIN
   RAISE EXCEPTION 'REAL RPC: wrong-direction custom role restriction bypass';
  END IF;
 
+ -- A valid draw is NOT a permanent authorization to respond. If the
+ -- recipient's verified-identity gate stops being satisfied before
+ -- Refuser, the real RPC must reject the mutation and leave the card
+ -- proposed, with no receipt or cycle exclusions changed.
+ PERFORM pg_catalog.set_config('lr026.test_verified','no',true);
+ blocked:=false;
+ BEGIN
+  PERFORM public.love_respond_and_redraw(drawn.id,'refuse',false);
+ EXCEPTION WHEN SQLSTATE '28000' THEN
+  blocked:=true;
+ END;
+ IF NOT blocked
+   OR (SELECT status FROM public.couple_challenges WHERE id=drawn.id)
+      IS DISTINCT FROM 'proposed'
+   OR (SELECT count(*) FROM public.love_challenge_redraws WHERE couple_id=pair)<>0
+   OR (SELECT count(*) FROM public.couple_challenges WHERE couple_id=pair)<>1 THEN
+  RAISE EXCEPTION 'REAL RPC: unverified recipient could mutate custom card';
+ END IF;
+ PERFORM pg_catalog.set_config('lr026.test_verified','yes',true);
+
  -- After the drawn challenge is offered to B, allow #31. All the
  -- unauthorized custom cards #26..29 remain technically present, so
  -- the REAL Refuser RPC must preserve the original recipient/drawer locks
