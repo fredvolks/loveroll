@@ -208,6 +208,26 @@ export async function runStage(env, mode, transport = fetch) {
     assert(otherMembership.length === 1 &&
       eq(otherMembership[0].user_id, outsider.id),
       'Outsider C must see their own membership, not be an unauthenticated guest');
+    // A zero-card result on both couples means nothing if no challenge
+    // was seeded or if the recipient-specific SELECT policy is broken.
+    // Prove positive visibility for every recipient before testing denials.
+    for (const actor of [a, b]) {
+      const own = await client.rows('couple_challenges',
+        'select=id,recipient,session_id&session_id=eq.' + config.sessionId,
+        actor.token);
+      assert(own.length >= 1 &&
+        own.every(card => eq(card.recipient, actor.id) &&
+          eq(card.session_id, config.sessionId) && UUID.test(card.id)),
+        'RLS audit needs one or more own A/B recipient challenges visible without partner cards');
+    }
+    const outsiderCards = await client.rows('couple_challenges',
+      'select=id,recipient,session_id&session_id=eq.' + config.otherSessionId,
+      outsider.token);
+    assert(outsiderCards.length >= 1 &&
+      outsiderCards.every(card => eq(card.recipient, outsider.id) &&
+        eq(card.session_id, config.otherSessionId) && UUID.test(card.id)),
+      'RLS audit needs a visible challenge addressed to outsider C');
+
     const privateSession = await client.rows('couple_sessions',
       'select=id&' + 'id=eq.' + config.sessionId, outsider.token);
     const privateMembership = await client.rows('couple_members',
@@ -229,8 +249,8 @@ export async function runStage(env, mode, transport = fetch) {
         'RLS isolation failed: duo A/B can see outside duo C data');
     }
     return {...result, mode: 'audit', real_auth_accounts: 3,
-      rls_outside_own_session_reads: 1, rls_cross_duo_denials: 9,
-      game_writes: 0};
+      rls_outside_own_session_reads: 1, rls_positive_challenge_reads: 3,
+      rls_cross_duo_denials: 9, game_writes: 0};
   }
 
   const sessionRows = await client.rows('couple_sessions',
