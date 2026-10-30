@@ -372,3 +372,13 @@ Afficher près des catégories les cartes distinctes encore admissibles à la pr
 - **Commits :** `4f7a394` (reproduction), `45e7c64` (correctif des verrous et des scans), `f669f0e` (tests de régression).
 - **Atelier Medium :** méthodes Architecture, Qualité et Sécurité appliquées. LoveRoll demeure absent de l'inventaire partagé Atelier; aucune mission BOSS autonome n'a été déclarée.
 - **Garde-fous restants :** suite complète Node/Chromium, tests sur deux identités Supabase Auth/RLS isolées, revue SQL/CI de la migration. PR #176 non fusionnée, aucune migration ou mise en production.
+
+### LR-026 — réponse tardive et délai de réessai d'un autre compte (30 octobre 2026)
+
+- **Scénario reproduit :** Alice valide un défi puis sa réponse reste en attente; Bob se connecte, son minuteur échoue hors ligne et reçoit un délai de 15 secondes; la réponse réussie d'Alice arrive ensuite. Avant correction, le succès tardif remettait inconditionnellement `timerCompletionRetryAt` à zéro et effaçait `state.timerCompletionRetryOwner` de Bob.
+- **Correctif :** le succès ne peut supprimer le délai que si la requête est encore propriétaire de `state.timerCompletionContext` **et** que le compte, couple et soirée sont toujours les siens. Une ancienne réponse ne modifie plus le délai du nouveau compte.
+- **Tests :** preuve rouge/vert avec deux réponses réseau dans l'ordre inverse et vérification du propriétaire + échéance conservés pour Bob. Test de compatibilité : un succès légitime, sous son propre compte, supprime bien son délai expiré. **34/34 tests ciblés de minuteur réussis** via exécution JavaScript isolée; les contrôles d'intégration `refreshShared` déjà réalisés restent pertinents.
+- **Révisions :** `87a6bb9` (test reproduisant le défaut), `4e593d6` (correctif) et `3695120` (test de succès légitime).
+- **CI :** le workflow `LoveRoll connected web checks` contient `node --test couple-web/timed-evening-completion.test.mjs` et est configuré pour `pull_request` vers `main`, mais aucun nouveau résultat CI n'est constaté sur le dernier SHA lors de la revue. Tests Node complets, navigateur et Supabase Auth/RLS isolé non exécutés ici.
+- **Atelier Medium :** avis méthodologiques des experts Architecture, Qualité et Sécurité appliqués; aucune mission BOSS autonome LoveRoll n'a été lancée, l'application n'étant pas enregistrée dans l'inventaire partagé.
+- **Déploiement :** PR #176 demeure brouillon; pas de fusion ni migration SQL.
