@@ -1535,7 +1535,11 @@ async function retryExpiredTimedEvening(){
     ownsTimerCompletionSession(context)
   });
   if(result.outcome==='ineligible'||result.outcome==='superseded')return;
-  timerCompletionRetryAt=0;state.timerCompletionRetryOwner=null;
+  // An old server response must not erase another account's newer
+  // offline/backoff state. Only the current operation owns this reset.
+  if(state.timerCompletionContext===context&&ownsTimerCompletionSession(context)){
+   timerCompletionRetryAt=0;state.timerCompletionRetryOwner=null;
+  }
   if(ownsTimerCompletionSession(context)&&
      ownsVisibleEveningTimer(id,userId,sessionId)){
    challengeTimer.autoCompletePending=false;saveChallengeTimer();
