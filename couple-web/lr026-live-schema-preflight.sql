@@ -3,6 +3,8 @@
 -- Conçu pour être rejoué juste avant la préparation d'un déploiement,
 -- et pour bloquer toute signature RPC / règle / structure inattendue.
 -- Les échecs sont détaillés dans la colonne blockers, jamais ignorés.
+-- to_regprocedure() renvoie NULL si une RPC a disparu : résultat bloqué,
+-- jamais une exception qui masquerait le diagnostic.
 WITH expected AS (
  SELECT
   'b85aab4563ec7e04956bd059d91479fa'::text AS normal_md5,
@@ -17,8 +19,8 @@ WITH expected AS (
  FROM pg_catalog.pg_proc p
  JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace
  WHERE n.nspname='public' AND
-       (p.oid='public.draw_for_partner(uuid,text,boolean)'::pg_catalog.regprocedure
-        OR p.oid='public.love_respond_and_redraw(uuid,text,boolean)'::pg_catalog.regprocedure)
+       (p.oid=pg_catalog.to_regprocedure('public.draw_for_partner(uuid,text,boolean)')
+        OR p.oid=pg_catalog.to_regprocedure('public.love_respond_and_redraw(uuid,text,boolean)'))
 ), checks AS (
  SELECT
   -- Re-run the EXACT original body guard in the proposed migration.
