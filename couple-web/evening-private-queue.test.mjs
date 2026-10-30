@@ -1244,6 +1244,32 @@ test('LR-026: legacy response refresh remains scoped across a night closure',()=
  assert.match(legacy,/render\(\);return;/);
 });
 
+test('LR-026: start, timer and redraw taps are serialized per recipient card',()=>{
+ const passStart=app.indexOf("if(verb==='evening-pass'||verb==='evening-refuse-choice')");
+ const passEnd=app.indexOf("if(verb==='evening-start')",passStart);
+ const startEnd=app.indexOf("if(verb==='surprise-activity')",passEnd);
+ const toggleStart=app.indexOf("if(verb==='timer-toggle')");
+ const toggleEnd=app.indexOf("if(verb==='give-challenge')",toggleStart);
+ assert.ok(passStart>0&&passEnd>passStart&&startEnd>passEnd&&toggleStart>0&&toggleEnd>toggleStart);
+ const passCode=app.slice(passStart,passEnd);
+ const startCode=app.slice(passEnd,startEnd);
+ const toggleCode=app.slice(toggleStart,toggleEnd);
+ // An acceptance started from either button must be settled before changing
+ // the same server challenge with the opposite action.
+ assert.match(passCode,/state\.eveningStartContext\?\.challengeId===challengeId&&\s+isSameEveningResponseContext\(state,state\.eveningStartContext\)/);
+ assert.match(passCode,/state\.timerStartContext\?\.challengeId===challengeId&&\s+isSameEveningResponseContext\(state,state\.timerStartContext\)/);
+ assert.match(startCode,/isActiveEveningRedrawPending\(\)&&\s+state\.redrawBusyContext\?\.challengeId===parts\[0\]/);
+ assert.match(toggleCode,/isActiveEveningRedrawPending\(\)&&\s+state\.redrawBusyContext\?\.challengeId===timerChallengeId/);
+ // This must be per-card, per-session and per-account: unrelated cards
+ // remain eligible and the later view must not inherit an old lock.
+ const request={userId:'A',sessionId:'s1',tab:'session',challengeId:'c1'};
+ const view={user:{id:'A'},session:{id:'s1'},tab:'session'};
+ assert.equal(request.challengeId==='c1'&&isSameEveningResponseContext(view,request),true);
+ assert.equal(request.challengeId==='c2'&&isSameEveningResponseContext(view,request),false);
+ assert.equal(isSameEveningResponseContext({...view,user:{id:'B'}},request),false);
+ assert.equal(isSameEveningResponseContext({...view,session:{id:'s2'}},request),false);
+});
+
 test('Each user sees ONLY their own challenge cards, sorted chronologically',()=>{
  assert.deepEqual(ownEveningChallenges([c,b,a],'fred','s1').map(x=>x.id),['challenge-a','challenge-c']);
  assert.deepEqual(ownEveningChallenges([c,b,a],'partner','s1').map(x=>x.id),['challenge-b']);
