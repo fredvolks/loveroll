@@ -11,6 +11,7 @@ on:
       - "couple-web/lr026-postgres-fixture.sql"
       - "couple-web/lr026-postgres-rank.test.sql"
       - "couple-web/lr026-exact-fast-path.test.sql"
+      - "couple-web/lr026-performance-profile.test.sql"
       - "couple-web/lr026-evening-flow.test.sql"
       - "couple-web/lr026-extract-helpers.cjs"
       - "couple-web/lr026-postgres-rpc-fixture.sql"
@@ -76,6 +77,8 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-exact-fast-path.test.sql
       - name: Test official category and couple/session scoping
         run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-postgres-rank.test.sql
+      - name: Profile old and exact-first ranking over identical 200 cards
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-performance-profile.test.sql
       - name: Simulate an evening, two couples and a 200-card cycle
         run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-evening-flow.test.sql
       - name: Reject roles, cycle exclusions, bag history and favorite bypass
