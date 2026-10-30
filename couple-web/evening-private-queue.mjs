@@ -82,6 +82,27 @@ export function isValidEveningRedrawReceipt(outcome,expectedOriginalId=null){
 }
 
 /**
+ * A syntactically valid RPC receipt is not proof that the refreshed RLS
+ * view actually contains the decision and its replacement. Verify both
+ * persisted rows before showing a final confirmation to the player.
+ *
+ * The replacement might already be accepted/completed by another device:
+ * its presence and provenance matter, not its current action status.
+ */
+export function isPersistedEveningRedrawReceipt(outcome,rows,userId,sessionId){
+ if(!isValidEveningRedrawReceipt(outcome))return false;
+ if(typeof userId!=='string'||!userId||typeof sessionId!=='string'||!sessionId)
+  return false;
+ const mine=ownEveningChallenges(rows,userId,sessionId);
+ const original=mine.find(card=>card.id===outcome.original_id);
+ if(original?.status!==(outcome.action==='pass'?'passed':'refused'))
+  return false;
+ if(outcome.replacement_id===null)return true;
+ const replacement=mine.find(card=>card.id===outcome.replacement_id);
+ return !!(replacement&&replacement.replaces_challenge_id===outcome.original_id);
+}
+
+/**
  * Async redraws may resolve after the user changes account, evening or tab.
  * Only the exact initiating view may receive navigation and confirmation.
  * This check is intentionally separate from the server receipt validation.
