@@ -35,7 +35,7 @@ function checkPublicKey(key) {
 }
 
 export function validateStage(env, mode) {
-  if (!['check', 'auth', 'play'].includes(mode)) throw new Error('Unknown LR-026 mode');
+  if (!['check', 'auth', 'audit', 'play'].includes(mode)) throw new Error('Unknown LR-026 mode');
   const ref = requireField(env.LR026_STAGING_REF, 'LR026_STAGING_REF');
   const confirmedRef = requireField(env.LR026_CONFIRM_STAGING_REF, 'LR026_CONFIRM_STAGING_REF');
   if (!REF.test(ref) || !REF.test(confirmedRef) || confirmedRef !== ref) {
@@ -78,6 +78,27 @@ export function validateStage(env, mode) {
   result.coupleId = requireUuid(env.LR026_STAGING_COUPLE_ID, 'LR026_STAGING_COUPLE_ID');
   result.sessionId = requireUuid(env.LR026_STAGING_SESSION_ID, 'LR026_STAGING_SESSION_ID');
 
+  if (mode === 'audit') {
+    const c = {
+      email: requireField(env.LR026_STAGING_C_EMAIL, 'LR026_STAGING_C_EMAIL'),
+      password: requireField(env.LR026_STAGING_C_PASSWORD, 'LR026_STAGING_C_PASSWORD'),
+      id: requireUuid(env.LR026_STAGING_C_ID, 'LR026_STAGING_C_ID')
+    };
+    if ([a.email, b.email].some(e => e.toLowerCase() === c.email.toLowerCase()) ||
+        [a.id, b.id].includes(c.id)) {
+      throw new Error('RLS outsider C must be a third distinct Auth account');
+    }
+    result.c = c;
+    result.otherCoupleId = requireUuid(env.LR026_STAGING_OTHER_COUPLE_ID,
+      'LR026_STAGING_OTHER_COUPLE_ID');
+    result.otherSessionId = requireUuid(env.LR026_STAGING_OTHER_SESSION_ID,
+      'LR026_STAGING_OTHER_SESSION_ID');
+    if (result.otherCoupleId === result.coupleId ||
+        result.otherSessionId === result.sessionId) {
+      throw new Error('RLS audit requires separate couples and separate sessions');
+    }
+  }
+
   if (mode === 'play') {
     if (env.LR026_STAGING_ALLOW_WRITES !== WRITE_ACK ||
         env.LR026_STAGING_WRITE_CONFIRM_REF !== ref) {
@@ -99,7 +120,7 @@ function apiClient(config, transport) {
     if (body !== undefined) headers['Content-Type'] = 'application/json';
     const response = await transport(config.url + path, {
       method, headers, body: body === undefined ? undefined : JSON.stringify(body),
-      signal: AbortSignal.timeout(18000)
+      redirect: 'error', cache: 'no-store', signal: AbortSignal.timeout(18000)
     });
     const text = await response.text();
     let data;
@@ -164,6 +185,46 @@ export async function runStage(env, mode, transport = fetch) {
     real_auth_accounts: 2, couple_id: config.coupleId, session_id: config.sessionId,
     rls_session_reads: 2, rls_membership_reads: 2};
   if (mode === 'auth') return result;
+
+  if (mode === 'audit') {
+    // This mode is intentionally read-only. Test both directions: C must
+    // not see the duo A/B, and A/B must not see C's separate duo.
+    const outsider = await client.login(config.c);
+    const otherSession = await client.rows('couple_sessions',
+      'select=id,couple_id,finished_at&id=eq.' + config.otherSessionId, outsider.token);
+    assert(otherSession.length === 1 &&
+      eq(otherSession[0].couple_id, config.otherCoupleId),
+      'Outsider C must have a visible own staging session before testing denials');
+    const otherMembership = await client.rows('couple_members',
+      'select=couple_id,user_id&couple_id=eq.' +
+        config.otherCoupleId + '&user_id=eq.' + outsider.id, outsider.token);
+    assert(otherMembership.length === 1 &&
+      eq(otherMembership[0].user_id, outsider.id),
+      'Outsider C must see their own membership, not be an unauthenticated guest');
+    const privateSession = await client.rows('couple_sessions',
+      'select=id&' + 'id=eq.' + config.sessionId, outsider.token);
+    const privateMembership = await client.rows('couple_members',
+      'select=couple_id,user_id&couple_id=eq.' + config.coupleId, outsider.token);
+    const privateCards = await client.rows('couple_challenges',
+      'select=id&session_id=eq.' + config.sessionId, outsider.token);
+    assert(privateSession.length === 0 && privateMembership.length === 0 &&
+      privateCards.length === 0,
+      'RLS isolation failed: outside account C can see duo A/B data');
+
+    for (const actor of [a, b]) {
+      const s = await client.rows('couple_sessions',
+        'select=id&id=eq.' + config.otherSessionId, actor.token);
+      const m = await client.rows('couple_members',
+        'select=couple_id,user_id&couple_id=eq.' + config.otherCoupleId, actor.token);
+      const cards = await client.rows('couple_challenges',
+        'select=id&session_id=eq.' + config.otherSessionId, actor.token);
+      assert(s.length === 0 && m.length === 0 && cards.length === 0,
+        'RLS isolation failed: duo A/B can see outside duo C data');
+    }
+    return {...result, mode: 'audit', real_auth_accounts: 3,
+      rls_outside_own_session_reads: 1, rls_cross_duo_denials: 9,
+      game_writes: 0};
+  }
 
   const sessionRows = await client.rows('couple_sessions',
     'select=id,paired_turns,self_draws&id=eq.' + config.sessionId, a.token);
