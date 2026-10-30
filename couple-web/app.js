@@ -1431,6 +1431,8 @@ function isVisibleEveningTimerActionPending(){
   context?.challengeId===cardId&&isSameEveningResponseContext(state,context));
 }
 function protectEveningTimerPresentation(presentation){
+ // An already expired challenge awaiting validation takes precedence.
+ if(challengeTimer.autoCompletePending)return;
  if(isVisibleEveningTimerActionPending())Object.assign(presentation,{
   label:'♡ Réponse en cours',status:'Décision sur le défi en cours',
   disabled:true,resetDisabled:true
