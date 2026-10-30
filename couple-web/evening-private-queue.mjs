@@ -99,9 +99,14 @@ export function isPersistedEveningRedrawReceipt(outcome,rows,userId,sessionId){
   return false;
  const validStamp=value=>typeof value==='string'&&
   value.trim().length>0&&Number.isFinite(Date.parse(value));
+ const validCardContent=card=>
+  typeof card.card_title==='string'&&card.card_title.trim().length>0&&
+  typeof card.card_description==='string'&&card.card_description.trim().length>0&&
+  (card.card_timer_minutes===null||
+   (Number.isInteger(card.card_timer_minutes)&&card.card_timer_minutes>0));
  // The real RPC and pass-stamp trigger commit exactly ONE decision date.
  // Malformed or contradictory stamps are not enough to stop a live timer.
- if(!validStamp(original.created_at)||
+ if(!validStamp(original.created_at)||!validCardContent(original)||
   (outcome.action==='pass'
    ?!validStamp(original.passed_at)||original.refused_at!==null
    :!validStamp(original.refused_at)||original.passed_at!==null))
@@ -113,7 +118,8 @@ export function isPersistedEveningRedrawReceipt(outcome,rows,userId,sessionId){
  if(outcome.replacement_id===null)return replacements.length===0;
  if(replacements.length!==1)return false;
  const replacement=replacements[0];
- if(!validStamp(replacement.created_at))return false;
+ if(!validStamp(replacement.created_at)||!validCardContent(replacement))
+  return false;
  // The official SQL chooses a different library card and D100 face
  // within the same category, recipient and evening. A stale or corrupted
  // response must not falsely confirm the same physical card again.
