@@ -644,3 +644,68 @@ test('LR-026 completed RPC holds timer controls locked until scoped refresh sett
  assert.equal(api.busy(),false,'the completion lock is released after settling');
  assert.equal(renderCount,1);
 });
+
+test('LR-026 unconfirmed refresh leaves the live expired timer retryable',async()=>{
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const start=source.indexOf('function ownsTimerCompletionSession(context){');
+ const end=source.indexOf('// LR-002: recover ALL due challenge timers',start);
+ assert.ok(start>0&&end>start);
+ for(const response of ['unconfirmed','offline']){
+  const state={user:{id:'alice'},session:{id:'s1'},coupleId:'c1',
+   tab:'session',timerCompletionContext:null};
+  const clock={id:'card-1',ownerUserId:'alice',ownerSessionId:'s1',
+   autoCompletePending:true,decisionPending:false,remainingMs:0};
+  let saves=0,notifications=0;
+  const retry=runInNewContext(source.slice(start,end)+'; retryExpiredTimedEvening;',{
+   state,challengeTimer:clock,timerCompletionInFlight:null,timerCompletionRetryAt:0,
+   timedEveningItem:()=>({id:'card-1',recipient:'alice',session_id:'s1',status:'accepted'}),
+   isAcceptedTimedEveningChallenge:()=>true,
+   completeTimedEveningChallenge:async()=>({outcome:'completed',finished:false}),
+   ownsVisibleEveningTimer:()=>true,saveChallengeTimer:()=>saves++,
+   refreshShared:async()=>{
+    if(response==='offline')throw Error('offline');
+    return undefined;
+   },
+   rpc:async()=>{},query:async()=>[],render:()=>{},notify:()=>notifications++,
+   console:{warn:()=>{}},document:{hidden:false},Date
+  });
+  await retry();
+  assert.equal(clock.autoCompletePending,true,
+   'failed '+response+' refresh cannot enable reset of a completed server card');
+  assert.ok(saves>=1);
+  assert.equal(state.timerCompletionContext,null);
+  if(response==='unconfirmed')assert.equal(notifications,0);
+ }
+});
+
+test('LR-026 unconfirmed saved-timer refresh retains the original pending receipt',async()=>{
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const start=source.indexOf('function ownsTimerCompletionSession(context){');
+ const end=source.indexOf('function endSignal(){',start);
+ assert.ok(start>0&&end>start);
+ const item={id:'card-1',recipient:'alice',session_id:'s1',status:'accepted'};
+ const state={user:{id:'alice'},session:{id:'s1'},coupleId:'c1',
+  tab:'session',challenges:[item],timerCompletionContext:null};
+ const clock={id:'other-card',autoCompletePending:false,decisionPending:false};
+ const saved={cardId:'card-1',ownerUserId:'alice',ownerSessionId:'s1',
+  running:true,durationMs:60000,remainingMs:0,deadline:Date.now()-5000};
+ const writes=[];
+ const recover=runInNewContext(source.slice(start,end)+'; reconcileSavedEveningTimers;',{
+  state,challengeTimer:clock,timerCompletionInFlight:null,timerCompletionRetryAt:0,
+  readSavedChallengeTimer:()=>saved,ownedSavedEveningTimerSnapshot:()=>saved,
+  writeSavedChallengeTimer:(key,value)=>writes.push({key,value}),
+  isAcceptedTimedEveningChallenge:()=>true,
+  completeTimedEveningChallenge:async()=>({outcome:'completed',finished:false}),
+  ownsVisibleEveningTimer:()=>false,saveChallengeTimer:()=>{},
+  refreshShared:async()=>undefined,rpc:async()=>{},query:async()=>[],
+  render:()=>{throw Error('unconfirmed view must not render');},
+  notify:()=>{throw Error('unconfirmed view must not announce completion');},
+  console:{warn:()=>{}},document:{hidden:false},Date
+ });
+ await recover();
+ assert.ok(writes.length>=2);
+ assert.equal(writes.at(-1).key,'loveroll-challenge-clock:alice:card-1');
+ assert.equal(writes.at(-1).value.autoCompletePending,true,
+  'failed private sync must preserve the original timer for later reconciliation');
+ assert.equal(state.timerCompletionContext,null);
+});
