@@ -51,6 +51,10 @@
 
 ## Cartes personnalisées : mêmes droits à la repige, titre et minuteur conservés — 30 octobre 2026
 
+**Contrôle d'identité renouvelé juste avant de répondre.** Dans ce même scénario, après la pige initiale, la validation d'identité du destinataire est volontairement désactivée dans la simulation locale (jeton fictif). La vraie RPC doit rejeter `Refuser(false)` avec l'erreur d'autorisation `28000` **avant** toute modification : la carte doit rester proposée, le nombre de défis inchangé, et aucun reçu de remplacement ne doit exister. Le contrôle rétablit ensuite l'état vérifié, puis vérifie que la vraie réponse personnalisée fonctionne. Cela protège le parcours contre l'idée erronée qu'une autorisation au moment de la pige dispense de revérifier l'identité au moment de répondre. Ce test ne constitue pas une authentification Supabase réelle : seule la recette staging A/B pourra l'établir.
+
+
+
 La recette `$lr026_real_roles# LoveRoll LR-026 — recette Supabase A/B (STAGING SEULEMENT)
 
 **Jamais de production.** Le projet LoveRoll de production `ejsrqfpkgwraorrznjpm` est interdit par le code. Aucune branche de staging n'était disponible au 30 octobre 2026. Ne pas créer de projet/branche facturable sans accord.
