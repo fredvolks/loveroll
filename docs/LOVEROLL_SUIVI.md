@@ -1,5 +1,13 @@
 # LoveRoll — SUIVI OFFICIEL DU PROMPT MAÎTRE
 
+### LR-026 — protection Éclat des sessions et rafraîchissements (30 octobre 2026)
+
+- Branche de travail : `feat/lr026-server-variety-after-category-20261029`, [PR #176](https://github.com/fredvolks/loveroll/pull/176) **brouillon non fusionné**. Pas de publication Web/APK ni de migration sur Supabase.
+- Les lectures Éclat (statut, historique, sondage 4,5 s) vérifient désormais l'**identité utilisateur et le couple d'origine** après les attentes réseau. Les requêtes plus anciennes ne remplacent plus les réponses récentes.
+- L'historique Éclat est associé à l'**utilisateur** en plus du couple, et vidé à la déconnexion. Les mutations Démarrer, Choisir, Suivant et Quitter ne mettent à jour l'écran que si l'identité, le couple, l'onglet et le jeton d'action correspondent à la demande initiale. La confirmation Quitter est également revalidée avant la RPC.
+- Tests de non-régression ajoutés dans `evening-private-queue.test.mjs` (changement de compte, réponse tardive, chevauchement des chargements, sondage Éclat, actions concurrentes et garde sur les quatre RPC).
+- Dernier commit de ce lot au moment de cette note : `c1e8aca41da88302c3df59fdff4d9ec5a4e3cf3c`. **Résultats CI du dernier SHA non encore confirmés** ; ne pas interpréter les tests écrits comme une exécution verte. Les tests Auth/RLS avec vrais comptes sur staging isolé et la recette physique restent bloquants.
+
 ## Priorité immédiate ordonnée — audit global client/design/ergonomie/responsive (28 octobre 2026)
 
 **LR-AUDIT-GLOBAL-20261028 — EN COURS, intégration progressive et preuves CI.** Le propriétaire demande que l'audit de **toutes les pages, sous-pages, états et boutons**, ses corrections et les protections permanentes passent avant les nouveaux développements. Le bloc en tête du [prompt maître](LOVEROLL_MASTER_PROMPT.md), le [démarrage Work](LOVEROLL_WORK_START.md) et le [protocole complet](LOVEROLL_UX_UI_AUTONOME_WORKFLOW.md) décrivent ce mandat.
