@@ -50,4 +50,6 @@ psql -X -d "$DB" -v ON_ERROR_STOP=1 \
  -f couple-web/lr026-server-variety.sql >/dev/null
 psql -X -d "$DB" -v ON_ERROR_STOP=1 \
  -f couple-web/lr026-real-rpc-e2e.test.sql
+psql -X -d "$DB" -v ON_ERROR_STOP=1 \
+ -f couple-web/lr026-real-rpc-paired-turns.test.sql
 echo "LR-026: actual production D100 and redraw RPC bodies passed isolated A/B integration"
