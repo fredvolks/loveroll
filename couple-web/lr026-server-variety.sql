@@ -41,6 +41,9 @@ $lr026$;
 -- BEFORE building expensive token sets for every still-eligible D100 card.
 -- Five DISTINCT meaningful tokens (min four letters each) need at least
 -- 24 normalized characters and at least five whitespace-separated words.
+-- Normalization guarantees single ASCII spaces between tokens. Parsing
+-- those tokens with string_to_array/unnest avoids repeated regex overhead,
+-- without changing any admissible card or semantic threshold.
 CREATE OR REPLACE FUNCTION couple_private.love_variety_near(
  p_title text, p_description text, p_old_title text, p_old_description text
 ) RETURNS boolean LANGUAGE sql IMMUTABLE SET search_path=''
@@ -57,14 +60,14 @@ AS $lr026$
    WHEN pg_catalog.length(n.a_desc)<24 OR pg_catalog.length(n.b_desc)<24
      THEN false
    WHEN pg_catalog.cardinality(
-          pg_catalog.regexp_split_to_array(n.a_desc,' '))<5
+          pg_catalog.string_to_array(n.a_desc,' '))<5
         OR pg_catalog.cardinality(
-          pg_catalog.regexp_split_to_array(n.b_desc,' '))<5
+          pg_catalog.string_to_array(n.b_desc,' '))<5
      THEN false
    ELSE (
      WITH current_terms AS (
        SELECT DISTINCT w.token
-       FROM pg_catalog.regexp_split_to_table(n.a_desc,' ') AS w(token)
+       FROM pg_catalog.unnest(pg_catalog.string_to_array(n.a_desc,' ')) AS w(token)
        WHERE pg_catalog.length(w.token)>=4 AND w.token NOT IN (
          'avec','comme','dans','pour','puis','sans','toute','tous','votre',
     'notre','leurs','chez','avant','apres','pendant','entre','faire',
@@ -74,7 +77,7 @@ AS $lr026$
        )
      ), prior_terms AS (
        SELECT DISTINCT w.token
-       FROM pg_catalog.regexp_split_to_table(n.b_desc,' ') AS w(token)
+       FROM pg_catalog.unnest(pg_catalog.string_to_array(n.b_desc,' ')) AS w(token)
        WHERE pg_catalog.length(w.token)>=4 AND w.token NOT IN (
          'avec','comme','dans','pour','puis','sans','toute','tous','votre',
     'notre','leurs','chez','avant','apres','pendant','entre','faire',
