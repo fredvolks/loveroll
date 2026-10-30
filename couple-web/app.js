@@ -2944,14 +2944,8 @@ async function handle(action,element){
     p_challenge:challengeId,p_action:refuse?'refuse':'pass',p_exclude:exclude});
    const receiptValid=isValidEveningRedrawReceipt(outcome,challengeId);
    const sameContext=isSameEveningResponseContext(state,responseContext);
-   // A malformed result is not proof that this card has been answered.
-   // Do not discard an active timer until a valid receipt or refreshed
-   // server state confirms the challenge actually ended.
-   if(receiptValid&&sameContext&&challengeTimer.id===challengeId){
-    challengeTimer.running=false;challengeTimer.deadline=0;challengeTimer.remainingMs=0;
-    challengeTimer.notified=true;challengeTimer.autoCompletePending=false;
-    challengeTimer.decisionPending=false;saveChallengeTimer();
-   }
+   // A syntactically valid RPC receipt cannot stop a live timer by itself.
+   // Wait for the recipient-only refreshed database view below.
    // Keep modal selection strictly bound to the initiating evening/account.
    if(sameContext){
     if(receiptValid)state.eveningRefusalId=null;
@@ -2965,14 +2959,20 @@ async function handle(action,element){
    const sameAfterRefresh=isSameEveningResponseContext(state,responseContext);
    const persistedReceiptValid=receiptValid&&sameAfterRefresh&&
     isPersistedEveningRedrawReceipt(outcome,state.challenges,state.user.id,state.session.id);
+   if(persistedReceiptValid&&challengeTimer.id===challengeId){
+    challengeTimer.running=false;challengeTimer.deadline=0;challengeTimer.remainingMs=0;
+    challengeTimer.notified=true;challengeTimer.autoCompletePending=false;
+    challengeTimer.decisionPending=false;saveChallengeTimer();
+   }
    if(receiptValid&&sameAfterRefresh&&!persistedReceiptValid){
     state.selectedEveningChallengeId=null;
     state.showEveningChallenges=true;
     render();
    }
-   // On an ambiguous receipt, use the real persisted status before freeing
-   // the timer's decision lock. A still-accepted challenge resumes its clock.
-   if(!receiptValid&&isSameEveningResponseContext(state,responseContext)){
+   // If the receipt OR the refreshed RLS view is incomplete, reconcile
+   // against the original persisted status before unlocking the timer.
+   // A still-accepted challenge keeps its countdown alive.
+   if(!persistedReceiptValid&&sameAfterRefresh){
     const stored=ownEveningChallenges(state.challenges,state.user.id,state.session.id)
      .find(card=>card.id===challengeId);
     const recovery=redrawTimerRecovery(stored?.status,challengeTimer.deadline,Date.now());
