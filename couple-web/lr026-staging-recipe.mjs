@@ -181,6 +181,7 @@ async function verifyMatchingD6(client, sessionId, a, b, invalidFixtureMessage) 
       baseline = facesByOwner;
     }
   }
+  return baseline;
 }
 
 export async function runStage(env, mode, transport = fetch) {
@@ -309,8 +310,14 @@ export async function runStage(env, mode, transport = fetch) {
   // Reject a malformed or RLS-invisible D6 fixture before calling the
   // mutating D100 RPC. A-only visibility does NOT prove B can read both D6.
   // Explicit session IDs, unique owners and faces 1..6 are mandatory.
-  await verifyMatchingD6(client, config.sessionId, a, b,
+  const initialD6 = await verifyMatchingD6(client, config.sessionId, a, b,
     'Two valid D6 rolls for this session must be readable by both partners before D100');
+  async function assertD6Unchanged(stage) {
+    const current = await verifyMatchingD6(client, config.sessionId, a, b,
+      'Two valid D6 rolls must remain visible and valid ' + stage);
+    assert(current.every((face, i) => face === initialD6[i]),
+      'D6 snapshot changed ' + stage + '; do not continue mutating the staging game');
+  }
   // Real production RLS on couple_challenges only exposes each card
   // to its RECIPIENT, not the person offering it. A's empty list alone
   // can conceal B's existing card; require zero visible challenges for
@@ -349,6 +356,7 @@ export async function runStage(env, mode, transport = fetch) {
     'First D100 must persist exactly one new A-to-B proposal before Passer');
   assert(firstForA.length === 0,
     'First D100 must not persist a proposal visible to A before Passer');
+  await assertD6Unchanged('after D100, before Passer');
   const response = await client.rpc('love_respond_and_redraw',
     {p_challenge: drawn.id, p_action: 'pass', p_exclude: false}, b.token);
   assert(eq(response?.original_id, drawn.id) &&
@@ -381,6 +389,7 @@ export async function runStage(env, mode, transport = fetch) {
     return JSON.stringify([...stored].sort((x, y) => x.id.localeCompare(y.id)));
   }
   const beforeReplay = await persistedPassSnapshot();
+  await assertD6Unchanged('after the first Passer, before replay');
   const replay = await client.rpc('love_respond_and_redraw',
     {p_challenge: drawn.id, p_action: 'pass', p_exclude: false}, b.token);
   assert(replay.already_processed === true &&
@@ -391,6 +400,7 @@ export async function runStage(env, mode, transport = fetch) {
   const afterReplay = await persistedPassSnapshot();
   assert(afterReplay === beforeReplay,
     'Repeated Passer must not change any persisted challenge field');
+  await assertD6Unchanged('after idempotent Passer replay');
   return {...result, draw_id: drawn.id, replacement_id: response.replacement_id,
     replacement_same_category: true, pass_replay_idempotent: true, persisted_challenges: 2};
 }
