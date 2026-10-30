@@ -188,4 +188,110 @@ BEGIN
  'LR-026 REAL RPC: two D6 gating, paired A/B/A, self-draw ownership, D100 budgets and cross-evening bags passed';
 END; $lr026_paired_turns$;
 
+-- Transfer A's one D6 challenge to B. The production queue must
+-- give A zero turns and B two; the second B self-draw is explicitly gifted.
+INSERT INTO public.couples(
+ id,owner_user_id,no_repeat_challenges,category_weights_enabled,
+ category_preference_percent,sexual_card_mode
+) VALUES(
+ 'eeeeeeee-aaaa-4eee-8eee-eeeeeeeeeeee',
+ 'aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa',
+ true,true,100,'custom'
+);
+INSERT INTO public.couple_members(couple_id,user_id)
+VALUES
+ ('eeeeeeee-aaaa-4eee-8eee-eeeeeeeeeeee',
+  'aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa'),
+ ('eeeeeeee-aaaa-4eee-8eee-eeeeeeeeeeee',
+  'bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb');
+INSERT INTO public.couple_sessions(
+ id,couple_id,opened_by,paired_turns,starting_user_id,self_draws)
+VALUES(
+ 'eeeeeeee-1111-4111-8111-eeeeeeeeeeee',
+ 'eeeeeeee-aaaa-4eee-8eee-eeeeeeeeeeee',
+ 'aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa',
+ true,'aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa',true);
+INSERT INTO public.couple_personal_rolls(session_id,user_id,face)
+VALUES
+ ('eeeeeeee-1111-4111-8111-eeeeeeeeeeee',
+  'aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa',1),
+ ('eeeeeeee-1111-4111-8111-eeeeeeeeeeee',
+  'bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb',1);
+INSERT INTO public.couple_challenge_gifts(
+ session_id,donor_user_id,receiver_user_id)
+VALUES(
+ 'eeeeeeee-1111-4111-8111-eeeeeeeeeeee',
+ 'aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa',
+ 'bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb');
+
+DO $lr026_gifted_turns$
+DECLARE
+ a uuid:='aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa';
+ b uuid:='bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb';
+ sid uuid:='eeeeeeee-1111-4111-8111-eeeeeeeeeeee';
+ first_draw public.couple_challenges%rowtype;
+ gifted_draw public.couple_challenges%rowtype;
+ rejected boolean:=false;
+ reason text;
+BEGIN
+ PERFORM pg_catalog.set_config('lr026.test_verified','yes',true);
+ PERFORM pg_catalog.set_config('request.jwt.claim.sub',a::text,true);
+
+ BEGIN
+   PERFORM public.draw_for_partner(sid,'SENSUEL',false);
+ EXCEPTION WHEN OTHERS THEN
+   GET STACKED DIAGNOSTICS reason=MESSAGE_TEXT;
+   IF reason<>'Ce n’est pas votre tour : attendez le lancer de votre partenaire' THEN
+     RAISE EXCEPTION 'LR-026 actual gift transfer unexpected A rejection: %',reason;
+   END IF;
+   rejected:=true;
+ END;
+ IF NOT rejected THEN
+   RAISE EXCEPTION 'LR-026 actual gift donor retained a transferred D6 turn';
+ END IF;
+
+ PERFORM pg_catalog.set_config('request.jwt.claim.sub',b::text,true);
+ SELECT * INTO first_draw FROM public.draw_for_partner(
+   sid,'SENSUEL',false);
+ IF first_draw.recipient IS DISTINCT FROM b
+   OR first_draw.offered_by IS DISTINCT FROM a
+   OR first_draw.is_gifted IS DISTINCT FROM false
+   OR first_draw.category IS DISTINCT FROM 'SENSUEL' THEN
+   RAISE EXCEPTION 'LR-026 actual original B turn misattributed: %',
+      first_draw;
+ END IF;
+
+ -- The transferred turn MUST let B choose SEXUEL without the ordinary
+ -- category mix weighing it against the SENSUEL request for first turn.
+ SELECT * INTO gifted_draw FROM public.draw_for_partner(
+   sid,'SEXUEL',false);
+ IF gifted_draw.recipient IS DISTINCT FROM b
+   OR gifted_draw.offered_by IS DISTINCT FROM a
+   OR gifted_draw.is_gifted IS DISTINCT FROM true
+   OR gifted_draw.category IS DISTINCT FROM 'SEXUEL' THEN
+   RAISE EXCEPTION 'LR-026 actual gifted B turn did not honor chosen category: %',
+      gifted_draw;
+ END IF;
+
+ rejected:=false;
+ BEGIN
+   PERFORM public.draw_for_partner(sid,'SENSUEL',false);
+ EXCEPTION WHEN OTHERS THEN
+   GET STACKED DIAGNOSTICS reason=MESSAGE_TEXT;
+   IF reason<>'Tous les défis de la soirée sont déjà pigés' THEN
+     RAISE EXCEPTION 'LR-026 actual gift queue overdraw wrong rejection: %',
+       reason;
+   END IF;
+   rejected:=true;
+ END;
+ IF NOT rejected
+   OR (SELECT count(*) FROM public.couple_challenges
+      WHERE session_id=sid AND recipient=b)<>2
+   OR EXISTS(SELECT 1 FROM public.couple_challenges
+      WHERE session_id=sid AND recipient=a)
+ THEN RAISE EXCEPTION 'LR-026 actual gifted D6 budget incorrect'; END IF;
+ RAISE NOTICE
+ 'LR-026 REAL RPC: transferred D6 budget, receiver chosen category and gifted flag passed';
+END; $lr026_gifted_turns$;
+
 ROLLBACK;
