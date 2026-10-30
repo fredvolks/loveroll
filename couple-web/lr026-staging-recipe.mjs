@@ -411,7 +411,7 @@ export async function runStage(env, mode, transport = fetch) {
   // Never retry mutations. On error the staging operator must inspect the
   // persisted state and provision a NEW fixture, not blindly replay.
   const challengeQuery =
-    'select=id,session_id,couple_id,offered_by,recipient,category,face,card_id,card_title,card_description,card_timer_minutes,is_gifted,replaces_challenge_id,status' +
+    'select=id,session_id,couple_id,offered_by,recipient,category,face,card_id,card_title,card_description,card_timer_minutes,is_gifted,passed_at,refused_at,replaces_challenge_id,status' +
     '&session_id=eq.' + config.sessionId;
   const drawn = await client.rpc('draw_for_partner',
     {p_session: config.sessionId, p_preference: config.preference, p_random: config.random}, giver.token);
@@ -454,6 +454,8 @@ export async function runStage(env, mode, transport = fetch) {
     Number.isInteger(firstForRecipient[0].face) && firstForRecipient[0].face >= 1 && firstForRecipient[0].face <= 100 &&
     Number.isInteger(firstForRecipient[0].card_id) && firstForRecipient[0].card_id >= 1 && firstForRecipient[0].card_id <= 100 &&
     firstForRecipient[0].status === 'proposed' &&
+    firstForRecipient[0].passed_at === null &&
+    firstForRecipient[0].refused_at === null &&
     firstForRecipient[0].replaces_challenge_id == null,
     'First D100 must persist exactly one drawer-to-recipient proposal before response');
   assert(firstForGiver.length === 0,
@@ -485,7 +487,13 @@ export async function runStage(env, mode, transport = fetch) {
     assert(stored.filter(c =>
       eq(c.id, drawn.id) && c.status ===
         (config.action === 'pass' ? 'passed' : 'refused') &&
-      eq(c.offered_by, giver.id) && c.replaces_challenge_id == null).length === 1,
+      eq(c.offered_by, giver.id) && c.replaces_challenge_id == null &&
+      (config.action === 'pass'
+        ? (typeof c.passed_at === 'string' &&
+            Number.isFinite(Date.parse(c.passed_at)) && c.refused_at === null)
+        : (typeof c.refused_at === 'string' &&
+            Number.isFinite(Date.parse(c.refused_at)) && c.passed_at === null))
+    ).length === 1,
       'Only one original responded challenge offered by drawer may exist');
     assert(stored.filter(c => eq(c.id, response.replacement_id) &&
       eq(c.replaces_challenge_id, drawn.id) && c.status === 'proposed' &&
@@ -496,7 +504,8 @@ export async function runStage(env, mode, transport = fetch) {
       typeof c.card_description === 'string' && c.card_description.trim().length > 0 &&
       (c.card_timer_minutes === null ||
         (Number.isInteger(c.card_timer_minutes) && c.card_timer_minutes > 0)) &&
-      c.is_gifted === drawn.is_gifted).length === 1,
+      c.is_gifted === drawn.is_gifted &&
+      c.passed_at === null && c.refused_at === null).length === 1,
       'Exactly one valid same-category replacement offered by drawer must exist for recipient');
     const original = stored.find(c => eq(c.id, drawn.id));
     const replacement = stored.find(c => eq(c.id, response.replacement_id));
