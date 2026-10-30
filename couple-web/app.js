@@ -942,6 +942,11 @@ function isActiveEveningRedrawPending(){
 }
 async function refreshShared(expectedContext=null){
  const c=state.coupleId,requestUserId=state.user?.id;
+ // A later ordinary refresh supersedes an earlier ordinary refresh, even
+ // for the SAME account/couple. Never roll back newer Supabase results.
+ // Scoped D100 actions keep their own independent ownership token.
+ const unscopedRequest=expectedContext?null:{};
+ if(!expectedContext)state.unscopedSharedRefreshRequest=unscopedRequest;
  // Even a normal background refresh is owned by the login and couple that
  // started it. Its HTTP responses must never populate a replacement account.
  // Tab changes are allowed here; scoped action refreshes remain tab-specific.
@@ -949,6 +954,7 @@ async function refreshShared(expectedContext=null){
  // scoped refresh. Permit that one transition, never a different session.
  let legacyClosedDuringRefresh=false;
  const current=()=>state.coupleId===c&&state.user?.id===requestUserId&&
+  (expectedContext||state.unscopedSharedRefreshRequest===unscopedRequest)&&
   (!expectedContext||(
   // Older redraw contexts had no coupleId; timer-completion contexts do.
   (expectedContext.coupleId===undefined||expectedContext.coupleId===c)&&
