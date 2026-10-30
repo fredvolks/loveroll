@@ -1510,8 +1510,11 @@ function keepExpiredTimerPending(context,cardId){
  saveChallengeTimer();
 }
 async function retryExpiredTimedEvening(){
- if(!challengeTimer.autoCompletePending||challengeTimer.decisionPending||timerCompletionInFlight||
+ if(!challengeTimer.autoCompletePending||challengeTimer.decisionPending||
     !state.user||!state.session)return;
+ // Only another operation for THIS authenticated couple and evening blocks.
+ // A stale account request must not monopolize the global UI timer worker.
+ if(timerCompletionInFlight&&ownsTimerCompletionSession(timerCompletionInFlight))return;
  const id=challengeTimer.id;
  const retryOwner=JSON.stringify([state.user.id,state.coupleId,state.session.id,id]);
  // A previous account's retry delay never blocks the active account/card.
@@ -1524,7 +1527,7 @@ async function retryExpiredTimedEvening(){
  if(!isAcceptedTimedEveningChallenge(item,state.user.id,state.session.id))return;
  const sessionId=state.session.id,userId=state.user.id;
  const context={userId,sessionId,coupleId:state.coupleId,tab:state.tab,challengeId:id};
- timerCompletionInFlight=id;state.timerCompletionContext=context;
+ timerCompletionInFlight=context;state.timerCompletionContext=context;
  try{
   const result=await completeTimedEveningChallenge({
    challenge:item,userId,sessionId,rpc,query,
@@ -1554,17 +1557,21 @@ async function retryExpiredTimedEvening(){
      !document.hidden)notify('Le minuteur est terminé. Validation du défi en attente de connexion.');
  }finally{
   if(state.timerCompletionContext===context)state.timerCompletionContext=null;
-  timerCompletionInFlight=null;
+  if(timerCompletionInFlight===context)timerCompletionInFlight=null;
  }
 }
 // LR-002: recover ALL due challenge timers from per-account session storage
 // after Safari/Android reload or suspension; do not require opening the card.
-let savedTimerScanAfter=0,savedTimerSyncInFlight=false;
+let savedTimerScanAfter=0,savedTimerScanOwner=null,savedTimerSyncInFlight=null;
 async function reconcileSavedEveningTimers(){
  const now=Date.now();
- if(!state.user||!state.session||savedTimerSyncInFlight||timerCompletionInFlight||
-    now<savedTimerScanAfter)return;
- savedTimerScanAfter=now+4000;
+ if(!state.user||!state.session)return;
+ const scanOwner=JSON.stringify([state.user.id,state.coupleId,state.session.id]);
+ // A blocked scan from an old account must not stall a different identity.
+ if((savedTimerSyncInFlight&&ownsTimerCompletionSession(savedTimerSyncInFlight))||
+    (timerCompletionInFlight&&ownsTimerCompletionSession(timerCompletionInFlight))||
+    (savedTimerScanOwner===scanOwner&&now<savedTimerScanAfter))return;
+ savedTimerScanOwner=scanOwner;savedTimerScanAfter=now+4000;
  for(const item of state.challenges||[]){
   const key='loveroll-challenge-clock:'+state.user.id+':'+item.id;
   const saved=ownedSavedEveningTimerSnapshot(readSavedChallengeTimer(key),
@@ -1583,7 +1590,7 @@ async function reconcileSavedEveningTimers(){
   if(!isAcceptedTimedEveningChallenge(item,state.user.id,state.session.id))continue;
   const userId=state.user.id,sessionId=state.session.id;
   const context={userId,sessionId,coupleId:state.coupleId,tab:state.tab,challengeId:item.id};
-  savedTimerSyncInFlight=true;timerCompletionInFlight=item.id;
+  savedTimerSyncInFlight=context;timerCompletionInFlight=context;
   state.timerCompletionContext=context;
   const expired={...saved,cardId:item.id,ownerUserId:userId,
    ownerSessionId:sessionId,running:false,remainingMs:0,
@@ -1619,7 +1626,8 @@ async function reconcileSavedEveningTimers(){
       !document.hidden)notify('Le minuteur est terminé. Validation du défi en attente de connexion.');
   }finally{
    if(state.timerCompletionContext===context)state.timerCompletionContext=null;
-   timerCompletionInFlight=null;savedTimerSyncInFlight=false;
+   if(timerCompletionInFlight===context)timerCompletionInFlight=null;
+   if(savedTimerSyncInFlight===context)savedTimerSyncInFlight=null;
   }
   return;
  }
