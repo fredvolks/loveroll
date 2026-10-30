@@ -542,3 +542,41 @@ test('LR-026 superseded timer leaves original pending receipt for later retry',a
  assert.equal(timer.autoCompletePending,true,'original timer stays retryable');
  assert.equal(state.timerCompletionContext,null,'the obsolete request lock is released');
 });
+
+test('LR-026 restored timer keeps a pending receipt after an account switch mid-RPC',async()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const start=app.indexOf('function ownsTimerCompletionSession(context){');
+ const end=app.indexOf('function endSignal(){',start);
+ assert.ok(start>0&&end>start);
+ const state={user:{id:'alice'},session:{id:'session-a'},coupleId:'couple-1',
+  tab:'session',timerCompletionContext:null,challenges:[card]};
+ const clock={id:'card-a',ownerUserId:'alice',ownerSessionId:'session-a',
+  autoCompletePending:false,decisionPending:false};
+ const saved={cardId:'card-a',ownerUserId:'alice',ownerSessionId:'session-a',
+  durationMs:60000,remainingMs:0,deadline:Date.now()-10000,running:true};
+ const writes=[],calls=[];
+ const recover=runInNewContext(app.slice(start,end)+'; reconcileSavedEveningTimers;',{
+  state,challengeTimer:clock,timerCompletionInFlight:null,timerCompletionRetryAt:0,
+  readSavedChallengeTimer:()=>saved,ownedSavedEveningTimerSnapshot:()=>saved,
+  writeSavedChallengeTimer:(key,value)=>writes.push({key,value}),
+  isAcceptedTimedEveningChallenge,completeTimedEveningChallenge,
+  rpc:async name=>{
+   calls.push(name);
+   if(name==='answer_challenge')state.user={id:'bob'};
+  },
+  query:async name=>{calls.push('SELECT '+name);return [];},
+  ownsVisibleEveningTimer:()=>false,
+  saveChallengeTimer:()=>{throw Error('Must not save new account timer');},
+  refreshShared:async()=>{throw Error('Must not refresh new account');},
+  render:()=>{throw Error('Must not render new account');},
+  notify:()=>{throw Error('Must not notify new account');},
+  console,document:{hidden:false},Date
+ });
+ await recover();
+ assert.deepEqual(calls,['answer_challenge'],
+  'no board, finish, or private SELECT may use the new account');
+ assert.equal(writes.length,1,'pending original timer remains saved for retry');
+ assert.equal(writes[0].key,'loveroll-challenge-clock:alice:card-a');
+ assert.equal(writes[0].value.autoCompletePending,true);
+ assert.equal(state.timerCompletionContext,null);
+});
