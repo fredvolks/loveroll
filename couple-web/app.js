@@ -2944,6 +2944,10 @@ async function handle(action,element){
     p_challenge:challengeId,p_action:refuse?'refuse':'pass',p_exclude:exclude});
    const receiptValid=isValidEveningRedrawReceipt(outcome,challengeId);
    const sameContext=isSameEveningResponseContext(state,responseContext);
+   // The player may have switched accounts, evenings or tabs during the
+   // network request. An old response must not trigger a new account's RLS
+   // refresh, selection or confirmation.
+   if(!sameContext)return;
    // A syntactically valid RPC receipt cannot stop a live timer by itself.
    // Wait for the recipient-only refreshed database view below.
    // The automatic queue refresh can discover a DIFFERENT newly offered
