@@ -33,6 +33,7 @@ function mockSupabase(opts = {}) {
   let passCount = 0;
   let lastDraw = null;
   const loginCounts = {a:0,b:0};
+  const sessionReadCounts = {a:0,b:0};
   const calls = [];
   const fetchFn = async (uri, init) => {
     count++;
@@ -77,8 +78,11 @@ function mockSupabase(opts = {}) {
       if (opts.hideSessionB && who === 'b') return response([]);
       if (opts.duetSessionHiddenFromBAfterDraw && afterDraw && who === 'b')
         return response([]);
-      const isPlayFlagsRead = url.searchParams.get('select') ===
-        'id,couple_id,finished_at,paired_turns,self_draws' &&
+      // Both initial Auth and game preflight request all lifecycle fields.
+      // Inject drift on the second read only, to prove that a previously
+      // valid Auth check cannot authorize an unsafe draw later.
+      sessionReadCounts[who]++;
+      const isPlayFlagsRead = sessionReadCounts[who] === 2 &&
         drawCount === 0 && passCount === 0;
       return response([{
         id: (isPlayFlagsRead && opts.wrongPlaySessionIdB && who === 'b') ||
@@ -411,6 +415,8 @@ test('read-only --ready proves both A/B identities, D6 and an empty evening befo
 
 for(const [name,opts,error] of [
  ['session flags hidden on B',{pairedTurnsForB:true},/fresh legacy partner-draw/],
+ ['session closes after Auth',{preflightClosedSessionB:true},/same active, fresh legacy partner-draw/],
+ ['session changes couple after Auth',{preflightWrongCoupleB:true},/same active, fresh legacy partner-draw/],
  ['session self mode on B',{selfDrawsForB:true},/fresh legacy partner-draw/],
  ['one D6 missing',{missingSecondD6:true},/Two valid D6 rolls/],
  ['different D6 on B',{d6DifferentFaceForB:true},/D6 faces disagree/],
@@ -426,6 +432,25 @@ for(const [name,opts,error] of [
   assert.equal(mock.counters().passCount,0);
   assert(!mock.calls.some(c=>c.path.startsWith('/rest/v1/rpc/')));
  });
+}
+
+for (const [name,opts] of [
+  ['session closes between Auth and first D100', {preflightClosedSessionB:true}],
+  ['session changes couple between Auth and first D100', {preflightWrongCoupleB:true}]
+]) {
+  for (const drawer of ['A','B']) {
+    test('play fails before any RPC when '+name+' (drawer '+drawer+')', async () => {
+      const mock = mockSupabase({...opts,drawerB:drawer==='B'});
+      await assert.rejects(runStage({...env(),LR026_STAGING_DRAWER:drawer},
+        'play',mock.fetchFn),/same active, fresh legacy partner-draw/);
+      assert.equal(mock.counters().drawCount,0);
+      assert.equal(mock.counters().passCount,0);
+      assert.deepEqual(mock.calls.filter(c=>c.path.startsWith('/rest/v1/rpc/')),[]);
+      const reads=mock.calls.filter(c=>c.path==='/rest/v1/couple_sessions');
+      assert.equal(reads.length,4,
+        'both accounts must complete initial Auth checks before detecting preflight drift');
+    });
+  }
 }
 
 test('read-only --ready rejects the production project before any network',async()=>{
