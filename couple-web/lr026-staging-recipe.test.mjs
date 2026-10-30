@@ -157,7 +157,10 @@ function mockSupabase(opts = {}) {
           !beforePass && opts.wrongOriginalRecipient ? a : b,
         category: (beforePass && opts.firstWrongCategory) ||
           (!beforePass && opts.wrongOriginalCategory) ? otherCategory : category,
-        status: beforePass && !opts.firstWrongStatus ? 'proposed' : 'passed',
+        status: beforePass ? opts.firstWrongStatus ? 'passed' : 'proposed'
+          : (opts.expectedAction === 'refuse' ? 'refused' : 'passed'),
+        face: beforePass && opts.firstWrongFace ? 0 : 14,
+        card_id: beforePass && opts.firstWrongCardId ? 0 : 3,
         replaces_challenge_id: beforePass && opts.firstReplacesCard ? replacedId : null
       };
       if (beforePass) {
@@ -173,6 +176,10 @@ function mockSupabase(opts = {}) {
         offered_by: (passCount === 1 && opts.firstPassWrongReplacementOfferer) ||
           (passCount > 1 && opts.replayMutatesReplacementOfferer) ? b : a,
         status: 'proposed', recipient: b,
+        face: (passCount === 1 && opts.firstPassDuplicateFace) ? 14 :
+          (passCount === 1 && opts.firstPassInvalidFace) ? 101 : 53,
+        card_id: (passCount === 1 && opts.firstPassDuplicateCard) ? 3 :
+          (passCount === 1 && opts.firstPassInvalidCardId) ? 0 : 8,
         category: (passCount === 1 && opts.firstPassWrongCategory) ||
           (passCount > 1 && opts.replayMutatesReplacementCategory) ?
             otherCategory : category,
@@ -197,11 +204,15 @@ function mockSupabase(opts = {}) {
     }
     if (path === '/rest/v1/rpc/love_respond_and_redraw') {
       assert.equal(who, 'b');
-      assert.equal(payload.p_action, 'pass');
+      assert.equal(payload.p_action, opts.expectedAction ?? 'pass');
+      assert.equal(payload.p_exclude, opts.expectedExclude ?? false);
       assert.equal(payload.p_challenge, drawnId);
       passCount++;
       return response({original_id: drawnId, replacement_id: replacedId,
-        action: passCount > 1 && opts.replayWrongAction ? 'declined' : 'pass',
+        action: passCount > 1 && opts.replayWrongAction ? 'declined' :
+          (opts.expectedAction ?? 'pass'),
+        excluded: passCount > 1 && opts.replayWrongExclusion ?
+          !(opts.expectedExclude ?? false) : (opts.expectedExclude ?? false),
         already_processed: passCount > 1});
     }
     throw new Error('Unexpected mocked endpoint ' + path);
@@ -325,6 +336,48 @@ test('a SEXUEL card changing category after Passer is refused before replay', as
     'play', mock.fetchFn), /Only the two correct-category B challenges/);
   assert.equal(mock.counters().drawCount, 1);
   assert.equal(mock.counters().passCount, 1);
+});
+
+for (const [action, excluded] of [
+  ['pass', false], ['refuse', false], ['refuse', true]
+]) {
+  test('official D100 response and idempotent replay: ' + action +
+    ' exclude=' + excluded, async () => {
+    const mock = mockSupabase({expectedAction: action, expectedExclude: excluded,
+      expectedPreference: 'SEXUEL', drawSexuel: true});
+    const output = await runStage({...env(),
+      LR026_STAGING_PREFERENCE: 'SEXUEL',
+      LR026_STAGING_ACTION: action,
+      LR026_STAGING_EXCLUDE: String(excluded)
+    }, 'play', mock.fetchFn);
+    assert.equal(output.response_action, action);
+    assert.equal(output.response_excluded, excluded);
+    assert.equal(output.persisted_challenges, 2);
+    assert.equal(mock.counters().passCount, 2);
+  });
+}
+
+test('invalid action, exclusion and illegal pass+exclude stop before network', async () => {
+  for (const [action, exclude] of [
+    ['decline', 'false'], ['PASS', 'false'], ['pass', 'true'],
+    ['refuse', 'TRUE'], ['refuse', ''], ['', 'false']
+  ]) {
+    const mock = mockSupabase();
+    await assert.rejects(runStage({...env(),
+      LR026_STAGING_ACTION: action,
+      LR026_STAGING_EXCLUDE: exclude}, 'play', mock.fetchFn),
+      /Staging response must be pass without exclusion, or refuse with optional exclusion/);
+    assert.equal(mock.counters().count, 0);
+  }
+});
+
+test('idempotent refuse cannot change the recorded exclusion flag', async () => {
+  const mock = mockSupabase({expectedAction: 'refuse', expectedExclude: true,
+    replayWrongExclusion: true});
+  await assert.rejects(runStage({...env(), LR026_STAGING_ACTION: 'refuse',
+    LR026_STAGING_EXCLUDE: 'true'}, 'play', mock.fetchFn),
+    /Repeated response must return the exact persisted action, exclusion and replacement/);
+  assert.equal(mock.counters().passCount, 2);
 });
 
 test('play mode runs exactly one normal D100 plus one pass and one idempotent replay', async () => {
@@ -537,6 +590,8 @@ for (const options of [
   {firstWrongOfferer: true},
   {firstWrongRecipient: true},
   {firstWrongCategory: true},
+  {firstWrongFace: true},
+  {firstWrongCardId: true},
   {firstWrongStatus: true},
   {firstReplacesCard: true},
   {firstCardForA: true}
@@ -562,6 +617,10 @@ for (const options of [
   {firstPassWrongReference: true},
   {firstPassWrongSession: true},
   {firstPassWrongCategory: true},
+  {firstPassInvalidFace: true},
+  {firstPassInvalidCardId: true},
+  {firstPassDuplicateFace: true},
+  {firstPassDuplicateCard: true},
   {firstPassWrongReplacementOfferer: true},
   {firstPassCardForA: true}
 ]) {
@@ -569,7 +628,7 @@ for (const options of [
     JSON.stringify(options), async () => {
     const mock = mockSupabase(options);
     await assert.rejects(runStage(env(), 'play', mock.fetchFn),
-      /Unexpected challenge addressed to A|Only the two correct-category B challenges|Only one original passed|Exactly one same-category replacement/);
+      /Unexpected challenge addressed to A|Only the two correct-category B challenges|Only one original responded|Exactly one valid same-category replacement|Replacement must not reuse/);
     assert.equal(mock.counters().drawCount, 1);
     assert.equal(mock.counters().passCount, 1,
       'A malformed persisted Passer must stop BEFORE a second RPC');
@@ -585,7 +644,7 @@ test('idempotent replay can reorder rows but must not mutate their contents', as
 test('idempotent replay cannot alter persisted replacement even when returning same ID', async () => {
   const mock = mockSupabase({replayMutatesReplacementOfferer: true});
   await assert.rejects(runStage(env(), 'play', mock.fetchFn),
-    /Repeated Passer must not change any persisted challenge field|Exactly one same-category replacement offered by A/);
+    /Repeated Passer must not change any persisted challenge field|Exactly one valid same-category replacement offered by A/);
   assert.equal(mock.counters().passCount, 2);
 });
 test('SEXUEL idempotent replay cannot silently change the replacement category', async () => {
@@ -599,7 +658,7 @@ test('SEXUEL idempotent replay cannot silently change the replacement category',
 test('idempotent replay must keep official Passer action', async () => {
   const mock = mockSupabase({replayWrongAction: true});
   await assert.rejects(runStage(env(), 'play', mock.fetchFn),
-    /Repeated Passer must return the exact persisted replacement/);
+    /Repeated response must return the exact persisted action, exclusion and replacement/);
   assert.equal(mock.counters().passCount, 2);
 });
 
