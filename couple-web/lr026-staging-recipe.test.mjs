@@ -62,7 +62,13 @@ function mockSupabase(opts = {}) {
     }
     if (path === '/rest/v1/couple_members') {
       if (opts.hideMemberB && who === 'b') return response([]);
-      return response([{couple_id: couple, user_id: uid}]);
+      if (opts.hidePartnerFromA && who === 'a')
+        return response([{couple_id: couple, user_id: a}]);
+      const members = [{couple_id: couple, user_id: a},
+        {couple_id: couple, user_id: b}];
+      if (opts.extraThirdMember) members.push({couple_id: couple,
+        user_id: 'cccccccc-1111-4111-8111-cccccccccccc'});
+      return response(members);
     }
     if (path === '/rest/v1/couple_personal_rolls') {
       if (opts.missingSecondD6) return response([{user_id: a, face: 2}]);
@@ -240,5 +246,23 @@ test('real recipient-only RLS: a clean session can draw even if drawer A cannot 
   assert.deepEqual(challenges.map(x => x.actorToken), [
     'Bearer auth-token-for-a-test', 'Bearer auth-token-for-b-test',
     'Bearer auth-token-for-b-test'
+  ]);
+});
+
+test('a third member or incomplete RLS membership view blocks every D100 before writes', async () => {
+  for (const options of [{extraThirdMember: true}, {hidePartnerFromA: true}]) {
+    const mock = mockSupabase(options);
+    await assert.rejects(runStage(env(), 'play', mock.fetchFn), /exactly A and B/);
+    assert.equal(mock.counters().drawCount, 0);
+    assert.equal(mock.counters().passCount, 0);
+  }
+});
+test('real member policy exposes the same exact two-person duo to both accounts', async () => {
+  const mock = mockSupabase();
+  const out = await runStage(env(), 'auth', mock.fetchFn);
+  assert.equal(out.rls_membership_reads, 2);
+  const memberRequests = mock.calls.filter(x => x.path === '/rest/v1/couple_members');
+  assert.deepEqual(memberRequests.map(x => x.actorToken), [
+    'Bearer auth-token-for-a-test', 'Bearer auth-token-for-b-test'
   ]);
 });
