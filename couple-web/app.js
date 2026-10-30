@@ -17,7 +17,7 @@ import {ROLL_TOTAL_MS} from './dice-roll-motion.mjs';
 import {createCoupleLiveSync} from './couple-live-sync.mjs?v=20261017-advent119';
 import {playableSessionForWeekly} from './couple-reset-view.mjs';
 import {eveningDailyAccess} from './evening-daily-policy.mjs?v=20261016-daily100';
-import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,snapshotEveningCardBeforeRedraw,isSameEveningResponseContext,isEveningRedrawBusyForCurrentView,ownsEveningRedrawRequest,redrawTimerRecovery} from './evening-private-queue.mjs';
+import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,snapshotEveningCardBeforeRedraw,isSameEveningResponseContext,isEveningRedrawBusyForCurrentView,ownsEveningRedrawRequest,ownsEveningTimerRecord,redrawTimerRecovery} from './evening-private-queue.mjs';
 import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261029-web259';
 import {saveEveningSelection,restoreEveningSelection,clearEveningSelection} from './evening-resume.mjs?v=20261027-web240';
 import {eclatHtml} from './eclat-ui.mjs?v=20261027-web242';
@@ -1397,9 +1397,7 @@ function activeTimer(challenge,minutes){
  }
 }
 function ownsVisibleEveningTimer(cardId,userId,sessionId){
- return !!cardId&&!!userId&&!!sessionId&&
-  challengeTimer.id===cardId&&challengeTimer.ownerUserId===userId&&
-  challengeTimer.ownerSessionId===sessionId&&
+ return ownsEveningTimerRecord(challengeTimer,cardId,userId,sessionId)&&
   state.user?.id===userId&&state.session?.id===sessionId;
 }
 function clockMs(){
@@ -3038,7 +3036,7 @@ async function handle(action,element){
      state.challenges,outcome,state.user.id,state.session.id);
     state.showEveningChallenges=true;
    }
-   if(persistedReceiptValid&&challengeTimer.id===challengeId){
+   if(persistedReceiptValid&&ownsVisibleEveningTimer(challengeId,responseContext.userId,responseContext.sessionId)){
     challengeTimer.running=false;challengeTimer.deadline=0;challengeTimer.remainingMs=0;
     challengeTimer.notified=true;challengeTimer.autoCompletePending=false;
     challengeTimer.decisionPending=false;saveChallengeTimer();
@@ -3060,7 +3058,7 @@ async function handle(action,element){
     // server confirms that the original decision has already been applied.
     if(recovery==='stop'&&state.eveningRefusalId===challengeId)
      state.eveningRefusalId=null;
-    if(challengeTimer.id===challengeId&&challengeTimer.decisionPending){
+    if(ownsVisibleEveningTimer(challengeId,responseContext.userId,responseContext.sessionId)&&challengeTimer.decisionPending){
      if(recovery==='stop'){
       challengeTimer.running=false;challengeTimer.deadline=0;challengeTimer.remainingMs=0;
       challengeTimer.notified=true;challengeTimer.autoCompletePending=false;
@@ -3084,7 +3082,7 @@ async function handle(action,element){
    // finally still unlocks the action and renders the current account.
    if(!isSameEveningResponseContext(state,responseContext)||
       !ownsEveningRedrawRequest(state,responseContext))return;
-   if(challengeTimer.id===challengeId&&challengeTimer.decisionPending){
+   if(ownsVisibleEveningTimer(challengeId,responseContext.userId,responseContext.sessionId)&&challengeTimer.decisionPending){
     challengeTimer.decisionPending=false;
     if(challengeTimer.deadline>0&&challengeTimer.deadline<=Date.now()){
      challengeTimer.running=false;challengeTimer.remainingMs=0;
@@ -3098,8 +3096,10 @@ async function handle(action,element){
    // Only the action owning this lock may release it. An older response
    // cannot unlock or alter a newer redraw started on another account.
    if(state.redrawBusyContext===responseContext){
-    if(challengeTimer.id===challengeId&&challengeTimer.decisionPending&&
-       !isSameEveningResponseContext(state,responseContext))
+    // This flag belongs to the old timer itself: clear it even if the
+    // account left that evening, but NEVER clear a newer account's timer.
+    if(ownsEveningTimerRecord(challengeTimer,challengeId,responseContext.userId,responseContext.sessionId)&&
+       challengeTimer.decisionPending)
      challengeTimer.decisionPending=false;
     state.redrawBusyContext=null;
     state.redrawBusy=false;
