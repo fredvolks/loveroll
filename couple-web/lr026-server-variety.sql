@@ -27,7 +27,11 @@ CREATE OR REPLACE FUNCTION couple_private.love_variety_normalize(p_text text)
 RETURNS text LANGUAGE sql IMMUTABLE SET search_path=''
 AS $lr026$
   SELECT pg_catalog.btrim(pg_catalog.regexp_replace(
-    pg_catalog.translate(pg_catalog.lower(coalesce(p_text,'')),
+    pg_catalog.translate(
+      pg_catalog.replace(
+        pg_catalog.replace(pg_catalog.lower(coalesce(p_text,'')),
+          'œ','oe'),
+        'æ','ae'),
       'àáâäãåçèéêëìíîïñòóôöõùúûüýÿ',
       'aaaaaaceeeeiiiinooooouuuuyy'),
     '[^a-z0-9]+',' ','g'));
