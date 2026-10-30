@@ -45,6 +45,17 @@ export function hasTurnToDraw(board,userId){
  * same challenge. A replay returns the WINNER's action and excluded flag,
  * not the losing device's requested buttons. Never infer from local intent.
  */
+// The live SQL replay returns the original persisted receipt without the
+// replacement_unavailable flag. NULL replacement_id on that replay means
+// there was no eligible card to replace the original; a missing property
+// remains invalid so truncated network payloads cannot masquerade as replays.
+function isUnavailableRedrawReceipt(outcome){
+ return outcome?.replacement_unavailable===true||
+  (outcome?.already_processed===true&&
+   outcome.replacement_unavailable===undefined&&
+   outcome.replacement_id===null);
+}
+
 // A receipt cannot be trusted just because it claims Passer or Refuser.
 // Validate both IDs and the action from the server before selecting a new
 // card. The caller can bind it to the challenge that was actually answered.
@@ -54,10 +65,10 @@ export function isValidEveningRedrawReceipt(outcome,expectedOriginalId=null){
  const hasOriginal=typeof original==='string'&&original.trim().length>0;
  const hasReplacement=hasOriginal&&typeof replacement==='string'&&
   replacement.trim().length>0&&replacement.trim()!==original.trim();
- const unavailable=outcome.replacement_unavailable===true;
+ const unavailable=isUnavailableRedrawReceipt(outcome);
  return hasOriginal&&
   (expectedOriginalId==null||original===expectedOriginalId)&&
-  (unavailable?replacement==null:hasReplacement)&&
+  (unavailable?replacement===null:hasReplacement)&&
   (outcome.replacement_unavailable===undefined||
    typeof outcome.replacement_unavailable==='boolean')&&
   (outcome.action==='pass'||outcome.action==='refuse')&&
@@ -100,7 +111,7 @@ export function eveningRedrawFeedback(outcome,expectedOriginalId=null){
  if(!isValidEveningRedrawReceipt(outcome,expectedOriginalId))
   return 'Réponse reçue. Vérifie la liste de tes défis pour confirmer le résultat.';
  let detail;
- if(outcome.replacement_unavailable===true)
+ if(isUnavailableRedrawReceipt(outcome))
   detail='Aucun autre défi admissible dans cette catégorie pour ce soir. Tu peux réintégrer un défi retiré ou revenir plus tard.';
  else if(outcome.action==='pass')
   detail='Défi passé — il pourra revenir plus tard.';
