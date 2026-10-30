@@ -32,7 +32,8 @@ function config() {
     // Intentionally NO writing acknowledgements.
   };
 }
-function fakeStage({leak, hideCOwnSession, hideCOwnMember} = {}) {
+function fakeStage({leak, hideCOwnSession, hideCOwnMember,
+  hideCOwnChallenge, hideABOwnChallenge, leakPartnerChallenge} = {}) {
   const calls = [];
   const transport = async (urlString, options) => {
     const url = new URL(urlString);
@@ -83,13 +84,24 @@ function fakeStage({leak, hideCOwnSession, hideCOwnMember} = {}) {
     }
     if (endpoint === '/rest/v1/couple_challenges') {
       const session = url.searchParams.get('session_id')?.slice(3);
-      if (session === AB_SESSION &&
-          actor === 'c' && leak === 'c-ab-card') {
-        return data([{id: 'dddddddd-4444-4444-8444-dddddddddddd'}]);
+      const aCard = {id:'dddddddd-4444-4444-8444-dddddddddddd',
+        recipient:A,session_id:AB_SESSION};
+      const bCard = {id:'ffffffff-4444-4444-8444-ffffffffffff',
+        recipient:B,session_id:AB_SESSION};
+      const cCard = {id:'eeeeeeee-4444-4444-8444-eeeeeeeeeeee',
+        recipient:C,session_id:C_SESSION};
+      if (session === AB_SESSION) {
+        if (actor === 'c')
+          return data(leak === 'c-ab-card' ? [aCard] : []);
+        if (hideABOwnChallenge === actor) return data([]);
+        const own = actor === 'a' ? aCard : bCard;
+        const partner = actor === 'a' ? bCard : aCard;
+        return data(leakPartnerChallenge === actor ? [own,partner] : [own]);
       }
-      if (session === C_SESSION &&
-          actor !== 'c' && leak === 'ab-c-card') {
-        return data([{id: 'eeeeeeee-4444-4444-8444-eeeeeeeeeeee'}]);
+      if (session === C_SESSION) {
+        if (actor === 'c')
+          return data(hideCOwnChallenge ? [] : [cCard]);
+        return data(leak === 'ab-c-card' ? [cCard] : []);
       }
       return data([]);
     }
@@ -106,7 +118,8 @@ test('audit mode is read-only, checks 3 real simulated Auth users and denies 9 c
   assert.equal(result.rls_cross_duo_denials, 9);
   assert.equal(result.game_writes, 0);
   assert.equal(calls.filter(x => x.endpoint === '/auth/v1/user').length, 3);
-  assert.equal(calls.filter(x => x.endpoint === '/rest/v1/couple_challenges').length, 3);
+  assert.equal(result.rls_positive_challenge_reads, 3);
+  assert.equal(calls.filter(x => x.endpoint === '/rest/v1/couple_challenges').length, 6);
   assert.equal(calls.filter(x => x.endpoint.includes('/rest/v1/rpc/')).length, 0);
   assert(calls.filter(x => x.method === 'POST').every(x => x.endpoint === '/auth/v1/token'));
   assert(!JSON.stringify(result).includes('A-private'));
@@ -151,3 +164,17 @@ test('audit cannot target known production project even with three real actors',
     LR026_CONFIRM_STAGING_REF:'ejsrqfpkgwraorrznjpm'
   }, 'audit'), /Production Supabase project/);
 });
+
+for (const options of [
+  {hideABOwnChallenge:'a'}, {hideABOwnChallenge:'b'},
+  {hideCOwnChallenge:true}, {leakPartnerChallenge:'a'},
+  {leakPartnerChallenge:'b'}
+]) {
+  test('RLS audit refuses missing recipient proof or visible partner card: ' +
+    JSON.stringify(options), async () => {
+    const {transport, calls} = fakeStage(options);
+    await assert.rejects(runStage(config(), 'audit', transport),
+      /RLS audit needs/);
+    assert(calls.every(x => !x.endpoint.includes('/rest/v1/rpc/')));
+  });
+}
