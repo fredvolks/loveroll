@@ -23,12 +23,13 @@ test('LR-026: Refuser-option race fixture IDs match the actual concurrent caller
  const members=extract('couple_members');
  const sessions=extract('couple_sessions');
  const challenges=extract('couple_challenges');
- assert.equal(couples.length,1,'one race couple');
+ assert.equal(couples.length,2,'one race couple and its owner');
  assert.equal(members.length,4,'two members must belong to the same couple');
  assert.equal(sessions.length,3,'one session belongs to the race couple');
  assert.equal(challenges.length,5,'one challenge, session, couple and two actors');
- const [pair]=couples;
+ const [pair,coupleOwner]=couples;
  const [session,sessionPair,owner]=sessions;
+ assert.equal(coupleOwner,owner,'seeded couple owner must open the session');
  const [origin,challengeSession,challengePair,giver,recipient]=challenges;
  assert.equal(members[0],pair);
  assert.equal(members[2],pair);
