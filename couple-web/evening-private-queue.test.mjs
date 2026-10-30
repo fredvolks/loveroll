@@ -885,6 +885,37 @@ test('LR-026: Commencer ignores a stale RPC or refresh after switching accounts'
  assert.equal(state.eveningStartContext,null);
 });
 
+test('LR-026: Commencer never starts a clock on an unconfirmed proposed row',async()=>{
+ const code=app.slice(app.indexOf("if(verb==='evening-start')"),
+  app.indexOf("if(verb==='surprise-activity')"));
+ const make=Function('state','challengeTimer','ownEveningChallenges',
+  'isSameEveningResponseContext','rpc','refreshShared','activeTimer',
+  'resolvedCard','saveChallengeTimer','updateChallengeClock','render',
+  'notify','unlockLoveRollSounds',
+  'return async function(verb,parts){'+code+'}');
+ const original={id:'still-proposed',recipient:'fred',
+  session_id:'night',status:'proposed'};
+ const state={user:{id:'fred'},session:{id:'night'},tab:'session',
+  challenges:[original],showEveningChallenges:false,
+  selectedEveningChallengeId:null};
+ const clock={mode:'vibrate',remainingMs:180000,running:false};
+ let rpcCalls=0,refreshes=0,timers=0,renders=0,feedback=[];
+ const start=make(state,clock,ownEveningChallenges,isSameEveningResponseContext,
+  async()=>{rpcCalls++;},async()=>{refreshes++;},
+  ()=>{timers++;},()=>({minutes:3}),()=>{},()=>{},
+  ()=>{renders++;},message=>feedback.push(message),()=>{});
+ await start('evening-start',['still-proposed']);
+ assert.equal(rpcCalls,1);
+ assert.equal(refreshes,1);
+ assert.equal(timers,0,'HTTP success alone cannot start an uncommitted timer');
+ assert.equal(clock.running,false);
+ assert.equal(state.selectedEveningChallengeId,null);
+ assert.equal(state.showEveningChallenges,true);
+ assert.equal(renders,1);
+ assert.match(feedback[0],/pas encore confirmé/);
+ assert.equal(state.eveningStartContext,null);
+});
+
 test('LR-026: Commencer starts only after verified recipient refresh and prevents double taps',async()=>{
  const code=app.slice(app.indexOf("if(verb==='evening-start')"),
   app.indexOf("if(verb==='surprise-activity')"));
