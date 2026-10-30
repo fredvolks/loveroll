@@ -42,6 +42,12 @@ test('LR-026: malformed or contradictory RPC receipts never yield false confirma
    excluded:false,already_processed:false},
   {original_id:'old',replacement_id:1,action:'refuse',
    excluded:true,already_processed:false},
+  {original_id:17,replacement_id:'new',action:'pass',
+   excluded:false,already_processed:true},
+  {original_id:{id:'old'},replacement_id:'new',action:'refuse',
+   excluded:true,already_processed:true},
+  {original_id:[],replacement_id:'new',action:'pass',
+   excluded:false,already_processed:true},
   {original_id:'old',replacement_id:'new',action:'pass',
    excluded:false,already_processed:false,replacement_unavailable:'false'}
  ]) assert.equal(eveningRedrawFeedback(result),unknown,
