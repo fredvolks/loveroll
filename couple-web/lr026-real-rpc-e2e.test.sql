@@ -392,6 +392,167 @@ BEGIN
  'LR-026 REAL RPC role assignment: gender, owner/partner and per-user custom-card locks passed';
 END; $lr026_real_roles$;
 
+-- Cover the live SEXUEL category with the exact same two real SQL RPCs,
+-- in both directions. All identities and rows are disposable, rolled back.
+DO $lr026_real_sexuel$
+DECLARE
+ pair uuid:='dddddddd-aaaa-4aaa-8aaa-dddddddddddd';
+ a uuid:='aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa';
+ b uuid:='bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb';
+ s uuid:='dddddddd-2222-4222-8222-dddddddddddd';
+ for_b public.couple_challenges%rowtype;
+ for_a public.couple_challenges%rowtype;
+ next_b public.couple_challenges%rowtype;
+ next_a public.couple_challenges%rowtype;
+ reply jsonb;
+ blocked boolean;
+ rejection text;
+BEGIN
+ INSERT INTO public.couples(
+  id,owner_user_id,category_preference_percent,monthly_pass_limit,
+  sexual_card_mode
+ ) VALUES(pair,a,100,1,'custom');
+ INSERT INTO public.couple_members(couple_id,user_id)
+ VALUES(pair,a),(pair,b);
+ INSERT INTO public.couple_sessions(id,couple_id,opened_by,paired_turns,self_draws)
+ VALUES(s,pair,a,false,false);
+ INSERT INTO public.couple_personal_rolls(session_id,user_id,face)
+ VALUES(s,a,2),(s,b,2);
+ -- Keep a small but non-exhausted SEXUEL-only pool; the real base cards
+ -- from the preceding fixture are still present in both categories.
+ INSERT INTO public.love_cycle_excluded_cards(
+  couple_id,cycle_number,category,card_id
+ )
+ SELECT pair,1,cat.category,g
+ FROM (VALUES ('SENSUEL'::text),('SEXUEL'::text)) cat(category)
+ CROSS JOIN pg_catalog.generate_series(1,25) g
+ WHERE cat.category='SENSUEL' OR g>8;
+
+ PERFORM pg_catalog.set_config('lr026.test_verified','yes',true);
+ PERFORM pg_catalog.set_config('request.jwt.claim.sub',a::text,true);
+ SELECT * INTO for_b FROM public.draw_for_partner(s,'SEXUEL',false);
+ IF for_b.category IS DISTINCT FROM 'SEXUEL'
+   OR for_b.offered_by IS DISTINCT FROM a
+   OR for_b.recipient IS DISTINCT FROM b
+   OR for_b.face NOT BETWEEN 1 AND 100
+   OR for_b.card_id NOT BETWEEN 1 AND 8
+   OR for_b.status IS DISTINCT FROM 'proposed' THEN
+  RAISE EXCEPTION 'REAL RPC SEXUEL: A-to-B draw invalid %',for_b;
+ END IF;
+
+ PERFORM pg_catalog.set_config('request.jwt.claim.sub',b::text,true);
+ SELECT * INTO for_a FROM public.draw_for_partner(s,'SEXUEL',false);
+ IF for_a.category IS DISTINCT FROM 'SEXUEL'
+   OR for_a.offered_by IS DISTINCT FROM b
+   OR for_a.recipient IS DISTINCT FROM a
+   OR for_a.face NOT BETWEEN 1 AND 100
+   OR for_a.card_id NOT BETWEEN 1 AND 8
+   OR for_a.status IS DISTINCT FROM 'proposed' THEN
+  RAISE EXCEPTION 'REAL RPC SEXUEL: B-to-A draw invalid %',for_a;
+ END IF;
+
+ -- Both active challenges are recipient-private: the giver cannot
+ -- respond to the card they offered in either direction.
+ blocked:=false;
+ PERFORM pg_catalog.set_config('request.jwt.claim.sub',a::text,true);
+ BEGIN
+  PERFORM public.love_respond_and_redraw(for_b.id,'pass',false);
+ EXCEPTION WHEN OTHERS THEN
+  GET STACKED DIAGNOSTICS rejection=MESSAGE_TEXT;
+  IF rejection<>'Seul le destinataire peut répondre' THEN
+   RAISE EXCEPTION 'REAL RPC SEXUEL: wrong A response error: %',rejection;
+  END IF;
+  blocked:=true;
+ END;
+ IF NOT blocked THEN RAISE EXCEPTION 'REAL RPC SEXUEL: A passed B card'; END IF;
+ blocked:=false;
+ PERFORM pg_catalog.set_config('request.jwt.claim.sub',b::text,true);
+ BEGIN
+  PERFORM public.love_respond_and_redraw(for_a.id,'refuse',true);
+ EXCEPTION WHEN OTHERS THEN
+  GET STACKED DIAGNOSTICS rejection=MESSAGE_TEXT;
+  IF rejection<>'Seul le destinataire peut répondre' THEN
+   RAISE EXCEPTION 'REAL RPC SEXUEL: wrong B refusal error: %',rejection;
+  END IF;
+  blocked:=true;
+ END;
+ IF NOT blocked THEN RAISE EXCEPTION 'REAL RPC SEXUEL: B refused A card'; END IF;
+
+ -- B spends one Passer; A instead refuses and excludes their own original.
+ SELECT public.love_respond_and_redraw(for_b.id,'pass',false) INTO reply;
+ IF reply->>'action'<>'pass' OR reply->>'excluded'<>'false'
+   OR reply->>'already_processed'<>'false'
+   OR reply->>'replacement_unavailable'<>'false' THEN
+  RAISE EXCEPTION 'REAL RPC SEXUEL: B Passer result invalid %',reply;
+ END IF;
+ SELECT * INTO next_b FROM public.couple_challenges
+ WHERE id=(reply->>'replacement_id')::uuid;
+ IF NOT FOUND OR next_b.status IS DISTINCT FROM 'proposed'
+   OR next_b.category IS DISTINCT FROM 'SEXUEL'
+   OR next_b.recipient IS DISTINCT FROM b
+   OR next_b.offered_by IS DISTINCT FROM a
+   OR next_b.replaces_challenge_id IS DISTINCT FROM for_b.id
+   OR next_b.card_id IS NOT DISTINCT FROM for_b.card_id
+   OR next_b.face IS NOT DISTINCT FROM for_b.face THEN
+  RAISE EXCEPTION 'REAL RPC SEXUEL: B replacement invalid %',next_b;
+ END IF;
+ IF (SELECT status FROM public.couple_challenges WHERE id=for_b.id)<>'passed'
+   OR (SELECT passed_at FROM public.couple_challenges WHERE id=for_b.id) IS NULL THEN
+  RAISE EXCEPTION 'REAL RPC SEXUEL: B Passer status or stamp missing';
+ END IF;
+ SELECT public.love_respond_and_redraw(for_b.id,'pass',false) INTO reply;
+ IF reply->>'already_processed'<>'true'
+   OR reply->>'action'<>'pass' OR reply->>'excluded'<>'false'
+   OR (reply->>'replacement_id')::uuid IS DISTINCT FROM next_b.id THEN
+  RAISE EXCEPTION 'REAL RPC SEXUEL: B Passer replay changed %',reply;
+ END IF;
+
+ PERFORM pg_catalog.set_config('request.jwt.claim.sub',a::text,true);
+ SELECT public.love_respond_and_redraw(for_a.id,'refuse',true) INTO reply;
+ IF reply->>'action'<>'refuse' OR reply->>'excluded'<>'true'
+   OR reply->>'already_processed'<>'false'
+   OR reply->>'replacement_unavailable'<>'false' THEN
+  RAISE EXCEPTION 'REAL RPC SEXUEL: A refusal result invalid %',reply;
+ END IF;
+ SELECT * INTO next_a FROM public.couple_challenges
+ WHERE id=(reply->>'replacement_id')::uuid;
+ IF NOT FOUND OR next_a.status IS DISTINCT FROM 'proposed'
+   OR next_a.category IS DISTINCT FROM 'SEXUEL'
+   OR next_a.recipient IS DISTINCT FROM a
+   OR next_a.offered_by IS DISTINCT FROM b
+   OR next_a.replaces_challenge_id IS DISTINCT FROM for_a.id
+   OR next_a.card_id IS NOT DISTINCT FROM for_a.card_id
+   OR next_a.face IS NOT DISTINCT FROM for_a.face THEN
+  RAISE EXCEPTION 'REAL RPC SEXUEL: A replacement invalid %',next_a;
+ END IF;
+ IF (SELECT status FROM public.couple_challenges WHERE id=for_a.id)<>'refused'
+   OR (SELECT refused_at FROM public.couple_challenges WHERE id=for_a.id) IS NULL
+   OR NOT EXISTS(
+     SELECT 1 FROM public.love_cycle_excluded_cards ex
+     WHERE ex.couple_id=pair AND ex.cycle_number=1
+       AND ex.category='SEXUEL' AND ex.card_id=for_a.card_id
+       AND ex.excluded_by=a
+   ) THEN
+  RAISE EXCEPTION 'REAL RPC SEXUEL: A refusal exclusion or stamp missing';
+ END IF;
+ SELECT public.love_respond_and_redraw(for_a.id,'refuse',true) INTO reply;
+ IF reply->>'already_processed'<>'true'
+   OR reply->>'action'<>'refuse' OR reply->>'excluded'<>'true'
+   OR (reply->>'replacement_id')::uuid IS DISTINCT FROM next_a.id THEN
+  RAISE EXCEPTION 'REAL RPC SEXUEL: A refusal replay changed %',reply;
+ END IF;
+ IF (SELECT count(*) FROM public.couple_challenges WHERE couple_id=pair)<>4
+   OR (SELECT count(*) FROM public.love_challenge_redraws WHERE couple_id=pair)<>2
+   OR (SELECT count(*) FROM public.couple_challenges
+       WHERE couple_id=pair AND status='passed' AND recipient=b)<>1
+   OR (SELECT count(*) FROM public.couple_challenges
+       WHERE couple_id=pair AND status='refused' AND recipient=a)<>1 THEN
+  RAISE EXCEPTION 'REAL RPC SEXUEL: duplicated challenge, receipt or changed recipient';
+ END IF;
+ RAISE NOTICE
+ 'LR-026 REAL RPC SEXUEL: bidirectional D100, Passer, Refuser/exclusion and idempotency passed';
+END; $lr026_real_sexuel$;
+
 -- SQL ACL protection is preserved in the isolated snapshot.
 DO $lr026_real_rights$
 BEGIN
