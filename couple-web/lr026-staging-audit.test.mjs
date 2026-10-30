@@ -72,8 +72,8 @@ function fakeStage({leak, hideCOwnSession, hideCOwnMember} = {}) {
       const pair = url.searchParams.get('couple_id')?.slice(3);
       if (pair === AB_COUPLE) {
         if (actor === 'c' && leak !== 'c-ab-member') return data([]);
-        return data([{couple_id: AB_COUPLE,
-          user_id: actor === 'b' ? B : A}]);
+        return data([{couple_id: AB_COUPLE, user_id: A},
+          {couple_id: AB_COUPLE, user_id: B}]);
       }
       if (pair === C_COUPLE) {
         if (actor === 'c' && hideCOwnMember) return data([]);
