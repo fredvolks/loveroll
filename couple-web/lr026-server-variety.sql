@@ -150,4 +150,31 @@ BEGIN
  -- changement d'argument, de RLS, d'attribution, d'historique ou de hasard.
 END $lr026_apply$;
 
+-- Vérification post-installation, avant COMMIT : rollback complet sinon.
+-- La sélection de catégorie, les droits et les exclusions sont préservés
+-- par la vérification initiale du code source exact et les deux substitutions.
+DO $lr026_postcheck$
+DECLARE v_normal text; v_replace text;
+BEGIN
+ v_normal := pg_catalog.pg_get_functiondef(
+  'public.draw_for_partner(uuid,text,boolean)'::pg_catalog.regprocedure);
+ v_replace := pg_catalog.pg_get_functiondef(
+  'public.love_respond_and_redraw(uuid,text,boolean)'::pg_catalog.regprocedure);
+ IF pg_catalog.strpos(v_normal,
+    'order by couple_private.love_variety_rank(p_session,s.couple_id,v_cat,card)')
+    = 0 OR
+    pg_catalog.strpos(v_replace,
+    'ORDER BY couple_private.love_variety_rank(v_old.session_id,v_couple,v_old.category,candidate.card)')
+    = 0 THEN
+   RAISE EXCEPTION 'LR-026 : intégration RPC incomplète, rollback';
+ END IF;
+ IF (SELECT pg_catalog.count(*) FROM pg_catalog.pg_proc p
+     JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace
+     WHERE n.nspname='couple_private'
+     AND p.proname IN ('love_variety_normalize','love_variety_near','love_variety_rank')) <> 3
+ THEN
+   RAISE EXCEPTION 'LR-026 : fonctions privées manquantes, rollback';
+ END IF;
+END $lr026_postcheck$;
+
 COMMIT;
