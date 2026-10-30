@@ -66,6 +66,19 @@ checks AS (
    )
  FROM permissive_policies e
  UNION ALL
+ -- An extra permissive SELECT/ALL policy could bypass membership:
+ -- PostgreSQL OR-combines permissive grants, regardless of named safe policy.
+ SELECT 'NO_EXTRA_PERMISSIVE_READ:'||e.t,
+   NOT EXISTS(
+     SELECT 1 FROM pg_catalog.pg_policies p
+     WHERE p.schemaname='public' AND p.tablename=e.t
+       AND p.permissive='PERMISSIVE'
+       AND p.cmd IN ('SELECT','ALL')
+       AND (('authenticated'=ANY(p.roles)) OR ('public'=ANY(p.roles)))
+       AND p.policyname<>e.policy
+   )
+ FROM permissive_policies e
+ UNION ALL
  -- RPC must remain SECURITY DEFINER, reachable only by authenticated.
  SELECT 'RPC_PRIVILEGES:'||e.name,
    EXISTS(
