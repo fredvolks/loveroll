@@ -17,7 +17,7 @@ import {ROLL_TOTAL_MS} from './dice-roll-motion.mjs';
 import {createCoupleLiveSync} from './couple-live-sync.mjs?v=20261017-advent119';
 import {playableSessionForWeekly} from './couple-reset-view.mjs';
 import {eveningDailyAccess} from './evening-daily-policy.mjs?v=20261016-daily100';
-import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,snapshotEveningCardBeforeRedraw,isSameEveningResponseContext,isEveningRedrawBusyForCurrentView,ownsEveningRedrawRequest,ownsEveningTimerRecord,redrawTimerRecovery} from './evening-private-queue.mjs';
+import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,snapshotEveningCardBeforeRedraw,isSameEveningResponseContext,isEveningRedrawBusyForCurrentView,ownsEveningRedrawRequest,ownsEveningTimerRecord,ownedSavedEveningTimerSnapshot,redrawTimerRecovery} from './evening-private-queue.mjs';
 import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261029-web259';
 import {saveEveningSelection,restoreEveningSelection,clearEveningSelection} from './evening-resume.mjs?v=20261027-web240';
 import {eclatHtml} from './eclat-ui.mjs?v=20261027-web242';
@@ -1366,7 +1366,9 @@ function saveChallengeTimer(){
  // Persist under its ORIGINAL owner, never under whichever account is now signed in.
  if(!challengeTimer.id||!challengeTimer.ownerUserId)return;
  writeSavedChallengeTimer('loveroll-challenge-clock:'+challengeTimer.ownerUserId+':'+challengeTimer.id,
-  {durationMs:challengeTimer.durationMs,remainingMs:clockMs(),
+  {cardId:challengeTimer.id,ownerUserId:challengeTimer.ownerUserId,
+   ownerSessionId:challengeTimer.ownerSessionId,
+   durationMs:challengeTimer.durationMs,remainingMs:clockMs(),
    deadline:challengeTimer.deadline,running:challengeTimer.running,notified:challengeTimer.notified,
    autoCompletePending:challengeTimer.autoCompletePending});
 }
@@ -1376,7 +1378,9 @@ function activeTimer(challenge,minutes){
     challengeTimer.ownerUserId!==state.user.id||
     challengeTimer.ownerSessionId!==state.session?.id){
   saveChallengeTimer();
-  const stored=readSavedChallengeTimer('loveroll-challenge-clock:'+state.user.id+':'+challenge.id);
+  const stored=ownedSavedEveningTimerSnapshot(
+   readSavedChallengeTimer('loveroll-challenge-clock:'+state.user.id+':'+challenge.id),
+   challenge.id,state.user.id,state.session?.id);
   challengeTimer.id=challenge.id;
   challengeTimer.ownerUserId=state.user.id;
   challengeTimer.ownerSessionId=state.session?.id||null;
@@ -1463,21 +1467,25 @@ async function reconcileSavedEveningTimers(){
  savedTimerScanAfter=now+4000;
  for(const item of state.challenges||[]){
   const key='loveroll-challenge-clock:'+state.user.id+':'+item.id;
-  const saved=readSavedChallengeTimer(key);
-  if(!saved||!Number.isFinite(saved.durationMs)||saved.durationMs<=0)continue;
+  const saved=ownedSavedEveningTimerSnapshot(readSavedChallengeTimer(key),
+   item.id,state.user.id,state.session.id);
+  if(!saved)continue;
   const due=!!saved.autoCompletePending||
    (saved.running&&Number.isFinite(saved.deadline)&&saved.deadline>0&&saved.deadline<=now);
   if(!due||challengeTimer.decisionPending&&
      ownsVisibleEveningTimer(item.id,state.user.id,state.session.id))continue;
   if(['completed','passed','refused'].includes(item.status)){
-   writeSavedChallengeTimer(key,{...saved,running:false,
-    remainingMs:0,autoCompletePending:false});
+   writeSavedChallengeTimer(key,{...saved,cardId:item.id,
+    ownerUserId:state.user.id,ownerSessionId:state.session.id,
+    running:false,remainingMs:0,autoCompletePending:false});
    continue;
   }
   if(!isAcceptedTimedEveningChallenge(item,state.user.id,state.session.id))continue;
   const userId=state.user.id,sessionId=state.session.id;
   savedTimerSyncInFlight=true;timerCompletionInFlight=item.id;
-  const expired={...saved,running:false,remainingMs:0,notified:true,autoCompletePending:true};
+  const expired={...saved,cardId:item.id,ownerUserId:userId,
+   ownerSessionId:sessionId,running:false,remainingMs:0,
+   notified:true,autoCompletePending:true};
   writeSavedChallengeTimer(key,expired);
   try{
    const result=await completeTimedEveningChallenge({challenge:item,userId,sessionId,rpc,query});
