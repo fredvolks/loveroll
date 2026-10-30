@@ -411,7 +411,7 @@ export async function runStage(env, mode, transport = fetch) {
   // Never retry mutations. On error the staging operator must inspect the
   // persisted state and provision a NEW fixture, not blindly replay.
   const challengeQuery =
-    'select=id,session_id,couple_id,offered_by,recipient,category,face,card_id,replaces_challenge_id,status' +
+    'select=id,session_id,couple_id,offered_by,recipient,category,face,card_id,card_title,card_description,card_timer_minutes,is_gifted,replaces_challenge_id,status' +
     '&session_id=eq.' + config.sessionId;
   const drawn = await client.rpc('draw_for_partner',
     {p_session: config.sessionId, p_preference: config.preference, p_random: config.random}, giver.token);
@@ -425,6 +425,14 @@ export async function runStage(env, mode, transport = fetch) {
   assert(Number.isInteger(drawn.face) && drawn.face >= 1 && drawn.face <= 100 &&
     Number.isInteger(drawn.card_id) && drawn.card_id >= 1 && drawn.card_id <= 100,
     'Real D100 returned an invalid face or library card ID');
+  // The official D100 RPC returns a full challenge row. A valid card_id
+  // alone cannot prove the recipient will see correct card text or timer.
+  assert(typeof drawn.card_title === 'string' && drawn.card_title.trim().length > 0 &&
+    typeof drawn.card_description === 'string' && drawn.card_description.trim().length > 0 &&
+    (drawn.card_timer_minutes === null ||
+      (Number.isInteger(drawn.card_timer_minutes) && drawn.card_timer_minutes > 0)) &&
+    typeof drawn.is_gifted === 'boolean',
+    'Real D100 returned invalid card content, timer or gifted flag');
   // Independently read the newly persisted row as the B recipient and A.
   // A successful RPC response alone is not proof that it was saved for B.
   // NEVER run Passer if the first draw is missing, malformed or misrouted.
@@ -439,6 +447,10 @@ export async function runStage(env, mode, transport = fetch) {
     firstForRecipient[0].category === drawn.category &&
     firstForRecipient[0].face === drawn.face &&
     firstForRecipient[0].card_id === drawn.card_id &&
+    firstForRecipient[0].card_title === drawn.card_title &&
+    firstForRecipient[0].card_description === drawn.card_description &&
+    firstForRecipient[0].card_timer_minutes === drawn.card_timer_minutes &&
+    firstForRecipient[0].is_gifted === drawn.is_gifted &&
     Number.isInteger(firstForRecipient[0].face) && firstForRecipient[0].face >= 1 && firstForRecipient[0].face <= 100 &&
     Number.isInteger(firstForRecipient[0].card_id) && firstForRecipient[0].card_id >= 1 && firstForRecipient[0].card_id <= 100 &&
     firstForRecipient[0].status === 'proposed' &&
@@ -479,7 +491,12 @@ export async function runStage(env, mode, transport = fetch) {
       eq(c.replaces_challenge_id, drawn.id) && c.status === 'proposed' &&
       eq(c.offered_by, giver.id) &&
       Number.isInteger(c.face) && c.face >= 1 && c.face <= 100 &&
-      Number.isInteger(c.card_id) && c.card_id >= 1 && c.card_id <= 100).length === 1,
+      Number.isInteger(c.card_id) && c.card_id >= 1 && c.card_id <= 100 &&
+      typeof c.card_title === 'string' && c.card_title.trim().length > 0 &&
+      typeof c.card_description === 'string' && c.card_description.trim().length > 0 &&
+      (c.card_timer_minutes === null ||
+        (Number.isInteger(c.card_timer_minutes) && c.card_timer_minutes > 0)) &&
+      c.is_gifted === drawn.is_gifted).length === 1,
       'Exactly one valid same-category replacement offered by drawer must exist for recipient');
     const original = stored.find(c => eq(c.id, drawn.id));
     const replacement = stored.find(c => eq(c.id, response.replacement_id));
@@ -488,8 +505,12 @@ export async function runStage(env, mode, transport = fetch) {
     // but the responded row must retain those exact values afterwards.
     assert(original.face === drawn.face &&
       original.card_id === drawn.card_id &&
+      original.card_title === drawn.card_title &&
+      original.card_description === drawn.card_description &&
+      original.card_timer_minutes === drawn.card_timer_minutes &&
+      original.is_gifted === drawn.is_gifted &&
       original.replaces_challenge_id == null,
-      'Responded original must preserve its exact D100 face, card ID and provenance');
+      'Responded original must preserve its D100 face, card ID, content, timer, gifting and provenance');
     assert(original.card_id !== replacement.card_id && original.face !== replacement.face,
       'Replacement must not reuse the original card ID or D100 face in the same category/night');
     // Normalize row order, but compare every selected persisted field to
