@@ -178,6 +178,8 @@ function mockSupabase(opts = {}) {
       const original = {
         id: beforePass && opts.firstWrongId ? replacedId : drawnId,
         session_id: beforePass && opts.firstWrongSession ? couple : session,
+        couple_id: (beforePass && opts.firstWrongStoredCouple) ||
+          (!beforePass && opts.afterResponseWrongOriginalCouple) ? a : couple,
         offered_by: beforePass && opts.firstWrongOfferer ? recipientId : giverId,
         recipient: beforePass && opts.firstWrongRecipient ? giverId :
           !beforePass && opts.wrongOriginalRecipient ? giverId : recipientId,
@@ -201,6 +203,8 @@ function mockSupabase(opts = {}) {
       const replacement = {
         id: replacedId,
         session_id: passCount === 1 && opts.firstPassWrongSession ? couple : session,
+        couple_id: (passCount === 1 && opts.afterResponseWrongReplacementCouple) ||
+          (passCount > 1 && opts.replayMutatesReplacementCouple) ? a : couple,
         offered_by: (passCount === 1 && opts.firstPassWrongReplacementOfferer) ||
           (passCount > 1 && opts.replayMutatesReplacementOfferer) ||
           (passCount > 2 && opts.staleMutatesReplacementOfferer)
@@ -811,6 +815,7 @@ for (const options of [
   {firstExtraCard: true},
   {firstWrongId: true},
   {firstWrongSession: true},
+  {firstWrongStoredCouple: true},
   {firstWrongOfferer: true},
   {firstWrongRecipient: true},
   {firstWrongCategory: true},
@@ -840,6 +845,8 @@ for (const options of [
   {firstPassWrongStatus: true},
   {firstPassWrongReference: true},
   {firstPassWrongSession: true},
+  {afterResponseWrongOriginalCouple: true},
+  {afterResponseWrongReplacementCouple: true},
   {firstPassWrongCategory: true},
   {firstPassInvalidFace: true},
   {firstPassInvalidCardId: true},
@@ -1011,6 +1018,13 @@ test('idempotent replay cannot alter persisted replacement even when returning s
   const mock = mockSupabase({replayMutatesReplacementOfferer: true});
   await assert.rejects(runStage(env(), 'play', mock.fetchFn),
     /Repeated Passer must not change any persisted challenge field|Exactly one valid same-category replacement offered by drawer/);
+  assert.equal(mock.counters().passCount, 2);
+});
+test('idempotent replay cannot move a replacement into a different couple', async () => {
+  const mock = mockSupabase({replayMutatesReplacementCouple: true});
+  await assert.rejects(runStage(env(), 'play', mock.fetchFn),
+    /Only the two correct-category recipient challenges may exist/);
+  assert.equal(mock.counters().drawCount, 1);
   assert.equal(mock.counters().passCount, 2);
 });
 test('SEXUEL idempotent replay cannot silently change the replacement category', async () => {
