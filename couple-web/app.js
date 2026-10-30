@@ -947,6 +947,9 @@ async function refreshShared(expectedContext=null){
  // Scoped D100 actions keep their own independent ownership token.
  const unscopedRequest=expectedContext?null:{};
  if(!expectedContext)state.unscopedSharedRefreshRequest=unscopedRequest;
+ else state.unscopedSharedRefreshRequest=null;
+ // A newer action-owned D100 read must also supersede any older general
+ // background read; otherwise its stale result can overwrite the action.
  // Even a normal background refresh is owned by the login and couple that
  // started it. Its HTTP responses must never populate a replacement account.
  // Tab changes are allowed here; scoped action refreshes remain tab-specific.
