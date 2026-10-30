@@ -1091,3 +1091,39 @@ test('LR-026 saved timers skip only the card with an active manual answer',async
   'automatic recovery skips manually answered card A, not unrelated B');
  assert.ok(pendingWrites.every(x=>x.key.endsWith(':card-B')));
 });
+
+test("LR-026 real manual answer handler retains card and couple ownership during RPC",async()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const first=app.indexOf("if(verb==='answer'){");
+ const end=app.indexOf("if(verb==='finish-session')",first);
+ assert.ok(first>0&&end>first);
+ let release;
+ const pendingRpc=new Promise(resolve=>{release=resolve;});
+ const state={user:{id:'alice'},session:{id:'s1'},coupleId:'couple-1',
+  tab:'session',legacyAnswerContext:null,challenges:[
+   {id:'card-A',recipient:'alice',session_id:'s1',status:'accepted'}]};
+ const calls=[],paint=[];
+ const answer=runInNewContext('(async function(verb,parts){'+app.slice(first,end)+'})',{
+  state,isEveningCardCompleting:()=>false,
+  ownEveningChallenges:rows=>rows,
+  isSameEveningResponseContext:(v,c)=>v.user?.id===c?.userId&&
+   v.session?.id===c?.sessionId&&v.tab===c?.tab,
+  rpc:async name=>{calls.push(name);await pendingRpc;},
+  query:async()=>{throw Error('old response must not query under another tab');},
+  ownsVisibleEveningTimer:()=>false,refreshShared:async()=>{paint.push('refresh');},
+  render:()=>paint.push('render'),saveChallengeTimer:()=>{},
+  console,document:{hidden:false}
+ });
+ const task=answer('answer',['card-A','completed']);
+ assert.deepEqual(calls,['answer_challenge']);
+ assert.deepEqual({...state.legacyAnswerContext},{
+  userId:'alice',coupleId:'couple-1',sessionId:'s1',
+  tab:'session',challengeId:'card-A'
+ });
+ state.tab='special';
+ release();
+ await task;
+ assert.deepEqual(calls,['answer_challenge']);
+ assert.deepEqual(paint,[]);
+ assert.equal(state.legacyAnswerContext,null);
+});
