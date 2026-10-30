@@ -147,14 +147,16 @@ function mockSupabase(opts = {}) {
         }]);
         if (beforePass || !opts.leaksPartnerRowsToA) return response([]);
       }
+      const category = lastDraw.category;
+      const otherCategory = category === 'SEXUEL' ? 'SENSUEL' : 'SEXUEL';
       const original = {
         id: beforePass && opts.firstWrongId ? replacedId : drawnId,
         session_id: beforePass && opts.firstWrongSession ? couple : session,
         offered_by: beforePass && opts.firstWrongOfferer ? b : a,
         recipient: beforePass && opts.firstWrongRecipient ? a :
           !beforePass && opts.wrongOriginalRecipient ? a : b,
-        category: beforePass && opts.firstWrongCategory ? 'SEXUEL' :
-          !beforePass && opts.wrongOriginalCategory ? 'SEXUEL' : 'SENSUEL',
+        category: (beforePass && opts.firstWrongCategory) ||
+          (!beforePass && opts.wrongOriginalCategory) ? otherCategory : category,
         status: beforePass && !opts.firstWrongStatus ? 'proposed' : 'passed',
         replaces_challenge_id: beforePass && opts.firstReplacesCard ? replacedId : null
       };
@@ -171,7 +173,8 @@ function mockSupabase(opts = {}) {
         offered_by: (passCount === 1 && opts.firstPassWrongReplacementOfferer) ||
           (passCount > 1 && opts.replayMutatesReplacementOfferer) ? b : a,
         status: 'proposed', recipient: b,
-        category: passCount === 1 && opts.firstPassWrongCategory ? 'SEXUEL' : 'SENSUEL',
+        category: passCount === 1 && opts.firstPassWrongCategory ?
+          otherCategory : category,
         replaces_challenge_id: passCount === 1 && opts.firstPassWrongReference ?
           null : drawnId
       };
@@ -184,7 +187,10 @@ function mockSupabase(opts = {}) {
       assert.equal(who, 'a');
       assert.equal(payload.p_session, session);
       drawCount++;
-      lastDraw = {id: drawnId, offered_by: a, recipient: b, category: 'SENSUEL'};
+      assert.equal(payload.p_preference, opts.expectedPreference ?? 'SENSUEL');
+      assert.equal(payload.p_random, false);
+      lastDraw = {id: drawnId, offered_by: a, recipient: b,
+        category: opts.drawSexuel ? 'SEXUEL' : 'SENSUEL'};
       return response(lastDraw);
     }
     if (path === '/rest/v1/rpc/love_respond_and_redraw') {
@@ -271,6 +277,37 @@ test('a mismatched account identity fails authentication/RLS recipe early', asyn
   await assert.rejects(runStage(env(), 'auth', mock.fetchFn), /Authenticated user ID/);
   assert.equal(mock.counters().drawCount, 0);
 });
+test('both supported staging D100 preferences preserve the server category through Passer', async () => {
+  for (const preference of ['SENSUEL', 'SEXUEL']) {
+    const mock = mockSupabase({expectedPreference: preference, drawSexuel: true});
+    const out = await runStage({...env(), LR026_STAGING_PREFERENCE: preference},
+      'play', mock.fetchFn);
+    assert.equal(out.replacement_same_category, true);
+    assert.equal(out.pass_replay_idempotent, true);
+    assert.equal(mock.counters().drawCount, 1);
+    assert.equal(mock.counters().passCount, 2);
+  }
+});
+
+test('unexpected D100 preference is rejected before any request or mutation', async () => {
+  for (const preference of ['soft', 'sexuel', 'INTENSE', '', 'SENSUEL ']) {
+    const mock = mockSupabase();
+    await assert.rejects(runStage({...env(),
+      LR026_STAGING_PREFERENCE: preference}, 'play', mock.fetchFn),
+    /Staging D100 preference must be SENSUEL or SEXUEL/);
+    assert.equal(mock.counters().count, 0);
+  }
+});
+
+test('a SEXUEL card changing category after Passer is refused before replay', async () => {
+  const mock = mockSupabase({expectedPreference: 'SEXUEL', drawSexuel: true,
+    firstPassWrongCategory: true});
+  await assert.rejects(runStage({...env(), LR026_STAGING_PREFERENCE: 'SEXUEL'},
+    'play', mock.fetchFn), /Only the two correct-category B challenges/);
+  assert.equal(mock.counters().drawCount, 1);
+  assert.equal(mock.counters().passCount, 1);
+});
+
 test('play mode runs exactly one normal D100 plus one pass and one idempotent replay', async () => {
   const mock = mockSupabase();
   const out = await runStage(env(), 'play', mock.fetchFn);
