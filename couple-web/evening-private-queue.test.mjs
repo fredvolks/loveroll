@@ -520,6 +520,32 @@ test('LR-026: async D100 action checks same initiating context before selection 
   'checking only the session leaves another account/tab exposed');
 });
 
+test('LR-026: scoped refresh refuses stale account writes at every awaited stage',()=>{
+ const start=app.indexOf('async function refreshShared(expectedContext=null){');
+ const end=app.indexOf('const liveSync=createCoupleLiveSync(',start);
+ assert.ok(start>=0&&end>start,'scoped refresher must remain available');
+ const body=app.slice(start,end);
+ assert.match(body,/const current=\(\)=>!expectedContext\|\|\(state\.coupleId===c&&/);
+ assert.match(body,/isSameEveningResponseContext\(state,expectedContext\)/);
+ assert.match(body,/if\(!current\(\)\)return;/);
+ for(const pattern of [
+  /\]\);\s+if\(!current\(\)\)return;\s+state\.cycleStatus=/,
+  /const available=await rpc\('love_redraw_capabilities',[\s\S]*?if\(!current\(\)\)return;\s+state\.redrawReady=/,
+  /const list=await rpc\('my_love_cycle_exclusions',[\s\S]*?if\(!current\(\)\)return;/,
+  /const links=await rpc\('love_evening_replacement_links',[\s\S]*?if\(!current\(\)\)return;/,
+  /const \[places,bookings\]=await Promise\.all\([\s\S]*?if\(!current\(\)\)return;/,
+  /const \[personal,challenges,status,board\]=await Promise\.all\([\s\S]*?if\(!current\(\)\)return;/,
+  /const totals=await rpc\('my_love_evening_card_totals',[\s\S]*?if\(!current\(\)\)return;/,
+  /const invite=await rpc\('love_evening_invite_status',[\s\S]*?if\(!current\(\)\)return;/
+ ])assert.match(body,pattern,'stale response must not write into a switched user account');
+ assert.match(body,/if\(!expectedContext\)\{\s+try\{await refreshEclatStatus\(\)/,
+  'ordinary refresh still updates Eclat, scoped D100 refresh does not');
+ assert.match(app,/await refreshShared\(responseContext\);/,
+  'the real D100 button must use the guarded refresh');
+ assert.match(app,/async function refreshAndShow\(\)\{await refreshShared\(\);render\(\);\}/,
+  'unscoped refresh should preserve normal screens');
+});
+
 test('LR-026: stale account or tab cannot refresh after an in-flight redraw RPC',()=>{
  const start=app.indexOf("if(verb==='evening-pass'||verb==='evening-refuse-choice')");
  const end=app.indexOf("if(verb==='evening-start')",start);
