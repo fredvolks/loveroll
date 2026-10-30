@@ -20,7 +20,7 @@ BEGIN
   THEN
     RAISE EXCEPTION 'LR-026 bloqué : les fonctions de pige ont changé, nouvelle revue obligatoire';
   END IF;
-END $lr026_guard$;
+END; $lr026_guard$;
 
 -- Pas de dépendance à unaccent/pg_trgm, absentes du projet vérifié.
 CREATE OR REPLACE FUNCTION couple_private.love_variety_normalize(p_text text)
@@ -148,7 +148,7 @@ BEGIN
 
  -- Les fonctions publiques héritent de leurs droits EXACTS : ni GRANT ni
  -- changement d'argument, de RLS, d'attribution, d'historique ou de hasard.
-END $lr026_apply$;
+END; $lr026_apply$;
 
 -- Vérification post-installation, avant COMMIT : rollback complet sinon.
 -- La sélection de catégorie, les droits et les exclusions sont préservés
@@ -175,6 +175,6 @@ BEGIN
  THEN
    RAISE EXCEPTION 'LR-026 : fonctions privées manquantes, rollback';
  END IF;
-END $lr026_postcheck$;
+END; $lr026_postcheck$;
 
 COMMIT;
