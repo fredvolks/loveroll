@@ -297,8 +297,11 @@ test('LR-026 async completion ignores a result after switching account or evenin
   if(moved==='couple')state.coupleId='couple-2';
   release();
   await pending;
-  assert.deepEqual(counters,{refresh:0,render:0,notify:0,saves:0},
+  assert.deepEqual(counters,{refresh:0,render:0,notify:0,saves:moved==='tab'?1:0},
    moved+' must not modify the now-visible user interface');
+  if(moved==='tab')assert.equal(challengeTimer.autoCompletePending,false,
+   'a tab switch may safely persist the finished timer for its original owner');
+  else assert.equal(challengeTimer.autoCompletePending,true);
   assert.equal(state.timerCompletionContext,null);
  }
 });
@@ -393,4 +396,56 @@ test('LR-026 saved timer recovery uses same request ownership and cleans its loc
  const refresh=app.slice(syncBegin,syncEnd);
  assert.match(refresh,/state\.timerCompletionContext===expectedContext/);
  assert.match(refresh,/return true; \/\/ A caller may render only after the scoped refresh really finished/);
+});
+
+test('LR-026 restored timer completion persists only its original private key',async()=>{
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const start=source.indexOf('function ownsTimerCompletionSession(context){');
+ const end=source.indexOf('function endSignal(){',start);
+ assert.ok(start>0&&end>start);
+ const executable=source.slice(start,end)+'; reconcileSavedEveningTimers;';
+ for(const moved of ['account','session','couple','tab']){
+  let release;
+  const server=new Promise(resolve=>{release=resolve;});
+  const state={user:{id:'alice'},session:{id:'s1'},coupleId:'couple-1',tab:'session',
+   timerCompletionContext:null,challenges:[{id:'card-1',recipient:'alice',
+    session_id:'s1',status:'accepted'}]};
+  const clock={id:'card-1',ownerUserId:'alice',ownerSessionId:'s1',
+   autoCompletePending:false,decisionPending:false,running:false,remainingMs:1000};
+  const stored={ownerUserId:'alice',ownerSessionId:'s1',cardId:'card-1',
+   deadline:Date.now()-10000,durationMs:60000,running:true,remainingMs:1000};
+  const writes=[],notifications=[],events=[];
+  const recover=runInNewContext(executable,{
+   state,challengeTimer:clock,timerCompletionInFlight:null,timerCompletionRetryAt:0,
+   readSavedChallengeTimer:()=>stored,
+   ownedSavedEveningTimerSnapshot:(saved,id,u,s)=>
+    saved.cardId===id&&saved.ownerUserId===u&&saved.ownerSessionId===s?saved:null,
+   writeSavedChallengeTimer:(key,value)=>writes.push({key,value}),
+   isAcceptedTimedEveningChallenge:()=>true,
+   completeTimedEveningChallenge:async()=>{await server;return {outcome:'completed',finished:true};},
+   ownsVisibleEveningTimer:(id,u,s)=>clock.id===id&&state.user?.id===u&&state.session?.id===s,
+   saveChallengeTimer:()=>events.push('saved-visible'),
+   refreshShared:async()=>{events.push('refresh');return true;},
+   render:()=>events.push('render'),notify:msg=>notifications.push(msg),
+   rpc:async()=>null,query:async()=>[],console,document:{hidden:false},Date
+  });
+  const pending=recover();
+  assert.equal(writes.length,1,'expired private timer is marked pending before server RPC');
+  assert.ok(state.timerCompletionContext,'the original owner is captured');
+  if(moved==='account')state.user={id:'bob'};
+  if(moved==='session')state.session={id:'s2'};
+  if(moved==='couple')state.coupleId='couple-2';
+  if(moved==='tab')state.tab='home';
+  release();
+  await pending;
+  assert.equal(writes.length,2,'the old private key is cleared after server completion');
+  assert.equal(writes[1].key,'loveroll-challenge-clock:alice:card-1');
+  assert.equal(writes[1].value.autoCompletePending,false);
+  assert.ok(!events.includes('refresh')&&!events.includes('render'));
+  assert.deepEqual(notifications,[]);
+  assert.equal(state.timerCompletionContext,null);
+  if(moved==='tab')assert.deepEqual(events,['saved-visible'],
+   'same owner and evening may update local timer without changing the page');
+  else assert.deepEqual(events,[]);
+ }
 });
