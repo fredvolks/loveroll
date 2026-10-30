@@ -1300,3 +1300,31 @@ test('LR-026 authoritative closed-night response paints unlocked final view',asy
  assert.deepEqual(events,[{visible:true,busy:true},{visible:false,busy:false}]);
  assert.equal(state.legacyAnswerContext,null);
 });
+
+test('LR-026 a successful finish RPC cannot hide D100 before closed session appears',async()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const start=app.indexOf("if(verb==='answer'){");
+ const end=app.indexOf("if(verb==='finish-session')",start);
+ assert.ok(start>0&&end>start);
+ const state={user:{id:'alice'},coupleId:'c1',session:{id:'s1'},tab:'session',
+  sessions:[{id:'s1',finished_at:null}],showEveningChallenges:true,
+  selectedEveningChallengeId:'card-A',legacyAnswerContext:null,
+  challenges:[{id:'card-A',recipient:'alice',session_id:'s1',status:'accepted'}]};
+ const renders=[],messages=[];
+ const run=runInNewContext('(async function(verb,parts){'+app.slice(start,end)+'})',{
+  state,isEveningCardCompleting:()=>false,ownEveningChallenges:rows=>rows,
+  isSameEveningResponseContext:(v,c)=>v.user?.id===c?.userId&&
+   v.session?.id===c?.sessionId&&v.tab===c?.tab,
+  rpc:async name=>name==='my_love_evening_board'?{finished:true}:{},
+  query:async()=>[],ownsVisibleEveningTimer:()=>false,saveChallengeTimer:()=>{},
+  refreshShared:async()=>true,
+  render:()=>renders.push({visible:state.showEveningChallenges,
+   busy:!!state.legacyAnswerContext}),
+  notify:msg=>messages.push(msg),console,document:{hidden:false}
+ });
+ await run('answer',['card-A','completed']);
+ assert.deepEqual(renders,[{visible:true,busy:true},{visible:true,busy:false}]);
+ assert.equal(state.selectedEveningChallengeId,'card-A');
+ assert.ok(messages.some(msg=>/pas encore confirmée/.test(msg)));
+ assert.equal(state.legacyAnswerContext,null);
+});
