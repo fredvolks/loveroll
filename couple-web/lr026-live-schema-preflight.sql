@@ -96,15 +96,8 @@ WITH expected AS (
   -- RLS enabled alone is insufficient: permissive SELECT policies are
   -- OR-combined. Assert the actual LoveRoll member/recipient guards and
   -- fail closed if another browser-visible permissive read policy appears.
-  (SELECT pg_catalog.count(*)=2 FROM pg_catalog.pg_policy p
-   JOIN pg_catalog.pg_class c ON c.oid=p.polrelid
-   JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
-   WHERE n.nspname='public' AND c.relname IN ('couple_challenges','couples')
-     AND p.polpermissive AND p.polcmd IN ('r','*')
-     AND (0::oid=ANY(p.polroles) OR EXISTS(
-       SELECT 1 FROM pg_catalog.pg_roles r
-       WHERE r.oid=ANY(p.polroles) AND r.rolname='authenticated'))
-     AND (
+  (SELECT pg_catalog.count(*)=2
+          AND pg_catalog.bool_and(
        (c.relname='couple_challenges' AND p.polname='challenges_read'
          AND p.polcmd='r'
          AND pg_catalog.strpos(pg_catalog.pg_get_expr(p.polqual,p.polrelid),
@@ -119,6 +112,14 @@ WITH expected AS (
          AND pg_catalog.strpos(pg_catalog.pg_get_expr(p.polqual,p.polrelid),
                                'couple_private.is_member')>0)
      )
+   FROM pg_catalog.pg_policy p
+   JOIN pg_catalog.pg_class c ON c.oid=p.polrelid
+   JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+   WHERE n.nspname='public' AND c.relname IN ('couple_challenges','couples')
+     AND p.polpermissive AND p.polcmd IN ('r','*')
+     AND (0::oid=ANY(p.polroles) OR EXISTS(
+       SELECT 1 FROM pg_catalog.pg_roles r
+       WHERE r.oid=ANY(p.polroles) AND r.rolname='authenticated'))
   ) AS browser_select_policies_scoped,
   (SELECT pg_catalog.count(*)=2 FROM pg_catalog.pg_policy p
    JOIN pg_catalog.pg_class c ON c.oid=p.polrelid
