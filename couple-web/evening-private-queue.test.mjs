@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
-import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,snapshotEveningCardBeforeRedraw,EVENING_REDRAW_IMMUTABLE_FIELDS,ownsEveningTimerRecord,ownedSavedEveningTimerSnapshot,isSameEveningResponseContext,isEveningRedrawBusyForCurrentView,ownsEveningRedrawRequest,redrawTimerRecovery,mayApplyScopedEveningRefresh} from './evening-private-queue.mjs';
+import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,snapshotEveningCardBeforeRedraw,EVENING_REDRAW_IMMUTABLE_FIELDS,ownsEveningTimerRecord,ownedSavedEveningTimerSnapshot,isSameEveningResponseContext,isEveningRedrawBusyForCurrentView,ownsEveningRedrawRequest,redrawTimerRecovery,mayApplyScopedEveningRefresh,ownsCoupleAsyncRead} from './evening-private-queue.mjs';
 import {premiumEveningHtml} from './premium-evening.mjs';
 const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
 const migration=readFileSync(new URL('./migrations/20261015_evening_private_challenge_queue.sql',import.meta.url),'utf8');
@@ -1683,4 +1683,95 @@ test('LR-026: scoped D100 refresh supersedes older ordinary background request',
  assert.equal(await background,undefined,
   'outdated background reads must yield to a later owned D100 request');
  assert.equal(state.cycleStatus.generation,2);
+});
+
+test('LR-026: background couple reads require BOTH original user and couple',()=>{
+ const a={userId:'alice',coupleId:'couple-1'};
+ assert.equal(ownsCoupleAsyncRead({user:{id:'alice'},coupleId:'couple-1'},a),true);
+ assert.equal(ownsCoupleAsyncRead({user:{id:'bob'},coupleId:'couple-1'},a),false,
+  'partners using the same device must not share a stale response');
+ assert.equal(ownsCoupleAsyncRead({user:{id:'alice'},coupleId:'couple-2'},a),false);
+ assert.equal(ownsCoupleAsyncRead({user:null,coupleId:'couple-1'},a),false);
+ for(const owner of [null,{}, {userId:'',coupleId:'couple-1'},
+  {userId:'alice',coupleId:''}])
+  assert.equal(ownsCoupleAsyncRead({user:{id:'alice'},coupleId:'couple-1'},owner),false);
+});
+
+function eclatReadFixture(state,{rpc=async()=>null,loadEclatHistory=async()=>[]}={}){
+ const begin=app.indexOf('let latestEclatHistoryRead=null,latestEclatStatusRead=null;');
+ const end=app.indexOf('function renderEclat(){',begin);
+ assert.ok(begin>=0&&end>begin,'production Éclat read implementation must be tested');
+ return runInNewContext(app.slice(begin,end)+
+  ';({refreshEclatHistory,refreshEclatStatus})',{
+   state,rpc,loadEclatHistory,ownsCoupleAsyncRead,
+   isSharedCoupleReady:(couple,members)=>!!couple&&members?.length===2,console
+  });
+}
+
+test('LR-026: an Éclat history result from a signed-out partner cannot cross into new account',async()=>{
+ const state={user:{id:'alice'},coupleId:'same-duo',members:[1,2],
+  eclatHistory:[{id:'previous'}],eclatHistoryCouple:'same-duo',
+  eclatHistoryUserId:'alice',eclatGalleryScroll:2};
+ let release;
+ const pending=new Promise(resolve=>{release=resolve;});
+ const {refreshEclatHistory}=eclatReadFixture(state,{loadEclatHistory:()=>pending});
+ const old=refreshEclatHistory();
+ state.user={id:'bob'};
+ release([{id:'alice-private'}]);
+ await old;
+ assert.deepEqual(state.eclatHistory,[{id:'previous'}],
+  'old account response cannot write after login change');
+ const newFixture=eclatReadFixture(state,{loadEclatHistory:async()=>[{id:'bob-only'}]});
+ await newFixture.refreshEclatHistory();
+ assert.equal(state.eclatHistoryUserId,'bob');
+ assert.equal(state.eclatGalleryScroll,0);
+ assert.deepEqual(Array.from(state.eclatHistory,r=>r.id),['bob-only']);
+});
+
+test('LR-026: newer Éclat history refresh wins an older delayed response',async()=>{
+ const state={user:{id:'alice'},coupleId:'duo',members:[1,2],
+  eclatHistory:[],eclatHistoryCouple:'duo',eclatHistoryUserId:'alice'};
+ let release,reads=0;
+ const pending=new Promise(resolve=>{release=resolve;});
+ const {refreshEclatHistory}=eclatReadFixture(state,{
+  loadEclatHistory:()=>++reads===1?pending:Promise.resolve([{id:'newest'}])
+ });
+ const old=refreshEclatHistory();
+ await refreshEclatHistory();
+ release([{id:'outdated'}]);await old;
+ assert.deepEqual(Array.from(state.eclatHistory,r=>r.id),['newest']);
+});
+
+test('LR-026: delayed Éclat status cannot replace a different account or render its poll',async()=>{
+ const state={user:{id:'alice'},coupleId:'shared',members:[1,2],
+  tab:'eclat',eclat:{id:'old'},eclatHistory:[],eclatHistoryCouple:'shared',
+  eclatHistoryUserId:'alice'};
+ let release;
+ const pending=new Promise(resolve=>{release=resolve;});
+ const {refreshEclatStatus}=eclatReadFixture(state,{rpc:()=>pending});
+ const call=refreshEclatStatus();
+ state.user={id:'bob'};
+ release({id:'alice-session'});
+ assert.equal(await call,null);
+ assert.equal(state.eclat.id,'old');
+ const start=app.indexOf('let latestEclatHistoryRead=null,latestEclatStatusRead=null;');
+ const end=app.indexOf('function renderEclat(){',start);
+ const pollBegin=app.indexOf("setInterval(async()=>{\n if(document.hidden||state.tab!=='eclat'");
+ const pollEnd=app.indexOf('},4500);',pollBegin);
+ assert.ok(pollBegin>0&&pollEnd>pollBegin);
+ let tick,renderCount=0,releasePoll;
+ const pollPending=new Promise(resolve=>{releasePoll=resolve;});
+ runInNewContext(app.slice(start,end)+app.slice(pollBegin,pollEnd+8),{
+  state,ownsCoupleAsyncRead,console,
+  isSharedCoupleReady:(c,m)=>!!c&&m?.length===2,
+  rpc:()=>pollPending,loadEclatHistory:async()=>[],
+  document:{hidden:false},setInterval:fn=>{tick=fn;},
+  render:()=>{renderCount++;}
+ });
+ const ticking=tick();
+ state.user={id:'carol'};
+ releasePoll({id:'bob-session'});
+ await ticking;
+ assert.equal(state.eclat.id,'old');
+ assert.equal(renderCount,0,'old poll must not repaint the new account');
 });
