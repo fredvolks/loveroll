@@ -82,6 +82,7 @@ expect_blocker "$output" "Verified identity RLS policy no longer restrictive"
 expect_blocker "$output" "Browser table GRANTs widened"
 expect_blocker "$output" "Pass timestamp trigger missing or disabled"
 expect_blocker "$output" "Pass timestamp function drifted"
+expect_blocker "$output" "D100 identity unique indexes missing or changed"
 
 # Install the reviewed pass timestamp function and correct trigger ONLY in
 # this disposable database, before testing deliberate regressions.
@@ -145,6 +146,73 @@ output="$(check_fail_closed lr026_preflight_mutation)"
 expect_no_blocker "$output" "RLS SELECT policy scope widened"
 expect_no_blocker "$output" "Verified identity RLS policy no longer restrictive"
 expect_no_blocker "$output" "Browser table GRANTs widened"
+
+# Real LoveRoll has three composite unique indexes. Add matching definitions
+# to the disposable source schema, then mutate each individually to prove
+# that missing, invalid key order or lost uniqueness cannot be ignored.
+psql -X -d lr026_preflight_mutation -v ON_ERROR_STOP=1 >/dev/null <<'SQL'
+ALTER TABLE public.love_card_draw_history
+  ADD COLUMN couple_id uuid,
+  ADD COLUMN recipient_user_id uuid,
+  ADD COLUMN category text,
+  ADD COLUMN card_id integer;
+ALTER TABLE public.love_cycle_excluded_cards
+  ADD COLUMN couple_id uuid,
+  ADD COLUMN cycle_number integer,
+  ADD COLUMN category text,
+  ADD COLUMN card_id integer;
+CREATE UNIQUE INDEX love_challenge_unique_card
+ ON public.couple_challenges (session_id, recipient, category, card_id);
+CREATE UNIQUE INDEX love_card_draw_history_pkey
+ ON public.love_card_draw_history (couple_id, recipient_user_id, category, card_id);
+CREATE UNIQUE INDEX love_cycle_excluded_cards_pkey
+ ON public.love_cycle_excluded_cards (couple_id, cycle_number, category, card_id);
+SQL
+output="$(check_fail_closed lr026_preflight_mutation)"
+expect_no_blocker "$output" "D100 identity unique indexes missing or changed"
+
+# A missing session/card uniqueness key could permit duplicate D100 cards.
+psql -X -d lr026_preflight_mutation -v ON_ERROR_STOP=1 \
+ -c 'DROP INDEX public.love_challenge_unique_card' >/dev/null
+output="$(check_fail_closed lr026_preflight_mutation)"
+expect_blocker "$output" "D100 identity unique indexes missing or changed"
+psql -X -d lr026_preflight_mutation -v ON_ERROR_STOP=1 \
+ -c 'CREATE UNIQUE INDEX love_challenge_unique_card ON public.couple_challenges (session_id, recipient, category, card_id)' >/dev/null
+output="$(check_fail_closed lr026_preflight_mutation)"
+expect_no_blocker "$output" "D100 identity unique indexes missing or changed"
+
+# A non-unique draw-history index is not a substitute for the real bag key.
+psql -X -d lr026_preflight_mutation -v ON_ERROR_STOP=1 >/dev/null <<'SQL'
+DROP INDEX public.love_card_draw_history_pkey;
+CREATE INDEX love_card_draw_history_pkey ON public.love_card_draw_history
+ (couple_id, recipient_user_id, category, card_id);
+SQL
+output="$(check_fail_closed lr026_preflight_mutation)"
+expect_blocker "$output" "D100 identity unique indexes missing or changed"
+psql -X -d lr026_preflight_mutation -v ON_ERROR_STOP=1 >/dev/null <<'SQL'
+DROP INDEX public.love_card_draw_history_pkey;
+CREATE UNIQUE INDEX love_card_draw_history_pkey ON public.love_card_draw_history
+ (couple_id, recipient_user_id, category, card_id);
+SQL
+output="$(check_fail_closed lr026_preflight_mutation)"
+expect_no_blocker "$output" "D100 identity unique indexes missing or changed"
+
+# Changing the order of the cycle-exclusion key must fail the exact check.
+psql -X -d lr026_preflight_mutation -v ON_ERROR_STOP=1 >/dev/null <<'SQL'
+DROP INDEX public.love_cycle_excluded_cards_pkey;
+CREATE UNIQUE INDEX love_cycle_excluded_cards_pkey
+ ON public.love_cycle_excluded_cards (couple_id, category, card_id, cycle_number);
+SQL
+output="$(check_fail_closed lr026_preflight_mutation)"
+expect_blocker "$output" "D100 identity unique indexes missing or changed"
+psql -X -d lr026_preflight_mutation -v ON_ERROR_STOP=1 >/dev/null <<'SQL'
+DROP INDEX public.love_cycle_excluded_cards_pkey;
+CREATE UNIQUE INDEX love_cycle_excluded_cards_pkey
+ ON public.love_cycle_excluded_cards (couple_id, cycle_number, category, card_id);
+SQL
+output="$(check_fail_closed lr026_preflight_mutation)"
+expect_no_blocker "$output" "D100 identity unique indexes missing or changed"
+echo "LR-026 preflight: D100/session, draw history and exclusion unique keys validated"
 
 # Postgres OR-combines permissive SELECT policies. A single new USAGE/SELECT
 # policy that allows everyone must invalidate the preflight.
