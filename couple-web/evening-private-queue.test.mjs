@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,snapshotEveningCardBeforeRedraw,EVENING_REDRAW_IMMUTABLE_FIELDS,ownsEveningTimerRecord,isSameEveningResponseContext,isEveningRedrawBusyForCurrentView,ownsEveningRedrawRequest,redrawTimerRecovery} from './evening-private-queue.mjs';
+import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,snapshotEveningCardBeforeRedraw,EVENING_REDRAW_IMMUTABLE_FIELDS,ownsEveningTimerRecord,ownedSavedEveningTimerSnapshot,isSameEveningResponseContext,isEveningRedrawBusyForCurrentView,ownsEveningRedrawRequest,redrawTimerRecovery} from './evening-private-queue.mjs';
 import {premiumEveningHtml} from './premium-evening.mjs';
 const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
 const migration=readFileSync(new URL('./migrations/20261015_evening_private_challenge_queue.sql',import.meta.url),'utf8');
@@ -727,6 +727,48 @@ test('LR-026: uncertain redraw never completes a live accepted timer without ser
  for(const status of ['passed','refused','completed']){
   assert.equal(redrawTimerRecovery(status,0,due),'stop');
  }
+});
+
+test('LR-026: stored D100 timer identity blocks cross-account restore without losing legacy clocks',()=>{
+ const cardId='challenge-1',userId='fred',sessionId='soir-1';
+ const legacy={durationMs:240000,remainingMs:185000,deadline:12345678,
+  running:true,notified:false,autoCompletePending:false};
+ assert.equal(ownedSavedEveningTimerSnapshot(legacy,cardId,userId,sessionId),legacy,
+  'old clocks use the account+card key and must remain recoverable');
+ const current={...legacy,cardId,ownerUserId:userId,ownerSessionId:sessionId};
+ assert.equal(ownedSavedEveningTimerSnapshot(current,cardId,userId,sessionId),current);
+ assert.equal(ownedSavedEveningTimerSnapshot(current,cardId,'partner',sessionId),null);
+ assert.equal(ownedSavedEveningTimerSnapshot(current,cardId,userId,'soir-2'),null);
+ assert.equal(ownedSavedEveningTimerSnapshot(current,'different',userId,sessionId),null);
+ for(const broken of [
+  {...legacy,cardId},{...legacy,ownerUserId:userId},
+  {...legacy,cardId,ownerUserId:userId},
+  {...current,ownerSessionId:null},
+  {...current,ownerUserId:undefined},
+  {...current,cardId:''},
+  {...current,durationMs:0},
+  {...current,durationMs:Infinity},
+  {...current,durationMs:'240000'},
+  [],null
+ ])assert.equal(ownedSavedEveningTimerSnapshot(broken,cardId,userId,sessionId),null);
+ assert.equal(ownedSavedEveningTimerSnapshot(current,cardId,'',sessionId),null);
+ assert.equal(ownedSavedEveningTimerSnapshot(current,cardId,userId,''),null);
+});
+
+test('LR-026: timer restoration and expiry scanner reject mismatched stored owners',()=>{
+ const saved=app.slice(app.indexOf('function saveChallengeTimer(){'),
+  app.indexOf('function showTimerFinished(){'));
+ assert.match(saved,/cardId:challengeTimer\.id,ownerUserId:challengeTimer\.ownerUserId,/);
+ assert.match(saved,/ownerSessionId:challengeTimer\.ownerSessionId,/);
+ assert.match(saved,/const stored=ownedSavedEveningTimerSnapshot\(\s+readSavedChallengeTimer\(/);
+ assert.match(saved,/challenge\.id,state\.user\.id,state\.session\?\.id\)/);
+ const scan=app.slice(app.indexOf('async function reconcileSavedEveningTimers(){'),
+  app.indexOf('function endSignal(){'));
+ assert.match(scan,/const saved=ownedSavedEveningTimerSnapshot\(readSavedChallengeTimer\(key\),\s+item\.id,state\.user\.id,state\.session\.id\);/);
+ assert.match(scan,/if\(!saved\)continue;/);
+ assert.match(scan,/const expired=\{\.\.\.saved,cardId:item\.id,ownerUserId:userId,/);
+ assert.match(scan,/ownerSessionId:sessionId,running:false/);
+ assert.match(scan,/ownerUserId:state\.user\.id,ownerSessionId:state\.session\.id,/);
 });
 
 test('LR-026: a D100 timer belongs to one challenge, user and evening even when IDs are reused',()=>{
