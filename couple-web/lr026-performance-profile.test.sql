@@ -90,6 +90,31 @@ BEGIN
 
   RAISE NOTICE 'LR-026 profile: 200 cards, 199 seen; baseline=% ms, exact-first=% ms (runner diagnostic only)',
     pg_catalog.round(old_ms,2),pg_catalog.round(new_ms,2);
+
+  -- Separate session: every candidate must remain entirely unseen.
+  -- A fast-path must never confuse the last evening with a new evening.
+  FOR g IN 10..209 LOOP
+    IF couple_private.lr026_baseline_rank(
+        '44444444-4444-4444-8444-444444444444'::uuid,a,'SENSUEL',g)<>0
+       OR couple_private.love_variety_rank(
+        '44444444-4444-4444-8444-444444444444'::uuid,a,'SENSUEL',g)<>0 THEN
+      RAISE EXCEPTION 'LR-026 profile: new evening had false history on card %',g;
+    END IF;
+  END LOOP;
+
+  -- Complete the cycle: 200 of 200 cards have been seen.
+  -- Both rankings must still permit the fallback and agree on every result.
+  INSERT INTO public.couple_challenges(
+    couple_id,session_id,category,card_id,card_title,card_description)
+  VALUES (a,tonight,'SENSUEL',209,'Performance 209',
+          'Activité originale numéro 209');
+  FOR g IN 10..209 LOOP
+    IF couple_private.lr026_baseline_rank(tonight,a,'SENSUEL',g)<>1
+       OR couple_private.love_variety_rank(tonight,a,'SENSUEL',g)<>1 THEN
+      RAISE EXCEPTION 'LR-026 profile: exhausted evening differed on card %',g;
+    END IF;
+  END LOOP;
+  RAISE NOTICE 'LR-026 profile: parity verified for 200 unseen, 199/200 seen and 200/200 seen cards';
 END; $lr026_performance$;
 
 ROLLBACK;
