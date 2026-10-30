@@ -2954,7 +2954,9 @@ async function handle(action,element){
     state.selectedEveningChallengeId=null;
     state.showEveningChallenges=true;
    }
-   await refreshAndShow();
+   // Refresh the recipient-only RLS rows WITHOUT rendering an intermediate
+   // auto-selected card. The finally block paints the confirmed state once.
+   await refreshShared();
    // A valid RPC JSON payload alone does not prove that the recipient can
    // render the committed replacement after RLS refresh. Do not announce a
    // successful repick or keep an invisible card selected in that case.
@@ -2976,7 +2978,6 @@ async function handle(action,element){
    if(receiptValid&&sameAfterRefresh&&!persistedReceiptValid){
     state.selectedEveningChallengeId=null;
     state.showEveningChallenges=true;
-    render();
    }
    // If the receipt OR the refreshed RLS view is incomplete, reconcile
    // against the original persisted status before unlocking the timer.
