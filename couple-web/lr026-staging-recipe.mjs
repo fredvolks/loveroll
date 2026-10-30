@@ -133,6 +133,14 @@ export function validateStage(env, mode) {
     }
     result.action = action;
     result.exclude = exclude === 'true';
+    // Optional stale-device probe is deliberately OFF by default.
+    // Even after one valid idempotent replay, conflicting requests must
+    // replay the immutable server receipt, never change Passer/Refuser.
+    const staleReplay = env.LR026_STAGING_STALE_REPLAY ?? 'false';
+    if (!['true','false'].includes(staleReplay)) {
+      throw new Error('Stale-response replay switch must be true or false');
+    }
+    result.staleReplay = staleReplay === 'true';
     if (env.LR026_STAGING_ALLOW_WRITES !== WRITE_ACK ||
         env.LR026_STAGING_WRITE_CONFIRM_REF !== ref) {
       throw new Error('Mutating staging recipe requires an exact write acknowledgement and project-ref confirmation');
@@ -481,9 +489,42 @@ export async function runStage(env, mode, transport = fetch) {
     'Repeated Passer must not change any persisted challenge field');
   await assertDuetUnchanged('after idempotent Passer replay');
   await assertD6Unchanged('after idempotent Passer replay');
+
+  // Explicit opt-in only. A stale phone may resend an incompatible button
+  // after the first decision is committed. Each call MUST return the original
+  // receipt, even when the stale action carries a different exclusion flag.
+  // Keep this at the END of the recipe: never attempt conflicting requests
+  // until both user views, the current session, both D6 and the original
+  // idempotency check have passed.
+  let staleReplayChecks = 0;
+  if (config.staleReplay) {
+    const contradictions = config.action === 'pass'
+      ? [{action:'refuse',exclude:true}]
+      : [{action:'pass',exclude:false},
+         {action:'refuse',exclude:!config.exclude}];
+    for (const stale of contradictions) {
+      const staleResult = await client.rpc('love_respond_and_redraw', {
+        p_challenge: drawn.id,p_action:stale.action,p_exclude:stale.exclude
+      },recipient.token);
+      assert(staleResult?.already_processed === true &&
+        eq(staleResult.original_id,drawn.id) &&
+        eq(staleResult.replacement_id,response.replacement_id) &&
+        staleResult.action === config.action &&
+        staleResult.excluded === config.exclude,
+        'Stale conflicting response must replay the first immutable server decision');
+      const afterConflict = await persistedPassSnapshot();
+      assert(afterConflict === beforeReplay,
+        'Stale conflicting response mutated a persisted challenge');
+      await assertDuetUnchanged('after stale conflicting response');
+      await assertD6Unchanged('after stale conflicting response');
+      staleReplayChecks++;
+    }
+  }
+
   return {...result, draw_id: drawn.id, replacement_id: response.replacement_id,
     drawer: config.drawer, random_category_mode: config.random,
     actual_draw_category: drawn.category, replacement_same_category: true, pass_replay_idempotent: true,
+    stale_replay_checks: staleReplayChecks,
     response_action: config.action, response_excluded: config.exclude,
     persisted_challenges: 2};
 }
