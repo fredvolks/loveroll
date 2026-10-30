@@ -219,17 +219,20 @@ test('LR-026: official SQL and UI agree on unique face, card and carried gift',(
   /replacement\.card_id!==original\.card_id/,
   /card\.category===replacement\.category/,
   /card\.face===replacement\.face\|\|card\.card_id===replacement\.card_id/,
-  /replacement\.is_gifted===Boolean\(original\.is_gifted\)/
+  /replacement\.is_gifted===original\.is_gifted/
  ]) assert.match(check,pattern,'UI persisted receipt must enforce the original SQL rule');
 });
 
 test('LR-026: redraw success requires original decision and replacement in recipient RLS view',()=>{
  const original={id:'clicked-card',recipient:'fred',session_id:'s1',
   couple_id:'duo-1',offered_by:'partner',status:'passed',
-  category:'SENSUEL',face:14,card_id:3,is_gifted:false};
+  category:'SENSUEL',face:14,card_id:3,is_gifted:false,
+  created_at:'2026-10-30T12:00:00Z',
+  passed_at:'2026-10-30T12:02:00Z',refused_at:null};
  const replacement={id:'new-card',recipient:'fred',session_id:'s1',
   couple_id:'duo-1',offered_by:'partner',status:'proposed',
   category:'SENSUEL',face:53,card_id:8,is_gifted:false,
+  created_at:'2026-10-30T12:02:00Z',
   replaces_challenge_id:'clicked-card'};
  const receipt={original_id:'clicked-card',replacement_id:'new-card',
   action:'pass',excluded:false,already_processed:false,
@@ -265,6 +268,16 @@ test('LR-026: redraw success requires original decision and replacement in recip
  assert.equal(verify([replacement]),false,
   'replacement alone cannot prove the original Passer/Refuser decision');
  assert.equal(verify([{...original,status:'accepted'},replacement]),false);
+ for(const badStamp of [null,undefined,'not-a-date','']){
+  assert.equal(verify([{...original,passed_at:badStamp},replacement]),false,
+   'a Passer without a valid persisted passed_at must not confirm the timer');
+  assert.equal(verify([{...original,created_at:badStamp},replacement]),false,
+   'an original must carry its actual persisted creation date');
+  assert.equal(verify([original,{...replacement,created_at:badStamp}]),false,
+   'a replacement cannot claim success without a valid creation date');
+ }
+ assert.equal(verify([{...original,refused_at:'2026-10-30T12:02:00Z'},replacement]),
+  false,'Passer and Refuser timestamps cannot be set together');
  assert.equal(verify([original,{...replacement,replaces_challenge_id:'another-card'}]),false);
  assert.equal(verify([original,{...replacement,category:'SEXUEL'}]),false);
  assert.equal(verify([original,{...replacement,offered_by:'other-giver'}]),false);
@@ -279,6 +292,8 @@ test('LR-026: redraw success requires original decision and replacement in recip
  assert.equal(verify([{...original,card_id:'3'},replacement]),false);
  assert.equal(verify([original,{...replacement,is_gifted:true}]),false,
   'replacement must keep the same gift transfer state');
+ assert.equal(verify([{...original,is_gifted:undefined},replacement]),false,
+  'a missing original gifting flag must not masquerade as false');
  assert.equal(verify([{...original,is_gifted:true},
    {...replacement,is_gifted:true}]),true,
   'a legitimate gifted D100 card remains supported');
@@ -288,9 +303,14 @@ test('LR-026: redraw success requires original decision and replacement in recip
  assert.equal(verify([original,replacement],receipt,'partner'),false);
  assert.equal(verify([original,replacement],receipt,'fred','another-night'),false);
  assert.equal(verify([original,replacement],{...receipt,original_id:'other-card'}),false);
- const refused={...original,status:'refused'};
+ const refused={...original,status:'refused',passed_at:null,
+  refused_at:'2026-10-30T12:02:00Z'};
  const refuseReceipt={...receipt,action:'refuse',excluded:true};
  assert.equal(verify([refused,replacement],refuseReceipt),true);
+ assert.equal(verify([{...refused,refused_at:null},replacement],refuseReceipt),false);
+ assert.equal(verify([{...refused,passed_at:'2026-10-30T12:02:00Z'},
+  replacement],refuseReceipt),false,
+  'a Refuser cannot preserve a Passer timestamp');
  assert.equal(verify([original,replacement],refuseReceipt),false);
  const unavailable={...refuseReceipt,replacement_id:null,
   replacement_unavailable:true};
