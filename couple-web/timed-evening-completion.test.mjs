@@ -192,6 +192,13 @@ test('LR-026 timer locks only the active owner/card and never the next account',
  }
  timer.decisionPending=true;
  assert.equal(guards.busy(),true);
+ timer.autoCompletePending=true;
+ const completedView={label:'♡ Validation en cours',status:'Validation du défi en cours',
+  disabled:true,resetDisabled:true};
+ guards.protect(completedView);
+ assert.equal(completedView.status,'Validation du défi en cours',
+  'server completion must take precedence over pending redraw UI');
+ timer.autoCompletePending=false;
  state.user={id:'B'};
  assert.equal(guards.busy(),false,'the previous owner cannot block B');
 });
@@ -235,8 +242,7 @@ test('LR-026 real reset handler ignores pending clicks before any timer mutation
  const renderEnd=app.indexOf('function renderLegacySession()',renderStart);
  assert.match(app.slice(updateStart,updateEnd),/protectEveningTimerPresentation\(presentation\)/);
  assert.match(app.slice(renderStart,renderEnd),/protectEveningTimerPresentation\(presentation\)/);
- assert.match(app.slice(end,app.indexOf("if(verb==='timer-mode')",end)>end?
-  app.indexOf("if(verb==='timer-mode')",end):end+2600),/isVisibleEveningTimerActionPending\(\)/);
+ assert.match(app.slice(end,end+1400),/isVisibleEveningTimerActionPending\(\)/);
 });
 
 test('LR-002 live countdown and rerender cannot revive an inert Reprendre button',()=>{
