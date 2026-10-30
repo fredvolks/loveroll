@@ -243,6 +243,18 @@ async function verifyFreshD100Session(client,config,a,b){
       sessions[0].paired_turns===false&&sessions[0].self_draws===false,
       'Mutating recipe requires both partners to see the same active, fresh legacy partner-draw session (paired_turns=false, self_draws=false)');
   }
+  // The pair may change after successful Auth but before the first D100.
+  // Recheck under both identities, immediately before the game writes.
+  // draw_for_partner selects a member other than auth.uid(), so even one
+  // unexpected third member makes the fixture unsafe.
+  for (const actor of [a,b]) {
+    const members=await client.rows('couple_members',
+      'select=couple_id,user_id&couple_id=eq.'+config.coupleId,actor.token);
+    assert(members.length===2 &&
+      members.every(m=>eq(m.couple_id,config.coupleId)) &&
+      [a.id,b.id].every(id=>members.filter(m=>eq(m.user_id,id)).length===1),
+      'Fresh D100 preflight requires both partners to still see exactly A and B');
+  }
   const faces=await verifyMatchingD6(client,config.sessionId,a,b,
     'Two valid D6 rolls for this session must be readable by both partners before D100');
   // A's recipient-only RLS view cannot prove B has no existing challenge;
