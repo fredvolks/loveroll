@@ -1810,7 +1810,7 @@ test('LR-026: every Éclat mutation checks ownership before applying its respons
   ['start','love_eclat_start'],['choose','love_eclat_choose'],
   ['next','love_eclat_next'],['end','love_eclat_end']
  ]){
-  const from=app.indexOf("if(kind==='"+action+"'){",app.indexOf("if(verb.startsWith('eclat:')"));
+  const from=app.indexOf("if(kind==='"+action+"'){",app.indexOf("if(verb==='eclat'){"));
   assert.ok(from>0,'Éclat action '+action+' must remain present');
   const until=app.indexOf("if(kind==='",from+15);
   const branch=app.slice(from,until<0?from+1200:until);
