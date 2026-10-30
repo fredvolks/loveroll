@@ -49,6 +49,14 @@
 
 **Important** : le script ne provisionne pas de comptes, ne restaure pas de soirée et ne répète pas automatiquement les mutations en cas d'échec. Il conserve les résultats de test sur le seul staging. S'il échoue en cours de route, inspecter la base puis utiliser une autre soirée fictive.
 
+## Protection des identifiants et de la catégorie D100 — 30 octobre 2026
+
+Le moteur serveur `couple_private.love_variety_rank` distingue `couple_challenges.id` (identifiant de l'occurrence) de `couple_challenges.card_id` (identifiant de bibliothèque). La comparaison auxiliaire JavaScript ne considère donc plus deux cartes comme identiques sur la seule égalité de leur **UUID de ligne**, lorsque `card_id` est absent. Les identifiants de carte réels restent prioritaires; la comparaison des titres complets et des descriptions reste possible sans `card_id`.
+
+`filterSimilarEveningCandidates` valide désormais explicitement que `selectedCategory` et chaque carte admissible correspondent aux catégories **SENSUEL** ou **SEXUEL**. Une catégorie inconnue est rejetée **même si le lot admissible est vide** : il serait trompeur de renvoyer « zéro carte » pour un état de catégorie invalide. Un lot valide et vide renvoie toujours `no-eligible-cards`. Le contrôle du lot mono-catégorie et la conservation du hasard du serveur restent intacts.
+
+Les tests ciblés `couple-web/evening-variety.test.mjs` couvrent l'égalité trompeuse des UUID, l'égalité réelle de `card_id`, les catégories invalides et le lot vide valide. Correctifs sur la PR brouillon uniquement; aucune migration, aucune carte personnelle et aucun déploiement.
+
 ## Parité stricte avec le moteur de similarité SQL — 30 octobre 2026
 
 Le comparateur **consultatif JavaScript** a été aligné sur `couple_private.love_variety_near`, et non uniquement sur sa normalisation. Le moteur SQL considère « semblables » deux cartes ayant **le même titre complet normalisé**, ou bien au moins **cinq mots significatifs distincts communs** (longueur minimale quatre lettres, mots fréquents de la liste SQL exclus) avec une **similarité de Jaccard d'au moins 68 %** dans leurs descriptions. Les champs `activity_tag`, `theme` et `tags`, ainsi qu'une simple intersection partielle des mots d'un titre, ne font pas partie de cette décision serveur. Ils ne doivent donc pas écarter une carte pourtant admissible ou classée nouvelle par le serveur.
