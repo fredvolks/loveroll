@@ -7,6 +7,7 @@ on:
       - "couple-web/lr026-server-variety-smoke.sql"
       - "couple-web/lr026-postgres-fixture.sql"
       - "couple-web/lr026-postgres-rank.test.sql"
+      - "couple-web/lr026-evening-flow.test.sql"
       - "couple-web/lr026-extract-helpers.cjs"
       - "couple-web/lr026-postgres-rpc-fixture.sql"
       - "couple-web/lr026-fixture-migration.cjs"
@@ -58,6 +59,8 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-server-variety-smoke.sql
       - name: Test official category and couple/session scoping
         run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-postgres-rank.test.sql
+      - name: Simulate an evening, two couples and a 200-card cycle
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-evening-flow.test.sql
       - name: Create synthetic normal and replacement RPCs
         run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-postgres-rpc-fixture.sql
       - name: Derive fixture fingerprints for guard verification
@@ -74,6 +77,7 @@ jobs:
         run: |
           psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-server-variety-smoke.sql
           psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-postgres-rank.test.sql
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-evening-flow.test.sql
       - name: Reject a stale migration without changing the patched RPCs
         run: |
           set -euo pipefail
