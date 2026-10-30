@@ -1,9 +1,12 @@
 const assert=require('node:assert/strict'),path=require('node:path');
 const {chromium}=require('playwright');
 const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
+const {eveningD100Viewports}=require('./evening-d100-viewports.cjs');
 (async()=>{
+ const selected=eveningD100Viewports(process.env.LOVEROLL_D100_VIEWPORT_LANE||'all');
+ console.log('EVENING_D100_MANDATORY_VIEWPORTS',JSON.stringify(selected));
  const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
- try{for(const [width,height] of [[320,568],[360,640],[360,740],[393,852],[412,824],[412,915],[430,932]]){
+ try{for(const [width,height] of selected){
   const started=Date.now();
   let stage='initialize';
   const checkpoint=name=>{
