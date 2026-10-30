@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isSameEveningResponseContext,redrawTimerRecovery} from './evening-private-queue.mjs';
+import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,isSameEveningResponseContext,redrawTimerRecovery} from './evening-private-queue.mjs';
 import {premiumEveningHtml} from './premium-evening.mjs';
 const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
 const migration=readFileSync(new URL('./migrations/20261015_evening_private_challenge_queue.sql',import.meta.url),'utf8');
@@ -201,6 +201,70 @@ test('LR-026: app checks original ID before selecting and confirming a new D100 
  assert.doesNotMatch(app,/state\.selectedEveningChallengeId=outcome\?\.replacement_id\|\|null/);
 });
 
+test('LR-026: redraw success requires original decision and replacement in recipient RLS view',()=>{
+ const original={id:'clicked-card',recipient:'fred',session_id:'s1',
+  couple_id:'duo-1',offered_by:'partner',status:'passed',
+  category:'SENSUEL'};
+ const replacement={id:'new-card',recipient:'fred',session_id:'s1',
+  couple_id:'duo-1',offered_by:'partner',status:'proposed',
+  category:'SENSUEL',replaces_challenge_id:'clicked-card'};
+ const receipt={original_id:'clicked-card',replacement_id:'new-card',
+  action:'pass',excluded:false,already_processed:false,
+  replacement_unavailable:false};
+ const verify=(rows,reply=receipt,recipient='fred',session='s1')=>
+  isPersistedEveningRedrawReceipt(reply,rows,recipient,session);
+ assert.equal(verify([original,replacement]),true);
+ assert.equal(verify([replacement,original]),true,
+  'server order must not affect the same physical D6 slot');
+ assert.equal(verify([original,replacement],{...receipt,already_processed:true}),true,
+  'a second-device replay with unchanged SQL receipt remains valid');
+ assert.equal(verify([original]),false,
+  'never select or congratulate an invisible replacement');
+ assert.equal(verify([replacement]),false,
+  'replacement alone cannot prove the original Passer/Refuser decision');
+ assert.equal(verify([{...original,status:'accepted'},replacement]),false);
+ assert.equal(verify([original,{...replacement,replaces_challenge_id:'another-card'}]),false);
+ assert.equal(verify([original,{...replacement,category:'SEXUEL'}]),false);
+ assert.equal(verify([original,{...replacement,offered_by:'other-giver'}]),false);
+ assert.equal(verify([original,{...replacement,couple_id:'other-couple'}]),false);
+ assert.equal(verify([original,{...replacement,recipient:'partner'}]),false,
+  'never expose cards belonging to the other person');
+ assert.equal(verify([original,{...replacement,session_id:'s2'}]),false);
+ assert.equal(verify([original,replacement],receipt,'partner'),false);
+ assert.equal(verify([original,replacement],receipt,'fred','another-night'),false);
+ assert.equal(verify([original,replacement],{...receipt,original_id:'other-card'}),false);
+ const refused={...original,status:'refused'};
+ const refuseReceipt={...receipt,action:'refuse',excluded:true};
+ assert.equal(verify([refused,replacement],refuseReceipt),true);
+ assert.equal(verify([original,replacement],refuseReceipt),false);
+ const unavailable={...refuseReceipt,replacement_id:null,
+  replacement_unavailable:true};
+ assert.equal(verify([refused],unavailable),true,
+  'a confirmed server exhaustion must not invent a replacement');
+ assert.equal(verify([{...refused,status:'proposed'}],unavailable),false);
+ assert.equal(verify([refused],{...unavailable,already_processed:true,
+  replacement_unavailable:undefined}),true,
+  'SQL idempotency receipt may omit availability only on replay');
+});
+
+test('LR-026: UI waits for persisted redraw before stopping a live timer or confirming success',()=>{
+ const start=app.indexOf("if(verb==='evening-pass'||verb==='evening-refuse-choice')");
+ const end=app.indexOf("if(verb==='evening-start')",start);
+ const code=app.slice(start,end);
+ const refresh=code.indexOf('await refreshAndShow();');
+ const storedCheck=code.indexOf('const persistedReceiptValid=');
+ const stop=code.indexOf('if(persistedReceiptValid&&challengeTimer.id===challengeId)');
+ assert.ok(refresh>=0&&storedCheck>refresh&&stop>storedCheck,
+  'timer must stop only after the refreshed RLS rows confirm the decision');
+ assert.match(code,/if\(!persistedReceiptValid&&sameAfterRefresh\)/);
+ assert.match(code,/receiptValid&&!persistedReceiptValid/);
+ assert.match(code,/state\.selectedEveningChallengeId=null/);
+ assert.match(code,/redrawFeedback=receiptValid&&!persistedReceiptValid/);
+ const early=code.slice(0,refresh);
+ assert.doesNotMatch(early,/challengeTimer\.running=false;challengeTimer\.deadline=0/,
+  'a valid but incomplete RPC response is not grounds for resetting the timer');
+});
+
 test('LR-026: delayed redraw updates only the initiating authenticated evening and tab',()=>{
  const request={userId:'partner',sessionId:'evening-1',tab:'session'};
  const active={user:{id:'partner'},session:{id:'evening-1'},tab:'session'};
@@ -254,7 +318,7 @@ test('LR-026: redraw timer only stops on valid receipt or independently refreshe
  const end=app.indexOf("if(verb==='evening-start')",start);
  assert.ok(start>=0&&end>start);
  const code=app.slice(start,end);
- assert.match(code,/if\(receiptValid&&sameContext&&challengeTimer\.id===challengeId\)/);
+ assert.match(code,/if\(persistedReceiptValid&&challengeTimer\.id===challengeId\)/);
  assert.match(code,/const recovery=redrawTimerRecovery\(stored\?\.status,challengeTimer\.deadline,Date\.now\(\)\)/);
  assert.match(code,/if\(recovery==='stop'\)/);
  assert.match(code,/if\(recovery==='expire'\)/);
