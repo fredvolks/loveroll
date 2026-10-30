@@ -1420,6 +1420,22 @@ function ownsVisibleEveningTimer(cardId,userId,sessionId){
  return ownsEveningTimerRecord(challengeTimer,cardId,userId,sessionId)&&
   state.user?.id===userId&&state.session?.id===sessionId;
 }
+// Keep the DOM controls and the action handler in sync. A network decision
+// or an in-flight acceptance must not be undone by a synthetic reset click.
+function isVisibleEveningTimerActionPending(){
+ const cardId=challengeTimer.id;
+ if(!cardId||!ownsVisibleEveningTimer(cardId,state.user?.id,state.session?.id))return false;
+ if(challengeTimer.decisionPending)return true;
+ if(isActiveEveningRedrawPending()&&state.redrawBusyContext?.challengeId===cardId)return true;
+ return [state.timerStartContext,state.eveningStartContext].some(context=>
+  context?.challengeId===cardId&&isSameEveningResponseContext(state,context));
+}
+function protectEveningTimerPresentation(presentation){
+ if(isVisibleEveningTimerActionPending())Object.assign(presentation,{
+  label:'♡ Réponse en cours',status:'Décision sur le défi en cours',
+  disabled:true,resetDisabled:true
+ });
+}
 function clockMs(){
  return challengeTimer.running?Math.max(0,challengeTimer.deadline-Date.now()):challengeTimer.remainingMs;
 }
@@ -1558,6 +1574,7 @@ function updateChallengeClock(){
  const clock=document.getElementById('challenge-timer-clock');
  if(clock)clock.textContent=formatCountdown(clockMs());
  const presentation=timedEveningTimerControl(challengeTimer);
+ protectEveningTimerPresentation(presentation);
  const button=document.getElementById('challenge-timer-toggle');
  if(button){
   button.textContent=presentation.label;
@@ -1594,6 +1611,7 @@ function timerWidget(challenge,minutes){
  if(minutes===null||minutes===undefined||minutes===0)return '<p class="tiny-note">♡ Sans minuteur · l’activité se termine quand vous le souhaitez.</p>';
  activeTimer(challenge,minutes);
  const presentation=timedEveningTimerControl(challengeTimer);
+ protectEveningTimerPresentation(presentation);
  return '<div class="timer-panel"><div class="eyebrow">⏱ Minuteur du défi · '+minutes+' min</div>'+
    '<div id="challenge-timer-clock" class="timer-clock">'+formatCountdown(clockMs())+'</div>'+
    '<p id="challenge-timer-status">'+presentation.status+'</p>'+
@@ -4361,6 +4379,9 @@ async function handle(action,element){
  if(verb==='timer-reset'){
    if(!ownsVisibleEveningTimer(challengeTimer.id,state.user?.id,state.session?.id))
     throw Error('Le minuteur appartient à une autre soirée. Actualise tes défis.');
+   // The button is disabled in the view, but protect direct/double clicks too.
+   // Do not reset a countdown while Passer, Refuser or Commencer is unresolved.
+   if(isVisibleEveningTimerActionPending())return;
    // Reject a reset after the real deadline, even between two clock ticks.
    if(challengeTimer.running&&challengeTimer.deadline>0&&Date.now()>=challengeTimer.deadline){
     challengeTimer.running=false;challengeTimer.remainingMs=0;endSignal();saveChallengeTimer();
@@ -4377,6 +4398,7 @@ async function handle(action,element){
    const ownsClock=()=>ownsVisibleEveningTimer(timerChallengeId,timerUserId,timerSessionId)&&
     state.tab===timerTab;
    if(!ownsClock())throw Error('Aucun minuteur actif pour cette soirée');
+   if(isVisibleEveningTimerActionPending())return;
    // A timer tap cannot pause/restart while its challenge is being redrawn.
    if(isActiveEveningRedrawPending()&&
       state.redrawBusyContext?.challengeId===timerChallengeId)return;
