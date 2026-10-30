@@ -22,6 +22,15 @@ BEGIN
       'epaules a deux' THEN
    RAISE EXCEPTION 'LR-026 : accents non normalisés';
  END IF;
+ IF couple_private.love_variety_normalize('Cœur et âme, sœur & æther') <>
+      'coeur et ame soeur aether' THEN
+   RAISE EXCEPTION 'LR-026 : ligatures françaises non normalisées';
+ END IF;
+ IF NOT couple_private.love_variety_near(
+    'Un cœur léger','Quelques secondes de complicité.',
+    'Un coeur léger','Autre consigne.') THEN
+   RAISE EXCEPTION 'LR-026 : cœur et coeur reconnus à tort comme différents';
+ END IF;
  -- Generic instructions alone must NOT create a false similarity.
  IF couple_private.love_variety_near(
     'Soirée parfum',
