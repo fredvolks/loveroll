@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
+import {runInNewContext} from 'node:vm';
 import {isAcceptedTimedEveningChallenge,isSameCompletedEveningChallenge,completeTimedEveningChallenge,timedEveningTimerControl} from './timed-evening-completion.mjs';
 const card={id:'card-a',recipient:'alice',session_id:'session-a',status:'accepted'};
 test('Only accepted, recipient-owned Soirée cards qualify; unrelated timers never count',()=>{
@@ -261,4 +262,135 @@ test('LR-002 live countdown and rerender cannot revive an inert Reprendre button
  assert.match(render,/presentation\.disabled\?' disabled aria-disabled="true"'/);
  assert.match(render,/presentation\.resetDisabled\?' disabled aria-disabled="true"'/);
  assert.match(render,/presentation\.label/);
+});
+
+test('LR-026 async completion ignores a result after switching account or evening',async()=>{
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const start=source.indexOf('function ownsTimerCompletionRefresh(context){');
+ const end=source.indexOf('// LR-002: recover ALL due challenge timers',start);
+ assert.ok(start>0&&end>start);
+ const executable=source.slice(start,end)+'; retryExpiredTimedEvening;';
+ for(const moved of ['account','session','tab','couple']){
+  let release;
+  const server=new Promise(resolve=>{release=resolve;});
+  const state={user:{id:'alice'},session:{id:'s1'},coupleId:'couple-1',
+   tab:'session',timerCompletionContext:null,showEveningChallenges:true,
+   selectedEveningChallengeId:'card-1'};
+  const challengeTimer={id:'card-1',autoCompletePending:true,decisionPending:false};
+  const counters={refresh:0,render:0,notify:0,saves:0};
+  const retry=runInNewContext(executable,{
+   state,challengeTimer,timerCompletionInFlight:null,timerCompletionRetryAt:0,
+   timedEveningItem:()=>({id:'card-1',status:'accepted',recipient:'alice',session_id:'s1'}),
+   isAcceptedTimedEveningChallenge:()=>true,
+   completeTimedEveningChallenge:async()=>{await server;return {outcome:'completed',finished:true};},
+   ownsVisibleEveningTimer:(id,u,s)=>state.user?.id===u&&state.session?.id===s,
+   saveChallengeTimer:()=>counters.saves++,
+   refreshShared:async()=>{counters.refresh++;return true;},
+   render:()=>counters.render++,notify:()=>counters.notify++,
+   console,document:{hidden:false},Date
+  });
+  const pending=retry();
+  assert.ok(state.timerCompletionContext,'each RPC must acquire a scoped owner');
+  if(moved==='account')state.user={id:'bob'};
+  if(moved==='session')state.session={id:'s2'};
+  if(moved==='tab')state.tab='home';
+  if(moved==='couple')state.coupleId='couple-2';
+  release();
+  await pending;
+  assert.deepEqual(counters,{refresh:0,render:0,notify:0,saves:0},
+   moved+' must not modify the now-visible user interface');
+  assert.equal(state.timerCompletionContext,null);
+ }
+});
+
+test('LR-026 async completion refreshes only the confirmed original session',async()=>{
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const start=source.indexOf('function ownsTimerCompletionRefresh(context){');
+ const end=source.indexOf('// LR-002: recover ALL due challenge timers',start);
+ const executable=source.slice(start,end)+'; retryExpiredTimedEvening;';
+ for(const closure of [false,true]){
+  const state={user:{id:'alice'},session:{id:'s1'},coupleId:'couple-1',
+   tab:'session',timerCompletionContext:null,showEveningChallenges:true,
+   selectedEveningChallengeId:'card-1'};
+  const challengeTimer={id:'card-1',autoCompletePending:true,decisionPending:false};
+  const outputs={renders:0,notifications:[],refreshes:[],saves:0};
+  const retry=runInNewContext(executable,{
+   state,challengeTimer,timerCompletionInFlight:null,timerCompletionRetryAt:0,
+   timedEveningItem:()=>({id:'card-1',status:'accepted',recipient:'alice',session_id:'s1'}),
+   isAcceptedTimedEveningChallenge:()=>true,
+   completeTimedEveningChallenge:async()=>({outcome:'completed',finished:closure}),
+   ownsVisibleEveningTimer:(id,u,s)=>id==='card-1'&&u==='alice'&&s==='s1',
+   saveChallengeTimer:()=>outputs.saves++,
+   refreshShared:async context=>{
+    outputs.refreshes.push({...context});
+    if(closure)state.session=null;
+    return true;
+   },
+   render:()=>outputs.renders++,
+   notify:message=>outputs.notifications.push(message),
+   console,document:{hidden:false},Date
+  });
+  await retry();
+  assert.equal(outputs.refreshes.length,1);
+  assert.deepEqual(outputs.refreshes[0],{
+   userId:'alice',sessionId:'s1',coupleId:'couple-1',tab:'session',challengeId:'card-1'
+  });
+  assert.equal(challengeTimer.autoCompletePending,false);
+  assert.equal(outputs.renders,1);
+  assert.deepEqual(outputs.notifications,['♡ Défi accompli ♥']);
+  assert.equal(state.timerCompletionContext,null);
+  assert.equal(state.showEveningChallenges,!closure);
+  assert.equal(state.selectedEveningChallengeId,closure?null:'card-1');
+ }
+});
+
+test('LR-026 a late scoped refresh cannot paint a replaced account or night',async()=>{
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const start=source.indexOf('function ownsTimerCompletionRefresh(context){');
+ const end=source.indexOf('// LR-002: recover ALL due challenge timers',start);
+ const executable=source.slice(start,end)+'; retryExpiredTimedEvening;';
+ for(const moved of ['account','session','server-rejected']){
+  let releaseRefresh;
+  const refreshWait=new Promise(resolve=>{releaseRefresh=resolve;});
+  const state={user:{id:'alice'},session:{id:'s1'},coupleId:'couple-1',
+   tab:'session',timerCompletionContext:null,showEveningChallenges:true,
+   selectedEveningChallengeId:'card-1'};
+  let refreshed=0,rendered=0,notified=0;
+  const retry=runInNewContext(executable,{
+   state,challengeTimer:{id:'card-1',autoCompletePending:true,decisionPending:false},
+   timerCompletionInFlight:null,timerCompletionRetryAt:0,
+   timedEveningItem:()=>({id:'card-1',status:'accepted',recipient:'alice',session_id:'s1'}),
+   isAcceptedTimedEveningChallenge:()=>true,
+   completeTimedEveningChallenge:async()=>({outcome:'completed',finished:true}),
+   ownsVisibleEveningTimer:()=>true,saveChallengeTimer:()=>{},
+   refreshShared:async()=>{refreshed++;await refreshWait;return moved!=='server-rejected';},
+   render:()=>rendered++,notify:()=>notified++,console,document:{hidden:false},Date
+  });
+  const pending=retry();
+  for(let tick=0;tick<5&&refreshed===0;tick++)await Promise.resolve();
+  assert.equal(refreshed,1);
+  if(moved==='account')state.user={id:'bob'};
+  if(moved==='session')state.session={id:'new-evening'};
+  releaseRefresh();
+  await pending;
+  assert.equal(rendered,0);
+  assert.equal(notified,0);
+ }
+});
+
+test('LR-026 saved timer recovery uses same request ownership and cleans its lock',()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const begin=app.indexOf('async function reconcileSavedEveningTimers(){');
+ const end=app.indexOf('function endSignal(){',begin);
+ assert.ok(begin>0&&end>begin);
+ const recovery=app.slice(begin,end);
+ assert.match(recovery,/state\.timerCompletionContext=context;/);
+ assert.match(recovery,/await refreshConfirmedTimedEvening\(context\)/);
+ assert.match(recovery,/if\(state\.timerCompletionContext===context\)state\.timerCompletionContext=null;/);
+ assert.doesNotMatch(recovery,/await refreshAndShow\(\)/);
+ const syncBegin=app.indexOf('async function refreshShared(expectedContext=null){');
+ const syncEnd=app.indexOf('const liveSync=createCoupleLiveSync',syncBegin);
+ const refresh=app.slice(syncBegin,syncEnd);
+ assert.match(refresh,/state\.timerCompletionContext===expectedContext/);
+ assert.match(refresh,/return true; \/\/ A caller may render only after the scoped refresh really finished/);
 });
