@@ -450,6 +450,16 @@ if [[ "$fresh" != 1 || "$replayed" != 1 ]]; then
  echo "::error::Pass/Refuse race produced $fresh fresh and $replayed replayed"
  exit 1
 fi
+# .1 sent Passer, .2 sent Refuser(true). The winning request must
+# match whichever caller actually received already_processed=false.
+if { grep -q '"already_processed": false' "$tmp/pass_versus_refuse.1.log" &&
+     [[ "$recorded" != pass ]]; } ||
+   { grep -q '"already_processed": false' "$tmp/pass_versus_refuse.2.log" &&
+     [[ "$recorded" != refuse ]]; }; then
+ echo "::error::Pass/Refuse winner differs from the successful caller's choice"
+ cat "$tmp/pass_versus_refuse."{1,2}".log"
+ exit 1
+fi
 pair=88888888-aaaa-4888-8888-888888888888
 origin=88888888-cccc-4888-8888-888888888888
 assert_both_client_receipts pass_versus_refuse "$pair" "$origin"
@@ -516,6 +526,16 @@ for suffix in 1 2; do
 done
 if [[ "$fresh" != 1 || "$replayed" != 1 ]]; then
  echo "::error::Concurrent Refuser choices gave $fresh fresh, $replayed replayed"
+ exit 1
+fi
+# .1 sent Refuser(false), .2 sent Refuser(true). A successful fresh
+# request must not commit the opposite choice, even under contention.
+if { grep -q '"already_processed": false' "$tmp/refuse_without_versus_with_exclusion.1.log" &&
+     [[ "$recorded" != false ]]; } ||
+   { grep -q '"already_processed": false' "$tmp/refuse_without_versus_with_exclusion.2.log" &&
+     [[ "$recorded" != true ]]; }; then
+ echo "::error::Refuser winner differs from fresh caller's exclusion choice"
+ cat "$tmp/refuse_without_versus_with_exclusion."{1,2}".log"
  exit 1
 fi
 assert_both_client_receipts refuse_without_versus_with_exclusion "$pair" "$origin"
