@@ -17,7 +17,7 @@ import {ROLL_TOTAL_MS} from './dice-roll-motion.mjs';
 import {createCoupleLiveSync} from './couple-live-sync.mjs?v=20261017-advent119';
 import {playableSessionForWeekly} from './couple-reset-view.mjs';
 import {eveningDailyAccess} from './evening-daily-policy.mjs?v=20261016-daily100';
-import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,isSameEveningResponseContext,isEveningRedrawBusyForCurrentView,ownsEveningRedrawRequest,redrawTimerRecovery} from './evening-private-queue.mjs';
+import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,snapshotEveningCardBeforeRedraw,isSameEveningResponseContext,isEveningRedrawBusyForCurrentView,ownsEveningRedrawRequest,redrawTimerRecovery} from './evening-private-queue.mjs';
 import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261029-web259';
 import {saveEveningSelection,restoreEveningSelection,clearEveningSelection} from './evening-resume.mjs?v=20261027-web240';
 import {eclatHtml} from './eclat-ui.mjs?v=20261027-web242';
@@ -2965,6 +2965,8 @@ async function handle(action,element){
   if(refuse&&!['yes','no'].includes(parts[1]))throw Error('Choix de refus non reconnu.');
   const item=ownEveningChallenges(state.challenges,state.user?.id,state.session?.id).find(x=>x.id===challengeId);
   if(!item||!['proposed','accepted'].includes(item.status))throw Error('Défi déjà répondu ou inaccessible.');
+  const originalSnapshot=snapshotEveningCardBeforeRedraw(item);
+  if(!originalSnapshot)throw Error('Impossible de vérifier les informations de ce défi. Actualise la soirée.');
   if(!refuse&&state.monthlyPassQuota?.can_pass===false)
    throw Error('Limite mensuelle de passages atteinte. Tu peux toujours refuser un défi.');
   const responseContext={sessionId:state.session.id,userId:state.user?.id,tab:state.tab};
@@ -3002,7 +3004,7 @@ async function handle(action,element){
    const sameAfterRefresh=isSameEveningResponseContext(state,responseContext)&&
     ownsEveningRedrawRequest(state,responseContext);
    const persistedReceiptValid=receiptValid&&sameAfterRefresh&&
-    isPersistedEveningRedrawReceipt(outcome,state.challenges,state.user.id,state.session.id,item);
+    isPersistedEveningRedrawReceipt(outcome,state.challenges,state.user.id,state.session.id,originalSnapshot);
    if(persistedReceiptValid){
     // A simultaneous second-device response can already have consumed the
     // replacement. Only focus it if it remains in the visible D6 queue.
