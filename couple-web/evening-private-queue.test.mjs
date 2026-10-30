@@ -35,10 +35,49 @@ test('LR-026: malformed or contradictory RPC receipts never yield false confirma
   {action:'ban',excluded:true,already_processed:false},
   {action:'pass',excluded:true,already_processed:true},
   {action:'pass',excluded:false,already_processed:'true'},
-  {action:'refuse',excluded:'true',already_processed:false}
+  {action:'refuse',excluded:'true',already_processed:false},
+  {original_id:'old',action:'pass',excluded:false,already_processed:false},
+  {replacement_id:'new',action:'pass',excluded:false,already_processed:false},
+  {original_id:'old',replacement_id:'old',action:'pass',
+   excluded:false,already_processed:false},
+  {original_id:'old',replacement_id:1,action:'refuse',
+   excluded:true,already_processed:false},
+  {original_id:'old',replacement_id:'new',action:'pass',
+   excluded:false,already_processed:false,replacement_unavailable:'false'}
  ]) assert.equal(eveningRedrawFeedback(result),unknown,
   'an invalid receipt must not be interpreted as a user choice');
  assert.match(unknown,/Vérifie la liste de tes défis/);
+});
+
+test('LR-026: valid receipt allows a warning when the category has no replacement',()=>{
+ const warning=eveningRedrawFeedback({
+  original_id:'old',replacement_id:null,
+  action:'refuse',excluded:false,already_processed:false,
+  replacement_unavailable:true
+ });
+ assert.match(warning,/Aucun autre défi admissible/);
+ assert.doesNotMatch(warning,/Vérifie la liste de tes défis/);
+ const invalid=eveningRedrawFeedback({
+  original_id:'old',replacement_id:null,
+  action:'refuse',excluded:false,already_processed:false,
+  replacement_unavailable:false
+ });
+ assert.match(invalid,/Vérifie la liste de tes défis/);
+});
+test('LR-026: ambiguous or missing receipts never congratulate a stale device',()=>{
+ const ambiguous=[
+  {original_id:'old',replacement_id:'',action:'pass',
+   excluded:false,already_processed:true},
+  {original_id:1,replacement_id:'new',action:'refuse',
+   excluded:true,already_processed:true},
+  {original_id:'  ',replacement_id:'new',action:'pass',
+   excluded:false,already_processed:true},
+  {original_id:'old',replacement_id:'old',action:'refuse',
+   excluded:true,already_processed:true}
+ ];
+ for(const receipt of ambiguous){
+  assert.match(eveningRedrawFeedback(receipt),/Vérifie la liste de tes défis/);
+ }
 });
 
 test('Each user sees ONLY their own challenge cards, sorted chronologically',()=>{
