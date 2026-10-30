@@ -29,4 +29,4 @@ VALUES (
  'aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa',
  'bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb',
  'SENSUEL',1,1,'Synthetic undecided challenge',
- 'Challenge to race Passer against Refuser','proposed');
+ 'Challenge to race Refuser with or without exclusion','proposed');
