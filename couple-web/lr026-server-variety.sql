@@ -95,18 +95,26 @@ AS $lr026$
   LEFT JOIN public.love_base_challenges base
     ON base.category=p_category AND base.card_id=p_card_id
  )
- SELECT CASE WHEN EXISTS (
-   SELECT 1 FROM public.couple_challenges seen CROSS JOIN candidate current_card
-   WHERE seen.couple_id=p_couple AND seen.session_id=p_session
-     -- Never let a card from another D100 category affect this draw.
-     AND seen.category=p_category
-     AND (
-       seen.card_id=p_card_id
-       OR couple_private.love_variety_near(
-         current_card.title,current_card.description,
-         seen.card_title,seen.card_description)
-     )
- ) THEN 1 ELSE 0 END;
+ -- Exact card ids are checked FIRST.  In a 200-card evening this saves
+ -- nearly all expensive text comparisons for cards already in the history.
+ -- PostgreSQL's CASE ensures the second EXISTS is skipped on an exact hit.
+ SELECT CASE
+   WHEN EXISTS (
+     SELECT 1 FROM public.couple_challenges seen
+     WHERE seen.couple_id=p_couple AND seen.session_id=p_session
+       AND seen.category=p_category AND seen.card_id=p_card_id
+   ) THEN 1
+   WHEN EXISTS (
+     SELECT 1 FROM public.couple_challenges seen
+     CROSS JOIN candidate current_card
+     WHERE seen.couple_id=p_couple AND seen.session_id=p_session
+       -- Keep the semantic fallback inside the SAME official D100 category.
+       AND seen.category=p_category
+       AND couple_private.love_variety_near(
+          current_card.title,current_card.description,
+          seen.card_title,seen.card_description)
+   ) THEN 1
+   ELSE 0 END;
 $lr026$;
 
 REVOKE ALL ON FUNCTION couple_private.love_variety_normalize(text)
