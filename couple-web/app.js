@@ -1429,6 +1429,17 @@ function ownsVisibleEveningTimer(cardId,userId,sessionId){
 }
 // Keep the DOM controls and the action handler in sync. A network decision
 // or an in-flight acceptance must not be undone by a synthetic reset click.
+// A countdown at 00:00 may be committing its answer on Supabase.
+ // The same card must not submit an opposing Passer/Refuser/Commencer or
+ // manual completion while its automatic completion is unresolved.
+function isEveningCardCompleting(cardId){
+ if(!cardId||!state.user||!state.session)return false;
+ const completion=state.timerCompletionContext;
+ if(completion?.challengeId===cardId&&ownsTimerCompletionSession(completion))
+  return true;
+ return challengeTimer.autoCompletePending===true&&
+  ownsVisibleEveningTimer(cardId,state.user.id,state.session.id);
+}
 function isVisibleEveningTimerActionPending(){
  const cardId=challengeTimer.id;
  if(!cardId||!ownsVisibleEveningTimer(cardId,state.user?.id,state.session?.id))return false;
@@ -1874,13 +1885,15 @@ function renderSession(){
        timerWidget(view,resolvedCard(view).minutes):
        '<p class="tiny-note">Ce défi est archivé dans votre historique.</p>')+
      (view.status==='proposed'?
-       button('evening-start:'+view.id,'▶ Commencer ce défi','class="evening-primary"'):'')+
+       button('evening-start:'+view.id,'▶ Commencer ce défi',
+        'class="evening-primary" '+(isEveningCardCompleting(view.id)?'disabled':'')):'')+
      (view.status==='accepted'?
-       button('answer:'+view.id+':completed','✓ Défi réalisé','class="evening-primary"'):'')+
+       button('answer:'+view.id+':completed','✓ Défi réalisé',
+        'class="evening-primary" '+(isEveningCardCompleting(view.id)?'disabled':'')):'')+
      (['proposed','accepted'].includes(view.status)&&state.redrawReady?
       '<div class="lr-redraw-actions" aria-label="Autres choix pour ce défi">'+
-       button('evening-pass:'+view.id,'Passer ce défi','class="subtle" '+(isActiveEveningRedrawPending()||state.monthlyPassQuota?.can_pass===false?'disabled':''))+
-       button('evening-refuse:'+view.id,'Refuser ce défi','class="subtle" '+(isActiveEveningRedrawPending()?'disabled':''))+
+       button('evening-pass:'+view.id,'Passer ce défi','class="subtle" '+(isActiveEveningRedrawPending()||isEveningCardCompleting(view.id)||state.monthlyPassQuota?.can_pass===false?'disabled':''))+
+       button('evening-refuse:'+view.id,'Refuser ce défi','class="subtle" '+(isActiveEveningRedrawPending()||isEveningCardCompleting(view.id)?'disabled':''))+
        '<small>'+(state.monthlyPassQuota?.can_pass===false?
         'Limite atteinte : '+safe(state.monthlyPassQuota?.used??'—')+
         ' / '+safe(state.monthlyPassQuota?.limit??'—')+
@@ -1893,9 +1906,9 @@ function renderSession(){
        '<h3 id="lr-refusal-title">Tu préfères un autre défi ?</h3>'+
        '<p id="lr-refusal-description">Veux-tu retirer ce défi des prochaines piges pour le cycle en cours ?</p>'+
        '<div class="lr-refusal-buttons">'+
-        button('evening-refuse-choice:'+view.id+':yes','Oui, retirer du lot','class="evening-primary" '+(isActiveEveningRedrawPending()?'disabled':''))+
-        button('evening-refuse-choice:'+view.id+':no','Non, le garder dans le lot','class="subtle" '+(isActiveEveningRedrawPending()?'disabled':''))+
-        button('evening-refuse-cancel','Annuler','class="subtle" '+(isActiveEveningRedrawPending()?'disabled':''))+
+        button('evening-refuse-choice:'+view.id+':yes','Oui, retirer du lot','class="evening-primary" '+(isActiveEveningRedrawPending()||isEveningCardCompleting(view.id)?'disabled':''))+
+        button('evening-refuse-choice:'+view.id+':no','Non, le garder dans le lot','class="subtle" '+(isActiveEveningRedrawPending()||isEveningCardCompleting(view.id)?'disabled':''))+
+        button('evening-refuse-cancel','Annuler','class="subtle" '+(isActiveEveningRedrawPending()||isEveningCardCompleting(view.id)?'disabled':''))+
        '</div></div>':'')+
      '<div class="evening-queue-nav">'+
        (idx>0?button('evening-open:'+mineCards[idx-1].id,'← Précédent','class="subtle"'):'<span></span>')+
@@ -3104,6 +3117,7 @@ async function handle(action,element){
   render();return;
  }
  if(verb==='evening-refuse'){
+  if(isEveningCardCompleting(parts[0]))return;
   if(!state.redrawReady)throw Error('La repige sécurisée n’est pas encore disponible sur ce serveur.');
   const item=ownEveningChallenges(state.challenges,state.user?.id,state.session?.id).find(x=>x.id===parts[0]);
   if(!item||!['proposed','accepted'].includes(item.status))throw Error('Ce défi ne peut pas être refusé.');
@@ -3121,6 +3135,7 @@ async function handle(action,element){
   if(!state.redrawReady)throw Error('La repige sécurisée n’est pas encore disponible sur ce serveur.');
   if(isActiveEveningRedrawPending())return;
   const refuse=verb==='evening-refuse-choice',challengeId=parts[0];
+  if(isEveningCardCompleting(challengeId))return;
   // Commencer and the timer can be awaiting the acceptance RPC. Do not
   // race their result with a Passer/Refuser of this SAME recipient card.
   if(state.eveningStartContext?.challengeId===challengeId&&
@@ -3252,6 +3267,7 @@ async function handle(action,element){
   return;
  }
  if(verb==='evening-start'){
+  if(isEveningCardCompleting(parts[0]))return;
   // A D100 decision has priority over stale start taps on the same card.
   if(isActiveEveningRedrawPending()&&
      state.redrawBusyContext?.challengeId===parts[0])return;
@@ -4613,6 +4629,7 @@ async function handle(action,element){
   }finally{eveningCategoryConfirmInFlight=false;}
  }
  if(verb==='answer'){
+  if(isEveningCardCompleting(parts[0]))return;
   const item=ownEveningChallenges(state.challenges,state.user.id,state.session?.id).find(c=>c.id===parts[0]);
   if(!item)throw Error('Ce défi n’est pas dans ta liste personnelle.');
   const eveningId=state.session.id;
