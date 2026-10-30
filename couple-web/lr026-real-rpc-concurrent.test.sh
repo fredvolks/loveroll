@@ -46,7 +46,7 @@ run_race() {
 BEGIN;
 SET statement_timeout='8s';
 SELECT id FROM public.couples WHERE id='$couple'::uuid FOR UPDATE;
-\\echo LR026_GATE_LOCKED
+\echo LR026_GATE_LOCKED
 SELECT pg_sleep(2);
 COMMIT;
 SQL
