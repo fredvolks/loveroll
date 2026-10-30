@@ -33,7 +33,8 @@ function config() {
   };
 }
 function fakeStage({leak, hideCOwnSession, hideCOwnMember,
-  hideCOwnChallenge, hideABOwnChallenge, leakPartnerChallenge} = {}) {
+  hideCOwnChallenge, hideABOwnChallenge, leakPartnerChallenge,
+  hideCOwnRoll, hideABOwnRoll} = {}) {
   const calls = [];
   const transport = async (urlString, options) => {
     const url = new URL(urlString);
@@ -82,6 +83,23 @@ function fakeStage({leak, hideCOwnSession, hideCOwnMember,
         return data([{couple_id: C_COUPLE, user_id: C}]);
       }
     }
+    if (endpoint === '/rest/v1/couple_personal_rolls') {
+      const session = url.searchParams.get('session_id')?.slice(3);
+      const abRolls = [
+        {session_id: AB_SESSION, user_id: A, face: 2},
+        {session_id: AB_SESSION, user_id: B, face: 3}
+      ];
+      const cRoll = {session_id: C_SESSION, user_id: C, face: 4};
+      if (session === AB_SESSION) {
+        if (actor === 'c') return data(leak === 'c-ab-roll' ? [abRolls[0]] : []);
+        return data(hideABOwnRoll === actor ? [] : abRolls);
+      }
+      if (session === C_SESSION) {
+        if (actor === 'c') return data(hideCOwnRoll ? [] : [cRoll]);
+        return data(leak === 'ab-c-roll' ? [cRoll] : []);
+      }
+      return data([]);
+    }
     if (endpoint === '/rest/v1/couple_challenges') {
       const session = url.searchParams.get('session_id')?.slice(3);
       const aCard = {id:'dddddddd-4444-4444-8444-dddddddddddd',
@@ -110,15 +128,17 @@ function fakeStage({leak, hideCOwnSession, hideCOwnMember,
   return {transport, calls};
 }
 
-test('audit mode is read-only, checks 3 real simulated Auth users and denies 9 cross-duo reads', async () => {
+test('audit mode is read-only, checks 3 real simulated Auth users and denies 12 cross-duo reads', async () => {
   const {transport, calls} = fakeStage();
   const result = await runStage(config(), 'audit', transport);
   assert.equal(result.mode, 'audit');
   assert.equal(result.real_auth_accounts, 3);
-  assert.equal(result.rls_cross_duo_denials, 9);
+  assert.equal(result.rls_cross_duo_denials, 12);
   assert.equal(result.game_writes, 0);
   assert.equal(calls.filter(x => x.endpoint === '/auth/v1/user').length, 3);
   assert.equal(result.rls_positive_challenge_reads, 3);
+  assert.equal(result.rls_positive_d6_reads, 3);
+  assert.equal(calls.filter(x => x.endpoint === '/rest/v1/couple_personal_rolls').length, 6);
   assert.equal(calls.filter(x => x.endpoint === '/rest/v1/couple_challenges').length, 6);
   assert.equal(calls.filter(x => x.endpoint.includes('/rest/v1/rpc/')).length, 0);
   assert(calls.filter(x => x.method === 'POST').every(x => x.endpoint === '/auth/v1/token'));
@@ -126,7 +146,8 @@ test('audit mode is read-only, checks 3 real simulated Auth users and denies 9 c
   assert(!JSON.stringify(result).includes('test-session-'));
 });
 for (const leak of ['c-ab-session','c-ab-member','c-ab-card',
-  'ab-c-session','ab-c-member','ab-c-card']) {
+  'ab-c-session','ab-c-member','ab-c-card',
+  'c-ab-roll','ab-c-roll']) {
   test('RLS audit fails closed when a foreign row leaks: ' + leak, async () => {
     const {transport, calls} = fakeStage({leak});
     await assert.rejects(runStage(config(), 'audit', transport),
@@ -167,10 +188,12 @@ test('audit cannot target known production project even with three real actors',
 
 for (const options of [
   {hideABOwnChallenge:'a'}, {hideABOwnChallenge:'b'},
-  {hideCOwnChallenge:true}, {leakPartnerChallenge:'a'},
+  {hideCOwnChallenge:true},
+  {hideABOwnRoll:'a'}, {hideABOwnRoll:'b'}, {hideCOwnRoll:true},
+  {leakPartnerChallenge:'a'},
   {leakPartnerChallenge:'b'}
 ]) {
-  test('RLS audit refuses missing recipient proof or visible partner card: ' +
+  test('RLS audit refuses missing D6 or challenge proof, or visible partner card: ' +
     JSON.stringify(options), async () => {
     const {transport, calls} = fakeStage(options);
     await assert.rejects(runStage(config(), 'audit', transport),
