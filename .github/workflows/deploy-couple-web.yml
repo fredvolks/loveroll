@@ -29,6 +29,7 @@ jobs:
           node --check couple-web/evening-eclat-switcher.mjs
           test -s couple-web/assets/eclat-photo-strip.webp
           node --check couple-web/eclat-ui.mjs
+          node --test couple-web/verify-live-release.test.cjs
           node --test couple-web/ipad-android-stage-v236.test.mjs
           node --test couple-web/evening-resume.test.mjs
           node --test couple-web/evening-category-confirm.test.mjs
@@ -188,6 +189,19 @@ jobs:
         uses: actions/deploy-pages@v4
         with:
           artifact_name: github-pages-${{ github.run_attempt }}
+      - name: Vérifier que Pages sert réellement la nouvelle version et son cache
+        timeout-minutes: 4
+        run: |
+          set -euo pipefail
+          for attempt in 1 2 3 4 5 6; do
+            echo "Pages version/cache - tentative $attempt"
+            if LOVEROLL_DIAGNOSTIC_URL=https://fredvolks.github.io/loveroll/ node couple-web/verify-live-release.cjs; then
+              exit 0
+            fi
+            sleep 12
+          done
+          echo "::error::Le site public sert une ancienne version ou des fichiers incohérents."
+          exit 1
       - name: Vérifier le site réellement publié et la console de Chromium
         timeout-minutes: 6
         run: |
