@@ -35,7 +35,8 @@ INSERT INTO public.love_base_challenges(category,card_id,title,description)
 VALUES
  ('SENSUEL',1,'Baisers dans le cou','Propose des baisers doux à ton partenaire'),
  ('SENSUEL',2,'Une danse au salon','Choisissez une chanson et dansez ensemble'),
- ('SEXUEL',1,'Une invitation différente','Parlez de vos envies et limites');
+ ('SEXUEL',1,'Une invitation différente','Parlez de vos envies et limites'),
+ ('SEXUEL',4,'Baisers dans le cou','Propose des baisers doux à ton partenaire');
 
 INSERT INTO couple_private.love_active_challenges(
  couple_id,category,card_id,title,description)
