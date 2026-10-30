@@ -49,6 +49,10 @@ function mockSupabase(opts = {}) {
     }
     const who = actorToken === 'Bearer auth-token-for-a-test' ? 'a' : 'b';
     const uid = who === 'a' ? a : b;
+    const drawerWho = opts.drawerB ? 'b' : 'a';
+    const recipientWho = opts.drawerB ? 'a' : 'b';
+    const giverId = opts.drawerB ? b : a;
+    const recipientId = opts.drawerB ? a : b;
     if (path === '/auth/v1/user') {
       return response({id: opts.wrongUser && who === 'a' ? b : uid,
         email: who + '@example.invalid',
@@ -129,8 +133,11 @@ function mockSupabase(opts = {}) {
       return response(valid);
     }
     if (path === '/rest/v1/couple_challenges') {
-      if (opts.existingChallengeForB) {
-        return response(who === 'b' ? [{id: drawnId, recipient: b, status: 'proposed'}] : []);
+      if (opts.existingChallengeForB || opts.existingChallengeForA) {
+        const addressedTo = opts.existingChallengeForA ? 'a' : 'b';
+        const recipientIdToShow = addressedTo === 'a' ? a : b;
+        return response(who === addressedTo ?
+          [{id: drawnId, recipient: recipientIdToShow, status: 'proposed'}] : []);
       }
       if (opts.existingChallenge) return response([{id: drawnId}]);
       if (!lastDraw) return response([]);
@@ -138,12 +145,12 @@ function mockSupabase(opts = {}) {
       // Later corruption is injected only after the Passer RPC to exercise
       // both independent checkpoints rather than failing at the first one.
       const beforePass = passCount === 0;
-      if (who === 'a') {
+      if (who === drawerWho) {
         if ((beforePass && opts.firstCardForA) ||
             (passCount === 1 && opts.firstPassCardForA) ||
             (!beforePass && opts.unexpectedCardForA)) return response([{
           id: '99999999-1111-4111-8111-999999999999', session_id: session,
-          offered_by: b, status: 'proposed', recipient: a, category: 'SENSUEL'
+          offered_by: recipientId, status: 'proposed', recipient: giverId, category: 'SENSUEL'
         }]);
         if (beforePass || !opts.leaksPartnerRowsToA) return response([]);
       }
@@ -152,9 +159,9 @@ function mockSupabase(opts = {}) {
       const original = {
         id: beforePass && opts.firstWrongId ? replacedId : drawnId,
         session_id: beforePass && opts.firstWrongSession ? couple : session,
-        offered_by: beforePass && opts.firstWrongOfferer ? b : a,
-        recipient: beforePass && opts.firstWrongRecipient ? a :
-          !beforePass && opts.wrongOriginalRecipient ? a : b,
+        offered_by: beforePass && opts.firstWrongOfferer ? recipientId : giverId,
+        recipient: beforePass && opts.firstWrongRecipient ? giverId :
+          !beforePass && opts.wrongOriginalRecipient ? giverId : recipientId,
         category: (beforePass && opts.firstWrongCategory) ||
           (!beforePass && opts.wrongOriginalCategory) ? otherCategory : category,
         status: beforePass ? opts.firstWrongStatus ? 'passed' : 'proposed'
@@ -174,8 +181,8 @@ function mockSupabase(opts = {}) {
         id: replacedId,
         session_id: passCount === 1 && opts.firstPassWrongSession ? couple : session,
         offered_by: (passCount === 1 && opts.firstPassWrongReplacementOfferer) ||
-          (passCount > 1 && opts.replayMutatesReplacementOfferer) ? b : a,
-        status: 'proposed', recipient: b,
+          (passCount > 1 && opts.replayMutatesReplacementOfferer) ? recipientId : giverId,
+        status: 'proposed', recipient: recipientId,
         face: (passCount === 1 && opts.firstPassDuplicateFace) ? 14 :
           (passCount === 1 && opts.firstPassInvalidFace) ? 101 : 53,
         card_id: (passCount === 1 && opts.firstPassDuplicateCard) ? 3 :
@@ -192,13 +199,13 @@ function mockSupabase(opts = {}) {
       return response(passCount > 1 && opts.replayReordersRows ? rows.reverse() : rows);
     }
     if (path === '/rest/v1/rpc/draw_for_partner') {
-      assert.equal(who, 'a');
+      assert.equal(who, drawerWho);
       assert.equal(payload.p_session, session);
       drawCount++;
       assert.equal(payload.p_preference, opts.expectedPreference ?? 'SENSUEL');
       assert.equal(payload.p_random, false);
       lastDraw = {id: drawnId, session_id: session, couple_id: couple,
-        offered_by: a, recipient: b, face: 14, card_id: 3,
+        offered_by: giverId, recipient: recipientId, face: 14, card_id: 3,
         category: opts.drawUnknownCategory ? 'INVALID' :
           opts.drawSexuel ? 'SEXUEL' : 'SENSUEL'};
       return response({
@@ -211,7 +218,7 @@ function mockSupabase(opts = {}) {
       });
     }
     if (path === '/rest/v1/rpc/love_respond_and_redraw') {
-      assert.equal(who, 'b');
+      assert.equal(who, recipientWho);
       assert.equal(payload.p_action, opts.expectedAction ?? 'pass');
       assert.equal(payload.p_exclude, opts.expectedExclude ?? false);
       assert.equal(payload.p_challenge, drawnId);
@@ -413,6 +420,53 @@ test('idempotent refuse cannot change the recorded exclusion flag', async () => 
     LR026_STAGING_EXCLUDE: 'true'}, 'play', mock.fetchFn),
     /Repeated response must return the exact persisted action, exclusion and replacement/);
   assert.equal(mock.counters().passCount, 2);
+});
+
+test('B can draw for A and A can respond with recipient-only RLS', async () => {
+  for (const [action, excluded] of [['pass', false], ['refuse', true]]) {
+    const mock = mockSupabase({drawerB: true, expectedAction: action,
+      expectedExclude: excluded, expectedPreference: 'SEXUEL', drawSexuel: true});
+    const out = await runStage({...env(), LR026_STAGING_DRAWER: 'B',
+      LR026_STAGING_PREFERENCE: 'SEXUEL',
+      LR026_STAGING_ACTION: action,
+      LR026_STAGING_EXCLUDE: String(excluded)}, 'play', mock.fetchFn);
+    assert.equal(out.drawer, 'B');
+    assert.equal(out.response_action, action);
+    assert.equal(out.response_excluded, excluded);
+    assert.equal(out.pass_replay_idempotent, true);
+    assert.equal(mock.counters().drawCount, 1);
+    assert.equal(mock.counters().passCount, 2);
+    const rpcCalls = mock.calls.filter(c => c.path.startsWith('/rest/v1/rpc/'));
+    assert.deepEqual(rpcCalls.map(c => c.actorToken), [
+      'Bearer auth-token-for-b-test',
+      'Bearer auth-token-for-a-test',
+      'Bearer auth-token-for-a-test'
+    ]);
+    const challengeReads = mock.calls.filter(c => c.path === '/rest/v1/couple_challenges');
+    assert.deepEqual(challengeReads.map(c => c.actorToken), [
+      'Bearer auth-token-for-a-test', 'Bearer auth-token-for-b-test',
+      'Bearer auth-token-for-a-test', 'Bearer auth-token-for-b-test',
+      'Bearer auth-token-for-a-test', 'Bearer auth-token-for-b-test',
+      'Bearer auth-token-for-a-test', 'Bearer auth-token-for-b-test'
+    ]);
+  }
+});
+
+test('B cannot draw into a session with a preexisting A-only RLS card', async () => {
+  const mock = mockSupabase({drawerB: true, existingChallengeForA: true});
+  await assert.rejects(runStage({...env(), LR026_STAGING_DRAWER: 'B'},
+    'play', mock.fetchFn), /clean session/);
+  assert.equal(mock.counters().drawCount, 0);
+  assert.equal(mock.counters().passCount, 0);
+});
+
+test('staging drawer setting rejects unknown values before any network call', async () => {
+  for (const drawer of ['', 'a', 'C', 'A,B', 'B ']) {
+    const mock = mockSupabase();
+    await assert.rejects(runStage({...env(), LR026_STAGING_DRAWER: drawer},
+      'play', mock.fetchFn), /Staging D100 drawer must be A or B/);
+    assert.equal(mock.counters().count, 0);
+  }
 });
 
 test('play mode runs exactly one normal D100 plus one pass and one idempotent replay', async () => {
@@ -663,7 +717,7 @@ for (const options of [
     JSON.stringify(options), async () => {
     const mock = mockSupabase(options);
     await assert.rejects(runStage(env(), 'play', mock.fetchFn),
-      /Unexpected challenge addressed to A|Only the two correct-category B challenges|Only one original responded|Exactly one valid same-category replacement|Replacement must not reuse/);
+      /Unexpected challenge addressed to drawer|Only the two correct-category recipient challenges|Only one original responded|Exactly one valid same-category replacement|Replacement must not reuse/);
     assert.equal(mock.counters().drawCount, 1);
     assert.equal(mock.counters().passCount, 1,
       'A malformed persisted Passer must stop BEFORE a second RPC');
