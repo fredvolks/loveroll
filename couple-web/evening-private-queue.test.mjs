@@ -1,13 +1,46 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw} from './evening-private-queue.mjs';
+import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback} from './evening-private-queue.mjs';
 import {premiumEveningHtml} from './premium-evening.mjs';
 const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
 const migration=readFileSync(new URL('./migrations/20261015_evening_private_challenge_queue.sql',import.meta.url),'utf8');
 const a={id:'challenge-a',recipient:'fred',session_id:'s1',status:'proposed',created_at:'2026-10-15T19:00:00Z',face:33,category:'SENSUEL',card_title:'Massage 10 minutes',card_description:'Faire un massage',card_timer_minutes:10};
 const b={id:'challenge-b',recipient:'partner',session_id:'s1',status:'proposed',created_at:'2026-10-15T19:01:00Z',face:5,category:'SEXUEL',card_title:'Défi privé partenaire'};
 const c={id:'challenge-c',recipient:'fred',session_id:'s1',status:'accepted',created_at:'2026-10-15T19:03:00Z',face:7,category:'SENSUEL',card_title:'Défi plus tard'};
+test('LR-026: evening feedback shows committed RPC decision, not tapped button',()=>{
+ const pass={original_id:'old',replacement_id:'new',action:'pass',
+  excluded:false,already_processed:false,replacement_unavailable:false};
+ const refused={...pass,action:'refuse',excluded:true,already_processed:true};
+ const refusedKept={...refused,excluded:false};
+ assert.equal(eveningRedrawFeedback(pass),
+  'Défi passé — il pourra revenir plus tard.');
+ assert.equal(eveningRedrawFeedback(refused),
+  'Ce défi avait déjà reçu une réponse. Défi retiré du lot pour ce cycle.');
+ assert.equal(eveningRedrawFeedback(refusedKept),
+  'Ce défi avait déjà reçu une réponse. Défi conservé dans la pige.');
+ assert.equal(eveningRedrawFeedback({...pass,already_processed:true}),
+  'Ce défi avait déjà reçu une réponse. Défi passé — il pourra revenir plus tard.');
+ assert.equal(eveningRedrawFeedback({...pass,action:'refuse',excluded:false}),
+  'Défi conservé dans la pige.');
+ assert.match(eveningRedrawFeedback({...refused,replacement_unavailable:true}),
+  /avait déjà reçu une réponse.*Aucun autre défi admissible/);
+ assert.match(app,/redrawFeedback=eveningRedrawFeedback\(outcome\)/);
+ assert.doesNotMatch(app,/redrawFeedback=outcome\?\.replacement_unavailable/);
+});
+
+test('LR-026: malformed or contradictory RPC receipts never yield false confirmations',()=>{
+ const unknown=eveningRedrawFeedback({action:'refuse',already_processed:true});
+ for(const result of [null,[],{},true,
+  {action:'ban',excluded:true,already_processed:false},
+  {action:'pass',excluded:true,already_processed:true},
+  {action:'pass',excluded:false,already_processed:'true'},
+  {action:'refuse',excluded:'true',already_processed:false}
+ ]) assert.equal(eveningRedrawFeedback(result),unknown,
+  'an invalid receipt must not be interpreted as a user choice');
+ assert.match(unknown,/Vérifie la liste de tes défis/);
+});
+
 test('Each user sees ONLY their own challenge cards, sorted chronologically',()=>{
  assert.deepEqual(ownEveningChallenges([c,b,a],'fred','s1').map(x=>x.id),['challenge-a','challenge-c']);
  assert.deepEqual(ownEveningChallenges([c,b,a],'partner','s1').map(x=>x.id),['challenge-b']);
