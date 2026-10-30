@@ -80,6 +80,18 @@ export function isSameEveningResponseContext(view,request){
 }
 
 /**
+ * Reconcile an uncertain Passer/Refuser receipt against an independently
+ * refreshed challenge, never against the button the user tapped.
+ * Keep the timer untouched when no reliable status is available.
+ */
+export function redrawTimerRecovery(status,deadline,now){
+ if(['passed','refused','completed'].includes(status))return 'stop';
+ if(status==='accepted'&&Number.isFinite(deadline)&&deadline>0&&
+    Number.isFinite(now)&&deadline<=now)return 'expire';
+ return 'retain';
+}
+
+/**
  * Derive confirmation from the stored decision, not the tap from this device.
  * When provided, expectedOriginalId also prevents a mismatched RPC receipt
  * from confirming or navigating to an unrelated challenge.
