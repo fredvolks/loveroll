@@ -28,6 +28,7 @@ launch() {
  local rpc
  case "$mode" in
   pass) rpc="public.love_respond_and_redraw('$challenge'::uuid,'pass',false)" ;;
+  refuse) rpc="public.love_respond_and_redraw('$challenge'::uuid,'refuse',true)" ;;
   draw) rpc="public.draw_for_partner('$challenge'::uuid,'SENSUEL',false)" ;;
   *) echo "::error::Unsupported RPC race mode $mode"; exit 1 ;;
  esac
@@ -53,6 +54,8 @@ run_race() {
  elif [[ "$mode" == mixed ]]; then
    first_mode=draw; second_mode=pass
    rpc_predicate="(query LIKE '%draw_for_partner%' OR query LIKE '%love_respond_and_redraw%')"
+ elif [[ "$mode" == decisions ]]; then
+   first_mode=pass; second_mode=refuse
  fi
  (
    psql -X -d "$DB" -q -At -v ON_ERROR_STOP=1 >"$tmp/$label.gate" 2>&1 <<SQL
