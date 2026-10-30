@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,isSameEveningResponseContext,redrawTimerRecovery} from './evening-private-queue.mjs';
+import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,isSameEveningResponseContext,isEveningRedrawBusyForCurrentView,ownsEveningRedrawRequest,redrawTimerRecovery} from './evening-private-queue.mjs';
 import {premiumEveningHtml} from './premium-evening.mjs';
 const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
 const migration=readFileSync(new URL('./migrations/20261015_evening_private_challenge_queue.sql',import.meta.url),'utf8');
@@ -569,19 +569,43 @@ test('LR-026: scoped refresh refuses stale account writes at every awaited stage
   'unscoped refresh should preserve normal screens');
 });
 
+test('LR-026: pending redraw tokens distinguish two requests even on the same evening',()=>{
+ const original={userId:'A',sessionId:'evening-1',tab:'session'};
+ const view={user:{id:'A'},session:{id:'evening-1'},tab:'session',
+  redrawBusy:true,redrawBusyContext:original};
+ assert.equal(isEveningRedrawBusyForCurrentView(view),true);
+ assert.equal(ownsEveningRedrawRequest(view,original),true);
+ assert.equal(ownsEveningRedrawRequest(view,{...original}),false,
+  'two distinct concurrent requests on the same evening cannot share a lock');
+ const otherAccount={...view,user:{id:'B'}};
+ assert.equal(isEveningRedrawBusyForCurrentView(otherAccount),false);
+ assert.equal(ownsEveningRedrawRequest(otherAccount,original),false);
+ assert.equal(isEveningRedrawBusyForCurrentView({...view,session:{id:'evening-2'}}),false);
+ assert.equal(isEveningRedrawBusyForCurrentView({...view,tab:'settings'}),false);
+ assert.equal(isEveningRedrawBusyForCurrentView({...view,redrawBusy:false}),false);
+ assert.equal(isEveningRedrawBusyForCurrentView({...view,redrawBusyContext:null}),false);
+ const second={userId:'B',sessionId:'evening-2',tab:'session'};
+ const switched={...otherAccount,session:{id:'evening-2'},
+  redrawBusyContext:second};
+ assert.equal(isEveningRedrawBusyForCurrentView(switched),true);
+ assert.equal(ownsEveningRedrawRequest(switched,second),true);
+ assert.equal(ownsEveningRedrawRequest(switched,original),false,
+  'an old network response cannot release or mutate the new request');
+});
+
 test('LR-026: pending redraw belongs to its initiating account and cannot unlock another action',()=>{
  const start=app.indexOf("if(verb==='evening-pass'||verb==='evening-refuse-choice')");
  const end=app.indexOf("if(verb==='evening-start')",start);
  const action=app.slice(start,end);
  const helper=app.slice(app.indexOf('function isActiveEveningRedrawPending(){'),
   app.indexOf('async function refreshShared(expectedContext=null){'));
- assert.match(helper,/state\.redrawBusy===true&&!!state\.redrawBusyContext&&/);
- assert.match(helper,/isSameEveningResponseContext\(state,state\.redrawBusyContext\)/);
+ assert.match(helper,/return isEveningRedrawBusyForCurrentView\(state\)/);
+
  assert.match(action,/if\(isActiveEveningRedrawPending\(\)\)return;/);
  assert.match(action,/state\.redrawBusyContext=responseContext;\s+state\.redrawBusy=true;/);
- assert.match(action,/if\(!sameContext\|\|state\.redrawBusyContext!==responseContext\)return;/,
+ assert.match(action,/if\(!sameContext\|\|!ownsEveningRedrawRequest\(state,responseContext\)\)return;/,
   'old account response must not refresh the new owner');
- assert.match(action,/const sameAfterRefresh=isSameEveningResponseContext\(state,responseContext\)&&\s+state\.redrawBusyContext===responseContext/);
+ assert.match(action,/const sameAfterRefresh=isSameEveningResponseContext\(state,responseContext\)&&\s+ownsEveningRedrawRequest\(state,responseContext\)/);
  assert.match(action,/if\(state\.redrawBusyContext===responseContext\)\{[\s\S]*?state\.redrawBusyContext=null;\s+state\.redrawBusy=false;\s+render\(\)/,
   'only the current ticket may unlock its controls');
  assert.match(app,/state\.redrawBusyContext===expectedContext/,
@@ -598,7 +622,7 @@ test('LR-026: stale account or tab cannot refresh after an in-flight redraw RPC'
  const branch=app.slice(start,end);
  const response=branch.indexOf("const outcome=await rpc('love_respond_and_redraw'");
  const context=branch.indexOf('const sameContext=isSameEveningResponseContext(state,responseContext)');
- const reject=branch.indexOf('if(!sameContext||state.redrawBusyContext!==responseContext)return;');
+ const reject=branch.indexOf('if(!sameContext||!ownsEveningRedrawRequest(state,responseContext))return;');
  const refresh=branch.indexOf('await refreshShared(responseContext);');
  const done=branch.indexOf('}finally{');
  assert.ok(response>=0&&context>response&&reject>context&&refresh>reject&&done>refresh,
@@ -654,7 +678,7 @@ test('LR-026: redraw timer only stops on valid receipt or independently refreshe
  assert.match(code,/if\(recovery==='stop'&&state\.eveningRefusalId===challengeId\)/);
  assert.match(code,/if\(challengeTimer\.id===challengeId&&challengeTimer\.decisionPending\)/);
  assert.match(code,/if\(receiptValid\)state\.eveningRefusalId=null/);
- assert.match(code,/if\(!isSameEveningResponseContext\(state,responseContext\)\|\|[\s\S]*?state\.redrawBusyContext!==responseContext\)return;[\s\S]*?if\(challengeTimer\.id===challengeId&&challengeTimer\.decisionPending\)/);
+ assert.match(code,/if\(!isSameEveningResponseContext\(state,responseContext\)\|\|[\s\S]*?!ownsEveningRedrawRequest\(state,responseContext\)\)return;[\s\S]*?if\(challengeTimer\.id===challengeId&&challengeTimer\.decisionPending\)/);
  assert.match(code,/else saveChallengeTimer\(\)/);
  assert.doesNotMatch(code,/if\(challengeTimer\.id===challengeId\)\{\s+challengeTimer\.running=false/,
   'timer must not stop unconditionally before receipt validation');
