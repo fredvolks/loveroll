@@ -204,6 +204,9 @@ function mockSupabase(opts = {}) {
           (!beforePass && opts.wrongOriginalCategory) ? otherCategory : category,
         status: beforePass ? opts.firstWrongStatus ? 'passed' : 'proposed'
           : (opts.expectedAction === 'refuse' ? 'refused' : 'passed'),
+        created_at: beforePass && opts.firstWrongStoredCreatedAt ?
+          '2026-10-30T11:30:00Z' : !beforePass && opts.firstPassMutatesOriginalCreatedAt ?
+          '2026-10-30T13:30:00Z' : '2026-10-30T12:00:00Z',
         passed_at: beforePass ? (opts.firstUnexpectedPassedAt ? '2026-10-30T12:00:00Z' : null)
           : opts.expectedAction === 'refuse'
             ? (opts.afterRefuseUnexpectedPassStamp ? '2026-10-30T12:00:00Z' : null)
@@ -248,6 +251,11 @@ function mockSupabase(opts = {}) {
           (passCount > 2 && opts.staleMutatesReplacementOfferer)
             ? recipientId : giverId,
         status: 'proposed', recipient: recipientId,
+        created_at: passCount === 1 && opts.firstPassInvalidReplacementCreatedAt ?
+          'invalid-stamp' : passCount > 1 &&
+          (opts.replayMutatesReplacementCreatedAt ||
+            (passCount > 2 && opts.staleMutatesReplacementCreatedAt)) ?
+          '2026-10-30T13:30:00Z' : '2026-10-30T12:10:00Z',
         passed_at: opts.replacementUnexpectedPassedAt ? '2026-10-30T12:00:00Z' : null,
         refused_at: opts.replacementUnexpectedRefusedAt ? '2026-10-30T12:00:00Z' : null,
         face: (passCount === 1 && opts.firstPassDuplicateFace) ? 14 :
@@ -284,6 +292,7 @@ function mockSupabase(opts = {}) {
         card_title: opts.drawEmptyTitle ? '' : 'First card',
         card_description: 'First description',
         card_timer_minutes: 3, is_gifted: false,
+        created_at: opts.drawInvalidCreatedAt ? 'broken-date' : '2026-10-30T12:00:00Z',
         category: opts.drawUnknownCategory ? 'INVALID' :
           opts.drawSexuel ? 'SEXUEL' : 'SENSUEL'};
       return response({
@@ -921,6 +930,7 @@ for (const options of [
   {firstWrongStoredDescription: true},
   {firstWrongStoredTimer: true},
   {firstWrongStoredGift: true},
+  {firstWrongStoredCreatedAt: true},
   {firstUnexpectedPassedAt: true},
   {firstUnexpectedRefusedAt: true},
   {firstWrongStatus: true},
@@ -964,6 +974,8 @@ for (const options of [
   {firstPassMutatesOriginalCardId: true},
   {firstPassMutatesOriginalTitle: true},
   {firstPassMutatesOriginalTimer: true},
+  {firstPassMutatesOriginalCreatedAt: true},
+  {firstPassInvalidReplacementCreatedAt: true},
   {firstPassBlankReplacementTitle: true},
   {firstPassInvalidReplacementTimer: true},
   {firstPassWrongReplacementGift: true},
@@ -1128,6 +1140,17 @@ for (const [action, option] of [
     assert.equal(mock.counters().passCount, 3);
   });
 }
+test('second device cannot silently recreate a replacement with its original ID', async () => {
+  const mock = mockSupabase({
+    expectStaleReplay: true,
+    staleMutatesReplacementCreatedAt: true
+  });
+  await assert.rejects(runStage({...env(),
+    LR026_STAGING_STALE_REPLAY:'true'}, 'play', mock.fetchFn),
+    /Stale conflicting response mutated a persisted challenge/);
+  assert.equal(mock.counters().drawCount, 1);
+  assert.equal(mock.counters().passCount, 3);
+});
 test('stale replay that silently changes persisted rows is rejected',async()=>{
  const mock=mockSupabase({
   staleMutatesReplacementOfferer:true,expectStaleReplay:true
@@ -1149,6 +1172,20 @@ test('idempotent replay cannot alter persisted replacement even when returning s
   await assert.rejects(runStage(env(), 'play', mock.fetchFn),
     /Repeated Passer must not change any persisted challenge field|Exactly one valid same-category replacement offered by drawer/);
   assert.equal(mock.counters().passCount, 2);
+});
+test('idempotent replay cannot silently recreate replacement challenge', async () => {
+  const mock = mockSupabase({replayMutatesReplacementCreatedAt: true});
+  await assert.rejects(runStage(env(), 'play', mock.fetchFn),
+    /Repeated Passer must not change any persisted challenge field/);
+  assert.equal(mock.counters().drawCount, 1);
+  assert.equal(mock.counters().passCount, 2);
+});
+test('D100 RPC must provide a valid created_at before returning a challenge', async () => {
+  const mock = mockSupabase({drawInvalidCreatedAt: true});
+  await assert.rejects(runStage(env(), 'play', mock.fetchFn),
+    /Real D100 returned invalid card content, timer or gifted flag/);
+  assert.equal(mock.counters().drawCount, 1);
+  assert.equal(mock.counters().passCount, 0);
 });
 test('idempotent replay cannot silently rewrite a pass timestamp', async () => {
   const mock = mockSupabase({replayMutatesPassedAt: true});
