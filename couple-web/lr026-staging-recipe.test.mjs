@@ -192,11 +192,14 @@ function mockSupabase(opts = {}) {
             ? (opts.afterRefuseUnexpectedPassStamp ? '2026-10-30T12:00:00Z' : null)
             : opts.afterPassMissingStamp ? null
               : opts.afterPassInvalidStamp ? 'invalid-stamp'
-                : passCount > 1 && opts.replayMutatesPassedAt
+                : passCount > 1 && (opts.replayMutatesPassedAt ||
+                    (passCount > 2 && opts.staleMutatesPassedAt))
                   ? '2026-10-30T13:00:00Z' : '2026-10-30T12:00:00Z',
         refused_at: beforePass ? (opts.firstUnexpectedRefusedAt ? '2026-10-30T12:00:00Z' : null)
           : opts.expectedAction === 'refuse'
-            ? (opts.afterRefuseMissingStamp ? null : '2026-10-30T12:00:00Z')
+            ? (opts.afterRefuseMissingStamp ? null :
+                passCount > 2 && opts.staleMutatesRefusedAt
+                  ? '2026-10-30T13:00:00Z' : '2026-10-30T12:00:00Z')
             : (opts.afterPassUnexpectedRefuseStamp ? '2026-10-30T12:00:00Z' : null),
         face: beforePass && opts.firstWrongFace ? 0 :
           !beforePass && opts.firstPassMutatesOriginalFace ? 22 : 14,
@@ -1046,6 +1049,24 @@ for(const options of [
    /Stale conflicting response must replay the first immutable server decision/);
   assert.equal(mock.counters().passCount,3);
  });
+}
+for (const [action, option] of [
+  ['pass', 'staleMutatesPassedAt'],
+  ['refuse', 'staleMutatesRefusedAt']
+]) {
+  test('second device must never alter committed ' + action + ' timestamp', async () => {
+    const mock = mockSupabase({
+      expectedAction: action,
+      expectStaleReplay: true,
+      [option]: true
+    });
+    await assert.rejects(runStage({...env(),
+      LR026_STAGING_ACTION: action,
+      LR026_STAGING_STALE_REPLAY: 'true'}, 'play', mock.fetchFn),
+      /Stale conflicting response mutated a persisted challenge/);
+    assert.equal(mock.counters().drawCount, 1);
+    assert.equal(mock.counters().passCount, 3);
+  });
 }
 test('stale replay that silently changes persisted rows is rejected',async()=>{
  const mock=mockSupabase({
