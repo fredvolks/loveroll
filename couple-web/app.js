@@ -2961,21 +2961,25 @@ async function handle(action,element){
    await refreshAndShow();
    // On an ambiguous receipt, use the real persisted status before freeing
    // the timer's decision lock. A still-accepted challenge resumes its clock.
-   if(!receiptValid&&isSameEveningResponseContext(state,responseContext)&&
-      challengeTimer.id===challengeId&&challengeTimer.decisionPending){
+   if(!receiptValid&&isSameEveningResponseContext(state,responseContext)){
     const stored=ownEveningChallenges(state.challenges,state.user.id,state.session.id)
      .find(card=>card.id===challengeId);
     const recovery=redrawTimerRecovery(stored?.status,challengeTimer.deadline,Date.now());
-    if(recovery==='stop'){
-     challengeTimer.running=false;challengeTimer.deadline=0;challengeTimer.remainingMs=0;
-     challengeTimer.notified=true;challengeTimer.autoCompletePending=false;
+    // Even cards without a timer must dismiss a refusal dialog if the
+    // server confirms that the original decision has already been applied.
+    if(recovery==='stop'&&state.eveningRefusalId===challengeId)
      state.eveningRefusalId=null;
-    }else if(recovery==='expire'){
-     challengeTimer.running=false;challengeTimer.remainingMs=0;
-     challengeTimer.autoCompletePending=true;
+    if(challengeTimer.id===challengeId&&challengeTimer.decisionPending){
+     if(recovery==='stop'){
+      challengeTimer.running=false;challengeTimer.deadline=0;challengeTimer.remainingMs=0;
+      challengeTimer.notified=true;challengeTimer.autoCompletePending=false;
+     }else if(recovery==='expire'){
+      challengeTimer.running=false;challengeTimer.remainingMs=0;
+      challengeTimer.autoCompletePending=true;
+     }
+     challengeTimer.decisionPending=false;saveChallengeTimer();
+     if(challengeTimer.autoCompletePending)void retryExpiredTimedEvening();
     }
-    challengeTimer.decisionPending=false;saveChallengeTimer();
-    if(challengeTimer.autoCompletePending)void retryExpiredTimedEvening();
    }
    // The persisted action is authoritative even if the other device sent
    // a different Passer/Refuser intent.
