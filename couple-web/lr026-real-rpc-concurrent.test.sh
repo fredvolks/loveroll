@@ -334,3 +334,33 @@ grep -q 'permission denied' "$tmp/anon.draw.log" || {
  cat "$tmp/anon.draw.log"; exit 1;
 }
 echo "LR-026 real D100 RPC: anonymous execution denied"
+
+
+# Cross-action collision: A requests a new D100 challenge at the same
+# instant B presses Passer on B's unresolved card. Regardless of who
+# acquires the couple lock first, Passer must create ONE replacement;
+# the new D100 must still be rejected because that replacement is
+# awaiting B's response. The original passed row and the replacement
+# remain the only two rows in this evening.
+psql -X -d "$DB" -v ON_ERROR_STOP=1 \
+ -f couple-web/lr026-real-rpc-mixed-race.seed.sql >/dev/null
+run_race draw_versus_pass 77777777-aaaa-4777-8777-777777777777 \
+ "$A" 77777777-bbbb-4777-8777-777777777777 \
+ "$B" 77777777-cccc-4777-8777-777777777777 mixed
+assert_draw_denial draw_versus_pass.1 'Attendre la réponse au défi précédent'
+assert_first draw_versus_pass.2
+assert_count "Mixed draw/pass original marked passed" \
+ "SELECT count(*) FROM public.couple_challenges WHERE id='77777777-cccc-4777-8777-777777777777' AND status='passed' AND passed_at IS NOT NULL" 1
+assert_count "Mixed draw/pass replacement pending" \
+ "SELECT count(*) FROM public.couple_challenges WHERE couple_id='77777777-aaaa-4777-8777-777777777777' AND replaces_challenge_id='77777777-cccc-4777-8777-777777777777' AND recipient='$B' AND category='SENSUEL' AND status='proposed'" 1
+assert_count "Mixed draw/pass total challenges" \
+ "SELECT count(*) FROM public.couple_challenges WHERE couple_id='77777777-aaaa-4777-8777-777777777777'" 2
+assert_count "Mixed draw/pass one receipt" \
+ "SELECT count(*) FROM public.love_challenge_redraws WHERE couple_id='77777777-aaaa-4777-8777-777777777777' AND action='pass'" 1
+assert_count "Mixed draw/pass no additional draw events" \
+ "SELECT count(*) FROM public.couple_events WHERE couple_id='77777777-aaaa-4777-8777-777777777777' AND event_type='challenge'" 1
+assert_count "Mixed draw/pass one history card" \
+ "SELECT count(*) FROM public.love_card_draw_history WHERE couple_id='77777777-aaaa-4777-8777-777777777777' AND recipient_user_id='$B'" 1
+assert_count "Mixed draw/pass different replacement card" \
+ "SELECT count(*) FROM public.couple_challenges WHERE couple_id='77777777-aaaa-4777-8777-777777777777' AND replaces_challenge_id IS NOT NULL AND card_id<>1" 1
+echo "LR-026 real RPC: simultaneous D100 draw and Passer yielded one replacement, no duplicate proposal"
