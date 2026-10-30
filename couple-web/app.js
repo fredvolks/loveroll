@@ -1380,6 +1380,12 @@ function activeTimer(challenge,minutes){
   challengeTimer.id=challenge.id;
   challengeTimer.ownerUserId=state.user.id;
   challengeTimer.ownerSessionId=state.session?.id||null;
+  // One pending redraw must never lock another card's or account's timer.
+  // Reopening the initiating card while the RPC is still pending restores it.
+  challengeTimer.decisionPending=!!(state.redrawBusy&&
+   state.redrawBusyContext?.challengeId===challenge.id&&
+   state.redrawBusyContext?.userId===state.user.id&&
+   state.redrawBusyContext?.sessionId===state.session?.id);
   challengeTimer.durationMs=millis;
   challengeTimer.remainingMs=stored?.durationMs===millis&&Number.isFinite(stored.remainingMs)?
    Math.max(0,Math.min(millis,stored.remainingMs)):millis;
@@ -1389,6 +1395,12 @@ function activeTimer(challenge,minutes){
   challengeTimer.notified=!!stored?.notified;
   challengeTimer.autoCompletePending=!!stored?.autoCompletePending;
  }
+}
+function ownsVisibleEveningTimer(cardId,userId,sessionId){
+ return !!cardId&&!!userId&&!!sessionId&&
+  challengeTimer.id===cardId&&challengeTimer.ownerUserId===userId&&
+  challengeTimer.ownerSessionId===sessionId&&
+  state.user?.id===userId&&state.session?.id===sessionId;
 }
 function clockMs(){
  return challengeTimer.running?Math.max(0,challengeTimer.deadline-Date.now()):challengeTimer.remainingMs;
@@ -1427,7 +1439,7 @@ async function retryExpiredTimedEvening(){
   const result=await completeTimedEveningChallenge({challenge:item,userId,sessionId,rpc,query});
   if(result.outcome==='ineligible')return;
   timerCompletionRetryAt=0;
-  if(challengeTimer.id===id){
+  if(ownsVisibleEveningTimer(id,userId,sessionId)){
    challengeTimer.autoCompletePending=false;saveChallengeTimer();
   }
   if(state.user?.id===userId&&state.session?.id===sessionId){
@@ -1436,9 +1448,11 @@ async function retryExpiredTimedEvening(){
    await refreshAndShow();
   }
  }catch(error){
-  timerCompletionRetryAt=Date.now()+15000;
+  if(state.user?.id===userId&&state.session?.id===sessionId)
+   timerCompletionRetryAt=Date.now()+15000;
   console.warn('Défi terminé : validation serveur en attente',error);
-  if(!document.hidden)notify('Le minuteur est terminé. Validation du défi en attente de connexion.');
+  if(state.user?.id===userId&&state.session?.id===sessionId&&
+     !document.hidden)notify('Le minuteur est terminé. Validation du défi en attente de connexion.');
  }finally{timerCompletionInFlight=null;}
 }
 // LR-002: recover ALL due challenge timers from per-account session storage
@@ -1470,7 +1484,7 @@ async function reconcileSavedEveningTimers(){
    const result=await completeTimedEveningChallenge({challenge:item,userId,sessionId,rpc,query});
    if(result.outcome==='ineligible')return;
    writeSavedChallengeTimer(key,{...expired,autoCompletePending:false});
-   if(challengeTimer.id===item.id){
+   if(ownsVisibleEveningTimer(item.id,userId,sessionId)){
     challengeTimer.running=false;challengeTimer.remainingMs=0;
     challengeTimer.autoCompletePending=false;saveChallengeTimer();
    }
@@ -1480,9 +1494,11 @@ async function reconcileSavedEveningTimers(){
     await refreshAndShow();
    }
   }catch(error){
-   savedTimerScanAfter=Date.now()+15000;
+   if(state.user?.id===userId&&state.session?.id===sessionId)
+    savedTimerScanAfter=Date.now()+15000;
    console.warn('Minuteur expiré : validation à reprendre après reconnexion',error);
-   if(!document.hidden)notify('Le minuteur est terminé. Validation du défi en attente de connexion.');
+   if(state.user?.id===userId&&state.session?.id===sessionId&&
+      !document.hidden)notify('Le minuteur est terminé. Validation du défi en attente de connexion.');
   }finally{timerCompletionInFlight=null;savedTimerSyncInFlight=false;}
   return;
  }
@@ -2977,11 +2993,11 @@ async function handle(action,element){
   if(!originalSnapshot)throw Error('Impossible de vérifier les informations de ce défi. Actualise la soirée.');
   if(!refuse&&state.monthlyPassQuota?.can_pass===false)
    throw Error('Limite mensuelle de passages atteinte. Tu peux toujours refuser un défi.');
-  const responseContext={sessionId:state.session.id,userId:state.user?.id,tab:state.tab};
+  const responseContext={sessionId:state.session.id,userId:state.user?.id,tab:state.tab,challengeId};
   const exclude=refuse&&parts[1]==='yes';
   state.redrawBusyContext=responseContext;
   state.redrawBusy=true;
-  if(challengeTimer.id===challengeId)challengeTimer.decisionPending=true;
+  if(ownsVisibleEveningTimer(challengeId,state.user.id,state.session.id))challengeTimer.decisionPending=true;
   render();
   let redrawFeedback=null;
   try{
