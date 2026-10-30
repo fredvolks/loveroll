@@ -67,6 +67,19 @@ export function isValidEveningRedrawReceipt(outcome,expectedOriginalId=null){
 }
 
 /**
+ * Async redraws may resolve after the user changes account, evening or tab.
+ * Only the exact initiating view may receive navigation and confirmation.
+ * This check is intentionally separate from the server receipt validation.
+ */
+export function isSameEveningResponseContext(view,request){
+ return typeof request?.userId==='string'&&request.userId.length>0&&
+  typeof request?.sessionId==='string'&&request.sessionId.length>0&&
+  typeof request?.tab==='string'&&request.tab.length>0&&
+  view?.user?.id===request.userId&&
+  view?.session?.id===request.sessionId&&view?.tab===request.tab;
+}
+
+/**
  * Derive confirmation from the stored decision, not the tap from this device.
  * When provided, expectedOriginalId also prevents a mismatched RPC receipt
  * from confirming or navigating to an unrelated challenge.
