@@ -1194,8 +1194,9 @@ test('LR-026 manual D100 completion cannot render an unconfirmed scoped refresh'
 
 test('LR-026 D100 manual completion shows accessible disabled busy label',()=>{
  const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
- const queue=source.slice(source.indexOf('const mineCards=session?'),
-  source.indexOf('function renderLegacySession(){'));
+ const begin=source.indexOf('const mineCards=session?');
+ assert.ok(begin>0);
+ const queue=source.slice(begin,begin+6500);
  assert.match(queue,/isEveningCardCompleting\(view\.id\)\?'♡ Réponse en cours':'✓ Défi réalisé'/);
  assert.match(queue,/aria-busy="true"/);
 });
