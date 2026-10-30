@@ -354,3 +354,12 @@ Afficher près des catégories les cartes distinctes encore admissibles à la pr
 - **Révisions :** `e38d730` (import), `7aea1fc` (RPC), `4eb7abb` (deux appelants), `0d5fd35` (tests), `166d2c9` (test régression), `c8f725e` (validation couple), `1d3020e` (test de reprise).
 - **Revue Medium Atelier :** méthodes Architecture, Qualité et Sécurité consultées. Le BOSS partagé n'a pas été invoqué comme mission autonome : LoveRoll n'est pas enregistré dans l'inventaire actuel d'Atelier.
 - **Restant avant fusion :** exécuter les suites Node/Chromium et les vrais scénarios avec deux sessions Supabase isolées (Auth/RLS, idempotence), consulter les validations CI de la révision exacte, puis revoir la migration. PR #176 brouillon; aucune fusion, migration ou mise en production de ce lot.
+
+### LR-026 — reprise de minuteur isolée par compte, couple, soirée et carte (30 octobre 2026)
+
+- **Défaut reproduit :** `timerCompletionRetryAt` était global. Une erreur réseau sur le minuteur de A imposait 15 secondes d'attente à B ou à une autre carte, même quand le nouveau défi était admissible. Le nouveau test de concurrence échouait avant la correction.
+- **Correction :** calcul d'une identité de réessai avec `JSON.stringify([userId,coupleId,sessionId,challengeId])` et limitation du délai à `state.timerCompletionRetryOwner`. Une opération d'un autre compte, couple, soirée ou défi peut continuer immédiatement. Le succès remet à zéro le délai et sa propriété.
+- **Tests :** les **30 tests ciblés** de `timed-evening-completion.test.mjs` ont été rejoués dans un moteur JavaScript isolé et passent. Le nouveau scénario vérifie explicitement un autre utilisateur, une autre soirée et une **autre carte au sein de la même soirée**. Il ne s'agit pas d'une exécution complète du runner Node, de Chromium ou de Supabase.
+- **Révisions :** `c96eb08` (test initial en échec), `810c89c` (correction du délai), `2c281df` (harnais aligné sur l'état), `e58c182` (carte distincte d'une même soirée). Les correctifs précédents de synchronisation (`41fbac8`) et les attentes de sécurité actualisées (`a346524`) restent dans la PR.
+- **Atelier Medium :** critères des spécialistes Architecture, Qualité et Sécurité consultés; BOSS LoveRoll non lancé, car LoveRoll n'est pas enregistré dans la liste des applications du connecteur Atelier. Aucune migration, fusion ou publication en production.
+- **À valider :** tests Node/Chromium complets, CI de la révision exacte et sessions Auth/RLS dans une branche Supabase isolée.
