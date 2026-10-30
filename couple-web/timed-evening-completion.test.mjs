@@ -296,11 +296,10 @@ test('LR-026 async completion ignores a result after switching account or evenin
   if(moved==='couple')state.coupleId='couple-2';
   release();
   await pending;
-  assert.deepEqual(counters,{refresh:0,render:0,notify:0,saves:moved==='tab'?1:0},
+  assert.deepEqual(counters,{refresh:0,render:0,notify:0,saves:moved==='tab'?2:0},
    moved+' must not modify the now-visible user interface');
-  if(moved==='tab')assert.equal(challengeTimer.autoCompletePending,false,
-   'a tab switch may safely persist the finished timer for its original owner');
-  else assert.equal(challengeTimer.autoCompletePending,true);
+  assert.equal(challengeTimer.autoCompletePending,true,
+   'a changed tab or identity cannot clear pending until scoped refresh confirms');
   assert.equal(state.timerCompletionContext,null);
  }
 });
@@ -437,14 +436,19 @@ test('LR-026 restored timer completion persists only its original private key',a
   if(moved==='tab')state.tab='home';
   release();
   await pending;
-  assert.equal(writes.length,2,'the old private key is cleared after server completion');
-  assert.equal(writes[1].key,'loveroll-challenge-clock:alice:card-1');
-  assert.equal(writes[1].value.autoCompletePending,false);
+  assert.equal(writes.length,3,'unconfirmed refresh restores original timer receipt');
+  assert.deepEqual(writes.map(entry=>entry.key),Array(3).fill(
+   'loveroll-challenge-clock:alice:card-1'));
+  assert.equal(writes[0].value.autoCompletePending,true);
+  assert.equal(writes[1].value.autoCompletePending,false,
+   'server completion is recorded before attempted refresh');
+  assert.equal(writes[2].value.autoCompletePending,true,
+   'without confirmed recipient-only refresh, original receipt stays retryable');
   assert.ok(!events.includes('refresh')&&!events.includes('render'));
   assert.deepEqual(notifications,[]);
   assert.equal(state.timerCompletionContext,null);
-  if(moved==='tab')assert.deepEqual(events,['saved-visible'],
-   'same owner and evening may update local timer without changing the page');
+  if(moved==='tab')assert.deepEqual(events,['saved-visible','saved-visible'],
+   'same owner and evening may persist retry state without changing the page');
   else assert.deepEqual(events,[]);
  }
 });
