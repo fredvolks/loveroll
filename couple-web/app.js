@@ -1908,7 +1908,7 @@ function renderSession(){
        '<div class="lr-refusal-buttons">'+
         button('evening-refuse-choice:'+view.id+':yes','Oui, retirer du lot','class="evening-primary" '+(isActiveEveningRedrawPending()||isEveningCardCompleting(view.id)?'disabled':''))+
         button('evening-refuse-choice:'+view.id+':no','Non, le garder dans le lot','class="subtle" '+(isActiveEveningRedrawPending()||isEveningCardCompleting(view.id)?'disabled':''))+
-        button('evening-refuse-cancel','Annuler','class="subtle" '+(isActiveEveningRedrawPending()||isEveningCardCompleting(view.id)?'disabled':''))+
+        button('evening-refuse-cancel','Annuler','class="subtle" '+(isActiveEveningRedrawPending()?'disabled':''))+
        '</div></div>':'')+
      '<div class="evening-queue-nav">'+
        (idx>0?button('evening-open:'+mineCards[idx-1].id,'← Précédent','class="subtle"'):'<span></span>')+
