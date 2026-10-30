@@ -69,8 +69,11 @@ function mockSupabase(opts = {}) {
       return response([{user_id: a, face: 2}, {user_id: b, face: 2}]);
     }
     if (path === '/rest/v1/couple_challenges') {
+      if (opts.existingChallengeForB) {
+        return response(who === 'b' ? [{id: drawnId, recipient: b, status: 'proposed'}] : []);
+      }
       if (opts.existingChallenge) return response([{id: drawnId}]);
-      if (!lastDraw) return response([]);
+      if (!lastDraw || (opts.recipientOnlyRls && who === 'a')) return response([]);
       return response([
         {id: drawnId, status: 'passed', recipient: b, category: 'SENSUEL'},
         {id: replacedId, status: 'proposed', recipient: b,
@@ -215,4 +218,27 @@ test('missing second D6 blocks real D100 before gameplay writes', async () => {
   await assert.rejects(runStage(env(), 'play', mock.fetchFn), /Two D6 rolls/);
   assert.equal(mock.counters().drawCount, 0);
   assert.equal(mock.counters().passCount, 0);
+});
+
+test('real recipient-only RLS: recipient B already has a card invisible to drawer A, so writes are blocked', async () => {
+  const mock = mockSupabase({existingChallengeForB: true});
+  await assert.rejects(runStage(env(), 'play', mock.fetchFn), /clean session/);
+  assert.equal(mock.counters().drawCount, 0);
+  assert.equal(mock.counters().passCount, 0);
+  const challenges = mock.calls.filter(x => x.path === '/rest/v1/couple_challenges');
+  assert.deepEqual(challenges.map(x => x.actorToken), [
+    'Bearer auth-token-for-a-test', 'Bearer auth-token-for-b-test'
+  ]);
+});
+test('real recipient-only RLS: a clean session can draw even if drawer A cannot read B cards', async () => {
+  const mock = mockSupabase({recipientOnlyRls: true});
+  const result = await runStage(env(), 'play', mock.fetchFn);
+  assert.equal(result.pass_replay_idempotent, true);
+  assert.equal(mock.counters().drawCount, 1);
+  assert.equal(mock.counters().passCount, 2);
+  const challenges = mock.calls.filter(x => x.path === '/rest/v1/couple_challenges');
+  assert.deepEqual(challenges.map(x => x.actorToken), [
+    'Bearer auth-token-for-a-test', 'Bearer auth-token-for-b-test',
+    'Bearer auth-token-for-b-test'
+  ]);
 });
