@@ -98,18 +98,58 @@ test('LR-026: generic overlaps never remove unrelated activities',()=>{
  assert.equal(areNearDuplicateEveningCards(a,b),false);
  assert.equal(areNearDuplicateEveningCards(null,b),false);
 });
-test('LR-026: explicit matching activity/theme plus instructions detects near duplicates',()=>{
+test('LR-026: tags cannot overrule the official SQL similarity decision',()=>{
  const a=card(1,'Un soin tendre',
   'Masser doucement le dos pendant cinq minutes sans matériel.',
   {tags:{activity:'massage',theme:'detente'}});
  const b=card(2,'Le bien-être partagé',
   'Masser le dos tendrement pendant cinq minutes avec une huile.',
   {activity_tag:'massage',theme_tag:'detente'});
- assert.equal(areNearDuplicateEveningCards(a,b),true);
- assert.equal(areNearDuplicateEveningCards(a,{
-  ...b,theme_tag:'autre',description:'Proposer une longue danse',activity_tag:'danse'
- }),false);
+ assert.equal(areNearDuplicateEveningCards(a,b),false,
+  'matching client-only tags cannot suppress server-admissible cards');
+ const shared=card(3,'L’expérience de demain',
+  'Masser lentement les epaules poignets doigts avec douceur',
+  {activity_tag:'danse',theme_tag:'autre'});
+ const related=card(4,'Notre rituel paisible',
+  'Masser lentement les epaules poignets doigts avec huile',
+  {activity_tag:'massage',theme_tag:'detente'});
+ assert.equal(areNearDuplicateEveningCards(shared,related),true,
+  'five significant description tokens at >=68% Jaccard must match');
 });
+
+test('LR-026: title word overlap is not a SQL duplicate without exact title',()=>{
+ const a=card(1,'Danse lente au salon','Une consigne trop courte');
+ const b=card(2,'Danse lente dans la cuisine','Une deuxième consigne courte');
+ assert.equal(areNearDuplicateEveningCards(a,b),false,
+  'SQL matches normalized complete title, not partial title word sets');
+ const result=filterSimilarEveningCandidates({
+  eligibleCards:[b],recentInSession:[a],selectedCategory:'SENSUEL'
+ });
+ assert.equal(result.reason,'all-eligible');
+ assert.deepEqual(result.candidates,[b]);
+});
+
+test('LR-026: description overlap respects SQL five-token and 68% thresholds',()=>{
+ const old=card(1,'Premier titre',
+  'masser lentement les epaules poignets doigts chaleur');
+ const near=card(2,'Autre titre',
+  'masser lentement les epaules poignets doigts huile');
+ assert.equal(areNearDuplicateEveningCards(near,old),true,
+  '5 shared of 7 distinct meaningful words is above 68%');
+ const tooBroad=card(3,'Troisième titre',
+  'masser lentement les epaules poignets doigts huile musique');
+ assert.equal(areNearDuplicateEveningCards(tooBroad,old),false,
+  '5 shared of 8 distinct meaningful words is below 68%');
+ const fourShared=card(4,'Quatrième titre',
+  'masser lentement les epaules poignets musique bruits');
+ assert.equal(areNearDuplicateEveningCards(fourShared,old),false,
+  'four shared words never meet the minimum even if Jaccard is high');
+ const shortA=card(5,'Court A','masser lentement les epaules poignets');
+ const shortB=card(6,'Court B','masser lentement les epaules poignets');
+ assert.equal(areNearDuplicateEveningCards(shortA,shortB),false,
+  '4 meaningful words are not enough for the server');
+});
+
 test('LR-026: only candidates already eligible can survive and order never changes',()=>{
  const former=card(1,'Massage des mains','Massage doux et détente');
  const similar=card(2,'Massage des mains !','Répéter le même massage');
