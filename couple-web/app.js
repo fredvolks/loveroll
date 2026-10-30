@@ -1913,8 +1913,10 @@ function renderSession(){
        button('evening-start:'+view.id,'▶ Commencer ce défi',
         'class="evening-primary" '+(isEveningCardCompleting(view.id)?'disabled':'')):'')+
      (view.status==='accepted'?
-       button('answer:'+view.id+':completed','✓ Défi réalisé',
-        'class="evening-primary" '+(isEveningCardCompleting(view.id)?'disabled':'')):'')+
+       button('answer:'+view.id+':completed',
+        isEveningCardCompleting(view.id)?'♡ Réponse en cours':'✓ Défi réalisé',
+        'class="evening-primary" '+(isEveningCardCompleting(view.id)?
+        'disabled aria-disabled="true" aria-busy="true"':'')):'')+
      (['proposed','accepted'].includes(view.status)&&state.redrawReady?
       '<div class="lr-redraw-actions" aria-label="Autres choix pour ce défi">'+
        button('evening-pass:'+view.id,'Passer ce défi','class="subtle" '+(isActiveEveningRedrawPending()||isEveningCardCompleting(view.id)||state.monthlyPassQuota?.can_pass===false?'disabled':''))+
@@ -4666,7 +4668,10 @@ async function handle(action,element){
   state.legacyAnswerContext=answerContext;
   const ownsAnswer=()=>isSameEveningResponseContext(state,answerContext)&&
    state.legacyAnswerContext===answerContext;
+  let responsePainted=false;
   try{
+  // Surface the busy state BEFORE the server call, not only on completion.
+  render();
   if(parts[1]==='passed'&&state.monthlyPassQuota?.can_pass===false)throw Error('Limite mensuelle de passes atteinte.');
   if(parts[1]==='passed'&&state.monthlyPassQuota==null){
    const quota=await rpc('my_love_monthly_pass_quota',{p_couple:state.coupleId});
@@ -4712,16 +4717,28 @@ async function handle(action,element){
   if(!ownsAnswer())return;
   // The unscoped refreshAndShow() could overwrite a newly signed-in user's
   // state while its requests were in flight. Refresh under this operation.
-  await refreshShared(answerContext);
+  const confirmed=await refreshShared(answerContext);
+  if(confirmed!==true){
+   if(ownsAnswer())notify('Réponse envoyée, mais la mise à jour n’est pas confirmée. Actualise tes défis.');
+   return;
+  }
   if(state.legacyAnswerContext!==answerContext||
      state.user?.id!==answerContext.userId||state.tab!==answerContext.tab||
      !(state.session?.id===eveningId||
        (state.session===null&&state.sessions?.some(s=>
         s.id===eveningId&&s.finished_at))))return;
-  render();return;
+  responsePainted=true;render();return;
   }finally{
    // An older promise cannot release the lock held by a newer request.
-   if(state.legacyAnswerContext===answerContext)state.legacyAnswerContext=null;
+   if(state.legacyAnswerContext===answerContext){
+    state.legacyAnswerContext=null;
+    // On failure (or an unconfirmed refresh), restore controls immediately.
+    // A different account, tab or session must not be repainted here.
+    if(!responsePainted&&state.user?.id===answerContext.userId&&
+       state.coupleId===answerContext.coupleId&&
+       state.session?.id===answerContext.sessionId&&state.tab===answerContext.tab)
+     render();
+   }
   }
  }
  if(verb==='finish-session'){
