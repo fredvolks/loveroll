@@ -111,6 +111,20 @@ export function isPersistedEveningRedrawReceipt(outcome,rows,userId,sessionId){
 }
 
 /**
+ * A confirmed replacement may have already been passed/refused on another
+ * device while the first device refreshed the list. Focus only a currently
+ * visible D6 card; never navigate to a historical row or a foreign account.
+ * Caller must first check isPersistedEveningRedrawReceipt.
+ */
+export function activeEveningRedrawReplacementId(rows,outcome,userId,sessionId){
+ if(!Array.isArray(rows)||!outcome?.replacement_id)return null;
+ const replacement=ownEveningChallenges(rows,userId,sessionId)
+  .find(card=>card.id===outcome.replacement_id);
+ return replacement&&['proposed','accepted','completed'].includes(replacement.status)
+  ?replacement.id:null;
+}
+
+/**
  * Async redraws may resolve after the user changes account, evening or tab.
  * Only the exact initiating view may receive navigation and confirmation.
  * This check is intentionally separate from the server receipt validation.
