@@ -31,7 +31,11 @@ test('LR-026: history and candidates are restricted to this couple/session/categ
  assert.match(sql,/active\.couple_id=p_couple/);
  assert.match(sql,/active\.category=p_category AND active\.card_id=p_card_id/);
  assert.match(sql,/base\.category=p_category AND base\.card_id=p_card_id/);
- assert.match(sql,/AND seen\.category=p_category\s+AND \(\s+seen\.card_id=p_card_id/);
+ assert.match(sql,/AND seen\.category=p_category AND seen\.card_id=p_card_id/);
+ assert.match(sql,/WHEN EXISTS \(\s+SELECT 1 FROM public\.couple_challenges seen\s+CROSS JOIN candidate current_card/);
+ assert.ok(sql.indexOf('AND seen.category=p_category AND seen.card_id=p_card_id') <
+            sql.indexOf('AND couple_private.love_variety_near('),
+            'Exact previously drawn cards must skip semantic comparisons');
  assert.match(sql,/p_session,s\.couple_id,v_cat,card/);
  assert.match(sql,/v_old\.session_id,v_couple,v_old\.category,candidate\.card/);
 });
@@ -49,7 +53,7 @@ test('LR-026: helper functions are private with no new client permissions',()=>{
 test('LR-026: exact titles plus meaningful content similarity and non-blocking fallback',()=>{
  assert.match(sql,/a_title=b_title/);
  assert.match(sql,/shared>=5 AND shared\*100 >= 68\*/);
- assert.match(sql,/THEN 1 ELSE 0 END/);
+ assert.match(sql,/THEN 1[\s\S]*?ELSE 0 END/);
  assert.match(sql,/ASC, random\(\) LIMIT 1;/);
  assert.match(sql,/NE PAS appliquer en production/);
 });
@@ -77,4 +81,16 @@ test('LR-026: each PL/pgSQL DO block closes with END; before its dollar delimite
    'Invalid END without semicolon on '+tag);
  }
  assert.ok(smoke.includes('END; $lr026_test$;'));
+});
+
+test('LR-026: exact history short-circuits semantic comparisons before text matching',()=>{
+ const rank=sql.slice(
+   sql.indexOf('CREATE OR REPLACE FUNCTION couple_private.love_variety_rank('),
+   sql.indexOf('REVOKE ALL ON FUNCTION couple_private.love_variety_normalize('));
+ assert.match(rank,/SELECT CASE\s+WHEN EXISTS \(/);
+ assert.match(rank,/AND seen\.category=p_category AND seen\.card_id=p_card_id/);
+ assert.match(rank,/WHEN EXISTS \([\s\S]*?couple_private\.love_variety_near\(/);
+ assert.ok(rank.indexOf('AND seen.category=p_category AND seen.card_id=p_card_id') <
+            rank.indexOf('couple_private.love_variety_near('));
+ assert.match(rank,/ELSE 0 END;/);
 });
