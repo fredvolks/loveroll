@@ -17,7 +17,7 @@ import {ROLL_TOTAL_MS} from './dice-roll-motion.mjs';
 import {createCoupleLiveSync} from './couple-live-sync.mjs?v=20261017-advent119';
 import {playableSessionForWeekly} from './couple-reset-view.mjs';
 import {eveningDailyAccess} from './evening-daily-policy.mjs?v=20261016-daily100';
-import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,isSameEveningResponseContext,redrawTimerRecovery} from './evening-private-queue.mjs';
+import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,isSameEveningResponseContext,redrawTimerRecovery} from './evening-private-queue.mjs';
 import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261029-web259';
 import {saveEveningSelection,restoreEveningSelection,clearEveningSelection} from './evening-resume.mjs?v=20261027-web240';
 import {eclatHtml} from './eclat-ui.mjs?v=20261027-web242';
@@ -2964,10 +2964,8 @@ async function handle(action,element){
    if(persistedReceiptValid){
     // A simultaneous second-device response can already have consumed the
     // replacement. Only focus it if it remains in the visible D6 queue.
-    const selected=state.challenges.find(card=>
-     card.id===outcome.replacement_id&&
-     !['passed','refused'].includes(card.status));
-    state.selectedEveningChallengeId=selected?.id||null;
+    state.selectedEveningChallengeId=activeEveningRedrawReplacementId(
+     state.challenges,outcome,state.user.id,state.session.id);
     state.showEveningChallenges=true;
    }
    if(persistedReceiptValid&&challengeTimer.id===challengeId){
