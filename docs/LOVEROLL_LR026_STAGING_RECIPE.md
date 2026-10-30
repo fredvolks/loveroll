@@ -47,6 +47,14 @@
 
 **Important** : le script ne provisionne pas de comptes, ne restaure pas de soirée et ne répète pas automatiquement les mutations en cas d'échec. Il conserve les résultats de test sur le seul staging. S'il échoue en cours de route, inspecter la base puis utiliser une autre soirée fictive.
 
+## Parité des textes français et isolation de catégorie — correctif JavaScript (30 octobre 2026)
+
+La politique auxiliaire `couple-web/evening-variety.mjs` conserve le filtre des candidats **uniquement après sélection officielle de la catégorie D100**. Un écart vérifié entre JavaScript et `couple_private.love_variety_normalize` est maintenant corrigé : la normalisation Unicode `NFKD` n'expanse pas `œ` / `æ`, tandis que la fonction SQL les transforme déjà en `oe` / `ae`. Les titres « cœur/coeur » et « encyclopædie/encyclopaedie » sont désormais reconnus comme équivalents, y compris en majuscules; cela ne modifie aucune carte source ni les catégories.
+
+Le filtrage du catalogue client ignore maintenant les entrées historiques dont la catégorie est **absente ou différente** de la catégorie sélectionnée. Cette distinction est importante : une comparaison directe sans catégorie peut être tolérée pour un diagnostic, mais le moteur serveur ne compare que `seen.category = p_category`. Un historique incomplet ne doit donc pas rétrécir silencieusement le lot admissible du D100. Les tests `couple-web/evening-variety.test.mjs` couvrent ligatures, ordre stable, historique partiel, catégories opposées et suppression seulement lorsque l'historique possède la catégorie correcte.
+
+Ces modifications concernent l'**utilitaire consultatif** et ses tests dans la PR non fusionnée; elles ne remplacent pas le choix de catégorie, les autorisations RLS, la requête d'admissibilité ni le tirage officiel sur le serveur. L'absence de déploiement et la nécessité de la recette en staging restent inchangées.
+
 ## Prérequis
 
 1. Préparer un **projet Supabase distinct** de LoveRoll production, avec schéma, fonctions SQL et politiques RLS installés sur le staging sans contenu de vrais joueurs. Vérifier le prévol LR-026 et appliquer la migration uniquement sur cette base isolée.
