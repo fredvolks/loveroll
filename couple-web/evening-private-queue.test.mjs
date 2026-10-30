@@ -361,6 +361,54 @@ test('LR-026: redraw success requires original decision and replacement in recip
   'SQL idempotency receipt may omit availability only on replay');
 });
 
+test('LR-026: a response cannot rewrite the original D100 card shown at tap time',()=>{
+ const seen={id:'original',recipient:'fred',session_id:'s1',couple_id:'pair',
+  offered_by:'partner',category:'SENSUEL',face:17,card_id:8,
+  card_title:'Un défi sensible',card_description:'Un moment partagé',
+  card_timer_minutes:null,is_gifted:true,
+  created_at:'2026-10-30T12:00:00Z',replaces_challenge_id:null,
+  status:'accepted',passed_at:null,refused_at:null};
+ const stored={...seen,status:'passed',passed_at:'2026-10-30T12:05:00Z'};
+ const replacement={...seen,id:'next',face:21,card_id:9,
+  card_title:'Une autre idée',card_description:'Un autre moment',
+  created_at:'2026-10-30T12:05:00Z',
+  status:'proposed',passed_at:null,refused_at:null,
+  replaces_challenge_id:'original'};
+ const receipt={original_id:'original',replacement_id:'next',action:'pass',
+  excluded:false,already_processed:false,replacement_unavailable:false};
+ const check=(a=stored,b=replacement,before=seen,reply=receipt)=>
+  isPersistedEveningRedrawReceipt(reply,[a,b],'fred','s1',before);
+ assert.equal(check(),true,'a legitimate Passer preserves the initial D100 identity');
+ assert.equal(check(stored,replacement,seen,{...receipt,already_processed:true}),true,
+  'a second-device replay must not invalidate an unchanged original');
+ assert.equal(check(stored,replacement,{...seen,status:'proposed'}),true,
+  'both original pre-action statuses are legal');
+ const refused={...stored,status:'refused',passed_at:null,
+  refused_at:'2026-10-30T12:05:00Z'};
+ assert.equal(check(refused,replacement,seen,{...receipt,action:'refuse'}),true,
+  'Refuser must retain the same original identity');
+ for(const key of ['id','session_id','couple_id','offered_by','recipient',
+  'category','face','card_id','card_title','card_description',
+  'card_timer_minutes','is_gifted','created_at','replaces_challenge_id']){
+  const altered={...stored,[key]:key==='face'?18:
+   key==='card_id'?10:key==='card_timer_minutes'?5:
+   key==='is_gifted'?false:key==='replaces_challenge_id'?'other':
+   key==='created_at'?'2026-10-30T12:04:00Z':
+   key==='id'?'another-id':'changed'};
+  assert.equal(check(altered),false,
+   'server unexpectedly modified the original field '+key);
+  assert.equal(check(stored,replacement,{...seen,[key]:undefined}),false,
+   'missing or changed pre-action field must not be silently accepted: '+key);
+ }
+ assert.equal(check(stored,replacement,{}),false);
+ assert.equal(check(stored,replacement,undefined),true,
+  'the optional snapshot supports earlier independent receipt tests');
+ const appBranch=app.slice(app.indexOf("if(verb==='evening-pass'||verb==='evening-refuse-choice')"),
+  app.indexOf("if(verb==='evening-start')"));
+ assert.match(appBranch,/isPersistedEveningRedrawReceipt\(outcome,state\.challenges,state\.user\.id,state\.session\.id,item\)/,
+  'the real UI must pass the originally visible card to the persisted check');
+});
+
 test('LR-026: late second-device redraw never focuses consumed or foreign replacement',()=>{
  const receipt={original_id:'original',replacement_id:'new-card',
   action:'refuse',excluded:false,already_processed:false,
