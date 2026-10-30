@@ -304,29 +304,43 @@ export async function runStage(env, mode, transport = fetch) {
   // persisted state and provision a NEW fixture, not blindly replay.
   const drawn = await client.rpc('draw_for_partner',
     {p_session: config.sessionId, p_preference: 'SENSUEL', p_random: false}, a.token);
-  assert(typeof drawn?.id === 'string' && eq(drawn.recipient, b.id) &&
-    eq(drawn.offered_by, a.id), 'Real D100 did not return a card offered by A to B');
+  assert(UUID.test(drawn?.id || '') && eq(drawn.recipient, b.id) &&
+    eq(drawn.offered_by, a.id), 'Real D100 did not return a valid card offered by A to B');
   assert(['SENSUEL', 'SEXUEL'].includes(drawn.category),
     'Real D100 returned an unknown category');
   const response = await client.rpc('love_respond_and_redraw',
     {p_challenge: drawn.id, p_action: 'pass', p_exclude: false}, b.token);
   assert(eq(response?.original_id, drawn.id) &&
     response.action === 'pass' && response.already_processed === false &&
-    UUID.test(response.replacement_id || ''), 'Partner B Passer must create one replacement');
+    UUID.test(response.replacement_id || '') &&
+    !eq(response.replacement_id, drawn.id),
+    'Partner B Passer must create one new and distinct replacement');
   const replay = await client.rpc('love_respond_and_redraw',
     {p_challenge: drawn.id, p_action: 'pass', p_exclude: false}, b.token);
   assert(replay.already_processed === true &&
     eq(replay.replacement_id, response.replacement_id) &&
     eq(replay.original_id, drawn.id),
     'Repeated Passer must return the exact persisted replacement');
-  const stored = await client.rows('couple_challenges',
-    'select=id,recipient,category,replaces_challenge_id,status&session_id=eq.' +
-      config.sessionId, b.token);
-  assert(stored.length === 2 && stored.filter(c => eq(c.id, drawn.id) && c.status === 'passed').length === 1,
-    'Only one original passed challenge may exist');
+  // The real recipient-only RLS hides A's cards from B and vice versa.
+  // Check BOTH authenticated recipients after the RPCs; a stray card for A
+  // would otherwise remain invisible to the B-only verification.
+  const challengeQuery =
+    'select=id,session_id,offered_by,recipient,category,replaces_challenge_id,status' +
+    '&session_id=eq.' + config.sessionId;
+  const stored = await client.rows('couple_challenges', challengeQuery, b.token);
+  const forA = await client.rows('couple_challenges', challengeQuery, a.token);
+  assert(forA.length === 0,
+    'Unexpected challenge addressed to A after a partner B draw and Passer');
+  assert(stored.length === 2 &&
+    stored.every(c => eq(c.session_id, config.sessionId) &&
+      eq(c.recipient, b.id) && c.category === drawn.category),
+    'Only the two correct-category B challenges may exist');
+  assert(stored.filter(c =>
+    eq(c.id, drawn.id) && c.status === 'passed' &&
+    eq(c.offered_by, a.id)).length === 1,
+    'Only one original passed challenge offered by A may exist');
   assert(stored.filter(c => eq(c.id, response.replacement_id) &&
-    eq(c.replaces_challenge_id, drawn.id) && c.status === 'proposed' &&
-    eq(c.recipient, b.id) && c.category === drawn.category).length === 1,
+    eq(c.replaces_challenge_id, drawn.id) && c.status === 'proposed').length === 1,
     'Exactly one same-category replacement must exist for recipient B');
   return {...result, draw_id: drawn.id, replacement_id: response.replacement_id,
     replacement_same_category: true, pass_replay_idempotent: true, persisted_challenges: 2};
