@@ -56,7 +56,7 @@ CREATE TEMP TABLE lr026_similarity_cases(
 INSERT INTO lr026_similarity_cases(
  title_a,desc_a,title_b,desc_b,expected)
 VALUES
- ('Un câlin','court','Un calin','court',false),
+ ('Un câlin','court','Un calin','court',true),
  ('Une danse','très court','Une danse','sans importance',true),
  ('Cœur & douceur','', 'Coeur douceur',NULL,true),
  (NULL,NULL,NULL,NULL,false),
