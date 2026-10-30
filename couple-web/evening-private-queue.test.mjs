@@ -201,6 +201,28 @@ test('LR-026: app checks original ID before selecting and confirming a new D100 
  assert.doesNotMatch(app,/state\.selectedEveningChallengeId=outcome\?\.replacement_id\|\|null/);
 });
 
+test('LR-026: official SQL and UI agree on unique face, card and carried gift',()=>{
+ const sql=readFileSync(new URL('./lr026-real-rpc-snapshot.sql',import.meta.url),'utf8');
+ const start=sql.indexOf('-- love_respond_and_redraw');
+ assert.ok(start>=0);
+ const redraw=sql.slice(start);
+ assert.match(redraw,/seen\.session_id=v_old\.session_id AND seen\.recipient=v_old\.recipient/);
+ assert.match(redraw,/seen\.category=v_old\.category AND seen\.card_id=candidate\.card/);
+ assert.match(redraw,/used\.session_id=v_old\.session_id AND used\.recipient=v_old\.recipient/);
+ assert.match(redraw,/used\.category=v_old\.category AND used\.face=possible\.face/);
+ assert.match(redraw,/coalesce\(v_old\.is_gifted,false\),p_challenge/);
+ const client=readFileSync(new URL('./evening-private-queue.mjs',import.meta.url),'utf8');
+ const check=client.slice(client.indexOf('export function isPersistedEveningRedrawReceipt('),
+  client.indexOf('export function activeEveningRedrawReplacementId('));
+ for(const pattern of [
+  /replacement\.face!==original\.face/,
+  /replacement\.card_id!==original\.card_id/,
+  /card\.category===replacement\.category/,
+  /card\.face===replacement\.face\|\|card\.card_id===replacement\.card_id/,
+  /replacement\.is_gifted===Boolean\(original\.is_gifted\)/
+ ]) assert.match(check,pattern,'UI persisted receipt must enforce the original SQL rule');
+});
+
 test('LR-026: redraw success requires original decision and replacement in recipient RLS view',()=>{
  const original={id:'clicked-card',recipient:'fred',session_id:'s1',
   couple_id:'duo-1',offered_by:'partner',status:'passed',
