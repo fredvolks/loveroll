@@ -1504,8 +1504,12 @@ async function retryExpiredTimedEvening(){
  const context={userId,sessionId,coupleId:state.coupleId,tab:state.tab,challengeId:id};
  timerCompletionInFlight=id;state.timerCompletionContext=context;
  try{
-  const result=await completeTimedEveningChallenge({challenge:item,userId,sessionId,rpc,query});
-  if(result.outcome==='ineligible')return;
+  const result=await completeTimedEveningChallenge({
+   challenge:item,userId,sessionId,rpc,query,
+   ownsRequest:()=>state.timerCompletionContext===context&&
+    ownsTimerCompletionSession(context)
+  });
+  if(result.outcome==='ineligible'||result.outcome==='superseded')return;
   timerCompletionRetryAt=0;
   if(ownsTimerCompletionSession(context)&&
      ownsVisibleEveningTimer(id,userId,sessionId)){
@@ -1556,8 +1560,12 @@ async function reconcileSavedEveningTimers(){
    notified:true,autoCompletePending:true};
   writeSavedChallengeTimer(key,expired);
   try{
-   const result=await completeTimedEveningChallenge({challenge:item,userId,sessionId,rpc,query});
-   if(result.outcome==='ineligible')return;
+   const result=await completeTimedEveningChallenge({
+    challenge:item,userId,sessionId,rpc,query,
+    ownsRequest:()=>state.timerCompletionContext===context&&
+     ownsTimerCompletionSession(context)
+   });
+   if(result.outcome==='ineligible'||result.outcome==='superseded')return;
    writeSavedChallengeTimer(key,{...expired,autoCompletePending:false});
    if(ownsTimerCompletionSession(context)&&
       ownsVisibleEveningTimer(item.id,userId,sessionId)){
