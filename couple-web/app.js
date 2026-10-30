@@ -2942,25 +2942,42 @@ async function handle(action,element){
   try{
    const outcome=await rpc('love_respond_and_redraw',{
     p_challenge:challengeId,p_action:refuse?'refuse':'pass',p_exclude:exclude});
-   // Clear only the timer for the responded challenge. A late callback from
-   // this local device must not mark a passed/refused card as completed.
-   if(challengeTimer.id===challengeId){
+   const receiptValid=isValidEveningRedrawReceipt(outcome,challengeId);
+   const sameContext=isSameEveningResponseContext(state,responseContext);
+   // A malformed result is not proof that this card has been answered.
+   // Do not discard an active timer until a valid receipt or refreshed
+   // server state confirms the challenge actually ended.
+   if(receiptValid&&sameContext&&challengeTimer.id===challengeId){
     challengeTimer.running=false;challengeTimer.deadline=0;challengeTimer.remainingMs=0;
     challengeTimer.notified=true;challengeTimer.autoCompletePending=false;
     challengeTimer.decisionPending=false;saveChallengeTimer();
    }
-   // A device can switch soirées while the RPC is in flight. Apply its
-   // navigation only if the same evening remains active; otherwise do not
-   // clear a new soirée's refusal dialog or select an unrelated challenge.
-   const receiptValid=isValidEveningRedrawReceipt(outcome,challengeId);
-   if(isSameEveningResponseContext(state,responseContext)){
+   // Keep modal selection strictly bound to the initiating evening/account.
+   if(sameContext){
     state.eveningRefusalId=null;
     state.selectedEveningChallengeId=receiptValid?outcome.replacement_id:null;
     state.showEveningChallenges=true;
    }
    await refreshAndShow();
-   // A simultaneous device can win with a DIFFERENT action. The RPC's
-   // committed action/excluded flag is authoritative on every replay.
+   // On an ambiguous receipt, use the real persisted status before freeing
+   // the timer's decision lock. A still-accepted challenge resumes its clock.
+   if(!receiptValid&&isSameEveningResponseContext(state,responseContext)&&
+      challengeTimer.id===challengeId&&challengeTimer.decisionPending){
+    const stored=ownEveningChallenges(state.challenges,state.user.id,state.session.id)
+     .find(card=>card.id===challengeId);
+    if(['passed','refused','completed'].includes(stored?.status)){
+     challengeTimer.running=false;challengeTimer.deadline=0;challengeTimer.remainingMs=0;
+     challengeTimer.notified=true;challengeTimer.autoCompletePending=false;
+    }else if(stored?.status==='accepted'&&challengeTimer.deadline>0&&
+      challengeTimer.deadline<=Date.now()){
+     challengeTimer.running=false;challengeTimer.remainingMs=0;
+     challengeTimer.autoCompletePending=true;
+    }
+    challengeTimer.decisionPending=false;saveChallengeTimer();
+    if(challengeTimer.autoCompletePending)void retryExpiredTimedEvening();
+   }
+   // The persisted action is authoritative even if the other device sent
+   // a different Passer/Refuser intent.
    if(isSameEveningResponseContext(state,responseContext))
     redrawFeedback=eveningRedrawFeedback(outcome,challengeId);
   }catch(error){
@@ -2973,6 +2990,11 @@ async function handle(action,element){
    }
    throw error;
   }finally{
+   // A previous account's pending lock must not be persisted under the
+   // new account when an in-flight response arrives after switching.
+   if(challengeTimer.id===challengeId&&challengeTimer.decisionPending&&
+      !isSameEveningResponseContext(state,responseContext))
+    challengeTimer.decisionPending=false;
    state.redrawBusy=false;
    // Re-render after both success and failure; a rejected RPC must never
    // leave its on-screen buttons permanently disabled.
