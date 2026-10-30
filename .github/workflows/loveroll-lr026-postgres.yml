@@ -25,6 +25,9 @@ on:
       - "couple-web/lr026-real-rpc-response-race.seed.sql"
       - "couple-web/lr026-real-rpc-concurrent.test.sh"
       - "couple-web/lr026-real-rpc.test.sh"
+      - "couple-web/lr026-staging-recipe.mjs"
+      - "couple-web/lr026-staging-verify.mjs"
+      - "couple-web/lr026-staging-recipe.test.mjs"
       - "couple-web/lr026-evening-flow.test.sql"
       - "couple-web/lr026-extract-helpers.cjs"
       - "couple-web/lr026-postgres-rpc-fixture.sql"
@@ -76,6 +79,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
+      - name: Verify staging-only A/B Auth and RPC guards without any Supabase credentials
+        run: |
+          node --check couple-web/lr026-staging-recipe.mjs
+          node --check couple-web/lr026-staging-verify.mjs
+          node --test couple-web/lr026-staging-recipe.test.mjs
       - name: Check LR-026 SQL patch contracts with Node tests
         run: node --test couple-web/lr026-server-variety.test.mjs
       - name: Verify migration helper extraction syntax
