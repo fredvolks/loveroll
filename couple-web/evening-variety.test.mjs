@@ -113,3 +113,33 @@ test('LR-026: malformed eligible items never become drawable cards',()=>{
   eligibleCards:[null],recentInSession:[]
  }),TypeError);
 });
+
+test('LR-026: legacy RPC fields and canonical library face identify the same card',()=>{
+ const fromDraw={
+  category:'SENSUEL',face:7,card_title:'Un moment en douceur',
+  card_description:'Propose un massage et une détente.'
+ };
+ const saved={category:'SENSUEL',card_id:7,title:'Titre édité',
+  description:'Consigne remplacée'};
+ assert.equal(areNearDuplicateEveningCards(fromDraw,saved),true);
+ const descriptive={category:'SENSUEL',card_title:'La danse lente',
+  card_description:'Proposez une danse lente ensemble'};
+ const alternate={category:'SENSUEL',title:'La danse lente',
+  instructions:'Un autre texte'};
+ assert.equal(areNearDuplicateEveningCards(descriptive,alternate),true);
+});
+
+test('LR-026: a pool missing the official category must never enter the draw',()=>{
+ assert.throws(()=>filterSimilarEveningCandidates({
+  eligibleCards:[{card_id:1,title:'Sans catégorie'}],recentInSession:[]
+ }),/one official D100 category/);
+ assert.throws(()=>filterSimilarEveningCandidates({
+  eligibleCards:[card(1,'Présent','Une activité'),{card_id:2}],recentInSession:[]
+ }),/one official D100 category/);
+ assert.throws(()=>filterSimilarEveningCandidates({
+  eligibleCards:[[]],recentInSession:[]
+ }),TypeError);
+ assert.throws(()=>filterSimilarEveningCandidates({
+  eligibleCards:['invalid'],recentInSession:[]
+ }),TypeError);
+});
