@@ -230,8 +230,10 @@ function mockSupabase(opts = {}) {
         card_description: beforePass && opts.firstWrongStoredDescription ?
           'Incorrect description' : 'First description',
         card_timer_minutes: beforePass && opts.firstWrongStoredTimer ? 6 :
-          !beforePass && opts.firstPassMutatesOriginalTimer ? 5 : 3,
-        is_gifted: Boolean(beforePass && opts.firstWrongStoredGift),
+          !beforePass && opts.firstPassMutatesOriginalTimer ? 5 :
+          opts.nullTimer ? null : 3,
+        is_gifted: beforePass && opts.firstWrongStoredGift ?
+          !Boolean(opts.giftedTurn) : Boolean(opts.giftedTurn),
         replaces_challenge_id: beforePass && opts.firstReplacesCard ? replacedId : null
       };
       if (beforePass) {
@@ -266,8 +268,10 @@ function mockSupabase(opts = {}) {
           '' : 'Replacement card',
         card_description: passCount > 1 && opts.replayMutatesReplacementDescription ?
           'Changed description' : 'Replacement description',
-        card_timer_minutes: passCount === 1 && opts.firstPassInvalidReplacementTimer ? -5 : 4,
-        is_gifted: Boolean(passCount === 1 && opts.firstPassWrongReplacementGift),
+        card_timer_minutes: passCount === 1 && opts.firstPassInvalidReplacementTimer ?
+          -5 : opts.nullTimer ? null : 4,
+        is_gifted: passCount === 1 && opts.firstPassWrongReplacementGift ?
+          !Boolean(opts.giftedTurn) : Boolean(opts.giftedTurn),
         category: (passCount === 1 && opts.firstPassWrongCategory) ||
           (passCount > 1 && opts.replayMutatesReplacementCategory) ?
             otherCategory : category,
@@ -291,7 +295,8 @@ function mockSupabase(opts = {}) {
         offered_by: giverId, recipient: recipientId, face: 14, card_id: 3,
         card_title: opts.drawEmptyTitle ? '' : 'First card',
         card_description: 'First description',
-        card_timer_minutes: 3, is_gifted: false,
+        card_timer_minutes: opts.nullTimer ? null : 3,
+        is_gifted: Boolean(opts.giftedTurn),
         created_at: opts.drawInvalidCreatedAt ? 'broken-date' : '2026-10-30T12:00:00Z',
         category: opts.drawUnknownCategory ? 'INVALID' :
           opts.drawSexuel ? 'SEXUEL' : 'SENSUEL'};
@@ -1180,6 +1185,27 @@ test('idempotent replay cannot silently recreate replacement challenge', async (
   assert.equal(mock.counters().drawCount, 1);
   assert.equal(mock.counters().passCount, 2);
 });
+for (const [drawer, action, gifted, nullTimer] of [
+  ['A', 'pass', true, false],
+  ['B', 'refuse', true, true],
+  ['B', 'pass', false, true]
+]) {
+  test('legitimate gifting and nullable card timer survive response and replay: ' +
+    JSON.stringify({drawer,action,gifted,nullTimer}),async()=>{
+    const mock=mockSupabase({
+      drawerB:drawer==='B', expectedAction:action,
+      giftedTurn:gifted, nullTimer
+    });
+    const result=await runStage({...env(),
+      LR026_STAGING_DRAWER:drawer,
+      LR026_STAGING_ACTION:action},'play',mock.fetchFn);
+    assert.equal(result.pass_replay_idempotent,true);
+    assert.equal(mock.counters().drawCount,1);
+    assert.equal(mock.counters().passCount,2);
+    const calls=mock.calls.filter(c=>c.path==='/rest/v1/couple_challenges');
+    assert(calls.length>=8);
+  });
+}
 test('D100 RPC must provide a valid created_at before returning a challenge', async () => {
   const mock = mockSupabase({drawInvalidCreatedAt: true});
   await assert.rejects(runStage(env(), 'play', mock.fetchFn),
