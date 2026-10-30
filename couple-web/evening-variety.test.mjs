@@ -1,7 +1,25 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {areNearDuplicateEveningCards,filterSimilarEveningCandidates}
  from './evening-variety.mjs';
+test('LR-026: advisory JS source keeps official SQL stopwords and accent map',()=>{
+ const js=readFileSync(new URL('./evening-variety.mjs',import.meta.url),'utf8');
+ const sql=readFileSync(new URL('./lr026-server-variety.sql',import.meta.url),'utf8');
+ const tokens=section=>[...section.matchAll(/'([a-z]+)'/g)].map(m=>m[1]).sort();
+ const fromSql=sql.match(/t\.word NOT IN \(\s*([\s\S]*?)\s*\)/);
+ const fromJs=js.match(/const SQL_STOPWORDS=new Set\(\[\s*([\s\S]*?)\s*\]\)/);
+ assert.ok(fromSql&&fromJs,'both implementations must declare their stopword set');
+ assert.deepEqual(tokens(fromJs[1]),tokens(fromSql[1]),
+  'JS and SQL meaningful description words must use identical exclusions');
+ const sqlMap=sql.match(/'([àáâäãåçèéêëìíîïñòóôöõùúûüýÿ]+)',\s*'([a-z]+)'/);
+ const jsMap=js.match(/const SQL_DIACRITICS='([^']+)';\s*const SQL_ASCII='([^']+)'/);
+ assert.ok(sqlMap&&jsMap,'accent mappings must be declared in both sources');
+ assert.deepEqual(jsMap.slice(1),sqlMap.slice(1));
+ assert.match(sql,/RETURN shared>=5 AND shared\*100 >= 68\*\(/);
+ assert.match(js,/return shared>=5&&shared\*100>=68\*/);
+});
+
 const card=(id,title,description,extra={})=>({
  card_id:id,category:'SENSUEL',title,description,...extra
 });
