@@ -1007,6 +1007,125 @@ BEGIN
  'LR-026 REAL RPC: completed in previous cycle does not block Refuser(false) bag release';
 END; $lr026_real_previous_cycle_refusal$;
 
+-- Each player has their OWN cycle bag. Completion of card #1 for
+-- A cannot keep the same card locked in B's bag after B refuses it.
+-- Conversely A's completion stays protected while B's bag is released.
+DO $lr026_real_cross_recipient_refusal$
+DECLARE
+ pair uuid:='acacaaaa-aaaa-4aaa-8aaa-acacaaaacaca';
+ a uuid:='aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa';
+ b uuid:='bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb';
+ prior_session uuid:='acacaaaa-1111-4111-8111-acacaaaacaca';
+ current_session uuid:='acacaaaa-2222-4222-8222-acacaaaacaca';
+ completed uuid:='acacaaaa-3333-4333-8333-acacaaaacaca';
+ drawn public.couple_challenges%rowtype;
+ replacement public.couple_challenges%rowtype;
+ response jsonb;
+BEGIN
+ INSERT INTO public.couples(
+  id,owner_user_id,category_preference_percent,monthly_pass_limit,
+  no_repeat_challenges,challenge_cycle_started_at,sexual_card_mode
+ ) VALUES(pair,a,100,0,false,now()-interval '10 days','custom');
+ INSERT INTO public.couple_members(couple_id,user_id)
+ VALUES(pair,a),(pair,b);
+ INSERT INTO public.couple_sessions(
+  id,couple_id,opened_by,started_at,finished_at,paired_turns,self_draws
+ ) VALUES
+ (prior_session,pair,a,now()-interval '2 days',
+  now()-interval '1 day',false,false),
+ (current_session,pair,a,now(),NULL,false,false);
+ INSERT INTO public.couple_personal_rolls(session_id,user_id,face)
+ VALUES(current_session,a,2),(current_session,b,2);
+ -- The historical completion belongs to A, whereas the current D100
+ -- recipient is B: both players retain distinct draw-history rows.
+ INSERT INTO public.couple_challenges(
+  id,session_id,couple_id,offered_by,recipient,category,face,card_id,
+  card_title,card_description,status
+ ) VALUES(
+  completed,prior_session,pair,b,a,'SENSUEL',17,1,
+  'Baisers au clair de lune','Un moment tendre et plein de douceur','completed'
+ );
+ INSERT INTO public.love_card_draw_history(
+  couple_id,recipient_user_id,category,card_id
+ ) VALUES(pair,a,'SENSUEL',1),(pair,b,'SENSUEL',1);
+ INSERT INTO public.love_cycle_excluded_cards(
+  couple_id,cycle_number,category,card_id
+ )
+ SELECT pair,1,cat.category,g
+ FROM (VALUES('SENSUEL'::text),('SEXUEL'::text)) cat(category)
+ CROSS JOIN pg_catalog.generate_series(1,25) g
+ WHERE cat.category='SEXUEL' OR g>1;
+ PERFORM pg_catalog.set_config('lr026.test_verified','yes',true);
+ PERFORM pg_catalog.set_config('request.jwt.claim.sub',a::text,true);
+ SELECT * INTO drawn FROM public.draw_for_partner(
+  current_session,'SENSUEL',false);
+ IF drawn.card_id IS DISTINCT FROM 1
+   OR drawn.recipient IS DISTINCT FROM b
+   OR drawn.offered_by IS DISTINCT FROM a THEN
+  RAISE EXCEPTION 'REAL RPC CROSS RECIPIENT: expected B to receive card 1 %',drawn;
+ END IF;
+ -- Turn normal anti-repeat back on before the recipient refuses.
+ UPDATE public.couples SET no_repeat_challenges=true WHERE id=pair;
+ DELETE FROM public.love_cycle_excluded_cards
+ WHERE couple_id=pair AND category='SENSUEL' AND card_id IN (2,3);
+ PERFORM pg_catalog.set_config('request.jwt.claim.sub',b::text,true);
+ SELECT public.love_respond_and_redraw(drawn.id,'refuse',false) INTO response;
+ IF response->>'action'<>'refuse'
+   OR response->>'excluded'<>'false'
+   OR response->>'already_processed'<>'false'
+   OR response->>'replacement_id' IS NULL THEN
+  RAISE EXCEPTION 'REAL RPC CROSS RECIPIENT: refusal response invalid %',response;
+ END IF;
+ SELECT * INTO replacement FROM public.couple_challenges
+ WHERE id=(response->>'replacement_id')::uuid;
+ IF NOT FOUND OR replacement.card_id NOT IN (2,3)
+   OR replacement.category IS DISTINCT FROM 'SENSUEL'
+   OR replacement.recipient IS DISTINCT FROM b
+   OR replacement.offered_by IS DISTINCT FROM a
+   OR replacement.replaces_challenge_id IS DISTINCT FROM drawn.id
+   OR replacement.face IS NOT DISTINCT FROM drawn.face THEN
+  RAISE EXCEPTION 'REAL RPC CROSS RECIPIENT: replacement incorrect %',replacement;
+ END IF;
+ IF NOT EXISTS(
+    SELECT 1 FROM public.love_card_draw_history h
+    WHERE h.couple_id=pair AND h.recipient_user_id=a
+     AND h.category='SENSUEL' AND h.card_id=1
+   )
+   OR EXISTS(
+    SELECT 1 FROM public.love_card_draw_history h
+    WHERE h.couple_id=pair AND h.recipient_user_id=b
+     AND h.category='SENSUEL' AND h.card_id=1
+   )
+   OR NOT EXISTS(
+    SELECT 1 FROM public.love_card_draw_history h
+    WHERE h.couple_id=pair AND h.recipient_user_id=b
+     AND h.category='SENSUEL' AND h.card_id=replacement.card_id
+   )
+   OR (SELECT status FROM public.couple_challenges WHERE id=completed)<>'completed'
+   OR (SELECT status FROM public.couple_challenges WHERE id=drawn.id)<>'refused'
+   OR (SELECT refused_at FROM public.couple_challenges WHERE id=drawn.id) IS NULL
+   OR EXISTS(
+    SELECT 1 FROM public.love_cycle_excluded_cards ex
+    WHERE ex.couple_id=pair AND ex.category='SENSUEL' AND ex.card_id=1
+   ) THEN
+  RAISE EXCEPTION 'REAL RPC CROSS RECIPIENT: one partner changed the other bag';
+ END IF;
+ SELECT public.love_respond_and_redraw(drawn.id,'refuse',true) INTO response;
+ IF response->>'already_processed'<>'true'
+   OR response->>'excluded'<>'false'
+   OR (response->>'replacement_id')::uuid IS DISTINCT FROM replacement.id
+   OR (SELECT count(*) FROM public.couple_challenges WHERE couple_id=pair)<>3
+   OR (SELECT count(*) FROM public.love_challenge_redraws WHERE couple_id=pair)<>1
+   OR (SELECT count(*) FROM public.love_card_draw_history
+       WHERE couple_id=pair AND recipient_user_id=a)<>1
+   OR (SELECT count(*) FROM public.love_card_draw_history
+       WHERE couple_id=pair AND recipient_user_id=b)<>1 THEN
+  RAISE EXCEPTION 'REAL RPC CROSS RECIPIENT: idempotency or independent bags changed %',response;
+ END IF;
+ RAISE NOTICE
+ 'LR-026 REAL RPC: same-cycle completion by A does not lock B on Refuser(false)';
+END; $lr026_real_cross_recipient_refusal$;
+
 -- SQL ACL protection is preserved in the isolated snapshot.
 DO $lr026_real_rights$
 BEGIN
