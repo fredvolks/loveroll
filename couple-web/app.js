@@ -1503,6 +1503,12 @@ async function refreshConfirmedTimedEvening(context){
  notify('♡ Défi accompli ♥');
  return true;
 }
+function keepExpiredTimerPending(context,cardId){
+ if(!ownsTimerCompletionSession(context)||
+    !ownsVisibleEveningTimer(cardId,context.userId,context.sessionId))return;
+ challengeTimer.autoCompletePending=true;
+ saveChallengeTimer();
+}
 async function retryExpiredTimedEvening(){
  if(!challengeTimer.autoCompletePending||challengeTimer.decisionPending||timerCompletionInFlight||
     Date.now()<timerCompletionRetryAt||!state.user||!state.session)return;
@@ -1527,10 +1533,16 @@ async function retryExpiredTimedEvening(){
      ownsVisibleEveningTimer(id,userId,sessionId)){
    challengeTimer.autoCompletePending=false;saveChallengeTimer();
   }
-  await refreshConfirmedTimedEvening(context);
- }catch(error){
-  if(state.user?.id===userId&&state.session?.id===sessionId)
+  const refreshed=await refreshConfirmedTimedEvening(context);
+  if(!refreshed&&ownsTimerCompletionSession(context)){
+   keepExpiredTimerPending(context,id);
    timerCompletionRetryAt=Date.now()+15000;
+  }
+ }catch(error){
+  if(ownsTimerCompletionSession(context)){
+   keepExpiredTimerPending(context,id);
+   timerCompletionRetryAt=Date.now()+15000;
+  }
   console.warn('Défi terminé : validation serveur en attente',error);
   if(ownsTimerCompletionRefresh(context)&&
      !document.hidden)notify('Le minuteur est terminé. Validation du défi en attente de connexion.');
@@ -1584,10 +1596,18 @@ async function reconcileSavedEveningTimers(){
     challengeTimer.running=false;challengeTimer.remainingMs=0;
     challengeTimer.autoCompletePending=false;saveChallengeTimer();
    }
-   await refreshConfirmedTimedEvening(context);
+   const refreshed=await refreshConfirmedTimedEvening(context);
+   if(!refreshed){
+    // The server committed, but the account's view did not confirm the
+    // refreshed card. Preserve the OLD private key even after a tab switch.
+    writeSavedChallengeTimer(key,expired);
+    keepExpiredTimerPending(context,item.id);
+    if(ownsTimerCompletionSession(context))savedTimerScanAfter=Date.now()+15000;
+   }
   }catch(error){
-   if(state.user?.id===userId&&state.session?.id===sessionId)
-    savedTimerScanAfter=Date.now()+15000;
+   writeSavedChallengeTimer(key,expired);
+   keepExpiredTimerPending(context,item.id);
+   if(ownsTimerCompletionSession(context))savedTimerScanAfter=Date.now()+15000;
    console.warn('Minuteur expiré : validation à reprendre après reconnexion',error);
    if(ownsTimerCompletionRefresh(context)&&
       !document.hidden)notify('Le minuteur est terminé. Validation du défi en attente de connexion.');
