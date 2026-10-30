@@ -241,6 +241,76 @@ BEGIN
  'LR-026 REAL RPC: normal D100, semantic priority, pass/redraw, A/B quota, idempotency, rollback and identity passed';
 END; $lr026_real_e2e$;
 
+-- Verify the ORIGINAL production RPC's custom-card assignment rules,
+-- including owner/partner, gender and hard user locks, in both directions.
+-- The only reachable card for owner A -> partner B must be #30.
+DO $lr026_real_roles$
+DECLARE
+ pair uuid:='cccccccc-aaaa-4aaa-8aaa-cccccccccccc';
+ a uuid:='aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa';
+ b uuid:='bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb';
+ s uuid:='bbbbbbbb-2222-4222-8222-bbbbbbbbbbbb';
+ drawn public.couple_challenges%rowtype;
+ blocked boolean:=false;
+ rejection text;
+BEGIN
+ PERFORM pg_catalog.set_config('lr026.test_verified','yes',true);
+ INSERT INTO public.couples(id,owner_user_id,category_preference_percent)
+ VALUES(pair,a,100);
+ INSERT INTO public.couple_members(couple_id,user_id)
+ VALUES(pair,a),(pair,b);
+ INSERT INTO public.couple_sessions(id,couple_id,opened_by)
+ VALUES(s,pair,a);
+ INSERT INTO public.couple_personal_rolls(session_id,user_id,face)
+ VALUES(s,a,2),(s,b,2);
+
+ INSERT INTO public.love_cycle_excluded_cards(
+  couple_id,cycle_number,category,card_id)
+ SELECT pair,1,category,g
+ FROM (VALUES ('SENSUEL'::text),('SEXUEL'::text)) cats(category)
+ CROSS JOIN pg_catalog.generate_series(1,25) g;
+ INSERT INTO public.love_custom_challenges(
+  couple_id,category,card_id,title,description,
+  drawer_role,recipient_role,recipient_user_id,drawer_user_id)
+ VALUES
+  (pair,'SENSUEL',26,'Owner only',
+   'Excluded by recipient owner rule','owner','owner',NULL,NULL),
+  (pair,'SENSUEL',27,'Partner only',
+   'Excluded by drawer partner rule','partner','partner',NULL,NULL),
+  (pair,'SENSUEL',28,'Recipient user A',
+   'Excluded by recipient lock', 'both','both',a,a),
+  (pair,'SENSUEL',29,'Drawer user B',
+   'Excluded by drawer lock','both','both',b,b),
+  (pair,'SENSUEL',30,'Allowed A to B',
+   'Exactly one eligible gender-aware custom card','him','her',NULL,NULL);
+ PERFORM pg_catalog.set_config('request.jwt.claim.sub',a::text,true);
+ SELECT * INTO drawn FROM public.draw_for_partner(s,'SENSUEL',false);
+ IF drawn.card_id IS DISTINCT FROM 30 OR
+    drawn.offered_by IS DISTINCT FROM a OR drawn.recipient IS DISTINCT FROM b
+ THEN
+  RAISE EXCEPTION 'REAL RPC: custom role or identity filters bypassed %',
+   drawn;
+ END IF;
+
+ -- Reverse direction must have zero valid cards, even though four other
+ -- custom cards exist. An unrelated SQL error must not count as denial.
+ PERFORM pg_catalog.set_config('request.jwt.claim.sub',b::text,true);
+ BEGIN
+  PERFORM public.draw_for_partner(s,'SENSUEL',false);
+ EXCEPTION WHEN OTHERS THEN
+  GET STACKED DIAGNOSTICS rejection=MESSAGE_TEXT;
+  IF rejection<>'Toutes les cartes ont déjà été proposées' THEN
+   RAISE EXCEPTION 'REAL RPC: unexpected reverse-role rejection %',rejection;
+  END IF;
+  blocked:=true;
+ END;
+ IF NOT blocked THEN
+  RAISE EXCEPTION 'REAL RPC: wrong-direction custom role restriction bypass';
+ END IF;
+ RAISE NOTICE
+ 'LR-026 REAL RPC role assignment: gender, owner/partner and per-user custom-card locks passed';
+END; $lr026_real_roles$;
+
 -- SQL ACL protection is preserved in the isolated snapshot.
 DO $lr026_real_rights$
 BEGIN
