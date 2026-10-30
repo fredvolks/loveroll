@@ -1250,7 +1250,8 @@ test('LR-026: scoped refresh rejects a newer night BEFORE committing state',()=>
  const firstWrite=refresh.indexOf('state.cycleStatus=cycleInfo;');
  assert.ok(guard>0&&firstWrite>guard,
   'the session preflight must execute before ANY shared state write');
- assert.match(refresh,/state\.legacyAnswerContext===expectedContext\)\)return;/);
+ assert.match(refresh,/state\.legacyAnswerContext===expectedContext\|\|\s*state\.timerCompletionContext===expectedContext\)\)return;/);
+ assert.match(refresh,/state\.timerCompletionContext===expectedContext/);
 });
 
 test('LR-026: live refresh implementation aborts stale server evening without writing state',async()=>{
