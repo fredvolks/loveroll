@@ -17,7 +17,7 @@ import {ROLL_TOTAL_MS} from './dice-roll-motion.mjs';
 import {createCoupleLiveSync} from './couple-live-sync.mjs?v=20261017-advent119';
 import {playableSessionForWeekly} from './couple-reset-view.mjs';
 import {eveningDailyAccess} from './evening-daily-policy.mjs?v=20261016-daily100';
-import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isSameEveningResponseContext} from './evening-private-queue.mjs';
+import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isSameEveningResponseContext,redrawTimerRecovery} from './evening-private-queue.mjs';
 import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261029-web259';
 import {saveEveningSelection,restoreEveningSelection,clearEveningSelection} from './evening-resume.mjs?v=20261027-web240';
 import {eclatHtml} from './eclat-ui.mjs?v=20261027-web242';
@@ -2954,7 +2954,7 @@ async function handle(action,element){
    }
    // Keep modal selection strictly bound to the initiating evening/account.
    if(sameContext){
-    state.eveningRefusalId=null;
+    if(receiptValid)state.eveningRefusalId=null;
     state.selectedEveningChallengeId=receiptValid?outcome.replacement_id:null;
     state.showEveningChallenges=true;
    }
@@ -2965,11 +2965,12 @@ async function handle(action,element){
       challengeTimer.id===challengeId&&challengeTimer.decisionPending){
     const stored=ownEveningChallenges(state.challenges,state.user.id,state.session.id)
      .find(card=>card.id===challengeId);
-    if(['passed','refused','completed'].includes(stored?.status)){
+    const recovery=redrawTimerRecovery(stored?.status,challengeTimer.deadline,Date.now());
+    if(recovery==='stop'){
      challengeTimer.running=false;challengeTimer.deadline=0;challengeTimer.remainingMs=0;
      challengeTimer.notified=true;challengeTimer.autoCompletePending=false;
-    }else if(stored?.status==='accepted'&&challengeTimer.deadline>0&&
-      challengeTimer.deadline<=Date.now()){
+     state.eveningRefusalId=null;
+    }else if(recovery==='expire'){
      challengeTimer.running=false;challengeTimer.remainingMs=0;
      challengeTimer.autoCompletePending=true;
     }
@@ -2981,12 +2982,15 @@ async function handle(action,element){
    if(isSameEveningResponseContext(state,responseContext))
     redrawFeedback=eveningRedrawFeedback(outcome,challengeId);
   }catch(error){
-   if(challengeTimer.id===challengeId&&challengeTimer.decisionPending){
+   // A rejected RPC may arrive after account / evening navigation; it
+   // must not save an old timer under the new account's storage key.
+   if(isSameEveningResponseContext(state,responseContext)&&
+      challengeTimer.id===challengeId&&challengeTimer.decisionPending){
     challengeTimer.decisionPending=false;
     if(challengeTimer.deadline>0&&challengeTimer.deadline<=Date.now()){
      challengeTimer.running=false;challengeTimer.remainingMs=0;
      challengeTimer.autoCompletePending=true;saveChallengeTimer();void retryExpiredTimedEvening();
-    }
+    }else saveChallengeTimer();
    }
    throw error;
   }finally{
