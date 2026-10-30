@@ -1040,8 +1040,15 @@ test("LR-026 manual response takes priority over automatic timer completion",asy
  assert.equal(guard.busy('card-A'),true,'manual decision must lock the same D100 card');
  assert.equal(guard.controls(),true,'reset and pause stay disabled during manual reply');
  assert.equal(guard.busy('card-B'),false,'another card remains independent');
+ // Switching tabs must not release the same authenticated account's manual
+ // RPC: the HTTP response is still outstanding even when its UI is hidden.
+ state.tab='special';clock.autoCompletePending=false;
+ assert.equal(guard.busy('card-A'),true,'manual card stays locked on another tab');
+ assert.equal(guard.controls(),true,'hidden manual RPC keeps pause/reset locked');
+ clock.autoCompletePending=true;
  await retry();
- assert.equal(completions,0,'automatic answer_challenge cannot race the manual one');
+ assert.equal(completions,0,'a tab switch cannot start duplicate auto-completion');
+ state.tab='session';
  assert.equal(clock.autoCompletePending,true,'expired timer waits for manual reply');
  state.legacyAnswerContext=null;
  assert.equal(guard.busy('card-A'),true,'expired timer remains locked until validated');
@@ -1060,6 +1067,8 @@ test('LR-026 saved timers skip only the card with an active manual answer',async
    {id:'card-A',recipient:'alice',session_id:'s1',status:'accepted'},
    {id:'card-B',recipient:'alice',session_id:'s1',status:'accepted'}]};
  const calls=[],pendingWrites=[];
+ // A hidden manual response still owns card A after navigating away.
+ state.tab='settings';
  const api=runInNewContext(source.slice(first,end)+'; reconcileSavedEveningTimers;',{
   state,challengeTimer:{id:'card-A',autoCompletePending:true,decisionPending:false},
   timerCompletionInFlight:null,timerCompletionRetryAt:0,
