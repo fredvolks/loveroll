@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,isSameEveningResponseContext,isEveningRedrawBusyForCurrentView,ownsEveningRedrawRequest,redrawTimerRecovery} from './evening-private-queue.mjs';
+import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,snapshotEveningCardBeforeRedraw,isSameEveningResponseContext,isEveningRedrawBusyForCurrentView,ownsEveningRedrawRequest,redrawTimerRecovery} from './evening-private-queue.mjs';
 import {premiumEveningHtml} from './premium-evening.mjs';
 const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
 const migration=readFileSync(new URL('./migrations/20261015_evening_private_challenge_queue.sql',import.meta.url),'utf8');
@@ -398,6 +398,52 @@ test('LR-026: redraw success requires original decision and replacement in recip
   'SQL idempotency receipt may omit availability only on replay');
 });
 
+test('LR-026: tap-time D100 snapshot survives in-place mutation during pending RPC',()=>{
+ const item={id:'card1',recipient:'fred',session_id:'night1',
+  couple_id:'duo1',offered_by:'partner',category:'SENSUEL',
+  face:18,card_id:11,card_title:'Massage',
+  card_description:'Prendre du temps ensemble',card_timer_minutes:null,
+  is_gifted:false,created_at:'2026-10-30T12:00:00Z',
+  replaces_challenge_id:null,status:'accepted'};
+ const before=snapshotEveningCardBeforeRedraw(item);
+ assert.ok(Object.isFrozen(before),'captured card must never be mutable');
+ assert.notStrictEqual(before,item,
+  'holding the same JS object across an await is not a real snapshot');
+ item.face=33;
+ item.card_title='Contenu modifié pendant le réseau';
+ item.created_at='2026-10-30T12:01:00Z';
+ item.is_gifted=true;
+ assert.equal(before.face,18);
+ assert.equal(before.card_title,'Massage');
+ assert.equal(before.created_at,'2026-10-30T12:00:00Z');
+ assert.equal(before.is_gifted,false);
+ const committed={...item,status:'passed',passed_at:'2026-10-30T12:02:00Z',
+  refused_at:null};
+ const replacement={...committed,id:'next',face:55,card_id:12,
+  card_title:'Carte de remplacement',created_at:'2026-10-30T12:02:00Z',
+  replaces_challenge_id:'card1',status:'proposed',
+  passed_at:null,refused_at:null};
+ const receipt={original_id:'card1',replacement_id:'next',
+  action:'pass',excluded:false,already_processed:false,
+  replacement_unavailable:false};
+ assert.equal(isPersistedEveningRedrawReceipt(
+  receipt,[committed,replacement],'fred','night1',before),false,
+  'in-place changes must not defeat immutable field comparisons');
+ assert.equal(snapshotEveningCardBeforeRedraw(null),null);
+ assert.equal(snapshotEveningCardBeforeRedraw([]),null);
+ const truncated={...item};
+ delete truncated.replaces_challenge_id;
+ assert.equal(snapshotEveningCardBeforeRedraw(truncated),null);
+ const start=app.indexOf("if(verb==='evening-pass'||verb==='evening-refuse-choice')");
+ const end=app.indexOf("if(verb==='evening-start')",start);
+ const branch=app.slice(start,end);
+ const capture=branch.indexOf('const originalSnapshot=snapshotEveningCardBeforeRedraw(item);');
+ const rpc=branch.indexOf("const outcome=await rpc('love_respond_and_redraw'");
+ assert.ok(capture>=0&&rpc>capture,'must freeze card before first network await');
+ assert.match(branch,/if\(!originalSnapshot\)throw Error\(/);
+ assert.match(branch,/isPersistedEveningRedrawReceipt\(outcome,state\.challenges,state\.user\.id,state\.session\.id,originalSnapshot\)/);
+});
+
 test('LR-026: a response cannot rewrite the original D100 card shown at tap time',()=>{
  const seen={id:'original',recipient:'fred',session_id:'s1',couple_id:'pair',
   offered_by:'partner',category:'SENSUEL',face:17,card_id:8,
@@ -442,7 +488,7 @@ test('LR-026: a response cannot rewrite the original D100 card shown at tap time
   'the optional snapshot supports earlier independent receipt tests');
  const appBranch=app.slice(app.indexOf("if(verb==='evening-pass'||verb==='evening-refuse-choice')"),
   app.indexOf("if(verb==='evening-start')"));
- assert.match(appBranch,/isPersistedEveningRedrawReceipt\(outcome,state\.challenges,state\.user\.id,state\.session\.id,item\)/,
+ assert.match(appBranch,/isPersistedEveningRedrawReceipt\(outcome,state\.challenges,state\.user\.id,state\.session\.id,originalSnapshot\)/,
   'the real UI must pass the originally visible card to the persisted check');
 });
 
