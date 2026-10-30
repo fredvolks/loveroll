@@ -367,3 +367,70 @@ assert_count "Mixed draw/pass one history card" \
 assert_count "Mixed draw/pass different replacement card" \
  "SELECT count(*) FROM public.couple_challenges WHERE couple_id='77777777-aaaa-4777-8777-777777777777' AND replaces_challenge_id IS NOT NULL AND card_id<>1" 1
 echo "LR-026 real RPC: simultaneous D100 draw and Passer yielded one replacement, no duplicate proposal"
+
+
+# Two incompatible answers on the SAME challenge, simultaneous:
+# one client presses Passer and the other Refuser + exclude. The original
+# SQL's idempotency record decides the winner. Both clients must return
+# successfully with the SAME recorded decision, no double replacement.
+psql -X -d "$DB" -v ON_ERROR_STOP=1 \
+ -f couple-web/lr026-real-rpc-response-race.seed.sql >/dev/null
+run_race pass_versus_refuse 88888888-aaaa-4888-8888-888888888888 \
+ "$B" 88888888-cccc-4888-8888-888888888888 \
+ "$B" 88888888-cccc-4888-8888-888888888888 decisions
+assert_status pass_versus_refuse.1 0
+assert_status pass_versus_refuse.2 0
+recorded="$(psql -X -d "$DB" -At -v ON_ERROR_STOP=1 -c "
+ SELECT action FROM public.love_challenge_redraws
+ WHERE origin_id='88888888-cccc-4888-8888-888888888888'")"
+if [[ "$recorded" != pass && "$recorded" != refuse ]]; then
+ echo "::error::Pass/Refuse race did not record an allowed winning action: $recorded"
+ exit 1
+fi
+fresh=0
+replayed=0
+for suffix in 1 2; do
+ label="pass_versus_refuse.$suffix"
+ if ! grep -Fq "\"action\": \"$recorded\"" "$tmp/$label.log"; then
+   echo "::error::$label returned a different decision from committed $recorded"
+   cat "$tmp/$label.log"; exit 1
+ fi
+ if grep -q '"already_processed": false' "$tmp/$label.log"; then
+   fresh=$((fresh+1))
+ elif grep -q '"already_processed": true' "$tmp/$label.log"; then
+   replayed=$((replayed+1))
+ else
+   echo "::error::$label did not return an idempotency marker"
+   cat "$tmp/$label.log"; exit 1
+ fi
+done
+if [[ "$fresh" != 1 || "$replayed" != 1 ]]; then
+ echo "::error::Pass/Refuse race produced $fresh fresh and $replayed replayed"
+ exit 1
+fi
+pair=88888888-aaaa-4888-8888-888888888888
+origin=88888888-cccc-4888-8888-888888888888
+assert_count "Competing responses exactly one receipt" \
+ "SELECT count(*) FROM public.love_challenge_redraws WHERE couple_id='$pair' AND origin_id='$origin'" 1
+assert_count "Competing responses exactly one replacement" \
+ "SELECT count(*) FROM public.couple_challenges WHERE couple_id='$pair' AND replaces_challenge_id='$origin' AND status='proposed' AND recipient='$B' AND card_id<>1" 1
+assert_count "Competing responses no third card" \
+ "SELECT count(*) FROM public.couple_challenges WHERE couple_id='$pair'" 2
+assert_count "Competing responses one event" \
+ "SELECT count(*) FROM public.couple_events WHERE couple_id='$pair' AND event_type='challenge'" 1
+assert_count "Competing responses one bag entry" \
+ "SELECT count(*) FROM public.love_card_draw_history WHERE couple_id='$pair' AND recipient_user_id='$B'" 1
+assert_count "Competing responses original final state" \
+ "SELECT count(*) FROM public.couple_challenges
+ WHERE id='$origin' AND status=CASE WHEN '$recorded'='pass' THEN 'passed' ELSE 'refused' END
+ AND CASE WHEN '$recorded'='pass'
+      THEN passed_at IS NOT NULL AND refused_at IS NULL
+      ELSE passed_at IS NULL AND refused_at IS NOT NULL END" 1
+assert_count "Competing responses monthly pass once at most" \
+ "SELECT count(*) FROM public.couple_challenges
+ WHERE couple_id='$pair' AND status='passed'" \
+ "$([[ "$recorded" == pass ]] && echo 1 || echo 0)"
+assert_count "Competing responses exclusion only on refusal" \
+ "SELECT count(*) FROM public.love_cycle_excluded_cards WHERE couple_id='$pair'" \
+ "$([[ "$recorded" == refuse ]] && echo 1 || echo 0)"
+echo "LR-026 real RPC: simultaneous Passer/Refuser recorded one $recorded decision, one replacement and idempotent replay"
