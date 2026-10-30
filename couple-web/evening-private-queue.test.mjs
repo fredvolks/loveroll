@@ -140,8 +140,8 @@ test('LR-026: async D100 action checks same initiating context before selection 
  const end=app.indexOf("if(verb==='evening-start')",start);
  assert.ok(start>=0&&end>start);
  const branch=app.slice(start,end);
- assert.equal((branch.match(/isSameEveningResponseContext\(state,responseContext\)/g)||[]).length,2,
-  'must protect both UI navigation and notifications');
+ assert.ok((branch.match(/isSameEveningResponseContext\(state,responseContext\)/g)||[]).length>=2,
+  'must guard both UI navigation and notifications; additional timer/error checks are required');
  assert.match(branch,/if\(isSameEveningResponseContext\(state,responseContext\)\)\{[\s\S]*?state\.selectedEveningChallengeId=receiptValid\?outcome\.replacement_id:null/);
  assert.match(branch,/await refreshAndShow\(\);[\s\S]*?if\(isSameEveningResponseContext\(state,responseContext\)\)\s+redrawFeedback=eveningRedrawFeedback\(outcome,challengeId\)/);
  assert.doesNotMatch(branch,/if\(state\.session\?\.id===sessionId\)/,
@@ -173,6 +173,8 @@ test('LR-026: redraw timer only stops on valid receipt or independently refreshe
  assert.match(code,/const recovery=redrawTimerRecovery\(stored\?\.status,challengeTimer\.deadline,Date\.now\(\)\)/);
  assert.match(code,/if\(recovery==='stop'\)/);
  assert.match(code,/if\(recovery==='expire'\)/);
+ assert.match(code,/if\(recovery==='stop'&&state\.eveningRefusalId===challengeId\)/);
+ assert.match(code,/if\(challengeTimer\.id===challengeId&&challengeTimer\.decisionPending\)/);
  assert.match(code,/if\(receiptValid\)state\.eveningRefusalId=null/);
  assert.match(code,/if\(isSameEveningResponseContext\(state,responseContext\)&&\s+challengeTimer\.id===challengeId&&challengeTimer\.decisionPending\)/);
  assert.match(code,/else saveChallengeTimer\(\)/);
