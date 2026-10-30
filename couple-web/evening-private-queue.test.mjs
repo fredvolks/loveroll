@@ -294,6 +294,10 @@ test('LR-026: UI waits for persisted redraw before stopping a live timer or conf
  assert.ok(refresh>=0&&storedCheck>refresh&&select>storedCheck&&stop>select,
   'timer must stop only after the refreshed RLS rows confirm the decision');
  assert.match(code,/if\(!persistedReceiptValid&&sameAfterRefresh\)/);
+ assert.match(code,/if\(sameAfterRefresh&&!persistedReceiptValid\)\{[\s\S]*?state\.selectedEveningChallengeId=null/,
+  'a malformed receipt must clear unrelated auto-selected cards');
+ assert.doesNotMatch(code,/if\(receiptValid&&sameAfterRefresh&&!persistedReceiptValid\)/,
+  'clearing an unrelated card must not depend on receipt validity');
  assert.match(code,/receiptValid&&!persistedReceiptValid/);
  assert.match(code,/state\.selectedEveningChallengeId=null/);
  assert.match(code,/redrawFeedback=receiptValid&&!persistedReceiptValid/);
