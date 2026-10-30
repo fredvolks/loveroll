@@ -105,8 +105,11 @@ function apiClient(config, transport) {
     let data;
     try { data = text ? JSON.parse(text) : null; } catch { throw new Error('Non-JSON Supabase response (' + response.status + ')'); }
     if (!response.ok) {
-      const serverMessage = typeof data?.message === 'string' ? data.message : data?.error_description || data?.code || 'API error';
-      throw new Error('Supabase API ' + response.status + ' (' + path.split('?')[0] + '): ' + serverMessage);
+      // Remote error text is untrusted and may echo passwords or tokens.
+      // Show only status and a bounded machine-readable error code.
+      const errorCode = typeof data?.code === 'string' && /^[a-zA-Z0-9_-]{1,32}$/.test(data.code)
+        ? ' [' + data.code + ']' : '';
+      throw new Error('Supabase API ' + response.status + ' (' + path.split('?')[0] + ')' + errorCode);
     }
     return data;
   }
