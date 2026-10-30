@@ -713,3 +713,39 @@ test('LR-026 unconfirmed saved-timer refresh retains the original pending receip
   'failed private sync must preserve the original timer for later reconciliation');
  assert.equal(state.timerCompletionContext,null);
 });
+
+test('LR-026 retry backoff belongs to its original account, couple and card',async()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const begin=app.indexOf('function ownsTimerCompletionSession(context){');
+ const end=app.indexOf('// LR-002: recover ALL due challenge timers',begin);
+ assert.ok(begin>0&&end>begin);
+ const run=(person,session,couple,retryOwner)=>{
+  const state={user:{id:person},session:{id:session},coupleId:couple,
+   tab:'session',timerCompletionContext:null};
+  const clock={id:'card-1',autoCompletePending:true,decisionPending:false};
+  const calls=[];
+  const retry=runInNewContext(app.slice(begin,end)+'; retryExpiredTimedEvening;',{
+   state,challengeTimer:clock,timerCompletionInFlight:null,
+   timerCompletionRetryAt:Date.now()+60000,timerCompletionRetryOwner:retryOwner,
+   timedEveningItem:()=>({id:'card-1',recipient:person,session_id:session,status:'accepted'}),
+   isAcceptedTimedEveningChallenge:()=>true,
+   completeTimedEveningChallenge:async()=>{calls.push('completion');return {outcome:'superseded',finished:false};},
+   rpc:async()=>{},query:async()=>[],ownsVisibleEveningTimer:()=>false,
+   saveChallengeTimer:()=>{},refreshShared:async()=>true,
+   render:()=>{},notify:()=>{},console,document:{hidden:false},Date
+  });
+  return {retry,calls};
+ };
+ const owner=JSON.stringify(['alice','couple-1','s1','card-1']);
+ const original=run('alice','s1','couple-1',owner);
+ await original.retry();
+ assert.deepEqual(original.calls,[],'original challenge still respects its own backoff');
+ const nextAccount=run('bob','s2','couple-2',owner);
+ await nextAccount.retry();
+ assert.deepEqual(nextAccount.calls,['completion'],
+  'Alice\'s offline timeout must never block Bob\'s eligible minuteur');
+ const nextCard=run('alice','s2','couple-1',owner);
+ await nextCard.retry();
+ assert.deepEqual(nextCard.calls,['completion'],
+  'another evening cannot inherit the old retry delay');
+});
