@@ -16,10 +16,18 @@ const norm=value=>String(value??'').normalize('NFKD')
  .replace(/[^a-z0-9]+/g,' ').trim().replace(/\s+/g,' ');
 const tokens=value=>new Set(norm(value).split(' ').filter(w=>
  w.length>=3&&!COMMON.has(w)));
+// The die's face is NOT a card identifier: the official draw persists
+// face (the dice result) separately from card_id (the selected library card).
+// A challenge-row UUID is also kept in a distinct namespace.
 const stableId=card=>{
- const id=card?.card_id??card?.cardId??card?.library_card_id??card?.face??card?.id;
- if(id===null||id===undefined||String(id).trim()==='')return null;
- return norm(card?.category||'')+'|'+String(id);
+ const category=norm(card?.category||'');
+ const id=card?.card_id??card?.cardId??card?.library_card_id;
+ if(id!==null&&id!==undefined&&String(id).trim()!=='')
+  return 'card|'+category+'|'+String(id).trim();
+ const rowId=card?.id;
+ if(rowId!==null&&rowId!==undefined&&String(rowId).trim()!=='')
+  return 'draw|'+category+'|'+String(rowId).trim();
+ return null;
 };
 const cardTitle=card=>card?.title??card?.card_title??'';
 const cardDescription=card=>card?.description??card?.card_description??card?.instructions??'';
