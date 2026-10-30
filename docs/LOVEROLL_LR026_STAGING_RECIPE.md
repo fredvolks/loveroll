@@ -80,6 +80,7 @@ Ces modifications concernent l'**utilitaire consultatif** et ses tests dans la P
 | `LR026_STAGING_OTHER_COUPLE_ID`, `LR026_STAGING_OTHER_SESSION_ID` | Pour `--audit` seulement : autre duo et autre soirée exclusivement associés à C |
 | `LR026_STAGING_COUPLE_ID`, `LR026_STAGING_SESSION_ID` | UUID du duo et de la soirée de test |
 | `LR026_STAGING_PREFERENCE` | Facultative pour `--play` : `SENSUEL` (défaut) ou `SEXUEL`; toute autre valeur est refusée avant réseau. Utiliser une nouvelle soirée vierge pour chaque essai. |
+| `LR026_STAGING_RANDOM` | Facultative pour `--play` : chaîne exacte `false` (défaut) ou `true`. En mode aléatoire, la catégorie réellement sélectionnée reste celle du serveur; une nouvelle soirée vierge est requise. |
 | `LR026_STAGING_DRAWER` | Facultative pour `--play` : `A` (défaut, A pige pour B) ou `B` (B pige pour A); toute autre valeur est refusée avant connexion. Une soirée vierge distincte par essai. |
 | `LR026_STAGING_ACTION` | Facultative pour `--play` : `pass` (défaut) ou `refuse` |
 | `LR026_STAGING_EXCLUDE` | Facultative pour `--play` : chaîne `false` (défaut) ou `true` seulement avec `refuse` |
