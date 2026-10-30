@@ -209,3 +209,107 @@ grep -q 'permission denied' "$tmp/anon.log" || {
  echo "::error::anon failed for an unexpected reason"; cat "$tmp/anon.log"; exit 1;
 }
 echo "LR-026 real RPC: anon cannot execute real protected response"
+
+
+# Now run real D100 draws, not merely the real response RPC. All cases
+# target different synthetic couples and reuse the same verified lock gate.
+psql -X -d "$DB" -v ON_ERROR_STOP=1 \
+ -f couple-web/lr026-real-rpc-draw-race.seed.sql >/dev/null
+
+assert_draw_denial() {
+ local label="$1" expected="$2" actual
+ actual="$(cat "$tmp/$label.rc")"
+ if [[ "$actual" == "0" ]] || ! grep -Fq "$expected" "$tmp/$label.log"; then
+   echo "::error::$label was not rejected for expected D100 reason: $expected"
+   cat "$tmp/$label.log"; exit 1
+ fi
+}
+assert_draw_rows() {
+ local couple="$1" count="$2"
+ assert_count "Concurrent D100 challenge rows for $couple" \
+  "SELECT count(*) FROM public.couple_challenges WHERE couple_id='$couple' AND status='proposed' AND category='SENSUEL'" "$count"
+ assert_count "Concurrent D100 events for $couple" \
+  "SELECT count(*) FROM public.couple_events WHERE couple_id='$couple' AND event_type='challenge'" "$count"
+ assert_count "Concurrent D100 bag history for $couple" \
+  "SELECT count(*) FROM public.love_card_draw_history WHERE couple_id='$couple' AND category='SENSUEL'" "$count"
+ assert_count "Concurrent D100 unique recipient/category/cards for $couple" \
+  "SELECT count(DISTINCT (recipient,category,card_id)) FROM public.couple_challenges WHERE couple_id='$couple'" "$count"
+}
+
+# A starts a paired A/B queue. Two simultaneous A attempts must produce
+# exactly one first turn; the second must fail with a genuine turn error.
+run_race draw_paired 44444444-aaaa-4444-8444-444444444444 \
+ "$A" 44444444-bbbb-4444-8444-444444444444 \
+ "$A" 44444444-bbbb-4444-8444-444444444444 draw
+drawn=0
+wrong_turn=0
+for suffix in 1 2; do
+ label="draw_paired.$suffix"
+ if [[ "$(cat "$tmp/$label.rc")" == 0 ]]; then
+   assert_status "$label" 0
+   drawn=$((drawn+1))
+ else
+   assert_draw_denial "$label" 'Ce n’est pas votre tour'
+   wrong_turn=$((wrong_turn+1))
+ fi
+done
+if [[ "$drawn" != 1 || "$wrong_turn" != 1 ]]; then
+ echo "::error::Paired same-player D100 race had $drawn success, $wrong_turn turn denial"
+ exit 1
+fi
+assert_draw_rows 44444444-aaaa-4444-8444-444444444444 1
+assert_count "D100 paired A giver" \
+ "SELECT count(*) FROM public.couple_challenges WHERE couple_id='44444444-aaaa-4444-8444-444444444444' AND offered_by='$A' AND recipient='$B'" 1
+echo "LR-026 real D100 RPC: simultaneous A turns serialized to one paired card"
+
+# In unpaired self-draw mode A and B may each draw for themselves in
+# parallel, even though both calls contend on the same couple row.
+run_race draw_self 55555555-aaaa-4555-8555-555555555555 \
+ "$A" 55555555-bbbb-4555-8555-555555555555 \
+ "$B" 55555555-bbbb-4555-8555-555555555555 draw
+assert_status draw_self.1 0
+assert_status draw_self.2 0
+assert_draw_rows 55555555-aaaa-4555-8555-555555555555 2
+assert_count "D100 self recipient A with B as giver" \
+ "SELECT count(*) FROM public.couple_challenges WHERE couple_id='55555555-aaaa-4555-8555-555555555555' AND offered_by='$B' AND recipient='$A'" 1
+assert_count "D100 self recipient B with A as giver" \
+ "SELECT count(*) FROM public.couple_challenges WHERE couple_id='55555555-aaaa-4555-8555-555555555555' AND offered_by='$A' AND recipient='$B'" 1
+echo "LR-026 real D100 RPC: simultaneous self draws preserve both recipients"
+
+# Legacy unpaired A chooses a challenge for B. A second overlapping
+# request cannot create another unresolved challenge for the same target.
+run_race draw_legacy 66666666-aaaa-4666-8666-666666666666 \
+ "$A" 66666666-bbbb-4666-8666-666666666666 \
+ "$A" 66666666-bbbb-4666-8666-666666666666 draw
+drawn=0
+pending=0
+for suffix in 1 2; do
+ label="draw_legacy.$suffix"
+ if [[ "$(cat "$tmp/$label.rc")" == 0 ]]; then
+   assert_status "$label" 0
+   drawn=$((drawn+1))
+ else
+   assert_draw_denial "$label" 'Attendre la réponse au défi précédent'
+   pending=$((pending+1))
+ fi
+done
+if [[ "$drawn" != 1 || "$pending" != 1 ]]; then
+ echo "::error::Legacy duplicate D100 produced $drawn draws, $pending pending denials"
+ exit 1
+fi
+assert_draw_rows 66666666-aaaa-4666-8666-666666666666 1
+assert_count "D100 legacy giver and recipient" \
+ "SELECT count(*) FROM public.couple_challenges WHERE couple_id='66666666-aaaa-4666-8666-666666666666' AND offered_by='$A' AND recipient='$B'" 1
+echo "LR-026 real D100 RPC: concurrent legacy double-click cannot create two proposals"
+
+# The direct SQL role also cannot invoke the actual normal D100 RPC.
+if psql -X -d "$DB" -v ON_ERROR_STOP=1 \
+ -c "SET ROLE anon; SELECT public.draw_for_partner('66666666-bbbb-4666-8666-666666666666'::uuid,'SENSUEL',false);" \
+ >"$tmp/anon.draw.log" 2>&1; then
+ echo "::error::anon executed protected D100 RPC"; exit 1
+fi
+grep -q 'permission denied' "$tmp/anon.draw.log" || {
+ echo "::error::anon D100 failed for the wrong reason"
+ cat "$tmp/anon.draw.log"; exit 1;
+}
+echo "LR-026 real D100 RPC: anonymous execution denied"
