@@ -28,6 +28,7 @@ on:
       - "couple-web/lr026-staging-recipe.mjs"
       - "couple-web/lr026-staging-verify.mjs"
       - "couple-web/lr026-staging-recipe.test.mjs"
+      - "couple-web/lr026-staging-audit.test.mjs"
       - "couple-web/lr026-evening-flow.test.sql"
       - "couple-web/lr026-extract-helpers.cjs"
       - "couple-web/lr026-postgres-rpc-fixture.sql"
@@ -84,6 +85,7 @@ jobs:
           node --check couple-web/lr026-staging-recipe.mjs
           node --check couple-web/lr026-staging-verify.mjs
           node --test couple-web/lr026-staging-recipe.test.mjs
+          node --test couple-web/lr026-staging-audit.test.mjs
       - name: Check LR-026 SQL patch contracts with Node tests
         run: node --test couple-web/lr026-server-variety.test.mjs
       - name: Verify migration helper extraction syntax
