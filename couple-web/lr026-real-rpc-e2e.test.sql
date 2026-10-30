@@ -77,6 +77,8 @@ DECLARE
  drawn public.couple_challenges%rowtype;
  a_draw public.couple_challenges%rowtype;
  replacement public.couple_challenges%rowtype;
+ a_replacement public.couple_challenges%rowtype;
+ refusal_replacement public.couple_challenges%rowtype;
  result jsonb;
  stamp timestamptz;
  passed integer;
@@ -237,8 +239,87 @@ BEGIN
   RAISE EXCEPTION 'REAL RPC: expected A+B independent monthly passes, got %',
      passed;
  END IF;
+
+ -- NEW: the reverse B -> A route must also handle a genuine Refuser with
+ -- exclusion, using the exact production function in this disposable DB.
+ -- A has already exhausted her/his monthly Passer allowance; Refuser is
+ -- independent of that quota and must keep recipient/offerer/category.
+ SELECT * INTO a_replacement FROM public.couple_challenges
+ WHERE id=(result->>'replacement_id')::uuid;
+ IF NOT FOUND OR a_replacement.recipient IS DISTINCT FROM a
+   OR a_replacement.offered_by IS DISTINCT FROM b
+   OR a_replacement.category IS DISTINCT FROM a_draw.category
+   OR a_replacement.card_id=a_draw.card_id
+   OR a_replacement.face=a_draw.face
+   OR a_replacement.status IS DISTINCT FROM 'proposed' THEN
+  RAISE EXCEPTION 'REAL RPC: reverse pass replacement incorrect %',a_replacement;
+ END IF;
+ PERFORM pg_catalog.set_config('request.jwt.claim.sub',b::text,true);
+ blocked:=false;
+ BEGIN
+  PERFORM public.love_respond_and_redraw(a_replacement.id,'refuse',true);
+ EXCEPTION WHEN OTHERS THEN
+  GET STACKED DIAGNOSTICS error_text=MESSAGE_TEXT;
+  IF error_text<>'Seul le destinataire peut répondre' THEN
+   RAISE EXCEPTION 'REAL RPC: unexpected reverse refusal denial: %',error_text;
+  END IF;
+  blocked:=true;
+ END;
+ IF NOT blocked THEN
+  RAISE EXCEPTION 'REAL RPC: B refused a challenge destined for A';
+ END IF;
+
+ PERFORM pg_catalog.set_config('request.jwt.claim.sub',a::text,true);
+ SELECT public.love_respond_and_redraw(a_replacement.id,'refuse',true) INTO result;
+ IF result->>'action'<>'refuse'
+   OR result->>'excluded'<>'true'
+   OR result->>'already_processed'<>'false'
+   OR result->>'replacement_unavailable'<>'false'
+   OR result->>'replacement_id' IS NULL THEN
+  RAISE EXCEPTION 'REAL RPC: reverse refusal/exclusion response incorrect %',result;
+ END IF;
+ SELECT * INTO refusal_replacement FROM public.couple_challenges
+ WHERE id=(result->>'replacement_id')::uuid;
+ IF NOT FOUND OR refusal_replacement.recipient IS DISTINCT FROM a
+   OR refusal_replacement.offered_by IS DISTINCT FROM b
+   OR refusal_replacement.category IS DISTINCT FROM a_draw.category
+   OR refusal_replacement.replaces_challenge_id IS DISTINCT FROM a_replacement.id
+   OR refusal_replacement.card_id IN (a_draw.card_id,a_replacement.card_id)
+   OR refusal_replacement.face IN (a_draw.face,a_replacement.face)
+   OR refusal_replacement.status IS DISTINCT FROM 'proposed' THEN
+  RAISE EXCEPTION 'REAL RPC: reverse refusal replacement invalid %',refusal_replacement;
+ END IF;
+ IF (SELECT status FROM public.couple_challenges WHERE id=a_replacement.id)
+     <>'refused'
+    OR (SELECT refused_at FROM public.couple_challenges
+        WHERE id=a_replacement.id) IS NULL
+    OR NOT EXISTS(
+      SELECT 1 FROM public.love_cycle_excluded_cards ex
+      WHERE ex.couple_id=drawn.couple_id AND ex.cycle_number=1
+        AND ex.category=a_replacement.category AND ex.card_id=a_replacement.card_id
+        AND ex.excluded_by=a)
+ THEN
+  RAISE EXCEPTION 'REAL RPC: reverse refusal did not persist exclusion and timestamp';
+ END IF;
+ -- Repeated Refuser is idempotent despite already-refused status.
+ SELECT public.love_respond_and_redraw(a_replacement.id,'refuse',true) INTO result;
+ IF result->>'already_processed'<>'true'
+   OR result->>'action'<>'refuse'
+   OR result->>'excluded'<>'true'
+   OR (result->>'replacement_id')::uuid IS DISTINCT FROM refusal_replacement.id
+ THEN
+  RAISE EXCEPTION 'REAL RPC: reverse refusal replay not idempotent %',result;
+ END IF;
+ SELECT count(*) INTO passed FROM public.couple_challenges
+ WHERE couple_id=drawn.couple_id AND status='passed';
+ IF passed<>2 OR
+   (SELECT count(*) FROM public.love_challenge_redraws
+     WHERE origin_id=a_replacement.id)<>1
+ THEN
+  RAISE EXCEPTION 'REAL RPC: reverse refusal consumed Passer quota or duplicated receipt';
+ END IF;
  RAISE NOTICE
- 'LR-026 REAL RPC: normal D100, semantic priority, pass/redraw, A/B quota, idempotency, rollback and identity passed';
+ 'LR-026 REAL RPC: both directions, pass/refuse with exclusion, category and face uniqueness, A/B quota, idempotency, rollback and identity passed';
 END; $lr026_real_e2e$;
 
 -- Verify the ORIGINAL production RPC's custom-card assignment rules,
