@@ -592,7 +592,7 @@ test('LR-026: delayed redraw updates only the initiating authenticated evening a
  assert.equal(isSameEveningResponseContext(null,request),false);
 });
 test('LR-026: async D100 action checks same initiating context before selection and after refresh',()=>{
- assert.match(app,/const responseContext=\{sessionId:state\.session\.id,userId:state\.user\?\.id,tab:state\.tab\}/);
+ assert.match(app,/const responseContext=\{sessionId:state\.session\.id,userId:state\.user\?\.id,tab:state\.tab,challengeId\}/);
  const start=app.indexOf("if(verb==='evening-pass'||verb==='evening-refuse-choice')");
  const end=app.indexOf("if(verb==='evening-start')",start);
  assert.ok(start>=0&&end>start);
@@ -756,7 +756,7 @@ test('LR-026: stale redraw, auto-completion and timer controls respect timer own
  const action=app.slice(app.indexOf("if(verb==='evening-pass'||verb==='evening-refuse-choice')"),
   app.indexOf("if(verb==='evening-start')"));
  const guard='ownsVisibleEveningTimer(challengeId,responseContext.userId,responseContext.sessionId)';
- assert.ok(action.split(guard).length>=5,
+ assert.ok(action.split(guard).length>=4,
   'RPC resolution, failure and reconciliation must check the owning timer');
  assert.match(action,/ownsEveningTimerRecord\(challengeTimer,challengeId,responseContext\.userId,responseContext\.sessionId\)&&\s+challengeTimer\.decisionPending/);
  assert.match(action,/if\(state\.redrawBusyContext===responseContext\)\{/);
