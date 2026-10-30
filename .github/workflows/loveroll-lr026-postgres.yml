@@ -8,6 +8,9 @@ on:
       - "couple-web/lr026-postgres-fixture.sql"
       - "couple-web/lr026-postgres-rank.test.sql"
       - "couple-web/lr026-extract-helpers.cjs"
+      - "couple-web/lr026-postgres-rpc-fixture.sql"
+      - "couple-web/lr026-fixture-migration.cjs"
+      - "couple-web/lr026-full-migration.test.sql"
       - ".github/workflows/loveroll-lr026-postgres.yml"
   workflow_dispatch:
 
@@ -55,3 +58,19 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-server-variety-smoke.sql
       - name: Test official category and couple/session scoping
         run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-postgres-rank.test.sql
+      - name: Create synthetic normal and replacement RPCs
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-postgres-rpc-fixture.sql
+      - name: Derive fixture fingerprints for guard verification
+        run: |
+          node --check couple-web/lr026-fixture-migration.cjs
+          DRAW_SHA="$(psql -X -At -v ON_ERROR_STOP=1 -c "SELECT md5(pg_get_functiondef('public.draw_for_partner(uuid,text,boolean)'::regprocedure))")"
+          REDRAW_SHA="$(psql -X -At -v ON_ERROR_STOP=1 -c "SELECT md5(pg_get_functiondef('public.love_respond_and_redraw(uuid,text,boolean)'::regprocedure))")"
+          node couple-web/lr026-fixture-migration.cjs "$DRAW_SHA" "$REDRAW_SHA" > "$RUNNER_TEMP/lr026-fixture-migration.sql"
+      - name: Execute entire guarded migration in disposable PostgreSQL
+        run: psql -X -v ON_ERROR_STOP=1 -f "$RUNNER_TEMP/lr026-fixture-migration.sql"
+      - name: Verify both patched RPCs and preserved execution rights
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-full-migration.test.sql
+      - name: Recheck rank and permissions after full migration
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-server-variety-smoke.sql
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-postgres-rank.test.sql
