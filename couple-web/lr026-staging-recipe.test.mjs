@@ -98,23 +98,39 @@ function mockSupabase(opts = {}) {
       }
       if (opts.existingChallenge) return response([{id: drawnId}]);
       if (!lastDraw) return response([]);
-      // Production RLS exposes challenges only to their recipient.
-      // Detect new wrong-recipient cards that B would never be able to read.
+      // The first persisted draw must be a single proposed card BEFORE Passer.
+      // Later corruption is injected only after the Passer RPC to exercise
+      // both independent checkpoints rather than failing at the first one.
+      const beforePass = passCount === 0;
       if (who === 'a') {
-        if (opts.unexpectedCardForA) return response([{
+        if ((beforePass && opts.firstCardForA) ||
+            (!beforePass && opts.unexpectedCardForA)) return response([{
           id: '99999999-1111-4111-8111-999999999999', session_id: session,
           offered_by: b, status: 'proposed', recipient: a, category: 'SENSUEL'
         }]);
-        if (!opts.leaksPartnerRowsToA) return response([]);
+        if (beforePass || !opts.leaksPartnerRowsToA) return response([]);
       }
-      return response([
-        {id: drawnId, session_id: session, offered_by: a,
-          status: 'passed', recipient: opts.wrongOriginalRecipient ? a : b,
-          category: opts.wrongOriginalCategory ? 'SEXUEL' : 'SENSUEL'},
-        {id: replacedId, session_id: session, offered_by: a,
-          status: 'proposed', recipient: b,
-          category: 'SENSUEL', replaces_challenge_id: drawnId}
-      ]);
+      const original = {
+        id: beforePass && opts.firstWrongId ? replacedId : drawnId,
+        session_id: beforePass && opts.firstWrongSession ? couple : session,
+        offered_by: beforePass && opts.firstWrongOfferer ? b : a,
+        recipient: beforePass && opts.firstWrongRecipient ? a :
+          !beforePass && opts.wrongOriginalRecipient ? a : b,
+        category: beforePass && opts.firstWrongCategory ? 'SEXUEL' :
+          !beforePass && opts.wrongOriginalCategory ? 'SEXUEL' : 'SENSUEL',
+        status: beforePass && !opts.firstWrongStatus ? 'proposed' : 'passed',
+        replaces_challenge_id: beforePass && opts.firstReplacesCard ? replacedId : null
+      };
+      if (beforePass) {
+        if (opts.firstMissingCard) return response([]);
+        if (opts.firstExtraCard) return response([original, {...original,id:replacedId}]);
+        return response([original]);
+      }
+      return response([original, {
+        id: replacedId, session_id: session, offered_by: a,
+        status: 'proposed', recipient: b, category: 'SENSUEL',
+        replaces_challenge_id: drawnId
+      }]);
     }
     if (path === '/rest/v1/rpc/draw_for_partner') {
       assert.equal(who, 'a');
@@ -218,9 +234,15 @@ test('play mode runs exactly one normal D100 plus one pass and one idempotent re
     'Bearer auth-token-for-a-test', 'Bearer auth-token-for-b-test'
   ]);
   const finalViews = mock.calls.filter(x => x.path === '/rest/v1/couple_challenges');
-  assert.deepEqual(finalViews.slice(-2).map(x => x.actorToken), [
+  assert.deepEqual(finalViews.map(x => x.actorToken), [
+    'Bearer auth-token-for-a-test', 'Bearer auth-token-for-b-test',
+    'Bearer auth-token-for-b-test', 'Bearer auth-token-for-a-test',
     'Bearer auth-token-for-b-test', 'Bearer auth-token-for-a-test'
   ]);
+  const firstRead = mock.calls.findIndex(x => x.path === '/rest/v1/couple_challenges' &&
+    finalViews.indexOf(x) === 2);
+  const passCall = mock.calls.findIndex(x => x.path === '/rest/v1/rpc/love_respond_and_redraw');
+  assert(firstRead !== -1 && firstRead < passCall, 'The persisted first draw must be checked before Passer');
   assert.equal(mock.counters().drawCount, 1);
   assert.equal(mock.counters().passCount, 2);
   assert(!JSON.stringify(out).includes('fake-password'));
@@ -298,9 +320,33 @@ test('real recipient-only RLS: a clean session can draw even if drawer A cannot 
   const challenges = mock.calls.filter(x => x.path === '/rest/v1/couple_challenges');
   assert.deepEqual(challenges.map(x => x.actorToken), [
     'Bearer auth-token-for-a-test', 'Bearer auth-token-for-b-test',
+    'Bearer auth-token-for-b-test', 'Bearer auth-token-for-a-test',
     'Bearer auth-token-for-b-test', 'Bearer auth-token-for-a-test'
   ]);
 });
+
+for (const options of [
+  {firstMissingCard: true},
+  {firstExtraCard: true},
+  {firstWrongId: true},
+  {firstWrongSession: true},
+  {firstWrongOfferer: true},
+  {firstWrongRecipient: true},
+  {firstWrongCategory: true},
+  {firstWrongStatus: true},
+  {firstReplacesCard: true},
+  {firstCardForA: true}
+]) {
+  test('first D100 persisted state blocks Passer when invalid: ' +
+    JSON.stringify(options), async () => {
+    const mock = mockSupabase(options);
+    await assert.rejects(runStage(env(), 'play', mock.fetchFn),
+      /First D100 must/);
+    assert.equal(mock.counters().drawCount, 1);
+    assert.equal(mock.counters().passCount, 0,
+      'Passer MUST NOT run when the first draw is corrupt');
+  });
+}
 
 for (const options of [
   {unexpectedCardForA: true},
