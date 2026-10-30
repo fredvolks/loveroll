@@ -65,6 +65,8 @@ psql -X -d lr026_preflight_mutation -v ON_ERROR_STOP=1 >/dev/null <<'SQL'
 CREATE TABLE public.couples (id uuid);
 CREATE TABLE public.love_card_draw_history (id uuid);
 CREATE TABLE public.love_cycle_excluded_cards (id uuid);
+ALTER TABLE public.couple_challenges ADD COLUMN status text NOT NULL DEFAULT 'proposed';
+ALTER TABLE public.couple_challenges ADD COLUMN passed_at timestamptz;
 ALTER TABLE public.couple_challenges ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.love_base_challenges ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.couples ENABLE ROW LEVEL SECURITY;
@@ -78,6 +80,41 @@ expect_no_blocker "$output" "Expected RLS tables missing"
 expect_blocker "$output" "RLS SELECT policy scope widened"
 expect_blocker "$output" "Verified identity RLS policy no longer restrictive"
 expect_blocker "$output" "Browser table GRANTs widened"
+expect_blocker "$output" "Pass timestamp trigger missing or disabled"
+expect_blocker "$output" "Pass timestamp function drifted"
+
+# Install the reviewed pass timestamp function and correct trigger ONLY in
+# this disposable database, before testing deliberate regressions.
+psql -X -d lr026_preflight_mutation -v ON_ERROR_STOP=1 \
+  -f couple-web/lr026-pass-stamp-fixture.sql >/dev/null
+psql -X -d lr026_preflight_mutation -v ON_ERROR_STOP=1 \
+  -c 'CREATE TRIGGER love_stamp_passed_at BEFORE UPDATE OF status ON public.couple_challenges FOR EACH ROW EXECUTE FUNCTION couple_private.love_stamp_challenge_pass()' >/dev/null
+output="$(check_fail_closed lr026_preflight_mutation)"
+expect_no_blocker "$output" "Pass timestamp trigger missing or disabled"
+expect_no_blocker "$output" "Pass timestamp function drifted"
+
+# Confirm the test actually catches a disabled pass-stamp trigger.
+psql -X -d lr026_preflight_mutation -v ON_ERROR_STOP=1 \
+  -c 'ALTER TABLE public.couple_challenges DISABLE TRIGGER love_stamp_passed_at' >/dev/null
+output="$(check_fail_closed lr026_preflight_mutation)"
+expect_blocker "$output" "Pass timestamp trigger missing or disabled"
+psql -X -d lr026_preflight_mutation -v ON_ERROR_STOP=1 \
+  -c 'ALTER TABLE public.couple_challenges ENABLE TRIGGER love_stamp_passed_at' >/dev/null
+output="$(check_fail_closed lr026_preflight_mutation)"
+expect_no_blocker "$output" "Pass timestamp trigger missing or disabled"
+
+# Even an enabled trigger is unsafe if its function silently stops stamping.
+psql -X -d lr026_preflight_mutation -v ON_ERROR_STOP=1 >/dev/null <<'SQL'
+CREATE OR REPLACE FUNCTION couple_private.love_stamp_challenge_pass()
+ RETURNS trigger LANGUAGE plpgsql SET search_path TO ''
+AS $drift$ BEGIN RETURN NEW; END; $drift$;
+SQL
+output="$(check_fail_closed lr026_preflight_mutation)"
+expect_blocker "$output" "Pass timestamp function drifted"
+psql -X -d lr026_preflight_mutation -v ON_ERROR_STOP=1 \
+  -f couple-web/lr026-pass-stamp-fixture.sql >/dev/null
+output="$(check_fail_closed lr026_preflight_mutation)"
+expect_no_blocker "$output" "Pass timestamp function drifted"
 
 # Add the expected production-style guards only to this synthetic DB.
 psql -X -d lr026_preflight_mutation -v ON_ERROR_STOP=1 >/dev/null <<'SQL'
