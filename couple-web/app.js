@@ -2948,12 +2948,15 @@ async function handle(action,element){
     challengeTimer.notified=true;challengeTimer.autoCompletePending=false;
     challengeTimer.decisionPending=false;saveChallengeTimer();
    }
-   state.eveningRefusalId=null;
-   // Never navigate to an unverified, mismatched or malformed ID returned
-   // by a stale network response. The refreshed queue remains authoritative.
+   // A device can switch soirées while the RPC is in flight. Apply its
+   // navigation only if the same evening remains active; otherwise do not
+   // clear a new soirée's refusal dialog or select an unrelated challenge.
    const receiptValid=isValidEveningRedrawReceipt(outcome,challengeId);
-   state.selectedEveningChallengeId=receiptValid?outcome.replacement_id:null;
-   if(state.session?.id===sessionId)state.showEveningChallenges=true;
+   if(state.session?.id===sessionId){
+    state.eveningRefusalId=null;
+    state.selectedEveningChallengeId=receiptValid?outcome.replacement_id:null;
+    state.showEveningChallenges=true;
+   }
    await refreshAndShow();
    // A simultaneous device can win with a DIFFERENT action. The RPC's
    // committed action/excluded flag is authoritative on every replay.
