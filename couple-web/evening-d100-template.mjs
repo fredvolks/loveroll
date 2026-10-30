@@ -1,4 +1,4 @@
-import {fitSharedStage,fitTabletRomanceStage} from './shared-stage.mjs?v=20261027-web237';
+import {fitSharedStage,fitTabletRomanceStage} from './shared-stage.mjs?v=20261029-ipad258';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // Use the same portrait-tablet D100 envelope as Surprise while respecting
 // the real Soirée theater height. Phone sizing is deliberately unchanged.

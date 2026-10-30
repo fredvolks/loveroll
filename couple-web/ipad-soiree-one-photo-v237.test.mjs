@@ -34,7 +34,9 @@ test('iPad Soirée draws one photographic layer and NO second background or sepa
 test('Web 237 one-photo rule remains intact in the current release with offline assets',()=>{
  const html=read('index.html'),app=read('app.js'),sw=read('service-worker.js');
  const build=JSON.parse(read('web-version.json')).build;
- assert.match(html,/ipad-soiree-one-photo-v237\.css\?v=20261027-web237/);
+ const ipadTag=build.split('.')[0].replaceAll('-','')+'-ipad'+build.split('.')[1];
+ assert.ok(html.includes('ipad-soiree-one-photo-v237.css?v='+ipadTag),
+  'The approved photo must load with a cache-buster matching the current release');
  const moduleTag=build.split('.')[0].replaceAll('-','')+'-web'+build.split('.')[1];
  assert.ok(app.includes('soiree-home-template.mjs?v='+moduleTag),
   'The real Soirée module must be refreshed at the displayed PWA release');
