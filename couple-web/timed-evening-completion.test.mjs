@@ -580,3 +580,67 @@ test('LR-026 restored timer keeps a pending receipt after an account switch mid-
  assert.equal(writes[0].value.autoCompletePending,true);
  assert.equal(state.timerCompletionContext,null);
 });
+
+test('LR-026 completed RPC holds timer controls locked until scoped refresh settles',async()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const guardStart=app.indexOf('function isVisibleEveningTimerActionPending(){');
+ const guardEnd=app.indexOf('function clockMs(){',guardStart);
+ const completionStart=app.indexOf('function ownsTimerCompletionSession(context){');
+ const completionEnd=app.indexOf('// LR-002: recover ALL due challenge timers',completionStart);
+ assert.ok(guardStart>0&&guardEnd>guardStart&&completionStart>guardEnd);
+ let releaseRefresh;
+ const waitRefresh=new Promise(resolve=>{releaseRefresh=resolve;});
+ let refreshCalls=0,saves=0,renderCount=0;
+ const state={user:{id:'alice'},session:{id:'s1'},coupleId:'couple-1',
+  tab:'session',timerCompletionContext:null,redrawBusyContext:null,
+  eveningStartContext:null,timerStartContext:null};
+ const timer={id:'card-1',ownerUserId:'alice',ownerSessionId:'s1',
+  autoCompletePending:true,decisionPending:false,running:false,
+  durationMs:60000,remainingMs:0,deadline:0,notified:true};
+ const ownsVisible=(id,userId,sessionId)=>timer.id===id&&
+  state.user?.id===userId&&state.session?.id===sessionId;
+ const api=runInNewContext(
+  app.slice(guardStart,guardEnd)+app.slice(completionStart,completionEnd)+
+  '; ({retry:retryExpiredTimedEvening,busy:isVisibleEveningTimerActionPending,'+
+  'protect:protectEveningTimerPresentation});',{
+   state,challengeTimer:timer,timerCompletionInFlight:null,timerCompletionRetryAt:0,
+   ownsVisibleEveningTimer:ownsVisible,isActiveEveningRedrawPending:()=>false,
+   isSameEveningResponseContext:()=>true,
+   timedEveningItem:()=>({id:'card-1',recipient:'alice',session_id:'s1',status:'accepted'}),
+   isAcceptedTimedEveningChallenge:()=>true,
+   completeTimedEveningChallenge:async()=>({outcome:'completed',finished:false}),
+   rpc:async()=>{},query:async()=>[],saveChallengeTimer:()=>saves++,
+   refreshShared:async()=>{refreshCalls++;await waitRefresh;return true;},
+   render:()=>renderCount++,notify:()=>{},console,document:{hidden:false},Date
+  });
+ const work=api.retry();
+ for(let n=0;n<8&&refreshCalls===0;n++)await Promise.resolve();
+ assert.equal(refreshCalls,1,'the server confirmed completion before the UI refresh resolves');
+ assert.equal(timer.autoCompletePending,false,'the timer is no longer marked pending locally');
+ assert.equal(api.busy(),true,'reset remains locked while refresh is unresolved');
+ const view={label:'▶ Recommencer',status:'À votre rythme',
+  disabled:false,resetDisabled:false};
+ api.protect(view);
+ assert.equal(view.disabled,true);
+ assert.equal(view.resetDisabled,true);
+ assert.equal(view.status,'Validation du défi en cours');
+ const resetStart=app.indexOf("if(verb==='timer-reset')");
+ const resetEnd=app.indexOf("if(verb==='timer-toggle')",resetStart);
+ const reset=runInNewContext('(function(verb){'+app.slice(resetStart,resetEnd)+'})',{
+  state,challengeTimer:timer,ownsVisibleEveningTimer:ownsVisible,
+  isVisibleEveningTimerActionPending:api.busy,
+  saveChallengeTimer:()=>{throw Error('reset must not save during server sync');},
+  updateChallengeClock:()=>{throw Error('reset must not repaint during server sync');},
+  endSignal:()=>{},notify:()=>{},Date
+ });
+ reset('timer-reset');
+ assert.equal(timer.remainingMs,0,'a pending refresh must not restart a completed challenge');
+ assert.equal(saves,1,'only the original server-confirmed completion may persist');
+ state.user={id:'bob'};
+ assert.equal(api.busy(),false,'A completion lock cannot disable the next account');
+ state.user={id:'alice'};
+ releaseRefresh();
+ await work;
+ assert.equal(api.busy(),false,'the completion lock is released after settling');
+ assert.equal(renderCount,1);
+});
