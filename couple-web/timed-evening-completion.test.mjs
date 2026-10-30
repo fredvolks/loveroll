@@ -1124,7 +1124,8 @@ test("LR-026 real manual answer handler retains card and couple ownership during
  release();
  await task;
  assert.deepEqual(calls,['answer_challenge']);
- assert.deepEqual(paint,[]);
+ assert.deepEqual(paint,['render'],
+  'only the initiating tab may show the pending UI before navigating away');
  assert.equal(state.legacyAnswerContext,null);
 });
 
@@ -1199,4 +1200,38 @@ test('LR-026 D100 manual completion shows accessible disabled busy label',()=>{
  const queue=source.slice(begin,begin+6500);
  assert.match(queue,/isEveningCardCompleting\(view\.id\)\?'♡ Réponse en cours':'✓ Défi réalisé'/);
  assert.match(queue,/aria-busy="true"/);
+});
+
+test('LR-026 completed manual D100 response repaints only after releasing busy lock',async()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const begin=app.indexOf("if(verb==='answer'){");
+ const end=app.indexOf("if(verb==='finish-session')",begin);
+ assert.ok(begin>0&&end>begin);
+ let release;
+ const answerPending=new Promise(resolve=>{release=resolve;});
+ const state={user:{id:'alice'},session:{id:'session-A'},coupleId:'couple-A',
+  tab:'session',legacyAnswerContext:null,challenges:[
+   {id:'card-A',recipient:'alice',session_id:'session-A',status:'accepted'}]};
+ const renderStates=[],calls=[];
+ const handle=runInNewContext('(async function(verb,parts){'+app.slice(begin,end)+'})',{
+  state,isEveningCardCompleting:()=>false,
+  ownEveningChallenges:rows=>rows,
+  isSameEveningResponseContext:(view,c)=>view.user?.id===c?.userId&&
+   view.session?.id===c?.sessionId&&view.tab===c?.tab,
+  rpc:async(name)=>{calls.push(name);
+   if(name==='answer_challenge')await answerPending;
+   return {finished:false};
+  },
+  query:async()=>[],ownsVisibleEveningTimer:()=>false,saveChallengeTimer:()=>{},
+  refreshShared:async()=>true,
+  render:()=>renderStates.push(state.legacyAnswerContext?.challengeId||'idle'),
+  notify:()=>{},console,document:{hidden:false}
+ });
+ const inFlight=handle('answer',['card-A','completed']);
+ assert.deepEqual(renderStates,['card-A']);
+ release();await inFlight;
+ assert.deepEqual(calls,['answer_challenge','my_love_evening_board']);
+ assert.deepEqual(renderStates,['card-A','idle'],
+  'successful manual decision must render UNLOCKED after the scoped commit');
+ assert.equal(state.legacyAnswerContext,null);
 });
