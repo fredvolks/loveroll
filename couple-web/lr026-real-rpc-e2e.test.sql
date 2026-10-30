@@ -186,6 +186,20 @@ BEGIN
   OR (result->>'replacement_id')::uuid IS DISTINCT FROM replacement.id
  THEN RAISE EXCEPTION 'REAL RPC: repeated pass not idempotent %',result;END IF;
 
+ -- A delayed Refuser from another view/device cannot change an already
+ -- committed Passer into an exclusion, nor generate an extra challenge.
+ SELECT public.love_respond_and_redraw(drawn.id,'refuse',true) INTO result;
+ IF result->>'already_processed'<>'true'
+   OR result->>'action'<>'pass'
+   OR result->>'excluded'<>'false'
+   OR (result->>'replacement_id')::uuid IS DISTINCT FROM replacement.id
+   OR (SELECT count(*) FROM public.love_cycle_excluded_cards
+       WHERE couple_id=drawn.couple_id AND category='SENSUEL'
+         AND card_id=drawn.card_id)<>0
+ THEN
+  RAISE EXCEPTION 'REAL RPC: delayed refusal rewrote an earlier Passer %',result;
+ END IF;
+
  -- B has now used monthly pass 1/1. A has a distinct, independent quota.
  blocked:=false;
  BEGIN
@@ -854,6 +868,24 @@ BEGIN
    OR (SELECT count(*) FROM public.couple_challenges
        WHERE couple_id=pair AND status='passed')<>0 THEN
   RAISE EXCEPTION 'REAL RPC REFUSE FALSE: replay altered choice or quota %',result;
+ END IF;
+
+ -- The inverse late tap is just as important: Passer requested AFTER
+ -- Refuser(false) must replay the refusal, not hit the zero-pass limit or
+ -- charge a pass. This guards reconnects and stale mobile interactions.
+ SELECT public.love_respond_and_redraw(first_card.id,'pass',false) INTO result;
+ IF result->>'already_processed'<>'true'
+   OR result->>'action'<>'refuse'
+   OR result->>'excluded'<>'false'
+   OR (result->>'replacement_id')::uuid IS DISTINCT FROM next_card.id
+   OR (SELECT count(*) FROM public.couple_challenges
+       WHERE couple_id=pair AND status='passed')<>0
+   OR (SELECT count(*) FROM public.love_challenge_redraws
+       WHERE couple_id=pair)<>1
+   OR (SELECT count(*) FROM public.love_cycle_excluded_cards
+       WHERE couple_id=pair AND category='SENSUEL'
+         AND card_id=first_card.card_id)<>0 THEN
+  RAISE EXCEPTION 'REAL RPC REFUSE FALSE: delayed Passer rewrote refusal %',result;
  END IF;
  RAISE NOTICE
  'LR-026 REAL RPC: zero Passer quota, Refuser(false), future-bag release, no exclusion and replay passed';
