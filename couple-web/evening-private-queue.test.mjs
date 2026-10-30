@@ -1527,3 +1527,75 @@ test('LR-015 keeps old queue CSS disabled and loads targeted mobile decision sty
  assert.ok(css.includes('@media(max-width:360px)'));
  assert.ok(css.includes('#app .lr-refusal-dialog{position:relative;display:block'));
 });
+
+test('LR-026: unscoped refresh never commits an old account or couple after first network batch',async()=>{
+ const start=app.indexOf('async function refreshShared(expectedContext=null){');
+ const end=app.indexOf('const liveSync=createCoupleLiveSync',start);
+ assert.ok(start>0&&end>start);
+ for(const moved of ['account','couple']){
+  const state={user:{id:'alice'},coupleId:'couple-A',tab:'session',
+   session:{id:'session-A'},cycleStatus:'previous',
+   monthlyPassQuota:'previous',challenges:[{id:'keep-private'}]};
+  let initialReads=0,additionalCalls=0;
+  const refresh=runInNewContext(app.slice(start,end)+'; refreshShared;',{
+   state,
+   query:async name=>{
+    initialReads++;
+    if(name==='couple_sessions'){
+     if(moved==='account')state.user={id:'bob'};
+     else state.coupleId='couple-B';
+     return [{id:'session-A',finished_at:null}];
+    }
+    return [];
+   },
+   rpc:async name=>{
+    if(name==='love_redraw_capabilities')additionalCalls++;
+    if(name==='love_cycle_status')return {pending:false};
+    return [];
+   },
+   isSameEveningResponseContext,mayApplyScopedEveningRefresh,
+   ownEveningChallenges,month:()=>'2026-10',week:()=>'2026-W44',
+   console
+  });
+  const result=await refresh();
+  assert.equal(result,undefined,
+   moved+' switching during an unscoped fetch must discard its results');
+  assert.ok(initialReads>=8,'the initial private query batch really started');
+  assert.equal(additionalCalls,0,'no further private RPC on the replacement account');
+  assert.equal(state.cycleStatus,'previous','old couple status must remain untouched');
+  assert.equal(state.monthlyPassQuota,'previous');
+  assert.deepEqual(state.challenges,[{id:'keep-private'}]);
+  assert.equal(state.session.id,'session-A');
+ }
+});
+
+test('LR-026: unscoped refresh survives a harmless tab change on the same account',async()=>{
+ const start=app.indexOf('async function refreshShared(expectedContext=null){');
+ const end=app.indexOf('const liveSync=createCoupleLiveSync',start);
+ assert.ok(start>0&&end>start);
+ const state={user:{id:'alice'},coupleId:'couple-A',tab:'session',
+  session:{id:'session-A'},challenges:[],reviewModalSessionId:null,
+  reviewDismissedSessionId:null,eveningCalendarMonth:'2026-10'};
+ const refresh=runInNewContext(app.slice(start,end)+'; refreshShared;',{
+  state,
+  query:async name=>{
+   if(name==='couple_sessions'){
+    state.tab='settings';
+    return [{id:'session-A',finished_at:null}];
+   }
+   return [];
+  },
+  rpc:async name=>{
+   if(name==='love_redraw_capabilities')return false;
+   if(name==='love_cycle_status')return {pending:false};
+   return [];
+  },
+  isSameEveningResponseContext,mayApplyScopedEveningRefresh,
+  ownEveningChallenges,refreshEclatStatus:async()=>{},
+  month:()=>'2026-10',week:()=>'2026-W44',console
+ });
+ const result=await refresh();
+ assert.equal(result,true,'tab navigation should not cancel an account-owned refresh');
+ assert.equal(state.tab,'settings');
+ assert.equal(state.session.id,'session-A');
+});
