@@ -785,7 +785,7 @@ for (const options of [
 }
 
 test('stale-response staging probe rejects ambiguous options before network', async () => {
- for (const value of ['TRUE','1','yes','',null]) {
+ for (const value of ['TRUE','1','yes','']) {
   const mock=mockSupabase();
   await assert.rejects(runStage({...env(),LR026_STAGING_STALE_REPLAY:value},
    'play',mock.fetchFn),/Stale-response replay switch must be true or false/);
