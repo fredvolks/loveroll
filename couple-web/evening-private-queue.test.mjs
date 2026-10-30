@@ -987,6 +987,58 @@ test('LR-026: pending timer-play RLS read cannot start a switched-account clock'
  assert.equal(state.timerStartContext,null);
 });
 
+test('LR-026: Commencer and timer-play cannot concurrently accept the same challenge',async()=>{
+ const begin=app.indexOf("if(verb==='evening-start')");
+ const end=app.indexOf("if(verb==='surprise-activity')",begin);
+ const startFactory=Function('state','challengeTimer','ownEveningChallenges',
+  'isSameEveningResponseContext','rpc','refreshShared','activeTimer',
+  'resolvedCard','saveChallengeTimer','updateChallengeClock','render',
+  'notify','unlockLoveRollSounds',
+  'return async function(verb,parts){'+app.slice(begin,end)+'}');
+ const playBegin=app.indexOf("if(verb==='timer-toggle')");
+ const playEnd=app.indexOf("if(verb==='give-challenge')",playBegin);
+ const playFactory=Function('state','challengeTimer','ownsVisibleEveningTimer',
+  'isSameEveningResponseContext','timedEveningItem','rpc','query',
+  'updateChallengeClock','saveChallengeTimer','notify','unlockLoveRollSounds',
+  'return async function(verb){'+app.slice(playBegin,playEnd)+'}');
+ const state={user:{id:'fred'},session:{id:'night'},tab:'session',
+  challenges:[{id:'card',recipient:'fred',session_id:'night',status:'proposed'}]};
+ const clock={id:'card',ownerUserId:'fred',ownerSessionId:'night',
+  mode:'vibrate',running:false,remainingMs:120000,autoCompletePending:false};
+ const owns=(id,userId,sessionId)=>ownsEveningTimerRecord(clock,id,userId,sessionId)&&
+  state.user?.id===userId&&state.session?.id===sessionId;
+ let rpcCalls=0;
+ let finish;
+ const pending=new Promise(resolve=>{finish=resolve;});
+ const rpc=async()=>{rpcCalls++;await pending;};
+ const start=startFactory(state,clock,ownEveningChallenges,isSameEveningResponseContext,
+  rpc,async()=>{state.challenges=[{...state.challenges[0],status:'accepted'}];},
+  ()=>{},()=>({minutes:2}),()=>{},()=>{},()=>{},()=>{},()=>{});
+ const play=playFactory(state,clock,owns,isSameEveningResponseContext,
+  ()=>state.challenges[0],rpc,async()=>[{...state.challenges[0],status:'accepted'}],
+  ()=>{},()=>{},()=>{},()=>true);
+ const first=start('evening-start',['card']);
+ await play('timer-toggle');
+ assert.equal(rpcCalls,1,'timer play cannot duplicate a pending Commencer RPC');
+ finish();await first;
+ assert.equal(state.eveningStartContext,null);
+ // In the opposite direction, pending timer-play owns the same acceptance.
+ state.challenges=[{...state.challenges[0],status:'proposed'}];
+ clock.running=false;clock.remainingMs=120000;
+ let finishAgain;const secondPending=new Promise(resolve=>{finishAgain=resolve;});
+ const rpcSecond=async()=>{rpcCalls++;await secondPending;};
+ const secondPlay=playFactory(state,clock,owns,isSameEveningResponseContext,
+  ()=>state.challenges[0],rpcSecond,async()=>[{...state.challenges[0],status:'accepted'}],
+  ()=>{},()=>{},()=>{},()=>true);
+ const secondStart=startFactory(state,clock,ownEveningChallenges,isSameEveningResponseContext,
+  rpcSecond,async()=>{},()=>{},()=>({minutes:2}),()=>{},()=>{},()=>{},()=>{},()=>{});
+ const second=secondPlay('timer-toggle');
+ await secondStart('evening-start',['card']);
+ assert.equal(rpcCalls,2,'Commencer cannot duplicate a pending timer-play RPC');
+ finishAgain();await second;
+ assert.equal(state.timerStartContext,null);
+});
+
 test('LR-026: Commencer never starts a clock on an unconfirmed proposed row',async()=>{
  const code=app.slice(app.indexOf("if(verb==='evening-start')"),
   app.indexOf("if(verb==='surprise-activity')"));
