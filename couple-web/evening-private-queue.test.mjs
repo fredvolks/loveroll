@@ -454,7 +454,7 @@ test('LR-026: UI waits for persisted redraw before stopping a live timer or conf
  const start=app.indexOf("if(verb==='evening-pass'||verb==='evening-refuse-choice')");
  const end=app.indexOf("if(verb==='evening-start')",start);
  const code=app.slice(start,end);
- const refresh=code.indexOf('await refreshShared();');
+ const refresh=code.indexOf('await refreshShared(responseContext);');
  const storedCheck=code.indexOf('const persistedReceiptValid=');
  const stop=code.indexOf('if(persistedReceiptValid&&challengeTimer.id===challengeId)');
  const select=code.indexOf('state.selectedEveningChallengeId=activeEveningRedrawReplacementId(');
@@ -477,7 +477,7 @@ test('LR-026: no intermediate redraw render can flash an unrelated new card',()=
  const begin=app.indexOf("if(verb==='evening-pass'||verb==='evening-refuse-choice')");
  const end=app.indexOf("if(verb==='evening-start')",begin);
  const branch=app.slice(begin,end);
- const refresh=branch.indexOf('await refreshShared();');
+ const refresh=branch.indexOf('await refreshShared(responseContext);');
  const finallyBlock=branch.indexOf('}finally{');
  assert.ok(refresh>=0&&finallyBlock>refresh);
  assert.doesNotMatch(branch.slice(0,finallyBlock),/await refreshAndShow\(\)/,
@@ -515,7 +515,7 @@ test('LR-026: async D100 action checks same initiating context before selection 
   'must guard both UI navigation and notifications; additional timer/error checks are required');
  assert.match(branch,/const sameContext=isSameEveningResponseContext\(state,responseContext\)/);
  assert.match(branch,/if\(sameContext\)\{\s+if\(receiptValid\)state\.eveningRefusalId=null;[\s\S]*?state\.selectedEveningChallengeId=null/);
- assert.match(branch,/await refreshShared\(\);[\s\S]*?const persistedReceiptValid=[\s\S]*?if\(isSameEveningResponseContext\(state,responseContext\)\)\s+redrawFeedback=receiptValid&&!persistedReceiptValid/);
+ assert.match(branch,/await refreshShared\(responseContext\);[\s\S]*?const persistedReceiptValid=[\s\S]*?if\(isSameEveningResponseContext\(state,responseContext\)\)\s+redrawFeedback=receiptValid&&!persistedReceiptValid/);
  assert.doesNotMatch(branch,/if\(state\.session\?\.id===sessionId\)/,
   'checking only the session leaves another account/tab exposed');
 });
@@ -527,7 +527,7 @@ test('LR-026: stale account or tab cannot refresh after an in-flight redraw RPC'
  const response=branch.indexOf("const outcome=await rpc('love_respond_and_redraw'");
  const context=branch.indexOf('const sameContext=isSameEveningResponseContext(state,responseContext)');
  const reject=branch.indexOf('if(!sameContext)return;');
- const refresh=branch.indexOf('await refreshShared();');
+ const refresh=branch.indexOf('await refreshShared(responseContext);');
  const done=branch.indexOf('}finally{');
  assert.ok(response>=0&&context>response&&reject>context&&refresh>reject&&done>refresh,
   'stale RPC must return before it can refresh any other account or evening');
