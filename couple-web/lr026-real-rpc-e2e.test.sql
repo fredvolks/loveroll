@@ -200,6 +200,57 @@ BEGIN
   RAISE EXCEPTION 'REAL RPC: delayed refusal rewrote an earlier Passer %',result;
  END IF;
 
+ -- Important access-control regression: once the receipt exists, the
+ -- offerer A must NOT get its idempotent response just by knowing the
+ -- original UUID. Membership alone never grants the right to replay B's
+ -- already-processed decision (and its replacement UUID).
+ PERFORM pg_catalog.set_config('request.jwt.claim.sub',a::text,true);
+ blocked:=false;
+ BEGIN
+  PERFORM public.love_respond_and_redraw(drawn.id,'refuse',true);
+ EXCEPTION WHEN OTHERS THEN
+  GET STACKED DIAGNOSTICS error_text=MESSAGE_TEXT;
+  IF error_text<>'Seul le destinataire peut répondre' THEN
+   RAISE EXCEPTION 'REAL RPC: wrong actor replay leaked unexpected error %',error_text;
+  END IF;
+  blocked:=true;
+ END;
+ IF NOT blocked THEN
+  RAISE EXCEPTION 'REAL RPC: original offerer replayed B private receipt';
+ END IF;
+
+ -- The completely unrelated user cannot discover a processed response
+ -- either. This must fail before the per-couple receipt is fetched.
+ PERFORM pg_catalog.set_config('request.jwt.claim.sub',outsider::text,true);
+ blocked:=false;
+ BEGIN
+  PERFORM public.love_respond_and_redraw(drawn.id,'pass',false);
+ EXCEPTION WHEN OTHERS THEN
+  GET STACKED DIAGNOSTICS error_text=MESSAGE_TEXT;
+  IF error_text<>'Défi inaccessible' THEN
+   RAISE EXCEPTION 'REAL RPC: outsider replay leaked unexpected error %',error_text;
+  END IF;
+  blocked:=true;
+ END;
+ IF NOT blocked THEN
+  RAISE EXCEPTION 'REAL RPC: outsider replayed another duet receipt';
+ END IF;
+ IF (SELECT count(*) FROM public.love_challenge_redraws
+     WHERE origin_id=drawn.id)<>1
+   OR (SELECT count(*) FROM public.couple_challenges
+       WHERE couple_id=drawn.couple_id
+         AND replaces_challenge_id=drawn.id)<>1
+   OR (SELECT status FROM public.couple_challenges
+       WHERE id=drawn.id)<>'passed'
+   OR EXISTS(
+      SELECT 1 FROM public.love_cycle_excluded_cards
+      WHERE couple_id=drawn.couple_id AND category=drawn.category
+        AND card_id=drawn.card_id)
+ THEN
+  RAISE EXCEPTION 'REAL RPC: unauthorized receipt replay mutated private state';
+ END IF;
+ PERFORM pg_catalog.set_config('request.jwt.claim.sub',b::text,true);
+
  -- B has now used monthly pass 1/1. A has a distinct, independent quota.
  blocked:=false;
  BEGIN
