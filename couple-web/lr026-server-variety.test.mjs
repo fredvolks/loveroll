@@ -31,7 +31,7 @@ test('LR-026: history and candidates are restricted to this couple/session/categ
  assert.match(sql,/active\.couple_id=p_couple/);
  assert.match(sql,/active\.category=p_category AND active\.card_id=p_card_id/);
  assert.match(sql,/base\.category=p_category AND base\.card_id=p_card_id/);
- assert.match(sql,/seen\.category=p_category AND seen\.card_id=p_card_id/);
+ assert.match(sql,/AND seen\.category=p_category\s+AND \(\s+seen\.card_id=p_card_id/);
  assert.match(sql,/p_session,s\.couple_id,v_cat,card/);
  assert.match(sql,/v_old\.session_id,v_couple,v_old\.category,candidate\.card/);
 });
