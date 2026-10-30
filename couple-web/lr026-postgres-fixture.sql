@@ -1,7 +1,15 @@
 -- Disposable PostgreSQL 17 CI fixture; never run against LoveRoll production.
 -- Only the schema needed for LR-026's private helper functions.
-CREATE ROLE anon NOLOGIN;
-CREATE ROLE authenticated NOLOGIN;
+-- PostgreSQL roles are cluster-wide: this fixture runs in TWO test databases.
+DO $lr026_fixture_roles$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname='anon') THEN
+    CREATE ROLE anon NOLOGIN;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname='authenticated') THEN
+    CREATE ROLE authenticated NOLOGIN;
+  END IF;
+END; $lr026_fixture_roles$;
 CREATE SCHEMA couple_private;
 
 CREATE TABLE public.love_base_challenges (
