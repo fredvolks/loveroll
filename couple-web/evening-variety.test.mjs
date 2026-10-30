@@ -13,6 +13,31 @@ test('LR-026: stable ID, accents and equivalent titles detect actual repeat',()=
  assert.equal(areNearDuplicateEveningCards(card(1,'Épaules douces','Un geste'),
   card(2,'Epaules douces','Autre geste')),true);
 });
+test('LR-026: French œ/æ ligatures normalize exactly like the SQL helper',()=>{
+ const heart=card(11,'Un cœur léger','Une soirée paisible au salon');
+ const coeur=card(12,'Un coeur leger','Une activité totalement différente');
+ assert.equal(areNearDuplicateEveningCards(heart,coeur),true,
+  'JavaScript NFKD alone cannot replace œ with oe');
+ assert.equal(areNearDuplicateEveningCards(coeur,heart),true);
+ const book=card(13,'L’encyclopædie de nos idées','Une activité calme');
+ const plain=card(14,'L encyclopaedie de nos idees','Un autre exercice');
+ assert.equal(areNearDuplicateEveningCards(book,plain),true);
+ const upper=card(15,'CŒUR et ÆTHER','Instructions du défi');
+ const lower=card(16,'Coeur et aether','Autre activité');
+ assert.equal(areNearDuplicateEveningCards(upper,lower),true);
+ const distinct=card(17,'Danse au jardin','Choisissez une chanson');
+ const selected=filterSimilarEveningCandidates({
+  eligibleCards:[plain,distinct],
+  recentInSession:[book],
+  selectedCategory:'SENSUEL'
+ });
+ assert.deepEqual(selected.candidates,[distinct]);
+ assert.equal(selected.suppressedCount,1);
+ const sexual={...plain,category:'SEXUEL'};
+ assert.equal(areNearDuplicateEveningCards(book,sexual),false,
+  'Ligature normalization must never cross the official D100 category');
+});
+
 test('LR-026: cross-category matching titles, card ids and instructions are NOT duplicates',()=>{
  const sensual=card(12,'Danse lente et douceur',
   'Proposez une danse lente ensemble autour du salon.');
