@@ -225,7 +225,7 @@ test('network-first shell asset refreshes canonical offline cache without touchi
 test('PWA release refreshes the actual iPad D100 CSS and ONE shared stage module',()=>{
  // iPad visual assets are versioned only when their actual bytes change.
  // A timer-only release must not force a misleading iPad asset version bump.
- const ipadTag=html.match(/ipad-soiree-one-photo-v237\\.css\\?v=(\\d{8}-ipad\\d+)/)?.[1];
+ const ipadTag=html.match(/ipad-soiree-one-photo-v237[.]css[?]v=([0-9]{8}-ipad[0-9]+)/)?.[1];
  assert.ok(ipadTag,'The approved iPad photo stylesheet needs a versioned URL');
  const d100=read('evening-d100-template.mjs');
  const d6=read('evening-d6-template.mjs');
