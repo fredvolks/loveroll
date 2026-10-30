@@ -158,6 +158,45 @@ assert_rejected_quota() {
    echo "::error::$label failed for the wrong reason"; cat "$tmp/$label.log"; exit 1;
  }
 }
+# The persisted receipt and BOTH returned JSON payloads must agree on
+# original_id, action, excluded and the EXACT replacement UUID. Merely
+# checking the row count could miss a stale-client wrong replacement_id.
+assert_both_client_receipts() {
+ local label="$1" couple="$2" origin="$3"
+ local saved replacement action excluded caller field
+ saved="$(psql -X -d "$DB" -At -v ON_ERROR_STOP=1 -c "
+  SELECT replacement_id::text || '|' || action || '|' ||
+   CASE WHEN excluded THEN 'true' ELSE 'false' END
+  FROM public.love_challenge_redraws
+  WHERE couple_id='$couple' AND origin_id='$origin'")"
+ IFS='|' read -r replacement action excluded <<< "$saved"
+ if [[ ! "$replacement" =~ ^[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}$ ]] ||
+    [[ "$action" != pass && "$action" != refuse ]] ||
+    [[ "$excluded" != true && "$excluded" != false ]]; then
+  echo "::error::$label invalid saved receipt: $saved"
+  exit 1
+ fi
+ assert_count "$label persisted replacement relationship" \
+  "SELECT count(*) FROM public.couple_challenges
+   WHERE id='$replacement' AND couple_id='$couple'
+     AND replaces_challenge_id='$origin' AND status='proposed'" 1
+ for suffix in 1 2; do
+  caller="$label.$suffix"
+  assert_status "$caller" 0
+  for field in \
+   "\"original_id\": \"$origin\"" \
+   "\"replacement_id\": \"$replacement\"" \
+   "\"action\": \"$action\"" \
+   "\"excluded\": $excluded"; do
+    if ! grep -Fq "$field" "$tmp/$caller.log"; then
+     echo "::error::$caller disagreed with the committed receipt on $field"
+     cat "$tmp/$caller.log"
+     exit 1
+    fi
+  done
+ done
+}
+
 assert_rows() {
  local couple="$1" passed="$2"
  assert_count "Real RPC passed rows $couple" \
@@ -413,6 +452,7 @@ if [[ "$fresh" != 1 || "$replayed" != 1 ]]; then
 fi
 pair=88888888-aaaa-4888-8888-888888888888
 origin=88888888-cccc-4888-8888-888888888888
+assert_both_client_receipts pass_versus_refuse "$pair" "$origin"
 assert_count "Competing responses exactly one receipt" \
  "SELECT count(*) FROM public.love_challenge_redraws WHERE couple_id='$pair' AND origin_id='$origin'" 1
 assert_count "Competing responses exactly one replacement" \
@@ -478,6 +518,7 @@ if [[ "$fresh" != 1 || "$replayed" != 1 ]]; then
  echo "::error::Concurrent Refuser choices gave $fresh fresh, $replayed replayed"
  exit 1
 fi
+assert_both_client_receipts refuse_without_versus_with_exclusion "$pair" "$origin"
 assert_count "Refuser option race one immutable receipt" \
  "SELECT count(*) FROM public.love_challenge_redraws WHERE origin_id='$origin' AND action='refuse'" 1
 assert_count "Refuser option race original timestamp and status" \
