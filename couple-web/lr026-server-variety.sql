@@ -37,66 +37,70 @@ AS $lr026$
     '[^a-z0-9]+',' ','g'));
 $lr026$;
 
--- Preserve semantic decisions, but reject impossible description overlap
--- BEFORE building expensive token sets for every still-eligible D100 card.
--- Five DISTINCT meaningful tokens (min four letters each) need at least
--- 24 normalized characters and at least five whitespace-separated words.
--- Normalization guarantees single ASCII spaces between tokens. Parsing
--- those tokens with string_to_array/unnest avoids repeated regex overhead,
--- without changing any admissible card or semantic threshold.
+-- The D100 draw evaluates all eligible cards against prior challenges.
+-- Preserve the original 5-token / 68%-Jaccard similarity rule exactly,
+-- while constructing each candidate's UNIQUE meaningful tokens only once
+-- per comparison (not three independent scans via scalar CTE subqueries).
 CREATE OR REPLACE FUNCTION couple_private.love_variety_near(
  p_title text, p_description text, p_old_title text, p_old_description text
-) RETURNS boolean LANGUAGE sql IMMUTABLE SET search_path=''
+) RETURNS boolean LANGUAGE plpgsql IMMUTABLE SET search_path=''
 AS $lr026$
- WITH normalized AS (
-   SELECT couple_private.love_variety_normalize(p_title) AS a_title,
-          couple_private.love_variety_normalize(p_old_title) AS b_title,
-          couple_private.love_variety_normalize(p_description) AS a_desc,
-          couple_private.love_variety_normalize(p_old_description) AS b_desc
- )
- SELECT CASE
-   WHEN n.a_title<>'' AND n.b_title<>'' AND n.a_title=n.b_title
-     THEN true
-   WHEN pg_catalog.length(n.a_desc)<24 OR pg_catalog.length(n.b_desc)<24
-     THEN false
-   WHEN pg_catalog.cardinality(
-          pg_catalog.string_to_array(n.a_desc,' '))<5
-        OR pg_catalog.cardinality(
-          pg_catalog.string_to_array(n.b_desc,' '))<5
-     THEN false
-   ELSE (
-     WITH current_terms AS (
-       SELECT DISTINCT w.token
-       FROM pg_catalog.unnest(pg_catalog.string_to_array(n.a_desc,' ')) AS w(token)
-       WHERE pg_catalog.length(w.token)>=4 AND w.token NOT IN (
-         'avec','comme','dans','pour','puis','sans','toute','tous','votre',
+DECLARE
+  a_title text := couple_private.love_variety_normalize(p_title);
+  b_title text := couple_private.love_variety_normalize(p_old_title);
+  a_desc text := couple_private.love_variety_normalize(p_description);
+  b_desc text := couple_private.love_variety_normalize(p_old_description);
+  a_tokens text[];
+  b_tokens text[];
+  word text;
+  shared integer := 0;
+BEGIN
+  IF a_title<>'' AND b_title<>'' AND a_title=b_title THEN
+    RETURN true;
+  END IF;
+  -- A five-word intersection of distinct tokens with >=4 letters cannot
+  -- occur in fewer than 24 characters or five whitespace-separated words.
+  IF pg_catalog.length(a_desc)<24 OR pg_catalog.length(b_desc)<24
+     OR pg_catalog.cardinality(pg_catalog.string_to_array(a_desc,' '))<5
+     OR pg_catalog.cardinality(pg_catalog.string_to_array(b_desc,' '))<5
+  THEN
+    RETURN false;
+  END IF;
+
+  SELECT ARRAY(
+    SELECT DISTINCT t.word
+    FROM pg_catalog.unnest(pg_catalog.string_to_array(a_desc,' ')) t(word)
+    WHERE pg_catalog.length(t.word)>=4 AND t.word NOT IN (
+      'avec','comme','dans','pour','puis','sans','toute','tous','votre',
     'notre','leurs','chez','avant','apres','pendant','entre','faire',
     'faites','invite','invitez','propose','proposez','choisis',
     'choisissez','partenaire','ensemble','quelques','minutes','minute',
     'chaque','autre','vous','nous'
-       )
-     ), prior_terms AS (
-       SELECT DISTINCT w.token
-       FROM pg_catalog.unnest(pg_catalog.string_to_array(n.b_desc,' ')) AS w(token)
-       WHERE pg_catalog.length(w.token)>=4 AND w.token NOT IN (
-         'avec','comme','dans','pour','puis','sans','toute','tous','votre',
+    )
+  ) INTO a_tokens;
+  IF pg_catalog.cardinality(a_tokens)<5 THEN RETURN false; END IF;
+
+  SELECT ARRAY(
+    SELECT DISTINCT t.word
+    FROM pg_catalog.unnest(pg_catalog.string_to_array(b_desc,' ')) t(word)
+    WHERE pg_catalog.length(t.word)>=4 AND t.word NOT IN (
+      'avec','comme','dans','pour','puis','sans','toute','tous','votre',
     'notre','leurs','chez','avant','apres','pendant','entre','faire',
     'faites','invite','invitez','propose','proposez','choisis',
     'choisissez','partenaire','ensemble','quelques','minutes','minute',
     'chaque','autre','vous','nous'
-       )
-     ), scores AS (
-       SELECT
-         (SELECT pg_catalog.count(*)
-          FROM current_terms JOIN prior_terms USING(token)) AS shared,
-         (SELECT pg_catalog.count(*) FROM current_terms) AS size_a,
-         (SELECT pg_catalog.count(*) FROM prior_terms) AS size_b
-     )
-     SELECT shared>=5 AND shared*100 >= 68*(size_a+size_b-shared)
-     FROM scores
-   )
- END
- FROM normalized n;
+    )
+  ) INTO b_tokens;
+  IF pg_catalog.cardinality(b_tokens)<5 THEN RETURN false; END IF;
+
+  FOREACH word IN ARRAY a_tokens LOOP
+    IF pg_catalog.array_position(b_tokens,word) IS NOT NULL THEN
+      shared:=shared+1;
+    END IF;
+  END LOOP;
+  RETURN shared>=5 AND shared*100 >= 68*(
+    pg_catalog.cardinality(a_tokens)+pg_catalog.cardinality(b_tokens)-shared);
+END;
 $lr026$;
 
 -- 0=nouveau, 1=semblable. Trie seulement les cartes DÉJÀ ADMISSIBLES.
