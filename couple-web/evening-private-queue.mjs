@@ -124,8 +124,13 @@ export function isPersistedEveningRedrawReceipt(outcome,rows,userId,sessionId,or
  // already acted on the replacement: accept a committed passed/refused
  // state ONLY when its corresponding stamp is present and the other absent.
  const validDecisionStamps=card=>{
-  if(card.status==='passed')return validStamp(card.passed_at)&&card.refused_at===null;
-  if(card.status==='refused')return validStamp(card.refused_at)&&card.passed_at===null;
+  // The server cannot decide a challenge before creating that challenge.
+  if(card.status==='passed')return validStamp(card.passed_at)&&
+   card.refused_at===null&&
+   Date.parse(card.passed_at)>=Date.parse(card.created_at);
+  if(card.status==='refused')return validStamp(card.refused_at)&&
+   card.passed_at===null&&
+   Date.parse(card.refused_at)>=Date.parse(card.created_at);
   return ['proposed','accepted','completed'].includes(card.status)&&
    card.passed_at===null&&card.refused_at===null;
  };
@@ -148,7 +153,9 @@ export function isPersistedEveningRedrawReceipt(outcome,rows,userId,sessionId,or
  const replacement=replacements[0];
  if(!validStamp(replacement.created_at)||!validCardContent(replacement)||
   !validDecisionStamps(replacement))return false;
- if(Date.parse(replacement.created_at)<Date.parse(original.created_at))
+ // The replacement is inserted by the SAME transaction that commits
+ // Passer/Refuser. It cannot be older than that persisted decision stamp.
+ if(Date.parse(replacement.created_at)<Date.parse(actionStamp))
   return false;
  // The official SQL chooses a different library card and D100 face
  // within the same category, recipient and evening. A stale or corrupted
