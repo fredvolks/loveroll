@@ -44,12 +44,18 @@ BEGIN
     'Autre activité',null) THEN
    RAISE EXCEPTION 'LR-026 : données vides traitées comme un doublon';
  END IF;
- -- Neither browser role may call the private helpers directly.
- IF pg_catalog.has_function_privilege('anon',
-   'couple_private.love_variety_rank(uuid,uuid,text,integer)','EXECUTE')
-  OR pg_catalog.has_function_privilege('authenticated',
-   'couple_private.love_variety_rank(uuid,uuid,text,integer)','EXECUTE') THEN
-   RAISE EXCEPTION 'LR-026 : exécution du rang privé exposée au navigateur';
+ -- Neither browser role may EXECUTE ANY of the three private helpers.
+ -- Check function ACL directly, independently of private-schema USAGE rights.
+ IF EXISTS (
+   SELECT 1 FROM pg_catalog.pg_proc p
+   JOIN pg_catalog.pg_namespace n ON n.oid=p.pronamespace
+   WHERE n.nspname='couple_private'
+     AND p.proname IN (
+       'love_variety_normalize','love_variety_near','love_variety_rank')
+     AND (pg_catalog.has_function_privilege('anon',p.oid,'EXECUTE')
+       OR pg_catalog.has_function_privilege('authenticated',p.oid,'EXECUTE'))
+ ) THEN
+   RAISE EXCEPTION 'LR-026 : une aide privée est exécutable par navigateur';
  END IF;
  IF NOT EXISTS (
   SELECT 1 FROM pg_catalog.pg_proc p
