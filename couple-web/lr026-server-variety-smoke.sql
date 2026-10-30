@@ -30,5 +30,5 @@ BEGIN
  ) THEN
    RAISE EXCEPTION 'LR-026 : fonction de classement manquante';
  END IF;
-END $lr026_test$;
+END; $lr026_test$;
 ROLLBACK;
