@@ -305,6 +305,12 @@ test('LR-026: redraw success requires original decision and replacement in recip
  }
  assert.equal(verify([{...original,passed_at:'2026-10-30T08:02:00-04:00'},
   {...replacement,created_at:'2026-10-30T12:02:00.123456+00:00'}]),true);
+ assert.equal(verify([{...original,passed_at:original.created_at},replacement]),true,
+  'a same-transaction timestamp may match the original creation time');
+ assert.equal(verify([{...original,passed_at:'2026-10-30T11:59:59Z'},replacement]),false,
+  'Passer cannot happen before the card was drawn');
+ assert.equal(verify([original,{...replacement,created_at:'2026-10-30T11:59:59Z'}]),false,
+  'a replacement cannot predate the challenge it replaces');
  for(const badStamp of [null,undefined,'not-a-date','']){
   assert.equal(verify([{...original,passed_at:badStamp},replacement]),false,
    'a Passer without a valid persisted passed_at must not confirm the timer');
@@ -353,6 +359,14 @@ test('LR-026: redraw success requires original decision and replacement in recip
   replacement_unavailable:true};
  assert.equal(verify([refused],unavailable),true,
   'a confirmed server exhaustion must not invent a replacement');
+ assert.equal(verify([{...refused,refused_at:'2026-10-30T11:59:59Z'}],unavailable),
+  false,'refusal cannot be older than the original challenge');
+ assert.equal(verify([{...refused,face:0}],unavailable),false,
+  'unavailable receipt still needs a valid original D100 face');
+ assert.equal(verify([{...refused,card_id:101}],unavailable),false,
+  'an exhausted category cannot justify an invalid original card');
+ assert.equal(verify([refused],{...unavailable,action:'pass'}),false,
+  'the same persisted status cannot confirm a conflicting action');
  assert.equal(verify([refused,replacement],unavailable),false,
   'a server claiming exhausted cards must not conceal a committed replacement');
  assert.equal(verify([{...refused,status:'proposed'}],unavailable),false);
