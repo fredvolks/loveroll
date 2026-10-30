@@ -104,10 +104,19 @@ export function isPersistedEveningRedrawReceipt(outcome,rows,userId,sessionId){
  if(outcome.replacement_id===null)return replacements.length===0;
  if(replacements.length!==1)return false;
  const replacement=replacements[0];
+ // The official SQL chooses a different library card and D100 face
+ // within the same category, recipient and evening. A stale or corrupted
+ // response must not falsely confirm the same physical card again.
+ const validD100=card=>Number.isInteger(card.face)&&card.face>=1&&card.face<=100&&
+  Number.isInteger(card.card_id)&&card.card_id>=1&&card.card_id<=100;
  return replacement.id===outcome.replacement_id&&
   replacement.category===original.category&&
   replacement.offered_by===original.offered_by&&
-  replacement.couple_id===original.couple_id;
+  replacement.couple_id===original.couple_id&&
+  validD100(original)&&validD100(replacement)&&
+  replacement.face!==original.face&&
+  replacement.card_id!==original.card_id&&
+  replacement.is_gifted===Boolean(original.is_gifted);
 }
 
 /**
