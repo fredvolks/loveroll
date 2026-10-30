@@ -57,6 +57,23 @@ node --test couple-web/lr026-staging-recipe.test.mjs
 node --test couple-web/lr026-staging-audit.test.mjs
 ~~~
 
+## Précontrôle PostgreSQL RLS (lecture seule)
+
+Le nouveau fichier `couple-web/lr026-staging-readiness.sql` vérifie dans le catalogue PostgreSQL, sans lire de cartes ni toucher aux comptes, que les quatre tables du jeu (`couple_sessions`, `couple_members`, `couple_personal_rolls`, `couple_challenges`) :
+
+- ont le RLS activé, sont lisibles par `authenticated` mais pas par `anon`;
+- ont chacune une politique **restrictive** exigeant le courriel vérifié;
+- ont les autorisations `SELECT` liées à l'appartenance au duo (et au destinataire pour les défis);
+- n'ont **aucune autre politique de lecture permissive** qui contournerait l'isolation du duo;
+- utilisent les deux fonctions de pige et de réponse comme `SECURITY DEFINER` avec recherche de schéma définie, accessibles uniquement à `authenticated`;
+- ont bien la migration de variété LR-026 installée dans les deux RPC.
+
+Le résultat est un code `PASS|0|` ou `FAIL|nombre|règles_en_échec`. Exécuter avec `psql -X -At -v ON_ERROR_STOP=1 -f couple-web/lr026-staging-readiness.sql` **sur une base de staging distincte uniquement**, APRÈS installation de la migration et des politiques RLS.
+
+Les nouveaux fichiers `couple-web/lr026-staging-rls-fixture.sql`, `couple-web/lr026-staging-rls.test.sql` et `couple-web/lr026-staging-rls.test.sh` font tourner les règles de production précédemment vérifiées sur un PostgreSQL 17 **jetable en CI**. Les tests sont exécutés réellement sous le rôle `authenticated` avec des identités synthétiques A/B/C, et valident le cloisonnement inter-duos, la lecture D6, les cartes privées réservées au destinataire, l'utilisateur sans duo et le blocage des courriels non confirmés. Quatre modifications délibérément dangereuses (RLS désactivé, lecture anonyme, vérification de courriel permissive, nouvelle politique `SELECT` permissive) sont détectées puis annulées par des transactions SQL.
+
+**Limite :** cette CI reproduit les politiques et les fonctions observées en lecture seule, mais **n'est pas une preuve d'exécution sur l'hébergement Supabase**. Avant publication, il faut encore lancer `--auth`, `--audit` et `--play` contre un vrai staging distinct avec de vrais comptes GoTrue.
+
 ## Verrous et limites
 
 Le script vérifie **avant la connexion** le project ref, l'absence de production, la concordance HTTPS, les UUID, la distinction des comptes, la clé publique et les confirmations d'écriture. Il rejette les clés `sb_secret_`, `service_role`, et les variables contenant des clés service-role connues. Il n'utilise pas de clé d'administration. Les résultats ne contiennent ni mots de passe ni jetons.
