@@ -459,8 +459,8 @@ export async function runStage(env, mode, transport = fetch) {
   // A first Passer response is not proof of successful persistence. Before
   // deliberately repeating a mutating RPC as an idempotency probe, verify
   // the exact two committed rows under recipient B AND the empty A view.
-  async function persistedPassSnapshot() {
-    const stored = await client.rows('couple_challenges', challengeQuery, recipient.token);
+  async function persistedPassSnapshot(readToken = recipient.token) {
+    const stored = await client.rows('couple_challenges', challengeQuery, readToken);
     const forGiver = await client.rows('couple_challenges', challengeQuery, giver.token);
     assert(forGiver.length === 0,
       'Unexpected challenge addressed to drawer after partner draw and response');
@@ -519,6 +519,40 @@ export async function runStage(env, mode, transport = fetch) {
     assert(eq(secondDevice.id, recipient.id) &&
       secondDevice.token !== recipient.token,
       'Stale response probe requires a second independent recipient Auth session');
+    // A new JWT must not be treated as equivalent until it independently
+    // proves that both D6s, the session, membership and persisted cards are
+    // visible through RLS. Otherwise a replay can appear successful while
+    // the second device cannot actually render its game.
+    async function assertSecondDeviceView(stage) {
+      const sessions = await client.rows('couple_sessions',
+        'select=id,couple_id,finished_at,paired_turns,self_draws&id=eq.' +
+          config.sessionId, secondDevice.token);
+      assert(sessions.length === 1 && eq(sessions[0].id, config.sessionId) &&
+        eq(sessions[0].couple_id, config.coupleId) &&
+        sessions[0].finished_at === null &&
+        sessions[0].paired_turns === false &&
+        sessions[0].self_draws === false,
+        'Second device cannot see the same active staging session ' + stage);
+      const members = await client.rows('couple_members',
+        'select=couple_id,user_id&couple_id=eq.' + config.coupleId,
+        secondDevice.token);
+      assert(members.length === 2 &&
+        members.every(m => eq(m.couple_id, config.coupleId)) &&
+        [a.id,b.id].every(id => members.filter(m => eq(m.user_id,id)).length === 1),
+        'Second device cannot see the same exact two-person duet ' + stage);
+      const rolls = await client.rows('couple_personal_rolls',
+        'select=session_id,user_id,face&session_id=eq.' + config.sessionId,
+        secondDevice.token);
+      assert(rolls.length === 2 &&
+        [a.id,b.id].every((id,i) => rolls.filter(r =>
+          eq(r.session_id,config.sessionId) && eq(r.user_id,id) &&
+          Number.isInteger(r.face) && r.face === initialD6[i]).length === 1),
+        'Second device D6 snapshot is missing or differs ' + stage);
+      const snapshot = await persistedPassSnapshot(secondDevice.token);
+      assert(snapshot === beforeReplay,
+        'Second device cannot see the same persisted D100 cards ' + stage);
+    }
+    await assertSecondDeviceView('before contradictory response');
     const contradictions = config.action === 'pass'
       ? [{action:'refuse',exclude:true}]
       : [{action:'pass',exclude:false},
@@ -538,6 +572,7 @@ export async function runStage(env, mode, transport = fetch) {
         'Stale conflicting response mutated a persisted challenge');
       await assertDuetUnchanged('after stale conflicting response');
       await assertD6Unchanged('after stale conflicting response');
+      await assertSecondDeviceView('after contradictory response');
       staleReplayChecks++;
     }
   }
