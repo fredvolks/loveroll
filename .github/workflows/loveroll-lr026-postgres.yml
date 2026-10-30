@@ -23,6 +23,7 @@ on:
       - "couple-web/lr026-real-rpc-draw-race.seed.sql"
       - "couple-web/lr026-real-rpc-mixed-race.seed.sql"
       - "couple-web/lr026-real-rpc-response-race.seed.sql"
+      - "couple-web/lr026-real-rpc-refuse-choices-race.seed.sql"
       - "couple-web/lr026-real-rpc-concurrent.test.sh"
       - "couple-web/lr026-real-rpc.test.sh"
       - "couple-web/lr026-staging-recipe.mjs"
