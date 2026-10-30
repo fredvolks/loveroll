@@ -909,3 +909,31 @@ test("LR-026 stale successful completion must not clear another account's retry 
  assert.equal(api.backoff(),deadline,
   'Alice must not shorten Bob\'s pending backoff');
 });
+
+test("LR-026 an owned success clears its own expired retry delay",async()=>{
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const start=source.indexOf('function ownsTimerCompletionSession(context){');
+ const end=source.indexOf('// LR-002: recover ALL due challenge timers',start);
+ assert.ok(start>0&&end>start);
+ const owner=JSON.stringify(['alice','couple-A','session-A','card-A']);
+ const state={user:{id:'alice'},coupleId:'couple-A',session:{id:'session-A'},
+  tab:'session',timerCompletionContext:null,timerCompletionRetryOwner:owner};
+ const clock={id:'card-A',autoCompletePending:true,decisionPending:false};
+ const events=[];
+ const api=runInNewContext(source.slice(start,end)+
+  '; ({retry:retryExpiredTimedEvening,backoff:()=>timerCompletionRetryAt});',{
+  state,challengeTimer:clock,timerCompletionInFlight:null,timerCompletionRetryAt:Date.now()-100,
+  timedEveningItem:()=>({id:'card-A',recipient:'alice',session_id:'session-A',status:'accepted'}),
+  isAcceptedTimedEveningChallenge:()=>true,
+  completeTimedEveningChallenge:async()=>({outcome:'completed',finished:false}),
+  rpc:async()=>{},query:async()=>[],ownsVisibleEveningTimer:()=>true,
+  saveChallengeTimer:()=>{},refreshShared:async()=>true,
+  render:()=>events.push('render'),notify:()=>events.push('notify'),
+  console:{warn:()=>{}},document:{hidden:false},Date
+ });
+ await api.retry();
+ assert.equal(state.timerCompletionRetryOwner,null);
+ assert.equal(api.backoff(),0);
+ assert.deepEqual(events,['render','notify']);
+ assert.equal(clock.autoCompletePending,false);
+});
