@@ -6,7 +6,7 @@
 
 - `--check` : valide les paramètres, le domaine HTTPS exact, le projet distinct et la clé **publique**. Aucune requête réseau.
 - `--auth` : ouvre deux vraies sessions Supabase Auth distinctes, confirme les identités auprès de GoTrue, puis vérifie la lecture de la soirée et des adhésions au duo sous les vraies règles RLS. Aucune mutation du jeu.
-- `--audit` : exige un troisième vrai compte Auth C qui appartient à **un autre duo** avec une séance distincte. Vérifie que C peut voir ses propres données, mais ne voit ni la séance, ni les adhésions, ni les défis A/B; vérifie réciproquement que A et B ne voient rien du duo C. **Neuf lectures inter-duos doivent être refusées par les RLS**. Aucun appel RPC de jeu, aucune écriture.
+- `--audit` : exige un troisième vrai compte Auth C qui appartient à **un autre duo** avec une séance distincte. Avant de tester les refus, A, B et C doivent **chacun voir au moins un défi dont ils sont le destinataire** dans leur propre soirée, sans voir la carte du partenaire. Cela évite un faux succès quand la table des défis est vide ou illisible pour tout le monde. Ensuite, il vérifie que C ne voit ni la séance, ni les adhésions, ni les défis A/B, et qu’A/B ne voient pas ceux de C. **Neuf lectures inter-duos doivent être refusées par RLS.** Aucun appel RPC de jeu, aucune écriture.
 - `--play` : avec une confirmation d'écriture supplémentaire, teste une soirée **fictive et vierge** (deux D6 enregistrés, `paired_turns=false`, `self_draws=false`) : A pige un D100 réel, B passe, puis rejoue exactement cette demande. Le script confirme la seule nouvelle carte, l'identité du destinataire, la catégorie conservée et l'idempotence.
 
 **Protection contre un duo mal configuré :** avant toute mutation, chaque compte A et B doit voir **exactement deux membres** dans `couple_members` : A et B, une seule fois chacun. Cela détecte un troisième membre, un partenaire masqué par les RLS ou une appartenance inattendue. Cette vérification précède le D100, car `draw_for_partner` choisit le membre différent du lanceur; avec un troisième membre, il pourrait donner un défi à la mauvaise personne avant que le test le remarque.
@@ -19,6 +19,7 @@
 
 1. Préparer un **projet Supabase distinct** de LoveRoll production, avec schéma, fonctions SQL et politiques RLS installés sur le staging sans contenu de vrais joueurs. Vérifier le prévol LR-026 et appliquer la migration uniquement sur cette base isolée.
 2. Créer deux vrais comptes Auth **de test** A et B, avec courriels confirmés, qui appartiennent au même duo fictif. Pour le mode `--audit`, créer aussi un compte C, avec son **autre duo fictif** et une autre soirée active; C ne doit jamais faire partie du duo A/B.
+   Pour `--audit`, prévoir **une carte fictive destinée à A, une destinée à B et une destinée à C** dans les deux soirées de test respectives. Le mode `--play` demande au contraire une séance A/B complètement vierge : utiliser **une autre soirée fictive** pour ce mode.
 3. Préparer une soirée fictive active. Pour `--play` : deux D6 présents, aucun défi existant, tour classique non alterné et un quota Passer restant pour B.
 4. Exécuter localement avec Node.js >= 22, depuis la racine du dépôt, en fournissant les variables sensibles dans l'environnement privé (ne pas les écrire dans GitHub).
 
