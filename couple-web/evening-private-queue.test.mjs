@@ -216,6 +216,13 @@ test('LR-026: redraw success requires original decision and replacement in recip
  assert.equal(verify([original,replacement]),true);
  assert.equal(verify([replacement,original]),true,
   'server order must not affect the same physical D6 slot');
+ assert.equal(verify([original,replacement,
+  {...replacement,id:'duplicate-device-replacement'}]),false,
+  'two device replies must never create two direct replacements for the same D6 slot');
+ assert.equal(verify([original,replacement,
+  {...replacement,id:'another-card',status:'completed',
+   replaces_challenge_id:'another-original'}]),true,
+  'a different legitimate D6 slot must not block this replacement');
  assert.equal(verify([original,replacement],{...receipt,already_processed:true}),true,
   'a second-device replay with unchanged SQL receipt remains valid');
  assert.equal(verify([original]),false,
