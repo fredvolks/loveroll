@@ -1286,6 +1286,29 @@ test('LR-026: live refresh implementation aborts stale server evening without wr
  }
 });
 
+test('LR-026: scoped timer refresh rejects a different couple before any RPC',async()=>{
+ const start=app.indexOf('async function refreshShared(expectedContext=null){');
+ const end=app.indexOf('const liveSync=createCoupleLiveSync',start);
+ assert.ok(start>0&&end>start);
+ const original={userId:'fred',sessionId:'s1',coupleId:'couple-1',
+  tab:'session',challengeId:'c1'};
+ const state={user:{id:'fred'},session:{id:'s1'},tab:'session',
+  coupleId:'couple-2',timerCompletionContext:original,
+  legacyAnswerContext:null,cycleStatus:'unchanged'};
+ let networkCalls=0;
+ const refresh=runInNewContext(app.slice(start,end)+'; refreshShared;',{
+  state,query:async()=>{networkCalls++;return [];},
+  rpc:async()=>{networkCalls++;return [];},
+  isSameEveningResponseContext,mayApplyScopedEveningRefresh,
+  month:()=>'2026-10',console
+ });
+ const result=await refresh(original);
+ assert.equal(result,undefined);
+ assert.equal(networkCalls,0,'foreign-couple request must fail before querying RLS');
+ assert.equal(state.cycleStatus,'unchanged');
+ assert.equal(state.session.id,'s1');
+});
+
 test('LR-026: full scoped refresh accepts timer closure but rejects another night',async()=>{
  const start=app.indexOf('async function refreshShared(expectedContext=null){');
  const end=app.indexOf('const liveSync=createCoupleLiveSync',start);
