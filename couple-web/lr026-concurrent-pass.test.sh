@@ -15,7 +15,18 @@ trap 'rm -rf "$TMP"' EXIT
 
 createdb "$DB"
 psql -X -d "$DB" -v ON_ERROR_STOP=1 \
+  -c "CREATE SCHEMA couple_private" >/dev/null
+psql -X -d "$DB" -v ON_ERROR_STOP=1 \
+  -f couple-web/lr026-pass-stamp-fixture.sql >/dev/null
+psql -X -d "$DB" -v ON_ERROR_STOP=1 \
   -f couple-web/lr026-concurrent-pass-fixture.sql >/dev/null
+# Prove the copied function actually matched the production fingerprint.
+stamp_sha="$(psql -X -d "$DB" -At -v ON_ERROR_STOP=1 \
+  -c "SELECT pg_catalog.md5(pg_catalog.pg_get_functiondef('couple_private.love_stamp_challenge_pass()'::pg_catalog.regprocedure))")"
+if [[ "$stamp_sha" != '3241da749bd0647c6106c613c7e3615a' ]]; then
+  echo "::error::Production pass-stamp trigger definition differs from fixture"
+  exit 1
+fi
 
 A="aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa"
 B="bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb"
