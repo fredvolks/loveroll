@@ -553,6 +553,98 @@ BEGIN
  'LR-026 REAL RPC SEXUEL: bidirectional D100, Passer, Refuser/exclusion and idempotency passed';
 END; $lr026_real_sexuel$;
 
+-- The REAL functions must remain playable when every eligible card
+-- is semantically similar to tonight's history: variety is a ranking,
+-- never an implicit ban or a change to official category probability.
+DO $lr026_real_variety_fallback$
+DECLARE
+ pair uuid:='eeeeeeee-aaaa-4aaa-8aaa-eeeeeeeeeeee';
+ a uuid:='aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa';
+ b uuid:='bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb';
+ s uuid:='eeeeeeee-2222-4222-8222-eeeeeeeeeeee';
+ drawn public.couple_challenges%rowtype;
+ replacement public.couple_challenges%rowtype;
+ result jsonb;
+BEGIN
+ INSERT INTO public.couples(
+  id,owner_user_id,category_preference_percent,monthly_pass_limit,
+  sexual_card_mode
+ ) VALUES(pair,a,100,1,'custom');
+ INSERT INTO public.couple_members(couple_id,user_id)
+ VALUES(pair,a),(pair,b);
+ INSERT INTO public.couple_sessions(id,couple_id,opened_by,paired_turns,self_draws)
+ VALUES(s,pair,a,false,false);
+ INSERT INTO public.couple_personal_rolls(session_id,user_id,face)
+ VALUES(s,a,2),(s,b,2);
+
+ -- The base fixture already gives SENSUEL cards 1 and 2 the exact same
+ -- meaningful title. Card 1 has been shown to A, not B; both are still
+ -- eligible to B (the game's exclusions are recipient-specific).
+ INSERT INTO public.couple_challenges(
+  session_id,couple_id,offered_by,recipient,category,face,card_id,
+  card_title,card_description,status
+ ) VALUES(
+  s,pair,b,a,'SENSUEL',1,1,'Baisers au clair de lune',
+  'Un moment tendre et plein de douceur','completed'
+ );
+ INSERT INTO public.love_cycle_excluded_cards(
+  couple_id,cycle_number,category,card_id
+ )
+ SELECT pair,1,cat.category,g
+ FROM (VALUES('SENSUEL'::text),('SEXUEL'::text)) cat(category)
+ CROSS JOIN pg_catalog.generate_series(1,25) g
+ WHERE cat.category='SEXUEL' OR g>2;
+
+ IF couple_private.love_variety_rank(s,pair,'SENSUEL',1)<>1
+   OR couple_private.love_variety_rank(s,pair,'SENSUEL',2)<>1 THEN
+  RAISE EXCEPTION 'REAL RPC FALLBACK: fixture must rank both candidates as similar';
+ END IF;
+
+ PERFORM pg_catalog.set_config('lr026.test_verified','yes',true);
+ PERFORM pg_catalog.set_config('request.jwt.claim.sub',a::text,true);
+ SELECT * INTO drawn FROM public.draw_for_partner(s,'SENSUEL',false);
+ IF drawn.category IS DISTINCT FROM 'SENSUEL'
+   OR drawn.card_id NOT IN (1,2)
+   OR drawn.recipient IS DISTINCT FROM b
+   OR drawn.offered_by IS DISTINCT FROM a
+   OR drawn.status IS DISTINCT FROM 'proposed' THEN
+  RAISE EXCEPTION 'REAL RPC FALLBACK: all-similar D100 should remain playable %',drawn;
+ END IF;
+
+ PERFORM pg_catalog.set_config('request.jwt.claim.sub',b::text,true);
+ SELECT public.love_respond_and_redraw(drawn.id,'pass',false) INTO result;
+ IF result->>'action'<>'pass'
+   OR result->>'already_processed'<>'false'
+   OR result->>'replacement_unavailable'<>'false'
+   OR result->>'replacement_id' IS NULL THEN
+  RAISE EXCEPTION 'REAL RPC FALLBACK: all-similar Passer should still work %',result;
+ END IF;
+ SELECT * INTO replacement FROM public.couple_challenges
+ WHERE id=(result->>'replacement_id')::uuid;
+ IF NOT FOUND OR replacement.category IS DISTINCT FROM 'SENSUEL'
+   OR replacement.recipient IS DISTINCT FROM b
+   OR replacement.offered_by IS DISTINCT FROM a
+   OR replacement.card_id NOT IN (1,2)
+   OR replacement.card_id IS NOT DISTINCT FROM drawn.card_id
+   OR replacement.face IS NOT DISTINCT FROM drawn.face
+   OR replacement.replaces_challenge_id IS DISTINCT FROM drawn.id
+   OR replacement.status IS DISTINCT FROM 'proposed' THEN
+  RAISE EXCEPTION 'REAL RPC FALLBACK: replacement lost category or reused card %',
+    replacement;
+ END IF;
+ SELECT public.love_respond_and_redraw(drawn.id,'pass',false) INTO result;
+ IF result->>'already_processed'<>'true'
+   OR (result->>'replacement_id')::uuid IS DISTINCT FROM replacement.id
+   OR (SELECT count(*) FROM public.couple_challenges
+       WHERE couple_id=pair AND recipient=b)<>2
+   OR (SELECT count(*) FROM public.love_challenge_redraws
+       WHERE couple_id=pair)<>1 THEN
+  RAISE EXCEPTION 'REAL RPC FALLBACK: Passer replay created a duplicate';
+ END IF;
+ RAISE NOTICE
+ 'LR-026 REAL RPC FALLBACK: all eligible cards similar, D100 and Passer remain playable';
+END; $lr026_real_variety_fallback$;
+
 -- SQL ACL protection is preserved in the isolated snapshot.
 DO $lr026_real_rights$
 BEGIN
