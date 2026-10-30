@@ -71,7 +71,7 @@ test('LR-002 reload restoration scans saved challenge timers without opening the
  assert.match(app,/saved\.deadline<=now/);
  assert.match(app,/saved\.autoCompletePending/);
  assert.match(app,/isAcceptedTimedEveningChallenge\(item,state\.user\.id,state\.session\.id\)/);
- assert.match(app,/completeTimedEveningChallenge\(\{challenge:item,userId,sessionId,rpc,query\}\)/);
+ assert.equal((app.match(/ownsRequest:\(\)=>state\.timerCompletionContext===context/g)||[]).length,2);
  assert.match(app,/void reconcileSavedEveningTimers\(\)/);
  assert.match(app,/savedTimerScanAfter=Date\.now\(\)\+15000/);
 });
@@ -447,4 +447,98 @@ test('LR-026 restored timer completion persists only its original private key',a
    'same owner and evening may update local timer without changing the page');
   else assert.deepEqual(events,[]);
  }
+});
+
+test('LR-026 changed authentication interrupts completion after accepted answer',async()=>{
+ const calls=[];
+ let owns=true;
+ const rpc=async name=>{
+  calls.push(name);
+  if(name==='answer_challenge')owns=false;
+  return {finished:true};
+ };
+ const result=await completeTimedEveningChallenge({
+  challenge:card,userId:'alice',sessionId:'session-a',rpc,
+  query:async()=>{throw Error('Cross-account SELECT must not be issued');},
+  ownsRequest:()=>owns
+ });
+ assert.deepEqual(result,{outcome:'superseded',finished:false});
+ assert.deepEqual(calls,['answer_challenge'],
+  'new account must never receive the old evening board or finish RPC');
+});
+
+test('LR-026 a late board cannot close an evening after account switch',async()=>{
+ const calls=[];
+ let owns=true;
+ const rpc=async name=>{
+  calls.push(name);
+  if(name==='my_love_evening_board'){owns=false;return {finished:true};}
+ };
+ const result=await completeTimedEveningChallenge({
+  challenge:card,userId:'alice',sessionId:'session-a',rpc,
+  query:async()=>{throw Error('Unexpected SELECT');},ownsRequest:()=>owns
+ });
+ assert.deepEqual(result,{outcome:'superseded',finished:false});
+ assert.deepEqual(calls,['answer_challenge','my_love_evening_board']);
+});
+
+test('LR-026 authentication switch during RPC failure skips private recovery SELECT',async()=>{
+ const calls=[];
+ let owns=true;
+ const rpc=async name=>{
+  calls.push(name);owns=false;
+  throw Error('A different account is now active');
+ };
+ const result=await completeTimedEveningChallenge({
+  challenge:card,userId:'alice',sessionId:'session-a',rpc,
+  query:async()=>{calls.push('SELECT');return [];},ownsRequest:()=>owns
+ });
+ assert.deepEqual(result,{outcome:'superseded',finished:false});
+ assert.deepEqual(calls,['answer_challenge']);
+});
+
+test('LR-026 authentication switch during private recovery skips board and close',async()=>{
+ const calls=[];
+ let owns=true;
+ const rpc=async name=>{calls.push(name);throw Error('already completed');};
+ const query=async name=>{
+  calls.push(name);owns=false;
+  return [{...card,status:'completed'}];
+ };
+ const result=await completeTimedEveningChallenge({
+  challenge:card,userId:'alice',sessionId:'session-a',rpc,query,
+  ownsRequest:()=>owns
+ });
+ assert.deepEqual(result,{outcome:'superseded',finished:false});
+ assert.deepEqual(calls,['answer_challenge','couple_challenges']);
+});
+
+test('LR-026 superseded timer leaves original pending receipt for later retry',async()=>{
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const first=source.indexOf('function ownsTimerCompletionSession(context){');
+ const end=source.indexOf('// LR-002: recover ALL due challenge timers',first);
+ assert.ok(first>0&&end>first);
+ const code=source.slice(first,end)+'; retryExpiredTimedEvening;';
+ const state={user:{id:'alice'},coupleId:'c1',session:{id:'s1'},tab:'session',
+  timerCompletionContext:null};
+ const timer={id:'card-1',autoCompletePending:true,decisionPending:false};
+ const original={id:'card-1',recipient:'alice',session_id:'s1',status:'accepted'};
+ const events=[];
+ const retry=runInNewContext(code,{
+  state,challengeTimer:timer,timerCompletionInFlight:null,timerCompletionRetryAt:0,
+  timedEveningItem:()=>original,
+  isAcceptedTimedEveningChallenge:()=>true,
+  completeTimedEveningChallenge,
+  rpc:async name=>{events.push(name);if(name==='answer_challenge')state.user={id:'bob'};},
+  query:async()=>{events.push('query');return [];},
+  ownsVisibleEveningTimer:()=>true,
+  saveChallengeTimer:()=>events.push('save'),
+  refreshShared:async()=>{events.push('refresh');return true;},
+  render:()=>events.push('render'),notify:()=>events.push('notify'),
+  console,document:{hidden:false},Date
+ });
+ await retry();
+ assert.deepEqual(events,['answer_challenge']);
+ assert.equal(timer.autoCompletePending,true,'original timer stays retryable');
+ assert.equal(state.timerCompletionContext,null,'the obsolete request lock is released');
 });
