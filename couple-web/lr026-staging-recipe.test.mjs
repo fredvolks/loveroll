@@ -55,13 +55,27 @@ function mockSupabase(opts = {}) {
         email_confirmed_at: '2026-10-10T00:00:00Z'});
     }
     if (path === '/rest/v1/couple_sessions') {
+      const afterDraw = drawCount === 1 && passCount === 0;
+      const afterFirstPass = passCount === 1;
+      const afterReplay = passCount === 2;
       if (opts.hideSessionB && who === 'b') return response([]);
+      if (opts.duetSessionHiddenFromBAfterDraw && afterDraw && who === 'b')
+        return response([]);
       const isPlayFlagsRead = url.searchParams.get('select') === 'id,paired_turns,self_draws';
-      return response([{id: isPlayFlagsRead && opts.wrongPlaySessionIdB && who === 'b' ?
-        couple : session, couple_id: couple,
-        finished_at: opts.finishedSession ? '2026-10-29T20:00:00Z' : null,
-        paired_turns: Boolean(isPlayFlagsRead && opts.pairedTurnsForB && who === 'b'),
-        self_draws: Boolean(isPlayFlagsRead && opts.selfDrawsForB && who === 'b')}]);
+      return response([{
+        id: (isPlayFlagsRead && opts.wrongPlaySessionIdB && who === 'b') ||
+          (afterDraw && opts.duetWrongSessionAfterDraw) ? couple : session,
+        couple_id: afterDraw && opts.duetWrongCoupleAfterDraw ? a : couple,
+        finished_at: opts.finishedSession ||
+          (afterDraw && opts.duetClosedAfterDraw) ||
+          (afterFirstPass && opts.duetClosedAfterFirstPass) ||
+          (afterReplay && opts.duetClosedAfterReplay)
+            ? '2026-10-29T20:00:00Z' : null,
+        paired_turns: Boolean((isPlayFlagsRead && opts.pairedTurnsForB && who === 'b') ||
+          (afterDraw && opts.duetPairedTurnsAfterDraw)),
+        self_draws: Boolean((isPlayFlagsRead && opts.selfDrawsForB && who === 'b') ||
+          (afterDraw && opts.duetSelfDrawsAfterDraw))
+      }]);
     }
     if (path === '/rest/v1/couple_members') {
       if (opts.hideMemberB && who === 'b') return response([]);
@@ -69,8 +83,14 @@ function mockSupabase(opts = {}) {
         return response([{couple_id: couple, user_id: a}]);
       const members = [{couple_id: couple, user_id: a},
         {couple_id: couple, user_id: b}];
-      if (opts.extraThirdMember) members.push({couple_id: couple,
-        user_id: 'cccccccc-1111-4111-8111-cccccccccccc'});
+      if (opts.extraThirdMember || (opts.duetThirdMemberAfterDraw &&
+          drawCount === 1 && passCount === 0))
+        members.push({couple_id: couple,
+          user_id: 'cccccccc-1111-4111-8111-cccccccccccc'});
+      if (opts.duetMemberMissingAfterFirstPass && passCount === 1 && who === 'b')
+        return response([members[0]]);
+      if (opts.duetMemberMissingAfterReplay && passCount === 2 && who === 'a')
+        return response([members[1]]);
       return response(members);
     }
     if (path === '/rest/v1/couple_personal_rolls') {
@@ -344,11 +364,37 @@ test('normal play validates feature flags under both authenticated accounts', as
   const mock = mockSupabase();
   await runStage(env(), 'play', mock.fetchFn);
   const specific = mock.calls.filter(c => c.path === '/rest/v1/couple_sessions');
-  assert.deepEqual(specific.map(c => c.actorToken), [
-    'Bearer auth-token-for-a-test', 'Bearer auth-token-for-b-test',
+  assert.deepEqual(specific.map(c => c.actorToken), Array(5).fill([
     'Bearer auth-token-for-a-test', 'Bearer auth-token-for-b-test'
-  ]);
+  ]).flat());
+  const memberReads = mock.calls.filter(c => c.path === '/rest/v1/couple_members');
+  assert.deepEqual(memberReads.map(c => c.actorToken), Array(4).fill([
+    'Bearer auth-token-for-a-test', 'Bearer auth-token-for-b-test'
+  ]).flat());
 });
+for (const [options, expectedPasses, error] of [
+  [{duetSessionHiddenFromBAfterDraw: true}, 0, /Staging session changed after D100/],
+  [{duetWrongSessionAfterDraw: true}, 0, /Staging session changed after D100/],
+  [{duetWrongCoupleAfterDraw: true}, 0, /Staging session changed after D100/],
+  [{duetClosedAfterDraw: true}, 0, /Staging session changed after D100/],
+  [{duetPairedTurnsAfterDraw: true}, 0, /Staging session changed after D100/],
+  [{duetSelfDrawsAfterDraw: true}, 0, /Staging session changed after D100/],
+  [{duetThirdMemberAfterDraw: true}, 0, /Staging duet membership changed after D100/],
+  [{duetClosedAfterFirstPass: true}, 1, /Staging session changed after the first Passer/],
+  [{duetMemberMissingAfterFirstPass: true}, 1, /Staging duet membership changed after the first Passer/],
+  [{duetClosedAfterReplay: true}, 2, /Staging session changed after idempotent Passer replay/],
+  [{duetMemberMissingAfterReplay: true}, 2, /Staging duet membership changed after idempotent Passer replay/]
+]) {
+  test('duet and session drift fail at the right gameplay boundary: ' +
+    JSON.stringify(options), async () => {
+    const mock = mockSupabase(options);
+    await assert.rejects(runStage(env(), 'play', mock.fetchFn), error);
+    assert.equal(mock.counters().drawCount, 1);
+    assert.equal(mock.counters().passCount, expectedPasses,
+      'The recipe must not send additional gameplay RPCs after drift');
+  });
+}
+
 test('preexisting staged challenge prevents ANY additional D100 draw', async () => {
   const mock = mockSupabase({existingChallenge: true});
   await assert.rejects(runStage(env(), 'play', mock.fetchFn), /clean session/);
