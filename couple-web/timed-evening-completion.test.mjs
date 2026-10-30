@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {runInNewContext} from 'node:vm';
 import {isAcceptedTimedEveningChallenge,isSameCompletedEveningChallenge,completeTimedEveningChallenge,timedEveningTimerControl} from './timed-evening-completion.mjs';
 const card={id:'card-a',recipient:'alice',session_id:'session-a',status:'accepted'};
 test('Only accepted, recipient-owned Soirée cards qualify; unrelated timers never count',()=>{
@@ -141,6 +142,101 @@ test('LR-002 countdown renders one truthful, actionable control at every phase',
   disabled:true,resetDisabled:true
  });
  assert.equal(timedEveningTimerControl({...base,remainingMs:-1}).disabled,true);
+});
+
+test('LR-026 pending D100 decision locks both timer buttons, without changing time',()=>{
+ const base={durationMs:240000,remainingMs:120000,deadline:240000,
+  running:true,decisionPending:true,autoCompletePending:false};
+ assert.deepEqual(timedEveningTimerControl(base),{
+  label:'♡ Réponse en cours',status:'Décision sur le défi en cours',
+  disabled:true,resetDisabled:true
+ });
+ assert.equal(base.running,true);
+ assert.equal(base.remainingMs,120000);
+ assert.equal(timedEveningTimerControl({...base,running:false}).resetDisabled,true);
+ assert.equal(timedEveningTimerControl({...base,decisionPending:false}).resetDisabled,false);
+ assert.equal(timedEveningTimerControl({...base,autoCompletePending:true}).status,
+  'Validation du défi en cours');
+});
+
+test('LR-026 timer locks only the active owner/card and never the next account',()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const begin=app.indexOf('function isVisibleEveningTimerActionPending(){');
+ const end=app.indexOf('function clockMs(){',begin);
+ assert.ok(begin>0&&end>begin);
+ const state={user:{id:'A'},session:{id:'s1'},tab:'session',
+  redrawBusyContext:null,eveningStartContext:null,timerStartContext:null};
+ const timer={id:'card-A',decisionPending:false};
+ const owned=(id,u,s)=>timer.id===id&&u==='A'&&s==='s1'&&
+  state.user?.id===u&&state.session?.id===s;
+ const same=(view,c)=>view.user?.id===c?.userId&&
+  view.session?.id===c?.sessionId&&view.tab===c?.tab;
+ const guards=runInNewContext(app.slice(begin,end)+
+  ';({busy:isVisibleEveningTimerActionPending,protect:protectEveningTimerPresentation});',{
+  state,challengeTimer:timer,ownsVisibleEveningTimer:owned,
+  isActiveEveningRedrawPending:()=>!!state.redrawBusyContext,
+  isSameEveningResponseContext:same
+ });
+ assert.equal(guards.busy(),false);
+ for(const key of ['redrawBusyContext','eveningStartContext','timerStartContext']){
+  state[key]={userId:'A',sessionId:'s1',tab:'session',challengeId:'card-A'};
+  assert.equal(guards.busy(),true,key+' must block the owned card');
+  const view={label:'▶ Reprendre',status:'En cours',disabled:false,resetDisabled:false};
+  guards.protect(view);
+  assert.equal(view.disabled,true);
+  assert.equal(view.resetDisabled,true);
+  assert.match(view.label,/Réponse en cours/);
+  state[key].challengeId='other-card';
+  assert.equal(guards.busy(),false,'another card cannot lock the timer');
+  state[key]=null;
+ }
+ timer.decisionPending=true;
+ assert.equal(guards.busy(),true);
+ state.user={id:'B'};
+ assert.equal(guards.busy(),false,'the previous owner cannot block B');
+});
+
+test('LR-026 real reset handler ignores pending clicks before any timer mutation',()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const start=app.indexOf("if(verb==='timer-reset')");
+ const end=app.indexOf("if(verb==='timer-toggle')",start);
+ assert.ok(start>0&&end>start);
+ const reset=app.slice(start,end);
+ assert.ok(reset.indexOf('if(isVisibleEveningTimerActionPending())return;')<
+  reset.indexOf('challengeTimer.running=false;'));
+ const execute=(busy)=>{
+  const timer={id:'c1',running:true,deadline:Date.now()+50000,
+   remainingMs:50000,durationMs:120000,notified:true,autoCompletePending:false};
+  let saves=0,updates=0;
+  runInNewContext('(function(verb){'+reset+'})("timer-reset");',{
+   state:{user:{id:'A'},session:{id:'s1'}},challengeTimer:timer,
+   ownsVisibleEveningTimer:()=>true,isVisibleEveningTimerActionPending:()=>busy,
+   saveChallengeTimer:()=>saves++,updateChallengeClock:()=>updates++,
+   endSignal:()=>{throw Error('not expired');},
+   notify:()=>{throw Error('unexpected notification');}
+  });
+  return {timer,saves,updates};
+ };
+ const pending=execute(true);
+ assert.equal(pending.timer.running,true);
+ assert.equal(pending.timer.deadline>0,true);
+ assert.equal(pending.timer.remainingMs,50000);
+ assert.equal(pending.saves,0);
+ assert.equal(pending.updates,0);
+ const released=execute(false);
+ assert.equal(released.timer.running,false);
+ assert.equal(released.timer.deadline,0);
+ assert.equal(released.timer.remainingMs,120000);
+ assert.equal(released.saves,1);
+ assert.equal(released.updates,1);
+ const updateStart=app.indexOf('function updateChallengeClock(){');
+ const updateEnd=app.indexOf('setInterval(updateChallengeClock,500)',updateStart);
+ const renderStart=app.indexOf('function timerWidget(challenge,minutes){');
+ const renderEnd=app.indexOf('function renderLegacySession()',renderStart);
+ assert.match(app.slice(updateStart,updateEnd),/protectEveningTimerPresentation\(presentation\)/);
+ assert.match(app.slice(renderStart,renderEnd),/protectEveningTimerPresentation\(presentation\)/);
+ assert.match(app.slice(end,app.indexOf("if(verb==='timer-mode')",end)>end?
+  app.indexOf("if(verb==='timer-mode')",end):end+2600),/isVisibleEveningTimerActionPending\(\)/);
 });
 
 test('LR-002 live countdown and rerender cannot revive an inert Reprendre button',()=>{
