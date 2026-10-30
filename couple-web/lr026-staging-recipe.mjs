@@ -108,6 +108,14 @@ export function validateStage(env, mode) {
       throw new Error('Staging D100 preference must be SENSUEL or SEXUEL');
     }
     result.preference = preference;
+    // A real draw may ignore the preferred category when p_random=true.
+    // Never infer probability from one D100; verify the chosen server
+    // category against the independently persisted row and replacement.
+    const random = env.LR026_STAGING_RANDOM ?? 'false';
+    if (!['true', 'false'].includes(random)) {
+      throw new Error('Staging D100 random mode must be true or false');
+    }
+    result.random = random === 'true';
     const drawer = env.LR026_STAGING_DRAWER ?? 'A';
     if (!['A', 'B'].includes(drawer)) {
       throw new Error('Staging D100 drawer must be A or B');
@@ -385,7 +393,7 @@ export async function runStage(env, mode, transport = fetch) {
     'select=id,session_id,offered_by,recipient,category,face,card_id,replaces_challenge_id,status' +
     '&session_id=eq.' + config.sessionId;
   const drawn = await client.rpc('draw_for_partner',
-    {p_session: config.sessionId, p_preference: config.preference, p_random: false}, giver.token);
+    {p_session: config.sessionId, p_preference: config.preference, p_random: config.random}, giver.token);
   assert(UUID.test(drawn?.id || '') &&
     eq(drawn.session_id, config.sessionId) &&
     eq(drawn.couple_id, config.coupleId) &&
@@ -474,8 +482,8 @@ export async function runStage(env, mode, transport = fetch) {
   await assertDuetUnchanged('after idempotent Passer replay');
   await assertD6Unchanged('after idempotent Passer replay');
   return {...result, draw_id: drawn.id, replacement_id: response.replacement_id,
-    drawer: config.drawer,
-    replacement_same_category: true, pass_replay_idempotent: true,
+    drawer: config.drawer, random_category_mode: config.random,
+    actual_draw_category: drawn.category, replacement_same_category: true, pass_replay_idempotent: true,
     response_action: config.action, response_excluded: config.exclude,
     persisted_challenges: 2};
 }
