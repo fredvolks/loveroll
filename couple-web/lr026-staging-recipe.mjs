@@ -100,6 +100,14 @@ export function validateStage(env, mode) {
   }
 
   if (mode === 'play') {
+    // Test either official D100 preference, never an arbitrary RPC payload.
+    // The returned category remains server-authoritative and is checked
+    // independently against persisted cards and the redraw.
+    const preference = env.LR026_STAGING_PREFERENCE ?? 'SENSUEL';
+    if (!['SENSUEL', 'SEXUEL'].includes(preference)) {
+      throw new Error('Staging D100 preference must be SENSUEL or SEXUEL');
+    }
+    result.preference = preference;
     if (env.LR026_STAGING_ALLOW_WRITES !== WRITE_ACK ||
         env.LR026_STAGING_WRITE_CONFIRM_REF !== ref) {
       throw new Error('Mutating staging recipe requires an exact write acknowledgement and project-ref confirmation');
@@ -356,7 +364,7 @@ export async function runStage(env, mode, transport = fetch) {
     'select=id,session_id,offered_by,recipient,category,replaces_challenge_id,status' +
     '&session_id=eq.' + config.sessionId;
   const drawn = await client.rpc('draw_for_partner',
-    {p_session: config.sessionId, p_preference: 'SENSUEL', p_random: false}, a.token);
+    {p_session: config.sessionId, p_preference: config.preference, p_random: false}, a.token);
   assert(UUID.test(drawn?.id || '') && eq(drawn.recipient, b.id) &&
     eq(drawn.offered_by, a.id), 'Real D100 did not return a valid card offered by A to B');
   assert(['SENSUEL', 'SEXUEL'].includes(drawn.category),
