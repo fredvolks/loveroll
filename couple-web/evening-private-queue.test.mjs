@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,snapshotEveningCardBeforeRedraw,EVENING_REDRAW_IMMUTABLE_FIELDS,isSameEveningResponseContext,isEveningRedrawBusyForCurrentView,ownsEveningRedrawRequest,redrawTimerRecovery} from './evening-private-queue.mjs';
+import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,snapshotEveningCardBeforeRedraw,EVENING_REDRAW_IMMUTABLE_FIELDS,ownsEveningTimerRecord,isSameEveningResponseContext,isEveningRedrawBusyForCurrentView,ownsEveningRedrawRequest,redrawTimerRecovery} from './evening-private-queue.mjs';
 import {premiumEveningHtml} from './premium-evening.mjs';
 const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
 const migration=readFileSync(new URL('./migrations/20261015_evening_private_challenge_queue.sql',import.meta.url),'utf8');
@@ -542,7 +542,7 @@ test('LR-026: UI waits for persisted redraw before stopping a live timer or conf
  const code=app.slice(start,end);
  const refresh=code.indexOf('await refreshShared(responseContext);');
  const storedCheck=code.indexOf('const persistedReceiptValid=');
- const stop=code.indexOf('if(persistedReceiptValid&&challengeTimer.id===challengeId)');
+ const stop=code.indexOf('if(persistedReceiptValid&&ownsVisibleEveningTimer(challengeId,responseContext.userId,responseContext.sessionId))');
  const select=code.indexOf('state.selectedEveningChallengeId=activeEveningRedrawReplacementId(');
  assert.ok(refresh>=0&&storedCheck>refresh&&select>storedCheck&&stop>select,
   'timer must stop only after the refreshed RLS rows confirm the decision');
@@ -702,7 +702,7 @@ test('LR-026: obsolete RPC errors do not escape into another account or tab',()=
  const action=app.slice(start,end);
  const failed=action.slice(action.indexOf('}catch(error){'),action.indexOf('}finally{'));
  const stale=failed.indexOf('if(!isSameEveningResponseContext(state,responseContext)||');
- const timer=failed.indexOf('if(challengeTimer.id===challengeId&&challengeTimer.decisionPending)');
+ const timer=failed.indexOf('if(ownsVisibleEveningTimer(challengeId,responseContext.userId,responseContext.sessionId)&&challengeTimer.decisionPending)');
  const rethrow=failed.indexOf('throw error;');
  assert.ok(stale>=0&&timer>stale&&rethrow>timer,
   'obsolete errors must return before timer mutation and before being thrown');
@@ -729,21 +729,65 @@ test('LR-026: uncertain redraw never completes a live accepted timer without ser
  }
 });
 
+test('LR-026: a D100 timer belongs to one challenge, user and evening even when IDs are reused',()=>{
+ const clock={id:'same-id',ownerUserId:'fred',ownerSessionId:'evening-1',
+  decisionPending:true,running:true};
+ assert.equal(ownsEveningTimerRecord(clock,'same-id','fred','evening-1'),true);
+ assert.equal(ownsEveningTimerRecord(clock,'same-id','other','evening-1'),false);
+ assert.equal(ownsEveningTimerRecord(clock,'same-id','fred','evening-2'),false);
+ assert.equal(ownsEveningTimerRecord(clock,'different','fred','evening-1'),false);
+ assert.equal(ownsEveningTimerRecord(null,'same-id','fred','evening-1'),false);
+ assert.equal(ownsEveningTimerRecord(clock,'','fred','evening-1'),false);
+ // Old request may clear its abandoned pending flag, but must NEVER clear
+ // the new account's timer after a card with a colliding ID is mounted.
+ const newOwner={...clock,ownerUserId:'partner',ownerSessionId:'evening-2'};
+ assert.equal(ownsEveningTimerRecord(newOwner,'same-id','fred','evening-1'),false);
+ assert.equal(ownsEveningTimerRecord(newOwner,'same-id','partner','evening-2'),true);
+ const source=app.slice(app.indexOf('function saveChallengeTimer(){'),
+  app.indexOf('function showTimerFinished(){'));
+ assert.match(source,/loveroll-challenge-clock:'\+challengeTimer\.ownerUserId/);
+ assert.doesNotMatch(source,/loveroll-challenge-clock:'\+state\.user\.id\+':'\+challengeTimer\.id/);
+ assert.match(source,/challengeTimer\.ownerUserId!==state\.user\.id/);
+ assert.match(source,/challengeTimer\.ownerSessionId!==state\.session\?\.id/);
+ assert.match(source,/function ownsVisibleEveningTimer\(cardId,userId,sessionId\)\{\s+return ownsEveningTimerRecord\(challengeTimer,cardId,userId,sessionId\)&&/);
+});
+
+test('LR-026: stale redraw, auto-completion and timer controls respect timer ownership',()=>{
+ const action=app.slice(app.indexOf("if(verb==='evening-pass'||verb==='evening-refuse-choice')"),
+  app.indexOf("if(verb==='evening-start')"));
+ const guard='ownsVisibleEveningTimer(challengeId,responseContext.userId,responseContext.sessionId)';
+ assert.ok(action.split(guard).length>=5,
+  'RPC resolution, failure and reconciliation must check the owning timer');
+ assert.match(action,/ownsEveningTimerRecord\(challengeTimer,challengeId,responseContext\.userId,responseContext\.sessionId\)&&\s+challengeTimer\.decisionPending/);
+ assert.match(action,/if\(state\.redrawBusyContext===responseContext\)\{/);
+ const completion=app.slice(app.indexOf('async function retryExpiredTimedEvening(){'),
+  app.indexOf('function endSignal',app.indexOf('async function retryExpiredTimedEvening(){')));
+ assert.match(completion,/if\(ownsVisibleEveningTimer\(id,userId,sessionId\)\)/);
+ assert.match(completion,/if\(ownsVisibleEveningTimer\(item\.id,userId,sessionId\)\)/);
+ assert.match(completion,/if\(state\.user\?\.id===userId&&state\.session\?\.id===sessionId&&\s+!document\.hidden\)notify/);
+ const controls=app.slice(app.indexOf("if(verb==='timer-reset')"),
+  app.indexOf("if(verb==='give-challenge')"));
+ assert.match(controls,/if\(!ownsVisibleEveningTimer\(challengeTimer\.id,state\.user\?\.id,state\.session\?\.id\)\)/);
+ assert.match(controls,/const ownsClock=\(\)=>ownsVisibleEveningTimer\(timerChallengeId,timerUserId,timerSessionId\)/);
+ assert.match(controls,/await rpc\('answer_challenge',[\s\S]*?if\(!ownsClock\(\)\)return;/);
+ assert.match(controls,/if\(!ownsClock\(\)\)return;\s+challengeTimer\.deadline=Date\.now\(\)/);
+});
+
 test('LR-026: redraw timer only stops on valid receipt or independently refreshed terminal status',()=>{
  const start=app.indexOf("if(verb==='evening-pass'||verb==='evening-refuse-choice')");
  const end=app.indexOf("if(verb==='evening-start')",start);
  assert.ok(start>=0&&end>start);
  const code=app.slice(start,end);
- assert.match(code,/if\(persistedReceiptValid&&challengeTimer\.id===challengeId\)/);
+ assert.match(code,/if\(persistedReceiptValid&&ownsVisibleEveningTimer\(challengeId,responseContext\.userId,responseContext\.sessionId\)\)/);
  assert.match(code,/const recovery=redrawTimerRecovery\(stored\?\.status,challengeTimer\.deadline,Date\.now\(\)\)/);
  assert.match(code,/if\(recovery==='stop'\)/);
  assert.match(code,/if\(recovery==='expire'\)/);
  assert.match(code,/if\(recovery==='stop'&&state\.eveningRefusalId===challengeId\)/);
- assert.match(code,/if\(challengeTimer\.id===challengeId&&challengeTimer\.decisionPending\)/);
+ assert.match(code,/if\(ownsVisibleEveningTimer\(challengeId,responseContext\.userId,responseContext\.sessionId\)&&challengeTimer\.decisionPending\)/);
  assert.match(code,/if\(receiptValid\)state\.eveningRefusalId=null/);
- assert.match(code,/if\(!isSameEveningResponseContext\(state,responseContext\)\|\|[\s\S]*?!ownsEveningRedrawRequest\(state,responseContext\)\)return;[\s\S]*?if\(challengeTimer\.id===challengeId&&challengeTimer\.decisionPending\)/);
+ assert.match(code,/if\(!isSameEveningResponseContext\(state,responseContext\)\|\|[\s\S]*?!ownsEveningRedrawRequest\(state,responseContext\)\)return;[\s\S]*?if\(ownsVisibleEveningTimer\(challengeId,responseContext\.userId,responseContext\.sessionId\)&&challengeTimer\.decisionPending\)/);
  assert.match(code,/else saveChallengeTimer\(\)/);
- assert.doesNotMatch(code,/if\(challengeTimer\.id===challengeId\)\{\s+challengeTimer\.running=false/,
+ assert.doesNotMatch(code,/if\(ownsVisibleEveningTimer\(challengeId,responseContext\.userId,responseContext\.sessionId\)\)\{\s+challengeTimer\.running=false/,
   'timer must not stop unconditionally before receipt validation');
 });
 
