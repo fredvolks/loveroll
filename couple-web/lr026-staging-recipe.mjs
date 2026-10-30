@@ -236,9 +236,16 @@ export async function runStage(env, mode, transport = fetch) {
   assert(rolls.length === 2 && rolls.some(x => eq(x.user_id, a.id) && x.face > 0) &&
     rolls.some(x => eq(x.user_id, b.id) && x.face > 0),
     'Two D6 rolls must exist before first D100 draw');
-  const existing = await client.rows('couple_challenges',
-    'select=id,recipient,status&session_id=eq.' + config.sessionId, a.token);
-  assert(existing.length === 0, 'Play recipe only accepts a clean session; never reset existing data');
+  // Real production RLS on couple_challenges only exposes each card
+  // to its RECIPIENT, not the person offering it. A's empty list alone
+  // can conceal B's existing card; require zero visible challenges for
+  // BOTH authenticated partners before making any mutating RPC.
+  for (const actor of [a, b]) {
+    const existing = await client.rows('couple_challenges',
+      'select=id,recipient,status&session_id=eq.' + config.sessionId, actor.token);
+    assert(existing.length === 0,
+      'Play recipe requires a clean session visible to both recipients; never reset existing data');
+  }
 
   // Never retry mutations. On error the staging operator must inspect the
   // persisted state and provision a NEW fixture, not blindly replay.
