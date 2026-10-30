@@ -88,6 +88,7 @@ jobs:
           node --test couple-web/evening-private-queue.test.mjs couple-web/evening-redesign.test.mjs couple-web/evening-calendar.test.mjs couple-web/evening-category-v93.test.mjs couple-web/evening-review.test.mjs
           node --test couple-web/privacy-screen.test.mjs
           node --test couple-web/evening-variety.test.mjs
+          node --test couple-web/lr026-server-variety.test.mjs
           node --test couple-web/evening-d100-template.test.mjs
           node --test couple-web/pages-soiree-privacy-header.test.mjs
           node --test couple-web/monthly-pass-limit-sql.test.mjs
