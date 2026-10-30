@@ -490,6 +490,7 @@ DECLARE
  b uuid:='bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb';
  s uuid:='bbbbbbbb-2222-4222-8222-bbbbbbbbbbbb';
  drawn public.couple_challenges%rowtype;
+ original_after public.couple_challenges%rowtype;
  replacement public.couple_challenges%rowtype;
  reply jsonb;
  blocked boolean:=false;
@@ -541,8 +542,15 @@ BEGIN
  SELECT * INTO drawn FROM public.draw_for_partner(s,'SENSUEL',false);
  IF drawn.card_id IS DISTINCT FROM 30 OR
     drawn.offered_by IS DISTINCT FROM a OR drawn.recipient IS DISTINCT FROM b
+    OR drawn.card_title IS DISTINCT FROM 'Allowed A to B'
+    OR drawn.card_description IS DISTINCT FROM
+       'Exactly one eligible gender-aware custom card'
+    OR drawn.card_timer_minutes IS NOT NULL
+    OR drawn.is_gifted IS DISTINCT FROM false
+    OR drawn.created_at IS NULL
+    OR drawn.passed_at IS NOT NULL OR drawn.refused_at IS NOT NULL
  THEN
-  RAISE EXCEPTION 'REAL RPC: custom role or identity filters bypassed %',
+  RAISE EXCEPTION 'REAL RPC: custom role, text, nullable timer or identity mismatch %',
    drawn;
  END IF;
 
@@ -633,8 +641,33 @@ BEGIN
   RAISE EXCEPTION 'REAL RPC: custom Refuser replay changed persisted result %',
    reply;
  END IF;
+ -- Inspect actual database rows after the first decision AND stale replay.
+ -- A matching receipt cannot conceal overwritten metadata or a recreated
+ -- original challenge. The first custom card intentionally has NO timer.
+ SELECT * INTO original_after FROM public.couple_challenges
+ WHERE id=drawn.id;
+ SELECT * INTO replacement FROM public.couple_challenges
+ WHERE id=replacement.id;
+ IF NOT FOUND
+    OR original_after.created_at IS DISTINCT FROM drawn.created_at
+    OR original_after.card_title IS DISTINCT FROM drawn.card_title
+    OR original_after.card_description IS DISTINCT FROM drawn.card_description
+    OR original_after.card_timer_minutes IS DISTINCT FROM drawn.card_timer_minutes
+    OR original_after.is_gifted IS DISTINCT FROM drawn.is_gifted
+    OR original_after.status IS DISTINCT FROM 'refused'
+    OR original_after.refused_at IS NULL
+    OR original_after.passed_at IS NOT NULL
+    OR replacement.created_at IS NULL
+    OR replacement.card_timer_minutes IS DISTINCT FROM 5
+    OR replacement.is_gifted IS DISTINCT FROM drawn.is_gifted
+    OR replacement.status IS DISTINCT FROM 'proposed'
+    OR replacement.passed_at IS NOT NULL
+    OR replacement.refused_at IS NOT NULL
+ THEN
+  RAISE EXCEPTION 'REAL RPC: custom Refuser or idempotent replay rewrote challenge metadata';
+ END IF;
  RAISE NOTICE
- 'LR-026 REAL RPC: custom A-to-B restrictions, Refuser replacement, custom text/timer and idempotency passed';
+ 'LR-026 REAL RPC: custom A-to-B restrictions, nullable timer, creation date, Refuser metadata and idempotency passed';
 END; $lr026_real_roles$;
 
 -- Cover the live SEXUEL category with the exact same two real SQL RPCs,
