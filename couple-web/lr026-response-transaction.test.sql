@@ -152,6 +152,9 @@ VALUES
       'aaaaaaaa-1111-4111-8111-aaaaaaaaaaaa','SENSUEL',1),
  (13,'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
       '44444444-4444-4444-8444-444444444444',
+      'bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb','SENSUEL',1),
+ (14,'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+      '55555555-5555-4555-8555-555555555555',
       'bbbbbbbb-1111-4111-8111-bbbbbbbbbbbb','SENSUEL',1);
 
 DO $lr026_response_assert$
@@ -214,6 +217,35 @@ BEGIN
     RAISE EXCEPTION 'LR-026: refusal exclusion not preserved';
   END IF;
 
+  -- Monthly pass quotas belong to individual recipients, not the couple:
+  -- player B must still have a pass when player A's quota is exhausted.
+  second_result := pg_temp.lr026_simulated_respond(
+    13,actor_b,'pass',false,1);
+  IF (second_result->>'card_id')::integer NOT IN (2,3) THEN
+    RAISE EXCEPTION 'LR-026: player B could not use their independent pass';
+  END IF;
+  IF (SELECT pg_catalog.count(*) FROM lr026_response_cases
+      WHERE recipient=actor_b AND status='passed') <> 1
+     OR (SELECT pg_catalog.count(*) FROM lr026_response_cases
+         WHERE recipient=actor_a AND status='passed') <> 1 THEN
+    RAISE EXCEPTION 'LR-026: pass counters leaked between partners';
+  END IF;
+
+  -- A second pass by B must hit B's own monthly limit.
+  denial := NULL;
+  BEGIN
+    PERFORM pg_temp.lr026_simulated_respond(14,actor_b,'pass',false,1);
+  EXCEPTION WHEN OTHERS THEN
+    GET STACKED DIAGNOSTICS denial = MESSAGE_TEXT;
+  END;
+  IF denial IS DISTINCT FROM 'Limite mensuelle de passes atteinte' THEN
+    RAISE EXCEPTION 'LR-026: B bypassed own monthly limit: %',denial;
+  END IF;
+  SELECT status INTO status_now FROM lr026_response_cases WHERE id=14;
+  IF status_now <> 'proposed' THEN
+    RAISE EXCEPTION 'LR-026: denied B pass altered card';
+  END IF;
+
   -- An invalid pass+exclude action must be rejected even when a card exists.
   denial := NULL;
   BEGIN
@@ -254,14 +286,14 @@ BEGIN
   -- Only the recipient can answer; no cross-partner action.
   denial := NULL;
   BEGIN
-    PERFORM pg_temp.lr026_simulated_respond(13,actor_a,'refuse',false,3);
+    PERFORM pg_temp.lr026_simulated_respond(14,actor_a,'refuse',false,3);
   EXCEPTION WHEN OTHERS THEN
     GET STACKED DIAGNOSTICS denial = MESSAGE_TEXT;
   END;
   IF denial IS DISTINCT FROM 'Seul le destinataire peut répondre' THEN
     RAISE EXCEPTION 'LR-026: one partner answered for the other: %',denial;
   END IF;
-  SELECT status INTO status_now FROM lr026_response_cases WHERE id=13;
+  SELECT status INTO status_now FROM lr026_response_cases WHERE id=14;
   IF status_now <> 'proposed' THEN
     RAISE EXCEPTION 'LR-026: unauthorized response modified partner card';
   END IF;
