@@ -103,7 +103,7 @@ const worldText=key=>worldT(worldLocale(),key);
 const state={user:null,profile:null,members:[],coupleId:null,couple:null,
  tab:launchParams.has('settings')?'settings':(['home','session','special','advent'].includes(launchParams.get('open'))?launchParams.get('open'):'home'),weekly:null,monthly:{},session:null,personal:[],challenges:[],gifts:[],rollStatus:null,customCards:[],customCategory:'SENSUEL',customSlot:1,customSearch:'',customFilter:'all',monthlyActivities:[],monthlySlot:1,libraryScreen:'list',libraryImportKind:null,specialEditorKey:null,specialEditorStage:'D6_activite',specialEditorFace:1,adventEditorDay:1,pushDevice:null,
  events:[],journal:[],advent:[],advent2026Config:null,advent2026Days:[],selectedDay:1,adventYear:null,adventSelected:null,adventHistory:false,adventOpening:null,adventRevealing:false,adventServerDate:null,unlockKey:null,channel:null,
- occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningRefusalId:null,redrawReady:false,redrawBusy:false,loveExcludedCards:[],eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],monthlyPassQuota:null,calendarPassMonth:null,cycleStatus:null,cycleDeferred:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,eveningInvite:null,eveningInviteBusy:false,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoBookingEdit:false,referral:null,eclat:null,eclatGalleryScroll:0,eclatHistory:[],eclatHistoryCouple:null,eclatBrowse:false,eclatHistoryError:false,eclatSelection:1,eclatMinutes:30,eclatIntent:'all',eclatDetails:false,eclatMusic:false,eclatFinished:null,testModeEligible:false,testMode:'real'};
+ occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningRefusalId:null,redrawReady:false,redrawBusy:false,redrawBusyContext:null,loveExcludedCards:[],eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],monthlyPassQuota:null,calendarPassMonth:null,cycleStatus:null,cycleDeferred:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,eveningInvite:null,eveningInviteBusy:false,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoBookingEdit:false,referral:null,eclat:null,eclatGalleryScroll:0,eclatHistory:[],eclatHistoryCouple:null,eclatBrowse:false,eclatHistoryError:false,eclatSelection:1,eclatMinutes:30,eclatIntent:'all',eclatDetails:false,eclatMusic:false,eclatFinished:null,testModeEligible:false,testMode:'real'};
 const names={SENSUEL:'Sensuel',COQUIN:'Coquin',SEXUEL:'Sexuel'};
 function isSharedCoupleReady(coupleId,members){
  return !!coupleId&&Array.isArray(members)&&members.length===2;
@@ -935,12 +935,19 @@ async function reload(){
  subscribe();render();
  }finally{if(loaderTicket!=null)window.LoveRollLoader?.end(loaderTicket);}
 }
+// A redraw started under another account or tab cannot disable the buttons
+// of the currently visible evening. Each in-flight redraw has its own owner.
+function isActiveEveningRedrawPending(){
+ return state.redrawBusy===true&&!!state.redrawBusyContext&&
+  isSameEveningResponseContext(state,state.redrawBusyContext);
+}
 async function refreshShared(expectedContext=null){
  const c=state.coupleId;
  // An in-flight redraw may outlive the account/session/tab that initiated
  // it. Ordinary shared refreshes keep their previous behavior.
  const current=()=>!expectedContext||(state.coupleId===c&&
-  isSameEveningResponseContext(state,expectedContext));
+  isSameEveningResponseContext(state,expectedContext)&&
+  state.redrawBusyContext===expectedContext);
  if(!current())return;
  const [rolls,sessions,advents,events,diary,occasionSettings,occasionRolls,keys,challengeHistory,gifts,adventServerDate,eveningStats,calendarChallenges,eveningReviews,calendarPasses,monthlyPassQuota,cycleInfo]=await Promise.all([
  query('couple_rolls',{eq:{couple_id:c}}),
@@ -1713,8 +1720,8 @@ function renderSession(){
        button('answer:'+view.id+':completed','✓ Défi réalisé','class="evening-primary"'):'')+
      (['proposed','accepted'].includes(view.status)&&state.redrawReady?
       '<div class="lr-redraw-actions" aria-label="Autres choix pour ce défi">'+
-       button('evening-pass:'+view.id,'Passer ce défi','class="subtle" '+(state.redrawBusy||state.monthlyPassQuota?.can_pass===false?'disabled':''))+
-       button('evening-refuse:'+view.id,'Refuser ce défi','class="subtle" '+(state.redrawBusy?'disabled':''))+
+       button('evening-pass:'+view.id,'Passer ce défi','class="subtle" '+(isActiveEveningRedrawPending()||state.monthlyPassQuota?.can_pass===false?'disabled':''))+
+       button('evening-refuse:'+view.id,'Refuser ce défi','class="subtle" '+(isActiveEveningRedrawPending()?'disabled':''))+
        '<small>'+(state.monthlyPassQuota?.can_pass===false?
         'Limite atteinte : '+safe(state.monthlyPassQuota?.used??'—')+
         ' / '+safe(state.monthlyPassQuota?.limit??'—')+
@@ -1727,9 +1734,9 @@ function renderSession(){
        '<h3 id="lr-refusal-title">Tu préfères un autre défi ?</h3>'+
        '<p id="lr-refusal-description">Veux-tu retirer ce défi des prochaines piges pour le cycle en cours ?</p>'+
        '<div class="lr-refusal-buttons">'+
-        button('evening-refuse-choice:'+view.id+':yes','Oui, retirer du lot','class="evening-primary" '+(state.redrawBusy?'disabled':''))+
-        button('evening-refuse-choice:'+view.id+':no','Non, le garder dans le lot','class="subtle" '+(state.redrawBusy?'disabled':''))+
-        button('evening-refuse-cancel','Annuler','class="subtle" '+(state.redrawBusy?'disabled':''))+
+        button('evening-refuse-choice:'+view.id+':yes','Oui, retirer du lot','class="evening-primary" '+(isActiveEveningRedrawPending()?'disabled':''))+
+        button('evening-refuse-choice:'+view.id+':no','Non, le garder dans le lot','class="subtle" '+(isActiveEveningRedrawPending()?'disabled':''))+
+        button('evening-refuse-cancel','Annuler','class="subtle" '+(isActiveEveningRedrawPending()?'disabled':''))+
        '</div></div>':'')+
      '<div class="evening-queue-nav">'+
        (idx>0?button('evening-open:'+mineCards[idx-1].id,'← Précédent','class="subtle"'):'<span></span>')+
@@ -2947,13 +2954,13 @@ async function handle(action,element){
  }
  if(verb==='evening-refuse-cancel'){
   const target=state.eveningRefusalId;
-  if(!state.redrawBusy){state.eveningRefusalId=null;render();
+  if(!isActiveEveningRedrawPending()){state.eveningRefusalId=null;render();
    root.querySelector('[data-action="evening-refuse:'+target+'"]')?.focus();}
   return;
  }
  if(verb==='evening-pass'||verb==='evening-refuse-choice'){
   if(!state.redrawReady)throw Error('La repige sécurisée n’est pas encore disponible sur ce serveur.');
-  if(state.redrawBusy)return;
+  if(isActiveEveningRedrawPending())return;
   const refuse=verb==='evening-refuse-choice',challengeId=parts[0];
   if(refuse&&state.eveningRefusalId!==challengeId)throw Error('Confirme ton choix pour ce défi.');
   if(refuse&&!['yes','no'].includes(parts[1]))throw Error('Choix de refus non reconnu.');
@@ -2963,6 +2970,7 @@ async function handle(action,element){
    throw Error('Limite mensuelle de passages atteinte. Tu peux toujours refuser un défi.');
   const responseContext={sessionId:state.session.id,userId:state.user?.id,tab:state.tab};
   const exclude=refuse&&parts[1]==='yes';
+  state.redrawBusyContext=responseContext;
   state.redrawBusy=true;
   if(challengeTimer.id===challengeId)challengeTimer.decisionPending=true;
   render();
@@ -2975,7 +2983,7 @@ async function handle(action,element){
    // The player may have switched accounts, evenings or tabs during the
    // network request. An old response must not trigger a new account's RLS
    // refresh, selection or confirmation.
-   if(!sameContext)return;
+   if(!sameContext||state.redrawBusyContext!==responseContext)return;
    // A syntactically valid RPC receipt cannot stop a live timer by itself.
    // Wait for the recipient-only refreshed database view below.
    // The automatic queue refresh can discover a DIFFERENT newly offered
@@ -2992,7 +3000,8 @@ async function handle(action,element){
    // A valid RPC JSON payload alone does not prove that the recipient can
    // render the committed replacement after RLS refresh. Do not announce a
    // successful repick or keep an invisible card selected in that case.
-   const sameAfterRefresh=isSameEveningResponseContext(state,responseContext);
+   const sameAfterRefresh=isSameEveningResponseContext(state,responseContext)&&
+    state.redrawBusyContext===responseContext;
    const persistedReceiptValid=receiptValid&&sameAfterRefresh&&
     isPersistedEveningRedrawReceipt(outcome,state.challenges,state.user.id,state.session.id,item);
    if(persistedReceiptValid){
@@ -3046,7 +3055,8 @@ async function handle(action,element){
    // A failure from an old account/evening/tab must never surface an
    // unrelated error on the screen now controlled by another session.
    // finally still unlocks the action and renders the current account.
-   if(!isSameEveningResponseContext(state,responseContext))return;
+   if(!isSameEveningResponseContext(state,responseContext)||
+      state.redrawBusyContext!==responseContext)return;
    if(challengeTimer.id===challengeId&&challengeTimer.decisionPending){
     challengeTimer.decisionPending=false;
     if(challengeTimer.deadline>0&&challengeTimer.deadline<=Date.now()){
@@ -3058,13 +3068,16 @@ async function handle(action,element){
   }finally{
    // A previous account's pending lock must not be persisted under the
    // new account when an in-flight response arrives after switching.
-   if(challengeTimer.id===challengeId&&challengeTimer.decisionPending&&
-      !isSameEveningResponseContext(state,responseContext))
-    challengeTimer.decisionPending=false;
-   state.redrawBusy=false;
-   // Re-render after both success and failure; a rejected RPC must never
-   // leave its on-screen buttons permanently disabled.
-   render();
+   // Only the action owning this lock may release it. An older response
+   // cannot unlock or alter a newer redraw started on another account.
+   if(state.redrawBusyContext===responseContext){
+    if(challengeTimer.id===challengeId&&challengeTimer.decisionPending&&
+       !isSameEveningResponseContext(state,responseContext))
+     challengeTimer.decisionPending=false;
+    state.redrawBusyContext=null;
+    state.redrawBusy=false;
+    render();
+   }
   }
   if(redrawFeedback)notify(redrawFeedback);
   return;
