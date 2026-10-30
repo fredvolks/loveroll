@@ -21,6 +21,7 @@ on:
       - "couple-web/lr026-source-preservation.test.sql"
       - "couple-web/lr026-eligibility-boundary.test.sql"
       - "couple-web/lr026-response-transaction.test.sql"
+      - "couple-web/lr026-authenticated-partners.test.sql"
       - "couple-web/lr026-rpc-role-security.test.sql"
       - "couple-web/lr026-failed-migration-fixture.sql"
       - "couple-web/lr026-atomic-rollback.test.sql"
@@ -101,6 +102,8 @@ jobs:
         run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-source-preservation.test.sql
       - name: Verify both patched RPCs and preserved execution rights
         run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-full-migration.test.sql
+      - name: Test authenticated A/B and outsider isolation with RLS and pass quotas
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-authenticated-partners.test.sql
       - name: Verify anon denial and authenticated server-side RPC execution
         run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-rpc-role-security.test.sql
       - name: Recheck rank and permissions after full migration
