@@ -61,6 +61,8 @@ jobs:
         run: node --test couple-web/lr026-server-variety.test.mjs
       - name: Verify migration helper extraction syntax
         run: node --check couple-web/lr026-extract-helpers.cjs
+      - name: Validate preflight regression Bash syntax early
+        run: bash -n couple-web/lr026-preflight-negative.test.sh
       - name: Create isolated synthetic test schema
         run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-postgres-fixture.sql
       - name: Extract exact private SQL helpers (never patch production RPC)
