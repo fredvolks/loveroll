@@ -41,6 +41,7 @@ function mockSupabase(opts = {}) {
     assert.equal(init.headers.apikey, env().LR026_STAGING_PUBLISHABLE_KEY);
     const path = url.pathname;
     const actorToken = init.headers.Authorization;
+    const secondDevice = actorToken?.includes('-device-2');
     const payload = init.body ? JSON.parse(init.body) : undefined;
     calls.push({method: init.method, path, actorToken, payload});
     const response = (data, status = 200) => new Response(JSON.stringify(data), {status});
@@ -65,6 +66,11 @@ function mockSupabase(opts = {}) {
         email_confirmed_at: '2026-10-10T00:00:00Z'});
     }
     if (path === '/rest/v1/couple_sessions') {
+      if (secondDevice && opts.staleDeviceHiddenSession) return response([]);
+      if (secondDevice && passCount > 2 && opts.staleDeviceClosedSessionAfterConflict)
+        return response([{id:session,couple_id:couple,
+          finished_at:'2026-10-30T12:00:00Z',
+          paired_turns:false,self_draws:false}]);
       const afterDraw = drawCount === 1 && passCount === 0;
       const afterFirstPass = passCount === 1;
       const afterReplay = passCount === 2;
@@ -88,6 +94,8 @@ function mockSupabase(opts = {}) {
       }]);
     }
     if (path === '/rest/v1/couple_members') {
+      if (secondDevice && opts.staleDeviceMissingMember)
+        return response([{couple_id:couple,user_id:uid}]);
       if (opts.hideMemberB && who === 'b') return response([]);
       if (opts.hidePartnerFromA && who === 'a')
         return response([{couple_id: couple, user_id: a}]);
@@ -104,6 +112,7 @@ function mockSupabase(opts = {}) {
       return response(members);
     }
     if (path === '/rest/v1/couple_personal_rolls') {
+      if (secondDevice && opts.staleDeviceD6Hidden) return response([]);
       const valid = [
         {session_id: session, user_id: a, face: 2},
         {session_id: session, user_id: b, face: 4}
@@ -115,6 +124,9 @@ function mockSupabase(opts = {}) {
           (opts.d6MutatedAfterReplay && passCount === 2))
         return response([valid[0], {...valid[1], face: 5}]);
       if (opts.d6DifferentFaceAfterDrawForB && drawCount === 1 && who === 'b')
+        return response([valid[0], {...valid[1], face: 5}]);
+      if (secondDevice && (opts.staleDeviceD6Mismatch ||
+        (opts.staleDeviceD6ChangesAfterConflict && passCount > 2)))
         return response([valid[0], {...valid[1], face: 5}]);
       if (opts.d6HiddenFromB && who === 'b') return response([]);
       if (opts.d6DifferentFaceForB && who === 'b')
@@ -139,6 +151,7 @@ function mockSupabase(opts = {}) {
       return response(valid);
     }
     if (path === '/rest/v1/couple_challenges') {
+      if (secondDevice && opts.staleDeviceHidesCards) return response([]);
       if (opts.existingChallengeForB || opts.existingChallengeForA) {
         const addressedTo = opts.existingChallengeForA ? 'a' : 'b';
         const recipientIdToShow = addressedTo === 'a' ? a : b;
@@ -204,6 +217,8 @@ function mockSupabase(opts = {}) {
       if (passCount === 1 && opts.firstPassWrongStatus)
         return response([{...original, status: 'proposed'}, replacement]);
       const rows = [original, replacement];
+      if (secondDevice && opts.staleDeviceMisroutesCard)
+        return response([original,{...replacement,recipient:giverId}]);
       return response(passCount > 1 && opts.replayReordersRows ? rows.reverse() : rows);
     }
     if (path === '/rest/v1/rpc/draw_for_partner') {
@@ -920,6 +935,42 @@ for(const options of [
   assert.equal(mock.counters().passCount,2);
   const logins=mock.calls.filter(c=>c.path==='/auth/v1/token');
   assert.equal(logins.length,3);
+ });
+}
+
+for(const [options,reason] of [
+ [{staleDeviceHiddenSession:true},/Second device cannot see the same active staging session/],
+ [{staleDeviceMissingMember:true},/Second device cannot see the same exact two-person duet/],
+ [{staleDeviceD6Hidden:true},/Second device D6 snapshot is missing or differs/],
+ [{staleDeviceD6Mismatch:true},/Second device D6 snapshot is missing or differs/],
+ [{staleDeviceHidesCards:true},/Only the two correct-category recipient challenges may exist/],
+ [{staleDeviceMisroutesCard:true},/Only the two correct-category recipient challenges may exist/]
+]){
+ test('stale device cannot send a contradictory D100 response with mismatched RLS: '+
+  JSON.stringify(options),async()=>{
+  const mock=mockSupabase({...options,expectStaleReplay:true});
+  await assert.rejects(runStage({...env(),LR026_STAGING_STALE_REPLAY:'true'},
+   'play',mock.fetchFn),reason);
+  assert.equal(mock.counters().passCount,2,
+   'stale RPC must not be sent before second-device preflight passes');
+  const staleRpc=mock.calls.filter(c=>c.path==='/rest/v1/rpc/love_respond_and_redraw' &&
+   c.actorToken?.includes('-device-2'));
+  assert.equal(staleRpc.length,0);
+ });
+}
+for(const [options,reason] of [
+ [{staleDeviceClosedSessionAfterConflict:true},
+  /Second device cannot see the same active staging session/],
+ [{staleDeviceD6ChangesAfterConflict:true},
+  /Second device D6 snapshot is missing or differs/]
+]){
+ test('second device must remain consistent after stale response: '+
+  JSON.stringify(options),async()=>{
+  const mock=mockSupabase({...options,expectStaleReplay:true});
+  await assert.rejects(runStage({...env(),LR026_STAGING_STALE_REPLAY:'true'},
+   'play',mock.fetchFn),reason);
+  assert.equal(mock.counters().passCount,3,
+   'stop immediately on second-device view drift after first stale response');
  });
 }
 
