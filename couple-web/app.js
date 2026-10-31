@@ -37,7 +37,7 @@ import {loginEmail,loginCode,emailAuthMessage,requireLovePassword,passwordQualit
 import {demoCoupleHtml,DEMO_TABS} from './demo-couple.mjs';
 import {inviteLinkForId,parseInvitationFromUrl,pendingInviteReference,INVITATION_REVISION} from './invite-links.mjs?v=20261018-safari150';
 import {sharedEveningTurns,lastOfficialChallengeFace,latestCountedSession} from './evening-turns.mjs';
-import { eveningCard, EVENING_CATEGORIES, formatCountdown,customCardSlots,editableCardSlots,playableEveningCount,resolvedCard } from './evening-challenges.mjs?v=20261016-restore113';
+import { eveningCard, EVENING_CATEGORIES, formatCountdown,validChallengeTimerMinutes,customCardSlots,editableCardSlots,playableEveningCount,resolvedCard } from './evening-challenges.mjs?v=20261016-restore113';
 import {MONTHLY_ACTIVITIES,editableMonthlyActivities,monthlyActivityForRoll} from './monthly-activities.mjs?v=20261018-d100151';
 import {ritualBrandHtml} from './brand.mjs?v=20261017-ritual130';
 import {validateAdventJson,calendarFromSaved} from './advent-calendar.mjs';
@@ -2486,7 +2486,7 @@ setInterval(async()=>{
  }
 },15000);
 function timerWidget(challenge,minutes){
- if(minutes===null||minutes===undefined||minutes===0)return '<p class="tiny-note">♡ Sans minuteur · l’activité se termine quand vous le souhaitez.</p>';
+ if(!validChallengeTimerMinutes(minutes))return '<p class="tiny-note">♡ Sans minuteur · l’activité se termine quand vous le souhaitez.</p>';
  activeTimer(challenge,minutes);
  const presentation=timedEveningTimerControl(challengeTimer);
  protectEveningTimerPresentation(presentation);
@@ -4188,7 +4188,7 @@ async function handle(action,element){
    state.showEveningChallenges=true;
    state.selectedEveningChallengeId=active.id;
    const minutes=resolvedCard(active).minutes;
-   if(minutes>0){
+   if(validChallengeTimerMinutes(minutes)){
     activeTimer(active,minutes);
     if(!challengeTimer.running&&challengeTimer.remainingMs>0){
      challengeTimer.deadline=Date.now()+challengeTimer.remainingMs;
@@ -4197,7 +4197,7 @@ async function handle(action,element){
     }
    }
    render();
-   if(minutes>0)updateChallengeClock();
+   if(validChallengeTimerMinutes(minutes))updateChallengeClock();
   }catch(error){
    if(!isCurrentStart())return;
    throw error;
