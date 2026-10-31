@@ -753,3 +753,57 @@ test('LR-026: current mutation returns the authoritative server receipt unchange
  assert.equal(h.state.eclat.id,'ended');
  assert.deepEqual(h.renders,[]);
 });
+
+test('LR-026: completed Éclat mutation cannot reopen server-revoked access',async()=>{
+ const pending=deferred();
+ const h=harness({rpc:()=>pending.promise});
+ h.state.eclat={access:true,active:true,session_id:'session-old',coffret_id:1,chapter_index:2};
+ const owner=h.beginEclatAction();
+ const writing=h.runEclatMutation(owner,'love_eclat_choose',{p_choice:1});
+ h.state.eclat={access:false,active:false,session_id:'session-old'};
+ pending.resolve({access:true,active:true,session_id:'session-old',id:'stale-choice'});
+ const receipt=await writing;
+ assert.equal(receipt.applied,false,'a stale mutation cannot regrant access after a newer server denial');
+ assert.equal(h.state.eclat.access,false);
+});
+
+test('LR-026: stale mutation cannot restore a previous partner session',async()=>{
+ const pending=deferred();
+ const h=harness({rpc:()=>pending.promise});
+ h.state.eclat={access:true,active:true,session_id:'session-old',coffret_id:1,chapter_index:2};
+ const owner=h.beginEclatAction();
+ const writing=h.runEclatMutation(owner,'love_eclat_next');
+ h.state.eclat={access:true,active:true,session_id:'session-new',coffret_id:2,chapter_index:1};
+ pending.resolve({access:true,active:true,session_id:'session-old',coffret_id:1,chapter_index:3});
+ assert.equal((await writing).applied,false);
+ assert.equal(h.state.eclat.session_id,'session-new');
+ assert.equal(h.state.eclat.coffret_id,2);
+});
+
+test('LR-026: stale mutation cannot roll back a chapter already advanced by partner',async()=>{
+ const pending=deferred();
+ const h=harness({rpc:()=>pending.promise});
+ h.state.eclat={access:true,active:true,session_id:'session-old',coffret_id:1,chapter_index:2};
+ const owner=h.beginEclatAction();
+ const writing=h.runEclatMutation(owner,'love_eclat_next');
+ h.state.eclat={...h.state.eclat,chapter_index:3};
+ pending.resolve({access:true,active:true,session_id:'session-old',coffret_id:1,chapter_index:2});
+ assert.equal((await writing).applied,false);
+ assert.equal(h.state.eclat.chapter_index,3);
+});
+
+test('LR-026: partner choice updates do not discard current authorized mutation',async()=>{
+ const pending=deferred();
+ const h=harness({rpc:()=>pending.promise});
+ h.state.eclat={access:true,active:true,session_id:'same-session',
+  coffret_id:1,chapter_index:2,my_choice:null};
+ const owner=h.beginEclatAction();
+ const writing=h.runEclatMutation(owner,'love_eclat_choose',{p_choice:0});
+ h.state.eclat={...h.state.eclat,my_choice:1};
+ const result={access:true,active:true,session_id:'same-session',
+  coffret_id:1,chapter_index:2,my_choice:0};
+ pending.resolve(result);
+ const receipt=await writing;
+ assert.equal(receipt.applied,true,'a choice update in the same chapter is not a new session');
+ assert.equal(receipt.value,result);
+});
