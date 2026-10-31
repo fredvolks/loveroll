@@ -43,9 +43,17 @@ test('Rating bounds, comment size and HTML escaping stay protected',()=>{
  assert.equal(validEveningReview({...reviews[0],appreciation:0}),false);
  assert.equal(validEveningReview({...reviews[0],connection:6}),false);
  assert.equal(validEveningReview({...reviews[0],comment:'x'.repeat(501)}),false);
+ assert.equal(validEveningReview({...reviews[0],comment:null}),true);
+ assert.equal(validEveningReview({...reviews[0],comment:undefined}),true);
+ for(const comment of [0,42,false,['note'],{text:'note'}])
+  assert.equal(validEveningReview({...reviews[0],comment}),false,
+   'Only a string or an empty optional comment is accepted');
  const html=eveningReviewModal({sessionId:'evening-1',draft:{comment:'<script>alert(1)</script>'}});
  assert.match(html,/&lt;script&gt;/);
  assert.doesNotMatch(html,/<script>/);
+ const malformed=eveningReviewModal({sessionId:'evening-1',draft:{comment:{secret:'not text'}}});
+ assert.match(malformed,/id="lr-review-counter">0\/500/);
+ assert.doesNotMatch(malformed,/object Object|not text/);
 });
 test('Each person accordion owns ONLY their challenges and their own review',()=>{
  const historyChallenges=[
@@ -114,6 +122,18 @@ test('Partial legacy reviews and an empty draft never break the calendar',()=>{
  });
  assert.match(missing,/En attente de son bilan/);
  assert.doesNotMatch(missing,/data-action="review-open:/);
+ const stray=eveningPersonReviewMarkup({
+  reviews:[{session_id:'evening-1',comment:'Orphaned comment',overall:5}],
+  sessionId:'evening-1',person:{name:'Personne inconnue'},me:'fred'
+ });
+ assert.doesNotMatch(stray,/Orphaned comment|5 sur 5/,
+  'A review with no author ID must not be assigned to an unknown calendar member');
+ assert.match(stray,/En attente de son bilan/);
+ const malformedNote=eveningPersonReviewMarkup({
+  reviews:[{...reviews[0],comment:{text:'not a saved note'}}],
+  sessionId:'evening-1',person:members[0],me:'fred'
+ });
+ assert.doesNotMatch(malformedNote,/object Object|not a saved note/);
 });
 test('Malformed past heart scores cannot blank the couple calendar',()=>{
  const weird={...reviews[0],overall:3.5,connection:100,appreciation:-1,again:'NaN'};
