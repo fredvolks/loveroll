@@ -2656,3 +2656,127 @@ test('LR-026: registration and profile actions use the same identity-owned save'
  }
  assert.match(profile,/if\(state\.user\?\.id===profileOwnerId\)[\s\S]*?notify\('Votre profil/);
 });
+
+function ownedSignoutFixture(state,{disablePush=async()=>{},removeChannel=async()=>{},
+ signOut=async()=>({error:null}),token=null}={}){
+ const start=app.indexOf('let currentSignoutRequest=null;');
+ const end=app.indexOf('function authMessage(',start);
+ assert.ok(start>0&&end>start,'real sign-out helper must be available');
+ const calls={push:[],channels:[],signouts:0,clears:0,paints:0,routes:0};
+ const scope=runInNewContext('let currentSignoutRequest=null;'+
+  app.slice(start+'let currentSignoutRequest=null;'.length,end)+
+  ';({signOutCurrentAccount,signoutRequest:()=>currentSignoutRequest})',{
+  state,client:{auth:{signOut:async()=>{
+   calls.signouts++;return signOut();
+  }},removeChannel:async channel=>{
+   calls.channels.push(channel);return removeChannel(channel);
+  }},
+  safeNativePushToken:()=>token,
+  disablePush:async(_client,userId)=>{calls.push.push(userId);return disablePush(userId);},
+  adoptAuthenticatedIdentity:next=>{
+   calls.clears++;state.user=next;state.coupleId=null;
+  },
+  keepAuthModeInUrl:()=>calls.routes++,
+  render:()=>calls.paints++,
+  console:{warn:()=>{}}
+ });
+ return {...scope,calls};
+}
+
+test('LR-026: logout that waits for FCM must not sign out a new account',async()=>{
+ let release;
+ const pushPending=new Promise(resolve=>{release=resolve;});
+ const state={user:{id:'alice'},coupleId:'alice-duo',channel:{id:'alice-channel'}};
+ const f=ownedSignoutFixture(state,{token:'push-key',disablePush:()=>pushPending});
+ const first=f.signOutCurrentAccount();
+ assert.equal(f.calls.push[0],'alice');
+ state.user={id:'bob'};state.coupleId='bob-duo';
+ release();
+ assert.equal(await first,false);
+ assert.equal(f.calls.signouts,0);
+ assert.equal(f.calls.channels.length,0);
+ assert.equal(f.calls.clears,0);
+ assert.equal(state.user.id,'bob');
+});
+
+test('LR-026: logout waiting for old Realtime channel must not revoke replacement login',async()=>{
+ let release;
+ const closing=new Promise(resolve=>{release=resolve;});
+ const state={user:{id:'alice'},coupleId:'alice-duo',channel:{id:'old'}};
+ const f=ownedSignoutFixture(state,{removeChannel:()=>closing});
+ const first=f.signOutCurrentAccount();
+ assert.equal(f.calls.channels.length,1);
+ state.user={id:'bob'};state.coupleId='bob-duo';state.channel={id:'new'};
+ release();
+ assert.equal(await first,false);
+ assert.equal(f.calls.signouts,0);
+ assert.equal(f.calls.clears,0);
+ assert.equal(state.channel.id,'new');
+});
+
+test('LR-026: normal logout cleans up once and returns to anonymous view',async()=>{
+ const channel={id:'alice'};
+ const state={user:{id:'alice'},coupleId:'alice-duo',channel,
+  showAuth:true,passwordRecovery:true,installAfterSignup:true,installModalOpen:true};
+ const f=ownedSignoutFixture(state);
+ assert.equal(await f.signOutCurrentAccount(),true);
+ assert.equal(state.user,null);
+ assert.equal(state.channel,null);
+ assert.equal(state.showAuth,false);
+ assert.equal(state.passwordRecovery,false);
+ assert.equal(state.installAfterSignup,false);
+ assert.equal(f.calls.signouts,1);
+ assert.equal(f.calls.channels[0],channel);
+ assert.equal(f.calls.clears,1);
+ assert.equal(f.calls.paints,1);
+ assert.equal(f.calls.routes,1);
+});
+
+test('LR-026: logout cannot be launched twice for the same account',async()=>{
+ let release;
+ const closing=new Promise(resolve=>{release=resolve;});
+ const state={user:{id:'alice'},channel:{id:'old'}};
+ const f=ownedSignoutFixture(state,{removeChannel:()=>closing});
+ const first=f.signOutCurrentAccount();
+ const second=f.signOutCurrentAccount();
+ assert.equal(await second,false);
+ assert.equal(f.calls.channels.length,1);
+ release();
+ assert.equal(await first,true);
+ assert.equal(f.calls.signouts,1);
+});
+
+test('LR-026: late failed signout from old account must not show an error to new login',async()=>{
+ let reject;
+ const pending=new Promise((_,bad)=>{reject=bad;});
+ const state={user:{id:'alice'},coupleId:'old-duo'};
+ const f=ownedSignoutFixture(state,{signOut:()=>pending});
+ const first=f.signOutCurrentAccount();
+ assert.equal(f.calls.signouts,1);
+ state.user={id:'bob'};state.coupleId='new-duo';
+ reject(Error('Old signout network failed'));
+ assert.equal(await first,false);
+ assert.equal(state.user.id,'bob');
+ assert.equal(f.calls.clears,0);
+});
+
+test('LR-026: old Realtime channel close error cannot fail replacement account logout',async()=>{
+ let reject;
+ const pending=new Promise((_,bad)=>{reject=bad;});
+ const state={user:{id:'alice'},channel:{id:'old'}};
+ const f=ownedSignoutFixture(state,{removeChannel:()=>pending});
+ const first=f.signOutCurrentAccount();
+ state.user={id:'bob'};state.channel={id:'new'};
+ reject(Error('Old channel cannot close'));
+ assert.equal(await first,false);
+ assert.equal(f.calls.signouts,0);
+ assert.equal(f.calls.clears,0);
+});
+
+test('LR-026: current logout error must still be reported to the same user',async()=>{
+ const state={user:{id:'alice'},coupleId:'old-duo'};
+ const f=ownedSignoutFixture(state,{signOut:async()=>({error:Error('Supabase blocked signout')})});
+ await assert.rejects(f.signOutCurrentAccount(),/Supabase blocked signout/);
+ assert.equal(state.user.id,'alice');
+ assert.equal(f.calls.clears,0);
+});
