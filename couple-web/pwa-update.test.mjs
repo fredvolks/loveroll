@@ -32,7 +32,8 @@ test('LoveRoll build versions agree between endpoint, app, HTML and imported mod
  assert.ok(sw.includes('./calendar-success-stats.mjs'));
  assert.ok(sw.includes('./play-style.mjs'));
  assert.ok(sw.includes('./cycle-questionnaire.mjs'));
- assert.ok(app.includes('cycle-questionnaire.mjs?v=20261018-cycle149'));
+ assert.ok(app.includes('cycle-questionnaire.mjs?v=20261031-cycle261'),
+  'the active PWA must import the latest personal 200-card questionnaire');
  assert.ok(app.includes("rpc('love_cycle_status'"));
  assert.ok(app.includes("rpc('reset_love_challenges_admin'"));
  assert.ok(html.includes('evening-calendar.css?v=20261018-stats148'));
