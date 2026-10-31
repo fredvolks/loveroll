@@ -703,21 +703,22 @@ function privateHistoryHarness(){
   eclat:{id:'original',access:true,active:true},
   eclatHistory:[{id:'prior-private-photo'}],eclatHistoryCouple:'couple-a',
   eclatHistoryUserId:'alice',eclatMusic:true,eclatFinished:'previous-finish'};
- const loads=[],renders=[],warnings=[],drafts=new Map([['secret',{value:'note'}]]);
+ const loads=[],pageGuards=[],renders=[],warnings=[],drafts=new Map([['secret',{value:'note'}]]);
  let clock=0,stops=0;
  const runtime={state,authFeedbackGeneration:1,client:{},
   Date:{now:()=>clock},eclatNoteDrafts:drafts,
   eclatAudio:{stop:()=>{stops++;}},
   ownsCoupleAsyncRead,isSharedCoupleReady:(couple,members)=>!!couple&&members?.length===2,
-  loadEclatHistory:(_client,coupleId)=>{
+  loadEclatHistory:(_client,coupleId,ownsRequest)=>{
    assert.equal(coupleId,'couple-a');
+   pageGuards.push(ownsRequest);
    const task=deferred();loads.push(task);return task.promise;
   },
   render:()=>renders.push(state.eclat?.id??null),
   console:{warn:(...args)=>warnings.push(args)}
  };
  runInNewContext(realHistorySource,runtime);
- return {state,runtime,loads,renders,warnings,drafts,stops:()=>stops,
+ return {state,runtime,loads,pageGuards,renders,warnings,drafts,stops:()=>stops,
   tick:()=>runtime.refreshEclatHistory(),advance:ms=>{clock+=ms;}};
 }
 
@@ -770,4 +771,21 @@ test('LR-026: temporary history failure preserves access and schedules bounded r
  assert.deepEqual(h.state.eclatHistory,[{id:'fresh-photo'}]);
  assert.equal(h.state.eclatHistoryError,false);
  assert.equal(h.state.eclatHistoryRetryAt,0);
+});
+
+test('LR-026: real private history refresh supplies a per-page account guard',async()=>{
+ const h=privateHistoryHarness();
+ const pending=h.tick();
+ assert.equal(h.loads.length,1);
+ assert.equal(typeof h.pageGuards[0],'function','pagination must receive the Auth owner');
+ assert.equal(h.pageGuards[0](),true);
+ h.runtime.authFeedbackGeneration=2;
+ h.state.eclat={id:'new-session',access:true,active:true};
+ h.state.eclatHistory=[{id:'new-private-history'}];
+ assert.equal(h.pageGuards[0](),false,'old page must stop after reauthentication');
+ h.loads[0].resolve([{id:'old-private-history'}]);
+ await pending;
+ assert.deepEqual(h.state.eclatHistory,[{id:'new-private-history'}]);
+ assert.equal(h.state.eclat.id,'new-session');
+ assert.deepEqual(h.renders,[]);
 });
