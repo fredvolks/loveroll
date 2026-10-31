@@ -149,7 +149,7 @@ export function premiumEveningHtml({
  giftCount=0,receivedGifts=0,pending=null,rolling=false,
  challengeOverlay='',showMore=false,confirmCancel=false,rollFace=null,rollingKind=null,
  lastEvening=null,lastD35Face=null,playable=null,ownChallengeCount=0,canStartEvening=true,sessionLength='libre',
- weeklyReady=true,weeklyCount=0,weeklyLimit=1,dailyLocked=false,invitationHtml='',
+ weeklyReady=true,weeklyCount=0,weeklyLimit=1,dailyLocked=false,historyReady=true,invitationHtml='',
  showSensuel=true,showSexuel=true,categoryOdds=88,challengeHistory=[],eveningWeights,eveningWeightsEnabled=true
 }={}){
  const preferredOdds=categoryConfirmOdds('SENSUEL',categoryOdds).sensuel;
@@ -264,6 +264,7 @@ export function premiumEveningHtml({
       '<h2>Votre soirée vous attend</h2>'+
       '<p class="evening-finale-description">'+
         (!weeklyReady?'Brassez d’abord le dé hebdomadaire depuis l’accueil.':
+         !historyReady?'Chargement de votre historique de soirées. Réessayez dans un instant.':
          dailyLocked?'Une soirée a déjà eu lieu aujourd’hui. Prochaine soirée au plus tôt demain.':
          canStartEvening?'Votre prochain moment à deux vous attend.':
          'Toutes les soirées de la semaine ont été utilisées.')+'</p>'+
