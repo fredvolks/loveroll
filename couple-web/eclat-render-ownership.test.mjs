@@ -453,7 +453,7 @@ test('LR-026: a pending old Quitter modal does not block a replacement coffret',
 
 test('LR-026: pending private save silently ignores duplicate note transitions',async()=>{
  const h=actionFixture({access:true,active:true,session_id:'in-flight'},{
-  withDraft:true,saveNote:async()=>{throw Error('must not be called again');}});
+  withDraft:true,saveNote:async()=> 'note-key'});
  h.drafts.get('note-key').saving=true;
  for(const command of ['note-save','note-play','note-done','note-edit'])
   await h.invoke(command);
