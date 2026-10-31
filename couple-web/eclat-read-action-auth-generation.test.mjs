@@ -621,7 +621,7 @@ assert.ok(noteReadStart>=0&&noteReadEnd>noteReadStart&&
 const noteReadSource='let latestEclatHistoryRead=null,latestEclatAudioOwner=null;\n'+
  app.slice(noteReadStart,noteReadEnd)+'\n'+app.slice(noteDenialStart,noteDenialEnd);
 
-function privateNoteDenialHarness({scopedKeys=false}={}){
+function privateNoteDenialHarness({scopedKeys=false,saveUi=false}={}){
  const pendingRead=deferred(),pendingSave=deferred();
  const state={user:{id:'alice'},coupleId:'couple-a',tab:'eclat',
   members:[{id:'alice'},{id:'bob'}],
@@ -629,17 +629,21 @@ function privateNoteDenialHarness({scopedKeys=false}={}){
   eclatHistory:[{id:'private-gallery'}],eclatMusic:true,
   eclatFinished:'Private completion'};
  const drafts=new Map(),renders=[];
+ const ui={button:{disabled:false,textContent:'Enregistrer ma note'},
+  label:{textContent:'Écris ici, puis enregistre.'}};
  let audioStops=0;
  const ctx={state,client:{},authFeedbackGeneration:1,eclatNoteDrafts:drafts,
   ownsCoupleAsyncRead,eclatNoteKey:status=>scopedKeys?
    (status?.active&&status?.session_id?`${status.session_id}:${status.chapter_index}`:null):'private-key',
   isSharedCoupleReady:(c,m)=>!!c&&m?.length===2,
   loadEclatNote:()=>pendingRead.promise,saveEclatNote:()=>pendingSave.promise,
-  eclatAudio:{stop:()=>{audioStops++;}},root:{querySelector:()=>null},
+  eclatAudio:{stop:()=>{audioStops++;}},root:{querySelector:selector=>saveUi?
+   (selector==='[data-action="eclat:note-save"]'?ui.button:
+    selector==='[data-eclat-note-status]'?ui.label:null):null},
   render:()=>renders.push(state.eclat?.access??null)};
  const functions=runInNewContext(noteReadSource+
   ';({eclatNoteState,saveCurrentEclatNote})',ctx);
- return {state,ctx,drafts,renders,pendingRead,pendingSave,...functions,
+ return {state,ctx,drafts,renders,pendingRead,pendingSave,ui,...functions,
   audioStops:()=>audioStops};
 }
 
@@ -975,4 +979,35 @@ test('LR-026: stalled Éclat mutation guard expires after 30 seconds',async()=>{
  assert.ok(h.beginEclatAction(),'the guard must not block controls permanently after a stalled request');
  pending.resolve({access:true,active:true,session_id:'scene',coffret_id:1,chapter_index:3});
  assert.equal((await oldAction).applied,false,'expired action receipt is superseded');
+});
+
+test('LR-026: saving private Éclat note announces progress and restores submit',async()=>{
+ const h=privateNoteDenialHarness({saveUi:true});
+ const draft={generation:1,loading:false,error:false,saving:false,
+  note:'Saved note',clue:'',moment_done:false,dirty:true};
+ h.drafts.set('private-key',draft);
+ const pending=h.saveCurrentEclatNote();
+ assert.equal(draft.saving,true);
+ assert.equal(h.ui.button.disabled,true);
+ assert.equal(h.ui.button.textContent,'Enregistrement…');
+ assert.equal(h.ui.label.textContent,'Enregistrement en cours…');
+ h.pendingSave.resolve();
+ assert.equal(await pending,'private-key');
+ assert.equal(h.ui.button.disabled,false);
+ assert.equal(h.ui.button.textContent,'Enregistrer ma note');
+ assert.equal(h.ui.label.textContent,'Note enregistrée pour toi');
+ assert.equal(draft.dirty,false);
+});
+
+test('LR-026: failed note save restores submit without hiding retry explanation',async()=>{
+ const h=privateNoteDenialHarness({saveUi:true});
+ h.drafts.set('private-key',{generation:1,loading:false,error:false,saving:false,
+  note:'Keep private text',clue:'',moment_done:false,dirty:true});
+ const saving=h.saveCurrentEclatNote();
+ h.pendingSave.reject(new Error('offline'));
+ await assert.rejects(saving,/offline/);
+ assert.equal(h.ui.button.disabled,false);
+ assert.equal(h.ui.button.textContent,'Enregistrer ma note');
+ assert.equal(h.ui.label.textContent,'Non enregistré. Ton texte est conservé ici; réessaie.');
+ assert.equal(h.drafts.get('private-key').note,'Keep private text');
 });
