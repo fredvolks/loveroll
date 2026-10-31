@@ -4,8 +4,9 @@ import {
  blankFutureArchive,inspectFutureArchive,addFutureArchiveRevision,
  recoverFutureArchiveRevision,FUTURE_ARCHIVE_LIMIT,FUTURE_ARCHIVE_MAX_BYTES
 } from './future-card-revisions.mjs';
+import {compareFutureCardDrafts} from './future-card-compare.mjs';
 
-const INPUT_NAMES=['label','save','select','restore','export','file','import','feedback','count'];
+const INPUT_NAMES=['label','save','select','restore','export','file','import','feedback','count','compare','diff'];
 const clone=value=>JSON.parse(JSON.stringify(value));
 
 export function initFutureCardArchiveStudio(doc=document,{
@@ -16,10 +17,37 @@ export function initFutureCardArchiveStudio(doc=document,{
   name,doc.getElementById('future-archive-'+name)]));
  if(INPUT_NAMES.some(name=>!controls[name]))return null;
  const {label,save,select,restore,export:exportBtn,file,import:importBtn,
-  feedback,count}=controls;
+  feedback,count,compare,diff}=controls;
  let archive=blankFutureArchive(),unexported=false,request=0;
  const say=message=>{feedback.textContent=message;};
  const confirm=message=>doc.defaultView?.confirm?.(message)===true;
+ const clearComparison=()=>diff.replaceChildren();
+ const showComparison=summary=>{
+  clearComparison();
+  const heading=doc.createElement('strong');
+  heading.textContent=summary.totalChanges+' changement(s) · '+
+   summary.added+' ajoutée(s) · '+summary.removed+' retirée(s) · '+
+   summary.modified+' modifiée(s) · '+summary.unchanged+' inchangée(s)';
+  diff.appendChild(heading);
+  if(!summary.totalChanges)return;
+  const list=doc.createElement('ul');
+  const titles={added:'Ajoutée',removed:'Retirée',modified:'Modifiée'};
+  const names={title:'titre',description:'consigne',levels:'niveaux',
+   target:'destinataire',minutes:'durée'};
+  for(const change of summary.details){
+   const li=doc.createElement('li');
+   li.textContent=titles[change.type]+' · '+change.id+
+    (change.fields.length?' ('+change.fields.map(f=>names[f]).join(', ')+')':'');
+   list.appendChild(li);
+  }
+  diff.appendChild(list);
+  if(summary.totalChanges>summary.details.length){
+   const more=doc.createElement('small');
+   more.textContent=(summary.totalChanges-summary.details.length)+
+    ' autre(s) changement(s) non détaillé(s).';
+   diff.appendChild(more);
+  }
+ };
  const refresh=()=>{
   select.replaceChildren();
   const blank=doc.createElement('option');
@@ -36,10 +64,25 @@ export function initFutureCardArchiveStudio(doc=document,{
    ' versions locales';
   restore.disabled=!hasHistory;
   exportBtn.disabled=!hasHistory;
+  compare.disabled=!hasHistory;
   save.disabled=archive.revisions.length>=FUTURE_ARCHIVE_LIMIT;
  };
  refresh();
- save.addEventListener('click',()=>{
+ select.addEventListener('change',clearComparison);
+ compare.addEventListener('click',()=>{
+  const id=select.value;
+  if(!id){say('Choisir une version à comparer au brouillon.');return;}
+  if(hasUnsavedForm()){
+   say('Enregistre la carte en cours pour comparer le bon brouillon.');
+   return;
+  }
+  try{
+   const saved=recoverFutureArchiveRevision(archive,id);
+   showComparison(compareFutureCardDrafts(saved,getCards()));
+   say('Comparaison locale terminée. Aucune carte modifiée.');
+  }catch(error){clearComparison();say(error.message);}
+ });
+  save.addEventListener('click',()=>{
   if(hasUnsavedForm()){
    say('Enregistre d’abord la carte en cours avant d’archiver le brouillon.');
    return;
@@ -48,7 +91,7 @@ export function initFutureCardArchiveStudio(doc=document,{
    const next=addFutureArchiveRevision(archive,getCards(),{
     createdAt:clock(),label:label.value
    });
-   archive=next;unexported=true;refresh();
+   archive=next;unexported=true;refresh();clearComparison();
    say('Version sauvegardée en mémoire. Exporte l’historique JSON pour la conserver.');
   }catch(error){say(error.message);}
  });
@@ -62,6 +105,7 @@ export function initFutureCardArchiveStudio(doc=document,{
     say('Restauration annulée. Le brouillon et les versions sont conservés.');
     return;
    }
+   clearComparison();
    say('Ancienne version restaurée dans le brouillon local. Les archives restent intactes.');
   }catch(error){say(error.message);}
  });
@@ -109,7 +153,7 @@ export function initFutureCardArchiveStudio(doc=document,{
     'Remplacer la liste actuelle de versions locales ? Exporte-la d’abord.')){
     say('Import annulé. L’historique précédent est conservé.');return;
    }
-   archive=clone(candidate);unexported=false;refresh();
+   archive=clone(candidate);unexported=false;refresh();clearComparison();
    say('Historique importé : '+archive.revisions.length+
     ' version(s). Le brouillon actuel n’a pas changé.');
   }catch{
@@ -120,5 +164,6 @@ export function initFutureCardArchiveStudio(doc=document,{
   if(!unexported)return;
   event.preventDefault();event.returnValue='';
  });
- return {getArchive:()=>clone(archive),hasUnexported:()=>unexported};
+ return {getArchive:()=>clone(archive),hasUnexported:()=>unexported,
+  clearComparison};
 }

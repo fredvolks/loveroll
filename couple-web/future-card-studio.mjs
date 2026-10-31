@@ -68,12 +68,12 @@ export function initFutureCardStudio(doc=document){
    }
   }
  };
- let preview=null;
+ let preview=null,archiveStudio=null;
  const editor=initFutureCardEditor(doc,{onDraftChange:next=>{
-  render(inspectFutureCardFile(next));preview?.clear();
+  render(inspectFutureCardFile(next));preview?.clear();archiveStudio?.clearComparison();
  }});
  preview=initFutureNightPreview(doc,()=>editor?.getCards()||[]);
- initFutureCardArchiveStudio(doc,{
+ archiveStudio=initFutureCardArchiveStudio(doc,{
   getCards:()=>editor?.getCards()||[],
   hasUnsavedForm:()=>editor?.hasUnsavedForm()===true,
   restoreCards:cards=>{
@@ -103,7 +103,7 @@ export function initFutureCardStudio(doc=document){
    const report=inspectFutureCardFile(parsed);
    if(id!==request)return;
    render(report);
-   preview?.clear();
+   preview?.clear();archiveStudio?.clearComparison();
    if(editor&&!editor.load(parsed))
     say('Fichier analysé; le brouillon précédent a été conservé.');
    else

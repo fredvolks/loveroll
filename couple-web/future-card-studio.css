@@ -59,3 +59,11 @@
 .future-archive-studio :is(select,input,button):focus-visible{outline:3px solid var(--rose);outline-offset:2px}
 @media(max-width:880px){.future-archive-restore{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.future-archive-restore>label{grid-column:1/-1}}
 @media(max-width:720px){.future-archive-save,.future-archive-import,.future-archive-restore{grid-template-columns:minmax(0,1fr)}.future-archive-restore>label{grid-column:auto}.future-archive-studio button{width:100%}}
+
+/* Non-destructive version comparison, no visual dependency on desktop width. */
+.future-archive-diff{grid-column:1/-1;display:grid;gap:8px;min-width:0;overflow-wrap:anywhere}
+.future-archive-diff:empty{display:none}
+.future-archive-diff>strong{font-size:13px;line-height:1.5}
+.future-archive-diff ul{display:grid;gap:6px;list-style:disc;margin:0;padding-inline-start:22px;max-height:240px;overflow:auto}
+.future-archive-diff li{font-size:13px;line-height:1.45}
+.future-archive-diff small{color:var(--muted)}

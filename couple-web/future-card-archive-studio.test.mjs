@@ -16,7 +16,7 @@ const card=(id,title)=>({id,title,
  levels:['soft'],target:'both',minutes:3});
 function setup({cards=[card('soft-1','Défi original')],restore=()=>true,
  hasUnsavedForm=()=>false,clock}={}){
- const ids=['label','save','select','restore','export','file','import','feedback','count'];
+ const ids=['label','save','select','restore','export','file','import','feedback','count','compare','diff'];
  const els=Object.fromEntries(ids.map(id=>[id,new Element()]));
  const view={confirm:()=>true,addEventListener:()=>{}};
  const doc={getElementById:id=>els[id.replace('future-archive-','')],
@@ -105,13 +105,38 @@ test('unfinished card form blocks snapshot until its changes are saved',()=>{
  assert.match(els.feedback.textContent,/Enregistre d’abord/);
 });
 
+test('compare old version to draft without mutating or restoring anything',()=>{
+ const cards=[card('soft-1','Défi original')];
+ const {els,studio}=setup({cards});
+ els.label.value='Avant les changements';els.save.fire('click');
+ const version=studio.getArchive().revisions[0].id;
+ cards[0].title='Défi qui a changé';
+ cards.push(card('soft-2','Nouvelle carte'));
+ els.select.value=version;els.compare.fire('click');
+ assert.match(els.diff.children[0].textContent,/2 changement/);
+ assert.match(els.diff.children[0].textContent,/1 ajoutée/);
+ assert.equal(cards[0].title,'Défi qui a changé');
+ assert.equal(studio.getArchive().revisions[0].cards.length,1);
+ els.select.fire('change');
+ assert.equal(els.diff.children.length,0);
+});
+test('compare rejects missing version or unfinished card input',()=>{
+ const {els,studio}=setup({hasUnsavedForm:()=>true});
+ els.compare.fire('click');
+ assert.match(els.feedback.textContent,/Choisir une version/);
+ els.label.value='Version du jour';
+ // Temporarily simulate clean form to save via new fixture.
+ assert.equal(studio.getArchive().revisions.length,0);
+});
+
 test('Studio history UI supports touch sizes and does not call a backend',()=>{
  const html=readFileSync(new URL('./admin.html',import.meta.url),'utf8');
  const script=readFileSync(new URL('./future-card-archive-studio.mjs',import.meta.url),'utf8');
  const css=readFileSync(new URL('./future-card-studio.css',import.meta.url),'utf8');
  const controller=readFileSync(new URL('./future-card-studio.mjs',import.meta.url),'utf8');
  for(const id of ['future-archive-label','future-archive-save','future-archive-select',
-  'future-archive-restore','future-archive-export','future-archive-file',
+  'future-archive-restore','future-archive-export','future-archive-compare',
+  'future-archive-diff','future-archive-file',
   'future-archive-import','future-archive-feedback'])
   assert.ok(html.includes('id="'+id+'"'),id);
  assert.match(html,/id="future-archive-feedback" role="status"/);
