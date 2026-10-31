@@ -387,7 +387,10 @@ function frame(body,title='LOVEROLL',subtitle='Un jeu intime, juste pour vous de
   state.cycleDeferred!==state.cycleStatus?.cycle?
   cycleIntensityQuestionnaireHtml({
    status:state.cycleStatus,style:state.profile?.play_style,
-   partnerName:other()?.name?.split(' ')[0]||'votre partenaire'
+   partnerName:other()?.name?.split(' ')[0]||'votre partenaire',
+   saving:!!(state.cycleAnswerRequest&&
+    ownsCycleIntensityAnswer(state,state.cycleAnswerRequest,authFeedbackGeneration)&&
+    state.cycleAnswerRequest.cycle===state.cycleStatus?.cycle)
   }):'';
  const oldGallery=root.querySelector('.eclat-photo-grid');
  if(oldGallery)state.eclatGalleryScroll=oldGallery.scrollTop;
@@ -4380,15 +4383,32 @@ async function handle(action,element){
    if(!ownsAnswer())return;
    if(result?.completed)notify('♡ Votre nouveau cycle de 200 défis commence.');
    return;
+  }catch(error){
+   // The failed request may belong to a previous sign-in, not the user
+   // currently viewing this screen. Never surface a stale failure to them.
+   if(!ownsAnswer())return;
+   throw error;
   }finally{
    if(state.cycleAnswerRequest===owner){
     state.cycleAnswerRequest=null;
     if(!committed&&ownsCycleIntensityAnswer(state,owner,authFeedbackGeneration)){
-     for(const control of controls)if(control.isConnected)control.disabled=false;
-     if(overlay?.isConnected){
-      overlay.removeAttribute('aria-busy');
-      if(progress)progress.hidden=true;
+     // A Realtime update may replace the modal while the RPC is pending.
+     // Recover the CURRENT panel, preserving legitimately disabled
+     // Soft/Intense bounds even when the original buttons were detached.
+     const currentOverlay=root.querySelector('.lr-cycle-overlay');
+     for(const control of currentOverlay?.querySelectorAll('.lr-cycle-choice')||[]){
+      const choice=control.dataset.action?.slice('cycle-answer:'.length);
+      const blocked=(state.profile?.play_style==='soft'&&choice==='down')||
+       (state.profile?.play_style==='intense'&&choice==='up');
+      control.disabled=blocked;
+      if(blocked)control.setAttribute('aria-disabled','true');
+      else control.removeAttribute('aria-disabled');
      }
+     const later=currentOverlay?.querySelector('[data-action="cycle-later"]');
+     if(later){later.disabled=false;later.removeAttribute('aria-disabled');}
+     currentOverlay?.removeAttribute('aria-busy');
+     const liveProgress=currentOverlay?.querySelector('.lr-cycle-progress');
+     if(liveProgress)liveProgress.hidden=true;
     }
    }
   }
