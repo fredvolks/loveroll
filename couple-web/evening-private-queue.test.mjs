@@ -2283,6 +2283,7 @@ function privateAuthBoundaryFixture(state,getUser){
 test('LR-026: an auth identity switch closes the old couple channel and clears private Éclat memory',async()=>{
  const state={user:{id:'alice'},coupleId:'couple-alice',profile:{display_name:'Alice'},
   couple:{id:'couple-alice'},members:[{user_id:'alice'}],tab:'eclat',
+  eclatMembershipScope:JSON.stringify(['couple-alice','alice','bob']),
   eclat:{active:true},eclatHistory:[{id:'private'}],
   eclatMusic:true,customCards:[{title:'private'}],
   challenges:[{id:'private'}],personalJournal:[{id:'private'}],testModeEligible:true};
@@ -2293,6 +2294,8 @@ test('LR-026: an auth identity switch closes the old couple channel and clears p
  assert.equal(state.coupleId,null);
  assert.equal(state.profile,null);
  assert.equal(state.members.length,0);
+ assert.equal(state.eclatMembershipScope,null,
+  'a new account must never reuse its previous duet membership identity');
  assert.equal(state.eclat,null);
  assert.equal(state.eclatHistory.length,0);
  assert.equal(state.eclatMusic,false);
