@@ -54,6 +54,7 @@ jobs:
           node --check couple-web/eclat-ui.mjs
           node --check couple-web/eclat-audio.mjs
           node --test couple-web/eclat.test.mjs
+          node --test couple-web/eclat-history.test.mjs
           node --check couple-web/platform-admin.js
           node --check couple-web/referral-program.mjs
           node --test couple-web/referral-program.test.mjs
