@@ -12,7 +12,8 @@ test('Unconfirmed Supabase user cannot enter LoveRoll or fetch private profiles'
  assert.equal(verifiedLoveEmail({email:'test@love.com',email_confirmed_at:'2026-10-14T14:00:00Z'}),true);
  assert.match(app,/async function refreshVerifiedIdentity\(\)/);
  assert.match(app,/client\.auth\.getUser\(\)/);
- assert.match(app,/if\(!\(await refreshVerifiedIdentity\(\)\)\)/);
+ assert.match(app,/const verified=await refreshVerifiedIdentity\(\);\s*if\(!current\(\)\)return;\s*if\(!verified\)\{/);
+ assert.match(app,/const expectedGeneration=authFeedbackGeneration;[\s\S]*?const \{data,error\}=await client\.auth\.getUser\(\);[\s\S]*?if\(state\.user\?\.id!==expectedId\|\|authFeedbackGeneration!==expectedGeneration\)return null;/);
  assert.match(app,/verificationPendingHtml\(/);
  assert.match(app,/state\.emailVerificationPending=true/);
  assert.match(app,/email-confirm-resend/);

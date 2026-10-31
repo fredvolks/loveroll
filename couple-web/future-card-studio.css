@@ -1,0 +1,69 @@
+/* Atelier catalogue 300: uses the existing Studio palette and controls. */
+.future-catalog-audit{display:grid;gap:13px;margin-top:30px;padding:clamp(13px,2vw,22px);border:1px solid var(--line);border-radius:18px;background:var(--card);min-width:0}
+.future-catalog-audit .section-head{margin:0;gap:6px}
+.future-catalog-audit h3{font:italic clamp(23px,3vw,30px)/1.2 Georgia,serif;margin:0}
+.future-catalog-controls{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:12px}
+.future-catalog-controls>button{min-height:44px}
+.future-catalog-controls input[type=file]{min-width:0;max-width:100%}
+.future-catalog-result{min-width:0;overflow-wrap:anywhere}
+.future-catalog-result:empty{display:none}
+.future-catalog-levels{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.future-catalog-level{display:grid;gap:4px;border:1px solid var(--line);border-radius:13px;padding:12px;min-width:0}
+.future-catalog-level strong{font-size:16px}
+.future-catalog-level small{color:var(--muted);line-height:1.35}
+.future-catalog-result ul{padding-inline-start:22px;max-height:230px;overflow-y:auto}
+.future-catalog-summary{font-weight:700}
+@media(max-width:720px){.future-catalog-controls{grid-template-columns:minmax(0,1fr)}.future-catalog-controls>button{width:100%}.future-catalog-levels{grid-template-columns:minmax(0,1fr)}}
+
+/* Shared Studio typography, colors and focus; readable on phones and tablets. */
+.future-card-editor{display:grid;gap:14px;padding-top:20px;border-top:1px solid var(--line);min-width:0}
+.future-card-editor h4{font:italic clamp(22px,2.7vw,27px)/1.2 Georgia,serif;margin:0}
+.future-card-editor .small-note{margin:0}
+.future-card-toolbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:end}
+.future-card-toolbar select,.future-card-editor select{width:100%;min-width:0;min-height:44px;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px}
+.future-card-toolbar button,.future-card-actions button{min-height:44px;white-space:normal}
+.future-card-levels-editor{display:flex;min-width:0;align-items:center;gap:8px 14px;flex-wrap:wrap;border:1px solid var(--line);border-radius:12px;padding:10px}
+.future-card-levels-editor legend{color:var(--muted)}
+.future-card-levels-editor label{display:flex;align-items:center;gap:7px;min-height:44px}
+.future-card-editor textarea{resize:vertical}
+.future-card-actions{display:flex;gap:8px;flex-wrap:wrap}
+.future-card-actions button{flex:1 1 170px}
+.future-card-editor :is(input,textarea,select,button):focus-visible{outline:3px solid var(--rose);outline-offset:2px}
+@media(max-width:720px){.future-card-toolbar{grid-template-columns:minmax(0,1fr)}.future-card-toolbar button{width:100%}.future-card-actions button{flex-basis:100%}}
+
+/* Future night simulation, read-only, with the same Studio controls. */
+.future-night-simulator{display:grid;gap:12px;min-width:0;padding:20px 0 0;border-top:1px solid var(--line)}
+.future-night-simulator h4{font:italic clamp(22px,2.6vw,27px)/1.2 Georgia,serif;margin:0}
+.future-night-simulator>.small-note{margin:0}
+.future-night-preview-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.future-night-preview-controls select{width:100%;min-width:0;min-height:44px;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px}
+.future-night-simulator>button{min-height:44px;justify-self:start}
+.future-night-preview-result:empty{display:none}
+.future-night-preview-result{border:1px solid var(--line);border-radius:13px;padding:13px;overflow-wrap:anywhere}
+.future-night-preview-result ol{display:grid;gap:8px;max-height:330px;overflow-y:auto;padding-inline-start:22px}
+.future-night-preview-result li{padding:6px 0}
+.future-night-preview-result li strong,.future-night-preview-result li small{display:block}
+.future-night-preview-result li small{color:var(--muted);padding-top:2px}
+.future-night-preview-controls select:focus-visible,.future-night-simulator>button:focus-visible{outline:3px solid var(--rose);outline-offset:2px}
+@media(max-width:720px){.future-night-preview-controls{grid-template-columns:minmax(0,1fr)}.future-night-simulator>button{width:100%}}
+
+/* Local version history: same burgundy Studio surfaces, responsive controls. */
+.future-archive-studio{display:grid;gap:12px;min-width:0;border-top:1px solid var(--line);padding-top:20px}
+.future-archive-studio h4{font:italic clamp(22px,2.6vw,27px)/1.2 Georgia,serif;margin:0}
+.future-archive-studio .small-note{margin:0}
+.future-archive-save,.future-archive-import{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:end}
+.future-archive-restore{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:end}
+.future-archive-studio select{width:100%;min-width:0;min-height:44px;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px}
+.future-archive-studio input[type=file]{max-width:100%;min-width:0}
+.future-archive-studio button{min-height:44px;white-space:normal}
+.future-archive-studio :is(select,input,button):focus-visible{outline:3px solid var(--rose);outline-offset:2px}
+@media(max-width:880px){.future-archive-restore{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.future-archive-restore>label{grid-column:1/-1}}
+@media(max-width:720px){.future-archive-save,.future-archive-import,.future-archive-restore{grid-template-columns:minmax(0,1fr)}.future-archive-restore>label{grid-column:auto}.future-archive-studio button{width:100%}}
+
+/* Non-destructive version comparison, no visual dependency on desktop width. */
+.future-archive-diff{grid-column:1/-1;display:grid;gap:8px;min-width:0;overflow-wrap:anywhere}
+.future-archive-diff:empty{display:none}
+.future-archive-diff>strong{font-size:13px;line-height:1.5}
+.future-archive-diff ul{display:grid;gap:6px;list-style:disc;margin:0;padding-inline-start:22px;max-height:240px;overflow:auto}
+.future-archive-diff li{font-size:13px;line-height:1.45}
+.future-archive-diff small{color:var(--muted)}

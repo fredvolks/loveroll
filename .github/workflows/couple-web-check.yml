@@ -54,9 +54,18 @@ jobs:
           node --check couple-web/eclat-ui.mjs
           node --check couple-web/eclat-audio.mjs
           node --test couple-web/eclat.test.mjs
+          node --test couple-web/eclat-history.test.mjs
           node --check couple-web/platform-admin.js
           node --check couple-web/referral-program.mjs
           node --test couple-web/referral-program.test.mjs
+          node --test couple-web/referral-polling-ownership.test.mjs
+          node --test couple-web/advent-date-polling-ownership.test.mjs
+          node --test couple-web/shared-refresh-auth-generation.test.mjs
+          node --test couple-web/eclat-poll-auth-generation.test.mjs
+          node --test couple-web/eclat-read-action-auth-generation.test.mjs
+          node --test couple-web/eclat-render-ownership.test.mjs
+          node --test couple-web/eclat-auth-completion-isolation.test.mjs
+          node --test couple-web/eclat-unavailable-duo.test.mjs
           node --check couple-web/world-preferences.mjs
           node --check couple-web/currency-exchange.mjs
           node --test couple-web/world-preferences.test.mjs
@@ -86,8 +95,11 @@ jobs:
           node --test couple-web/evening-d100-viewports.test.cjs
           node --test couple-web/pages-entry-parallel-contract.test.mjs
           node --test couple-web/evening-private-queue.test.mjs couple-web/evening-redesign.test.mjs couple-web/evening-calendar.test.mjs couple-web/evening-category-v93.test.mjs couple-web/evening-review.test.mjs
+          node --test couple-web/evening-private-queue-identity.test.mjs
+          node --test couple-web/evening-timer-snapshot-validation.test.mjs
           node --test couple-web/privacy-screen.test.mjs
           node --test couple-web/evening-variety.test.mjs
+          node --test couple-web/lr026-server-variety.test.mjs
           node --test couple-web/evening-d100-template.test.mjs
           node --test couple-web/pages-soiree-privacy-header.test.mjs
           node --test couple-web/monthly-pass-limit-sql.test.mjs
@@ -177,6 +189,52 @@ jobs:
 
       - name: LR-018 — resume live Soirée without duplicate draws
         run: node --test couple-web/evening-resume.test.mjs
+      - name: Safari timer alert choice without persistent storage
+        run: node --test couple-web/timer-alert-preference.test.mjs
+      - name: Block stale Safari/iOS sound previews after account changes
+        run: node --test couple-web/sound-preview-ownership.test.mjs
+      - name: Verify real weekly quota and daily lock access
+        run: node --test couple-web/evening-daily-policy.test.mjs
+      - name: Calendar monthly navigation and owner isolation
+        run: node --test couple-web/evening-calendar-navigation.test.mjs
+      - name: Couple review save privacy and late network ownership
+        run: node --test couple-web/evening-review-ownership.test.mjs
+      - name: Plan tonight's duration on Safari and multiple accounts
+        run: node --test couple-web/session-duration-preference.test.mjs
+      - name: Plan next-evening intensity per account without affecting live D100
+        run: node --test couple-web/evening-intensity-preference.test.mjs
+      - name: Validate balanced Soft Medium Intense future catalog routing
+        run: node --test couple-web/future-card-catalog.test.mjs
+      - name: Verify future 100-card regeneration preview and safety
+        run: node --test couple-web/future-card-regeneration.test.mjs
+      - name: Validate future 300-card admin import preview
+        run: node --test couple-web/future-card-studio.test.mjs
+      - name: Validate local future card draft CRUD
+        run: node --test couple-web/future-card-draft.test.mjs
+      - name: Verify interactive future card editor and export guard
+        run: node --test couple-web/future-card-editor.test.mjs
+      - name: Preview future nights in Studio without a session
+        run: node --test couple-web/future-night-studio.test.mjs
+      - name: Verify archived future card revisions remain recoverable
+        run: node --test couple-web/future-card-revisions.test.mjs
+      - name: Verify Studio future card version archive import and restore
+        run: node --test couple-web/future-card-archive-studio.test.mjs
+      - name: Compare future card history without mutating drafts
+        run: node --test couple-web/future-card-compare.test.mjs
+      - name: Review read-only future archive SQL staging safeguards
+        run: node --test couple-web/future-card-archive-schema.test.mjs
+      - name: Verify future archived regeneration is private and non-paying
+        run: node --test couple-web/future-card-regeneration-transaction.test.mjs
+      - name: Verify Stripe TEST-mode future card webhooks without enabling payment
+        run: node --test couple-web/future-card-stripe-test-webhook.test.mjs
+      - name: Verify private Stripe test intent and receipt ledger contracts
+        run: node --test couple-web/future-card-stripe-test-receipt-ledger.test.mjs
+      - name: Connect verified Stripe test proof to private receipt ledger (no live payment)
+        run: node --test couple-web/future-card-stripe-test-receipt-pipeline.test.mjs
+      - name: Verify assignment of future gender-specific and shared cards
+        run: node --test couple-web/future-card-audience.test.mjs
+      - name: Preview future nights from unique 2-6 minute cards
+        run: node --test couple-web/future-night-plan.test.mjs
       - name: LR-014 — category confirmation and private setting
         run: node --test couple-web/evening-category-confirm.test.mjs
       - name: Validate iPad Soirée one-HD-photo contract
@@ -199,7 +257,8 @@ jobs:
   browser-tests:
     needs: changes
     if: needs.changes.outputs.code == 'true'
-    runs-on: ubuntu-latest
+    # Playwright 1.56.0 cannot install Chromium on Ubuntu 26.04 (ubuntu-latest).
+    runs-on: ubuntu-24.04
     timeout-minutes: 35
     strategy:
       fail-fast: false

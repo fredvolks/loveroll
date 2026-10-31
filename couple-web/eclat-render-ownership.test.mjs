@@ -1,0 +1,552 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {runInNewContext} from 'node:vm';
+import {previewEclatStatus} from './account-preview-mode.mjs';
+import {captureEclatEditorFocus,restoreEclatEditorFocus} from './eclat-editor-focus.mjs';
+
+// Verify the live renderEclat function rather than duplicating its privacy rules.
+const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+const begin=app.indexOf('function renderEclat(){');
+const end=app.indexOf('function renderHome(){',begin);
+assert.ok(begin>0&&end>begin,'renderEclat production implementation exists');
+const source=app.slice(begin,end)+';renderEclat();';
+
+function renderFixture(memberCount,{statusOverrides={},mode='real',eligible=false,music=false,historyError=false}={}){
+ const status={active:true,access:true,coffret_id:1,chapter_number:1,variant_number:0,...statusOverrides};
+ const history=[{coffret_id:1,private_note:'old couple content'}];
+ const state={user:{id:'alice'},coupleId:'shared-duo',
+  members:Array.from({length:memberCount},(_,i)=>({id:i?'bob':'alice'})),
+  testMode:mode,testModeEligible:eligible,eclat:status,
+  tab:'eclat',eclatMusic:music,eclatSelection:1,eclatMinutes:30,
+  eclatDetails:false,eclatBrowse:false,eclatIntent:'all',
+  eclatFinished:'private completed title',eclatHistory:history,
+  eclatHistoryCouple:'shared-duo',eclatHistoryUserId:'alice',
+  eclatHistoryError:historyError};
+ const captured=[];let stops=0,notes=0,frames=0,moods=0;
+ runInNewContext(source,{
+  state,isSharedCoupleReady:(c,m)=>!!c&&Array.isArray(m)&&m.length===2,
+  previewEclatStatus,eclatStage:()=>({mood:'romantique'}),
+  eclatAudio:{setMood:()=>moods++,stop:()=>stops++},
+  eclatHtml:payload=>{captured.push(payload);return '<eclat>';},
+  eclatNoteState:()=>{notes++;return {note:'not-shared'};},
+  frame:()=>frames++
+ });
+ return {state,status,history,payload:captured[0],stops,notes,frames,moods};
+}
+
+test('LR-026: revoked couple cannot display cached Éclat status, history or completed title',()=>{
+ const f=renderFixture(1);
+ assert.equal(f.payload.status,null);
+ assert.equal(f.payload.coupleReady,false);
+ assert.equal(f.payload.history.length,0);
+ assert.equal(f.payload.finished,null);
+ assert.equal(f.notes,0,'no private note can load while the couple is unavailable');
+ assert.equal(f.frames,1);
+});
+
+test('LR-026: valid couple retains normal Éclat status, history and completion',()=>{
+ const f=renderFixture(2);
+ assert.equal(f.payload.status,f.status);
+ assert.equal(f.payload.coupleReady,true);
+ assert.equal(f.payload.history,f.history);
+ assert.equal(f.payload.finished,'private completed title');
+ assert.equal(f.notes,1);
+ assert.equal(f.frames,1);
+});
+
+
+test('LR-026: revoked Éclat access never loads private notes or sets audio mood',()=>{
+ const f=renderFixture(2,{statusOverrides:{access:false},music:true});
+ assert.equal(f.payload.status,f.status);
+ assert.equal(f.payload.status.active,true,'reproduces stale active status');
+ assert.equal(f.payload.status.access,false);
+ assert.equal(f.notes,0,'no private note request without entitlement');
+ assert.equal(f.moods,0,'no music mood without entitlement');
+ assert.equal(f.stops,1,'previous audio is silenced');
+ assert.equal(f.state.eclatMusic,false);
+});
+
+test('LR-026: member preview never loads private Éclat notes or plays music',()=>{
+ const f=renderFixture(2,{mode:'member',eligible:true,music:true});
+ assert.equal(f.payload.status.access,false);
+ assert.equal(f.payload.status.active,false);
+ assert.equal(f.notes,0);
+ assert.equal(f.moods,0);
+ assert.equal(f.stops,1);
+});
+
+test('LR-026: authorized active Éclat retains private notes and music mood',()=>{
+ const f=renderFixture(2,{music:true});
+ assert.equal(f.payload.status.access,true);
+ assert.equal(f.notes,1);
+ assert.equal(f.moods,1);
+ assert.equal(f.stops,0);
+});
+
+const permissionBegin=app.indexOf('function canPlayEclat(){');
+const permissionEnd=app.indexOf('function beginEclatAction(){',permissionBegin);
+const actionBegin=app.indexOf(" if(verb==='eclat'){");
+const actionEnd=app.indexOf(" if(verb==='referral-copy'",actionBegin);
+assert.ok(permissionBegin>=0&&permissionEnd>permissionBegin,'production entitlement gate exists');
+assert.ok(actionBegin>=0&&actionEnd>actionBegin,'production Éclat actions exist');
+// Exercise the real owner-bound RPC guard used by all four actions, rather
+// than bypassing it in this legacy interaction test harness.
+const mutationBegin=app.indexOf('async function runEclatMutation(');
+const mutationEnd=app.indexOf('function applyEclatActionResult(',mutationBegin);
+assert.ok(mutationBegin>0&&mutationEnd>mutationBegin,'secured Éclat mutation guard exists');
+const ownerBegin=app.indexOf('function beginEclatAction(){');
+const ownerEnd=app.indexOf('// Run every Éclat mutation',ownerBegin);
+assert.ok(ownerBegin>=0&&ownerEnd>ownerBegin,'real Éclat action ownership exists');
+const ownerSource='let latestEclatActionRequest=null,pendingEclatMutation=null;\n'+
+ app.slice(ownerBegin,ownerEnd)+'\n';
+const actionSource=app.slice(permissionBegin,permissionEnd)+'\n'+
+ app.slice(mutationBegin,mutationEnd)+
+ '\nlet latestEclatAudioOwner=null,pendingEclatExitConfirmation=null;\n'+
+ "async function invoke(command){const verb='eclat',parts=command.split(':'),element=null;\n"+
+ app.slice(actionBegin,actionEnd)+'\n}\n;invoke;';
+
+function actionFixture(status,{mode='real',eligible=false,startAudio=null,saveNote=null,confirm=null,withDraft=false,rpcStatus=null,historyLoad=null,realOwnership=false}={}){
+ const state={user:{id:'alice'},coupleId:'shared-duo',
+  members:[{id:'alice'},{id:'bob'}],tab:'eclat',
+  eclat:{coffret_id:1,chapter_number:1,chapter_index:1,chapter_total:6,variant_number:0,...status},
+  eclatMusic:false,testMode:mode,testModeEligible:eligible,eclatMinutes:30};
+ const calls=[],played=[],renders=[];let stops=0,confirms=0,notes=0;
+ const context={
+  state,authFeedbackGeneration:1,previewEclatStatus,
+  isSharedCoupleReady:(id,members)=>id==='shared-duo'&&members?.length===2,
+  ownsCoupleAsyncRead:(view,owner)=>view.user?.id===owner.userId&&view.coupleId===owner.coupleId,
+  eclatNoteDrafts:withDraft?new Map([['note-key',{loading:false,error:false,moment_done:true}]]):new Map(),
+  eclatNoteKey:()=> 'note-key',
+  saveCurrentEclatNote:async()=>{notes++;return saveNote?await saveNote():'note-key';},
+  beginEclatAction:()=>({}),ownsEclatAction:()=>true,
+  applyEclatActionResult:value=>{if(rpcStatus)state.eclat={...state.eclat,...value};return true;},
+  eclatStage:()=>({mood:'romantique',coffret:{title:'Coffret'}}),
+  eclatAudio:{
+   stop:()=>{stops++;},
+   start:async mood=>{played.push(mood);return startAudio?await startAudio():true;}
+  },
+  document:{documentElement:{classList:{contains:()=>false}}},
+  rpc:async name=>{calls.push(name);return rpcStatus||{access:true,active:true};},
+  render:()=>renders.push('render'),
+  refreshEclatHistory:async()=>{if(historyLoad)await historyLoad();},
+  premiumConfirm:async()=>{confirms++;return confirm?await confirm():true;},
+  notify:()=>{},
+  root:{querySelector:()=>null},
+  handle:async()=>{}
+ };
+ const invoke=runInNewContext((realOwnership?ownerSource:'')+actionSource,context);
+ return {state,invoke,calls,played,renders,drafts:context.eclatNoteDrafts,
+  stops:()=>stops,confirms:()=>confirms,notes:()=>notes};
+}
+
+test('LR-026: stale active status without access blocks every private Éclat command',async()=>{
+ for(const command of ['note-retry','choose:0','next','end','music']){
+  const h=actionFixture({access:false,active:true});
+  if(['end','music'].includes(command))await h.invoke(command);
+  else await assert.rejects(h.invoke(command),/Aucun coffret actif/);
+  assert.deepEqual(h.calls,[],'no mutating RPC for '+command);
+  assert.deepEqual(h.played,[],'no audio start for '+command);
+  assert.equal(h.notes(),0,'no private note write for '+command);
+  assert.equal(h.confirms(),0,'no exit confirmation for '+command);
+ }
+});
+
+test('LR-026: member preview and missing user cannot invoke Éclat choices',async()=>{
+ const preview=actionFixture({access:true,active:true},{mode:'member',eligible:true});
+ await assert.rejects(preview.invoke('choose:0'),/Aucun coffret actif/);
+ assert.deepEqual(preview.calls,[]);
+ const unsigned=actionFixture({access:true,active:true});
+ unsigned.state.user=null;
+ await assert.rejects(unsigned.invoke('choose:0'),/Aucun coffret actif/);
+ assert.deepEqual(unsigned.calls,[]);
+});
+
+test('LR-026: authorized Éclat commands still invoke their real RPC names',async()=>{
+ for(const [command,name] of [['choose:0','love_eclat_choose'],
+  ['next','love_eclat_next'],['end','love_eclat_end']]){
+  const h=actionFixture({access:true,active:true});
+  await h.invoke(command);
+  assert.deepEqual(h.calls,[name]);
+  assert.equal(h.renders.length,1);
+ }
+ const audio=actionFixture({access:true,active:true});
+ await audio.invoke('music');
+ assert.deepEqual(audio.played,['romantique']);
+ assert.equal(audio.state.eclatMusic,true);
+});
+
+test('LR-026: audio that resumes after entitlement revocation is stopped',async()=>{
+ let release;
+ const wait=new Promise(resolve=>{release=resolve;});
+ const h=actionFixture({access:true,active:true},{startAudio:()=>wait});
+ const pending=h.invoke('music');
+ assert.deepEqual(h.played,['romantique']);
+ h.state.eclat={...h.state.eclat,access:false};
+ release(true);
+ await pending;
+ assert.equal(h.stops(),1);
+ assert.equal(h.state.eclatMusic,false);
+ assert.deepEqual(h.renders,[],'stale audio success must not repaint');
+});
+
+
+test('LR-026: expired entitlement during private-note save cannot send choose RPC',async()=>{
+ let finish;
+ const pendingSave=new Promise(resolve=>{finish=resolve;});
+ const h=actionFixture({access:true,active:true},{
+  withDraft:true,saveNote:()=>pendingSave
+ });
+ const pending=h.invoke('choose:1');
+ assert.equal(h.notes(),1,'note save starts while access is authorized');
+ h.state.eclat={...h.state.eclat,access:false};
+ finish('note-key');
+ await pending;
+ assert.deepEqual(h.calls,[],'a late note-save receipt cannot authorize a choice');
+ assert.deepEqual(h.renders,[]);
+});
+
+test('LR-026: private note save keeps the textarea mounted and avoids focus loss',async()=>{
+ const saved=actionFixture({access:true,active:true},{withDraft:true});
+ await saved.invoke('note-save');
+ assert.equal(saved.notes(),1,'the user note is persisted through the existing save helper');
+ assert.deepEqual(saved.calls,[],'saving a note must not advance the shared Éclat chapter');
+ assert.deepEqual(saved.renders,[],
+  'the save helper updates status in place; rendering would replace the focused textarea');
+
+ const play=actionFixture({access:true,active:true},{withDraft:true});
+ await play.invoke('note-play');
+ assert.equal(play.notes(),1);
+ assert.equal(play.drafts.get('note-key').playing,true);
+ assert.equal(play.renders.length,1,'starting the chapter must still change the visible phase');
+
+ const done=actionFixture({access:true,active:true},{withDraft:true});
+ await done.invoke('note-done');
+ assert.equal(done.notes(),1);
+ assert.equal(done.renders.length,1,'finishing the chapter must still reveal the choices');
+});
+
+test('LR-026: authorized choice after note-save still reaches the official RPC',async()=>{
+ const h=actionFixture({access:true,active:true},{withDraft:true});
+ await h.invoke('choose:1');
+ assert.equal(h.notes(),1);
+ assert.deepEqual(h.calls,['love_eclat_choose']);
+ assert.equal(h.renders.length,1);
+});
+
+test('LR-026: revoking Éclat access during Quitter confirmation cannot send end RPC',async()=>{
+ let finish;
+ const decision=new Promise(resolve=>{finish=resolve;});
+ const h=actionFixture({access:true,active:true},{confirm:()=>decision});
+ const pending=h.invoke('end');
+ assert.equal(h.confirms(),1,'confirmation was actually opened');
+ h.state.eclat={...h.state.eclat,access:false};
+ finish(true);
+ await pending;
+ assert.deepEqual(h.calls,[]);
+ assert.deepEqual(h.renders,[]);
+});
+
+test('LR-026: delayed audio from previous Éclat session cannot play in new coffret',async()=>{
+ let finish;
+ const pendingAudio=new Promise(resolve=>{finish=resolve;});
+ const h=actionFixture({access:true,active:true,session_id:'coffret-old'},{
+  startAudio:()=>pendingAudio
+ });
+ const pending=h.invoke('music');
+ assert.deepEqual(h.played,['romantique']);
+ h.state.eclat={...h.state.eclat,session_id:'coffret-new',coffret_id:2};
+ finish(true);
+ await pending;
+ assert.equal(h.stops(),1);
+ assert.equal(h.state.eclatMusic,false);
+ assert.deepEqual(h.renders,[]);
+});
+
+test('LR-026: delayed audio is also cancelled when chapter changes',async()=>{
+ let finish;
+ const pendingAudio=new Promise(resolve=>{finish=resolve;});
+ const h=actionFixture({access:true,active:true,session_id:'same-session'},{
+  startAudio:()=>pendingAudio
+ });
+ const pending=h.invoke('music');
+ h.state.eclat={...h.state.eclat,chapter_number:2};
+ finish(true);
+ await pending;
+ assert.equal(h.stops(),1);
+ assert.equal(h.state.eclatMusic,false);
+ assert.deepEqual(h.renders,[]);
+});
+
+
+test('LR-026: final chapter with server-revoked access cannot recreate private ending',async()=>{
+ const h=actionFixture({access:true,active:true,chapter_index:6,chapter_total:6},
+  {rpcStatus:{access:false,active:false}});
+ await h.invoke('next');
+ assert.deepEqual(h.calls,['love_eclat_next']);
+ assert.equal(h.state.eclatFinished,undefined,
+  'a revoked entitlement cannot produce a private completed-coffret message');
+ assert.equal(h.stops(),0,'revoked status handler owns soundtrack cleanup');
+ assert.equal(h.renders.length,1,'render the no-access state');
+});
+
+test('LR-026: authorized last chapter still displays completed-coffret banner',async()=>{
+ const h=actionFixture({access:true,active:true,chapter_index:6,chapter_total:6},
+  {rpcStatus:{access:true,active:false}});
+ await h.invoke('next');
+ assert.deepEqual(h.calls,['love_eclat_next']);
+ assert.equal(h.state.eclatFinished,'Coffret');
+ assert.equal(h.stops(),1);
+ assert.equal(h.renders.length,1);
+});
+
+test('LR-026: revocation during final history read cannot restore completion',async()=>{
+ let resolveHistory,reads=0,beginHistory;
+ const pendingHistory=new Promise(resolve=>{resolveHistory=resolve;});
+ const historyStarted=new Promise(resolve=>{beginHistory=resolve;});
+ const h=actionFixture({access:true,active:true,chapter_index:6,chapter_total:6},
+  {rpcStatus:{access:true,active:false},
+   historyLoad:()=>{reads++;beginHistory();return pendingHistory;}});
+ const finishing=h.invoke('next');
+ await historyStarted;
+ assert.equal(reads,1,'the final history request must have started');
+ h.state.eclat={...h.state.eclat,access:false};
+ resolveHistory();
+ await finishing;
+ assert.equal(h.state.eclatFinished,undefined);
+ assert.equal(h.stops(),0);
+ assert.equal(h.renders.length,0,
+  'a stale completion must not repaint revoked content');
+});
+
+test('LR-026: a new active coffret supersedes pending last-chapter completion',async()=>{
+ let finishHistory,beginHistory;
+ const pending=new Promise(resolve=>{finishHistory=resolve;});
+ const historyStarted=new Promise(resolve=>{beginHistory=resolve;});
+ const h=actionFixture({access:true,active:true,chapter_index:6,chapter_total:6},
+  {rpcStatus:{access:true,active:false},historyLoad:()=>{beginHistory();return pending;}});
+ const finishing=h.invoke('next');
+ await historyStarted;
+ h.state.eclat={...h.state.eclat,session_id:'new-coffret',active:true};
+ finishHistory();
+ await finishing;
+ assert.equal(h.state.eclatFinished,undefined);
+ assert.equal(h.stops(),0);
+ assert.deepEqual(h.renders,[]);
+});
+
+
+test('LR-026: revoked Éclat access does not pass private history or ending to HTML',()=>{
+ const f=renderFixture(2,{statusOverrides:{access:false},historyError:true});
+ assert.equal(f.payload.coupleReady,true,'public duo context remains available');
+ assert.equal(f.payload.status.access,false,'public subscription gate remains visible');
+ assert.deepEqual(Array.from(f.payload.history),[]);
+ assert.equal(f.payload.finished,null);
+ assert.equal(f.payload.historyError,false,
+  'private history failure metadata must not be exposed without access');
+ assert.equal(f.history[0].private_note,'old couple content',
+  'test must preserve stale memory to prove the renderer filters it');
+});
+
+test('LR-026: member preview never forwards cached private Éclat history',()=>{
+ const f=renderFixture(2,{mode:'member',eligible:true,historyError:true});
+ assert.equal(f.payload.status.access,false);
+ assert.deepEqual(Array.from(f.payload.history),[]);
+ assert.equal(f.payload.finished,null);
+ assert.equal(f.payload.historyError,false);
+ assert.equal(f.notes,0);
+});
+
+test('LR-026: unavailable Éclat entitlement does not expose cached history',()=>{
+ const f=renderFixture(2,{statusOverrides:{access:undefined},historyError:true});
+ assert.deepEqual(Array.from(f.payload.history),[]);
+ assert.equal(f.payload.finished,null);
+ assert.equal(f.payload.historyError,false);
+});
+
+test('LR-026: authorized completed Éclat session retains prior private gallery',()=>{
+ const f=renderFixture(2,{statusOverrides:{access:true,active:false},historyError:true});
+ assert.equal(f.payload.history,f.history,
+  'history remains available even without an active chapter');
+ assert.equal(f.payload.finished,'private completed title');
+ assert.equal(f.payload.historyError,true);
+ assert.equal(f.notes,0,'finished chapters cannot load new in-progress notes');
+});
+
+test('LR-026: active entitled couple still renders private history normally',()=>{
+ const f=renderFixture(2,{historyError:true});
+ assert.equal(f.payload.history,f.history);
+ assert.equal(f.payload.finished,'private completed title');
+ assert.equal(f.payload.historyError,true);
+ assert.equal(f.notes,1);
+});
+
+
+test('LR-026: revoked entitlement cannot prefill suggestion from cached private history',async()=>{
+ const h=actionFixture({access:false,active:true});
+ h.state.eclatHistory=[{coffret_id:2,minutes:90,private_note:'old private'}];
+ await h.invoke('detail:2');
+ assert.equal(h.state.eclatSelection,2);
+ assert.equal(h.state.eclatMinutes,30,
+  'stale private duration may not influence public coffret defaults');
+ assert.deepEqual(h.calls,[]);
+ assert.deepEqual(h.renders,['render']);
+});
+
+test('LR-026: member preview ignores old private history while suggesting coffret',async()=>{
+ const h=actionFixture({access:true,active:true},{mode:'member',eligible:true});
+ h.state.eclatHistory=[{coffret_id:4,minutes:60}];
+ await h.invoke('suggest:4');
+ assert.equal(h.state.eclatMinutes,30);
+ assert.equal(h.state.eclatSelection,4);
+ assert.deepEqual(h.calls,[]);
+});
+
+test('LR-026: entitled couple can still reuse previous coffret duration',async()=>{
+ const h=actionFixture({access:true,active:true});
+ h.state.eclatHistory=[{coffret_id:3,minutes:90}];
+ await h.invoke('detail:3');
+ assert.equal(h.state.eclatMinutes,90);
+ assert.equal(h.state.eclatSelection,3);
+ assert.deepEqual(h.calls,[]);
+});
+
+test('LR-026: missing prior coffret keeps the default 30-minute duration',async()=>{
+ const h=actionFixture({access:true,active:true});
+ h.state.eclatHistory=[{coffret_id:9,minutes:60}];
+ await h.invoke('detail:3');
+ assert.equal(h.state.eclatMinutes,30);
+});
+
+test('LR-026: a second Choisir tap during note save cannot cancel the first choice',async()=>{
+ let release;
+ const waiting=new Promise(resolve=>{release=resolve;});
+ const h=actionFixture({access:true,active:true,session_id:'scene'},
+  {withDraft:true,realOwnership:true,saveNote:()=>waiting});
+ const first=h.invoke('choose:1');
+ assert.equal(h.notes(),1,'first tap started its private note save');
+ // The real note saver marks this draft as saving until Supabase responds.
+ h.drafts.get('note-key').saving=true;
+ const duplicate=h.invoke('choose:1');
+ await duplicate;
+ assert.equal(h.notes(),1,'duplicate tap must not try another save');
+ assert.deepEqual(h.calls,[],'choice waits for the original private note save');
+ h.drafts.get('note-key').saving=false;
+ release('note-key');
+ await first;
+ assert.deepEqual(h.calls,['love_eclat_choose'],
+  'the first choice must still be sent after its private note is saved');
+ assert.equal(h.renders.length,1);
+});
+
+test('LR-026: a second Quitter tap does not open two confirmation modals',async()=>{
+ let finish;
+ const confirmPromise=new Promise(resolve=>{finish=resolve;});
+ const h=actionFixture({access:true,active:true,session_id:'scene-a'},
+  {realOwnership:true,confirm:()=>confirmPromise});
+ const first=h.invoke('end');
+ assert.equal(h.confirms(),1);
+ const duplicate=h.invoke('end');
+ await duplicate;
+ assert.equal(h.confirms(),1,'the same scene may only show one exit confirmation');
+ assert.deepEqual(h.calls,[],'no exit mutation before the user confirms');
+ finish(false);
+ await first;
+ assert.deepEqual(h.calls,[],'cancelled confirmation cannot end the session');
+ await h.invoke('end');
+ assert.equal(h.confirms(),2,'after cancellation the same user can reopen the dialog');
+});
+
+test('LR-026: a pending old Quitter modal does not block a replacement coffret',async()=>{
+ let releaseOld;
+ const oldDecision=new Promise(resolve=>{releaseOld=resolve;});
+ let count=0;
+ const h=actionFixture({access:true,active:true,session_id:'first',coffret_id:1},
+  {realOwnership:true,confirm:()=>++count===1?oldDecision:Promise.resolve(false)});
+ const old=h.invoke('end');
+ h.state.eclat={...h.state.eclat,session_id:'new',coffret_id:2};
+ await h.invoke('end');
+ assert.equal(h.confirms(),2,'a new server-authorized coffret gets its own confirmation');
+ releaseOld(true);
+ await old;
+ assert.deepEqual(h.calls,[],'the former coffret confirmation cannot end the new session');
+});
+
+test('LR-026: pending private save silently ignores duplicate note transitions',async()=>{
+ const h=actionFixture({access:true,active:true,session_id:'in-flight'},{
+  withDraft:true,saveNote:async()=> 'note-key'});
+ h.drafts.get('note-key').saving=true;
+ for(const command of ['note-save','note-play','note-done','note-edit'])
+  await h.invoke(command);
+ assert.equal(h.notes(),0,'pending note save must not generate another network write');
+ assert.deepEqual(h.calls,[]);
+ assert.deepEqual(h.renders,[]);
+ h.drafts.get('note-key').saving=false;
+ await h.invoke('note-save');
+ assert.equal(h.notes(),1,'the save control becomes usable after the request settles');
+});
+
+
+function privateEditorFocusFixture(){
+ const oldDetails={open:true},newDetails={open:false};
+ const oldField={
+  id:'eclat-note-session-1-2',dataset:{eclatField:'note'},
+  selectionStart:7,selectionEnd:11,selectionDirection:'forward',
+  matches:selector=>selector==='textarea[data-eclat-field]',
+  closest:selector=>selector==='details'?oldDetails:null
+ };
+ const focused=[],selection=[];
+ const newField={
+  id:oldField.id,dataset:{eclatField:'note'},disabled:false,
+  closest:selector=>selector==='details'?newDetails:null,
+  focus:options=>focused.push(options),
+  setSelectionRange:(...args)=>selection.push(args)
+ };
+ const root={contains:node=>node===oldField,
+  querySelectorAll:selector=>{
+   assert.equal(selector,'textarea[data-eclat-field]');
+   return [newField];
+  }};
+ return {oldField,newField,root,oldDetails,newDetails,focused,selection};
+}
+
+test('LR-026: Éclat private editor refresh preserves mobile cursor in the same scene',()=>{
+ const f=privateEditorFocusFixture();
+ const scope=JSON.stringify(['alice','couple-a',1,'alice:session-1:2']);
+ const stored=captureEclatEditorFocus(f.root,f.oldField,scope);
+ assert.equal(stored?.kind,'note');
+ assert.equal(restoreEclatEditorFocus(f.root,stored,scope),true);
+ assert.equal(f.newDetails.open,true,'expanded private details remain visible');
+ assert.deepEqual(f.focused,[{preventScroll:true}],'mobile page must not scroll to refocus');
+ assert.deepEqual(f.selection,[[7,11,'forward']]);
+});
+
+test('LR-026: private focus does not cross accounts, couples or chapters',()=>{
+ const f=privateEditorFocusFixture();
+ const original=JSON.stringify(['alice','couple-a',1,'alice:session-1:2']);
+ const stored=captureEclatEditorFocus(f.root,f.oldField,original);
+ for(const changed of [
+  ['bob','couple-a',1,'bob:session-1:2'],
+  ['alice','couple-b',1,'alice:session-1:2'],
+  ['alice','couple-a',2,'alice:session-1:2'],
+  ['alice','couple-a',1,'alice:session-1:3']
+ ]){
+  assert.equal(restoreEclatEditorFocus(f.root,stored,JSON.stringify(changed)),false);
+ }
+ f.newField.id='eclat-note-new-session-2';
+ assert.equal(restoreEclatEditorFocus(f.root,stored,original),false,
+  'even a changed server scene before render cannot receive the previous cursor');
+ assert.equal(f.focused.length,0);
+ assert.equal(f.newDetails.open,false);
+});
+
+test('LR-026: hidden, disabled or unfocused editors never regain focus',()=>{
+ const f=privateEditorFocusFixture();
+ const scope='same-authenticated-scene';
+ assert.equal(captureEclatEditorFocus(f.root,{dataset:{eclatField:'note'}},scope),null);
+ assert.equal(captureEclatEditorFocus(f.root,f.oldField,null),null);
+ const stored=captureEclatEditorFocus(f.root,f.oldField,scope);
+ f.newField.disabled=true;
+ assert.equal(restoreEclatEditorFocus(f.root,stored,scope),false);
+ assert.equal(f.focused.length,0);
+});

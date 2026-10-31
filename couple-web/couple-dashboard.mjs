@@ -1,5 +1,29 @@
 // LoveRoll — invitation state and couple statistics.
 // Intimate encounter counts are computed on decrypted client-side entries only.
+/** Use only invitations belonging to the current duo; a cached link for
+ * another account, a cancelled link or an expired link is never shareable.
+ * Rows are already returned newest-first by the existing server query.
+ */
+export function coupleInvitationView(invitations,coupleId,now=Date.now()){
+ const rows=Array.isArray(invitations)&&typeof coupleId==='string'&&coupleId?
+  invitations.filter(row=>row&&typeof row==='object'&&
+   row.couple_id===coupleId):[];
+ const active=rows.find(row=>!row.cancelled_at&&!row.accepted_at&&
+  typeof row.expires_at==='string'&&Date.parse(row.expires_at)>now)||null;
+ return {latest:active||rows[0]||null,active};
+}
+// A share sheet/composer being opened is NOT proof of delivery. Only show
+// the manual confirmation for the same signed-in account, couple and link.
+export function canConfirmInvitationShare(attempt,active,userId,coupleId,now=Date.now()){
+ return !!attempt&&!!active&&typeof userId==='string'&&!!userId&&
+  typeof coupleId==='string'&&!!coupleId&&
+  attempt.userId===userId&&attempt.coupleId===coupleId&&
+  attempt.inviteId===active.id&&active.couple_id===coupleId&&
+  ['sms','courriel','messenger','partage'].includes(attempt.method)&&
+  !active.cancelled_at&&!active.accepted_at&&
+  typeof active.expires_at==='string'&&Date.parse(active.expires_at)>now;
+}
+
 export function invitationStatus(invitation,connected,now=Date.now()){
  if(connected)return {code:'accepted',title:'Demande acceptée',hint:'Votre espace couple est connecté.'};
  if(!invitation)return {code:'none',title:'Aucune demande envoyée',hint:'Invitez votre partenaire quand vous serez prêts.'};

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
+import {normalizeSessionLength,readSessionLength,saveSessionLength,sessionLengthSettingsHtml} from './session-duration-preference.mjs';
 const read=file=>readFileSync(new URL('./'+file,import.meta.url),'utf8');
 const html=read('index.html'),app=read('app.js'),sw=read('service-worker.js');
 const release=JSON.parse(read('web-version.json'));
@@ -31,8 +32,11 @@ test('LoveRoll build versions agree between endpoint, app, HTML and imported mod
  assert.ok(app.includes('play-style.mjs?v=20261018-styles149'));
  assert.ok(sw.includes('./calendar-success-stats.mjs'));
  assert.ok(sw.includes('./play-style.mjs'));
+ assert.ok(sw.includes('./session-duration-preference.mjs'));
+ assert.ok(app.includes('session-duration-preference.mjs?v=20261031-length262'));
  assert.ok(sw.includes('./cycle-questionnaire.mjs'));
- assert.ok(app.includes('cycle-questionnaire.mjs?v=20261018-cycle149'));
+ assert.ok(app.includes('cycle-questionnaire.mjs?v=20261031-cycle261'),
+  'the active PWA must import the latest personal 200-card questionnaire');
  assert.ok(app.includes("rpc('love_cycle_status'"));
  assert.ok(app.includes("rpc('reset_love_challenges_admin'"));
  assert.ok(html.includes('evening-calendar.css?v=20261018-stats148'));
@@ -270,4 +274,86 @@ test('Web 259 and later keep the repaired countdown UI without stale PWA assets'
  assert.match(control,/Validation en cours/);
  assert.match(app,/presentation\.disabled/);
  assert.match(app,/presentation\.resetDisabled/);
+});
+
+test('Personal evening length choices persist only for this account on this device',()=>{
+ const cache=new Map(),storage={
+  getItem:key=>cache.get(key)??null,
+  setItem:(key,value)=>{cache.set(key,value);}
+ };
+ assert.equal(readSessionLength('fred',storage),'libre');
+ for(const length of ['5','10','15','30','libre']){
+  assert.equal(normalizeSessionLength(length),length);
+  assert.equal(saveSessionLength('fred',length,storage),true);
+  assert.equal(readSessionLength('fred',storage),length);
+  assert.equal(readSessionLength('partner',storage),'libre');
+ }
+ for(const invalid of [null,undefined,5,'0','60','999','NaN','<script>']){
+  assert.equal(saveSessionLength('fred',invalid,storage),false);
+ }
+ assert.equal(saveSessionLength('', '5',storage),false);
+ assert.equal(readSessionLength('',storage),'libre');
+ cache.set('loveroll-session-length:fred','corrupt');
+ assert.equal(readSessionLength('fred',storage),'libre');
+ const restricted={getItem:()=>{throw Error('private browsing');},
+  setItem:()=>{throw Error('private browsing');}};
+ assert.equal(readSessionLength('fred',restricted),'libre');
+ assert.equal(saveSessionLength('fred','10',restricted),true);
+ assert.equal(readSessionLength('fred',restricted),'10',
+  'blocked Safari storage still allows a temporary per-account choice');
+ assert.equal(readSessionLength('partner',restricted),'libre');
+});
+
+test('Evening duration settings have accessible choices without an automatic stop',()=>{
+ const settings=sessionLengthSettingsHtml('15');
+ for(const length of ['5','10','15','30','libre']){
+  assert.match(settings,new RegExp('data-action="session-length:'+length+'"'));
+ }
+ assert.match(settings,/data-action="session-length:15" aria-pressed="true"/);
+ assert.match(settings,/Durée souhaitée de ma soirée/);
+ assert.match(settings,/ne termine pas automatiquement/);
+ assert.match(settings,/Enregistrée sur cet appareil si autorisé, sinon pour cette visite seulement/);
+ assert.match(sessionLengthSettingsHtml('unknown'),/data-action="session-length:libre" aria-pressed="true"/);
+ assert.match(app,/sessionLengthSettingsHtml\(readSessionLength\(state\.user\?\.id\)\)/);
+ assert.match(app,/saveSessionLength\(state\.user\.id,parts\[0\]\)/);
+});
+
+test('Safari privacy restrictions cannot crash rendering of session duration preferences',()=>{
+ // The localStorage PROPERTY getter may throw before getItem is reached.
+ // Evaluate the real implementation against a simulated blocked browser.
+ const source=read('session-duration-preference.mjs')
+  .replace(/^export /gm,'')+'\n({readSessionLength,saveSessionLength});';
+ const blocked={};
+ Object.defineProperty(blocked,'localStorage',{
+  get(){throw Error('SecurityError: storage access denied');}
+ });
+ const safe=vm.runInNewContext(source,{globalThis:blocked});
+ assert.equal(safe.readSessionLength('fred'),'libre');
+ assert.equal(safe.saveSessionLength('fred','15'),true);
+ assert.equal(safe.readSessionLength('fred',null),'15',
+  'a blocked browser keeps the temporary choice in memory');
+ assert.equal(safe.saveSessionLength('fred','30',null),true);
+ assert.equal(safe.readSessionLength('fred',null),'30');
+ assert.equal(safe.readSessionLength('another-user',null),'libre');
+ assert.match(app,/sessionLength:readSessionLength\(uid\)/);
+ assert.doesNotMatch(app,/sessionLength:readSessionLength\(uid,localStorage\)/);
+});
+
+test('Web 260 offline release updates the invitation shortcut as one coherent bundle',()=>{
+ const build=release.build;
+ const releaseNumber=Number(build.split('.')[1]);
+ assert.ok(Number.isInteger(releaseNumber)&&releaseNumber>=260);
+ assert.ok(html.includes('app.js?v='+appTag));
+ assert.ok(app.includes("const WEB_RELEASE='"+build+"'"));
+ assert.ok(app.includes('service-worker.js?v='+appTag));
+ assert.ok(app.includes('evening-invitation.mjs?v=20261031-invite260'));
+ assert.ok(html.includes('evening-invitation.css?v=20261031-invite260'));
+ assert.ok(sw.includes("const CACHE='loveroll-static-v"+releaseNumber+"'"));
+ for(const asset of ['./evening-invitation.mjs','./evening-invitation.css','./web-version.json'])
+  assert.ok(sw.includes("'"+asset+"'"),'Offline bundle missing '+asset);
+ const invitation=read('evening-invitation.mjs');
+ assert.ok(invitation.includes('data-action="evening-invite:yes"'),
+  'The new quick acceptance control must be included in the offline bundle');
+ assert.ok(invitation.includes('data-action="tab:session"'),
+  'Other responses must remain accessible without automatic dice');
 });

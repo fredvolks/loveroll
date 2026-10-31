@@ -24,7 +24,7 @@ test('Evening keeps original WebGL dice for partner result, own roll, summary an
  assert.match(html,/0 \/ 1/);
  assert.match(html,/1 \/ 2/);
  assert.match(html,/88 %/);
- assert.match(html,/class="evening-choice-odds">88 % de chances/);
+ assert.match(html,/class="evening-choice-odds" aria-live="polite">88 % de chances <span>d’avoir cette catégorie<\/span>/);
  assert.doesNotMatch(html,/12 % autre|Défi cadeau : 100 %/);
  assert.doesNotMatch(html,/Fred|Émilie|Player 1/);
 });
@@ -264,9 +264,12 @@ test('Selected category is visually distinct and reported to assistive technolog
 test('After finishing the evening the official feedback pathway remains available',()=>{
  const html=premiumEveningHtml({members:people,me:'first',
   lastEvening:{id:'past',completed:10,responses:1,myResponse:true,partnerResponse:false}});
- assert.doesNotMatch(html,/review-open:past/);
+ // The completed night exposes an explicit edit action instead of a
+ // disabled restart. Existing calendar access and button count stay unchanged.
+ assert.match(html,/data-action="review-open:past"/);
+ assert.match(html,/♡ MODIFIER MON BILAN/);
   assert.match(html,/data-action="evening-calendar"/);
-  assert.equal((html.match(/<button /g)||[]).length,4); // Four original controls; no floating privacy mask.
+  assert.equal((html.match(/<button /g)||[]).length,4); // Same two main actions; no floating privacy mask.
   assert.doesNotMatch(html,/data-lr-privacy-hide/);
  assert.match(html,/data-action="tab:eclat"/);
  assert.match(html,/Votre partenaire/);
@@ -304,9 +307,42 @@ test('Fullscreen v61 renders all six event choices in two columns and three rows
 });
 test('Soirée never crashes if the last session and feedback status are both missing',()=>{
  assert.doesNotMatch(app,/feedbackItemsFor|my_love_feedback_status|choose-feedback|save-feedback/);
- assert.match(app,/const recentReviews=last\?\(state.eveningReviews\|\|\[\]\)/);
+ assert.match(app,/const lastEvening=last\?eveningFinaleStatus\(/);
+ assert.match(app,/reviews:state\.eveningReviews/);
  assert.match(app,/eveningDailyAccess\(/);
  assert.doesNotMatch(app,/evening-locked-view/);
  assert.match(app,/weeklyReady:!!state.weekly/);
  assert.match(app,/const canStartEvening=daily.canStart/);
+});
+
+test('Soirée always keeps the two approved actions and a single decorative D100',()=>{
+ const intro=premiumEveningHtml({members:people,me:'first',
+  session:null,canStartEvening:true,sessionLength:'15'});
+ assert.match(intro,/data-action="new-session"/);
+ assert.match(intro,/data-action="evening-calendar"/);
+ const mainActions=intro.match(/<div class="evening-finale-actions">([\s\S]*?)<\/div>/)?.[1];
+ assert.ok(mainActions);
+ assert.equal((mainActions.match(/<button\b/g)||[]).length,2);
+ assert.equal((intro.match(/data-dice-sides="100"/g)||[]).length,1);
+ assert.doesNotMatch(intro,/evening-length-choice|data-action="session-length:/,
+  'five additional buttons must never obscure the calendar on small phones');
+ const active=premiumEveningHtml({members:people,me:'first',
+  session,rolls:[],status:{both_ready:false},turn:{ready:false}});
+ assert.doesNotMatch(active,/data-session-length-select/);
+ const closed=premiumEveningHtml({members:people,me:'first',
+  session:null,lastEvening:{completed:3,myResponse:true,partnerResponse:true,responses:2}});
+ assert.match(closed,/data-session-length-select="true"/);
+ assert.match(closed,/data-evening-intensity-select="true"/);
+ // The personal planner remains available after finishing a soirée, while
+ // the two real primary buttons and official session eligibility are unchanged.
+ assert.match(app,/sessionLengthSettingsHtml\(readSessionLength\(state\.user\?\.id\)\)/);
+ assert.match(app,/saveSessionLength\(state\.user\.id,parts\[0\]\)/);
+ if(intro.includes('data-session-length-select="true"')){
+  assert.match(intro,/aria-label="Durée souhaitée de ma soirée"/);
+  assert.match(intro,/<option value="15" selected>15 min<\/option>/);
+  const durationOptions=intro.match(/<select data-session-length-select="true"[^>]*>([\s\S]*?)<\/select>/)?.[1];
+  const intensityOptions=intro.match(/<select data-evening-intensity-select="true"[^>]*>([\s\S]*?)<\/select>/)?.[1];
+  assert.equal((durationOptions?.match(/<option value="/g)||[]).length,5);
+  assert.equal((intensityOptions?.match(/<option value="/g)||[]).length,3);
+ }
 });

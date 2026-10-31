@@ -67,10 +67,12 @@ test('Eclat is separate from old official dice and protected by Supabase',()=>{
  const app=read('./app.js');
  const styles=read('./eclat.css');
  const sw=read('./service-worker.js');
- assert.match(app,/rpc\('love_eclat_start'/);
- assert.match(app,/rpc\('love_eclat_choose'/);
- assert.match(app,/rpc\('love_eclat_next'/);
- assert.match(app,/rpc\('love_eclat_end'/);
+ // All four actions go through the owner-bound Auth/RLS guard before
+ // calling the actual server RPC. No local dice or offline fake draw.
+ for(const command of ['start','choose','next','end'])
+  assert.ok(app.includes("runEclatMutation(owner,'love_eclat_"+command+"'"),command+' uses the guarded RPC');
+ assert.match(app,/const value=await rpc\(name,args\)/);
+ assert.match(app,/invalidateEclatOnAuthRejection\(error\)/);
  assert.match(styles,/\.home-next-month>span:nth-child\(2\)/);
  assert.match(styles,/\.home-gift-icon svg/);
  for(const file of ['eclat-scenes-a.mjs','eclat-scenes-b.mjs','eclat-ui.mjs','eclat-catalog.mjs','eclat-audio.mjs','eclat.css'])
@@ -103,7 +105,11 @@ test('Music control is only shown inside an active coffret',()=>{
  assert.match(eclatHtml({status:active,members:people,userId:'a'}),/data-action="eclat:music"/);
  assert.match(eclatHtml({status:active,members:people,userId:'a',music:true}),/Couper le son/);
  const app=read('./app.js');
- assert.ok(app.includes("if(!state.eclat?.active){eclatAudio.stop();state.eclatMusic=false;return;}"));
+ // The current safety rule is stricter than the old inactive-only guard:
+ // a privacy mask also silences playback without repainting private content.
+ assert.match(app,/if\(privacyMasked\|\|!canPlayEclat\(\)\|\|state\.eclatMusic\)\{/);
+ assert.match(app,/eclatAudio\.stop\(\);state\.eclatMusic=false;/);
+ assert.match(app,/if\(!privacyMasked&&state\.tab==='eclat'\)render\(\);/);
  assert.ok(app.includes("state.eclatDetails=false;eclatAudio.stop();state.eclatMusic=false;"));
 });
 
@@ -187,4 +193,72 @@ test('Éclat regroupe clairement les trois choix privés pour lecteurs d’écra
  assert.doesNotMatch(revealed,/class="eclat-choices"/);
  assert.match(waiting,/On attend ton partenaire/);
  assert.match(revealed,/VOTRE SUITE COMMUNE/);
+});
+
+test('Éclat note saving progress disables repeat save but preserves editable drafts',()=>{
+ const status={access:true,active:true,coffret_id:1,minutes:30,
+  chapter_index:1,chapter_number:1,chapter_total:8,variant_number:0,
+  session_id:'private-note-saving',my_choice:null,both_chosen:false};
+ for(const phase of ['prepare','play']){
+  const noteState={note:'A note typed while saving',clue:'',saving:true,
+   moment_done:phase==='choose',playing:phase==='play',dirty:true};
+  const html=eclatHtml({status,members:people,userId:'a',noteState});
+  assert.match(html,/data-eclat-field="note"[^>]*>A note typed while saving<\/textarea>/,
+   'saving must not make a personal note unreadable or reset its content');
+  assert.match(html,/data-action="eclat:note-save"[^>]*disabled[^>]*>Enregistrement…<\/button>/,
+   'saving blocks repeated writes and announces the operation');
+  assert.match(html,/data-eclat-note-status role="status">Enregistrement en cours…<\/span>/,
+   'the current operation must be announced to assistive technology');
+ }
+ const choosing=eclatHtml({status,members:people,userId:'a',
+  noteState:{moment_done:true,saving:true,dirty:true}});
+ assert.match(choosing,/data-eclat-phase="choose"/);
+ assert.doesNotMatch(choosing,/data-eclat-field="note"/,
+  'the private editor is deliberately absent on the choice-only screen');
+ const completed=eclatHtml({status,members:people,userId:'a',
+  noteState:{playing:true,saving:false,dirty:true,saved:true}});
+ assert.match(completed,/data-eclat-note-status role="status">Modifications non enregistrées<\/span>/,
+  'stale saved flag must not override unsaved edits');
+ const available=eclatHtml({status,members:people,userId:'a',
+  noteState:{playing:true,saving:false,saved:true,dirty:false}});
+ assert.match(available,/data-eclat-note-status role="status">Note enregistrée pour toi<\/span>/);
+});
+
+test('Éclat controls prevent duplicate save transitions while a note is saving',()=>{
+ const status={access:true,active:true,coffret_id:1,minutes:30,
+  chapter_index:1,chapter_number:1,chapter_total:8,variant_number:0,
+  session_id:'note-in-flight',my_choice:null,both_chosen:false};
+ const render=noteState=>eclatHtml({status,members:people,userId:'a',noteState});
+ const prepare=render({note:'Private text remains editable',saving:true});
+ assert.match(prepare,/data-action="eclat:note-play"[^>]*disabled[^>]*>Vivre ce moment à deux<\/button>/);
+ assert.match(prepare,/data-action="eclat:choose:0"[^>]*disabled[^>]*>Passer ce moment<\/button>/);
+ assert.match(prepare,/data-eclat-field="note"[^>]*>Private text remains editable<\/textarea>/);
+ const playing=render({playing:true,saving:true});
+ assert.match(playing,/data-action="eclat:note-done"[^>]*disabled[^>]*>J’ai terminé ce moment<\/button>/);
+ assert.match(playing,/data-action="eclat:choose:0"[^>]*disabled[^>]*>Passer ce moment<\/button>/);
+ const choosing=render({moment_done:true,saving:true});
+ for(let choice=1;choice<=3;choice++){
+  assert.match(choosing,new RegExp('data-action="eclat:choose:'+choice+'"[^>]*disabled'),
+   'choices may not start duplicate saves in flight');
+ }
+ assert.match(choosing,/data-action="eclat:note-edit"[^>]*disabled[^>]*>Revenir au moment<\/button>/);
+ const loading=render({loading:true});
+ assert.match(loading,/data-action="eclat:choose:0" class="eclat-skip">Passer ce moment<\/button>/,
+  'skip remains available if the optional note has not loaded');
+});
+
+test('Incomplete Éclat history cannot falsely mark an unplayed coffret as already explored',()=>{
+ const status={access:true,active:false};
+ const incomplete=[
+  null,false,{},'garbage',
+  {coffret_id:1,started_at:null},
+  {coffret_id:1,started_at:'not-a-date'},
+  {coffret_id:99,started_at:'2026-10-30T17:00:00Z'}
+ ];
+ const html=eclatHtml({status,history:incomplete});
+ assert.match(html,/Voir notre suggestion : Les cinq secrets/);
+ assert.match(html,/À découvrir · pas encore commencé/);
+ const valid=eclatHtml({status,history:[
+  ...incomplete,{coffret_id:1,started_at:'2026-10-30T17:00:00Z'}]});
+ assert.match(valid,/Voir notre suggestion : Le double jeu/);
 });

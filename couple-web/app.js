@@ -1,14 +1,15 @@
 import {organizeSettingsMenus} from './settings-menus.mjs?v=20261022-home228';
 import {showEveningCategoryReminder} from './evening-d100-template.mjs?v=20261029-ipad258';
-import {eveningInviteHtml,eveningInviteInboxHtml,isEveningInviteAction} from './evening-invitation.mjs?v=20261028-web254';
-import {askEveningCategoryConfirmation,categoryConfirmEnabled,saveCategoryConfirmLocal} from './evening-category-confirm.mjs?v=20261027-web238';
+import {eveningInviteHtml,eveningInviteInboxHtml,isEveningInviteAction} from './evening-invitation.mjs?v=20261031-invite260';
+import {askEveningCategoryConfirmation,categoryConfirmEnabled,saveCategoryConfirmLocal,ownsEveningCategoryDraw} from './evening-category-confirm.mjs?v=20261031-owner';
 import {soundEnabled,setSoundEnabled,setLoveRollSoundUser,unlockLoveRollSounds,playLoveRollSound,soundSettingsHtml} from './loveroll-sounds.mjs?v=20261028-privacy250';
 import {isAcceptedTimedEveningChallenge,completeTimedEveningChallenge,timedEveningTimerControl} from './timed-evening-completion.mjs?v=20261029-timer259';
 import {fitSurpriseMinimal} from './surprise-minimal.mjs?v=20261022-home228';
 import {eclatNoteKey,loadEclatNote,saveEclatNote} from './eclat-guidance.mjs?v=20261022-home228';
+import {captureEclatEditorFocus,restoreEclatEditorFocus} from './eclat-editor-focus.mjs?v=20261031-focus';
 import {loadEclatHistory} from './eclat-history.mjs?v=20261022-home228';
 import {enhanceGoldBacks} from './gold-arrows.mjs?v=20261022-home228';
-import {fitSoireeHomeTemplate,fitRubyCalendar} from './soiree-home-template.mjs?v=20261029-web259';
+import {fitSoireeHomeTemplate,fitRubyCalendar} from './soiree-home-template.mjs?v=20261031-web260';
 import { marketingHtml,authHtml,profileHtml,inviteProfileHtml,emailConfirmationHtml,profileGenderSelect,profilePlayStyleSelect,matchHtml,parseMonthDay,monthDayInputs } from './onboarding.mjs?v=20261018-style148';
 import {editorialHeader,editorialRow,editorialIcon} from './editorial-ui.mjs?v=20261017-ritual130';
 import {cardLibraryHtml,monthlyEditorHtml,adventEditorHtml,specialEditorHtml,importEditorHtml} from './editorial-editors.mjs?v=20261017-ritual130';
@@ -17,26 +18,31 @@ import {ROLL_TOTAL_MS} from './dice-roll-motion.mjs';
 import {createCoupleLiveSync} from './couple-live-sync.mjs?v=20261017-advent119';
 import {playableSessionForWeekly} from './couple-reset-view.mjs';
 import {eveningDailyAccess} from './evening-daily-policy.mjs?v=20261016-daily100';
-import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw} from './evening-private-queue.mjs';
-import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261029-web259';
-import {saveEveningSelection,restoreEveningSelection,clearEveningSelection} from './evening-resume.mjs?v=20261027-web240';
+import {createEveningClosureGate} from './evening-closure-gate.mjs?v=20261031-closure';
+import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,snapshotEveningCardBeforeRedraw,isSameEveningResponseContext,isEveningRedrawBusyForCurrentView,ownsEveningRedrawRequest,ownsEveningTimerRecord,ownedSavedEveningTimerSnapshot,redrawTimerRecovery,mayApplyScopedEveningRefresh,ownsCoupleAsyncRead,hasPendingEclatNote} from './evening-private-queue.mjs';
+import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261031-web260';
+import {saveEveningSelection,restoreEveningSelection,clearEveningSelection,safeEveningBookmarkStorage} from './evening-resume.mjs?v=20261031-resume-safari';
+import {readTimerAlertMode,saveTimerAlertMode} from './timer-alert-preference.mjs?v=20261031-safari-timer';
 import {eclatHtml} from './eclat-ui.mjs?v=20261027-web242';
 import {previewMode,previewCanEdit,previewEclatStatus} from './account-preview-mode.mjs?v=20261020-test180';
 import {eclatStage} from './eclat-catalog.mjs?v=20261019-eclat174';
 import {createEclatAudio} from './eclat-audio.mjs?v=20261028-privacy250';
 import {futureCoupleStyleMix,playStyleLabel} from './play-style.mjs?v=20261018-styles149';
-import {cycleIntensityQuestionnaireHtml} from './cycle-questionnaire.mjs?v=20261018-cycle149';
+import {readSessionLength,saveSessionLength,sessionLengthSettingsHtml} from './session-duration-preference.mjs?v=20261031-length262';
+import {readEveningIntensity,saveEveningIntensity} from './evening-intensity-preference.mjs?v=20261031-intensity265';
+import {eveningFavoriteId,readEveningFavorites,toggleEveningFavorite,removeEveningFavorite,eveningFavoritesSettingsHtml,EVENING_FAVORITES_LIMIT} from './evening-favorites.mjs?v=20261031-favs264';
+import {cycleIntensityQuestionnaireHtml,ownsCycleIntensityAnswer} from './cycle-questionnaire.mjs?v=20261031-cycle261';
 import {DICE_WEIGHT_CONFIG,configuredDiceWeights,parseDiceWeightInputs} from './dice-weighting.mjs?v=20261018-weights146';
 import {premiumEveningHtml,updateEveningCategoryUi} from './premium-evening.mjs?v=20261028-lr027-web254';
-import {eveningHistoryMarkup,eveningLocalDay} from './evening-calendar.mjs?v=20261029-web259';
-import {eveningReviewModal,validEveningReview} from './evening-review.mjs?v=20261016-person-review97';
+import {eveningHistoryMarkup,eveningLocalDay,eveningCalendarInitialDate} from './evening-calendar.mjs?v=20261031-web260';
+import {eveningReviewModal,validEveningReview,eveningFinaleStatus} from './evening-review.mjs?v=20261016-person-review97';
 import {premiumSurpriseHtml,sixSpecialEvents} from './premium-surprise.mjs?v=20261022-home228';
 import {surpriseSlot,surpriseCustom,surpriseTitle,formatSurpriseDateInput,parseSurpriseDateInput} from './surprise-event-config.mjs?v=20261016-surprise109';
 import {loginEmail,loginCode,emailAuthMessage,requireLovePassword,passwordQuality,verifiedLoveEmail,passwordAuthMessage,invitationAuthMessage} from './email-auth.mjs';
 import {demoCoupleHtml,DEMO_TABS} from './demo-couple.mjs';
 import {inviteLinkForId,parseInvitationFromUrl,pendingInviteReference,INVITATION_REVISION} from './invite-links.mjs?v=20261018-safari150';
 import {sharedEveningTurns,lastOfficialChallengeFace,latestCountedSession} from './evening-turns.mjs';
-import { eveningCard, EVENING_CATEGORIES, formatCountdown,customCardSlots,editableCardSlots,playableEveningCount,resolvedCard } from './evening-challenges.mjs?v=20261016-restore113';
+import { eveningCard, EVENING_CATEGORIES, formatCountdown,validChallengeTimerMinutes,customCardSlots,editableCardSlots,playableEveningCount,resolvedCard } from './evening-challenges.mjs?v=20261016-restore113';
 import {MONTHLY_ACTIVITIES,editableMonthlyActivities,monthlyActivityForRoll} from './monthly-activities.mjs?v=20261018-d100151';
 import {ritualBrandHtml} from './brand.mjs?v=20261017-ritual130';
 import {validateAdventJson,calendarFromSaved} from './advent-calendar.mjs';
@@ -57,11 +63,11 @@ import {normalizeInviteEmail,composeInviteEmail} from './invite-email.mjs';
 import {enablePush,disablePush,updatePushPreference,sendTestPush,notificationSettingsMarkup,safeNativePushToken,currentPushDevice} from './push-notifications.mjs?v=20261027-web247';
 import {shouldOfferInstall,markInstallOffered,dismissInstall,requestInstall,installOfferHtml,installStepsHtml,installStatus,isEmbeddedBrowser,isIos} from './home-install.mjs?v=20261017-complete127';
 import {messengerExternalBrowserHtml} from './messenger-browser.mjs?v=20261017-entry139';
-import {invitationStatus,coupleStats,formatCoupleDate,invitationEmailText,invitationMessengerText,invitationPreviewMarkup} from './couple-dashboard.mjs';
+import {invitationStatus,coupleInvitationView,canConfirmInvitationShare,coupleStats,formatCoupleDate,invitationEmailText,invitationMessengerText,invitationPreviewMarkup} from './couple-dashboard.mjs';
 import {premiumConfirm,premiumCopyLink,focusInlineLoveDialog} from './premium-dialogs.mjs?v=20261017-complete127';
 
 
-const WEB_RELEASE='2026-10-29.259';
+const WEB_RELEASE='2026-10-31.260';
 const root=document.querySelector('#app');
 const enc=new TextEncoder(),dec=new TextDecoder();
 let diceCleanup=[],renderToken=0;
@@ -70,8 +76,10 @@ const client=CONFIG.supabaseUrl&&CONFIG.supabasePublishableKey?
  createClient(CONFIG.supabaseUrl,CONFIG.supabasePublishableKey,opts):null;
 const launchParams=new URLSearchParams(location.search);
 const eclatAudio=createEclatAudio();
+let latestEclatAudioOwner=null;
 // Masking a LoveRoll card must also silence locally playing Éclat audio.
 document.addEventListener('loveroll:privacy-mask',()=>{
+ latestEclatAudioOwner=null;
  eclatAudio.stop();
  state.eclatMusic=false;
 });
@@ -93,6 +101,15 @@ captureReferralFromUrl();
 const requestedSettingsSection=launchParams.get('section')||'';
 let settingsOpenSection=requestedSettingsSection||'';
 let notificationFeedback=null;
+// Only the newest month request may repaint this account's private calendar.
+let latestCalendarPassQuotaRequest=null;
+let currentReviewSaveRequest=null;
+// Ignore duplicate start taps for this Auth generation, but never block a new login.
+let currentNewSessionRequest=null;
+let currentWeeklyConfirmationRequest=null;
+let currentEveningInviteRequest=null;
+let latestDiceRollRequest=null;
+const eveningClosureGate=createEveningClosureGate();
 let worldGpsDraft=null;
 let worldFx=null,worldFxPending=null,worldFxFailed=null;
 let geoFetchActive=null,geoFetchSeen=new Set();
@@ -103,14 +120,14 @@ const worldText=key=>worldT(worldLocale(),key);
 const state={user:null,profile:null,members:[],coupleId:null,couple:null,
  tab:launchParams.has('settings')?'settings':(['home','session','special','advent'].includes(launchParams.get('open'))?launchParams.get('open'):'home'),weekly:null,monthly:{},session:null,personal:[],challenges:[],gifts:[],rollStatus:null,customCards:[],customCategory:'SENSUEL',customSlot:1,customSearch:'',customFilter:'all',monthlyActivities:[],monthlySlot:1,libraryScreen:'list',libraryImportKind:null,specialEditorKey:null,specialEditorStage:'D6_activite',specialEditorFace:1,adventEditorDay:1,pushDevice:null,
  events:[],journal:[],advent:[],advent2026Config:null,advent2026Days:[],selectedDay:1,adventYear:null,adventSelected:null,adventHistory:false,adventOpening:null,adventRevealing:false,adventServerDate:null,unlockKey:null,channel:null,
- occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningRefusalId:null,redrawReady:false,redrawBusy:false,loveExcludedCards:[],eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],monthlyPassQuota:null,calendarPassMonth:null,cycleStatus:null,cycleDeferred:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,eveningInvite:null,eveningInviteBusy:false,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoBookingEdit:false,referral:null,eclat:null,eclatGalleryScroll:0,eclatHistory:[],eclatHistoryCouple:null,eclatBrowse:false,eclatHistoryError:false,eclatSelection:1,eclatMinutes:30,eclatIntent:'all',eclatDetails:false,eclatMusic:false,eclatFinished:null,testModeEligible:false,testMode:'real'};
+ occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningRefusalId:null,redrawReady:false,redrawBusy:false,redrawBusyContext:null,eveningStartContext:null,timerStartContext:null,legacyAnswerContext:null,timerCompletionContext:null,timerCompletionRetryOwner:null,loveExcludedCards:[],eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],monthlyPassQuota:null,calendarPassMonth:null,cycleStatus:null,cycleDeferred:null,cycleAnswerRequest:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,eveningInvite:null,eveningInviteBusy:false,eveningGiftRequest:null,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoBookingEdit:false,referral:null,eclat:null,eclatGalleryScroll:0,eclatHistory:[],eclatHistoryCouple:null,eclatHistoryUserId:null,eclatBrowse:false,eclatHistoryError:false,eclatSelection:1,eclatMinutes:30,eclatIntent:'all',eclatDetails:false,eclatMusic:false,eclatFinished:null,testModeEligible:false,testMode:'real'};
 const names={SENSUEL:'Sensuel',COQUIN:'Coquin',SEXUEL:'Sexuel'};
 function isSharedCoupleReady(coupleId,members){
  return !!coupleId&&Array.isArray(members)&&members.length===2;
 }
-const challengeTimer={id:null,durationMs:0,remainingMs:0,deadline:0,running:false,notified:false,autoCompletePending:false,decisionPending:false,mode:'sound'};
+const challengeTimer={id:null,ownerUserId:null,ownerSessionId:null,durationMs:0,remainingMs:0,deadline:0,running:false,notified:false,autoCompletePending:false,decisionPending:false,mode:'sound'};
 let timerCompletionInFlight=null,timerCompletionRetryAt=0;
-try{const saved=localStorage.getItem('loveroll-timer-mode');if(saved==='vibrate'||saved==='sound')challengeTimer.mode=saved;}catch(e){}
+challengeTimer.mode=readTimerAlertMode();
 
 const kinds={weekly:'Rituel de la semaine',monthly_activity:'Sortie du mois',
  monthly_host:'Qui invite',monthly_restaurant:'Type de restaurant'};
@@ -220,7 +237,8 @@ function snapshotDraft(){
  }));
 }
 function formRouteKey(){return [state.tab,settingsOpenSection,state.libraryScreen,state.libraryImportKind,state.customCategory,state.customSlot,state.monthlySlot,state.adventEditorDay,state.specialEditorKey,state.specialEditorStage,state.specialEditorFace].join('|');}
-function hasUnsavedForm(){return snapshotDraft().length>0||[...eclatNoteDrafts.values()].some(d=>!d.saved&&(!!d.note||!!d.clue));}
+function hasUnsavedForm(){return snapshotDraft().length>0||
+ hasPendingEclatNote(eclatNoteDrafts,eclatNoteKey(state.eclat,state.user?.id),state.tab);}
 function restoreDraft(draft){
  for(const field of draft||[]){
   const el=document.getElementById(field.id);
@@ -235,24 +253,39 @@ function backFromLoveRoll(){
  if(gameInfo){gameInfo.close();return true;}
  const modal=document.querySelector('dialog.lr-evening-category-dialog[open]');
  if(modal){modal.close();return true;}
+ // Generic native modal: Android/system Back must close the current dialog,
+ // not navigate away from Surprise/Éclat or discard the current game.
+ const nativeModal=document.querySelector('dialog[open]');
+ if(nativeModal){nativeModal.close();return true;}
  if(!document.querySelector('dialog[open],.lr-dialog-overlay')&&root._settingsMenuBack?.())return true;
  if(document.querySelector('.lr-dialog-overlay')){
   document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
   return true;
  }
+ // Preserve the private challenge dialog and pending server receipt when
+ // Android Back or Escape arrives during a D100 roll or a repick.
+ if(state.tab==='session'&&(
+    isActiveEveningRedrawPending()||
+    (state.diceStatus&&(state.eveningRefusalId||state.showEveningChallenges))))return true;
  if(state.eveningRefusalId){state.eveningRefusalId=null;render();return true;}
  // The recipient's private challenge card is an actual modal. Native Back
  // and Escape must close it BEFORE leaving Soirée or switching tabs.
  if(state.showEveningChallenges){
   if(state.user?.id&&state.session?.id)
-   clearEveningSelection(localStorage,state.user.id,state.session.id);
+   clearEveningSelection(safeEveningBookmarkStorage(),state.user.id,state.session.id);
   state.showEveningChallenges=false;state.selectedEveningChallengeId=null;
   render();
   root.querySelector('[data-action="evening-list"]')?.focus();
   return true;
  }
  if(state.installModalOpen||state.forceInstallGuide){handle('install-later').catch(fail);return true;}
- if(state.reviewModalSessionId){state.reviewDismissedSessionId=state.reviewModalSessionId;state.reviewModalSessionId=null;state.reviewDraft={};render();return true;}
+ if(state.reviewModalSessionId){
+  // Native Back/Escape must invalidate the same in-flight save as the close button.
+  // The server may still store its result, but the stale response cannot repaint us.
+  currentReviewSaveRequest=null;state.reviewSaving=false;
+  state.reviewDismissedSessionId=state.reviewModalSessionId;
+  state.reviewModalSessionId=null;state.reviewDraft={};render();return true;
+ }
  if(allowBackExit){allowBackExit=false;return false;}
  if(state.showEveningChallenge){state.showEveningChallenge=false;render();return true;}
  if(state.showSurpriseActivity){state.showSurpriseActivity=false;render();return true;}
@@ -286,15 +319,28 @@ function backFromLoveRoll(){
 }
 window.loveRollHandleBack=backFromLoveRoll;
 document.addEventListener('keydown',event=>{
- if(event.key==='Escape'&&!document.querySelector('.lr-dialog-overlay')&&
-    !document.querySelector('dialog.lr-evening-category-dialog[open]')&&
-    !document.querySelector('dialog#evening-play-info[open]')){
+ // Let the browser dispatch the native dialog cancel/close for Escape.
+ // Intercepting Escape here incorrectly navigated Surprise back to Home.
+ if(event.key==='Escape'&&!document.querySelector('.lr-dialog-overlay,dialog[open]')){
   if(backFromLoveRoll())event.preventDefault();
  }
 });
 
 let diceView=null;
+let mountedEclatEditorScope=null;
 function frame(body,title='LOVEROLL',subtitle='Un jeu intime, juste pour vous deux'){
+ // Server-triggered refreshes may replace the Éclat editor while the user
+ // types. Restore its cursor only for the exact same authenticated chapter.
+ const eclatFocusScope=()=>{
+  if(state.tab!=='eclat'||state.eclat?.access!==true||
+     state.eclat?.active!==true||!state.user?.id||
+     !isSharedCoupleReady(state.coupleId,state.members))return null;
+  const key=eclatNoteKey(state.eclat,state.user.id);
+  return key?JSON.stringify([state.user.id,state.coupleId,authFeedbackGeneration,key]):null;
+ };
+ const currentEclatEditorScope=eclatFocusScope();
+ const focusedEclatEditor=captureEclatEditorFocus(root,document.activeElement,
+  mountedEclatEditorScope===currentEclatEditorScope?currentEclatEditorScope:null);
  setLoveRollSoundUser(state.user?.id);
  const openerAction=document.activeElement?.dataset?.action||null;
  const draft=lastFormTab===formRouteKey()?snapshotDraft():[];
@@ -370,7 +416,10 @@ function frame(body,title='LOVEROLL',subtitle='Un jeu intime, juste pour vous de
   state.cycleDeferred!==state.cycleStatus?.cycle?
   cycleIntensityQuestionnaireHtml({
    status:state.cycleStatus,style:state.profile?.play_style,
-   partnerName:other()?.name?.split(' ')[0]||'votre partenaire'
+   partnerName:other()?.name?.split(' ')[0]||'votre partenaire',
+   saving:!!(state.cycleAnswerRequest&&
+    ownsCycleIntensityAnswer(state,state.cycleAnswerRequest,authFeedbackGeneration)&&
+    state.cycleAnswerRequest.cycle===state.cycleStatus?.cycle)
   }):'';
  const oldGallery=root.querySelector('.eclat-photo-grid');
  if(oldGallery)state.eclatGalleryScroll=oldGallery.scrollTop;
@@ -378,6 +427,10 @@ function frame(body,title='LOVEROLL',subtitle='Un jeu intime, juste pour vous de
  const detailScroll=oldDetail?{id:oldDetail.dataset.coffretId,top:oldDetail.scrollTop}:null;
  const inviteInbox=realHome?eveningInviteInboxHtml(state.eveningInvite,{partnerName:other()?.name}):'';
  root.innerHTML=(realHome||realEvening||realSurprise||realEclat||realSettings||realEditor||eveningArchive||(isCouple&&state.tab==='advent')?'':usualHeader)+body+inviteInbox+(connected?nav():'')+installation+reviewPanel+cyclePanel;
+ // Record which authenticated scene actually owns the mounted DOM. A
+ // same-user re-login may otherwise capture yesterday's textarea using
+ // today's generation before this render has replaced the old nodes.
+ mountedEclatEditorScope=eclatFocusScope();
  if(homeStage){
   const fresh=root.querySelector('.home-die-platform canvas'),replacement=fresh?.closest('.home-die-platform');
   if(replacement){
@@ -415,18 +468,19 @@ function frame(body,title='LOVEROLL',subtitle='Un jeu intime, juste pour vous de
  fitHomeLayout(root);
  fitSoireeHomeTemplate(root);
  fitRubyCalendar(root);
- fitSurpriseMinimal(root);
+ fitSurpriseMinimal(root,{userId:state.user?.id,coupleId:state.coupleId});
  enhanceGoldBacks(root);
  organizeSettingsMenus(root);
  const newGallery=root.querySelector('.eclat-photo-grid');if(newGallery)newGallery.scrollTop=state.eclatGalleryScroll;
  const newDetail=root.querySelector('.eclat-detail');if(newDetail&&detailScroll?.id===newDetail.dataset.coffretId)newDetail.scrollTop=detailScroll.top;
  bindActions();
+ restoreEclatEditorFocus(root,focusedEclatEditor,eclatFocusScope());
  focusInlineLoveDialog(root,openerAction);
  // Render idle evening D6 in WebGL too: each side is a neutral heart,
  // never a fabricated pip result. Actual face comes from Supabase after rolling.
  const canvases=[...root.querySelectorAll('canvas[data-dice-sides]')];
  if(canvases.length){
-  import('./dice3d.js?v=20261029-web259').then(({dieOn})=>{
+  import('./dice3d.js?v=20261031-web260').then(({dieOn})=>{
    if(token!==renderToken)return;
    for(const canvas of canvases){
     if(!canvas.isConnected||canvas.loveRollDie)continue;
@@ -464,16 +518,57 @@ function nav(){
    ['pending','maybe'].includes(state.eveningInvite?.state)?'<span class="lr-evening-invite-dot" aria-label="Invitation reçue">♥</span>':'')+'</button>';
  }).join('')+'</div></nav>';
 }
-function bindActions(){
- const categoryPref=root.querySelector('#evening-category-confirm-pref');
- categoryPref?.addEventListener('change',()=>handle('evening-confirm-pref-toggle').catch(fail));
+// The input belongs to the rendered private note, not whatever account
+// or chapter happens to be active when a delayed browser input event fires.
+// Binding to its original owner prevents private text crossing scene scopes.
+function bindEclatPrivateNoteFields(){
+ const owner={userId:state.user?.id,coupleId:state.coupleId,
+  generation:authFeedbackGeneration};
+ const key=eclatNoteKey(state.eclat,owner.userId);
+ const draft=key?eclatNoteDrafts.get(key):null;
  root.querySelectorAll('[data-eclat-field]').forEach(field=>field.addEventListener('input',()=>{
-  const draft=eclatNoteDrafts.get(eclatNoteKey(state.eclat,state.user?.id));
-  if(!draft)return;
-  draft[field.dataset.eclatField]=field.value;draft.saved=false;
+  // A textarea from a prior render may still dispatch a queued input event.
+  // Even for the SAME chapter/draft it cannot overwrite the current editor.
+  if(!root.contains(field))return;
+  const property=field.dataset.eclatField;
+  if(property!=='note'&&property!=='clue')return;
+  if(!draft||draft.loading||draft.error||draft.generation!==owner.generation||
+     !ownsCoupleAsyncRead(state,owner)||authFeedbackGeneration!==owner.generation||
+     state.tab!=='eclat'||state.eclat?.access!==true||
+     !isSharedCoupleReady(owner.coupleId,state.members)||
+     eclatNoteKey(state.eclat,state.user?.id)!==key||
+     eclatNoteDrafts.get(key)!==draft)return;
+  draft[property]=field.value;draft.saved=false;draft.dirty=true;
   const label=root.querySelector('[data-eclat-note-status]');
   if(label)label.textContent='Modifications non enregistrées';
  }));
+}
+function bindActions(){
+ // Native select preserves the two approved Soirée action buttons and keeps
+ // the choice per-account. Do not accept delayed change events from old DOM.
+ const lengthSelect=root.querySelector('[data-session-length-select]');
+ const lengthUserId=state.user?.id,lengthGeneration=authFeedbackGeneration;
+ lengthSelect?.addEventListener('change',()=>{
+  if(!root.contains(lengthSelect)||state.user?.id!==lengthUserId||
+     authFeedbackGeneration!==lengthGeneration||state.tab!=='session')return;
+  handle('session-length:'+lengthSelect.value).then(()=>{
+   if(state.user?.id===lengthUserId&&authFeedbackGeneration===lengthGeneration)
+    root.querySelector('[data-session-length-select]')?.focus({preventScroll:true});
+  }).catch(fail);
+ });
+ const intensitySelect=root.querySelector('[data-evening-intensity-select]');
+ const intensityUserId=state.user?.id,intensityGeneration=authFeedbackGeneration;
+ intensitySelect?.addEventListener('change',()=>{
+  if(!root.contains(intensitySelect)||state.user?.id!==intensityUserId||
+     authFeedbackGeneration!==intensityGeneration||state.tab!=='session')return;
+  handle('evening-intensity:'+intensitySelect.value).then(()=>{
+   if(state.user?.id===intensityUserId&&authFeedbackGeneration===intensityGeneration)
+    root.querySelector('[data-evening-intensity-select]')?.focus({preventScroll:true});
+  }).catch(fail);
+ });
+ const categoryPref=root.querySelector('#evening-category-confirm-pref');
+ categoryPref?.addEventListener('change',()=>handle('evening-confirm-pref-toggle').catch(fail));
+ bindEclatPrivateNoteFields();
  const librarySearch=root.querySelector('#custom-card-search');
  const libraryFilter=root.querySelector('#custom-card-filter');
  const updateLibraryFilter=()=>{
@@ -592,7 +687,7 @@ function bindActions(){
 
 }
 
-let inviteAcceptanceBusy=false;
+let inviteAcceptanceBusy=false,inviteAcceptanceRequest=null;
 function pendingInviteUrl(recover=false){
  // A referral signup must return to the current website after Google OAuth
  // and after email verification, not to the legacy Mon Wallet Pages origin.
@@ -636,8 +731,20 @@ function rememberVerifiedInvitation(invitationId){
  state.inviteAccepted=false;state.showDiscover=false;state.showAuth=false;
  state.inviteError=null;state.inviteAttemptKey=null;
 }
-async function resolveVerifiedSignup(createOwner=false){
- const result=await rpc('resolve_love_signup',{p_create_owner:!!createOwner});
+async function resolveVerifiedSignup(createOwner=false,isCurrent=null){
+ const ownerId=state.user?.id,ownerGeneration=authFeedbackGeneration;
+ const current=()=>state.user?.id===ownerId&&
+  authFeedbackGeneration===ownerGeneration&&(!isCurrent||isCurrent());
+ let result;
+ try{result=await rpc('resolve_love_signup',{p_create_owner:!!createOwner});}
+ catch(error){
+  // Do not show Alice's failed lookup on Bob's screen or a fresh login.
+  if(!current())return {status:'account_changed'};
+  throw error;
+ }
+ // A stale lookup must not cache the previous session's invitation, even
+ // when that person signs out and back into the same account.
+ if(!current())return {status:'account_changed'};
  if(result?.status==='invitation'){
   if(!result.invitation_id)throw Error('Référence d’invitation manquante.');
   rememberVerifiedInvitation(result.invitation_id);
@@ -651,26 +758,338 @@ async function autoAcceptPendingInvite(){
  if(!verifiedLoveEmail(state.user)){
   state.inviteError='Confirmez votre adresse courriel pour terminer l’invitation.';return;
  }
- const key=state.user.id+':'+invite.kind+':'+invite.value;
- if(inviteAcceptanceBusy||state.inviteAttemptKey===key)return;
+ const ownerId=state.user.id,ownerGeneration=authFeedbackGeneration;
+ const key=ownerId+':'+invite.kind+':'+invite.value;
+ // An old network request must not block this user's newly authenticated
+ // session. Keep the duplicate-tap guard within the SAME auth generation.
+ const superseded=inviteAcceptanceRequest&&
+  (inviteAcceptanceRequest.ownerId!==ownerId||
+   inviteAcceptanceRequest.ownerGeneration!==ownerGeneration);
+ if(!superseded&&(inviteAcceptanceBusy||state.inviteAttemptKey===key))return;
+ const request={ownerId,ownerGeneration};
+ inviteAcceptanceRequest=request;
  state.inviteAttemptKey=key;inviteAcceptanceBusy=true;state.inviteError=null;
+ // A former account or replaced invitation cannot complete this UI action.
+ const current=()=>{
+  const pending=pendingInviteReference(sessionStorage);
+  return state.user?.id===ownerId&&authFeedbackGeneration===ownerGeneration&&
+   inviteAcceptanceRequest===request&&
+   state.inviteAttemptKey===key&&pending?.kind===invite.kind&&pending?.value===invite.value;
+ };
  try{
-  if(invite.kind==='id')await rpc('accept_love_match_by_id',{p_invitation:invite.value});
-  else await rpc('accept_love_match',{p_token_hash:await hashToken(invite.value)});
+  const args=invite.kind==='id'?{p_invitation:invite.value}:
+   {p_token_hash:await hashToken(invite.value)};
+  if(!current())return;
+  await rpc(invite.kind==='id'?'accept_love_match_by_id':'accept_love_match',args);
+  if(!current())return;
   finishInviteReference();
   state.inviteWelcome=true;state.tab='home';state.showAuth=false;
- }catch(error){state.inviteError=invitationAuthMessage(error);}
- finally{inviteAcceptanceBusy=false;}
+ }catch(error){
+  if(current())state.inviteError=invitationAuthMessage(error);
+ }finally{
+  if(inviteAcceptanceRequest===request){
+   inviteAcceptanceBusy=false;inviteAcceptanceRequest=null;
+   // An obsolete attempt must not permanently block retrying the same
+   // invitation after reauthentication with the same user ID.
+   if(authFeedbackGeneration!==ownerGeneration&&state.inviteAttemptKey===key)
+    state.inviteAttemptKey=null;
+  }
+ }
 }
 function verificationPendingHtml(email){
  return emailConfirmationHtml(email,{needsSignIn:!state.user,invitation:!!pendingInviteReference(sessionStorage),google:CONFIG.oauthProviders?.includes('google')===true});
 }
+// Preserve the private account boundary even when SIGNED_IN arrives without
+// an intermediate SIGNED_OUT, as can happen across multiple browser tabs.
+let latestAuthReloadRequest=null,authFeedbackGeneration=0;
+function adoptAuthenticatedIdentity(nextUser){
+ const previousId=state.user?.id||null,nextId=nextUser?.id||null;
+ if(previousId!==nextId){
+  authFeedbackGeneration++;
+  // A previous login's delayed official die receipt must not repaint this user.
+  latestDiceRollRequest=null;
+  state.diceStatus=null;state.rollAnimationFace=null;state.rollAnimationKind=null;
+  latestAuthReloadRequest=null;
+  currentSignoutRequest=null;
+  currentPasswordAuthRequest=null;
+  currentRecoveryPasswordRequest=null;
+  currentProfileSave=null;
+  inviteAcceptanceRequest=null;inviteAcceptanceBusy=false;
+  state.inviteAttemptKey=null;state.inviteError=null;state.inviteWelcome=false;
+  // Close the previous couple's Realtime channel before the new account
+  // can receive notifications or any private session refresh from it.
+  if(state.channel){
+   const obsolete=state.channel;
+   state.channel=null;
+   void client.removeChannel(obsolete).catch(()=>{});
+  }
+  if(realtimeReconnectTimer){
+   clearTimeout(realtimeReconnectTimer);realtimeReconnectTimer=null;
+  }
+  eclatNoteDrafts.clear();
+  latestEclatAudioOwner=null;eclatAudio.stop();state.eclatMusic=false;
+  latestEclatHistoryRead=null;latestEclatStatusRead=null;latestEclatActionRequest=null;
+  state.eclat=null;state.eclatHistory=[];state.eclatHistoryCouple=null;
+  state.eclatHistoryUserId=null;state.eclatHistoryError=false;
+  // The completed-coffret banner belongs to the previous couple too.
+  state.eclatFinished=null;
+  state.profile=null;state.coupleId=null;state.couple=null;state.members=[];
+  // An identity switch must also invalidate the two-member privacy scope;
+  // the next account must establish its own membership before Éclat reloads.
+  state.eclatMembershipScope=null;
+  // Recovery and verification UI also belongs to the previous login.
+  state.passwordRecovery=false;state.emailVerificationPending=false;
+  state.authNotice=null;state.authNeedsEmailConfirmation=false;
+  state.testModeEligible=false;state.testMode='real';
+  state.personalPass=null;state.eveningInvite=null;
+  state.eveningBoard=null;state.selectedEveningChallengeId=null;
+  state.showEveningChallenges=false;state.showEveningChallenge=false;
+  state.weekly=null;state.gifts=[];state.invitations=[];
+  state.wellbeing=null;state.personalJournal=[];state.personal=null;
+  state.personalSexualCardsReady=false;state.customCards=[];
+  state.challenges=[];state.challengesHistory=[];
+  state.session=null;state.sessions=[];state.pushPrefs=null;state.referral=null;
+  // A new identity must never inherit a former couple's downloaded/private
+  // calendar, draft invitation, ritual, GPS or game board. No browser storage
+  // is deleted: saved clocks remain scoped to their original user ID.
+  state.monthly={};state.monthlyActivities=[];state.rollStatus=null;
+  state.events=[];state.journal=[];state.occasionSettings=null;state.occasionRolls=[];
+  state.advent=[];state.advent2026Config=null;state.advent2026Days=[];
+  state.adventYear=null;state.adventSelected=null;state.adventServerDate=null;
+  state.adventOpening=null;state.adventRevealing=false;
+  state.specialEventsConfig=null;state.specialEventKeys=[];state.unlockKey=null;
+  state.weeklyRollHistory=[];state.calendarPassQuota=[];state.monthlyPassQuota=null;
+  state.calendarPassMonth=null;state.cycleStatus=null;state.cycleDeferred=null;state.cycleAnswerRequest=null;
+  state.eveningHistoryStats=[];state.eveningCalendarChallenges=[];
+  state.eveningReviews=[];state.reviewModalSessionId=null;
+  state.reviewDismissedSessionId=null;state.reviewDraft={};state.reviewSaving=false;
+  currentReviewSaveRequest=null;
+  state.eveningQueueSeen=null;state.loveExcludedCards=[];
+  state.eveningStartContext=null;state.timerStartContext=null;
+  state.legacyAnswerContext=null;state.timerCompletionContext=null;
+  state.timerCompletionRetryOwner=null;
+  state.redrawBusy=false;state.redrawBusyContext=null;state.redrawReady=false;
+  state.eveningInviteBusy=false;state.eveningGiftRequest=null;
+  state.inviteDraft=null;state.inviteCopyFallback=false;
+  state.lastInviteShareAttempt=null;
+  state.jsonPending=null;state.geoVenue=null;state.geoReservation=null;
+  state.geoLookup='idle';state.geoBookingEdit=false;
+  state.pushDevice=null;state.guidance='playful';
+  state.installModalOpen=false;state.installAfterSignup=false;
+  state.showInstallSteps=false;state.forceInstallGuide=false;
+  notificationFeedback=null;worldGpsDraft=null;worldFx=null;worldFxFailed=null;
+  timerCompletionInFlight=null;timerCompletionRetryAt=0;
+  savedTimerScanOwner=null;savedTimerScanAfter=0;savedTimerSyncInFlight=null;
+  // Persist the former owner's remaining time before clearing its live timer.
+  // saveChallengeTimer keys by challengeTimer.ownerUserId, never state.user.
+  saveChallengeTimer();
+  Object.assign(challengeTimer,{id:null,ownerUserId:null,ownerSessionId:null,
+   durationMs:0,remainingMs:0,deadline:0,running:false,notified:false,
+   autoCompletePending:false,decisionPending:false});
+  // Alert preference is reloaded for the next authenticated account below.
+  state.tab='home';
+ }
+ state.user=nextUser;
+ if(previousId!==nextId)challengeTimer.mode=readTimerAlertMode(nextId);
+ return previousId!==nextId;
+}
 async function refreshVerifiedIdentity(){
  if(!state.user)return false;
+ const expectedId=state.user.id;
+ // A SIGNED_OUT followed by a fresh SIGNED_IN can return to the *same*
+ // user ID while this network request is still pending. Invalidate the
+ // old getUser response on every real identity-boundary transition.
+ const expectedGeneration=authFeedbackGeneration;
  const {data,error}=await client.auth.getUser();
- if(error||!data?.user){state.user=null;return false;}
+ if(state.user?.id!==expectedId||authFeedbackGeneration!==expectedGeneration)return null;
+ if(error||!data?.user){
+  adoptAuthenticatedIdentity(null);
+  // reload() sees a different account after adopt() and correctly drops
+  // its stale results. It cannot repaint for us: clear the old private
+  // screen here when getUser() reports an expired/revoked session.
+  state.emailVerificationPending=false;
+  render();
+  return false;
+ }
+ if(data.user.id!==expectedId){
+  adoptAuthenticatedIdentity(data.user);
+  render(); // Remove the former account before loading this one's profile.
+  setTimeout(()=>reload().catch(fail),0);
+  return null;
+ }
  state.user=data.user;
  return verifiedLoveEmail(data.user);
+}
+// Avoid issuing later profile RPCs under a replacement Supabase login.
+let currentProfileSave=null;
+async function saveProfileForCurrentAccount(name,birthday,gender,playStyle){
+ const ownerId=state.user?.id;
+ if(!ownerId)throw Error('Connectez-vous pour enregistrer votre profil.');
+ // An obsolete in-flight write cannot block a new login with the same UID.
+ if(currentProfileSave?.ownerId===ownerId&&
+    currentProfileSave.ownerGeneration===authFeedbackGeneration)
+  throw Error('Enregistrement du profil déjà en cours…');
+ const ownerGeneration=authFeedbackGeneration;
+ const owner={ownerId,ownerGeneration};currentProfileSave=owner;
+ const current=()=>state.user?.id===ownerId&&
+  authFeedbackGeneration===ownerGeneration&&currentProfileSave===owner;
+ const steps=[
+  ['complete_love_registration',{p_name:name,p_birthday_md:birthday}],
+  ['save_my_gender',{p_gender:gender}],
+  ['save_my_play_style',{p_style:playStyle}]
+ ];
+ try{
+  for(const [method,args] of steps){
+   if(!current())return false;
+   try{await rpc(method,args);}
+   catch(error){if(!current())return false;throw error;}
+   if(!current())return false;
+  }
+  return true;
+ }finally{if(currentProfileSave===owner)currentProfileSave=null;}
+}
+// Logout can await FCM and Realtime cleanup. Those awaits must not cause
+// another account that signed in meanwhile to be signed out by mistake.
+let currentSignoutRequest=null;
+async function signOutCurrentAccount(){
+ const ownerId=state.user?.id;
+ if(!ownerId)return false;
+ if(currentSignoutRequest?.ownerId===ownerId&&
+    currentSignoutRequest.ownerGeneration===authFeedbackGeneration)return false;
+ const request={ownerId,ownerGeneration:authFeedbackGeneration};
+ currentSignoutRequest=request;
+ // Cleanup may await FCM, Realtime or Supabase while the same account
+ // signs back in. The old logout must never revoke that new session.
+ const current=()=>state.user?.id===ownerId&&
+  authFeedbackGeneration===request.ownerGeneration&&currentSignoutRequest===request;
+ try{
+  if(safeNativePushToken()){
+   try{await disablePush(client,ownerId);}
+   catch(error){if(current())console.warn('Désinscription FCM',error?.code||'');}
+   if(!current())return false;
+  }
+  if(state.channel){
+   const channel=state.channel;
+   try{await client.removeChannel(channel);}
+   catch(error){if(!current())return false;throw error;}
+   if(!current())return false;
+   if(state.channel===channel)state.channel=null;
+  }
+  if(!current())return false;
+  let outcome;
+  try{outcome=await client.auth.signOut();}
+  catch(error){if(!current())return false;throw error;}
+  // SIGNED_OUT may have already invalidated this owner and painted the
+  // anonymous view. Otherwise, explicitly finish clearing private state.
+  if(!current())return false;
+  if(outcome?.error)throw outcome.error;
+  adoptAuthenticatedIdentity(null);
+  state.showAuth=false;state.passwordRecovery=false;
+  keepAuthModeInUrl(null);
+  state.installAfterSignup=false;state.installModalOpen=false;
+  state.showInstallSteps=false;state.forceInstallGuide=false;
+  render();
+  return true;
+ }finally{
+  if(currentSignoutRequest===request)currentSignoutRequest=null;
+ }
+}
+// A password-recovery RPC may settle after a second account signs in.
+// Never finish the old recovery UI or surface its errors on the new account.
+let currentRecoveryPasswordRequest=null;
+async function updateRecoveryPasswordForCurrentAccount(password){
+ const ownerId=state.user?.id;
+ if(!ownerId||!state.passwordRecovery)return false;
+ if(currentRecoveryPasswordRequest?.ownerId===ownerId&&
+    currentRecoveryPasswordRequest.ownerGeneration===authFeedbackGeneration)
+  throw Error('Modification du mot de passe déjà en cours…');
+ const request={ownerId,ownerGeneration:authFeedbackGeneration};
+ currentRecoveryPasswordRequest=request;
+ // A password reset from a previous sign-in must never finish on a
+ // reauthenticated session, even if its user ID is unchanged.
+ const current=()=>state.user?.id===ownerId&&state.passwordRecovery&&
+  authFeedbackGeneration===request.ownerGeneration&&
+  currentRecoveryPasswordRequest===request;
+ try{
+  let response;
+  try{response=await client.auth.updateUser({password});}
+  catch(error){if(!current())return false;throw error;}
+  if(!current())return false;
+  if(response?.error)throw response.error;
+  return true;
+ }finally{
+  if(currentRecoveryPasswordRequest===request)currentRecoveryPasswordRequest=null;
+ }
+}
+// Email/reset messages are only valid for the screen and signed-in identity
+// which initiated the request. Changing tabs/forms also invalidates them.
+function captureAuthFeedbackContext(){
+ const generation=authFeedbackGeneration,userId=state.user?.id??null,
+  mode=state.authMode,verification=!!state.emailVerificationPending,
+  showAuth=!!state.showAuth;
+ return ()=>authFeedbackGeneration===generation&&
+  (state.user?.id??null)===userId&&state.authMode===mode&&
+  !!state.emailVerificationPending===verification&&!!state.showAuth===showAuth;
+}
+// Password sign-in/sign-up can settle after a newer Google login, another
+// email submission or a change of Auth screen. Only its original form may
+// display errors, set login state or request a reload.
+let currentPasswordAuthRequest=null;
+async function submitPasswordAuth(verb,email,password){
+ const ownerId=state.user?.id??null;
+ const validContext=captureAuthFeedbackContext();
+ if(currentPasswordAuthRequest?.current())return false;
+ const request={};
+ const current=()=>currentPasswordAuthRequest===request&&
+  validContext()&&(state.user?.id??null)===ownerId;
+ request.current=current;
+ currentPasswordAuthRequest=request;
+ let acceptedUserId=null;
+ try{
+  if(verb==='auth-signup-password'){
+   const {data,error}=await client.auth.signUp({email,password,
+    options:{emailRedirectTo:pendingInviteUrl()}});
+   if(!current())return false;
+   if(error)throw error;
+   state.authDraftEmail=email;
+   if(data?.session?.user&&verifiedLoveEmail(data.session.user)){
+    acceptedUserId=data.session.user.id;
+    adoptAuthenticatedIdentity(data.session.user);
+    state.showAuth=false;
+    await reload();
+    return true;
+   }
+   // No session can mean email verification or an existing identity;
+   // never claim that a confirmation email was actually delivered.
+   state.emailVerificationPending=true;state.authNotice=null;render();
+   return true;
+  }
+  const {data,error}=await client.auth.signInWithPassword({email,password});
+  if(!current())return false;
+  if(error){
+   state.authDraftEmail=email;
+   state.authNeedsEmailConfirmation=error.code==='email_not_confirmed'||
+    /email not confirmed|courriel non confirm/i.test(error.message||'');
+   if(state.authNeedsEmailConfirmation){
+    state.authNotice='Votre adresse courriel doit être confirmée avant de vous connecter. Vous pouvez demander un nouveau courriel ci-dessous.';
+    render();
+   }else authMessage(passwordAuthMessage(error));
+   return false;
+  }
+  if(!data?.user)throw Error('Aucune session ouverte.');
+  acceptedUserId=data.user.id;
+  adoptAuthenticatedIdentity(data.user);
+  state.authNeedsEmailConfirmation=false;
+  state.authNotice=null;state.showAuth=false;
+  await reload();
+  return true;
+ }catch(error){
+  if(current()||(acceptedUserId&&state.user?.id===acceptedUserId))
+   authMessage(passwordAuthMessage(error));
+  return false;
+ }finally{
+  if(currentPasswordAuthRequest===request)currentPasswordAuthRequest=null;
+ }
 }
 function authMessage(message){
  const feedback=id('auth-form-feedback');
@@ -802,22 +1221,30 @@ function render(){
 }
 async function reload(){
  if(!state.user)return;
+ const ownerId=state.user.id,ownerGeneration=authFeedbackGeneration,request={};
+ latestAuthReloadRequest=request;
+ // A fresh login can reuse the same user ID. Never hydrate a new session
+ // with asynchronous reads that started under the previous auth generation.
+ const current=()=>state.user?.id===ownerId&&
+  authFeedbackGeneration===ownerGeneration&&latestAuthReloadRequest===request;
  // Only show after 150ms for slow data refreshes. Never interrupt a live
  // dice animation, timer, unsaved form or the initial static boot splash.
  const useLoad=!root.querySelector('[data-lr-boot]')&&!state.diceStatus&&
   !challengeTimer.running&&!hasUnsavedForm()&&!document.hidden;
  const loaderTicket=useLoad?window.LoveRollLoader?.begin(150):null;
  try{
- if(!(await refreshVerifiedIdentity())){
-  state.profile=null;state.coupleId=null;state.members=[];state.wellbeing=null;
+ const verified=await refreshVerifiedIdentity();
+ if(!current())return;
+ if(!verified){
+  state.profile=null;state.coupleId=null;acceptEclatMembership([]);state.wellbeing=null;
   state.personalJournal=[];state.pushPrefs=null;
   state.emailVerificationPending=true;state.showAuth=true;
   render();return;
  }
  state.emailVerificationPending=false;
  // Verified by an authenticated, fixed-identity Supabase RPC. No public email allowlist.
- try{state.testModeEligible=(await rpc('love_test_mode_allowed'))===true;}
- catch{state.testModeEligible=false;}
+ try{const allowed=await rpc('love_test_mode_allowed');if(!current())return;state.testModeEligible=allowed===true;}
+ catch{if(!current())return;state.testModeEligible=false;}
  state.testMode=previewMode(state.testMode,state.testModeEligible);
  const [profiles,assessments,personal,pushSettings]=await Promise.all([
   query('couple_profiles',{eq:{id:state.user.id}}),
@@ -825,13 +1252,17 @@ async function reload(){
   query('love_personal_intimacy',{eq:{user_id:state.user.id}}),
   query('love_push_preferences',{eq:{user_id:state.user.id}})
  ]);
+ if(!current())return;
  state.pushPrefs=pushSettings[0]||{enabled:false,weekly:true,invitation:true,monthly:true,special:true};
  const nativeToken=safeNativePushToken();
  if(state.pushPrefs.enabled&&nativeToken){
   const {error}=await client.rpc('love_claim_native_push_token',{p_token:nativeToken});
+  if(!current())return;
   if(error)console.warn('Enregistrement FCM impossible',error.code||'');
  }
- state.pushDevice=await currentPushDevice(client,state.user?.id);
+ const device=await currentPushDevice(client,ownerId);
+ if(!current())return;
+ state.pushDevice=device;
 
  state.profile=profiles[0]||null;
  document.documentElement.lang=localeOrDefault(state.profile?.preferred_locale);
@@ -840,32 +1271,36 @@ async function reload(){
  // Safari can retain an old invitation while this verified account already
  // belongs to a duo. Check real Supabase membership FIRST: never attempt a
  // second acceptance, disconnect a member or hide their existing Home screen.
- const knownMembership=await query('couple_members',{eq:{user_id:state.user.id}});
- if(!knownMembership.length)await autoAcceptPendingInvite();
+ const knownMembership=await query('couple_members',{eq:{user_id:ownerId}});
+ if(!current())return;
+ if(!knownMembership.length){await autoAcceptPendingInvite();if(!current())return;}
  const membership=knownMembership.length?knownMembership:
-  await query('couple_members',{eq:{user_id:state.user.id}});
+  await query('couple_members',{eq:{user_id:ownerId}});
+ if(!current())return;
  const previousCouple=state.coupleId;
  state.coupleId=membership[0]?.couple_id||null;
  if(!state.coupleId&&!pendingInviteReference(sessionStorage)){
   // A verification email may open in a different browser; find the pending
   // invitation from the authenticated recipient before showing "Créer un duo".
-  const resolution=await resolveVerifiedSignup(false);
+  const resolution=await resolveVerifiedSignup(false,current);
+  if(!current())return;
   if(resolution?.status==='linked'){
-   const latest=await query('couple_members',{eq:{user_id:state.user.id}});
+   const latest=await query('couple_members',{eq:{user_id:ownerId}});
+   if(!current())return;
    state.coupleId=latest[0]?.couple_id||null;
   }
  }
- try{state.referral=await rpc('love_my_referral');}
- catch(error){state.referral=null;console.warn('Référencement indisponible',error?.message||'error');}
+ try{const referral=await rpc('love_my_referral');if(!current())return;state.referral=referral;}
+ catch(error){if(!current())return;state.referral=null;console.warn('Référencement indisponible',error?.message||'error');}
  if(!state.coupleId){
-  if(state.channel){await client.removeChannel(state.channel);state.channel=null;}
-  state.couple=null;state.members=[];state.weekly=null;state.monthly={};state.customCards=[];state.monthlyActivities=[];state.rollStatus=null;state.gifts=[];
-  state.session=null;state.sessions=[];state.events=[];state.journal=[];state.eveningHistoryStats=[];state.eveningCalendarChallenges=[];state.weeklyRollHistory=[];state.calendarPassQuota=[];state.monthlyPassQuota=null;state.calendarPassMonth=null;state.cycleStatus=null;state.cycleDeferred=null;state.eveningReviews=[];state.reviewModalSessionId=null;
+  if(state.channel){const channel=state.channel;await client.removeChannel(channel);if(!current())return;if(state.channel===channel)state.channel=null;}
+  state.couple=null;acceptEclatMembership([]);state.weekly=null;state.monthly={};state.customCards=[];state.monthlyActivities=[];state.rollStatus=null;state.gifts=[];
+  state.session=null;state.sessions=[];state.events=[];state.journal=[];state.eveningHistoryStats=[];state.eveningCalendarChallenges=[];state.weeklyRollHistory=[];state.calendarPassQuota=[];state.monthlyPassQuota=null;state.calendarPassMonth=null;state.cycleStatus=null;state.cycleDeferred=null;state.cycleAnswerRequest=null;state.eveningReviews=[];state.reviewModalSessionId=null;
   state.advent=[];state.adventYear=null;state.adventSelected=null;state.adventServerDate=null;state.advent2026Config=null;state.advent2026Days=[];state.specialEventsConfig=null;state.specialEventKeys=[];state.unlockKey=null;
   state.invitations=[];state.inviteDraft=null;state.eveningInvite=null;state.challengesHistory=[];state.eveningHistoryStats=[];state.eveningCalendarChallenges=[];state.eveningReviews=[];state.reviewModalSessionId=null;state.reviewDraft={};
   state.tab=['settings','personal-journal'].includes(state.tab)?state.tab:'home';
-  state.guidance=state.wellbeing?await rpc('get_love_guidance',{}):'gentle';
-  render();return;
+  const guidance=state.wellbeing?await rpc('get_love_guidance',{}):'gentle';
+  if(!current())return;state.guidance=guidance;render();return;
  }
  if(previousCouple&&previousCouple!==state.coupleId)state.unlockKey=null;
  const [couple,members,invitations]=await Promise.all([
@@ -873,6 +1308,7 @@ async function reload(){
   query('couple_members',{eq:{couple_id:state.coupleId}}),
   query('couple_invitations',{eq:{couple_id:state.coupleId},order:'created_at'})
  ]);
+ if(!current())return;
  state.invitations=invitations;
  const completedInvite=pendingInviteReference(sessionStorage);
  // A full duo takes precedence over an old/wrong Messenger invitation on
@@ -898,8 +1334,12 @@ async function reload(){
   if(state.couple?.owner_user_id===state.user.id){
    try{
     const result=await rpc('love_referral_claim',{p_code:pendingCode});
+    if(!current())return;
     if(result?.status!=='create_duo_first')clearPendingReferral();
-   }catch(error){console.warn('Référencement en attente',error?.message||'error');}
+   }catch(error){
+    if(!current())return;
+    console.warn('Référencement en attente',error?.message||'error');
+   }
   }else clearPendingReferral();
  }
 
@@ -914,6 +1354,7 @@ async function reload(){
    query('love_advent_2026_days',{eq:{couple_id:state.coupleId}}),
    query('love_special_event_catalogue',{eq:{couple_id:state.coupleId}})
   ]);
+  if(!current())return;
   // The original saved library is NEVER overwritten by the MEDIUM template.
   // In personal mode, use only this couple's editable 100-card copy.
   // The automatic secret pool is NEVER fetched into browser state.
@@ -929,14 +1370,64 @@ async function reload(){
   state.advent2026Config=null;state.advent2026Days=[];state.specialEventsConfig=null;
  }
  const profilesAll=await query('couple_profiles');
- state.members=members.sort((a,b)=>a.joined_at.localeCompare(b.joined_at)).map(m=>({...m,name:profilesAll.find(p=>p.id===m.user_id)?.display_name||'Profil à compléter',gender:profilesAll.find(p=>p.id===m.user_id)?.gender||null,playStyle:profilesAll.find(p=>p.id===m.user_id)?.play_style||'medium'}));
- state.guidance=state.wellbeing?await rpc('get_love_guidance',{p_couple:state.coupleId}):'gentle';
+ if(!current())return;
+ acceptEclatMembership(members.sort((a,b)=>a.joined_at.localeCompare(b.joined_at)).map(m=>({...m,name:profilesAll.find(p=>p.id===m.user_id)?.display_name||'Profil à compléter',gender:profilesAll.find(p=>p.id===m.user_id)?.gender||null,playStyle:profilesAll.find(p=>p.id===m.user_id)?.play_style||'medium'})));
+ const guidance=state.wellbeing?await rpc('get_love_guidance',{p_couple:state.coupleId}):'gentle';
+ if(!current())return;state.guidance=guidance;
  if(members.length===2)await refreshShared();
- subscribe();render();
+ if(!current())return;subscribe();render();
+ }catch(error){
+  // A retired account's request may reject after its Realtime channel and
+  // private state have already been revoked. Do not show an error or toast
+  // from that account on the new user's screen.
+  if(current())throw error;
  }finally{if(loaderTicket!=null)window.LoveRollLoader?.end(loaderTicket);}
 }
-async function refreshShared(){
- const c=state.coupleId;
+// A redraw started under another account or tab cannot disable the buttons
+// of the currently visible evening. Each in-flight redraw has its own owner.
+function isActiveEveningRedrawPending(){
+ return isEveningRedrawBusyForCurrentView(state);
+}
+function isActiveEveningGiftPending(){
+ const ticket=state.eveningGiftRequest;
+ return !!ticket&&ticket.userId===state.user?.id&&
+  ticket.coupleId===state.coupleId&&ticket.sessionId===state.session?.id&&
+  ticket.generation===authFeedbackGeneration;
+}
+async function refreshShared(expectedContext=null){
+ const c=state.coupleId,requestUserId=state.user?.id;
+ const ownerGeneration=authFeedbackGeneration;
+ // A later ordinary refresh supersedes an earlier ordinary refresh, even
+ // for the SAME account/couple. Never roll back newer Supabase results.
+ // Scoped D100 actions keep their own independent ownership token.
+ const unscopedRequest=expectedContext?null:{};
+ if(!expectedContext)state.unscopedSharedRefreshRequest=unscopedRequest;
+ else state.unscopedSharedRefreshRequest=null;
+ // A newer action-owned D100 read must also supersede any older general
+ // background read; otherwise its stale result can overwrite the action.
+ // Even a normal background refresh is owned by the login and couple that
+ // started it. Its HTTP responses must never populate a replacement account.
+ // Tab changes are allowed here; scoped action refreshes remain tab-specific.
+ // A server-confirmed completion may close the original evening DURING this
+ // scoped refresh. Permit that one transition, never a different session.
+ let legacyClosedDuringRefresh=false;
+ const current=()=>state.coupleId===c&&state.user?.id===requestUserId&&
+  authFeedbackGeneration===ownerGeneration&&
+  (expectedContext||state.unscopedSharedRefreshRequest===unscopedRequest)&&
+  (!expectedContext||(
+  // Older redraw contexts had no coupleId; timer-completion contexts do.
+  (expectedContext.coupleId===undefined||expectedContext.coupleId===c)&&
+  // Older redraw contexts had no coupleId; timer-completion contexts do.
+  state.user?.id===expectedContext.userId&&state.tab===expectedContext.tab&&
+  (isSameEveningResponseContext(state,expectedContext)||
+   (legacyClosedDuringRefresh&&state.session===null&&
+    (state.legacyAnswerContext===expectedContext||
+     state.timerCompletionContext===expectedContext)))&&
+  (state.redrawBusyContext===expectedContext||
+   state.eveningStartContext===expectedContext||
+   state.legacyAnswerContext===expectedContext||
+   state.timerCompletionContext===expectedContext)));
+ if(!current())return;
  const [rolls,sessions,advents,events,diary,occasionSettings,occasionRolls,keys,challengeHistory,gifts,adventServerDate,eveningStats,calendarChallenges,eveningReviews,calendarPasses,monthlyPassQuota,cycleInfo]=await Promise.all([
  query('couple_rolls',{eq:{couple_id:c}}),
  query('couple_sessions',{eq:{couple_id:c},order:'started_at'}),
@@ -956,24 +1447,41 @@ async function refreshShared(){
  rpc('my_love_monthly_pass_quota',{p_couple:c}),
  rpc('love_cycle_status',{p_couple:c})
  ]);
+ if(!current())return;
+ // Check the server's target session BEFORE changing any client state. A
+ // stale answer must not load a brand-new evening from another device.
+ if(!mayApplyScopedEveningRefresh(sessions,expectedContext,
+    state.legacyAnswerContext===expectedContext||
+    state.timerCompletionContext===expectedContext))return;
  state.cycleStatus=cycleInfo;
  if(!cycleInfo?.pending)state.cycleDeferred=null;
  state.eveningHistoryStats=Array.isArray(eveningStats)?eveningStats:[];
  state.eveningCalendarChallenges=Array.isArray(calendarChallenges)?calendarChallenges:[];
  state.calendarPassQuota=Array.isArray(calendarPasses)?calendarPasses:[];
  state.monthlyPassQuota=monthlyPassQuota;
- try{state.redrawReady=(await rpc('love_redraw_capabilities',{p_couple:c}))===true;}catch{state.redrawReady=false;}
- if(state.redrawReady){try{const list=await rpc('my_love_cycle_exclusions',{p_couple:c});state.loveExcludedCards=Array.isArray(list)?list:[];}catch{state.loveExcludedCards=[];}}else state.loveExcludedCards=[];
+ try{
+  const available=await rpc('love_redraw_capabilities',{p_couple:c});
+  if(!current())return;
+  state.redrawReady=available===true;
+ }catch{if(!current())return;state.redrawReady=false;}
+ if(state.redrawReady){
+  try{
+   const list=await rpc('my_love_cycle_exclusions',{p_couple:c});
+   if(!current())return;
+   state.loveExcludedCards=Array.isArray(list)?list:[];
+  }catch{if(!current())return;state.loveExcludedCards=[];}
+ }else state.loveExcludedCards=[];
  if(state.redrawReady){
   try{
    const links=await rpc('love_evening_replacement_links',{p_couple:c});
+   if(!current())return;
    const byReplacement=new Map((Array.isArray(links)?links:[])
     .filter(link=>link?.replacement_id&&link?.origin_id)
     .map(link=>[link.replacement_id,link.origin_id]));
    state.eveningCalendarChallenges=state.eveningCalendarChallenges.map(challenge=>({
     ...challenge,replaces_challenge_id:byReplacement.get(challenge.id)||null
    }));
-  }catch(error){console.warn('Liens de repige du calendrier indisponibles',error?.code||'');}
+  }catch(error){if(!current())return;console.warn('Liens de repige du calendrier indisponibles',error?.code||'');}
  }
  state.calendarPassMonth=state.eveningCalendarMonth||month();
  state.eveningReviews=Array.isArray(eveningReviews)?eveningReviews:[];
@@ -992,10 +1500,17 @@ async function refreshShared(){
    query('love_monthly_places',{eq:{roll_id:activeMonthlyRoll.id}}),
    query('love_monthly_reservations',{eq:{roll_id:activeMonthlyRoll.id}})
   ]);
+  if(!current())return;
   state.geoVenue=places[0]||null;state.geoReservation=bookings[0]||null;
   state.geoLookup=state.geoVenue?.state||'idle';
  }else{state.geoVenue=null;state.geoReservation=null;state.geoLookup='idle';state.geoBookingEdit=false;}
- state.session=sessions.find(s=>s.finished_at===null)||null;
+ const refreshedSession=sessions.find(s=>s.finished_at===null)||null;
+ legacyClosedDuringRefresh=!!(expectedContext&&
+  (state.legacyAnswerContext===expectedContext||
+   state.timerCompletionContext===expectedContext)&&
+  state.session?.id===expectedContext.sessionId&&refreshedSession===null&&
+  sessions.some(s=>s.id===expectedContext.sessionId&&s.finished_at));
+ state.session=refreshedSession;
  state.sessions=sessions;state.events=events;state.journal=diary;state.advent=advents;state.adventServerDate=adventServerDate;
  // After manual/automatic closure, both partners see their own review bubble.
  // A dismissed bubble stays dismissed in this tab; the calendar offers reopening.
@@ -1021,6 +1536,7 @@ async function refreshShared(){
     rpc('my_love_roll_status',{p_session:state.session.id}),
     rpc('my_love_evening_board',{p_session:state.session.id})
   ]);
+  if(!current())return;
   state.personal=personal;
   // The SELECT policy also restricts these rows, so a partner never gets
   // another person's challenge title, description or D100 face.
@@ -1043,12 +1559,22 @@ async function refreshShared(){
  // Only counts are revealed to the invited partner; titles remain owner-private.
  try{
   const totals=await rpc('my_love_evening_card_totals',{p_couple:c});
+  if(!current())return;
   state.playableCounts=Array.isArray(totals)?totals[0]||null:null;
- }catch(error){state.playableCounts=null;}
- try{await refreshEclatStatus();}catch(error){console.warn('Éclat temporairement indisponible',error?.code||'');}
+ }catch(error){if(!current())return;state.playableCounts=null;}
+ // The redraw's scoped refresh must not run unrelated Eclat work that can
+ // commit stale state while the active account is being switched.
+ if(!expectedContext){
+  try{await refreshEclatStatus();}catch(error){console.warn('Éclat temporairement indisponible',error?.code||'');}
+ }
+ if(!current())return;
  // A separate, private read: no partner's D6 face or challenge is revealed.
- try{state.eveningInvite=await rpc('love_evening_invite_status',{p_couple:c});}
- catch{state.eveningInvite=null;} // Feature hidden until its staging-approved migration exists.
+ try{
+  const invite=await rpc('love_evening_invite_status',{p_couple:c});
+  if(!current())return;
+  state.eveningInvite=invite;
+ }catch{if(!current())return;state.eveningInvite=null;} // Hidden until staging-approved migration exists.
+ return true; // A caller may render only after the scoped refresh really finished.
 }
 const liveSync=createCoupleLiveSync({
  state,query,rpc,refresh:refreshShared,render,ready:isSharedCoupleReady,
@@ -1058,17 +1584,21 @@ let realtimeReconnectTimer=null;
 function subscribe(){
  if(!state.coupleId)return;
  if(state.channel)client.removeChannel(state.channel);
- let channel=client.channel('shared-couple-'+state.coupleId);
+ const subscriberUserId=state.user?.id,subscriberCoupleId=state.coupleId;
+ let channel=client.channel('shared-couple-'+subscriberCoupleId);
+ const current=()=>state.channel===channel&&state.user?.id===subscriberUserId&&
+  state.coupleId===subscriberCoupleId;
  channel=channel.on('postgres_changes',{event:'*',schema:'public',table:'couple_members',
   filter:'couple_id=eq.'+state.coupleId},async()=>{
-   try{await reload();if(state.coupleId&&state.members.length===2)notify('♡ Votre partenaire a accepté le match !');}catch(e){fail(e);}
+   if(!current())return;
+   try{await reload();if(current()&&state.members.length===2)notify('♡ Votre partenaire a accepté le match !');}catch(e){fail(e);}
  });
  // Settings only: sync new odds to the other device without changing Soirée
  // visuals or resetting dice. Couples UPDATE is filtered by RLS membership.
  channel=channel.on('postgres_changes',{event:'UPDATE',schema:'public',table:'couples',
   filter:'id=eq.'+state.coupleId},payload=>{
   const updated=payload?.new;
-  if(!updated||updated.id!==state.coupleId||!state.couple)return;
+  if(!current()||!updated||updated.id!==state.coupleId||!state.couple)return;
   const earlierLimit=Number(state.couple.monthly_pass_limit??3);
   state.couple={...state.couple,...updated};
   if(Number(state.couple.monthly_pass_limit??3)!==earlierLimit){
@@ -1080,19 +1610,20 @@ function subscribe(){
    render();
  });
  if(state.members.length<2){
-  state.channel=channel.subscribe(status=>{if(status==='SUBSCRIBED')liveSync.request(200);});
+  state.channel=channel.subscribe(status=>{if(current()&&status==='SUBSCRIBED')liveSync.request(200);});
   return;
  }
  for(const table of ['couple_occasion_rolls','couple_occasion_settings','couple_rolls','couple_sessions','couple_challenges','couple_challenge_gifts',
   'couple_advent','couple_intimacy','couple_events'])
   channel=channel.on('postgres_changes',{event:'*',schema:'public',table,
    filter:'couple_id=eq.'+state.coupleId},async payload=>{
+    if(!current())return;
     if(payload.new?.actor_id&&payload.new.actor_id!==state.user.id)
      notify(person(payload.new.actor_id)+' a effectué une action dans votre jeu');
     liveSync.request(200);
    });
  channel=channel.on('postgres_changes',{event:'INSERT',schema:'public',
-  table:'couple_personal_rolls'},()=>liveSync.request(120));
+  table:'couple_personal_rolls'},()=>{if(current())liveSync.request(120);});
  // Keep the in-app invitation visible even if Push is blocked or delayed.
  // RLS limits this subscription to the two members of the exact couple.
  if(state.eveningInvite!==null){
@@ -1100,14 +1631,14 @@ function subscribe(){
   // channels working instead of subscribing to a non-existent table.
   channel=channel.on('postgres_changes',{event:'*',schema:'public',
    table:'love_evening_invitations',filter:'couple_id=eq.'+state.coupleId},
-   ()=>liveSync.request(80));
+   ()=>{if(current())liveSync.request(80);});
  }
  channel=channel.on('postgres_changes',{event:'*',schema:'public',table:'love_eclat_sessions',
   filter:'couple_id=eq.'+state.coupleId},()=>{
-  if(state.tab==='eclat')refreshEclatStatus().then(()=>{if(state.tab==='eclat')render();}).catch(console.warn);
+  if(current()&&state.tab==='eclat')refreshEclatStatus().then(()=>{if(current()&&state.tab==='eclat')render();}).catch(console.warn);
  });
  state.channel=channel.subscribe(status=>{
-   if(state.channel!==channel)return;
+   if(!current())return;
    if(status==='SUBSCRIBED'){
     if(realtimeReconnectTimer){clearTimeout(realtimeReconnectTimer);realtimeReconnectTimer=null;}
     liveSync.request(100);
@@ -1150,12 +1681,10 @@ function renderIdeas(){
   'NOS IDÉES DE SOIRÉE','Complicité et intimité selon votre rythme');
 }
 function renderInvitePanel(){
- const latest=state.invitations?.find(x=>!x.cancelled_at&&!x.accepted_at&&new Date(x.expires_at)>new Date())||
-  state.invitations?.[0];
+ const {latest,active:liveInvite}=coupleInvitationView(state.invitations,state.coupleId);
  const ready=state.members?.length===2;
  const status=invitationStatus(latest,ready);
- const active=latest&&!ready&&!latest.cancelled_at&&!latest.accepted_at&&
-  new Date(latest.expires_at)>new Date();
+ const active=!!liveInvite&&!ready;
  const draft=active?{id:latest.id,email:latest.invited_email,
   link:inviteLinkForId(CONFIG.siteUrl,latest.id)}:null;
  let html='<section class="partner-invite-panel" aria-label="Votre invitation">'+
@@ -1165,7 +1694,7 @@ function renderInvitePanel(){
   html+='<div class="partner-invite-fields"><label>Courriel de votre partenaire<input id="invite-email" type="email" autocomplete="email" aria-describedby="invite-email-hint" placeholder="partenaire@exemple.com" value="'+safe(draft?.email||latest?.invited_email||'')+'"></label>'+
    '<p id="invite-email-hint" class="tiny-note">Votre partenaire devra utiliser cette adresse pour accepter.</p>'+
    (!active?button('invite','Créer mon invitation','class="settings-primary"'):'')+'</div>';
-  if(active||!latest){
+  if(active){
    html+='<div class="partner-invite-share"><h2>Partager le lien</h2><div class="partner-invite-actions">'+
     button('send-messenger','Messenger','class="settings-secondary"')+
     button('send-sms','Texto SMS','class="settings-secondary"')+
@@ -1175,7 +1704,8 @@ function renderInvitePanel(){
   }
   if(latest&&!active)html+='<p class="tiny-note">Ce lien n’est plus actif. Créez une invitation si votre duo n’est pas encore associé.</p>';
   if(state.inviteCopyFallback&&draft)html+='<label class="invite-copy-manual">Lien à sélectionner et copier<input id="invite-manual-link" readonly aria-label="Lien d’invitation à copier" value="'+safe(draft.link)+'"></label>';
-  if(draft)html+=button('confirm-invite-sent','J’ai envoyé l’invitation','class="settings-primary"');
+  if(draft&&canConfirmInvitationShare(state.lastInviteShareAttempt,liveInvite,state.user?.id,state.coupleId))
+  html+=button('confirm-invite-sent','J’ai envoyé l’invitation','class="settings-primary"');
  }
  if(latest)html+='<details class="partner-invite-options"><summary>Détails et options du lien</summary><div class="partner-invite-option-body">'+
   '<p class="tiny-note">Destinataire : '+safe(latest.invited_email)+'<br>Préparée le '+safe(new Date(latest.created_at).toLocaleDateString('fr-CA'))+'</p>'+
@@ -1214,7 +1744,7 @@ function renderCoupleOverview(){
 }
 function renderWaitingPartner(){
  const name=safe(state.profile.display_name);
- const latest=state.invitations?.find(x=>!x.cancelled_at&&!x.accepted_at&&new Date(x.expires_at)>new Date())||state.invitations?.[0];
+ const {latest}=coupleInvitationView(state.invitations,state.coupleId);
  const status=invitationStatus(latest,false);
  frame('<section class="settings-editorial partner-editorial partner-waiting-page">'+editorialHeader('')+
   '<div class="settings-editorial-content"><div class="editorial-title"><h1>Votre espace est prêt</h1></div>'+
@@ -1234,61 +1764,383 @@ function renderWaitingPartner(){
 }
 // One private draft per account/session/step. No browser storage or text logs.
 const eclatNoteDrafts=new Map();
+// Member identities, not display names or array order, own private Éclat
+// data. A new partner or a different couple must never inherit old notes.
+function eclatMembershipScope(coupleId,members){
+ if(!isSharedCoupleReady(coupleId,members))return null;
+ const ids=members.map(m=>m?.user_id||m?.id);
+ if(ids.some(id=>typeof id!=='string'||!id)||ids[0]===ids[1])return null;
+ return JSON.stringify([coupleId,...ids.sort()]);
+}
+function acceptEclatMembership(nextMembers){
+ const scope=eclatMembershipScope(state.coupleId,nextMembers);
+ if(!scope||scope!==state.eclatMembershipScope){
+  // Invalidate pending reads/actions before their old responses can paint.
+  latestEclatHistoryRead=null;latestEclatStatusRead=null;
+  latestEclatExplicitRead=null;latestEclatActionRequest=null;
+  eclatNoteDrafts.clear();state.eclat=null;
+  state.eclatHistory=[];state.eclatHistoryError=false;
+  state.eclatHistoryCouple=null;state.eclatHistoryUserId=null;
+  state.eclatFinished=null;state.eclatGalleryScroll=0;
+  state.eclatBrowse=false;state.eclatDetails=false;
+  latestEclatAudioOwner=null;eclatAudio.stop();state.eclatMusic=false;
+ }
+ state.eclatMembershipScope=scope;
+ state.members=nextMembers;
+}
 function eclatNoteState(){
  const key=eclatNoteKey(state.eclat,state.user?.id);
- if(!key)return {};
- if(!eclatNoteDrafts.has(key)){
-  const draft={note:'',clue:'',moment_done:false,loading:true};
+ // A missing or stale access flag is not entitlement to read a private note.
+ if(!key||state.eclat?.access!==true||
+    !isSharedCoupleReady(state.coupleId,state.members))return {};
+ // A fresh Auth session with the same account ID must reload its own note.
+ // Discard any draft created under an older login before issuing a read.
+ if(!eclatNoteDrafts.has(key)||
+    eclatNoteDrafts.get(key)?.generation!==authFeedbackGeneration){
+  const draft={note:'',clue:'',moment_done:false,loading:true,dirty:false,
+   generation:authFeedbackGeneration};
   eclatNoteDrafts.set(key,draft);
-  const status={...state.eclat},userId=state.user.id;
-  loadEclatNote(client,status,userId).then(value=>Object.assign(draft,value,{saved:!!value.note||!!value.clue,error:false}))
-   .catch(()=>{draft.error=true;})
-   .finally(()=>{draft.loading=false;if(state.tab==='eclat'&&!state.eclatBrowse&&eclatNoteKey(state.eclat,state.user?.id)===key)render();});
+  const status={...state.eclat};
+  const owner={userId:state.user.id,coupleId:state.coupleId,
+   generation:authFeedbackGeneration};
+  // A retry replaces the draft while the previous read may still be pending.
+  // Never let that older read overwrite its replacement or repaint another
+  // signed-in user's private Éclat screen.
+  const current=()=>ownsCoupleAsyncRead(state,owner)&&
+   authFeedbackGeneration===owner.generation&&
+   isSharedCoupleReady(owner.coupleId,state.members)&&
+   state.eclat?.access===true&&
+   // A pending note belongs to a specific session AND chapter. A delayed
+   // response (including a 403/42501 denial) for an obsolete chapter must
+   // never clear the newer chapter's authorized private data.
+   eclatNoteKey(state.eclat,state.user?.id)===key&&
+   eclatNoteDrafts.get(key)===draft;
+  loadEclatNote(client,status,owner.userId).then(value=>{
+   if(current())Object.assign(draft,value,{saved:!!value.note||!!value.clue,dirty:false,error:false});
+  }).catch(error=>{
+   if(!current())return;
+   // A rejected private note read revokes the same entitlement as history:
+   // do not leave the former couple's gallery, notes or soundtrack visible.
+   if(invalidateEclatOnAuthRejection(error)){render();return;}
+   draft.error=true;
+  }).finally(()=>{
+    draft.loading=false;
+    if(current()&&state.tab==='eclat'&&!state.eclatBrowse&&
+       eclatNoteKey(state.eclat,state.user?.id)===key)render();
+   });
  }
  return eclatNoteDrafts.get(key);
 }
 async function saveCurrentEclatNote(momentDone){
- const key=eclatNoteKey(state.eclat,state.user?.id),draft=eclatNoteDrafts.get(key);
- if(!draft||draft.loading||draft.error)throw Error('Attends le chargement de ta note ou appuie sur Réessayer.');
+ // An unknown or revoked subscription cannot authorize a private write.
+ // Check before looking up the draft: a missing status has no note key.
+ if(state.eclat?.access!==true)return null;
+ const owner={userId:state.user?.id,coupleId:state.coupleId,
+  generation:authFeedbackGeneration};
+ const key=eclatNoteKey(state.eclat,owner.userId),draft=eclatNoteDrafts.get(key);
+ if(!draft)throw Error('Attends le chargement de ta note ou appuie sur Réessayer.');
+ if(draft.generation!==owner.generation)return null;
+ if(draft.loading||draft.error)throw Error('Attends le chargement de ta note ou appuie sur Réessayer.');
  if(draft.saving)throw Error('Enregistrement en cours…');
+ // An account switch, new chapter or note retry must invalidate the pending
+ // result even if the old network request is still settling.
+ const current=()=>ownsCoupleAsyncRead(state,owner)&&
+  authFeedbackGeneration===owner.generation&&
+  isSharedCoupleReady(owner.coupleId,state.members)&&state.tab==='eclat'&&
+  state.eclat?.access===true&&
+  eclatNoteKey(state.eclat,state.user?.id)===key&&
+  eclatNoteDrafts.get(key)===draft;
+ if(!current())return null;
  const snapshot={note:draft.note,clue:draft.clue,moment_done:momentDone??draft.moment_done};
+ const status={...state.eclat};
+ // "J’ai terminé" also changes the private note's persisted state even
+ // when both text fields are empty. A failed save must remain noticeable.
+ if(snapshot.moment_done!==draft.moment_done)draft.dirty=true;
  draft.saving=true;
+ // Update only the live status and save control. Re-rendering the page here
+ // would steal focus and risk losing edits typed while this RPC is pending.
+ const updateSaveControl=(saving,message)=>{
+  if(!current())return;
+  const button=root.querySelector('[data-action="eclat:note-save"]');
+  if(button){
+   button.disabled=saving;
+   button.textContent=saving?'Enregistrement…':'Enregistrer ma note';
+  }
+  // Keep the editor mounted and editable, but visibly prevent any
+  // chapter transition from racing the note currently being saved.
+  const phaseActions=new Set(['eclat:note-play','eclat:note-done',
+   'eclat:note-edit']);
+  for(const action of root.querySelectorAll?.('[data-action]')||[]){
+   const name=action.dataset?.action||'';
+   // All four choices (Passer and three moods) must reflect the same
+   // pending write. The choice RPC already ignores taps while saving,
+   // so keep the visible and accessible state consistent with that guard.
+   if(!phaseActions.has(name)&&!/^eclat:choose:[0-3]$/.test(name))continue;
+   action.disabled=saving;
+   if(saving)action.setAttribute('aria-busy','true');
+   else action.removeAttribute('aria-busy');
+  }
+  if(message!==null){
+   const label=root.querySelector('[data-eclat-note-status]');
+   if(label)label.textContent=message;
+  }
+ };
+ updateSaveControl(true,'Enregistrement en cours…');
+ let saveFailed=false;
  try{
-  await saveEclatNote(client,{...state.eclat},state.user.id,snapshot);
+  await saveEclatNote(client,status,owner.userId,snapshot);
+  if(!current())return null;
   draft.moment_done=snapshot.moment_done;
   draft.saved=draft.note===snapshot.note&&draft.clue===snapshot.clue;
+  draft.dirty=!draft.saved;
  }catch(error){
-  const label=root.querySelector('[data-eclat-note-status]');
-  if(label)label.textContent='Non enregistré. Ton texte est conservé ici; réessaie.';
+  if(!current())return null;
+  // A definitive Auth/RLS denial differs from an offline draft save.
+  // Drop private state rather than advertising an unsafe local retry.
+  if(invalidateEclatOnAuthRejection(error)){render();return null;}
+  saveFailed=true;
+  updateSaveControl(false,'Non enregistré. Ton texte est conservé ici; réessaie.');
   throw error;
- }finally{draft.saving=false;}
- return key;
+ }finally{
+  draft.saving=false;
+  if(!saveFailed)updateSaveControl(false,
+   draft.dirty?'Modifications non enregistrées':'Note enregistrée pour toi');
+  else updateSaveControl(false,null);
+ }
+ // A user may keep typing while the network saves the prior snapshot.
+ // The old snapshot was saved, but the current draft is STILL dirty.
+ // Never let « note-play » or « Choisir » advance as if those edits were saved.
+ return current()&&draft.saved?key:null;
 }
+// Every Éclat response is tied to both the account and the couple.
+// Request tokens also stop an older poll from rolling back a newer status.
+let latestEclatHistoryRead=null,latestEclatStatusRead=null;
+let latestEclatExplicitRead=null;
 async function refreshEclatHistory(){
- const coupleId=state.coupleId;
- if(!coupleId||!state.user)return;
- if(state.eclatHistoryCouple!==coupleId){state.eclatHistory=[];state.eclatHistoryCouple=coupleId;state.eclatGalleryScroll=0;}
+ const owner={userId:state.user?.id,coupleId:state.coupleId,
+  generation:authFeedbackGeneration};
+ // Only an explicit server-confirmed entitlement may query private history.
+ // A null or incomplete status is not proof of access.
+ if(!ownsCoupleAsyncRead(state,owner)||
+    !isSharedCoupleReady(owner.coupleId,state.members)||
+    state.eclat?.access!==true)return;
+ const request={};latestEclatHistoryRead=request;
+ const current=()=>ownsCoupleAsyncRead(state,owner)&&
+  authFeedbackGeneration===owner.generation&&
+  isSharedCoupleReady(owner.coupleId,state.members)&&
+  state.eclat?.access===true&&latestEclatHistoryRead===request;
+ if(state.eclatHistoryCouple!==owner.coupleId||
+    state.eclatHistoryUserId!==owner.userId){
+  state.eclatHistory=[];state.eclatHistoryCouple=owner.coupleId;
+  state.eclatHistoryUserId=owner.userId;state.eclatGalleryScroll=0;
+ }
  try{
-  const rows=await loadEclatHistory(client,coupleId);
-  if(state.coupleId===coupleId){state.eclatHistory=rows;state.eclatHistoryError=false;}
- }catch(error){if(state.coupleId===coupleId)state.eclatHistoryError=true;console.warn('Historique Éclat indisponible',error?.code||'');}
+  const rows=await loadEclatHistory(client,owner.coupleId,current);
+  if(!current())return;
+  state.eclatHistory=rows;state.eclatHistoryError=false;
+  state.eclatHistoryRetryAt=0;
+ }catch(error){
+  if(!current())return;
+  // A definitive permission denial must never leave previously cached
+  // private notes or gallery visible, even when the status RPC was valid.
+  if(invalidateEclatOnAuthRejection(error)){render();return;}
+  // Transient failures must not strand the gallery until a coffret changes.
+  // A rejected read is retried at most once every 30 seconds per live owner.
+  state.eclatHistoryError=true;
+  state.eclatHistoryRetryAt=Date.now()+30000;
+  console.warn('Historique Éclat indisponible',error?.code||'');
+ }
+}
+// One trusted state transition for server Éclat results from foreground
+// refreshes, background polls and mutating actions. The server RPC remains the
+// authority; UI state must drop private data immediately on revoked access.
+function applyEclatStatus(value){
+ state.eclat=value??null;
+ // An absent or malformed entitlement is not a valid permission receipt.
+ // Clear already cached private notes, gallery, completion and pending audio.
+ if(value?.access!==true){
+  latestEclatHistoryRead=null;
+  eclatNoteDrafts.clear();
+  state.eclatFinished=null;
+  state.eclatHistory=[];state.eclatHistoryError=false;
+  state.eclatHistoryRetryAt=0;
+  // Also cancel a pending AudioContext.resume() and any playing soundtrack.
+  latestEclatAudioOwner=null;
+  eclatAudio.stop();state.eclatMusic=false;
+  return false;
+ }
+ // A finished or cancelled session retains access to its history, but the
+ // soundtrack belongs to the active session. Stop it as soon as the RPC
+ // confirms the session is no longer active, before a slow history refresh.
+ if(value.active===false){
+  latestEclatAudioOwner=null;
+  eclatAudio.stop();state.eclatMusic=false;
+ }else if(value.active===true&&value.access===true){
+  // A partner can start a new coffret while this device still displays the
+  // previous completion. Never show that old ending on a live session.
+  state.eclatFinished=null;
+ }
+ return true;
+}
+// Auth/PostgREST rejection is distinct from a transient network outage.
+// Permission-denied SQLSTATE 42501 can arrive with HTTP 400 rather than 403.
+// Both status types are accepted; adapters may expose HTTP status as a string.
+// Callers first verify ownership so an old login cannot clear a newer session.
+function invalidateEclatOnAuthRejection(error){
+ const status=error?.status;
+ const denied=status===401||status===403||status==='401'||status==='403';
+ if(!denied&&error?.code!=='PGRST301'&&error?.code!=='42501')return false;
+ applyEclatStatus(null);
+ return true;
+}
+// Supabase may serialize the same status fields in a different key order.
+// Compare values, not object insertion order, so unchanged polls do not
+// reload the private gallery or repaint the Éclat screen every 4.5s.
+function eclatStatusSignature(status){
+ return JSON.stringify(status,(_key,value)=>{
+  if(value===null||typeof value!=='object'||Array.isArray(value))return value;
+  return Object.fromEntries(Object.keys(value).sort().map(key=>[key,value[key]]));
+ });
 }
 async function refreshEclatStatus(){
- if(!state.user||!isSharedCoupleReady(state.coupleId,state.members))return null;
- const value=await rpc('love_eclat_status');
- if(value&&state.coupleId)state.eclat=value;
- await refreshEclatHistory();
- return value;
+ const owner={userId:state.user?.id,coupleId:state.coupleId,
+  generation:authFeedbackGeneration};
+ if(!ownsCoupleAsyncRead(state,owner)||
+    !isSharedCoupleReady(owner.coupleId,state.members))return null;
+ const request={};latestEclatStatusRead=request;
+ // Foreground reads have priority over the 4.5s background poll.
+ // A stalled foreground request expires after 30s, same as a stalled poll.
+ latestEclatExplicitRead={...owner,request,startedAt:Date.now()};
+ const current=()=>ownsCoupleAsyncRead(state,owner)&&
+  authFeedbackGeneration===owner.generation&&
+  isSharedCoupleReady(owner.coupleId,state.members)&&
+  latestEclatStatusRead===request;
+ try{
+  const value=await rpc('love_eclat_status');
+  if(!current())return null;
+  // A null response means the old Éclat session is no longer available.
+  // Keep the foreground path consistent with the background sync instead of
+  // leaving a cached private coffret visible until the next poll.
+  if(!applyEclatStatus(value))return current()?value:null;
+  await refreshEclatHistory();
+  // The history endpoint may have revoked access after a successful status
+  // response. Do not return that stale permission receipt to any caller.
+  return current()&&state.eclat?.access===true?value:null;
+ }catch(error){
+  if(current()&&invalidateEclatOnAuthRejection(error))render();
+  throw error;
+ }finally{
+  if(latestEclatExplicitRead?.request===request)latestEclatExplicitRead=null;
+ }
+}
+// A user may switch accounts or leave Éclat while a mutating RPC awaits.
+// Keep its response local to the exact initiating account, couple and view.
+let latestEclatActionRequest=null;
+let pendingEclatMutation=null;
+let pendingEclatExitConfirmation=null;
+// UI-only guard: Supabase RPCs remain the authority for membership and access.
+// Apply the same entitlement rule to controls, note requests and audio, not
+// just to the HTML renderer. An old cached active flag is not permission.
+function canPlayEclat(){
+ const visible=previewEclatStatus(state.eclat,state.testMode,state.testModeEligible);
+ return !!(state.user?.id&&state.tab==='eclat'&&
+  isSharedCoupleReady(state.coupleId,state.members)&&
+  visible?.access===true&&visible?.active===true);
+}
+function beginEclatAction(){
+ const owner={userId:state.user?.id,coupleId:state.coupleId,
+  generation:authFeedbackGeneration,tab:state.tab,request:{}};
+ if(!ownsCoupleAsyncRead(state,owner)||
+    !isSharedCoupleReady(owner.coupleId,state.members))return null;
+ // Do not let two fast taps submit two non-idempotent RPCs for one chapter.
+ // An updated server chapter or a new Auth owner is independent. Bound the
+ // guard so a stalled request cannot disable the game forever.
+ const pending=pendingEclatMutation,scene=pending?.scene,e=state.eclat;
+ if(pending&&pending.userId===owner.userId&&
+    pending.coupleId===owner.coupleId&&
+    pending.generation===owner.generation&&
+    pending.tab===owner.tab&&
+    Date.now()-pending.startedAt<30000&&e?.access===true&&
+    (e.session_id??null)===scene.sessionId&&
+    (e.coffret_id??null)===scene.coffretId&&
+    (e.chapter_index??null)===scene.chapterIndex&&
+    (e.active??null)===scene.active)return null;
+ latestEclatActionRequest=owner.request;
+ return owner;
+}
+function ownsEclatAction(owner){
+ return !!owner&&ownsCoupleAsyncRead(state,owner)&&
+  authFeedbackGeneration===owner.generation&&
+  isSharedCoupleReady(owner.coupleId,state.members)&&
+  state.tab===owner.tab&&latestEclatActionRequest===owner.request;
+}
+// Run every Éclat mutation under the account/couple that initiated it.
+// A definitive server denial must revoke local private state, while an
+// ordinary outage must preserve drafts and let the UI show a retryable error.
+async function runEclatMutation(owner,name,args={}){
+ if(!ownsEclatAction(owner))return {applied:false};
+ // The request owner protects Auth/couple changes. The scene snapshot also
+ // protects against a NEWER server poll revoking or replacing this session
+ // while an earlier mutation is still waiting for its server receipt.
+ const previous=state.eclat;
+ const scene={sessionId:previous?.session_id??null,
+  coffretId:previous?.coffret_id??null,
+  chapterIndex:previous?.chapter_index??null,
+  active:previous?.active??null};
+ const inFlight={userId:owner.userId,coupleId:owner.coupleId,
+  generation:owner.generation,tab:owner.tab,scene,startedAt:Date.now()};
+ pendingEclatMutation=inFlight;
+ // A new server snapshot supersedes BOTH successful receipts and failures
+ // from an older scene. A 403 for a chapter already left must not purge
+ // the next chapter's authorized gallery, drafts or soundtrack.
+ const sceneStillCurrent=()=>{
+  const current=state.eclat;
+  return current?.access===true&&
+   (current.session_id??null)===scene.sessionId&&
+   (current.coffret_id??null)===scene.coffretId&&
+   (current.chapter_index??null)===scene.chapterIndex&&
+   (current.active??null)===scene.active;
+ };
+ try{
+  const value=await rpc(name,args);
+  return ownsEclatAction(owner)&&sceneStillCurrent()
+   ?{applied:true,value}:{applied:false};
+ }catch(error){
+  // Do not let an obsolete denied read or network error affect a newer
+  // login, coffret, chapter or already-revoked entitlement.
+  if(!ownsEclatAction(owner)||!sceneStillCurrent())return {applied:false};
+  if(invalidateEclatOnAuthRejection(error)){
+   // Invalidate an older background status that still claimed access.
+   latestEclatStatusRead=null;
+   render();
+   return {applied:false};
+  }
+  throw error;
+ }finally{
+  // A superseded old request must not clear the newer chapter's guard.
+  if(pendingEclatMutation===inFlight)pendingEclatMutation=null;
+ }
+}
+function applyEclatActionResult(value,owner){
+ if(!ownsEclatAction(owner))return false;
+ // A background status fetch launched before this action is now obsolete.
+ latestEclatStatusRead=null;
+ applyEclatStatus(value);
+ return true;
 }
 function renderEclat(){
- const e=previewEclatStatus(state.eclat,state.testMode,state.testModeEligible);
- if(e?.active){
+ const coupleReady=isSharedCoupleReady(state.coupleId,state.members);
+ const e=coupleReady?previewEclatStatus(state.eclat,state.testMode,state.testModeEligible):null;
+ const entitled=coupleReady&&e?.access===true;
+ const playable=entitled&&e?.active===true;
+ if(playable){
   const current=eclatStage(e.coffret_id,e.chapter_number,e.variant_number);
   if(current)eclatAudio.setMood(current.mood);
  }else if(state.eclatMusic){eclatAudio.stop();state.eclatMusic=false;}
- frame(eclatHtml({status:e,selected:state.eclatSelection,minutes:state.eclatMinutes,
+ frame(eclatHtml({status:e,coupleReady,selected:state.eclatSelection,minutes:state.eclatMinutes,
   details:state.eclatDetails,members:state.members,userId:state.user?.id,
-  music:state.eclatMusic,finished:state.eclatFinished,browse:state.eclatBrowse,intent:state.eclatIntent,noteState:e?.active&&!state.eclatBrowse?eclatNoteState():{},history:state.eclatHistoryCouple===state.coupleId?state.eclatHistory:[],historyError:state.eclatHistoryError}), 'Éclat','Notre expérience à deux');
+  music:state.eclatMusic,finished:entitled?state.eclatFinished:null,browse:state.eclatBrowse,intent:state.eclatIntent,noteState:playable&&!state.eclatBrowse?eclatNoteState():{},history:entitled&&state.eclatHistoryCouple===state.coupleId&&
+   state.eclatHistoryUserId===state.user?.id?state.eclatHistory:[],historyError:entitled&&state.eclatHistoryError}), 'Éclat','Notre expérience à deux');
 }
 function renderHome(){
  const members=state.members||[];
@@ -1328,18 +2180,34 @@ function writeSavedChallengeTimer(key,value){
  try{sessionStorage.setItem(key,json);}catch{}
 }
 function saveChallengeTimer(){
- if(!challengeTimer.id||!state.user)return;
- writeSavedChallengeTimer('loveroll-challenge-clock:'+state.user.id+':'+challengeTimer.id,
-  {durationMs:challengeTimer.durationMs,remainingMs:clockMs(),
+ // The active login may change while a previous timer is still mounted.
+ // Persist under its ORIGINAL owner, never under whichever account is now signed in.
+ if(!challengeTimer.id||!challengeTimer.ownerUserId)return;
+ writeSavedChallengeTimer('loveroll-challenge-clock:'+challengeTimer.ownerUserId+':'+challengeTimer.id,
+  {cardId:challengeTimer.id,ownerUserId:challengeTimer.ownerUserId,
+   ownerSessionId:challengeTimer.ownerSessionId,
+   durationMs:challengeTimer.durationMs,remainingMs:clockMs(),
    deadline:challengeTimer.deadline,running:challengeTimer.running,notified:challengeTimer.notified,
    autoCompletePending:challengeTimer.autoCompletePending});
 }
 function activeTimer(challenge,minutes){
  const millis=minutes*60000;
- if(challengeTimer.id!==challenge.id){
+ if(challengeTimer.id!==challenge.id||
+    challengeTimer.ownerUserId!==state.user.id||
+    challengeTimer.ownerSessionId!==state.session?.id){
   saveChallengeTimer();
-  const stored=readSavedChallengeTimer('loveroll-challenge-clock:'+state.user.id+':'+challenge.id);
+  const stored=ownedSavedEveningTimerSnapshot(
+   readSavedChallengeTimer('loveroll-challenge-clock:'+state.user.id+':'+challenge.id),
+   challenge.id,state.user.id,state.session?.id);
   challengeTimer.id=challenge.id;
+  challengeTimer.ownerUserId=state.user.id;
+  challengeTimer.ownerSessionId=state.session?.id||null;
+  // One pending redraw must never lock another card's or account's timer.
+  // Reopening the initiating card while the RPC is still pending restores it.
+  challengeTimer.decisionPending=!!(state.redrawBusy&&
+   state.redrawBusyContext?.challengeId===challenge.id&&
+   state.redrawBusyContext?.userId===state.user.id&&
+   state.redrawBusyContext?.sessionId===state.session?.id);
   challengeTimer.durationMs=millis;
   challengeTimer.remainingMs=stored?.durationMs===millis&&Number.isFinite(stored.remainingMs)?
    Math.max(0,Math.min(millis,stored.remainingMs)):millis;
@@ -1348,6 +2216,61 @@ function activeTimer(challenge,minutes){
   challengeTimer.running=!!(stored?.running&&challengeTimer.deadline>0);
   challengeTimer.notified=!!stored?.notified;
   challengeTimer.autoCompletePending=!!stored?.autoCompletePending;
+ }
+}
+function ownsVisibleEveningTimer(cardId,userId,sessionId){
+ return ownsEveningTimerRecord(challengeTimer,cardId,userId,sessionId)&&
+  state.user?.id===userId&&state.session?.id===sessionId;
+}
+// Keep the DOM controls and the action handler in sync. A network decision
+// or an in-flight acceptance must not be undone by a synthetic reset click.
+// A countdown at 00:00 may be committing its answer on Supabase.
+ // The same card must not submit an opposing Passer/Refuser/Commencer or
+ // manual completion while its automatic completion is unresolved.
+function isEveningCardCompleting(cardId){
+ if(!cardId||!state.user||!state.session)return false;
+ // A manual answer already sent to Supabase has priority over an
+ // automatic 00:00 completion for the SAME card.
+ if(state.legacyAnswerContext?.challengeId===cardId&&
+    state.legacyAnswerContext.userId===state.user?.id&&
+    state.legacyAnswerContext.sessionId===state.session?.id&&
+    (state.legacyAnswerContext.coupleId===undefined||
+     state.legacyAnswerContext.coupleId===state.coupleId))return true;
+ const completion=state.timerCompletionContext;
+ if(completion?.challengeId===cardId&&ownsTimerCompletionSession(completion))
+  return true;
+ return challengeTimer.autoCompletePending===true&&
+  ownsVisibleEveningTimer(cardId,state.user.id,state.session.id);
+}
+function isVisibleEveningTimerActionPending(){
+ const cardId=challengeTimer.id;
+ if(!cardId||!ownsVisibleEveningTimer(cardId,state.user?.id,state.session?.id))return false;
+ if(challengeTimer.decisionPending)return true;
+ if(state.legacyAnswerContext?.challengeId===cardId&&
+    state.legacyAnswerContext.userId===state.user?.id&&
+    state.legacyAnswerContext.sessionId===state.session?.id&&
+    (state.legacyAnswerContext.coupleId===undefined||
+     state.legacyAnswerContext.coupleId===state.coupleId))return true;
+ // The completion RPC can finish before its private, scoped refresh has
+ // returned. Keep both timer controls locked until that refresh settles.
+ const completion=state.timerCompletionContext;
+ if(completion?.challengeId===cardId&&ownsTimerCompletionSession(completion))return true;
+ if(isActiveEveningRedrawPending()&&state.redrawBusyContext?.challengeId===cardId)return true;
+ return [state.timerStartContext,state.eveningStartContext].some(context=>
+  context?.challengeId===cardId&&isSameEveningResponseContext(state,context));
+}
+function protectEveningTimerPresentation(presentation){
+ // An already expired challenge awaiting validation takes precedence.
+ if(challengeTimer.autoCompletePending)return;
+ if(isVisibleEveningTimerActionPending()){
+  const completion=state.timerCompletionContext;
+  const finalizing=completion?.challengeId===challengeTimer.id&&
+   ownsTimerCompletionSession(completion);
+  Object.assign(presentation,{
+   label:finalizing?'♡ Validation en cours':'♡ Réponse en cours',
+   status:finalizing?'Validation du défi en cours':'Décision sur le défi en cours',
+   disabled:true,resetDisabled:true
+  });
  }
 }
 function clockMs(){
@@ -1366,82 +2289,181 @@ function showTimerFinished(){
  setTimeout(()=>notice.remove(),6500);
 }
 function timedEveningItem(timerId){
- if(!state.user||!state.session||!timerId)return null;
+ if(!state.user||!state.session||!timerId||
+    challengeTimer.ownerUserId!==state.user.id||
+    challengeTimer.ownerSessionId!==state.session.id)return null;
  return ownEveningChallenges(state.challenges,state.user.id,state.session.id)
   .find(item=>item.id===timerId)||null;
 }
+// A timer may finish while the player signs into a different account or
+// starts a new evening. Only the exact request owner may refresh or notify.
+function ownsTimerCompletionSession(context){
+ return state.user?.id===context.userId&&
+  state.coupleId===context.coupleId&&state.session?.id===context.sessionId;
+}
+function ownsTimerCompletionRefresh(context){
+ return state.timerCompletionContext===context&&
+  ownsTimerCompletionSession(context)&&state.tab===context.tab;
+}
+async function refreshConfirmedTimedEvening(context){
+ if(!ownsTimerCompletionRefresh(context))return false;
+ const refreshed=await refreshShared(context);
+ // refreshShared also checks server-side session ownership before writing.
+ // A confirmed session closure is the sole permitted transition to null.
+ if(refreshed!==true||state.timerCompletionContext!==context||
+    state.user?.id!==context.userId||state.coupleId!==context.coupleId||
+    state.tab!==context.tab||
+    (state.session!==null&&state.session?.id!==context.sessionId))return false;
+ if(!state.session){
+  state.showEveningChallenges=false;state.selectedEveningChallengeId=null;
+ }
+ render();
+ notify('♡ Défi accompli ♥');
+ return true;
+}
+function keepExpiredTimerPending(context,cardId){
+ if(!ownsTimerCompletionSession(context)||
+    !ownsVisibleEveningTimer(cardId,context.userId,context.sessionId))return;
+ challengeTimer.autoCompletePending=true;
+ saveChallengeTimer();
+}
 async function retryExpiredTimedEvening(){
- if(!challengeTimer.autoCompletePending||challengeTimer.decisionPending||timerCompletionInFlight||
-    Date.now()<timerCompletionRetryAt||!state.user||!state.session)return;
- const id=challengeTimer.id,item=timedEveningItem(id);
+ if(!challengeTimer.autoCompletePending||challengeTimer.decisionPending||
+    !state.user||!state.session)return;
+ // Only another operation for THIS authenticated couple and evening blocks.
+ // A stale account request must not monopolize the global UI timer worker.
+ if(timerCompletionInFlight&&ownsTimerCompletionSession(timerCompletionInFlight))return;
+ const id=challengeTimer.id;
+ // Wait for the in-flight manual decision. If it fails, the still-pending
+ // expired timer may safely retry on the next tick.
+ if(state.legacyAnswerContext?.challengeId===id&&
+    state.legacyAnswerContext.userId===state.user?.id&&
+    state.legacyAnswerContext.sessionId===state.session?.id&&
+    (state.legacyAnswerContext.coupleId===undefined||
+     state.legacyAnswerContext.coupleId===state.coupleId))return;
+ const retryOwner=JSON.stringify([state.user.id,state.coupleId,state.session.id,id]);
+ // A previous account's retry delay never blocks the active account/card.
+ if(state.timerCompletionRetryOwner===retryOwner&&Date.now()<timerCompletionRetryAt)return;
+ const item=timedEveningItem(id);
  if(!item)return; // Keep pending until the corresponding session is loaded again.
  if(['completed','passed','refused'].includes(item.status)){
   challengeTimer.autoCompletePending=false;saveChallengeTimer();return;
  }
  if(!isAcceptedTimedEveningChallenge(item,state.user.id,state.session.id))return;
  const sessionId=state.session.id,userId=state.user.id;
- timerCompletionInFlight=id;
+ const context={userId,sessionId,coupleId:state.coupleId,tab:state.tab,challengeId:id};
+ timerCompletionInFlight=context;state.timerCompletionContext=context;
  try{
-  const result=await completeTimedEveningChallenge({challenge:item,userId,sessionId,rpc,query});
-  if(result.outcome==='ineligible')return;
-  timerCompletionRetryAt=0;
-  if(challengeTimer.id===id){
+  const result=await completeTimedEveningChallenge({
+   challenge:item,userId,sessionId,rpc,query,
+   ownsRequest:()=>state.timerCompletionContext===context&&
+    ownsTimerCompletionSession(context)
+  });
+  if(result.outcome==='ineligible'||result.outcome==='superseded')return;
+  // An old server response must not erase another account's newer
+  // offline/backoff state. Only the current operation owns this reset.
+  if(state.timerCompletionContext===context&&ownsTimerCompletionSession(context)){
+   timerCompletionRetryAt=0;state.timerCompletionRetryOwner=null;
+  }
+  if(ownsTimerCompletionSession(context)&&
+     ownsVisibleEveningTimer(id,userId,sessionId)){
    challengeTimer.autoCompletePending=false;saveChallengeTimer();
   }
-  if(state.user?.id===userId&&state.session?.id===sessionId){
-   if(result.finished){state.showEveningChallenges=false;state.selectedEveningChallengeId=null;}
-   notify('♡ Défi accompli ♥');
-   await refreshAndShow();
+  const refreshed=await refreshConfirmedTimedEvening(context);
+  if(!refreshed&&ownsTimerCompletionSession(context)){
+   keepExpiredTimerPending(context,id);
+   timerCompletionRetryAt=Date.now()+15000;
+   state.timerCompletionRetryOwner=retryOwner;
   }
  }catch(error){
-  timerCompletionRetryAt=Date.now()+15000;
+  if(ownsTimerCompletionSession(context)){
+   keepExpiredTimerPending(context,id);
+   timerCompletionRetryAt=Date.now()+15000;
+   state.timerCompletionRetryOwner=retryOwner;
+  }
   console.warn('Défi terminé : validation serveur en attente',error);
-  if(!document.hidden)notify('Le minuteur est terminé. Validation du défi en attente de connexion.');
- }finally{timerCompletionInFlight=null;}
+  if(ownsTimerCompletionRefresh(context)&&
+     !document.hidden)notify('Le minuteur est terminé. Validation du défi en attente de connexion.');
+ }finally{
+  if(state.timerCompletionContext===context)state.timerCompletionContext=null;
+  if(timerCompletionInFlight===context)timerCompletionInFlight=null;
+ }
 }
 // LR-002: recover ALL due challenge timers from per-account session storage
 // after Safari/Android reload or suspension; do not require opening the card.
-let savedTimerScanAfter=0,savedTimerSyncInFlight=false;
+let savedTimerScanAfter=0,savedTimerScanOwner=null,savedTimerSyncInFlight=null;
 async function reconcileSavedEveningTimers(){
  const now=Date.now();
- if(!state.user||!state.session||savedTimerSyncInFlight||timerCompletionInFlight||
-    now<savedTimerScanAfter)return;
- savedTimerScanAfter=now+4000;
+ if(!state.user||!state.session)return;
+ const scanOwner=JSON.stringify([state.user.id,state.coupleId,state.session.id]);
+ // A blocked scan from an old account must not stall a different identity.
+ if((savedTimerSyncInFlight&&ownsTimerCompletionSession(savedTimerSyncInFlight))||
+    (timerCompletionInFlight&&ownsTimerCompletionSession(timerCompletionInFlight))||
+    (savedTimerScanOwner===scanOwner&&now<savedTimerScanAfter))return;
+ savedTimerScanOwner=scanOwner;savedTimerScanAfter=now+4000;
  for(const item of state.challenges||[]){
   const key='loveroll-challenge-clock:'+state.user.id+':'+item.id;
-  const saved=readSavedChallengeTimer(key);
-  if(!saved||!Number.isFinite(saved.durationMs)||saved.durationMs<=0)continue;
+  const saved=ownedSavedEveningTimerSnapshot(readSavedChallengeTimer(key),
+   item.id,state.user.id,state.session.id);
+  if(!saved)continue;
   const due=!!saved.autoCompletePending||
    (saved.running&&Number.isFinite(saved.deadline)&&saved.deadline>0&&saved.deadline<=now);
-  if(!due||challengeTimer.decisionPending&&challengeTimer.id===item.id)continue;
+  if(!due||
+     (challengeTimer.decisionPending&&
+      ownsVisibleEveningTimer(item.id,state.user.id,state.session.id))||
+     (state.legacyAnswerContext?.challengeId===item.id&&
+      state.legacyAnswerContext.userId===state.user?.id&&
+      state.legacyAnswerContext.sessionId===state.session?.id&&
+      (state.legacyAnswerContext.coupleId===undefined||
+       state.legacyAnswerContext.coupleId===state.coupleId)))continue;
   if(['completed','passed','refused'].includes(item.status)){
-   writeSavedChallengeTimer(key,{...saved,running:false,
-    remainingMs:0,autoCompletePending:false});
+   writeSavedChallengeTimer(key,{...saved,cardId:item.id,
+    ownerUserId:state.user.id,ownerSessionId:state.session.id,
+    running:false,remainingMs:0,autoCompletePending:false});
    continue;
   }
   if(!isAcceptedTimedEveningChallenge(item,state.user.id,state.session.id))continue;
   const userId=state.user.id,sessionId=state.session.id;
-  savedTimerSyncInFlight=true;timerCompletionInFlight=item.id;
-  const expired={...saved,running:false,remainingMs:0,notified:true,autoCompletePending:true};
+  const context={userId,sessionId,coupleId:state.coupleId,tab:state.tab,challengeId:item.id};
+  savedTimerSyncInFlight=context;timerCompletionInFlight=context;
+  state.timerCompletionContext=context;
+  const expired={...saved,cardId:item.id,ownerUserId:userId,
+   ownerSessionId:sessionId,running:false,remainingMs:0,
+   notified:true,autoCompletePending:true};
   writeSavedChallengeTimer(key,expired);
   try{
-   const result=await completeTimedEveningChallenge({challenge:item,userId,sessionId,rpc,query});
-   if(result.outcome==='ineligible')return;
+   const result=await completeTimedEveningChallenge({
+    challenge:item,userId,sessionId,rpc,query,
+    ownsRequest:()=>state.timerCompletionContext===context&&
+     ownsTimerCompletionSession(context)
+   });
+   if(result.outcome==='ineligible'||result.outcome==='superseded')return;
    writeSavedChallengeTimer(key,{...expired,autoCompletePending:false});
-   if(challengeTimer.id===item.id){
+   if(ownsTimerCompletionSession(context)&&
+      ownsVisibleEveningTimer(item.id,userId,sessionId)){
     challengeTimer.running=false;challengeTimer.remainingMs=0;
     challengeTimer.autoCompletePending=false;saveChallengeTimer();
    }
-   if(state.user?.id===userId&&state.session?.id===sessionId){
-    if(result.finished){state.showEveningChallenges=false;state.selectedEveningChallengeId=null;}
-    notify('♡ Défi accompli ♥');
-    await refreshAndShow();
+   const refreshed=await refreshConfirmedTimedEvening(context);
+   if(!refreshed){
+    // The server committed, but the account's view did not confirm the
+    // refreshed card. Preserve the OLD private key even after a tab switch.
+    writeSavedChallengeTimer(key,expired);
+    keepExpiredTimerPending(context,item.id);
+    if(ownsTimerCompletionSession(context))savedTimerScanAfter=Date.now()+15000;
    }
   }catch(error){
-   savedTimerScanAfter=Date.now()+15000;
+   writeSavedChallengeTimer(key,expired);
+   keepExpiredTimerPending(context,item.id);
+   if(ownsTimerCompletionSession(context))savedTimerScanAfter=Date.now()+15000;
    console.warn('Minuteur expiré : validation à reprendre après reconnexion',error);
-   if(!document.hidden)notify('Le minuteur est terminé. Validation du défi en attente de connexion.');
-  }finally{timerCompletionInFlight=null;savedTimerSyncInFlight=false;}
+   if(ownsTimerCompletionRefresh(context)&&
+      !document.hidden)notify('Le minuteur est terminé. Validation du défi en attente de connexion.');
+  }finally{
+   if(state.timerCompletionContext===context)state.timerCompletionContext=null;
+   if(timerCompletionInFlight===context)timerCompletionInFlight=null;
+   if(savedTimerSyncInFlight===context)savedTimerSyncInFlight=null;
+  }
   return;
  }
 }
@@ -1468,7 +2490,8 @@ function endSignal(){
 }
 function updateChallengeClock(){
  void reconcileSavedEveningTimers();
- if(!challengeTimer.id)return;
+ // Never play an expired previous account's sound or paint its countdown.
+ if(!ownsVisibleEveningTimer(challengeTimer.id,state.user?.id,state.session?.id))return;
  if(challengeTimer.running&&Date.now()>=challengeTimer.deadline){
   challengeTimer.running=false;challengeTimer.remainingMs=0;endSignal();saveChallengeTimer();
  }
@@ -1476,6 +2499,7 @@ function updateChallengeClock(){
  const clock=document.getElementById('challenge-timer-clock');
  if(clock)clock.textContent=formatCountdown(clockMs());
  const presentation=timedEveningTimerControl(challengeTimer);
+ protectEveningTimerPresentation(presentation);
  const button=document.getElementById('challenge-timer-toggle');
  if(button){
   button.textContent=presentation.label;
@@ -1494,24 +2518,41 @@ setInterval(updateChallengeClock,500);
 // Referral balances are updated while this Settings page is being viewed.
 // Both partners share the same renewal credit ledger; the server remains
 // authoritative and no browser event can create referral rewards.
-let referralPolling=false;
+let referralPolling=null;
 setInterval(async()=>{
- if(referralPolling||!state.user||document.hidden||state.tab!=='settings'||
+ if(!state.user||document.hidden||state.tab!=='settings'||
     settingsOpenSection!=='parrainage'||!state.referral?.enabled)return;
- referralPolling=true;
+ // The old HTTP response may arrive AFTER logout, account replacement, or
+ // same-user reauthentication. Keep the polling lock tied to its Auth owner.
+ // A newer account must not be held hostage by an older stalled request.
+ const owner={userId:state.user.id,coupleId:state.coupleId||null,
+  generation:authFeedbackGeneration};
+ if(referralPolling?.userId===owner.userId&&
+    referralPolling.coupleId===owner.coupleId&&
+    referralPolling.generation===owner.generation)return;
+ referralPolling=owner;
+ const current=()=>referralPolling===owner&&
+  state.user?.id===owner.userId&&
+  (state.coupleId||null)===owner.coupleId&&
+  authFeedbackGeneration===owner.generation&&
+  state.tab==='settings'&&settingsOpenSection==='parrainage'&&
+  !!state.referral?.enabled;
  try{
   const next=await rpc('love_my_referral');
-  if(state.tab==='settings'&&settingsOpenSection==='parrainage'&&
-     JSON.stringify(next)!==JSON.stringify(state.referral)){
+  if(current()&&JSON.stringify(next)!==JSON.stringify(state.referral)){
    state.referral=next;render();
   }
- }catch(error){console.warn('Actualisation des crédits différée',error?.message||'error');}
- finally{referralPolling=false;}
+ }catch(error){
+  if(current())console.warn('Actualisation des crédits différée',error?.message||'error');
+ }finally{
+  if(referralPolling===owner)referralPolling=null;
+ }
 },15000);
 function timerWidget(challenge,minutes){
- if(minutes===null||minutes===undefined||minutes===0)return '<p class="tiny-note">♡ Sans minuteur · l’activité se termine quand vous le souhaitez.</p>';
+ if(!validChallengeTimerMinutes(minutes))return '<p class="tiny-note">♡ Sans minuteur · l’activité se termine quand vous le souhaitez.</p>';
  activeTimer(challenge,minutes);
  const presentation=timedEveningTimerControl(challengeTimer);
+ protectEveningTimerPresentation(presentation);
  return '<div class="timer-panel"><div class="eyebrow">⏱ Minuteur du défi · '+minutes+' min</div>'+
    '<div id="challenge-timer-clock" class="timer-clock">'+formatCountdown(clockMs())+'</div>'+
    '<p id="challenge-timer-status">'+presentation.status+'</p>'+
@@ -1521,9 +2562,9 @@ function timerWidget(challenge,minutes){
    button('timer-reset','↻ Recommencer',
     'class="subtle"'+(presentation.resetDisabled?' disabled aria-disabled="true"':''))+'</div>'+
    '<div class="chipline" style="margin-top:9px">'+
-   '<button class="pill '+(challengeTimer.mode==='sound'?'selected':'')+'" data-action="timer-mode:sound">♫ Son doux</button>'+
-   '<button class="pill '+(challengeTimer.mode==='vibrate'?'selected':'')+'" data-action="timer-mode:vibrate">〰 Vibration</button>'+
-   '<button class="pill" data-action="timer-sound-test">♫ Tester</button></div>'+
+   '<button type="button" class="pill '+(challengeTimer.mode==='sound'?'selected':'')+'" data-action="timer-mode:sound" aria-pressed="'+(challengeTimer.mode==='sound')+'">♫ Son doux</button>'+
+   '<button type="button" class="pill '+(challengeTimer.mode==='vibrate'?'selected':'')+'" data-action="timer-mode:vibrate" aria-pressed="'+(challengeTimer.mode==='vibrate')+'">〰 Vibration</button>'+
+   '<button type="button" class="pill" data-action="timer-sound-test">♫ Tester</button></div>'+
    '<small>Sonnerie discrète en fin de compte à rebours; sur iPhone, la vibration peut être indisponible. Le minuteur n’oblige jamais à poursuivre.</small></div>';
 }
 function renderLegacySession(){
@@ -1642,14 +2683,16 @@ function renderSession(){
  if(session&&(!session.paired_turns||!session.self_draws))return renderLegacySession();
  const turn=session?(state.eveningBoard||sharedEveningTurns(session,state.members,state.personal,state.challenges,state.gifts)):{};
  const mineCards=session?visibleEveningQueue(ownEveningChallenges(state.challenges,uid,session.id)):[];
+ // Resume an accepted personal challenge first, then offer an unstarted one.
+ // This is only a private-navigation hint; Supabase still owns its state.
+ const nextChallenge=mineCards.find(card=>card.status==='accepted')||
+  mineCards.find(card=>card.status==='proposed')||null;
  const daily=eveningDailyAccess({sessions:state.sessions,weekly:state.weekly});
  const last=daily.closedToday;
- const recentReviews=last?(state.eveningReviews||[]).filter(x=>x.session_id===last.id):[];
- const lastEvening=last?{id:last.id,completed:state.eveningCalendarChallenges.filter(
-    c=>c.session_id===last.id&&c.status==='completed').length,
-   responses:recentReviews.length,
-   myResponse:recentReviews.some(f=>f.author_id===uid),
-   partnerResponse:recentReviews.some(f=>f.author_id===partner?.user_id)}:null;
+ const lastEvening=last?eveningFinaleStatus({
+  sessionId:last.id,reviews:state.eveningReviews,
+  challenges:state.eveningCalendarChallenges,selfId:uid,partnerId:partner?.user_id
+ }):null;
  const canStartEvening=daily.canStart;
  const gifts=state.gifts||[];
  const giftCount=gifts.filter(g=>g.donor_user_id===uid&&g.month_key?.slice(0,7)===month()).length;
@@ -1657,12 +2700,18 @@ function renderSession(){
  // Personal queue: each account sees only cards received by THAT user.
  // Draws can all be completed before any challenge is accepted or played.
  const selected=mineCards.find(c=>c.id===state.selectedEveningChallengeId);
+ const favoriteKeys=readEveningFavorites(uid,state.coupleId);
+ const selectedFavoriteId=eveningFavoriteId(selected);
+ const isFavorite=selectedFavoriteId&&favoriteKeys.includes(selectedFavoriteId);
+ // Gift receipt changes the turn counts; keep old private actions disabled.
+ const giftTransferPending=isActiveEveningGiftPending();
  if(session&&state.showEveningChallenges){
   const view=selected;
   const idx=view?queuePosition(mineCards,view.id):-1;
   overlay='<div class="surprise-modal evening-queue-modal'+(view?' is-detail':'')+'" role="dialog" aria-modal="true" aria-label="Mes défis de ce soir">'+
    '<article class="surprise-modal-content evening-queue-content'+(view?' is-detail':'')+'">'+
    '<div class="eyebrow">♡ MES DÉFIS DU SOIR</div>'+
+   (giftTransferPending?'<p class="evening-gift-pending" role="status" aria-live="polite">♡ Don en cours de confirmation…</p>':'')+
    (view?
     '<div class="evening-queue-nav">'+
      button('evening-list','← Mes défis ('+mineCards.length+')','class="subtle"')+
@@ -1676,18 +2725,37 @@ function renderSession(){
      '<h2>'+safe(resolvedCard(view).title)+'</h2>'+
      '<div class="evening-challenge-scene" aria-hidden="true"></div>'+
      '<p class="evening-challenge-instructions" role="region" aria-label="Consigne du défi" tabindex="0">'+safe(resolvedCard(view).description)+'</p>'+
+     (selectedFavoriteId?
+      button('evening-favorite:'+view.id,
+       (isFavorite?'♥ Retirer de mes favoris':'♡ Ajouter à mes favoris')+
+       ' ('+favoriteKeys.length+' / '+EVENING_FAVORITES_LIMIT+')',
+       'class="evening-favorite-btn" aria-pressed="'+(isFavorite?'true':'false')+'"'+
+        (!isFavorite&&favoriteKeys.length>=EVENING_FAVORITES_LIMIT?
+         ' disabled aria-disabled="true" title="Limite de cinq favoris atteinte"':
+         (isActiveEveningRedrawPending()||giftTransferPending)?' disabled aria-disabled="true"':'')):'')+
      (['proposed','accepted'].includes(view.status)?
        timerWidget(view,resolvedCard(view).minutes):
        '<p class="tiny-note">Ce défi est archivé dans votre historique.</p>')+
      (view.status==='proposed'?
-       button('evening-start:'+view.id,'▶ Commencer ce défi','class="evening-primary"'):'')+
+       button('evening-start:'+view.id,'▶ Commencer ce défi',
+        'class="evening-primary" '+(isActiveEveningRedrawPending()||giftTransferPending||isEveningCardCompleting(view.id)?
+         'disabled aria-disabled="true" aria-busy="true"':'')):'')+
      (view.status==='accepted'?
-       button('answer:'+view.id+':completed','✓ Défi réalisé','class="evening-primary"'):'')+
-     (['proposed','accepted'].includes(view.status)&&state.redrawReady?
+       button('answer:'+view.id+':completed',
+        giftTransferPending?'♡ Don en cours…':
+        isActiveEveningRedrawPending()?'♡ Confirmation en cours':
+        isEveningCardCompleting(view.id)?'♡ Réponse en cours':'✓ Défi réalisé',
+        'class="evening-primary" '+(isActiveEveningRedrawPending()||giftTransferPending||isEveningCardCompleting(view.id)?
+        'disabled aria-disabled="true" aria-busy="true"':'')):'')+
+     (['proposed','accepted'].includes(view.status)?
       '<div class="lr-redraw-actions" aria-label="Autres choix pour ce défi">'+
-       button('evening-pass:'+view.id,'Passer ce défi','class="subtle" '+(state.redrawBusy||state.monthlyPassQuota?.can_pass===false?'disabled':''))+
-       button('evening-refuse:'+view.id,'Refuser ce défi','class="subtle" '+(state.redrawBusy?'disabled':''))+
-       '<small>'+(state.monthlyPassQuota?.can_pass===false?
+       button('evening-pass:'+view.id,'Passer ce défi','class="subtle" '+
+        (!state.redrawReady||isActiveEveningRedrawPending()||giftTransferPending||isEveningCardCompleting(view.id)||state.monthlyPassQuota?.can_pass===false?'disabled aria-disabled="true"':''))+
+       button('evening-refuse:'+view.id,'Refuser ce défi','class="subtle" '+
+        (!state.redrawReady||isActiveEveningRedrawPending()||giftTransferPending||isEveningCardCompleting(view.id)?'disabled aria-disabled="true"':''))+
+       '<small>'+(!state.redrawReady?
+        'Passer et Refuser seront disponibles lorsque la repige sera confirmée par le serveur.':
+        state.monthlyPassQuota?.can_pass===false?
         'Limite atteinte : '+safe(state.monthlyPassQuota?.used??'—')+
         ' / '+safe(state.monthlyPassQuota?.limit??'—')+
         '. Tu pourras passer à nouveau le 1er du mois prochain, ou choisir Refuser.':
@@ -1699,9 +2767,9 @@ function renderSession(){
        '<h3 id="lr-refusal-title">Tu préfères un autre défi ?</h3>'+
        '<p id="lr-refusal-description">Veux-tu retirer ce défi des prochaines piges pour le cycle en cours ?</p>'+
        '<div class="lr-refusal-buttons">'+
-        button('evening-refuse-choice:'+view.id+':yes','Oui, retirer du lot','class="evening-primary" '+(state.redrawBusy?'disabled':''))+
-        button('evening-refuse-choice:'+view.id+':no','Non, le garder dans le lot','class="subtle" '+(state.redrawBusy?'disabled':''))+
-        button('evening-refuse-cancel','Annuler','class="subtle" '+(state.redrawBusy?'disabled':''))+
+        button('evening-refuse-choice:'+view.id+':yes','Oui, retirer du lot','class="evening-primary" '+(isActiveEveningRedrawPending()||giftTransferPending||isEveningCardCompleting(view.id)?'disabled':''))+
+        button('evening-refuse-choice:'+view.id+':no','Non, le garder dans le lot','class="subtle" '+(isActiveEveningRedrawPending()||giftTransferPending||isEveningCardCompleting(view.id)?'disabled':''))+
+        button('evening-refuse-cancel','Annuler','class="subtle" '+(isActiveEveningRedrawPending()||giftTransferPending?'disabled':''))+
        '</div></div>':'')+
      '<div class="evening-queue-nav">'+
        (idx>0?button('evening-open:'+mineCards[idx-1].id,'← Précédent','class="subtle"'):'<span></span>')+
@@ -1729,13 +2797,17 @@ function renderSession(){
    showSexuel:state.couple?.show_sexuel_button!==false,
    categoryOdds:state.couple?.category_weights_enabled===false?50:
     state.couple?.category_preference_percent??88,
-   giftCount,rolling:state.diceStatus==='rolling'||state.diceStatus==='pending',rollFace:state.rollAnimationFace,
+   giftCount,giftPending:isActiveEveningGiftPending(),
+   rolling:state.diceStatus==='rolling'||state.diceStatus==='pending',
+   redrawPending:isActiveEveningRedrawPending(),rollFace:state.rollAnimationFace,
    playable:state.playableCounts||(isLoveAdmin()?playableEveningCount(state.customCards):null),
    rollingKind:state.rollAnimationKind,showMore:state.eveningMore,confirmCancel:state.confirmCancel,
    challengeOverlay:overlay,lastEvening,canStartEvening,
+   sessionLength:readSessionLength(uid),
+   eveningIntensity:readEveningIntensity(uid,state.profile?.play_style),
    challengeHistory:[...state.challengesHistory,...state.eveningCalendarChallenges,...state.challenges],
-   weeklyReady:!!state.weekly,weeklyCount:daily.counted,weeklyLimit:daily.limit,
-   dailyLocked:daily.dailyLocked,ownChallengeCount:mineCards.length,
+   weeklyReady:!!state.weekly,weeklyCount:daily.counted,weeklyLimit:daily.limit,historyReady:daily.historyReady,
+   dailyLocked:daily.dailyLocked,ownChallengeCount:mineCards.length,nextChallenge,
    lastD35Face:lastOfficialChallengeFace(
     session?state.challenges:state.challengesHistory,session?.id||last?.id||null)
  }), 'NOTRE SOIRÉE','Un jeu synchronisé sur nos deux comptes');
@@ -1745,10 +2817,9 @@ function eveningCalendarReturn(){
 }
 function renderEveningCalendar(){
  const mo=state.eveningCalendarMonth||month();
- const date=state.eveningCalendarDate?.startsWith(mo)?state.eveningCalendarDate:
-  ((state.sessions||[]).find(s=>eveningLocalDay(s.started_at)?.startsWith(mo))?
-   eveningLocalDay(state.sessions.find(s=>eveningLocalDay(s.started_at)?.startsWith(mo)).started_at):
-   (mo===month()?today():mo+'-01'));
+ const date=eveningCalendarInitialDate({
+  sessions:state.sessions,month:mo,selectedDate:state.eveningCalendarDate
+ });
  frame(eveningHistoryMarkup({
   sessions:state.sessions||[],members:state.members||[],
   stats:state.eveningHistoryStats||[],historyChallenges:state.eveningCalendarChallenges||[],
@@ -1759,7 +2830,7 @@ function renderEveningCalendar(){
  }), 'CALENDRIER DES SOIRÉES', 'Un souvenir de chaque moment à deux');
 }
 function optionalRolledTimer(roll){
- if(!roll?.timer_minutes)return '';
+ if(!validChallengeTimerMinutes(roll?.timer_minutes))return '';
  const key='special-'+roll.id;
  return state.specialTimerKey===key?timerWidget({id:key},roll.timer_minutes):
   button('special-timer:'+key,editorialIcon('clock')+' Minuteur · '+roll.timer_minutes+' min','class="subtle occasion-timer"');
@@ -1807,7 +2878,7 @@ function renderSpecial(){
    geoEnabled:worldGeoEnabled(),geoVenue:state.geoVenue,geoLookup:state.geoLookup,
    reservation:state.geoReservation,canReserve:currentHost()?.user_id===state.user?.id,
    bookingEditor:state.geoBookingEdit,
-   timerHtml:state.showSurpriseActivity&&activity?.timer_minutes?
+   timerHtml:state.showSurpriseActivity&&validChallengeTimerMinutes(activity?.timer_minutes)?
     timerWidget({id:'monthly-'+month()},activity.timer_minutes):'',
    rolling:!!state.diceStatus,rollingKind,rollFace:state.rollAnimationFace,
    showActivity:state.showSurpriseActivity,season:state.surpriseSeason,editSlot:state.surpriseEditSlot,
@@ -1965,7 +3036,7 @@ function renderAdvent(){
   when:new Date(serverDate+'T16:00:00Z'),year:state.adventYear,
   selectedDay:state.adventSelected,
   openingDay:state.adventOpening,revealing:state.adventRevealing,dateTrusted:!!state.adventServerDate,showHistory:state.adventHistory,
-  timerHtml:selected?.advent_timer_minutes?
+  timerHtml:validChallengeTimerMinutes(selected?.advent_timer_minutes)?
    timerWidget({id:'advent-'+selected.year+'-'+selected.day},selected.advent_timer_minutes):''
  }), 'CALENDRIER DE L’AVENT','Votre rituel commun en décembre');
 }
@@ -2244,14 +3315,21 @@ function openSettingsPage(section=''){
 }
 async function persistEveningCategoryConfirmPref(enabled){
  if(!state.user?.id||!state.profile)throw Error('Compte requis.');
+ const userId=state.user.id,coupleId=state.coupleId,generation=authFeedbackGeneration;
+ const current=()=>state.user?.id===userId&&state.coupleId===coupleId&&
+  authFeedbackGeneration===generation;
  // User-scoped Supabase preference, with per-user local fallback for older deployments.
  if(typeof state.profile.confirm_evening_category==='boolean'){
-  const {error}=await client.from('couple_profiles').update({confirm_evening_category:!!enabled}).eq('id',state.user.id);
+  const {error}=await client.from('couple_profiles').update({confirm_evening_category:!!enabled}).eq('id',userId);
   if(error)throw error;
+  // A Supabase response can arrive after sign-out, an account change or a
+  // fresh sign-in. It must never write into the replacement profile.
+  if(!current())return false;
   state.profile={...state.profile,confirm_evening_category:!!enabled};
- }else if(!saveCategoryConfirmLocal(state.user.id,enabled,localStorage)){
+ }else if(!saveCategoryConfirmLocal(userId,enabled,localStorage)){
   throw Error('Stockage de la préférence indisponible.');
  }
+ return current();
 }
 let eveningCategoryConfirmInFlight=false;
 function renderSettings(){
@@ -2259,12 +3337,27 @@ function renderSettings(){
  const futureMix=hasPartner?futureCoupleStyleMix(...state.members.map(m=>m.playStyle)):
   futureCoupleStyleMix(state.profile?.play_style,state.profile?.play_style);
  const futureMixLabel=futureMix.map(entry=>playStyleLabel(entry.style)+' '+entry.weight+' %').join(' · ');
+ const savedFavorites=readEveningFavorites(state.user?.id,state.coupleId);
+ const favoriteTitles=Object.create(null);
+ if(savedFavorites.length){
+  // Only inspect card IDs saved by this account. Do not display missing
+  // or unfilled admin slots as if they were playable.
+  for(const category of EVENING_CATEGORIES){
+   for(const card of editableCardSlots(category,state.customCards||[])){
+    const key=category+':'+card.cardId;
+    if(card.filled&&savedFavorites.includes(key)&&card.title)
+     favoriteTitles[key]=card.title;
+   }
+  }
+ }
  const account='<div class="settings-account-form">'+
   '<div class="settings-premium-section-head"><span>MON COMPTE LOVEROLL</span><h2>Votre espace personnel</h2><p>Un profil privé pour vos défis, vos préférences et vos invitations.</p></div>'+
   '<section class="settings-premium-glass-group"><h3>Mes informations</h3>'+
   '<label class="settings-inline-name"><span>Prénom affiché</span>'+
   '<input id="profile-name" type="text" autocomplete="given-name" value="'+safe(state.profile.display_name)+'" maxlength="80" aria-label="Prénom affiché"></label>'+
   profileGenderSelect(state.profile.gender)+profilePlayStyleSelect(state.profile.play_style)+
+  sessionLengthSettingsHtml(readSessionLength(state.user?.id))+
+  (state.coupleId?eveningFavoritesSettingsHtml(savedFavorites,favoriteTitles):'')+
   '<div class="settings-birthday-edit"><span>Mon anniversaire</span>'+monthDayInputs('settings-birthday',state.profile.birthday_md)+'</div>'+
   '<label>Courriel du compte<input type="email" readonly aria-readonly="true" value="'+safe(state.user.email||'')+'" autocomplete="email"></label>'+
   (state.testModeEligible?
@@ -2456,6 +3549,12 @@ function renderSettings(){
 async function refreshAndShow(){await refreshShared();render();}
 async function animateRoll(fn,kind='general'){
  if(state.diceStatus)throw Error('Un dé est déjà en cours de brassage.');
+ const ownerId=state.user?.id,ownerCouple=state.coupleId,
+  ownerGeneration=authFeedbackGeneration,request={};
+ latestDiceRollRequest=request;
+ const current=()=>latestDiceRollRequest===request&&
+  state.user?.id===ownerId&&state.coupleId===ownerCouple&&
+  authFeedbackGeneration===ownerGeneration;
  const activeD100=kind==='new-challenge'&&state.tab==='session'?
   root.querySelector('.evening-step.two .evening-d35-col canvas[data-dice-sides="100"]'):null;
  const activeMonthly=['monthly_activity','monthly_host'].includes(kind)&&state.tab==='special'?
@@ -2480,6 +3579,7 @@ async function animateRoll(fn,kind='general'){
  }else render();
  try{
   const result=await fn(); // Supabase determines and persists the actual result
+  if(!current())return null; // Old account's receipt cannot animate this login.
   // Never fabricate a one-pip result if Supabase has not confirmed a face.
   const confirmedFace=Number(result?.face);
   if(!Number.isInteger(confirmedFace)||confirmedFace<1||
@@ -2494,6 +3594,7 @@ async function animateRoll(fn,kind='general'){
   const liveD100Started=useLiveD100&&liveStarted;
   if(!liveStarted)render();
   await new Promise(resolve=>setTimeout(resolve,window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches?180:ROLL_TOTAL_MS+140));
+  if(!current())return null;
   if(liveD100Started&&activeD100.isConnected){
    const number=root.querySelector('.evening-d100-result');
    if(number){number.textContent='Résultat : '+confirmedFace;number.hidden=false;}
@@ -2503,26 +3604,44 @@ async function animateRoll(fn,kind='general'){
    // opening the activity or restoring the D100. Never draw twice.
    state.diceStatus='settled';
    await refreshShared();
+   if(!current())return null;
    // Keep the existing WebGL canvas mounted: no flash or animation restart.
    await new Promise(resolve=>setTimeout(resolve,1000));
+   if(!current())return null;
   }
   if(kind==='new-challenge'){
    // Keep official D100 face visible for a full second after the animation.
    // A truthy status temporarily suppresses refreshShared's automatic popup.
    state.diceStatus='settled';
    await refreshShared();
+   if(!current())return null;
    if(state.tab==='session'&&!liveD100Started)render();
    await new Promise(resolve=>setTimeout(resolve,1000));
+   if(!current())return null;
   }
   state.diceStatus=null;state.rollAnimationFace=null;state.rollAnimationKind=null;
   // Open the confirmed activity before repainting: no intermediate D6 flash.
   await refreshShared();
+  if(!current())return null;
   if(kind==='monthly_activity')state.showSurpriseActivity=!!state.monthly?.monthly_activity;
   render();return result;
  }catch(e){
+  if(!current())return null; // Ignore an error belonging to the old login.
   state.diceStatus=null;state.rollAnimationFace=null;state.rollAnimationKind=null;
-  try{await refreshShared();}finally{render();}
+  try{await refreshShared();}finally{if(current())render();}
+  if(!current())return null;
   throw e;
+ }finally{
+  if(latestDiceRollRequest===request){
+   const wasCurrent=current();
+   latestDiceRollRequest=null;
+   // Navigating between Auth screens can invalidate a roll without changing
+   // the user ID. Release that old pending state only if no newer roll owns it.
+   if(!wasCurrent&&state.diceStatus){
+    state.diceStatus=null;state.rollAnimationFace=null;state.rollAnimationKind=null;
+    if(state.user?.id===ownerId&&state.coupleId===ownerCouple)render();
+   }
+  }
  }
 }
 async function hashToken(token){
@@ -2537,18 +3656,18 @@ async function ensureInviteDraft(forceNew=false){
  if(!state.coupleId||state.members.length===2)throw Error('Le couple est déjà connecté.');
  const email=normalizeInviteEmail(id('invite-email')?.value);
  if(!CONFIG.siteUrl)throw Error('Adresse publique LoveRoll manquante.');
- const existing=state.invitations?.find(x=>!x.cancelled_at&&!x.accepted_at&&
-  new Date(x.expires_at)>new Date()&&x.invited_email?.toLowerCase()===email);
- // ID links are recoverable from server-visible invitation metadata; the
- // secret token hash is never exposed. Re-sending does not consume/invalidate it.
- if(!forceNew&&existing){
-  state.inviteDraft={id:existing.id,email,link:inviteLinkForId(CONFIG.siteUrl,existing.id)};
+ const {active}=coupleInvitationView(state.invitations,state.coupleId);
+ // The server-visible invite list is authoritative. Never reuse an expired,
+ // cancelled, accepted or other-couple link from state.inviteDraft memory.
+ if(!forceNew&&active?.invited_email?.toLowerCase()===email){
+  state.inviteDraft={id:active.id,email,link:inviteLinkForId(CONFIG.siteUrl,active.id)};
   return state.inviteDraft;
  }
- if(!forceNew&&state.inviteDraft&&state.inviteDraft.email===email)return state.inviteDraft;
- if(!forceNew&&state.invitations?.some(x=>!x.cancelled_at&&!x.accepted_at&&
-   new Date(x.expires_at)>new Date()))
+ if(!forceNew&&active)
   throw Error('Une invitation active existe pour un autre courriel. Utilisez « Remplacer le lien actuel ».');
+ // Share actions must never silently create an invitation or resurrect one
+ // left in memory. Creating/replacing requires the explicit Invite button.
+ if(!forceNew)throw Error('Aucun lien actif. Créez une invitation avant de la partager.');
  const token=randomInviteToken(),digest=await hashToken(token);
  const invitationId=await rpc('create_pair_invite',{p_couple:state.coupleId,p_email:email,p_token_hash:digest});
  state.inviteDraft={id:invitationId,email,link:inviteLinkForId(CONFIG.siteUrl,invitationId)};
@@ -2576,7 +3695,14 @@ async function handle(action,element){
      !['pending','maybe'].includes(state.eveningInvite?.state)||
      !state.eveningInvite.id))
    throw Error('Cette invitation ne peut plus recevoir de réponse.');
-  const who=state.user?.id,couple=state.coupleId;
+  const who=state.user?.id,couple=state.coupleId,
+   generation=authFeedbackGeneration,invitationId=state.eveningInvite?.id;
+  if(!who)return;
+  const request={};
+  currentEveningInviteRequest=request;
+  const current=()=>currentEveningInviteRequest===request&&
+   state.user?.id===who&&state.coupleId===couple&&
+   authFeedbackGeneration===generation;
   state.eveningInviteBusy=true;
   if(element){element.disabled=true;element.setAttribute('aria-busy','true');}
   try{
@@ -2584,25 +3710,37 @@ async function handle(action,element){
     await rpc('love_evening_invite_send',{p_couple:couple});
    }else{
     await rpc('love_evening_invite_respond',{
-     p_invitation:state.eveningInvite.id,p_answer:answer
+     p_invitation:invitationId,p_answer:answer
     });
    }
-   if(state.coupleId!==couple||state.user?.id!==who)return;
-   state.eveningInviteBusy=false; // Refresh must render enabled controls.
+   if(!current())return; // An old reply cannot navigate another member.
+   let setupError=null;
    if(answer==='yes'){
-    // Yes gives permission to open the real Soirée; never roll either D6.
-    // The official session RPC still enforces day/week and partner rules.
-    state.tab='session';
-    let setupError=null;
+    // Yes permits opening Soirée, never an automatic D6. Keep the previous
+    // screen visible until setup has completed for THIS authenticated member.
     if(!state.session)try{
      await rpc('ensure_couple_session',{p_couple:couple});
     }catch(error){setupError=error;}
-    await refreshAndShow();
-    if(setupError)showInlineError('Invitation acceptée. Ouvre la soirée manuellement si le D6 n’est pas encore disponible.');
-   }else await refreshAndShow();
-  }finally{
+    if(!current())return;
+   }
+   // Keep Accueil visible until this member's server state is ready.
+   // A failed refresh must not leave the app on an unrendered Soirée tab.
+   await refreshShared();
+   if(!current())return;
+   if(answer==='yes')state.tab='session';
    state.eveningInviteBusy=false;
-   if(element?.isConnected){element.disabled=false;element.removeAttribute('aria-busy');}
+   render();
+   if(setupError)showInlineError('Invitation acceptée. Ouvre la soirée manuellement si le D6 n’est pas encore disponible.');
+  }catch(error){
+   if(current())throw error; // Do not announce Alice's failure on Bob's screen.
+  }finally{
+   if(current()){
+    state.eveningInviteBusy=false;
+    if(element?.isConnected){
+     element.disabled=false;element.removeAttribute('aria-busy');
+    }
+   }
+   if(currentEveningInviteRequest===request)currentEveningInviteRequest=null;
   }
   return;
  }
@@ -2621,27 +3759,62 @@ async function handle(action,element){
   if(!isSharedCoupleReady(state.coupleId,state.members))throw Error('Éclat nécessite deux partenaires associés.');
   const kind=parts[0],num=Number(parts[1]);
   if(kind.startsWith('note-')){
-   if(!state.eclat?.active)throw Error('Aucun coffret actif');
+   if(!canPlayEclat())throw Error('Aucun coffret actif');
    const key=eclatNoteKey(state.eclat,state.user?.id);
-   if(kind==='note-retry'){eclatNoteDrafts.delete(key);render();return;}
+   if(kind==='note-retry'){
+    // A refresh of the draft must not race with a still-pending write.
+    if(eclatNoteDrafts.get(key)?.saving)throw Error('Enregistrement en cours…');
+    eclatNoteDrafts.delete(key);render();return;
+   }
+   // A second tap while a note is saving is not a user-visible error.
+   // Keep the original write running and preserve the edit field's focus.
+   if(eclatNoteDrafts.get(key)?.saving)return;
    const savedKey=await saveCurrentEclatNote(kind==='note-done'?true:kind==='note-edit'?false:undefined);
-   if(savedKey!==eclatNoteKey(state.eclat,state.user?.id))return;
+   if(!savedKey||state.tab!=='eclat'||
+      savedKey!==eclatNoteKey(state.eclat,state.user?.id))return;
+   // Saving a private note should not rebuild the editor: the save helper
+   // already updates the live status, while a re-render would steal focus
+   // and interrupt typing that continues during the network request.
+   if(kind==='note-save')return;
    if(kind==='note-play'||kind==='note-edit')eclatNoteDrafts.get(key).playing=true;
    render();return;
   }
   if(kind==='back'){await handle('tab:session',element);return;}
   if(kind==='music'){
-   if(document.documentElement.classList.contains('lr-privacy-active')){
-    eclatAudio.stop();state.eclatMusic=false;return;
+   const privacyMasked=document.documentElement.classList.contains('lr-privacy-active');
+   if(privacyMasked||!canPlayEclat()||state.eclatMusic){
+    latestEclatAudioOwner=null;
+    eclatAudio.stop();state.eclatMusic=false;
+    // Never repaint private challenge content while its mask is active.
+    if(!privacyMasked&&state.tab==='eclat')render();
+    return;
    }
-   if(!state.eclat?.active){eclatAudio.stop();state.eclatMusic=false;return;}
-   if(state.eclatMusic){eclatAudio.stop();state.eclatMusic=false;}
-   else{
-    const current=state.eclat?.active?eclatStage(state.eclat.coffret_id,state.eclat.chapter_number,state.eclat.variant_number):null;
-    const ok=await eclatAudio.start(current?.mood||'romantique');
-    state.eclatMusic=ok;
-    if(!ok)notify('Audio non disponible sur cet appareil.');
+   // AudioContext.resume() may wait for an iOS/Android gesture; ownership
+   // must be checked again AFTER awaiting it. A second tap supersedes this.
+   const owner={userId:state.user?.id,coupleId:state.coupleId,
+    generation:authFeedbackGeneration,sessionId:state.eclat.session_id,
+    coffretId:state.eclat.coffret_id,chapterNumber:state.eclat.chapter_number,
+    variantNumber:state.eclat.variant_number};
+   latestEclatAudioOwner=owner;
+   const current=eclatStage(owner.coffretId,
+    owner.chapterNumber,owner.variantNumber);
+   const ok=await eclatAudio.start(current?.mood||'romantique');
+   if(latestEclatAudioOwner!==owner)return;
+   if(!ownsCoupleAsyncRead(state,owner)||
+      authFeedbackGeneration!==owner.generation||
+      !isSharedCoupleReady(owner.coupleId,state.members)||state.tab!=='eclat'||
+      !canPlayEclat()||
+      // AudioContext.resume() must not revive the previous scene.
+      state.eclat.session_id!==owner.sessionId||
+      state.eclat.coffret_id!==owner.coffretId||
+      state.eclat.chapter_number!==owner.chapterNumber||
+      state.eclat.variant_number!==owner.variantNumber||
+      document.documentElement.classList.contains('lr-privacy-active')){
+    latestEclatAudioOwner=null;
+    eclatAudio.stop();return;
    }
+   state.eclatMusic=ok;
+   if(!ok)notify('Audio non disponible sur cet appareil.');
    render();return;
   }
   if(kind==='resume'){state.eclatBrowse=false;state.eclatDetails=false;render();return;}
@@ -2652,7 +3825,11 @@ async function handle(action,element){
   }
   if(kind==='detail'||kind==='suggest'){
    if(!Number.isInteger(num)||num<1||num>12)throw Error('Coffret inconnu');
-   const previous=state.eclatHistory.find(row=>Number(row.coffret_id)===num);
+   // A preview or revoked account may still have an old in-memory gallery.
+   // Do not derive even the suggested duration from private history unless
+   // the current account has an explicit Éclat entitlement.
+   const canReadPrevious=previewEclatStatus(state.eclat,state.testMode,state.testModeEligible)?.access===true;
+   const previous=canReadPrevious?state.eclatHistory.find(row=>Number(row.coffret_id)===num):null;
    state.eclatMinutes=[30,60,90].includes(Number(previous?.minutes))?Number(previous.minutes):30;
    state.eclatBrowse=true;state.eclatSelection=num;state.eclatDetails=true;state.eclatFinished=null;render();return;
   }
@@ -2663,32 +3840,87 @@ async function handle(action,element){
   if(kind==='start'){
    if(!Number.isInteger(num)||num<1||num>12)throw Error('Coffret inconnu');
    if(!previewEclatStatus(state.eclat,state.testMode,state.testModeEligible)?.access)throw Error('Ce coffret nécessite le forfait Éclat.');
-   state.eclat=await rpc('love_eclat_start',{p_coffret:num,p_minutes:state.eclatMinutes});
-   state.eclatBrowse=false;state.eclatDetails=false;state.eclatFinished=null;await refreshEclatHistory();render();return;
+   const owner=beginEclatAction();if(!owner)return;
+   const result=await runEclatMutation(owner,'love_eclat_start',{p_coffret:num,p_minutes:state.eclatMinutes});
+   if(!result.applied||!applyEclatActionResult(result.value,owner))return;
+   state.eclatBrowse=false;state.eclatDetails=false;state.eclatFinished=null;
+   await refreshEclatHistory();
+   if(ownsEclatAction(owner))render();
+   return;
   }
   if(kind==='choose'){
-   if(!state.eclat?.active)throw Error('Aucun coffret actif');
+   if(!canPlayEclat())throw Error('Aucun coffret actif');
    if(!Number.isInteger(num)||num<0||num>3)throw Error('Choix invalide');
    const draft=eclatNoteDrafts.get(eclatNoteKey(state.eclat,state.user?.id));
    if(num>0&&!draft?.moment_done)throw Error('Vivez d’abord le moment ensemble, puis confirme que tu as terminé.');
-   if(draft&&!draft.loading&&!draft.error)await saveCurrentEclatNote();
-   state.eclat=await rpc('love_eclat_choose',{p_choice:num});render();return;
+   // Another tap during the private save must not supersede the original
+   // choice's action owner. Reserve the mutating action only AFTER the
+   // private note has been saved and the scene has been revalidated.
+   if(draft?.saving)return;
+   if(draft&&!draft.loading&&!draft.error){
+    const saved=await saveCurrentEclatNote();
+    if(!saved)return; // A new account/chapter must not receive this choice.
+   }
+   if(!canPlayEclat())return;
+   const owner=beginEclatAction();if(!owner)return;
+   if(!ownsEclatAction(owner)||!canPlayEclat())return;
+   const result=await runEclatMutation(owner,'love_eclat_choose',{p_choice:num});
+   if(!result.applied||!applyEclatActionResult(result.value,owner))return;
+   render();return;
   }
   if(kind==='next'){
-   if(!state.eclat?.active)throw Error('Aucun coffret actif');
+   if(!canPlayEclat())throw Error('Aucun coffret actif');
    const last=state.eclat.chapter_index===state.eclat.chapter_total;
    const title=last?eclatStage(state.eclat.coffret_id,8,0)?.coffret?.title:null;
-   state.eclat=await rpc('love_eclat_next');
-   if(last&&!state.eclat?.active){await refreshEclatHistory();state.eclatFinished=title||'Expérience terminée';state.eclatDetails=false;eclatAudio.stop();state.eclatMusic=false;}
+   const owner=beginEclatAction();if(!owner)return;
+   const result=await runEclatMutation(owner,'love_eclat_next');
+   if(!result.applied||!applyEclatActionResult(result.value,owner))return;
+   // Completion is private. A server receipt may revoke Éclat access at
+   // the last chapter; never recreate its banner from a stale response.
+   if(last&&state.eclat?.access===true&&!state.eclat?.active){
+    await refreshEclatHistory();
+    // History loading can race with a revoked entitlement or a new coffret.
+    if(!ownsEclatAction(owner)||state.eclat?.access!==true||
+       state.eclat?.active===true)return;
+    state.eclatFinished=title||'Expérience terminée';
+    state.eclatDetails=false;eclatAudio.stop();state.eclatMusic=false;
+   }
    render();return;
   }
   if(kind==='end'){
-   if(!state.eclat?.active)return;
-   const yes=await premiumConfirm('Quitter ce coffret maintenant ? Les chapitres terminés restent dans votre historique de jeu, mais cette séance ne pourra pas être reprise.',{
-    kind:'library',title:'Quitter Éclat ?',accept:'Quitter',cancel:'Continuer'
-   });
-   if(!yes)return;
-   state.eclat=await rpc('love_eclat_end');await refreshEclatHistory();state.eclatDetails=false;state.eclatFinished=null;eclatAudio.stop();state.eclatMusic=false;render();return;
+   if(!canPlayEclat())return;
+   // Confirmations are async. A second tap on Quitter must not open another
+   // dialog or supersede the first action before the player has answered.
+   // New chapters, coffrets and accounts may open their own confirmation.
+   const pending=pendingEclatExitConfirmation,currentScene=state.eclat;
+   if(pending&&pending.userId===state.user?.id&&
+      pending.coupleId===state.coupleId&&
+      pending.generation===authFeedbackGeneration&&
+      pending.sessionId===(currentScene?.session_id??null)&&
+      pending.chapterIndex===(currentScene?.chapter_index??null))return;
+   const owner=beginEclatAction();if(!owner)return;
+   const confirmation={userId:owner.userId,coupleId:owner.coupleId,
+    generation:owner.generation,sessionId:currentScene?.session_id??null,
+    chapterIndex:currentScene?.chapter_index??null};
+   pendingEclatExitConfirmation=confirmation;
+   let yes=false;
+   try{
+    yes=await premiumConfirm('Quitter ce coffret maintenant ? Les chapitres terminés restent dans votre historique de jeu, mais cette séance ne pourra pas être reprise.',{
+     kind:'library',title:'Quitter Éclat ?',accept:'Quitter',cancel:'Continuer'
+    });
+   }finally{
+    if(pendingEclatExitConfirmation===confirmation)pendingEclatExitConfirmation=null;
+   }
+   // A delayed approval from an old chapter must not end the new one.
+   if(!yes||!ownsEclatAction(owner)||!canPlayEclat()||
+      (state.eclat.session_id??null)!==confirmation.sessionId||
+      (state.eclat.chapter_index??null)!==confirmation.chapterIndex)return;
+   const result=await runEclatMutation(owner,'love_eclat_end');
+   if(!result.applied||!applyEclatActionResult(result.value,owner))return;
+   await refreshEclatHistory();
+   if(!ownsEclatAction(owner))return;
+   state.eclatDetails=false;state.eclatFinished=null;
+   eclatAudio.stop();state.eclatMusic=false;render();return;
   }
   throw Error('Commande Éclat inconnue');
  }
@@ -2796,6 +4028,7 @@ async function handle(action,element){
   state.homeNotices=!state.homeNotices;render();return;
  }
  if(verb==='review-rate'){
+  if(state.reviewSaving)return;
   const key=parts[0],value=Number(parts[1]);
   if(!state.reviewModalSessionId||!['overall','connection','appreciation','again'].includes(key)||
     !Number.isInteger(value)||value<1||value>5)throw Error('Note invalide.');
@@ -2812,14 +4045,16 @@ async function handle(action,element){
   return;
  }
  if(verb==='review-dismiss'){
+  currentReviewSaveRequest=null;state.reviewSaving=false;
   state.reviewDismissedSessionId=state.reviewModalSessionId;
   state.reviewModalSessionId=null;state.reviewDraft={};render();return;
  }
  if(verb==='review-open'){
-  const sessionId=parts[0],session=state.sessions?.find(s=>s.id===sessionId&&s.finished_at&&s.counted);
+  if(state.reviewSaving)return;
+  const sessionId=parts[0],session=state.sessions?.find(s=>s&&s.id===sessionId&&s.finished_at&&s.counted);
   if(!session||!isSharedCoupleReady(state.coupleId,state.members))
    throw Error('Bilan inaccessible.');
-  const previous=state.eveningReviews.find(r=>r.session_id===sessionId&&r.author_id===state.user.id);
+  const previous=state.eveningReviews?.find(r=>r&&r.session_id===sessionId&&r.author_id===state.user?.id);
   state.reviewModalSessionId=sessionId;state.reviewDismissedSessionId=null;
   state.reviewDraft=previous?{overall:previous.overall,connection:previous.connection,
    appreciation:previous.appreciation,again:previous.again,comment:previous.comment||'',editing:true}:
@@ -2829,20 +4064,39 @@ async function handle(action,element){
  if(verb==='review-save'){
   if(state.reviewSaving)return;
   const sessionId=state.reviewModalSessionId;
-  const session=state.sessions.find(x=>x.id===sessionId&&x.finished_at&&x.counted);
-  if(!session)throw Error('Cette soirée n’est pas clôturée.');
-  const draft={...state.reviewDraft,comment:root.querySelector('#lr-review-comment')?.value||''};
+  const session=state.sessions?.find(x=>x&&x.id===sessionId&&x.finished_at&&x.counted);
+  if(!session||!state.user?.id||!state.coupleId)
+   throw Error('Cette soirée n’est pas clôturée.');
+  const owner={userId:state.user.id,coupleId:state.coupleId,tab:state.tab,
+   sessionId,generation:authFeedbackGeneration};
+  const request={};currentReviewSaveRequest=request;
+  const ownsRequest=()=>currentReviewSaveRequest===request&&
+   state.user?.id===owner.userId&&state.coupleId===owner.coupleId&&
+   authFeedbackGeneration===owner.generation;
+  const current=()=>ownsRequest()&&state.tab===owner.tab&&
+   state.reviewModalSessionId===sessionId;
+  const commentInput=root.querySelector('#lr-review-comment');
+  const draft={...state.reviewDraft,comment:commentInput?.value||''};
   const err=root.querySelector('.lr-review-error');
   if(!validEveningReview(draft)){
+   currentReviewSaveRequest=null;
    if(err){err.hidden=false;err.textContent='Choisis de 1 à 5 cœurs pour chacune des quatre questions.';}
    return;
   }
   const save=root.querySelector('.lr-review-save');
-  state.reviewSaving=true;if(save){save.disabled=true;save.textContent='♡ Enregistrement…';}
+  const ratingButtons=Array.from(root.querySelectorAll?.('.lr-review-heart')||[]);
+  // Freeze the exact answers sent to the server: edits during a slow save
+  // would otherwise be discarded when its success navigates to Calendar.
+  state.reviewSaving=true;
+  if(commentInput)commentInput.readOnly=true;
+  for(const rating of ratingButtons)rating.disabled=true;
+  if(save){save.disabled=true;save.textContent='♡ Enregistrement…';}
   try{
    await rpc('save_love_evening_review',{p_session:sessionId,p_overall:draft.overall,
     p_connection:draft.connection,p_appreciation:draft.appreciation,
     p_again:draft.again,p_comment:draft.comment});
+   // Supabase may finish after sign-out, a new login or closing the panel.
+   if(!current())return;
    state.reviewModalSessionId=null;state.reviewDraft={};state.reviewDismissedSessionId=sessionId;
    const date=eveningLocalDay(session.started_at);
    state.eveningCalendarMonth=date?.slice(0,7)||month();
@@ -2851,12 +4105,27 @@ async function handle(action,element){
    state.tab='evening-calendar';
    await refreshAndShow();
   }catch(error){
-   if(err){err.hidden=false;err.textContent=String(error?.message||'Enregistrement impossible. Réessaie.');}
-  }finally{state.reviewSaving=false;if(save?.isConnected){save.disabled=false;save.textContent='♡ Enregistrer notre bilan';}}
+   if(current()&&err){err.hidden=false;err.textContent=String(error?.message||'Enregistrement impossible. Réessaie.');}
+  }finally{
+   if(ownsRequest()){
+    currentReviewSaveRequest=null;state.reviewSaving=false;
+    if(commentInput?.isConnected)commentInput.readOnly=false;
+    for(const rating of ratingButtons)if(rating.isConnected)rating.disabled=false;
+    if(save?.isConnected){save.disabled=false;save.textContent='♡ Enregistrer notre bilan';}
+   }
+  }
   return;
  }
- if(verb==='evening-more'){state.eveningMore=!state.eveningMore;render();return;}
+ if(verb==='evening-more'){
+  // Avoid toggling a stale management dialog while a gift owns the turn.
+  if(state.tab==='session'&&(state.diceStatus||isActiveEveningRedrawPending()||
+     isActiveEveningGiftPending()))return;
+  state.eveningMore=!state.eveningMore;render();return;
+ }
  if(verb==='evening-calendar'){
+  // Stay in Soirée until the official die, redraw or gift receipt settles.
+  if(state.tab==='session'&&(state.diceStatus||isActiveEveningRedrawPending()||
+      isActiveEveningGiftPending()))return;
   state.eveningCalendarBack=parts[0]==='settings'||state.tab==='settings'?'settings-page:confidentialite':'tab:session';
   state.eveningMore=false;state.confirmCancel=false;
   const date=state.session?eveningLocalDay(state.session.started_at):null;
@@ -2864,52 +4133,142 @@ async function handle(action,element){
   state.tab='evening-calendar';render();return;
  }
  if(verb==='evening-month-prev'||verb==='evening-month-next'){
+  if(!state.user?.id||!state.coupleId||state.tab!=='evening-calendar')return;
+  const owner={userId:state.user.id,coupleId:state.coupleId,
+   generation:authFeedbackGeneration};
   const d=new Date((state.eveningCalendarMonth||month())+'-15T12:00:00Z');
   d.setUTCMonth(d.getUTCMonth()+(verb==='evening-month-next'?1:-1));
-  state.eveningCalendarMonth=d.toISOString().slice(0,7);
-  state.eveningCalendarDate=state.eveningCalendarMonth+'-01';
-  state.calendarPassQuota=await rpc('love_calendar_pass_quota',{
-   p_couple:state.coupleId,p_month:state.eveningCalendarMonth
-  });
-  state.calendarPassMonth=state.eveningCalendarMonth;
-  render();return;
+  const nextMonth=d.toISOString().slice(0,7),request={};
+  latestCalendarPassQuotaRequest=request;
+  state.eveningCalendarMonth=nextMonth;
+  state.eveningCalendarDate=nextMonth+'-01';
+  // The month is usable immediately, even if optional pass statistics fail.
+  render();
+  const current=()=>latestCalendarPassQuotaRequest===request&&
+   state.user?.id===owner.userId&&state.coupleId===owner.coupleId&&
+   authFeedbackGeneration===owner.generation&&
+   state.tab==='evening-calendar'&&state.eveningCalendarMonth===nextMonth;
+  try{
+   const quota=await rpc('love_calendar_pass_quota',{
+    p_couple:owner.coupleId,p_month:nextMonth
+   });
+   if(!current())return;
+   state.calendarPassQuota=Array.isArray(quota)?quota:[];
+   state.calendarPassMonth=nextMonth;
+   render();
+  }catch(error){
+   if(!current())return;
+   state.calendarPassQuota=[];state.calendarPassMonth=null;
+   console.warn('Statistiques des passes du calendrier indisponibles',error);
+   notify('Calendrier affiché. Les statistiques des passes sont temporairement indisponibles.');
+  }
+  return;
  }
  if(verb==='evening-date'){
-  const date=parts[0];
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||date.slice(0,7)!==(state.eveningCalendarMonth||month()))
+  const date=parts[0],calendarMonth=state.eveningCalendarMonth||month();
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||
+     date!==eveningCalendarInitialDate({
+      sessions:[],month:calendarMonth,selectedDate:date
+     }))
    throw Error('Date de calendrier invalide.');
   state.eveningCalendarDate=date;render();return;
  }
  if(verb==='evening-close-request'){
+  if(state.diceStatus)return; // Let the official D100/D6 settle before closing.
+  // Never offer closure while a private-card decision or gift is being persisted.
+  if(isActiveEveningRedrawPending()||isActiveEveningGiftPending())return;
   if(!state.session)throw Error('Aucune soirée à clore.');
   state.eveningMore=false;state.confirmCancel=true;render();return;
  }
  if(verb==='evening-close-confirm'){
+  if(state.diceStatus)return; // A stale confirmation must not close mid-roll.
+  // A delayed confirmation cannot close the session ahead of a repick or gift.
+  if(isActiveEveningRedrawPending()||isActiveEveningGiftPending())return;
   if(!state.session)throw Error('Cette soirée est déjà clôturée.');
   const ended=state.session;
-  await rpc('close_love_evening_preserve',{p_session:ended.id});
-  const date=eveningLocalDay(ended.started_at);
-  state.eveningCalendarMonth=date?.slice(0,7)||month();
-  state.eveningCalendarDate=date||today();
-  state.confirmCancel=false;state.eveningMore=false;state.showEveningChallenges=false;
-  state.tab='evening-calendar';await refreshAndShow();return;
+  const owner={userId:state.user?.id,coupleId:state.coupleId,
+   sessionId:ended.id,generation:authFeedbackGeneration};
+  const ownsClose=()=>state.user?.id===owner.userId&&
+   state.coupleId===owner.coupleId&&state.session?.id===owner.sessionId&&
+   authFeedbackGeneration===owner.generation;
+  const ticket=eveningClosureGate.begin(owner);
+  if(!ticket)return; // A terminal request for this evening is already pending.
+  try{
+   await rpc('close_love_evening_preserve',{p_session:ended.id});
+   if(!ownsClose())return;
+   const date=eveningLocalDay(ended.started_at);
+   state.eveningCalendarMonth=date?.slice(0,7)||month();
+   state.eveningCalendarDate=date||today();
+   state.confirmCancel=false;state.eveningMore=false;state.showEveningChallenges=false;
+   state.tab='evening-calendar';await refreshAndShow();return;
+  }finally{eveningClosureGate.release(ticket);}
  }
  if(verb==='evening-challenge'||verb==='evening-list'){
-  if(state.user?.id&&state.session?.id)clearEveningSelection(localStorage,state.user.id,state.session.id);
-  state.showEveningChallenges=true;state.selectedEveningChallengeId=null;render();return;
+  // Do not discard the authoritative RLS refresh or live WebGL canvas.
+  if(state.diceStatus||isActiveEveningRedrawPending())return;
+  if(state.user?.id&&state.session?.id)clearEveningSelection(safeEveningBookmarkStorage(),state.user.id,state.session.id);
+  state.showEveningChallenges=true;state.selectedEveningChallengeId=null;render();
+  // Give keyboard/screen-reader users a stable entry point into the modal.
+  root.querySelector('.evening-queue-modal [data-action="evening-close"]')
+   ?.focus({preventScroll:true});
+  return;
  }
  if(verb==='evening-close'){
-  if(state.user?.id&&state.session?.id)clearEveningSelection(localStorage,state.user.id,state.session.id);
-  state.showEveningChallenges=false;state.selectedEveningChallengeId=null;render();return;
+  // Closing the queue before a repick settles would reopen it from a late reply.
+  if(state.diceStatus||isActiveEveningRedrawPending())return;
+  if(state.user?.id&&state.session?.id)clearEveningSelection(safeEveningBookmarkStorage(),state.user.id,state.session.id);
+  state.showEveningChallenges=false;state.selectedEveningChallengeId=null;render();
+  // Restore focus to the action which opens this drawer, never to the body.
+  (root.querySelector('button[data-action="evening-list"]')||
+   root.querySelector('.evening-manage'))?.focus({preventScroll:true});
+  return;
+ }
+ if(verb==='favorite-remove'){
+  if(!state.user?.id||!state.coupleId||
+     (element&&!root.contains(element)))return;
+  const identity=parts.join(':');
+  const outcome=removeEveningFavorite(state.user.id,state.coupleId,identity);
+  if(!outcome.ok)throw Error(outcome.reason==='not-found'?
+   'Ce favori a déjà été retiré. Actualise ton compte.':
+   'Impossible de retirer ce favori sur cet appareil.');
+  render();
+  root.querySelector('.lr-favorite-manager')?.focus({preventScroll:true});
+  return;
+ }
+ if(verb==='evening-favorite'){
+  // An obsolete favorite tap must not repaint a live D100 or a pending repick.
+  if(state.diceStatus||isActiveEveningRedrawPending())return;
+  const item=ownEveningChallenges(state.challenges,state.user?.id,state.session?.id)
+   .find(card=>card.id===parts[0]);
+  if(!item||!state.coupleId||!state.user?.id)
+   throw Error('Ce défi ne fait pas partie de ta soirée personnelle.');
+  const outcome=toggleEveningFavorite(state.user.id,state.coupleId,item);
+  if(!outcome.ok)throw Error(outcome.reason==='limit'?
+   'Tu peux conserver au maximum cinq favoris. Retire-en un avant d’en ajouter un autre.':
+   'Impossible d’enregistrer ce favori sur cet appareil.');
+  render();
+  // The button is recreated after toggling its state; keep keyboard and
+  // screen-reader focus on the same favorite control rather than on the body.
+  root.querySelector('.evening-queue-detail button[data-action^="evening-favorite:"]')
+   ?.focus({preventScroll:true});
+  return;
  }
  if(verb==='evening-open'){
+  // A delayed queue touch must not replace the live D100 or its RLS refresh.
+  if(state.diceStatus||isActiveEveningRedrawPending())return;
   if(!ownEveningChallenges(state.challenges,state.user?.id,state.session?.id).some(x=>x.id===parts[0]))
    throw Error('Ce défi ne fait pas partie de ta liste personnelle.');
   state.selectedEveningChallengeId=parts[0];state.showEveningChallenges=true;
-  saveEveningSelection(localStorage,state.user.id,state.session.id,parts[0]);
-  render();return;
+  saveEveningSelection(safeEveningBookmarkStorage(),state.user.id,state.session.id,parts[0]);
+  render();
+  root.querySelector('.evening-queue-modal [data-action="evening-close"]')
+   ?.focus({preventScroll:true});
+  return;
  }
  if(verb==='evening-refuse'){
+  // Refusing a private card cannot race a gift that updates session turns.
+  if(state.diceStatus||isActiveEveningRedrawPending()||isActiveEveningGiftPending()||
+     isEveningCardCompleting(parts[0]))return;
   if(!state.redrawReady)throw Error('La repige sécurisée n’est pas encore disponible sur ce serveur.');
   const item=ownEveningChallenges(state.challenges,state.user?.id,state.session?.id).find(x=>x.id===parts[0]);
   if(!item||!['proposed','accepted'].includes(item.status))throw Error('Ce défi ne peut pas être refusé.');
@@ -2918,81 +4277,213 @@ async function handle(action,element){
   return;
  }
  if(verb==='evening-refuse-cancel'){
+  // A stale cancellation cannot remount a rolling 3D die or pending gift.
+  if(state.diceStatus||isActiveEveningGiftPending())return;
   const target=state.eveningRefusalId;
-  if(!state.redrawBusy){state.eveningRefusalId=null;render();
+  if(!isActiveEveningRedrawPending()){state.eveningRefusalId=null;render();
    root.querySelector('[data-action="evening-refuse:'+target+'"]')?.focus();}
   return;
  }
  if(verb==='evening-pass'||verb==='evening-refuse-choice'){
+  // Private Passer/Refuser cannot run against a gift's changing turn counts.
+  if(state.diceStatus||isActiveEveningGiftPending())return;
   if(!state.redrawReady)throw Error('La repige sécurisée n’est pas encore disponible sur ce serveur.');
-  if(state.redrawBusy)return;
+  if(isActiveEveningRedrawPending())return;
   const refuse=verb==='evening-refuse-choice',challengeId=parts[0];
+  if(isEveningCardCompleting(challengeId))return;
+  // Commencer and the timer can be awaiting the acceptance RPC. Do not
+  // race their result with a Passer/Refuser of this SAME recipient card.
+  if(state.eveningStartContext?.challengeId===challengeId&&
+     isSameEveningResponseContext(state,state.eveningStartContext))return;
+  if(state.timerStartContext?.challengeId===challengeId&&
+     isSameEveningResponseContext(state,state.timerStartContext))return;
   if(refuse&&state.eveningRefusalId!==challengeId)throw Error('Confirme ton choix pour ce défi.');
   if(refuse&&!['yes','no'].includes(parts[1]))throw Error('Choix de refus non reconnu.');
   const item=ownEveningChallenges(state.challenges,state.user?.id,state.session?.id).find(x=>x.id===challengeId);
   if(!item||!['proposed','accepted'].includes(item.status))throw Error('Défi déjà répondu ou inaccessible.');
+  const originalSnapshot=snapshotEveningCardBeforeRedraw(item);
+  if(!originalSnapshot)throw Error('Impossible de vérifier les informations de ce défi. Actualise la soirée.');
   if(!refuse&&state.monthlyPassQuota?.can_pass===false)
    throw Error('Limite mensuelle de passages atteinte. Tu peux toujours refuser un défi.');
-  const sessionId=state.session.id,exclude=refuse&&parts[1]==='yes';
+  const responseContext={sessionId:state.session.id,userId:state.user?.id,tab:state.tab,challengeId};
+  const exclude=refuse&&parts[1]==='yes';
+  state.redrawBusyContext=responseContext;
   state.redrawBusy=true;
-  if(challengeTimer.id===challengeId)challengeTimer.decisionPending=true;
+  if(ownsVisibleEveningTimer(challengeId,state.user.id,state.session.id))challengeTimer.decisionPending=true;
   render();
   let redrawFeedback=null;
   try{
    const outcome=await rpc('love_respond_and_redraw',{
     p_challenge:challengeId,p_action:refuse?'refuse':'pass',p_exclude:exclude});
-   // Clear only the timer for the responded challenge. A late callback from
-   // this local device must not mark a passed/refused card as completed.
-   if(challengeTimer.id===challengeId){
+   const receiptValid=isValidEveningRedrawReceipt(outcome,challengeId);
+   const sameContext=isSameEveningResponseContext(state,responseContext);
+   // The player may have switched accounts, evenings or tabs during the
+   // network request. An old response must not trigger a new account's RLS
+   // refresh, selection or confirmation.
+   if(!sameContext||!ownsEveningRedrawRequest(state,responseContext))return;
+   // A syntactically valid RPC receipt cannot stop a live timer by itself.
+   // Wait for the recipient-only refreshed database view below.
+   // The automatic queue refresh can discover a DIFFERENT newly offered
+   // challenge. Never preselect the RPC replacement before verifying its
+   // authoritative recipient-only row; choose it after refresh instead.
+   if(sameContext){
+    if(receiptValid)state.eveningRefusalId=null;
+    state.selectedEveningChallengeId=null;
+    state.showEveningChallenges=true;
+   }
+   // Refresh the recipient-only RLS rows WITHOUT rendering an intermediate
+   // auto-selected card. The finally block paints the confirmed state once.
+   await refreshShared(responseContext);
+   // A valid RPC JSON payload alone does not prove that the recipient can
+   // render the committed replacement after RLS refresh. Do not announce a
+   // successful repick or keep an invisible card selected in that case.
+   const sameAfterRefresh=isSameEveningResponseContext(state,responseContext)&&
+    ownsEveningRedrawRequest(state,responseContext);
+   const persistedReceiptValid=receiptValid&&sameAfterRefresh&&
+    isPersistedEveningRedrawReceipt(outcome,state.challenges,state.user.id,state.session.id,originalSnapshot);
+   if(persistedReceiptValid){
+    // A simultaneous second-device response can already have consumed the
+    // replacement. Only focus it if it remains in the visible D6 queue.
+    state.selectedEveningChallengeId=activeEveningRedrawReplacementId(
+     state.challenges,outcome,state.user.id,state.session.id);
+    state.showEveningChallenges=true;
+   }
+   if(persistedReceiptValid&&ownsVisibleEveningTimer(challengeId,responseContext.userId,responseContext.sessionId)){
     challengeTimer.running=false;challengeTimer.deadline=0;challengeTimer.remainingMs=0;
     challengeTimer.notified=true;challengeTimer.autoCompletePending=false;
     challengeTimer.decisionPending=false;saveChallengeTimer();
    }
-   state.eveningRefusalId=null;
-   state.selectedEveningChallengeId=outcome?.replacement_id||null;
-   if(state.session?.id===sessionId)state.showEveningChallenges=true;
-   await refreshAndShow();
-   redrawFeedback=outcome?.replacement_unavailable?
-    'Aucun autre défi admissible dans cette catégorie pour ce soir. Tu peux réintégrer un défi retiré ou revenir plus tard.':
-    (refuse?(exclude?'Défi retiré du lot pour ce cycle.':'Défi conservé dans la pige.'):
-      'Défi passé — il pourra revenir plus tard.');
+   if(sameAfterRefresh&&!persistedReceiptValid){
+    // Even malformed/partial receipts must clear any automatic selection
+    // made by refreshShared; never open a different freshly offered card.
+    state.selectedEveningChallengeId=null;
+    state.showEveningChallenges=true;
+   }
+   // If the receipt OR the refreshed RLS view is incomplete, reconcile
+   // against the original persisted status before unlocking the timer.
+   // A still-accepted challenge keeps its countdown alive.
+   if(!persistedReceiptValid&&sameAfterRefresh){
+    const stored=ownEveningChallenges(state.challenges,state.user.id,state.session.id)
+     .find(card=>card.id===challengeId);
+    const recovery=redrawTimerRecovery(stored?.status,challengeTimer.deadline,Date.now());
+    // Even cards without a timer must dismiss a refusal dialog if the
+    // server confirms that the original decision has already been applied.
+    if(recovery==='stop'&&state.eveningRefusalId===challengeId)
+     state.eveningRefusalId=null;
+    if(ownsVisibleEveningTimer(challengeId,responseContext.userId,responseContext.sessionId)&&challengeTimer.decisionPending){
+     if(recovery==='stop'){
+      challengeTimer.running=false;challengeTimer.deadline=0;challengeTimer.remainingMs=0;
+      challengeTimer.notified=true;challengeTimer.autoCompletePending=false;
+     }else if(recovery==='expire'){
+      challengeTimer.running=false;challengeTimer.remainingMs=0;
+      challengeTimer.autoCompletePending=true;
+     }
+     challengeTimer.decisionPending=false;saveChallengeTimer();
+     if(challengeTimer.autoCompletePending)void retryExpiredTimedEvening();
+    }
+   }
+   // The persisted action is authoritative even if the other device sent
+   // a different Passer/Refuser intent.
+   if(isSameEveningResponseContext(state,responseContext))
+    redrawFeedback=receiptValid&&!persistedReceiptValid
+     ?'Réponse reçue, mais la nouvelle carte n’est pas confirmée dans ta liste. Vérifie tes défis.'
+     :eveningRedrawFeedback(outcome,challengeId);
   }catch(error){
-   if(challengeTimer.id===challengeId&&challengeTimer.decisionPending){
+   // A failure from an old account/evening/tab must never surface an
+   // unrelated error on the screen now controlled by another session.
+   // finally still unlocks the action and renders the current account.
+   if(!isSameEveningResponseContext(state,responseContext)||
+      !ownsEveningRedrawRequest(state,responseContext))return;
+   if(ownsVisibleEveningTimer(challengeId,responseContext.userId,responseContext.sessionId)&&challengeTimer.decisionPending){
     challengeTimer.decisionPending=false;
     if(challengeTimer.deadline>0&&challengeTimer.deadline<=Date.now()){
      challengeTimer.running=false;challengeTimer.remainingMs=0;
      challengeTimer.autoCompletePending=true;saveChallengeTimer();void retryExpiredTimedEvening();
-    }
+    }else saveChallengeTimer();
    }
    throw error;
   }finally{
-   state.redrawBusy=false;
-   // Re-render after both success and failure; a rejected RPC must never
-   // leave its on-screen buttons permanently disabled.
-   render();
+   // A previous account's pending lock must not be persisted under the
+   // new account when an in-flight response arrives after switching.
+   // Only the action owning this lock may release it. An older response
+   // cannot unlock or alter a newer redraw started on another account.
+   if(state.redrawBusyContext===responseContext){
+    // This flag belongs to the old timer itself: clear it even if the
+    // account left that evening, but NEVER clear a newer account's timer.
+    if(ownsEveningTimerRecord(challengeTimer,challengeId,responseContext.userId,responseContext.sessionId)&&
+       challengeTimer.decisionPending)
+     challengeTimer.decisionPending=false;
+    state.redrawBusyContext=null;
+    state.redrawBusy=false;
+    render();
+   }
   }
   if(redrawFeedback)notify(redrawFeedback);
   return;
  }
  if(verb==='evening-start'){
-  // Prime WebAudio immediately during the user's tap, before awaiting the server.
+  // A stale start tap must not race a live die or a pending gift transfer.
+  if(state.diceStatus||isActiveEveningGiftPending())return;
+  if(isEveningCardCompleting(parts[0]))return;
+  // A repick refreshes the entire recipient-only queue. Starting even a
+  // DIFFERENT private card before that confirmation can race the RLS view.
+  if(isActiveEveningRedrawPending())return;
+  if(isSameEveningResponseContext(state,state.eveningStartContext))return;
+  // Timer lecture and Commencer must not both accept this same D100 card.
+  if(state.timerStartContext?.challengeId===parts[0]&&
+     isSameEveningResponseContext(state,state.timerStartContext))return;
+  // Prime WebAudio synchronously on an authorized user gesture only.
   if(challengeTimer.mode==='sound')void unlockLoveRollSounds();
-  const picked=ownEveningChallenges(state.challenges,state.user?.id,state.session?.id).find(x=>x.id===parts[0]);
-  if(!picked||!['proposed','accepted'].includes(picked.status))throw Error('Ce défi ne peut pas être commencé.');
-  if(picked.status==='proposed')
-   await rpc('answer_challenge',{p_id:picked.id,p_status:'accepted'});
-  state.showEveningChallenges=true;state.selectedEveningChallengeId=picked.id;
-  await refreshAndShow();
-  const active=state.challenges.find(c=>c.id===picked.id);
-  const minutes=resolvedCard(active||picked).minutes;
-  if(minutes>0){
-   activeTimer(active||picked,minutes);
-   if(!challengeTimer.running&&challengeTimer.remainingMs>0){
-    challengeTimer.deadline=Date.now()+challengeTimer.remainingMs;
-    challengeTimer.running=true;challengeTimer.notified=false;
-    saveChallengeTimer();
+  const startContext={sessionId:state.session?.id,userId:state.user?.id,
+   tab:state.tab,challengeId:parts[0]};
+  const picked=ownEveningChallenges(state.challenges,startContext.userId,startContext.sessionId)
+   .find(x=>x.id===parts[0]);
+  if(!picked||!['proposed','accepted'].includes(picked.status))
+   throw Error('Ce défi ne peut pas être commencé.');
+  state.eveningStartContext=startContext;
+  const isCurrentStart=()=>isSameEveningResponseContext(state,startContext)&&
+   state.eveningStartContext===startContext;
+  try{
+   if(picked.status==='proposed'){
+    await rpc('answer_challenge',{p_id:picked.id,p_status:'accepted'});
+    // A late response from account A must never select or start B's timer.
+    if(!isCurrentStart())return;
    }
-   updateChallengeClock();
+   // Refresh without an intermediate render or an unscoped account write.
+   await refreshShared(startContext);
+   if(!isCurrentStart())return;
+   const active=ownEveningChallenges(state.challenges,startContext.userId,startContext.sessionId)
+    .find(x=>x.id===picked.id);
+   // Only an accepted row returned by the recipient-only RLS refresh may
+   // start a real timer. A stale "proposed" row is not proof that the
+   // acceptance RPC committed, even if its HTTP response was successful.
+   if(active?.status!=='accepted'){
+    state.selectedEveningChallengeId=null;
+    state.showEveningChallenges=true;
+    render();
+    notify(active?.status==='proposed'
+     ?'Le serveur n’a pas encore confirmé le début du défi. Réessaie après l’actualisation.'
+     :'Ce défi a déjà changé. Consulte ta liste pour voir son état.');
+    return;
+   }
+   state.showEveningChallenges=true;
+   state.selectedEveningChallengeId=active.id;
+   const minutes=resolvedCard(active).minutes;
+   if(validChallengeTimerMinutes(minutes)){
+    activeTimer(active,minutes);
+    if(!challengeTimer.running&&challengeTimer.remainingMs>0){
+     challengeTimer.deadline=Date.now()+challengeTimer.remainingMs;
+     challengeTimer.running=true;challengeTimer.notified=false;
+     saveChallengeTimer();
+    }
+   }
+   render();
+   if(validChallengeTimerMinutes(minutes))updateChallengeClock();
+  }catch(error){
+   if(!isCurrentStart())return;
+   throw error;
+  }finally{
+   if(state.eveningStartContext===startContext)state.eveningStartContext=null;
   }
   return;
  }
@@ -3141,17 +4632,73 @@ async function handle(action,element){
   notify('Un nouveau cycle de 200 défis est prêt. Vos souvenirs sont conservés.');return;
  }
  if(verb==='cycle-answer'){
-  if(!state.cycleStatus?.pending||!state.coupleId)
+  if(!state.cycleStatus?.pending||state.cycleStatus.answered_self||
+     !state.coupleId||!state.user?.id)
    throw Error('Le questionnaire des 200 défis n’est pas disponible.');
   const choice=parts[0];
   if(!['down','same','up'].includes(choice))throw Error('Choix d’intensité invalide.');
-  const result=await rpc('answer_love_cycle_intensity',{p_couple:state.coupleId,p_choice:choice});
-  state.cycleDeferred=null;
-  await reload();
-  if(result?.completed)notify('♡ Votre nouveau cycle de 200 défis commence.');
-  return;
+  // Double taps must not submit two personal decisions. An old request
+  // must not prevent a replacement account from answering its own cycle.
+  if(state.cycleAnswerRequest&&
+     ownsCycleIntensityAnswer(state,state.cycleAnswerRequest,authFeedbackGeneration)&&
+     state.cycleStatus.cycle===state.cycleAnswerRequest.cycle)return;
+  const owner={userId:state.user.id,coupleId:state.coupleId,
+   cycle:state.cycleStatus.cycle,generation:authFeedbackGeneration};
+  state.cycleAnswerRequest=owner;
+  const ownsAnswer=()=>state.cycleAnswerRequest===owner&&
+   ownsCycleIntensityAnswer(state,owner,authFeedbackGeneration);
+  const controls=[...root.querySelectorAll('.lr-cycle-overlay .lr-cycle-choice')];
+  const overlay=root.querySelector('.lr-cycle-overlay');
+  const progress=overlay?.querySelector('.lr-cycle-progress');
+  for(const control of controls)control.disabled=true;
+  if(progress)progress.hidden=false;
+  overlay?.setAttribute('aria-busy','true');
+  let committed=false;
+  try{
+   const result=await rpc('answer_love_cycle_intensity',
+    {p_couple:owner.coupleId,p_choice:choice});
+   if(!ownsAnswer()||state.cycleStatus?.cycle!==owner.cycle)return;
+   committed=true;
+   state.cycleDeferred=null;
+   await reload();
+   if(!ownsAnswer())return;
+   if(result?.completed)notify('♡ Votre nouveau cycle de 200 défis commence.');
+   return;
+  }catch(error){
+   // The failed request may belong to a previous sign-in, not the user
+   // currently viewing this screen. Never surface a stale failure to them.
+   if(!ownsAnswer())return;
+   throw error;
+  }finally{
+   if(state.cycleAnswerRequest===owner){
+    state.cycleAnswerRequest=null;
+    if(!committed&&ownsCycleIntensityAnswer(state,owner,authFeedbackGeneration)){
+     // A Realtime update may replace the modal while the RPC is pending.
+     // Recover the CURRENT panel, preserving legitimately disabled
+     // Soft/Intense bounds even when the original buttons were detached.
+     const currentOverlay=root.querySelector('.lr-cycle-overlay');
+     for(const control of currentOverlay?.querySelectorAll('.lr-cycle-choice')||[]){
+      const choice=control.dataset.action?.slice('cycle-answer:'.length);
+      const blocked=(state.profile?.play_style==='soft'&&choice==='down')||
+       (state.profile?.play_style==='intense'&&choice==='up');
+      control.disabled=blocked;
+      if(blocked)control.setAttribute('aria-disabled','true');
+      else control.removeAttribute('aria-disabled');
+     }
+     const later=currentOverlay?.querySelector('[data-action="cycle-later"]');
+     if(later){later.disabled=false;later.removeAttribute('aria-disabled');}
+     currentOverlay?.removeAttribute('aria-busy');
+     const liveProgress=currentOverlay?.querySelector('.lr-cycle-progress');
+     if(liveProgress)liveProgress.hidden=true;
+    }
+   }
+  }
  }
  if(verb==='cycle-later'){
+  if(state.cycleAnswerRequest&&
+     ownsCycleIntensityAnswer(state,state.cycleAnswerRequest,authFeedbackGeneration)&&
+     state.cycleStatus?.cycle===state.cycleAnswerRequest.cycle)
+   return;
   state.cycleDeferred=state.cycleStatus?.cycle||null;render();return;
  }
  if(verb==='cycle-reopen'){
@@ -3212,7 +4759,13 @@ async function handle(action,element){
   setSoundEnabled(!soundEnabled());render();setNotificationFeedback(soundEnabled()?'Son des défis activé.':'Son des défis désactivé.');return;
  }
  if(verb==='sound-test'){
+  const owner={userId:state.user?.id,tab:state.tab,
+   generation:authFeedbackGeneration};
+  if(!owner.userId||owner.tab!=='settings')return;
   const ready=await unlockLoveRollSounds();
+  // A Safari permission reply can arrive after a new account signs in.
+  if(state.user?.id!==owner.userId||state.tab!==owner.tab||
+     authFeedbackGeneration!==owner.generation)return;
   const played=ready&&playLoveRollSound('timer-preview',{force:true});
   setNotificationFeedback(played?'Son de fin de minuteur joué.':'Son bloqué par le navigateur : touche le bouton de nouveau après avoir activé le son du téléphone.',played?'status':'error');return;
  }
@@ -3294,13 +4847,31 @@ async function handle(action,element){
   // The pending invitation stays intact across this local sign-out.
   const hadInvite=!!pendingInviteReference(sessionStorage);
   const priorConsent=!!state.inviteAccepted;
-  if(state.channel){await client.removeChannel(state.channel);state.channel=null;}
-  state.unlockKey=null;state.personalPass=null;state.personalJournal=[];
+  const signoutUserId=state.user?.id,signoutGeneration=authFeedbackGeneration;
+  const signoutCurrent=()=>state.user?.id===signoutUserId&&
+   authFeedbackGeneration===signoutGeneration;
+  if(state.channel){
+   const channel=state.channel;
+   await client.removeChannel(channel);
+   if(!signoutCurrent())return;
+   if(state.channel===channel)state.channel=null;
+  }
+  if(!signoutCurrent())return;
+  // Preserve the signed-in account's data until logout succeeds.
+  // adoptAuthenticatedIdentity(null) performs the full private cleanup.
   // No profile, couple, challenge, invitation or user row is deleted.
-  const {error}=await client.auth.signOut({scope:'local'});
-  if(error)throw error;
-  state.user=null;state.profile=null;state.coupleId=null;state.couple=null;
-  state.members=[];state.wellbeing=null;state.emailVerificationPending=false;
+  // Do not erase a new login while the former local sign-out is awaiting.
+  let signout;
+  try{signout=await client.auth.signOut({scope:'local'});}
+  catch(error){
+   // An older sign-out failure must never be shown on another login.
+   if(state.user?.id&&!signoutCurrent())return;
+   throw error;
+  }
+  if(state.user?.id&&!signoutCurrent())return;
+  if(signout?.error)throw signout.error;
+  adoptAuthenticatedIdentity(null);
+  state.wellbeing=null;state.emailVerificationPending=false;
   state.passwordRecovery=false;state.showDiscover=false;state.showAuth=true;
   state.authMode='signin';state.authDraftEmail='';state.inviteError=null;
   state.inviteAttemptKey=null;
@@ -3337,15 +4908,32 @@ async function handle(action,element){
   return;
  }
  if(verb==='switch-account-invite'){
+  const signoutUserId=state.user?.id,signoutGeneration=authFeedbackGeneration;
+  const signoutCurrent=()=>state.user?.id===signoutUserId&&
+   authFeedbackGeneration===signoutGeneration;
   if(state.user&&safeNativePushToken()){
-   try{await disablePush(client,state.user.id);}catch(error){console.warn('Déconnexion FCM',error.code||'');}
+   try{await disablePush(client,signoutUserId);}
+   catch(error){if(signoutCurrent())console.warn('Déconnexion FCM',error?.code||'');}
+   if(!signoutCurrent())return;
   }
   if(!pendingInviteReference(sessionStorage))throw Error('Invitation introuvable.');
-  state.unlockKey=null;state.personalPass=null;state.personalJournal=[];
-  if(state.channel){await client.removeChannel(state.channel);state.channel=null;}
-  const {error}=await client.auth.signOut();
-  if(error)throw error;
-  state.user=null;state.profile=null;state.coupleId=null;state.members=[];
+  // A failed invitation sign-out leaves the existing private state untouched.
+  if(state.channel){
+   const channel=state.channel;
+   await client.removeChannel(channel);
+   if(!signoutCurrent())return;
+   if(state.channel===channel)state.channel=null;
+  }
+  if(!signoutCurrent())return;
+  let signout;
+  try{signout=await client.auth.signOut();}
+  catch(error){
+   if(state.user?.id&&!signoutCurrent())return;
+   throw error;
+  }
+  if(state.user?.id&&!signoutCurrent())return;
+  if(signout?.error)throw signout.error;
+  adoptAuthenticatedIdentity(null);
   state.inviteAccepted=true;state.showAuth=true;state.inviteError=null;state.inviteAttemptKey=null;render();return;
  }
  if(verb==='native-update'){
@@ -3669,6 +5257,7 @@ async function handle(action,element){
   state.personalCalendarMonth=d.toISOString().slice(0,7);render();return;
  }
  if(verb==='show-auth'){
+  authFeedbackGeneration++;
   if(pendingInviteReference(sessionStorage)&&!state.inviteAccepted)
    throw Error('Acceptez d’abord l’invitation.');
   // Both landing buttons must enter their actual requested authentication flow.
@@ -3678,8 +5267,10 @@ async function handle(action,element){
   state.authNotice=null;state.passwordRecovery=false;
   state.showDiscover=false;state.showAuth=true;render();return;
  }
- if(verb==='show-landing'){keepAuthModeInUrl(null);state.showDiscover=false;state.showAuth=false;render();return;}
+ if(verb==='show-landing'){authFeedbackGeneration++;keepAuthModeInUrl(null);state.showDiscover=false;state.showAuth=false;render();return;}
  if(verb==='google'&&window.LoveRollNativeAuth?.googleSignIn){
+  // A different Auth provider supersedes any pending email/password reply.
+  authFeedbackGeneration++;
   try{
    state.authNotice='Connexion Google en cours… Sélectionnez votre compte dans la fenêtre Android.';
    const message=id('auth-form-feedback');
@@ -3693,6 +5284,8 @@ async function handle(action,element){
   return;
  }
  if(verb==='google'||verb==='apple'){
+  // Never let an older password response override a newer provider choice.
+  authFeedbackGeneration++;
   sessionStorage.setItem('authStarted','1');
   const redirectUrl=new URL(CONFIG.siteUrl||location.origin+location.pathname);
   const pendingId=sessionStorage.getItem('pendingInviteId');
@@ -3705,6 +5298,7 @@ async function handle(action,element){
   if(error)throw error;return;
  }
  if(verb==='auth-mode'){
+  authFeedbackGeneration++;
   state.authDraftEmail=id('signin-email')?.value.trim()||state.authDraftEmail;
   state.authMode=parts[0]==='signin'?'signin':'signup';
   keepAuthModeInUrl(state.authMode);
@@ -3726,45 +5320,18 @@ async function handle(action,element){
     else if(!password)throw Error('Entrez votre mot de passe.');
   }catch(error){authMessage(error.message);return;}
   const btn=element;if(btn?.disabled)return;if(btn)btn.disabled=true;
-  try{
-   if(verb==='auth-signup-password'){
-    const {data,error}=await client.auth.signUp({email,password,
-     options:{emailRedirectTo:pendingInviteUrl()}});
-    if(error){authMessage(passwordAuthMessage(error));return;}
-    state.authDraftEmail=email;
-    if(data?.session?.user&&verifiedLoveEmail(data.session.user)){
-     state.user=data.session.user;state.showAuth=false;await reload();return;
-    }
-    // No session: this may be a new signup awaiting verification OR an
-    // existing Google identity. Never claim that a message was delivered.
-    state.emailVerificationPending=true;
-    state.authNotice=null;render();
-   }else{
-    const {data,error}=await client.auth.signInWithPassword({email,password});
-    if(error){
-     state.authDraftEmail=email;
-     state.authNeedsEmailConfirmation=error.code==='email_not_confirmed'||
-      /email not confirmed|courriel non confirm/i.test(error.message||'');
-     if(state.authNeedsEmailConfirmation){
-      state.authNotice='Votre adresse courriel doit être confirmée avant de vous connecter. Vous pouvez demander un nouveau courriel ci-dessous.';
-      render();
-     }else authMessage(passwordAuthMessage(error));
-     return;
-    }
-    if(!data?.user)throw Error('Aucune session ouverte.');
-    state.authNeedsEmailConfirmation=false;
-    state.user=data.user;state.authNotice=null;state.showAuth=false;
-    await reload();
-   }
-  }catch(error){authMessage(passwordAuthMessage(error));}
+  try{await submitPasswordAuth(verb,email,password);}
+  catch(error){authMessage(passwordAuthMessage(error));}
   finally{if(btn)btn.disabled=false;}
   return;
  }
  if(verb==='email-confirm-login'){
+  authFeedbackGeneration++;
   if(state.user&&!verifiedLoveEmail(state.user)){
-   const {error}=await client.auth.signOut();
-   if(error)throw error;
-   state.user=null;
+   await signOutCurrentAccount();
+   // A SIGNED_IN may have replaced the unverified account while the old
+   // signout awaited FCM or Realtime. Never overwrite that new login.
+   if(state.user)return;
   }
   state.emailVerificationPending=false;state.showDiscover=false;state.showAuth=true;
   state.authMode='signin';keepAuthModeInUrl('signin');
@@ -3778,7 +5345,12 @@ async function handle(action,element){
    state.authNotice='Connectez-vous pour que LoveRoll vérifie votre compte confirmé auprès de Supabase.';
    render();return;
   }
-  if(await refreshVerifiedIdentity()){
+  const ownerId=state.user.id;
+  const verified=await refreshVerifiedIdentity();
+  // getUser() may detect a new account or an expired session and repaint.
+  // Do not write Alice's verification notice onto Bob's current screen.
+  if(state.user?.id!==ownerId)return;
+  if(verified){
    state.emailVerificationPending=false;state.authNotice=null;
    await reload();return;
   }
@@ -3794,25 +5366,32 @@ async function handle(action,element){
   const until=Number(sessionStorage.getItem('loverollConfirmResendAfter')||0);
   if(Date.now()<until){authMessage('Veuillez patienter avant de demander un autre courriel.');return;}
   if(btn)btn.disabled=true;
+  const current= captureAuthFeedbackContext();
   try{
    const {error}=await client.auth.resend({type:'signup',email,
     options:{emailRedirectTo:pendingInviteUrl()}});
+   if(!current())return;
    if(error){authMessage(passwordAuthMessage(error));return;}
    state.authDraftEmail=email;
    sessionStorage.setItem('loverollConfirmResendAfter',String(Date.now()+60000));
    const status=id('auth-resend-status')||id('email-confirm-status');
    const msg='Demande reçue par le serveur. Cela ne garantit pas la réception du courriel. Vérifiez votre boîte et les indésirables. Si ce compte est déjà confirmé avec Google, utilisez « Continuer avec Google ».';
    if(status)status.textContent=msg;else authMessage(msg);
-  }catch(error){authMessage(passwordAuthMessage(error));}
+  }catch(error){if(current())authMessage(passwordAuthMessage(error));}
   finally{if(btn)btn.disabled=false;}
   return;
  }
  if(verb==='email-confirm-edit'){
-  if(state.user)await client.auth.signOut();
-  state.user=null;state.emailVerificationPending=false;state.authDraftEmail='';
+  authFeedbackGeneration++;
+  if(state.user){
+   await signOutCurrentAccount();
+   if(state.user)return;
+  }
+  state.emailVerificationPending=false;state.authDraftEmail='';
   state.authMode='signup';state.showAuth=true;render();return;
  }
  if(verb==='auth-reset-request'){
+  authFeedbackGeneration++;
   state.authDraftEmail=id('signin-email')?.value.trim()||state.authDraftEmail;
   state.authMode='request-reset';keepAuthModeInUrl('request-reset');state.authNeedsEmailConfirmation=false;
   state.authNotice=null;state.showAuth=true;render();return;
@@ -3823,13 +5402,15 @@ async function handle(action,element){
   const until=Number(sessionStorage.getItem('loverollResetAfter')||0);
   if(Date.now()<until){authMessage('Veuillez patienter avant une nouvelle demande.');return;}
   const btn=element;if(btn?.disabled)return;if(btn)btn.disabled=true;
+  const current=captureAuthFeedbackContext();
   try{
    const {error}=await client.auth.resetPasswordForEmail(email,{redirectTo:pendingInviteUrl(true)});
+   if(!current())return;
    if(error){authMessage(passwordAuthMessage(error));return;}
    state.authDraftEmail=email;
    sessionStorage.setItem('loverollResetAfter',String(Date.now()+60000));
    authMessage('Demande de récupération acceptée. Si ce compte existe, le fournisseur pourra envoyer un lien. Vérifiez vos courriels; sa réception n’est pas encore confirmée.');
-  }catch(error){authMessage(passwordAuthMessage(error));}
+  }catch(error){if(current())authMessage(passwordAuthMessage(error));}
   finally{if(btn)btn.disabled=false;}
   return;
  }
@@ -3838,29 +5419,25 @@ async function handle(action,element){
   let password;
   try{password=requireLovePassword(id('signin-password')?.value);}
   catch(error){authMessage(error.message);return;}
+  const ownerId=state.user.id;
   const btn=element;if(btn?.disabled)return;if(btn)btn.disabled=true;
   try{
-   const {error}=await client.auth.updateUser({password});
-   if(error){authMessage(passwordAuthMessage(error));return;}
+   if(!(await updateRecoveryPasswordForCurrentAccount(password))||
+      state.user?.id!==ownerId||!state.passwordRecovery)return;
    state.passwordRecovery=false;state.authMode='signin';state.authNotice=null;
    const url=new URL(location.href);url.searchParams.delete('auth');url.searchParams.delete('type');
    history.replaceState(null,'',url.pathname+url.search+url.hash);
    await reload();
-  }catch(error){authMessage(passwordAuthMessage(error));}
-  finally{if(btn)btn.disabled=false;}
+  }catch(error){
+   // A late failure from the old account cannot overwrite the new login.
+   if(state.user?.id===ownerId&&state.passwordRecovery)
+    authMessage(passwordAuthMessage(error));
+  }finally{if(btn)btn.disabled=false;}
   return;
  }
  if(verb==='signout'){
-  if(state.user&&safeNativePushToken()){
-   try{await disablePush(client,state.user.id);}catch(err){console.warn('Désinscription FCM',err.code||'');}
-  }
-  state.unlockKey=null;state.personalPass=null;state.personalJournal=[];
-  if(state.channel){await client.removeChannel(state.channel);state.channel=null;}
-  const {error}=await client.auth.signOut();if(error)throw error;
-  state.user=null;state.profile=null;state.coupleId=null;state.showAuth=false;state.passwordRecovery=false;
-  keepAuthModeInUrl(null);
-  state.installAfterSignup=false;state.installModalOpen=false;state.showInstallSteps=false;state.forceInstallGuide=false;
-  render();return;
+  await signOutCurrentAccount();
+  return;
  }
  if(verb==='complete-registration'){
   const name=id('profile-name')?.value.trim();
@@ -3871,14 +5448,17 @@ async function handle(action,element){
   if(!['him','her'].includes(gender))throw Error('Choisissez Homme ou Femme pour votre profil.');
   if(!['soft','medium','intense'].includes(playStyle))throw Error('Choisissez Soft, Medium ou Intense.');
   if(!id('age-confirm')?.checked)throw Error('LoveRoll est réservé aux personnes de 18 ans et plus.');
-  await rpc('complete_love_registration',{p_name:name,p_birthday_md:birthday});
-  await rpc('save_my_gender',{p_gender:gender});
-  await rpc('save_my_play_style',{p_style:playStyle});
+  const profileOwnerId=state.user?.id;
+  if(!(await saveProfileForCurrentAccount(name,birthday,gender,playStyle))||
+     state.user?.id!==profileOwnerId)return;
   // Invitation => accept existing duo. No invitation => own new admin duo.
   // Both decisions are authenticated and checked in one server transaction.
   // An account already linked to a duo is never duplicated.
-  if(!pendingInviteReference(sessionStorage))
-   await resolveVerifiedSignup(true);
+  if(!pendingInviteReference(sessionStorage)){
+   const ownerId=state.user?.id;
+   const result=await resolveVerifiedSignup(true);
+   if(state.user?.id!==ownerId||result?.status==='account_changed')return;
+  }
   state.installAfterSignup=true;
   await reload();return;
  }
@@ -3890,15 +5470,19 @@ async function handle(action,element){
   const playStyle=id('profile-play-style')?.value||'medium';
   if(!['him','her'].includes(gender))throw Error('Choisissez Homme ou Femme pour votre profil.');
   if(!['soft','medium','intense'].includes(playStyle))throw Error('Choisissez Soft, Medium ou Intense.');
-  await rpc('complete_love_registration',{p_name:name,p_birthday_md:birthday});
-  await rpc('save_my_gender',{p_gender:gender});
-  await rpc('save_my_play_style',{p_style:playStyle});
-  await reload();notify('Votre profil, votre style et votre date sont enregistrés.');return;
+  const profileOwnerId=state.user?.id;
+  if(!(await saveProfileForCurrentAccount(name,birthday,gender,playStyle))||
+     state.user?.id!==profileOwnerId)return;
+  await reload();
+  if(state.user?.id===profileOwnerId)
+   notify('Votre profil, votre style et votre date sont enregistrés.');
+  return;
  }
  if(verb==='prepare-cards'){
   if(pendingInviteReference(sessionStorage))throw Error('Une invitation est en attente.');
   if(!state.coupleId){
    const decision=await resolveVerifiedSignup(false);
+   if(decision?.status==='account_changed')return;
    if(decision?.status==='invitation'||decision?.status==='linked'){
     await reload();return;
    }
@@ -3912,6 +5496,7 @@ async function handle(action,element){
  if(verb==='create-couple'){
   if(pendingInviteReference(sessionStorage))throw Error('Une invitation est en attente.');
   const decision=await resolveVerifiedSignup(false);
+  if(decision?.status==='account_changed')return;
   if(decision?.status==='invitation'||decision?.status==='linked'){
    await reload();return;
   }
@@ -3922,62 +5507,91 @@ async function handle(action,element){
  if(verb==='invite'){
   if(state.invitations?.some(x=>!x.cancelled_at&&!x.accepted_at&&new Date(x.expires_at)>new Date())&&
      !(await premiumConfirm('L’ancien lien d’invitation cessera de fonctionner. Votre partenaire devra utiliser le nouveau lien.',{kind:'library',title:'Remplacer le lien sécurisé ?'})))return;
-  await ensureInviteDraft(true);state.inviteCopyFallback=false;render();
+  await ensureInviteDraft(true);state.inviteCopyFallback=false;state.lastInviteShareAttempt=null;render();
   notify('Nouveau lien prêt. L’ancien lien a été remplacé.');return;
  }
  if(verb==='send-sms'||verb==='send-email'||verb==='send-messenger'||verb==='copy-invite'){
-  // Reuse the unexpired invitation ID after reload. The server verifies email at acceptance.
+  const userId=state.user?.id,coupleId=state.coupleId;
+  // Only the active, server-listed link may be shared.
   const d=await ensureInviteDraft(false);
+  const current=()=>state.user?.id===userId&&state.coupleId===coupleId&&
+   coupleInvitationView(state.invitations,coupleId).active?.id===d.id;
+  if(!current())return;
+  const recordAttempt=method=>{
+   if(!current())return false;
+   state.lastInviteShareAttempt={userId,coupleId,inviteId:d.id,method};
+   render();
+   return true;
+  };
   if(verb==='copy-invite'){
    try{
     if(!navigator.clipboard?.writeText)throw Error('Presse-papiers indisponible');
     await navigator.clipboard.writeText(d.link);
-    state.inviteCopyFallback=false;notify('Lien copié, sans modifier votre invitation.');
-   }catch(error){
-    state.inviteCopyFallback=true;render();
+    if(recordAttempt('partage'))
+     notify('Lien copié. Après l’avoir envoyé, confirmez l’envoi ici.');
+   }catch{
+    if(!current())return;
+    state.inviteCopyFallback=true;
+    recordAttempt('partage');
     const field=id('invite-manual-link');
     field?.focus();field?.select();
-    notify('Copie automatique indisponible : sélectionnez le lien affiché pour le copier.');
+    notify('Sélectionnez le lien, envoyez-le, puis confirmez l’envoi ici.');
    }
    return;
   }
   const text=verb==='send-messenger'?invitationMessengerText(d.link):invitationEmailText(d.link);
-  state.lastShareMethod=verb==='send-sms'?'sms':verb==='send-email'?'courriel':'messenger';
+  const method=verb==='send-sms'?'sms':verb==='send-email'?'courriel':'messenger';
   if(verb==='send-messenger'){
-   if(window.LoveRollNativeAuth?.openShare)window.LoveRollNativeAuth.openShare(text);
+   if(window.LoveRollNativeAuth?.openShare)await window.LoveRollNativeAuth.openShare(text);
    else if(navigator.share){
     try{await navigator.share({url:d.link});}
-    catch(error){if(error.name!=='AbortError')throw error;}
+    catch(error){if(error?.name==='AbortError')return;throw error;}
    }else{
-    try{await navigator.clipboard.writeText(d.link);
-     notify('Lien copié : collez-le dans une conversation Messenger.');}
-    catch{state.inviteCopyFallback=true;render();id('invite-manual-link')?.select();
-     notify('Sélectionnez le lien affiché pour le partager sur Messenger.');}
+    try{
+     if(!navigator.clipboard?.writeText)throw Error('Presse-papiers indisponible');
+     await navigator.clipboard.writeText(d.link);
+     if(recordAttempt('partage'))
+      notify('Lien copié : envoyez-le dans Messenger, puis confirmez ici.');
+    }catch{
+     if(!current())return;
+     state.inviteCopyFallback=true;recordAttempt('partage');
+     id('invite-manual-link')?.select();
+     notify('Copiez ce lien dans Messenger, puis confirmez l’envoi ici.');
+    }
     return;
    }
   }else if(verb==='send-sms'){
-   if(window.LoveRollNativeAuth?.openSms)window.LoveRollNativeAuth.openSms(text);
+   if(window.LoveRollNativeAuth?.openSms)await window.LoveRollNativeAuth.openSms(text);
    else{
     const isApple=/iPhone|iPad|iPod/i.test(navigator.userAgent);
     window.location.href='sms:'+(isApple?'&':'?')+'body='+encodeURIComponent(text);
    }
   }else{
    const subject='LoveRoll ❤️ Une invitation juste pour nous deux';
-   if(window.LoveRollNativeAuth?.openEmail)window.LoveRollNativeAuth.openEmail(d.email,subject,text);
+   if(window.LoveRollNativeAuth?.openEmail)
+    await window.LoveRollNativeAuth.openEmail(d.email,subject,text);
    else window.location.href=composeInviteEmail(d.email,subject,text);
   }
-  notify('Choisissez le destinataire et confirmez vous-même le partage.');
+  if(recordAttempt(method))
+   notify('Terminez l’envoi dans votre messagerie, puis confirmez ici.');
   return;
  }
  if(verb==='confirm-invite-sent'){
-  const invitation=await ensureInviteDraft(false);
-  await rpc('mark_pair_invite_sent',{p_invitation:invitation.id,p_method:state.lastShareMethod||'partage'});
-  state.invitations=await query('couple_invitations',{eq:{couple_id:state.coupleId},order:'created_at'});
+  const userId=state.user?.id,coupleId=state.coupleId;
+  const active=coupleInvitationView(state.invitations,coupleId).active;
+  const attempt=state.lastInviteShareAttempt;
+  if(!canConfirmInvitationShare(attempt,active,userId,coupleId))
+   throw Error('Partagez d’abord le lien actif, puis confirmez son envoi.');
+  await rpc('mark_pair_invite_sent',{p_invitation:active.id,p_method:attempt.method});
+  if(state.user?.id!==userId||state.coupleId!==coupleId)return;
+  const invitations=await query('couple_invitations',{eq:{couple_id:coupleId},order:'created_at'});
+  if(state.user?.id!==userId||state.coupleId!==coupleId)return;
+  state.invitations=invitations;state.lastInviteShareAttempt=null;
   render();notify('Envoi confirmé manuellement.');return;
  }
  if(verb==='cancel-invite'){
   await rpc('cancel_pair_invite',{p_invitation:parts[0]});
-  state.inviteDraft=null;
+  state.inviteDraft=null;state.inviteCopyFallback=false;state.lastInviteShareAttempt=null;
   state.invitations=await query('couple_invitations',{eq:{couple_id:state.coupleId},order:'created_at'});
   render();notify('Invitation annulée.');return;
  }
@@ -3997,9 +5611,20 @@ async function handle(action,element){
  }
  if(verb==='resume-evening'){
   // LR-018: synchronize from Supabase, never create a session or new D6/D100.
-  if(state.diceStatus)return;
+  // A pending repick or gift already owns the next snapshot of this session.
+  if(state.diceStatus||isActiveEveningRedrawPending()||isActiveEveningGiftPending())return;
   if(!isSharedCoupleReady(state.coupleId,state.members))throw Error('Deux partenaires doivent être associés.');
-  await refreshShared();
+  const owner={userId:state.user?.id,coupleId:state.coupleId,
+   tab:state.tab,generation:authFeedbackGeneration};
+  // The refresh may resolve after a login, tab change, official roll or a
+  // newer request. Never reopen the former player's private queue then.
+  const refreshing=refreshShared();
+  const request=state.unscopedSharedRefreshRequest;
+  await refreshing;
+  if(state.user?.id!==owner.userId||state.coupleId!==owner.coupleId||
+     state.tab!==owner.tab||authFeedbackGeneration!==owner.generation||
+     state.unscopedSharedRefreshRequest!==request||
+     state.diceStatus||isActiveEveningRedrawPending())return;
   const session=playableSessionForWeekly(state.session,state.weekly);
   if(!session){
    state.tab='home';state.showEveningChallenges=false;state.selectedEveningChallengeId=null;
@@ -4007,7 +5632,7 @@ async function handle(action,element){
    return;
   }
   const privateCards=visibleEveningQueue(ownEveningChallenges(state.challenges,state.user.id,session.id));
-  const selected=restoreEveningSelection(localStorage,state.user.id,session.id,privateCards);
+  const selected=restoreEveningSelection(safeEveningBookmarkStorage(),state.user.id,session.id,privateCards);
   state.tab='session';state.eveningRefusalId=null;state.eveningMore=false;
   state.selectedEveningChallengeId=selected;
   state.showEveningChallenges=privateCards.length>0;
@@ -4018,7 +5643,9 @@ async function handle(action,element){
   return;
  }
  if(verb==='tab'){
-  if(state.diceStatus)return;
+  // A tab change cannot invalidate an in-flight repick or gift receipt.
+  if(state.diceStatus||(state.tab==='session'&&
+     (isActiveEveningRedrawPending()||isActiveEveningGiftPending())))return;
   const ready=isSharedCoupleReady(state.coupleId,state.members);
   const allowed=ready?
    ['home','session','special','occasions','advent','settings','eclat','library',
@@ -4067,6 +5694,7 @@ async function handle(action,element){
   const [kind,owner,rollType]=parts;
   const x=await animateRoll(()=>rpc('roll_love_occasion_once',{p_couple:state.coupleId,
    p_kind:kind,p_owner:owner==='-'?null:owner,p_roll:rollType}),'occasion');
+  if(!x)return; // A disconnected account must receive no stale toast.
   notify('♡ Tirage enregistré pour le couple.');return;
  }
  if(verb==='roll'){
@@ -4076,26 +5704,72 @@ async function handle(action,element){
     throw Error('Associez deux comptes pour le dé hebdomadaire.');
    if(state.weekly)throw Error('Le dé a déjà été brassé cette semaine.');
    if(state.diceStatus)return;
-   const confirmed=await premiumConfirm(
-    'Ce tirage est commun à votre couple et ne pourra pas être refait avant la semaine prochaine. Êtes-vous sûrs de vouloir brasser le dé ?',
-    {kind:'weekly',title:'Brasser le dé ?',accept:'Oui, brasser',cancel:'Annuler'});
-   if(!confirmed||state.diceStatus||state.weekly)return;
+   const owner={userId:state.user?.id,coupleId:state.coupleId,
+    generation:authFeedbackGeneration};
+   if(!owner.userId||!owner.coupleId)return;
+   const ownsOwner=()=>state.user?.id===owner.userId&&
+    state.coupleId===owner.coupleId&&authFeedbackGeneration===owner.generation;
+   // Multiple fast taps must open only ONE confirmation for this account.
+   // An older login's open dialog must not block a replacement user.
+   if(currentWeeklyConfirmationRequest&&
+      currentWeeklyConfirmationRequest.userId===owner.userId&&
+      currentWeeklyConfirmationRequest.coupleId===owner.coupleId&&
+      currentWeeklyConfirmationRequest.generation===owner.generation)return;
+   const confirmation={...owner};
+   currentWeeklyConfirmationRequest=confirmation;
+   let confirmed=false;
+   try{
+    confirmed=await premiumConfirm(
+     'Ce tirage est commun à votre couple et ne pourra pas être refait avant la semaine prochaine. Êtes-vous sûrs de vouloir brasser le dé ?',
+     {kind:'weekly',title:'Brasser le dé ?',accept:'Oui, brasser',cancel:'Annuler'});
+   }catch(error){
+    if(!ownsOwner())return; // Ignore an old account's dismissed/failed dialog.
+    throw error;
+   }finally{
+    if(currentWeeklyConfirmationRequest===confirmation)currentWeeklyConfirmationRequest=null;
+   }
+   if(!ownsOwner()||!confirmed||state.diceStatus||state.weekly)return;
+   const request={};
+   latestDiceRollRequest=request;
+   const current=()=>ownsOwner()&&latestDiceRollRequest===request;
    state.diceStatus='pending';render();
    try{
-    // Supabase selects and persists the one true face under a couple row lock;
-    // only after the response do we animate the ACTUAL server result.
-    const result=await rpc('roll_couple_once',{p_couple:state.coupleId,p_kind:'weekly'});
-    state.rollAnimationFace=result.face;
+    // Supabase alone persists the real D6 face. A previous login cannot
+    // animate, cache or announce its receipt on the replacement account.
+    const result=await rpc('roll_couple_once',{p_couple:owner.coupleId,p_kind:'weekly'});
+    if(!current())return;
+    const face=Number(result?.face);
+    if(!Number.isInteger(face)||face<1||face>6)
+     throw Error('Le serveur n’a pas confirmé le résultat officiel du dé.');
+    state.rollAnimationFace=face;
     state.diceStatus='rolling';render();
     await new Promise(resolve=>setTimeout(resolve,window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches?180:ROLL_TOTAL_MS+140));
+    if(!current())return;
     state.diceStatus=null;state.rollAnimationFace=null;
     state.weekly=result;
-    await refreshAndShow();
+    await refreshShared();
+    if(!current())return;
+    render();
     notify('♡ Le dé s’est arrêté sur le résultat officiel.');
-    }catch(error){state.diceStatus=null;state.rollAnimationFace=null;await refreshAndShow();throw error;}
+   }catch(error){
+    if(!current())return;
+    state.diceStatus=null;state.rollAnimationFace=null;
+    try{await refreshShared();}finally{if(current())render();}
+    if(current())throw error;
+   }finally{
+    if(latestDiceRollRequest===request){
+     const wasCurrent=current();
+     latestDiceRollRequest=null;
+     if(!wasCurrent&&state.diceStatus){
+      state.diceStatus=null;state.rollAnimationFace=null;
+      if(state.user?.id===owner.userId&&state.coupleId===owner.coupleId)render();
+     }
+    }
+   }
    return;
   }
   const result=await animateRoll(()=>rpc('roll_couple_once',{p_couple:state.coupleId,p_kind:kind}),kind);
+  if(!result)return;
   if(kind==='monthly_activity'){
    // Only after Supabase confirms the official D100 and its 3D animation ends.
    state.showSurpriseActivity=!!state.monthly?.monthly_activity;
@@ -4114,45 +5788,110 @@ async function handle(action,element){
   if(!daily.canStart)throw Error(daily.dailyLocked?
    'Une seule soirée par jour. Revenez demain (heure du Québec).':
    'Le quota hebdomadaire est atteint.');
-  await rpc('ensure_couple_session',{p_couple:state.coupleId});
-  state.tab='session';await refreshAndShow();return;
+  const owner={userId:state.user?.id,coupleId:state.coupleId,
+   generation:authFeedbackGeneration};
+  if(!owner.userId||!owner.coupleId)return;
+  const ownsSession=()=>state.user?.id===owner.userId&&
+   state.coupleId===owner.coupleId&&authFeedbackGeneration===owner.generation;
+  if(currentNewSessionRequest&&currentNewSessionRequest.userId===owner.userId&&
+     currentNewSessionRequest.coupleId===owner.coupleId&&
+     currentNewSessionRequest.generation===owner.generation)return;
+  const request={...owner};
+  currentNewSessionRequest=request;
+  try{
+   // One RPC per user gesture; a new Auth generation is never blocked.
+   await rpc('ensure_couple_session',{p_couple:owner.coupleId});
+   if(!ownsSession())return;
+   state.tab='session';await refreshAndShow();return;
+  }finally{
+   // A stale completion cannot release a newer account's pending request.
+   if(currentNewSessionRequest===request)currentNewSessionRequest=null;
+  }
  }
  if(verb==='my-d6'){
+  // A late D6 touch cannot compete with an official roll, repick or gift.
+  if(state.diceStatus||isActiveEveningRedrawPending()||isActiveEveningGiftPending())return;
   if(!state.session)throw Error('Aucune soirée active.');
   await animateRoll(()=>rpc('roll_my_evening_d6',{p_session:state.session.id}),'my-d6');
   // La carte de l'étape 1 affiche l'état du lancer; aucun toast supplémentaire.
   return;
  }
  if(verb==='category'){
+  // During a confirmation or official roll the selected category is fixed.
+  // A queued/touch-synthesized event must not mutate state or sessionStorage.
+  if(eveningCategoryConfirmInFlight||state.diceStatus||
+     isActiveEveningRedrawPending()||isActiveEveningGiftPending())return;
   if(!EVENING_CATEGORIES.includes(parts[0])&&parts[0]!=='HASARD')
    throw Error('Catégorie interdite');
-  state.category=parts[0];state.randomMode=parts[0]==='HASARD';
-  if(state.session)try{sessionStorage.setItem('loveroll-category-'+state.session.id,parts[0]);}catch{}
-  // Never tear down all WebGL renderers for a category-only UI change.
+  // Reject stale/disabled category events BEFORE writing the next D100 choice
+  // to state or sessionStorage. Do not remount a live WebGL canvas on failure.
   if(!updateEveningCategoryUi(root,parts[0],
    state.couple?.category_weights_enabled===false?50:
-   state.couple?.category_preference_percent??88))render();
+   state.couple?.category_preference_percent??88))return;
+  state.category=parts[0];state.randomMode=parts[0]==='HASARD';
+  if(state.session)try{sessionStorage.setItem('loveroll-category-'+state.session.id,parts[0]);}catch{}
   return;
  }
+  if(verb==='session-length'){
+   // A personal planning hint, not an instruction to end the server session.
+   if(!state.user?.id||!state.profile)throw Error('Compte requis.');
+   if(!saveSessionLength(state.user.id,parts[0]))
+    throw Error('Impossible de sauvegarder la durée souhaitée sur cet appareil.');
+   render();return;
+  }
+  if(verb==='evening-intensity'){
+   // Preview for the upcoming evening only: do not rewrite profile or
+   // server-authorized category, deck, quota or current D100 result.
+   if(!state.user?.id||!state.profile||state.tab!=='session'||state.session)
+    throw Error('Choix disponible avant la prochaine soirée seulement.');
+   if(!saveEveningIntensity(state.user.id,parts[0]))
+    throw Error('Intensité souhaitée invalide.');
+   render();return;
+  }
   if(verb==='timer-mode'){
    if(parts[0]!=='vibrate'&&parts[0]!=='sound')throw Error('Signal inconnu');
+   const owner={userId:state.user?.id,sessionId:state.session?.id,
+    generation:authFeedbackGeneration};
+   if(!owner.userId||!owner.sessionId||state.tab!=='session')return;
+   const current=()=>state.user?.id===owner.userId&&
+    state.session?.id===owner.sessionId&&
+    authFeedbackGeneration===owner.generation&&state.tab==='session';
    if(parts[0]==='vibrate'&&typeof navigator.vibrate!=='function'){
     notify('Vibration indisponible sur cet appareil. Utilise le son du minuteur.');
     return;
    }
-   if(parts[0]==='sound'&&!await unlockLoveRollSounds())
-    notify('Autorise le son du navigateur avec un toucher, puis utilise Tester.');
+   if(parts[0]==='sound'){
+    const ready=await unlockLoveRollSounds();
+    // Safari may resolve WebAudio permission after switching accounts, tabs
+    // or sessions. Old gestures cannot overwrite the replacement account.
+    if(!current())return;
+    if(!ready)notify('Autorise le son du navigateur avec un toucher, puis utilise Tester.');
+   }
+   if(!current())return;
    challengeTimer.mode=parts[0];
-   localStorage.setItem('loveroll-timer-mode',parts[0]);
+   if(!saveTimerAlertMode(owner.userId,parts[0]))
+    notify('Le signal reste actif pour cette visite, mais sa préférence ne peut pas être conservée sur cet appareil.');
    render();return;
  }
  if(verb==='timer-sound-test'){
+   const owner={userId:state.user?.id,sessionId:state.session?.id,
+    challengeId:challengeTimer.id,generation:authFeedbackGeneration};
+   if(!owner.userId||!owner.sessionId||!owner.challengeId||
+      state.tab!=='session')return;
    const ready=await unlockLoveRollSounds();
+   if(state.user?.id!==owner.userId||state.session?.id!==owner.sessionId||
+      challengeTimer.id!==owner.challengeId||
+      authFeedbackGeneration!==owner.generation||state.tab!=='session')return;
    const played=ready&&playLoveRollSound('timer-preview',{force:true});
    notify(played?'♫ Voici le son de fin du minuteur.':'Son bloqué : vérifie le volume du téléphone, puis retouche Tester.');
    return;
  }
  if(verb==='timer-reset'){
+   if(!ownsVisibleEveningTimer(challengeTimer.id,state.user?.id,state.session?.id))
+    throw Error('Le minuteur appartient à une autre soirée. Actualise tes défis.');
+   // The button is disabled in the view, but protect direct/double clicks too.
+   // Do not reset a countdown while Passer, Refuser or Commencer is unresolved.
+   if(isVisibleEveningTimerActionPending())return;
    // Reject a reset after the real deadline, even between two clock ticks.
    if(challengeTimer.running&&challengeTimer.deadline>0&&Date.now()>=challengeTimer.deadline){
     challengeTimer.running=false;challengeTimer.remainingMs=0;endSignal();saveChallengeTimer();
@@ -4164,7 +5903,19 @@ async function handle(action,element){
    challengeTimer.notified=false;saveChallengeTimer();updateChallengeClock();return;
  }
  if(verb==='timer-toggle'){
-   if(!challengeTimer.id)throw Error('Aucun défi avec minuteur');
+   const timerUserId=state.user?.id,timerSessionId=state.session?.id,
+    timerChallengeId=challengeTimer.id,timerTab=state.tab;
+   const ownsClock=()=>ownsVisibleEveningTimer(timerChallengeId,timerUserId,timerSessionId)&&
+    state.tab===timerTab;
+   if(!ownsClock())throw Error('Aucun minuteur actif pour cette soirée');
+   if(isVisibleEveningTimerActionPending())return;
+   // A timer tap cannot pause/restart while its challenge is being redrawn.
+   if(isActiveEveningRedrawPending()&&
+      state.redrawBusyContext?.challengeId===timerChallengeId)return;
+   if(state.timerStartContext?.challengeId===timerChallengeId&&
+      isSameEveningResponseContext(state,state.timerStartContext))return;
+   if(state.eveningStartContext?.challengeId===timerChallengeId&&
+      isSameEveningResponseContext(state,state.eveningStartContext))return;
    // Observe an already-expired deadline before a pause tap can zero out
    // the running state (timer ticks are only scheduled every 500ms).
    updateChallengeClock();
@@ -4175,40 +5926,96 @@ async function handle(action,element){
     challengeTimer.remainingMs=Math.max(0,challengeTimer.deadline-Date.now());
     challengeTimer.running=false;
    }else if(challengeTimer.remainingMs>0){
-    // The countdown can be launched without pressing « Commencer » first.
-    // Ensure the official card becomes accepted before the timer begins.
-    const current=timedEveningItem(challengeTimer.id);
-    if(current?.status==='proposed'){
-     if(challengeTimer.mode==='sound')void unlockLoveRollSounds();
-     await rpc('answer_challenge',{p_id:current.id,p_status:'accepted'});
+    // A timer may be launched without pressing Commencer first. Confirm the
+    // card's persisted accepted state via recipient-only RLS before starting.
+    const current=timedEveningItem(timerChallengeId);
+    if(!current||!['proposed','accepted'].includes(current.status))
+     throw Error('Ce défi ne peut pas démarrer. Actualise ta liste.');
+    const request={userId:timerUserId,sessionId:timerSessionId,
+     tab:timerTab,challengeId:timerChallengeId};
+    state.timerStartContext=request;
+    const ownsStart=()=>ownsClock()&&state.timerStartContext===request;
+    try{
+     if(current.status==='proposed'){
+      if(challengeTimer.mode==='sound')void unlockLoveRollSounds();
+      await rpc('answer_challenge',{p_id:current.id,p_status:'accepted'});
+      if(!ownsStart())return;
+     }
+     const saved=await query('couple_challenges',{
+      eq:{id:timerChallengeId,session_id:timerSessionId,recipient:timerUserId}
+     });
+     if(!ownsStart())return;
+     if(!Array.isArray(saved)||saved.length!==1||saved[0]?.status!=='accepted')
+      throw Error('Le serveur n’a pas confirmé le début de ce défi. Actualise ta liste.');
      current.status='accepted';
+     if(challengeTimer.mode==='sound'&&!await unlockLoveRollSounds()){
+      if(!ownsStart())return;
+      notify('Son non autorisé. Utilise le bouton ♫ Tester pour le débloquer.');
+     }
+     if(!ownsStart())return;
+     challengeTimer.deadline=Date.now()+challengeTimer.remainingMs;
+     challengeTimer.running=true;
+     challengeTimer.notified=false;
+    }catch(error){
+     if(!ownsStart())return;
+     throw error;
+    }finally{
+     if(state.timerStartContext===request)state.timerStartContext=null;
     }
-    if(challengeTimer.mode==='sound'&&!await unlockLoveRollSounds())
-     notify('Son non autorisé. Utilise le bouton ♫ Tester pour le débloquer.');
-    challengeTimer.deadline=Date.now()+challengeTimer.remainingMs;
-    challengeTimer.running=true;
-    challengeTimer.notified=false;
    }
+   if(!ownsClock())return;
    saveChallengeTimer();updateChallengeClock();return;
  }
  if(verb==='give-challenge'){
+  // One request at a time for the SAME authenticated owner and evening.
+  // Two fast taps must never open two confirmations or send two gifts.
+  if(isActiveEveningGiftPending())return;
+  // A stale gift action must not mutate the turn while its private deck is
+  // being replaced by the recipient-only, server-confirmed repick.
+  if(state.diceStatus||isActiveEveningRedrawPending())return;
   if(!state.session?.paired_turns||!state.session?.self_draws||!state.rollStatus?.both_ready)
    throw Error('Attendez vos deux tirages personnels pour donner un défi.');
   const me=state.user.id,otherPerson=other();
+  const giftOwner={userId:me,coupleId:state.coupleId,sessionId:state.session.id,
+   generation:authFeedbackGeneration};
+  const ownsGift=()=>!state.diceStatus&&!isActiveEveningRedrawPending()&&
+   state.user?.id===giftOwner.userId&&
+   state.coupleId===giftOwner.coupleId&&state.session?.id===giftOwner.sessionId&&
+   authFeedbackGeneration===giftOwner.generation&&state.tab==='session';
   const turn=state.eveningBoard||sharedEveningTurns(state.session,state.members,state.personal,state.challenges,state.gifts);
   if(!turn.ready||turn.remaining[me]<=0)
    throw Error('Aucun défi non commencé à donner.');
   const monthCount=state.gifts.filter(g=>g.donor_user_id===me&&g.month_key?.slice(0,7)===month()).length;
   if(monthCount>=3)throw Error('Vos 3 dons du mois sont utilisés.');
+  const giftTicket={...giftOwner};
+  state.eveningGiftRequest=giftTicket;
+  try{
+  render(); // Reflect the pending gift before opening the dialog.
   if(!(await premiumConfirm('Offrir un de tes défis restants à '+otherPerson.name+
    ' ? Son nombre de défis à recevoir augmentera de 1 et le tien diminuera de 1.',
    {kind:'gift'})))return;
-  await rpc('give_love_challenge',{p_session:state.session.id});
+  // Confirmation is asynchronous: a different login, active roll or evening
+  // may have replaced the screen while the dialog was open.
+  if(!ownsGift())return;
+  await rpc('give_love_challenge',{p_session:giftOwner.sessionId});
+  if(!ownsGift())return; // Do not repaint another player's account.
   await refreshAndShow();
-  notify('♥ Défi transféré ! '+otherPerson.name+' choisira la catégorie de son prochain défi.');
+  if(ownsGift())notify('♥ Défi transféré ! '+otherPerson.name+' choisira la catégorie de son prochain défi.');
   return;
+  }finally{
+   // A late completion must never clear a newer login's gift lock.
+   if(state.eveningGiftRequest===giftTicket){
+    state.eveningGiftRequest=null;
+    if(state.user?.id===giftOwner.userId&&state.coupleId===giftOwner.coupleId&&
+       state.session?.id===giftOwner.sessionId&&state.tab==='session'&&
+       authFeedbackGeneration===giftOwner.generation&&
+       !state.diceStatus&&!isActiveEveningRedrawPending())render();
+   }
+  }
  }
  if(verb==='new-challenge'){
+  // The official D100 cannot race a repick or a gift that updates turn counts.
+  if(isActiveEveningRedrawPending()||isActiveEveningGiftPending())return;
   if(eveningCategoryConfirmInFlight)return; // One dialog and one official RPC only.
   if(!state.session)throw Error('Aucune soirée active.');
   if(!EVENING_CATEGORIES.includes(state.category)&&state.category!=='HASARD'){
@@ -4217,6 +6024,12 @@ async function handle(action,element){
   }
   // Never trigger a server draw or rotate the D100 before confirmation.
   const selectedCategory=state.category,sessionId=state.session.id;
+  const drawOwner={userId:state.user?.id,coupleId:state.coupleId,
+   sessionId,generation:authFeedbackGeneration};
+  // Category confirmation is asynchronous. A private Passer/Refuser may
+  // start while its dialog is open; it owns the next server queue snapshot.
+  const ownsDraw=()=>ownsEveningCategoryDraw(state,drawOwner,authFeedbackGeneration)&&
+   !isActiveEveningRedrawPending()&&!isActiveEveningGiftPending();
   eveningCategoryConfirmInFlight=true;
   try{
    let disableReminder=false;
@@ -4225,10 +6038,14 @@ async function handle(action,element){
      percentage:state.couple?.category_weights_enabled===false?50:
       state.couple?.category_preference_percent??88});
     if(!answer.confirmed)return;
+    if(!ownsDraw())return;
     if(state.category!==selectedCategory||state.session?.id!==sessionId||state.tab!=='session')
      throw Error('La soirée ou la catégorie a changé. Confirme ton nouveau choix.');
     disableReminder=answer.neverShow;
    }
+   // The confirmation may have been bypassed by a personal preference;
+   // never draw for an account or evening that has since been replaced.
+   if(!ownsDraw())return;
    // Existing official D100 RPC: Supabase owns probability, result and quota.
    const drawn=await animateRoll(()=>
     selectedCategory==='HASARD'?
@@ -4236,6 +6053,8 @@ async function handle(action,element){
      rpc('draw_for_partner',{p_session:sessionId,
        p_preference:selectedCategory,p_random:false}),
     'new-challenge');
+   if(!ownsDraw())return;
+   if(state.category!==selectedCategory)return;
    if(drawn?.id&&drawn.recipient===state.user.id&&
         state.tab==='session'&&state.session?.id===sessionId){
     state.selectedEveningChallengeId=drawn.id;
@@ -4244,9 +6063,13 @@ async function handle(action,element){
    // Only after a successful official roll, never after cancel/ESC/network failure.
    if(disableReminder){
     try{await persistEveningCategoryConfirmPref(false);}
-    catch(error){console.warn('Préférence du D100 non enregistrée',error);
-     notify('Lancer réussi, mais le réglage de confirmation n’a pas pu être enregistré.');}
+    catch(error){
+     if(!ownsDraw())return;
+     console.warn('Préférence du D100 non enregistrée',error);
+     notify('Lancer réussi, mais le réglage de confirmation n’a pas pu être enregistré.');
+    }
    }
+   if(!ownsDraw())return;
    try{sessionStorage.removeItem('loveroll-category-'+sessionId);}catch{}
    state.category=null; // Choix renouvelé à chaque défi.
    render();
@@ -4254,17 +6077,35 @@ async function handle(action,element){
   }finally{eveningCategoryConfirmInFlight=false;}
  }
  if(verb==='answer'){
+  // Manual completion must not race a repick or a pending gift transfer.
+  if(isActiveEveningRedrawPending()||isActiveEveningGiftPending()||
+     isEveningCardCompleting(parts[0]))return;
   const item=ownEveningChallenges(state.challenges,state.user.id,state.session?.id).find(c=>c.id===parts[0]);
   if(!item)throw Error('Ce défi n’est pas dans ta liste personnelle.');
   const eveningId=state.session.id;
+  // The legacy response path also needs a request-owned lock: a late RPC
+  // must not update a different account, evening, tab or timer.
+  const answerContext={userId:state.user.id,coupleId:state.coupleId,sessionId:eveningId,
+   tab:state.tab,challengeId:parts[0]};
+  if(isSameEveningResponseContext(state,state.legacyAnswerContext))return;
+  state.legacyAnswerContext=answerContext;
+  const ownsAnswer=()=>isSameEveningResponseContext(state,answerContext)&&
+   state.legacyAnswerContext===answerContext;
+  try{
+  // Surface the busy state BEFORE the server call, not only on completion.
+  render();
   if(parts[1]==='passed'&&state.monthlyPassQuota?.can_pass===false)throw Error('Limite mensuelle de passes atteinte.');
   if(parts[1]==='passed'&&state.monthlyPassQuota==null){
-   state.monthlyPassQuota=await rpc('my_love_monthly_pass_quota',{p_couple:state.coupleId});
+   const quota=await rpc('my_love_monthly_pass_quota',{p_couple:state.coupleId});
+   if(!ownsAnswer())return;
+   state.monthlyPassQuota=quota;
    if(!state.monthlyPassQuota.can_pass)throw Error('Limite mensuelle de passes atteinte.');
   }
   if(parts[1]==='passed'&&state.session?.id!==eveningId)throw Error('La soirée a changé, veuillez réessayer.');
   await rpc('answer_challenge',{p_id:parts[0],p_status:parts[1]});
-  if(challengeTimer.id===parts[0]&&['completed','passed'].includes(parts[1])){
+  if(!ownsAnswer())return;
+  if(ownsVisibleEveningTimer(parts[0],answerContext.userId,answerContext.sessionId)&&
+     ['completed','passed'].includes(parts[1])){
    challengeTimer.running=false;challengeTimer.remainingMs=0;
    challengeTimer.autoCompletePending=false;saveChallengeTimer();
   }
@@ -4273,36 +6114,108 @@ async function handle(action,element){
    const limit=Number(state.monthlyPassQuota.limit);
    state.monthlyPassQuota={...state.monthlyPassQuota,used,remaining:Math.max(0,limit-used),can_pass:used<limit};
   }
+  let completionClosedNight=false;
   if(parts[1]==='completed'){
    // Last completed challenge closes the shared night automatically.
    // The official server function checks BOTH adjusted D6 quotas atomically.
    const board=await rpc('my_love_evening_board',{p_session:eveningId});
+   if(!ownsAnswer())return;
    if(board?.finished){
-    try{await rpc('finish_couple_session',{p_session:eveningId,p_count:true});}
+    try{
+     await rpc('finish_couple_session',{p_session:eveningId,p_count:true});
+     if(!ownsAnswer())return;
+    }
     catch(error){
      // Partner may have closed the same session milliseconds earlier.
+     if(!ownsAnswer())return;
      const alreadyClosed=(await query('couple_sessions',{eq:{id:eveningId}}))[0]?.finished_at;
+     if(!ownsAnswer())return;
      if(!alreadyClosed)throw error;
     }
-    state.showEveningChallenges=false;state.selectedEveningChallengeId=null;
-   }else{
-    state.showEveningChallenges=true;state.selectedEveningChallengeId=item.id;
+    // A successful RPC alone is not an authoritative refreshed closure.
+    // Keep the existing queue visible until the recipient-only read confirms.
+    completionClosedNight=true;
    }
-  }else{state.showEveningChallenges=true;state.selectedEveningChallengeId=item.id;}
-  await refreshAndShow();return;
+  }
+  if(!ownsAnswer())return;
+  // The unscoped refreshAndShow() could overwrite a newly signed-in user's
+  // state while its requests were in flight. Refresh under this operation.
+  const confirmed=await refreshShared(answerContext);
+  if(confirmed!==true){
+   if(ownsAnswer())notify('Réponse envoyée, mais la mise à jour n’est pas confirmée. Actualise tes défis.');
+   return;
+  }
+  if(state.legacyAnswerContext!==answerContext||
+     state.user?.id!==answerContext.userId||state.tab!==answerContext.tab||
+     !(state.session?.id===eveningId||
+       (state.session===null&&state.sessions?.some(s=>
+        s.id===eveningId&&s.finished_at))))return;
+  if(completionClosedNight){
+   if(state.session!==null||!state.sessions?.some(s=>
+      s.id===eveningId&&s.finished_at)){
+    notify('Fin de soirée envoyée, mais pas encore confirmée. Actualise tes défis.');
+    return;
+   }
+   state.showEveningChallenges=false;state.selectedEveningChallengeId=null;
+  }else{
+   state.showEveningChallenges=true;state.selectedEveningChallengeId=item.id;
+  }
+  return;
+  }finally{
+   // Release the owner token BEFORE painting a final state. Otherwise the
+   // completed D100 still renders the disabled "Réponse en cours" button.
+   if(state.legacyAnswerContext===answerContext){
+    state.legacyAnswerContext=null;
+    const sameView=state.user?.id===answerContext.userId&&
+     state.coupleId===answerContext.coupleId&&state.tab===answerContext.tab;
+    const sameEvening=state.session?.id===answerContext.sessionId||
+     (state.session===null&&state.sessions?.some(entry=>
+      entry.id===answerContext.sessionId&&entry.finished_at));
+    if(sameView&&sameEvening)render();
+   }
+  }
  }
  if(verb==='finish-session'){
+  if(state.diceStatus)return; // Finishing before the receipt interrupts the die.
+  // Never finish before a Passer/Refuser or gift transfer is confirmed.
+  if(isActiveEveningRedrawPending()||isActiveEveningGiftPending())return;
   if(!state.session)return;
   const finishedId=state.session.id;
-  await rpc('finish_couple_session',{p_session:finishedId,p_count:true});
-  state.chosenSession=finishedId;state.tab='session';await refreshAndShow();return;
+  const owner={userId:state.user?.id,coupleId:state.coupleId,
+   sessionId:finishedId,generation:authFeedbackGeneration};
+  const ownsFinish=()=>state.user?.id===owner.userId&&
+   state.coupleId===owner.coupleId&&state.session?.id===owner.sessionId&&
+   authFeedbackGeneration===owner.generation;
+  const ticket=eveningClosureGate.begin(owner);
+  if(!ticket)return;
+  try{
+   await rpc('finish_couple_session',{p_session:finishedId,p_count:true});
+   if(!ownsFinish())return;
+   state.chosenSession=finishedId;state.tab='session';await refreshAndShow();return;
+  }finally{eveningClosureGate.release(ticket);}
  }
- if(verb==='cancel-session'){state.confirmCancel=true;render();return;}
+ if(verb==='cancel-session'){
+  if(state.diceStatus)return; // The official result must settle before cancellation.
+  if(isActiveEveningRedrawPending()||isActiveEveningGiftPending())return;
+  state.confirmCancel=true;render();return;
+ }
  if(verb==='dismiss-cancel'){state.confirmCancel=false;render();return;}
  if(verb==='confirm-cancel'){
-  if(!state.session)return;
-  await rpc('finish_couple_session',{p_session:state.session.id,p_count:false});
-  state.confirmCancel=false;state.tab='home';await refreshAndShow();return;
+  if(state.diceStatus||!state.session)return;
+  // A stale dialog must not cancel an evening during a redraw or gift transfer.
+  if(isActiveEveningRedrawPending()||isActiveEveningGiftPending())return;
+  const owner={userId:state.user?.id,coupleId:state.coupleId,
+   sessionId:state.session.id,generation:authFeedbackGeneration};
+  const ownsCancel=()=>state.user?.id===owner.userId&&
+   state.coupleId===owner.coupleId&&state.session?.id===owner.sessionId&&
+   authFeedbackGeneration===owner.generation;
+  const ticket=eveningClosureGate.begin(owner);
+  if(!ticket)return;
+  try{
+   await rpc('finish_couple_session',{p_session:owner.sessionId,p_count:false});
+   if(!ownsCancel())return; // Do not redirect a new login after the server reply.
+   state.confirmCancel=false;state.tab='home';await refreshAndShow();return;
+  }finally{eveningClosureGate.release(ticket);}
  }
  if(verb==='advent-open'){
   if(!isSharedCoupleReady(state.coupleId,state.members))
@@ -4520,15 +6433,25 @@ async function start(){
   catch(e){fail(e);window.LoveRollBoot?.showFailure();}
  }else render();
  client.auth.onAuthStateChange((event,session)=>{
-  if(event==='SIGNED_IN'&&session?.user&&!state.user){
-   state.user=session.user;
+  if(event==='SIGNED_IN'&&session?.user&&state.user?.id!==session.user.id){
+   adoptAuthenticatedIdentity(session.user);
+   render(); // Immediately replace the former account's private screen.
    setTimeout(()=>reload().catch(fail),0);
   }
   if(event==='PASSWORD_RECOVERY'){
-    state.passwordRecovery=true;state.showAuth=true;
-    state.user=session?.user||state.user;render();
-   }
-   if(event==='SIGNED_OUT'){eclatNoteDrafts.clear();state.user=null;state.profile=null;state.coupleId=null;state.wellbeing=null;state.personalPass=null;state.personalJournal=[];state.emailVerificationPending=false;render();}
+   if(session?.user&&state.user?.id!==session.user.id)adoptAuthenticatedIdentity(session.user);
+   state.passwordRecovery=true;state.showAuth=true;
+   render();
+  }
+  if(event==='SIGNED_OUT'){
+   adoptAuthenticatedIdentity(null);
+   state.personalPass=null;state.emailVerificationPending=false;
+   state.showAuth=false;state.passwordRecovery=false;
+   state.installAfterSignup=false;state.installModalOpen=false;
+   state.showInstallSteps=false;state.forceInstallGuide=false;
+   keepAuthModeInUrl(null);
+   render();
+  }
  });
 }
 // Version probe bypasses WebView/Chrome and service worker HTTP cache.
@@ -4590,17 +6513,38 @@ window.addEventListener('appinstalled',()=>{
 });
 // When left open across midnight, server time (not phone time) changes the
 // current Advent door without requiring a restart or manual refresh.
+// An old account/couple's pending reply must never repaint a new user's view.
+let adventDatePolling=null;
 setInterval(async()=>{
  if(!state.user||state.tab!=='advent'||document.hidden||state.adventOpening!==null)return;
+ const owner={userId:state.user.id,coupleId:state.coupleId||null,
+  generation:authFeedbackGeneration};
+ if(adventDatePolling?.userId===owner.userId&&
+    adventDatePolling.coupleId===owner.coupleId&&
+    adventDatePolling.generation===owner.generation)return;
+ adventDatePolling=owner;
+ const current=()=>adventDatePolling===owner&&
+  state.user?.id===owner.userId&&
+  (state.coupleId||null)===owner.coupleId&&
+  authFeedbackGeneration===owner.generation&&
+  state.tab==='advent'&&!document.hidden&&state.adventOpening===null;
  try{
   const todayOnServer=await rpc('love_advent_server_date');
+  if(!current())return;
   if(todayOnServer&&todayOnServer!==state.adventServerDate){
-   state.adventServerDate=todayOnServer;
-   state.adventYear=null;
+   // refreshShared reads the authoritative date again and owns its state
+   // update. Never mark the new day as fetched before that network refresh
+   // succeeds: a failure must leave the old date so the next tick retries.
    await refreshShared();
+   if(!current()||state.adventServerDate!==todayOnServer)return;
+   state.adventYear=null;
    render();
   }
- }catch(error){console.warn('Horloge Avent indisponible',error);}
+ }catch(error){
+  if(current())console.warn('Horloge Avent indisponible',error);
+ }finally{
+  if(adventDatePolling===owner)adventDatePolling=null;
+ }
 },60_000);
 // Fallback when Realtime WebSocket events are missed in Chrome, Safari,
  // Messenger, iPadOS, or after background suspension. No manual refresh.
@@ -4629,38 +6573,130 @@ document.addEventListener('visibilitychange',()=>{
  }
 });
 // Android native Google chooser passes the selected ID token to Supabase.
+// Native Android Google OAuth may resolve after an account switch or after
+// another Google chooser. A stale callback may never replace the current
+// player or put its error on someone else's private screen.
+let currentNativeGoogleLoginRequest=null;
 window.addEventListener('loveroll-native-google-result',async event=>{
- const {token,nonce,error}=event.detail||{};
- if(error){
-  state.authNotice=error;
-  authMessage(error);return;
- }
- if(!token){authMessage('Aucun identifiant Google reçu. Réessayez ou connectez-vous avec votre mot de passe.');return;}
+ const request={};
+ currentNativeGoogleLoginRequest=request;
+ authFeedbackGeneration++; // Also invalidates an earlier password form reply.
+ const originalUserId=state.user?.id??null;
+ const generation=authFeedbackGeneration;
+ const current=()=>currentNativeGoogleLoginRequest===request&&
+  authFeedbackGeneration===generation&&
+  (state.user?.id??null)===originalUserId;
  try{
-  const result=await client.auth.signInWithIdToken({provider:'google',token,nonce});
-  if(result.error)throw result.error;
-  if(result.data?.user){
-   state.user=result.data.user;state.showAuth=false;
-   await reload();
+  const {token,nonce,error}=event.detail||{};
+  if(error){
+   if(current()){state.authNotice=error;authMessage(error);}
+   return;
   }
-  }catch(err){
-  authMessage('Google n’a pas pu ouvrir la session LoveRoll. Vérifiez le compte choisi et réessayez, ou utilisez votre mot de passe.');
-  console.warn('Google Supabase auth failed',err?.code||'unknown');
+  if(!token){
+   if(current())authMessage('Aucun identifiant Google reçu. Réessayez ou connectez-vous avec votre mot de passe.');
+   return;
+  }
+  const result=await client.auth.signInWithIdToken({provider:'google',token,nonce});
+  // SIGNED_IN may have already adopted this result and queued its reload.
+  // In that case, never perform a duplicate or stale presentation update.
+  if(!current())return;
+  if(result.error)throw result.error;
+  if(!result.data?.user)throw Error('Aucune session Google ouverte.');
+  const acceptedUserId=result.data.user.id;
+  adoptAuthenticatedIdentity(result.data.user);
+  state.showAuth=false;
+  try{await reload();}
+  catch(err){if(state.user?.id===acceptedUserId)fail(err);}
+ }catch(err){
+  if(current()){
+   authMessage('Google n’a pas pu ouvrir la session LoveRoll. Vérifiez le compte choisi et réessayez, ou utilisez votre mot de passe.');
+   console.warn('Google Supabase auth failed',err?.code||'unknown');
+  }
+ }finally{
+  if(currentNativeGoogleLoginRequest===request)currentNativeGoogleLoginRequest=null;
  }
 });
 
+// Keep background status reads single-flight per auth session. A stalled
+// network request may be replaced after 30 seconds, but cannot repaint later.
+let latestEclatPollPending=null;
 setInterval(async()=>{
- if(document.hidden||state.tab!=='eclat'||!state.user||!isSharedCoupleReady(state.coupleId,state.members))return;
+ if(document.hidden||state.tab!=='eclat'||!state.user||
+    !isSharedCoupleReady(state.coupleId,state.members))return;
+ const pending=latestEclatPollPending;
+ if(pending&&pending.userId===state.user.id&&
+    pending.coupleId===state.coupleId&&
+    pending.generation===authFeedbackGeneration&&
+    latestEclatStatusRead===pending.request&&
+    Date.now()-pending.startedAt<30000)return;
+ const foreground=latestEclatExplicitRead;
+ if(foreground&&foreground.userId===state.user.id&&
+    foreground.coupleId===state.coupleId&&
+    foreground.generation===authFeedbackGeneration&&
+    latestEclatStatusRead===foreground.request&&
+    Date.now()-foreground.startedAt<30000)return;
+ // Account IDs can be reused after a fresh login. Invalidate old replies
+ // without blocking a new session or relying on its first timer tick.
+ const owner={userId:state.user.id,coupleId:state.coupleId,
+  generation:authFeedbackGeneration};
+ const request={};latestEclatStatusRead=request;
+ latestEclatPollPending={...owner,request,startedAt:Date.now()};
+ const current=()=>ownsCoupleAsyncRead(state,owner)&&
+  authFeedbackGeneration===owner.generation&&
+  isSharedCoupleReady(owner.coupleId,state.members)&&
+  !document.hidden&&latestEclatStatusRead===request&&state.tab==='eclat';
  try{
-  const prior=JSON.stringify(state.eclat);
+  const prior=eclatStatusSignature(state.eclat);
   const value=await rpc('love_eclat_status');
-  if(state.tab==='eclat'&&JSON.stringify(value)!==prior){state.eclat=value;await refreshEclatHistory();render();}
- }catch(error){console.warn('Synchronisation Éclat',error?.code||'');}
+  if(!current())return;
+  if(eclatStatusSignature(value)!==prior){
+   // A progress/choice update can change the status every 4.5 seconds.
+   // Do not bypass the 30-second history retry cooldown for such updates.
+   // A new coffret or a just-ended session DOES need an immediate reload.
+   const previous=state.eclat;
+   const sessionChanged=(previous?.session_id??null)!==(value?.session_id??null)||
+    (previous?.coffret_id??null)!==(value?.coffret_id??null)||
+    (previous?.active===true&&value?.active===false);
+   // History contains session/chapter metadata, not each user's temporary
+   // choice. Avoid a private paginated query on every partner choice update.
+   const chapterChanged=(previous?.chapter_index??null)!==(value?.chapter_index??null);
+   const historyScopeMissing=state.eclatHistoryCouple!==owner.coupleId||
+    state.eclatHistoryUserId!==owner.userId;
+   const regainedAccess=previous?.access!==true&&value?.access===true;
+   const retryDue=state.eclatHistoryError===true&&
+    Date.now()>=(state.eclatHistoryRetryAt??0);
+   const historyChanged=sessionChanged||chapterChanged||historyScopeMissing||regainedAccess;
+   // The cooldown applies only to retrying the SAME failed history snapshot.
+   // A new chapter, session or account scope requires its own timely read.
+   if(applyEclatStatus(value)&&(historyChanged||retryDue))
+    await refreshEclatHistory();
+   if(current())render();
+  }else if(value?.access===true&&(
+    state.eclatHistoryCouple!==owner.coupleId||
+    state.eclatHistoryUserId!==owner.userId||
+    (state.eclatHistoryError===true&&
+     Date.now()>=(state.eclatHistoryRetryAt??0)))){
+   // A status can remain unchanged when a private gallery has never loaded
+   // for this owner. Hydrate it once, or retry a failed owned gallery only
+   // after its bounded cooldown; never request one without server access.
+   await refreshEclatHistory();
+   if(current())render();
+  }
+ }catch(error){
+  if(current()){
+   // A verified authentication rejection is not an ordinary network outage.
+   // Discard private history, drafts and sound immediately when Auth rejects
+   // the current session; a later successful poll may restore access.
+   if(invalidateEclatOnAuthRejection(error))render();
+   console.warn('Synchronisation Éclat',error?.code||'');
+  }
+ }
+ finally{if(latestEclatPollPending?.request===request)latestEclatPollPending=null;}
 },4500);
 start().catch(error=>{fail(error);window.LoveRollBoot?.showFailure();});
 
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   window.addEventListener('load', () =>
-    navigator.serviceWorker.register('./service-worker.js?v=20261029-web259',
+    navigator.serviceWorker.register('./service-worker.js?v=20261031-web260',
      {scope:'./',updateViaCache:'none'}).then(reg=>reg.update()).catch(console.warn));
 }

@@ -54,6 +54,11 @@ test('Yes only navigates and optionally starts real server session; D6 still by 
 });
 test('private read has realtime/polling fallback and no forced Push permission',()=>{
  assert.match(sync,/if\(remote\.invitation&&/);
- assert.match(app,/state\.eveningInvite=await rpc\('love_evening_invite_status'/);
+ // A late invitation response must not leak into a new login or duo.
+ // Verify the RPC result is committed only after its ownership guard.
+ const reader=app.slice(app.indexOf('async function refreshShared('),
+  app.indexOf('const liveSync=createCoupleLiveSync('));
+ assert.match(reader,/const invite=await rpc\('love_evening_invite_status',\{p_couple:c\}\);\s*if\(!current\(\)\)return;\s*state\.eveningInvite=invite;/);
+ assert.match(reader,/catch\{if\(!current\(\)\)return;state\.eveningInvite=null;\}/);
  assert.doesNotMatch(app.slice(app.indexOf("if(verb==='evening-invite')"),app.indexOf("if(verb==='eclat')")),/Notification\.requestPermission|enablePush/);
 });

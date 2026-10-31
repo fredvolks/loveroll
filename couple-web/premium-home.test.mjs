@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {
  WEEKLY_ODDS,PIP_POSITIONS,pipFace,nextMonday,nextMonthly,
- assignedTonight,coupleHomeStats,premiumHomeHtml
+ assignedTonight,coupleHomeStats,premiumHomeHtml,calculateMobileHomePhotoGeometry
 } from './premium-home.mjs';
 
 const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
@@ -180,4 +180,28 @@ test('Partner statistics distinguish saved profiles with the same first name',()
  const partners=h.match(/class="home-stat-card partners"[\s\S]*?<\/div>/)?.[0];
  assert.match(partners,/<small>Fred \/ Fred Messely<\/small>/);
  assert.doesNotMatch(partners,/<small>Fred \/ Fred<\/small>/);
+});
+
+test('Mobile Home scene geometry never produces negative artwork heights when Safari viewport shrinks',()=>{
+ const normal=calculateMobileHomePhotoGeometry(852,512);
+ assert.equal(normal.split,512,'existing Android/iPhone portrait alignment is untouched');
+ assert.equal(normal.topImageHeight,512/.438);
+ assert.equal(normal.bottomImageHeight,(852-512)/.562);
+ assert.equal(normal.contact,512*.342/.438);
+ for(const [viewportHeight,rollTop] of [
+  [320,800], // keyboard opened: roll button moved below visible viewport
+  [568,-120], // vertical scrolling moved the roll above viewport
+  [220,1000], // short landscape viewport
+  [95,-20], // compact landscape
+  [600,600]
+ ]){
+  const photo=calculateMobileHomePhotoGeometry(viewportHeight,rollTop);
+  assert.ok(photo.split>0&&photo.split<viewportHeight);
+  assert.ok(photo.topImageHeight>0&&Number.isFinite(photo.topImageHeight));
+  assert.ok(photo.bottomImageHeight>0&&Number.isFinite(photo.bottomImageHeight));
+  assert.ok(photo.contact>0&&Number.isFinite(photo.contact));
+ }
+ for(const bad of [[0,300],[-5,80],[Infinity,80],[700,NaN],[700,Infinity]]){
+  assert.equal(calculateMobileHomePhotoGeometry(...bad),null);
+ }
 });

@@ -43,7 +43,8 @@ jobs:
           fi
 
   visual-parity:
-    runs-on: ubuntu-latest
+    # Playwright 1.56.0 cannot install Chromium on Ubuntu 26.04 (ubuntu-latest).
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4

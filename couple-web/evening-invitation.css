@@ -31,3 +31,18 @@
 @media(max-width:540px){.lr-evening-invite{padding:11px 12px;margin:8px auto;width:calc(100% - 18px)}
  .lr-evening-invite-actions{gap:7px}.lr-evening-invite button{flex:1 1 42%;font-size:.83rem}}
 @media(prefers-reduced-motion:reduce){.lr-evening-invite *{animation:none!important;transition:none!important}}
+
+/* Accueil shortcut: accepting the invitation takes one tap; less eager
+   answers still open the full Soirée choice without an automatic D6. */
+.lr-evening-inbox-actions{display:flex;align-items:center;justify-content:flex-end;
+ gap:6px;flex:none;min-width:0}
+.lr-evening-inbox-yes{min-height:44px;padding:7px 10px;border:1px solid #ffe1e9;
+ border-radius:14px;background:#ffd5e1;color:#68243f;
+ font:700 .85rem system-ui,sans-serif;cursor:pointer;white-space:nowrap}
+.lr-evening-inbox-yes:focus-visible{outline:3px solid #fff;outline-offset:2px}
+@media(max-width:530px){
+ .lr-evening-inbox{flex-wrap:wrap}
+ .lr-evening-inbox-copy{flex-basis:calc(100% - 42px)}
+ .lr-evening-inbox-actions{justify-content:center;width:100%;flex-wrap:wrap}
+ .lr-evening-inbox-actions>button{flex:1 1 115px;max-width:100%}
+}

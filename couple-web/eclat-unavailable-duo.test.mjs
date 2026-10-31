@@ -1,0 +1,60 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {eclatHtml} from './eclat-ui.mjs';
+
+test('LR-026: revoked duo sees guidance instead of private coffret or paywall',()=>{
+ const html=eclatHtml({
+  coupleReady:false,
+  status:{access:true,active:true,coffret_id:1,chapter_number:1,variant_number:0},
+  selected:2,music:true,details:true,browse:false,
+  finished:'former couple private title',
+  history:[{coffret_id:1,note:'former private memory'}],
+  noteState:{note:'hidden personal note'},
+  userId:'alice',members:[{id:'alice'}]
+ });
+ assert.match(html,/Votre duo n’est pas prêt/);
+ assert.match(html,/deux partenaires associés/);
+ assert.match(html,/data-action="tab:session"/);
+ assert.doesNotMatch(html,/former couple private title|former private memory|hidden personal note/);
+ assert.doesNotMatch(html,/eclat:music|eclat:start:|eclat:choose:/);
+ assert.doesNotMatch(html,/999|forfait|abonnement|\/mois/i,
+  'missing couple membership is not a subscription problem');
+});
+
+test('LR-026: normal incomplete subscription still shows regular Éclat offer with an associated duo',()=>{
+ const html=eclatHtml({coupleReady:true,status:null});
+ assert.match(html,/ÉCLAT PREMIUM/);
+ assert.match(html,/L’activation et le paiement en ligne ne sont pas encore disponibles/);
+ assert.doesNotMatch(html,/Votre duo n’est pas prêt/);
+});
+
+test('LR-026: completion notice is hidden when Éclat access disappears',()=>{
+ const previous='Titre du dernier coffret privé';
+ for(const status of [null,{access:false,active:false},{access:false,active:true}]){
+  const html=eclatHtml({coupleReady:true,status,finished:previous});
+  assert.doesNotMatch(html,/Coffret terminé ensemble/);
+  assert.doesNotMatch(html,/data-action="eclat:(choose|next|music|end)\b/,
+   'revoked access cannot expose active Éclat controls');
+  assert.doesNotMatch(html,/eclat-guided|eclat-step-progress/,
+   'revoked access cannot show a private guided chapter');
+  assert.doesNotMatch(html,new RegExp(previous),
+   'a revoked or unknown entitlement cannot display an old completion');
+ }
+});
+
+test('LR-026: completion notice belongs to finished, authorized coffret only',()=>{
+ const finished='Notre coffret terminé';
+ const inactive=eclatHtml({
+  coupleReady:true,status:{access:true,active:false},finished
+ });
+ assert.match(inactive,/Coffret terminé ensemble/);
+ assert.match(inactive,new RegExp(finished));
+ const active=eclatHtml({
+  coupleReady:true,
+  status:{access:true,active:true,coffret_id:1,chapter_number:1,variant_number:0},
+  finished,userId:'alice',members:[{user_id:'alice'},{user_id:'bob'}]
+ });
+ assert.doesNotMatch(active,/Coffret terminé ensemble/);
+ assert.doesNotMatch(active,new RegExp(finished),
+  'starting another coffret must not replay a previous success banner');
+});

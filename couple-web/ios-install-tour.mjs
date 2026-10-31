@@ -1,16 +1,28 @@
 // Safari iPhone: optional, accessible instructions; no Apple Developer account needed.
 export const IOS_TOUR_KEY='loveroll-ios-safari-guide-v229';
+export function isIosTablet(nav=globalThis.navigator){
+ const ua=String(nav?.userAgent||'');
+ return /iPad/i.test(ua)||(nav?.platform==='MacIntel'&&Number(nav?.maxTouchPoints)>1);
+}
+export function iosInstallTourTitle(nav=globalThis.navigator){
+ return isIosTablet(nav)?'LoveRoll sur ton iPad':'LoveRoll sur ton iPhone';
+}
 export function isIosSafari(nav=globalThis.navigator,win=globalThis.window){
  if(!nav||!win||win.LoveRollNativeAuth)return false;
  const ua=String(nav.userAgent||'');
- const ios=/iPhone|iPad|iPod/i.test(ua)||(nav.platform==='MacIntel'&&nav.maxTouchPoints>1);
+ const ios=/iPhone|iPod/i.test(ua)||isIosTablet(nav);
  const other=/CriOS|FxiOS|EdgiOS|OPiOS|DuckDuckGo|FBAN|FBAV|Messenger|Instagram/i.test(ua);
  return ios&&!other&&!win.matchMedia?.('(display-mode: standalone)')?.matches&&!nav.standalone;
 }
 export function shouldShowIosTour(store=globalThis.localStorage,now=Date.now()){
  try{
   const saved=JSON.parse(store?.getItem(IOS_TOUR_KEY)||'null');
-  return !saved||saved.choice==='later'&&now-saved.at>7*86400000;
+  if(!saved||typeof saved!=='object')return true;
+  if(saved.choice==='done')return false;
+  if(saved.choice!=='later')return true;
+  const timestamp=Number(saved.at);
+  if(!Number.isFinite(timestamp)||timestamp<=0||timestamp>now||saved.at==null)return true;
+  return now-timestamp>7*86400000;
  }catch{return true;}
 }
 const steps=[
@@ -32,7 +44,7 @@ function render(){
  '<button type="button" data-ios-tour="close" class="lr-ios-tour-close" aria-label="Fermer le tutoriel">×</button>'+
  '<p class="lr-ios-tour-kicker">LOVEROLL · '+(step?'ÉTAPE '+step+'/4':'BIENVENUE')+'</p>'+
  '<div class="lr-ios-tour-illustration" aria-hidden="true"><span class="lr-ios-tour-phone"><span class="lr-ios-tour-phone-top"></span><span class="lr-ios-tour-symbol">'+escapeHtml(info.symbol)+'</span><span class="lr-ios-tour-phone-bottom"></span></span></div>'+
- '<h2 id="lr-ios-tour-title">'+escapeHtml(info.title)+'</h2>'+
+ '<h2 id="lr-ios-tour-title">'+escapeHtml(step===0?iosInstallTourTitle():info.title)+'</h2>'+
  '<p id="lr-ios-tour-desc">'+escapeHtml(info.subtitle)+'</p>'+
  '<div class="lr-ios-tour-dots" aria-label="Progression du tutoriel">'+steps.slice(1).map((_,i)=>'<span class="'+(i+1===step?'active':'')+'"></span>').join('')+'</div>'+
  '<div class="lr-ios-tour-actions">'+(step>0?'<button type="button" data-ios-tour="prev" class="lr-ios-tour-secondary">Précédent</button>':'<button type="button" data-ios-tour="later" class="lr-ios-tour-secondary">Plus tard</button>')+
@@ -44,14 +56,23 @@ function close(choice){
  remember(choice);overlay.remove();overlay=null;document.removeEventListener('keydown',keyHandler);
  previousFocus?.isConnected&&previousFocus.focus?.({preventScroll:true});previousFocus=null;
 }
+// Keep keyboard focus in the guide even when the app rerenders its former
+// active button behind the overlay. Do not move the underlying page.
+export function cycleIosTourFocus(event,controls,activeElement){
+ if(event?.key!=='Tab'||!controls?.length)return false;
+ const current=controls.indexOf(activeElement);
+ const target=event.shiftKey?
+  (current<=0?controls.at(-1):null):
+  (current<0||current===controls.length-1?controls[0]:null);
+ if(!target)return false;
+ event.preventDefault();target.focus({preventScroll:true});return true;
+}
 function keyHandler(event){
  if(!overlay)return;
  if(event.key==='Escape'){event.preventDefault();close('later');return;}
  if(event.key!=='Tab')return;
  const focus=[...overlay.querySelectorAll('button:not([disabled])')];
- const current=focus.indexOf(document.activeElement);
- if(event.shiftKey&&current===0){event.preventDefault();focus.at(-1)?.focus();}
- if(!event.shiftKey&&current===focus.length-1){event.preventDefault();focus[0]?.focus();}
+ cycleIosTourFocus(event,focus,document.activeElement);
 }
 export function openIosInstallTour(){
  if(!globalThis.document||overlay||!isIosSafari())return false;

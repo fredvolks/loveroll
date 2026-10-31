@@ -3,6 +3,8 @@
 // The weekly goal is the lesser of the D6 face and remaining local days
 // (one eligible counted evening per calendar day, reset Monday).
 const torontoDate=instant=>{
+ // An unloaded legacy timestamp must not be mistaken for 1969/1970.
+ if(typeof instant!=='string'&&!(instant instanceof Date))return null;
  const time=new Date(instant);
  if(!Number.isFinite(time.getTime()))return null;
  const parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/Toronto',
@@ -26,15 +28,20 @@ export function remainingWeekEvenings(rollAt){
 }
 export function calendarWeekSuccess({date,weeklyRolls=[],sessions=[]}={}){
  const start=mondayOf(date);
- const roll=(weeklyRolls||[]).filter(r=>r.kind==='weekly'&&r.key===start)
+ // Sparse Supabase history may contain null or invalid legacy rows.
+ const safeRows=value=>Array.isArray(value)?value.filter(x=>x&&typeof x==='object'&&!Array.isArray(x)):[];
+ const roll=safeRows(weeklyRolls).filter(r=>r.kind==='weekly'&&r.key===start)
   .sort((a,b)=>Date.parse(b.created_at)-Date.parse(a.created_at))[0];
  if(!roll)return {hasRoll:false,possible:0,completed:0,percent:null,face:null};
  const face=Math.max(1,Math.min(6,Number(roll.face)||1));
  const possible=Math.min(face,remainingWeekEvenings(roll.created_at));
  const since=Date.parse(roll.created_at);
- const completed=(sessions||[]).filter(s=>s.counted===true&&s.finished_at&&
-  mondayOf(torontoDate(s.started_at))===start&&Date.parse(s.started_at)>=since).length;
- const capped=Math.min(possible,completed);
+ // Count a maximum of one eligible counted night per Québec calendar day.
+ // Two historical records on the same local day never increase D6 success.
+ const completedDays=new Set(safeRows(sessions).filter(s=>s.counted===true&&s.finished_at&&
+  mondayOf(torontoDate(s.started_at))===start&&Date.parse(s.started_at)>=since)
+  .map(s=>torontoDate(s.started_at)));
+ const capped=Math.min(possible,completedDays.size);
  return {hasRoll:true,possible,completed:capped,
   percent:possible?Math.round(100*capped/possible):null,face};
 }
@@ -43,11 +50,19 @@ export function monthlyChallengeSuccess({
 }={}){
  const valid=/^\d{4}-(0[1-9]|1[0-2])$/.test(month||'');
  if(!valid)return [];
- const chosenSessions=(sessions||[]).filter(s=>torontoDate(s.started_at)?.slice(0,7)===month);
+ // All inputs are RPC snapshots, sometimes including incomplete legacy rows.
+ // Skip malformed entries instead of breaking the entire mobile calendar.
+ const rows=value=>Array.isArray(value)?value.filter(x=>
+  x&&typeof x==='object'&&!Array.isArray(x)):[];
+ const chosenSessions=rows(sessions).filter(s=>
+  s.id!=null&&torontoDate(s.started_at)?.slice(0,7)===month);
  const sessionsById=new Map(chosenSessions.map(s=>[s.id,s]));
- const freePasses=new Set((passQuota||[]).filter(p=>p.free_pass===true).map(p=>p.challenge_id));
- const byUser=(members||[]).map(m=>{
-  const received=(historyChallenges||[]).filter(c=>sessionsById.has(c.session_id)&&c.recipient===m.user_id);
+ const passes=rows(passQuota);
+ const history=rows(historyChallenges);
+ const stats=rows(sessionStats);
+ const freePasses=new Set(passes.filter(p=>p.free_pass===true).map(p=>p.challenge_id));
+ const byUser=rows(members).filter(m=>typeof m.user_id==='string'&&m.user_id).map(m=>{
+  const received=history.filter(c=>sessionsById.has(c.session_id)&&c.recipient===m.user_id);
   // A replacement inherits its predecessor's D6 slot. Both occurrences
   // remain visible in history, but only the last card in a chain counts
   // toward the allocated slots and monthly success denominator.
@@ -63,7 +78,7 @@ export function monthlyChallengeSuccess({
   const free=reportable.filter(c=>c.status==='passed'&&freePasses.has(c.id)).length;
   const penalized=reportable.filter(c=>c.status==='passed'&&!freePasses.has(c.id)).length;
   // Missing challenge slots become non-realized only after the night is closed.
-  const undrawn=(sessionStats||[]).filter(row=>row.user_id===m.user_id&&
+  const undrawn=stats.filter(row=>row.user_id===m.user_id&&
    sessionsById.get(row.session_id)?.finished_at).reduce((acc,row)=>{
     if(row.target==null)return acc;
     // Count every assigned challenge, INCLUDING a pass, so it cannot count
@@ -74,7 +89,7 @@ export function monthlyChallengeSuccess({
   const denominator=reportable.length-free+undrawn;
   const done=complete;
   const success=denominator>0?Math.round(100*done/denominator):null;
-  const monthlyPasses=(passQuota||[]).filter(p=>p.recipient===m.user_id);
+  const monthlyPasses=passes.filter(p=>p.recipient===m.user_id);
   return {userId:m.user_id,name:m.name||'Partenaire',done,freeUsed:monthlyPasses.filter(p=>p.free_pass).length,
    penalizedPasses:monthlyPasses.filter(p=>!p.free_pass).length,denominator,
    unpicked:undrawn,percent:success};

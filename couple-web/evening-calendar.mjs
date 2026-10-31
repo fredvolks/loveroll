@@ -24,8 +24,46 @@ export function eveningChallengeStatusLabel(status,closed=false){
 }
 const monthLabel=mo=>new Intl.DateTimeFormat('fr-CA',{month:'long',year:'numeric',timeZone:'UTC'})
  .format(new Date(mo+'-15T12:00:00Z'));
-export function eveningHistoryMarkup({sessions=[],members=[],stats=[],historyChallenges=[],reviews=[],me,month,selectedDate,
- weeklyRolls=[],passQuota=[],backAction='tab:session',backLabel='Retour à Soirée'}={}){
+/** Choose a real Québec date before rendering the shared calendar.
+ * Skip incomplete legacy rows and never read started_at from a null record.
+ * This does not disclose anything outside the member-checked server history.
+ */
+export function eveningCalendarInitialDate({sessions=[],month,selectedDate,now=new Date()}={}){
+ const currentDay=eveningLocalDay(now),currentMonth=currentDay?.slice(0,7);
+ const targetMonth=isoMonth(month)||currentMonth;
+ if(!targetMonth)return null;
+ const validInMonth=date=>{
+  if(typeof date!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(date)||
+     !date.startsWith(targetMonth+'-'))return false;
+  const [year,monthNum,day]=date.split('-').map(Number);
+  return day>=1&&day<=new Date(Date.UTC(year,monthNum,0)).getUTCDate();
+ };
+ if(validInMonth(selectedDate))return selectedDate;
+ const saved=Array.isArray(sessions)?sessions:[];
+ const archiveDate=saved.map(row=>
+  row&&typeof row.started_at==='string'?eveningLocalDay(row.started_at):null)
+  .filter(validInMonth).sort().at(-1);
+ return archiveDate||(targetMonth===currentMonth?currentDay:targetMonth+'-01');
+}
+
+export function eveningHistoryMarkup({
+ sessions:rawSessions=[],members:rawMembers=[],stats:rawStats=[],
+ historyChallenges:rawChallenges=[],reviews:rawReviews=[],me,month,selectedDate,
+ weeklyRolls:rawWeeklyRolls=[],passQuota:rawPassQuota=[],
+ backAction='tab:session',backLabel='Retour à Soirée'}={}){
+ // Legacy or partially loaded RPC arrays can be null or include null rows.
+ // Keep the calendar navigable without inventing completed challenges.
+ const rows=value=>Array.isArray(value)?value.filter(row=>
+  row!==null&&typeof row==='object'&&!Array.isArray(row)):[]; 
+ // Legacy rows must not leak NaN/Infinity/negative counts into the calendar.
+ // Accept nonnegative integer strings returned by older SQL views.
+ const count=value=>{
+  const n=Number(value);
+  return Number.isSafeInteger(n)&&n>=0?n:0;
+ };
+ const sessions=rows(rawSessions),members=rows(rawMembers).filter(m=>!!m.user_id);
+ const stats=rows(rawStats),historyChallenges=rows(rawChallenges);
+ const reviews=rows(rawReviews),weeklyRolls=rows(rawWeeklyRolls),passQuota=rows(rawPassQuota);
  // The calendar's fallback month follows the couple's Toronto timezone.
  // Previously it was frozen to October 2026, including in future years.
  const current=isoMonth(month)||eveningLocalDay(new Date().toISOString()).slice(0,7);
@@ -38,7 +76,9 @@ export function eveningHistoryMarkup({sessions=[],members=[],stats=[],historyCha
   cd>=1&&cd<=new Date(Date.UTC(cy,cm,0)).getUTCDate()?candidate:current+'-01';
  const firstDay=new Date(Date.UTC(year,m-1,1)).getUTCDay(),padding=(firstDay+6)%7;
  const days=new Date(Date.UTC(year,m,0)).getUTCDate();
- const archives=(sessions||[]).filter(s=>!!s.started_at).map(s=>({...s,localDay:eveningLocalDay(s.started_at)}));
+ const archives=sessions.filter(s=>typeof s.started_at==='string'&&!!s.started_at)
+  .map(s=>({...s,localDay:eveningLocalDay(s.started_at)}))
+  .filter(s=>s.localDay!==null);
  // The displayed totals must describe the selected Toronto calendar month.
  // Previously they summed EVERY archived year/month while the grid showed one.
  // Only CLOSED evenings count as final non-completions; never penalize open cards.
@@ -47,9 +87,10 @@ export function eveningHistoryMarkup({sessions=[],members=[],stats=[],historyCha
  const closedMonthIds=new Set(monthSessions.filter(s=>s.finished_at).map(s=>s.id));
  const history=closedMonthIds.size;
  const done=stats.filter(r=>closedMonthIds.has(r.session_id))
-  .reduce((n,r)=>n+Number(r.completed||0),0);
+  .reduce((n,r)=>n+count(r.completed),0);
  const incomplete=stats.filter(r=>closedMonthIds.has(r.session_id))
-  .reduce((n,r)=>n+Math.max(0,Number(r.target==null?r.incomplete:(r.target-r.completed))||0),0);
+  .reduce((n,r)=>n+(r.target==null?count(r.incomplete):
+   Math.max(0,count(r.target)-count(r.completed))),0);
  const weekResult=calendarWeekSuccess({date:validDate,weeklyRolls,sessions});
  const monthlyResults=monthlyChallengeSuccess({
   month:current,members,sessions,historyChallenges,sessionStats:stats,passQuota
@@ -81,10 +122,10 @@ export function eveningHistoryMarkup({sessions=[],members=[],stats=[],historyCha
    const row=rolls.find(item=>item.user_id===m.user_id);
    const cards=historyChallenges.filter(c=>c.session_id===s.id&&c.recipient===m.user_id)
     .sort((a,b)=>Date.parse(a.created_at||'')-Date.parse(b.created_at||''));
-   const countDone=Number(row?.completed)||0;
+   const countDone=count(row?.completed);
    const countOutstanding=row?.target==null
-    ?Math.max(0,Number(row?.incomplete)||0)
-    :Math.max(0,Number(row.target)-countDone);
+    ?count(row?.incomplete)
+    :Math.max(0,count(row.target)-countDone);
    const closed=!!s.finished_at;
    const name=String(m.name||'Partenaire').trim();
    const role=m.user_id===me?' (moi)':' (partenaire)';
@@ -102,7 +143,8 @@ export function eveningHistoryMarkup({sessions=[],members=[],stats=[],historyCha
        eveningChallengeStatusLabel(c.status,closed))+'</span><strong>'+safe(card.title)+'</strong>'+
       '<small>'+safe(c.category==='SEXUEL'?'Sexuel':'Sensuel')+'</small></li>';
    }).join('');
-   const unpicked=row?.target==null?0:Math.max(0,Number(row.target)-Number(row.drawn||cards.length));
+   const unpicked=row?.target==null?0:Math.max(0,count(row.target)-
+    count(row.drawn??cards.length));
    const extras=unpicked?'<p class="evening-cal-unpicked">♡ '+unpicked+
       ' défi'+(unpicked>1?'s':'')+(closed?' non pigé':' à piger')+(closed&&unpicked>1?'s':'')+
       ' : aucune carte attribuée.</p>':'';

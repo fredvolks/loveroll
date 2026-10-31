@@ -270,17 +270,39 @@ export function availableEveningCategories(preferred){
  if(!EVENING_CATEGORIES.includes(preferred))throw new Error('Catégorie non reconnue');
  return EVENING_CATEGORIES.map(category=>({category,weight:category===preferred?88:12}));
 }
+// Timers are optional. Keep malformed imported/server data from starting
+// an unbounded deadline, while preserving existing short and long rituals.
+export function validChallengeTimerMinutes(minutes){
+ return Number.isInteger(minutes)&&minutes>0&&minutes<=1440;
+}
 export function formatCountdown(milliseconds){
- const seconds=Math.max(0,Math.ceil(milliseconds/1000));
+ // An incomplete saved timer or a malformed server value must never display
+ // "NaN:NaN" or "Infinity:NaN" on the challenge card.
+ const seconds=Number.isFinite(milliseconds)?
+  Math.max(0,Math.ceil(milliseconds/1000)):0;
  return String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0');
 }
 
 export const CUSTOM_CARD_START=26;
 export const CUSTOM_CARD_END=100;
+// Index each collection once instead of repeatedly scanning every entry for
+// all 100 editor slots. Keep the FIRST saved row if duplicate IDs appear,
+// matching the earlier Array.find contract without modifying imported data.
+function savedEveningCardIndex(category,cards){
+ const indexed=new Map();
+ if(!Array.isArray(cards))return indexed;
+ for(const card of cards){
+  if(!card||card.category!==category||!Number.isInteger(card.card_id)||
+     card.card_id<1||card.card_id>CUSTOM_CARD_END||indexed.has(card.card_id))continue;
+  indexed.set(card.card_id,card);
+ }
+ return indexed;
+}
 export function customCardSlots(category,cards=[]){
  if(!EVENING_CATEGORIES.includes(category))throw Error('Catégorie de carte invalide');
+ const indexed=savedEveningCardIndex(category,cards);
  return Array.from({length:75},(_,i)=>{
-  const cardId=26+i,found=cards.find(c=>c.category===category&&c.card_id===cardId);
+  const cardId=26+i,found=indexed.get(cardId);
   return {category,cardId,title:found?.title||'',description:found?.description||'',
    minutes:found?.timer_minutes??null,recipientId:found?.recipient_user_id||null,filled:!!found};
  });
@@ -288,10 +310,11 @@ export function customCardSlots(category,cards=[]){
 // Slot IDs are private editor metadata, never shown with the drawn card.
 export function editableCardSlots(category,cards=[]){
  if(!EVENING_CATEGORIES.includes(category))throw Error('Catégorie de carte invalide');
+ const indexed=savedEveningCardIndex(category,cards);
  return Array.from({length:100},(_,i)=>{
   const cardId=i+1;
   const original=cardId<=25?eveningCard(category,cardId):null;
-  const saved=cards.find(c=>c.category===category&&c.card_id===cardId);
+  const saved=indexed.get(cardId);
   return {category,cardId,
     title:saved?.title??original?.title??'',
     description:saved?.description??original?.description??'',
