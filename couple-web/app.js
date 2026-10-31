@@ -2721,17 +2721,20 @@ function renderSession(){
        ' ('+favoriteKeys.length+' / '+EVENING_FAVORITES_LIMIT+')',
        'class="evening-favorite-btn" aria-pressed="'+(isFavorite?'true':'false')+'"'+
         (!isFavorite&&favoriteKeys.length>=EVENING_FAVORITES_LIMIT?
-         ' disabled aria-disabled="true" title="Limite de cinq favoris atteinte"':'')):'')+
+         ' disabled aria-disabled="true" title="Limite de cinq favoris atteinte"':
+         isActiveEveningRedrawPending()?' disabled aria-disabled="true"':'') )):'')+
      (['proposed','accepted'].includes(view.status)?
        timerWidget(view,resolvedCard(view).minutes):
        '<p class="tiny-note">Ce défi est archivé dans votre historique.</p>')+
      (view.status==='proposed'?
        button('evening-start:'+view.id,'▶ Commencer ce défi',
-        'class="evening-primary" '+(isEveningCardCompleting(view.id)?'disabled':'')):'')+
+        'class="evening-primary" '+(isActiveEveningRedrawPending()||isEveningCardCompleting(view.id)?
+         'disabled aria-disabled="true" aria-busy="true"':'')):'')+
      (view.status==='accepted'?
        button('answer:'+view.id+':completed',
+        isActiveEveningRedrawPending()?'♡ Confirmation en cours':
         isEveningCardCompleting(view.id)?'♡ Réponse en cours':'✓ Défi réalisé',
-        'class="evening-primary" '+(isEveningCardCompleting(view.id)?
+        'class="evening-primary" '+(isActiveEveningRedrawPending()||isEveningCardCompleting(view.id)?
         'disabled aria-disabled="true" aria-busy="true"':'')):'')+
      (['proposed','accepted'].includes(view.status)?
       '<div class="lr-redraw-actions" aria-label="Autres choix pour ce défi">'+
@@ -6021,7 +6024,9 @@ async function handle(action,element){
   }finally{eveningCategoryConfirmInFlight=false;}
  }
  if(verb==='answer'){
-  if(isEveningCardCompleting(parts[0]))return;
+  // The recipient-only refresh for Passer/Refuser must settle before any
+  // manual completion; otherwise its older snapshot could undo this reply.
+  if(isActiveEveningRedrawPending()||isEveningCardCompleting(parts[0]))return;
   const item=ownEveningChallenges(state.challenges,state.user.id,state.session?.id).find(c=>c.id===parts[0]);
   if(!item)throw Error('Ce défi n’est pas dans ta liste personnelle.');
   const eveningId=state.session.id;
