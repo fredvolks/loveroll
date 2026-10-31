@@ -4082,10 +4082,12 @@ async function handle(action,element){
   state.eveningCalendarDate=date;render();return;
  }
  if(verb==='evening-close-request'){
+  if(state.diceStatus)return; // Let the official D100/D6 settle before closing.
   if(!state.session)throw Error('Aucune soirée à clore.');
   state.eveningMore=false;state.confirmCancel=true;render();return;
  }
  if(verb==='evening-close-confirm'){
+  if(state.diceStatus)return; // A stale confirmation must not close mid-roll.
   if(!state.session)throw Error('Cette soirée est déjà clôturée.');
   const ended=state.session;
   await rpc('close_love_evening_preserve',{p_session:ended.id});
@@ -4096,6 +4098,7 @@ async function handle(action,element){
   state.tab='evening-calendar';await refreshAndShow();return;
  }
  if(verb==='evening-challenge'||verb==='evening-list'){
+  if(state.diceStatus)return; // Opening the drawer unmounts the live dice scene.
   if(state.user?.id&&state.session?.id)clearEveningSelection(safeEveningBookmarkStorage(),state.user.id,state.session.id);
   state.showEveningChallenges=true;state.selectedEveningChallengeId=null;render();return;
  }
@@ -5747,6 +5750,7 @@ async function handle(action,element){
    saveChallengeTimer();updateChallengeClock();return;
  }
  if(verb==='give-challenge'){
+  if(state.diceStatus)return; // Prevent gift/turn mutations during an official roll.
   if(!state.session?.paired_turns||!state.session?.self_draws||!state.rollStatus?.both_ready)
    throw Error('Attendez vos deux tirages personnels pour donner un défi.');
   const me=state.user.id,otherPerson=other();
@@ -5919,6 +5923,7 @@ async function handle(action,element){
   }
  }
  if(verb==='finish-session'){
+  if(state.diceStatus)return; // Finishing before the receipt interrupts the die.
   if(!state.session)return;
   const finishedId=state.session.id;
   await rpc('finish_couple_session',{p_session:finishedId,p_count:true});
