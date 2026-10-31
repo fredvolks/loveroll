@@ -1388,6 +1388,12 @@ async function reload(){
 function isActiveEveningRedrawPending(){
  return isEveningRedrawBusyForCurrentView(state);
 }
+function isActiveEveningGiftPending(){
+ const ticket=state.eveningGiftRequest;
+ return !!ticket&&ticket.userId===state.user?.id&&
+  ticket.coupleId===state.coupleId&&ticket.sessionId===state.session?.id&&
+  ticket.generation===authFeedbackGeneration;
+}
 async function refreshShared(expectedContext=null){
  const c=state.coupleId,requestUserId=state.user?.id;
  const ownerGeneration=authFeedbackGeneration;
@@ -2787,10 +2793,7 @@ function renderSession(){
    showSexuel:state.couple?.show_sexuel_button!==false,
    categoryOdds:state.couple?.category_weights_enabled===false?50:
     state.couple?.category_preference_percent??88,
-   giftCount,giftPending:state.eveningGiftRequest?.userId===uid&&
-    state.eveningGiftRequest?.coupleId===state.coupleId&&
-    state.eveningGiftRequest?.sessionId===session?.id&&
-    state.eveningGiftRequest?.generation===authFeedbackGeneration,
+   giftCount,giftPending:isActiveEveningGiftPending(),
    rolling:state.diceStatus==='rolling'||state.diceStatus==='pending',
    redrawPending:isActiveEveningRedrawPending(),rollFace:state.rollAnimationFace,
    playable:state.playableCounts||(isLoveAdmin()?playableEveningCount(state.customCards):null),
@@ -5797,8 +5800,8 @@ async function handle(action,element){
   }
  }
  if(verb==='my-d6'){
-  // A late D6 touch cannot compete with an official roll or a private repick.
-  if(state.diceStatus||isActiveEveningRedrawPending())return;
+  // A late D6 touch cannot compete with an official roll, repick or gift.
+  if(state.diceStatus||isActiveEveningRedrawPending()||isActiveEveningGiftPending())return;
   if(!state.session)throw Error('Aucune soirée active.');
   await animateRoll(()=>rpc('roll_my_evening_d6',{p_session:state.session.id}),'my-d6');
   // La carte de l'étape 1 affiche l'état du lancer; aucun toast supplémentaire.
@@ -5807,7 +5810,8 @@ async function handle(action,element){
  if(verb==='category'){
   // During a confirmation or official roll the selected category is fixed.
   // A queued/touch-synthesized event must not mutate state or sessionStorage.
-  if(eveningCategoryConfirmInFlight||state.diceStatus||isActiveEveningRedrawPending())return;
+  if(eveningCategoryConfirmInFlight||state.diceStatus||
+     isActiveEveningRedrawPending()||isActiveEveningGiftPending())return;
   if(!EVENING_CATEGORIES.includes(parts[0])&&parts[0]!=='HASARD')
    throw Error('Catégorie interdite');
   // Reject stale/disabled category events BEFORE writing the next D100 choice
@@ -5956,10 +5960,7 @@ async function handle(action,element){
  if(verb==='give-challenge'){
   // One request at a time for the SAME authenticated owner and evening.
   // Two fast taps must never open two confirmations or send two gifts.
-  if(state.eveningGiftRequest?.userId===state.user?.id&&
-     state.eveningGiftRequest?.coupleId===state.coupleId&&
-     state.eveningGiftRequest?.sessionId===state.session?.id&&
-     state.eveningGiftRequest?.generation===authFeedbackGeneration)return;
+  if(isActiveEveningGiftPending())return;
   // A stale gift action must not mutate the turn while its private deck is
   // being replaced by the recipient-only, server-confirmed repick.
   if(state.diceStatus||isActiveEveningRedrawPending())return;
@@ -5979,8 +5980,8 @@ async function handle(action,element){
   if(monthCount>=3)throw Error('Vos 3 dons du mois sont utilisés.');
   const giftTicket={...giftOwner};
   state.eveningGiftRequest=giftTicket;
-  render(); // Reflect the pending gift on screen before opening the dialog.
   try{
+  render(); // Reflect the pending gift before opening the dialog.
   if(!(await premiumConfirm('Offrir un de tes défis restants à '+otherPerson.name+
    ' ? Son nombre de défis à recevoir augmentera de 1 et le tien diminuera de 1.',
    {kind:'gift'})))return;
@@ -5998,14 +5999,14 @@ async function handle(action,element){
     state.eveningGiftRequest=null;
     if(state.user?.id===giftOwner.userId&&state.coupleId===giftOwner.coupleId&&
        state.session?.id===giftOwner.sessionId&&state.tab==='session'&&
-       authFeedbackGeneration===giftOwner.generation)render();
+       authFeedbackGeneration===giftOwner.generation&&
+       !state.diceStatus&&!isActiveEveningRedrawPending())render();
    }
   }
  }
  if(verb==='new-challenge'){
-  // Re-picking a private card and drawing the next official D100 must not
-  // race for the same session's refreshed challenge queue.
-  if(isActiveEveningRedrawPending())return;
+  // The official D100 cannot race a repick or a gift that updates turn counts.
+  if(isActiveEveningRedrawPending()||isActiveEveningGiftPending())return;
   if(eveningCategoryConfirmInFlight)return; // One dialog and one official RPC only.
   if(!state.session)throw Error('Aucune soirée active.');
   if(!EVENING_CATEGORIES.includes(state.category)&&state.category!=='HASARD'){
@@ -6019,7 +6020,7 @@ async function handle(action,element){
   // Category confirmation is asynchronous. A private Passer/Refuser may
   // start while its dialog is open; it owns the next server queue snapshot.
   const ownsDraw=()=>ownsEveningCategoryDraw(state,drawOwner,authFeedbackGeneration)&&
-   !isActiveEveningRedrawPending();
+   !isActiveEveningRedrawPending()&&!isActiveEveningGiftPending();
   eveningCategoryConfirmInFlight=true;
   try{
    let disableReminder=false;
