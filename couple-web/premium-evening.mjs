@@ -61,17 +61,25 @@ export function updateEveningCategoryUi(root,category,percent=88){
   const option=button.closest('.evening-choice-option');
   if(!option)continue;
   let odds=option.querySelector('.evening-choice-odds');
-  if(selected&&category!=='HASARD'){
+  if(selected){
    if(!odds){
     odds=button.ownerDocument.createElement('small');
     odds.className='evening-choice-odds';
+    odds.setAttribute('aria-live','polite');
     option.appendChild(odds);
    }
-   if(odds.textContent!==String(percent)+' % de chancesd’avoir cette catégorie'){
-    odds.textContent=String(percent)+' % de chances';
-    const detail=button.ownerDocument.createElement('span');
-    detail.textContent='d’avoir cette catégorie';
-    odds.appendChild(detail);
+   // "Au hasard" always uses 50/50, regardless of the preferred odds.
+   // Keep an actual space between text and its styled detail so screen
+   // readers do not announce "chancesd’avoir" as one joined word.
+   const readable=category==='HASARD'?'50 % Sensuel · 50 % Sexuel':
+    String(percent)+' % de chances d’avoir cette catégorie';
+   if(odds.textContent!==readable){
+    odds.textContent=category==='HASARD'?readable:String(percent)+' % de chances ';
+    if(category!=='HASARD'){
+     const detail=button.ownerDocument.createElement('span');
+     detail.textContent='d’avoir cette catégorie';
+     odds.appendChild(detail);
+    }
    }
   }else odds?.remove();
  }
