@@ -5939,10 +5939,14 @@ setInterval(async()=>{
    if(applyEclatStatus(value)&&(historyChanged||retryDue))
     await refreshEclatHistory();
    if(current())render();
-  }else if(value?.access===true&&state.eclatHistoryError===true&&
-    Date.now()>=(state.eclatHistoryRetryAt??0)){
-   // Recovery is independent of the status signature: server status can be
-   // unchanged while a temporary history/network error has healed.
+  }else if(value?.access===true&&(
+    state.eclatHistoryCouple!==owner.coupleId||
+    state.eclatHistoryUserId!==owner.userId||
+    (state.eclatHistoryError===true&&
+     Date.now()>=(state.eclatHistoryRetryAt??0)))){
+   // A status can remain unchanged when a private gallery has never loaded
+   // for this owner. Hydrate it once, or retry a failed owned gallery only
+   // after its bounded cooldown; never request one without server access.
    await refreshEclatHistory();
    if(current())render();
   }
