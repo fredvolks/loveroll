@@ -12,6 +12,11 @@ export function futureCardRecipients(card,members=[]){
  const ids=coupleIds(members);
  if(!ids||!card||!FUTURE_TARGETS.includes(card.target))return [];
  if(card.target==='both')return ids;
+ // A missing second profile cannot prove that the target is unique.
+ // Requiring BOTH known genders avoids assigning a woman/man card to the
+ // first matching profile before the other partner finishes onboarding.
+ if(!members.every(member=>member.gender==='her'||member.gender==='him'))
+  return [];
  const matching=members.filter(member=>
   member.gender===(card.target==='woman'?'her':'him'));
  // Two women/men do not identify a unique intended recipient. Do not
