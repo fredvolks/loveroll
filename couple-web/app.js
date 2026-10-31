@@ -1717,10 +1717,12 @@ async function saveCurrentEclatNote(momentDone){
 // Request tokens also stop an older poll from rolling back a newer status.
 let latestEclatHistoryRead=null,latestEclatStatusRead=null;
 async function refreshEclatHistory(){
- const owner={userId:state.user?.id,coupleId:state.coupleId};
+ const owner={userId:state.user?.id,coupleId:state.coupleId,
+  generation:authFeedbackGeneration};
  if(!ownsCoupleAsyncRead(state,owner))return;
  const request={};latestEclatHistoryRead=request;
  const current=()=>ownsCoupleAsyncRead(state,owner)&&
+  authFeedbackGeneration===owner.generation&&
   latestEclatHistoryRead===request;
  if(state.eclatHistoryCouple!==owner.coupleId||
     state.eclatHistoryUserId!==owner.userId){
@@ -1738,11 +1740,13 @@ async function refreshEclatHistory(){
  }
 }
 async function refreshEclatStatus(){
- const owner={userId:state.user?.id,coupleId:state.coupleId};
+ const owner={userId:state.user?.id,coupleId:state.coupleId,
+  generation:authFeedbackGeneration};
  if(!ownsCoupleAsyncRead(state,owner)||
     !isSharedCoupleReady(owner.coupleId,state.members))return null;
  const request={};latestEclatStatusRead=request;
  const current=()=>ownsCoupleAsyncRead(state,owner)&&
+  authFeedbackGeneration===owner.generation&&
   latestEclatStatusRead===request;
  const value=await rpc('love_eclat_status');
  if(!current())return null;
@@ -1754,13 +1758,15 @@ async function refreshEclatStatus(){
 // Keep its response local to the exact initiating account, couple and view.
 let latestEclatActionRequest=null;
 function beginEclatAction(){
- const owner={userId:state.user?.id,coupleId:state.coupleId,tab:state.tab,request:{}};
+ const owner={userId:state.user?.id,coupleId:state.coupleId,
+  generation:authFeedbackGeneration,tab:state.tab,request:{}};
  if(!ownsCoupleAsyncRead(state,owner))return null;
  latestEclatActionRequest=owner.request;
  return owner;
 }
 function ownsEclatAction(owner){
  return !!owner&&ownsCoupleAsyncRead(state,owner)&&
+  authFeedbackGeneration===owner.generation&&
   state.tab===owner.tab&&latestEclatActionRequest===owner.request;
 }
 function applyEclatActionResult(value,owner){
