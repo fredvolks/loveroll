@@ -21,8 +21,8 @@ test('LR-012: old queue skin stays intentionally absent and D100 unclipped',()=>
 });
 test('LR-012: genuine completion, pass and next actions remain intact',()=>{
  // Completing a card keeps the real action but uses a guarded in-flight label.
- assert.match(source,/button\('answer:'\+view\.id\+':completed',\s*isActiveEveningRedrawPending\(\)\?'♡ Confirmation en cours':\s*isEveningCardCompleting\(view\.id\)\?'♡ Réponse en cours':'✓ Défi réalisé'/);
- assert.match(source,/isActiveEveningRedrawPending\(\)\|\|isEveningCardCompleting\(view\.id\)\?\s*'disabled aria-disabled="true" aria-busy="true"'/);
+ assert.match(source,/button\('answer:'\+view\.id\+':completed',\s*giftTransferPending\?'♡ Don en cours…':\s*isActiveEveningRedrawPending\(\)\?'♡ Confirmation en cours':\s*isEveningCardCompleting\(view\.id\)\?'♡ Réponse en cours':'✓ Défi réalisé'/);
+ assert.match(source,/isActiveEveningRedrawPending\(\)\|\|giftTransferPending\|\|isEveningCardCompleting\(view\.id\)\?\s*'disabled aria-disabled="true" aria-busy="true"'/);
  assert.match(source,/button\('evening-pass:'\+view\.id,'Passer ce défi'/);
  assert.match(source,/love_respond_and_redraw/);
  assert.match(source,/button\('evening-open:'\+mineCards\[idx\+1\]\.id,'Suivant →'/);
