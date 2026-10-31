@@ -639,8 +639,12 @@ function rememberVerifiedInvitation(invitationId){
  state.inviteAccepted=false;state.showDiscover=false;state.showAuth=false;
  state.inviteError=null;state.inviteAttemptKey=null;
 }
-async function resolveVerifiedSignup(createOwner=false){
+async function resolveVerifiedSignup(createOwner=false,isCurrent=null){
+ const ownerId=state.user?.id;
  const result=await rpc('resolve_love_signup',{p_create_owner:!!createOwner});
+ // A stale lookup may never overwrite the next account's invitation.
+ if(state.user?.id!==ownerId||(isCurrent&&!isCurrent()))
+  return {status:'account_changed'};
  if(result?.status==='invitation'){
   if(!result.invitation_id)throw Error('Référence d’invitation manquante.');
   rememberVerifiedInvitation(result.invitation_id);
@@ -934,7 +938,7 @@ async function reload(){
  if(!state.coupleId&&!pendingInviteReference(sessionStorage)){
   // A verification email may open in a different browser; find the pending
   // invitation from the authenticated recipient before showing "Créer un duo".
-  const resolution=await resolveVerifiedSignup(false);
+  const resolution=await resolveVerifiedSignup(false,current);
   if(!current())return;
   if(resolution?.status==='linked'){
    const latest=await query('couple_members',{eq:{user_id:ownerId}});
@@ -4469,8 +4473,11 @@ async function handle(action,element){
   // Invitation => accept existing duo. No invitation => own new admin duo.
   // Both decisions are authenticated and checked in one server transaction.
   // An account already linked to a duo is never duplicated.
-  if(!pendingInviteReference(sessionStorage))
-   await resolveVerifiedSignup(true);
+  if(!pendingInviteReference(sessionStorage)){
+   const ownerId=state.user?.id;
+   const result=await resolveVerifiedSignup(true);
+   if(state.user?.id!==ownerId||result?.status==='account_changed')return;
+  }
   state.installAfterSignup=true;
   await reload();return;
  }
@@ -4491,6 +4498,7 @@ async function handle(action,element){
   if(pendingInviteReference(sessionStorage))throw Error('Une invitation est en attente.');
   if(!state.coupleId){
    const decision=await resolveVerifiedSignup(false);
+   if(decision?.status==='account_changed')return;
    if(decision?.status==='invitation'||decision?.status==='linked'){
     await reload();return;
    }
@@ -4504,6 +4512,7 @@ async function handle(action,element){
  if(verb==='create-couple'){
   if(pendingInviteReference(sessionStorage))throw Error('Une invitation est en attente.');
   const decision=await resolveVerifiedSignup(false);
+  if(decision?.status==='account_changed')return;
   if(decision?.status==='invitation'||decision?.status==='linked'){
    await reload();return;
   }
