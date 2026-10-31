@@ -103,3 +103,18 @@ test('Live D100 odds show random category as 50/50 and preserve readable spacing
  assert.equal(updateEveningCategoryUi(f.root,'SEXUEL',61),true);
  assert.equal(f.options.SEXUEL.odds?.textContent,'61 % de chances d’avoir cette catégorie');
 });
+
+test('Server-rendered D100 category labels survive the next responsive refresh',()=>{
+ const base={...ready,categoryOdds:74};
+ const random=premiumEveningHtml({...base,category:'HASARD'});
+ assert.match(random,/data-action="category:HASARD"[^>]*aria-pressed="true"/);
+ assert.match(random,/<small class="evening-choice-odds" aria-live="polite">50 % Sensuel · 50 % Sexuel<\/small>/);
+ assert.doesNotMatch(random,/chancesd’avoir/);
+ for(const category of ['SENSUEL','SEXUEL']){
+  const html=premiumEveningHtml({...base,category});
+  assert.match(html,/74 % de chances <span>d’avoir cette catégorie<\/span>/);
+  assert.doesNotMatch(html,/chancesd’avoir/);
+ }
+ const none=premiumEveningHtml({...base,category:null});
+ assert.doesNotMatch(none,/class="evening-choice-odds"/);
+});
