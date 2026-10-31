@@ -128,3 +128,60 @@ test('A failed draw followed by a refresh outage unlocks the interface without a
  assert.equal(calls,1);assert.equal(state.diceStatus,null);assert.equal(state.rollAnimationFace,null);
  assert.equal(tabs.some(t=>t.disabled),false);assert.ok(renders>=2);
 });
+
+test('A former account cannot animate or refresh a new login when its official roll returns',async()=>{
+ const source=appSource.slice(appSource.indexOf('async function animateRoll('),
+  appSource.indexOf('\nasync function hashToken('));
+ function deferred(){
+  let resolve,reject;
+  const promise=new Promise((a,b)=>{resolve=a;reject=b;});
+  return {promise,resolve,reject};
+ }
+ function harness(){
+  const state={user:{id:'alice'},coupleId:'couple-a',tab:'special',
+   diceStatus:null,rollAnimationKind:null,rollAnimationFace:null};
+  let renders=0,refreshes=0;
+  const root={querySelector:()=>null,querySelectorAll:()=>[]};
+  const api=new Function('state','root','render','refreshShared','ROLL_TOTAL_MS',
+   'window','setTimeout',
+   'let authFeedbackGeneration=2,latestDiceRollRequest=null;'+source+
+   ';return {roll:animateRoll,switchAccount:(name,couple)=>{state.user={id:name};'+
+   'state.coupleId=couple;authFeedbackGeneration++;latestDiceRollRequest=null;'+
+   'state.diceStatus=null;state.rollAnimationFace=null;state.rollAnimationKind=null;},'+
+   'request:()=>latestDiceRollRequest};')(
+   state,root,()=>{renders++;},async()=>{refreshes++;},ROLL_TOTAL_MS,
+   {matchMedia:()=>({matches:true})},callback=>callback());
+  return {state,api,get renders(){return renders;},get refreshes(){return refreshes;}};
+ }
+ const h=harness(),old=deferred();
+ const first=h.api.roll(()=>old.promise,'general');
+ assert.equal(h.state.diceStatus,'pending');
+ h.api.switchAccount('bob','couple-b');
+ const next=deferred(),second=h.api.roll(()=>next.promise,'general');
+ const secondTicket=h.api.request();
+ old.resolve({face:99});assert.equal(await first,null);
+ assert.equal(h.api.request(),secondTicket,
+  'The old roll must not release the replacement login request');
+ assert.equal(h.state.diceStatus,'pending');
+ assert.equal(h.refreshes,0,'Stale result must not fetch new account data');
+ next.resolve({face:4});const result=await second;
+ assert.equal(result.face,4);
+ assert.equal(h.state.diceStatus,null);
+ assert.equal(h.state.rollAnimationFace,null);
+ assert.equal(h.refreshes,1);
+
+ const errorCase=harness(),oldError=deferred();
+ const pending=errorCase.api.roll(()=>oldError.promise,'general');
+ errorCase.api.switchAccount('bob','couple-b');
+ oldError.reject(Error('Old account network failure'));
+ assert.equal(await pending,null,'Old account errors do not appear on the new login');
+ assert.equal(errorCase.refreshes,0);
+ assert.equal(errorCase.state.diceStatus,null);
+
+ const currentError=harness();
+ await assert.rejects(currentError.api.roll(async()=>{throw Error('Current network failure');},
+  'general'),/Current network failure/);
+ assert.equal(currentError.state.diceStatus,null);
+ assert.equal(currentError.refreshes,1,
+  'The active user retains the ordinary recovery and refresh behavior');
+});
