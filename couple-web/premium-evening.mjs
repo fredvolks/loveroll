@@ -50,7 +50,10 @@ export function updateEveningCategoryUi(root,category,percent=88){
  const preferred=categoryConfirmOdds('SENSUEL',percent).sensuel;
  const group=root?.querySelector('.evening-step.two .evening-choice');
  const buttons=[...(group?.querySelectorAll('button[data-action^="category:"]')||[])];
- if(!buttons.length||buttons.every(button=>button.disabled)||!buttons.some(b=>b.dataset.action==='category:'+category))return false;
+ // A delayed touch from a previous turn must not select a now-disabled
+ // category or re-enable the official D100 draw button.
+ const target=buttons.find(button=>button.dataset.action==='category:'+category);
+ if(!target||target.disabled)return false;
  group.classList.remove('lr-choose-category');group.querySelector('.lr-category-hint')?.remove();
  const names={SENSUEL:'Sensuel',HASARD:'Au hasard',SEXUEL:'Sexuel'};
  for(const button of buttons){
