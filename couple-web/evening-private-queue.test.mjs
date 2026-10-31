@@ -1847,15 +1847,17 @@ function eclatMusicFixture(state,audio,notify=()=>{},render=()=>{},masked=false)
  const end=app.indexOf("if(kind==='resume'){",start);
  assert.ok(parent>0&&start>parent&&end>start,
   'production Éclat music handler must be present');
- return runInNewContext(
+ const runtime={
+  state,authFeedbackGeneration:1,eclatAudio:audio,
+  document:{documentElement:{classList:{contains:()=>masked}}},
+  eclatStage:()=>({mood:'romantique'}),
+  ownsCoupleAsyncRead,notify,render
+ };
+ const music=runInNewContext(
   'let latestEclatAudioOwner=null; async function runMusic(kind){'+
   app.slice(start,end)+
-  '} ({runMusic,owner:()=>latestEclatAudioOwner});',{
-   state,eclatAudio:audio,
-   document:{documentElement:{classList:{contains:()=>masked}}},
-   eclatStage:()=>({mood:'romantique'}),
-   ownsCoupleAsyncRead,notify,render
-  });
+  '} ({runMusic,owner:()=>latestEclatAudioOwner});',runtime);
+ return {...music,setAuthGeneration:value=>{runtime.authFeedbackGeneration=value;}};
 }
 
 test('LR-026: asynchronous Éclat audio cannot resume after changing account',async()=>{
@@ -1874,6 +1876,41 @@ test('LR-026: asynchronous Éclat audio cannot resume after changing account',as
  assert.equal(state.eclatMusic,false,'new account must not inherit playback');
  assert.equal(notifications,0,'no stale audio error toast');
  assert.equal(paints,0,'no stale audio screen render');
+});
+
+test('LR-026: Éclat audio permission cannot resume after reauthentication of the same user',async()=>{
+ const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
+  eclat:{active:true,coffret_id:1,chapter_number:1,variant_number:1},
+  eclatMusic:false};
+ let finishStart,stops=0,notifications=0,paints=0;
+ const audio={start:()=>new Promise(resolve=>{finishStart=resolve;}),
+  stop:()=>{stops++;}};
+ const music=eclatMusicFixture(state,audio,()=>notifications++,()=>paints++);
+ const pending=music.runMusic('music');
+ music.setAuthGeneration(2);
+ finishStart(true);
+ await pending;
+ assert.equal(stops,1,'a previous login must not resume audio on the new login');
+ assert.equal(state.eclatMusic,false);
+ assert.equal(notifications,0);
+ assert.equal(paints,0);
+});
+
+test('LR-026: Éclat audio can start after reauthentication without accepting an older result',async()=>{
+ const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
+  eclat:{active:true,coffret_id:1,chapter_number:1,variant_number:1},
+  eclatMusic:false};
+ const starts=[];
+ const audio={start:()=>new Promise(resolve=>starts.push(resolve)),stop:()=>{}};
+ let paints=0;
+ const music=eclatMusicFixture(state,audio,()=>{},()=>paints++);
+ const previous=music.runMusic('music');
+ music.setAuthGeneration(2);
+ const newest=music.runMusic('music');
+ starts[1](true);await newest;
+ starts[0](false);await previous;
+ assert.equal(state.eclatMusic,true,'latest login is still allowed to play');
+ assert.equal(paints,1,'old permission cannot render new UI');
 });
 
 test('LR-026: later Éclat audio tap wins while earlier permission is pending',async()=>{
