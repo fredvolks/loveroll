@@ -49,3 +49,35 @@ test('Resume action is read-only, restores server private queue and reconciles t
  assert.match(sw,/\.\/evening-resume\.mjs/);
  assert.ok(app.includes("const WEB_RELEASE='"+build+"'"));
 });
+
+
+test('Resume bookmark acknowledges only a real successful storage write',()=>{
+ const store=memory();
+ assert.equal(saveEveningSelection(undefined,'alice','s1','a'),false);
+ assert.equal(saveEveningSelection({getItem:()=>null},'alice','s1','a'),false);
+ assert.equal(saveEveningSelection({setItem:()=>{throw Error('blocked');}},'alice','s1','a'),false);
+ assert.equal(saveEveningSelection(store,'alice','s1',null),false);
+ assert.equal(saveEveningSelection(store,'alice','s1',{}),false);
+ assert.equal(saveEveningSelection(store,'alice','s1','   '),false);
+ assert.equal(store.map.size,0);
+ assert.equal(saveEveningSelection(store,'alice','s1','a'),true);
+ assert.equal(restoreEveningSelection(store,'alice','s1',[{
+  id:'a',recipient:'alice',session_id:'s1',status:'accepted'
+ }]),'a');
+});
+test('A transient malformed private queue cannot crash resume or erase its bookmark',()=>{
+ const store=memory();
+ saveEveningSelection(store,'alice','s1','a');
+ const before=[...store.map];
+ for(const malformed of [null,undefined,{},'not ready',false]){
+  assert.equal(restoreEveningSelection(store,'alice','s1',malformed),null);
+  assert.deepEqual([...store.map],before);
+ }
+ assert.equal(restoreEveningSelection(store,'alice','s1',[{
+  id:'a',recipient:'alice',session_id:'s1',status:'accepted'
+ }]),'a');
+ // Once the server returns a valid list with no matching card, the bookmark
+ // is legitimately stale and must be discarded.
+ assert.equal(restoreEveningSelection(store,'alice','s1',[]),null);
+ assert.equal(store.map.size,0);
+});
