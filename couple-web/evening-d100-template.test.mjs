@@ -470,3 +470,44 @@ test('LR-027: private-card Passer and Refuser remain visible with truthful serve
  }
  assert.equal(pick('completed',false),'','Archived cards cannot be redrawn');
 });
+
+test('LR-027: delayed personal-card touches cannot interrupt or mutate a rolling D100',async()=>{
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const {runInNewContext}=await import('node:vm');
+ const fromOpen=source.indexOf("if(verb==='evening-open'){");
+ const untilOpen=source.indexOf("if(verb==='favorite-remove'){",fromOpen);
+ const fromDecision=source.indexOf("if(verb==='evening-refuse'){");
+ const untilDecision=source.indexOf("if(verb==='evening-start'){",fromDecision);
+ assert.ok(fromOpen>=0&&untilOpen>fromOpen&&fromDecision>=0&&untilDecision>fromDecision,
+  'Production routes for the queue and private decisions are present');
+ const open=source.slice(fromOpen,untilOpen);
+ const decide=source.slice(fromDecision,untilDecision);
+ for(const diceStatus of ['pending','rolling','settled']){
+  let writes=0,renders=0;
+  const state={diceStatus,redrawReady:true,eveningRefusalId:null};
+  const context={state,rpc:()=>{writes++;throw Error('Stale touch reached RPC');},
+   render:()=>{renders++;},isActiveEveningRedrawPending:()=>false,
+   isEveningCardCompleting:()=>false};
+  const openRoute=runInNewContext('(async (verb,parts)=>{'+open+'})',context);
+  const decisionRoute=runInNewContext('(async (verb,parts)=>{'+decide+'})',context);
+  await openRoute('evening-open',['private-card']);
+  for(const verb of ['evening-refuse','evening-pass','evening-refuse-choice']){
+   const args=verb==='evening-refuse-choice'?['private-card','yes']:['private-card'];
+   await decisionRoute(verb,args);
+  }
+  assert.equal(writes,0,'No redraw or reply during '+diceStatus);
+  assert.equal(renders,0,'The live WebGL scene must not be remounted during '+diceStatus);
+  assert.equal(state.eveningRefusalId,null,'A stale refusal must not open a modal');
+ }
+ // Even without a die animation, a repick already awaiting the server
+ // must not reopen another refusal dialog from an older click.
+ let renders=0;
+ const state={diceStatus:null,redrawReady:true,eveningRefusalId:null};
+ const decideDuringRepick=runInNewContext('(async (verb,parts)=>{'+decide+'})',{
+  state,isActiveEveningRedrawPending:()=>true,
+  isEveningCardCompleting:()=>false,render:()=>{renders++;}
+ });
+ await decideDuringRepick('evening-refuse',['private-card']);
+ assert.equal(state.eveningRefusalId,null);
+ assert.equal(renders,0);
+});
