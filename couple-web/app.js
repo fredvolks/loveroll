@@ -4239,8 +4239,8 @@ async function handle(action,element){
   return;
  }
  if(verb==='evening-favorite'){
-  // An obsolete favorite tap must not repaint a live D100 or a pending repick.
-  if(state.diceStatus||isActiveEveningRedrawPending())return;
+  // A delayed favorite tap cannot remount an official die, repick or gift dialog.
+  if(state.diceStatus||isActiveEveningRedrawPending()||isActiveEveningGiftPending())return;
   const item=ownEveningChallenges(state.challenges,state.user?.id,state.session?.id)
    .find(card=>card.id===parts[0]);
   if(!item||!state.coupleId||!state.user?.id)
