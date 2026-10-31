@@ -60,7 +60,9 @@ test('Soft/Medium/Intense chosen at either signup path, editable in profile, sav
  assert.match(html,/option value="intense"/);
  assert.match(profilePlayStyleSelect('soft'),/option value="soft" selected/);
  assert.match(app,/profilePlayStyleSelect\(state\.profile\.play_style\)/);
- assert.match(app,/rpc\('save_my_play_style',\{p_style:playStyle\}\)/);
+ assert.match(app,/\['save_my_play_style',\{p_style:playStyle\}\]/);
+ assert.match(app,/await saveProfileForCurrentAccount\(name,birthday,gender,playStyle\)/);
+ assert.match(app,/if\(!current\(\)\)return false;[\s\S]*?try\{await rpc\(method,args\);\}[\s\S]*?if\(!current\(\)\)return false;/);
  assert.match(profileSql,/ADD COLUMN IF NOT EXISTS play_style text NOT NULL DEFAULT 'medium'/);
  assert.match(profileSql,/play_style IN \('soft','medium','intense'\)/);
  assert.match(profileSql,/WHERE id=\(select auth\.uid\(\)\)/);
