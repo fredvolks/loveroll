@@ -185,3 +185,32 @@ test('A former account cannot animate or refresh a new login when its official r
  assert.equal(currentError.refreshes,1,
   'The active user retains the ordinary recovery and refresh behavior');
 });
+
+test('Auth navigation invalidation releases a stale die without displaying its result',async()=>{
+ const source=appSource.slice(appSource.indexOf('async function animateRoll('),
+  appSource.indexOf('\nasync function hashToken('));
+ for(const rejection of [false,true]){
+  const state={user:{id:'alice'},coupleId:'duo-a',tab:'special',
+   diceStatus:null,rollAnimationFace:null,rollAnimationKind:null};
+  const root={querySelector:()=>null,querySelectorAll:()=>[]};
+  let resolve,reject,refreshes=0,renders=0;
+  const pending=new Promise((a,b)=>{resolve=a;reject=b;});
+  const scope=new Function('state','root','render','refreshShared','ROLL_TOTAL_MS',
+   'let authFeedbackGeneration=3,latestDiceRollRequest=null;'+source+
+   ';return {roll:animateRoll,advanceAuth:()=>authFeedbackGeneration++,ticket:()=>latestDiceRollRequest};')(
+    state,root,()=>{renders++;},async()=>{refreshes++;},ROLL_TOTAL_MS);
+  const running=scope.roll(()=>pending,'general');
+  assert.equal(state.diceStatus,'pending');
+  assert.ok(scope.ticket());
+  scope.advanceAuth(); // A new Auth route invalidates the old user gesture.
+  if(rejection)reject(Error('Delayed network error'));
+  else resolve({face:26});
+  assert.equal(await running,null);
+  assert.equal(refreshes,0,'No stale request can rehydrate the active view');
+  assert.equal(state.diceStatus,null,'The invalidated roll releases its lock');
+  assert.equal(state.rollAnimationFace,null);
+  assert.equal(state.rollAnimationKind,null);
+  assert.equal(scope.ticket(),null);
+  assert.ok(renders>=2,'The active UI is restored after the abandoned roll');
+ }
+});
