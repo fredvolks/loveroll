@@ -5754,6 +5754,11 @@ async function handle(action,element){
   if(!state.session?.paired_turns||!state.session?.self_draws||!state.rollStatus?.both_ready)
    throw Error('Attendez vos deux tirages personnels pour donner un défi.');
   const me=state.user.id,otherPerson=other();
+  const giftOwner={userId:me,coupleId:state.coupleId,sessionId:state.session.id,
+   generation:authFeedbackGeneration};
+  const ownsGift=()=>!state.diceStatus&&state.user?.id===giftOwner.userId&&
+   state.coupleId===giftOwner.coupleId&&state.session?.id===giftOwner.sessionId&&
+   authFeedbackGeneration===giftOwner.generation&&state.tab==='session';
   const turn=state.eveningBoard||sharedEveningTurns(state.session,state.members,state.personal,state.challenges,state.gifts);
   if(!turn.ready||turn.remaining[me]<=0)
    throw Error('Aucun défi non commencé à donner.');
@@ -5762,9 +5767,13 @@ async function handle(action,element){
   if(!(await premiumConfirm('Offrir un de tes défis restants à '+otherPerson.name+
    ' ? Son nombre de défis à recevoir augmentera de 1 et le tien diminuera de 1.',
    {kind:'gift'})))return;
-  await rpc('give_love_challenge',{p_session:state.session.id});
+  // Confirmation is asynchronous: a different login, active roll or evening
+  // may have replaced the screen while the dialog was open.
+  if(!ownsGift())return;
+  await rpc('give_love_challenge',{p_session:giftOwner.sessionId});
+  if(!ownsGift())return; // Do not repaint another player's account.
   await refreshAndShow();
-  notify('♥ Défi transféré ! '+otherPerson.name+' choisira la catégorie de son prochain défi.');
+  if(ownsGift())notify('♥ Défi transféré ! '+otherPerson.name+' choisira la catégorie de son prochain défi.');
   return;
  }
  if(verb==='new-challenge'){
