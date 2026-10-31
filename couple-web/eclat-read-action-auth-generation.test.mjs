@@ -807,3 +807,66 @@ test('LR-026: partner choice updates do not discard current authorized mutation'
  assert.equal(receipt.applied,true,'a choice update in the same chapter is not a new session');
  assert.equal(receipt.value,result);
 });
+
+test('LR-026: obsolete SQLSTATE 42501 from prior Éclat session does not revoke current session',async()=>{
+ const pending=deferred();
+ const h=harness({rpc:()=>pending.promise});
+ h.state.eclat={access:true,active:true,session_id:'former',coffret_id:1,chapter_index:3};
+ const owner=h.beginEclatAction();
+ const writing=h.runEclatMutation(owner,'love_eclat_next');
+ // An authoritative newer server poll already opened another coffret.
+ h.state.eclat={access:true,active:true,session_id:'current',coffret_id:2,chapter_index:1};
+ h.state.eclatHistory=[{id:'current-private-gallery'}];
+ h.ctx.eclatNoteDrafts.set('current',{note:'Protected by current session'});
+ pending.reject({status:400,code:'42501'});
+ const result=await writing;
+ assert.equal(result.applied,false);
+ assert.equal(h.state.eclat.session_id,'current');
+ assert.deepEqual(h.state.eclatHistory,[{id:'current-private-gallery'}]);
+ assert.equal(h.ctx.eclatNoteDrafts.get('current').note,'Protected by current session');
+ assert.equal(h.audioStops(),0);
+ assert.deepEqual(h.renders,[]);
+});
+
+test('LR-026: obsolete HTTP 403 from prior chapter cannot revoke newer chapter',async()=>{
+ const pending=deferred();
+ const h=harness({rpc:()=>pending.promise});
+ h.state.eclat={access:true,active:true,session_id:'same',coffret_id:1,chapter_index:2};
+ const owner=h.beginEclatAction();
+ const writing=h.runEclatMutation(owner,'love_eclat_choose',{p_choice:1});
+ h.state.eclat={access:true,active:true,session_id:'same',coffret_id:1,chapter_index:3};
+ pending.reject({status:403,code:'permission_denied'});
+ assert.equal((await writing).applied,false);
+ assert.equal(h.state.eclat.chapter_index,3);
+ assert.equal(h.state.eclat.access,true);
+ assert.deepEqual(h.renders,[]);
+});
+
+test('LR-026: current session permission denial still revokes private Éclat access',async()=>{
+ const pending=deferred();
+ const h=harness({rpc:()=>pending.promise});
+ h.state.eclat={access:true,active:true,session_id:'same',coffret_id:1,chapter_index:2};
+ const owner=h.beginEclatAction();
+ const writing=h.runEclatMutation(owner,'love_eclat_choose',{p_choice:0});
+ // Status with a newer partner choice is still the same authorized scene.
+ h.state.eclat={...h.state.eclat,my_choice:1};
+ h.state.eclatHistory=[{id:'private-gallery'}];
+ pending.reject({status:400,code:'42501'});
+ assert.equal((await writing).applied,false);
+ assert.equal(h.state.eclat,null);
+ assert.deepEqual(Array.from(h.state.eclatHistory),[]);
+ assert.deepEqual(h.renders,[null]);
+});
+
+test('LR-026: obsolete transient mutation error does not notify an already advanced chapter',async()=>{
+ const pending=deferred();
+ const h=harness({rpc:()=>pending.promise});
+ h.state.eclat={access:true,active:true,session_id:'same',coffret_id:1,chapter_index:2};
+ const owner=h.beginEclatAction();
+ const writing=h.runEclatMutation(owner,'love_eclat_next');
+ h.state.eclat={access:true,active:true,session_id:'same',coffret_id:1,chapter_index:3};
+ pending.reject(new Error('former chapter network error'));
+ assert.equal((await writing).applied,false);
+ assert.equal(h.state.eclat.chapter_index,3);
+ assert.deepEqual(h.renders,[]);
+});
