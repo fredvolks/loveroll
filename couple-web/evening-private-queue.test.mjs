@@ -1990,3 +1990,55 @@ test('LR-026: a private note superseded during Choose forbids the following RPC'
   app.indexOf("if(kind==='back'){",app.indexOf("if(verb==='eclat'){")));
  assert.match(noteFlow,/if\(!savedKey\|\|state\.tab!=='eclat'/);
 });
+
+function privateEclatReadFixture(state,loadEclatNote){
+ const start=app.indexOf('const eclatNoteDrafts=new Map();');
+ const end=app.indexOf('// Every Éclat response is tied',start);
+ assert.ok(start>0&&end>start);
+ let paints=0;
+ const scope=runInNewContext(app.slice(start,end)+
+  ';({eclatNoteState,drafts:eclatNoteDrafts})',{
+  state,loadEclatNote,ownsCoupleAsyncRead,console,client:{},
+  eclatNoteKey:(status,userId)=>status?.active&&status.session_id&&userId?
+   [userId,status.session_id,status.chapter_index].join(':'):null,
+  render:()=>paints++
+ });
+ return {...scope,paintCount:()=>paints};
+}
+const settlePrivateNoteRead=async()=>{
+ for(let i=0;i<6;i++)await Promise.resolve();
+};
+
+test('LR-026: older Éclat note load cannot overwrite a new retry draft',async()=>{
+ const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
+  eclat:{active:true,session_id:'session-1',chapter_index:1},eclatBrowse:false};
+ let releaseOld,reads=0;
+ const pending=new Promise(resolve=>{releaseOld=resolve;});
+ const f=privateEclatReadFixture(state,()=>++reads===1?pending:
+  Promise.resolve({note:'Réponse récente',clue:'Indice actuel',moment_done:false}));
+ const old=f.eclatNoteState();
+ f.drafts.delete('alice:session-1:1');
+ const latest=f.eclatNoteState();
+ await settlePrivateNoteRead();
+ assert.equal(latest.note,'Réponse récente');
+ releaseOld({note:'Ancienne réponse',clue:'Ancien indice',moment_done:true});
+ await settlePrivateNoteRead();
+ assert.equal(latest.note,'Réponse récente');
+ assert.equal(latest.moment_done,false);
+ assert.equal(old.note,'','previous draft is no longer used');
+ assert.equal(f.paintCount(),1,'stale fetch must not trigger a second repaint');
+});
+
+test('LR-026: old Éclat note load failure cannot repaint a different signed-in user',async()=>{
+ const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
+  eclat:{active:true,session_id:'session-1',chapter_index:1},eclatBrowse:false};
+ let rejectOld;
+ const pending=new Promise((_,reject)=>{rejectOld=reject;});
+ const f=privateEclatReadFixture(state,()=>pending);
+ const old=f.eclatNoteState();
+ state.user={id:'bob'};
+ rejectOld(Error('Private read failed'));
+ await settlePrivateNoteRead();
+ assert.equal(old.error,undefined,'stale read failure must not flag another user's view');
+ assert.equal(f.paintCount(),0,'old session cannot repaint Bob’s Éclat page');
+});
