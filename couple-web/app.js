@@ -1117,8 +1117,12 @@ function render(){
 }
 async function reload(){
  if(!state.user)return;
- const ownerId=state.user.id,request={};latestAuthReloadRequest=request;
- const current=()=>state.user?.id===ownerId&&latestAuthReloadRequest===request;
+ const ownerId=state.user.id,ownerGeneration=authFeedbackGeneration,request={};
+ latestAuthReloadRequest=request;
+ // A fresh login can reuse the same user ID. Never hydrate a new session
+ // with asynchronous reads that started under the previous auth generation.
+ const current=()=>state.user?.id===ownerId&&
+  authFeedbackGeneration===ownerGeneration&&latestAuthReloadRequest===request;
  // Only show after 150ms for slow data refreshes. Never interrupt a live
  // dice animation, timer, unsaved form or the initial static boot splash.
  const useLoad=!root.querySelector('[data-lr-boot]')&&!state.diceStatus&&
