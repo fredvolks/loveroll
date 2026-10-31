@@ -816,12 +816,12 @@ let currentProfileSave=null;
 async function saveProfileForCurrentAccount(name,birthday,gender,playStyle){
  const ownerId=state.user?.id;
  if(!ownerId)throw Error('Connectez-vous pour enregistrer votre profil.');
- if(currentProfileSave?.ownerId===ownerId)
+ // An obsolete in-flight write cannot block a new login with the same UID.
+ if(currentProfileSave?.ownerId===ownerId&&
+    currentProfileSave.ownerGeneration===authFeedbackGeneration)
   throw Error('Enregistrement du profil déjà en cours…');
- const owner={ownerId};currentProfileSave=owner;
- // A sign-out and fresh sign-in can return to the same user ID while an
- // older RPC is in flight. Never reuse that request across auth generations.
  const ownerGeneration=authFeedbackGeneration;
+ const owner={ownerId,ownerGeneration};currentProfileSave=owner;
  const current=()=>state.user?.id===ownerId&&
   authFeedbackGeneration===ownerGeneration&&currentProfileSave===owner;
  const steps=[
@@ -845,7 +845,8 @@ let currentSignoutRequest=null;
 async function signOutCurrentAccount(){
  const ownerId=state.user?.id;
  if(!ownerId)return false;
- if(currentSignoutRequest?.ownerId===ownerId)return false;
+ if(currentSignoutRequest?.ownerId===ownerId&&
+    currentSignoutRequest.ownerGeneration===authFeedbackGeneration)return false;
  const request={ownerId,ownerGeneration:authFeedbackGeneration};
  currentSignoutRequest=request;
  // Cleanup may await FCM, Realtime or Supabase while the same account
@@ -890,7 +891,8 @@ let currentRecoveryPasswordRequest=null;
 async function updateRecoveryPasswordForCurrentAccount(password){
  const ownerId=state.user?.id;
  if(!ownerId||!state.passwordRecovery)return false;
- if(currentRecoveryPasswordRequest?.ownerId===ownerId)
+ if(currentRecoveryPasswordRequest?.ownerId===ownerId&&
+    currentRecoveryPasswordRequest.ownerGeneration===authFeedbackGeneration)
   throw Error('Modification du mot de passe déjà en cours…');
  const request={ownerId,ownerGeneration:authFeedbackGeneration};
  currentRecoveryPasswordRequest=request;
