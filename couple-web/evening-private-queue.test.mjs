@@ -2170,7 +2170,7 @@ function privateAuthBoundaryFixture(state,getUser){
  const timer={id:'alice-card',ownerUserId:'alice',ownerSessionId:'alice-session',
   durationMs:120000,remainingMs:55000,deadline:123456,running:true,
   notified:false,autoCompletePending:true,decisionPending:false,mode:'vibrate'};
- const calls={audioStops:0,channelRemovals:0,paints:0,reloads:0,timers:0};
+ const calls={audioStops:0,channelRemovals:0,paints:0,reloads:0,timers:0,savedTimers:[]};
  state.channel=channel;
  const scope=runInNewContext(
   'const eclatNoteDrafts=drafts,challengeTimer=timer;let latestEclatAudioOwner=null;'+
@@ -2182,6 +2182,7 @@ function privateAuthBoundaryFixture(state,getUser){
   ';({adoptAuthenticatedIdentity,refreshVerifiedIdentity,readRequest:()=>latestAuthReloadRequest})',{
    state,drafts,timer,client:{auth:{getUser},removeChannel:async()=>{calls.channelRemovals++;}},
    eclatAudio:{stop:()=>calls.audioStops++},
+   saveChallengeTimer:()=>calls.savedTimers.push({...timer}),
    clearTimeout:()=>{},setTimeout:()=>calls.timers++,
    reload:async()=>calls.reloads++,render:()=>calls.paints++,
    fail:()=>{},verifiedLoveEmail:()=>true
@@ -3474,4 +3475,38 @@ test('LR-026: signing out clears account-specific presentation and pending insta
  assert.equal(state.forceInstallGuide,false);
  assert.equal(state.personalPass,null);
  assert.equal(state.jsonPending,null);
+});
+
+test('LR-026: switching accounts saves the former owner\'s running timer before clearing it',()=>{
+ const state={user:{id:'alice'},coupleId:'alice-duo',tab:'session'};
+ const f=privateAuthBoundaryFixture(state,async()=>({data:{user:state.user}}));
+ assert.equal(f.timer.running,true);
+ assert.equal(f.adoptAuthenticatedIdentity({id:'bob'}),true);
+ assert.equal(f.calls.savedTimers.length,1);
+ assert.equal(f.calls.savedTimers[0].ownerUserId,'alice');
+ assert.equal(f.calls.savedTimers[0].id,'alice-card');
+ assert.equal(f.calls.savedTimers[0].remainingMs,55000);
+ assert.equal(f.timer.id,null);
+ assert.equal(f.timer.ownerUserId,null);
+ assert.equal(f.timer.mode,'vibrate');
+});
+
+test('LR-026: refreshing the same account does not save or clear its current timer',()=>{
+ const state={user:{id:'alice'},coupleId:'alice-duo',tab:'session'};
+ const f=privateAuthBoundaryFixture(state,async()=>({data:{user:state.user}}));
+ assert.equal(f.adoptAuthenticatedIdentity({id:'alice',email:'alice@example.com'}),false);
+ assert.equal(f.calls.savedTimers.length,0);
+ assert.equal(f.timer.ownerUserId,'alice');
+ assert.equal(f.timer.running,true);
+});
+
+test('LR-026: signing out persists the previous owner\'s timer without keeping private runtime state',()=>{
+ const state={user:{id:'alice'},coupleId:'alice-duo',tab:'session'};
+ const f=privateAuthBoundaryFixture(state,async()=>({data:{user:state.user}}));
+ assert.equal(f.adoptAuthenticatedIdentity(null),true);
+ assert.equal(f.calls.savedTimers.length,1);
+ assert.equal(f.calls.savedTimers[0].ownerUserId,'alice');
+ assert.equal(state.user,null);
+ assert.equal(state.coupleId,null);
+ assert.equal(f.timer.running,false);
 });
