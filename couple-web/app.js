@@ -33,7 +33,7 @@ import {cycleIntensityQuestionnaireHtml,ownsCycleIntensityAnswer} from './cycle-
 import {DICE_WEIGHT_CONFIG,configuredDiceWeights,parseDiceWeightInputs} from './dice-weighting.mjs?v=20261018-weights146';
 import {premiumEveningHtml,updateEveningCategoryUi} from './premium-evening.mjs?v=20261028-lr027-web254';
 import {eveningHistoryMarkup,eveningLocalDay,eveningCalendarInitialDate} from './evening-calendar.mjs?v=20261029-web259';
-import {eveningReviewModal,validEveningReview} from './evening-review.mjs?v=20261016-person-review97';
+import {eveningReviewModal,validEveningReview,eveningFinaleStatus} from './evening-review.mjs?v=20261016-person-review97';
 import {premiumSurpriseHtml,sixSpecialEvents} from './premium-surprise.mjs?v=20261022-home228';
 import {surpriseSlot,surpriseCustom,surpriseTitle,formatSurpriseDateInput,parseSurpriseDateInput} from './surprise-event-config.mjs?v=20261016-surprise109';
 import {loginEmail,loginCode,emailAuthMessage,requireLovePassword,passwordQuality,verifiedLoveEmail,passwordAuthMessage,invitationAuthMessage} from './email-auth.mjs';
@@ -2642,12 +2642,10 @@ function renderSession(){
  const mineCards=session?visibleEveningQueue(ownEveningChallenges(state.challenges,uid,session.id)):[];
  const daily=eveningDailyAccess({sessions:state.sessions,weekly:state.weekly});
  const last=daily.closedToday;
- const recentReviews=last?(state.eveningReviews||[]).filter(x=>x.session_id===last.id):[];
- const lastEvening=last?{id:last.id,completed:state.eveningCalendarChallenges.filter(
-    c=>c.session_id===last.id&&c.status==='completed').length,
-   responses:recentReviews.length,
-   myResponse:recentReviews.some(f=>f.author_id===uid),
-   partnerResponse:recentReviews.some(f=>f.author_id===partner?.user_id)}:null;
+ const lastEvening=last?eveningFinaleStatus({
+  sessionId:last.id,reviews:state.eveningReviews,
+  challenges:state.eveningCalendarChallenges,selfId:uid,partnerId:partner?.user_id
+ }):null;
  const canStartEvening=daily.canStart;
  const gifts=state.gifts||[];
  const giftCount=gifts.filter(g=>g.donor_user_id===uid&&g.month_key?.slice(0,7)===month()).length;
