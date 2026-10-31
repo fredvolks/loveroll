@@ -793,6 +793,10 @@ test('LR-026: real private history refresh supplies a per-page account guard',as
 test('LR-026: changed Éclat status respects the failed-history retry deadline',async()=>{
  const h=harness({recoverHistory:true});
  h.state.eclat={id:'original',access:true,active:true,session_id:'session-1'};
+ // This case exercises a previously loaded history for the SAME owner.
+ // A missing scope represents a first read, which must bypass stale cooldown.
+ h.state.eclatHistoryCouple='couple-a';
+ h.state.eclatHistoryUserId='alice';
  h.state.eclatHistoryError=true;
  h.state.eclatHistoryRetryAt=30000;
  let tick=h.tick();
