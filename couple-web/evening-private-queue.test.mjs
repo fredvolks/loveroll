@@ -3332,3 +3332,48 @@ test('LR-026: password Auth action delegates to account-owned helper',()=>{
  assert.doesNotMatch(action,/client\.auth\.signInWithPassword\(/);
  assert.doesNotMatch(action,/client\.auth\.signUp\(/);
 });
+
+test('LR-026: current signup with a verified session signs in without losing the new identity',async()=>{
+ const state={user:null,authMode:'signup',showAuth:true};
+ const f=passwordAuthSubmitFixture(state,{signUp:async()=>({
+  data:{session:{user:{id:'alice'}}},error:null
+ })});
+ assert.equal(await f.submitPasswordAuth('auth-signup-password','alice@example.com','secret'),true);
+ assert.equal(state.user.id,'alice');
+ assert.equal(state.showAuth,false);
+ assert.equal(f.calls.adopts[0],'alice');
+ assert.equal(f.calls.reloads,1);
+});
+
+test('LR-026: active sign-in failure is visible but does not enter the game',async()=>{
+ const state={user:null,authMode:'signin',showAuth:true};
+ const f=passwordAuthSubmitFixture(state,{signIn:async()=>({
+  data:null,error:{code:'invalid_credentials',message:'Invalid password'}
+ })});
+ assert.equal(await f.submitPasswordAuth('auth-signin-password','alice@example.com','wrong'),false);
+ assert.equal(state.user,null);
+ assert.equal(f.calls.messages.length,1);
+ assert.equal(f.calls.reloads,0);
+});
+
+test('LR-026: a stale password signup network failure cannot warn a new account',async()=>{
+ let reject;
+ const pending=new Promise((_,bad)=>{reject=bad;});
+ const state={user:null,authMode:'signup',showAuth:true};
+ const f=passwordAuthSubmitFixture(state,{signUp:()=>pending});
+ const signup=f.submitPasswordAuth('auth-signup-password','alice@example.com','secret');
+ state.user={id:'bob'};f.bump();
+ reject(Error('Expired old signup request'));
+ assert.equal(await signup,false);
+ assert.equal(f.calls.messages.length,0);
+ assert.equal(f.calls.renders,0);
+});
+
+test('LR-026: switching to Google or Apple invalidates pending password form replies',()=>{
+ const nativeStart=app.indexOf("if(verb==='google'&&window.LoveRollNativeAuth?.googleSignIn){");
+ const browserStart=app.indexOf("if(verb==='google'||verb==='apple'){",nativeStart);
+ const end=app.indexOf("if(verb==='auth-mode'){",browserStart);
+ assert.ok(nativeStart>0&&browserStart>nativeStart&&end>browserStart);
+ assert.match(app.slice(nativeStart,browserStart),/authFeedbackGeneration\+\+/);
+ assert.match(app.slice(browserStart,end),/authFeedbackGeneration\+\+/);
+});
