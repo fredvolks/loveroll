@@ -2930,8 +2930,8 @@ function ownedRecoveryFixture(state,updateUser){
  const last=app.indexOf('function authMessage(',first);
  assert.ok(first>=0&&last>first,'production account-owned password recovery helper is present');
  const calls=[];
- const f=runInNewContext(app.slice(first,last)+
-  ';({updateRecoveryPasswordForCurrentAccount,currentRequest:()=>currentRecoveryPasswordRequest})',{
+ const f=runInNewContext('let authFeedbackGeneration=0;\n'+app.slice(first,last)+
+  ';({updateRecoveryPasswordForCurrentAccount,currentRequest:()=>currentRecoveryPasswordRequest,bumpAuthGeneration:()=>authFeedbackGeneration++})',{
    state,client:{auth:{updateUser:async args=>{calls.push(args);return updateUser(args);}}}
   });
  return {...f,calls};
@@ -2943,6 +2943,34 @@ test('LR-026: password recovery success belongs to the active account',async()=>
  assert.equal(await f.updateRecoveryPasswordForCurrentAccount('Password2!'),true);
  assert.equal(f.calls.length,1);
  assert.equal(f.calls[0].password,'Password2!');
+ assert.equal(f.currentRequest(),null);
+});
+
+test('LR-026: password recovery cannot complete from an older same-user session',async()=>{
+ let release;
+ const pending=new Promise(resolve=>{release=resolve;});
+ const state={user:{id:'alice'},passwordRecovery:true};
+ const f=ownedRecoveryFixture(state,()=>pending);
+ const update=f.updateRecoveryPasswordForCurrentAccount('Password2!');
+ f.bumpAuthGeneration();
+ release({error:null});
+ assert.equal(await update,false);
+ assert.equal(f.calls.length,1);
+ assert.equal(f.currentRequest(),null);
+ assert.equal(state.passwordRecovery,true);
+ assert.equal(await f.updateRecoveryPasswordForCurrentAccount('Password2!'),true);
+ assert.equal(f.calls.length,2);
+});
+
+test('LR-026: old password recovery failure is hidden after same-user relogin',async()=>{
+ let reject;
+ const pending=new Promise((_,rejectFn)=>{reject=rejectFn;});
+ const state={user:{id:'alice'},passwordRecovery:true};
+ const f=ownedRecoveryFixture(state,()=>pending);
+ const update=f.updateRecoveryPasswordForCurrentAccount('Password2!');
+ f.bumpAuthGeneration();
+ reject(Error('Previous login recovery failed'));
+ assert.equal(await update,false);
  assert.equal(f.currentRequest(),null);
 });
 
