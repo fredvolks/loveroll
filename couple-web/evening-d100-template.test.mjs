@@ -833,4 +833,23 @@ test('LR-027: a gift confirmation that resolves after a repick starts never send
  await task;
  assert.equal(writes,0);
  assert.equal(state.tab,'session');
+ // When no repick is running, gifting must remain usable and confirm once.
+ pending=false;
+ let sent=0,refreshed=0,toasted=0;
+ const normal=runInNewContext('(async verb=>{'+code+'})',{
+  state,authFeedbackGeneration:1,isActiveEveningRedrawPending:()=>pending,
+  other:()=>({name:'Émilie'}),month:()=> '2026-10',
+  premiumConfirm:async()=>true,
+  rpc:async(name,args)=>{
+   assert.equal(name,'give_love_challenge');
+   assert.equal(args.p_session,'night-1');
+   sent++;
+  },
+  refreshAndShow:async()=>{refreshed++;},
+  notify:()=>{toasted++;}
+ });
+ await normal('give-challenge');
+ assert.equal(sent,1,'The valid gift is submitted exactly once');
+ assert.equal(refreshed,1,'The evening updates after an authorized gift');
+ assert.equal(toasted,1,'Only a confirmed gift displays feedback');
 });
