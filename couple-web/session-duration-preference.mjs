@@ -6,15 +6,23 @@ const storageKey=userId=>'loveroll-session-length:'+userId;
 export function normalizeSessionLength(value){
  return SESSION_LENGTH_OPTIONS.includes(value)?value:'libre';
 }
-export function readSessionLength(userId,storage=globalThis.localStorage){
+export function readSessionLength(userId,storage){
  if(typeof userId!=='string'||!userId)return 'libre';
- try{return normalizeSessionLength(storage?.getItem(storageKey(userId)));}
- catch{return 'libre';}
+ // Reading globalThis.localStorage can itself throw (Safari privacy policy,
+ // opaque origins). Resolve it INSIDE the guarded block, not in defaults.
+ try{
+  const available=storage===undefined?globalThis.localStorage:storage;
+  return normalizeSessionLength(available?.getItem(storageKey(userId)));
+ }catch{return 'libre';}
 }
-export function saveSessionLength(userId,value,storage=globalThis.localStorage){
+export function saveSessionLength(userId,value,storage){
  if(typeof userId!=='string'||!userId||!SESSION_LENGTH_OPTIONS.includes(value))return false;
- try{storage?.setItem(storageKey(userId),value);return !!storage;}
- catch{return false;}
+ try{
+  const available=storage===undefined?globalThis.localStorage:storage;
+  if(!available?.setItem)return false;
+  available.setItem(storageKey(userId),value);
+  return true;
+ }catch{return false;}
 }
 export function sessionLengthSettingsHtml(value='libre'){
  const selected=normalizeSessionLength(value);
