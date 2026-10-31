@@ -759,6 +759,9 @@ function adoptAuthenticatedIdentity(nextUser){
   notificationFeedback=null;worldGpsDraft=null;worldFx=null;worldFxFailed=null;
   timerCompletionInFlight=null;timerCompletionRetryAt=0;
   savedTimerScanOwner=null;savedTimerScanAfter=0;savedTimerSyncInFlight=null;
+  // Persist the former owner's remaining time before clearing its live timer.
+  // saveChallengeTimer keys by challengeTimer.ownerUserId, never state.user.
+  saveChallengeTimer();
   Object.assign(challengeTimer,{id:null,ownerUserId:null,ownerSessionId:null,
    durationMs:0,remainingMs:0,deadline:0,running:false,notified:false,
    autoCompletePending:false,decisionPending:false});
