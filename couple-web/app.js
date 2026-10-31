@@ -1777,6 +1777,7 @@ async function refreshEclatStatus(){
   if(value==null){
    // The service no longer exposes this session. Erase stale private history
    // without another read; the next authorized refresh can repopulate it.
+   latestEclatHistoryRead=null;
    state.eclatHistory=[];state.eclatHistoryError=false;
    return null;
   }
