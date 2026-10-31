@@ -198,6 +198,8 @@ test('D100 favorites announce pressed state and return focus after changing a ca
  const state={user:{id:'fred'},coupleId:'couple-a',session:{id:'evening-1'},
   challenges:[item]};
  const scope={state,parts:['draw-7'],
+  isActiveEveningRedrawPending:()=>false,
+  isActiveEveningGiftPending:()=>false,
   ownEveningChallenges:(cards,user,session)=>{
    assert.equal(user,'fred');assert.equal(session,'evening-1');
    return cards;
@@ -240,6 +242,8 @@ test('Soirée challenge drawer has keyboard focus on entry, detail and return',a
   selectedEveningChallengeId:null,showEveningChallenges:false};
  let openerPresent=true;
  const scope={state,parts:['draw-7'],
+  isActiveEveningRedrawPending:()=>false,
+  isActiveEveningGiftPending:()=>false,
   root:{querySelector:selector=>{
    if(selector==='button[data-action="evening-list"]'&&!openerPresent)return null;
    return {focus:opts=>events.push('focus:'+selector+':'+String(opts.preventScroll))};
