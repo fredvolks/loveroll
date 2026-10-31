@@ -1320,21 +1320,31 @@ function eclatNoteState(){
  return eclatNoteDrafts.get(key);
 }
 async function saveCurrentEclatNote(momentDone){
- const key=eclatNoteKey(state.eclat,state.user?.id),draft=eclatNoteDrafts.get(key);
+ const owner={userId:state.user?.id,coupleId:state.coupleId};
+ const key=eclatNoteKey(state.eclat,owner.userId),draft=eclatNoteDrafts.get(key);
  if(!draft||draft.loading||draft.error)throw Error('Attends le chargement de ta note ou appuie sur Réessayer.');
  if(draft.saving)throw Error('Enregistrement en cours…');
+ // An account switch, new chapter or note retry must invalidate the pending
+ // result even if the old network request is still settling.
+ const current=()=>ownsCoupleAsyncRead(state,owner)&&state.tab==='eclat'&&
+  eclatNoteKey(state.eclat,state.user?.id)===key&&
+  eclatNoteDrafts.get(key)===draft;
+ if(!current())return null;
  const snapshot={note:draft.note,clue:draft.clue,moment_done:momentDone??draft.moment_done};
+ const status={...state.eclat};
  draft.saving=true;
  try{
-  await saveEclatNote(client,{...state.eclat},state.user.id,snapshot);
+  await saveEclatNote(client,status,owner.userId,snapshot);
+  if(!current())return null;
   draft.moment_done=snapshot.moment_done;
   draft.saved=draft.note===snapshot.note&&draft.clue===snapshot.clue;
  }catch(error){
+  if(!current())return null;
   const label=root.querySelector('[data-eclat-note-status]');
   if(label)label.textContent='Non enregistré. Ton texte est conservé ici; réessaie.';
   throw error;
  }finally{draft.saving=false;}
- return key;
+ return current()?key:null;
 }
 // Every Éclat response is tied to both the account and the couple.
 // Request tokens also stop an older poll from rolling back a newer status.
@@ -2916,7 +2926,8 @@ async function handle(action,element){
    const key=eclatNoteKey(state.eclat,state.user?.id);
    if(kind==='note-retry'){eclatNoteDrafts.delete(key);render();return;}
    const savedKey=await saveCurrentEclatNote(kind==='note-done'?true:kind==='note-edit'?false:undefined);
-   if(savedKey!==eclatNoteKey(state.eclat,state.user?.id))return;
+   if(!savedKey||state.tab!=='eclat'||
+      savedKey!==eclatNoteKey(state.eclat,state.user?.id))return;
    if(kind==='note-play'||kind==='note-edit')eclatNoteDrafts.get(key).playing=true;
    render();return;
   }
@@ -2981,7 +2992,10 @@ async function handle(action,element){
    const draft=eclatNoteDrafts.get(eclatNoteKey(state.eclat,state.user?.id));
    if(num>0&&!draft?.moment_done)throw Error('Vivez d’abord le moment ensemble, puis confirme que tu as terminé.');
    const owner=beginEclatAction();if(!owner)return;
-   if(draft&&!draft.loading&&!draft.error)await saveCurrentEclatNote();
+   if(draft&&!draft.loading&&!draft.error){
+    const saved=await saveCurrentEclatNote();
+    if(!saved)return; // A new account/chapter must not receive this choice.
+   }
    if(!ownsEclatAction(owner))return;
    const value=await rpc('love_eclat_choose',{p_choice:num});
    if(!applyEclatActionResult(value,owner))return;
