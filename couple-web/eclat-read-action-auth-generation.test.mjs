@@ -225,3 +225,15 @@ test('LR-026: null Éclat response cannot delete history after identity changes'
  assert.equal(h.state.eclat.id,'bob-coffret');
  assert.deepEqual(h.state.eclatHistory,[{id:'bob-history'}]);
 });
+
+test('LR-026: a pending history response cannot restore content after null status',async()=>{
+ const delayed=deferred();
+ const h=harness({rpc:async()=>null,loadEclatHistory:()=>delayed.promise});
+ const stale=h.refreshEclatHistory();
+ await h.refreshEclatStatus();
+ assert.deepEqual(h.state.eclatHistory,[]);
+ delayed.resolve([{id:'stale-private-history'}]);
+ await stale;
+ assert.deepEqual(h.state.eclatHistory,[],
+  'the null status invalidates a previously authorized history request');
+});
