@@ -9,7 +9,7 @@ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
 const start=app.indexOf("setInterval(async()=>{\n if(document.hidden||state.tab!=='eclat'");
 const end=app.indexOf('},4500);',start);
 assert.ok(start>=0&&end>start,'real Éclat poll must remain available');
-const source='let latestEclatStatusRead=null;\n'+app.slice(start,end+8);
+const source='let latestEclatStatusRead=null,latestEclatPollPending=null;\n'+app.slice(start,end+8);
 
 function deferred(){
  let resolve,reject;
@@ -20,9 +20,9 @@ function harness(){
  const state={user:{id:'alice'},coupleId:'couple-a',members:[{},{}],
   tab:'eclat',eclat:{id:'original'}};
  const requests=[],renders=[],warnings=[],history=[];
- let tick=null;
+ let tick=null,clock=0;
  const runtime={
-  state,authFeedbackGeneration:1,document:{hidden:false},
+  state,authFeedbackGeneration:1,document:{hidden:false},Date:{now:()=>clock},
   ownsCoupleAsyncRead,isSharedCoupleReady:(couple,members)=>!!couple&&members?.length===2,
   rpc:name=>{
    assert.equal(name,'love_eclat_status');
@@ -35,7 +35,7 @@ function harness(){
  };
  runInNewContext(source,runtime);
  assert.equal(typeof tick,'function');
- return {state,runtime,requests,renders,warnings,history,tick:()=>tick()};
+ return {state,runtime,requests,renders,warnings,history,tick:()=>tick(),advance:ms=>{clock+=ms;}};
 }
 
 test('LR-026: late Éclat poll cannot repaint a new login for the same user',async()=>{
@@ -54,16 +54,46 @@ test('LR-026: late Éclat poll cannot repaint a new login for the same user',asy
  assert.deepEqual(h.renders,['current']);
 });
 
-test('LR-026: two concurrent Éclat polls discard earlier delayed response',async()=>{
+test('LR-026: repeated Éclat ticks reuse one pending server read per session',async()=>{
  const h=harness();
  const first=h.tick();
- const second=h.tick();
- h.requests[1].resolve({id:'newest'});
- await second;
- h.requests[0].resolve({id:'older'});
+ await h.tick();
+ await h.tick();
+ assert.equal(h.requests.length,1,'the 4.5s poll must not pile up pending requests');
+ h.requests[0].resolve({id:'first'});
  await first;
- assert.equal(h.state.eclat.id,'newest');
- assert.deepEqual(h.renders,['newest']);
+ const second=h.tick();
+ assert.equal(h.requests.length,2,'a completed request permits the next poll');
+ h.requests[1].resolve({id:'second'});
+ await second;
+ assert.deepEqual(h.renders,['first','second']);
+});
+
+test('LR-026: a stalled Éclat poll retries after 30 seconds and rejects the old reply',async()=>{
+ const h=harness();
+ const first=h.tick();
+ h.advance(29999);
+ await h.tick();
+ assert.equal(h.requests.length,1,'short stalls remain single-flight');
+ h.advance(1);
+ const replacement=h.tick();
+ assert.equal(h.requests.length,2,'an overdue request cannot freeze synchronization');
+ h.requests[1].resolve({id:'replacement'});
+ await replacement;
+ h.requests[0].resolve({id:'stale'});
+ await first;
+ assert.equal(h.state.eclat.id,'replacement');
+ assert.deepEqual(h.renders,['replacement']);
+ assert.deepEqual(h.history,['alice']);
+});
+
+test('LR-026: identical Éclat status skips private history reads and redraws',async()=>{
+ const h=harness();
+ const poll=h.tick();
+ h.requests[0].resolve({id:'original'});
+ await poll;
+ assert.deepEqual(h.history,[]);
+ assert.deepEqual(h.renders,[]);
 });
 
 test('LR-026: old account or couple never receives private Éclat data',async()=>{
