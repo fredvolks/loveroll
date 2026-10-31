@@ -143,6 +143,20 @@ test('LR-002 countdown renders one truthful, actionable control at every phase',
   disabled:true,resetDisabled:true
  });
  assert.equal(timedEveningTimerControl({...base,remainingMs:-1}).disabled,true);
+ // A delayed countdown tick may leave running=true at 00:00. The UI must
+ // never invite "Pause" on an expired card or resume a finished challenge.
+ const expiredWhileRunning=timedEveningTimerControl({
+  ...base,running:true,remainingMs:0
+ });
+ assert.deepEqual(expiredWhileRunning,{
+  label:'♡ Terminé',status:'Terminé',disabled:true,resetDisabled:false
+ });
+ assert.deepEqual(timedEveningTimerControl({
+  ...base,running:true,remainingMs:0,autoCompletePending:true
+ }),{
+  label:'♡ Validation en cours',status:'Validation du défi en cours',
+  disabled:true,resetDisabled:true
+ });
 });
 
 test('LR-026 pending D100 decision locks both timer buttons, without changing time',()=>{
