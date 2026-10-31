@@ -162,7 +162,9 @@ export function premiumEveningHtml({
  canMyRoll=!!session&&!status?.my_rolled&&!rolling;
  const first=turn?.first?members.find(m=>m.user_id===turn.first)?.name?.split(' ')[0]:'';
  const totals=turn.targets||{},done=turn.completed||{};
- const canDraw=ready&&turn.ready&&!turn.drawsFinished&&
+ // A draw in flight owns the chosen category until its official receipt.
+ // Prevent another tap from changing the visible choice mid-animation.
+ const canDraw=ready&&turn.ready&&!turn.drawsFinished&&!rolling&&
   Number(turn.remaining?.[me]||0)>0&&turn.next===me;
  const canGive=ready&&turn.ready&&giftCount<3&&Number(turn.remaining?.[me])>0;
  const challengeText=pending?'♡ Voir notre défi en cours':turn.finished?'Tous les défis terminés':!ready?'En attente des deux D6':canDraw?'À toi de jouer':'En attente de '+esc(partner.name?.split(' ')[0]||'ton partenaire');
