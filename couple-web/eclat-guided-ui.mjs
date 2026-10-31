@@ -32,13 +32,13 @@ export function eclatGuidedPlay({stage,status,members,userId,noteState={}}){
  let content='',actions='';
  if(phase==='prepare'){
   content=common+'<section class="eclat-personal"><small>POUR TOI SEULEMENT</small>'+fields+'</section>'+help;
-  actions=button('note-play','Vivre ce moment à deux','eclat-primary',!!noteUnavailable)+button('choose:0','Passer ce moment','eclat-skip');
+  actions=button('note-play','Vivre ce moment à deux','eclat-primary',!!noteUnavailable||saving)+button('choose:0','Passer ce moment','eclat-skip',saving);
  }else if(phase==='play'){
   content=common+'<section class="eclat-moment-steps"><small>À VOUS DE JOUER</small><ol>'+guide.steps.slice(1).map(s=>'<li>'+esc(s)+'</li>').join('')+'</ol></section><details class="eclat-personal"><summary>Relire ou modifier ma note privée</summary>'+fields+'</details>'+help;
-  actions=button('note-done','J’ai terminé ce moment','eclat-primary',!!noteUnavailable)+button('choose:0','Passer ce moment','eclat-skip');
+  actions=button('note-done','J’ai terminé ce moment','eclat-primary',!!noteUnavailable||saving)+button('choose:0','Passer ce moment','eclat-skip',saving);
  }else if(phase==='choose'){
   content=common+'<section class="eclat-choice-intro"><small>ET POUR LA SUITE ?</small><h3>Ton envie, en privé</h3><p>Ces boutons choisissent l’ambiance de la suite. Ils ne répondent pas à la devinette et ne partagent pas ta note.</p></section>';
-  actions='<div class="eclat-choices" role="group" aria-label="Choix privé pour cette étape">'+c.choices.map((s,i)=>button('choose:'+(i+1),esc(s),'eclat-choice')).join('')+'</div>'+button('note-edit','Revenir au moment','eclat-skip');
+  actions='<div class="eclat-choices" role="group" aria-label="Choix privé pour cette étape">'+c.choices.map((s,i)=>button('choose:'+(i+1),esc(s),'eclat-choice',saving)).join('')+'</div>'+button('note-edit','Revenir au moment','eclat-skip',saving);
  }else if(phase==='wait'){
   content=common+'<div class="eclat-wait" role="status">Ton choix est enregistré. On attend ton partenaire…<p>Ta note reste privée. Aucun texte n’est transmis.</p></div>';
  }else{
