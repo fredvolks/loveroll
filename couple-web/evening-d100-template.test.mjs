@@ -790,7 +790,7 @@ test('LR-027: delayed D6, category, gift and resume touches cannot race a privat
   const state={tab:'session',diceStatus:null,session:{id:'night-1'},
    category:null,user:{id:'alice'}};
   const route=runInNewContext('(async (verb,parts)=>{'+code+'})',{
-   state,isActiveEveningRedrawPending:()=>true,
+   state,isActiveEveningGiftPending:()=>false,isActiveEveningRedrawPending:()=>true,
    eveningCategoryConfirmInFlight:false,
    rpc:()=>{sideEffects++;throw Error('Unexpected RPC')},
    animateRoll:()=>{sideEffects++;throw Error('Unexpected D6')},
@@ -821,7 +821,11 @@ test('LR-027: a gift confirmation that resolves after a repick starts never send
   gifts:[],members:[],personal:[],challenges:[]};
  const confirmation=new Promise(resolve=>{resolveConfirmation=resolve;});
  const route=runInNewContext('(async verb=>{'+code+'})',{
-  state,authFeedbackGeneration:1,isActiveEveningRedrawPending:()=>pending,
+  state,authFeedbackGeneration:1,
+  isActiveEveningGiftPending:()=>!!(state.eveningGiftRequest&&
+   state.eveningGiftRequest.userId===state.user?.id&&
+   state.eveningGiftRequest.sessionId===state.session?.id),
+  isActiveEveningRedrawPending:()=>pending,
   other:()=>({name:'Émilie'}),month:()=> '2026-10',
   premiumConfirm:()=>confirmation,render:()=>{},
   rpc:()=>{writes++;throw Error('Gift must not race repick')},
@@ -837,7 +841,11 @@ test('LR-027: a gift confirmation that resolves after a repick starts never send
  pending=false;
  let sent=0,refreshed=0,toasted=0;
  const normal=runInNewContext('(async verb=>{'+code+'})',{
-  state,authFeedbackGeneration:1,isActiveEveningRedrawPending:()=>pending,
+  state,authFeedbackGeneration:1,
+  isActiveEveningGiftPending:()=>!!(state.eveningGiftRequest&&
+   state.eveningGiftRequest.userId===state.user?.id&&
+   state.eveningGiftRequest.sessionId===state.session?.id),
+  isActiveEveningRedrawPending:()=>pending,
   other:()=>({name:'Émilie'}),month:()=> '2026-10',
   premiumConfirm:async()=>true,render:()=>{},
   rpc:async(name,args)=>{
@@ -866,6 +874,7 @@ test('LR-027: repick starting during category confirmation cancels the stale D10
   '(()=>{let eveningCategoryConfirmInFlight=false;return async verb=>{'+code+'}})()',{
    state,authFeedbackGeneration:1,EVENING_CATEGORIES:['SENSUEL','SEXUEL'],
    isActiveEveningRedrawPending:()=>settings.pending,
+   isActiveEveningGiftPending:()=>settings.giftPending===true,
    ownsEveningCategoryDraw:()=>true,categoryConfirmEnabled:()=>true,
    askEveningCategoryConfirmation:settings.confirm,
    animateRoll:settings.roll,localStorage:{},
@@ -967,7 +976,11 @@ test('LR-027: duplicate Give taps cannot open a second dialog or write two gifts
  const dialog=new Promise(resolve=>{confirmResolve=resolve;});
  const rpcPending=new Promise(resolve=>{rpcResolve=resolve;});
  const run=runInNewContext('(async verb=>{'+code+'})',{
-  state,authFeedbackGeneration:1,isActiveEveningRedrawPending:()=>false,
+  state,authFeedbackGeneration:1,
+  isActiveEveningGiftPending:()=>!!(state.eveningGiftRequest&&
+   state.eveningGiftRequest.userId===state.user?.id&&
+   state.eveningGiftRequest.sessionId===state.session?.id),
+  isActiveEveningRedrawPending:()=>false,
   other:()=>({name:'Partenaire'}),month:()=> '2026-10',
   premiumConfirm:()=>{dialogs++;return dialog;},
   rpc:async name=>{
@@ -1014,7 +1027,11 @@ test('LR-027: cancelled gift unlocks and an old login cannot clear a newer gift'
  let releaseFirst,dialogCount=0,rpcCalls=0;
  const firstDialog=new Promise(resolve=>{releaseFirst=resolve;});
  const run=runInNewContext('(async verb=>{'+code+'})',{
-  state,authFeedbackGeneration:1,isActiveEveningRedrawPending:()=>false,
+  state,authFeedbackGeneration:1,
+  isActiveEveningGiftPending:()=>!!(state.eveningGiftRequest&&
+   state.eveningGiftRequest.userId===state.user?.id&&
+   state.eveningGiftRequest.sessionId===state.session?.id),
+  isActiveEveningRedrawPending:()=>false,
   other:()=>({name:'Partenaire'}),month:()=> '2026-10',
   premiumConfirm:()=>++dialogCount===1?firstDialog:Promise.resolve(false),
   rpc:()=>{rpcCalls++;throw Error('Cancelled gifts must not write');},
