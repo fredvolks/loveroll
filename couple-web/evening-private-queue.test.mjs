@@ -1993,7 +1993,7 @@ function privateEclatSaveFixture(state,saveEclatNote){
    root:{querySelector:()=>({set textContent(value){labels.push(value);}})}
   });
  const draft={note:'Private',clue:'Indice',moment_done:false,
-  loading:false,error:false,saving:false,saved:false};
+  loading:false,error:false,saving:false,saved:false,generation:1};
  scope.drafts.set('alice:session-1:1',draft);
  return {...scope,draft,labels};
 }
@@ -3932,5 +3932,17 @@ test('LR-026: expired Éclat note-save error cannot report failure to the new lo
  rejectSave(new Error('Former session failed'));
  assert.equal(await previous,null);
  assert.deepEqual(f.labels,[],'the old request must not change the new login feedback');
+ assert.equal(f.draft.saving,false);
+});
+
+test('LR-026: cached note from a previous login cannot start a save',async()=>{
+ const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
+  eclat:{active:true,session_id:'session-1',chapter_index:1}};
+ let networkCalls=0;
+ const f=privateEclatSaveFixture(state,async()=>{networkCalls++;});
+ f.setAuthGeneration(2);
+ assert.equal(await f.saveCurrentEclatNote(true),null);
+ assert.equal(networkCalls,0,'a stale draft must not reach the network');
+ assert.equal(f.draft.moment_done,false);
  assert.equal(f.draft.saving,false);
 });
