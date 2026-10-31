@@ -4029,3 +4029,59 @@ test('LR-026: revoked private note save response must not acknowledge an older s
  assert.equal(f.draft.saving,false);
  assert.deepEqual(f.labels,[]);
 });
+
+
+test('LR-026: revoked Éclat entitlement prevents loading private notes',async()=>{
+ const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
+  eclat:{access:false,active:true,session_id:'session-1',chapter_index:1}};
+ let calls=0;
+ const f=privateEclatReadFixture(state,async()=>{
+  calls++;return {note:'should stay private'};
+ });
+ assert.deepEqual(Object.keys(f.eclatNoteState()),[]);
+ assert.equal(calls,0);
+ assert.equal(f.drafts.size,0);
+});
+
+test('LR-026: pending note read cannot commit after Éclat entitlement is revoked',async()=>{
+ const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
+  eclat:{access:true,active:true,session_id:'session-1',chapter_index:1},
+  eclatBrowse:false};
+ let finish;
+ const waiting=new Promise(resolve=>{finish=resolve;});
+ const f=privateEclatReadFixture(state,()=>waiting);
+ const draft=f.eclatNoteState();
+ state.eclat={...state.eclat,access:false};
+ finish({note:'revoked private content',clue:'old clue',moment_done:true});
+ await settlePrivateNoteRead();
+ assert.equal(draft.note,'','a revoked result must never repopulate private draft');
+ assert.equal(draft.moment_done,false);
+ assert.equal(f.paintCount(),0);
+ assert.deepEqual(Object.keys(f.eclatNoteState()),[]);
+});
+
+test('LR-026: pending note save cannot mark completion after Éclat access is revoked',async()=>{
+ const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
+  eclat:{access:true,active:true,session_id:'session-1',chapter_index:1}};
+ let finish;
+ const waiting=new Promise(resolve=>{finish=resolve;});
+ const f=privateEclatSaveFixture(state,()=>waiting);
+ const pending=f.saveCurrentEclatNote(true);
+ state.eclat={...state.eclat,access:false};
+ finish();
+ assert.equal(await pending,null);
+ assert.equal(f.draft.moment_done,false);
+ assert.equal(f.draft.saved,false);
+ assert.equal(f.draft.saving,false);
+ assert.deepEqual(f.labels,[]);
+});
+
+test('LR-026: already revoked Éclat access cannot initiate private note save',async()=>{
+ const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
+  eclat:{access:false,active:true,session_id:'session-1',chapter_index:1}};
+ let writes=0;
+ const f=privateEclatSaveFixture(state,async()=>{writes++;});
+ assert.equal(await f.saveCurrentEclatNote(true),null);
+ assert.equal(writes,0);
+ assert.equal(f.draft.saved,false);
+});
