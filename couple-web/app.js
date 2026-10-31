@@ -2783,7 +2783,8 @@ function renderSession(){
    showSexuel:state.couple?.show_sexuel_button!==false,
    categoryOdds:state.couple?.category_weights_enabled===false?50:
     state.couple?.category_preference_percent??88,
-   giftCount,rolling:state.diceStatus==='rolling'||state.diceStatus==='pending',rollFace:state.rollAnimationFace,
+   giftCount,rolling:state.diceStatus==='rolling'||state.diceStatus==='pending',
+   redrawPending:isActiveEveningRedrawPending(),rollFace:state.rollAnimationFace,
    playable:state.playableCounts||(isLoveAdmin()?playableEveningCount(state.customCards):null),
    rollingKind:state.rollAnimationKind,showMore:state.eveningMore,confirmCancel:state.confirmCancel,
    challengeOverlay:overlay,lastEvening,canStartEvening,
