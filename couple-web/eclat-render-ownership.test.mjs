@@ -89,7 +89,13 @@ const actionBegin=app.indexOf(" if(verb==='eclat'){");
 const actionEnd=app.indexOf(" if(verb==='referral-copy'",actionBegin);
 assert.ok(permissionBegin>=0&&permissionEnd>permissionBegin,'production entitlement gate exists');
 assert.ok(actionBegin>=0&&actionEnd>actionBegin,'production Éclat actions exist');
-const actionSource=app.slice(permissionBegin,permissionEnd)+
+// Exercise the real owner-bound RPC guard used by all four actions, rather
+// than bypassing it in this legacy interaction test harness.
+const mutationBegin=app.indexOf('async function runEclatMutation(');
+const mutationEnd=app.indexOf('function applyEclatActionResult(',mutationBegin);
+assert.ok(mutationBegin>0&&mutationEnd>mutationBegin,'secured Éclat mutation guard exists');
+const actionSource=app.slice(permissionBegin,permissionEnd)+'\n'+
+ app.slice(mutationBegin,mutationEnd)+
  '\nlet latestEclatAudioOwner=null;\n'+
  "async function invoke(command){const verb='eclat',parts=command.split(':'),element=null;\n"+
  app.slice(actionBegin,actionEnd)+'\n}\n;invoke;';
