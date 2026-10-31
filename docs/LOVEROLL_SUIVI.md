@@ -1,5 +1,17 @@
 # LoveRoll — SUIVI OFFICIEL DU PROMPT MAÎTRE
 
+
+### LR-027 — état clair de la repige et blocage des actions concurrentes (31 octobre 2026)
+
+- Branche `feat/lr026-server-variety-after-category-20261029`, [PR #176](https://github.com/fredvolks/loveroll/pull/176), **brouillon non fusionné**.
+- Pendant la confirmation serveur de Passer/Refuser, l'écran Soirée affiche **« Repige en cours de confirmation… »**. Le D100, le D6, la liste des défis, les dons, le menu de gestion et les actions personnelles ne paraissent plus disponibles lorsque leur exécution est bloquée. À la fin, le comportement habituel réapparaît sans changer les probabilités ni les résultats officiels.
+- Les commandes privées **Commencer**, **Défi réalisé** et **Favoris** sont temporairement désactivées dans le dialogue. Une ancienne action `answer` ne peut plus concurrencer la repige en attente de réconciliation RLS.
+- Code : `couple-web/premium-evening.mjs`, `couple-web/app.js`. Régressions : `couple-web/evening-d100-template.test.mjs`. Commits principaux `fb2dc31`, `3293bf0`, `edce6ac`, `31bf1c1`, `6ea2e06`, `86c2705`.
+- Vérification ciblée : **syntaxe V8 des trois fichiers réussie**, rendu du D100 vérifié avec et sans repige (boutons et état d'attente), action `answer` confirmée inactive pendant repige et contrôles des boutons privés présents. **CI GitHub complète au SHA final, staging Supabase Auth/RLS et appareils physiques NON VÉRIFIÉS** lors de cette note.
+- Coordination demandée : appels directs aux fiches, liste des agents et méthode Architecture d'Atelier réalisés mais **erreur interne**; **non synchronisé avec Atelier**. Aucune mission BOSS ni agent autonome revendiquée. Méthode de revue MEDIUM de secours appliquée localement.
+- Aucun SQL de production, comptes réels, Pages ni APK modifié. Ne pas fusionner sans les validations requises.
+
+
 ### LR-027 — empêcher les actions périmées pendant D100 et une repige (31 octobre 2026)
 
 - [PR #176](https://github.com/fredvolks/loveroll/pull/176) toujours en brouillon, non fusionnée; aucun changement SQL, Pages ou APK.
