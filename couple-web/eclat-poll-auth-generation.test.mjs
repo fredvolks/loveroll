@@ -23,7 +23,7 @@ function harness(){
  let tick=null;
  const runtime={
   state,authFeedbackGeneration:1,document:{hidden:false},
-  ownsCoupleAsyncRead,isSharedCoupleReady:()=>true,
+  ownsCoupleAsyncRead,isSharedCoupleReady:(couple,members)=>!!couple&&members?.length===2,
   rpc:name=>{
    assert.equal(name,'love_eclat_status');
    const task=deferred();requests.push(task);return task.promise;
@@ -90,5 +90,24 @@ test('LR-026: stale network errors do not notify a reauthenticated user',async()
  h.requests[0].reject(new Error('previous session network'));
  await pending;
  assert.equal(h.warnings.length,0);
+ assert.equal(h.renders.length,0);
+});
+
+test('LR-026: Éclat poll ignores replies after couple membership disappears',async()=>{
+ const h=harness(),pending=h.tick();
+ h.state.members=[{id:'alice'}];
+ h.requests[0].resolve({id:'no-longer-authorized'});
+ await pending;
+ assert.equal(h.state.eclat.id,'original');
+ assert.equal(h.renders.length,0);
+ assert.equal(h.history.length,0);
+});
+
+test('LR-026: hidden Éclat tab never paints a pending status update',async()=>{
+ const h=harness(),pending=h.tick();
+ h.runtime.document.hidden=true;
+ h.requests[0].resolve({id:'background-only'});
+ await pending;
+ assert.equal(h.state.eclat.id,'original');
  assert.equal(h.renders.length,0);
 });
