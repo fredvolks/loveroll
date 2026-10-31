@@ -1794,14 +1794,15 @@ function applyEclatActionResult(value,owner){
  return true;
 }
 function renderEclat(){
- const e=previewEclatStatus(state.eclat,state.testMode,state.testModeEligible);
+ const coupleReady=isSharedCoupleReady(state.coupleId,state.members);
+ const e=coupleReady?previewEclatStatus(state.eclat,state.testMode,state.testModeEligible):null;
  if(e?.active){
   const current=eclatStage(e.coffret_id,e.chapter_number,e.variant_number);
   if(current)eclatAudio.setMood(current.mood);
  }else if(state.eclatMusic){eclatAudio.stop();state.eclatMusic=false;}
  frame(eclatHtml({status:e,selected:state.eclatSelection,minutes:state.eclatMinutes,
   details:state.eclatDetails,members:state.members,userId:state.user?.id,
-  music:state.eclatMusic,finished:state.eclatFinished,browse:state.eclatBrowse,intent:state.eclatIntent,noteState:e?.active&&!state.eclatBrowse?eclatNoteState():{},history:state.eclatHistoryCouple===state.coupleId&&
+  music:state.eclatMusic,finished:coupleReady?state.eclatFinished:null,browse:state.eclatBrowse,intent:state.eclatIntent,noteState:e?.active&&!state.eclatBrowse?eclatNoteState():{},history:coupleReady&&state.eclatHistoryCouple===state.coupleId&&
    state.eclatHistoryUserId===state.user?.id?state.eclatHistory:[],historyError:state.eclatHistoryError}), 'Éclat','Notre expérience à deux');
 }
 function renderHome(){
