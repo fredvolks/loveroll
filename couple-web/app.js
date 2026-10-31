@@ -4284,11 +4284,15 @@ async function handle(action,element){
   state.unlockKey=null;state.personalPass=null;state.personalJournal=[];
   // No profile, couple, challenge, invitation or user row is deleted.
   // Do not erase a new login while the former local sign-out is awaiting.
-  const {error}=await client.auth.signOut({scope:'local'});
-  if(error)throw error;
-  if(state.user?.id&&
-     (state.user.id!==signoutUserId||
-      authFeedbackGeneration!==signoutGeneration))return;
+  let signout;
+  try{signout=await client.auth.signOut({scope:'local'});}
+  catch(error){
+   // An older sign-out failure must never be shown on another login.
+   if(state.user?.id&&!signoutCurrent())return;
+   throw error;
+  }
+  if(state.user?.id&&!signoutCurrent())return;
+  if(signout?.error)throw signout.error;
   adoptAuthenticatedIdentity(null);
   state.wellbeing=null;state.emailVerificationPending=false;
   state.passwordRecovery=false;state.showDiscover=false;state.showAuth=true;
@@ -4344,11 +4348,14 @@ async function handle(action,element){
    if(state.channel===channel)state.channel=null;
   }
   if(!signoutCurrent())return;
-  const {error}=await client.auth.signOut();
-  if(error)throw error;
-  if(state.user?.id&&
-     (state.user.id!==signoutUserId||
-      authFeedbackGeneration!==signoutGeneration))return;
+  let signout;
+  try{signout=await client.auth.signOut();}
+  catch(error){
+   if(state.user?.id&&!signoutCurrent())return;
+   throw error;
+  }
+  if(state.user?.id&&!signoutCurrent())return;
+  if(signout?.error)throw signout.error;
   adoptAuthenticatedIdentity(null);
   state.inviteAccepted=true;state.showAuth=true;state.inviteError=null;state.inviteAttemptKey=null;render();return;
  }
