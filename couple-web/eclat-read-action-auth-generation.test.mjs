@@ -92,3 +92,35 @@ test('LR-026: Éclat status cannot apply a reply after couple membership is lost
  assert.equal(h.state.eclat.id,'initial');
  assert.deepEqual(h.state.eclatHistory,[{id:'initial-history'}]);
 });
+
+test('LR-026: pending Éclat history cannot commit after couple membership is revoked',async()=>{
+ const pending=deferred();
+ const h=harness({loadEclatHistory:()=>pending.promise});
+ const old=h.refreshEclatHistory();
+ h.state.members=[{id:'alice'}];
+ pending.resolve([{id:'former-private-history'}]);
+ await old;
+ assert.deepEqual(h.state.eclatHistory,[{id:'initial-history'}]);
+ assert.equal(h.state.eclatHistoryError,undefined);
+});
+
+test('LR-026: Éclat history does not query the server without a ready couple',async()=>{
+ let calls=0;
+ const h=harness({loadEclatHistory:async()=>{calls++;return [];}});
+ h.state.members=[{id:'alice'}];
+ await h.refreshEclatHistory();
+ assert.equal(calls,0);
+ assert.deepEqual(h.state.eclatHistory,[{id:'initial-history'}]);
+});
+
+test('LR-026: an Éclat action is invalid after couple membership is revoked',()=>{
+ const h=harness();
+ const owner=h.beginEclatAction();
+ assert.ok(owner);
+ h.state.members=[{id:'alice'}];
+ assert.equal(h.ownsEclatAction(owner),false);
+ assert.equal(h.applyEclatActionResult({id:'unavailable'},owner),false);
+ assert.equal(h.beginEclatAction(),null,
+  'cannot start another action after losing couple membership');
+ assert.equal(h.state.eclat.id,'initial');
+});
