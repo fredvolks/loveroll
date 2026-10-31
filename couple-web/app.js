@@ -2741,7 +2741,7 @@ function renderEveningCalendar(){
  }), 'CALENDRIER DES SOIRÉES', 'Un souvenir de chaque moment à deux');
 }
 function optionalRolledTimer(roll){
- if(!roll?.timer_minutes)return '';
+ if(!validChallengeTimerMinutes(roll?.timer_minutes))return '';
  const key='special-'+roll.id;
  return state.specialTimerKey===key?timerWidget({id:key},roll.timer_minutes):
   button('special-timer:'+key,editorialIcon('clock')+' Minuteur · '+roll.timer_minutes+' min','class="subtle occasion-timer"');
@@ -2789,7 +2789,7 @@ function renderSpecial(){
    geoEnabled:worldGeoEnabled(),geoVenue:state.geoVenue,geoLookup:state.geoLookup,
    reservation:state.geoReservation,canReserve:currentHost()?.user_id===state.user?.id,
    bookingEditor:state.geoBookingEdit,
-   timerHtml:state.showSurpriseActivity&&activity?.timer_minutes?
+   timerHtml:state.showSurpriseActivity&&validChallengeTimerMinutes(activity?.timer_minutes)?
     timerWidget({id:'monthly-'+month()},activity.timer_minutes):'',
    rolling:!!state.diceStatus,rollingKind,rollFace:state.rollAnimationFace,
    showActivity:state.showSurpriseActivity,season:state.surpriseSeason,editSlot:state.surpriseEditSlot,
@@ -2947,7 +2947,7 @@ function renderAdvent(){
   when:new Date(serverDate+'T16:00:00Z'),year:state.adventYear,
   selectedDay:state.adventSelected,
   openingDay:state.adventOpening,revealing:state.adventRevealing,dateTrusted:!!state.adventServerDate,showHistory:state.adventHistory,
-  timerHtml:selected?.advent_timer_minutes?
+  timerHtml:validChallengeTimerMinutes(selected?.advent_timer_minutes)?
    timerWidget({id:'advent-'+selected.year+'-'+selected.day},selected.advent_timer_minutes):''
  }), 'CALENDRIER DE L’AVENT','Votre rituel commun en décembre');
 }
