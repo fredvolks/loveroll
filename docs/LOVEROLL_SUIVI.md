@@ -1,6 +1,16 @@
 # LoveRoll — SUIVI OFFICIEL DU PROMPT MAÎTRE
 
 
+### LR-028 — Retour Android et navigation privée protégés pendant un don (31 octobre 2026)
+
+- [PR #176](https://github.com/fredvolks/loveroll/pull/176), branche `feat/lr026-server-variety-after-category-20261029`, **brouillon**, non fusionnée. Le parcours Soirée conserve son vrai serveur/RLS et ses dés officiels.
+- **Bug client corrigé** : avant le reçu d'un don, un appui Retour Android pouvait fermer la liste privée Mes défis, et les anciens boutons « Fermer », « Mes défis », « Précédent », « Suivant » ou une ligne de défi pouvaient encore remonter une ancienne liste. `couple-web/app.js` (commit `22c495b`) bloque ces actions pendant un don propre à l'utilisateur et à la soirée ; les boutons correspondants sont réellement désactivés, pas seulement protégés à la réception du clic. Le native Back peut toujours fermer intentionnellement le dialogue de confirmation du don ; après l'attente, les commandes normales sont rétablies.
+- **Qualité / preuve ciblée** : `couple-web/evening-d100-template.test.mjs` (commit `2dc3314`) exerce les vrais handlers ouvrir/fermer/sélectionner un défi et la fonction Retour Android avec/sans liste et avec un dialogue natif : **PASS en V8 sur la source GitHub actuelle**. Les anciens tests Retour Android ont été adaptés pour injecter le nouveau prédicat `isActiveEveningGiftPending` (commit présent à la tête avant `02085ef`).
+- **CI réparée** : `couple-web/evening-private-queue.test.mjs` (commit `02085ef`) reconnaît le verrou du don en plus de l'état repige/minuteur, **sans imposer une limite mensuelle à Refuser**. Le lot CI GitHub final et les essais réels appareils/2 comptes Supabase restent **non confirmés** ; ne pas présenter V8 comme une recette bout-en-bout.
+- **Atelier demandé en MEDIUM** : appels réels à l'application LoveRoll, à la liste d'agents et aux experts Architecture/QA : quatre erreurs internes. **Non synchronisé avec Atelier**. Aucun merge, SQL production, déploiement ou APK.
+
+
+
 ### LR-027 — liste privée verrouillée pendant un don et récupération Soirée (31 octobre 2026)
 
 - **Livraison sur [PR #176](https://github.com/fredvolks/loveroll/pull/176)** : pendant un don en attente pour le même compte, duo et soirée, la liste privée **Mes défis** annonce « Don en cours de confirmation… » avec `role="status"` et `aria-live="polite"`. Les commandes Commencer, Défi réalisé, Passer, Refuser, choix de refus, Annuler le refus et favoris sont désactivées pour éviter une opération contre les anciens compteurs, tout en conservant leur visibilité. Les contrôles redeviennent utilisables à la fin du don.
