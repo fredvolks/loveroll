@@ -1019,8 +1019,8 @@ test("LR-026 real D100 handlers reject clicks while automatic completion is pend
  for(const action of ['evening-start','evening-pass','evening-refuse','answer'])
   assert.match(ui,new RegExp("button\\('"+action+":'\\+view\\.id[\\s\\S]*?isEveningCardCompleting\\(view\\.id\\)"),
    'visible '+action+' button must disable for the completing card');
- assert.match(ui,/button\('evening-refuse-cancel','Annuler','class="subtle" '\+\(isActiveEveningRedrawPending\(\)\?'disabled':''\)/,
-  'Cancel stays available so the player may dismiss the dialog');
+ assert.match(ui,/button\('evening-refuse-cancel','Annuler','class="subtle" '\+\(isActiveEveningRedrawPending\(\)\|\|giftTransferPending\?'disabled':''\)/,
+  'Cancel stays available normally but cannot remount a stale gift or repick');
 });
 
 test("LR-026 manual response takes priority over automatic timer completion",async()=>{
