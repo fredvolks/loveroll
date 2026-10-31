@@ -132,12 +132,17 @@ test('LR-026: duplicate ticks coalesce and a completed tick allows next date che
 });
 
 test('LR-026: auth switch while Advent refresh awaits suppresses stale repaint',async()=>{
- const h=harness(),refresh=deferred();
- h.context.refreshShared=async()=>{h.refreshes.push('started');await refresh.promise;};
+ const h=harness(),refresh=deferred(),entered=deferred();
+ h.context.refreshShared=async()=>{
+  h.refreshes.push('started');
+  entered.resolve();
+  await refresh.promise;
+ };
  const pending=h.tick();
  h.requests[0].resolve('2026-12-02');
- // Complete RPC and schedule the async refresh before changing Auth.
- await Promise.resolve();
+ // Wait for the real async boundary instead of assuming a single microtask
+ // settles a promise created by the isolated VM execution context.
+ await entered.promise;
  assert.equal(h.refreshes.length,1);
  h.state.user={id:'bob'};h.state.coupleId='couple-b';
  h.context.authFeedbackGeneration=2;
