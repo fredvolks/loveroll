@@ -5893,12 +5893,22 @@ setInterval(async()=>{
    // A progress/choice update can change the status every 4.5 seconds.
    // Do not bypass the 30-second history retry cooldown for such updates.
    // A new coffret or a just-ended session DOES need an immediate reload.
-   const sessionChanged=(state.eclat?.session_id??null)!==(value?.session_id??null)||
-    (state.eclat?.coffret_id??null)!==(value?.coffret_id??null)||
-    (state.eclat?.active===true&&value?.active===false);
-   const historyReady=state.eclatHistoryError!==true||
-    Date.now()>=(state.eclatHistoryRetryAt??0)||sessionChanged;
-   if(applyEclatStatus(value)&&historyReady)await refreshEclatHistory();
+   const previous=state.eclat;
+   const sessionChanged=(previous?.session_id??null)!==(value?.session_id??null)||
+    (previous?.coffret_id??null)!==(value?.coffret_id??null)||
+    (previous?.active===true&&value?.active===false);
+   // History contains session/chapter metadata, not each user's temporary
+   // choice. Avoid a private paginated query on every partner choice update.
+   const chapterChanged=(previous?.chapter_index??null)!==(value?.chapter_index??null);
+   const historyScopeMissing=state.eclatHistoryCouple!==owner.coupleId||
+    state.eclatHistoryUserId!==owner.userId;
+   const regainedAccess=previous?.access!==true&&value?.access===true;
+   const retryDue=state.eclatHistoryError===true&&
+    Date.now()>=(state.eclatHistoryRetryAt??0);
+   const historyReady=state.eclatHistoryError!==true||retryDue||sessionChanged;
+   const historyChanged=sessionChanged||chapterChanged||historyScopeMissing||regainedAccess;
+   if(applyEclatStatus(value)&&historyReady&&(historyChanged||retryDue))
+    await refreshEclatHistory();
    if(current())render();
   }else if(value?.access===true&&state.eclatHistoryError===true&&
     Date.now()>=(state.eclatHistoryRetryAt??0)){
