@@ -20,6 +20,17 @@ export function categoryConfirmOdds(category,percentage=88){
  return category==='SENSUEL'?
   {sensuel:preferred,sexuel:100-preferred}:{sensuel:100-preferred,sexuel:preferred};
 }
+// A D100 confirmation belongs to the exact Auth generation, member, duo
+// and evening that opened it. A delayed dialog result or server receipt
+// must not submit a draw or write state for a replacement account.
+export function ownsEveningCategoryDraw(state,request,generation){
+ return !!(request?.userId&&request?.coupleId&&request?.sessionId&&
+  Number.isInteger(request.generation)&&
+  state?.user?.id===request.userId&&
+  state?.coupleId===request.coupleId&&
+  state?.session?.id===request.sessionId&&
+  state?.tab==='session'&&request.generation===generation);
+}
 export function eveningCategoryConfirmMarkup(category,percentage=88){
  if(!allowed.has(category))throw Error('Catégorie invalide');
  const odds=categoryConfirmOdds(category,percentage);
