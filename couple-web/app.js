@@ -4271,13 +4271,18 @@ async function handle(action,element){
   // The pending invitation stays intact across this local sign-out.
   const hadInvite=!!pendingInviteReference(sessionStorage);
   const priorConsent=!!state.inviteAccepted;
+  const signoutUserId=state.user?.id,signoutGeneration=authFeedbackGeneration;
   if(state.channel){await client.removeChannel(state.channel);state.channel=null;}
   state.unlockKey=null;state.personalPass=null;state.personalJournal=[];
   // No profile, couple, challenge, invitation or user row is deleted.
+  // Do not erase a new login while the former local sign-out is awaiting.
   const {error}=await client.auth.signOut({scope:'local'});
   if(error)throw error;
-  state.user=null;state.profile=null;state.coupleId=null;state.couple=null;
-  state.members=[];state.wellbeing=null;state.emailVerificationPending=false;
+  if(state.user?.id&&
+     (state.user.id!==signoutUserId||
+      authFeedbackGeneration!==signoutGeneration))return;
+  adoptAuthenticatedIdentity(null);
+  state.wellbeing=null;state.emailVerificationPending=false;
   state.passwordRecovery=false;state.showDiscover=false;state.showAuth=true;
   state.authMode='signin';state.authDraftEmail='';state.inviteError=null;
   state.inviteAttemptKey=null;
@@ -4314,6 +4319,7 @@ async function handle(action,element){
   return;
  }
  if(verb==='switch-account-invite'){
+  const signoutUserId=state.user?.id,signoutGeneration=authFeedbackGeneration;
   if(state.user&&safeNativePushToken()){
    try{await disablePush(client,state.user.id);}catch(error){console.warn('Déconnexion FCM',error.code||'');}
   }
@@ -4322,7 +4328,10 @@ async function handle(action,element){
   if(state.channel){await client.removeChannel(state.channel);state.channel=null;}
   const {error}=await client.auth.signOut();
   if(error)throw error;
-  state.user=null;state.profile=null;state.coupleId=null;state.members=[];
+  if(state.user?.id&&
+     (state.user.id!==signoutUserId||
+      authFeedbackGeneration!==signoutGeneration))return;
+  adoptAuthenticatedIdentity(null);
   state.inviteAccepted=true;state.showAuth=true;state.inviteError=null;state.inviteAttemptKey=null;render();return;
  }
  if(verb==='native-update'){
