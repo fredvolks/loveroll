@@ -467,16 +467,32 @@ function nav(){
    ['pending','maybe'].includes(state.eveningInvite?.state)?'<span class="lr-evening-invite-dot" aria-label="Invitation reçue">♥</span>':'')+'</button>';
  }).join('')+'</div></nav>';
 }
-function bindActions(){
- const categoryPref=root.querySelector('#evening-category-confirm-pref');
- categoryPref?.addEventListener('change',()=>handle('evening-confirm-pref-toggle').catch(fail));
+// The input belongs to the rendered private note, not whatever account
+// or chapter happens to be active when a delayed browser input event fires.
+// Binding to its original owner prevents private text crossing scene scopes.
+function bindEclatPrivateNoteFields(){
+ const owner={userId:state.user?.id,coupleId:state.coupleId,
+  generation:authFeedbackGeneration};
+ const key=eclatNoteKey(state.eclat,owner.userId);
+ const draft=key?eclatNoteDrafts.get(key):null;
  root.querySelectorAll('[data-eclat-field]').forEach(field=>field.addEventListener('input',()=>{
-  const draft=eclatNoteDrafts.get(eclatNoteKey(state.eclat,state.user?.id));
-  if(!draft)return;
-  draft[field.dataset.eclatField]=field.value;draft.saved=false;draft.dirty=true;
+  const property=field.dataset.eclatField;
+  if(property!=='note'&&property!=='clue')return;
+  if(!draft||draft.loading||draft.error||draft.generation!==owner.generation||
+     !ownsCoupleAsyncRead(state,owner)||authFeedbackGeneration!==owner.generation||
+     state.tab!=='eclat'||state.eclat?.access!==true||
+     !isSharedCoupleReady(owner.coupleId,state.members)||
+     eclatNoteKey(state.eclat,state.user?.id)!==key||
+     eclatNoteDrafts.get(key)!==draft)return;
+  draft[property]=field.value;draft.saved=false;draft.dirty=true;
   const label=root.querySelector('[data-eclat-note-status]');
   if(label)label.textContent='Modifications non enregistrées';
  }));
+}
+function bindActions(){
+ const categoryPref=root.querySelector('#evening-category-confirm-pref');
+ categoryPref?.addEventListener('change',()=>handle('evening-confirm-pref-toggle').catch(fail));
+ bindEclatPrivateNoteFields();
  const librarySearch=root.querySelector('#custom-card-search');
  const libraryFilter=root.querySelector('#custom-card-filter');
  const updateLibraryFilter=()=>{
