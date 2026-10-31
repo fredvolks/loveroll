@@ -2042,3 +2042,48 @@ test('LR-026: old Éclat note load failure cannot repaint a different signed-in 
  assert.equal(old.error,undefined,'stale read failure must not flag another account view');
  assert.equal(f.paintCount(),0,'old session cannot repaint Bob’s Éclat page');
 });
+
+test('LR-026: editing private note during save cannot advance Éclat on old snapshot',async()=>{
+ const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
+  eclat:{active:true,session_id:'session-1',chapter_index:1}};
+ let releaseSave,submitted;
+ const pending=new Promise(resolve=>{releaseSave=resolve;});
+ const f=privateEclatSaveFixture(state,async(_client,status,userId,snapshot)=>{
+  submitted={status,userId,snapshot};
+  await pending;
+ });
+ const inFlight=f.saveCurrentEclatNote(true);
+ // The client keeps editing after the save started. The SQL upsert may
+ // succeed, but only the earlier note was stored on the server.
+ f.draft.note='Modifications plus récentes';
+ f.draft.saved=false;
+ releaseSave();
+ assert.equal(await inFlight,null,
+  'the old save is not proof that the new text has been persisted');
+ assert.equal(f.draft.note,'Modifications plus récentes');
+ assert.equal(f.draft.saved,false);
+ assert.equal(f.draft.saving,false);
+ assert.equal(submitted.snapshot.note,'Private',
+  'the backend receives only the frozen tap-time snapshot');
+ // A subsequent explicit save of the newer text can confirm the note.
+ const second=await f.saveCurrentEclatNote(true);
+ assert.equal(second,'alice:session-1:1');
+ assert.equal(f.draft.saved,true);
+ assert.equal(submitted.snapshot.note,'Modifications plus récentes');
+});
+
+test('LR-026: edited clue during pending save remains unsaved until retry',async()=>{
+ const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
+  eclat:{active:true,session_id:'session-1',chapter_index:1}};
+ let release;
+ const pending=new Promise(resolve=>{release=resolve;});
+ const f=privateEclatSaveFixture(state,()=>pending);
+ const saving=f.saveCurrentEclatNote(true);
+ f.draft.clue='Indice modifié pendant la sauvegarde';
+ f.draft.saved=false;
+ release();
+ assert.equal(await saving,null);
+ assert.equal(f.draft.saved,false);
+ assert.equal(f.draft.clue,'Indice modifié pendant la sauvegarde');
+ assert.equal(f.draft.saving,false);
+});
