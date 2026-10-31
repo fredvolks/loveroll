@@ -665,6 +665,7 @@ test('LR-027: private queue and native Back preserve a rolling D100 or pending r
   let renders=0;
   const back=runInNewContext(source.slice(from,until)+'\nbackFromLoveRoll',{
    state,isActiveEveningRedrawPending:()=>reason==='redraw',
+   isActiveEveningGiftPending:()=>false,
    document:{querySelector:()=>null},root:{_settingsMenuBack:()=>false},
    render:()=>{renders++;}
   });
@@ -679,6 +680,7 @@ test('LR-027: private queue and native Back preserve a rolling D100 or pending r
  let renders=0;
  const back=runInNewContext(source.slice(from,until)+'\nbackFromLoveRoll',{
   state,isActiveEveningRedrawPending:()=>false,
+  isActiveEveningGiftPending:()=>false,
   document:{querySelector:()=>null},root:{_settingsMenuBack:()=>false},
   render:()=>{renders++;}
  });
@@ -741,6 +743,7 @@ test('LR-027: pending repick protects tab, calendar and next D100 from stale eve
   eveningRefusalId:null};
  const back=runInNewContext(source.slice(backStart,backEnd)+'\nbackFromLoveRoll',{
   state:backState,isActiveEveningRedrawPending:()=>true,
+  isActiveEveningGiftPending:()=>false,
   document:{querySelector:()=>null},root:{_settingsMenuBack:()=>false},
   render:()=>{throw Error('Back must not navigate during a repick')}
  });
