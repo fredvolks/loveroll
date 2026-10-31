@@ -93,7 +93,7 @@ test('A delayed new-session RPC cannot navigate another account or couple',async
   const state={user:{id:'alice'},coupleId:'couple-a',weekly:{id:'week'},
    sessions:[],tab:'home'};
   const calls={writes:[],refresh:0};
-  const scope={state,authFeedbackGeneration:2,
+  const scope={state,authFeedbackGeneration:2,currentNewSessionRequest:null,
    eveningDailyAccess:()=>({canStart:true}),
    rpc:(method,args)=>{calls.writes.push({method,args});return pending;},
    refreshAndShow:async()=>{calls.refresh++;}
@@ -127,6 +127,62 @@ test('A delayed new-session RPC cannot navigate another account or couple',async
  assert.equal(missing.state.tab,'home');
 });
 
+
+test('Rapid Soirée start taps only create one session; next login is not blocked',async()=>{
+ const {runInNewContext}=await import('node:vm');
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const start=source.indexOf("if(verb==='new-session'){");
+ const end=source.indexOf("if(verb==='my-d6'){",start);
+ assert.ok(start>0&&end>start);
+ const route=source.slice(start,end);
+ const state={user:{id:'alice'},coupleId:'duo-a',
+  weekly:{id:'week'},sessions:[],tab:'home'};
+ let nextResolve;
+ const pending=[];
+ let writes=0,refreshes=0;
+ const scope={state,authFeedbackGeneration:2,currentNewSessionRequest:null,
+  eveningDailyAccess:()=>({canStart:true}),
+  rpc:(name,args)=>{
+   assert.equal(name,'ensure_couple_session');
+   writes++;
+   let resolve,reject;
+   const promise=new Promise((a,b)=>{resolve=a;reject=b;});
+   pending.push({resolve,reject,args});
+   nextResolve=resolve;
+   return promise;
+  },
+  refreshAndShow:async()=>{refreshes++;}
+ };
+ const act=runInNewContext('(async verb=>{'+route+'})',scope);
+ const first=act('new-session'),duplicate=act('new-session');
+ await duplicate;
+ assert.equal(writes,1,'Double-tap must not send a second server RPC');
+ assert.equal(pending[0].args.p_couple,'duo-a');
+ // A fresh account may start even while the earlier pending request is unresolved.
+ state.user={id:'bob'};state.coupleId='duo-b';scope.authFeedbackGeneration=3;
+ const second=act('new-session');
+ assert.equal(writes,2);
+ assert.equal(pending[1].args.p_couple,'duo-b');
+ pending[0].resolve(null);await first;
+ assert.equal(state.tab,'home','Earlier user cannot navigate the replacement login');
+ assert.equal(refreshes,0);
+ assert.ok(scope.currentNewSessionRequest,'Stale completion cannot clear Bob’s request');
+ pending[1].resolve(null);await second;
+ assert.equal(state.tab,'session');
+ assert.equal(refreshes,1);
+ assert.equal(scope.currentNewSessionRequest,null);
+ // Failure must release the guard so a legitimate same-account retry can run.
+ state.tab='home';
+ const failed=act('new-session');
+ assert.equal(writes,3);
+ pending[2].reject(Error('Temporary network failure'));
+ await assert.rejects(failed,/Temporary network failure/);
+ assert.equal(scope.currentNewSessionRequest,null);
+ const retry=act('new-session');
+ assert.equal(writes,4);
+ pending[3].resolve(null);await retry;
+ assert.equal(refreshes,2);
+});
 
 test('Delayed close and finish responses cannot repaint a replacement login',async()=>{
  const {runInNewContext}=await import('node:vm');
