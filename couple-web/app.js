@@ -691,10 +691,11 @@ function verificationPendingHtml(email){
 }
 // Preserve the private account boundary even when SIGNED_IN arrives without
 // an intermediate SIGNED_OUT, as can happen across multiple browser tabs.
-let latestAuthReloadRequest=null;
+let latestAuthReloadRequest=null,authFeedbackGeneration=0;
 function adoptAuthenticatedIdentity(nextUser){
  const previousId=state.user?.id||null,nextId=nextUser?.id||null;
  if(previousId!==nextId){
+  authFeedbackGeneration++;
   latestAuthReloadRequest=null;
   currentSignoutRequest=null;
   currentRecoveryPasswordRequest=null;
@@ -843,6 +844,16 @@ async function updateRecoveryPasswordForCurrentAccount(password){
  }finally{
   if(currentRecoveryPasswordRequest===request)currentRecoveryPasswordRequest=null;
  }
+}
+// Email/reset messages are only valid for the screen and signed-in identity
+// which initiated the request. Changing tabs/forms also invalidates them.
+function captureAuthFeedbackContext(){
+ const generation=authFeedbackGeneration,userId=state.user?.id??null,
+  mode=state.authMode,verification=!!state.emailVerificationPending,
+  showAuth=!!state.showAuth;
+ return ()=>authFeedbackGeneration===generation&&
+  (state.user?.id??null)===userId&&state.authMode===mode&&
+  !!state.emailVerificationPending===verification&&!!state.showAuth===showAuth;
 }
 function authMessage(message){
  const feedback=id('auth-form-feedback');
@@ -4358,6 +4369,7 @@ async function handle(action,element){
   state.personalCalendarMonth=d.toISOString().slice(0,7);render();return;
  }
  if(verb==='show-auth'){
+  authFeedbackGeneration++;
   if(pendingInviteReference(sessionStorage)&&!state.inviteAccepted)
    throw Error('Acceptez d’abord l’invitation.');
   // Both landing buttons must enter their actual requested authentication flow.
@@ -4367,7 +4379,7 @@ async function handle(action,element){
   state.authNotice=null;state.passwordRecovery=false;
   state.showDiscover=false;state.showAuth=true;render();return;
  }
- if(verb==='show-landing'){keepAuthModeInUrl(null);state.showDiscover=false;state.showAuth=false;render();return;}
+ if(verb==='show-landing'){authFeedbackGeneration++;keepAuthModeInUrl(null);state.showDiscover=false;state.showAuth=false;render();return;}
  if(verb==='google'&&window.LoveRollNativeAuth?.googleSignIn){
   try{
    state.authNotice='Connexion Google en cours… Sélectionnez votre compte dans la fenêtre Android.';
@@ -4394,6 +4406,7 @@ async function handle(action,element){
   if(error)throw error;return;
  }
  if(verb==='auth-mode'){
+  authFeedbackGeneration++;
   state.authDraftEmail=id('signin-email')?.value.trim()||state.authDraftEmail;
   state.authMode=parts[0]==='signin'?'signin':'signup';
   keepAuthModeInUrl(state.authMode);
@@ -4450,6 +4463,7 @@ async function handle(action,element){
   return;
  }
  if(verb==='email-confirm-login'){
+  authFeedbackGeneration++;
   if(state.user&&!verifiedLoveEmail(state.user)){
    await signOutCurrentAccount();
    // A SIGNED_IN may have replaced the unverified account while the old
@@ -4489,20 +4503,23 @@ async function handle(action,element){
   const until=Number(sessionStorage.getItem('loverollConfirmResendAfter')||0);
   if(Date.now()<until){authMessage('Veuillez patienter avant de demander un autre courriel.');return;}
   if(btn)btn.disabled=true;
+  const current= captureAuthFeedbackContext();
   try{
    const {error}=await client.auth.resend({type:'signup',email,
     options:{emailRedirectTo:pendingInviteUrl()}});
+   if(!current())return;
    if(error){authMessage(passwordAuthMessage(error));return;}
    state.authDraftEmail=email;
    sessionStorage.setItem('loverollConfirmResendAfter',String(Date.now()+60000));
    const status=id('auth-resend-status')||id('email-confirm-status');
    const msg='Demande reçue par le serveur. Cela ne garantit pas la réception du courriel. Vérifiez votre boîte et les indésirables. Si ce compte est déjà confirmé avec Google, utilisez « Continuer avec Google ».';
    if(status)status.textContent=msg;else authMessage(msg);
-  }catch(error){authMessage(passwordAuthMessage(error));}
+  }catch(error){if(current())authMessage(passwordAuthMessage(error));}
   finally{if(btn)btn.disabled=false;}
   return;
  }
  if(verb==='email-confirm-edit'){
+  authFeedbackGeneration++;
   if(state.user){
    await signOutCurrentAccount();
    if(state.user)return;
@@ -4511,6 +4528,7 @@ async function handle(action,element){
   state.authMode='signup';state.showAuth=true;render();return;
  }
  if(verb==='auth-reset-request'){
+  authFeedbackGeneration++;
   state.authDraftEmail=id('signin-email')?.value.trim()||state.authDraftEmail;
   state.authMode='request-reset';keepAuthModeInUrl('request-reset');state.authNeedsEmailConfirmation=false;
   state.authNotice=null;state.showAuth=true;render();return;
@@ -4521,13 +4539,15 @@ async function handle(action,element){
   const until=Number(sessionStorage.getItem('loverollResetAfter')||0);
   if(Date.now()<until){authMessage('Veuillez patienter avant une nouvelle demande.');return;}
   const btn=element;if(btn?.disabled)return;if(btn)btn.disabled=true;
+  const current=captureAuthFeedbackContext();
   try{
    const {error}=await client.auth.resetPasswordForEmail(email,{redirectTo:pendingInviteUrl(true)});
+   if(!current())return;
    if(error){authMessage(passwordAuthMessage(error));return;}
    state.authDraftEmail=email;
    sessionStorage.setItem('loverollResetAfter',String(Date.now()+60000));
    authMessage('Demande de récupération acceptée. Si ce compte existe, le fournisseur pourra envoyer un lien. Vérifiez vos courriels; sa réception n’est pas encore confirmée.');
-  }catch(error){authMessage(passwordAuthMessage(error));}
+  }catch(error){if(current())authMessage(passwordAuthMessage(error));}
   finally{if(btn)btn.disabled=false;}
   return;
  }
