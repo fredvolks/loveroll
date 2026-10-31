@@ -1910,7 +1910,7 @@ function privateEclatSaveFixture(state,saveEclatNote){
  const labels=[];
  const scope=runInNewContext(app.slice(start,end)+
   ';({saveCurrentEclatNote,drafts:eclatNoteDrafts})',{
-   state,saveEclatNote,ownsCoupleAsyncRead,console,
+   state,saveEclatNote,ownsCoupleAsyncRead,console,client:{},
    eclatNoteKey:(status,userId)=>status?.active&&status.session_id&&userId?
     [userId,status.session_id,status.chapter_index].join(':'):null,
    root:{querySelector:()=>({set textContent(value){labels.push(value);}})}
