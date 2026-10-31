@@ -132,3 +132,14 @@ test('rating controls reject edits while review saving is in progress',()=>{
  assert.match(block,/if\(state\.reviewSaving\)return;/);
  assert.ok(block.indexOf('if(state.reviewSaving)return;')<block.indexOf('state.reviewDraft='));
 });
+
+test('native Back also invalidates the pending save before dismissing the modal',()=>{
+ const begin=app.indexOf('if(state.reviewModalSessionId){');
+ const end=app.indexOf('if(allowBackExit)',begin);
+ assert.ok(begin>0&&end>begin,'Native back close block must exist');
+ const block=app.slice(begin,end);
+ const invalidate=block.indexOf('currentReviewSaveRequest=null;state.reviewSaving=false;');
+ const close=block.indexOf('state.reviewModalSessionId=null;');
+ assert.ok(invalidate>=0&&close>invalidate,'Cancel ownership before closing UI');
+ assert.match(block,/render\(\);return true;/);
+});
