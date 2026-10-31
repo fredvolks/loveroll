@@ -3549,7 +3549,7 @@ test('LR-026: real Chromium redraw mock respects strict persisted receipt valida
  const mock=browser.slice(begin+'const fakeSupabase=\x60'.length,end)
   .replace('export function createClient(){','function createClient(){');
  for(const [action,exclude] of [['pass',false],['refuse',false],['refuse',true]]){
-  const sandbox={window:{},location:{href:'https://test.invalid/?boot_case=paired-redraw-pass'}};
+  const sandbox={window:{},URL,location:{href:'https://test.invalid/?boot_case=paired-redraw-pass'}};
   const client=runInNewContext(mock+';createClient()',sandbox);
   const originalRows=await client.from('couple_challenges').select('*');
   const original=originalRows.data.find(row=>row.id==='redraw-original');
