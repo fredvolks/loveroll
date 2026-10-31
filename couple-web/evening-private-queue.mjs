@@ -1,7 +1,12 @@
 // A challenge list belongs exclusively to the recipient, never to the other
 // partner. The database RLS repeats this rule even for direct API requests.
 export function ownEveningChallenges(rows=[],userId,sessionId){
- return (rows||[]).filter(r=>r?.recipient===userId&&r.session_id===sessionId)
+ // Fail closed if Auth/session is absent or a server response is malformed.
+ // Otherwise a row with missing identity fields can compare equal to an
+ // undefined caller identity during sign-out or an interrupted reload.
+ if(typeof userId!=='string'||!userId||
+    typeof sessionId!=='string'||!sessionId||!Array.isArray(rows))return [];
+ return rows.filter(r=>r?.recipient===userId&&r.session_id===sessionId)
   .sort((a,b)=>Date.parse(a.created_at||'')-Date.parse(b.created_at||'')||
    String(a.id).localeCompare(String(b.id)));
 }
