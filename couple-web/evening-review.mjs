@@ -13,7 +13,8 @@ export function validEveningReview(draft){
    String(draft?.comment||'').length<=500;
 }
 export function eveningHeartRating(key,score){
- const value=Number(score)||0;
+ const raw=Number(score);
+ const value=Number.isInteger(raw)&&raw>=1&&raw<=5?raw:0;
  return '<div class="lr-review-hearts" role="group" aria-label="Note sur 5 pour '+esc(REVIEW_QUESTIONS.find(x=>x.key===key)?.label)+'">'+
   Array.from({length:5},(_,i)=>{
    const n=i+1;
@@ -25,6 +26,7 @@ export function eveningHeartRating(key,score){
 }
 export function eveningReviewModal({sessionId,draft={},saving=false,partnerName='ton partenaire'}={}){
  if(!sessionId)return '';
+ const answer=draft&&typeof draft==='object'&&!Array.isArray(draft)?draft:{};
  return '<div class="lr-review-backdrop" role="presentation">'+
  '<section class="lr-review-modal" role="dialog" aria-modal="true" aria-labelledby="lr-review-title" '+
   'aria-describedby="lr-review-intro" data-review-session="'+esc(sessionId)+'">'+
@@ -34,11 +36,11 @@ export function eveningReviewModal({sessionId,draft={},saving=false,partnerName=
  '<p id="lr-review-intro">Chacun remplit son ressenti de son côté.</p>'+
  '<div class="lr-review-questions">'+REVIEW_QUESTIONS.map(q=>
    '<div class="lr-review-question"><span class="lr-review-icon" aria-hidden="true">'+q.icon+'</span>'+
-   '<strong>'+esc(q.label)+'</strong>'+eveningHeartRating(q.key,draft[q.key])+'</div>').join('')+'</div>'+
+   '<strong>'+esc(q.label)+'</strong>'+eveningHeartRating(q.key,answer[q.key])+'</div>').join('')+'</div>'+
  '<label class="lr-review-comment-label" for="lr-review-comment">♧ Commentaire</label>'+
  '<div class="lr-review-note"><textarea id="lr-review-comment" maxlength="500" rows="3" '+
   'placeholder="Écrire une note ou un commentaire sur ce qu’on a aimé ou moins aimé...">'+
-  esc(draft.comment||'')+'</textarea><span id="lr-review-counter">'+String(draft.comment||'').length+'/500</span></div>'+
+  esc(answer.comment||'')+'</textarea><span id="lr-review-counter">'+String(answer.comment||'').length+'/500</span></div>'+
  '<p class="lr-review-calendar-note">▦ Ce bilan sera sauvegardé dans votre calendrier commun. '+
   'Le bilan de '+esc(partnerName)+' sera ajouté dès qu’il sera enregistré.</p>'+
  '<p class="lr-review-error" role="alert" hidden></p>'+
@@ -62,7 +64,8 @@ export function eveningPersonReviewMarkup({reviews=[],sessionId,person={},me}={}
   '<h4>'+heading+'</h4><p>♡ '+(isMine?'Ton bilan n’est pas encore rempli.':'En attente de son bilan')+
   '</p>'+edit+'</section>';
  const scores=REVIEW_QUESTIONS.map(q=>{
-  const score=Math.max(0,Math.min(5,Number(review[q.key])||0));
+  const raw=Number(review[q.key]);
+  const score=Number.isInteger(raw)&&raw>=1&&raw<=5?raw:0;
   return '<div class="evening-review-score"><span>'+esc(q.label)+'</span>'+
    '<strong aria-label="'+score+' sur 5">'+('♥'.repeat(score))+
     ('♡'.repeat(5-score))+'</strong></div>';
