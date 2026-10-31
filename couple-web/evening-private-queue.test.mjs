@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
 import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,snapshotEveningCardBeforeRedraw,EVENING_REDRAW_IMMUTABLE_FIELDS,ownsEveningTimerRecord,ownedSavedEveningTimerSnapshot,isSameEveningResponseContext,isEveningRedrawBusyForCurrentView,ownsEveningRedrawRequest,redrawTimerRecovery,mayApplyScopedEveningRefresh,ownsCoupleAsyncRead,hasPendingEclatNote} from './evening-private-queue.mjs';
 import {premiumEveningHtml} from './premium-evening.mjs';
+import {validChallengeTimerMinutes} from './evening-challenges.mjs';
 import {previewEclatStatus} from './account-preview-mode.mjs';
 const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
  // Isolated handler tests evaluate the REAL production action guards.
@@ -14,7 +15,10 @@ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
    app.indexOf('function protectEveningTimerPresentation(presentation){')),
   app.slice(app.indexOf('function isActiveEveningRedrawPending(){'),
    app.indexOf('async function refreshShared(expectedContext=null){')),
-  isEveningRedrawBusyForCurrentView.toString()
+  isEveningRedrawBusyForCurrentView.toString(),
+  // Dynamic handler fixtures must include the production timer validator,
+  // just like the real app's module import.
+  validChallengeTimerMinutes.toString()
  ].join('\n');
 
 const migration=readFileSync(new URL('./migrations/20261015_evening_private_challenge_queue.sql',import.meta.url),'utf8');
