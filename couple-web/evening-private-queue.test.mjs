@@ -5,6 +5,17 @@ import {runInNewContext} from 'node:vm';
 import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,snapshotEveningCardBeforeRedraw,EVENING_REDRAW_IMMUTABLE_FIELDS,ownsEveningTimerRecord,ownedSavedEveningTimerSnapshot,isSameEveningResponseContext,isEveningRedrawBusyForCurrentView,ownsEveningRedrawRequest,redrawTimerRecovery,mayApplyScopedEveningRefresh,ownsCoupleAsyncRead,hasPendingEclatNote} from './evening-private-queue.mjs';
 import {premiumEveningHtml} from './premium-evening.mjs';
 const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ // Isolated handler tests evaluate the REAL production action guards.
+ const actionGuardPrelude=[
+  app.slice(app.indexOf('function ownsTimerCompletionSession(context){'),
+   app.indexOf('function ownsTimerCompletionRefresh(context){')),
+  app.slice(app.indexOf('function isEveningCardCompleting(cardId){'),
+   app.indexOf('function protectEveningTimerPresentation(presentation){')),
+  app.slice(app.indexOf('function isActiveEveningRedrawPending(){'),
+   app.indexOf('async function refreshShared(expectedContext=null){')),
+  isEveningRedrawBusyForCurrentView.toString()
+ ].join('\n');
+
 const migration=readFileSync(new URL('./migrations/20261015_evening_private_challenge_queue.sql',import.meta.url),'utf8');
 const a={id:'challenge-a',recipient:'fred',session_id:'s1',status:'proposed',created_at:'2026-10-15T19:00:00Z',face:33,category:'SENSUEL',card_title:'Massage 10 minutes',card_description:'Faire un massage',card_timer_minutes:10};
 const b={id:'challenge-b',recipient:'partner',session_id:'s1',status:'proposed',created_at:'2026-10-15T19:01:00Z',face:5,category:'SEXUEL',card_title:'Défi privé partenaire'};
@@ -612,11 +623,12 @@ test('LR-026: scoped refresh refuses stale account writes at every awaited stage
  const end=app.indexOf('const liveSync=createCoupleLiveSync(',start);
  assert.ok(start>=0&&end>start,'scoped refresher must remain available');
  const body=app.slice(start,end);
- assert.match(body,/const current=\(\)=>!expectedContext\|\|\(state\.coupleId===c&&/);
+ assert.match(body,/const current=\(\)=>state\.coupleId===c&&state\.user\?\.id===requestUserId&&/);
+ assert.match(body,/state\.unscopedSharedRefreshRequest===unscopedRequest/);
  assert.match(body,/isSameEveningResponseContext\(state,expectedContext\)/);
  assert.match(body,/if\(!current\(\)\)return;/);
  for(const pattern of [
-  /\]\);\s+if\(!current\(\)\)return;\s+state\.cycleStatus=/,
+  /\]\);\s+if\(!current\(\)\)return;[\s\S]*?if\(!mayApplyScopedEveningRefresh\([\s\S]*?\)\)return;\s+state\.cycleStatus=/,
   /const available=await rpc\('love_redraw_capabilities',[\s\S]*?if\(!current\(\)\)return;\s+state\.redrawReady=/,
   /const list=await rpc\('my_love_cycle_exclusions',[\s\S]*?if\(!current\(\)\)return;/,
   /const links=await rpc\('love_evening_replacement_links',[\s\S]*?if\(!current\(\)\)return;/,
@@ -837,7 +849,7 @@ test('LR-026: Commencer ignores a stale RPC or refresh after switching accounts'
   'isSameEveningResponseContext','rpc','refreshShared','activeTimer',
   'resolvedCard','saveChallengeTimer','updateChallengeClock','render',
   'notify','unlockLoveRollSounds',
-  'return async function(verb,parts){'+code+'}');
+  'return async function(verb,parts){'+actionGuardPrelude+code+'}');
  const gate=()=>{let resolve,reject;
   const promise=new Promise((ok,fail)=>{resolve=ok;reject=fail;});
   return {promise,resolve,reject};
@@ -894,7 +906,7 @@ test('LR-026: direct timer play needs authoritative accepted RLS row, not just a
  const make=Function('state','challengeTimer','ownsVisibleEveningTimer',
   'isSameEveningResponseContext','timedEveningItem','rpc','query',
   'updateChallengeClock','saveChallengeTimer','notify','unlockLoveRollSounds',
-  'return async function(verb){'+branch+'}');
+  'return async function(verb){'+actionGuardPrelude+branch+'}');
  const card={id:'card-1',status:'proposed',recipient:'fred',session_id:'night-1'};
  const state={user:{id:'fred'},session:{id:'night-1'},tab:'session'};
  const clock={id:'card-1',ownerUserId:'fred',ownerSessionId:'night-1',
@@ -933,7 +945,7 @@ test('LR-026: late timer-play RPC cannot start or notify another account',async(
  const make=Function('state','challengeTimer','ownsVisibleEveningTimer',
   'isSameEveningResponseContext','timedEveningItem','rpc','query',
   'updateChallengeClock','saveChallengeTimer','notify','unlockLoveRollSounds',
-  'return async function(verb){'+app.slice(begin,end)+'}');
+  'return async function(verb){'+actionGuardPrelude+app.slice(begin,end)+'}');
  const state={user:{id:'fred'},session:{id:'night-a'},tab:'session'};
  const clock={id:'same',ownerUserId:'fred',ownerSessionId:'night-a',
   mode:'vibrate',remainingMs:150000,running:false,deadline:0,
@@ -965,7 +977,7 @@ test('LR-026: pending timer-play RLS read cannot start a switched-account clock'
  const make=Function('state','challengeTimer','ownsVisibleEveningTimer',
   'isSameEveningResponseContext','timedEveningItem','rpc','query',
   'updateChallengeClock','saveChallengeTimer','notify','unlockLoveRollSounds',
-  'return async function(verb){'+app.slice(begin,end)+'}');
+  'return async function(verb){'+actionGuardPrelude+app.slice(begin,end)+'}');
  const state={user:{id:'fred'},session:{id:'night-a'},tab:'session'};
  const clock={id:'card',ownerUserId:'fred',ownerSessionId:'night-a',
   mode:'vibrate',running:false,remainingMs:60000,autoCompletePending:false};
@@ -995,13 +1007,13 @@ test('LR-026: Commencer and timer-play cannot concurrently accept the same chall
   'isSameEveningResponseContext','rpc','refreshShared','activeTimer',
   'resolvedCard','saveChallengeTimer','updateChallengeClock','render',
   'notify','unlockLoveRollSounds',
-  'return async function(verb,parts){'+app.slice(begin,end)+'}');
+  'return async function(verb,parts){'+actionGuardPrelude+app.slice(begin,end)+'}');
  const playBegin=app.indexOf("if(verb==='timer-toggle')");
  const playEnd=app.indexOf("if(verb==='give-challenge')",playBegin);
  const playFactory=Function('state','challengeTimer','ownsVisibleEveningTimer',
   'isSameEveningResponseContext','timedEveningItem','rpc','query',
   'updateChallengeClock','saveChallengeTimer','notify','unlockLoveRollSounds',
-  'return async function(verb){'+app.slice(playBegin,playEnd)+'}');
+  'return async function(verb){'+actionGuardPrelude+app.slice(playBegin,playEnd)+'}');
  const state={user:{id:'fred'},session:{id:'night'},tab:'session',
   challenges:[{id:'card',recipient:'fred',session_id:'night',status:'proposed'}]};
  const clock={id:'card',ownerUserId:'fred',ownerSessionId:'night',
@@ -1047,7 +1059,7 @@ test('LR-026: Commencer never starts a clock on an unconfirmed proposed row',asy
   'isSameEveningResponseContext','rpc','refreshShared','activeTimer',
   'resolvedCard','saveChallengeTimer','updateChallengeClock','render',
   'notify','unlockLoveRollSounds',
-  'return async function(verb,parts){'+code+'}');
+  'return async function(verb,parts){'+actionGuardPrelude+code+'}');
  const original={id:'still-proposed',recipient:'fred',
   session_id:'night',status:'proposed'};
  const state={user:{id:'fred'},session:{id:'night'},tab:'session',
@@ -1078,7 +1090,7 @@ test('LR-026: Commencer starts only after verified recipient refresh and prevent
   'isSameEveningResponseContext','rpc','refreshShared','activeTimer',
   'resolvedCard','saveChallengeTimer','updateChallengeClock','render',
   'notify','unlockLoveRollSounds',
-  'return async function(verb,parts){'+code+'}');
+  'return async function(verb,parts){'+actionGuardPrelude+code+'}');
  const card={id:'active-card',recipient:'fred',session_id:'my-night',status:'proposed'};
  const state={user:{id:'fred'},session:{id:'my-night'},tab:'session',
   challenges:[card],showEveningChallenges:false,selectedEveningChallengeId:null};
@@ -1162,9 +1174,9 @@ test('LR-026: stale redraw, auto-completion and timer controls respect timer own
  assert.match(action,/if\(state\.redrawBusyContext===responseContext\)\{/);
  const completion=app.slice(app.indexOf('async function retryExpiredTimedEvening(){'),
   app.indexOf('function endSignal',app.indexOf('async function retryExpiredTimedEvening(){')));
- assert.match(completion,/if\(ownsVisibleEveningTimer\(id,userId,sessionId\)\)/);
- assert.match(completion,/if\(ownsVisibleEveningTimer\(item\.id,userId,sessionId\)\)/);
- assert.match(completion,/if\(state\.user\?\.id===userId&&state\.session\?\.id===sessionId&&\s+!document\.hidden\)notify/);
+ assert.match(completion,/if\(ownsTimerCompletionSession\(context\)&&\s*ownsVisibleEveningTimer\(id,userId,sessionId\)\)/);
+ assert.match(completion,/if\(ownsTimerCompletionSession\(context\)&&\s*ownsVisibleEveningTimer\(item\.id,userId,sessionId\)\)/);
+ assert.match(completion,/if\(ownsTimerCompletionRefresh\(context\)&&\s*!document\.hidden\)notify/);
  const controls=app.slice(app.indexOf("if(verb==='timer-reset')"),
   app.indexOf("if(verb==='give-challenge')"));
  assert.match(controls,/if\(!ownsVisibleEveningTimer\(challengeTimer\.id,state\.user\?\.id,state\.session\?\.id\)\)/);
@@ -1196,7 +1208,7 @@ test('LR-026: legacy answer path ignores late responses and never stops a foreig
  const end=app.indexOf("if(verb==='finish-session')",begin);
  assert.ok(begin>0&&end>begin,'legacy response code exists');
  const handler=app.slice(begin,end);
- assert.match(handler,/const answerContext=\{userId:state\.user\.id,sessionId:eveningId,tab:state\.tab\}/);
+ assert.match(handler,/const answerContext=\{userId:state\.user\.id,coupleId:state\.coupleId,sessionId:eveningId,\s*tab:state\.tab,challengeId:parts\[0\]\}/);
  assert.match(handler,/if\(isSameEveningResponseContext\(state,state\.legacyAnswerContext\)\)return;/,
   'duplicate taps on the same account and evening must not send overlapping answers');
  assert.match(handler,/const ownsAnswer=\(\)=>isSameEveningResponseContext\(state,answerContext\)&&/);
@@ -1513,8 +1525,8 @@ test('LR-016 quota UX states used/limit, explains next month, never disables unl
  assert.match(source,/state\.monthlyPassQuota\?\.limit/);
  assert.match(source,/Tu pourras passer à nouveau le 1er du mois prochain, ou choisir Refuser/);
  assert.match(source,/Refuser reste permis, sans limite/);
- assert.match(source,/isActiveEveningRedrawPending\(\)\|\|state\.monthlyPassQuota\?\.can_pass===false\?'disabled'/);
- assert.match(source,/isActiveEveningRedrawPending\(\)\?'disabled'/);
+ assert.match(source,/isActiveEveningRedrawPending\(\)\|\|isEveningCardCompleting\(view\.id\)\|\|state\.monthlyPassQuota\?\.can_pass===false\?'disabled'/);
+ assert.match(source,/isActiveEveningRedrawPending\(\)\|\|isEveningCardCompleting\(view\.id\)\?'disabled'/);
 });
 
 test('LR-015 keeps old queue CSS disabled and loads targeted mobile decision styling',()=>{
@@ -1703,7 +1715,7 @@ function eclatReadFixture(state,{rpc=async()=>null,loadEclatHistory=async()=>[]}
  assert.ok(begin>=0&&end>begin,'production Éclat read implementation must be tested');
  return runInNewContext(app.slice(begin,end)+
   ';({refreshEclatHistory,refreshEclatStatus})',{
-   state,rpc,loadEclatHistory,ownsCoupleAsyncRead,
+   state,rpc,loadEclatHistory,ownsCoupleAsyncRead,client:{},
    isSharedCoupleReady:(couple,members)=>!!couple&&members?.length===2,console
   });
 }
@@ -1880,8 +1892,10 @@ test('LR-026: later Éclat audio tap wins while earlier permission is pending',a
 test('LR-026: signing out and masking privacy invalidate Éclat audio',()=>{
  const signout=app.indexOf("if(event==='SIGNED_OUT')");
  assert.ok(signout>=0);
- assert.match(app.slice(signout,signout+440),
-  /latestEclatAudioOwner=null;eclatAudio\.stop\(\);state\.eclatMusic=false/);
+ assert.match(app.slice(signout,signout+440),/adoptAuthenticatedIdentity\(null\)/);
+ const identityReset=app.slice(app.indexOf('function adoptAuthenticatedIdentity(nextUser){'),
+  app.indexOf('function adoptAuthenticatedIdentity(nextUser){')+4000);
+ assert.match(identityReset,/latestEclatAudioOwner=null;eclatAudio\.stop\(\);state\.eclatMusic=false/);
  const privacy=app.slice(app.indexOf("document.addEventListener('loveroll:privacy-mask'"),
   app.indexOf('function pendingReferralCode()'));
  assert.match(privacy,/latestEclatAudioOwner=null;[\s\S]*eclatAudio\.stop\(\)/);
