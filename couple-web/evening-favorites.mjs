@@ -13,36 +13,49 @@ export function eveningFavoriteId(card){
 const validScope=(userId,coupleId)=>typeof userId==='string'&&userId.length>0&&
  typeof coupleId==='string'&&coupleId.length>0;
 const key=(userId,coupleId)=>KEY_PREFIX+encodeURIComponent(userId)+':'+encodeURIComponent(coupleId);
+// Keep parsing independent of the storage I/O. Failed reads must not be
+// interpreted as an empty collection when someone tries to save a new item.
+function parseFavoriteEntries(raw){
+ const parsed=JSON.parse(raw||'[]');
+ if(!Array.isArray(parsed))return [];
+ const seen=new Set(),items=[];
+ for(const entry of parsed){
+  if(typeof entry!=='string')continue;
+  const [category,idText,...rest]=entry.split(':');
+  if(rest.length||!/^\\d{1,3}$/.test(idText))continue;
+  const identity=eveningFavoriteId({category,card_id:Number(idText)});
+  if(identity!==entry||seen.has(identity))continue;
+  seen.add(identity);items.push(identity);
+  if(items.length===EVENING_FAVORITES_LIMIT)break;
+ }
+ return items;
+}
 export function readEveningFavorites(userId,coupleId,storage){
  if(!validScope(userId,coupleId))return [];
  try{
-  const raw=storage?.getItem(key(userId,coupleId));
-  const parsed=JSON.parse(raw||'[]');
-  if(!Array.isArray(parsed))return [];
-  const seen=new Set(),items=[];
-  for(const entry of parsed){
-   if(typeof entry!=='string')continue;
-   const [category,idText,...rest]=entry.split(':');
-   if(rest.length||!/^\d{1,3}$/.test(idText))continue;
-   const identity=eveningFavoriteId({category,card_id:Number(idText)});
-   if(identity!==entry||seen.has(identity))continue;
-   seen.add(identity);items.push(identity);
-   if(items.length===EVENING_FAVORITES_LIMIT)break;
-  }
-  return items;
+  // localStorage property access itself can throw on Safari/iOS.
+  const available=storage===undefined?globalThis.localStorage:storage;
+  return parseFavoriteEntries(available?.getItem(key(userId,coupleId)));
  }catch{return [];}
 }
 export function toggleEveningFavorite(userId,coupleId,card,storage){
  const id=eveningFavoriteId(card);
  if(!validScope(userId,coupleId)||!id)return {ok:false,reason:'invalid',favorites:[]};
- const current=readEveningFavorites(userId,coupleId,storage);
+ let current,available;
+ try{
+  available=storage===undefined?globalThis.localStorage:storage;
+  if(!available?.getItem||!available?.setItem)
+   return {ok:false,reason:'storage',favorites:[]};
+  // Do not overwrite five existing favorites just because a privacy policy,
+  // quota restriction or transient failure prevented reading their key.
+  current=parseFavoriteEntries(available.getItem(key(userId,coupleId)));
+ }catch{return {ok:false,reason:'storage',favorites:[]};}
  const removing=current.includes(id);
  if(!removing&&current.length>=EVENING_FAVORITES_LIMIT)
   return {ok:false,reason:'limit',favorites:current};
  const next=removing?current.filter(value=>value!==id):[...current,id];
  try{
-  if(!storage?.setItem)return {ok:false,reason:'storage',favorites:current};
-  storage.setItem(key(userId,coupleId),JSON.stringify(next));
+  available.setItem(key(userId,coupleId),JSON.stringify(next));
   return {ok:true,reason:removing?'removed':'added',favorites:next};
  }catch{return {ok:false,reason:'storage',favorites:current};}
 }
