@@ -3057,3 +3057,132 @@ test('LR-026: unverified current account retains verification guidance',async()=
  assert.match(f.status.textContent,/pas encore confirmée/);
  assert.equal(f.calls.reloads,0);
 });
+
+function authFeedbackFixture(state,{resend=async()=>({error:null}),
+ reset=async()=>({error:null}),email='alice@example.com'}={}){
+ const helperStart=app.indexOf('function captureAuthFeedbackContext(){');
+ const helperEnd=app.indexOf('function authMessage(',helperStart);
+ const resendStart=app.indexOf("if(verb==='email-confirm-resend'||verb==='auth-resend-confirmation'){");
+ const resendEnd=app.indexOf("if(verb==='email-confirm-edit'){",resendStart);
+ const resetStart=app.indexOf("if(verb==='auth-send-reset'){");
+ const resetEnd=app.indexOf("if(verb==='auth-update-password'){",resetStart);
+ assert.ok(helperStart>0&&helperEnd>helperStart&&resendStart>0&&
+  resendEnd>resendStart&&resetStart>0&&resetEnd>resetStart);
+ const calls={resends:[],resets:[],messages:[],storage:new Map(),
+  status:{textContent:''}};
+ const storage={
+  getItem:key=>calls.storage.get(key)||null,
+  setItem:(key,value)=>calls.storage.set(key,String(value))
+ };
+ const scope=runInNewContext(
+  'let authFeedbackGeneration=0;'+app.slice(helperStart,helperEnd)+
+  'const resendAction=async (verb,element)=>{'+app.slice(resendStart,resendEnd)+'};'+
+  'const resetAction=async (verb,element)=>{'+app.slice(resetStart,resetEnd)+'};'+
+  '({resendAction,resetAction,bump:()=>authFeedbackGeneration++})',{
+   state,sessionStorage:storage,
+   client:{auth:{
+    resend:async value=>{calls.resends.push(value);return resend(value);},
+    resetPasswordForEmail:async (...args)=>{calls.resets.push(args);return reset(...args);}
+   }},
+   id:key=>key==='signin-email'?{value:email}:
+    key==='auth-resend-status'||key==='email-confirm-status'?calls.status:null,
+   loginEmail:value=>String(value||'').trim().toLowerCase(),
+   pendingInviteUrl:()=> 'https://love.example/auth',
+   passwordAuthMessage:error=>error?.message||'Error',
+   authMessage:message=>calls.messages.push(message)
+  });
+ return {...scope,calls};
+}
+
+test('LR-026: current email resend records throttling and confirmation feedback',async()=>{
+ const state={user:{id:'alice'},authMode:'signup',showAuth:true,
+  authDraftEmail:'alice@example.com',emailVerificationPending:false};
+ const f=authFeedbackFixture(state),button={disabled:false};
+ await f.resendAction('auth-resend-confirmation',button);
+ assert.equal(f.calls.resends.length,1);
+ assert.equal(f.calls.resends[0].email,'alice@example.com');
+ assert.equal(f.calls.status.textContent.includes('Demande reçue'),true);
+ assert.equal(f.calls.storage.has('loverollConfirmResendAfter'),true);
+ assert.equal(button.disabled,false);
+});
+
+test('LR-026: stale email resend cannot change replacement login',async()=>{
+ let resolve;
+ const pending=new Promise(done=>{resolve=done;});
+ const state={user:{id:'alice'},authMode:'signup',showAuth:true,
+  authDraftEmail:'alice@example.com',emailVerificationPending:false};
+ const f=authFeedbackFixture(state,{resend:()=>pending});
+ const button={disabled:false},saving=f.resendAction('email-confirm-resend',button);
+ state.user={id:'bob'};state.authDraftEmail='bob@example.com';f.bump();
+ resolve({error:null});
+ await saving;
+ assert.equal(state.authDraftEmail,'bob@example.com');
+ assert.equal(f.calls.status.textContent,'');
+ assert.equal(f.calls.storage.has('loverollConfirmResendAfter'),false);
+ assert.equal(button.disabled,false);
+});
+
+test('LR-026: stale email resend error cannot show on new account',async()=>{
+ let reject;
+ const pending=new Promise((_,bad)=>{reject=bad;});
+ const state={user:{id:'alice'},authMode:'signup',showAuth:true,
+  emailVerificationPending:false};
+ const f=authFeedbackFixture(state,{resend:()=>pending});
+ const saving=f.resendAction('email-confirm-resend',{disabled:false});
+ state.user={id:'bob'};f.bump();
+ reject(Error('Expired Alice resend'));
+ await saving;
+ assert.equal(f.calls.messages.length,0);
+});
+
+test('LR-026: current reset link request preserves expected confirmation and throttle',async()=>{
+ const state={user:null,authMode:'request-reset',showAuth:true,
+  authDraftEmail:'alice@example.com'};
+ const f=authFeedbackFixture(state),button={disabled:false};
+ await f.resetAction('auth-send-reset',button);
+ assert.equal(f.calls.resets.length,1);
+ assert.equal(f.calls.resets[0][0],'alice@example.com');
+ assert.equal(f.calls.storage.has('loverollResetAfter'),true);
+ assert.equal(f.calls.messages[0].includes('Demande de récupération acceptée'),true);
+ assert.equal(button.disabled,false);
+});
+
+test('LR-026: switching anonymous Auth forms ignores a delayed reset link',async()=>{
+ let resolve;
+ const pending=new Promise(done=>{resolve=done;});
+ const state={user:null,authMode:'request-reset',showAuth:true,
+  authDraftEmail:'alice@example.com'};
+ const f=authFeedbackFixture(state,{reset:()=>pending});
+ const saving=f.resetAction('auth-send-reset',{disabled:false});
+ state.authMode='signup';f.bump();
+ resolve({error:null});
+ await saving;
+ assert.equal(f.calls.storage.has('loverollResetAfter'),false);
+ assert.equal(f.calls.messages.length,0);
+});
+
+test('LR-026: stale reset email failure cannot overwrite the new login',async()=>{
+ let reject;
+ const pending=new Promise((_,bad)=>{reject=bad;});
+ const state={user:null,authMode:'request-reset',showAuth:true};
+ const f=authFeedbackFixture(state,{reset:()=>pending});
+ const saving=f.resetAction('auth-send-reset',{disabled:false});
+ state.user={id:'bob'};state.authMode='signin';f.bump();
+ reject(Error('Expired request for Alice'));
+ await saving;
+ assert.equal(f.calls.messages.length,0);
+});
+
+test('LR-026: Auth navigations invalidate previous email/reset feedback generation',()=>{
+ const slice=app.slice(app.indexOf("if(verb==='show-auth'){"),
+  app.indexOf("if(verb==='auth-eye'){"));
+ assert.match(slice,/if\(verb==='show-auth'\)\{\s*authFeedbackGeneration\+\+/);
+ assert.match(slice,/if\(verb==='auth-mode'\)\{\s*authFeedbackGeneration\+\+/);
+ assert.match(slice,/if\(verb==='show-landing'\)\{authFeedbackGeneration\+\+/);
+ const reset=app.slice(app.indexOf("if(verb==='auth-reset-request'){"),
+  app.indexOf("if(verb==='auth-send-reset'){"));
+ assert.match(reset,/authFeedbackGeneration\+\+/);
+ const adopt=app.slice(app.indexOf('function adoptAuthenticatedIdentity('),
+  app.indexOf('async function refreshVerifiedIdentity()'));
+ assert.match(adopt,/authFeedbackGeneration\+\+/);
+});
