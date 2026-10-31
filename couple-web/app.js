@@ -731,6 +731,38 @@ function adoptAuthenticatedIdentity(nextUser){
   state.personalSexualCardsReady=false;state.customCards=[];
   state.challenges=[];state.challengesHistory=[];
   state.session=null;state.sessions=[];state.pushPrefs=null;state.referral=null;
+  // A new identity must never inherit a former couple's downloaded/private
+  // calendar, draft invitation, ritual, GPS or game board. No browser storage
+  // is deleted: saved clocks remain scoped to their original user ID.
+  state.monthly={};state.monthlyActivities=[];state.rollStatus=null;
+  state.events=[];state.journal=[];state.occasionSettings=null;state.occasionRolls=[];
+  state.advent=[];state.advent2026Config=null;state.advent2026Days=[];
+  state.adventYear=null;state.adventSelected=null;state.adventServerDate=null;
+  state.adventOpening=null;state.adventRevealing=false;
+  state.specialEventsConfig=null;state.specialEventKeys=[];state.unlockKey=null;
+  state.weeklyRollHistory=[];state.calendarPassQuota=[];state.monthlyPassQuota=null;
+  state.calendarPassMonth=null;state.cycleStatus=null;state.cycleDeferred=null;
+  state.eveningHistoryStats=[];state.eveningCalendarChallenges=[];
+  state.eveningReviews=[];state.reviewModalSessionId=null;
+  state.reviewDismissedSessionId=null;state.reviewDraft={};state.reviewSaving=false;
+  state.eveningQueueSeen=null;state.loveExcludedCards=[];
+  state.eveningStartContext=null;state.timerStartContext=null;
+  state.legacyAnswerContext=null;state.timerCompletionContext=null;
+  state.timerCompletionRetryOwner=null;
+  state.redrawBusy=false;state.redrawBusyContext=null;state.redrawReady=false;
+  state.eveningInviteBusy=false;state.inviteDraft=null;state.inviteCopyFallback=false;
+  state.jsonPending=null;state.geoVenue=null;state.geoReservation=null;
+  state.geoLookup='idle';state.geoBookingEdit=false;
+  state.pushDevice=null;state.guidance='playful';
+  state.installModalOpen=false;state.installAfterSignup=false;
+  state.showInstallSteps=false;state.forceInstallGuide=false;
+  notificationFeedback=null;worldGpsDraft=null;worldFx=null;worldFxFailed=null;
+  timerCompletionInFlight=null;timerCompletionRetryAt=0;
+  savedTimerScanOwner=null;savedTimerScanAfter=0;savedTimerSyncInFlight=null;
+  Object.assign(challengeTimer,{id:null,ownerUserId:null,ownerSessionId:null,
+   durationMs:0,remainingMs:0,deadline:0,running:false,notified:false,
+   autoCompletePending:false,decisionPending:false});
+  // Preserve only the local timer sound/vibration preference, not its owner.
   state.tab='home';
  }
  state.user=nextUser;
