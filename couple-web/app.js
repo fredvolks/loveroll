@@ -4272,7 +4272,15 @@ async function handle(action,element){
   const hadInvite=!!pendingInviteReference(sessionStorage);
   const priorConsent=!!state.inviteAccepted;
   const signoutUserId=state.user?.id,signoutGeneration=authFeedbackGeneration;
-  if(state.channel){await client.removeChannel(state.channel);state.channel=null;}
+  const signoutCurrent=()=>state.user?.id===signoutUserId&&
+   authFeedbackGeneration===signoutGeneration;
+  if(state.channel){
+   const channel=state.channel;
+   await client.removeChannel(channel);
+   if(!signoutCurrent())return;
+   if(state.channel===channel)state.channel=null;
+  }
+  if(!signoutCurrent())return;
   state.unlockKey=null;state.personalPass=null;state.personalJournal=[];
   // No profile, couple, challenge, invitation or user row is deleted.
   // Do not erase a new login while the former local sign-out is awaiting.
@@ -4320,12 +4328,22 @@ async function handle(action,element){
  }
  if(verb==='switch-account-invite'){
   const signoutUserId=state.user?.id,signoutGeneration=authFeedbackGeneration;
+  const signoutCurrent=()=>state.user?.id===signoutUserId&&
+   authFeedbackGeneration===signoutGeneration;
   if(state.user&&safeNativePushToken()){
-   try{await disablePush(client,state.user.id);}catch(error){console.warn('Déconnexion FCM',error.code||'');}
+   try{await disablePush(client,signoutUserId);}
+   catch(error){if(signoutCurrent())console.warn('Déconnexion FCM',error?.code||'');}
+   if(!signoutCurrent())return;
   }
   if(!pendingInviteReference(sessionStorage))throw Error('Invitation introuvable.');
   state.unlockKey=null;state.personalPass=null;state.personalJournal=[];
-  if(state.channel){await client.removeChannel(state.channel);state.channel=null;}
+  if(state.channel){
+   const channel=state.channel;
+   await client.removeChannel(channel);
+   if(!signoutCurrent())return;
+   if(state.channel===channel)state.channel=null;
+  }
+  if(!signoutCurrent())return;
   const {error}=await client.auth.signOut();
   if(error)throw error;
   if(state.user?.id&&
