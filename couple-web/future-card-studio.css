@@ -30,3 +30,19 @@
 .future-card-actions button{flex:1 1 170px}
 .future-card-editor :is(input,textarea,select,button):focus-visible{outline:3px solid var(--rose);outline-offset:2px}
 @media(max-width:720px){.future-card-toolbar{grid-template-columns:minmax(0,1fr)}.future-card-toolbar button{width:100%}.future-card-actions button{flex-basis:100%}}
+
+/* Future night simulation, read-only, with the same Studio controls. */
+.future-night-simulator{display:grid;gap:12px;min-width:0;padding:20px 0 0;border-top:1px solid var(--line)}
+.future-night-simulator h4{font:italic clamp(22px,2.6vw,27px)/1.2 Georgia,serif;margin:0}
+.future-night-simulator>.small-note{margin:0}
+.future-night-preview-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.future-night-preview-controls select{width:100%;min-width:0;min-height:44px;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px}
+.future-night-simulator>button{min-height:44px;justify-self:start}
+.future-night-preview-result:empty{display:none}
+.future-night-preview-result{border:1px solid var(--line);border-radius:13px;padding:13px;overflow-wrap:anywhere}
+.future-night-preview-result ol{display:grid;gap:8px;max-height:330px;overflow-y:auto;padding-inline-start:22px}
+.future-night-preview-result li{padding:6px 0}
+.future-night-preview-result li strong,.future-night-preview-result li small{display:block}
+.future-night-preview-result li small{color:var(--muted);padding-top:2px}
+.future-night-preview-controls select:focus-visible,.future-night-simulator>button:focus-visible{outline:3px solid var(--rose);outline-offset:2px}
+@media(max-width:720px){.future-night-preview-controls{grid-template-columns:minmax(0,1fr)}.future-night-simulator>button{width:100%}}

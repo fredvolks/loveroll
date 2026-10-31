@@ -231,6 +231,24 @@
  </div>
  <p class="small-note" id="future-card-editor-feedback" role="status" aria-live="polite">Aucune carte publiée ni sauvegardée sur le serveur.</p>
 </div>
+
+<div class="future-night-simulator" aria-labelledby="future-night-preview-title">
+ <h4 id="future-night-preview-title">Essayer une soirée fictive</h4>
+ <p class="small-note">Prévisualise le tirage des cartes de ton brouillon avec deux partenaires fictifs. Aucun défi réel, historique ou paiement n’est créé.</p>
+ <div class="future-night-preview-controls">
+  <label for="future-night-style-a">Intensité partenaire A
+   <select id="future-night-style-a"><option value="soft">Soft</option><option value="medium" selected>Medium</option><option value="intense">Intense</option></select>
+  </label>
+  <label for="future-night-style-b">Intensité partenaire B
+   <select id="future-night-style-b"><option value="soft">Soft</option><option value="medium" selected>Medium</option><option value="intense">Intense</option></select>
+  </label>
+  <label for="future-night-duration">Durée de la soirée
+   <select id="future-night-duration"><option value="5">5 minutes</option><option value="10">10 minutes</option><option value="15" selected>15 minutes</option><option value="30">30 minutes</option><option value="libre">Libre (20 cartes maximum)</option></select>
+  </label>
+ </div>
+ <button type="button" class="secondary" id="future-night-preview-run">Prévisualiser la soirée</button>
+ <div class="future-night-preview-result" aria-live="polite" id="future-night-preview-result"></div>
+</div>
   <p class="small-note">Préparation seulement : aucune carte n’est publiée, aucun D100 actif n’est modifié et aucun paiement n’est lancé. Le renouvellement prévu (100 cartes par niveau, 4 $ CA, une fois tous les deux mois) exigera un traitement serveur sécurisé.</p>
 </section>
 </section>
