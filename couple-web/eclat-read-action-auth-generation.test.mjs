@@ -197,3 +197,31 @@ test('LR-026: failed foreground status request preserves the displayed coffret',
  assert.equal(h.state.eclat.id,'initial');
  assert.equal(h.getForeground(),null);
 });
+
+test('LR-026: null Éclat status drops cached history without querying private records',async()=>{
+ let historyReads=0;
+ const h=harness({
+  rpc:async()=>null,
+  loadEclatHistory:async()=>{historyReads++;return [{id:'should-not-load'}];}
+ });
+ h.state.eclat={active:true,id:'previous-coffret'};
+ h.state.eclatHistoryError=true;
+ assert.equal(await h.refreshEclatStatus(),null);
+ assert.equal(h.state.eclat,null);
+ assert.deepEqual(h.state.eclatHistory,[]);
+ assert.equal(h.state.eclatHistoryError,false);
+ assert.equal(historyReads,0,'unavailable status must not trigger another private history fetch');
+});
+
+test('LR-026: null Éclat response cannot delete history after identity changes',async()=>{
+ const delayed=deferred();
+ const h=harness({rpc:()=>delayed.promise});
+ const previous=h.refreshEclatStatus();
+ h.state.user={id:'bob'};
+ h.state.eclat={id:'bob-coffret'};
+ h.state.eclatHistory=[{id:'bob-history'}];
+ delayed.resolve(null);
+ assert.equal(await previous,null);
+ assert.equal(h.state.eclat.id,'bob-coffret');
+ assert.deepEqual(h.state.eclatHistory,[{id:'bob-history'}]);
+});
