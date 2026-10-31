@@ -1407,10 +1407,14 @@ test('LR-026: start, timer and redraw taps are serialized per recipient card',()
  // the same server challenge with the opposite action.
  assert.match(passCode,/state\.eveningStartContext\?\.challengeId===challengeId&&\s+isSameEveningResponseContext\(state,state\.eveningStartContext\)/);
  assert.match(passCode,/state\.timerStartContext\?\.challengeId===challengeId&&\s+isSameEveningResponseContext\(state,state\.timerStartContext\)/);
- assert.match(startCode,/isActiveEveningRedrawPending\(\)&&\s+state\.redrawBusyContext\?\.challengeId===parts\[0\]/);
+ // Starting another private card would race the recipient-only RLS queue.
+ // Block all start events during a server-confirmed redraw, not only its card.
+ assert.match(startCode,/if\(isActiveEveningRedrawPending\(\)\)return;/);
+ // A pending gift transfer also changes the authoritative turn/deck counts.
+ assert.match(startCode,/if\(state\.diceStatus\|\|isActiveEveningGiftPending\(\)\)return;/);
  assert.match(toggleCode,/isActiveEveningRedrawPending\(\)&&\s+state\.redrawBusyContext\?\.challengeId===timerChallengeId/);
- // This must be per-card, per-session and per-account: unrelated cards
- // remain eligible and the later view must not inherit an old lock.
+ // Acceptance locks must remain scoped by card, session and account;
+ // the separate server-repick queue lock intentionally blocks other starts.
  const request={userId:'A',sessionId:'s1',tab:'session',challengeId:'c1'};
  const view={user:{id:'A'},session:{id:'s1'},tab:'session'};
  assert.equal(request.challengeId==='c1'&&isSameEveningResponseContext(view,request),true);
