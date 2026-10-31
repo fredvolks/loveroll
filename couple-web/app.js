@@ -806,7 +806,11 @@ async function saveProfileForCurrentAccount(name,birthday,gender,playStyle){
  if(currentProfileSave?.ownerId===ownerId)
   throw Error('Enregistrement du profil déjà en cours…');
  const owner={ownerId};currentProfileSave=owner;
- const current=()=>state.user?.id===ownerId&&currentProfileSave===owner;
+ // A sign-out and fresh sign-in can return to the same user ID while an
+ // older RPC is in flight. Never reuse that request across auth generations.
+ const ownerGeneration=authFeedbackGeneration;
+ const current=()=>state.user?.id===ownerId&&
+  authFeedbackGeneration===ownerGeneration&&currentProfileSave===owner;
  const steps=[
   ['complete_love_registration',{p_name:name,p_birthday_md:birthday}],
   ['save_my_gender',{p_gender:gender}],
