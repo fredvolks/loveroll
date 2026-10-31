@@ -49,12 +49,16 @@ export function eveningReviewModal({sessionId,draft={},saving=false,partnerName=
 // The review belongs inside its owner's expandable challenge list, never
 // in a separate shared block below both partners.
 export function eveningPersonReviewMarkup({reviews=[],sessionId,person={},me}={}){
- const isMine=person.user_id===me;
- const review=reviews.find(r=>r.session_id===sessionId&&r.author_id===person.user_id);
- const heading='♡ Bilan de '+esc(person.name||'cette personne');
+ // A partially loaded calendar may contain null legacy rows. Never lose the
+ // entire couple history just because one optional review is malformed.
+ const member=person&&typeof person==='object'?person:{};
+ const isMine=!!member.user_id&&member.user_id===me;
+ const review=(Array.isArray(reviews)?reviews:[]).find(r=>
+  r&&typeof r==='object'&&r.session_id===sessionId&&r.author_id===member.user_id);
+ const heading='♡ Bilan de '+esc(member.name||'cette personne');
  const edit=isMine?'<button type="button" class="evening-review-edit" data-action="review-open:'+
    esc(sessionId)+'">'+(review?'Modifier mon bilan':'♡ Remplir mon bilan')+'</button>':'';
- if(!review)return '<section class="evening-review-person" data-review-person="'+esc(person.user_id)+'">'+
+ if(!review)return '<section class="evening-review-person" data-review-person="'+esc(member.user_id)+'">'+
   '<h4>'+heading+'</h4><p>♡ '+(isMine?'Ton bilan n’est pas encore rempli.':'En attente de son bilan')+
   '</p>'+edit+'</section>';
  const scores=REVIEW_QUESTIONS.map(q=>{
@@ -63,7 +67,7 @@ export function eveningPersonReviewMarkup({reviews=[],sessionId,person={},me}={}
    '<strong aria-label="'+score+' sur 5">'+('♥'.repeat(score))+
     ('♡'.repeat(5-score))+'</strong></div>';
  }).join('');
- return '<section class="evening-review-person" data-review-person="'+esc(person.user_id)+'">'+
+ return '<section class="evening-review-person" data-review-person="'+esc(member.user_id)+'">'+
   '<h4>'+heading+'</h4>'+scores+
   (review.comment?'<p class="evening-review-note">'+esc(review.comment)+'</p>':'')+
   edit+'</section>';
