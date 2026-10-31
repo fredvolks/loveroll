@@ -22,18 +22,22 @@ export function buildFutureNightPlan({
  members=[],cards=[],styleA='medium',styleB='medium',minutes=15,
  excludedIds=[],cardTickets,maxCards=VALID_CAP
 }={}){
- if(!FUTURE_NIGHT_LENGTHS.includes(minutes))
+ // The current next-night dropdown persists string values ("5", "15", ...).
+ // Normalize those exact choices; do not accept arbitrary coercible input.
+ const selectedMinutes=typeof minutes==='string'&&/^(5|10|15|30)$/.test(minutes)?
+  Number(minutes):minutes;
+ if(!FUTURE_NIGHT_LENGTHS.includes(selectedMinutes))
   throw Error('Durée de soirée invalide.');
  if(!Number.isInteger(maxCards)||maxCards<1||maxCards>100)
   throw Error('Nombre de cartes invalide.');
  if(!Array.isArray(cards)||!Array.isArray(excludedIds)||
     (cardTickets!==undefined&&!Array.isArray(cardTickets)))
   throw Error('Liste de cartes ou de tirages invalide.');
- const free=minutes==='free',selected=[],used=new Set(excludedIds),
+ const free=selectedMinutes==='free',selected=[],used=new Set(excludedIds),
   seenIds=new Set();
  let spent=0,reason='limit';
  for(let index=0;index<maxCards;index++){
-  const remaining=free?Infinity:minutes-spent;
+  const remaining=free?Infinity:selectedMinutes-spent;
   if(remaining<2){reason='duration';break;}
   // Validation, level and recipient rules are delegated to the same future
   // selector used by the single-card preview. Invalid cards are ignored.
@@ -53,11 +57,11 @@ export function buildFutureNightPlan({
    recipientIds:Object.freeze([...assigned.recipientIds]),
    fromMinute,toMinute:spent
   }));
-  if(!free&&spent===minutes){reason='duration';break;}
+  if(!free&&spent===selectedMinutes){reason='duration';break;}
  }
  return Object.freeze({
-  requestedMinutes:minutes,spentMinutes:spent,
-  remainingMinutes:free?null:minutes-spent,
+  requestedMinutes:selectedMinutes,spentMinutes:spent,
+  remainingMinutes:free?null:selectedMinutes-spent,
   reason,items:Object.freeze(selected)
  });
 }
