@@ -1928,18 +1928,25 @@ async function runEclatMutation(owner,name,args={}){
   coffretId:previous?.coffret_id??null,
   chapterIndex:previous?.chapter_index??null,
   active:previous?.active??null};
+ // A new server snapshot supersedes BOTH successful receipts and failures
+ // from an older scene. A 403 for a chapter already left must not purge
+ // the next chapter's authorized gallery, drafts or soundtrack.
+ const sceneStillCurrent=()=>{
+  const current=state.eclat;
+  return current?.access===true&&
+   (current.session_id??null)===scene.sessionId&&
+   (current.coffret_id??null)===scene.coffretId&&
+   (current.chapter_index??null)===scene.chapterIndex&&
+   (current.active??null)===scene.active;
+ };
  try{
   const value=await rpc(name,args);
-  if(!ownsEclatAction(owner)||state.eclat?.access!==true)return {applied:false};
-  const current=state.eclat;
-  if((current.session_id??null)!==scene.sessionId||
-     (current.coffret_id??null)!==scene.coffretId||
-     (current.chapter_index??null)!==scene.chapterIndex||
-     (current.active??null)!==scene.active)return {applied:false};
-  return {applied:true,value};
+  return ownsEclatAction(owner)&&sceneStillCurrent()
+   ?{applied:true,value}:{applied:false};
  }catch(error){
-  // A late denial from a former login may not touch the new account.
-  if(!ownsEclatAction(owner))return {applied:false};
+  // Do not let an obsolete denied read or network error affect a newer
+  // login, coffret, chapter or already-revoked entitlement.
+  if(!ownsEclatAction(owner)||!sceneStillCurrent())return {applied:false};
   if(invalidateEclatOnAuthRejection(error)){
    // Invalidate an older background status that still claimed access.
    latestEclatStatusRead=null;
