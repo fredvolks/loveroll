@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {runInNewContext} from 'node:vm';
 import {categoryConfirmOdds,categoryConfirmEnabled,saveCategoryConfirmLocal,eveningCategoryConfirmMarkup,ownsEveningCategoryDraw} from './evening-category-confirm.mjs';
 
 const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
@@ -75,4 +76,41 @@ test('LR-014: a stale confirmation cannot execute RPC or write another account p
   'identity must be checked again before a personal preference or UI is updated');
  assert.match(trigger,/const drawOwner=\{userId:state\.user\?\.id,coupleId:state\.coupleId,/);
  assert.match(trigger,/generation:authFeedbackGeneration/);
+});
+
+test('LR-014: delayed preference save cannot rewrite a replacement account',async()=>{
+ const impl=source.slice(source.indexOf('async function persistEveningCategoryConfirmPref('),
+  source.indexOf('let eveningCategoryConfirmInFlight=false;'));
+ assert.ok(impl.includes('async function persistEveningCategoryConfirmPref'));
+ const alice={user:{id:'alice'},coupleId:'duo-a',
+  profile:{confirm_evening_category:true}};
+ let resolveWrite;
+ const scope={state:alice,authFeedbackGeneration:5,
+  client:{from:()=>({update:()=>({eq:()=>new Promise(resolve=>{resolveWrite=resolve;})})})},
+  saveCategoryConfirmLocal:()=>true,localStorage:{}};
+ const persist=runInNewContext(impl+';persistEveningCategoryConfirmPref',scope);
+ const pending=persist(false);
+ alice.user={id:'bob'};
+ alice.coupleId='duo-b';
+ alice.profile={confirm_evening_category:true};
+ scope.authFeedbackGeneration=6;
+ resolveWrite({error:null});
+ await pending;
+ assert.equal(alice.profile.confirm_evening_category,true,
+  'late confirmation may not overwrite Bob’s profile');
+ // A new Auth generation is also distinct even with the same UUID.
+ const same={user:{id:'alice'},coupleId:'duo-a',
+  profile:{confirm_evening_category:true}};
+ scope.state=same;scope.authFeedbackGeneration=7;
+ const second=persist(false);
+ scope.authFeedbackGeneration=8;
+ resolveWrite({error:null});
+ await second;
+ assert.equal(same.profile.confirm_evening_category,true,
+  'late confirmation may not overwrite a freshly signed-in session');
+ const third=persist(false);
+ resolveWrite({error:null});
+ await third;
+ assert.equal(same.profile.confirm_evening_category,false,
+  'the still-current account can persist its own preference');
 });
