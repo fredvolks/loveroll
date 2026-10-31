@@ -68,8 +68,8 @@ BEGIN
   END LOOP;
   IF NOT members_level THEN RETURN false;END IF;
  END LOOP;
- RETURN pg_catalog.greatest(count_woman,count_man,count_both)-
-  pg_catalog.least(count_woman,count_man,count_both)<=1;
+ RETURN GREATEST(count_woman,count_man,count_both)-
+  LEAST(count_woman,count_man,count_both)<=1;
 END;
 $validate$;
 REVOKE ALL ON FUNCTION couple_private.love_future_archive_cards_valid(jsonb,text)
