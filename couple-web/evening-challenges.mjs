@@ -270,6 +270,11 @@ export function availableEveningCategories(preferred){
  if(!EVENING_CATEGORIES.includes(preferred))throw new Error('Catégorie non reconnue');
  return EVENING_CATEGORIES.map(category=>({category,weight:category===preferred?88:12}));
 }
+// Timers are optional. Keep malformed imported/server data from starting
+// an unbounded deadline, while preserving existing short and long rituals.
+export function validChallengeTimerMinutes(minutes){
+ return Number.isInteger(minutes)&&minutes>0&&minutes<=1440;
+}
 export function formatCountdown(milliseconds){
  // An incomplete saved timer or a malformed server value must never display
  // "NaN:NaN" or "Infinity:NaN" on the challenge card.
