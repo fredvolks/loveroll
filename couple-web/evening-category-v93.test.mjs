@@ -93,3 +93,19 @@ test('Switching categories must leave mounted WebGL canvases in place',()=>{
  assert.doesNotMatch(updater,/innerHTML|outerHTML|replaceChildren|diceCleanup|clearDice|dieOn|render\(/);
  assert.match(updater,/roll\.disabled=false/);
 });
+
+test('A blocked D100 category must not be persisted in app state or session storage',()=>{
+ const app=read('app.js');
+ const start=app.indexOf("if(verb==='category')");
+ const end=app.indexOf("if(verb==='timer-mode')",start);
+ assert.ok(start>=0&&end>start);
+ const handler=app.slice(start,end);
+ const guard=handler.indexOf('if(!updateEveningCategoryUi(root,parts[0],');
+ const stateWrite=handler.indexOf('state.category=parts[0]');
+ const store=handler.indexOf("sessionStorage.setItem('loveroll-category-'");
+ assert.ok(guard>=0&&stateWrite>guard&&store>guard,
+  'a disabled/stale selection must not enter app state or the next D100');
+ assert.match(handler,/if\(!updateEveningCategoryUi\(root,parts\[0\],[\s\S]*?\)\)return;/);
+ assert.doesNotMatch(handler,/\)\)render\(\)/,
+  'never force a full WebGL remount for a refused category event');
+});
