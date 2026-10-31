@@ -2922,11 +2922,12 @@ async function handle(action,element){
   }
   if(kind==='back'){await handle('tab:session',element);return;}
   if(kind==='music'){
-   if(document.documentElement.classList.contains('lr-privacy-active')||
-      !state.eclat?.active||state.eclatMusic){
+   const privacyMasked=document.documentElement.classList.contains('lr-privacy-active');
+   if(privacyMasked||!state.eclat?.active||state.eclatMusic){
     latestEclatAudioOwner=null;
     eclatAudio.stop();state.eclatMusic=false;
-    if(state.tab==='eclat')render();
+    // Never repaint private challenge content while its mask is active.
+    if(!privacyMasked&&state.tab==='eclat')render();
     return;
    }
    // AudioContext.resume() may wait for an iOS/Android gesture; ownership
