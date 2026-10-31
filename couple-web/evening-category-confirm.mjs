@@ -51,6 +51,14 @@ export function eveningCategoryConfirmMarkup(category,percentage=88){
 export function askEveningCategoryConfirmation({category,percentage=88,doc=document}){
  return new Promise((resolve,reject)=>{
   if(!allowed.has(category)){reject(Error('Catégorie invalide'));return;}
+  const opener=doc.activeElement;
+  const restoreFocus=()=>{
+   // A login or navigation may have already removed the old trigger.
+   // Never focus a detached control or scroll the game when closing.
+   if(!opener?.isConnected||typeof opener.focus!=='function')return;
+   try{opener.focus({preventScroll:true});}
+   catch{opener.focus();}
+  };
   const dialog=doc.createElement('dialog');
   dialog.className='lr-evening-category-dialog';
   dialog.setAttribute('aria-labelledby','lr-evening-confirm-title');
@@ -60,7 +68,7 @@ export function askEveningCategoryConfirmation({category,percentage=88,doc=docum
   const finish=(result)=>{
    if(done)return;done=true;
    if(dialog.open)dialog.close();
-   dialog.remove();resolve(result);
+   dialog.remove();restoreFocus();resolve(result);
   };
   dialog.addEventListener('cancel',event=>{event.preventDefault();finish({confirmed:false,neverShow:false});});
   dialog.addEventListener('close',()=>finish({confirmed:false,neverShow:false}));
@@ -72,6 +80,6 @@ export function askEveningCategoryConfirmation({category,percentage=88,doc=docum
   });
   doc.body.append(dialog);
   try{dialog.showModal();dialog.querySelector('[data-confirm-action="yes"]')?.focus();}
-  catch(error){dialog.remove();reject(error);}
+  catch(error){dialog.remove();restoreFocus();reject(error);}
  });
 }
