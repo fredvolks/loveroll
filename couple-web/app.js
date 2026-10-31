@@ -27,7 +27,7 @@ import {eclatStage} from './eclat-catalog.mjs?v=20261019-eclat174';
 import {createEclatAudio} from './eclat-audio.mjs?v=20261028-privacy250';
 import {futureCoupleStyleMix,playStyleLabel} from './play-style.mjs?v=20261018-styles149';
 import {readSessionLength,saveSessionLength,sessionLengthSettingsHtml} from './session-duration-preference.mjs?v=20261031-length262';
-import {eveningFavoriteId,readEveningFavorites,toggleEveningFavorite,EVENING_FAVORITES_LIMIT} from './evening-favorites.mjs?v=20261031-favs263';
+import {eveningFavoriteId,readEveningFavorites,toggleEveningFavorite,removeEveningFavorite,eveningFavoritesSettingsHtml,EVENING_FAVORITES_LIMIT} from './evening-favorites.mjs?v=20261031-favs264';
 import {cycleIntensityQuestionnaireHtml,ownsCycleIntensityAnswer} from './cycle-questionnaire.mjs?v=20261031-cycle261';
 import {DICE_WEIGHT_CONFIG,configuredDiceWeights,parseDiceWeightInputs} from './dice-weighting.mjs?v=20261018-weights146';
 import {premiumEveningHtml,updateEveningCategoryUi} from './premium-evening.mjs?v=20261028-lr027-web254';
@@ -3280,6 +3280,8 @@ function renderSettings(){
   '<input id="profile-name" type="text" autocomplete="given-name" value="'+safe(state.profile.display_name)+'" maxlength="80" aria-label="Prénom affiché"></label>'+
   profileGenderSelect(state.profile.gender)+profilePlayStyleSelect(state.profile.play_style)+
   sessionLengthSettingsHtml(readSessionLength(state.user?.id))+
+  (state.coupleId?eveningFavoritesSettingsHtml(
+   readEveningFavorites(state.user?.id,state.coupleId)):'')+
   '<div class="settings-birthday-edit"><span>Mon anniversaire</span>'+monthDayInputs('settings-birthday',state.profile.birthday_md)+'</div>'+
   '<label>Courriel du compte<input type="email" readonly aria-readonly="true" value="'+safe(state.user.email||'')+'" autocomplete="email"></label>'+
   (state.testModeEligible?
@@ -4010,6 +4012,18 @@ async function handle(action,element){
  if(verb==='evening-close'){
   if(state.user?.id&&state.session?.id)clearEveningSelection(localStorage,state.user.id,state.session.id);
   state.showEveningChallenges=false;state.selectedEveningChallengeId=null;render();return;
+ }
+ if(verb==='favorite-remove'){
+  if(!state.user?.id||!state.coupleId||
+     (element&&!root.contains(element)))return;
+  const identity=parts.join(':');
+  const outcome=removeEveningFavorite(state.user.id,state.coupleId,identity);
+  if(!outcome.ok)throw Error(outcome.reason==='not-found'?
+   'Ce favori a déjà été retiré. Actualise ton compte.':
+   'Impossible de retirer ce favori sur cet appareil.');
+  render();
+  root.querySelector('.lr-favorite-manager')?.focus({preventScroll:true});
+  return;
  }
  if(verb==='evening-favorite'){
   const item=ownEveningChallenges(state.challenges,state.user?.id,state.session?.id)
