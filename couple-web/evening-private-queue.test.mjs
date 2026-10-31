@@ -2537,6 +2537,12 @@ test('LR-026: a same-account relogin cannot clear a newer invitation or change t
  assert.equal(state.inviteWelcome,undefined);
  assert.equal(f.clears(),0);
  assert.equal(f.busy(),false);
+ assert.equal(state.inviteAttemptKey,null,'obsolete attempt must allow a retry');
+ // The current session may safely accept the same invitation on a fresh try.
+ await f.autoAcceptPendingInvite();
+ assert.equal(f.clears(),1);
+ assert.equal(state.tab,'home');
+ assert.equal(state.inviteWelcome,true);
 });
 
 test('LR-026: a changed invitation reference must not be cleared by the old acceptance',async()=>{
