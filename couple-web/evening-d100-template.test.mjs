@@ -32,6 +32,10 @@ test('D100 locks every category during a live roll and restores choices after it
  assert.doesNotMatch(pending,/data-action="new-challenge"/,
   'A pending draw must never offer a duplicate official roll');
  assert.match(pending,/Brassage en cours/);
+ assert.match(pending,/<div class="evening-play-state">🎲 Brassage en cours…<\/div>/,
+  'A running D100 must not falsely announce that the partner now owns the turn');
+ assert.doesNotMatch(pending,/<div class="evening-play-state">Au tour de /);
+ assert.match(idle,/<div class="evening-play-state">♥ C’est ton tour !<\/div>/);
  assert.match(idle,/data-action="new-challenge"/);
 });
 test('Information uses the actual configured preference and preserves calendar and closure',()=>{
