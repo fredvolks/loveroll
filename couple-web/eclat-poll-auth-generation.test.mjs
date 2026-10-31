@@ -103,6 +103,8 @@ test('LR-026: a stalled Éclat poll retries after 30 seconds and rejects the old
 
 test('LR-026: identical Éclat status skips private history reads and redraws',async()=>{
  const h=harness();
+ h.state.eclatHistoryCouple='couple-a';
+ h.state.eclatHistoryUserId='alice';
  const poll=h.tick();
  h.requests[0].resolve({id:'original',access:true});
  await poll;
@@ -970,5 +972,45 @@ test('LR-026: obsolete 42501 from a former Auth generation is ignored',async()=>
  assert.equal(h.state.eclat.id,'replacement');
  assert.deepEqual(h.state.eclatHistory,[{id:'replacement-private'}]);
  assert.equal(h.drafts.size,1);
+ assert.deepEqual(h.renders,[]);
+});
+
+test('LR-026: unchanged Éclat status initializes absent private history exactly once',async()=>{
+ const h=harness({recoverHistory:true});
+ const first=h.tick();
+ h.requests[0].resolve({id:'original',access:true});
+ await first;
+ assert.deepEqual(h.history,['alice'],'a valid entitlement must hydrate a missing gallery even without a status change');
+ assert.deepEqual(h.renders,['original']);
+ // The real refreshEclatHistory records owner scope before a successful read.
+ h.state.eclatHistoryCouple='couple-a';
+ h.state.eclatHistoryUserId='alice';
+ const second=h.tick();
+ h.requests[1].resolve({access:true,id:'original'});
+ await second;
+ assert.deepEqual(h.history,['alice'],'loaded private scope must not trigger another paginated read');
+ assert.deepEqual(h.renders,['original'],'stable polling must not repaint a fully-loaded gallery');
+});
+
+test('LR-026: unchanged denied status never initializes missing private history',async()=>{
+ const h=harness({recoverHistory:true});
+ h.state.eclat={id:'offer',access:false};
+ const poll=h.tick();
+ h.requests[0].resolve({access:false,id:'offer'});
+ await poll;
+ assert.deepEqual(h.history,[],'a missing private scope alone does not authorize an Éclat read');
+ assert.deepEqual(h.renders,[]);
+});
+
+test('LR-026: same status does not retry failed loaded history before cooldown',async()=>{
+ const h=harness({recoverHistory:true});
+ h.state.eclatHistoryCouple='couple-a';
+ h.state.eclatHistoryUserId='alice';
+ h.state.eclatHistoryError=true;
+ h.state.eclatHistoryRetryAt=30000;
+ const poll=h.tick();
+ h.requests[0].resolve({access:true,id:'original'});
+ await poll;
+ assert.deepEqual(h.history,[],'an unchanged, previously loaded scope respects its retry deadline');
  assert.deepEqual(h.renders,[]);
 });
