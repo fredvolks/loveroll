@@ -2671,6 +2671,10 @@ function renderSession(){
  if(session&&(!session.paired_turns||!session.self_draws))return renderLegacySession();
  const turn=session?(state.eveningBoard||sharedEveningTurns(session,state.members,state.personal,state.challenges,state.gifts)):{};
  const mineCards=session?visibleEveningQueue(ownEveningChallenges(state.challenges,uid,session.id)):[];
+ // Resume an accepted personal challenge first, then offer an unstarted one.
+ // This is only a private-navigation hint; Supabase still owns its state.
+ const nextChallenge=mineCards.find(card=>card.status==='accepted')||
+  mineCards.find(card=>card.status==='proposed')||null;
  const daily=eveningDailyAccess({sessions:state.sessions,weekly:state.weekly});
  const last=daily.closedToday;
  const lastEvening=last?eveningFinaleStatus({
@@ -2778,7 +2782,7 @@ function renderSession(){
    eveningIntensity:readEveningIntensity(uid,state.profile?.play_style),
    challengeHistory:[...state.challengesHistory,...state.eveningCalendarChallenges,...state.challenges],
    weeklyReady:!!state.weekly,weeklyCount:daily.counted,weeklyLimit:daily.limit,historyReady:daily.historyReady,
-   dailyLocked:daily.dailyLocked,ownChallengeCount:mineCards.length,
+   dailyLocked:daily.dailyLocked,ownChallengeCount:mineCards.length,nextChallenge,
    lastD35Face:lastOfficialChallengeFace(
     session?state.challenges:state.challengesHistory,session?.id||last?.id||null)
  }), 'NOTRE SOIRÉE','Un jeu synchronisé sur nos deux comptes');
