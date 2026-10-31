@@ -9,7 +9,7 @@ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
 const start=app.indexOf("setInterval(async()=>{\n if(document.hidden||state.tab!=='eclat'");
 const end=app.indexOf('},4500);',start);
 assert.ok(start>=0&&end>start,'real Éclat poll must remain available');
-const source='let latestEclatStatusRead=null,latestEclatPollPending=null;\n'+app.slice(start,end+8);
+const source='let latestEclatStatusRead=null,latestEclatPollPending=null;\n'+app.slice(start,end+8)+'\nfunction invalidateStatusRead(){latestEclatStatusRead={};}';
 
 function deferred(){
  let resolve,reject;
@@ -35,7 +35,7 @@ function harness(){
  };
  runInNewContext(source,runtime);
  assert.equal(typeof tick,'function');
- return {state,runtime,requests,renders,warnings,history,tick:()=>tick(),advance:ms=>{clock+=ms;}};
+ return {state,runtime,requests,renders,warnings,history,tick:()=>tick(),advance:ms=>{clock+=ms;},invalidate:()=>runtime.invalidateStatusRead()};
 }
 
 test('LR-026: late Éclat poll cannot repaint a new login for the same user',async()=>{
@@ -162,7 +162,7 @@ test('LR-026: explicit status refresh can supersede an unresolved background pol
  const h=harness();
  const background=h.tick();
  // An explicit refresh owns the status token, so a newer poll may resume.
- h.runtime.latestEclatStatusRead={};
+ h.invalidate();
  const foreground=h.tick();
  assert.equal(h.requests.length,2);
  h.requests[1].resolve({id:'foreground'});
