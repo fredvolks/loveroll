@@ -9,8 +9,11 @@ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
 const start=app.indexOf("setInterval(async()=>{\n if(document.hidden||state.tab!=='eclat'");
 const end=app.indexOf('},4500);',start);
 assert.ok(start>=0&&end>start,'real Éclat poll must remain available');
-const source='let latestEclatHistoryRead=null,latestEclatStatusRead=null,latestEclatPollPending=null,latestEclatExplicitRead=null;\n'+
- app.slice(start,end+8)+
+const statusBegin=app.indexOf('function applyEclatStatus(value){');
+const statusEnd=app.indexOf('async function refreshEclatStatus(){',statusBegin);
+assert.ok(statusBegin>=0&&statusEnd>statusBegin,'real Éclat status handoff exists');
+const source='let latestEclatHistoryRead=null,latestEclatStatusRead=null,latestEclatPollPending=null,latestEclatExplicitRead=null;\nlet latestEclatAudioOwner=null;\n'+
+ app.slice(statusBegin,statusEnd)+'\n'+app.slice(start,end+8)+
  '\nfunction invalidateStatusRead(){latestEclatStatusRead={};}'+
  '\nfunction holdForegroundRead(){const request={};latestEclatStatusRead=request;'+
  'latestEclatExplicitRead={userId:state.user.id,coupleId:state.coupleId,'+
@@ -26,10 +29,11 @@ function harness(){
  const state={user:{id:'alice'},coupleId:'couple-a',members:[{},{}],
   tab:'eclat',eclat:{id:'original'}};
  const requests=[],renders=[],warnings=[],history=[];
- let tick=null,clock=0;
+ let tick=null,clock=0,audioStops=0;
  const runtime={
   state,authFeedbackGeneration:1,document:{hidden:false},Date:{now:()=>clock},
-  eclatNoteDrafts:new Map(),ownsCoupleAsyncRead,isSharedCoupleReady:(couple,members)=>!!couple&&members?.length===2,
+  eclatNoteDrafts:new Map(),eclatAudio:{stop:()=>{audioStops++;}},
+  ownsCoupleAsyncRead,isSharedCoupleReady:(couple,members)=>!!couple&&members?.length===2,
   rpc:name=>{
    assert.equal(name,'love_eclat_status');
    const task=deferred();requests.push(task);return task.promise;
@@ -41,7 +45,8 @@ function harness(){
  };
  runInNewContext(source,runtime);
  assert.equal(typeof tick,'function');
- return {state,runtime,requests,renders,warnings,history,tick:()=>tick(),advance:ms=>{clock+=ms;},invalidate:()=>runtime.invalidateStatusRead(),hold:()=>runtime.holdForegroundRead(),release:req=>runtime.releaseForegroundRead(req)};
+ return {state,runtime,requests,renders,warnings,history,audioStops:()=>audioStops,
+  tick:()=>tick(),advance:ms=>{clock+=ms;},invalidate:()=>runtime.invalidateStatusRead(),hold:()=>runtime.holdForegroundRead(),release:req=>runtime.releaseForegroundRead(req)};
 }
 
 test('LR-026: late Éclat poll cannot repaint a new login for the same user',async()=>{
@@ -301,4 +306,28 @@ test('LR-026: stale denied background response preserves new login drafts',async
  await tick;
  assert.equal(h.runtime.eclatNoteDrafts.get('new-session').note,'New draft');
  assert.equal(h.state.eclatFinished,'New ending');
+});
+
+
+test('LR-026: background entitlement revocation immediately silences Éclat audio',async()=>{
+ const h=harness();
+ h.state.eclat={access:true,active:true,id:'private'};
+ h.state.eclatMusic=true;
+ const pending=h.tick();
+ h.requests[0].resolve({access:false,active:false,id:'revoked'});
+ await pending;
+ assert.equal(h.audioStops(),1);
+ assert.equal(h.state.eclatMusic,false);
+ assert.deepEqual(h.renders,['revoked']);
+});
+
+test('LR-026: obsolete background revocation cannot stop newer login music',async()=>{
+ const h=harness();
+ const previous=h.tick();
+ h.runtime.authFeedbackGeneration=2;
+ h.state.eclatMusic=true;
+ h.requests[0].resolve({access:false,active:false,id:'old'});
+ await previous;
+ assert.equal(h.audioStops(),0);
+ assert.equal(h.state.eclatMusic,true);
 });
