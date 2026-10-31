@@ -160,6 +160,6 @@ test('native Back immediately closes a stalled review without waiting for RPC',(
  assert.equal(state.reviewModalSessionId,null);
  assert.equal(state.reviewDismissedSessionId,'night-1');
  assert.equal(state.reviewSaving,false,'A stalled request must not lock future edits');
- assert.deepEqual(state.reviewDraft,{});
+ assert.equal(Object.keys(state.reviewDraft).length,0);
  assert.equal(renders,1);
 });
