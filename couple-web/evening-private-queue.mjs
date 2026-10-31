@@ -329,6 +329,18 @@ export function ownsCoupleAsyncRead(view,owner){
 }
 
 /**
+ * Only the visible account's current Éclat note can block navigation or a
+ * background update. Clearing all text is still an unsaved modification,
+ * and an in-flight save is not yet an acknowledged server write.
+ */
+export function hasPendingEclatNote(drafts,key,tab){
+ if(tab!=='eclat'||typeof key!=='string'||!key||
+    typeof drafts?.get!=='function')return false;
+ const draft=drafts.get(key);
+ return draft?.dirty===true||draft?.saving===true;
+}
+
+/**
  * Derive confirmation from the stored decision, not the tap from this device.
  * When provided, expectedOriginalId also prevents a mismatched RPC receipt
  * from confirming or navigating to an unrelated challenge.
