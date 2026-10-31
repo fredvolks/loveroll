@@ -3,7 +3,7 @@
 // Use this for previews until the 300 original cards pass the release audit.
 import {selectFutureAssignedCard} from './future-card-audience.mjs';
 
-export const FUTURE_NIGHT_LENGTHS=Object.freeze([5,10,15,30,'free']);
+export const FUTURE_NIGHT_LENGTHS=Object.freeze([5,10,15,30,'libre']);
 const VALID_CAP=20;
 const isTicket=value=>typeof value==='number'&&Number.isFinite(value)&&value>=0&&value<1;
 const ticketAt=(tickets,index)=>{
@@ -24,8 +24,11 @@ export function buildFutureNightPlan({
 }={}){
  // The current next-night dropdown persists string values ("5", "15", ...).
  // Normalize those exact choices; do not accept arbitrary coercible input.
- const selectedMinutes=typeof minutes==='string'&&/^(5|10|15|30)$/.test(minutes)?
-  Number(minutes):minutes;
+ // "libre" is the exact value persisted by session-duration-preference.mjs.
+ // Keep "free" as a compatibility alias for early planner callers only.
+ const selectedMinutes=minutes==='free'?'libre':
+  typeof minutes==='string'&&/^(5|10|15|30)$/.test(minutes)?
+   Number(minutes):minutes;
  if(!FUTURE_NIGHT_LENGTHS.includes(selectedMinutes))
   throw Error('Durée de soirée invalide.');
  if(!Number.isInteger(maxCards)||maxCards<1||maxCards>100)
@@ -33,7 +36,7 @@ export function buildFutureNightPlan({
  if(!Array.isArray(cards)||!Array.isArray(excludedIds)||
     (cardTickets!==undefined&&!Array.isArray(cardTickets)))
   throw Error('Liste de cartes ou de tirages invalide.');
- const free=selectedMinutes==='free',selected=[],used=new Set(excludedIds),
+ const free=selectedMinutes==='libre',selected=[],used=new Set(excludedIds),
   seenIds=new Set();
  let spent=0,reason='limit';
  for(let index=0;index<maxCards;index++){
