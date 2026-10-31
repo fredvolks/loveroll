@@ -201,6 +201,8 @@ jobs:
         run: node --test couple-web/evening-review-ownership.test.mjs
       - name: Plan tonight's duration on Safari and multiple accounts
         run: node --test couple-web/session-duration-preference.test.mjs
+      - name: Plan next-evening intensity per account without affecting live D100
+        run: node --test couple-web/evening-intensity-preference.test.mjs
       - name: LR-014 — category confirmation and private setting
         run: node --test couple-web/evening-category-confirm.test.mjs
       - name: Validate iPad Soirée one-HD-photo contract
