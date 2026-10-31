@@ -27,6 +27,7 @@ import {eclatStage} from './eclat-catalog.mjs?v=20261019-eclat174';
 import {createEclatAudio} from './eclat-audio.mjs?v=20261028-privacy250';
 import {futureCoupleStyleMix,playStyleLabel} from './play-style.mjs?v=20261018-styles149';
 import {readSessionLength,saveSessionLength,sessionLengthSettingsHtml} from './session-duration-preference.mjs?v=20261031-length262';
+import {eveningFavoriteId,readEveningFavorites,toggleEveningFavorite,EVENING_FAVORITES_LIMIT} from './evening-favorites.mjs?v=20261031-favs263';
 import {cycleIntensityQuestionnaireHtml,ownsCycleIntensityAnswer} from './cycle-questionnaire.mjs?v=20261031-cycle261';
 import {DICE_WEIGHT_CONFIG,configuredDiceWeights,parseDiceWeightInputs} from './dice-weighting.mjs?v=20261018-weights146';
 import {premiumEveningHtml,updateEveningCategoryUi} from './premium-evening.mjs?v=20261028-lr027-web254';
@@ -2648,6 +2649,9 @@ function renderSession(){
  // Personal queue: each account sees only cards received by THAT user.
  // Draws can all be completed before any challenge is accepted or played.
  const selected=mineCards.find(c=>c.id===state.selectedEveningChallengeId);
+ const favoriteKeys=readEveningFavorites(uid,state.coupleId,localStorage);
+ const selectedFavoriteId=eveningFavoriteId(selected);
+ const isFavorite=selectedFavoriteId&&favoriteKeys.includes(selectedFavoriteId);
  if(session&&state.showEveningChallenges){
   const view=selected;
   const idx=view?queuePosition(mineCards,view.id):-1;
@@ -2667,6 +2671,13 @@ function renderSession(){
      '<h2>'+safe(resolvedCard(view).title)+'</h2>'+
      '<div class="evening-challenge-scene" aria-hidden="true"></div>'+
      '<p class="evening-challenge-instructions" role="region" aria-label="Consigne du défi" tabindex="0">'+safe(resolvedCard(view).description)+'</p>'+
+     (selectedFavoriteId?
+      button('evening-favorite:'+view.id,
+       (isFavorite?'♥ Retirer de mes favoris':'♡ Ajouter à mes favoris')+
+       ' ('+favoriteKeys.length+' / '+EVENING_FAVORITES_LIMIT+')',
+       'class="evening-favorite-btn"'+
+        (!isFavorite&&favoriteKeys.length>=EVENING_FAVORITES_LIMIT?
+         ' disabled aria-disabled="true" title="Limite de cinq favoris atteinte"':'')):'')+
      (['proposed','accepted'].includes(view.status)?
        timerWidget(view,resolvedCard(view).minutes):
        '<p class="tiny-note">Ce défi est archivé dans votre historique.</p>')+
@@ -3999,6 +4010,17 @@ async function handle(action,element){
  if(verb==='evening-close'){
   if(state.user?.id&&state.session?.id)clearEveningSelection(localStorage,state.user.id,state.session.id);
   state.showEveningChallenges=false;state.selectedEveningChallengeId=null;render();return;
+ }
+ if(verb==='evening-favorite'){
+  const item=ownEveningChallenges(state.challenges,state.user?.id,state.session?.id)
+   .find(card=>card.id===parts[0]);
+  if(!item||!state.coupleId||!state.user?.id)
+   throw Error('Ce défi ne fait pas partie de ta soirée personnelle.');
+  const outcome=toggleEveningFavorite(state.user.id,state.coupleId,item,localStorage);
+  if(!outcome.ok)throw Error(outcome.reason==='limit'?
+   'Tu peux conserver au maximum cinq favoris. Retire-en un avant d’en ajouter un autre.':
+   'Impossible d’enregistrer ce favori sur cet appareil.');
+  render();return;
  }
  if(verb==='evening-open'){
   if(!ownEveningChallenges(state.challenges,state.user?.id,state.session?.id).some(x=>x.id===parts[0]))
