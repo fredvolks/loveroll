@@ -4090,7 +4090,14 @@ async function handle(action,element){
   if(state.diceStatus)return; // A stale confirmation must not close mid-roll.
   if(!state.session)throw Error('Cette soirée est déjà clôturée.');
   const ended=state.session;
+  const owner={userId:state.user?.id,coupleId:state.coupleId,
+   sessionId:ended.id,generation:authFeedbackGeneration};
+  const ownsClose=()=>state.user?.id===owner.userId&&
+   state.coupleId===owner.coupleId&&state.session?.id===owner.sessionId&&
+   authFeedbackGeneration===owner.generation;
+  if(!owner.userId||!owner.coupleId)return;
   await rpc('close_love_evening_preserve',{p_session:ended.id});
+  if(!ownsClose())return;
   const date=eveningLocalDay(ended.started_at);
   state.eveningCalendarMonth=date?.slice(0,7)||month();
   state.eveningCalendarDate=date||today();
@@ -5942,7 +5949,14 @@ async function handle(action,element){
   if(state.diceStatus)return; // Finishing before the receipt interrupts the die.
   if(!state.session)return;
   const finishedId=state.session.id;
+  const owner={userId:state.user?.id,coupleId:state.coupleId,
+   sessionId:finishedId,generation:authFeedbackGeneration};
+  const ownsFinish=()=>state.user?.id===owner.userId&&
+   state.coupleId===owner.coupleId&&state.session?.id===owner.sessionId&&
+   authFeedbackGeneration===owner.generation;
+  if(!owner.userId||!owner.coupleId)return;
   await rpc('finish_couple_session',{p_session:finishedId,p_count:true});
+  if(!ownsFinish())return;
   state.chosenSession=finishedId;state.tab='session';await refreshAndShow();return;
  }
  if(verb==='cancel-session'){state.confirmCancel=true;render();return;}
