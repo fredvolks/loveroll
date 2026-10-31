@@ -95,7 +95,10 @@ const {eveningD100Viewports}=require('./evening-d100-viewports.cjs');
   assert.equal(world.calls.filter(c=>c.name==='close_love_evening_preserve').length,0);await page.locator('[data-action="dismiss-cancel"]').click();
   assert.equal(await page.evaluate(()=>window.__eveningD100===document.querySelector('.evening-d35-col canvas')),true);
   if(width===360){
-   await page.locator('[data-action="category:HASARD"]').click();assert.equal(await page.locator('.evening-choice-odds').count(),0);
+   await page.locator('[data-action="category:HASARD"]').click();
+   assert.equal(await page.locator('.evening-choice-odds').count(),1);
+   assert.equal(await page.locator('.evening-choice-odds').innerText(),'50 % Sensuel · 50 % Sexuel');
+   assert.equal(await page.evaluate(()=>window.__eveningD100===document.querySelector('.evening-d35-col canvas')),true);
   }
   await page.locator('[data-action="new-challenge"]').click();
   // LR-014: the old browser contract now confirms the selected category first.
