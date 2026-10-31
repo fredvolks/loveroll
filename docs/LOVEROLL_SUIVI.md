@@ -1,6 +1,15 @@
 # LoveRoll — SUIVI OFFICIEL DU PROMPT MAÎTRE
 
 
+### LR-027 — déduplication des dons et protection du tour officiel (31 octobre 2026)
+
+- Un double toucher sur **Donner un défi** ne peut plus ouvrir deux confirmations ni envoyer deux RPC `give_love_challenge` pour la même identité, le même duo et la même soirée. La demande possède un jeton propre, libéré en `finally` après succès, annulation ou erreur. Un ancien compte ne peut pas effacer le verrou d'un nouveau compte.
+- L'interface affiche **« Don en cours… »** et un état d'attente accessible pendant la confirmation; le D6 et le prochain D100 restent bloqués pendant ce don, puis se réactivent normalement. Le contrôle propriétaire du D100 est également revérifié après son dialogue asynchrone. Le nettoyage d'un don périmé ne réinitialise pas une animation de dé ou une repige en cours.
+- Code : `couple-web/app.js` et `couple-web/premium-evening.mjs`. Régressions : `couple-web/evening-d100-template.test.mjs`. Commits `ead7dc5`, `0575d23`, `b48793f`, `c5b691c`, `cb722d2`, `0278b13`, `adf2d89`. **Six régressions exécutées directement dans V8** à partir des extraits du dépôt, toutes réussies (dons simultanés, confirmation annulée, changement de compte, repige, confirmation D100 et reprise de Soirée). Syntaxe des trois fichiers vérifiée. La CI GitHub complète du SHA final, le staging Supabase avec sessions Auth/RLS et les tests physiques ne sont pas encore tous confirmés.
+- [PR #176](https://github.com/fredvolks/loveroll/pull/176) **draft** : aucune migration serveur, fusion ni publication. Appels réels à Atelier (fiches, agents, Architecture) en mode MEDIUM : erreurs internes; **non synchronisé avec Atelier**, sans prétendre à une mission BOSS active.
+
+
+
 ### LR-027 — D100 confirmé trop tard et reprise de soirée périmée (31 octobre 2026)
 
 - La validation de catégorie d'un D100 est asynchrone. Si une repige **Passer/Refuser** démarre pendant ce dialogue, le contrôle propriétaire `ownsDraw` refuse maintenant de déclencher le D100, même si la catégorie, le compte et la soirée n'ont pas changé. Les dés officiels restent exclusivement déterminés par le serveur.
