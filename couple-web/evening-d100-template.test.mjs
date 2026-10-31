@@ -108,6 +108,76 @@ test('Stale Soirée actions cannot interrupt official dice state',async()=>{
  }
 });
 
+
+test("Delayed gift approval cannot change another player's evening",async()=>{
+ const {runInNewContext}=await import('node:vm');
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const from=source.indexOf("if(verb==='give-challenge'){");
+ const to=source.indexOf("if(verb==='new-challenge'){",from);
+ assert.ok(from>0&&to>from);
+ const giftCode=source.slice(from,to);
+ const deferred=()=>{
+  let resolve;
+  const promise=new Promise(ok=>{resolve=ok;});
+  return {promise,resolve};
+ };
+ function fixture(){
+  const confirmation=deferred(),server=deferred(),serverStarted=deferred();
+  const state={
+   user:{id:'alice'},coupleId:'couple-one',tab:'session',diceStatus:null,
+   session:{id:'night-one',paired_turns:true,self_draws:true},
+   rollStatus:{both_ready:true},eveningBoard:{ready:true,remaining:{alice:2}},gifts:[]
+  };
+  const calls={writes:[],refresh:0,notifications:0};
+  const scope={
+   state,authFeedbackGeneration:3,month:()=> '2026-10',
+   other:()=>({name:'Partenaire'}),
+   premiumConfirm:()=>confirmation.promise,
+   rpc:(name,args)=>{calls.writes.push({name,args});serverStarted.resolve();return server.promise;},
+   refreshAndShow:async()=>{calls.refresh++;},
+   notify:()=>{calls.notifications++;}
+  };
+  const act=runInNewContext('(async verb=>{'+giftCode+'})',scope);
+  return {state,scope,calls,confirmation,server,serverStarted,act};
+ }
+ for(const change of [
+  h=>{h.state.user={id:'bob'};},
+  h=>{h.state.coupleId='other-couple';},
+  h=>{h.state.session={id:'other-night'};},
+  h=>{h.state.diceStatus='pending';},
+  h=>{h.scope.authFeedbackGeneration++;},
+  h=>{h.state.tab='home';}
+ ]){
+  const h=fixture();
+  const work=h.act('give-challenge');
+  change(h);
+  h.confirmation.resolve(true);await work;
+  assert.equal(h.calls.writes.length,0,'Stale approval must not send a gift RPC');
+  assert.equal(h.calls.refresh,0);
+  assert.equal(h.calls.notifications,0);
+ }
+ const accepted=fixture();
+ const success=accepted.act('give-challenge');
+ accepted.confirmation.resolve(true);
+ await accepted.serverStarted.promise;
+ assert.equal(accepted.calls.writes.length,1);
+ assert.equal(accepted.calls.writes[0].name,'give_love_challenge');
+ assert.equal(accepted.calls.writes[0].args.p_session,'night-one');
+ accepted.server.resolve(null);await success;
+ assert.equal(accepted.calls.refresh,1);
+ assert.equal(accepted.calls.notifications,1);
+ const changedDuringRpc=fixture();
+ const delayed=changedDuringRpc.act('give-challenge');
+ changedDuringRpc.confirmation.resolve(true);
+ await changedDuringRpc.serverStarted.promise;
+ changedDuringRpc.state.user={id:'bob'};
+ changedDuringRpc.server.resolve(null);await delayed;
+ assert.equal(changedDuringRpc.calls.writes.length,1);
+ assert.equal(changedDuringRpc.calls.refresh,0,
+  'The former user's gift receipt cannot replace a new account view');
+ assert.equal(changedDuringRpc.calls.notifications,0);
+});
+
 test('Information uses the actual configured preference and preserves calendar and closure',()=>{
  const info=eveningPlayInfoHtml(74);
  assert.match(info,/74 % pour la catégorie choisie et 26 % pour l’autre/);
