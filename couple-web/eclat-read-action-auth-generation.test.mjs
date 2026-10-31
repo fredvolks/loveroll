@@ -237,3 +237,47 @@ test('LR-026: a pending history response cannot restore content after null statu
  assert.deepEqual(Array.from(h.state.eclatHistory),[],
   'the null status invalidates a previously authorized history request');
 });
+
+
+test('LR-026: denied foreground Éclat status removes prior private history without refetch',async()=>{
+ let reads=0;
+ const denied={id:'denied',access:false,active:false,total_cents:999};
+ const h=harness({rpc:async()=>denied,loadEclatHistory:async()=>{
+  reads++;return [{id:'must-not-be-read'}];
+ }});
+ h.state.eclat={id:'former',access:true,active:true};
+ h.state.eclatHistoryError=true;
+ const result=await h.refreshEclatStatus();
+ assert.equal(result?.id,'denied','denied status remains available for public offer');
+ assert.equal(h.state.eclat?.access,false);
+ assert.deepEqual(Array.from(h.state.eclatHistory),[]);
+ assert.equal(h.state.eclatHistoryError,false);
+ assert.equal(reads,0,'revoked access must not start private history query');
+});
+
+test('LR-026: history cannot reload while Éclat entitlement is denied',async()=>{
+ let reads=0;
+ const h=harness({loadEclatHistory:async()=>{reads++;return []; }});
+ h.state.eclat={access:false,active:false};
+ await h.refreshEclatHistory();
+ assert.equal(reads,0);
+ assert.deepEqual(h.state.eclatHistory,[{id:'initial-history'}],
+  'a skipped fetch does not invent or overwrite history; status handler owns its purge');
+});
+
+test('LR-026: stale history read cannot restore private data after access is denied',async()=>{
+ const old=deferred();
+ let reads=0;
+ const h=harness({rpc:async()=>({access:false,active:false}),loadEclatHistory:()=>{
+  reads++;return old.promise;
+ }});
+ h.state.eclat={access:true,active:true};
+ const earlier=h.refreshEclatHistory();
+ await h.refreshEclatStatus();
+ assert.equal(reads,1);
+ assert.deepEqual(Array.from(h.state.eclatHistory),[]);
+ old.resolve([{id:'former-private-history'}]);
+ await earlier;
+ assert.deepEqual(Array.from(h.state.eclatHistory),[]);
+ assert.equal(h.state.eclat?.access,false);
+});
