@@ -247,11 +247,11 @@ export function premiumEveningHtml({
   '<div class="evening-aftercare">'+
     '<div class="evening-finale-ornament" aria-hidden="true"><span>♡</span></div>'+
     '<div class="evening-finale-weekly">♡ SOIRÉES CETTE SEMAINE · '+
-       esc(weeklyCount)+' / '+(weeklyReady?esc(weeklyLimit):'—')+
-       // Keep next-evening planning available after today's finished night,
-       // without enabling a second official session or changing a D6/D100.
-       sessionLengthChooserHtml(sessionLength)+'</div>'+ 
-    '<div class="evening-next-intensity">'+eveningIntensityChooserHtml(eveningIntensity)+
+       esc(weeklyCount)+' / '+(weeklyReady?esc(weeklyLimit):'—')+'</div>'+
+    // Place both local next-night preferences on ONE compact responsive row.
+    // Neither can modify the active or server-confirmed D6/D100 game.
+    '<div class="evening-next-intensity">'+sessionLengthChooserHtml(sessionLength)+
+      eveningIntensityChooserHtml(eveningIntensity)+
      '<small>Pour préparer une prochaine soirée; les tirages actuels ne changent pas.</small></div>'+ 
     (lastEvening?
       '<h2>Notre soirée est terminée</h2>'+
