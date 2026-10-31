@@ -205,6 +205,8 @@ jobs:
         run: node --test couple-web/evening-intensity-preference.test.mjs
       - name: Validate balanced Soft Medium Intense future catalog routing
         run: node --test couple-web/future-card-catalog.test.mjs
+      - name: Verify future 100-card regeneration preview and safety
+        run: node --test couple-web/future-card-regeneration.test.mjs
       - name: Verify assignment of future gender-specific and shared cards
         run: node --test couple-web/future-card-audience.test.mjs
       - name: Preview future nights from unique 2-6 minute cards
