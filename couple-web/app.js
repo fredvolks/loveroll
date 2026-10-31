@@ -1761,13 +1761,15 @@ let latestEclatActionRequest=null;
 function beginEclatAction(){
  const owner={userId:state.user?.id,coupleId:state.coupleId,
   generation:authFeedbackGeneration,tab:state.tab,request:{}};
- if(!ownsCoupleAsyncRead(state,owner))return null;
+ if(!ownsCoupleAsyncRead(state,owner)||
+    !isSharedCoupleReady(owner.coupleId,state.members))return null;
  latestEclatActionRequest=owner.request;
  return owner;
 }
 function ownsEclatAction(owner){
  return !!owner&&ownsCoupleAsyncRead(state,owner)&&
   authFeedbackGeneration===owner.generation&&
+  isSharedCoupleReady(owner.coupleId,state.members)&&
   state.tab===owner.tab&&latestEclatActionRequest===owner.request;
 }
 function applyEclatActionResult(value,owner){
