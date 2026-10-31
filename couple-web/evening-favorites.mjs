@@ -87,7 +87,7 @@ export function removeEveningFavorite(userId,coupleId,id,storage){
 
 // The list contains only verified canonical IDs, not untrusted card titles.
 // A small self-contained section remains usable on phone and desktop.
-export function eveningFavoritesSettingsHtml(favorites=[]){
+export function eveningFavoritesSettingsHtml(favorites=[],titles={}){
  const items=Array.isArray(favorites)?favorites.slice(0,EVENING_FAVORITES_LIMIT):[];
  const valid=items.filter(value=>{
   if(typeof value!=='string')return false;
@@ -99,7 +99,14 @@ export function eveningFavoritesSettingsHtml(favorites=[]){
   const [category,number]=value.split(':');
   const name=category==='SENSUEL'?'Sensuel':category==='SEXUEL'?'Sexuel':'Mixte';
   const label=name+' · carte '+number;
-  return '<div class="lr-favorite-item"><span>'+label+'</span>'+
+  // Some cards have been edited by the admin. Titles supplied by the current
+  // library are never trusted HTML; old/missing slots keep their stable ID.
+  const title=typeof titles?.[value]==='string'?titles[value].trim().slice(0,120):'';
+  const escapedTitle=title.replace(/[&<>"']/g,c=>
+   ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const display=escapedTitle?
+   '<strong>'+escapedTitle+'</strong><small>'+label+'</small>':label;
+  return '<div class="lr-favorite-item"><span>'+display+'</span>'+
    '<button type="button" class="account-test-option" data-action="favorite-remove:'+value+
    '" aria-label="Retirer le favori '+label+'">Retirer</button></div>';
  }).join('');
