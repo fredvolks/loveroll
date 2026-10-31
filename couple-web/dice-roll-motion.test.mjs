@@ -228,7 +228,8 @@ test('Weekly official D6 cannot use a former account confirmation or receipt',as
   const state={user:{id:'alice'},coupleId:'duo-a',members:[{user_id:'alice'}],
    weekly:null,diceStatus:null,rollAnimationFace:null};
   const calls={writes:[],renders:0,refresh:0,notices:0};
-  const scope={state,parts:['weekly'],authFeedbackGeneration:2,latestDiceRollRequest:null,
+  const scope={state,parts:['weekly'],authFeedbackGeneration:2,
+   currentWeeklyConfirmationRequest:null,latestDiceRollRequest:null,
    isSharedCoupleReady:()=>true,
    premiumConfirm:()=>confirmation,
    rpc:(method,args)=>{calls.writes.push({method,args});return pending;},
@@ -283,4 +284,63 @@ test('Weekly official D6 cannot use a former account confirmation or receipt',as
  assert.equal(bad.state.weekly,null,'Unconfirmed D6 faces are never shown');
  assert.equal(bad.state.diceStatus,null);
  assert.equal(bad.calls.notices,0);
+});
+
+test('Weekly D6 confirmation is single-flight and a new login is never blocked',async()=>{
+ const {runInNewContext}=await import('node:vm');
+ const start=appSource.indexOf("if(verb==='roll'){");
+ const end=appSource.indexOf("if(verb==='new-session'){",start);
+ assert.ok(start>0&&end>start);
+ const route=appSource.slice(start,end);
+ const state={user:{id:'alice'},coupleId:'duo-a',members:[{user_id:'alice'}],
+  weekly:null,diceStatus:null};
+ const confirmations=[],writes=[];
+ const scope={state,parts:['weekly'],authFeedbackGeneration:4,
+  currentWeeklyConfirmationRequest:null,latestDiceRollRequest:null,
+  isSharedCoupleReady:()=>true,
+  premiumConfirm:()=>{
+   let resolve,reject;
+   const promise=new Promise((a,b)=>{resolve=a;reject=b;});
+   confirmations.push({resolve,reject});
+   return promise;
+  },
+  rpc:(name,args)=>{writes.push({name,args});return Promise.resolve({face:2});},
+  render:()=>{},refreshShared:async()=>{},notify:()=>{},
+  window:{matchMedia:()=>({matches:true})},ROLL_TOTAL_MS,
+  setTimeout:done=>done()
+ };
+ const act=runInNewContext('(async verb=>{'+route+'})',scope);
+ const first=act('roll'),duplicate=act('roll');
+ await duplicate;
+ assert.equal(confirmations.length,1,'Two quick taps should open one dialog');
+ assert.equal(writes.length,0,'No real D6 draw before consent');
+ // Different account can start its own confirmation before Alice's resolves.
+ state.user={id:'bob'};state.coupleId='duo-b';scope.authFeedbackGeneration++;
+ const replacement=act('roll');
+ assert.equal(confirmations.length,2);
+ const bobConfirmation=scope.currentWeeklyConfirmationRequest;
+ confirmations[0].resolve(false);await first;
+ assert.equal(scope.currentWeeklyConfirmationRequest,bobConfirmation,
+  'Alice must not clear Bob’s pending confirmation');
+ confirmations[1].resolve(false);await replacement;
+ assert.equal(scope.currentWeeklyConfirmationRequest,null);
+ assert.equal(writes.length,0);
+ // A failed active confirmation must clear the guard for retry.
+ const failed=act('roll');
+ assert.equal(confirmations.length,3);
+ confirmations[2].reject(Error('Dialog error'));
+ await assert.rejects(failed,/Dialog error/);
+ assert.equal(scope.currentWeeklyConfirmationRequest,null);
+ const retry=act('roll');
+ assert.equal(confirmations.length,4);
+ confirmations[3].resolve(false);await retry;
+ assert.equal(scope.currentWeeklyConfirmationRequest,null);
+ assert.equal(writes.length,0);
+ // Stale dialog rejections are silent after a user switch.
+ const old=act('roll');
+ state.user={id:'carol'};state.coupleId='duo-c';scope.authFeedbackGeneration++;
+ confirmations[4].reject(Error('Old dialog failed'));
+ await old;
+ assert.equal(writes.length,0);
+ assert.equal(scope.currentWeeklyConfirmationRequest,null);
 });
