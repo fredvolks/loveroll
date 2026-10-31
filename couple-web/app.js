@@ -3440,7 +3440,11 @@ async function handle(action,element){
   }
   if(kind==='detail'||kind==='suggest'){
    if(!Number.isInteger(num)||num<1||num>12)throw Error('Coffret inconnu');
-   const previous=state.eclatHistory.find(row=>Number(row.coffret_id)===num);
+   // A preview or revoked account may still have an old in-memory gallery.
+   // Do not derive even the suggested duration from private history unless
+   // the current account has an explicit Éclat entitlement.
+   const canReadPrevious=previewEclatStatus(state.eclat,state.testMode,state.testModeEligible)?.access===true;
+   const previous=canReadPrevious?state.eclatHistory.find(row=>Number(row.coffret_id)===num):null;
    state.eclatMinutes=[30,60,90].includes(Number(previous?.minutes))?Number(previous.minutes):30;
    state.eclatBrowse=true;state.eclatSelection=num;state.eclatDetails=true;state.eclatFinished=null;render();return;
   }
