@@ -94,7 +94,7 @@ const actionSource=app.slice(permissionBegin,permissionEnd)+
  "async function invoke(command){const verb='eclat',parts=command.split(':'),element=null;\n"+
  app.slice(actionBegin,actionEnd)+'\n}\n;invoke;';
 
-function actionFixture(status,{mode='real',eligible=false,startAudio=null}={}){
+function actionFixture(status,{mode='real',eligible=false,startAudio=null,saveNote=null,confirm=null,withDraft=false}={}){
  const state={user:{id:'alice'},coupleId:'shared-duo',
   members:[{id:'alice'},{id:'bob'}],tab:'eclat',
   eclat:{coffret_id:1,chapter_number:1,chapter_index:1,chapter_total:6,variant_number:0,...status},
@@ -104,8 +104,9 @@ function actionFixture(status,{mode='real',eligible=false,startAudio=null}={}){
   state,authFeedbackGeneration:1,previewEclatStatus,
   isSharedCoupleReady:(id,members)=>id==='shared-duo'&&members?.length===2,
   ownsCoupleAsyncRead:(view,owner)=>view.user?.id===owner.userId&&view.coupleId===owner.coupleId,
-  eclatNoteDrafts:new Map(),eclatNoteKey:()=> 'note-key',
-  saveCurrentEclatNote:async()=>{notes++;return 'note-key';},
+  eclatNoteDrafts:withDraft?new Map([['note-key',{loading:false,error:false,moment_done:true}]]):new Map(),
+  eclatNoteKey:()=> 'note-key',
+  saveCurrentEclatNote:async()=>{notes++;return saveNote?await saveNote():'note-key';},
   beginEclatAction:()=>({}),ownsEclatAction:()=>true,
   applyEclatActionResult:()=>true,
   eclatStage:()=>({mood:'romantique',coffret:{title:'Coffret'}}),
@@ -117,7 +118,7 @@ function actionFixture(status,{mode='real',eligible=false,startAudio=null}={}){
   rpc:async name=>{calls.push(name);return {access:true,active:true};},
   render:()=>renders.push('render'),
   refreshEclatHistory:async()=>{},
-  premiumConfirm:async()=>{confirms++;return true;},
+  premiumConfirm:async()=>{confirms++;return confirm?await confirm():true;},
   notify:()=>{},
   root:{querySelector:()=>null},
   handle:async()=>{}
@@ -174,4 +175,72 @@ test('LR-026: audio that resumes after entitlement revocation is stopped',async(
  assert.equal(h.stops(),1);
  assert.equal(h.state.eclatMusic,false);
  assert.deepEqual(h.renders,[],'stale audio success must not repaint');
+});
+
+
+test('LR-026: expired entitlement during private-note save cannot send choose RPC',async()=>{
+ let finish;
+ const pendingSave=new Promise(resolve=>{finish=resolve;});
+ const h=actionFixture({access:true,active:true},{
+  withDraft:true,saveNote:()=>pendingSave
+ });
+ const pending=h.invoke('choose:1');
+ assert.equal(h.notes(),1,'note save starts while access is authorized');
+ h.state.eclat={...h.state.eclat,access:false};
+ finish('note-key');
+ await pending;
+ assert.deepEqual(h.calls,[],'a late note-save receipt cannot authorize a choice');
+ assert.deepEqual(h.renders,[]);
+});
+
+test('LR-026: authorized choice after note-save still reaches the official RPC',async()=>{
+ const h=actionFixture({access:true,active:true},{withDraft:true});
+ await h.invoke('choose:1');
+ assert.equal(h.notes(),1);
+ assert.deepEqual(h.calls,['love_eclat_choose']);
+ assert.equal(h.renders.length,1);
+});
+
+test('LR-026: revoking Éclat access during Quitter confirmation cannot send end RPC',async()=>{
+ let finish;
+ const decision=new Promise(resolve=>{finish=resolve;});
+ const h=actionFixture({access:true,active:true},{confirm:()=>decision});
+ const pending=h.invoke('end');
+ assert.equal(h.confirms(),1,'confirmation was actually opened');
+ h.state.eclat={...h.state.eclat,access:false};
+ finish(true);
+ await pending;
+ assert.deepEqual(h.calls,[]);
+ assert.deepEqual(h.renders,[]);
+});
+
+test('LR-026: delayed audio from previous Éclat session cannot play in new coffret',async()=>{
+ let finish;
+ const pendingAudio=new Promise(resolve=>{finish=resolve;});
+ const h=actionFixture({access:true,active:true,session_id:'coffret-old'},{
+  startAudio:()=>pendingAudio
+ });
+ const pending=h.invoke('music');
+ assert.deepEqual(h.played,['romantique']);
+ h.state.eclat={...h.state.eclat,session_id:'coffret-new',coffret_id:2};
+ finish(true);
+ await pending;
+ assert.equal(h.stops(),1);
+ assert.equal(h.state.eclatMusic,false);
+ assert.deepEqual(h.renders,[]);
+});
+
+test('LR-026: delayed audio is also cancelled when chapter changes',async()=>{
+ let finish;
+ const pendingAudio=new Promise(resolve=>{finish=resolve;});
+ const h=actionFixture({access:true,active:true,session_id:'same-session'},{
+  startAudio:()=>pendingAudio
+ });
+ const pending=h.invoke('music');
+ h.state.eclat={...h.state.eclat,chapter_number:2};
+ finish(true);
+ await pending;
+ assert.equal(h.stops(),1);
+ assert.equal(h.state.eclatMusic,false);
+ assert.deepEqual(h.renders,[]);
 });
