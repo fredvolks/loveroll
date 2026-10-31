@@ -2608,7 +2608,8 @@ function ownedProfileSaveFixture(state,rpc){
  const start=app.indexOf('let currentProfileSave=null;');
  const end=app.indexOf('function authMessage(',start);
  assert.ok(start>0&&end>start);
- return runInNewContext(app.slice(start,end)+
+ // In the actual module, the auth generation is declared above this slice.
+ return runInNewContext('let authFeedbackGeneration=0;\n'+app.slice(start,end)+
   ';({saveProfileForCurrentAccount,getCurrent:()=>currentProfileSave})',{state,rpc});
 }
 
