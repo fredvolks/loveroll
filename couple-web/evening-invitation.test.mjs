@@ -126,10 +126,12 @@ test('Real invitation response stays owned by its account through server setup a
  assert.equal(normal.state.tab,'home','Do not navigate before server setup');
  normal.setup.resolve({id:'night-a'});
  await new Promise(resolve=>setImmediate(resolve));
- assert.equal(normal.state.tab,'session');
+ assert.equal(normal.state.tab,'home',
+  'An accepted invite must keep Accueil visible until its server refresh completes');
  assert.equal(normal.state.eveningInviteBusy,true);
  normal.refresh.resolve();
  await work;
+ assert.equal(normal.state.tab,'session');
  assert.equal(normal.state.eveningInviteBusy,false);
  assert.equal(normal.element.disabled,false);
  assert.equal(normal.events.filter(e=>e==='render').length,1);
@@ -165,6 +167,20 @@ test('Real invitation response stays owned by its account through server setup a
  duringRefresh.refresh.resolve();
  await savingNo;
  assert.equal(duringRefresh.events.includes('render'),false);
+
+ // If the authoritative refresh fails after server consent, the home
+ // screen remains the visible route; a later retry can open Soirée safely.
+ const refreshFailure=make('yes'),refreshFailed=refreshFailure.start();
+ refreshFailure.response.resolve({status:'yes'});
+ await new Promise(resolve=>setImmediate(resolve));
+ refreshFailure.setup.resolve({id:'night-a'});
+ await new Promise(resolve=>setImmediate(resolve));
+ refreshFailure.refresh.reject(Error('Refresh unavailable'));
+ await assert.rejects(refreshFailed,/Refresh unavailable/);
+ assert.equal(refreshFailure.state.tab,'home');
+ assert.equal(refreshFailure.state.eveningInviteBusy,false);
+ assert.equal(refreshFailure.element.disabled,false);
+ assert.equal(refreshFailure.events.includes('render'),false);
 
  const failed=make('no'),failedWork=failed.start();
  failed.response.reject(Error('Temporary network outage'));
