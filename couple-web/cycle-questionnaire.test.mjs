@@ -59,9 +59,9 @@ test('The active cycle answer is serialized, scoped and not applied to a differe
  assert.match(handler,/state.cycleStatus.answered_self/);
  assert.match(handler,/finally\{/);
  assert.match(handler,/if\(state.cycleAnswerRequest===owner\)/);
- assert.match(handler,/for\(const control of controls\)if\(control.isConnected\)control.disabled=false/);
+ assert.match(handler,/for\(const control of currentOverlay\?\.querySelectorAll\('\.lr-cycle-choice'\)\|\|\[\]\)/);
  assert.match(handler,/if\(progress\)progress.hidden=false/);
- assert.match(handler,/if\(progress\)progress.hidden=true/);
+ assert.match(handler,/if\(liveProgress\)liveProgress.hidden=true/);
  assert.match(handler,/if\(verb==='cycle-later'\)\{[\s\S]*?state.cycleAnswerRequest/);
 });
 
