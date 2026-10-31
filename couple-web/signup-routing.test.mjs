@@ -161,6 +161,7 @@ test('new account without invitation resolves owner creation server-side exactly
 test('server invitation decision is retrieved before creating the admin duo',async()=>{
  const calls=[];
  const ctx={
+  authFeedbackGeneration:0,
   state:{user:{id:'signup-owner'}},
   rpc:async(name,args)=>{
    calls.push({name,args});
@@ -174,6 +175,24 @@ test('server invitation decision is retrieved before creating the admin duo',asy
  assert.deepEqual(calls.map(x=>x.name),['resolve_love_signup','remember']);
  assert.equal(calls[0].args.p_create_owner,true);
  assert.equal(calls[1].id,response.invitation_id);
+});
+
+test('same-account reauthentication cannot restore a stale signup invitation',async()=>{
+ let resolveRpc;
+ const pending=new Promise(resolve=>{resolveRpc=resolve;});
+ const calls=[],state={user:{id:'signup-owner'}};
+ const ctx={
+  state,authFeedbackGeneration:0,
+  rpc:async(name,args)=>{calls.push({name,args});return pending;},
+  rememberVerifiedInvitation:id=>calls.push({name:'remember',id})
+ };
+ const fn=vm.runInNewContext(resolution+';resolveVerifiedSignup',ctx);
+ const lookup=fn(true);
+ ctx.authFeedbackGeneration++;
+ resolveRpc({status:'invitation',invitation_id:'stale-after-relogin'});
+ assert.equal((await lookup).status,'account_changed');
+ assert.deepEqual(calls.map(x=>x.name),['resolve_love_signup'],
+  'do not restore the previous session invitation');
 });
 
 test('server security and transaction contract: verified email, member uniqueness, invitation priority',()=>{
