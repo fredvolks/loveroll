@@ -32,7 +32,7 @@ import {eveningFavoriteId,readEveningFavorites,toggleEveningFavorite,removeEveni
 import {cycleIntensityQuestionnaireHtml,ownsCycleIntensityAnswer} from './cycle-questionnaire.mjs?v=20261031-cycle261';
 import {DICE_WEIGHT_CONFIG,configuredDiceWeights,parseDiceWeightInputs} from './dice-weighting.mjs?v=20261018-weights146';
 import {premiumEveningHtml,updateEveningCategoryUi} from './premium-evening.mjs?v=20261028-lr027-web254';
-import {eveningHistoryMarkup,eveningLocalDay} from './evening-calendar.mjs?v=20261029-web259';
+import {eveningHistoryMarkup,eveningLocalDay,eveningCalendarInitialDate} from './evening-calendar.mjs?v=20261029-web259';
 import {eveningReviewModal,validEveningReview} from './evening-review.mjs?v=20261016-person-review97';
 import {premiumSurpriseHtml,sixSpecialEvents} from './premium-surprise.mjs?v=20261022-home228';
 import {surpriseSlot,surpriseCustom,surpriseTitle,formatSurpriseDateInput,parseSurpriseDateInput} from './surprise-event-config.mjs?v=20261016-surprise109';
@@ -2754,10 +2754,9 @@ function eveningCalendarReturn(){
 }
 function renderEveningCalendar(){
  const mo=state.eveningCalendarMonth||month();
- const date=state.eveningCalendarDate?.startsWith(mo)?state.eveningCalendarDate:
-  ((state.sessions||[]).find(s=>eveningLocalDay(s.started_at)?.startsWith(mo))?
-   eveningLocalDay(state.sessions.find(s=>eveningLocalDay(s.started_at)?.startsWith(mo)).started_at):
-   (mo===month()?today():mo+'-01'));
+ const date=eveningCalendarInitialDate({
+  sessions:state.sessions,month:mo,selectedDate:state.eveningCalendarDate
+ });
  frame(eveningHistoryMarkup({
   sessions:state.sessions||[],members:state.members||[],
   stats:state.eveningHistoryStats||[],historyChallenges:state.eveningCalendarChallenges||[],
