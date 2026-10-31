@@ -247,7 +247,9 @@ export function premiumEveningHtml({
     '<div class="evening-finale-ornament" aria-hidden="true"><span>♡</span></div>'+
     '<div class="evening-finale-weekly">♡ SOIRÉES CETTE SEMAINE · '+
        esc(weeklyCount)+' / '+(weeklyReady?esc(weeklyLimit):'—')+
-       (!lastEvening?sessionLengthChooserHtml(sessionLength):'')+'</div>'+
+       // Keep next-evening planning available after today's finished night,
+       // without enabling a second official session or changing a D6/D100.
+       sessionLengthChooserHtml(sessionLength)+'</div>'+
     (lastEvening?
       '<h2>Notre soirée est terminée</h2>'+
       '<p class="evening-finale-description"><strong>'+esc(lastEvening.completed)+
