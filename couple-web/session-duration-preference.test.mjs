@@ -238,3 +238,64 @@ test('Delayed close and finish responses cannot repaint a replacement login',asy
   }
  }
 });
+
+test('Cancel confirmation is safe during an official roll and after an Auth change',async()=>{
+ const {runInNewContext}=await import('node:vm');
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const start=source.indexOf("if(verb==='cancel-session'){");
+ const end=source.indexOf("if(verb==='advent-open'){",start);
+ assert.ok(start>0&&end>start);
+ const route=source.slice(start,end);
+ function fixture(){
+  let resolve;
+  const pending=new Promise(done=>{resolve=done;});
+  const state={user:{id:'alice'},coupleId:'duo-a',tab:'session',
+   session:{id:'night-a'},confirmCancel:false,diceStatus:null};
+  const calls={writes:[],refresh:0,renders:0};
+  const scope={state,authFeedbackGeneration:4,
+   rpc:(name,args)=>{calls.writes.push({name,args});return pending;},
+   render:()=>{calls.renders++;},
+   refreshAndShow:async()=>{calls.refresh++;}
+  };
+  const run=runInNewContext('(async verb=>{'+route+'})',scope);
+  return {state,scope,calls,resolve,run};
+ }
+ const normal=fixture();
+ await normal.run('cancel-session');
+ assert.equal(normal.state.confirmCancel,true);
+ assert.equal(normal.calls.renders,1);
+ const closed=normal.run('confirm-cancel');
+ assert.equal(normal.calls.writes.length,1);
+ assert.equal(normal.calls.writes[0].name,'finish_couple_session');
+ assert.equal(normal.calls.writes[0].args.p_session,'night-a');
+ assert.equal(normal.calls.writes[0].args.p_count,false);
+ normal.resolve(null);await closed;
+ assert.equal(normal.state.tab,'home');
+ assert.equal(normal.state.confirmCancel,false);
+ assert.equal(normal.calls.refresh,1);
+ for(const status of ['pending','rolling','settled']){
+  const h=fixture();h.state.diceStatus=status;
+  await h.run('cancel-session');
+  await h.run('confirm-cancel');
+  assert.equal(h.calls.writes.length,0,'No cancel RPC while dice are active');
+  assert.equal(h.calls.renders,0);
+  assert.equal(h.state.confirmCancel,false);
+ }
+ for(const mutation of [
+  h=>{h.state.user={id:'bob'};},
+  h=>{h.state.coupleId='duo-b';},
+  h=>{h.state.session={id:'night-b'};},
+  h=>{h.scope.authFeedbackGeneration++;}
+ ]){
+  const h=fixture();
+  h.state.confirmCancel=true;
+  const work=h.run('confirm-cancel');
+  mutation(h);
+  h.resolve(null);await work;
+  assert.equal(h.calls.writes.length,1);
+  assert.equal(h.state.tab,'session','Old receipt cannot send new login home');
+  assert.equal(h.state.confirmCancel,true);
+  assert.equal(h.calls.refresh,0);
+ }
+});
+
