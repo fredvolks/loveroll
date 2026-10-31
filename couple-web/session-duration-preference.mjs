@@ -3,11 +3,16 @@
 // governed by server state; this choice does not close or shorten a session.
 export const SESSION_LENGTH_OPTIONS=Object.freeze(['5','10','15','30','libre']);
 const storageKey=userId=>'loveroll-session-length:'+userId;
+// Session-only fallback when Safari/Android WebView forbids local storage.
+// Only the chosen duration is cached; never card text or server state.
+const temporaryLengths=new Map();
+const validUserId=id=>typeof id==='string'&&!!id.trim();
 export function normalizeSessionLength(value){
  return SESSION_LENGTH_OPTIONS.includes(value)?value:'libre';
 }
 export function readSessionLength(userId,storage){
- if(typeof userId!=='string'||!userId)return 'libre';
+ if(!validUserId(userId))return 'libre';
+ if(temporaryLengths.has(userId))return temporaryLengths.get(userId);
  // Reading globalThis.localStorage can itself throw (Safari privacy policy,
  // opaque origins). Resolve it INSIDE the guarded block, not in defaults.
  try{
@@ -16,13 +21,17 @@ export function readSessionLength(userId,storage){
  }catch{return 'libre';}
 }
 export function saveSessionLength(userId,value,storage){
- if(typeof userId!=='string'||!userId||!SESSION_LENGTH_OPTIONS.includes(value))return false;
+ if(!validUserId(userId)||!SESSION_LENGTH_OPTIONS.includes(value))return false;
  try{
   const available=storage===undefined?globalThis.localStorage:storage;
-  if(!available?.setItem)return false;
+  if(typeof available?.setItem!=='function')throw Error('Storage unavailable');
   available.setItem(storageKey(userId),value);
+  temporaryLengths.delete(userId); // Real persistent storage is authoritative.
   return true;
- }catch{return false;}
+ }catch{
+  temporaryLengths.set(userId,value); // Until this page is closed/refreshed.
+  return true;
+ }
 }
 export function sessionLengthSettingsHtml(value='libre'){
  const selected=normalizeSessionLength(value);
@@ -38,7 +47,7 @@ export function sessionLengthSettingsHtml(value='libre'){
   '<p>Un repère personnel pour préparer votre prochain moment à deux. '+
   'Il ne termine pas automatiquement la soirée ni les défis.</p>'+
   '<div class="account-test-options">'+choices+'</div>'+
-  '<small>Préférence enregistrée sur cet appareil pour ce compte.</small></div>';
+  '<small>Enregistrée sur cet appareil si autorisé, sinon pour cette visite seulement.</small></div>';
 }
 
 // Compact pre-session choice. This changes only the local preference; the
