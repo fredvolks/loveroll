@@ -697,6 +697,7 @@ function adoptAuthenticatedIdentity(nextUser){
  if(previousId!==nextId){
   latestAuthReloadRequest=null;
   currentSignoutRequest=null;
+  currentRecoveryPasswordRequest=null;
   currentProfileSave=null;
   inviteAcceptanceRequest=null;inviteAcceptanceBusy=false;
   state.inviteAttemptKey=null;state.inviteError=null;state.inviteWelcome=false;
@@ -816,6 +817,28 @@ async function signOutCurrentAccount(){
   return true;
  }finally{
   if(currentSignoutRequest===request)currentSignoutRequest=null;
+ }
+}
+// A password-recovery RPC may settle after a second account signs in.
+// Never finish the old recovery UI or surface its errors on the new account.
+let currentRecoveryPasswordRequest=null;
+async function updateRecoveryPasswordForCurrentAccount(password){
+ const ownerId=state.user?.id;
+ if(!ownerId||!state.passwordRecovery)return false;
+ if(currentRecoveryPasswordRequest?.ownerId===ownerId)
+  throw Error('Modification du mot de passe déjà en cours…');
+ const request={ownerId};currentRecoveryPasswordRequest=request;
+ const current=()=>state.user?.id===ownerId&&state.passwordRecovery&&
+  currentRecoveryPasswordRequest===request;
+ try{
+  let response;
+  try{response=await client.auth.updateUser({password});}
+  catch(error){if(!current())return false;throw error;}
+  if(!current())return false;
+  if(response?.error)throw response.error;
+  return true;
+ }finally{
+  if(currentRecoveryPasswordRequest===request)currentRecoveryPasswordRequest=null;
  }
 }
 function authMessage(message){
@@ -4501,16 +4524,20 @@ async function handle(action,element){
   let password;
   try{password=requireLovePassword(id('signin-password')?.value);}
   catch(error){authMessage(error.message);return;}
+  const ownerId=state.user.id;
   const btn=element;if(btn?.disabled)return;if(btn)btn.disabled=true;
   try{
-   const {error}=await client.auth.updateUser({password});
-   if(error){authMessage(passwordAuthMessage(error));return;}
+   if(!(await updateRecoveryPasswordForCurrentAccount(password))||
+      state.user?.id!==ownerId||!state.passwordRecovery)return;
    state.passwordRecovery=false;state.authMode='signin';state.authNotice=null;
    const url=new URL(location.href);url.searchParams.delete('auth');url.searchParams.delete('type');
    history.replaceState(null,'',url.pathname+url.search+url.hash);
    await reload();
-  }catch(error){authMessage(passwordAuthMessage(error));}
-  finally{if(btn)btn.disabled=false;}
+  }catch(error){
+   // A late failure from the old account cannot overwrite the new login.
+   if(state.user?.id===ownerId&&state.passwordRecovery)
+    authMessage(passwordAuthMessage(error));
+  }finally{if(btn)btn.disabled=false;}
   return;
  }
  if(verb==='signout'){
