@@ -32,3 +32,19 @@ export function sessionLengthSettingsHtml(value='libre'){
   '<div class="account-test-options">'+choices+'</div>'+
   '<small>Préférence enregistrée sur cet appareil pour ce compte.</small></div>';
 }
+
+// Compact pre-session choice. This changes only the local preference; the
+// official D6/D100 and evening close conditions are never derived from it.
+export function sessionLengthChooserHtml(value='libre'){
+ const selected=normalizeSessionLength(value);
+ const buttons=SESSION_LENGTH_OPTIONS.map(duration=>{
+  const active=duration===selected;
+  const label=duration==='libre'?'Libre':duration+' min';
+  return '<button type="button" class="evening-length-option'+
+   (active?' is-selected':'')+'" data-action="session-length:'+duration+'"'+
+   ' aria-pressed="'+active+'">'+label+'</button>';
+ }).join('');
+ return '<div class="evening-length-choice" role="group" aria-label="Durée souhaitée de la soirée">'+
+  '<p class="evening-length-caption">Durée souhaitée <small>· repère personnel, sans arrêt automatique</small></p>'+
+  '<div class="evening-length-options">'+buttons+'</div></div>';
+}
