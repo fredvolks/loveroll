@@ -1657,7 +1657,7 @@ function renderWaitingPartner(){
 const eclatNoteDrafts=new Map();
 function eclatNoteState(){
  const key=eclatNoteKey(state.eclat,state.user?.id);
- if(!key)return {};
+ if(!key||!isSharedCoupleReady(state.coupleId,state.members))return {};
  // A fresh Auth session with the same account ID must reload its own note.
  // Discard any draft created under an older login before issuing a read.
  if(!eclatNoteDrafts.has(key)||
@@ -1673,6 +1673,7 @@ function eclatNoteState(){
   // signed-in user's private Éclat screen.
   const current=()=>ownsCoupleAsyncRead(state,owner)&&
    authFeedbackGeneration===owner.generation&&
+   isSharedCoupleReady(owner.coupleId,state.members)&&
    eclatNoteDrafts.get(key)===draft;
   loadEclatNote(client,status,owner.userId).then(value=>{
    if(current())Object.assign(draft,value,{saved:!!value.note||!!value.clue,dirty:false,error:false});
@@ -1696,7 +1697,8 @@ async function saveCurrentEclatNote(momentDone){
  // An account switch, new chapter or note retry must invalidate the pending
  // result even if the old network request is still settling.
  const current=()=>ownsCoupleAsyncRead(state,owner)&&
-  authFeedbackGeneration===owner.generation&&state.tab==='eclat'&&
+  authFeedbackGeneration===owner.generation&&
+  isSharedCoupleReady(owner.coupleId,state.members)&&state.tab==='eclat'&&
   eclatNoteKey(state.eclat,state.user?.id)===key&&
   eclatNoteDrafts.get(key)===draft;
  if(!current())return null;
