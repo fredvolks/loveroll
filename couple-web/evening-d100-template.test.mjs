@@ -1198,3 +1198,67 @@ test('LR-027: private-card overlay honestly locks Start, Complete, Refuse during
  assert.match(action,/if\(state\.diceStatus\|\|isActiveEveningGiftPending\(\)\)return;/,
   'The server action also rejects an old tap, regardless of button state');
 });
+
+test('LR-028: a pending gift keeps the private queue and Android Back stable',async()=>{
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const {runInNewContext}=await import('node:vm');
+ const routes=[
+  {verb:'evening-list',from:"if(verb==='evening-challenge'||verb==='evening-list'){",
+   until:"if(verb==='evening-close'){"},
+  {verb:'evening-close',from:"if(verb==='evening-close'){",
+   until:"if(verb==='favorite-remove'){"},
+  {verb:'evening-open',from:"if(verb==='evening-open'){",
+   until:"if(verb==='evening-refuse'){"}
+ ];
+ for(const {verb,from,until} of routes){
+  const a=source.indexOf(from),z=source.indexOf(until,a+from.length);
+  assert.ok(a>0&&z>a,'Use real private queue action: '+verb);
+  const state={tab:'session',diceStatus:null,user:{id:'alice'},
+   session:{id:'night'},showEveningChallenges:true,selectedEveningChallengeId:'card-a'};
+  let writes=0,paints=0,focus=0;
+  const forbid=()=>{writes++;throw Error('Pending gift changed private queue');};
+  const action=runInNewContext('(async (verb,parts)=>{'+source.slice(a,z)+'})',{
+   state,isActiveEveningRedrawPending:()=>false,
+   isActiveEveningGiftPending:()=>true,
+   render:()=>{paints++;},clearEveningSelection:forbid,
+   saveEveningSelection:forbid,ownEveningChallenges:forbid,
+   safeEveningBookmarkStorage:forbid,
+   root:{querySelector:()=>{focus++;return null;}}
+  });
+  await action(verb,['card-b']);
+  assert.equal(writes,0,'No stale queue mutation: '+verb);
+  assert.equal(paints,0,'No stale queue repaint: '+verb);
+  assert.equal(focus,0,'No focus theft: '+verb);
+  assert.equal(state.selectedEveningChallengeId,'card-a');
+  assert.equal(state.showEveningChallenges,true);
+ }
+ const a=source.indexOf('function backFromLoveRoll(){');
+ const z=source.indexOf('window.loveRollHandleBack=backFromLoveRoll;',a);
+ assert.ok(a>0&&z>a,'Native Back must exist');
+ for(const hasQueue of [false,true]){
+  const state={tab:'session',diceStatus:null,user:{id:'alice'},
+   session:{id:'night'},showEveningChallenges:hasQueue,
+   eveningRefusalId:hasQueue?'card-a':null};
+  let paints=0,settings=0;
+  const back=runInNewContext(source.slice(a,z)+'\nbackFromLoveRoll',{
+   state,isActiveEveningGiftPending:()=>true,
+   isActiveEveningRedrawPending:()=>false,
+   root:{_settingsMenuBack:()=>{settings++;return true;}},
+   document:{querySelector:()=>null},
+   render:()=>{paints++;throw Error('Back cannot remount gifting queue');}
+  });
+  assert.equal(back(),true);
+  assert.equal(paints,0);assert.equal(settings,0);
+  assert.equal(state.showEveningChallenges,hasQueue);
+  assert.equal(state.tab,'session');
+ }
+ // The native confirmation dialog may still be dismissed intentionally.
+ let closed=0;
+ const backDialog=runInNewContext(source.slice(a,z)+'\nbackFromLoveRoll',{
+  state:{tab:'session'},isActiveEveningGiftPending:()=>true,
+  document:{querySelector:selector=>selector==='dialog[open]'?
+   {close:()=>{closed++;}}:null}
+ });
+ assert.equal(backDialog(),true);
+ assert.equal(closed,1,'The pending confirmation is allowed to cancel');
+});
