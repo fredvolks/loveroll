@@ -3601,7 +3601,16 @@ async function animateRoll(fn,kind='general'){
   if(!current())return null;
   throw e;
  }finally{
-  if(latestDiceRollRequest===request)latestDiceRollRequest=null;
+  if(latestDiceRollRequest===request){
+   const wasCurrent=current();
+   latestDiceRollRequest=null;
+   // Navigating between Auth screens can invalidate a roll without changing
+   // the user ID. Release that old pending state only if no newer roll owns it.
+   if(!wasCurrent&&state.diceStatus){
+    state.diceStatus=null;state.rollAnimationFace=null;state.rollAnimationKind=null;
+    if(state.user?.id===ownerId&&state.coupleId===ownerCouple)render();
+   }
+  }
  }
 }
 async function hashToken(token){
