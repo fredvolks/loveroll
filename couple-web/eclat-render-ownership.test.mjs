@@ -11,7 +11,7 @@ const end=app.indexOf('function renderHome(){',begin);
 assert.ok(begin>0&&end>begin,'renderEclat production implementation exists');
 const source=app.slice(begin,end)+';renderEclat();';
 
-function renderFixture(memberCount,{statusOverrides={},mode='real',eligible=false,music=false}={}){
+function renderFixture(memberCount,{statusOverrides={},mode='real',eligible=false,music=false,historyError=false}={}){
  const status={active:true,access:true,coffret_id:1,chapter_number:1,variant_number:0,...statusOverrides};
  const history=[{coffret_id:1,private_note:'old couple content'}];
  const state={user:{id:'alice'},coupleId:'shared-duo',
@@ -21,7 +21,7 @@ function renderFixture(memberCount,{statusOverrides={},mode='real',eligible=fals
   eclatDetails:false,eclatBrowse:false,eclatIntent:'all',
   eclatFinished:'private completed title',eclatHistory:history,
   eclatHistoryCouple:'shared-duo',eclatHistoryUserId:'alice',
-  eclatHistoryError:false};
+  eclatHistoryError:historyError};
  const captured=[];let stops=0,notes=0,frames=0,moods=0;
  runInNewContext(source,{
   state,isSharedCoupleReady:(c,m)=>!!c&&Array.isArray(m)&&m.length===2,
@@ -300,4 +300,50 @@ test('LR-026: a new active coffret supersedes pending last-chapter completion',a
  assert.equal(h.state.eclatFinished,undefined);
  assert.equal(h.stops(),0);
  assert.deepEqual(h.renders,[]);
+});
+
+
+test('LR-026: revoked Éclat access does not pass private history or ending to HTML',()=>{
+ const f=renderFixture(2,{statusOverrides:{access:false},historyError:true});
+ assert.equal(f.payload.coupleReady,true,'public duo context remains available');
+ assert.equal(f.payload.status.access,false,'public subscription gate remains visible');
+ assert.deepEqual(Array.from(f.payload.history),[]);
+ assert.equal(f.payload.finished,null);
+ assert.equal(f.payload.historyError,false,
+  'private history failure metadata must not be exposed without access');
+ assert.equal(f.history[0].private_note,'old couple content',
+  'test must preserve stale memory to prove the renderer filters it');
+});
+
+test('LR-026: member preview never forwards cached private Éclat history',()=>{
+ const f=renderFixture(2,{mode:'member',eligible:true,historyError:true});
+ assert.equal(f.payload.status.access,false);
+ assert.deepEqual(Array.from(f.payload.history),[]);
+ assert.equal(f.payload.finished,null);
+ assert.equal(f.payload.historyError,false);
+ assert.equal(f.notes,0);
+});
+
+test('LR-026: unavailable Éclat entitlement does not expose cached history',()=>{
+ const f=renderFixture(2,{statusOverrides:{access:undefined},historyError:true});
+ assert.deepEqual(Array.from(f.payload.history),[]);
+ assert.equal(f.payload.finished,null);
+ assert.equal(f.payload.historyError,false);
+});
+
+test('LR-026: authorized completed Éclat session retains prior private gallery',()=>{
+ const f=renderFixture(2,{statusOverrides:{access:true,active:false},historyError:true});
+ assert.equal(f.payload.history,f.history,
+  'history remains available even without an active chapter');
+ assert.equal(f.payload.finished,'private completed title');
+ assert.equal(f.payload.historyError,true);
+ assert.equal(f.notes,0,'finished chapters cannot load new in-progress notes');
+});
+
+test('LR-026: active entitled couple still renders private history normally',()=>{
+ const f=renderFixture(2,{historyError:true});
+ assert.equal(f.payload.history,f.history);
+ assert.equal(f.payload.finished,'private completed title');
+ assert.equal(f.payload.historyError,true);
+ assert.equal(f.notes,1);
 });
