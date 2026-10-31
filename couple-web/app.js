@@ -1784,9 +1784,13 @@ async function saveCurrentEclatNote(momentDone){
   // Keep the editor mounted and editable, but visibly prevent any
   // chapter transition from racing the note currently being saved.
   const phaseActions=new Set(['eclat:note-play','eclat:note-done',
-   'eclat:note-edit','eclat:choose:0']);
+   'eclat:note-edit']);
   for(const action of root.querySelectorAll?.('[data-action]')||[]){
-   if(!phaseActions.has(action.dataset?.action))continue;
+   const name=action.dataset?.action||'';
+   // All four choices (Passer and three moods) must reflect the same
+   // pending write. The choice RPC already ignores taps while saving,
+   // so keep the visible and accessible state consistent with that guard.
+   if(!phaseActions.has(name)&&!/^eclat:choose:[0-3]$/.test(name))continue;
    action.disabled=saving;
    if(saving)action.setAttribute('aria-busy','true');
    else action.removeAttribute('aria-busy');
