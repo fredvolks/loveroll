@@ -771,3 +771,65 @@ test('LR-027: personal completion and overlay buttons wait for a private server 
   'Favorites must not repaint the view during a pending repick');
  assert.match(personalOverlay,/Confirmation en cours/);
 });
+
+test('LR-027: delayed D6, category, gift and resume touches cannot race a private repick',async()=>{
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const {runInNewContext}=await import('node:vm');
+ const routes=[
+  {verb:'my-d6',start:"if(verb==='my-d6'){",end:"if(verb==='category'){"},
+  {verb:'category',start:"if(verb==='category'){",end:"if(verb==='session-length'){"},
+  {verb:'give-challenge',start:"if(verb==='give-challenge'){",end:"if(verb==='new-challenge'){"},
+  {verb:'resume-evening',start:"if(verb==='resume-evening'){",end:"if(verb==='tab'){"}
+ ];
+ for(const {verb,start,end} of routes){
+  const from=source.indexOf(start),until=source.indexOf(end,from);
+  assert.ok(from>0&&until>from,'Use the real '+verb+' action');
+  const code=source.slice(from,until);
+  assert.match(code,/isActiveEveningRedrawPending\(\)/,verb+' needs an in-flight repick guard');
+  let sideEffects=0;
+  const state={tab:'session',diceStatus:null,session:{id:'night-1'},
+   category:null,user:{id:'alice'}};
+  const route=runInNewContext('(async (verb,parts)=>{'+code+'})',{
+   state,isActiveEveningRedrawPending:()=>true,
+   rpc:()=>{sideEffects++;throw Error('Unexpected RPC')},
+   animateRoll:()=>{sideEffects++;throw Error('Unexpected D6')},
+   updateEveningCategoryUi:()=>{sideEffects++;throw Error('Unexpected selection')},
+   refreshShared:()=>{sideEffects++;throw Error('Unexpected RLS reload')},
+   premiumConfirm:()=>{sideEffects++;throw Error('Unexpected confirmation')},
+   render:()=>{sideEffects++;throw Error('Unexpected repaint')}
+  });
+  await route(verb,verb==='category'?['SENSUEL']:[]);
+  assert.equal(sideEffects,0,verb+' must not have any side effects');
+  assert.equal(state.tab,'session');
+  assert.equal(state.category,null);
+ }
+});
+test('LR-027: a gift confirmation that resolves after a repick starts never sends an RPC',async()=>{
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const from=source.indexOf("if(verb==='give-challenge'){");
+ const until=source.indexOf("if(verb==='new-challenge'){",from);
+ assert.ok(from>0&&until>from);
+ const {runInNewContext}=await import('node:vm');
+ const code=source.slice(from,until);
+ assert.match(code,/const ownsGift=\(\)=>!state\.diceStatus&&!isActiveEveningRedrawPending\(\)/,
+  'The confirmation must recheck the repick guard, not just its initial click');
+ let resolveConfirmation,pending=false,writes=0;
+ const state={tab:'session',diceStatus:null,user:{id:'alice'},coupleId:'couple-1',
+  session:{id:'night-1',paired_turns:true,self_draws:true},
+  rollStatus:{both_ready:true},eveningBoard:{ready:true,remaining:{alice:2}},
+  gifts:[],members:[],personal:[],challenges:[]};
+ const confirmation=new Promise(resolve=>{resolveConfirmation=resolve;});
+ const route=runInNewContext('(async verb=>{'+code+'})',{
+  state,authFeedbackGeneration:1,isActiveEveningRedrawPending:()=>pending,
+  other:()=>({name:'Émilie'}),month:()=> '2026-10',
+  premiumConfirm:()=>confirmation,
+  rpc:()=>{writes++;throw Error('Gift must not race repick')},
+  refreshAndShow:()=>{writes++;throw Error('Stale refresh forbidden')},
+  notify:()=>{writes++;throw Error('Stale toast forbidden')}
+ });
+ const task=route('give-challenge');
+ pending=true;resolveConfirmation(true);
+ await task;
+ assert.equal(writes,0);
+ assert.equal(state.tab,'session');
+});
