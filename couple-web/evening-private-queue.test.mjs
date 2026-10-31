@@ -2287,3 +2287,82 @@ test('LR-026: obsolete couple Realtime callbacks do not reach the new account',a
  assert.equal(probes,1,'the previous channel cannot refresh a replacement user');
  assert.equal(reloads,0,'old membership notifications cannot reload another account');
 });
+
+test('LR-026: revoked getUser session removes previous private screen immediately',async()=>{
+ const state={user:{id:'alice'},coupleId:'couple-alice',profile:{display_name:'Private'},
+  tab:'eclat',eclat:{active:true},eclatHistory:[{id:'private'}],
+  customCards:[{title:'private'}],emailVerificationPending:true};
+ const f=privateAuthBoundaryFixture(state,async()=>({error:{message:'Invalid JWT'},data:null}));
+ assert.equal(await f.refreshVerifiedIdentity(),false);
+ assert.equal(state.user,null);
+ assert.equal(state.coupleId,null);
+ assert.equal(state.profile,null);
+ assert.equal(state.eclat,null);
+ assert.equal(state.eclatHistory.length,0);
+ assert.equal(state.customCards.length,0);
+ assert.equal(state.channel,null);
+ assert.equal(state.emailVerificationPending,false);
+ assert.equal(f.calls.paints,1,'a revoked session must repaint the login instead of leaving private content on screen');
+ assert.equal(f.calls.channelRemovals,1);
+});
+
+test('LR-026: absent authoritative getUser identity also removes old couple view',async()=>{
+ const state={user:{id:'alice'},coupleId:'couple-alice',
+  profile:{display_name:'Private'},tab:'eclat'};
+ const f=privateAuthBoundaryFixture(state,async()=>({data:{user:null},error:null}));
+ assert.equal(await f.refreshVerifiedIdentity(),false);
+ assert.equal(state.user,null);
+ assert.equal(state.profile,null);
+ assert.equal(f.calls.paints,1);
+});
+
+test('LR-026: old getUser rejection after account switch cannot log out or repaint the new user',async()=>{
+ let release;
+ const pending=new Promise(resolve=>{release=resolve;});
+ const state={user:{id:'alice'},coupleId:'couple-alice',
+  profile:{display_name:'Alice'},tab:'eclat'};
+ const f=privateAuthBoundaryFixture(state,()=>pending);
+ const checking=f.refreshVerifiedIdentity();
+ f.adoptAuthenticatedIdentity({id:'bob'});
+ release({error:{message:'Expired Alice token'}});
+ assert.equal(await checking,null);
+ assert.equal(state.user.id,'bob');
+ assert.equal(f.calls.paints,0);
+});
+
+test('LR-026: obsolete account reload failure is suppressed after sign-in to another account',async()=>{
+ const first=app.indexOf('async function reload(){');
+ const end=app.indexOf('// A redraw started under another account',first);
+ assert.ok(first>=0&&end>first);
+ const state={user:{id:'alice'},coupleId:'couple-alice',testModeEligible:false};
+ let failRpc;
+ const pending=new Promise((_,reject)=>{failRpc=reject;});
+ const f=runInNewContext('let latestAuthReloadRequest=null;'+app.slice(first,end)+
+  ';({reload})',{
+   state,document:{hidden:false},challengeTimer:{running:false},
+   hasUnsavedForm:()=>false,root:{querySelector:()=>null},window:{},
+   refreshVerifiedIdentity:async()=>true,rpc:()=>pending,
+   console:{warn:()=>{}}
+  });
+ const loading=f.reload();
+ state.user={id:'bob'};
+ failRpc(Error('Stale Alice network failure'));
+ await assert.doesNotReject(loading);
+ assert.equal(state.user.id,'bob');
+ assert.equal(state.testModeEligible,false);
+});
+
+test('LR-026: active account reload failure still reports its own network error',async()=>{
+ const first=app.indexOf('async function reload(){');
+ const end=app.indexOf('// A redraw started under another account',first);
+ const state={user:{id:'alice'},coupleId:'couple-alice',testModeEligible:false};
+ const f=runInNewContext('let latestAuthReloadRequest=null;'+app.slice(first,end)+
+  ';({reload})',{
+   state,document:{hidden:false},challengeTimer:{running:false},
+   hasUnsavedForm:()=>false,root:{querySelector:()=>null},window:{},
+   refreshVerifiedIdentity:async()=>true,
+   rpc:async()=>{throw Error('Active Alice network failure');},
+   console:{warn:()=>{}}
+  });
+ await assert.rejects(f.reload(),/Active Alice network failure/);
+});
