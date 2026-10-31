@@ -14,8 +14,10 @@ const cleanup=between(' state.invitations=invitations;', ' state.couple=couple[0
 async function membershipRoute(rows,acceptInvites){
  const calls=[];
  const state={user:{id:'owner'}};
+ const ownerId=state.user.id;
+ const current=()=>state.user?.id===ownerId;
  const ctx={
-  state,
+  state,ownerId,current,
   query:async(name,params)=>{
    calls.push(name+':'+params.eq.user_id);
    return rows;
