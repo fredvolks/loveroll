@@ -7,7 +7,7 @@ const localDay=(date)=>{
  const val=t=>p.find(x=>x.type===t)?.value;
  return val('year')+'-'+val('month')+'-'+val('day');
 };
-export function eveningDailyAccess({sessions=[],weekly=null,now=new Date()}={}){
+export function eveningDailyAccess({sessions=null,weekly=null,now=new Date()}={}){
  const today=localDay(now),rawLimit=Number(weekly?.face);
  // The official weekly limit is a D6 face, never an arbitrary server value.
  const limit=Number.isInteger(rawLimit)&&rawLimit>=1&&rawLimit<=6?rawLimit:0;
