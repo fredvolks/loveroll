@@ -1,5 +1,14 @@
 # LoveRoll — SUIVI OFFICIEL DU PROMPT MAÎTRE
 
+### LR-027 — empêcher les actions périmées pendant D100 et une repige (31 octobre 2026)
+
+- [PR #176](https://github.com/fredvolks/loveroll/pull/176) toujours en brouillon, non fusionnée; aucun changement SQL, Pages ou APK.
+- Pendant une animation officielle D6/D100 (`diceStatus` actif), un événement ancien ne peut plus ouvrir le détail d'une carte privée ni déclencher Passer/Refuser; le rendu WebGL et le choix serveur en cours sont préservés.
+- Un Refuser périmé ne peut plus ouvrir une deuxième confirmation pendant une repige déjà en attente. Tant qu'une repige attend la confirmation de la liste RLS, Commencer/Reprendre un **autre** défi personnel est également bloqué pour éviter deux rafraîchissements concurrents de cette liste.
+- Code : `couple-web/app.js`. Régressions : `couple-web/evening-d100-template.test.mjs` (D100 `pending/rolling/settled`, refus et passe tardifs, file personnelle, autre défi pendant repige).
+- Commits code `e0bcf2f` et `1720749`, tests `97d1dad`, `0c1457c` et `29bf3e0`. Treize parcours de garde vérifiés directement dans V8 avec les véritables extraits de production; **la suite GitHub Actions du SHA final, le vrai staging Supabase A/B/C et les appareils physiques ne sont pas encore confirmés**. Ne pas fusionner/déployer sans ces validations.
+
+
 ### LR-027 — parcours de reprise des défis personnels (31 octobre 2026)
 
 - [PR #176](https://github.com/fredvolks/loveroll/pull/176), branche `feat/lr026-server-variety-after-category-20261029` : **développement enregistré, PR en brouillon, non fusionnée et non déployée**.
