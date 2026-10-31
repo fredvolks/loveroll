@@ -4119,11 +4119,19 @@ async function handle(action,element){
  if(verb==='evening-challenge'||verb==='evening-list'){
   if(state.diceStatus)return; // Opening the drawer unmounts the live dice scene.
   if(state.user?.id&&state.session?.id)clearEveningSelection(safeEveningBookmarkStorage(),state.user.id,state.session.id);
-  state.showEveningChallenges=true;state.selectedEveningChallengeId=null;render();return;
+  state.showEveningChallenges=true;state.selectedEveningChallengeId=null;render();
+  // Give keyboard/screen-reader users a stable entry point into the modal.
+  root.querySelector('.evening-queue-modal [data-action="evening-close"]')
+   ?.focus({preventScroll:true});
+  return;
  }
  if(verb==='evening-close'){
   if(state.user?.id&&state.session?.id)clearEveningSelection(safeEveningBookmarkStorage(),state.user.id,state.session.id);
-  state.showEveningChallenges=false;state.selectedEveningChallengeId=null;render();return;
+  state.showEveningChallenges=false;state.selectedEveningChallengeId=null;render();
+  // Restore focus to the action which opens this drawer, never to the body.
+  (root.querySelector('button[data-action="evening-list"]')||
+   root.querySelector('.evening-manage'))?.focus({preventScroll:true});
+  return;
  }
  if(verb==='favorite-remove'){
   if(!state.user?.id||!state.coupleId||
@@ -4158,7 +4166,10 @@ async function handle(action,element){
    throw Error('Ce défi ne fait pas partie de ta liste personnelle.');
   state.selectedEveningChallengeId=parts[0];state.showEveningChallenges=true;
   saveEveningSelection(safeEveningBookmarkStorage(),state.user.id,state.session.id,parts[0]);
-  render();return;
+  render();
+  root.querySelector('.evening-queue-modal [data-action="evening-close"]')
+   ?.focus({preventScroll:true});
+  return;
  }
  if(verb==='evening-refuse'){
   if(isEveningCardCompleting(parts[0]))return;
