@@ -13,10 +13,15 @@ test('Only actually finished, uncancelled sessions complete a duration; repeats 
 });
 test('History is restricted to its couple, paginated, and contains no private instructions or choices',async()=>{
  const requests=[];
- const client={from(table){const q={table};requests.push(q);return {select(columns){q.columns=columns;return this},eq(k,v){q.filter=[k,v];return this},order(k,v){q.order=[k,v];return this},range(a,b){q.range=[a,b];return Promise.resolve({data:a===0?Array.from({length:1000},(_,i)=>({id:i})):[{id:1000}],error:null})}}}};
+ const client={from(table){const q={table,orders:[]};requests.push(q);return {select(columns){q.columns=columns;return this},eq(k,v){q.filter=[k,v];return this},order(k,v){q.orders.push([k,v]);return this},range(a,b){q.range=[a,b];return Promise.resolve({data:a===0?Array.from({length:1000},(_,i)=>({id:i})):[{id:1000}],error:null})}}}};
  assert.equal((await loadEclatHistory(client,'couple-a')).length,1001);
  assert.equal(requests.length,2);
- for(const r of requests){assert.deepEqual(r.filter,['couple_id','couple-a']);assert.doesNotMatch(r.columns,/choice|variant_plan|outcome|started_by/);}
+ for(const r of requests){
+  assert.deepEqual(r.filter,['couple_id','couple-a']);
+  assert.deepEqual(r.orders,[['started_at',{ascending:false}],['id',{ascending:false}]],
+   'the secondary unique key gives every history page a stable order');
+  assert.doesNotMatch(r.columns,/choice|variant_plan|outcome|started_by/);
+ }
 });
 test('Gallery and detail retain persistent completed-duration memos and safe resume actions',()=>{
  const status={access:true,active:false};
@@ -96,4 +101,35 @@ test('LR-026: still-authorized multipage history preserves all rows',async()=>{
  const rows=await pending;
  assert.equal(rows.length,1001);
  assert.equal(rows.at(-1).id,1000);
+});
+
+test('LR-026: an explicit inactive status supersedes unfinished historical sessions',()=>{
+ const rows=[
+  {id:'unfinished',coffret_id:9,minutes:60,chapter_index:3,ended_at:null,cancelled:false},
+  {id:'cancelled',coffret_id:8,minutes:30,chapter_index:2,ended_at:null,cancelled:true}
+ ];
+ const inactive=coffretMemo(rows,9,{access:true,active:false});
+ assert.equal(inactive.active,false);
+ assert.equal(inactive.started,true);
+ assert.equal(inactive.minutes,null);
+ assert.equal(inactive.chapter,null);
+ assert.equal(coffretMemo(rows,8).active,false,'a cancelled session is never resumable');
+ const activeOther=coffretMemo(rows,9,{
+  access:true,active:true,coffret_id:2,minutes:90,chapter_index:6
+ });
+ assert.equal(activeOther.active,false,'an active coffret cannot revive another unfinished one');
+ const activeChosen=coffretMemo(rows,2,{
+  access:true,active:true,coffret_id:2,minutes:90,chapter_index:6
+ });
+ assert.equal(activeChosen.active,true);
+ assert.equal(activeChosen.minutes,90);
+ assert.equal(activeChosen.chapter,6);
+ assert.equal(coffretMemo(rows,9).active,true,'missing status permits a genuine unfinished session fallback');
+});
+test('LR-026: a session with cancellation does not display En cours in the gallery',()=>{
+ const html=eclatHtml({status:{access:true,active:false},history:[
+  {id:'cancelled',coffret_id:9,minutes:60,chapter_index:2,ended_at:null,cancelled:true}
+ ]});
+ assert.doesNotMatch(html,/En cours · 60 min · étape 2/);
+ assert.match(html,/Déjà commencé/);
 });
