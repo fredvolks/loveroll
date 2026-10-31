@@ -1,6 +1,16 @@
 # LoveRoll — SUIVI OFFICIEL DU PROMPT MAÎTRE
 
 
+### LR-027 — UI honnête pendant le don et corrections CI des actions Soirée (31 octobre 2026)
+
+- Branche `feat/lr026-server-variety-after-category-20261029`, [PR #176](https://github.com/fredvolks/loveroll/pull/176), encore **brouillon** et non fusionnée.
+- **Affichage Soirée** : durant un don, le statut principal et le texte de tour indiquent **« Don en cours de confirmation… »**. Le bouton de gestion est désactivé et les anciennes fenêtres de gestion/clôture restent masquées jusqu'à la fin de la confirmation. Un ancien clic `evening-more` ne peut pas rouvrir le menu pendant un don ; le menu et les fenêtres réapparaissent après l'attente, sans bloquer la navigation habituelle.
+- **Commits de code** : `66c9255` (`premium-evening.mjs`, message et menu désactivé), `afc89d2` (menus/dialogues non affichés pendant un don ou une repige), `facea9e` (`app.js`, guard direct sur clic retardé). Tests `11d2941` dans `evening-d100-template.test.mjs`.
+- **Preuves ciblées** : cinq régressions du fichier `evening-d100-template.test.mjs` exécutées en V8 contre les versions lues directement sur la branche GitHub, toutes réussies : menu/agenda durant D100, protection de repige, déduplication des dons, blocage de 13 actions sensibles, restitution des commandes après le don. L'ensemble GitHub Actions du dernier commit n'est **pas** encore confirmé, pas de preuve de tests navigateur avec de vrais comptes Auth/RLS.
+- Atelier : consultation réelle de la fiche LoveRoll, de la liste des agents et des experts Architecture/Qualité en mode MEDIUM, mais **erreur interne** à chaque appel ; **non synchronisé avec Atelier**. Aucun changement à la base de production, aucune fusion, aucun déploiement.
+
+
+
 ### LR-027 — réparations des régressions CI minuteur et réponse manuelle (31 octobre 2026)
 
 - [PR #176](https://github.com/fredvolks/loveroll/pull/176), toujours **brouillon non fusionné**. GitHub Actions `LoveRoll connected web checks` sur le commit `55db9f3` : tâche `static-tests` en **échec** dans `JavaScript syntax`, à cause de huit régressions `couple-web/timed-evening-completion.test.mjs` (notamment `isActiveEveningGiftPending is not defined` / `isActiveEveningRedrawPending is not defined` dans des isolats Node VM et des réponses manuelles sautées). Il s'agissait de contextes de test incomplets après les nouveaux gardes; ne pas supprimer les gardes de production.
