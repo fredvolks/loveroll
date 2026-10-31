@@ -2160,3 +2160,130 @@ test('LR-026: retry does not discard a private note while save pending',async()=
  assert.equal(busy.has('alice:s1:1'),false,'retry can reload after save settles');
  assert.equal(renders,1);
 });
+
+function privateAuthBoundaryFixture(state,getUser){
+ const start=app.indexOf('let latestAuthReloadRequest=null;');
+ const end=app.indexOf('function authMessage(',start);
+ assert.ok(start>0&&end>start,'production identity boundary must be available');
+ const drafts=new Map([['alice:session:1',{note:'PRIVATE'}]]);
+ const channel={id:'previous-private-couple'};
+ const calls={audioStops:0,channelRemovals:0,paints:0,reloads:0,timers:0};
+ state.channel=channel;
+ const scope=runInNewContext(
+  'const eclatNoteDrafts=drafts;let latestEclatAudioOwner=null;'+
+  'let latestEclatHistoryRead=null,latestEclatStatusRead=null,latestEclatActionRequest=null;'+
+  'let realtimeReconnectTimer=null;'+app.slice(start,end)+
+  ';({adoptAuthenticatedIdentity,refreshVerifiedIdentity,readRequest:()=>latestAuthReloadRequest})',{
+   state,drafts,client:{auth:{getUser},removeChannel:async()=>{calls.channelRemovals++;}},
+   eclatAudio:{stop:()=>calls.audioStops++},
+   clearTimeout:()=>{},setTimeout:()=>calls.timers++,
+   reload:async()=>calls.reloads++,render:()=>calls.paints++,
+   fail:()=>{},verifiedLoveEmail:()=>true
+  });
+ return {...scope,calls,drafts,channel};
+}
+
+test('LR-026: an auth identity switch closes the old couple channel and clears private Éclat memory',async()=>{
+ const state={user:{id:'alice'},coupleId:'couple-alice',profile:{display_name:'Alice'},
+  couple:{id:'couple-alice'},members:[{user_id:'alice'}],tab:'eclat',
+  eclat:{active:true},eclatHistory:[{id:'private'}],
+  eclatMusic:true,customCards:[{title:'private'}],
+  challenges:[{id:'private'}],personalJournal:[{id:'private'}],testModeEligible:true};
+ const f=privateAuthBoundaryFixture(state,async()=>({data:{user:state.user}}));
+ assert.equal(f.adoptAuthenticatedIdentity({id:'bob'}),true);
+ await Promise.resolve();
+ assert.equal(state.user.id,'bob');
+ assert.equal(state.coupleId,null);
+ assert.equal(state.profile,null);
+ assert.deepEqual(state.members,[]);
+ assert.equal(state.eclat,null);
+ assert.deepEqual(state.eclatHistory,[]);
+ assert.equal(state.eclatMusic,false);
+ assert.deepEqual(state.customCards,[]);
+ assert.deepEqual(state.challenges,[]);
+ assert.deepEqual(state.personalJournal,[]);
+ assert.equal(state.channel,null);
+ assert.equal(state.testModeEligible,false);
+ assert.equal(f.drafts.size,0);
+ assert.equal(f.calls.audioStops,1);
+ assert.equal(f.calls.channelRemovals,1);
+});
+
+test('LR-026: late getUser result cannot restore a previous authenticated account',async()=>{
+ let release;
+ const pending=new Promise(resolve=>{release=resolve;});
+ const state={user:{id:'alice'},coupleId:'couple-alice',tab:'eclat'};
+ const f=privateAuthBoundaryFixture(state,()=>pending);
+ const checking=f.refreshVerifiedIdentity();
+ f.adoptAuthenticatedIdentity({id:'bob'});
+ release({data:{user:{id:'alice'}}});
+ assert.equal(await checking,null);
+ assert.equal(state.user.id,'bob');
+ assert.equal(state.coupleId,null);
+ assert.equal(f.calls.reloads,0);
+});
+
+test('LR-026: authoritative getUser account change clears the old screen and schedules its own reload',async()=>{
+ const state={user:{id:'alice'},coupleId:'couple-alice',tab:'eclat'};
+ const f=privateAuthBoundaryFixture(state,async()=>({data:{user:{id:'bob'}}}));
+ assert.equal(await f.refreshVerifiedIdentity(),null);
+ assert.equal(state.user.id,'bob');
+ assert.equal(state.coupleId,null);
+ assert.equal(f.calls.paints,1);
+ assert.equal(f.calls.timers,1);
+});
+
+test('LR-026: stale login reload cannot apply an obsolete test-mode permission',async()=>{
+ const first=app.indexOf('async function reload(){');
+ const end=app.indexOf('// A redraw started under another account',first);
+ assert.ok(first>0&&end>first);
+ const state={user:{id:'alice'},coupleId:'couple-alice',testModeEligible:false};
+ let release;
+ const pending=new Promise(resolve=>{release=resolve;});
+ let paints=0;
+ const f=runInNewContext('let latestAuthReloadRequest=null;'+app.slice(first,end)+
+  ';({reload})',{
+   state,document:{hidden:false},
+   challengeTimer:{running:false},hasUnsavedForm:()=>false,
+   root:{querySelector:()=>null},window:{},
+   refreshVerifiedIdentity:async()=>true,
+   rpc:()=>pending,render:()=>paints++,
+   console:{warn:()=>{}}
+  });
+ const loading=f.reload();
+ // The old RPC succeeds only after the user signs in to a different account.
+ state.user={id:'bob'};
+ release(true);
+ await loading;
+ assert.equal(state.user.id,'bob');
+ assert.equal(state.testModeEligible,false);
+ assert.equal(paints,0);
+});
+
+test('LR-026: obsolete couple Realtime callbacks do not reach the new account',async()=>{
+ const start=app.indexOf('function subscribe(){');
+ const end=app.indexOf('function heroDice(',start);
+ assert.ok(start>0&&end>start);
+ const callbacks=[];
+ let statusCallback,probes=0,reloads=0;
+ const state={user:{id:'alice'},coupleId:'duo-alice',members:[{user_id:'alice'}],channel:null};
+ const channel={
+  on(_event,filter,callback){callbacks.push({filter,callback});return this;},
+  subscribe(callback){statusCallback=callback;return this;}
+ };
+ const f=runInNewContext(app.slice(start,end)+';({subscribe})',{
+  state,client:{channel:()=>channel,removeChannel:()=>Promise.resolve()},
+  liveSync:{request:()=>probes++},
+  reload:async()=>reloads++,notify:()=>{},fail:()=>{},
+  console:{warn:()=>{}}
+ });
+ f.subscribe();
+ statusCallback('SUBSCRIBED');
+ assert.equal(probes,1,'the current subscriber still refreshes its own data');
+ state.user={id:'bob'};state.coupleId='duo-bob';state.channel=null;
+ statusCallback('SUBSCRIBED');
+ const member=callbacks.find(e=>e.filter.table==='couple_members');
+ await member.callback();
+ assert.equal(probes,1,'the previous channel cannot refresh a replacement user');
+ assert.equal(reloads,0,'old membership notifications cannot reload another account');
+});
