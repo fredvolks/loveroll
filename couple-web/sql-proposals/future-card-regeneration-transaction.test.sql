@@ -1,3 +1,31 @@
+-- Boundary checks against the JavaScript preview: clamp calendar months
+-- while keeping UTC time and milliseconds, even in a non-UTC DB session.
+SET TIME ZONE 'America/Toronto';
+DO $calendar$
+DECLARE
+ before_date timestamptz;
+BEGIN
+ IF couple_private.love_future_regen_next_utc('2026-07-31T18:45:01.250Z'::timestamptz)
+  IS DISTINCT FROM '2026-09-30T18:45:01.250Z'::timestamptz
+ THEN RAISE EXCEPTION 'July 31 should clamp to September 30';END IF;
+ IF couple_private.love_future_regen_next_utc('2026-12-31T23:59:59Z'::timestamptz)
+  IS DISTINCT FROM '2027-02-28T23:59:59Z'::timestamptz
+ THEN RAISE EXCEPTION 'December 31 should clamp to February 28';END IF;
+ IF couple_private.love_future_regen_next_utc('2027-12-31T00:00:00Z'::timestamptz)
+  IS DISTINCT FROM '2028-02-29T00:00:00Z'::timestamptz
+ THEN RAISE EXCEPTION 'Leap-year February 29 expected';END IF;
+ IF couple_private.love_future_regen_next_utc('2026-08-31T16:00:00Z'::timestamptz)
+  IS DISTINCT FROM '2026-10-31T16:00:00Z'::timestamptz
+ THEN RAISE EXCEPTION 'Time-zone shift changed UTC instant';END IF;
+ IF couple_private.love_future_regen_next_utc(NULL) IS NOT NULL
+ THEN RAISE EXCEPTION 'Unknown history must not become an eligible date';END IF;
+ IF has_function_privilege('authenticated',
+ 'couple_private.love_future_regen_next_utc(timestamptz)','EXECUTE')
+ THEN RAISE EXCEPTION 'Calendar helper exposed to clients';END IF;
+END;
+$calendar$;
+RESET TIME ZONE;
+
 -- All synthetic; no Supabase credentials, actual payment or live D100.
 DO $t$
 DECLARE

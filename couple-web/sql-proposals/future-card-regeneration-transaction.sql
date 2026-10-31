@@ -23,6 +23,29 @@ REVOKE ALL ON TABLE couple_private.love_future_verified_regen_receipts
 -- Transactional trusted-worker-only operation.
 -- Receipts are evidence of an independently verified 400-cent payment,
 -- not something a client can write. No public or authenticated EXECUTE.
+-- Canonical two-calendar-month UTC clamp, aligned with the client preview:
+-- 31 December -> 28/29 February, NOT early March.
+CREATE OR REPLACE FUNCTION couple_private.love_future_regen_next_utc(
+ p_previous timestamptz
+) RETURNS timestamptz LANGUAGE plpgsql IMMUTABLE SET search_path='' AS $next$
+DECLARE
+ v_utc timestamp;
+ v_month timestamp;
+ v_last_day integer;
+ v_day integer;
+BEGIN
+ IF p_previous IS NULL THEN RETURN NULL;END IF;
+ v_utc:=p_previous AT TIME ZONE 'UTC';
+ v_month:=date_trunc('month',v_utc)+INTERVAL '2 months';
+ v_last_day:=EXTRACT(day FROM (v_month+INTERVAL '1 month - 1 day'))::integer;
+ v_day:=LEAST(EXTRACT(day FROM v_utc)::integer,v_last_day);
+ RETURN (v_month+(v_day-1)*INTERVAL '1 day'
+  +(v_utc-date_trunc('day',v_utc))) AT TIME ZONE 'UTC';
+END;
+$next$;
+REVOKE ALL ON FUNCTION couple_private.love_future_regen_next_utc(timestamptz)
+ FROM PUBLIC,anon,authenticated;
+
 CREATE OR REPLACE FUNCTION couple_private.apply_future_archive_regeneration(
  p_receipt_id uuid,p_cards jsonb
 ) RETURNS uuid
@@ -59,9 +82,8 @@ BEGIN
  WHERE couple_id=r.couple_id AND member_id=r.member_id AND level=r.level;
  IF v_baseline<>1 THEN RAISE EXCEPTION 'Initial version is required';END IF;
  IF v_last_generated IS NOT NULL THEN
-  -- Two calendar months, clamped at month end in UTC.
-  v_next:=((v_last_generated AT TIME ZONE 'UTC')+
-    INTERVAL '2 months') AT TIME ZONE 'UTC';
+  -- Two full calendar months: clamp the day at month end in UTC.
+  v_next:=couple_private.love_future_regen_next_utc(v_last_generated);
   IF v_now<v_next THEN
    RAISE EXCEPTION 'Two-calendar-month cooldown has not expired';
   END IF;

@@ -18,8 +18,13 @@ test('a locked verified receipt is consumed only with a new archived version',()
  assert.match(sql,/FROM public\.couples WHERE id=r\.couple_id FOR UPDATE/);
  assert.match(sql,/amount_cad_cents=400/);
  assert.match(sql,/v_baseline<>1/);
+ assert.match(sql,/love_future_regen_next_utc\(v_last_generated\)/);
  assert.match(sql,/INTERVAL '2 months'/);
  assert.match(sql,/AT TIME ZONE 'UTC'/);
+ assert.match(sql,/LEAST\(EXTRACT\(day FROM v_utc\)::integer,v_last_day\)/);
+ assert.match(smoke,/July 31 should clamp to September 30/);
+ assert.match(smoke,/December 31 should clamp to February 28/);
+ assert.match(smoke,/Leap-year February 29 expected/);
  assert.match(sql,/v_now<v_next/);
  assert.match(sql,/love_future_archive_cards_valid\(p_cards,r\.level\)/);
  assert.match(sql,/Recycled cards are forbidden/);
