@@ -225,6 +225,8 @@ jobs:
         run: node --test couple-web/future-card-archive-schema.test.mjs
       - name: Verify future archived regeneration is private and non-paying
         run: node --test couple-web/future-card-regeneration-transaction.test.mjs
+      - name: Verify Stripe TEST-mode future card webhooks without enabling payment
+        run: node --test couple-web/future-card-stripe-test-webhook.test.mjs
       - name: Verify assignment of future gender-specific and shared cards
         run: node --test couple-web/future-card-audience.test.mjs
       - name: Preview future nights from unique 2-6 minute cards
