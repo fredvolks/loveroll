@@ -1049,3 +1049,80 @@ test('LR-026: obsolete private note save cannot update replacement coffret statu
  assert.equal(h.drafts.get('replacement:1').note,'New private chapter');
  assert.equal(h.state.eclat.access,true);
 });
+
+const boundInputStart=app.indexOf('function bindEclatPrivateNoteFields(){');
+const boundInputEnd=app.indexOf('function bindActions(){',boundInputStart);
+assert.ok(boundInputStart>=0&&boundInputEnd>boundInputStart,'real scoped Éclat field binding exists');
+const boundInputSource=app.slice(boundInputStart,boundInputEnd);
+
+function boundPrivateInputHarness(){
+ const state={user:{id:'alice'},coupleId:'couple-a',tab:'eclat',
+  members:[{id:'alice'},{id:'bob'}],
+  eclat:{access:true,active:true,session_id:'session-1',chapter_index:1}};
+ const key=status=>status?.active&&status.session_id&&state.user?.id?
+  [state.user.id,status.session_id,status.chapter_index].join(':'):null;
+ const draft={generation:1,loading:false,error:false,note:'Before',clue:'',
+  saved:true,dirty:false};
+ const drafts=new Map([['alice:session-1:1',draft]]);
+ const status={textContent:'Note enregistrée pour toi'};
+ const fields=['note','clue','not-a-note'].map(property=>({
+  dataset:{eclatField:property},value:'',listener:null,
+  addEventListener(type,listener){assert.equal(type,'input');this.listener=listener;},
+  input(value){this.value=value;this.listener();}
+ }));
+ const ctx={state,authFeedbackGeneration:1,eclatNoteDrafts:drafts,
+  eclatNoteKey:(s,id)=>s?.active&&s.session_id&&id?
+   [id,s.session_id,s.chapter_index].join(':'):null,
+  ownsCoupleAsyncRead,
+  isSharedCoupleReady:(c,m)=>!!c&&m?.length===2,
+  root:{querySelectorAll:()=>fields,
+   querySelector:selector=>selector==='[data-eclat-note-status]'?status:null}};
+ runInNewContext(boundInputSource+';bindEclatPrivateNoteFields()',ctx);
+ return {state,ctx,draft,drafts,status,fields};
+}
+
+test('LR-026: current Éclat inputs update only note and clue for their owner',()=>{
+ const h=boundPrivateInputHarness();
+ h.fields[0].input('Nouvelle note');
+ assert.equal(h.draft.note,'Nouvelle note');
+ assert.equal(h.draft.dirty,true);
+ assert.equal(h.draft.saved,false);
+ assert.equal(h.status.textContent,'Modifications non enregistrées');
+ h.fields[1].input('Indice privé');
+ assert.equal(h.draft.clue,'Indice privé');
+ h.fields[2].input('malicious');
+ assert.equal(h.draft['not-a-note'],undefined,'unrecognized data field must not mutate draft');
+});
+
+test('LR-026: stale Éclat input cannot write into a replacement chapter',()=>{
+ const h=boundPrivateInputHarness();
+ h.state.eclat={...h.state.eclat,chapter_index:2};
+ h.drafts.set('alice:session-1:2',{generation:1,note:'Chapitre suivant'});
+ h.status.textContent='Nouvelle scène';
+ h.fields[0].input('Ancienne zone de texte');
+ assert.equal(h.drafts.get('alice:session-1:2').note,'Chapitre suivant');
+ assert.equal(h.draft.note,'Before');
+ assert.equal(h.status.textContent,'Nouvelle scène');
+});
+
+test('LR-026: former login input cannot alter a new account private note',()=>{
+ const h=boundPrivateInputHarness();
+ h.state.user={id:'bob'};
+ h.ctx.authFeedbackGeneration=2;
+ h.drafts.set('bob:session-1:1',{generation:2,note:'Note de Bob'});
+ h.fields[0].input('Texte ancien Alice');
+ assert.equal(h.drafts.get('bob:session-1:1').note,'Note de Bob');
+ assert.equal(h.draft.note,'Before');
+});
+
+test('LR-026: revoked Éclat entitlement or replaced draft rejects stale input',()=>{
+ const denied=boundPrivateInputHarness();
+ denied.state.eclat.access=false;
+ denied.fields[0].input('Cannot write after denial');
+ assert.equal(denied.draft.note,'Before');
+ const replaced=boundPrivateInputHarness();
+ replaced.drafts.set('alice:session-1:1',{generation:1,note:'New retry draft'});
+ replaced.fields[0].input('Cannot overwrite retry');
+ assert.equal(replaced.drafts.get('alice:session-1:1').note,'New retry draft');
+ assert.equal(replaced.draft.note,'Before');
+});
