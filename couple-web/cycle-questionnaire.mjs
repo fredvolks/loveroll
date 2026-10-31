@@ -36,6 +36,7 @@ export function cycleIntensityQuestionnaireHtml({
   '<p class="lr-cycle-current">Votre intensité actuelle : <strong>'+label+'</strong></p>'+
   (already?'<p class="lr-cycle-waiting">En attente de '+String(partnerName||'votre partenaire').replace(/[&<>"']/g,'')+'.</p>':
     '<div class="lr-cycle-choices">'+choices+'</div>')+
+  '<p class="lr-cycle-progress" role="status" aria-live="polite" hidden>Enregistrement de votre choix…</p>'+
   '<p class="lr-cycle-note">Votre choix reste personnel. Les cartes et les anciennes soirées sont conservées.</p>'+
   '<button type="button" class="lr-cycle-later" data-action="cycle-later">Revenir au jeu plus tard</button>'+
   '</section></div>';
