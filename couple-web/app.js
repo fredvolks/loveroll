@@ -1898,6 +1898,7 @@ async function refreshEclatStatus(){
 // Keep its response local to the exact initiating account, couple and view.
 let latestEclatActionRequest=null;
 let pendingEclatMutation=null;
+let pendingEclatExitConfirmation=null;
 // UI-only guard: Supabase RPCs remain the authority for membership and access.
 // Apply the same entitlement rule to controls, note requests and audio, not
 // just to the HTML renderer. An old cached active flag is not permission.
@@ -3649,12 +3650,32 @@ async function handle(action,element){
   }
   if(kind==='end'){
    if(!canPlayEclat())return;
+   // Confirmations are async. A second tap on Quitter must not open another
+   // dialog or supersede the first action before the player has answered.
+   // New chapters, coffrets and accounts may open their own confirmation.
+   const pending=pendingEclatExitConfirmation,currentScene=state.eclat;
+   if(pending&&pending.userId===state.user?.id&&
+      pending.coupleId===state.coupleId&&
+      pending.generation===authFeedbackGeneration&&
+      pending.sessionId===(currentScene?.session_id??null)&&
+      pending.chapterIndex===(currentScene?.chapter_index??null))return;
    const owner=beginEclatAction();if(!owner)return;
-   const yes=await premiumConfirm('Quitter ce coffret maintenant ? Les chapitres terminés restent dans votre historique de jeu, mais cette séance ne pourra pas être reprise.',{
-    kind:'library',title:'Quitter Éclat ?',accept:'Quitter',cancel:'Continuer'
-   });
-   // Confirmation may finish after the session or entitlement is revoked.
-   if(!yes||!ownsEclatAction(owner)||!canPlayEclat())return;
+   const confirmation={userId:owner.userId,coupleId:owner.coupleId,
+    generation:owner.generation,sessionId:currentScene?.session_id??null,
+    chapterIndex:currentScene?.chapter_index??null};
+   pendingEclatExitConfirmation=confirmation;
+   let yes=false;
+   try{
+    yes=await premiumConfirm('Quitter ce coffret maintenant ? Les chapitres terminés restent dans votre historique de jeu, mais cette séance ne pourra pas être reprise.',{
+     kind:'library',title:'Quitter Éclat ?',accept:'Quitter',cancel:'Continuer'
+    });
+   }finally{
+    if(pendingEclatExitConfirmation===confirmation)pendingEclatExitConfirmation=null;
+   }
+   // A delayed approval from an old chapter must not end the new one.
+   if(!yes||!ownsEclatAction(owner)||!canPlayEclat()||
+      state.eclat.session_id!==confirmation.sessionId||
+      state.eclat.chapter_index!==confirmation.chapterIndex)return;
    const result=await runEclatMutation(owner,'love_eclat_end');
    if(!result.applied||!applyEclatActionResult(result.value,owner))return;
    await refreshEclatHistory();
