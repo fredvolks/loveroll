@@ -1760,6 +1760,23 @@ async function refreshEclatHistory(){
   console.warn('Historique Éclat indisponible',error?.code||'');
  }
 }
+// One trusted state transition for server Éclat results from foreground
+// refreshes, background polls and mutating actions. The server RPC remains the
+// authority; UI state must drop private data immediately on revoked access.
+function applyEclatStatus(value){
+ state.eclat=value??null;
+ if(value==null||value.access===false){
+  latestEclatHistoryRead=null;
+  eclatNoteDrafts.clear();
+  state.eclatFinished=null;
+  state.eclatHistory=[];state.eclatHistoryError=false;
+  // Also cancel a pending AudioContext.resume() and any playing soundtrack.
+  latestEclatAudioOwner=null;
+  eclatAudio.stop();state.eclatMusic=false;
+  return false;
+ }
+ return true;
+}
 async function refreshEclatStatus(){
  const owner={userId:state.user?.id,coupleId:state.coupleId,
   generation:authFeedbackGeneration};
@@ -1779,18 +1796,7 @@ async function refreshEclatStatus(){
   // A null response means the old Éclat session is no longer available.
   // Keep the foreground path consistent with the background sync instead of
   // leaving a cached private coffret visible until the next poll.
-  state.eclat=value??null;
-  if(value==null||value.access===false){
-   // Missing status or explicit access revocation invalidates private history.
-   // Keep denied status for public subscription details but never fetch or
-   // retain private metadata until access is restored.
-   latestEclatHistoryRead=null;
-   // Revocation must also invalidate draft objects and their pending network
-   // callbacks; a later reactivation cannot resurrect an old private note.
-   eclatNoteDrafts.clear();state.eclatFinished=null;
-   state.eclatHistory=[];state.eclatHistoryError=false;
-   return current()?value:null;
-  }
+  if(!applyEclatStatus(value))return current()?value:null;
   await refreshEclatHistory();
   return current()?value:null;
  }finally{
@@ -1827,7 +1833,7 @@ function applyEclatActionResult(value,owner){
  if(!ownsEclatAction(owner))return false;
  // A background status fetch launched before this action is now obsolete.
  latestEclatStatusRead=null;
- state.eclat=value;
+ applyEclatStatus(value);
  return true;
 }
 function renderEclat(){
@@ -5762,14 +5768,7 @@ setInterval(async()=>{
   const value=await rpc('love_eclat_status');
   if(!current())return;
   if(JSON.stringify(value)!==prior){
-   state.eclat=value;
-   if(value==null||value.access===false){
-    // Missing status or access revocation clears cached private history
-    // and invalidates earlier private history responses.
-    latestEclatHistoryRead=null;
-    eclatNoteDrafts.clear();state.eclatFinished=null;
-    state.eclatHistory=[];state.eclatHistoryError=false;
-   }else await refreshEclatHistory();
+   if(applyEclatStatus(value))await refreshEclatHistory();
    if(current())render();
   }
  }catch(error){if(current())console.warn('Synchronisation Éclat',error?.code||'');}
