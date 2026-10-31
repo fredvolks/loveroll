@@ -47,3 +47,28 @@ test('Actual finished evening after new weekly roll disables button until tomorr
   now:new Date('2026-10-17T13:00:00Z')});
  assert.deepEqual([tomorrow.counted,tomorrow.dailyLocked,tomorrow.canStart],[1,false,true]);
 });
+
+test('Missing/failed session history never opens another evening optimistically',()=>{
+ for(const sessions of [null,undefined,{},'not yet loaded']){
+  const result=eveningDailyAccess({sessions,weekly,now:new Date('2026-10-16T12:00:00Z')});
+  assert.equal(result.canStart,false,'missing history must never enable an official draw');
+  assert.equal(result.counted,0);
+ }
+});
+test('Malformed historic entries do not crash access or alter valid couples sessions',()=>{
+ const result=eveningDailyAccess({
+  sessions:[null,undefined,false,[],{},past,'unparseable'],
+  weekly,now:new Date('2026-10-16T12:00:00Z')
+ });
+ assert.equal(result.counted,1);
+ assert.equal(result.canStart,true);
+ assert.equal(result.dailyLocked,false);
+});
+test('Invalid weekly D6 result and invalid device date cannot open soirée',()=>{
+ for(const face of [0,7,100,-1,2.5,'invalid',null]){
+  const state=eveningDailyAccess({sessions:[],weekly:{...weekly,face},now:new Date('2026-10-16T12:00:00Z')});
+  assert.equal(state.canStart,false,'invalid D6 face '+String(face));
+ }
+ assert.equal(eveningDailyAccess({sessions:[],weekly,now:new Date('invalid')}).canStart,false);
+ assert.equal(eveningDailyAccess({sessions:[],weekly:{face:3},now:new Date('2026-10-16T12:00:00Z')}).canStart,false);
+});
