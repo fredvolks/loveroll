@@ -3510,3 +3510,33 @@ test('LR-026: signing out persists the previous owner\'s timer without keeping p
  assert.equal(state.coupleId,null);
  assert.equal(f.timer.running,false);
 });
+
+test('LR-026: old getUser rejection cannot revoke a new login of the same account',async()=>{
+ let release;
+ const pending=new Promise(resolve=>{release=resolve;});
+ const state={user:{id:'alice'},coupleId:'new-session-pending',tab:'eclat'};
+ const f=privateAuthBoundaryFixture(state,()=>pending);
+ const checking=f.refreshVerifiedIdentity();
+ f.adoptAuthenticatedIdentity(null);
+ f.adoptAuthenticatedIdentity({id:'alice',email:'fresh-session@example.com'});
+ release({error:{code:'invalid_token'},data:null});
+ assert.equal(await checking,null);
+ assert.equal(state.user.id,'alice');
+ assert.equal(state.user.email,'fresh-session@example.com');
+ assert.equal(f.calls.paints,0,'old expired token cannot clear a fresh account');
+ assert.equal(f.calls.reloads,0);
+});
+
+test('LR-026: old getUser success cannot rewrite a new login of the same account',async()=>{
+ let release;
+ const pending=new Promise(resolve=>{release=resolve;});
+ const state={user:{id:'alice',email:'old@example.com'},tab:'home'};
+ const f=privateAuthBoundaryFixture(state,()=>pending);
+ const checking=f.refreshVerifiedIdentity();
+ f.adoptAuthenticatedIdentity(null);
+ f.adoptAuthenticatedIdentity({id:'alice',email:'new@example.com'});
+ release({data:{user:{id:'alice',email:'old@example.com'}},error:null});
+ assert.equal(await checking,null);
+ assert.equal(state.user.email,'new@example.com');
+ assert.equal(f.calls.paints,0);
+});
