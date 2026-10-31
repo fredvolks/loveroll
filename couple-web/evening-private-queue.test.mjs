@@ -1825,7 +1825,7 @@ test('LR-026: every Éclat mutation checks ownership before applying its respons
   'confirming Quitter under an old account must never send a mutation');
 });
 
-function eclatMusicFixture(state,audio,notify=()=>{},render=()=>{}){
+function eclatMusicFixture(state,audio,notify=()=>{},render=()=>{},masked=false){
  const parent=app.indexOf("if(verb==='eclat'){");
  const start=app.indexOf("if(kind==='music'){",parent);
  const end=app.indexOf("if(kind==='resume'){",start);
@@ -1836,7 +1836,7 @@ function eclatMusicFixture(state,audio,notify=()=>{},render=()=>{}){
   app.slice(start,end)+
   '} ({runMusic,owner:()=>latestEclatAudioOwner});',{
    state,eclatAudio:audio,
-   document:{documentElement:{classList:{contains:()=>false}}},
+   document:{documentElement:{classList:{contains:()=>masked}}},
    eclatStage:()=>({mood:'romantique'}),
    ownsCoupleAsyncRead,notify,render
   });
@@ -1885,4 +1885,20 @@ test('LR-026: signing out and masking privacy invalidate Éclat audio',()=>{
  const privacy=app.slice(app.indexOf("document.addEventListener('loveroll:privacy-mask'"),
   app.indexOf('function pendingReferralCode()'));
  assert.match(privacy,/latestEclatAudioOwner=null;[\s\S]*eclatAudio\.stop\(\)/);
+});
+
+test('LR-026: a masked Éclat audio tap never repaints protected content',async()=>{
+ const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
+  eclat:{active:true,coffret_id:1,chapter_number:1,variant_number:1},
+  eclatMusic:false};
+ let stops=0,starts=0,paints=0,notifications=0;
+ const music=eclatMusicFixture(state,{
+  start:async()=>{starts++;return true;},stop:()=>{stops++;}
+ },()=>notifications++,()=>paints++,true);
+ await music.runMusic('music');
+ assert.equal(starts,0,'privacy overlay cannot start soundtrack');
+ assert.equal(stops,1,'existing music must stop');
+ assert.equal(paints,0,'privacy overlay must not rerender card content');
+ assert.equal(notifications,0);
+ assert.equal(state.eclatMusic,false);
 });
