@@ -1262,3 +1262,57 @@ test('LR-028: a pending gift keeps the private queue and Android Back stable',as
  assert.equal(backDialog(),true);
  assert.equal(closed,1,'The pending confirmation is allowed to cancel');
 });
+
+test('LR-028: Android Back cancels custom gift dialog but never interrupts a bare D100',async()=>{
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const {runInNewContext}=await import('node:vm');
+ const from=source.indexOf('function backFromLoveRoll(){');
+ const to=source.indexOf('window.loveRollHandleBack=backFromLoveRoll;',from);
+ assert.ok(from>0&&to>from,'Use real native Back handler');
+ const makeBack=(state,document,extra={})=>runInNewContext(
+  source.slice(from,to)+'\nbackFromLoveRoll',{
+   state,document,root:{_settingsMenuBack:()=>{throw Error('Settings Back must not interrupt active game');}},
+   isActiveEveningGiftPending:()=>!!state.giftPending,
+   isActiveEveningRedrawPending:()=>!!state.redrawPending,
+   KeyboardEvent:class KeyboardEvent{constructor(type,options){this.type=type;this.key=options.key;}},
+   ...extra
+  });
+ const giftState={tab:'session',diceStatus:null,giftPending:true,
+  showEveningChallenges:true,eveningRefusalId:'challenge-a'};
+ let escapes=0,nativeCloses=0;
+ const customOverlay={
+  querySelector:selector=>selector==='.lr-dialog-overlay'?{}:null,
+  dispatchEvent:event=>{
+   assert.equal(event.type,'keydown');assert.equal(event.key,'Escape');escapes++;
+  }
+ };
+ assert.equal(makeBack(giftState,customOverlay)(),true);
+ assert.equal(escapes,1,'Back sends Escape to the cancellable gift confirmation');
+ assert.equal(giftState.showEveningChallenges,true);
+ assert.equal(giftState.eveningRefusalId,'challenge-a');
+ const nativeDialog={querySelector:selector=>selector==='dialog[open]'?
+  {close:()=>{nativeCloses++;}}:null};
+ assert.equal(makeBack(giftState,nativeDialog)(),true);
+ assert.equal(nativeCloses,1);
+ const empty={querySelector:()=>null};
+ for(const state of [
+  {tab:'session',diceStatus:'rolling',giftPending:false,redrawPending:false,
+   showEveningChallenges:false,eveningRefusalId:null},
+  {tab:'session',diceStatus:null,giftPending:false,redrawPending:true,
+   showEveningChallenges:false,eveningRefusalId:null},
+  {tab:'session',diceStatus:null,giftPending:true,redrawPending:false,
+   showEveningChallenges:false,eveningRefusalId:null}
+ ]){
+  const back=makeBack(state,empty,{render:()=>{throw Error('Active game remounted');}});
+  assert.equal(back(),true,'Native Back must be swallowed during a server operation');
+  assert.equal(state.tab,'session');
+ }
+ // In ordinary idle views, existing Settings Back navigation still works.
+ let settingsCalled=0;
+ const idle={tab:'settings',diceStatus:null,giftPending:false,redrawPending:false};
+ const idleBack=makeBack(idle,empty,{
+  root:{_settingsMenuBack:()=>{settingsCalled++;return true;}}
+ });
+ assert.equal(idleBack(),true);
+ assert.equal(settingsCalled,1);
+});
