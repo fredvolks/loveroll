@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {test} from 'node:test';
 import { marketingHtml,authHtml,profileHtml,matchHtml,monthDayInputs,parseMonthDay } from './onboarding.mjs';
-import { EVENING_CATEGORIES,EVENING_CHALLENGES,eveningCard,availableEveningCategories,formatCountdown,customCardSlots,editableCardSlots,resolvedCard } from './evening-challenges.mjs';
+import { EVENING_CATEGORIES,EVENING_CHALLENGES,eveningCard,availableEveningCategories,formatCountdown,validChallengeTimerMinutes,customCardSlots,editableCardSlots,resolvedCard } from './evening-challenges.mjs';
 import {MONTHLY_ACTIVITIES,editableMonthlyActivities,monthlyActivityForRoll} from './monthly-activities.mjs';
 import {ADVENT_YEAR,validateAdventJson,calendarFromSaved} from './advent-calendar.mjs';
 import {validateSpecialEventsJson,privateSpecialKey,SPECIAL_EVENT_KEYS} from './private-special-events.mjs';
@@ -221,6 +221,16 @@ test('Countdown uses a monotonic wall deadline, pause reset and optional signals
   assert.equal(formatCountdown(invalid),'00:00');
  }
  assert.equal(formatCountdown(1000),'00:01');
+ assert.equal(validChallengeTimerMinutes(2),true);
+ assert.equal(validChallengeTimerMinutes(6),true);
+ assert.equal(validChallengeTimerMinutes(60),true);
+ assert.equal(validChallengeTimerMinutes(240),true);
+ for(const malformed of [null,undefined,0,-5,NaN,Infinity,-Infinity,1.5,
+  '5','invalid',1441,Number.MAX_SAFE_INTEGER]){
+  assert.equal(validChallengeTimerMinutes(malformed),false,String(malformed));
+ }
+ assert.match(app,/if\(!validChallengeTimerMinutes\(minutes\)\)return '<p class="tiny-note">♡ Sans minuteur/);
+ assert.match(app,/if\(validChallengeTimerMinutes\(minutes\)\)\{/);
  assert.match(app,/challengeTimer\.deadline-Date\.now\(\)/);
  assert.match(app,/timer-reset/);
  assert.match(app,/timer-toggle/);
