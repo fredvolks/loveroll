@@ -4381,6 +4381,8 @@ async function handle(action,element){
   return;
  }
  if(verb==='evening-start'){
+  // A stale start tap must not interrupt or remount a live D6/D100 scene.
+  if(state.diceStatus)return;
   if(isEveningCardCompleting(parts[0]))return;
   // A D100 decision has priority over stale start taps on the same card.
   if(isActiveEveningRedrawPending()&&
