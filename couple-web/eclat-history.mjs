@@ -1,10 +1,15 @@
 // Only shared session metadata: never load a partner's private choices.
-export async function loadEclatHistory(client,coupleId){
+export async function loadEclatHistory(client,coupleId,ownsRequest=()=>true){
  const rows=[];
  for(let offset=0;;offset+=1000){
+  // A previous account's multi-page read must never issue the NEXT request
+  // with a new Supabase auth token for the former couple.
+  if(!ownsRequest())return null;
   const {data,error}=await client.from('love_eclat_sessions')
    .select('id,coffret_id,minutes,chapter_index,started_at,ended_at,cancelled')
    .eq('couple_id',coupleId).order('started_at',{ascending:false}).range(offset,offset+999);
+  // Do not expose partially loaded private history after cancellation.
+  if(!ownsRequest())return null;
   if(error)throw error;
   rows.push(...(data||[]));
   if(!data||data.length<1000)return rows;
