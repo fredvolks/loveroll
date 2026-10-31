@@ -1986,8 +1986,8 @@ function privateEclatSaveFixture(state,saveEclatNote){
  assert.ok(start>=0&&end>start,'real Éclat private-note helpers must be available');
  const labels=[];
  const scope=runInNewContext(app.slice(start,end)+
-  ';({saveCurrentEclatNote,drafts:eclatNoteDrafts})',{
-   state,saveEclatNote,ownsCoupleAsyncRead,console,client:{},
+  ';({saveCurrentEclatNote,drafts:eclatNoteDrafts,setAuthGeneration:value=>{authFeedbackGeneration=value;}})',{
+   state,authFeedbackGeneration:1,saveEclatNote,ownsCoupleAsyncRead,console,client:{},
    eclatNoteKey:(status,userId)=>status?.active&&status.session_id&&userId?
     [userId,status.session_id,status.chapter_index].join(':'):null,
    root:{querySelector:()=>({set textContent(value){labels.push(value);}})}
@@ -2074,8 +2074,8 @@ function privateEclatReadFixture(state,loadEclatNote){
  assert.ok(start>0&&end>start);
  let paints=0;
  const scope=runInNewContext(app.slice(start,end)+
-  ';({eclatNoteState,drafts:eclatNoteDrafts})',{
-  state,loadEclatNote,ownsCoupleAsyncRead,console,client:{},
+  ';({eclatNoteState,drafts:eclatNoteDrafts,setAuthGeneration:value=>{authFeedbackGeneration=value;}})',{
+  state,authFeedbackGeneration:1,loadEclatNote,ownsCoupleAsyncRead,console,client:{},
   eclatNoteKey:(status,userId)=>status?.active&&status.session_id&&userId?
    [userId,status.session_id,status.chapter_index].join(':'):null,
   render:()=>paints++
