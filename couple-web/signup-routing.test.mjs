@@ -195,6 +195,44 @@ test('same-account reauthentication cannot restore a stale signup invitation',as
   'do not restore the previous session invitation');
 });
 
+test('stale signup RPC failure does not surface in a replacement account',async()=>{
+ let rejectRpc;
+ const pending=new Promise((_,reject)=>{rejectRpc=reject;});
+ const state={user:{id:'account-A'}},calls=[];
+ const ctx={
+  state,authFeedbackGeneration:0,
+  rpc:()=>pending,
+  rememberVerifiedInvitation:id=>calls.push(id)
+ };
+ const fn=vm.runInNewContext(resolution+';resolveVerifiedSignup',ctx);
+ const lookup=fn(true);
+ state.user={id:'account-B'};
+ rejectRpc(Error('Old account network failure'));
+ assert.equal((await lookup).status,'account_changed');
+ assert.deepEqual(calls,[]);
+});
+
+test('same-account relogin suppresses obsolete signup RPC errors',async()=>{
+ let rejectRpc;
+ const pending=new Promise((_,reject)=>{rejectRpc=reject;});
+ const state={user:{id:'account-A'}};
+ const ctx={state,authFeedbackGeneration:0,rpc:()=>pending,
+  rememberVerifiedInvitation:()=>{throw Error('Must not cache stale invitation');}};
+ const fn=vm.runInNewContext(resolution+';resolveVerifiedSignup',ctx);
+ const lookup=fn(false);
+ ctx.authFeedbackGeneration++;
+ rejectRpc(Error('Previous login lost its network'));
+ assert.equal((await lookup).status,'account_changed');
+});
+
+test('current signup RPC failure still reaches the signed-in user',async()=>{
+ const error=Error('Current session RPC failed');
+ const ctx={state:{user:{id:'account-A'}},authFeedbackGeneration:0,
+  rpc:async()=>{throw error;},rememberVerifiedInvitation:()=>{}};
+ const fn=vm.runInNewContext(resolution+';resolveVerifiedSignup',ctx);
+ await assert.rejects(fn(true),/Current session RPC failed/);
+});
+
 test('server security and transaction contract: verified email, member uniqueness, invitation priority',()=>{
  for(const pattern of [
   /auth\.uid\(\)/,/love_require_verified_identity\(\)/,
