@@ -264,9 +264,12 @@ test('Selected category is visually distinct and reported to assistive technolog
 test('After finishing the evening the official feedback pathway remains available',()=>{
  const html=premiumEveningHtml({members:people,me:'first',
   lastEvening:{id:'past',completed:10,responses:1,myResponse:true,partnerResponse:false}});
- assert.doesNotMatch(html,/review-open:past/);
+ // The completed night exposes an explicit edit action instead of a
+ // disabled restart. Existing calendar access and button count stay unchanged.
+ assert.match(html,/data-action="review-open:past"/);
+ assert.match(html,/♡ MODIFIER MON BILAN/);
   assert.match(html,/data-action="evening-calendar"/);
-  assert.equal((html.match(/<button /g)||[]).length,4); // Four original controls; no floating privacy mask.
+  assert.equal((html.match(/<button /g)||[]).length,4); // Same two main actions; no floating privacy mask.
   assert.doesNotMatch(html,/data-lr-privacy-hide/);
  assert.match(html,/data-action="tab:eclat"/);
  assert.match(html,/Votre partenaire/);
