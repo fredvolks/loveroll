@@ -85,6 +85,28 @@ const layouts=[
       assert.equal(style.shadow,'none',layout.name+' extra shadow/frame in '+part);
      }
     }
+    if(layout.width<768){
+     // Exercise actual native mobile dialogs, not a static HTML snapshot.
+     const events=page.locator('.surprise-events-summary');
+     await events.waitFor({state:'visible'});
+     assert.equal(await events.isDisabled(),false,'Events must be available independent of D100 roll');
+     await events.click();
+     const dialog=page.locator('#surprise-events-dialog');
+     await dialog.waitFor({state:'visible'});
+     assert.equal(await dialog.locator('.surprise-event-card').count(),6,
+      'All six editable occasions must be reachable on mobile');
+     await page.keyboard.press('Escape');
+     await dialog.waitFor({state:'hidden'});
+     const info=page.locator('.home-odds-info');
+     await info.click();
+     const infoDialog=page.locator('#surprise-info-dialog');
+     await infoDialog.waitFor({state:'visible'});
+     assert.match(await infoDialog.innerText(),/D100/);
+     assert.match(await infoDialog.innerText(),/pair/);
+     await page.keyboard.press('Escape');
+     await infoDialog.waitFor({state:'hidden'});
+     assert.equal(await page.locator('.surprise-events-summary').isVisible(),true);
+    }
     assert.deepEqual(errors,[],layout.name+' JavaScript errors');
     await page.screenshot({path:path.join('design-captures','lr-surprise-one-photo-'+layout.name+'.png')});
     console.log('LR_SURPRISE_ONE_PHOTO_OK',layout.name,data);
