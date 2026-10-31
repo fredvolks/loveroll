@@ -951,3 +951,88 @@ test('LR-027: Resume Soirée ignores stale identity, tab, superseding read and r
  assert.equal(rendered,1);
  assert.equal(feedback,1);
 });
+
+test('LR-027: duplicate Give taps cannot open a second dialog or write two gifts',async()=>{
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const from=source.indexOf("if(verb==='give-challenge'){");
+ const until=source.indexOf("if(verb==='new-challenge'){",from);
+ assert.ok(from>0&&until>from);
+ const code=source.slice(from,until);
+ const {runInNewContext}=await import('node:vm');
+ const state={tab:'session',diceStatus:null,user:{id:'alice'},coupleId:'couple',
+  session:{id:'night',paired_turns:true,self_draws:true},
+  rollStatus:{both_ready:true},eveningBoard:{ready:true,remaining:{alice:2}},
+  gifts:[],members:[],personal:[],challenges:[],eveningGiftRequest:null};
+ let confirmResolve,rpcResolve,dialogs=0,writes=0,paints=0,refreshes=0,notices=0;
+ const dialog=new Promise(resolve=>{confirmResolve=resolve;});
+ const rpcPending=new Promise(resolve=>{rpcResolve=resolve;});
+ const run=runInNewContext('(async verb=>{'+code+'})',{
+  state,authFeedbackGeneration:1,isActiveEveningRedrawPending:()=>false,
+  other:()=>({name:'Partenaire'}),month:()=> '2026-10',
+  premiumConfirm:()=>{dialogs++;return dialog;},
+  rpc:async name=>{
+   assert.equal(name,'give_love_challenge');writes++;
+   return rpcPending;
+  },
+  refreshAndShow:async()=>{refreshes++;},
+  notify:()=>{notices++;},
+  render:()=>{paints++;}
+ });
+ const first=run('give-challenge');
+ assert.equal(dialogs,1);
+ assert.equal(state.eveningGiftRequest?.userId,'alice');
+ await run('give-challenge');
+ assert.equal(dialogs,1,'Duplicate tap never opens a second modal');
+ confirmResolve(true);
+ await Promise.resolve();
+ assert.equal(writes,1,'First confirmed gift starts exactly one RPC');
+ await run('give-challenge');
+ assert.equal(writes,1,'Duplicate tap during RPC never sends a second gift');
+ rpcResolve();await first;
+ assert.equal(state.eveningGiftRequest,null,'Gift lock clears after completion');
+ assert.equal(writes,1);
+ assert.equal(refreshes,1);
+ assert.equal(notices,1);
+ assert.ok(paints>=2,'Busy indicator is shown and reset');
+ const busy=premiumEveningHtml({...ready,giftPending:true,giftCount:0});
+ assert.match(busy,/Don en cours…/);
+ assert.match(busy,/data-action="give-challenge"[^>]*disabled/);
+ const free=premiumEveningHtml({...ready,giftPending:false,giftCount:0});
+ assert.doesNotMatch(free,/Don en cours…/);
+});
+
+test('LR-027: cancelled gift unlocks and an old login cannot clear a newer gift',async()=>{
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const from=source.indexOf("if(verb==='give-challenge'){");
+ const until=source.indexOf("if(verb==='new-challenge'){",from);
+ const {runInNewContext}=await import('node:vm');
+ const code=source.slice(from,until);
+ const state={tab:'session',diceStatus:null,user:{id:'alice'},coupleId:'duo',
+  session:{id:'night',paired_turns:true,self_draws:true},
+  rollStatus:{both_ready:true},eveningBoard:{ready:true,remaining:{alice:2,bob:2}},
+  gifts:[],members:[],personal:[],challenges:[],eveningGiftRequest:null};
+ let releaseFirst,dialogCount=0,rpcCalls=0;
+ const firstDialog=new Promise(resolve=>{releaseFirst=resolve;});
+ const run=runInNewContext('(async verb=>{'+code+'})',{
+  state,authFeedbackGeneration:1,isActiveEveningRedrawPending:()=>false,
+  other:()=>({name:'Partenaire'}),month:()=> '2026-10',
+  premiumConfirm:()=>++dialogCount===1?firstDialog:Promise.resolve(false),
+  rpc:()=>{rpcCalls++;throw Error('Cancelled gifts must not write');},
+  refreshAndShow:()=>{throw Error('Cancelled gift must not refresh');},
+  notify:()=>{throw Error('Cancelled gift must not toast');},
+  render:()=>{}
+ });
+ const stale=run('give-challenge');
+ assert.equal(state.eveningGiftRequest?.userId,'alice');
+ state.user={id:'bob'};
+ const next=run('give-challenge');
+ assert.equal(dialogCount,2,'A different user is not blocked by the old lock');
+ assert.equal(state.eveningGiftRequest?.userId,'bob');
+ releaseFirst(true);
+ await Promise.all([stale,next]);
+ assert.equal(rpcCalls,0);
+ assert.equal(state.eveningGiftRequest,null,
+  'The old request never clears the newer user’s gift lock');
+ await run('give-challenge');
+ assert.equal(dialogCount,3,'The cancelled request releases its owner lock');
+});
