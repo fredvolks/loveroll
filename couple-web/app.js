@@ -101,6 +101,7 @@ let settingsOpenSection=requestedSettingsSection||'';
 let notificationFeedback=null;
 // Only the newest month request may repaint this account's private calendar.
 let latestCalendarPassQuotaRequest=null;
+let currentReviewSaveRequest=null;
 let worldGpsDraft=null;
 let worldFx=null,worldFxPending=null,worldFxFailed=null;
 let geoFetchActive=null,geoFetchSeen=new Set();
@@ -826,6 +827,7 @@ function adoptAuthenticatedIdentity(nextUser){
   state.eveningHistoryStats=[];state.eveningCalendarChallenges=[];
   state.eveningReviews=[];state.reviewModalSessionId=null;
   state.reviewDismissedSessionId=null;state.reviewDraft={};state.reviewSaving=false;
+  currentReviewSaveRequest=null;
   state.eveningQueueSeen=null;state.loveExcludedCards=[];
   state.eveningStartContext=null;state.timerStartContext=null;
   state.legacyAnswerContext=null;state.timerCompletionContext=null;
@@ -3938,14 +3940,16 @@ async function handle(action,element){
   return;
  }
  if(verb==='review-dismiss'){
+  currentReviewSaveRequest=null;state.reviewSaving=false;
   state.reviewDismissedSessionId=state.reviewModalSessionId;
   state.reviewModalSessionId=null;state.reviewDraft={};render();return;
  }
  if(verb==='review-open'){
-  const sessionId=parts[0],session=state.sessions?.find(s=>s.id===sessionId&&s.finished_at&&s.counted);
+  if(state.reviewSaving)return;
+  const sessionId=parts[0],session=state.sessions?.find(s=>s&&s.id===sessionId&&s.finished_at&&s.counted);
   if(!session||!isSharedCoupleReady(state.coupleId,state.members))
    throw Error('Bilan inaccessible.');
-  const previous=state.eveningReviews.find(r=>r.session_id===sessionId&&r.author_id===state.user.id);
+  const previous=state.eveningReviews?.find(r=>r&&r.session_id===sessionId&&r.author_id===state.user?.id);
   state.reviewModalSessionId=sessionId;state.reviewDismissedSessionId=null;
   state.reviewDraft=previous?{overall:previous.overall,connection:previous.connection,
    appreciation:previous.appreciation,again:previous.again,comment:previous.comment||'',editing:true}:
@@ -3955,11 +3959,21 @@ async function handle(action,element){
  if(verb==='review-save'){
   if(state.reviewSaving)return;
   const sessionId=state.reviewModalSessionId;
-  const session=state.sessions.find(x=>x.id===sessionId&&x.finished_at&&x.counted);
-  if(!session)throw Error('Cette soirée n’est pas clôturée.');
+  const session=state.sessions?.find(x=>x&&x.id===sessionId&&x.finished_at&&x.counted);
+  if(!session||!state.user?.id||!state.coupleId)
+   throw Error('Cette soirée n’est pas clôturée.');
+  const owner={userId:state.user.id,coupleId:state.coupleId,tab:state.tab,
+   sessionId,generation:authFeedbackGeneration};
+  const request={};currentReviewSaveRequest=request;
+  const ownsRequest=()=>currentReviewSaveRequest===request&&
+   state.user?.id===owner.userId&&state.coupleId===owner.coupleId&&
+   authFeedbackGeneration===owner.generation;
+  const current=()=>ownsRequest()&&state.tab===owner.tab&&
+   state.reviewModalSessionId===sessionId;
   const draft={...state.reviewDraft,comment:root.querySelector('#lr-review-comment')?.value||''};
   const err=root.querySelector('.lr-review-error');
   if(!validEveningReview(draft)){
+   currentReviewSaveRequest=null;
    if(err){err.hidden=false;err.textContent='Choisis de 1 à 5 cœurs pour chacune des quatre questions.';}
    return;
   }
@@ -3969,6 +3983,8 @@ async function handle(action,element){
    await rpc('save_love_evening_review',{p_session:sessionId,p_overall:draft.overall,
     p_connection:draft.connection,p_appreciation:draft.appreciation,
     p_again:draft.again,p_comment:draft.comment});
+   // Supabase may finish after sign-out, a new login or closing the panel.
+   if(!current())return;
    state.reviewModalSessionId=null;state.reviewDraft={};state.reviewDismissedSessionId=sessionId;
    const date=eveningLocalDay(session.started_at);
    state.eveningCalendarMonth=date?.slice(0,7)||month();
@@ -3977,8 +3993,13 @@ async function handle(action,element){
    state.tab='evening-calendar';
    await refreshAndShow();
   }catch(error){
-   if(err){err.hidden=false;err.textContent=String(error?.message||'Enregistrement impossible. Réessaie.');}
-  }finally{state.reviewSaving=false;if(save?.isConnected){save.disabled=false;save.textContent='♡ Enregistrer notre bilan';}}
+   if(current()&&err){err.hidden=false;err.textContent=String(error?.message||'Enregistrement impossible. Réessaie.');}
+  }finally{
+   if(ownsRequest()){
+    currentReviewSaveRequest=null;state.reviewSaving=false;
+    if(save?.isConnected){save.disabled=false;save.textContent='♡ Enregistrer notre bilan';}
+   }
+  }
   return;
  }
  if(verb==='evening-more'){state.eveningMore=!state.eveningMore;render();return;}
