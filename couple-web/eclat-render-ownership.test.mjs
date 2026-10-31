@@ -450,3 +450,17 @@ test('LR-026: a pending old Quitter modal does not block a replacement coffret',
  await old;
  assert.deepEqual(h.calls,[],'the former coffret confirmation cannot end the new session');
 });
+
+test('LR-026: pending private save silently ignores duplicate note transitions',async()=>{
+ const h=actionFixture({access:true,active:true,session_id:'in-flight'},{
+  withDraft:true,saveNote:async()=>{throw Error('must not be called again');}});
+ h.drafts.get('note-key').saving=true;
+ for(const command of ['note-save','note-play','note-done','note-edit'])
+  await h.invoke(command);
+ assert.equal(h.notes(),0,'pending note save must not generate another network write');
+ assert.deepEqual(h.calls,[]);
+ assert.deepEqual(h.renders,[]);
+ h.drafts.get('note-key').saving=false;
+ await h.invoke('note-save');
+ assert.equal(h.notes(),1,'the save control becomes usable after the request settles');
+});
