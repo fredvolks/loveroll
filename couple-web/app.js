@@ -710,7 +710,15 @@ async function refreshVerifiedIdentity(){
  const expectedId=state.user.id;
  const {data,error}=await client.auth.getUser();
  if(state.user?.id!==expectedId)return null;
- if(error||!data?.user){adoptAuthenticatedIdentity(null);return false;}
+ if(error||!data?.user){
+  adoptAuthenticatedIdentity(null);
+  // reload() sees a different account after adopt() and correctly drops
+  // its stale results. It cannot repaint for us: clear the old private
+  // screen here when getUser() reports an expired/revoked session.
+  state.emailVerificationPending=false;
+  render();
+  return false;
+ }
  if(data.user.id!==expectedId){
   adoptAuthenticatedIdentity(data.user);
   render(); // Remove the former account before loading this one's profile.
@@ -998,6 +1006,11 @@ async function reload(){
  if(!current())return;state.guidance=guidance;
  if(members.length===2)await refreshShared();
  if(!current())return;subscribe();render();
+ }catch(error){
+  // A retired account's request may reject after its Realtime channel and
+  // private state have already been revoked. Do not show an error or toast
+  // from that account on the new user's screen.
+  if(current())throw error;
  }finally{if(loaderTicket!=null)window.LoveRollLoader?.end(loaderTicket);}
 }
 // A redraw started under another account or tab cannot disable the buttons
