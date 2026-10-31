@@ -364,13 +364,13 @@ test('LR-027: the final D100 draw offers a single Start or Resume CTA and keeps 
   const id='my-private-card';
   const html=premiumEveningHtml({...base,nextChallenge:{id,status}});
   const actions=html.match(/<div class="evening-roll-actions">([\s\S]*?)<\/div>/)?.[1]||'';
-  assert.match(actions,new RegExp('class="evening-primary" data-action="evening-open:'+id+'"'));
+  assert.match(actions,new RegExp('class="evening-primary" data-action="evening-start:'+id+'"'));
   assert.match(actions,new RegExp(label));
   assert.match(actions,/data-action="evening-list"/,'All private cards stay reachable');
   assert.equal((actions.match(/class="evening-primary"/g)||[]).length,1,
    'There is only one primary CTA after the final draw');
   assert.doesNotMatch(actions,/data-action="new-challenge"|data-action="finish-session"/);
-  assert.doesNotMatch(html,/data-action="evening-open:another-user"/,
+  assert.doesNotMatch(html,/data-action="evening-start:another-user"/,
    'The renderer never guesses or fetches another person’s challenge');
  }
  // When the partner still has D100 draws, active personal challenges
@@ -379,7 +379,7 @@ test('LR-027: the final D100 draw offers a single Start or Resume CTA and keeps 
   ...ready.turn,next:'b',drawsFinished:false,remaining:{a:0,b:2}
  },nextChallenge:{id:'resume-now',status:'accepted'}});
  const partnerActions=partnerTurn.match(/<div class="evening-roll-actions">([\s\S]*?)<\/div>/)?.[1]||'';
- assert.match(partnerActions,/data-action="evening-open:resume-now"/);
+ assert.match(partnerActions,/data-action="evening-start:resume-now"/);
  assert.match(partnerActions,/Reprendre mon défi/);
  assert.match(partnerActions,/data-action="evening-list"/);
  assert.doesNotMatch(partnerActions,/data-action="new-challenge"/);
@@ -389,7 +389,7 @@ test('LR-027: the final D100 draw offers a single Start or Resume CTA and keeps 
  const myActions=myTurn.match(/<div class="evening-roll-actions">([\s\S]*?)<\/div>/)?.[1]||'';
  assert.match(myActions,/data-action="new-challenge"/,
   'On my official D100 turn the draw still has priority');
- assert.doesNotMatch(myActions,/data-action="evening-open:resume-now"/);
+ assert.doesNotMatch(myActions,/data-action="evening-start:resume-now"/);
  const archived=premiumEveningHtml({...base,nextChallenge:null});
  const archivedActions=archived.match(/<div class="evening-roll-actions">([\s\S]*?)<\/div>/)?.[1]||'';
  assert.match(archivedActions,/class="evening-primary" data-action="evening-list"/);
@@ -402,10 +402,10 @@ test('LR-027: the final D100 draw offers a single Start or Resume CTA and keeps 
   turn:{...base.turn,finished:true},nextChallenge:{id:'old',status:'accepted'}});
  assert.match(finished,/data-action="finish-session"/,
   'Official session completion still takes priority over an old card');
- assert.doesNotMatch(finished,/data-action="evening-open:old"/);
+ assert.doesNotMatch(finished,/data-action="evening-start:old"/);
  const rolling=premiumEveningHtml({...base,rolling:true,rollingKind:'new-challenge',
   nextChallenge:{id:'old',status:'accepted'}});
- assert.doesNotMatch(rolling,/data-action="evening-open:old"|data-action="evening-list"/,
+ assert.doesNotMatch(rolling,/data-action="evening-start:old"|data-action="evening-list"/,
   'A live 3D die must not be unmounted by the resume shortcut');
 });
 test('LR-027: live Soirée chooses only this account’s unfinished card for the quick action',()=>{
@@ -418,8 +418,8 @@ test('LR-027: live Soirée chooses only this account’s unfinished card for the
  assert.match(code,/const nextChallenge=mineCards\.find\(card=>card\.status==='accepted'\)\|\|/);
  assert.match(code,/mineCards\.find\(card=>card\.status==='proposed'\)/);
  assert.match(code,/ownChallengeCount:mineCards\.length,nextChallenge/);
- const action=source.slice(source.indexOf("if(verb==='evening-open'){"),
-  source.indexOf("if(verb==='evening-refuse'){"));
+ const action=source.slice(source.indexOf("if(verb==='evening-start'){"),
+  source.indexOf("if(verb==='surprise-activity'){"));
  assert.match(action,/ownEveningChallenges\(state\.challenges,state\.user\?\.id,state\.session\?\.id\)/,
-  'The actual opening route revalidates that the card belongs to this user');
+  'The actual one-tap start route revalidates that the card belongs to this user');
 });
