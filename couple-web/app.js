@@ -3580,6 +3580,10 @@ async function handle(action,element){
    const savedKey=await saveCurrentEclatNote(kind==='note-done'?true:kind==='note-edit'?false:undefined);
    if(!savedKey||state.tab!=='eclat'||
       savedKey!==eclatNoteKey(state.eclat,state.user?.id))return;
+   // Saving a private note should not rebuild the editor: the save helper
+   // already updates the live status, while a re-render would steal focus
+   // and interrupt typing that continues during the network request.
+   if(kind==='note-save')return;
    if(kind==='note-play'||kind==='note-edit')eclatNoteDrafts.get(key).playing=true;
    render();return;
   }
