@@ -28,7 +28,7 @@ export function eveningDailyAccess({sessions=null,weekly=null,now=new Date()}={}
  const closedToday=current.filter(s=>s.counted===true&&s.finished_at&&
   localDay(s.finished_at)===today).sort((a,b)=>Date.parse(b.finished_at)-Date.parse(a.finished_at))[0]||null;
  const active=current.some(s=>!s.finished_at);
- return {today,counted,limit,dailyLocked,closedToday,
+ return {today,counted,limit,dailyLocked,closedToday,historyReady,
   canStart:!!today&&historyReady&&!!weekStart&&limit>0&&
    counted<limit&&!dailyLocked&&!active};
 }
