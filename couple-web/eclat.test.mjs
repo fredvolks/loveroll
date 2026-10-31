@@ -194,3 +194,27 @@ test('Éclat regroupe clairement les trois choix privés pour lecteurs d’écra
  assert.match(waiting,/On attend ton partenaire/);
  assert.match(revealed,/VOTRE SUITE COMMUNE/);
 });
+
+test('Éclat note saving progress disables repeat save but preserves editable drafts',()=>{
+ const status={access:true,active:true,coffret_id:1,minutes:30,
+  chapter_index:1,chapter_number:1,chapter_total:8,variant_number:0,
+  session_id:'private-note-saving',my_choice:null,both_chosen:false};
+ for(const phase of ['prepare','play','choose']){
+  const noteState={note:'A note typed while saving',clue:'',saving:true,
+   moment_done:phase==='choose',playing:phase==='play',dirty:true};
+  const html=eclatHtml({status,members:people,userId:'a',noteState});
+  assert.match(html,/data-eclat-field="note"[^>]*>A note typed while saving<\/textarea>/,
+   'saving must not make a personal note unreadable or reset its content');
+  assert.match(html,/data-action="eclat:note-save"[^>]*disabled[^>]*>Enregistrement…<\/button>/,
+   'saving blocks repeated writes and announces the operation');
+  assert.match(html,/data-eclat-note-status role="status">Enregistrement en cours…<\/span>/,
+   'the current operation must be announced to assistive technology');
+ }
+ const completed=eclatHtml({status,members:people,userId:'a',
+  noteState:{moment_done:true,saving:false,dirty:true,saved:true}});
+ assert.match(completed,/data-eclat-note-status role="status">Modifications non enregistrées<\/span>/,
+  'stale saved flag must not override unsaved edits');
+ const available=eclatHtml({status,members:people,userId:'a',
+  noteState:{moment_done:true,saving:false,saved:true,dirty:false}});
+ assert.match(available,/data-eclat-note-status role="status">Note enregistrée pour toi<\/span>/);
+});
