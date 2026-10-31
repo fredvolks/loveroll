@@ -4092,3 +4092,71 @@ test('LR-026: already revoked Éclat access cannot initiate private note save',a
  assert.equal(writes,0);
  assert.equal(f.draft.saved,false);
 });
+
+
+function invitationSwitchFixture(command,signOut){
+ const start=app.indexOf("if(verb==='"+command+"'){");
+ const next=command==='use-existing-account'?"if(verb==='join-invite-from-solo')":"if(verb==='native-update')";
+ const end=app.indexOf(next,start);
+ assert.ok(start>0&&end>start,'production invitation account switch exists');
+ const state={user:{id:'alice'},coupleId:'duo-alice',couple:{id:'duo-alice'},
+  members:[{user_id:'alice'},{user_id:'bob'}],tab:'eclat',
+  eclatMembershipScope:JSON.stringify(['duo-alice','alice','bob']),
+  eclat:{id:'private-session'},eclatHistory:[{id:'private-history'}],
+  eclatMusic:true,inviteAccepted:true};
+ const auth=privateAuthBoundaryFixture(state,async()=>({data:{user:state.user}}));
+ state.channel=null;
+ let renders=0;
+ const scope={state,authFeedbackGeneration:0,client:{auth:{signOut},removeChannel:async()=>{}},
+  sessionStorage:{},pendingInviteReference:()=>({kind:'id'}),
+  safeNativePushToken:()=>false,
+  adoptAuthenticatedIdentity:auth.adoptAuthenticatedIdentity,
+  render:()=>{renders++;}};
+ const action=runInNewContext('(async verb=>{'+app.slice(start,end)+'})',scope);
+ return {state,scope,auth,execute:()=>action(command),renders:()=>renders};
+}
+
+test('LR-026: invitation account switching clears all Éclat private data through auth boundary',async()=>{
+ for(const command of ['use-existing-account','switch-account-invite']){
+  const f=invitationSwitchFixture(command,async()=>({error:null}));
+  await f.execute();
+  assert.equal(f.state.user,null,command);
+  assert.equal(f.state.coupleId,null,command);
+  assert.equal(f.state.eclatMembershipScope,null,command);
+  assert.equal(f.state.eclat,null,command);
+  assert.deepEqual(Array.from(f.state.eclatHistory),[],command);
+  assert.equal(f.state.eclatMusic,false,command);
+  assert.equal(f.auth.drafts.size,0,command);
+  assert.equal(f.state.showAuth,true,command);
+  assert.equal(f.state.inviteAccepted,true,command);
+  assert.equal(f.renders(),1,command);
+ }
+});
+
+test('LR-026: obsolete invitation sign-out cannot erase another account',async()=>{
+ for(const command of ['use-existing-account','switch-account-invite']){
+  let finish;const pending=new Promise(resolve=>{finish=resolve;});
+  const f=invitationSwitchFixture(command,()=>pending);
+  const old=f.execute();
+  f.state.user={id:'carol'};f.state.coupleId='carol-duo';
+  finish({error:null});await old;
+  assert.equal(f.state.user.id,'carol',command);
+  assert.equal(f.state.coupleId,'carol-duo',command);
+  assert.equal(f.auth.drafts.size,1,command);
+  assert.equal(f.renders(),0,command);
+ }
+});
+
+test('LR-026: new same-user login invalidates pending invitation logout',async()=>{
+ for(const command of ['use-existing-account','switch-account-invite']){
+  let finish;const pending=new Promise(resolve=>{finish=resolve;});
+  const f=invitationSwitchFixture(command,()=>pending);
+  const old=f.execute();
+  f.scope.authFeedbackGeneration=1;
+  finish({error:null});await old;
+  assert.equal(f.state.user.id,'alice',command);
+  assert.equal(f.state.eclat?.id,'private-session',command);
+  assert.equal(f.auth.drafts.size,1,command);
+  assert.equal(f.renders(),0,command);
+ }
+});
