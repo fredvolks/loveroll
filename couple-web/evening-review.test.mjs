@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {eveningReviewModal,validEveningReview,eveningPersonReviewMarkup,REVIEW_QUESTIONS} from './evening-review.mjs';
+import {eveningReviewModal,validEveningReview,eveningPersonReviewMarkup,eveningFinaleStatus,REVIEW_QUESTIONS} from './evening-review.mjs';
 import {eveningHistoryMarkup} from './evening-calendar.mjs';
 const read=f=>readFileSync(new URL(f,import.meta.url),'utf8');
 const members=[{user_id:'fred',name:'Fred'},{user_id:'partner',name:'Partenaire'}];
@@ -110,4 +110,33 @@ test('Malformed past heart scores cannot blank the couple calendar',()=>{
  assert.equal((html.match(/♡♡♡♡♡/g)||[]).length,4);
  const rating=eveningReviewModal({sessionId:'evening-1',draft:weird});
  assert.match(rating,/data-review-session="evening-1"/);
+});
+
+test('Finale counts one review per partner and handles incomplete history safely',()=>{
+ const summary=eveningFinaleStatus({
+  sessionId:'evening-1',selfId:'fred',partnerId:'partner',
+  reviews:[null,{session_id:'evening-1',author_id:'fred'},
+   {session_id:'evening-1',author_id:'fred'},
+   {session_id:'evening-1',author_id:'different-user'},
+   {session_id:'older',author_id:'partner'}],
+  challenges:[null,{session_id:'evening-1',status:'completed'},
+   {session_id:'evening-1',status:'proposed'},
+   {session_id:'older',status:'completed'}]
+ });
+ assert.deepEqual(summary,{id:'evening-1',completed:1,responses:1,
+  myResponse:true,partnerResponse:false});
+ const both=eveningFinaleStatus({
+  sessionId:'evening-1',selfId:'fred',partnerId:'partner',reviews
+ });
+ assert.equal(both.responses,2);
+ assert.equal(both.partnerResponse,true);
+ const unavailable=eveningFinaleStatus({
+  sessionId:'evening-1',selfId:'fred',reviews:null,challenges:null
+ });
+ assert.equal(unavailable.responses,null);
+ assert.equal(unavailable.partnerResponse,null);
+ assert.equal(unavailable.completed,0);
+ assert.equal(eveningFinaleStatus({sessionId:null}),null);
+ const app=read('app.js');
+ assert.match(app,/const lastEvening=last\?eveningFinaleStatus\(/);
 });
