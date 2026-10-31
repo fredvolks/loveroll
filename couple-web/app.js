@@ -3693,10 +3693,12 @@ async function handle(action,element){
      await rpc('ensure_couple_session',{p_couple:couple});
     }catch(error){setupError=error;}
     if(!current())return;
-    state.tab='session';
    }
+   // Keep Accueil visible until this member's server state is ready.
+   // A failed refresh must not leave the app on an unrendered Soirée tab.
    await refreshShared();
    if(!current())return;
+   if(answer==='yes')state.tab='session';
    state.eveningInviteBusy=false;
    render();
    if(setupError)showInlineError('Invitation acceptée. Ouvre la soirée manuellement si le D6 n’est pas encore disponible.');
