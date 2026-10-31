@@ -313,3 +313,11 @@ main#app.loveroll-editorial{--nav-space:66px;box-sizing:border-box;width:100%;ma
  #app .is-finale .evening-finale-person{padding:2px;}
  #app .is-finale .evening-finale-progress small{font-size:9px;}
 }
+
+/* Short phones have two visible member review states already. The extra
+   prose and duplicated 1/2 progress label are secondary; dropping only those
+   prevents a closed night's Calendar action from slipping behind the nav. */
+@media(max-width:380px) and (max-height:680px){
+ #app .is-finale .evening-finale-description span{display:none;}
+ #app .is-finale .evening-finale-progress{display:none;}
+}
