@@ -632,7 +632,8 @@ function privateNoteDenialHarness({scopedKeys=false,saveUi=false}={}){
  const ui={button:{disabled:false,textContent:'Enregistrer ma note'},
   label:{textContent:'Écris ici, puis enregistre.'},
   actions:['eclat:note-play','eclat:note-done','eclat:note-edit',
-   'eclat:choose:0','eclat:library'].map(action=>({
+   'eclat:choose:0','eclat:choose:1','eclat:choose:2',
+   'eclat:choose:3','eclat:library'].map(action=>({
     dataset:{action},disabled:false,attributes:new Map(),
     setAttribute(name,value){this.attributes.set(name,value);},
     removeAttribute(name){this.attributes.delete(name);}
