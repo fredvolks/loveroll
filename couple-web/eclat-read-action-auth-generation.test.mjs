@@ -629,7 +629,7 @@ function privateNoteDenialHarness(){
   eclatFinished:'Private completion'};
  const drafts=new Map(),renders=[];
  let audioStops=0;
- const ctx={state,authFeedbackGeneration:1,eclatNoteDrafts:drafts,
+ const ctx={state,client:{},authFeedbackGeneration:1,eclatNoteDrafts:drafts,
   ownsCoupleAsyncRead,eclatNoteKey:()=> 'private-key',
   isSharedCoupleReady:(c,m)=>!!c&&m?.length===2,
   loadEclatNote:()=>pendingRead.promise,saveEclatNote:()=>pendingSave.promise,
