@@ -15,6 +15,76 @@ const resolution=extract('async function resolveVerifiedSignup(', 'async functio
 const autoJoin=extract('async function autoAcceptPendingInvite(){','function verificationPendingHtml(');
 const profileSave=extract('let currentProfileSave=null;','// Logout can await');
 
+test('in-flight profile save cannot continue under a different account',async()=>{
+ const calls=[],state={user:{id:'account-A'}};
+ let finishFirstRpc;
+ const firstRpc=new Promise(resolve=>{finishFirstRpc=resolve;});
+ const save=vm.runInNewContext(profileSave+';saveProfileForCurrentAccount',{
+  state,rpc:(name,args)=>{
+   calls.push({user:state.user.id,name,args});
+   return calls.length===1?firstRpc:Promise.resolve();
+  }
+ });
+ const pending=save('Profil A','10-18','her','soft');
+ assert.deepEqual(calls.map(c=>c.name),['complete_love_registration']);
+ state.user={id:'account-B'};
+ finishFirstRpc();
+ assert.equal(await pending,false,'A must stop when a different account owns the view');
+ assert.deepEqual(calls.map(c=>c.name),['complete_love_registration'],
+  'A must never write its gender/style with account B credentials');
+ assert.equal(await save('Profil B','10-19','him','medium'),true);
+ assert.deepEqual(calls.map(c=>c.user),['account-A','account-B','account-B','account-B']);
+});
+
+test('double submission cannot issue duplicate RPCs or unlock another account save',async()=>{
+ const calls=[],state={user:{id:'account-A'}};
+ const pendingRpcs={};
+ const pause=key=>new Promise(resolve=>{pendingRpcs[key]=resolve;});
+ const firstA=pause('account-A'),firstB=pause('account-B');
+ const save=vm.runInNewContext(profileSave+';saveProfileForCurrentAccount',{
+  state,rpc:(name)=>{
+   const owner=state.user.id;
+   calls.push(owner+':'+name);
+   if(name==='complete_love_registration'&&owner==='account-A')return firstA;
+   if(name==='complete_love_registration'&&owner==='account-B')return firstB;
+   return Promise.resolve();
+  }
+ });
+ const oldSave=save('A','10-18','her','soft');
+ await assert.rejects(save('Dupliqué','10-18','her','soft'),/déjà en cours/,
+  'a second tap cannot produce duplicate profile writes');
+ state.user={id:'account-B'};
+ const newSave=save('B','10-19','him','intense');
+ pendingRpcs['account-A']();
+ assert.equal(await oldSave,false);
+ await assert.rejects(save('Doublon B','10-19','him','intense'),/déjà en cours/,
+  'an old account completion must never unlock a newer account save');
+ assert.deepEqual(calls,[
+  'account-A:complete_love_registration',
+  'account-B:complete_love_registration'
+ ]);
+ pendingRpcs['account-B']();
+ assert.equal(await newSave,true);
+ assert.deepEqual(calls.slice(2),['account-B:save_my_gender','account-B:save_my_play_style']);
+});
+
+test('profile saving reopens safely after a same-account RPC failure',async()=>{
+ const calls=[],state={user:{id:'account-A'}};
+ let failOnce=true;
+ const save=vm.runInNewContext(profileSave+';saveProfileForCurrentAccount',{
+  state,rpc:async name=>{
+   calls.push(name);
+   if(name==='save_my_gender'&&failOnce){failOnce=false;throw Error('RPC temporarily offline');}
+  }
+ });
+ await assert.rejects(save('A','10-18','her','soft'),/temporarily offline/);
+ assert.equal(await save('A','10-18','her','soft'),true);
+ assert.deepEqual(calls,[
+  'complete_love_registration','save_my_gender',
+  'complete_love_registration','save_my_gender','save_my_play_style'
+ ]);
+});
+
 test('new account with invitation completes profile but never creates own admin duo',async()=>{
  const calls=[],state={user:{id:'invited-account'},installAfterSignup:false};
  const ctx={
