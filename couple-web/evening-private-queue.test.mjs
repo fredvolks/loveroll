@@ -1824,3 +1824,65 @@ test('LR-026: every Éclat mutation checks ownership before applying its respons
  assert.match(app,/if\(!yes\|\|!ownsEclatAction\(owner\)\)return;/,
   'confirming Quitter under an old account must never send a mutation');
 });
+
+function eclatMusicFixture(state,audio,notify=()=>{},render=()=>{}){
+ const parent=app.indexOf("if(verb==='eclat'){");
+ const start=app.indexOf("if(kind==='music'){",parent);
+ const end=app.indexOf("if(kind==='resume'){",start);
+ assert.ok(parent>0&&start>parent&&end>start,
+  'production Éclat music handler must be present');
+ return runInNewContext(
+  'let latestEclatAudioOwner=null; async function runMusic(kind){'+
+  app.slice(start,end)+
+  '} ({runMusic,owner:()=>latestEclatAudioOwner});',{
+   state,eclatAudio:audio,
+   document:{documentElement:{classList:{contains:()=>false}}},
+   eclatStage:()=>({mood:'romantique'}),
+   ownsCoupleAsyncRead,notify,render
+  });
+}
+
+test('LR-026: asynchronous Éclat audio cannot resume after changing account',async()=>{
+ const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
+  eclat:{active:true,coffret_id:1,chapter_number:1,variant_number:1},
+  eclatMusic:false};
+ let release,stops=0,notifications=0,paints=0;
+ const audio={start:()=>new Promise(resolve=>{release=resolve;}),
+  stop:()=>{stops++;}};
+ const music=eclatMusicFixture(state,audio,()=>notifications++,()=>paints++);
+ const pending=music.runMusic('music');
+ state.user={id:'bob'};
+ release(true);
+ await pending;
+ assert.equal(stops,1,'stale audio must stop after account change');
+ assert.equal(state.eclatMusic,false,'new account must not inherit playback');
+ assert.equal(notifications,0,'no stale audio error toast');
+ assert.equal(paints,0,'no stale audio screen render');
+});
+
+test('LR-026: later Éclat audio tap wins while earlier permission is pending',async()=>{
+ const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
+  eclat:{active:true,coffret_id:1,chapter_number:1,variant_number:1},
+  eclatMusic:false};
+ const starts=[];
+ const audio={start:()=>new Promise(resolve=>starts.push(resolve)),stop:()=>{}};
+ let paints=0;
+ const music=eclatMusicFixture(state,audio,()=>{},()=>paints++);
+ const first=music.runMusic('music'),second=music.runMusic('music');
+ assert.equal(starts.length,2);
+ starts[1](true);await second;
+ starts[0](false);await first;
+ assert.equal(state.eclatMusic,true,
+  'outdated audio permission must not turn off a newer successful start');
+ assert.equal(paints,1);
+});
+
+test('LR-026: signing out and masking privacy invalidate Éclat audio',()=>{
+ const signout=app.indexOf("if(event==='SIGNED_OUT')");
+ assert.ok(signout>=0);
+ assert.match(app.slice(signout,signout+440),
+  /latestEclatAudioOwner=null;eclatAudio\.stop\(\);state\.eclatMusic=false/);
+ const privacy=app.slice(app.indexOf("document.addEventListener('loveroll:privacy-mask'"),
+  app.indexOf('function pendingReferralCode()'));
+ assert.match(privacy,/latestEclatAudioOwner=null;[\s\S]*eclatAudio\.stop\(\)/);
+});
