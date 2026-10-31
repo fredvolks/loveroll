@@ -64,3 +64,35 @@ test('The active cycle answer is serialized, scoped and not applied to a differe
  assert.match(handler,/if\(progress\)progress.hidden=true/);
  assert.match(handler,/if\(verb==='cycle-later'\)\{[\s\S]*?state.cycleAnswerRequest/);
 });
+
+test('Pending 200-card votes remain visibly pending across a realtime redraw',()=>{
+ const active=cycleIntensityQuestionnaireHtml({status:{pending:true,cycle:3},
+  style:'medium',saving:true});
+ assert.match(active,/<div class="lr-cycle-overlay"[^>]*aria-busy="true"/);
+ for(const choice of ['down','same','up']){
+  assert.match(active,new RegExp('data-action="cycle-answer:'+choice+'" disabled aria-disabled="true"'));
+ }
+ assert.match(active,/<p class="lr-cycle-progress" role="status" aria-live="polite">Enregistrement de votre choix…<\/p>/);
+ assert.match(active,/data-action="cycle-later" disabled aria-disabled="true"/);
+ const upperBound=cycleIntensityQuestionnaireHtml({status:{pending:true},
+  style:'intense',saving:false});
+ assert.match(upperBound,/data-action="cycle-answer:up" disabled aria-disabled="true"/);
+ assert.doesNotMatch(upperBound,/aria-busy="true"/);
+ const waiting=cycleIntensityQuestionnaireHtml({status:{pending:true,answered_self:true},
+  saving:true});
+ assert.doesNotMatch(waiting,/aria-busy="true"/);
+ assert.doesNotMatch(waiting,/data-action="cycle-answer:/);
+});
+
+test('An interrupted 200-card save restores the CURRENT visible overlay, not a detached one',()=>{
+ const start=source.indexOf("if(verb==='cycle-answer'){");
+ const end=source.indexOf("if(verb==='cycle-reopen'){",start);
+ const handler=source.slice(start,end);
+ assert.match(handler,/const currentOverlay=root.querySelector\('\.lr-cycle-overlay'\)/);
+ assert.match(handler,/for\(const control of currentOverlay\?\.querySelectorAll\('\.lr-cycle-choice'\)\|\|\[\]\)/);
+ assert.match(handler,/currentOverlay\?\.querySelector\('\.lr-cycle-progress'\)/);
+ assert.match(handler,/state\.cycleAnswerRequest===owner/);
+ assert.match(source,/saving:!!\(state\.cycleAnswerRequest&&/);
+ assert.match(handler,/catch\(error\)\{\s*if\(!ownsAnswer\(\)\)return;/,
+  'stale RPC errors must not be shown to a different signed-in account');
+});
