@@ -136,6 +136,17 @@ test('Finale counts one review per partner and handles incomplete history safely
  assert.equal(unavailable.responses,null);
  assert.equal(unavailable.partnerResponse,null);
  assert.equal(unavailable.completed,0);
+ const unknownPartner=eveningFinaleStatus({
+  sessionId:'evening-1',selfId:'fred',reviews
+ });
+ assert.equal(unknownPartner.myResponse,true);
+ assert.equal(unknownPartner.partnerResponse,null);
+ assert.equal(unknownPartner.responses,null,'not enough member data to claim 2 / 2');
+ const duplicateMember=eveningFinaleStatus({
+  sessionId:'evening-1',selfId:'fred',partnerId:'fred',reviews
+ });
+ assert.equal(duplicateMember.partnerResponse,null);
+ assert.equal(duplicateMember.responses,null,'one member must never count twice');
  assert.equal(eveningFinaleStatus({sessionId:null}),null);
  const app=read('app.js');
  assert.match(app,/const lastEvening=last\?eveningFinaleStatus\(/);
