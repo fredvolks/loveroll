@@ -1727,7 +1727,7 @@ async function saveCurrentEclatNote(momentDone){
 }
 // Every Éclat response is tied to both the account and the couple.
 // Request tokens also stop an older poll from rolling back a newer status.
-let latestEclatHistoryRead=null,latestEclatStatusRead=null;
+let latestEclatHistoryRead=null,latestEclatStatusRead=null,latestEclatExplicitRead=null;
 async function refreshEclatHistory(){
  const owner={userId:state.user?.id,coupleId:state.coupleId,
   generation:authFeedbackGeneration};
@@ -1759,15 +1759,22 @@ async function refreshEclatStatus(){
  if(!ownsCoupleAsyncRead(state,owner)||
     !isSharedCoupleReady(owner.coupleId,state.members))return null;
  const request={};latestEclatStatusRead=request;
+ // Foreground reads have priority over the 4.5s background poll.
+ // A stalled foreground request expires after 30s, same as a stalled poll.
+ latestEclatExplicitRead={...owner,request,startedAt:Date.now()};
  const current=()=>ownsCoupleAsyncRead(state,owner)&&
   authFeedbackGeneration===owner.generation&&
   isSharedCoupleReady(owner.coupleId,state.members)&&
   latestEclatStatusRead===request;
- const value=await rpc('love_eclat_status');
- if(!current())return null;
- if(value)state.eclat=value;
- await refreshEclatHistory();
- return current()?value:null;
+ try{
+  const value=await rpc('love_eclat_status');
+  if(!current())return null;
+  if(value)state.eclat=value;
+  await refreshEclatHistory();
+  return current()?value:null;
+ }finally{
+  if(latestEclatExplicitRead?.request===request)latestEclatExplicitRead=null;
+ }
 }
 // A user may switch accounts or leave Éclat while a mutating RPC awaits.
 // Keep its response local to the exact initiating account, couple and view.
@@ -5694,6 +5701,12 @@ setInterval(async()=>{
     pending.generation===authFeedbackGeneration&&
     latestEclatStatusRead===pending.request&&
     Date.now()-pending.startedAt<30000)return;
+ const foreground=latestEclatExplicitRead;
+ if(foreground&&foreground.userId===state.user.id&&
+    foreground.coupleId===state.coupleId&&
+    foreground.generation===authFeedbackGeneration&&
+    latestEclatStatusRead===foreground.request&&
+    Date.now()-foreground.startedAt<30000)return;
  // Account IDs can be reused after a fresh login. Invalidate old replies
  // without blocking a new session or relying on its first timer tick.
  const owner={userId:state.user.id,coupleId:state.coupleId,
