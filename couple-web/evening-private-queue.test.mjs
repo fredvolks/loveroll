@@ -2380,7 +2380,7 @@ function pendingAuthReloadFixture(state,rpc,query,overrides={}){
  const f=runInNewContext('let latestAuthReloadRequest=null;'+app.slice(first,end)+
   ';({reload})',{
    state,document:{hidden:false,documentElement:{lang:'fr'}},
-   challengeTimer:{running:false},hasUnsavedForm:()=>false,
+   sessionStorage:{},challengeTimer:{running:false},hasUnsavedForm:()=>false,
    root:{querySelector:()=>null},window:{},
    refreshVerifiedIdentity:async()=>true,
    previewMode:()=> 'real',rpc,query,
