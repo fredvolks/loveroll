@@ -5549,17 +5549,35 @@ window.addEventListener('appinstalled',()=>{
 });
 // When left open across midnight, server time (not phone time) changes the
 // current Advent door without requiring a restart or manual refresh.
+// An old account/couple's pending reply must never repaint a new user's view.
+let adventDatePolling=null;
 setInterval(async()=>{
  if(!state.user||state.tab!=='advent'||document.hidden||state.adventOpening!==null)return;
+ const owner={userId:state.user.id,coupleId:state.coupleId||null,
+  generation:authFeedbackGeneration};
+ if(adventDatePolling?.userId===owner.userId&&
+    adventDatePolling.coupleId===owner.coupleId&&
+    adventDatePolling.generation===owner.generation)return;
+ adventDatePolling=owner;
+ const current=()=>adventDatePolling===owner&&
+  state.user?.id===owner.userId&&
+  (state.coupleId||null)===owner.coupleId&&
+  authFeedbackGeneration===owner.generation&&
+  state.tab==='advent'&&!document.hidden&&state.adventOpening===null;
  try{
   const todayOnServer=await rpc('love_advent_server_date');
+  if(!current())return;
   if(todayOnServer&&todayOnServer!==state.adventServerDate){
    state.adventServerDate=todayOnServer;
    state.adventYear=null;
    await refreshShared();
-   render();
+   if(current())render();
   }
- }catch(error){console.warn('Horloge Avent indisponible',error);}
+ }catch(error){
+  if(current())console.warn('Horloge Avent indisponible',error);
+ }finally{
+  if(adventDatePolling===owner)adventDatePolling=null;
+ }
 },60_000);
 // Fallback when Realtime WebSocket events are missed in Chrome, Safari,
  // Messenger, iPadOS, or after background suspension. No manual refresh.
