@@ -478,11 +478,11 @@ test('LR-027: private-card Passer and Refuser remain visible with truthful serve
  assert.ok(from>0&&until>from,'The original private-card choice template must exist');
  const expr=source.slice(from,until).trim().replace(/\+\s*$/,'');
  const render=new Function('view','state','button','safe',
-  'isActiveEveningRedrawPending','isEveningCardCompleting','return '+expr+';');
+  'isActiveEveningRedrawPending','isEveningCardCompleting','giftTransferPending','return '+expr+';');
  const button=(action,label,attr='')=>'<button data-action="'+action+'" '+attr+'>'+label+'</button>';
- const pick=(status,ready,quota=null)=>render({id:'private-card',status},{
+ const pick=(status,ready,quota=null,gifting=false)=>render({id:'private-card',status},{
   redrawReady:ready,monthlyPassQuota:quota
- },button,x=>String(x),()=>false,()=>false);
+ },button,x=>String(x),()=>false,()=>false,gifting);
  for(const status of ['proposed','accepted']){
   const offline=pick(status,false);
   assert.match(offline,/data-action="evening-pass:private-card"/);
@@ -493,6 +493,9 @@ test('LR-027: private-card Passer and Refuser remain visible with truthful serve
   const ready=pick(status,true,{used:1,limit:3,can_pass:true});
   assert.doesNotMatch(ready,/disabled aria-disabled/);
   assert.match(ready,/Passes ce mois : 1 \/ 3/);
+  const gifting=pick(status,true,{used:1,limit:3,can_pass:true},true);
+  assert.match(gifting,/data-action="evening-pass:private-card"[^>]*disabled/);
+  assert.match(gifting,/data-action="evening-refuse:private-card"[^>]*disabled/);
   const limit=pick(status,true,{used:3,limit:3,can_pass:false});
   assert.match(limit,/data-action="evening-pass:private-card"[^>]*disabled/);
   assert.doesNotMatch(limit,/data-action="evening-refuse:private-card"[^>]*disabled/,
