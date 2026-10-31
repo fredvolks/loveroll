@@ -1830,14 +1830,14 @@ function applyEclatStatus(value){
  }
  return true;
 }
-// A verified denial from Auth or PostgREST differs from a temporary outage.
-// Never keep a previously cached private coffret after a 401/403 response.
+// Auth/PostgREST rejection is distinct from a transient network outage.
+// Permission-denied SQLSTATE 42501 can arrive with HTTP 400 rather than 403.
 // Both status types are accepted; adapters may expose HTTP status as a string.
 // Callers first verify ownership so an old login cannot clear a newer session.
 function invalidateEclatOnAuthRejection(error){
  const status=error?.status;
  const denied=status===401||status===403||status==='401'||status==='403';
- if(!denied&&error?.code!=='PGRST301')return false;
+ if(!denied&&error?.code!=='PGRST301'&&error?.code!=='42501')return false;
  applyEclatStatus(null);
  return true;
 }
