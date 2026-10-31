@@ -5971,11 +5971,21 @@ async function handle(action,element){
   if(!ownsFinish())return;
   state.chosenSession=finishedId;state.tab='session';await refreshAndShow();return;
  }
- if(verb==='cancel-session'){state.confirmCancel=true;render();return;}
+ if(verb==='cancel-session'){
+  if(state.diceStatus)return; // The official result must settle before cancellation.
+  state.confirmCancel=true;render();return;
+ }
  if(verb==='dismiss-cancel'){state.confirmCancel=false;render();return;}
  if(verb==='confirm-cancel'){
-  if(!state.session)return;
-  await rpc('finish_couple_session',{p_session:state.session.id,p_count:false});
+  if(state.diceStatus||!state.session)return;
+  const owner={userId:state.user?.id,coupleId:state.coupleId,
+   sessionId:state.session.id,generation:authFeedbackGeneration};
+  const ownsCancel=()=>state.user?.id===owner.userId&&
+   state.coupleId===owner.coupleId&&state.session?.id===owner.sessionId&&
+   authFeedbackGeneration===owner.generation;
+  if(!owner.userId||!owner.coupleId)return;
+  await rpc('finish_couple_session',{p_session:owner.sessionId,p_count:false});
+  if(!ownsCancel())return; // Do not redirect a new login after the server reply.
   state.confirmCancel=false;state.tab='home';await refreshAndShow();return;
  }
  if(verb==='advent-open'){
