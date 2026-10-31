@@ -67,10 +67,12 @@ test('Eclat is separate from old official dice and protected by Supabase',()=>{
  const app=read('./app.js');
  const styles=read('./eclat.css');
  const sw=read('./service-worker.js');
- assert.match(app,/rpc\('love_eclat_start'/);
- assert.match(app,/rpc\('love_eclat_choose'/);
- assert.match(app,/rpc\('love_eclat_next'/);
- assert.match(app,/rpc\('love_eclat_end'/);
+ // All four actions go through the owner-bound Auth/RLS guard before
+ // calling the actual server RPC. No local dice or offline fake draw.
+ for(const command of ['start','choose','next','end'])
+  assert.ok(app.includes("runEclatMutation(owner,'love_eclat_"+command+"'"),command+' uses the guarded RPC');
+ assert.match(app,/const value=await rpc\(name,args\)/);
+ assert.match(app,/invalidateEclatOnAuthRejection\(error\)/);
  assert.match(styles,/\.home-next-month>span:nth-child\(2\)/);
  assert.match(styles,/\.home-gift-icon svg/);
  for(const file of ['eclat-scenes-a.mjs','eclat-scenes-b.mjs','eclat-ui.mjs','eclat-catalog.mjs','eclat-audio.mjs','eclat.css'])
