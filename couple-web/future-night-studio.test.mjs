@@ -65,7 +65,7 @@ test('preview controls render card text as textContent instead of HTML',()=>{
  const preview=initFutureNightPreview(doc,()=>cards);
  assert.ok(preview);
  controls.run.fire('click');
- assert.equal(controls.result.children.length,3);
+ assert.equal(controls.result.children.length,4);
  const rows=controls.result.children[1].children;
  assert.equal(rows[0].children[0].textContent,'<img src=x onerror=alert(1)>');
  controls.a.fire('change');assert.equal(controls.result.children.length,0);
