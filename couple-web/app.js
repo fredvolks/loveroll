@@ -103,6 +103,8 @@ let notificationFeedback=null;
 // Only the newest month request may repaint this account's private calendar.
 let latestCalendarPassQuotaRequest=null;
 let currentReviewSaveRequest=null;
+// Ignore duplicate start taps for this Auth generation, but never block a new login.
+let currentNewSessionRequest=null;
 let worldGpsDraft=null;
 let worldFx=null,worldFxPending=null,worldFxFailed=null;
 let geoFetchActive=null,geoFetchSeen=new Set();
@@ -5603,10 +5605,20 @@ async function handle(action,element){
   if(!owner.userId||!owner.coupleId)return;
   const ownsSession=()=>state.user?.id===owner.userId&&
    state.coupleId===owner.coupleId&&authFeedbackGeneration===owner.generation;
-  // A slow session-creation RPC must never navigate a replacement login.
-  await rpc('ensure_couple_session',{p_couple:owner.coupleId});
-  if(!ownsSession())return;
-  state.tab='session';await refreshAndShow();return;
+  if(currentNewSessionRequest&&currentNewSessionRequest.userId===owner.userId&&
+     currentNewSessionRequest.coupleId===owner.coupleId&&
+     currentNewSessionRequest.generation===owner.generation)return;
+  const request={...owner};
+  currentNewSessionRequest=request;
+  try{
+   // One RPC per user gesture; a new Auth generation is never blocked.
+   await rpc('ensure_couple_session',{p_couple:owner.coupleId});
+   if(!ownsSession())return;
+   state.tab='session';await refreshAndShow();return;
+  }finally{
+   // A stale completion cannot release a newer account's pending request.
+   if(currentNewSessionRequest===request)currentNewSessionRequest=null;
+  }
  }
  if(verb==='my-d6'){
   if(!state.session)throw Error('Aucune soirée active.');
