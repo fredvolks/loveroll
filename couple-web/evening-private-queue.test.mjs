@@ -2172,7 +2172,8 @@ function privateAuthBoundaryFixture(state,getUser){
  const scope=runInNewContext(
   'const eclatNoteDrafts=drafts;let latestEclatAudioOwner=null;'+
   'let latestEclatHistoryRead=null,latestEclatStatusRead=null,latestEclatActionRequest=null;'+
-  'let realtimeReconnectTimer=null;'+app.slice(start,end)+
+  'let realtimeReconnectTimer=null;'+
+  'let inviteAcceptanceBusy=false,inviteAcceptanceRequest=null;'+app.slice(start,end)+
   ';({adoptAuthenticatedIdentity,refreshVerifiedIdentity,readRequest:()=>latestAuthReloadRequest})',{
    state,drafts,client:{auth:{getUser},removeChannel:async()=>{calls.channelRemovals++;}},
    eclatAudio:{stop:()=>calls.audioStops++},
@@ -2449,4 +2450,79 @@ test('LR-026: rejected referral from an earlier login cannot continue an obsolet
   'the old reload must never fetch private cards for the replacement account');
  assert.equal(f.calls.render,0);
  assert.equal(f.calls.warnings,0,'obsolete errors must not toast or log a referral warning');
+});
+
+function invitationAcceptanceFixture(state,rpc){
+ const start=app.indexOf('async function autoAcceptPendingInvite(){');
+ const end=app.indexOf('function verificationPendingHtml(',start);
+ assert.ok(start>0&&end>start);
+ let pending={kind:'id',value:'invitation-alice'},clears=0;
+ const context=runInNewContext(
+  'let inviteAcceptanceBusy=false,inviteAcceptanceRequest=null;'+
+  'let inviteAcceptanceBusyState=()=>inviteAcceptanceBusy;'+app.slice(start,end)+
+  ';({autoAcceptPendingInvite,busy:inviteAcceptanceBusyState})',{
+   state,sessionStorage:{},
+   pendingInviteReference:()=>pending,
+   verifiedLoveEmail:()=>true,rpc,
+   hashToken:async value=>'hash-'+value,
+   finishInviteReference:()=>{clears++;pending=null;},
+   invitationAuthMessage:()=> 'Invitation refusée'
+  });
+ return {...context,clears:()=>clears,setInvite:value=>{pending=value;}};
+}
+
+test('LR-026: accepted invitation updates only its originating signed-in user',async()=>{
+ const state={user:{id:'alice'},inviteAccepted:true,
+  profile:{birthday_md:'06-22'},passwordRecovery:false,tab:'settings'};
+ const f=invitationAcceptanceFixture(state,async()=>({status:'accepted'}));
+ await f.autoAcceptPendingInvite();
+ assert.equal(f.clears(),1);
+ assert.equal(state.inviteWelcome,true);
+ assert.equal(state.tab,'home');
+ assert.equal(f.busy(),false);
+});
+
+test('LR-026: late accepted invitation cannot switch another account tab or clear its invitation',async()=>{
+ let release;
+ const pending=new Promise(resolve=>{release=resolve;});
+ const state={user:{id:'alice'},inviteAccepted:true,
+  profile:{birthday_md:'06-22'},passwordRecovery:false,tab:'settings'};
+ const f=invitationAcceptanceFixture(state,()=>pending);
+ const accepting=f.autoAcceptPendingInvite();
+ state.user={id:'bob'};state.tab='eclat';state.inviteWelcome=false;
+ release({status:'accepted'});
+ await accepting;
+ assert.equal(state.tab,'eclat');
+ assert.equal(state.inviteWelcome,false);
+ assert.equal(f.clears(),0);
+ assert.equal(f.busy(),false);
+});
+
+test('LR-026: a changed invitation reference must not be cleared by the old acceptance',async()=>{
+ let release;
+ const pending=new Promise(resolve=>{release=resolve;});
+ const state={user:{id:'alice'},inviteAccepted:true,
+  profile:{birthday_md:'06-22'},passwordRecovery:false,tab:'settings'};
+ const f=invitationAcceptanceFixture(state,()=>pending);
+ const accepting=f.autoAcceptPendingInvite();
+ f.setInvite({kind:'id',value:'invitation-new'});
+ release({status:'accepted'});
+ await accepting;
+ assert.equal(f.clears(),0);
+ assert.equal(state.inviteWelcome,undefined);
+});
+
+test('LR-026: rejected invitation from a former account cannot display errors on the new account',async()=>{
+ let reject;
+ const pending=new Promise((_,fail)=>{reject=fail;});
+ const state={user:{id:'alice'},inviteAccepted:true,
+  profile:{birthday_md:'06-22'},passwordRecovery:false,tab:'settings'};
+ const f=invitationAcceptanceFixture(state,()=>pending);
+ const accepting=f.autoAcceptPendingInvite();
+ state.user={id:'bob'};state.inviteError=null;
+ reject(Error('Alice invitation expired'));
+ await accepting;
+ assert.equal(state.inviteError,null);
+ assert.equal(f.clears(),0);
+ assert.equal(f.busy(),false);
 });
