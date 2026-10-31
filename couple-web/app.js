@@ -1753,6 +1753,22 @@ async function saveCurrentEclatNote(momentDone){
  // when both text fields are empty. A failed save must remain noticeable.
  if(snapshot.moment_done!==draft.moment_done)draft.dirty=true;
  draft.saving=true;
+ // Update only the live status and save control. Re-rendering the page here
+ // would steal focus and risk losing edits typed while this RPC is pending.
+ const updateSaveControl=(saving,message)=>{
+  if(!current())return;
+  const button=root.querySelector('[data-action="eclat:note-save"]');
+  if(button){
+   button.disabled=saving;
+   button.textContent=saving?'Enregistrement…':'Enregistrer ma note';
+  }
+  if(message!==null){
+   const label=root.querySelector('[data-eclat-note-status]');
+   if(label)label.textContent=message;
+  }
+ };
+ updateSaveControl(true,'Enregistrement en cours…');
+ let saveFailed=false;
  try{
   await saveEclatNote(client,status,owner.userId,snapshot);
   if(!current())return null;
@@ -1764,10 +1780,15 @@ async function saveCurrentEclatNote(momentDone){
   // A definitive Auth/RLS denial differs from an offline draft save.
   // Drop private state rather than advertising an unsafe local retry.
   if(invalidateEclatOnAuthRejection(error)){render();return null;}
-  const label=root.querySelector('[data-eclat-note-status]');
-  if(label)label.textContent='Non enregistré. Ton texte est conservé ici; réessaie.';
+  saveFailed=true;
+  updateSaveControl(false,'Non enregistré. Ton texte est conservé ici; réessaie.');
   throw error;
- }finally{draft.saving=false;}
+ }finally{
+  draft.saving=false;
+  if(!saveFailed)updateSaveControl(false,
+   draft.dirty?'Modifications non enregistrées':'Note enregistrée pour toi');
+  else updateSaveControl(false,null);
+ }
  // A user may keep typing while the network saves the prior snapshot.
  // The old snapshot was saved, but the current draft is STILL dirty.
  // Never let « note-play » or « Choisir » advance as if those edits were saved.
