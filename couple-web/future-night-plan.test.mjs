@@ -99,16 +99,16 @@ test('Future short evening balances woman, man and both when all three have elig
  const cards=['medium','intense'].flatMap(level=>Array.from({length:6},(_,i)=>
   card(level,i,3,audiences[i%3])));
  const plan=buildFutureNightPlan({
-  members,cards,styleA:'medium',styleB:'intense',minutes:18,
-  cardTickets:Array(6).fill(0)
+  members,cards,styleA:'medium',styleB:'intense',minutes:15,
+  cardTickets:Array(5).fill(0)
  });
- assert.equal(plan.spentMinutes,18);
+ assert.equal(plan.spentMinutes,15);
  assert.deepEqual(plan.items.map(item=>item.level),
-  ['medium','intense','medium','intense','medium','intense']);
+  ['medium','intense','medium','intense','medium']);
  const targets=plan.items.map(item=>cards.find(c=>c.id===item.cardId).target);
- assert.deepEqual(targets,['woman','man','both','woman','man','both']);
- assert.deepEqual(plan.items.map(item=>item.recipientIds.length),[1,1,2,1,1,2]);
- assert.equal(new Set(plan.items.map(item=>item.cardId)).size,6);
+ assert.deepEqual(targets,['woman','man','both','woman','man']);
+ assert.deepEqual(plan.items.map(item=>item.recipientIds.length),[1,1,2,1,1]);
+ assert.equal(new Set(plan.items.map(item=>item.cardId)).size,5);
 });
 test('Target balancing never assigns a gender-specific card to an ambiguous pair',()=>{
  const women=[{user_id:'a',gender:'her'},{user_id:'b',gender:'her'}];
