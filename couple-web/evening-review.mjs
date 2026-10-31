@@ -8,9 +8,12 @@ export const REVIEW_QUESTIONS=[
  {key:'again',label:'Envie de recommencer',icon:'↻'}
 ];
 export function validEveningReview(draft){
+ const comment=draft?.comment;
+ // The SQL review accepts optional text, not arbitrary objects accidentally
+ // stringified by the client. Match the textarea's UTF-16 maxlength contract.
  return REVIEW_QUESTIONS.every(q=>Number.isInteger(draft?.[q.key])&&
    draft[q.key]>=1&&draft[q.key]<=5)&&
-   String(draft?.comment||'').length<=500;
+   (comment==null||typeof comment==='string'&&comment.length<=500);
 }
 export function eveningHeartRating(key,score,saving=false){
  const raw=Number(score);
@@ -27,6 +30,7 @@ export function eveningHeartRating(key,score,saving=false){
 export function eveningReviewModal({sessionId,draft={},saving=false,partnerName='ton partenaire'}={}){
  if(!sessionId)return '';
  const answer=draft&&typeof draft==='object'&&!Array.isArray(draft)?draft:{};
+ const comment=typeof answer.comment==='string'?answer.comment:'';
  return '<div class="lr-review-backdrop" role="presentation">'+
  '<section class="lr-review-modal" role="dialog" aria-modal="true" aria-labelledby="lr-review-title" '+
   'aria-describedby="lr-review-intro" aria-busy="'+saving+'" data-review-session="'+esc(sessionId)+'">'+
@@ -40,7 +44,7 @@ export function eveningReviewModal({sessionId,draft={},saving=false,partnerName=
  '<label class="lr-review-comment-label" for="lr-review-comment">♧ Commentaire</label>'+
  '<div class="lr-review-note"><textarea id="lr-review-comment" maxlength="500" rows="3"'+(saving?' readonly':'')+' '+
   'placeholder="Écrire une note ou un commentaire sur ce qu’on a aimé ou moins aimé...">'+
-  esc(answer.comment||'')+'</textarea><span id="lr-review-counter">'+String(answer.comment||'').length+'/500</span></div>'+
+  esc(comment)+'</textarea><span id="lr-review-counter">'+comment.length+'/500</span></div>'+
  '<p class="lr-review-calendar-note">▦ Ce bilan sera sauvegardé dans votre calendrier commun. '+
   'Le bilan de '+esc(partnerName)+' sera ajouté dès qu’il sera enregistré.</p>'+
  '<p class="lr-review-error" role="alert" hidden></p>'+
@@ -55,8 +59,9 @@ export function eveningPersonReviewMarkup({reviews=[],sessionId,person={},me}={}
  // entire couple history just because one optional review is malformed.
  const member=person&&typeof person==='object'?person:{};
  const isMine=!!member.user_id&&member.user_id===me;
- const review=(Array.isArray(reviews)?reviews:[]).find(r=>
-  r&&typeof r==='object'&&r.session_id===sessionId&&r.author_id===member.user_id);
+ const review=typeof member.user_id==='string'&&member.user_id.length>0?
+  (Array.isArray(reviews)?reviews:[]).find(r=>r&&typeof r==='object'&&
+   r.session_id===sessionId&&r.author_id===member.user_id):null;
  const heading='♡ Bilan de '+esc(member.name||'cette personne');
  const edit=isMine?'<button type="button" class="evening-review-edit" data-action="review-open:'+
    esc(sessionId)+'">'+(review?'Modifier mon bilan':'♡ Remplir mon bilan')+'</button>':'';
@@ -72,7 +77,8 @@ export function eveningPersonReviewMarkup({reviews=[],sessionId,person={},me}={}
  }).join('');
  return '<section class="evening-review-person" data-review-person="'+esc(member.user_id)+'">'+
   '<h4>'+heading+'</h4>'+scores+
-  (review.comment?'<p class="evening-review-note">'+esc(review.comment)+'</p>':'')+
+  (typeof review.comment==='string'&&review.comment?
+   '<p class="evening-review-note">'+esc(review.comment)+'</p>':'')+
   edit+'</section>';
 }
 
