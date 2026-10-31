@@ -3273,6 +3273,19 @@ function renderSettings(){
  const futureMix=hasPartner?futureCoupleStyleMix(...state.members.map(m=>m.playStyle)):
   futureCoupleStyleMix(state.profile?.play_style,state.profile?.play_style);
  const futureMixLabel=futureMix.map(entry=>playStyleLabel(entry.style)+' '+entry.weight+' %').join(' · ');
+ const savedFavorites=readEveningFavorites(state.user?.id,state.coupleId);
+ const favoriteTitles=Object.create(null);
+ if(savedFavorites.length){
+  // Only inspect card IDs saved by this account. Do not display missing
+  // or unfilled admin slots as if they were playable.
+  for(const category of EVENING_CATEGORIES){
+   for(const card of editableCardSlots(category,state.customCards||[])){
+    const key=category+':'+card.cardId;
+    if(card.filled&&savedFavorites.includes(key)&&card.title)
+     favoriteTitles[key]=card.title;
+   }
+  }
+ }
  const account='<div class="settings-account-form">'+
   '<div class="settings-premium-section-head"><span>MON COMPTE LOVEROLL</span><h2>Votre espace personnel</h2><p>Un profil privé pour vos défis, vos préférences et vos invitations.</p></div>'+
   '<section class="settings-premium-glass-group"><h3>Mes informations</h3>'+
@@ -3280,8 +3293,7 @@ function renderSettings(){
   '<input id="profile-name" type="text" autocomplete="given-name" value="'+safe(state.profile.display_name)+'" maxlength="80" aria-label="Prénom affiché"></label>'+
   profileGenderSelect(state.profile.gender)+profilePlayStyleSelect(state.profile.play_style)+
   sessionLengthSettingsHtml(readSessionLength(state.user?.id))+
-  (state.coupleId?eveningFavoritesSettingsHtml(
-   readEveningFavorites(state.user?.id,state.coupleId)):'')+
+  (state.coupleId?eveningFavoritesSettingsHtml(savedFavorites,favoriteTitles):'')+
   '<div class="settings-birthday-edit"><span>Mon anniversaire</span>'+monthDayInputs('settings-birthday',state.profile.birthday_md)+'</div>'+
   '<label>Courriel du compte<input type="email" readonly aria-readonly="true" value="'+safe(state.user.email||'')+'" autocomplete="email"></label>'+
   (state.testModeEligible?
