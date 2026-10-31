@@ -4036,8 +4036,13 @@ async function handle(action,element){
   }
   return;
  }
- if(verb==='evening-more'){state.eveningMore=!state.eveningMore;render();return;}
+ if(verb==='evening-more'){
+  if(state.tab==='session'&&state.diceStatus)return;
+  state.eveningMore=!state.eveningMore;render();return;
+ }
  if(verb==='evening-calendar'){
+  // Even a late touch event cannot navigate away and unmount a spinning die.
+  if(state.tab==='session'&&state.diceStatus)return;
   state.eveningCalendarBack=parts[0]==='settings'||state.tab==='settings'?'settings-page:confidentialite':'tab:session';
   state.eveningMore=false;state.confirmCancel=false;
   const date=state.session?eveningLocalDay(state.session.started_at):null;
