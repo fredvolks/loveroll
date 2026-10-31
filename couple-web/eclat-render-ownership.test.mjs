@@ -85,8 +85,8 @@ test('LR-026: authorized active Éclat retains private notes and music mood',()=
 
 const permissionBegin=app.indexOf('function canPlayEclat(){');
 const permissionEnd=app.indexOf('function beginEclatAction(){',permissionBegin);
-const actionBegin=app.indexOf("  if(verb==='eclat'){");
-const actionEnd=app.indexOf("  if(verb==='referral-copy'",actionBegin);
+const actionBegin=app.indexOf(" if(verb==='eclat'){");
+const actionEnd=app.indexOf(" if(verb==='referral-copy'",actionBegin);
 assert.ok(permissionBegin>=0&&permissionEnd>permissionBegin,'production entitlement gate exists');
 assert.ok(actionBegin>=0&&actionEnd>actionBegin,'production Éclat actions exist');
 const actionSource=app.slice(permissionBegin,permissionEnd)+
