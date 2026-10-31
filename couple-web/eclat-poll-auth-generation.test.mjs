@@ -893,3 +893,37 @@ test('LR-026: newly known account and couple always load their own first Éclat 
  await tick;
  assert.deepEqual(h.history,['alice'],'missing history scope requires a first read');
 });
+
+test('LR-026: a chapter change bypasses an old failed-history cooldown',async()=>{
+ const h=harness({recoverHistory:true});
+ h.state.eclat={id:'chapter-3',access:true,active:true,
+  session_id:'session-1',coffret_id:2,chapter_index:3};
+ h.state.eclatHistoryCouple='couple-a';
+ h.state.eclatHistoryUserId='alice';
+ h.state.eclatHistoryError=true;
+ h.state.eclatHistoryRetryAt=30000;
+ const tick=h.tick();
+ h.requests[0].resolve({id:'chapter-4',access:true,active:true,
+  session_id:'session-1',coffret_id:2,chapter_index:4});
+ await tick;
+ assert.equal(h.state.eclat.chapter_index,4);
+ assert.deepEqual(h.history,['alice'],
+  'a newly advanced chapter must refresh its history before the old retry deadline');
+ assert.equal(h.state.eclatHistoryError,false);
+ assert.deepEqual(h.renders,['chapter-4']);
+});
+
+test('LR-026: a missing private-history scope bypasses a prior cooldown once',async()=>{
+ const h=harness({recoverHistory:true});
+ h.state.eclat={id:'current',access:true,active:true,
+  session_id:'session-1',coffret_id:2,chapter_index:3};
+ h.state.eclatHistoryError=true;
+ h.state.eclatHistoryRetryAt=30000;
+ const tick=h.tick();
+ h.requests[0].resolve({id:'current-with-choice',access:true,active:true,
+  session_id:'session-1',coffret_id:2,chapter_index:3,my_choice:1});
+ await tick;
+ assert.deepEqual(h.history,['alice'],
+  'the first read for a new identity/couple must never inherit an obsolete cooldown');
+ assert.equal(h.state.eclatHistoryError,false);
+});
