@@ -511,3 +511,22 @@ test('LR-027: delayed personal-card touches cannot interrupt or mutate a rolling
  assert.equal(state.eveningRefusalId,null);
  assert.equal(renders,0);
 });
+
+test('LR-027: one pending repick blocks starting another private card',async()=>{
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const from=source.indexOf("if(verb==='evening-start'){");
+ const until=source.indexOf("if(verb==='surprise-activity'){",from);
+ assert.ok(from>0&&until>from,'Use the production Start action');
+ const {runInNewContext}=await import('node:vm');
+ let called=0;
+ const route=runInNewContext('(async (verb,parts)=>{'+source.slice(from,until)+'})',{
+  state:{diceStatus:null,redrawBusyContext:{challengeId:'card-already-passing'}},
+  isActiveEveningRedrawPending:()=>true,
+  isEveningCardCompleting:()=>false,
+  unlockLoveRollSounds:()=>{called++;},
+  rpc:()=>{called++;throw Error('Must not accept another card while redrawing');}
+ });
+ await route('evening-start',['another-personal-card']);
+ assert.equal(called,0,
+  'A repick on one card must settle before another card can be started');
+});
