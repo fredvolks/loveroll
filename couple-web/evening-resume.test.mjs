@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {premiumHomeHtml} from './premium-home.mjs';
-import {saveEveningSelection,clearEveningSelection,restoreEveningSelection} from './evening-resume.mjs';
+import {saveEveningSelection,clearEveningSelection,restoreEveningSelection,safeEveningBookmarkStorage} from './evening-resume.mjs';
 const read=p=>readFileSync(new URL('./'+p,import.meta.url),'utf8'),app=read('app.js'),sw=read('service-worker.js');
 const memory=()=>{const map=new Map();return {map,getItem:k=>map.get(k)??null,setItem:(k,v)=>map.set(k,v),removeItem:k=>map.delete(k)};};
 test('Home exposes resume only while an official weekly evening is open',()=>{
@@ -39,11 +39,11 @@ test('Resume action is read-only, restores server private queue and reconciles t
  assert.match(handler,/await refreshShared\(\)/);
  assert.match(handler,/playableSessionForWeekly\(state\.session,state\.weekly\)/);
  assert.match(handler,/ownEveningChallenges\(state\.challenges,state\.user\.id,session\.id\)/);
- assert.match(handler,/restoreEveningSelection\(localStorage,state\.user\.id,session\.id,privateCards\)/);
+ assert.match(handler,/restoreEveningSelection\(safeEveningBookmarkStorage\(\),state\.user\.id,session\.id,privateCards\)/);
  assert.match(handler,/reconcileSavedEveningTimers\(\)/);
  assert.doesNotMatch(handler,/rpc\('|animateRoll|new-session|new-challenge|roll_my_evening_d6/);
  assert.match(app,/activeEvening:!!activeEvening/);
- assert.match(app,/saveEveningSelection\(localStorage,state\.user\.id,state\.session\.id,parts\[0\]\)/);
+ assert.match(app,/saveEveningSelection\(safeEveningBookmarkStorage\(\),state\.user\.id,state\.session\.id,parts\[0\]\)/);
  const build=JSON.parse(read('web-version.json')).build;
  assert.ok(sw.includes("const CACHE='loveroll-static-v"+build.split('.')[1]+"'"));
  assert.match(sw,/\.\/evening-resume\.mjs/);
@@ -80,4 +80,23 @@ test('A transient malformed private queue cannot crash resume or erase its bookm
  // is legitimately stale and must be discarded.
  assert.equal(restoreEveningSelection(store,'alice','s1',[]),null);
  assert.equal(store.map.size,0);
+});
+
+test('Safari denied storage access cannot interrupt opening, closing or resuming Soirée',()=>{
+ const restricted=Object.defineProperty({},'localStorage',{
+  get(){throw new DOMException('Storage blocked','SecurityError');}
+ });
+ assert.equal(safeEveningBookmarkStorage(restricted),null);
+ assert.equal(safeEveningBookmarkStorage({}),null);
+ const store=memory();
+ assert.equal(safeEveningBookmarkStorage({localStorage:store}),store);
+ const own={id:'a',recipient:'alice',session_id:'s1',status:'accepted'};
+ assert.equal(saveEveningSelection(safeEveningBookmarkStorage(restricted),'alice','s1','a'),false);
+ assert.equal(restoreEveningSelection(safeEveningBookmarkStorage(restricted),'alice','s1',[own]),null);
+ assert.doesNotThrow(()=>clearEveningSelection(safeEveningBookmarkStorage(restricted),'alice','s1'));
+ // All five private bookmark entry points in the app must use this adapter.
+ const callsites=app.match(/(?:saveEveningSelection|restoreEveningSelection|clearEveningSelection)\(safeEveningBookmarkStorage\(\),/g)||[];
+ assert.equal(callsites.length,5);
+ assert.doesNotMatch(app,/(?:saveEveningSelection|restoreEveningSelection|clearEveningSelection)\(localStorage,/);
+ assert.match(app,/evening-resume\.mjs\?v=20261031-resume-safari/);
 });
