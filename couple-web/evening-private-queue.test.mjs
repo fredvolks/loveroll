@@ -2830,3 +2830,92 @@ test('LR-026: explicit signout and Supabase signed-out event both use the safe s
  assert.match(auth,/adoptAuthenticatedIdentity\(null\)/);
  assert.match(auth,/state\.showAuth=false;state\.passwordRecovery=false/);
 });
+
+function ownedRecoveryFixture(state,updateUser){
+ const first=app.indexOf('let currentRecoveryPasswordRequest=null;');
+ const last=app.indexOf('function authMessage(',first);
+ assert.ok(first>=0&&last>first,'production account-owned password recovery helper is present');
+ const calls=[];
+ const f=runInNewContext(app.slice(first,last)+
+  ';({updateRecoveryPasswordForCurrentAccount,currentRequest:()=>currentRecoveryPasswordRequest})',{
+   state,client:{auth:{updateUser:async args=>{calls.push(args);return updateUser(args);}}}
+  });
+ return {...f,calls};
+}
+
+test('LR-026: password recovery success belongs to the active account',async()=>{
+ const state={user:{id:'alice'},passwordRecovery:true};
+ const f=ownedRecoveryFixture(state,async()=>({error:null}));
+ assert.equal(await f.updateRecoveryPasswordForCurrentAccount('Password2!'),true);
+ assert.equal(f.calls.length,1);
+ assert.equal(f.calls[0].password,'Password2!');
+ assert.equal(f.currentRequest(),null);
+});
+
+test('LR-026: a late recovery result must not clear the replacement account view',async()=>{
+ let release;
+ const pending=new Promise(resolve=>{release=resolve;});
+ const state={user:{id:'alice'},passwordRecovery:true};
+ const f=ownedRecoveryFixture(state,()=>pending);
+ const saving=f.updateRecoveryPasswordForCurrentAccount('Password2!');
+ state.user={id:'bob'};
+ release({error:null});
+ assert.equal(await saving,false);
+ assert.equal(f.currentRequest(),null);
+ assert.equal(state.user.id,'bob');
+});
+
+test('LR-026: rejected previous-account password reset is suppressed after switching accounts',async()=>{
+ let reject;
+ const pending=new Promise((_,rejectFn)=>{reject=rejectFn;});
+ const state={user:{id:'alice'},passwordRecovery:true};
+ const f=ownedRecoveryFixture(state,()=>pending);
+ const saving=f.updateRecoveryPasswordForCurrentAccount('Password2!');
+ state.user={id:'bob'};
+ reject(Error('Alice recovery failed'));
+ assert.equal(await saving,false);
+ assert.equal(f.currentRequest(),null);
+});
+
+test('LR-026: account-owned password recovery errors remain visible to the current user',async()=>{
+ const state={user:{id:'alice'},passwordRecovery:true};
+ const f=ownedRecoveryFixture(state,async()=>({error:Error('Password update rejected')}));
+ await assert.rejects(f.updateRecoveryPasswordForCurrentAccount('Password2!'),/Password update rejected/);
+ assert.equal(f.currentRequest(),null);
+});
+
+test('LR-026: duplicate password recovery writes are blocked for the same account',async()=>{
+ let release;
+ const pending=new Promise(resolve=>{release=resolve;});
+ const state={user:{id:'alice'},passwordRecovery:true};
+ const f=ownedRecoveryFixture(state,()=>pending);
+ const first=f.updateRecoveryPasswordForCurrentAccount('Password2!');
+ await assert.rejects(f.updateRecoveryPasswordForCurrentAccount('Password3!'),/déjà en cours/);
+ assert.equal(f.calls.length,1);
+ release({error:null});
+ assert.equal(await first,true);
+ assert.equal(f.currentRequest(),null);
+});
+
+test('LR-026: closing password recovery invalidates a pending reset result',async()=>{
+ let release;
+ const pending=new Promise(resolve=>{release=resolve;});
+ const state={user:{id:'alice'},passwordRecovery:true};
+ const f=ownedRecoveryFixture(state,()=>pending);
+ const saving=f.updateRecoveryPasswordForCurrentAccount('Password2!');
+ state.passwordRecovery=false;
+ release({error:null});
+ assert.equal(await saving,false);
+});
+
+test('LR-026: password recovery UI checks account ownership before advancing the route',()=>{
+ const start=app.indexOf("if(verb==='auth-update-password'){");
+ const end=app.indexOf("if(verb==='signout'){",start);
+ assert.ok(start>=0&&end>start);
+ const block=app.slice(start,end);
+ assert.match(block,/const ownerId=state\.user\.id/);
+ assert.match(block,/await updateRecoveryPasswordForCurrentAccount\(password\)/);
+ assert.match(block,/state\.user\?\.id!==ownerId\|\|!state\.passwordRecovery\)return/);
+ assert.match(block,/if\(state\.user\?\.id===ownerId&&state\.passwordRecovery\)/);
+ assert.doesNotMatch(block,/client\.auth\.updateUser\(/);
+});
