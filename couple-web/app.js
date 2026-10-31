@@ -5658,9 +5658,13 @@ window.addEventListener('loveroll-native-google-result',async event=>{
 setInterval(async()=>{
  if(document.hidden||state.tab!=='eclat'||!state.user||
     !isSharedCoupleReady(state.coupleId,state.members))return;
- const owner={userId:state.user.id,coupleId:state.coupleId};
+ // Account IDs can be reused after a fresh login. Invalidate old replies
+ // without blocking a new session or relying on its first timer tick.
+ const owner={userId:state.user.id,coupleId:state.coupleId,
+  generation:authFeedbackGeneration};
  const request={};latestEclatStatusRead=request;
  const current=()=>ownsCoupleAsyncRead(state,owner)&&
+  authFeedbackGeneration===owner.generation&&
   latestEclatStatusRead===request&&state.tab==='eclat';
  try{
   const prior=JSON.stringify(state.eclat);
