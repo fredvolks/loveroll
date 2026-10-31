@@ -233,18 +233,3 @@ main#app.loveroll-editorial{--nav-space:66px;box-sizing:border-box;width:100%;ma
  #app .lr-refusal-buttons{display:grid;grid-template-columns:minmax(0,1fr)}
 }
 
-/* Personal pre-evening duration: one compact row across phone, tablet and PC.
-   Extra content may scroll in short landscape without hiding the start action. */
-#app .evening-length-choice{min-width:0;display:grid;gap:5px;margin:0;}
-#app .evening-length-caption{margin:0;font-size:11px;line-height:1.3;color:var(--ritual-text);font-weight:600;}
-#app .evening-length-caption small{font-size:10px;font-weight:400;color:var(--ritual-muted);}
-#app .evening-length-options{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px;min-width:0;}
-#app .evening-length-option{min-width:0;min-height:38px;padding:6px 2px;border:1px solid var(--ritual-border);border-radius:12px;background:var(--ritual-card);color:var(--ritual-text);font:600 11px/1.2 system-ui,sans-serif;white-space:nowrap;touch-action:manipulation;}
-#app .evening-length-option.is-selected{background:var(--ritual-button);border-color:var(--ritual-rose);color:#fff2f2;}
-#app .evening-length-option:focus-visible{outline:3px solid var(--ritual-rose);outline-offset:2px;}
-#app .is-finale .evening-aftercare{min-height:0;max-height:100%;overflow-y:auto;overscroll-behavior:contain;}
-@media(max-width:360px),(max-height:660px){
- #app .evening-length-options{gap:3px;}
- #app .evening-length-option{min-height:34px;padding:5px 1px;font-size:10px;}
- #app .evening-length-caption small{font-size:9px;}
-}
