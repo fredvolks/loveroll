@@ -5595,7 +5595,8 @@ async function handle(action,element){
  }
  if(verb==='resume-evening'){
   // LR-018: synchronize from Supabase, never create a session or new D6/D100.
-  if(state.diceStatus)return;
+  // A pending repick already owns its scoped refresh of this same session.
+  if(state.diceStatus||isActiveEveningRedrawPending())return;
   if(!isSharedCoupleReady(state.coupleId,state.members))throw Error('Deux partenaires doivent être associés.');
   await refreshShared();
   const session=playableSessionForWeekly(state.session,state.weekly);
@@ -5781,6 +5782,8 @@ async function handle(action,element){
   }
  }
  if(verb==='my-d6'){
+  // A late D6 touch cannot compete with an official roll or a private repick.
+  if(state.diceStatus||isActiveEveningRedrawPending())return;
   if(!state.session)throw Error('Aucune soirée active.');
   await animateRoll(()=>rpc('roll_my_evening_d6',{p_session:state.session.id}),'my-d6');
   // La carte de l'étape 1 affiche l'état du lancer; aucun toast supplémentaire.
@@ -5789,7 +5792,7 @@ async function handle(action,element){
  if(verb==='category'){
   // During a confirmation or official roll the selected category is fixed.
   // A queued/touch-synthesized event must not mutate state or sessionStorage.
-  if(eveningCategoryConfirmInFlight||state.diceStatus)return;
+  if(eveningCategoryConfirmInFlight||state.diceStatus||isActiveEveningRedrawPending())return;
   if(!EVENING_CATEGORIES.includes(parts[0])&&parts[0]!=='HASARD')
    throw Error('Catégorie interdite');
   // Reject stale/disabled category events BEFORE writing the next D100 choice
@@ -5936,13 +5939,16 @@ async function handle(action,element){
    saveChallengeTimer();updateChallengeClock();return;
  }
  if(verb==='give-challenge'){
-  if(state.diceStatus)return; // Prevent gift/turn mutations during an official roll.
+  // A stale gift action must not mutate the turn while its private deck is
+  // being replaced by the recipient-only, server-confirmed repick.
+  if(state.diceStatus||isActiveEveningRedrawPending())return;
   if(!state.session?.paired_turns||!state.session?.self_draws||!state.rollStatus?.both_ready)
    throw Error('Attendez vos deux tirages personnels pour donner un défi.');
   const me=state.user.id,otherPerson=other();
   const giftOwner={userId:me,coupleId:state.coupleId,sessionId:state.session.id,
    generation:authFeedbackGeneration};
-  const ownsGift=()=>!state.diceStatus&&state.user?.id===giftOwner.userId&&
+  const ownsGift=()=>!state.diceStatus&&!isActiveEveningRedrawPending()&&
+   state.user?.id===giftOwner.userId&&
    state.coupleId===giftOwner.coupleId&&state.session?.id===giftOwner.sessionId&&
    authFeedbackGeneration===giftOwner.generation&&state.tab==='session';
   const turn=state.eveningBoard||sharedEveningTurns(state.session,state.members,state.personal,state.challenges,state.gifts);
