@@ -5598,6 +5598,9 @@ async function handle(action,element){
   return;
  }
  if(verb==='category'){
+  // During a confirmation or official roll the selected category is fixed.
+  // A queued/touch-synthesized event must not mutate state or sessionStorage.
+  if(eveningCategoryConfirmInFlight||state.diceStatus)return;
   if(!EVENING_CATEGORIES.includes(parts[0])&&parts[0]!=='HASARD')
    throw Error('Catégorie interdite');
   // Reject stale/disabled category events BEFORE writing the next D100 choice
