@@ -3223,14 +3223,21 @@ function openSettingsPage(section=''){
 }
 async function persistEveningCategoryConfirmPref(enabled){
  if(!state.user?.id||!state.profile)throw Error('Compte requis.');
+ const userId=state.user.id,coupleId=state.coupleId,generation=authFeedbackGeneration;
+ const current=()=>state.user?.id===userId&&state.coupleId===coupleId&&
+  authFeedbackGeneration===generation;
  // User-scoped Supabase preference, with per-user local fallback for older deployments.
  if(typeof state.profile.confirm_evening_category==='boolean'){
-  const {error}=await client.from('couple_profiles').update({confirm_evening_category:!!enabled}).eq('id',state.user.id);
+  const {error}=await client.from('couple_profiles').update({confirm_evening_category:!!enabled}).eq('id',userId);
   if(error)throw error;
+  // A Supabase response can arrive after sign-out, an account change or a
+  // fresh sign-in. It must never write into the replacement profile.
+  if(!current())return false;
   state.profile={...state.profile,confirm_evening_category:!!enabled};
- }else if(!saveCategoryConfirmLocal(state.user.id,enabled,localStorage)){
+ }else if(!saveCategoryConfirmLocal(userId,enabled,localStorage)){
   throw Error('Stockage de la préférence indisponible.');
  }
+ return current();
 }
 let eveningCategoryConfirmInFlight=false;
 function renderSettings(){
