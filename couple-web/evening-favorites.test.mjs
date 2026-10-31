@@ -197,7 +197,7 @@ test('D100 favorites announce pressed state and return focus after changing a ca
  const events=[];
  const state={user:{id:'fred'},coupleId:'couple-a',session:{id:'evening-1'},
   challenges:[item]};
- const scope={state,
+ const scope={state,parts:['draw-7'],
   ownEveningChallenges:(cards,user,session)=>{
    assert.equal(user,'fred');assert.equal(session,'evening-1');
    return cards;
