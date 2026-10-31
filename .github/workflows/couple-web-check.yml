@@ -63,6 +63,7 @@ jobs:
           node --test couple-web/eclat-poll-auth-generation.test.mjs
           node --test couple-web/eclat-read-action-auth-generation.test.mjs
           node --test couple-web/eclat-render-ownership.test.mjs
+          node --test couple-web/eclat-auth-completion-isolation.test.mjs
           node --test couple-web/eclat-unavailable-duo.test.mjs
           node --check couple-web/world-preferences.mjs
           node --check couple-web/currency-exchange.mjs
