@@ -1747,6 +1747,7 @@ async function refreshEclatStatus(){
  const request={};latestEclatStatusRead=request;
  const current=()=>ownsCoupleAsyncRead(state,owner)&&
   authFeedbackGeneration===owner.generation&&
+  isSharedCoupleReady(owner.coupleId,state.members)&&
   latestEclatStatusRead===request;
  const value=await rpc('love_eclat_status');
  if(!current())return null;
@@ -5671,7 +5672,8 @@ setInterval(async()=>{
  const request={};latestEclatStatusRead=request;
  const current=()=>ownsCoupleAsyncRead(state,owner)&&
   authFeedbackGeneration===owner.generation&&
-  latestEclatStatusRead===request&&state.tab==='eclat';
+  isSharedCoupleReady(owner.coupleId,state.members)&&
+  !document.hidden&&latestEclatStatusRead===request&&state.tab==='eclat';
  try{
   const prior=JSON.stringify(state.eclat);
   const value=await rpc('love_eclat_status');
