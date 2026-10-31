@@ -262,6 +262,10 @@ function backFromLoveRoll(){
   document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
   return true;
  }
+ // Preserve the private challenge dialog and pending server receipt when
+ // Android Back or Escape arrives during a D100 roll or a repick.
+ if(state.tab==='session'&&(state.eveningRefusalId||state.showEveningChallenges)&&
+    (state.diceStatus||isActiveEveningRedrawPending()))return true;
  if(state.eveningRefusalId){state.eveningRefusalId=null;render();return true;}
  // The recipient's private challenge card is an actual modal. Native Back
  // and Escape must close it BEFORE leaving Soirée or switching tabs.
@@ -4180,7 +4184,8 @@ async function handle(action,element){
   }finally{eveningClosureGate.release(ticket);}
  }
  if(verb==='evening-challenge'||verb==='evening-list'){
-  if(state.diceStatus)return; // Opening the drawer unmounts the live dice scene.
+  // Do not discard the authoritative RLS refresh or live WebGL canvas.
+  if(state.diceStatus||isActiveEveningRedrawPending())return;
   if(state.user?.id&&state.session?.id)clearEveningSelection(safeEveningBookmarkStorage(),state.user.id,state.session.id);
   state.showEveningChallenges=true;state.selectedEveningChallengeId=null;render();
   // Give keyboard/screen-reader users a stable entry point into the modal.
@@ -4189,6 +4194,8 @@ async function handle(action,element){
   return;
  }
  if(verb==='evening-close'){
+  // Closing the queue before a repick settles would reopen it from a late reply.
+  if(state.diceStatus||isActiveEveningRedrawPending())return;
   if(state.user?.id&&state.session?.id)clearEveningSelection(safeEveningBookmarkStorage(),state.user.id,state.session.id);
   state.showEveningChallenges=false;state.selectedEveningChallengeId=null;render();
   // Restore focus to the action which opens this drawer, never to the body.
@@ -4209,6 +4216,8 @@ async function handle(action,element){
   return;
  }
  if(verb==='evening-favorite'){
+  // An obsolete favorite tap must not repaint a live D100 or a pending repick.
+  if(state.diceStatus||isActiveEveningRedrawPending())return;
   const item=ownEveningChallenges(state.challenges,state.user?.id,state.session?.id)
    .find(card=>card.id===parts[0]);
   if(!item||!state.coupleId||!state.user?.id)
@@ -4225,8 +4234,8 @@ async function handle(action,element){
   return;
  }
  if(verb==='evening-open'){
-  // A delayed queue touch must not replace the live D100 canvas.
-  if(state.diceStatus)return;
+  // A delayed queue touch must not replace the live D100 or its RLS refresh.
+  if(state.diceStatus||isActiveEveningRedrawPending())return;
   if(!ownEveningChallenges(state.challenges,state.user?.id,state.session?.id).some(x=>x.id===parts[0]))
    throw Error('Ce défi ne fait pas partie de ta liste personnelle.');
   state.selectedEveningChallengeId=parts[0];state.showEveningChallenges=true;
@@ -4247,6 +4256,8 @@ async function handle(action,element){
   return;
  }
  if(verb==='evening-refuse-cancel'){
+  // A stale cancellation cannot remount a rolling 3D die.
+  if(state.diceStatus)return;
   const target=state.eveningRefusalId;
   if(!isActiveEveningRedrawPending()){state.eveningRefusalId=null;render();
    root.querySelector('[data-action="evening-refuse:'+target+'"]')?.focus();}
