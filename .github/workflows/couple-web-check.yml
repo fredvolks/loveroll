@@ -87,6 +87,7 @@ jobs:
           node --test couple-web/pages-entry-parallel-contract.test.mjs
           node --test couple-web/evening-private-queue.test.mjs couple-web/evening-redesign.test.mjs couple-web/evening-calendar.test.mjs couple-web/evening-category-v93.test.mjs couple-web/evening-review.test.mjs
           node --test couple-web/evening-private-queue-identity.test.mjs
+          node --test couple-web/evening-timer-snapshot-validation.test.mjs
           node --test couple-web/privacy-screen.test.mjs
           node --test couple-web/evening-variety.test.mjs
           node --test couple-web/lr026-server-variety.test.mjs
