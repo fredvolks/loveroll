@@ -102,7 +102,8 @@ test('Profile style mixing is prepared for 200x3 future cards, without touching 
  const onboarding=read('onboarding.mjs'),app=read('app.js'),
   engine=read('evening-challenges.mjs');
  assert.match(onboarding,/profilePlayStyleSelect\(profile\?\.play_style\)/);
- assert.match(app,/rpc\('save_my_play_style'/);
+ assert.match(app,/\['save_my_play_style',\{p_style:playStyle\}\]/);
+  assert.match(app,/await saveProfileForCurrentAccount\(name,birthday,gender,playStyle\)/);
  assert.match(app,/futureCoupleStyleMix/);
  assert.doesNotMatch(engine,/play_style|futureCoupleStyleMix/);
 });
