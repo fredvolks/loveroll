@@ -892,8 +892,12 @@ async function updateRecoveryPasswordForCurrentAccount(password){
  if(!ownerId||!state.passwordRecovery)return false;
  if(currentRecoveryPasswordRequest?.ownerId===ownerId)
   throw Error('Modification du mot de passe déjà en cours…');
- const request={ownerId};currentRecoveryPasswordRequest=request;
+ const request={ownerId,ownerGeneration:authFeedbackGeneration};
+ currentRecoveryPasswordRequest=request;
+ // A password reset from a previous sign-in must never finish on a
+ // reauthenticated session, even if its user ID is unchanged.
  const current=()=>state.user?.id===ownerId&&state.passwordRecovery&&
+  authFeedbackGeneration===request.ownerGeneration&&
   currentRecoveryPasswordRequest===request;
  try{
   let response;
