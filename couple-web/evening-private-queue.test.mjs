@@ -1902,3 +1902,91 @@ test('LR-026: a masked Éclat audio tap never repaints protected content',async(
  assert.equal(notifications,0);
  assert.equal(state.eclatMusic,false);
 });
+
+function privateEclatSaveFixture(state,saveEclatNote){
+ const start=app.indexOf('const eclatNoteDrafts=new Map();');
+ const end=app.indexOf('// Every Éclat response is tied',start);
+ assert.ok(start>=0&&end>start,'real Éclat private-note helpers must be available');
+ const labels=[];
+ const scope=runInNewContext(app.slice(start,end)+
+  ';({saveCurrentEclatNote,drafts:eclatNoteDrafts})',{
+   state,saveEclatNote,ownsCoupleAsyncRead,console,
+   eclatNoteKey:(status,userId)=>status?.active&&status.session_id&&userId?
+    [userId,status.session_id,status.chapter_index].join(':'):null,
+   root:{querySelector:()=>({set textContent(value){labels.push(value);}})}
+  });
+ const draft={note:'Private',clue:'Indice',moment_done:false,
+  loading:false,error:false,saving:false,saved:false};
+ scope.drafts.set('alice:session-1:1',draft);
+ return {...scope,draft,labels};
+}
+
+test('LR-026: private Éclat note save ignores a late response after account switch',async()=>{
+ let release;const pending=new Promise(resolve=>{release=resolve;});
+ const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
+  eclat:{active:true,session_id:'session-1',chapter_index:1}};
+ const {saveCurrentEclatNote,draft,labels}=privateEclatSaveFixture(state,()=>pending);
+ const saving=saveCurrentEclatNote(true);
+ state.user={id:'bob'};
+ release();
+ assert.equal(await saving,null);
+ assert.equal(draft.moment_done,false,
+  'a private save from Alice cannot mark Bob current moment as finished');
+ assert.equal(draft.saved,false);
+ assert.equal(draft.saving,false);
+ assert.deepEqual(labels,[]);
+});
+
+test('LR-026: old Éclat chapter response cannot mark a new chapter saved',async()=>{
+ let release;const pending=new Promise(resolve=>{release=resolve;});
+ const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
+  eclat:{active:true,session_id:'session-1',chapter_index:1}};
+ const {saveCurrentEclatNote,draft}=privateEclatSaveFixture(state,()=>pending);
+ const saving=saveCurrentEclatNote(true);
+ state.eclat={...state.eclat,chapter_index:2};
+ release();
+ assert.equal(await saving,null);
+ assert.equal(draft.moment_done,false);
+ assert.equal(draft.saved,false);
+});
+
+test('LR-026: stale Éclat save error never changes a new account error label',async()=>{
+ let rejectSave;const pending=new Promise((_,reject)=>{rejectSave=reject;});
+ const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
+  eclat:{active:true,session_id:'session-1',chapter_index:1}};
+ const {saveCurrentEclatNote,labels}=privateEclatSaveFixture(state,()=>pending);
+ const saving=saveCurrentEclatNote(true);
+ state.user={id:'bob'};
+ rejectSave(new Error('Network failed'));
+ assert.equal(await saving,null);
+ assert.deepEqual(labels,[],'stale failure cannot overwrite Bob error message');
+});
+
+test('LR-026: current Éclat note saves preserve normal success and visible failures',async()=>{
+ const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
+  eclat:{active:true,session_id:'session-1',chapter_index:1}};
+ let captured;
+ const valid=privateEclatSaveFixture(state,async(_client,status,userId,snapshot)=>{
+  captured={status,userId,snapshot};
+ });
+ assert.equal(await valid.saveCurrentEclatNote(true),'alice:session-1:1');
+ assert.equal(valid.draft.moment_done,true);
+ assert.equal(valid.draft.saved,true);
+ assert.equal(captured.userId,'alice');
+ assert.equal(captured.status.chapter_index,1);
+ assert.equal(captured.snapshot.moment_done,true);
+ const failed=privateEclatSaveFixture(state,async()=>{throw Error('Server failed');});
+ await assert.rejects(failed.saveCurrentEclatNote(),/Server failed/);
+ assert.equal(failed.labels.length,1);
+ assert.equal(failed.draft.saving,false);
+});
+
+test('LR-026: a private note superseded during Choose forbids the following RPC',()=>{
+ const action=app.slice(app.indexOf("if(kind==='choose'){",app.indexOf("if(verb==='eclat'){")),
+  app.indexOf("if(kind==='next'){",app.indexOf("if(verb==='eclat'){")));
+ assert.match(action,/const saved=await saveCurrentEclatNote\(\)/);
+ assert.match(action,/if\(!saved\)return;/);
+ const noteFlow=app.slice(app.indexOf("if(kind.startsWith('note-')){",app.indexOf("if(verb==='eclat'){")),
+  app.indexOf("if(kind==='back'){",app.indexOf("if(verb==='eclat'){")));
+ assert.match(noteFlow,/if\(!savedKey\|\|state\.tab!=='eclat'/);
+});
