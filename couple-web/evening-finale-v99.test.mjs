@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {premiumEveningHtml,completedEveningLibraryCount} from './premium-evening.mjs';
 const read=p=>readFileSync(new URL('./'+p,import.meta.url),'utf8');
 const base={session:null,lastEvening:{id:'s1',completed:0,responses:1,myResponse:true,partnerResponse:false}};
-test('Finished evening has exactly two real buttons, dark start when weekly quota full',()=>{
+test('Finished evening keeps two useful actions even when weekly quota is full',()=>{
  const html=premiumEveningHtml({...base,canStartEvening:false});
  assert.match(html,/evening-premium-view is-inactive is-finale/);
  const finaleActions=html.match(/<div class="evening-finale-actions">([\s\S]*?)<\/div>/)?.[1];
@@ -14,14 +14,21 @@ test('Finished evening has exactly two real buttons, dark start when weekly quot
  assert.doesNotMatch(html,/data-lr-privacy-hide/, 'Aucun bouton Masquer flottant sur la première page Soirée');
  assert.match(html,/Notre soirée est terminée/);
  assert.match(html,/1 \/ 2 bilans déposés/);
- assert.match(html,/class="evening-finale-start" data-action="new-session" disabled/);
- assert.match(html,/data-action="evening-calendar"/);
- assert.doesNotMatch(html,/Modifier mon bilan|Donner mon bilan|review-open:/);
+ assert.match(finaleActions,/class="evening-finale-start" data-action="review-open:s1"/);
+ assert.match(finaleActions,/♡ MODIFIER MON BILAN/);
+ assert.match(finaleActions,/data-action="evening-calendar"/);
+ assert.doesNotMatch(finaleActions,/data-action="new-session"/,
+  'La soirée terminée doit présenter son bilan plutôt qu’un redémarrage');
 });
-test('If more counted soirées permitted by weekly D6, start button stays live',()=>{
- const html=premiumEveningHtml({...base,canStartEvening:true});
- assert.match(html,/class="evening-finale-start" data-action="new-session">/);
- assert.doesNotMatch(html,/data-action="new-session" disabled/);
+test('A new soirée becomes actionable only without a closed evening to review',()=>{
+ const closed=premiumEveningHtml({...base,canStartEvening:true});
+ assert.match(closed,/data-action="review-open:s1"/);
+ assert.doesNotMatch(closed,/data-action="new-session"/);
+ const ready=premiumEveningHtml({...base,lastEvening:null,canStartEvening:true});
+ assert.match(ready,/class="evening-finale-start" data-action="new-session">/);
+ assert.doesNotMatch(ready,/data-action="new-session" disabled/);
+ const quota=premiumEveningHtml({...base,lastEvening:null,canStartEvening:false});
+ assert.match(quota,/class="evening-finale-start" data-action="new-session" disabled/);
 });
 test('Premium finale uses one decorative 3D D100; mobile and desktop CSS is isolated',()=>{
  const html=premiumEveningHtml({...base,canStartEvening:false});
