@@ -692,6 +692,10 @@ async function autoAcceptPendingInvite(){
  }finally{
   if(inviteAcceptanceRequest===request){
    inviteAcceptanceBusy=false;inviteAcceptanceRequest=null;
+   // An obsolete attempt must not permanently block retrying the same
+   // invitation after reauthentication with the same user ID.
+   if(authFeedbackGeneration!==ownerGeneration&&state.inviteAttemptKey===key)
+    state.inviteAttemptKey=null;
   }
  }
 }
