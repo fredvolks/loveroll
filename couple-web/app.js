@@ -450,7 +450,7 @@ function frame(body,title='LOVEROLL',subtitle='Un jeu intime, juste pour vous de
  fitHomeLayout(root);
  fitSoireeHomeTemplate(root);
  fitRubyCalendar(root);
- fitSurpriseMinimal(root);
+ fitSurpriseMinimal(root,{userId:state.user?.id,coupleId:state.coupleId});
  enhanceGoldBacks(root);
  organizeSettingsMenus(root);
  const newGallery=root.querySelector('.eclat-photo-grid');if(newGallery)newGallery.scrollTop=state.eclatGalleryScroll;

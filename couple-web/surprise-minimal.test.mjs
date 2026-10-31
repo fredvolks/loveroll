@@ -29,6 +29,10 @@ test('Mobile Surprise uses a safe fallback for partial renders and preserves eve
  assert.match(code,/if\(!target\.open\)target\.showModal\(\)/);
  assert.match(code,/if\(other\.open\)other\.close\(\)/);
  assert.match(code,/if\(!list\.open&&!info\.open&&opener\.isConnected\)/);
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ assert.match(app,/fitSurpriseMinimal\(root,\{userId:state\.user\?\.id,coupleId:state\.coupleId\}\)/);
+ assert.match(code,/if\(userId!==scopeUser\|\|coupleId!==scopeCouple\)/);
+ assert.match(code,/eventsOpen=infoOpen=false;\s+scopeUser=userId;scopeCouple=coupleId;/);
 });
 
 test('Escape and native Android Back close native Surprise dialogs before navigating',()=>{

@@ -1,7 +1,15 @@
 import {fitSharedStage} from './shared-stage.mjs?v=20261022-home228';
 import {goldArrowHtml} from './gold-arrows.mjs?v=20261022-home228';
 let observer,eventsOpen=false,infoOpen=false,activeRender=0;
-export function fitSurpriseMinimal(root){
+let scopeUser=null,scopeCouple=null;
+export function fitSurpriseMinimal(root,identity={}){
+ // A window opened by one account/duo must never reappear when another
+ // account signs in or the current user changes couples.
+ const userId=identity.userId??null,coupleId=identity.coupleId??null;
+ if(userId!==scopeUser||coupleId!==scopeCouple){
+  eventsOpen=infoOpen=false;
+  scopeUser=userId;scopeCouple=coupleId;
+ }
  // A previous rendered dialog can dispatch a delayed close event after a
  // realtime replacement. It must never clear the newer dialog's open state.
  const renderId=++activeRender;
