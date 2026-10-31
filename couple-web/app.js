@@ -4150,12 +4150,16 @@ async function handle(action,element){
   state.eveningCalendarDate=date;render();return;
  }
  if(verb==='evening-close-request'){
-  if(state.diceStatus)return; // Let the official D100/D6 settle before closing.
+  if(state.diceStatus)return;
+  // Never offer closure while a private-card decision is being persisted.
+  if(isActiveEveningRedrawPending())return; // Let the official D100/D6 settle before closing.
   if(!state.session)throw Error('Aucune soirée à clore.');
   state.eveningMore=false;state.confirmCancel=true;render();return;
  }
  if(verb==='evening-close-confirm'){
-  if(state.diceStatus)return; // A stale confirmation must not close mid-roll.
+  if(state.diceStatus)return;
+  // A delayed confirmation cannot close the session ahead of its repick.
+  if(isActiveEveningRedrawPending())return; // A stale confirmation must not close mid-roll.
   if(!state.session)throw Error('Cette soirée est déjà clôturée.');
   const ended=state.session;
   const owner={userId:state.user?.id,coupleId:state.coupleId,
@@ -6097,7 +6101,9 @@ async function handle(action,element){
   }
  }
  if(verb==='finish-session'){
-  if(state.diceStatus)return; // Finishing before the receipt interrupts the die.
+  if(state.diceStatus)return;
+  // Finishing while a Passer/Refuser RPC is in flight would race its receipt.
+  if(isActiveEveningRedrawPending())return; // Finishing before the receipt interrupts the die.
   if(!state.session)return;
   const finishedId=state.session.id;
   const owner={userId:state.user?.id,coupleId:state.coupleId,
@@ -6114,12 +6120,15 @@ async function handle(action,element){
   }finally{eveningClosureGate.release(ticket);}
  }
  if(verb==='cancel-session'){
-  if(state.diceStatus)return; // The official result must settle before cancellation.
+  if(state.diceStatus)return;
+  if(isActiveEveningRedrawPending())return; // The official result must settle before cancellation.
   state.confirmCancel=true;render();return;
  }
  if(verb==='dismiss-cancel'){state.confirmCancel=false;render();return;}
  if(verb==='confirm-cancel'){
   if(state.diceStatus||!state.session)return;
+  // A stale dialog must not cancel the evening during a committed redraw.
+  if(isActiveEveningRedrawPending())return;
   const owner={userId:state.user?.id,coupleId:state.coupleId,
    sessionId:state.session.id,generation:authFeedbackGeneration};
   const ownsCancel=()=>state.user?.id===owner.userId&&
