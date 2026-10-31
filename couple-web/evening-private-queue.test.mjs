@@ -1721,6 +1721,7 @@ function eclatReadFixture(state,{rpc=async()=>null,loadEclatHistory=async()=>[]}
  return runInNewContext(app.slice(begin,end)+
   ';({refreshEclatHistory,refreshEclatStatus})',{
    state,authFeedbackGeneration:1,rpc,loadEclatHistory,ownsCoupleAsyncRead,client:{},
+   eclatNoteDrafts:new Map(),
    isSharedCoupleReady:(couple,members)=>!!couple&&members?.length===2,console
   });
 }
@@ -1780,6 +1781,7 @@ test('LR-026: delayed Éclat status cannot replace a different account or render
  const pollPending=new Promise(resolve=>{releasePoll=resolve;});
  runInNewContext(app.slice(start,end)+'let latestEclatPollPending=null;\n'+app.slice(pollBegin,pollEnd+8),{
   state,authFeedbackGeneration:1,ownsCoupleAsyncRead,console,
+  eclatNoteDrafts:new Map(),
   isSharedCoupleReady:(c,m)=>!!c&&m?.length===2,
   rpc:()=>pollPending,loadEclatHistory:async()=>[],
   document:{hidden:false},setInterval:fn=>{tick=fn;},
