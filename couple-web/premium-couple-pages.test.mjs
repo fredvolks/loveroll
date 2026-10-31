@@ -310,3 +310,31 @@ test('Soirée never crashes if the last session and feedback status are both mis
  assert.match(app,/weeklyReady:!!state.weekly/);
  assert.match(app,/const canStartEvening=daily.canStart/);
 });
+
+test('Soirée preparation offers a personal duration choice without changing official dice',()=>{
+ const original=premiumEveningHtml({members:people,me:'first',
+  session:null,canStartEvening:true,sessionLength:'15'});
+ assert.match(original,/data-action="new-session"/);
+ for(const duration of ['5','10','15','30','libre']){
+  assert.match(original,new RegExp('data-action="session-length:'+duration+'"'));
+ }
+ assert.match(original,/data-action="session-length:15" aria-pressed="true"/);
+ assert.match(original,/repère personnel, sans arrêt automatique/);
+ assert.equal((original.match(/data-dice-sides="100"/g)||[]).length,1);
+ const untrusted=premiumEveningHtml({members:people,me:'second',
+  session:null,sessionLength:'<script>'});
+ assert.match(untrusted,/data-action="session-length:libre" aria-pressed="true"/);
+ assert.doesNotMatch(untrusted,/<script>/);
+ const active=premiumEveningHtml({members:people,me:'first',
+  session,rolls:[],status:{both_ready:false},turn:{ready:false},sessionLength:'10'});
+ assert.doesNotMatch(active,/evening-length-choice/,
+  'changing the planning preference must not affect the official in-progress scene');
+ const completed=premiumEveningHtml({members:people,me:'first',
+  session:null,lastEvening:{completed:3,myResponse:true,partnerResponse:true,responses:2},
+  sessionLength:'5'});
+ assert.doesNotMatch(completed,/evening-length-choice/,
+  'the finished evening recap should not suggest a new session time');
+ assert.match(app,/sessionLength:readSessionLength\(uid,localStorage\)/);
+ assert.match(read('evening-editorial.css'),/\.evening-length-options\{display:grid;grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/);
+ assert.match(read('evening-editorial.css'),/\.is-finale \.evening-aftercare\{min-height:0;max-height:100%;overflow-y:auto/);
+});
