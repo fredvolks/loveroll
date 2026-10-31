@@ -311,19 +311,36 @@ test('Soirée never crashes if the last session and feedback status are both mis
  assert.match(app,/const canStartEvening=daily.canStart/);
 });
 
-test('Soirée keeps its approved two-action photo layout while preferences stay in Settings',()=>{
+test('Soirée keeps two action buttons and a compact accessible duration dropdown',()=>{
  const intro=premiumEveningHtml({members:people,me:'first',
-  session:null,canStartEvening:true});
+  session:null,canStartEvening:true,sessionLength:'15'});
  assert.match(intro,/data-action="new-session"/);
  assert.match(intro,/data-action="evening-calendar"/);
- assert.equal((intro.match(/data-action="session-length:/g)||[]).length,0,
-  'the one-screen visual must not be covered by five planning controls');
+ const mainActions=intro.match(/<div class="evening-finale-actions">([\s\S]*?)<\/div>/)?.[1];
+ assert.ok(mainActions);
+ assert.equal((mainActions.match(/<button\b/g)||[]).length,2,
+  'a compact planning preference must not add a third primary button');
+ assert.match(intro,/data-session-length-select="true"/);
+ assert.match(intro,/aria-label="Durée souhaitée de ma soirée"/);
+ assert.match(intro,/<option value="15" selected>15 min<\/option>/);
+ assert.equal((intro.match(/<option value="/g)||[]).length,5);
  assert.equal((intro.match(/data-dice-sides="100"/g)||[]).length,1);
- assert.doesNotMatch(intro,/evening-length-choice/);
+ assert.doesNotMatch(intro,/evening-length-choice|data-action="session-length:/);
+ const invalid=premiumEveningHtml({members:people,me:'second',
+  session:null,sessionLength:'<script>'});
+ assert.match(invalid,/<option value="libre" selected>Libre<\/option>/);
+ assert.doesNotMatch(invalid,/<script>/);
  const active=premiumEveningHtml({members:people,me:'first',
   session,rolls:[],status:{both_ready:false},turn:{ready:false}});
- assert.doesNotMatch(active,/evening-length-choice/);
+ assert.doesNotMatch(active,/data-session-length-select/);
+ const closed=premiumEveningHtml({members:people,me:'first',
+  session:null,lastEvening:{completed:3,myResponse:true,partnerResponse:true,responses:2}});
+ assert.doesNotMatch(closed,/data-session-length-select/);
  assert.match(app,/sessionLengthSettingsHtml\(readSessionLength\(state\.user\?\.id,localStorage\)\)/);
+ assert.match(app,/sessionLength:readSessionLength\(uid,localStorage\)/);
  assert.match(app,/saveSessionLength\(state\.user\.id,parts\[0\],localStorage\)/);
- assert.doesNotMatch(read('evening-editorial.css'),/\.is-finale \.evening-aftercare\{min-height:0;max-height:100%;overflow-y:auto/);
+ assert.match(app,/data-session-length-select/);
+ const styles=read('evening-editorial.css');
+ assert.match(styles,/\.evening-length-compact select/);
+ assert.match(styles,/@media\(max-height:660px\)/);
 });
