@@ -494,3 +494,36 @@ test('LR-026: stale history fetch cannot reintroduce data after membership chang
  assert.deepEqual(Array.from(h.state.eclatHistory),[],
   'retired member history must not overwrite new member boundary');
 });
+
+
+test('LR-026: foreground new active Éclat session hides older completion banner',async()=>{
+ const h=harness({rpc:async()=>({id:'new-session',access:true,active:true})});
+ h.state.eclatFinished='Old completed coffret';
+ const value=await h.refreshEclatStatus();
+ assert.equal(value.id,'new-session');
+ assert.equal(h.state.eclatFinished,null,
+  'a new playable coffret cannot display the old private completion');
+ assert.equal(h.audioStops(),0);
+});
+
+test('LR-026: active action receipt clears completion but keeps authorized notes',()=>{
+ const h=harness();
+ h.state.eclatFinished='Former ending';
+ h.ctx.eclatNoteDrafts.set('owned',{note:'Still owned'});
+ const owner=h.beginEclatAction();
+ assert.equal(h.applyEclatActionResult({id:'new',access:true,active:true},owner),true);
+ assert.equal(h.state.eclatFinished,null);
+ assert.equal(h.ctx.eclatNoteDrafts.get('owned').note,'Still owned');
+ assert.equal(h.audioStops(),0);
+});
+
+test('LR-026: stale foreground activation cannot erase newer login completion',async()=>{
+ const previous=deferred();
+ const h=harness({rpc:()=>previous.promise});
+ const old=h.refreshEclatStatus();
+ h.ctx.authFeedbackGeneration=2;
+ h.state.eclatFinished='New login ending';
+ previous.resolve({access:true,active:true});
+ assert.equal(await old,null);
+ assert.equal(h.state.eclatFinished,'New login ending');
+});
