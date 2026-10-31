@@ -6,6 +6,7 @@ import {soundEnabled,setSoundEnabled,setLoveRollSoundUser,unlockLoveRollSounds,p
 import {isAcceptedTimedEveningChallenge,completeTimedEveningChallenge,timedEveningTimerControl} from './timed-evening-completion.mjs?v=20261029-timer259';
 import {fitSurpriseMinimal} from './surprise-minimal.mjs?v=20261022-home228';
 import {eclatNoteKey,loadEclatNote,saveEclatNote} from './eclat-guidance.mjs?v=20261022-home228';
+import {captureEclatEditorFocus,restoreEclatEditorFocus} from './eclat-editor-focus.mjs?v=20261031-focus';
 import {loadEclatHistory} from './eclat-history.mjs?v=20261022-home228';
 import {enhanceGoldBacks} from './gold-arrows.mjs?v=20261022-home228';
 import {fitSoireeHomeTemplate,fitRubyCalendar} from './soiree-home-template.mjs?v=20261029-web259';
@@ -298,6 +299,16 @@ document.addEventListener('keydown',event=>{
 
 let diceView=null;
 function frame(body,title='LOVEROLL',subtitle='Un jeu intime, juste pour vous deux'){
+ // Server-triggered refreshes may replace the Éclat editor while the user
+ // types. Restore its cursor only for the exact same authenticated chapter.
+ const eclatFocusScope=()=>{
+  if(state.tab!=='eclat'||state.eclat?.access!==true||
+     state.eclat?.active!==true||!state.user?.id||
+     !isSharedCoupleReady(state.coupleId,state.members))return null;
+  const key=eclatNoteKey(state.eclat,state.user.id);
+  return key?JSON.stringify([state.user.id,state.coupleId,authFeedbackGeneration,key]):null;
+ };
+ const focusedEclatEditor=captureEclatEditorFocus(root,document.activeElement,eclatFocusScope());
  setLoveRollSoundUser(state.user?.id);
  const openerAction=document.activeElement?.dataset?.action||null;
  const draft=lastFormTab===formRouteKey()?snapshotDraft():[];
@@ -424,6 +435,7 @@ function frame(body,title='LOVEROLL',subtitle='Un jeu intime, juste pour vous de
  const newGallery=root.querySelector('.eclat-photo-grid');if(newGallery)newGallery.scrollTop=state.eclatGalleryScroll;
  const newDetail=root.querySelector('.eclat-detail');if(newDetail&&detailScroll?.id===newDetail.dataset.coffretId)newDetail.scrollTop=detailScroll.top;
  bindActions();
+ restoreEclatEditorFocus(root,focusedEclatEditor,eclatFocusScope());
  focusInlineLoveDialog(root,openerAction);
  // Render idle evening D6 in WebGL too: each side is a neutral heart,
  // never a fabricated pip result. Actual face comes from Supabase after rolling.
