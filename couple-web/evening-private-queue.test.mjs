@@ -2012,7 +2012,7 @@ function privateEclatSaveFixture(state,saveEclatNote){
 test('LR-026: private Éclat note save ignores a late response after account switch',async()=>{
  let release;const pending=new Promise(resolve=>{release=resolve;});
  const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
-  eclat:{active:true,session_id:'session-1',chapter_index:1}};
+  eclat:{access:true,active:true,session_id:'session-1',chapter_index:1}};
  const {saveCurrentEclatNote,draft,labels}=privateEclatSaveFixture(state,()=>pending);
  const saving=saveCurrentEclatNote(true);
  state.user={id:'bob'};
@@ -2028,7 +2028,7 @@ test('LR-026: private Éclat note save ignores a late response after account swi
 test('LR-026: old Éclat chapter response cannot mark a new chapter saved',async()=>{
  let release;const pending=new Promise(resolve=>{release=resolve;});
  const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
-  eclat:{active:true,session_id:'session-1',chapter_index:1}};
+  eclat:{access:true,active:true,session_id:'session-1',chapter_index:1}};
  const {saveCurrentEclatNote,draft}=privateEclatSaveFixture(state,()=>pending);
  const saving=saveCurrentEclatNote(true);
  state.eclat={...state.eclat,chapter_index:2};
@@ -2041,7 +2041,7 @@ test('LR-026: old Éclat chapter response cannot mark a new chapter saved',async
 test('LR-026: stale Éclat save error never changes a new account error label',async()=>{
  let rejectSave;const pending=new Promise((_,reject)=>{rejectSave=reject;});
  const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
-  eclat:{active:true,session_id:'session-1',chapter_index:1}};
+  eclat:{access:true,active:true,session_id:'session-1',chapter_index:1}};
  const {saveCurrentEclatNote,labels}=privateEclatSaveFixture(state,()=>pending);
  const saving=saveCurrentEclatNote(true);
  state.user={id:'bob'};
@@ -2052,7 +2052,7 @@ test('LR-026: stale Éclat save error never changes a new account error label',a
 
 test('LR-026: current Éclat note saves preserve normal success and visible failures',async()=>{
  const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
-  eclat:{active:true,session_id:'session-1',chapter_index:1}};
+  eclat:{access:true,active:true,session_id:'session-1',chapter_index:1}};
  let captured;
  const valid=privateEclatSaveFixture(state,async(_client,status,userId,snapshot)=>{
   captured={status,userId,snapshot};
@@ -2102,7 +2102,7 @@ const settlePrivateNoteRead=async()=>{
 
 test('LR-026: older Éclat note load cannot overwrite a new retry draft',async()=>{
  const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
-  eclat:{active:true,session_id:'session-1',chapter_index:1},eclatBrowse:false};
+  eclat:{access:true,active:true,session_id:'session-1',chapter_index:1},eclatBrowse:false};
  let releaseOld,reads=0;
  const pending=new Promise(resolve=>{releaseOld=resolve;});
  const f=privateEclatReadFixture(state,()=>++reads===1?pending:
@@ -2122,7 +2122,7 @@ test('LR-026: older Éclat note load cannot overwrite a new retry draft',async()
 
 test('LR-026: old Éclat note load failure cannot repaint a different signed-in user',async()=>{
  const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
-  eclat:{active:true,session_id:'session-1',chapter_index:1},eclatBrowse:false};
+  eclat:{access:true,active:true,session_id:'session-1',chapter_index:1},eclatBrowse:false};
  let rejectOld;
  const pending=new Promise((_,reject)=>{rejectOld=reject;});
  const f=privateEclatReadFixture(state,()=>pending);
@@ -2136,7 +2136,7 @@ test('LR-026: old Éclat note load failure cannot repaint a different signed-in 
 
 test('LR-026: editing private note during save cannot advance Éclat on old snapshot',async()=>{
  const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
-  eclat:{active:true,session_id:'session-1',chapter_index:1}};
+  eclat:{access:true,active:true,session_id:'session-1',chapter_index:1}};
  let releaseSave,submitted;
  const pending=new Promise(resolve=>{releaseSave=resolve;});
  const f=privateEclatSaveFixture(state,async(_client,status,userId,snapshot)=>{
@@ -2165,7 +2165,7 @@ test('LR-026: editing private note during save cannot advance Éclat on old snap
 
 test('LR-026: edited clue during pending save remains unsaved until retry',async()=>{
  const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
-  eclat:{active:true,session_id:'session-1',chapter_index:1}};
+  eclat:{access:true,active:true,session_id:'session-1',chapter_index:1}};
  let release;
  const pending=new Promise(resolve=>{release=resolve;});
  const f=privateEclatSaveFixture(state,()=>pending);
@@ -2212,7 +2212,7 @@ test('LR-026: private Éclat input and save lifecycle track blank deletion and c
 
 test('LR-026: successful blank private note deletion clears dirty state after server acknowledgement',async()=>{
  const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
-  eclat:{active:true,session_id:'session-1',chapter_index:1}};
+  eclat:{access:true,active:true,session_id:'session-1',chapter_index:1}};
  const fixture=privateEclatSaveFixture(state,async()=>{});
  fixture.draft.note='';fixture.draft.clue='';fixture.draft.dirty=true;
  assert.equal(hasPendingEclatNote(fixture.drafts,'alice:session-1:1','eclat'),true);
@@ -2224,7 +2224,7 @@ test('LR-026: successful blank private note deletion clears dirty state after se
 
 test('LR-026: failed empty-text moment completion remains pending after network error',async()=>{
  const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
-  eclat:{active:true,session_id:'session-1',chapter_index:1}};
+  eclat:{access:true,active:true,session_id:'session-1',chapter_index:1}};
  const fixture=privateEclatSaveFixture(state,async()=>{throw Error('Offline');});
  fixture.draft.note='';fixture.draft.clue='';fixture.draft.dirty=false;
  await assert.rejects(fixture.saveCurrentEclatNote(true),/Offline/);
@@ -3903,7 +3903,7 @@ test('LR-026: real Chromium redraw mock respects strict persisted receipt valida
 
 test('LR-026: same-user reauthentication reloads a private Éclat note instead of retaining an old draft',async()=>{
  const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
-  eclat:{active:true,session_id:'session-1',chapter_index:1},eclatBrowse:false};
+  eclat:{access:true,active:true,session_id:'session-1',chapter_index:1},eclatBrowse:false};
  let finishOld,reads=0;
  const pending=new Promise(resolve=>{finishOld=resolve;});
  const f=privateEclatReadFixture(state,()=>++reads===1?pending:
@@ -3927,7 +3927,7 @@ test('LR-026: private Éclat save finishing after same-user reauthentication is 
  let finishSave;
  const pending=new Promise(resolve=>{finishSave=resolve;});
  const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
-  eclat:{active:true,session_id:'session-1',chapter_index:1}};
+  eclat:{access:true,active:true,session_id:'session-1',chapter_index:1}};
  const f=privateEclatSaveFixture(state,()=>pending);
  const previous=f.saveCurrentEclatNote(true);
  f.setAuthGeneration(2);
@@ -3943,7 +3943,7 @@ test('LR-026: expired Éclat note-save error cannot report failure to the new lo
  let rejectSave;
  const pending=new Promise((_,reject)=>{rejectSave=reject;});
  const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
-  eclat:{active:true,session_id:'session-1',chapter_index:1}};
+  eclat:{access:true,active:true,session_id:'session-1',chapter_index:1}};
  const f=privateEclatSaveFixture(state,()=>pending);
  const previous=f.saveCurrentEclatNote(true);
  f.setAuthGeneration(2);
@@ -3955,7 +3955,7 @@ test('LR-026: expired Éclat note-save error cannot report failure to the new lo
 
 test('LR-026: cached note from a previous login cannot start a save',async()=>{
  const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
-  eclat:{active:true,session_id:'session-1',chapter_index:1}};
+  eclat:{access:true,active:true,session_id:'session-1',chapter_index:1}};
  let networkCalls=0;
  const f=privateEclatSaveFixture(state,async()=>{networkCalls++;});
  f.setAuthGeneration(2);
@@ -3967,7 +3967,7 @@ test('LR-026: cached note from a previous login cannot start a save',async()=>{
 
 test('LR-026: a private Éclat save without a loaded draft keeps the original validation',async()=>{
  const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
-  eclat:{active:true,session_id:'session-1',chapter_index:1}};
+  eclat:{access:true,active:true,session_id:'session-1',chapter_index:1}};
  let calls=0;
  const f=privateEclatSaveFixture(state,async()=>{calls++;});
  f.drafts.delete('alice:session-1:1');
@@ -3977,7 +3977,7 @@ test('LR-026: a private Éclat save without a loaded draft keeps the original va
 
 test('LR-026: a cached private note is allowed to save within its original login',async()=>{
  const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
-  eclat:{active:true,session_id:'session-1',chapter_index:1}};
+  eclat:{access:true,active:true,session_id:'session-1',chapter_index:1}};
  let calls=0;
  const f=privateEclatSaveFixture(state,async()=>{calls++;});
  assert.equal(await f.saveCurrentEclatNote(true),'alice:session-1:1');
@@ -3988,7 +3988,7 @@ test('LR-026: a cached private note is allowed to save within its original login
 test('LR-026: private Éclat note never loads without a ready couple',()=>{
  const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
   members:[{id:'alice'}],
-  eclat:{active:true,session_id:'session-1',chapter_index:1}};
+  eclat:{access:true,active:true,session_id:'session-1',chapter_index:1}};
  let reads=0;
  const f=privateEclatReadFixture(state,async()=>{reads++;return {note:'old-private'};});
  assert.deepEqual(Object.keys(f.eclatNoteState()),[]);
@@ -3998,7 +3998,7 @@ test('LR-026: private Éclat note never loads without a ready couple',()=>{
 
 test('LR-026: private Éclat note load ignores membership revocation during request',async()=>{
  const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
-  eclat:{active:true,session_id:'session-1',chapter_index:1},eclatBrowse:false};
+  eclat:{access:true,active:true,session_id:'session-1',chapter_index:1},eclatBrowse:false};
  let resolveRead;
  const wait=new Promise(resolve=>{resolveRead=resolve;});
  const f=privateEclatReadFixture(state,()=>wait);
@@ -4014,7 +4014,7 @@ test('LR-026: private Éclat note load ignores membership revocation during requ
 
 test('LR-026: private Éclat note cannot be submitted once membership is revoked',async()=>{
  const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
-  eclat:{active:true,session_id:'session-1',chapter_index:1}};
+  eclat:{access:true,active:true,session_id:'session-1',chapter_index:1}};
  let writes=0;
  const f=privateEclatSaveFixture(state,async()=>{writes++;});
  state.members=[{id:'alice'}];
@@ -4025,7 +4025,7 @@ test('LR-026: private Éclat note cannot be submitted once membership is revoked
 
 test('LR-026: revoked private note save response must not acknowledge an older session',async()=>{
  const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
-  eclat:{active:true,session_id:'session-1',chapter_index:1}};
+  eclat:{access:true,active:true,session_id:'session-1',chapter_index:1}};
  let finish;
  const waiting=new Promise(resolve=>{finish=resolve;});
  const f=privateEclatSaveFixture(state,()=>waiting);
@@ -4252,4 +4252,61 @@ test('LR-026: invite sign-out keeps local private data while server request is i
   assert.equal(f.state.personalPass,null,command);
   assert.deepEqual(Array.from(f.state.personalJournal),[],command);
  }
+});
+
+
+test('LR-026: missing Éclat entitlement blocks private note loading',async()=>{
+ let reads=0;
+ for(const status of [null,{active:true,session_id:'session-1',chapter_index:1},
+  {access:null,active:true,session_id:'session-1',chapter_index:1}]){
+  const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
+   eclat:status,eclatBrowse:false};
+  const f=privateEclatReadFixture(state,async()=>{reads++;return {note:'private'};});
+  assert.deepEqual(Object.keys(f.eclatNoteState()),[]);
+  assert.equal(f.drafts.size,0);
+ }
+ assert.equal(reads,0,'an unknown subscription cannot start private note reads');
+});
+
+test('LR-026: missing Éclat entitlement blocks private note saving',async()=>{
+ for(const status of [null,{active:true,session_id:'session-1',chapter_index:1},
+  {access:null,active:true,session_id:'session-1',chapter_index:1}]){
+  let writes=0;
+  const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',eclat:status};
+  const f=privateEclatSaveFixture(state,async()=>{writes++;});
+  assert.equal(await f.saveCurrentEclatNote(true),null);
+  assert.equal(writes,0);
+  assert.equal(f.draft.moment_done,false);
+ }
+});
+
+test('LR-026: pending private note read ignores entitlement becoming unconfirmed',async()=>{
+ let release;
+ const pending=new Promise(resolve=>{release=resolve;});
+ const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
+  eclat:{access:true,active:true,session_id:'session-1',chapter_index:1},
+  eclatBrowse:false};
+ const f=privateEclatReadFixture(state,()=>pending);
+ const draft=f.eclatNoteState();
+ state.eclat={...state.eclat,access:null};
+ release({note:'no longer confirmed',moment_done:true});
+ await settlePrivateNoteRead();
+ assert.equal(draft.note,'');
+ assert.equal(draft.moment_done,false);
+ assert.equal(f.paintCount(),0);
+});
+
+test('LR-026: pending private note save cannot acknowledge an unconfirmed subscription',async()=>{
+ let release;
+ const pending=new Promise(resolve=>{release=resolve;});
+ const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
+  eclat:{access:true,active:true,session_id:'session-1',chapter_index:1}};
+ const f=privateEclatSaveFixture(state,()=>pending);
+ const saving=f.saveCurrentEclatNote(true);
+ state.eclat={...state.eclat,access:undefined};
+ release();
+ assert.equal(await saving,null);
+ assert.equal(f.draft.saved,false);
+ assert.equal(f.draft.moment_done,false);
+ assert.equal(f.draft.saving,false);
 });
