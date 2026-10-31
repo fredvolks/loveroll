@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
-import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,snapshotEveningCardBeforeRedraw,EVENING_REDRAW_IMMUTABLE_FIELDS,ownsEveningTimerRecord,ownedSavedEveningTimerSnapshot,isSameEveningResponseContext,isEveningRedrawBusyForCurrentView,ownsEveningRedrawRequest,redrawTimerRecovery,mayApplyScopedEveningRefresh,ownsCoupleAsyncRead} from './evening-private-queue.mjs';
+import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,snapshotEveningCardBeforeRedraw,EVENING_REDRAW_IMMUTABLE_FIELDS,ownsEveningTimerRecord,ownedSavedEveningTimerSnapshot,isSameEveningResponseContext,isEveningRedrawBusyForCurrentView,ownsEveningRedrawRequest,redrawTimerRecovery,mayApplyScopedEveningRefresh,ownsCoupleAsyncRead,hasPendingEclatNote} from './evening-private-queue.mjs';
 import {premiumEveningHtml} from './premium-evening.mjs';
 const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
 const migration=readFileSync(new URL('./migrations/20261015_evening_private_challenge_queue.sql',import.meta.url),'utf8');
@@ -2086,4 +2086,57 @@ test('LR-026: edited clue during pending save remains unsaved until retry',async
  assert.equal(f.draft.saved,false);
  assert.equal(f.draft.clue,'Indice modifié pendant la sauvegarde');
  assert.equal(f.draft.saving,false);
+});
+
+test('LR-026: pending Éclat private notes include blank deletions but exclude other chapters/accounts',()=>{
+ const drafts=new Map([
+  ['alice:session-1:1',{note:'',clue:'',dirty:true,saved:false}],
+  ['alice:session-1:2',{note:'Previous chapter',dirty:true,saved:false}],
+  ['bob:session-1:1',{note:'Different account',dirty:true,saved:false}]
+ ]);
+ assert.equal(hasPendingEclatNote(drafts,'alice:session-1:1','eclat'),true,
+  'deleting every character is still a modification to persist');
+ assert.equal(hasPendingEclatNote(drafts,'alice:session-1:1','home'),false,
+  'an invisible Éclat note cannot block an unrelated settings/home action');
+ assert.equal(hasPendingEclatNote(drafts,'alice:session-1:3','eclat'),false);
+ drafts.get('alice:session-1:1').dirty=false;
+ assert.equal(hasPendingEclatNote(drafts,'alice:session-1:1','eclat'),false,
+  'an old dirty chapter or another account must not block this clean step');
+ drafts.get('alice:session-1:1').saving=true;
+ assert.equal(hasPendingEclatNote(drafts,'alice:session-1:1','eclat'),true,
+  'in-progress server saves are not yet acknowledged');
+ drafts.get('alice:session-1:1').saving=false;
+ for(const invalid of [null,'',{},[]])
+  assert.equal(hasPendingEclatNote(drafts,invalid,'eclat'),false);
+});
+
+test('LR-026: private Éclat input and save lifecycle track blank deletion and completion',()=>{
+ assert.match(app,/hasPendingEclatNote\(eclatNoteDrafts,eclatNoteKey\(state\.eclat,state\.user\?\.id\),state\.tab\)/);
+ assert.match(app,/draft\[field\.dataset\.eclatField\]=field\.value;draft\.saved=false;draft\.dirty=true/);
+ assert.match(app,/const draft=\{note:'',clue:'',moment_done:false,loading:true,dirty:false\}/);
+ assert.match(app,/if\(snapshot\.moment_done!==draft\.moment_done\)draft\.dirty=true/);
+ assert.match(app,/draft\.dirty=!draft\.saved/);
+});
+
+test('LR-026: successful blank private note deletion clears dirty state after server acknowledgement',async()=>{
+ const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
+  eclat:{active:true,session_id:'session-1',chapter_index:1}};
+ const fixture=privateEclatSaveFixture(state,async()=>{});
+ fixture.draft.note='';fixture.draft.clue='';fixture.draft.dirty=true;
+ assert.equal(hasPendingEclatNote(fixture.drafts,'alice:session-1:1','eclat'),true);
+ assert.equal(await fixture.saveCurrentEclatNote(),'alice:session-1:1');
+ assert.equal(fixture.draft.saved,true);
+ assert.equal(fixture.draft.dirty,false);
+ assert.equal(hasPendingEclatNote(fixture.drafts,'alice:session-1:1','eclat'),false);
+});
+
+test('LR-026: failed empty-text moment completion remains pending after network error',async()=>{
+ const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
+  eclat:{active:true,session_id:'session-1',chapter_index:1}};
+ const fixture=privateEclatSaveFixture(state,async()=>{throw Error('Offline');});
+ fixture.draft.note='';fixture.draft.clue='';fixture.draft.dirty=false;
+ await assert.rejects(fixture.saveCurrentEclatNote(true),/Offline/);
+ assert.equal(fixture.draft.moment_done,false);
+ assert.equal(fixture.draft.dirty,true);
+ assert.equal(hasPendingEclatNote(fixture.drafts,'alice:session-1:1','eclat'),true);
 });
