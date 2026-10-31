@@ -18,6 +18,7 @@ import {ROLL_TOTAL_MS} from './dice-roll-motion.mjs';
 import {createCoupleLiveSync} from './couple-live-sync.mjs?v=20261017-advent119';
 import {playableSessionForWeekly} from './couple-reset-view.mjs';
 import {eveningDailyAccess} from './evening-daily-policy.mjs?v=20261016-daily100';
+import {createEveningClosureGate} from './evening-closure-gate.mjs?v=20261031-closure';
 import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,snapshotEveningCardBeforeRedraw,isSameEveningResponseContext,isEveningRedrawBusyForCurrentView,ownsEveningRedrawRequest,ownsEveningTimerRecord,ownedSavedEveningTimerSnapshot,redrawTimerRecovery,mayApplyScopedEveningRefresh,ownsCoupleAsyncRead,hasPendingEclatNote} from './evening-private-queue.mjs';
 import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261029-web259';
 import {saveEveningSelection,restoreEveningSelection,clearEveningSelection,safeEveningBookmarkStorage} from './evening-resume.mjs?v=20261031-resume-safari';
@@ -105,6 +106,7 @@ let latestCalendarPassQuotaRequest=null;
 let currentReviewSaveRequest=null;
 // Ignore duplicate start taps for this Auth generation, but never block a new login.
 let currentNewSessionRequest=null;
+const eveningClosureGate=createEveningClosureGate();
 let worldGpsDraft=null;
 let worldFx=null,worldFxPending=null,worldFxFailed=null;
 let geoFetchActive=null,geoFetchSeen=new Set();
@@ -4097,14 +4099,17 @@ async function handle(action,element){
   const ownsClose=()=>state.user?.id===owner.userId&&
    state.coupleId===owner.coupleId&&state.session?.id===owner.sessionId&&
    authFeedbackGeneration===owner.generation;
-  if(!owner.userId||!owner.coupleId)return;
-  await rpc('close_love_evening_preserve',{p_session:ended.id});
-  if(!ownsClose())return;
-  const date=eveningLocalDay(ended.started_at);
-  state.eveningCalendarMonth=date?.slice(0,7)||month();
-  state.eveningCalendarDate=date||today();
-  state.confirmCancel=false;state.eveningMore=false;state.showEveningChallenges=false;
-  state.tab='evening-calendar';await refreshAndShow();return;
+  const ticket=eveningClosureGate.begin(owner);
+  if(!ticket)return; // A terminal request for this evening is already pending.
+  try{
+   await rpc('close_love_evening_preserve',{p_session:ended.id});
+   if(!ownsClose())return;
+   const date=eveningLocalDay(ended.started_at);
+   state.eveningCalendarMonth=date?.slice(0,7)||month();
+   state.eveningCalendarDate=date||today();
+   state.confirmCancel=false;state.eveningMore=false;state.showEveningChallenges=false;
+   state.tab='evening-calendar';await refreshAndShow();return;
+  }finally{eveningClosureGate.release(ticket);}
  }
  if(verb==='evening-challenge'||verb==='evening-list'){
   if(state.diceStatus)return; // Opening the drawer unmounts the live dice scene.
@@ -5966,10 +5971,13 @@ async function handle(action,element){
   const ownsFinish=()=>state.user?.id===owner.userId&&
    state.coupleId===owner.coupleId&&state.session?.id===owner.sessionId&&
    authFeedbackGeneration===owner.generation;
-  if(!owner.userId||!owner.coupleId)return;
-  await rpc('finish_couple_session',{p_session:finishedId,p_count:true});
-  if(!ownsFinish())return;
-  state.chosenSession=finishedId;state.tab='session';await refreshAndShow();return;
+  const ticket=eveningClosureGate.begin(owner);
+  if(!ticket)return;
+  try{
+   await rpc('finish_couple_session',{p_session:finishedId,p_count:true});
+   if(!ownsFinish())return;
+   state.chosenSession=finishedId;state.tab='session';await refreshAndShow();return;
+  }finally{eveningClosureGate.release(ticket);}
  }
  if(verb==='cancel-session'){
   if(state.diceStatus)return; // The official result must settle before cancellation.
@@ -5983,10 +5991,13 @@ async function handle(action,element){
   const ownsCancel=()=>state.user?.id===owner.userId&&
    state.coupleId===owner.coupleId&&state.session?.id===owner.sessionId&&
    authFeedbackGeneration===owner.generation;
-  if(!owner.userId||!owner.coupleId)return;
-  await rpc('finish_couple_session',{p_session:owner.sessionId,p_count:false});
-  if(!ownsCancel())return; // Do not redirect a new login after the server reply.
-  state.confirmCancel=false;state.tab='home';await refreshAndShow();return;
+  const ticket=eveningClosureGate.begin(owner);
+  if(!ticket)return;
+  try{
+   await rpc('finish_couple_session',{p_session:owner.sessionId,p_count:false});
+   if(!ownsCancel())return; // Do not redirect a new login after the server reply.
+   state.confirmCancel=false;state.tab='home';await refreshAndShow();return;
+  }finally{eveningClosureGate.release(ticket);}
  }
  if(verb==='advent-open'){
   if(!isSharedCoupleReady(state.coupleId,state.members))
