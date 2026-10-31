@@ -94,13 +94,18 @@ assert.ok(actionBegin>=0&&actionEnd>actionBegin,'production Éclat actions exist
 const mutationBegin=app.indexOf('async function runEclatMutation(');
 const mutationEnd=app.indexOf('function applyEclatActionResult(',mutationBegin);
 assert.ok(mutationBegin>0&&mutationEnd>mutationBegin,'secured Éclat mutation guard exists');
+const ownerBegin=app.indexOf('function beginEclatAction(){');
+const ownerEnd=app.indexOf('// Run every Éclat mutation',ownerBegin);
+assert.ok(ownerBegin>=0&&ownerEnd>ownerBegin,'real Éclat action ownership exists');
+const ownerSource='let latestEclatActionRequest=null,pendingEclatMutation=null;\n'+
+ app.slice(ownerBegin,ownerEnd)+'\n';
 const actionSource=app.slice(permissionBegin,permissionEnd)+'\n'+
  app.slice(mutationBegin,mutationEnd)+
  '\nlet latestEclatAudioOwner=null;\n'+
  "async function invoke(command){const verb='eclat',parts=command.split(':'),element=null;\n"+
  app.slice(actionBegin,actionEnd)+'\n}\n;invoke;';
 
-function actionFixture(status,{mode='real',eligible=false,startAudio=null,saveNote=null,confirm=null,withDraft=false,rpcStatus=null,historyLoad=null}={}){
+function actionFixture(status,{mode='real',eligible=false,startAudio=null,saveNote=null,confirm=null,withDraft=false,rpcStatus=null,historyLoad=null,realOwnership=false}={}){
  const state={user:{id:'alice'},coupleId:'shared-duo',
   members:[{id:'alice'},{id:'bob'}],tab:'eclat',
   eclat:{coffret_id:1,chapter_number:1,chapter_index:1,chapter_total:6,variant_number:0,...status},
@@ -129,8 +134,9 @@ function actionFixture(status,{mode='real',eligible=false,startAudio=null,saveNo
   root:{querySelector:()=>null},
   handle:async()=>{}
  };
- const invoke=runInNewContext(actionSource,context);
- return {state,invoke,calls,played,renders,stops:()=>stops,confirms:()=>confirms,notes:()=>notes};
+ const invoke=runInNewContext((realOwnership?ownerSource:'')+actionSource,context);
+ return {state,invoke,calls,played,renders,drafts:context.eclatNoteDrafts,
+  stops:()=>stops,confirms:()=>confirms,notes:()=>notes};
 }
 
 test('LR-026: stale active status without access blocks every private Éclat command',async()=>{
@@ -389,4 +395,25 @@ test('LR-026: missing prior coffret keeps the default 30-minute duration',async(
  h.state.eclatHistory=[{coffret_id:9,minutes:60}];
  await h.invoke('detail:3');
  assert.equal(h.state.eclatMinutes,30);
+});
+
+test('LR-026: a second Choisir tap during note save cannot cancel the first choice',async()=>{
+ let release;
+ const waiting=new Promise(resolve=>{release=resolve;});
+ const h=actionFixture({access:true,active:true,session_id:'scene'},
+  {withDraft:true,realOwnership:true,saveNote:()=>waiting});
+ const first=h.invoke('choose:1');
+ assert.equal(h.notes(),1,'first tap started its private note save');
+ // The real note saver marks this draft as saving until Supabase responds.
+ h.drafts.get('note-key').saving=true;
+ const duplicate=h.invoke('choose:1');
+ await duplicate;
+ assert.equal(h.notes(),1,'duplicate tap must not try another save');
+ assert.deepEqual(h.calls,[],'choice waits for the original private note save');
+ h.drafts.get('note-key').saving=false;
+ release('note-key');
+ await first;
+ assert.deepEqual(h.calls,['love_eclat_choose'],
+  'the first choice must still be sent after its private note is saved');
+ assert.equal(h.renders.length,1);
 });
