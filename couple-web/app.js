@@ -1134,7 +1134,7 @@ async function reload(){
  const verified=await refreshVerifiedIdentity();
  if(!current())return;
  if(!verified){
-  state.profile=null;state.coupleId=null;state.members=[];state.wellbeing=null;
+  state.profile=null;state.coupleId=null;acceptEclatMembership([]);state.wellbeing=null;
   state.personalJournal=[];state.pushPrefs=null;
   state.emailVerificationPending=true;state.showAuth=true;
   render();return;
@@ -1192,7 +1192,7 @@ async function reload(){
  catch(error){if(!current())return;state.referral=null;console.warn('Référencement indisponible',error?.message||'error');}
  if(!state.coupleId){
   if(state.channel){const channel=state.channel;await client.removeChannel(channel);if(!current())return;if(state.channel===channel)state.channel=null;}
-  state.couple=null;state.members=[];state.weekly=null;state.monthly={};state.customCards=[];state.monthlyActivities=[];state.rollStatus=null;state.gifts=[];
+  state.couple=null;acceptEclatMembership([]);state.weekly=null;state.monthly={};state.customCards=[];state.monthlyActivities=[];state.rollStatus=null;state.gifts=[];
   state.session=null;state.sessions=[];state.events=[];state.journal=[];state.eveningHistoryStats=[];state.eveningCalendarChallenges=[];state.weeklyRollHistory=[];state.calendarPassQuota=[];state.monthlyPassQuota=null;state.calendarPassMonth=null;state.cycleStatus=null;state.cycleDeferred=null;state.eveningReviews=[];state.reviewModalSessionId=null;
   state.advent=[];state.adventYear=null;state.adventSelected=null;state.adventServerDate=null;state.advent2026Config=null;state.advent2026Days=[];state.specialEventsConfig=null;state.specialEventKeys=[];state.unlockKey=null;
   state.invitations=[];state.inviteDraft=null;state.eveningInvite=null;state.challengesHistory=[];state.eveningHistoryStats=[];state.eveningCalendarChallenges=[];state.eveningReviews=[];state.reviewModalSessionId=null;state.reviewDraft={};
