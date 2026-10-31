@@ -17,7 +17,7 @@ function deferred(){
 }
 function harness({rpc=async()=>null,loadEclatHistory=async()=>[]}={}){
  const state={user:{id:'alice'},coupleId:'couple-a',tab:'eclat',
-  members:[{id:'alice'},{id:'bob'}],eclat:{id:'initial'},
+  members:[{id:'alice'},{id:'bob'}],eclat:{id:'initial',access:true},
   eclatHistory:[{id:'initial-history'}],
   eclatHistoryCouple:'couple-a',eclatHistoryUserId:'alice'};
  const warnings=[];let audioStops=0;
@@ -526,4 +526,55 @@ test('LR-026: stale foreground activation cannot erase newer login completion',a
  previous.resolve({access:true,active:true});
  assert.equal(await old,null);
  assert.equal(h.state.eclatFinished,'New login ending');
+});
+
+
+test('LR-026: null Éclat status cannot initiate a private history query',async()=>{
+ let requests=0;
+ const h=harness({loadEclatHistory:async()=>{requests++;return [{id:'leak'}];}});
+ h.state.eclat=null;
+ await h.refreshEclatHistory();
+ assert.equal(requests,0);
+ assert.deepEqual(h.state.eclatHistory,[{id:'initial-history'}]);
+});
+
+test('LR-026: incomplete Éclat status is not evidence of entitlement',async()=>{
+ let requests=0;
+ const h=harness({loadEclatHistory:async()=>{requests++;return [{id:'leak'}];}});
+ for(const status of [{active:true},{access:null,active:true},{access:0,active:true}]){
+  h.state.eclat=status;
+  await h.refreshEclatHistory();
+ }
+ assert.equal(requests,0,'missing or non-boolean access must never fetch private history');
+ assert.deepEqual(h.state.eclatHistory,[{id:'initial-history'}]);
+});
+
+test('LR-026: current authorized history request still loads private gallery',async()=>{
+ let requests=0;
+ const h=harness({loadEclatHistory:async()=>{requests++;return [{id:'authorized'}];}});
+ h.state.eclat={access:true,active:false};
+ await h.refreshEclatHistory();
+ assert.equal(requests,1,'finished users still have authorized gallery access');
+ assert.deepEqual(Array.from(h.state.eclatHistory,x=>x.id),['authorized']);
+});
+
+test('LR-026: pending history cannot commit after entitlement becomes unconfirmed',async()=>{
+ const pending=deferred();
+ const h=harness({loadEclatHistory:()=>pending.promise});
+ h.state.eclat={access:true,active:true};
+ const reading=h.refreshEclatHistory();
+ h.state.eclat={active:true};
+ pending.resolve([{id:'stale-private-history'}]);
+ await reading;
+ assert.deepEqual(h.state.eclatHistory,[{id:'initial-history'}]);
+ assert.equal(h.state.eclatHistoryError,undefined);
+});
+
+test('LR-026: foreground status with missing access never fetches private history',async()=>{
+ let requests=0;
+ const h=harness({rpc:async()=>({active:true}),
+  loadEclatHistory:async()=>{requests++;return [{id:'leak'}];}});
+ await h.refreshEclatStatus();
+ assert.equal(requests,0);
+ assert.equal(h.state.eclat.active,true);
 });
