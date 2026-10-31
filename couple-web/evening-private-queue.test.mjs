@@ -3010,3 +3010,50 @@ test('LR-026: confirmation transitions use guarded signout rather than raw clien
  assert.equal(slice.match(/await signOutCurrentAccount\(\)/g)?.length,2);
  assert.doesNotMatch(slice,/await client\.auth\.signOut\(\)/);
 });
+
+function emailVerificationRecheckFixture(state,refreshVerifiedIdentity){
+ const begin=app.indexOf("if(verb==='email-confirm-recheck'){");
+ const end=app.indexOf("if(verb==='email-confirm-resend'",begin);
+ assert.ok(begin>0&&end>begin);
+ const status={textContent:''},calls={reloads:0,paints:0,routes:0};
+ const action=runInNewContext('(async verb=>{'+app.slice(begin,end)+'})',{
+  state,refreshVerifiedIdentity,
+  id:()=>status,
+  reload:async()=>{calls.reloads++;},
+  render:()=>calls.paints++,
+  keepAuthModeInUrl:()=>{calls.routes++;}
+ });
+ return {recheck:()=>action('email-confirm-recheck'),calls,status};
+}
+
+test('LR-026: stale email-confirmation recheck cannot modify the replacement account',async()=>{
+ let release;
+ const pending=new Promise(resolve=>{release=resolve;});
+ const state={user:{id:'alice'},emailVerificationPending:true,authNotice:'Alice'};
+ const f=emailVerificationRecheckFixture(state,()=>pending);
+ const checking=f.recheck();
+ state.user={id:'bob'};state.authNotice='Bob';
+ release(false);
+ await checking;
+ assert.equal(state.user.id,'bob');
+ assert.equal(state.authNotice,'Bob');
+ assert.equal(f.status.textContent,'');
+ assert.equal(f.calls.reloads,0);
+});
+
+test('LR-026: successful verification refreshes the same account',async()=>{
+ const state={user:{id:'alice'},emailVerificationPending:true,authNotice:'Old'};
+ const f=emailVerificationRecheckFixture(state,async()=>true);
+ await f.recheck();
+ assert.equal(state.emailVerificationPending,false);
+ assert.equal(state.authNotice,null);
+ assert.equal(f.calls.reloads,1);
+});
+
+test('LR-026: unverified current account retains verification guidance',async()=>{
+ const state={user:{id:'alice'},emailVerificationPending:true};
+ const f=emailVerificationRecheckFixture(state,async()=>false);
+ await f.recheck();
+ assert.match(f.status.textContent,/pas encore confirmée/);
+ assert.equal(f.calls.reloads,0);
+});
