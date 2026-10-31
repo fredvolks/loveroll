@@ -4150,16 +4150,16 @@ async function handle(action,element){
   state.eveningCalendarDate=date;render();return;
  }
  if(verb==='evening-close-request'){
-  if(state.diceStatus)return;
+  if(state.diceStatus)return; // Let the official D100/D6 settle before closing.
   // Never offer closure while a private-card decision is being persisted.
-  if(isActiveEveningRedrawPending())return; // Let the official D100/D6 settle before closing.
+  if(isActiveEveningRedrawPending())return;
   if(!state.session)throw Error('Aucune soirée à clore.');
   state.eveningMore=false;state.confirmCancel=true;render();return;
  }
  if(verb==='evening-close-confirm'){
-  if(state.diceStatus)return;
+  if(state.diceStatus)return; // A stale confirmation must not close mid-roll.
   // A delayed confirmation cannot close the session ahead of its repick.
-  if(isActiveEveningRedrawPending())return; // A stale confirmation must not close mid-roll.
+  if(isActiveEveningRedrawPending())return;
   if(!state.session)throw Error('Cette soirée est déjà clôturée.');
   const ended=state.session;
   const owner={userId:state.user?.id,coupleId:state.coupleId,
@@ -6101,9 +6101,9 @@ async function handle(action,element){
   }
  }
  if(verb==='finish-session'){
-  if(state.diceStatus)return;
+  if(state.diceStatus)return; // Finishing before the receipt interrupts the die.
   // Finishing while a Passer/Refuser RPC is in flight would race its receipt.
-  if(isActiveEveningRedrawPending())return; // Finishing before the receipt interrupts the die.
+  if(isActiveEveningRedrawPending())return;
   if(!state.session)return;
   const finishedId=state.session.id;
   const owner={userId:state.user?.id,coupleId:state.coupleId,
@@ -6120,8 +6120,8 @@ async function handle(action,element){
   }finally{eveningClosureGate.release(ticket);}
  }
  if(verb==='cancel-session'){
-  if(state.diceStatus)return;
-  if(isActiveEveningRedrawPending())return; // The official result must settle before cancellation.
+  if(state.diceStatus)return; // The official result must settle before cancellation.
+  if(isActiveEveningRedrawPending())return;
   state.confirmCancel=true;render();return;
  }
  if(verb==='dismiss-cancel'){state.confirmCancel=false;render();return;}
