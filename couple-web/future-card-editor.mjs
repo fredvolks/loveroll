@@ -120,5 +120,5 @@ export function initFutureCardEditor(doc=document,{onDraftChange=()=>{}}={}){
   if(!dirty&&!unexported)return;
   event.preventDefault();event.returnValue='';
  });
- return {load,getCards:()=>copy(cards)};
+ return {load,getCards:()=>copy(cards),hasUnsavedForm:()=>dirty};
 }

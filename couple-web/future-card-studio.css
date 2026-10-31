@@ -46,3 +46,16 @@
 .future-night-preview-result li small{color:var(--muted);padding-top:2px}
 .future-night-preview-controls select:focus-visible,.future-night-simulator>button:focus-visible{outline:3px solid var(--rose);outline-offset:2px}
 @media(max-width:720px){.future-night-preview-controls{grid-template-columns:minmax(0,1fr)}.future-night-simulator>button{width:100%}}
+
+/* Local version history: same burgundy Studio surfaces, responsive controls. */
+.future-archive-studio{display:grid;gap:12px;min-width:0;border-top:1px solid var(--line);padding-top:20px}
+.future-archive-studio h4{font:italic clamp(22px,2.6vw,27px)/1.2 Georgia,serif;margin:0}
+.future-archive-studio .small-note{margin:0}
+.future-archive-save,.future-archive-import{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:end}
+.future-archive-restore{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:end}
+.future-archive-studio select{width:100%;min-width:0;min-height:44px;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px}
+.future-archive-studio input[type=file]{max-width:100%;min-width:0}
+.future-archive-studio button{min-height:44px;white-space:normal}
+.future-archive-studio :is(select,input,button):focus-visible{outline:3px solid var(--rose);outline-offset:2px}
+@media(max-width:880px){.future-archive-restore{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.future-archive-restore>label{grid-column:1/-1}}
+@media(max-width:720px){.future-archive-save,.future-archive-import,.future-archive-restore{grid-template-columns:minmax(0,1fr)}.future-archive-restore>label{grid-column:auto}.future-archive-studio button{width:100%}}

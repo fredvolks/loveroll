@@ -3,6 +3,7 @@
 import {auditFuturePlayableCatalog,FUTURE_LEVELS} from './future-card-catalog.mjs';
 import {initFutureCardEditor} from './future-card-editor.mjs';
 import {initFutureNightPreview} from './future-night-studio.mjs';
+import {initFutureCardArchiveStudio} from './future-card-archive-studio.mjs';
 const MAX_BYTES=1024*1024, MAX_ITEMS=1000, MAX_ERRORS=12;
 const LEVEL_LABELS=Object.freeze({soft:'Soft',medium:'Medium',intense:'Intense'});
 
@@ -72,6 +73,16 @@ export function initFutureCardStudio(doc=document){
   render(inspectFutureCardFile(next));preview?.clear();
  }});
  preview=initFutureNightPreview(doc,()=>editor?.getCards()||[]);
+ initFutureCardArchiveStudio(doc,{
+  getCards:()=>editor?.getCards()||[],
+  hasUnsavedForm:()=>editor?.hasUnsavedForm()===true,
+  restoreCards:cards=>{
+   if(!editor?.load(cards))return false;
+   render(inspectFutureCardFile(cards));
+   preview?.clear();
+   return true;
+  }
+ });
  input.addEventListener('change',()=>{
   request++;output.replaceChildren();button.disabled=false;
   say('Fichier changé : appuyer sur « Analyser les cartes ».');

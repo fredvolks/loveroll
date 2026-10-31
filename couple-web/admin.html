@@ -232,6 +232,33 @@
  <p class="small-note" id="future-card-editor-feedback" role="status" aria-live="polite">Aucune carte publiée ni sauvegardée sur le serveur.</p>
 </div>
 
+
+<div class="future-archive-studio" aria-labelledby="future-archive-title">
+ <h4 id="future-archive-title">Historique des versions de cartes</h4>
+ <p class="small-note">Sauvegarde des versions locales de ton brouillon, récupère une ancienne version et exporte le tout en JSON. Aucun historique n’est synchronisé avec Supabase.</p>
+ <div class="future-archive-save">
+  <label for="future-archive-label">Nom de la version
+   <input id="future-archive-label" maxlength="80" placeholder="Catalogue octobre 2026" autocomplete="off">
+  </label>
+  <button id="future-archive-save" class="secondary" type="button">Sauvegarder cette version</button>
+ </div>
+ <p id="future-archive-count" class="small-note">0 / 24 versions locales</p>
+ <div class="future-archive-restore">
+  <label for="future-archive-select">Versions enregistrées
+   <select id="future-archive-select"><option value="">Choisir une version</option></select>
+  </label>
+  <button id="future-archive-restore" class="secondary" type="button" disabled>Restaurer dans l’éditeur</button>
+  <button id="future-archive-export" class="secondary" type="button" disabled>Exporter l’historique</button>
+ </div>
+ <div class="future-archive-import">
+  <label for="future-archive-file">Importer un historique JSON (8 Mo maximum)
+   <input id="future-archive-file" type="file" accept=".json,application/json">
+  </label>
+  <button id="future-archive-import" type="button" class="secondary">Importer l’historique</button>
+ </div>
+ <p id="future-archive-feedback" role="status" aria-live="polite" class="small-note">Les archives restent en mémoire jusqu’à leur exportation. Une restauration n’efface jamais une ancienne version.</p>
+</div>
+
 <div class="future-night-simulator" aria-labelledby="future-night-preview-title">
  <h4 id="future-night-preview-title">Essayer une soirée fictive</h4>
  <p class="small-note">Prévisualise le tirage des cartes de ton brouillon avec deux partenaires fictifs. Aucun défi réel, historique ou paiement n’est créé.</p>
