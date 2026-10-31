@@ -362,3 +362,29 @@ test('LR-026: stale background completion cannot silence new login music',async(
  assert.equal(h.state.eclatMusic,true);
  assert.deepEqual(h.renders,[]);
 });
+
+
+test('LR-026: partner starting another coffret clears former completion on poll',async()=>{
+ const h=harness();
+ h.state.eclat={id:'previous-finished',access:true,active:false};
+ h.state.eclatFinished='Former coffret ending';
+ const refreshing=h.tick();
+ h.requests[0].resolve({id:'partner-new-session',access:true,active:true});
+ await refreshing;
+ assert.equal(h.state.eclat?.id,'partner-new-session');
+ assert.equal(h.state.eclatFinished,null);
+ assert.deepEqual(h.renders,['partner-new-session']);
+ assert.deepEqual(h.history,['alice'],'new authorized session refreshes history');
+});
+
+test('LR-026: obsolete background activation cannot clear the new login ending',async()=>{
+ const h=harness();
+ h.state.eclat={id:'previous-finished',access:true,active:false};
+ const refreshing=h.tick();
+ h.runtime.authFeedbackGeneration=2;
+ h.state.eclatFinished='Only new login ending';
+ h.requests[0].resolve({id:'old-account-new-session',access:true,active:true});
+ await refreshing;
+ assert.equal(h.state.eclatFinished,'Only new login ending');
+ assert.deepEqual(h.renders,[]);
+});
