@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
 import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,snapshotEveningCardBeforeRedraw,EVENING_REDRAW_IMMUTABLE_FIELDS,ownsEveningTimerRecord,ownedSavedEveningTimerSnapshot,isSameEveningResponseContext,isEveningRedrawBusyForCurrentView,ownsEveningRedrawRequest,redrawTimerRecovery,mayApplyScopedEveningRefresh,ownsCoupleAsyncRead,hasPendingEclatNote} from './evening-private-queue.mjs';
 import {premiumEveningHtml} from './premium-evening.mjs';
+import {previewEclatStatus} from './account-preview-mode.mjs';
 const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
  // Isolated handler tests evaluate the REAL production action guards.
  const actionGuardPrelude=[
@@ -1853,11 +1854,13 @@ function eclatMusicFixture(state,audio,notify=()=>{},render=()=>{},masked=false)
   state,authFeedbackGeneration:1,eclatAudio:audio,
   document:{documentElement:{classList:{contains:()=>masked}}},
   eclatStage:()=>({mood:'romantique'}),
-  ownsCoupleAsyncRead,
+  ownsCoupleAsyncRead,previewEclatStatus,
   isSharedCoupleReady:(couple,members)=>!!couple&&Array.isArray(members)&&members.length===2,
   notify,render
  };
  const music=runInNewContext(
+  app.slice(app.indexOf('function canPlayEclat(){'),
+   app.indexOf('function beginEclatAction(){'))+
   'let latestEclatAudioOwner=null; async function runMusic(kind){'+
   app.slice(start,end)+
   '} ({runMusic,owner:()=>latestEclatAudioOwner});',runtime);
@@ -1866,7 +1869,7 @@ function eclatMusicFixture(state,audio,notify=()=>{},render=()=>{},masked=false)
 
 test('LR-026: asynchronous Éclat audio cannot resume after changing account',async()=>{
  const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
-  eclat:{active:true,coffret_id:1,chapter_number:1,variant_number:1},
+  eclat:{access:true,active:true,coffret_id:1,chapter_number:1,variant_number:1},
   members:[{id:'alice'},{id:'bob'}],eclatMusic:false};
  let release,stops=0,notifications=0,paints=0;
  const audio={start:()=>new Promise(resolve=>{release=resolve;}),
@@ -1884,7 +1887,7 @@ test('LR-026: asynchronous Éclat audio cannot resume after changing account',as
 
 test('LR-026: Éclat audio permission cannot resume after reauthentication of the same user',async()=>{
  const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
-  eclat:{active:true,coffret_id:1,chapter_number:1,variant_number:1},
+  eclat:{access:true,active:true,coffret_id:1,chapter_number:1,variant_number:1},
   members:[{id:'alice'},{id:'bob'}],eclatMusic:false};
  let finishStart,stops=0,notifications=0,paints=0;
  const audio={start:()=>new Promise(resolve=>{finishStart=resolve;}),
@@ -1902,7 +1905,7 @@ test('LR-026: Éclat audio permission cannot resume after reauthentication of th
 
 test('LR-026: Éclat audio can start after reauthentication without accepting an older result',async()=>{
  const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
-  eclat:{active:true,coffret_id:1,chapter_number:1,variant_number:1},
+  eclat:{access:true,active:true,coffret_id:1,chapter_number:1,variant_number:1},
   members:[{id:'alice'},{id:'bob'}],eclatMusic:false};
  const starts=[];
  const audio={start:()=>new Promise(resolve=>starts.push(resolve)),stop:()=>{}};
@@ -1919,7 +1922,7 @@ test('LR-026: Éclat audio can start after reauthentication without accepting an
 
 test('LR-026: later Éclat audio tap wins while earlier permission is pending',async()=>{
  const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
-  eclat:{active:true,coffret_id:1,chapter_number:1,variant_number:1},
+  eclat:{access:true,active:true,coffret_id:1,chapter_number:1,variant_number:1},
   members:[{id:'alice'},{id:'bob'}],eclatMusic:false};
  const starts=[];
  const audio={start:()=>new Promise(resolve=>starts.push(resolve)),stop:()=>{}};
@@ -1937,7 +1940,7 @@ test('LR-026: later Éclat audio tap wins while earlier permission is pending',a
 
 test('LR-026: pending Éclat audio is cancelled if couple membership is revoked',async()=>{
  const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
-  eclat:{active:true,coffret_id:1,chapter_number:1,variant_number:1},
+  eclat:{access:true,active:true,coffret_id:1,chapter_number:1,variant_number:1},
   members:[{id:'alice'},{id:'bob'}],eclatMusic:false};
  let finishStart,stops=0,paints=0;
  const audio={start:()=>new Promise(resolve=>{finishStart=resolve;}),
@@ -1966,7 +1969,7 @@ test('LR-026: signing out and masking privacy invalidate Éclat audio',()=>{
 
 test('LR-026: a masked Éclat audio tap never repaints protected content',async()=>{
  const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
-  eclat:{active:true,coffret_id:1,chapter_number:1,variant_number:1},
+  eclat:{access:true,active:true,coffret_id:1,chapter_number:1,variant_number:1},
   members:[{id:'alice'},{id:'bob'}],eclatMusic:false};
  let stops=0,starts=0,paints=0,notifications=0;
  const music=eclatMusicFixture(state,{
