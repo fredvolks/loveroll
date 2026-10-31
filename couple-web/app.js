@@ -26,7 +26,7 @@ import {previewMode,previewCanEdit,previewEclatStatus} from './account-preview-m
 import {eclatStage} from './eclat-catalog.mjs?v=20261019-eclat174';
 import {createEclatAudio} from './eclat-audio.mjs?v=20261028-privacy250';
 import {futureCoupleStyleMix,playStyleLabel} from './play-style.mjs?v=20261018-styles149';
-import {cycleIntensityQuestionnaireHtml} from './cycle-questionnaire.mjs?v=20261018-cycle149';
+import {cycleIntensityQuestionnaireHtml,ownsCycleIntensityAnswer} from './cycle-questionnaire.mjs?v=20261031-cycle261';
 import {DICE_WEIGHT_CONFIG,configuredDiceWeights,parseDiceWeightInputs} from './dice-weighting.mjs?v=20261018-weights146';
 import {premiumEveningHtml,updateEveningCategoryUi} from './premium-evening.mjs?v=20261028-lr027-web254';
 import {eveningHistoryMarkup,eveningLocalDay} from './evening-calendar.mjs?v=20261029-web259';
@@ -106,7 +106,7 @@ const worldText=key=>worldT(worldLocale(),key);
 const state={user:null,profile:null,members:[],coupleId:null,couple:null,
  tab:launchParams.has('settings')?'settings':(['home','session','special','advent'].includes(launchParams.get('open'))?launchParams.get('open'):'home'),weekly:null,monthly:{},session:null,personal:[],challenges:[],gifts:[],rollStatus:null,customCards:[],customCategory:'SENSUEL',customSlot:1,customSearch:'',customFilter:'all',monthlyActivities:[],monthlySlot:1,libraryScreen:'list',libraryImportKind:null,specialEditorKey:null,specialEditorStage:'D6_activite',specialEditorFace:1,adventEditorDay:1,pushDevice:null,
  events:[],journal:[],advent:[],advent2026Config:null,advent2026Days:[],selectedDay:1,adventYear:null,adventSelected:null,adventHistory:false,adventOpening:null,adventRevealing:false,adventServerDate:null,unlockKey:null,channel:null,
- occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningRefusalId:null,redrawReady:false,redrawBusy:false,redrawBusyContext:null,eveningStartContext:null,timerStartContext:null,legacyAnswerContext:null,timerCompletionContext:null,timerCompletionRetryOwner:null,loveExcludedCards:[],eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],monthlyPassQuota:null,calendarPassMonth:null,cycleStatus:null,cycleDeferred:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,eveningInvite:null,eveningInviteBusy:false,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoBookingEdit:false,referral:null,eclat:null,eclatGalleryScroll:0,eclatHistory:[],eclatHistoryCouple:null,eclatHistoryUserId:null,eclatBrowse:false,eclatHistoryError:false,eclatSelection:1,eclatMinutes:30,eclatIntent:'all',eclatDetails:false,eclatMusic:false,eclatFinished:null,testModeEligible:false,testMode:'real'};
+ occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningRefusalId:null,redrawReady:false,redrawBusy:false,redrawBusyContext:null,eveningStartContext:null,timerStartContext:null,legacyAnswerContext:null,timerCompletionContext:null,timerCompletionRetryOwner:null,loveExcludedCards:[],eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],monthlyPassQuota:null,calendarPassMonth:null,cycleStatus:null,cycleDeferred:null,cycleAnswerRequest:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,eveningInvite:null,eveningInviteBusy:false,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoBookingEdit:false,referral:null,eclat:null,eclatGalleryScroll:0,eclatHistory:[],eclatHistoryCouple:null,eclatHistoryUserId:null,eclatBrowse:false,eclatHistoryError:false,eclatSelection:1,eclatMinutes:30,eclatIntent:'all',eclatDetails:false,eclatMusic:false,eclatFinished:null,testModeEligible:false,testMode:'real'};
 const names={SENSUEL:'Sensuel',COQUIN:'Coquin',SEXUEL:'Sexuel'};
 function isSharedCoupleReady(coupleId,members){
  return !!coupleId&&Array.isArray(members)&&members.length===2;
@@ -802,7 +802,7 @@ function adoptAuthenticatedIdentity(nextUser){
   state.adventOpening=null;state.adventRevealing=false;
   state.specialEventsConfig=null;state.specialEventKeys=[];state.unlockKey=null;
   state.weeklyRollHistory=[];state.calendarPassQuota=[];state.monthlyPassQuota=null;
-  state.calendarPassMonth=null;state.cycleStatus=null;state.cycleDeferred=null;
+  state.calendarPassMonth=null;state.cycleStatus=null;state.cycleDeferred=null;state.cycleAnswerRequest=null;
   state.eveningHistoryStats=[];state.eveningCalendarChallenges=[];
   state.eveningReviews=[];state.reviewModalSessionId=null;
   state.reviewDismissedSessionId=null;state.reviewDraft={};state.reviewSaving=false;
@@ -1234,7 +1234,7 @@ async function reload(){
  if(!state.coupleId){
   if(state.channel){const channel=state.channel;await client.removeChannel(channel);if(!current())return;if(state.channel===channel)state.channel=null;}
   state.couple=null;acceptEclatMembership([]);state.weekly=null;state.monthly={};state.customCards=[];state.monthlyActivities=[];state.rollStatus=null;state.gifts=[];
-  state.session=null;state.sessions=[];state.events=[];state.journal=[];state.eveningHistoryStats=[];state.eveningCalendarChallenges=[];state.weeklyRollHistory=[];state.calendarPassQuota=[];state.monthlyPassQuota=null;state.calendarPassMonth=null;state.cycleStatus=null;state.cycleDeferred=null;state.eveningReviews=[];state.reviewModalSessionId=null;
+  state.session=null;state.sessions=[];state.events=[];state.journal=[];state.eveningHistoryStats=[];state.eveningCalendarChallenges=[];state.weeklyRollHistory=[];state.calendarPassQuota=[];state.monthlyPassQuota=null;state.calendarPassMonth=null;state.cycleStatus=null;state.cycleDeferred=null;state.cycleAnswerRequest=null;state.eveningReviews=[];state.reviewModalSessionId=null;
   state.advent=[];state.adventYear=null;state.adventSelected=null;state.adventServerDate=null;state.advent2026Config=null;state.advent2026Days=[];state.specialEventsConfig=null;state.specialEventKeys=[];state.unlockKey=null;
   state.invitations=[];state.inviteDraft=null;state.eveningInvite=null;state.challengesHistory=[];state.eveningHistoryStats=[];state.eveningCalendarChallenges=[];state.eveningReviews=[];state.reviewModalSessionId=null;state.reviewDraft={};
   state.tab=['settings','personal-journal'].includes(state.tab)?state.tab:'home';
@@ -4348,17 +4348,50 @@ async function handle(action,element){
   notify('Un nouveau cycle de 200 défis est prêt. Vos souvenirs sont conservés.');return;
  }
  if(verb==='cycle-answer'){
-  if(!state.cycleStatus?.pending||!state.coupleId)
+  if(!state.cycleStatus?.pending||state.cycleStatus.answered_self||
+     !state.coupleId||!state.user?.id)
    throw Error('Le questionnaire des 200 défis n’est pas disponible.');
   const choice=parts[0];
   if(!['down','same','up'].includes(choice))throw Error('Choix d’intensité invalide.');
-  const result=await rpc('answer_love_cycle_intensity',{p_couple:state.coupleId,p_choice:choice});
-  state.cycleDeferred=null;
-  await reload();
-  if(result?.completed)notify('♡ Votre nouveau cycle de 200 défis commence.');
-  return;
+  // Double taps must not submit two personal decisions. An old request
+  // must not prevent a replacement account from answering its own cycle.
+  if(state.cycleAnswerRequest&&
+     ownsCycleIntensityAnswer(state,state.cycleAnswerRequest,authFeedbackGeneration)&&
+     state.cycleStatus.cycle===state.cycleAnswerRequest.cycle)return;
+  const owner={userId:state.user.id,coupleId:state.coupleId,
+   cycle:state.cycleStatus.cycle,generation:authFeedbackGeneration};
+  state.cycleAnswerRequest=owner;
+  const ownsAnswer=()=>state.cycleAnswerRequest===owner&&
+   ownsCycleIntensityAnswer(state,owner,authFeedbackGeneration);
+  const controls=[...root.querySelectorAll('.lr-cycle-overlay .lr-cycle-choice')];
+  const overlay=root.querySelector('.lr-cycle-overlay');
+  for(const control of controls)control.disabled=true;
+  overlay?.setAttribute('aria-busy','true');
+  let committed=false;
+  try{
+   const result=await rpc('answer_love_cycle_intensity',
+    {p_couple:owner.coupleId,p_choice:choice});
+   if(!ownsAnswer()||state.cycleStatus?.cycle!==owner.cycle)return;
+   committed=true;
+   state.cycleDeferred=null;
+   await reload();
+   if(!ownsAnswer())return;
+   if(result?.completed)notify('♡ Votre nouveau cycle de 200 défis commence.');
+   return;
+  }finally{
+   if(state.cycleAnswerRequest===owner){
+    state.cycleAnswerRequest=null;
+    if(!committed&&ownsCycleIntensityAnswer(state,owner,authFeedbackGeneration)){
+     for(const control of controls)if(control.isConnected)control.disabled=false;
+     if(overlay?.isConnected)overlay.removeAttribute('aria-busy');
+    }
+   }
+  }
  }
  if(verb==='cycle-later'){
+  if(state.cycleAnswerRequest&&
+     ownsCycleIntensityAnswer(state,state.cycleAnswerRequest,authFeedbackGeneration))
+   return;
   state.cycleDeferred=state.cycleStatus?.cycle||null;render();return;
  }
  if(verb==='cycle-reopen'){
