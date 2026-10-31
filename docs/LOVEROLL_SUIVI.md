@@ -1,6 +1,16 @@
 # LoveRoll — SUIVI OFFICIEL DU PROMPT MAÎTRE
 
 
+### LR-028 — Retour Android : fenêtre cadeau et D100 sans liste privée (31 octobre 2026)
+
+- **Application** : [PR #176](https://github.com/fredvolks/loveroll/pull/176), branche `feat/lr026-server-variety-after-category-20261029`, toujours **brouillon non fusionné**. Poursuite du correctif LR-028 avec la source du dépôt, sans modifications de migrations SQL ni publication.
+- **Correctif produit** `4601ead` dans `couple-web/app.js` : l'action système Retour sur Android traite désormais la fenêtre personnalisée `.lr-dialog-overlay` (Escape) avant le verrou de don. Un cadeau peut donc être annulé par Retour même si le verrou protège les compteurs du tour. Les dialogues HTML natifs restent traités avant l'écran sous-jacent. Un D6/D100 officiel avec `state.diceStatus`, une repige RLS ou un don en cours empêchent ensuite de quitter ou remonter les écrans, **y compris lorsqu'aucune liste privée n'est ouverte** ; le retour ordinaire des Réglages reste utilisable lorsque le jeu est au repos.
+- **Tests et preuve** `6c8e35b` dans `couple-web/evening-d100-template.test.mjs` : annulation du dialogue personnalisé (Escape), fermeture d'un dialogue natif, protection du D100 en animation sans liste, protection d'une repige/d'un don sans liste et retour normal des Réglages. Le test précédent `LR-028: a pending gift keeps the private queue and Android Back stable` est conservé. **Quatre tests ciblés de navigation/repige et trois analyses de syntaxe JavaScript réalisés directement en V8 sur la version GitHub : PASS** ; ce n'est pas une recette appareil physique.
+- **CI** : `db3e545` corrige `couple-web/evening-resume.test.mjs` en vérifiant le jeton de rafraîchissement et la propriété du compte après `await refreshing`, au lieu d'exiger la forme devenue obsolète `await refreshShared()`. Test ciblé de Reprendre la soirée : PASS. GitHub Actions du SHA de code encore **en cours** lors de la vérification ; ne pas revendiquer de résultat complet. Requiert toujours tests réels A/B Auth/RLS et Safari/Android physique avant fusion.
+- **Atelier MEDIUM** : appels directs à la fiche LoveRoll, à la liste d'agents, à Architecture et QA, quatre échecs du connecteur interne. **Non synchronisé avec Atelier** ; seule la méthode de secours architecture 1.0.0 a été consultée, pas un expert autonome. Aucune fusion, aucun déploiement, aucune migration de production.
+
+
+
 ### LR-028 — Retour Android et navigation privée protégés pendant un don (31 octobre 2026)
 
 - [PR #176](https://github.com/fredvolks/loveroll/pull/176), branche `feat/lr026-server-variety-after-category-20261029`, **brouillon**, non fusionnée. Le parcours Soirée conserve son vrai serveur/RLS et ses dés officiels.
