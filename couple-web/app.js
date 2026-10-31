@@ -666,7 +666,7 @@ async function autoAcceptPendingInvite(){
  if(!verifiedLoveEmail(state.user)){
   state.inviteError='Confirmez votre adresse courriel pour terminer l’invitation.';return;
  }
- const ownerId=state.user.id;
+ const ownerId=state.user.id,ownerGeneration=authFeedbackGeneration;
  const key=ownerId+':'+invite.kind+':'+invite.value;
  if(inviteAcceptanceBusy||state.inviteAttemptKey===key)return;
  const request={};
@@ -675,7 +675,8 @@ async function autoAcceptPendingInvite(){
  // A former account or replaced invitation cannot complete this UI action.
  const current=()=>{
   const pending=pendingInviteReference(sessionStorage);
-  return state.user?.id===ownerId&&inviteAcceptanceRequest===request&&
+  return state.user?.id===ownerId&&authFeedbackGeneration===ownerGeneration&&
+   inviteAcceptanceRequest===request&&
    state.inviteAttemptKey===key&&pending?.kind===invite.kind&&pending?.value===invite.value;
  };
  try{
