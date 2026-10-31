@@ -81,7 +81,10 @@ export function initFutureCardArchiveStudio(doc=document,{
   }catch{say('Impossible de télécharger le fichier; les archives sont conservées.');}
   finally{setTimeout(()=>URL.revokeObjectURL(url),1500);}
  });
- file.addEventListener('change',()=>{request++;say('Historique sélectionné. Appuyer sur Importer.');});
+ file.addEventListener('change',()=>{
+  request++;importBtn.disabled=false;
+  say('Historique sélectionné. Appuyer sur Importer.');
+ });
  importBtn.addEventListener('click',async()=>{
   const id=++request,upload=file.files?.[0];
   if(!upload){say('Sélectionner un fichier d’historique JSON.');return;}

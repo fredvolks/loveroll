@@ -14,14 +14,16 @@ class Element{
 const card=(id,title)=>({id,title,
  description:'Une proposition originale et complète pour le couple.',
  levels:['soft'],target:'both',minutes:3});
-function setup({cards=[card('soft-1','Défi original')],restore=()=>true,clock}={}){
+function setup({cards=[card('soft-1','Défi original')],restore=()=>true,
+ hasUnsavedForm=()=>false,clock}={}){
  const ids=['label','save','select','restore','export','file','import','feedback','count'];
  const els=Object.fromEntries(ids.map(id=>[id,new Element()]));
  const view={confirm:()=>true,addEventListener:()=>{}};
  const doc={getElementById:id=>els[id.replace('future-archive-','')],
   createElement:()=>new Element(),defaultView:view};
  const studio=initFutureCardArchiveStudio(doc,{getCards:()=>cards,
-  restoreCards:restore,clock:clock||(()=>'2026-10-31T18:00:00.000Z')});
+  restoreCards:restore,hasUnsavedForm,
+  clock:clock||(()=>'2026-10-31T18:00:00.000Z')});
  return {els,studio,view};
 }
 test('a named version is saved independently of subsequent draft edits',()=>{
@@ -63,11 +65,46 @@ test('import stale asynchronous read cannot replace a newer file',async()=>{
  const empty={kind:'loveroll-future-deck-history',version:1,revisions:[]};
  els.file.files=[{name:'new.json',size:10,text:async()=>JSON.stringify(empty)}];
  els.file.fire('change');
+ assert.equal(els.import.disabled,false);
  await els.import.fire('click');
  finish('{bad');await first;
  assert.deepEqual(studio.getArchive(),empty);
  assert.match(els.feedback.textContent,/importé/);
 });
+test('restoring an old version passes an independent card copy to the editor',()=>{
+ let recovered;
+ const {els,studio}=setup({restore:cards=>{recovered=cards;return true;}});
+ els.label.value='Avant la modification';els.save.fire('click');
+ els.select.value=studio.getArchive().revisions[0].id;
+ els.restore.fire('click');
+ assert.equal(recovered[0].title,'Défi original');
+ recovered[0].title='Autre valeur';
+ assert.equal(studio.getArchive().revisions[0].cards[0].title,'Défi original');
+ assert.match(els.feedback.textContent,/restaurée/);
+});
+test('local history import keeps the original snapshot and never overwrites when refused',async()=>{
+ const {els,studio,view}=setup();
+ els.label.value='En cours';els.save.fire('click');
+ const old=studio.getArchive();
+ view.confirm=()=>false;
+ const payload={kind:'loveroll-future-deck-history',version:1,revisions:[]};
+ els.file.files=[{name:'other.json',size:120,text:async()=>JSON.stringify(payload)}];
+ await els.import.fire('click');
+ assert.deepEqual(studio.getArchive(),old);
+ assert.match(els.feedback.textContent,/annulé/);
+ view.confirm=()=>true;
+ await els.import.fire('click');
+ assert.deepEqual(studio.getArchive(),payload);
+ assert.equal(studio.hasUnexported(),false);
+ assert.match(els.feedback.textContent,/importé/);
+});
+test('unfinished card form blocks snapshot until its changes are saved',()=>{
+ const {els,studio}=setup({hasUnsavedForm:()=>true});
+ els.label.value='Ne pas archiver';els.save.fire('click');
+ assert.equal(studio.getArchive().revisions.length,0);
+ assert.match(els.feedback.textContent,/Enregistre d’abord/);
+});
+
 test('Studio history UI supports touch sizes and does not call a backend',()=>{
  const html=readFileSync(new URL('./admin.html',import.meta.url),'utf8');
  const script=readFileSync(new URL('./future-card-archive-studio.mjs',import.meta.url),'utf8');
