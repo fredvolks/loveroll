@@ -14,3 +14,19 @@
 .future-catalog-result ul{padding-inline-start:22px;max-height:230px;overflow-y:auto}
 .future-catalog-summary{font-weight:700}
 @media(max-width:720px){.future-catalog-controls{grid-template-columns:minmax(0,1fr)}.future-catalog-controls>button{width:100%}.future-catalog-levels{grid-template-columns:minmax(0,1fr)}}
+
+/* Shared Studio typography, colors and focus; readable on phones and tablets. */
+.future-card-editor{display:grid;gap:14px;padding-top:20px;border-top:1px solid var(--line);min-width:0}
+.future-card-editor h4{font:italic clamp(22px,2.7vw,27px)/1.2 Georgia,serif;margin:0}
+.future-card-editor .small-note{margin:0}
+.future-card-toolbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:end}
+.future-card-toolbar select,.future-card-editor select{width:100%;min-width:0;min-height:44px;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px}
+.future-card-toolbar button,.future-card-actions button{min-height:44px;white-space:normal}
+.future-card-levels-editor{display:flex;min-width:0;align-items:center;gap:8px 14px;flex-wrap:wrap;border:1px solid var(--line);border-radius:12px;padding:10px}
+.future-card-levels-editor legend{color:var(--muted)}
+.future-card-levels-editor label{display:flex;align-items:center;gap:7px;min-height:44px}
+.future-card-editor textarea{resize:vertical}
+.future-card-actions{display:flex;gap:8px;flex-wrap:wrap}
+.future-card-actions button{flex:1 1 170px}
+.future-card-editor :is(input,textarea,select,button):focus-visible{outline:3px solid var(--rose);outline-offset:2px}
+@media(max-width:720px){.future-card-toolbar{grid-template-columns:minmax(0,1fr)}.future-card-toolbar button{width:100%}.future-card-actions button{flex-basis:100%}}

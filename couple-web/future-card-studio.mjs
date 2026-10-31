@@ -1,6 +1,7 @@
 // Studio admin: validate a local JSON preview of the future 300-card deck.
 // Does not contact Supabase, upload files, persist content or modify the live D100.
 import {auditFuturePlayableCatalog,FUTURE_LEVELS} from './future-card-catalog.mjs';
+import {initFutureCardEditor} from './future-card-editor.mjs';
 const MAX_BYTES=1024*1024, MAX_ITEMS=1000, MAX_ERRORS=12;
 const LEVEL_LABELS=Object.freeze({soft:'Soft',medium:'Medium',intense:'Intense'});
 
@@ -65,6 +66,7 @@ export function initFutureCardStudio(doc=document){
    }
   }
  };
+ const editor=initFutureCardEditor(doc,{onDraftChange:next=>render(inspectFutureCardFile(next))});
  input.addEventListener('change',()=>{
   request++;output.replaceChildren();button.disabled=false;
   say('Fichier changé : appuyer sur « Analyser les cartes ».');
@@ -85,6 +87,9 @@ export function initFutureCardStudio(doc=document){
    const report=inspectFutureCardFile(parsed);
    if(id!==request)return;
    render(report);
+   if(editor&&!editor.load(parsed))
+    say('Fichier analysé; le brouillon précédent a été conservé.');
+   else
    say(report.valid?'Catalogue vérifié localement. Aucun envoi au serveur.' :
     'Corriger le fichier puis relancer une validation.');
   }catch{

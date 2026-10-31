@@ -192,6 +192,45 @@
   </div>
   <p id="future-catalog-feedback" class="small-note" role="status" aria-live="polite">Aucun fichier analysé. Vos cartes restent sur cet appareil.</p>
   <div id="future-catalog-result" class="future-catalog-result" aria-label="Résultats de validation"></div>
+  <div class="future-card-editor" aria-labelledby="future-card-editor-title">
+ <h4 id="future-card-editor-title">Créer ou modifier une carte</h4>
+ <p class="small-note">Tout reste sur ton appareil. Pour conserver tes modifications, exporte le brouillon JSON.</p>
+ <div class="future-card-toolbar">
+  <label for="future-card-select">Carte existante
+   <select id="future-card-select"><option value="">Nouvelle carte</option></select>
+  </label>
+  <button class="secondary" id="future-card-new" type="button">+ Nouvelle carte</button>
+ </div>
+ <div class="fields future-card-fields">
+  <label for="future-card-id">Identifiant unique
+   <input id="future-card-id" maxlength="128" placeholder="soft-001" autocomplete="off">
+  </label>
+  <label for="future-card-minutes">Durée
+   <select id="future-card-minutes"><option value="2">2 minutes</option><option value="3">3 minutes</option><option value="4">4 minutes</option><option value="5">5 minutes</option><option value="6">6 minutes</option></select>
+  </label>
+  <label for="future-card-target">Destinataire
+   <select id="future-card-target"><option value="both">Les deux</option><option value="woman">Femme</option><option value="man">Homme</option></select>
+  </label>
+  <fieldset class="future-card-levels-editor">
+   <legend>Niveaux</legend>
+   <label><input type="checkbox" id="future-card-soft"> Soft</label>
+   <label><input type="checkbox" id="future-card-medium"> Medium</label>
+   <label><input type="checkbox" id="future-card-intense"> Intense</label>
+  </fieldset>
+ </div>
+ <label for="future-card-title">Titre
+  <input id="future-card-title" maxlength="120" autocomplete="off">
+ </label>
+ <label for="future-card-description">Consigne
+  <textarea id="future-card-description" rows="4" maxlength="1200"></textarea>
+ </label>
+ <div class="future-card-actions">
+  <button class="primary" id="future-card-save" type="button">Enregistrer la carte</button>
+  <button class="secondary" id="future-card-remove" type="button" disabled>Supprimer la carte</button>
+  <button class="secondary" id="future-card-export" type="button" disabled>Exporter le brouillon JSON</button>
+ </div>
+ <p class="small-note" id="future-card-editor-feedback" role="status" aria-live="polite">Aucune carte publiée ni sauvegardée sur le serveur.</p>
+</div>
   <p class="small-note">Préparation seulement : aucune carte n’est publiée, aucun D100 actif n’est modifié et aucun paiement n’est lancé. Le renouvellement prévu (100 cartes par niveau, 4 $ CA, une fois tous les deux mois) exigera un traitement serveur sécurisé.</p>
 </section>
 </section>
