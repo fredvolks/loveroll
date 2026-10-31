@@ -1534,8 +1534,12 @@ test('LR-016 quota UX states used/limit, explains next month, never disables unl
  assert.match(source,/state\.monthlyPassQuota\?\.limit/);
  assert.match(source,/Tu pourras passer à nouveau le 1er du mois prochain, ou choisir Refuser/);
  assert.match(source,/Refuser reste permis, sans limite/);
- assert.match(source,/isActiveEveningRedrawPending\(\)\|\|isEveningCardCompleting\(view\.id\)\|\|state\.monthlyPassQuota\?\.can_pass===false\?'disabled'/);
- assert.match(source,/isActiveEveningRedrawPending\(\)\|\|isEveningCardCompleting\(view\.id\)\?'disabled'/);
+ // LR-027: the controls stay visible when redraw is unavailable,
+ // but their disabled state still checks the server capability first.
+ assert.match(source,/!state\.redrawReady\|\|isActiveEveningRedrawPending\(\)\|\|isEveningCardCompleting\(view\.id\)\|\|state\.monthlyPassQuota\?\.can_pass===false/);
+ assert.match(source,/!state\.redrawReady\|\|isActiveEveningRedrawPending\(\)\|\|isEveningCardCompleting\(view\.id\)/);
+ assert.match(source,/disabled aria-disabled="true"/);
+ assert.match(source,/repige sera confirmée par le serveur/);
 });
 
 test('LR-015 keeps old queue CSS disabled and loads targeted mobile decision styling',()=>{
