@@ -424,3 +424,53 @@ test('LR-026: stale incomplete background response cannot purge new login cache'
  assert.deepEqual(h.state.eclatHistory,[{id:'new-private'}]);
  assert.equal(h.audioStops(),0);
 });
+
+
+test('LR-026: reordered server status fields do not trigger redundant history refresh',async()=>{
+ const h=harness();
+ h.state.eclat={id:'original',access:true,active:true};
+ const poll=h.tick();
+ h.requests[0].resolve({active:true,access:true,id:'original'});
+ await poll;
+ assert.deepEqual(h.history,[],'same status must not trigger a gallery fetch');
+ assert.deepEqual(h.renders,[],'same status must not repaint the view');
+ assert.equal(h.state.eclat.id,'original');
+});
+
+test('LR-026: nested server status field ordering is also ignored',async()=>{
+ const h=harness();
+ h.state.eclat={id:'original',access:true,active:true,
+  progress:{chapter_index:1,chapter_total:6},choices:[{id:1,selected:false}]};
+ const poll=h.tick();
+ h.requests[0].resolve({choices:[{selected:false,id:1}],
+  progress:{chapter_total:6,chapter_index:1},active:true,access:true,id:'original'});
+ await poll;
+ assert.deepEqual(h.history,[]);
+ assert.deepEqual(h.renders,[]);
+});
+
+test('LR-026: actual status change still reloads authorized history once',async()=>{
+ const h=harness();
+ h.state.eclat={id:'original',access:true,active:true};
+ const poll=h.tick();
+ h.requests[0].resolve({active:true,access:true,id:'changed'});
+ await poll;
+ assert.equal(h.state.eclat.id,'changed');
+ assert.deepEqual(h.history,['alice']);
+ assert.deepEqual(h.renders,['changed']);
+});
+
+test('LR-026: reordered status with revoked entitlement still clears private state',async()=>{
+ const h=harness();
+ h.state.eclat={id:'original',access:true,active:true};
+ h.state.eclatHistory=[{id:'previous-private'}];
+ h.state.eclatMusic=true;
+ const poll=h.tick();
+ h.requests[0].resolve({active:true,id:'original',access:false});
+ await poll;
+ assert.equal(h.state.eclat.access,false);
+ assert.deepEqual(Array.from(h.state.eclatHistory),[]);
+ assert.equal(h.state.eclatMusic,false);
+ assert.equal(h.audioStops(),1);
+ assert.deepEqual(h.history,[]);
+});
