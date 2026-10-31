@@ -57,8 +57,10 @@ test('Existing paired account never re-accepts another invite before loading own
  const result=await membershipRoute(original);
  assert.deepEqual(result.calls,['couple_members:owner']);
  assert.equal(result.result[0].couple_id,'duo');
- assert.equal(app.indexOf('const knownMembership=await query(')<
-  app.indexOf('if(!knownMembership.length)await autoAcceptPendingInvite()'),true);
+ const known=app.indexOf('const knownMembership=await query(');
+ assert.ok(known>=0,'existing membership is read before invite acceptance');
+ const recheck=app.indexOf('if(!knownMembership.length){await autoAcceptPendingInvite();if(!current())return;}',known);
+ assert.ok(recheck>known,'invite acceptance is guarded and only attempted after a negative membership lookup');
 });
 
 test('Safari old invite pointing to another person is discarded for paired owner',()=>{
