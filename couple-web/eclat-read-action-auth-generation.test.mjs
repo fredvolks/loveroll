@@ -617,8 +617,8 @@ const noteDenialEnd=app.indexOf('// Supabase may serialize the same status field
 assert.ok(noteReadStart>=0&&noteReadEnd>noteReadStart&&
  noteDenialStart>noteReadEnd&&noteDenialEnd>noteDenialStart,
  'real Éclat private note and denial handlers are required');
-const noteReadSource='let latestEclatHistoryRead=null,latestEclatAudioOwner=null;\\n'+
- app.slice(noteReadStart,noteReadEnd)+'\\n'+app.slice(noteDenialStart,noteDenialEnd);
+const noteReadSource='let latestEclatHistoryRead=null,latestEclatAudioOwner=null;\n'+
+ app.slice(noteReadStart,noteReadEnd)+'\n'+app.slice(noteDenialStart,noteDenialEnd);
 
 function privateNoteDenialHarness(){
  const pendingRead=deferred(),pendingSave=deferred();
