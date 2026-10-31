@@ -1845,8 +1845,16 @@ test('LR-026: every Éclat mutation checks ownership before applying its respons
   assert.match(branch,/if\(!result\.applied\|\|!applyEclatActionResult\(result\.value,owner\)\)return;/,
    action+' may apply only the owner-validated server receipt');
  }
- assert.match(app,/if\(!yes\|\|!ownsEclatAction\(owner\)\|\|!canPlayEclat\(\)\)return;/,
-  'confirming Quitter under an old account must never send a mutation');
+ const exitStart=app.indexOf("if(kind==='end'){",app.indexOf("if(verb==='eclat'){"));
+ const exitEnd=app.indexOf("throw Error('Commande Éclat inconnue')",exitStart);
+ assert.ok(exitStart>0&&exitEnd>exitStart,'the real Quitter guard must exist');
+ const exitBranch=app.slice(exitStart,exitEnd);
+ assert.match(exitBranch,/!yes\|\|!ownsEclatAction\(owner\)\|\|!canPlayEclat\(\)/,
+  'an old account or revoked entitlement must never send a Quitter mutation');
+ assert.match(exitBranch,/session_id\?\?null\)\!\=\=confirmation\.sessionId/,
+  'a confirmation from a replaced coffret cannot end the new session');
+ assert.match(exitBranch,/chapter_index\?\?null\)\!\=\=confirmation\.chapterIndex/,
+  'an old chapter confirmation cannot end the next chapter');
 });
 
 function eclatMusicFixture(state,audio,notify=()=>{},render=()=>{},masked=false){
