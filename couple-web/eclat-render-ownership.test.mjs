@@ -205,6 +205,26 @@ test('LR-026: expired entitlement during private-note save cannot send choose RP
  assert.deepEqual(h.renders,[]);
 });
 
+test('LR-026: private note save keeps the textarea mounted and avoids focus loss',async()=>{
+ const saved=actionFixture({access:true,active:true},{withDraft:true});
+ await saved.invoke('note-save');
+ assert.equal(saved.notes(),1,'the user note is persisted through the existing save helper');
+ assert.deepEqual(saved.calls,[],'saving a note must not advance the shared Éclat chapter');
+ assert.deepEqual(saved.renders,[],
+  'the save helper updates status in place; rendering would replace the focused textarea');
+
+ const play=actionFixture({access:true,active:true},{withDraft:true});
+ await play.invoke('note-play');
+ assert.equal(play.notes(),1);
+ assert.equal(play.drafts.get('note-key').playing,true);
+ assert.equal(play.renders.length,1,'starting the chapter must still change the visible phase');
+
+ const done=actionFixture({access:true,active:true},{withDraft:true});
+ await done.invoke('note-done');
+ assert.equal(done.notes(),1);
+ assert.equal(done.renders.length,1,'finishing the chapter must still reveal the choices');
+});
+
 test('LR-026: authorized choice after note-save still reaches the official RPC',async()=>{
  const h=actionFixture({access:true,active:true},{withDraft:true});
  await h.invoke('choose:1');
