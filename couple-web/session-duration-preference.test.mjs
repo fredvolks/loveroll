@@ -79,3 +79,51 @@ test('Next-evening planner stays visible after closure without unlocking another
  });
  assert.match(locked,/data-action="new-session"[^>]*disabled/);
 });
+
+test('A delayed new-session RPC cannot navigate another account or couple',async()=>{
+ const {runInNewContext}=await import('node:vm');
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const begin=source.indexOf("if(verb==='new-session'){");
+ const end=source.indexOf("if(verb==='my-d6'){",begin);
+ assert.ok(begin>0&&end>begin,'The production new-session route exists');
+ const route=source.slice(begin,end);
+ function harness(){
+  let resolve;
+  const pending=new Promise(done=>{resolve=done;});
+  const state={user:{id:'alice'},coupleId:'couple-a',weekly:{id:'week'},
+   sessions:[],tab:'home'};
+  const calls={writes:[],refresh:0};
+  const scope={state,authFeedbackGeneration:2,
+   eveningDailyAccess:()=>({canStart:true}),
+   rpc:(method,args)=>{calls.writes.push({method,args});return pending;},
+   refreshAndShow:async()=>{calls.refresh++;}
+  };
+  const execute=runInNewContext('(async verb=>{'+route+'})',scope);
+  return {state,scope,calls,resolve,execute:()=>execute('new-session')};
+ }
+ const normal=harness(),go=normal.execute();
+ assert.equal(normal.calls.writes.length,1);
+ assert.equal(normal.calls.writes[0].method,'ensure_couple_session');
+ assert.equal(normal.calls.writes[0].args.p_couple,'couple-a');
+ normal.resolve(null);await go;
+ assert.equal(normal.state.tab,'session');
+ assert.equal(normal.calls.refresh,1);
+ for(const change of [
+  h=>{h.state.user={id:'bob'};},
+  h=>{h.state.coupleId='couple-b';},
+  h=>{h.scope.authFeedbackGeneration++;},
+  h=>{h.state.user=null;}
+ ]){
+  const h=harness(),work=h.execute();
+  change(h);h.resolve(null);await work;
+  assert.equal(h.calls.writes.length,1);
+  assert.equal(h.state.tab,'home');
+  assert.equal(h.calls.refresh,0,'Stale session result must not refresh another login');
+ }
+ const missing=harness();
+ missing.state.coupleId=null;
+ await missing.execute();
+ assert.equal(missing.calls.writes.length,0);
+ assert.equal(missing.state.tab,'home');
+});
+
