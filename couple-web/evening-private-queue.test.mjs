@@ -2579,3 +2579,80 @@ test('LR-026: signup actions do not create a couple after an account_changed res
  assert.match(prepare,/if\(decision\?\.status==='account_changed'\)return;/);
  assert.match(create,/if\(decision\?\.status==='account_changed'\)return;/);
 });
+
+function ownedProfileSaveFixture(state,rpc){
+ const start=app.indexOf('let currentProfileSave=null;');
+ const end=app.indexOf('function authMessage(',start);
+ assert.ok(start>0&&end>start);
+ return runInNewContext(app.slice(start,end)+
+  ';({saveProfileForCurrentAccount,getCurrent:()=>currentProfileSave})',{state,rpc});
+}
+
+test('LR-026: profile save stops before gender write after account switch',async()=>{
+ let release;
+ const pending=new Promise(resolve=>{release=resolve;});
+ const state={user:{id:'alice'}},writes=[];
+ const f=ownedProfileSaveFixture(state,(method,args)=>{
+  writes.push({method,args});return pending;
+ });
+ const saving=f.saveProfileForCurrentAccount('Alice','03-02','her','soft');
+ assert.equal(writes.length,1);
+ state.user={id:'bob'};
+ release();
+ assert.equal(await saving,false);
+ assert.equal(writes.length,1,'Bob must not receive Alice gender or play-style RPCs');
+ assert.equal(f.getCurrent(),null);
+});
+
+test('LR-026: old profile network failure cannot surface on replacement login',async()=>{
+ let reject;
+ const pending=new Promise((_,fail)=>{reject=fail;});
+ const state={user:{id:'alice'}},writes=[];
+ const f=ownedProfileSaveFixture(state,method=>{writes.push(method);return pending;});
+ const saving=f.saveProfileForCurrentAccount('Alice','03-02','her','soft');
+ state.user={id:'bob'};
+ reject(Error('Alice connection lost'));
+ assert.equal(await saving,false);
+ assert.equal(writes.length,1);
+});
+
+test('LR-026: a second profile save cannot overlap the same account writes',async()=>{
+ let release;
+ const pending=new Promise(resolve=>{release=resolve;});
+ const state={user:{id:'alice'}},writes=[];
+ const f=ownedProfileSaveFixture(state,method=>{
+  writes.push(method);return writes.length===1?pending:Promise.resolve();
+ });
+ const first=f.saveProfileForCurrentAccount('Alice','03-02','her','soft');
+ await assert.rejects(f.saveProfileForCurrentAccount('A','03-02','her','soft'),/déjà en cours/);
+ release();
+ assert.equal(await first,true);
+ assert.equal(writes.join(','),'complete_love_registration,save_my_gender,save_my_play_style');
+ assert.equal(f.getCurrent(),null);
+});
+
+test('LR-026: a failed current-account profile write preserves the error and stops next RPC',async()=>{
+ const state={user:{id:'alice'}},writes=[];
+ const f=ownedProfileSaveFixture(state,method=>{
+  writes.push(method);
+  if(method==='save_my_gender')throw Error('Supabase gender write failed');
+ });
+ await assert.rejects(f.saveProfileForCurrentAccount('Alice','03-02','her','soft'),
+  /Supabase gender write failed/);
+ assert.equal(writes.join(','),'complete_love_registration,save_my_gender');
+ assert.equal(f.getCurrent(),null);
+});
+
+test('LR-026: registration and profile actions use the same identity-owned save',()=>{
+ const register=app.slice(app.indexOf("if(verb==='complete-registration'){"),
+  app.indexOf("if(verb==='profile'){"));
+ const profile=app.slice(app.indexOf("if(verb==='profile'){"),
+  app.indexOf("if(verb==='prepare-cards'){"));
+ for(const body of [register,profile]){
+  assert.match(body,/const profileOwnerId=state\.user\?\.id/);
+  assert.match(body,/await saveProfileForCurrentAccount\(name,birthday,gender,playStyle\)/);
+  assert.match(body,/state\.user\?\.id!==profileOwnerId\)return/);
+  assert.doesNotMatch(body,/await rpc\('save_my_gender'/);
+ }
+ assert.match(profile,/if\(state\.user\?\.id===profileOwnerId\)[\s\S]*?notify\('Votre profil/);
+});
