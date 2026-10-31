@@ -442,8 +442,9 @@ test('LR-027: live Soirée chooses only this account’s unfinished card for the
 
 test('LR-027: private-card Passer and Refuser remain visible with truthful server availability',()=>{
  const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
- const from=source.indexOf("(['proposed','accepted'].includes(view.status)?");
- const until=source.indexOf('(view&&state.eveningRefusalId===view.id?',from);
+ const controls=source.indexOf('lr-redraw-actions" aria-label="Autres choix pour ce défi"');
+ const from=source.lastIndexOf("(['proposed','accepted'].includes(view.status)?",controls);
+ const until=source.indexOf('(view&&state.eveningRefusalId===view.id?',controls);
  assert.ok(from>0&&until>from,'The original private-card choice template must exist');
  const expr=source.slice(from,until).trim().replace(/\+\s*$/,'');
  const render=new Function('view','state','button','safe',
