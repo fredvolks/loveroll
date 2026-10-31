@@ -1808,6 +1808,10 @@ function applyEclatStatus(value){
  if(value.active===false){
   latestEclatAudioOwner=null;
   eclatAudio.stop();state.eclatMusic=false;
+ }else if(value.active===true&&value.access===true){
+  // A partner can start a new coffret while this device still displays the
+  // previous completion. Never show that old ending on a live session.
+  state.eclatFinished=null;
  }
  return true;
 }
