@@ -1,4 +1,5 @@
 import {sessionLengthChooserHtml} from './session-duration-preference.mjs';
+import {eveningIntensityChooserHtml} from './evening-intensity-preference.mjs';
 import {eveningOddsHtml} from './evening-d6-template.mjs?v=20261022-home228';
 // LoveRoll connected couple — production UI, not a demo. All results are provided by Supabase.
 import {ritualHeadingHtml} from './brand.mjs?v=20261017-ritual130';
@@ -148,7 +149,7 @@ export function premiumEveningHtml({
  session,members=[],me,rolls=[],status={},turn={},category=null,
  giftCount=0,receivedGifts=0,pending=null,rolling=false,
  challengeOverlay='',showMore=false,confirmCancel=false,rollFace=null,rollingKind=null,
- lastEvening=null,lastD35Face=null,playable=null,ownChallengeCount=0,canStartEvening=true,sessionLength='libre',
+ lastEvening=null,lastD35Face=null,playable=null,ownChallengeCount=0,canStartEvening=true,sessionLength='libre',eveningIntensity='medium',
  weeklyReady=true,weeklyCount=0,weeklyLimit=1,dailyLocked=false,historyReady=true,invitationHtml='',
  showSensuel=true,showSexuel=true,categoryOdds=88,challengeHistory=[],eveningWeights,eveningWeightsEnabled=true
 }={}){
@@ -249,7 +250,9 @@ export function premiumEveningHtml({
        esc(weeklyCount)+' / '+(weeklyReady?esc(weeklyLimit):'—')+
        // Keep next-evening planning available after today's finished night,
        // without enabling a second official session or changing a D6/D100.
-       sessionLengthChooserHtml(sessionLength)+'</div>'+
+       sessionLengthChooserHtml(sessionLength)+'</div>'+ 
+    '<div class="evening-next-intensity">'+eveningIntensityChooserHtml(eveningIntensity)+
+     '<small>Pour préparer une prochaine soirée; les tirages actuels ne changent pas.</small></div>'+ 
     (lastEvening?
       '<h2>Notre soirée est terminée</h2>'+
       '<p class="evening-finale-description"><strong>'+esc(lastEvening.completed)+
