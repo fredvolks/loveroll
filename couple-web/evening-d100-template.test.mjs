@@ -420,6 +420,10 @@ test('LR-027: live Soirée chooses only this account’s unfinished card for the
  assert.match(code,/ownChallengeCount:mineCards\.length,nextChallenge/);
  const action=source.slice(source.indexOf("if(verb==='evening-start'){"),
   source.indexOf("if(verb==='surprise-activity'){"));
- assert.match(action,/ownEveningChallenges\(state\.challenges,state\.user\?\.id,state\.session\?\.id\)/,
-  'The actual one-tap start route revalidates that the card belongs to this user');
+ assert.match(action,/ownEveningChallenges\(state\.challenges,startContext\.userId,startContext\.sessionId\)/,
+  'The one-tap start route revalidates the original user and session');
+ assert.match(action,/rpc\('answer_challenge',\{p_id:picked\.id,p_status:'accepted'\}\)/,
+  'A proposed card must be accepted by the server, not only by local UI');
+ assert.match(action,/if\(!isCurrentStart\(\)\)return/,
+  'Old account responses cannot start a new login’s timer');
 });
