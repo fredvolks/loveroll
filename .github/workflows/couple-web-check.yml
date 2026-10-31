@@ -191,6 +191,8 @@ jobs:
         run: node --test couple-web/evening-resume.test.mjs
       - name: Safari timer alert choice without persistent storage
         run: node --test couple-web/timer-alert-preference.test.mjs
+      - name: Verify real weekly quota and daily lock access
+        run: node --test couple-web/evening-daily-policy.test.mjs
       - name: LR-014 — category confirmation and private setting
         run: node --test couple-web/evening-category-confirm.test.mjs
       - name: Validate iPad Soirée one-HD-photo contract
