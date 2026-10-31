@@ -2545,6 +2545,63 @@ test('LR-026: a same-account relogin cannot clear a newer invitation or change t
  assert.equal(state.inviteWelcome,true);
 });
 
+test('LR-026: same-user new login can retry acceptance before old RPC settles',async()=>{
+ let releaseOld,releaseNew;
+ const oldPending=new Promise(resolve=>{releaseOld=resolve;});
+ const newPending=new Promise(resolve=>{releaseNew=resolve;});
+ const state={user:{id:'alice'},inviteAccepted:true,
+  profile:{birthday_md:'06-22'},passwordRecovery:false,tab:'settings'};
+ const calls=[];
+ const f=invitationAcceptanceFixture(state,(name,args)=>{
+  calls.push({name,args});
+  return calls.length===1?oldPending:newPending;
+ });
+ const old=f.autoAcceptPendingInvite();
+ assert.equal(calls.length,1);
+ f.bumpAuthGeneration(); // same user ID, but fresh sign-in
+ const current=f.autoAcceptPendingInvite();
+ assert.equal(calls.length,2,'new auth generation must not wait for old RPC');
+ assert.equal(f.busy(),true);
+ releaseOld({status:'accepted'});
+ await old;
+ assert.equal(state.inviteWelcome,undefined,'old response must not switch new session');
+ assert.equal(f.clears(),0,'old response must not remove pending invite');
+ assert.equal(f.busy(),true,'old completion must not unlock current request');
+ await f.autoAcceptPendingInvite();
+ assert.equal(calls.length,2,'double taps in current session remain blocked');
+ releaseNew({status:'accepted'});
+ await current;
+ assert.equal(f.clears(),1);
+ assert.equal(f.busy(),false);
+ assert.equal(state.tab,'home');
+ assert.equal(state.inviteWelcome,true);
+});
+
+test('LR-026: stale same-user invitation rejection cannot interrupt current retry',async()=>{
+ let rejectOld,releaseNew;
+ const oldPending=new Promise((_,reject)=>{rejectOld=reject;});
+ const newPending=new Promise(resolve=>{releaseNew=resolve;});
+ const state={user:{id:'alice'},inviteAccepted:true,
+  profile:{birthday_md:'06-22'},passwordRecovery:false,tab:'settings'};
+ let calls=0;
+ const f=invitationAcceptanceFixture(state,()=>{
+  calls++;
+  return calls===1?oldPending:newPending;
+ });
+ const old=f.autoAcceptPendingInvite();
+ f.bumpAuthGeneration();
+ const current=f.autoAcceptPendingInvite();
+ assert.equal(calls,2);
+ rejectOld(Error('Expired prior-session invitation'));
+ await old;
+ assert.equal(state.inviteError,null,'stale failures must not show on the new login');
+ assert.equal(f.busy(),true);
+ releaseNew({status:'accepted'});
+ await current;
+ assert.equal(f.clears(),1);
+ assert.equal(state.inviteError,null);
+});
+
 test('LR-026: a changed invitation reference must not be cleared by the old acceptance',async()=>{
  let release;
  const pending=new Promise(resolve=>{release=resolve;});
