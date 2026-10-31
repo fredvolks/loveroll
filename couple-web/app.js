@@ -4468,7 +4468,12 @@ async function handle(action,element){
    state.authNotice='Connectez-vous pour que LoveRoll vérifie votre compte confirmé auprès de Supabase.';
    render();return;
   }
-  if(await refreshVerifiedIdentity()){
+  const ownerId=state.user.id;
+  const verified=await refreshVerifiedIdentity();
+  // getUser() may detect a new account or an expired session and repaint.
+  // Do not write Alice's verification notice onto Bob's current screen.
+  if(state.user?.id!==ownerId)return;
+  if(verified){
    state.emailVerificationPending=false;state.authNotice=null;
    await reload();return;
   }
