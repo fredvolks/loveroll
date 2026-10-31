@@ -5,6 +5,7 @@ import {
  readSessionLength,saveSessionLength,sessionLengthChooserHtml,sessionLengthSettingsHtml
 } from './session-duration-preference.mjs';
 import {premiumEveningHtml} from './premium-evening.mjs';
+import {createEveningClosureGate} from './evening-closure-gate.mjs';
 
 const memory=()=>{
  const values=new Map();
@@ -208,6 +209,7 @@ test('Delayed close and finish responses cannot repaint a replacement login',asy
    };
    const calls={writes:[],refresh:0};
    const scope={state,authFeedbackGeneration:5,
+    eveningClosureGate:createEveningClosureGate(),
     rpc:(name,args)=>{calls.writes.push({name,args});return pending;},
     eveningLocalDay:()=> '2026-10-16',month:()=> '2026-10',
     today:()=> '2026-10-16',
@@ -253,6 +255,7 @@ test('Cancel confirmation is safe during an official roll and after an Auth chan
    session:{id:'night-a'},confirmCancel:false,diceStatus:null};
   const calls={writes:[],refresh:0,renders:0};
   const scope={state,authFeedbackGeneration:4,
+   eveningClosureGate:createEveningClosureGate(),
    rpc:(name,args)=>{calls.writes.push({name,args});return pending;},
    render:()=>{calls.renders++;},
    refreshAndShow:async()=>{calls.refresh++;}
@@ -299,3 +302,73 @@ test('Cancel confirmation is safe during an official roll and after an Auth chan
  }
 });
 
+
+test('Terminal soirée actions are single-flight across finish, cancel and calendar close',async()=>{
+ const {runInNewContext}=await import('node:vm');
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const codeFor=(from,to)=>{
+  const start=source.indexOf(from),end=source.indexOf(to,start+from.length);
+  assert.ok(start>0&&end>start);
+  return source.slice(start,end);
+ };
+ const routes={
+  finish:codeFor("if(verb==='finish-session'){","if(verb==='cancel-session'){"),
+  cancel:codeFor("if(verb==='confirm-cancel'){","if(verb==='advent-open'){"),
+  close:codeFor("if(verb==='evening-close-confirm'){",
+   "if(verb==='evening-challenge'||verb==='evening-list'){")
+ };
+ function fixture(){
+  const state={user:{id:'alice'},coupleId:'duo-a',tab:'session',
+   session:{id:'night-a',started_at:'2026-10-16T19:00:00Z'},
+   diceStatus:null,confirmCancel:true};
+  const writes=[],pending=[];
+  const scope={state,authFeedbackGeneration:7,
+   eveningClosureGate:createEveningClosureGate(),
+   rpc:(method,args)=>{
+    writes.push({method,args});
+    let resolve,reject;
+    const promise=new Promise((a,b)=>{resolve=a;reject=b;});
+    pending.push({resolve,reject});
+    return promise;
+   },
+   refreshAndShow:async()=>{},
+   eveningLocalDay:()=> '2026-10-16',month:()=> '2026-10',today:()=> '2026-10-16'
+  };
+  const run=(verb,route)=>runInNewContext('(async verb=>{'+routes[route]+'})',scope)(verb);
+  return {state,scope,writes,pending,run};
+ }
+ const first=fixture();
+ const closing=first.run('finish-session','finish');
+ await first.run('confirm-cancel','cancel');
+ await first.run('evening-close-confirm','close');
+ await first.run('finish-session','finish');
+ assert.equal(first.writes.length,1,
+  'Only one terminal RPC may be active for the same member and evening');
+ assert.equal(first.writes[0].args.p_count,true);
+ first.pending[0].resolve(null);await closing;
+ const after=first.run('confirm-cancel','cancel');
+ assert.equal(first.writes.length,2,'The gate releases after the first request');
+ assert.equal(first.writes[1].args.p_count,false);
+ first.pending[1].resolve(null);await after;
+ const failed=fixture();
+ const error=failed.run('finish-session','finish');
+ failed.pending[0].reject(Error('temporary offline'));
+ await assert.rejects(error,/temporary offline/);
+ const retry=failed.run('finish-session','finish');
+ assert.equal(failed.writes.length,2,
+  'Failed finish requests must unlock the action so a user can retry');
+ failed.pending[1].resolve(null);await retry;
+ const switcher=fixture();
+ const old=switcher.run('evening-close-confirm','close');
+ switcher.state.user={id:'bob'};
+ switcher.state.coupleId='duo-b';
+ switcher.scope.authFeedbackGeneration=8;
+ const fresh=switcher.run('finish-session','finish');
+ assert.equal(switcher.writes.length,2,
+  'A different Auth generation must not be blocked by the old account');
+ switcher.pending[0].resolve(null);await old;
+ // Old receipt releases only its own ticket, not the new account's pending RPC.
+ await switcher.run('confirm-cancel','cancel');
+ assert.equal(switcher.writes.length,2);
+ switcher.pending[1].resolve(null);await fresh;
+});
