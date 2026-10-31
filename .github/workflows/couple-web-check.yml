@@ -189,6 +189,8 @@ jobs:
 
       - name: LR-018 — resume live Soirée without duplicate draws
         run: node --test couple-web/evening-resume.test.mjs
+      - name: Safari timer alert choice without persistent storage
+        run: node --test couple-web/timer-alert-preference.test.mjs
       - name: LR-014 — category confirmation and private setting
         run: node --test couple-web/evening-category-confirm.test.mjs
       - name: Validate iPad Soirée one-HD-photo contract
@@ -211,7 +213,8 @@ jobs:
   browser-tests:
     needs: changes
     if: needs.changes.outputs.code == 'true'
-    runs-on: ubuntu-latest
+    # Playwright 1.56.0 cannot install Chromium on Ubuntu 26.04 (ubuntu-latest).
+    runs-on: ubuntu-24.04
     timeout-minutes: 35
     strategy:
       fail-fast: false
