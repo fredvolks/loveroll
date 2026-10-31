@@ -19,6 +19,21 @@ test('No category is preselected; an eligible player can press roll to receive g
   assert.match(view,new RegExp('class="evening-primary-status" role="status">'+label));
  }
 });
+test('D100 locks every category during a live roll and restores choices after it settles',()=>{
+ const idle=premiumEveningHtml({...ready,category:'SENSUEL',rolling:false});
+ const pending=premiumEveningHtml({...ready,category:'SENSUEL',
+  rolling:true,rollingKind:'new-challenge'});
+ for(const type of ['SENSUEL','HASARD','SEXUEL']){
+  assert.match(idle,new RegExp('data-action="category:'+type+'"[^>]*'));
+  assert.match(pending,new RegExp('data-action="category:'+type+'"[^>]*disabled'),
+   'Even the selected category must be locked during the official D100 draw');
+ }
+ assert.doesNotMatch(idle,/data-action="category:SENSUEL"[^>]*disabled/);
+ assert.doesNotMatch(pending,/data-action="new-challenge"/,
+  'A pending draw must never offer a duplicate official roll');
+ assert.match(pending,/Brassage en cours/);
+ assert.match(idle,/data-action="new-challenge"/);
+});
 test('Information uses the actual configured preference and preserves calendar and closure',()=>{
  const info=eveningPlayInfoHtml(74);
  assert.match(info,/74 % pour la catégorie choisie et 26 % pour l’autre/);
