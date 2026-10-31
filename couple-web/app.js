@@ -1735,12 +1735,13 @@ async function refreshEclatHistory(){
  const owner={userId:state.user?.id,coupleId:state.coupleId,
   generation:authFeedbackGeneration};
  if(!ownsCoupleAsyncRead(state,owner)||
-    !isSharedCoupleReady(owner.coupleId,state.members))return;
+    !isSharedCoupleReady(owner.coupleId,state.members)||
+    state.eclat?.access===false)return;
  const request={};latestEclatHistoryRead=request;
  const current=()=>ownsCoupleAsyncRead(state,owner)&&
   authFeedbackGeneration===owner.generation&&
   isSharedCoupleReady(owner.coupleId,state.members)&&
-  latestEclatHistoryRead===request;
+  state.eclat?.access!==false&&latestEclatHistoryRead===request;
  if(state.eclatHistoryCouple!==owner.coupleId||
     state.eclatHistoryUserId!==owner.userId){
   state.eclatHistory=[];state.eclatHistoryCouple=owner.coupleId;
@@ -1776,12 +1777,13 @@ async function refreshEclatStatus(){
   // Keep the foreground path consistent with the background sync instead of
   // leaving a cached private coffret visible until the next poll.
   state.eclat=value??null;
-  if(value==null){
-   // The service no longer exposes this session. Erase stale private history
-   // without another read; the next authorized refresh can repopulate it.
+  if(value==null||value.access===false){
+   // Missing status or explicit access revocation invalidates private history.
+   // Keep denied status for public subscription details but never fetch or
+   // retain private metadata until access is restored.
    latestEclatHistoryRead=null;
    state.eclatHistory=[];state.eclatHistoryError=false;
-   return null;
+   return current()?value:null;
   }
   await refreshEclatHistory();
   return current()?value:null;
@@ -5755,9 +5757,9 @@ setInterval(async()=>{
   if(!current())return;
   if(JSON.stringify(value)!==prior){
    state.eclat=value;
-   if(value==null){
-    // The server no longer exposes the Éclat session: retire its old
-    // history and invalidate any earlier private history response.
+   if(value==null||value.access===false){
+    // Missing status or access revocation clears cached private history
+    // and invalidates earlier private history responses.
     latestEclatHistoryRead=null;
     state.eclatHistory=[];state.eclatHistoryError=false;
    }else await refreshEclatHistory();
