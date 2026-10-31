@@ -4,6 +4,9 @@ import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import {cycleIntensityQuestionnaireHtml} from './cycle-questionnaire.mjs';
 import {futureCoupleStyleMix,chooseFutureStyle} from './play-style.mjs';
+// The existing CI executes cycle-200.test.mjs explicitly. Include the
+// account-isolation and interrupted-save regressions with this stable suite.
+import './cycle-questionnaire.test.mjs';
 const read=path=>readFileSync(new URL('./'+path,import.meta.url),'utf8');
 const sql=read('migrations/20261018_challenge_cycles_and_recycled_passes.sql');
 const stylesSql=read('migrations/20261018_future_style_5050.sql');
