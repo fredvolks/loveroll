@@ -649,3 +649,63 @@ test('LR-027: private queue and native Back preserve a rolling D100 or pending r
  assert.equal(state.eveningRefusalId,null);
  assert.equal(renders,1);
 });
+
+test('LR-027: pending repick protects tab, calendar and next D100 from stale events',async()=>{
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const {runInNewContext}=await import('node:vm');
+ const branches=[
+  {verb:'evening-more',start:"if(verb==='evening-more'){",
+   end:"if(verb==='evening-calendar'){"},
+  {verb:'evening-calendar',start:"if(verb==='evening-calendar'){",
+   end:"if(verb==='evening-month-prev'||verb==='evening-month-next'){"},
+  {verb:'tab',start:"if(verb==='tab'){",
+   end:"if(['review-save','evening-close-confirm'"},
+  {verb:'new-challenge',start:"if(verb==='new-challenge'){",
+   end:"if(verb==='answer'){"}
+ ];
+ for(const {verb,start,end} of branches){
+  const from=source.indexOf(start),until=source.indexOf(end,from);
+  assert.ok(from>0&&until>from,'Use production route for '+verb);
+  const snippet=source.slice(from,until);
+  assert.match(snippet,/isActiveEveningRedrawPending\(\)/);
+  const state={tab:'session',diceStatus:null,session:{id:'night-one'},
+   eveningMore:false,confirmCancel:false,category:'SENSUEL'};
+  let renders=0,mutations=0;
+  const run=runInNewContext('(async (verb,parts)=>{'+snippet+'})',{
+   state,isActiveEveningRedrawPending:()=>true,
+   render:()=>{renders++;},rpc:()=>{mutations++;throw Error('Unexpected server RPC')},
+   animateRoll:()=>{mutations++;throw Error('Unexpected dice animation')},
+   eveningLocalDay:()=>{throw Error('Stale event changed date')}
+  });
+  await run(verb,verb==='tab'?['home']:[]);
+  assert.equal(renders,0,verb+' must keep the in-flight recipient view');
+  assert.equal(mutations,0,verb+' must not send a D100/RPC');
+  assert.equal(state.tab,'session');
+  assert.equal(state.eveningMore,false);
+  assert.equal(state.confirmCancel,false);
+ }
+ // Neither the calendar nor the overflow menu is permanently disabled.
+ const from=source.indexOf("if(verb==='evening-more'){");
+ const until=source.indexOf("if(verb==='evening-calendar'){",from);
+ const state={tab:'session',diceStatus:null,eveningMore:false};
+ let renders=0;
+ const openMenu=runInNewContext('(async verb=>{'+source.slice(from,until)+'})',{
+  state,isActiveEveningRedrawPending:()=>false,render:()=>{renders++;}
+ });
+ await openMenu('evening-more');
+ assert.equal(state.eveningMore,true);
+ assert.equal(renders,1);
+ // Android Back must also consume a pending redraw even without an open card.
+ const backStart=source.indexOf('function backFromLoveRoll(){');
+ const backEnd=source.indexOf('window.loveRollHandleBack=backFromLoveRoll;',backStart);
+ assert.ok(backStart>0&&backEnd>backStart);
+ const backState={tab:'session',diceStatus:null,showEveningChallenges:false,
+  eveningRefusalId:null};
+ const back=runInNewContext(source.slice(backStart,backEnd)+'\nbackFromLoveRoll',{
+  state:backState,isActiveEveningRedrawPending:()=>true,
+  document:{querySelector:()=>null},root:{_settingsMenuBack:()=>false},
+  render:()=>{throw Error('Back must not navigate during a repick')}
+ });
+ assert.equal(back(),true);
+ assert.equal(backState.tab,'session');
+});
