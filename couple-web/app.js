@@ -1312,10 +1312,21 @@ function eclatNoteState(){
  if(!eclatNoteDrafts.has(key)){
   const draft={note:'',clue:'',moment_done:false,loading:true};
   eclatNoteDrafts.set(key,draft);
-  const status={...state.eclat},userId=state.user.id;
-  loadEclatNote(client,status,userId).then(value=>Object.assign(draft,value,{saved:!!value.note||!!value.clue,error:false}))
-   .catch(()=>{draft.error=true;})
-   .finally(()=>{draft.loading=false;if(state.tab==='eclat'&&!state.eclatBrowse&&eclatNoteKey(state.eclat,state.user?.id)===key)render();});
+  const status={...state.eclat};
+  const owner={userId:state.user.id,coupleId:state.coupleId};
+  // A retry replaces the draft while the previous read may still be pending.
+  // Never let that older read overwrite its replacement or repaint another
+  // signed-in user's private Éclat screen.
+  const current=()=>ownsCoupleAsyncRead(state,owner)&&
+   eclatNoteDrafts.get(key)===draft;
+  loadEclatNote(client,status,owner.userId).then(value=>{
+   if(current())Object.assign(draft,value,{saved:!!value.note||!!value.clue,error:false});
+  }).catch(()=>{if(current())draft.error=true;})
+   .finally(()=>{
+    draft.loading=false;
+    if(current()&&state.tab==='eclat'&&!state.eclatBrowse&&
+       eclatNoteKey(state.eclat,state.user?.id)===key)render();
+   });
  }
  return eclatNoteDrafts.get(key);
 }
