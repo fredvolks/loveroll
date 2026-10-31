@@ -331,3 +331,34 @@ test('LR-026: obsolete background revocation cannot stop newer login music',asyn
  assert.equal(h.audioStops(),0);
  assert.equal(h.state.eclatMusic,true);
 });
+
+
+test('LR-026: background normal completion stops music but retains authorized history',async()=>{
+ const h=harness();
+ h.state.eclat={id:'playing',access:true,active:true};
+ h.state.eclatMusic=true;
+ h.state.eclatHistory=[{id:'prior-activity'}];
+ h.runtime.eclatNoteDrafts.set('private',{note:'Keep until session changes'});
+ const pending=h.tick();
+ h.requests[0].resolve({id:'finished',access:true,active:false});
+ await pending;
+ assert.equal(h.audioStops(),1);
+ assert.equal(h.state.eclatMusic,false);
+ assert.equal(h.runtime.eclatNoteDrafts.get('private').note,
+  'Keep until session changes');
+ assert.deepEqual(h.history,['alice'],'authorized history still refreshes');
+ assert.deepEqual(h.renders,['finished']);
+});
+
+test('LR-026: stale background completion cannot silence new login music',async()=>{
+ const h=harness();
+ h.state.eclat={id:'previous',access:true,active:true};
+ const pending=h.tick();
+ h.runtime.authFeedbackGeneration=2;
+ h.state.eclatMusic=true;
+ h.requests[0].resolve({id:'old-completion',access:true,active:false});
+ await pending;
+ assert.equal(h.audioStops(),0);
+ assert.equal(h.state.eclatMusic,true);
+ assert.deepEqual(h.renders,[]);
+});
