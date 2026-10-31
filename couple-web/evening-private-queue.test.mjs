@@ -2919,3 +2919,94 @@ test('LR-026: password recovery UI checks account ownership before advancing the
  assert.match(block,/if\(state\.user\?\.id===ownerId&&state\.passwordRecovery\)/);
  assert.doesNotMatch(block,/client\.auth\.updateUser\(/);
 });
+
+function emailAuthTransitionFixture(state,signOutCurrentAccount){
+ const loginStart=app.indexOf("if(verb==='email-confirm-login'){");
+ const loginEnd=app.indexOf("if(verb==='email-confirm-recheck'){",loginStart);
+ const editStart=app.indexOf("if(verb==='email-confirm-edit'){");
+ const editEnd=app.indexOf("if(verb==='auth-reset-request'){",editStart);
+ assert.ok(loginStart>0&&loginEnd>loginStart&&editStart>0&&editEnd>editStart);
+ const calls={paint:0,routes:[]};
+ const scope={
+  state,signOutCurrentAccount,verifiedLoveEmail:()=>false,
+  keepAuthModeInUrl:route=>calls.routes.push(route),
+  render:()=>calls.paint++
+ };
+ const login=runInNewContext('(async verb=>{'+app.slice(loginStart,loginEnd)+'})',scope);
+ const edit=runInNewContext('(async verb=>{'+app.slice(editStart,editEnd)+'})',scope);
+ return {login:()=>login('email-confirm-login'),
+  edit:()=>edit('email-confirm-edit'),calls};
+}
+
+test('LR-026: editing email after normal signout opens registration safely',async()=>{
+ const state={user:{id:'alice'},emailVerificationPending:true,authDraftEmail:'old@example.com',
+  authMode:'signin',showAuth:false};
+ const f=emailAuthTransitionFixture(state,async()=>{state.user=null;return true;});
+ await f.edit();
+ assert.equal(state.authMode,'signup');
+ assert.equal(state.authDraftEmail,'');
+ assert.equal(state.showAuth,true);
+ assert.equal(state.emailVerificationPending,false);
+ assert.equal(f.calls.paint,1);
+});
+
+test('LR-026: editing email cannot clear a replacement account after old logout',async()=>{
+ let finish;
+ const pending=new Promise(resolve=>{finish=resolve;});
+ const state={user:{id:'alice'},emailVerificationPending:true,
+  authDraftEmail:'new-account@example.com',showAuth:false};
+ const f=emailAuthTransitionFixture(state,()=>pending);
+ const editing=f.edit();
+ state.user={id:'bob'};
+ finish(false);
+ await editing;
+ assert.equal(state.user.id,'bob');
+ assert.equal(state.authDraftEmail,'new-account@example.com');
+ assert.equal(state.emailVerificationPending,true);
+ assert.equal(f.calls.paint,0);
+});
+
+test('LR-026: confirmation login opens the sign-in screen after old unverified logout',async()=>{
+ const state={user:{id:'alice'},emailVerificationPending:true,showAuth:false};
+ const f=emailAuthTransitionFixture(state,async()=>{state.user=null;return true;});
+ await f.login();
+ assert.equal(state.authMode,'signin');
+ assert.equal(state.showAuth,true);
+ assert.equal(state.emailVerificationPending,false);
+ assert.equal(f.calls.routes[0],'signin');
+ assert.equal(f.calls.paint,1);
+});
+
+test('LR-026: confirmation login never overwrites a replacement account',async()=>{
+ let release;
+ const pending=new Promise(resolve=>{release=resolve;});
+ const state={user:{id:'alice'},emailVerificationPending:true,showAuth:false,authMode:'signup'};
+ const f=emailAuthTransitionFixture(state,()=>pending);
+ const login=f.login();
+ state.user={id:'bob'};
+ release(false);
+ await login;
+ assert.equal(state.user.id,'bob');
+ assert.equal(state.authMode,'signup');
+ assert.equal(state.emailVerificationPending,true);
+ assert.equal(f.calls.paint,0);
+ assert.equal(f.calls.routes.length,0);
+});
+
+test('LR-026: replacing Auth identity cancels previous password-recovery UI state',()=>{
+ const start=app.indexOf('function adoptAuthenticatedIdentity(');
+ const end=app.indexOf('async function refreshVerifiedIdentity()',start);
+ assert.ok(start>0&&end>start);
+ const owner=app.slice(start,end);
+ assert.match(owner,/state\.passwordRecovery=false;state\.emailVerificationPending=false/);
+ assert.match(owner,/state\.authNotice=null;state\.authNeedsEmailConfirmation=false/);
+});
+
+test('LR-026: confirmation transitions use guarded signout rather than raw client signout',()=>{
+ const start=app.indexOf("if(verb==='email-confirm-login'){");
+ const end=app.indexOf("if(verb==='auth-reset-request'){",start);
+ assert.ok(start>0&&end>start);
+ const slice=app.slice(start,end);
+ assert.equal(slice.match(/await signOutCurrentAccount\(\)/g)?.length,2);
+ assert.doesNotMatch(slice,/await client\.auth\.signOut\(\)/);
+});
