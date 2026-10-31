@@ -215,12 +215,12 @@ const {eveningD100Viewports}=require('./evening-d100-viewports.cjs');
    return {action:primary?.getAttribute('data-action')||null,
     label:primary?.textContent?.trim()||'',hasQueue:!!queue};
   });
-  if(nextStep.action?.startsWith('evening-open:')){
+  if(nextStep.action?.startsWith('evening-start:')){
    assert.match(nextStep.label,/Commencer mon défi|Reprendre mon défi/,
     'The shortcut must identify this player\'s personal next challenge');
    assert.equal(nextStep.hasQueue,true,
     'The private challenge list remains visible as a secondary action');
-   assert.ok(nextStep.action.length>'evening-open:'.length,
+   assert.ok(nextStep.action.length>'evening-start:'.length,
     'The shortcut must reference a real private challenge ID');
   }else{
    assert.equal(nextStep.action,null,
