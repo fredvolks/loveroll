@@ -1658,15 +1658,21 @@ const eclatNoteDrafts=new Map();
 function eclatNoteState(){
  const key=eclatNoteKey(state.eclat,state.user?.id);
  if(!key)return {};
- if(!eclatNoteDrafts.has(key)){
-  const draft={note:'',clue:'',moment_done:false,loading:true,dirty:false};
+ // A fresh Auth session with the same account ID must reload its own note.
+ // Discard any draft created under an older login before issuing a read.
+ if(!eclatNoteDrafts.has(key)||
+    eclatNoteDrafts.get(key)?.generation!==authFeedbackGeneration){
+  const draft={note:'',clue:'',moment_done:false,loading:true,dirty:false,
+   generation:authFeedbackGeneration};
   eclatNoteDrafts.set(key,draft);
   const status={...state.eclat};
-  const owner={userId:state.user.id,coupleId:state.coupleId};
+  const owner={userId:state.user.id,coupleId:state.coupleId,
+   generation:authFeedbackGeneration};
   // A retry replaces the draft while the previous read may still be pending.
   // Never let that older read overwrite its replacement or repaint another
   // signed-in user's private Éclat screen.
   const current=()=>ownsCoupleAsyncRead(state,owner)&&
+   authFeedbackGeneration===owner.generation&&
    eclatNoteDrafts.get(key)===draft;
   loadEclatNote(client,status,owner.userId).then(value=>{
    if(current())Object.assign(draft,value,{saved:!!value.note||!!value.clue,dirty:false,error:false});
@@ -1680,13 +1686,15 @@ function eclatNoteState(){
  return eclatNoteDrafts.get(key);
 }
 async function saveCurrentEclatNote(momentDone){
- const owner={userId:state.user?.id,coupleId:state.coupleId};
+ const owner={userId:state.user?.id,coupleId:state.coupleId,
+  generation:authFeedbackGeneration};
  const key=eclatNoteKey(state.eclat,owner.userId),draft=eclatNoteDrafts.get(key);
  if(!draft||draft.loading||draft.error)throw Error('Attends le chargement de ta note ou appuie sur Réessayer.');
  if(draft.saving)throw Error('Enregistrement en cours…');
  // An account switch, new chapter or note retry must invalidate the pending
  // result even if the old network request is still settling.
- const current=()=>ownsCoupleAsyncRead(state,owner)&&state.tab==='eclat'&&
+ const current=()=>ownsCoupleAsyncRead(state,owner)&&
+  authFeedbackGeneration===owner.generation&&state.tab==='eclat'&&
   eclatNoteKey(state.eclat,state.user?.id)===key&&
   eclatNoteDrafts.get(key)===draft;
  if(!current())return null;
