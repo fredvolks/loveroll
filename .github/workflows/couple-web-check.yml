@@ -229,6 +229,8 @@ jobs:
         run: node --test couple-web/future-card-stripe-test-webhook.test.mjs
       - name: Verify private Stripe test intent and receipt ledger contracts
         run: node --test couple-web/future-card-stripe-test-receipt-ledger.test.mjs
+      - name: Connect verified Stripe test proof to private receipt ledger (no live payment)
+        run: node --test couple-web/future-card-stripe-test-receipt-pipeline.test.mjs
       - name: Verify assignment of future gender-specific and shared cards
         run: node --test couple-web/future-card-audience.test.mjs
       - name: Preview future nights from unique 2-6 minute cards
