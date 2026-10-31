@@ -58,3 +58,31 @@ export function selectFutureCard({
  const card=choices[Math.floor(cardTicket*choices.length)];
  return {level,card,candidateCount:choices.length};
 }
+
+/** Before activating the 300-card deck, require actual original challenge
+ * text. Placeholder titles, empty instructions and duplicated content are
+ * not playable cards. This audit never writes to the live legacy catalog.
+ */
+export function auditFuturePlayableCatalog(cards,options={}){
+ const metadata=auditFutureCardCatalog(cards,options);
+ const errors=[...metadata.errors],seenCopy=new Map();
+ if(Array.isArray(cards))for(const [index,card] of cards.entries()){
+  if(!card||typeof card!=='object'||Array.isArray(card))continue;
+  const title=typeof card.title==='string'?card.title.trim():'';
+  const description=typeof card.description==='string'?card.description.trim():'';
+  const readable=value=>!/[\u0000-\u001f<>]/u.test(value);
+  if(title.length<5||title.length>120||!readable(title))
+   errors.push('Carte '+(index+1)+' : titre absent ou invalide');
+  if(description.length<15||description.length>1200||!readable(description))
+   errors.push('Carte '+(index+1)+' : consigne absente ou invalide');
+  if(title.length>=5&&description.length>=15){
+   const signature=(title+'\n'+description).normalize('NFKC')
+    .toLocaleLowerCase('fr-CA').replace(/\s+/gu,' ').trim();
+   const previous=seenCopy.get(signature);
+   if(previous!==undefined&&previous!==card.id)
+    errors.push('Consigne répétée : cartes '+previous+' et '+card.id);
+   else if(typeof card.id==='string')seenCopy.set(signature,card.id);
+  }
+ }
+ return {...metadata,valid:errors.length===0,errors};
+}
