@@ -373,6 +373,23 @@ test('LR-027: the final D100 draw offers a single Start or Resume CTA and keeps 
   assert.doesNotMatch(html,/data-action="evening-open:another-user"/,
    'The renderer never guesses or fetches another person’s challenge');
  }
+ // When the partner still has D100 draws, active personal challenges
+ // should remain actionable rather than showing a dead waiting state.
+ const partnerTurn=premiumEveningHtml({...base,turn:{
+  ...ready.turn,next:'b',drawsFinished:false,remaining:{a:0,b:2}
+ },nextChallenge:{id:'resume-now',status:'accepted'}});
+ const partnerActions=partnerTurn.match(/<div class="evening-roll-actions">([\s\S]*?)<\/div>/)?.[1]||'';
+ assert.match(partnerActions,/data-action="evening-open:resume-now"/);
+ assert.match(partnerActions,/Reprendre mon défi/);
+ assert.match(partnerActions,/data-action="evening-list"/);
+ assert.doesNotMatch(partnerActions,/data-action="new-challenge"/);
+ const myTurn=premiumEveningHtml({...base,turn:{
+  ...ready.turn,next:'a',drawsFinished:false,remaining:{a:2,b:2}
+ },nextChallenge:{id:'resume-now',status:'accepted'}});
+ const myActions=myTurn.match(/<div class="evening-roll-actions">([\s\S]*?)<\/div>/)?.[1]||'';
+ assert.match(myActions,/data-action="new-challenge"/,
+  'On my official D100 turn the draw still has priority');
+ assert.doesNotMatch(myActions,/data-action="evening-open:resume-now"/);
  const archived=premiumEveningHtml({...base,nextChallenge:null});
  const archivedActions=archived.match(/<div class="evening-roll-actions">([\s\S]*?)<\/div>/)?.[1]||'';
  assert.match(archivedActions,/class="evening-primary" data-action="evening-list"/);
