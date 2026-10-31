@@ -147,7 +147,7 @@ const step1Summary=(mine,partner,myRoll,theirRoll,totals)=>{
 };
 export function premiumEveningHtml({
  session,members=[],me,rolls=[],status={},turn={},category=null,
- giftCount=0,receivedGifts=0,pending=null,rolling=false,redrawPending=false,
+ giftCount=0,receivedGifts=0,pending=null,rolling=false,redrawPending=false,giftPending=false,
  challengeOverlay='',showMore=false,confirmCancel=false,rollFace=null,rollingKind=null,
  lastEvening=null,lastD35Face=null,playable=null,ownChallengeCount=0,canStartEvening=true,sessionLength='libre',eveningIntensity='medium',
  weeklyReady=true,weeklyCount=0,weeklyLimit=1,dailyLocked=false,historyReady=true,invitationHtml='',
@@ -167,7 +167,7 @@ export function premiumEveningHtml({
  // Prevent another tap from changing the visible choice mid-animation.
  const canDraw=ready&&turn.ready&&!turn.drawsFinished&&!rolling&&!redrawPending&&
   Number(turn.remaining?.[me]||0)>0&&turn.next===me;
- const canGive=ready&&turn.ready&&!redrawPending&&giftCount<3&&Number(turn.remaining?.[me])>0;
+ const canGive=ready&&turn.ready&&!redrawPending&&!giftPending&&giftCount<3&&Number(turn.remaining?.[me])>0;
  const challengeText=rolling?'Brassage en cours…':pending?'♡ Voir notre défi en cours':turn.finished?'Tous les défis terminés':!ready?'En attente des deux D6':canDraw?'À toi de jouer':'En attente de '+esc(partner.name?.split(' ')[0]||'ton partenaire');
  const stateText=ready?'✓ Étape 2 débloquée':status?.my_rolled?'Ton lancer est enregistré. Attends ton partenaire.':status?.partner_rolled?'Le résultat de '+esc(partner.name?.split(' ')[0]||'ton partenaire')+' est prêt. À toi de brasser le dé.':'Chaque partenaire brasse son propre dé.';
  const currentStatus=rolling?'🎲 Brassage en cours…':redrawPending?'♡ Repige en cours de confirmation…':turn.finished?'♡ Tous les défis sont réalisés':turn.drawsFinished?'♡ Tous les défis sont pigés':canDraw?'♥ C’est ton tour !':ready?'Au tour de '+esc(partner.name?.split(' ')[0]||'ton partenaire'):'Étape 2 verrouillée';
@@ -250,7 +250,8 @@ export function premiumEveningHtml({
 
   '<section class="evening-gift"><div><strong>🎁 UN PETIT CADEAU</strong>'+
    '<p>Transfère un défi non commencé · '+giftCount+'/3 dons ce mois</p></div>'+
-   bt('give-challenge','♡ Donner 1 défi à '+esc(partner.name?.split(' ')[0]||'mon partenaire'),
+   bt('give-challenge',giftPending?'♡ Don en cours…':
+    '♡ Donner 1 défi à '+esc(partner.name?.split(' ')[0]||'mon partenaire'),
     'evening-gift-btn',!canGive||rolling)+'</section>'
   :
   '<section class="evening-empty is-finale ritual-gallery">'+
