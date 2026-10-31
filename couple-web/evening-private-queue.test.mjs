@@ -2419,12 +2419,17 @@ function pendingAuthReloadFixture(state,rpc,query,overrides={}){
 
 test('LR-026: same-user reauthentication discards an obsolete private reload',async()=>{
  const state={user:{id:'alice'},coupleId:'duo-alice',testModeEligible:false};
- let finish,queries=0;
+ let finish,queries=0,started=0;
  const permission=new Promise(resolve=>{finish=resolve;});
- const f=pendingAuthReloadFixture(state,()=>permission,()=>{
+ const f=pendingAuthReloadFixture(state,()=>{
+  started++;return permission;
+ },()=>{
   queries++;return Promise.resolve([]);
  });
  const old=f.reload();
+ // Verify the old RPC really started before the identity changes.
+ for(let i=0;i<8&&started===0;i++)await Promise.resolve();
+ assert.equal(started,1,'obsolete permission request must be in flight');
  f.bumpAuthGeneration(); // new login has same user ID
  finish(true);
  await assert.doesNotReject(old);
@@ -2436,10 +2441,14 @@ test('LR-026: same-user reauthentication discards an obsolete private reload',as
 
 test('LR-026: stale same-user reload failure never surfaces after new login',async()=>{
  const state={user:{id:'alice'},coupleId:'duo-alice',testModeEligible:false};
- let reject;
+ let reject,started=0;
  const permission=new Promise((_,fail)=>{reject=fail;});
- const f=pendingAuthReloadFixture(state,()=>permission,()=>Promise.resolve([]));
+ const f=pendingAuthReloadFixture(state,()=>{
+  started++;return permission;
+ },()=>Promise.resolve([]));
  const old=f.reload();
+ for(let i=0;i<8&&started===0;i++)await Promise.resolve();
+ assert.equal(started,1,'network failure must belong to a started RPC');
  f.bumpAuthGeneration();
  reject(Error('Network failure from obsolete session'));
  await assert.doesNotReject(old);
