@@ -56,8 +56,10 @@ export async function verifyFutureCardStripeTestWebhook({
   typeof lookupIntent!=='function'||!Number.isFinite(now))return fail('configuration');
  const signature=signatureParts(signatureHeader);
  if(!signature||Math.abs(now/1000-signature.time)>300)return fail('signature');
+ // Snapshot caller-owned binary data before the first async HMAC step.
+ // A reused Buffer/Uint8Array must never change the payload after verification.
  const bytes=typeof rawBody==='string'?encoder.encode(rawBody):
-  rawBody instanceof Uint8Array?rawBody:null;
+  rawBody instanceof Uint8Array?new Uint8Array(rawBody):null;
  if(!bytes||bytes.byteLength<1||bytes.byteLength>262144)return fail('body');
  let event;
  try{
