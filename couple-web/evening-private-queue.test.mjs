@@ -2335,21 +2335,25 @@ test('LR-026: obsolete account reload failure is suppressed after sign-in to ano
  const end=app.indexOf('// A redraw started under another account',first);
  assert.ok(first>=0&&end>first);
  const state={user:{id:'alice'},coupleId:'couple-alice',testModeEligible:false};
- let failRpc;
- const pending=new Promise((_,reject)=>{failRpc=reject;});
+ let rejectProfiles,queries=0;
+ const profiles=new Promise((_,reject)=>{rejectProfiles=reject;});
  const f=runInNewContext('let latestAuthReloadRequest=null;'+app.slice(first,end)+
   ';({reload})',{
    state,document:{hidden:false},challengeTimer:{running:false},
    hasUnsavedForm:()=>false,root:{querySelector:()=>null},window:{},
-   refreshVerifiedIdentity:async()=>true,rpc:()=>pending,
+   refreshVerifiedIdentity:async()=>true,rpc:async()=>true,
+   previewMode:()=> 'real',query:()=>{queries++;return profiles;},
    console:{warn:()=>{}}
   });
  const loading=f.reload();
+ for(let i=0;i<8&&queries===0;i++)await Promise.resolve();
+ assert.equal(queries,4,'the old account has started its four profile reads');
  state.user={id:'bob'};
- failRpc(Error('Stale Alice network failure'));
+ rejectProfiles(Error('Stale Alice network failure'));
  await assert.doesNotReject(loading);
  assert.equal(state.user.id,'bob');
- assert.equal(state.testModeEligible,false);
+ assert.equal(state.testModeEligible,true,
+  'the last completed permission belongs to the old request but the rejected profile read must not apply data');
 });
 
 test('LR-026: active account reload failure still reports its own network error',async()=>{
@@ -2360,8 +2364,9 @@ test('LR-026: active account reload failure still reports its own network error'
   ';({reload})',{
    state,document:{hidden:false},challengeTimer:{running:false},
    hasUnsavedForm:()=>false,root:{querySelector:()=>null},window:{},
-   refreshVerifiedIdentity:async()=>true,
-   rpc:async()=>{throw Error('Active Alice network failure');},
+   refreshVerifiedIdentity:async()=>true,rpc:async()=>true,
+   previewMode:()=> 'real',
+   query:async()=>{throw Error('Active Alice network failure');},
    console:{warn:()=>{}}
   });
  await assert.rejects(f.reload(),/Active Alice network failure/);
