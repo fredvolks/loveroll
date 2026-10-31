@@ -106,6 +106,7 @@ let latestCalendarPassQuotaRequest=null;
 let currentReviewSaveRequest=null;
 // Ignore duplicate start taps for this Auth generation, but never block a new login.
 let currentNewSessionRequest=null;
+let latestDiceRollRequest=null;
 const eveningClosureGate=createEveningClosureGate();
 let worldGpsDraft=null;
 let worldFx=null,worldFxPending=null,worldFxFailed=null;
@@ -798,6 +799,9 @@ function adoptAuthenticatedIdentity(nextUser){
  const previousId=state.user?.id||null,nextId=nextUser?.id||null;
  if(previousId!==nextId){
   authFeedbackGeneration++;
+  // A previous login's delayed official die receipt must not repaint this user.
+  latestDiceRollRequest=null;
+  state.diceStatus=null;state.rollAnimationFace=null;state.rollAnimationKind=null;
   latestAuthReloadRequest=null;
   currentSignoutRequest=null;
   currentPasswordAuthRequest=null;
@@ -3514,6 +3518,12 @@ function renderSettings(){
 async function refreshAndShow(){await refreshShared();render();}
 async function animateRoll(fn,kind='general'){
  if(state.diceStatus)throw Error('Un dé est déjà en cours de brassage.');
+ const ownerId=state.user?.id,ownerCouple=state.coupleId,
+  ownerGeneration=authFeedbackGeneration,request={};
+ latestDiceRollRequest=request;
+ const current=()=>latestDiceRollRequest===request&&
+  state.user?.id===ownerId&&state.coupleId===ownerCouple&&
+  authFeedbackGeneration===ownerGeneration;
  const activeD100=kind==='new-challenge'&&state.tab==='session'?
   root.querySelector('.evening-step.two .evening-d35-col canvas[data-dice-sides="100"]'):null;
  const activeMonthly=['monthly_activity','monthly_host'].includes(kind)&&state.tab==='special'?
@@ -3538,6 +3548,7 @@ async function animateRoll(fn,kind='general'){
  }else render();
  try{
   const result=await fn(); // Supabase determines and persists the actual result
+  if(!current())return null; // Old account's receipt cannot animate this login.
   // Never fabricate a one-pip result if Supabase has not confirmed a face.
   const confirmedFace=Number(result?.face);
   if(!Number.isInteger(confirmedFace)||confirmedFace<1||
@@ -3552,6 +3563,7 @@ async function animateRoll(fn,kind='general'){
   const liveD100Started=useLiveD100&&liveStarted;
   if(!liveStarted)render();
   await new Promise(resolve=>setTimeout(resolve,window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches?180:ROLL_TOTAL_MS+140));
+  if(!current())return null;
   if(liveD100Started&&activeD100.isConnected){
    const number=root.querySelector('.evening-d100-result');
    if(number){number.textContent='Résultat : '+confirmedFace;number.hidden=false;}
@@ -3561,26 +3573,35 @@ async function animateRoll(fn,kind='general'){
    // opening the activity or restoring the D100. Never draw twice.
    state.diceStatus='settled';
    await refreshShared();
+   if(!current())return null;
    // Keep the existing WebGL canvas mounted: no flash or animation restart.
    await new Promise(resolve=>setTimeout(resolve,1000));
+   if(!current())return null;
   }
   if(kind==='new-challenge'){
    // Keep official D100 face visible for a full second after the animation.
    // A truthy status temporarily suppresses refreshShared's automatic popup.
    state.diceStatus='settled';
    await refreshShared();
+   if(!current())return null;
    if(state.tab==='session'&&!liveD100Started)render();
    await new Promise(resolve=>setTimeout(resolve,1000));
+   if(!current())return null;
   }
   state.diceStatus=null;state.rollAnimationFace=null;state.rollAnimationKind=null;
   // Open the confirmed activity before repainting: no intermediate D6 flash.
   await refreshShared();
+  if(!current())return null;
   if(kind==='monthly_activity')state.showSurpriseActivity=!!state.monthly?.monthly_activity;
   render();return result;
  }catch(e){
+  if(!current())return null; // Ignore an error belonging to the old login.
   state.diceStatus=null;state.rollAnimationFace=null;state.rollAnimationKind=null;
-  try{await refreshShared();}finally{render();}
+  try{await refreshShared();}finally{if(current())render();}
+  if(!current())return null;
   throw e;
+ }finally{
+  if(latestDiceRollRequest===request)latestDiceRollRequest=null;
  }
 }
 async function hashToken(token){
@@ -5579,6 +5600,7 @@ async function handle(action,element){
   const [kind,owner,rollType]=parts;
   const x=await animateRoll(()=>rpc('roll_love_occasion_once',{p_couple:state.coupleId,
    p_kind:kind,p_owner:owner==='-'?null:owner,p_roll:rollType}),'occasion');
+  if(!x)return; // A disconnected account must receive no stale toast.
   notify('♡ Tirage enregistré pour le couple.');return;
  }
  if(verb==='roll'){
@@ -5608,6 +5630,7 @@ async function handle(action,element){
    return;
   }
   const result=await animateRoll(()=>rpc('roll_couple_once',{p_couple:state.coupleId,p_kind:kind}),kind);
+  if(!result)return;
   if(kind==='monthly_activity'){
    // Only after Supabase confirms the official D100 and its 3D animation ends.
    state.showSurpriseActivity=!!state.monthly?.monthly_activity;
