@@ -1853,7 +1853,9 @@ function eclatMusicFixture(state,audio,notify=()=>{},render=()=>{},masked=false)
   state,authFeedbackGeneration:1,eclatAudio:audio,
   document:{documentElement:{classList:{contains:()=>masked}}},
   eclatStage:()=>({mood:'romantique'}),
-  ownsCoupleAsyncRead,notify,render
+  ownsCoupleAsyncRead,
+  isSharedCoupleReady:(couple,members)=>!!couple&&Array.isArray(members)&&members.length===2,
+  notify,render
  };
  const music=runInNewContext(
   'let latestEclatAudioOwner=null; async function runMusic(kind){'+
@@ -1865,7 +1867,7 @@ function eclatMusicFixture(state,audio,notify=()=>{},render=()=>{},masked=false)
 test('LR-026: asynchronous Éclat audio cannot resume after changing account',async()=>{
  const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
   eclat:{active:true,coffret_id:1,chapter_number:1,variant_number:1},
-  eclatMusic:false};
+  members:[{id:'alice'},{id:'bob'}],eclatMusic:false};
  let release,stops=0,notifications=0,paints=0;
  const audio={start:()=>new Promise(resolve=>{release=resolve;}),
   stop:()=>{stops++;}};
@@ -1883,7 +1885,7 @@ test('LR-026: asynchronous Éclat audio cannot resume after changing account',as
 test('LR-026: Éclat audio permission cannot resume after reauthentication of the same user',async()=>{
  const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
   eclat:{active:true,coffret_id:1,chapter_number:1,variant_number:1},
-  eclatMusic:false};
+  members:[{id:'alice'},{id:'bob'}],eclatMusic:false};
  let finishStart,stops=0,notifications=0,paints=0;
  const audio={start:()=>new Promise(resolve=>{finishStart=resolve;}),
   stop:()=>{stops++;}};
@@ -1901,7 +1903,7 @@ test('LR-026: Éclat audio permission cannot resume after reauthentication of th
 test('LR-026: Éclat audio can start after reauthentication without accepting an older result',async()=>{
  const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
   eclat:{active:true,coffret_id:1,chapter_number:1,variant_number:1},
-  eclatMusic:false};
+  members:[{id:'alice'},{id:'bob'}],eclatMusic:false};
  const starts=[];
  const audio={start:()=>new Promise(resolve=>starts.push(resolve)),stop:()=>{}};
  let paints=0;
@@ -1918,7 +1920,7 @@ test('LR-026: Éclat audio can start after reauthentication without accepting an
 test('LR-026: later Éclat audio tap wins while earlier permission is pending',async()=>{
  const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
   eclat:{active:true,coffret_id:1,chapter_number:1,variant_number:1},
-  eclatMusic:false};
+  members:[{id:'alice'},{id:'bob'}],eclatMusic:false};
  const starts=[];
  const audio={start:()=>new Promise(resolve=>starts.push(resolve)),stop:()=>{}};
  let paints=0;
@@ -1930,6 +1932,24 @@ test('LR-026: later Éclat audio tap wins while earlier permission is pending',a
  assert.equal(state.eclatMusic,true,
   'outdated audio permission must not turn off a newer successful start');
  assert.equal(paints,1);
+});
+
+
+test('LR-026: pending Éclat audio is cancelled if couple membership is revoked',async()=>{
+ const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
+  eclat:{active:true,coffret_id:1,chapter_number:1,variant_number:1},
+  members:[{id:'alice'},{id:'bob'}],eclatMusic:false};
+ let finishStart,stops=0,paints=0;
+ const audio={start:()=>new Promise(resolve=>{finishStart=resolve;}),
+  stop:()=>{stops++;}};
+ const music=eclatMusicFixture(state,audio,()=>{},()=>paints++);
+ const old=music.runMusic('music');
+ state.members=[{id:'alice'}];
+ finishStart(true);
+ await old;
+ assert.equal(stops,1,'an outdated audio session must stop');
+ assert.equal(state.eclatMusic,false);
+ assert.equal(paints,0);
 });
 
 test('LR-026: signing out and masking privacy invalidate Éclat audio',()=>{
@@ -1947,7 +1967,7 @@ test('LR-026: signing out and masking privacy invalidate Éclat audio',()=>{
 test('LR-026: a masked Éclat audio tap never repaints protected content',async()=>{
  const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
   eclat:{active:true,coffret_id:1,chapter_number:1,variant_number:1},
-  eclatMusic:false};
+  members:[{id:'alice'},{id:'bob'}],eclatMusic:false};
  let stops=0,starts=0,paints=0,notifications=0;
  const music=eclatMusicFixture(state,{
   start:async()=>{starts++;return true;},stop:()=>{stops++;}
