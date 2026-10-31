@@ -192,6 +192,17 @@ test('Soirée management and calendar cannot interrupt an official D100 animatio
  assert.match(idle,/class="evening-manage" data-action="evening-more"/);
  assert.doesNotMatch(idle,/class="evening-manage"[^>]*disabled/);
  assert.match(idle,/class="evening-more-menu"/);
+ // A gift may have started while an old overflow or closure dialog was open.
+ const gifting=premiumEveningHtml({...ready,rolling:false,showMore:true,
+  confirmCancel:true,giftPending:true,category:'SENSUEL'});
+ assert.match(gifting,/class="evening-manage" data-action="evening-more"[^>]*disabled/);
+ assert.match(gifting,/Don en cours de confirmation…/);
+ assert.doesNotMatch(gifting,/class="evening-more-menu"/);
+ assert.doesNotMatch(gifting,/class="evening-confirm"/);
+ const giftFinished=premiumEveningHtml({...ready,rolling:false,showMore:true,
+  confirmCancel:true,giftPending:false,category:'SENSUEL'});
+ assert.match(giftFinished,/class="evening-more-menu"/);
+ assert.match(giftFinished,/class="evening-confirm"/);
 
  const {runInNewContext}=await import('node:vm');
  const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
@@ -227,6 +238,17 @@ test('Soirée management and calendar cannot interrupt an official D100 animatio
  await run('evening-calendar');
  assert.equal(state.tab,'evening-calendar');
  assert.equal(state.eveningCalendarDate,'2026-10-31');
+ // A late menu click cannot remount a gifting session's private turn.
+ const giftState={tab:'session',diceStatus:null,eveningMore:false};
+ let giftPaints=0;
+ const giftingMenu=runInNewContext('(async verb=>{'+source.slice(start,
+  source.indexOf("if(verb==='evening-calendar'){",start))+'})',{
+  state:giftState,isActiveEveningRedrawPending:()=>false,
+  isActiveEveningGiftPending:()=>true,render:()=>{giftPaints++;}
+ });
+ await giftingMenu('evening-more');
+ assert.equal(giftPaints,0);
+ assert.equal(giftState.eveningMore,false);
 });
 
 test('Information uses the actual configured preference and preserves calendar and closure',()=>{
@@ -702,7 +724,8 @@ test('LR-027: pending repick protects tab, calendar and next D100 from stale eve
  const state={tab:'session',diceStatus:null,eveningMore:false};
  let renders=0;
  const openMenu=runInNewContext('(async verb=>{'+source.slice(from,until)+'})',{
-  state,isActiveEveningRedrawPending:()=>false,render:()=>{renders++;}
+  state,isActiveEveningRedrawPending:()=>false,
+  isActiveEveningGiftPending:()=>false,render:()=>{renders++;}
  });
  await openMenu('evening-more');
  assert.equal(state.eveningMore,true);
