@@ -3674,8 +3674,8 @@ async function handle(action,element){
    }
    // A delayed approval from an old chapter must not end the new one.
    if(!yes||!ownsEclatAction(owner)||!canPlayEclat()||
-      state.eclat.session_id!==confirmation.sessionId||
-      state.eclat.chapter_index!==confirmation.chapterIndex)return;
+      (state.eclat.session_id??null)!==confirmation.sessionId||
+      (state.eclat.chapter_index??null)!==confirmation.chapterIndex)return;
    const result=await runEclatMutation(owner,'love_eclat_end');
    if(!result.applied||!applyEclatActionResult(result.value,owner))return;
    await refreshEclatHistory();
