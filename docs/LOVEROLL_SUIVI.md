@@ -1,5 +1,13 @@
 # LoveRoll — SUIVI OFFICIEL DU PROMPT MAÎTRE
 
+### LR-027 — parcours de reprise des défis personnels (31 octobre 2026)
+
+- [PR #176](https://github.com/fredvolks/loveroll/pull/176), branche `feat/lr026-server-variety-after-category-20261029` : **développement enregistré, PR en brouillon, non fusionnée et non déployée**.
+- Après les derniers tirages D100, un défi personnel **accepté** affiche « Reprendre mon défi »; un défi **proposé** affiche « Commencer mon défi ». Les autres cartes restent accessibles par le bouton secondaire « Voir mes défis ». Lorsqu'aucun défi n'est à entreprendre, la liste ou l'état d'attente est conservé.
+- Pendant le tour D100 de l'autre partenaire, les défis personnels déjà tirés peuvent être repris directement. Pendant son propre tour, le **D100 officiel reste l'action principale**; les actions de fin et les états d'animation conservent leur priorité. Le contrôle d'appartenance côté action `evening-open` continue de valider l'utilisateur et la session.
+- Code : `couple-web/app.js` et `couple-web/premium-evening.mjs`. Régressions : `couple-web/evening-d100-template.test.mjs` (pige terminée, reprise en attente, tour courant, archivage, fin et dé en cours).
+- Commits de développement : `9707ee9`, `ace42eb`, `d063da3`, `e24f38e`, `f4c5fc9`. La CI, la recette deux comptes sur staging et les essais physiques iPhone/Android/tablette/PC ne sont **pas encore tous confirmés** : LR-027 reste ouvert. Consultation d'Atelier MEDIUM tentée; le connecteur a renvoyé une erreur interne, **aucune mission Atelier enregistrée**.
+
 ### LR-026 — protection Éclat des sessions et rafraîchissements (30 octobre 2026)
 
 - Branche de travail : `feat/lr026-server-variety-after-category-20261029`, [PR #176](https://github.com/fredvolks/loveroll/pull/176) **brouillon non fusionné**. Pas de publication Web/APK ni de migration sur Supabase.
