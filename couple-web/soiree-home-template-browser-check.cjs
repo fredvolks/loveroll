@@ -124,7 +124,17 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
     await page.locator('[data-action="tab:session"]').click();await page.waitForSelector('.evening-summary-shell.is-aftercare');
     assert.equal(await page.locator('.evening-finale-start').isDisabled(),true);
     assert.match(await page.locator('.evening-summary-shell').innerText(),/Notre soirée est terminée/);
-    assert.match(await page.locator('.evening-summary-shell').innerText(),/1 \/ 2 bilans déposés/);
+    // The compact 360px layout deliberately hides the redundant numeric row.
+    // Verify the actual visible per-person statuses AND the underlying total.
+    const aftercare=page.locator('.evening-summary-shell');
+    const visible=await aftercare.innerText();
+    assert.match(visible,/Vos réponses\s*:\s*Enregistrées/,
+      'Own submitted review must be visibly confirmed on a small phone');
+    assert.match(visible,/Votre partenaire\s*:\s*En attente/,
+      'Missing partner review must not be presented as submitted');
+    assert.match(await aftercare.locator('.evening-finale-progress').textContent(),
+      /1\s*\/\s*2 bilans déposés/,
+      'The total must stay correct even when its redundant row is visually hidden');
     const overflows=await page.locator('.evening-summary-shell').evaluate(card=>{const r=card.getBoundingClientRect();return [...card.querySelectorAll('h2,p,strong,small,button')].filter(n=>n.getClientRects().length).some(n=>{const c=n.getBoundingClientRect();return c.bottom>r.bottom+1||c.right>r.right+1||c.left<r.left-1;});});
     assert.equal(overflows,false,'Aftercare information stays inside the shared bubble');
     if(process.env.LOVEROLL_CAPTURE_DIR)await page.screenshot({path:path.join(process.env.LOVEROLL_CAPTURE_DIR,'soiree-aftercare.png')});

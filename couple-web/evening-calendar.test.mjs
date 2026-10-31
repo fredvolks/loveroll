@@ -252,3 +252,24 @@ test('Calendar chooses a real Québec day despite sparse history and UTC midnigh
  assert.match(app,/const date=eveningCalendarInitialDate\(/);
  assert.doesNotMatch(app,/state\.sessions\.find\(s=>eveningLocalDay\(s\.started_at\)/);
 });
+
+test('Soirée calendar never prints NaN, Infinity or negative challenge counts from older stats',()=>{
+ const html=eveningHistoryMarkup({
+  month:'2026-10',selectedDate:'2026-10-15',me:'a',
+  sessions:[{id:'legacy',started_at:'2026-10-15T19:00:00Z',
+   finished_at:'2026-10-15T22:00:00Z',counted:true}],
+  members:[{user_id:'a',name:'Fred'},{user_id:'b',name:'Camille'}],
+  stats:[
+   {session_id:'legacy',user_id:'a',completed:'Infinity',target:'NaN',
+    drawn:-10,incomplete:'-Infinity'},
+   {session_id:'legacy',user_id:'b',completed:'2',target:'3',drawn:'2'}
+  ]
+ });
+ const totals=html.match(/<div class="evening-cal-stats">([\s\S]*?)<\/div>/)?.[1];
+ assert.ok(totals);
+ assert.match(totals,/<strong>2<\/strong> défis réalisés ce mois/);
+ assert.match(totals,/<strong>1<\/strong> non réalisés ce mois/);
+ assert.doesNotMatch(html,/NaN|Infinity|<b>-\d+<\/b>/);
+ assert.match(html,/Fred \(moi\)/);
+ assert.match(html,/Camille \(partenaire\)/);
+});

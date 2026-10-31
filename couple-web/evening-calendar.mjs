@@ -54,7 +54,13 @@ export function eveningHistoryMarkup({
  // Legacy or partially loaded RPC arrays can be null or include null rows.
  // Keep the calendar navigable without inventing completed challenges.
  const rows=value=>Array.isArray(value)?value.filter(row=>
-  row!==null&&typeof row==='object'&&!Array.isArray(row)):[];
+  row!==null&&typeof row==='object'&&!Array.isArray(row)):[]; 
+ // Legacy rows must not leak NaN/Infinity/negative counts into the calendar.
+ // Accept nonnegative integer strings returned by older SQL views.
+ const count=value=>{
+  const n=Number(value);
+  return Number.isSafeInteger(n)&&n>=0?n:0;
+ };
  const sessions=rows(rawSessions),members=rows(rawMembers).filter(m=>!!m.user_id);
  const stats=rows(rawStats),historyChallenges=rows(rawChallenges);
  const reviews=rows(rawReviews),weeklyRolls=rows(rawWeeklyRolls),passQuota=rows(rawPassQuota);
@@ -81,9 +87,10 @@ export function eveningHistoryMarkup({
  const closedMonthIds=new Set(monthSessions.filter(s=>s.finished_at).map(s=>s.id));
  const history=closedMonthIds.size;
  const done=stats.filter(r=>closedMonthIds.has(r.session_id))
-  .reduce((n,r)=>n+Number(r.completed||0),0);
+  .reduce((n,r)=>n+count(r.completed),0);
  const incomplete=stats.filter(r=>closedMonthIds.has(r.session_id))
-  .reduce((n,r)=>n+Math.max(0,Number(r.target==null?r.incomplete:(r.target-r.completed))||0),0);
+  .reduce((n,r)=>n+(r.target==null?count(r.incomplete):
+   Math.max(0,count(r.target)-count(r.completed))),0);
  const weekResult=calendarWeekSuccess({date:validDate,weeklyRolls,sessions});
  const monthlyResults=monthlyChallengeSuccess({
   month:current,members,sessions,historyChallenges,sessionStats:stats,passQuota
@@ -115,10 +122,10 @@ export function eveningHistoryMarkup({
    const row=rolls.find(item=>item.user_id===m.user_id);
    const cards=historyChallenges.filter(c=>c.session_id===s.id&&c.recipient===m.user_id)
     .sort((a,b)=>Date.parse(a.created_at||'')-Date.parse(b.created_at||''));
-   const countDone=Number(row?.completed)||0;
+   const countDone=count(row?.completed);
    const countOutstanding=row?.target==null
-    ?Math.max(0,Number(row?.incomplete)||0)
-    :Math.max(0,Number(row.target)-countDone);
+    ?count(row?.incomplete)
+    :Math.max(0,count(row.target)-countDone);
    const closed=!!s.finished_at;
    const name=String(m.name||'Partenaire').trim();
    const role=m.user_id===me?' (moi)':' (partenaire)';
@@ -136,7 +143,8 @@ export function eveningHistoryMarkup({
        eveningChallengeStatusLabel(c.status,closed))+'</span><strong>'+safe(card.title)+'</strong>'+
       '<small>'+safe(c.category==='SEXUEL'?'Sexuel':'Sensuel')+'</small></li>';
    }).join('');
-   const unpicked=row?.target==null?0:Math.max(0,Number(row.target)-Number(row.drawn||cards.length));
+   const unpicked=row?.target==null?0:Math.max(0,count(row.target)-
+    count(row.drawn??cards.length));
    const extras=unpicked?'<p class="evening-cal-unpicked">♡ '+unpicked+
       ' défi'+(unpicked>1?'s':'')+(closed?' non pigé':' à piger')+(closed&&unpicked>1?'s':'')+
       ' : aucune carte attribuée.</p>':'';
