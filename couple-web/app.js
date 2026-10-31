@@ -3385,16 +3385,23 @@ async function handle(action,element){
    // AudioContext.resume() may wait for an iOS/Android gesture; ownership
    // must be checked again AFTER awaiting it. A second tap supersedes this.
    const owner={userId:state.user?.id,coupleId:state.coupleId,
-    generation:authFeedbackGeneration};
+    generation:authFeedbackGeneration,sessionId:state.eclat.session_id,
+    coffretId:state.eclat.coffret_id,chapterNumber:state.eclat.chapter_number,
+    variantNumber:state.eclat.variant_number};
    latestEclatAudioOwner=owner;
-   const current=eclatStage(state.eclat.coffret_id,
-    state.eclat.chapter_number,state.eclat.variant_number);
+   const current=eclatStage(owner.coffretId,
+    owner.chapterNumber,owner.variantNumber);
    const ok=await eclatAudio.start(current?.mood||'romantique');
    if(latestEclatAudioOwner!==owner)return;
    if(!ownsCoupleAsyncRead(state,owner)||
       authFeedbackGeneration!==owner.generation||
       !isSharedCoupleReady(owner.coupleId,state.members)||state.tab!=='eclat'||
       !canPlayEclat()||
+      // AudioContext.resume() must not revive the previous scene.
+      state.eclat.session_id!==owner.sessionId||
+      state.eclat.coffret_id!==owner.coffretId||
+      state.eclat.chapter_number!==owner.chapterNumber||
+      state.eclat.variant_number!==owner.variantNumber||
       document.documentElement.classList.contains('lr-privacy-active')){
     latestEclatAudioOwner=null;
     eclatAudio.stop();return;
@@ -3440,7 +3447,8 @@ async function handle(action,element){
     const saved=await saveCurrentEclatNote();
     if(!saved)return; // A new account/chapter must not receive this choice.
    }
-   if(!ownsEclatAction(owner))return;
+   // A slow private-note save must not authorize a choice after access changes.
+   if(!ownsEclatAction(owner)||!canPlayEclat())return;
    const value=await rpc('love_eclat_choose',{p_choice:num});
    if(!applyEclatActionResult(value,owner))return;
    render();return;
@@ -3466,7 +3474,8 @@ async function handle(action,element){
    const yes=await premiumConfirm('Quitter ce coffret maintenant ? Les chapitres terminés restent dans votre historique de jeu, mais cette séance ne pourra pas être reprise.',{
     kind:'library',title:'Quitter Éclat ?',accept:'Quitter',cancel:'Continuer'
    });
-   if(!yes||!ownsEclatAction(owner))return;
+   // Confirmation may finish after the session or entitlement is revoked.
+   if(!yes||!ownsEclatAction(owner)||!canPlayEclat())return;
    const value=await rpc('love_eclat_end');
    if(!applyEclatActionResult(value,owner))return;
    await refreshEclatHistory();
