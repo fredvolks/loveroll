@@ -35,7 +35,7 @@ export function eveningIntensityChooserHtml(style='medium'){
   .map(([value,label])=>'<option value="'+value+'"'+
    (value===selected?' selected':'')+'>'+label+'</option>').join('');
  return '<label class="evening-intensity-compact">'+
-  '<span>Intensité souhaitée pour la prochaine soirée</span>'+
+  '<span>Intensité</span>'+
   '<select data-evening-intensity-select="true" aria-label="Intensité souhaitée pour la prochaine soirée">'+
    options+'</select></label>';
 }
