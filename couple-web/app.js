@@ -1786,9 +1786,13 @@ async function refreshEclatHistory(){
   const rows=await loadEclatHistory(client,owner.coupleId);
   if(!current())return;
   state.eclatHistory=rows;state.eclatHistoryError=false;
+  state.eclatHistoryRetryAt=0;
  }catch(error){
   if(!current())return;
+  // Transient failures must not strand the gallery until a coffret changes.
+  // A rejected read is retried at most once every 30 seconds per live owner.
   state.eclatHistoryError=true;
+  state.eclatHistoryRetryAt=Date.now()+30000;
   console.warn('Historique Éclat indisponible',error?.code||'');
  }
 }
@@ -1804,6 +1808,7 @@ function applyEclatStatus(value){
   eclatNoteDrafts.clear();
   state.eclatFinished=null;
   state.eclatHistory=[];state.eclatHistoryError=false;
+  state.eclatHistoryRetryAt=0;
   // Also cancel a pending AudioContext.resume() and any playing soundtrack.
   latestEclatAudioOwner=null;
   eclatAudio.stop();state.eclatMusic=false;
@@ -5881,6 +5886,12 @@ setInterval(async()=>{
   if(!current())return;
   if(eclatStatusSignature(value)!==prior){
    if(applyEclatStatus(value))await refreshEclatHistory();
+   if(current())render();
+  }else if(value?.access===true&&state.eclatHistoryError===true&&
+    Date.now()>=(state.eclatHistoryRetryAt??0)){
+   // Recovery is independent of the status signature: server status can be
+   // unchanged while a temporary history/network error has healed.
+   await refreshEclatHistory();
    if(current())render();
   }
  }catch(error){
