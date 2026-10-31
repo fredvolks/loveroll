@@ -3946,3 +3946,23 @@ test('LR-026: cached note from a previous login cannot start a save',async()=>{
  assert.equal(f.draft.moment_done,false);
  assert.equal(f.draft.saving,false);
 });
+
+test('LR-026: a private Éclat save without a loaded draft keeps the original validation',async()=>{
+ const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
+  eclat:{active:true,session_id:'session-1',chapter_index:1}};
+ let calls=0;
+ const f=privateEclatSaveFixture(state,async()=>{calls++;});
+ f.drafts.delete('alice:session-1:1');
+ await assert.rejects(f.saveCurrentEclatNote(true),/Attends le chargement de ta note/);
+ assert.equal(calls,0,'no private note is sent before it loads');
+});
+
+test('LR-026: a cached private note is allowed to save within its original login',async()=>{
+ const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
+  eclat:{active:true,session_id:'session-1',chapter_index:1}};
+ let calls=0;
+ const f=privateEclatSaveFixture(state,async()=>{calls++;});
+ assert.equal(await f.saveCurrentEclatNote(true),'alice:session-1:1');
+ assert.equal(calls,1);
+ assert.equal(f.draft.moment_done,true);
+});
