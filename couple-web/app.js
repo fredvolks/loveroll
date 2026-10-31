@@ -5682,14 +5682,24 @@ window.addEventListener('loveroll-native-google-result',async event=>{
  }
 });
 
+// Keep background status reads single-flight per auth session. A stalled
+// network request may be replaced after 30 seconds, but cannot repaint later.
+let latestEclatPollPending=null;
 setInterval(async()=>{
  if(document.hidden||state.tab!=='eclat'||!state.user||
     !isSharedCoupleReady(state.coupleId,state.members))return;
+ const pending=latestEclatPollPending;
+ if(pending&&pending.userId===state.user.id&&
+    pending.coupleId===state.coupleId&&
+    pending.generation===authFeedbackGeneration&&
+    latestEclatStatusRead===pending.request&&
+    Date.now()-pending.startedAt<30000)return;
  // Account IDs can be reused after a fresh login. Invalidate old replies
  // without blocking a new session or relying on its first timer tick.
  const owner={userId:state.user.id,coupleId:state.coupleId,
   generation:authFeedbackGeneration};
  const request={};latestEclatStatusRead=request;
+ latestEclatPollPending={...owner,request,startedAt:Date.now()};
  const current=()=>ownsCoupleAsyncRead(state,owner)&&
   authFeedbackGeneration===owner.generation&&
   isSharedCoupleReady(owner.coupleId,state.members)&&
@@ -5704,6 +5714,7 @@ setInterval(async()=>{
    if(current())render();
   }
  }catch(error){if(current())console.warn('Synchronisation Éclat',error?.code||'');}
+ finally{if(latestEclatPollPending?.request===request)latestEclatPollPending=null;}
 },4500);
 start().catch(error=>{fail(error);window.LoveRollBoot?.showFailure();});
 
