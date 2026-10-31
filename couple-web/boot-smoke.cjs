@@ -75,7 +75,8 @@ export function createClient(){
    id:'redraw-original',couple_id:'couple-test',session_id:'active-session-synthetic',
    recipient:user.id,offered_by:second.id,category:'SENSUEL',card_id:1,face:12,
    status:'accepted',card_title:'Défi original',card_description:'Activité synthétique',
-   card_timer_minutes:0,created_at:earlier
+   card_timer_minutes:4,is_gifted:false,replaces_challenge_id:null,
+   passed_at:null,refused_at:null,created_at:earlier
   }]:[]
  };
  return {
@@ -106,12 +107,19 @@ export function createClient(){
     window.__redrawCalls.push({name,args});
     if(args.p_exclude)window.__fakeExclusions.push({category:'SENSUEL',card_id:1,excluded_at:new Date().toISOString()});
     const original=rows.couple_challenges[0];
+    // Model the committed production RPC: persisted stamps and an exact
+    // receipt, otherwise the strict UI legitimately rejects the replacement.
+    const committedAt=new Date().toISOString();
     original.status=args.p_action==='refuse'?'refused':'passed';
+    original.passed_at=args.p_action==='pass'?committedAt:null;
+    original.refused_at=args.p_action==='refuse'?committedAt:null;
     if(!rows.couple_challenges.some(c=>c.id==='redraw-replacement'))
      rows.couple_challenges.push({...original,id:'redraw-replacement',status:'proposed',
-      card_id:2,face:13,replaces_challenge_id:original.id,card_title:'Remplacement du défi',created_at:new Date().toISOString()});
+      card_id:2,face:13,replaces_challenge_id:original.id,card_title:'Remplacement du défi',
+      passed_at:null,refused_at:null,created_at:committedAt});
     return {data:{original_id:original.id,replacement_id:'redraw-replacement',
-      excluded:args.p_exclude,already_processed:false},error:null};
+      action:args.p_action,excluded:!!args.p_exclude,already_processed:false,
+      replacement_unavailable:false},error:null};
    }
    return {data:name==='get_love_guidance'?'gentle':
    name==='love_advent_server_date'?'2026-10-15':
