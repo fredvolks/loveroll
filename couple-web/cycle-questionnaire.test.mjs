@@ -29,6 +29,7 @@ test('The 200-card question offers one personal response and a waiting state',()
  assert.match(pending,/data-action="cycle-answer:same"/);
  assert.match(pending,/data-action="cycle-answer:up"/);
  assert.match(pending,/aria-modal="true"/);
+ assert.match(pending,/<p class="lr-cycle-progress" role="status" aria-live="polite" hidden>/);
  assert.match(pending,/data-action="cycle-later"/);
  const answered=cycleIntensityQuestionnaireHtml({status:{pending:true,answered_self:true,cycle:3},
   style:'intense',partnerName:'Camille'});
@@ -59,5 +60,7 @@ test('The active cycle answer is serialized, scoped and not applied to a differe
  assert.match(handler,/finally\{/);
  assert.match(handler,/if\(state.cycleAnswerRequest===owner\)/);
  assert.match(handler,/for\(const control of controls\)if\(control.isConnected\)control.disabled=false/);
+ assert.match(handler,/if\(progress\)progress.hidden=false/);
+ assert.match(handler,/if\(progress\)progress.hidden=true/);
  assert.match(handler,/if\(verb==='cycle-later'\)\{[\s\S]*?state.cycleAnswerRequest/);
 });
