@@ -38,7 +38,9 @@ test('The D100 information button also exists on desktop, without rolling the di
  assert.match(source,/if\(!hero\|\|hero\.querySelector\('\.home-odds-info'\)\)return;/);
  assert.match(source,/aria-controls','evening-play-info'/);
  assert.match(source,/dialog\.addEventListener\('close'/);
- assert.match(app,/!document\.querySelector\('dialog#evening-play-info\[open\]'\)/);
+ // Escape must respect ANY active native dialog, including Surprise, not only D100.
+ assert.match(app,/!document\.querySelector\('\\.lr-dialog-overlay,dialog\\[open\\]'\)/);
+ assert.doesNotMatch(app,/!document\\.querySelector\\('dialog#evening-play-info\\[open\\]'\\)/);
  assert.match(app,/const gameInfo=document\.querySelector\('dialog#evening-play-info\[open\]'\)/);
  assert.match(app,/if\(gameInfo\)\{gameInfo\.close\(\);return true;\}/);
  assert.match(css,/@media \(min-width:1200px\) and \(pointer:fine\)/);
