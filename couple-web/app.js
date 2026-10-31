@@ -5365,12 +5365,13 @@ async function handle(action,element){
  if(verb==='category'){
   if(!EVENING_CATEGORIES.includes(parts[0])&&parts[0]!=='HASARD')
    throw Error('Catégorie interdite');
-  state.category=parts[0];state.randomMode=parts[0]==='HASARD';
-  if(state.session)try{sessionStorage.setItem('loveroll-category-'+state.session.id,parts[0]);}catch{}
-  // Never tear down all WebGL renderers for a category-only UI change.
+  // Reject stale/disabled category events BEFORE writing the next D100 choice
+  // to state or sessionStorage. Do not remount a live WebGL canvas on failure.
   if(!updateEveningCategoryUi(root,parts[0],
    state.couple?.category_weights_enabled===false?50:
-   state.couple?.category_preference_percent??88))render();
+   state.couple?.category_preference_percent??88))return;
+  state.category=parts[0];state.randomMode=parts[0]==='HASARD';
+  if(state.session)try{sessionStorage.setItem('loveroll-category-'+state.session.id,parts[0]);}catch{}
   return;
  }
   if(verb==='timer-mode'){
