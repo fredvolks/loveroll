@@ -84,3 +84,30 @@ test('New per-person reviews remain authenticated and protected',()=>{
  assert.match(sql,/auth\.uid\(\)/);
  assert.match(sql,/REVOKE ALL ON TABLE public\.couple_evening_reviews FROM PUBLIC, anon, authenticated/);
 });
+
+test('Partial legacy reviews and an empty draft never break the calendar',()=>{
+ const empty=eveningReviewModal({sessionId:'evening-1',draft:null});
+ assert.match(empty,/Notre bilan de la soirée/);
+ assert.equal((empty.match(/class="lr-review-question"/g)||[]).length,4);
+ const mine=eveningPersonReviewMarkup({
+  reviews:[null,false,{},...reviews],sessionId:'evening-1',person:members[0],me:'fred'
+ });
+ assert.match(mine,/Une belle soirée/);
+ assert.doesNotMatch(mine,/J’ai aimé notre moment/);
+ const missing=eveningPersonReviewMarkup({
+  reviews:null,sessionId:'evening-1',person:null,me:'fred'
+ });
+ assert.match(missing,/En attente de son bilan/);
+ assert.doesNotMatch(missing,/data-action="review-open:/);
+});
+test('Malformed past heart scores cannot blank the couple calendar',()=>{
+ const weird={...reviews[0],overall:3.5,connection:100,appreciation:-1,again:'NaN'};
+ const html=eveningPersonReviewMarkup({
+  reviews:[weird],sessionId:'evening-1',person:members[0],me:'fred'
+ });
+ assert.equal((html.match(/aria-label="0 sur 5"/g)||[]).length,4);
+ assert.doesNotMatch(html,/aria-label="3\.5 sur 5"/);
+ assert.equal((html.match(/♡♡♡♡♡/g)||[]).length,4);
+ const rating=eveningReviewModal({sessionId:'evening-1',draft:weird});
+ assert.match(rating,/data-review-session="evening-1"/);
+});
