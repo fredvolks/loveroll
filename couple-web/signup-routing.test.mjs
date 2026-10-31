@@ -13,9 +13,10 @@ function extract(start,end){
 const complete=extract(" if(verb==='complete-registration'){"," if(verb==='profile'){");
 const resolution=extract('async function resolveVerifiedSignup(', 'async function autoAcceptPendingInvite(){');
 const autoJoin=extract('async function autoAcceptPendingInvite(){','function verificationPendingHtml(');
+const profileSave=extract('let currentProfileSave=null;','// Logout can await');
 
 test('new account with invitation completes profile but never creates own admin duo',async()=>{
- const calls=[],state={installAfterSignup:false};
+ const calls=[],state={user:{id:'invited-account'},installAfterSignup:false};
  const ctx={
   id:k=>({
    'profile-name':{value:'Nouvelle partenaire'},
@@ -29,7 +30,7 @@ test('new account with invitation completes profile but never creates own admin 
   resolveVerifiedSignup:async()=>{throw Error('Invited signup must not create a duo');},
   reload:async()=>{calls.push({name:'reload'});}
  };
- const handler=vm.runInNewContext('(async function(verb){'+complete+'})',ctx);
+ const handler=vm.runInNewContext(profileSave+';(async function(verb){'+complete+'})',ctx);
  await handler('complete-registration');
  assert.deepEqual(calls.map(x=>x.name),[
   'complete_love_registration','save_my_gender','save_my_play_style','reload']);
@@ -46,14 +47,14 @@ test('new account without invitation resolves owner creation server-side exactly
   }[k]),
   parseMonthDay:()=> '10-18',
   rpc:async(name,args)=>{calls.push({name,args});},
-  state:{installAfterSignup:false},
+  state:{user:{id:'new-owner'},installAfterSignup:false},
   pendingInviteReference:()=>null,sessionStorage:{},
   resolveVerifiedSignup:async flag=>{
    calls.push({name:'resolveVerifiedSignup',flag});return {status:'owner'};
   },
   reload:async()=>{calls.push({name:'reload'});}
  };
- const handler=vm.runInNewContext('(async function(verb){'+complete+'})',ctx);
+ const handler=vm.runInNewContext(profileSave+';(async function(verb){'+complete+'})',ctx);
  await handler('complete-registration');
  assert.deepEqual(calls.map(x=>x.name),[
   'complete_love_registration','save_my_gender','save_my_play_style','resolveVerifiedSignup','reload']);
@@ -63,6 +64,7 @@ test('new account without invitation resolves owner creation server-side exactly
 test('server invitation decision is retrieved before creating the admin duo',async()=>{
  const calls=[];
  const ctx={
+  state:{user:{id:'signup-owner'}},
   rpc:async(name,args)=>{
    calls.push({name,args});
    return {status:'invitation',invitation_id:'72aa640b-2644-4d0d-bcf7-575587d27f31'};
