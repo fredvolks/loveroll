@@ -203,6 +203,8 @@ jobs:
         run: node --test couple-web/session-duration-preference.test.mjs
       - name: Plan next-evening intensity per account without affecting live D100
         run: node --test couple-web/evening-intensity-preference.test.mjs
+      - name: Validate balanced Soft Medium Intense future catalog routing
+        run: node --test couple-web/future-card-catalog.test.mjs
       - name: LR-014 — category confirmation and private setting
         run: node --test couple-web/evening-category-confirm.test.mjs
       - name: Validate iPad Soirée one-HD-photo contract
