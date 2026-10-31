@@ -2380,7 +2380,7 @@ function pendingAuthReloadFixture(state,rpc,query,overrides={}){
  const f=runInNewContext('let latestAuthReloadRequest=null;'+app.slice(first,end)+
   ';({reload})',{
    state,document:{hidden:false,documentElement:{lang:'fr'}},
-   sessionStorage:{},challengeTimer:{running:false},hasUnsavedForm:()=>false,
+   sessionStorage:{},client:{},challengeTimer:{running:false},hasUnsavedForm:()=>false,
    root:{querySelector:()=>null},window:{},
    refreshVerifiedIdentity:async()=>true,
    previewMode:()=> 'real',rpc,query,
@@ -2401,6 +2401,8 @@ test('LR-026: simultaneous refreshes of the same account ignore the older test-m
   return ++reads===1?firstPermission:true;
  },async()=>{throw Error('Latest profile read deliberately failed');});
  const previous=f.reload();
+ for(let i=0;i<12&&reads===0;i++)await Promise.resolve();
+ assert.equal(reads,1,'the older permission RPC must be in flight before the newer reload');
  const latest=f.reload();
  await assert.rejects(latest,/Latest profile read deliberately failed/);
  assert.equal(state.testModeEligible,true);
