@@ -234,6 +234,6 @@ test('LR-026: a pending history response cannot restore content after null statu
  assert.deepEqual(Array.from(h.state.eclatHistory),[]);
  delayed.resolve([{id:'stale-private-history'}]);
  await stale;
- assert.deepEqual(h.state.eclatHistory,[],
+ assert.deepEqual(Array.from(h.state.eclatHistory),[],
   'the null status invalidates a previously authorized history request');
 });
