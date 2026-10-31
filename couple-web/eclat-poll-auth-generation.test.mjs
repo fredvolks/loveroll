@@ -101,7 +101,7 @@ test('LR-026: a stalled Éclat poll retries after 30 seconds and rejects the old
 test('LR-026: identical Éclat status skips private history reads and redraws',async()=>{
  const h=harness();
  const poll=h.tick();
- h.requests[0].resolve({access:true,id:'original'});
+ h.requests[0].resolve({id:'original',access:true});
  await poll;
  assert.deepEqual(h.history,[]);
  assert.deepEqual(h.renders,[]);
