@@ -823,7 +823,7 @@ test('LR-027: a gift confirmation that resolves after a repick starts never send
  const route=runInNewContext('(async verb=>{'+code+'})',{
   state,authFeedbackGeneration:1,isActiveEveningRedrawPending:()=>pending,
   other:()=>({name:'Émilie'}),month:()=> '2026-10',
-  premiumConfirm:()=>confirmation,
+  premiumConfirm:()=>confirmation,render:()=>{},
   rpc:()=>{writes++;throw Error('Gift must not race repick')},
   refreshAndShow:()=>{writes++;throw Error('Stale refresh forbidden')},
   notify:()=>{writes++;throw Error('Stale toast forbidden')}
@@ -839,7 +839,7 @@ test('LR-027: a gift confirmation that resolves after a repick starts never send
  const normal=runInNewContext('(async verb=>{'+code+'})',{
   state,authFeedbackGeneration:1,isActiveEveningRedrawPending:()=>pending,
   other:()=>({name:'Émilie'}),month:()=> '2026-10',
-  premiumConfirm:async()=>true,
+  premiumConfirm:async()=>true,render:()=>{},
   rpc:async(name,args)=>{
    assert.equal(name,'give_love_challenge');
    assert.equal(args.p_session,'night-1');
