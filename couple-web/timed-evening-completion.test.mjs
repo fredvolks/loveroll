@@ -1009,6 +1009,7 @@ test("LR-026 real D100 handlers reject clicks while automatic completion is pend
    state:{redrawReady:true,user:{id:'alice'},session:{id:'s1'}},
    isEveningCardCompleting:cardId=>cardId==='card-A',
    isActiveEveningRedrawPending:()=>false,
+   isActiveEveningGiftPending:()=>false,
    rpc:async()=>{throw Error('Forbidden RPC while the timer is completing');}
   });
   await action(verb,['card-A','yes']);
@@ -1119,6 +1120,8 @@ test("LR-026 real manual answer handler retains card and couple ownership during
  const calls=[],paint=[];
  const answer=runInNewContext('(async function(verb,parts){'+app.slice(first,end)+'})',{
   state,isEveningCardCompleting:()=>false,
+  isActiveEveningRedrawPending:()=>false,
+  isActiveEveningGiftPending:()=>false,
   ownEveningChallenges:rows=>rows,
   isSameEveningResponseContext:(v,c)=>v.user?.id===c?.userId&&
    v.session?.id===c?.sessionId&&v.tab===c?.tab,
@@ -1156,6 +1159,8 @@ test('LR-026 manual D100 answer immediately renders busy state and restores cont
  const rendered=[],calls=[];
  const handler=runInNewContext('(async function(verb,parts){'+app.slice(start,end)+'})',{
   state,isEveningCardCompleting:()=>false,
+  isActiveEveningRedrawPending:()=>false,
+  isActiveEveningGiftPending:()=>false,
   ownEveningChallenges:r=>r,
   isSameEveningResponseContext:(v,c)=>v.user?.id===c?.userId&&
    v.session?.id===c?.sessionId&&v.tab===c?.tab,
@@ -1188,6 +1193,8 @@ test('LR-026 manual D100 completion cannot render an unconfirmed scoped refresh'
  const renders=[],notices=[],calls=[];
  const handler=runInNewContext('(async function(verb,parts){'+app.slice(start,end)+'})',{
   state,isEveningCardCompleting:()=>false,
+  isActiveEveningRedrawPending:()=>false,
+  isActiveEveningGiftPending:()=>false,
   ownEveningChallenges:r=>r,
   isSameEveningResponseContext:(v,c)=>v.user?.id===c?.userId&&
    v.session?.id===c?.sessionId&&v.tab===c?.tab,
@@ -1229,6 +1236,8 @@ test('LR-026 completed manual D100 response repaints only after releasing busy l
  const renderStates=[],calls=[];
  const handle=runInNewContext('(async function(verb,parts){'+app.slice(begin,end)+'})',{
   state,isEveningCardCompleting:()=>false,
+  isActiveEveningRedrawPending:()=>false,
+  isActiveEveningGiftPending:()=>false,
   ownEveningChallenges:rows=>rows,
   isSameEveningResponseContext:(view,c)=>view.user?.id===c?.userId&&
    view.session?.id===c?.sessionId&&view.tab===c?.tab,
@@ -1261,7 +1270,9 @@ test('LR-026 final manual D100 card waits for authoritative session closure befo
   challenges:[{id:'card-A',recipient:'alice',session_id:'s1',status:'accepted'}]};
  const calls=[],rendered=[],messages=[];
  const answer=runInNewContext('(async function(verb,parts){'+app.slice(start,end)+'})',{
-  state,isEveningCardCompleting:()=>false,ownEveningChallenges:r=>r,
+  state,isEveningCardCompleting:()=>false,
+  isActiveEveningRedrawPending:()=>false,
+  isActiveEveningGiftPending:()=>false,ownEveningChallenges:r=>r,
   isSameEveningResponseContext:(v,c)=>v.user?.id===c?.userId&&
    v.session?.id===c?.sessionId&&v.tab===c?.tab,
   rpc:async name=>{calls.push(name);return name==='my_love_evening_board'?{finished:true}:{};},
@@ -1295,7 +1306,9 @@ test('LR-026 authoritative closed-night response paints unlocked final view',asy
   challenges:[{id:'card-A',recipient:'alice',session_id:'s1',status:'accepted'}]};
  const events=[];
  const answer=runInNewContext('(async function(verb,parts){'+app.slice(start,end)+'})',{
-  state,isEveningCardCompleting:()=>false,ownEveningChallenges:r=>r,
+  state,isEveningCardCompleting:()=>false,
+  isActiveEveningRedrawPending:()=>false,
+  isActiveEveningGiftPending:()=>false,ownEveningChallenges:r=>r,
   isSameEveningResponseContext:(v,c)=>v.user?.id===c?.userId&&
    v.session?.id===c?.sessionId&&v.tab===c?.tab,
   rpc:async name=>name==='my_love_evening_board'?{finished:true}:{},
@@ -1326,7 +1339,9 @@ test('LR-026 a successful finish RPC cannot hide D100 before closed session appe
   challenges:[{id:'card-A',recipient:'alice',session_id:'s1',status:'accepted'}]};
  const renders=[],messages=[];
  const run=runInNewContext('(async function(verb,parts){'+app.slice(start,end)+'})',{
-  state,isEveningCardCompleting:()=>false,ownEveningChallenges:rows=>rows,
+  state,isEveningCardCompleting:()=>false,
+  isActiveEveningRedrawPending:()=>false,
+  isActiveEveningGiftPending:()=>false,ownEveningChallenges:rows=>rows,
   isSameEveningResponseContext:(v,c)=>v.user?.id===c?.userId&&
    v.session?.id===c?.sessionId&&v.tab===c?.tab,
   rpc:async name=>name==='my_love_evening_board'?{finished:true}:{},
