@@ -182,24 +182,26 @@ export function premiumEveningHtml({
  const count=(uid)=>esc((done[uid]||0)+' / '+(totals[uid]??'—'));
  // LR-027: waiting for another person is a state, not a fake disabled button.
  const waitingStatus=label=>'<p class="evening-primary-status" role="status">'+esc(label)+'</p>';
+ const resumeAction=nextChallenge?.id&&['accepted','proposed'].includes(nextChallenge.status)?
+  bt('evening-open:'+nextChallenge.id,
+   nextChallenge.status==='accepted'?'▶ Reprendre mon défi':'▶ Commencer mon défi',
+   'evening-primary'):'';
+ // A member waiting for the other player's D100 can still play their own
+ // already-drawn card. Never replace the D100 itself on the active turn.
  const primaryAction=rolling?waitingStatus('Brassage en cours…'):
   turn.finished?bt('finish-session','✓ Terminer la soirée','evening-primary'):
   !ready?waitingStatus(status?.my_rolled?
    'En attente du D6 de ton partenaire':'Lance ton D6 pour continuer'):
-  turn.drawsFinished?(nextChallenge?.id&&['accepted','proposed'].includes(nextChallenge.status)?
-   bt('evening-open:'+nextChallenge.id,
-    nextChallenge.status==='accepted'?'▶ Reprendre mon défi':'▶ Commencer mon défi',
-    'evening-primary'):
-   ownChallengeCount>0?
+  turn.drawsFinished?(resumeAction||
+   (ownChallengeCount>0?
     bt('evening-list','♡ Voir mes défis ('+ownChallengeCount+')','evening-primary'):
-    waitingStatus('Tous les tirages sont terminés')):
+    waitingStatus('Tous les tirages sont terminés'))):
   canDraw?bt('new-challenge','🎲 Brasser le D100','evening-primary'):
-   waitingStatus('En attente du tour de ton partenaire');
+   resumeAction||waitingStatus('En attente du tour de ton partenaire');
  // Opening the challenge list remounts the die scene. Keep that action
  // unavailable until the official D100 animation has finished.
  const secondaryAction=ownChallengeCount>0&&!rolling&&!turn.finished&&
-  (!turn.drawsFinished||(nextChallenge?.id&&
-   ['accepted','proposed'].includes(nextChallenge.status)))?
+  (!turn.drawsFinished||!!resumeAction)?
   bt('evening-list','♡ Voir mes défis ('+ownChallengeCount+')','evening-queue-open-btn'):'';
  return '<div class="evening-premium-view '+(session?(ready?'is-ready':'is-waiting'):'is-inactive is-finale')+'" data-category-percent="'+esc(preferredOdds)+'">'+
  '<div class="evening-toolbar">'+
