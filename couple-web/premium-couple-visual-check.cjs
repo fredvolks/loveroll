@@ -11,9 +11,12 @@ const {chromium}=require('playwright');
    isMobile:true,hasTouch:true,deviceScaleFactor:2});
   const errors=[];page.on('pageerror',err=>errors.push(err.message));
   const url='http://127.0.0.1:8765/__premium-couple-pages-test.html?page='+pageName;
+  const sceneStartedAt=Date.now();
+  console.log('WEBGL_SCENE_START',device.name,pageName);
   await page.goto(url,{waitUntil:'load'});
   await page.locator(pageName.startsWith('evening')?'.evening-premium-view':'.surprise-premium-view').waitFor();
-  await page.waitForFunction(()=>[...document.querySelectorAll('canvas[data-dice-sides]')].every(x=>x.dataset.webglReady==='true'),null,{timeout:20000});
+  await page.waitForFunction(()=>{const dice=[...document.querySelectorAll('canvas[data-dice-sides]')];return dice.length>0&&dice.every(x=>x.dataset.webglReady==='true');},null,{timeout:20000});
+  console.log('WEBGL_SCENE_READY',device.name,pageName,'elapsed_ms',Date.now()-sceneStartedAt);
   await page.waitForTimeout(450);
   const result=await page.evaluate(()=>{
    const main=document.querySelector('main'),nav=document.querySelector('.nav').getBoundingClientRect();
@@ -87,6 +90,7 @@ const {chromium}=require('playwright');
       result.surpriseDice.some(d=>!d.inside||!d.noButtonOverlap||d.position!=='absolute')
      )))throw Error('Rendu S25 incorrect : '+pageName+' '+device.name);
   await page.screenshot({path:'landing-captures/'+device.name+'-'+pageName+'-vrai-couple.png'});
+  console.log('WEBGL_SCENE_CAPTURED',device.name,pageName,'elapsed_ms',Date.now()-sceneStartedAt);
   await page.close();
  }
 
@@ -100,10 +104,13 @@ const {chromium}=require('playwright');
   const page=await browser.newPage({viewport:{width:device.width,height:device.height},
    isMobile:true,hasTouch:true,deviceScaleFactor:2});
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
+  const responsiveStartedAt=Date.now();
+  console.log('WEBGL_RESPONSIVE_START',device.name,pageName);
   await page.goto('http://127.0.0.1:8765/__premium-couple-pages-test.html?page='+pageName,{waitUntil:'load'});
   if(device.fontSize)await page.addStyleTag({content:'body{font-size:'+device.fontSize+'!important}'});
-  await page.waitForFunction(()=>[...document.querySelectorAll('canvas[data-dice-sides]')].every(
-   el=>el.dataset.webglReady==='true'),null,{timeout:20000});
+  await page.waitForFunction(()=>{const dice=[...document.querySelectorAll('canvas[data-dice-sides]')];return dice.length>0&&dice.every(
+   el=>el.dataset.webglReady==='true');},null,{timeout:20000});
+  console.log('WEBGL_RESPONSIVE_READY',device.name,pageName,'elapsed_ms',Date.now()-responsiveStartedAt);
   const target=page.locator(pageName.startsWith('evening')?'.evening-small-roll':'.surprise-primary').first();
   await target.scrollIntoViewIfNeeded();
   const metrics=await page.evaluate(()=>{
@@ -130,6 +137,7 @@ const {chromium}=require('playwright');
     throw Error('Commande inaccessible sur petit écran : '+device.name+' '+pageName);
   }
   await page.screenshot({path:'landing-captures/'+device.name+'-'+pageName+'-responsive.png',fullPage:true});
+  console.log('WEBGL_RESPONSIVE_CAPTURED',device.name,pageName,'elapsed_ms',Date.now()-responsiveStartedAt);
   await page.close();
  }
  await browser.close();
