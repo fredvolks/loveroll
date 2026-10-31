@@ -1800,7 +1800,7 @@ function renderEclat(){
   const current=eclatStage(e.coffret_id,e.chapter_number,e.variant_number);
   if(current)eclatAudio.setMood(current.mood);
  }else if(state.eclatMusic){eclatAudio.stop();state.eclatMusic=false;}
- frame(eclatHtml({status:e,selected:state.eclatSelection,minutes:state.eclatMinutes,
+ frame(eclatHtml({status:e,coupleReady,selected:state.eclatSelection,minutes:state.eclatMinutes,
   details:state.eclatDetails,members:state.members,userId:state.user?.id,
   music:state.eclatMusic,finished:coupleReady?state.eclatFinished:null,browse:state.eclatBrowse,intent:state.eclatIntent,noteState:e?.active&&!state.eclatBrowse?eclatNoteState():{},history:coupleReady&&state.eclatHistoryCouple===state.coupleId&&
    state.eclatHistoryUserId===state.user?.id?state.eclatHistory:[],historyError:state.eclatHistoryError}), 'Éclat','Notre expérience à deux');
