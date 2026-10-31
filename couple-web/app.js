@@ -5598,7 +5598,17 @@ async function handle(action,element){
   // A pending repick already owns its scoped refresh of this same session.
   if(state.diceStatus||isActiveEveningRedrawPending())return;
   if(!isSharedCoupleReady(state.coupleId,state.members))throw Error('Deux partenaires doivent être associés.');
-  await refreshShared();
+  const owner={userId:state.user?.id,coupleId:state.coupleId,
+   tab:state.tab,generation:authFeedbackGeneration};
+  // The refresh may resolve after a login, tab change, official roll or a
+  // newer request. Never reopen the former player's private queue then.
+  const refreshing=refreshShared();
+  const request=state.unscopedSharedRefreshRequest;
+  await refreshing;
+  if(state.user?.id!==owner.userId||state.coupleId!==owner.coupleId||
+     state.tab!==owner.tab||authFeedbackGeneration!==owner.generation||
+     state.unscopedSharedRefreshRequest!==request||
+     state.diceStatus||isActiveEveningRedrawPending())return;
   const session=playableSessionForWeekly(state.session,state.weekly);
   if(!session){
    state.tab='home';state.showEveningChallenges=false;state.selectedEveningChallengeId=null;
@@ -5982,7 +5992,10 @@ async function handle(action,element){
   const selectedCategory=state.category,sessionId=state.session.id;
   const drawOwner={userId:state.user?.id,coupleId:state.coupleId,
    sessionId,generation:authFeedbackGeneration};
-  const ownsDraw=()=>ownsEveningCategoryDraw(state,drawOwner,authFeedbackGeneration);
+  // Category confirmation is asynchronous. A private Passer/Refuser may
+  // start while its dialog is open; it owns the next server queue snapshot.
+  const ownsDraw=()=>ownsEveningCategoryDraw(state,drawOwner,authFeedbackGeneration)&&
+   !isActiveEveningRedrawPending();
   eveningCategoryConfirmInFlight=true;
   try{
    let disableReminder=false;
