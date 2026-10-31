@@ -668,10 +668,40 @@ async function autoAcceptPendingInvite(){
 function verificationPendingHtml(email){
  return emailConfirmationHtml(email,{needsSignIn:!state.user,invitation:!!pendingInviteReference(sessionStorage),google:CONFIG.oauthProviders?.includes('google')===true});
 }
+// Preserve the private account boundary even when SIGNED_IN arrives without
+// an intermediate SIGNED_OUT, as can happen across multiple browser tabs.
+let latestAuthReloadRequest=null;
+function adoptAuthenticatedIdentity(nextUser){
+ const previousId=state.user?.id||null,nextId=nextUser?.id||null;
+ if(previousId!==nextId){
+  latestAuthReloadRequest=null;
+  eclatNoteDrafts.clear();
+  latestEclatAudioOwner=null;eclatAudio.stop();state.eclatMusic=false;
+  latestEclatHistoryRead=null;latestEclatStatusRead=null;latestEclatActionRequest=null;
+  state.eclat=null;state.eclatHistory=[];state.eclatHistoryCouple=null;
+  state.eclatHistoryUserId=null;
+  state.profile=null;state.coupleId=null;state.couple=null;state.members=[];
+  state.wellbeing=null;state.personalJournal=[];state.personal=null;
+  state.personalSexualCardsReady=false;state.customCards=[];
+  state.challenges=[];state.challengesHistory=[];
+  state.session=null;state.sessions=[];state.pushPrefs=null;state.referral=null;
+  state.tab='home';
+ }
+ state.user=nextUser;
+ return previousId!==nextId;
+}
 async function refreshVerifiedIdentity(){
  if(!state.user)return false;
+ const expectedId=state.user.id;
  const {data,error}=await client.auth.getUser();
- if(error||!data?.user){state.user=null;return false;}
+ if(state.user?.id!==expectedId)return null;
+ if(error||!data?.user){adoptAuthenticatedIdentity(null);return false;}
+ if(data.user.id!==expectedId){
+  adoptAuthenticatedIdentity(data.user);
+  render(); // Remove the former account before loading this one's profile.
+  setTimeout(()=>reload().catch(fail),0);
+  return null;
+ }
  state.user=data.user;
  return verifiedLoveEmail(data.user);
 }
@@ -5110,20 +5140,21 @@ async function start(){
   catch(e){fail(e);window.LoveRollBoot?.showFailure();}
  }else render();
  client.auth.onAuthStateChange((event,session)=>{
-  if(event==='SIGNED_IN'&&session?.user&&!state.user){
-   state.user=session.user;
+  if(event==='SIGNED_IN'&&session?.user&&state.user?.id!==session.user.id){
+   adoptAuthenticatedIdentity(session.user);
+   render(); // Immediately replace the former account's private screen.
    setTimeout(()=>reload().catch(fail),0);
   }
   if(event==='PASSWORD_RECOVERY'){
-    state.passwordRecovery=true;state.showAuth=true;
-    state.user=session?.user||state.user;render();
-   }
-   if(event==='SIGNED_OUT'){eclatNoteDrafts.clear();
-   latestEclatAudioOwner=null;eclatAudio.stop();state.eclatMusic=false;
-   latestEclatHistoryRead=null;latestEclatStatusRead=null;latestEclatActionRequest=null;
-   state.eclat=null;
-   state.eclatHistory=[];state.eclatHistoryCouple=null;state.eclatHistoryUserId=null;
-   state.user=null;state.profile=null;state.coupleId=null;state.wellbeing=null;state.personalPass=null;state.personalJournal=[];state.emailVerificationPending=false;render();}
+   if(session?.user&&state.user?.id!==session.user.id)adoptAuthenticatedIdentity(session.user);
+   state.passwordRecovery=true;state.showAuth=true;
+   render();
+  }
+  if(event==='SIGNED_OUT'){
+   adoptAuthenticatedIdentity(null);
+   state.personalPass=null;state.emailVerificationPending=false;
+   render();
+  }
  });
 }
 // Version probe bypasses WebView/Chrome and service worker HTTP cache.
