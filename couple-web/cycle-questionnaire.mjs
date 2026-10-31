@@ -1,5 +1,15 @@
 // LoveRoll — a private choice for EACH partner when 200 shared challenges
 // have been completed. This is not a card and does not affect current dice.
+// A completed-cycle choice is personal and must not inherit a replacement
+// account, couple, or re-authenticated browser session during an async RPC.
+// Cycle identity is checked separately before applying the server result.
+export function ownsCycleIntensityAnswer(state,request,generation){
+ return !!(typeof request?.userId==='string'&&request.userId&&
+  typeof request?.coupleId==='string'&&request.coupleId&&
+  Number.isInteger(request.generation)&&
+  request.generation===generation&&
+  state?.user?.id===request.userId&&state?.coupleId===request.coupleId);
+}
 export function cycleIntensityQuestionnaireHtml({
  status=null,style='medium',partnerName='votre partenaire'
 }={}){
