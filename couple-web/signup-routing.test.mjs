@@ -317,6 +317,10 @@ test('same-account relogin cannot finalize stale acceptance after RPC response',
  assert.equal(state.tab,'settings');
  assert.notEqual(state.inviteWelcome,true);
  assert.equal(state.inviteError,null);
+ assert.equal(state.inviteAttemptKey,null,'same invitation can be retried after the old request ends');
+ await fn();
+ assert.equal(clears,1,'current session may finish pairing on its own request');
+ assert.equal(state.tab,'home');
 });
 
 test('invitation cannot pair before birth date or email verification',async()=>{
