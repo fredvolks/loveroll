@@ -107,6 +107,7 @@ let currentReviewSaveRequest=null;
 // Ignore duplicate start taps for this Auth generation, but never block a new login.
 let currentNewSessionRequest=null;
 let currentWeeklyConfirmationRequest=null;
+let currentEveningInviteRequest=null;
 let latestDiceRollRequest=null;
 const eveningClosureGate=createEveningClosureGate();
 let worldGpsDraft=null;
@@ -3665,7 +3666,14 @@ async function handle(action,element){
      !['pending','maybe'].includes(state.eveningInvite?.state)||
      !state.eveningInvite.id))
    throw Error('Cette invitation ne peut plus recevoir de réponse.');
-  const who=state.user?.id,couple=state.coupleId;
+  const who=state.user?.id,couple=state.coupleId,
+   generation=authFeedbackGeneration,invitationId=state.eveningInvite?.id;
+  if(!who)return;
+  const request={};
+  currentEveningInviteRequest=request;
+  const current=()=>currentEveningInviteRequest===request&&
+   state.user?.id===who&&state.coupleId===couple&&
+   authFeedbackGeneration===generation;
   state.eveningInviteBusy=true;
   if(element){element.disabled=true;element.setAttribute('aria-busy','true');}
   try{
@@ -3673,25 +3681,35 @@ async function handle(action,element){
     await rpc('love_evening_invite_send',{p_couple:couple});
    }else{
     await rpc('love_evening_invite_respond',{
-     p_invitation:state.eveningInvite.id,p_answer:answer
+     p_invitation:invitationId,p_answer:answer
     });
    }
-   if(state.coupleId!==couple||state.user?.id!==who)return;
-   state.eveningInviteBusy=false; // Refresh must render enabled controls.
+   if(!current())return; // An old reply cannot navigate another member.
+   let setupError=null;
    if(answer==='yes'){
-    // Yes gives permission to open the real Soirée; never roll either D6.
-    // The official session RPC still enforces day/week and partner rules.
-    state.tab='session';
-    let setupError=null;
+    // Yes permits opening Soirée, never an automatic D6. Keep the previous
+    // screen visible until setup has completed for THIS authenticated member.
     if(!state.session)try{
      await rpc('ensure_couple_session',{p_couple:couple});
     }catch(error){setupError=error;}
-    await refreshAndShow();
-    if(setupError)showInlineError('Invitation acceptée. Ouvre la soirée manuellement si le D6 n’est pas encore disponible.');
-   }else await refreshAndShow();
-  }finally{
+    if(!current())return;
+    state.tab='session';
+   }
+   await refreshShared();
+   if(!current())return;
    state.eveningInviteBusy=false;
-   if(element?.isConnected){element.disabled=false;element.removeAttribute('aria-busy');}
+   render();
+   if(setupError)showInlineError('Invitation acceptée. Ouvre la soirée manuellement si le D6 n’est pas encore disponible.');
+  }catch(error){
+   if(current())throw error; // Do not announce Alice's failure on Bob's screen.
+  }finally{
+   if(current()){
+    state.eveningInviteBusy=false;
+    if(element?.isConnected){
+     element.disabled=false;element.removeAttribute('aria-busy');
+    }
+   }
+   if(currentEveningInviteRequest===request)currentEveningInviteRequest=null;
   }
   return;
  }
