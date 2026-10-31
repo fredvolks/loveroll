@@ -298,6 +298,7 @@ document.addEventListener('keydown',event=>{
 });
 
 let diceView=null;
+let mountedEclatEditorScope=null;
 function frame(body,title='LOVEROLL',subtitle='Un jeu intime, juste pour vous deux'){
  // Server-triggered refreshes may replace the Éclat editor while the user
  // types. Restore its cursor only for the exact same authenticated chapter.
@@ -308,7 +309,9 @@ function frame(body,title='LOVEROLL',subtitle='Un jeu intime, juste pour vous de
   const key=eclatNoteKey(state.eclat,state.user.id);
   return key?JSON.stringify([state.user.id,state.coupleId,authFeedbackGeneration,key]):null;
  };
- const focusedEclatEditor=captureEclatEditorFocus(root,document.activeElement,eclatFocusScope());
+ const currentEclatEditorScope=eclatFocusScope();
+ const focusedEclatEditor=captureEclatEditorFocus(root,document.activeElement,
+  mountedEclatEditorScope===currentEclatEditorScope?currentEclatEditorScope:null);
  setLoveRollSoundUser(state.user?.id);
  const openerAction=document.activeElement?.dataset?.action||null;
  const draft=lastFormTab===formRouteKey()?snapshotDraft():[];
@@ -392,6 +395,10 @@ function frame(body,title='LOVEROLL',subtitle='Un jeu intime, juste pour vous de
  const detailScroll=oldDetail?{id:oldDetail.dataset.coffretId,top:oldDetail.scrollTop}:null;
  const inviteInbox=realHome?eveningInviteInboxHtml(state.eveningInvite,{partnerName:other()?.name}):'';
  root.innerHTML=(realHome||realEvening||realSurprise||realEclat||realSettings||realEditor||eveningArchive||(isCouple&&state.tab==='advent')?'':usualHeader)+body+inviteInbox+(connected?nav():'')+installation+reviewPanel+cyclePanel;
+ // Record which authenticated scene actually owns the mounted DOM. A
+ // same-user re-login may otherwise capture yesterday's textarea using
+ // today's generation before this render has replaced the old nodes.
+ mountedEclatEditorScope=eclatFocusScope();
  if(homeStage){
   const fresh=root.querySelector('.home-die-platform canvas'),replacement=fresh?.closest('.home-die-platform');
   if(replacement){
