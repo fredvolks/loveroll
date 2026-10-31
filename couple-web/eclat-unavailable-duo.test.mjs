@@ -33,6 +33,10 @@ test('LR-026: completion notice is hidden when Éclat access disappears',()=>{
  for(const status of [null,{access:false,active:false},{access:false,active:true}]){
   const html=eclatHtml({coupleReady:true,status,finished:previous});
   assert.doesNotMatch(html,/Coffret terminé ensemble/);
+  assert.doesNotMatch(html,/data-action="eclat:(choose|next|music|end)\b/,
+   'revoked access cannot expose active Éclat controls');
+  assert.doesNotMatch(html,/eclat-guided|eclat-step-progress/,
+   'revoked access cannot show a private guided chapter');
   assert.doesNotMatch(html,new RegExp(previous),
    'a revoked or unknown entitlement cannot display an old completion');
  }
