@@ -1181,7 +1181,7 @@ test('LR-027: private-card overlay honestly locks Start, Complete, Refuse during
  const overlay=app.slice(from,until);
  assert.match(overlay,/const giftTransferPending=isActiveEveningGiftPending\(\)/,
   'The lock derives from the current user and evening, not a shared global flag');
- assert.match(overlay,/evening-gift-pending[^']*' role="status" aria-live="polite"/,
+ assert.match(overlay,/evening-gift-pending" role="status" aria-live="polite"/,
   'Gift progress is described to keyboard and screen-reader users');
  assert.match(overlay,/button\('evening-start:'\+view\.id[\s\S]*?isActiveEveningRedrawPending\(\)\|\|giftTransferPending\|\|isEveningCardCompleting\(view\.id\)/);
  assert.match(overlay,/button\('answer:'\+view\.id\+':completed',[\s\S]*?giftTransferPending\?'♡ Don en cours…'/);
