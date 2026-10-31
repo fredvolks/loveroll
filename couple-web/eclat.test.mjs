@@ -223,3 +223,26 @@ test('Éclat note saving progress disables repeat save but preserves editable dr
   noteState:{playing:true,saving:false,saved:true,dirty:false}});
  assert.match(available,/data-eclat-note-status role="status">Note enregistrée pour toi<\/span>/);
 });
+
+test('Éclat controls prevent duplicate save transitions while a note is saving',()=>{
+ const status={access:true,active:true,coffret_id:1,minutes:30,
+  chapter_index:1,chapter_number:1,chapter_total:8,variant_number:0,
+  session_id:'note-in-flight',my_choice:null,both_chosen:false};
+ const render=noteState=>eclatHtml({status,members:people,userId:'a',noteState});
+ const prepare=render({note:'Private text remains editable',saving:true});
+ assert.match(prepare,/data-action="eclat:note-play"[^>]*disabled[^>]*>Vivre ce moment à deux<\/button>/);
+ assert.match(prepare,/data-action="eclat:choose:0"[^>]*disabled[^>]*>Passer ce moment<\/button>/);
+ assert.match(prepare,/data-eclat-field="note"[^>]*>Private text remains editable<\/textarea>/);
+ const playing=render({playing:true,saving:true});
+ assert.match(playing,/data-action="eclat:note-done"[^>]*disabled[^>]*>J’ai terminé ce moment<\/button>/);
+ assert.match(playing,/data-action="eclat:choose:0"[^>]*disabled[^>]*>Passer ce moment<\/button>/);
+ const choosing=render({moment_done:true,saving:true});
+ for(let choice=1;choice<=3;choice++){
+  assert.match(choosing,new RegExp('data-action="eclat:choose:'+choice+'"[^>]*disabled'),
+   'choices may not start duplicate saves in flight');
+ }
+ assert.match(choosing,/data-action="eclat:note-edit"[^>]*disabled[^>]*>Revenir au moment<\/button>/);
+ const loading=render({loading:true});
+ assert.match(loading,/data-action="eclat:choose:0" class="eclat-skip">Passer ce moment<\/button>/,
+  'skip remains available if the optional note has not loaded');
+});
