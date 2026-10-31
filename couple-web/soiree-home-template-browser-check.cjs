@@ -122,7 +122,20 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
     world.reviews=[{session_id:'closed',author_id:'a'}];
     await page.reload();await page.waitForSelector('.home-dashboard');
     await page.locator('[data-action="tab:session"]').click();await page.waitForSelector('.evening-summary-shell.is-aftercare');
-    assert.equal(await page.locator('.evening-finale-start').isDisabled(),true);
+    // The first-time review may open automatically after a closed night.
+    // Dismiss it to verify the persistent aftercare entry point remains usable.
+    const dismiss=page.locator('.lr-review-modal [data-action="review-dismiss"]');
+    if(await dismiss.count()){
+     await dismiss.click();
+     await page.locator('.lr-review-modal').waitFor({state:'detached'});
+    }
+    const reviewButton=page.locator('.evening-finale-start');
+    assert.equal(await reviewButton.isDisabled(),false);
+    assert.equal(await reviewButton.getAttribute('data-action'),'review-open:closed');
+    await reviewButton.click();
+    await page.locator('.lr-review-modal[data-review-session="closed"]').waitFor({state:'visible'});
+    await page.locator('.lr-review-modal [data-action="review-dismiss"]').click();
+    await page.locator('.lr-review-modal').waitFor({state:'detached'});
     assert.match(await page.locator('.evening-summary-shell').innerText(),/Notre soirée est terminée/);
     // The compact 360px layout deliberately hides the redundant numeric row.
     // Verify the actual visible per-person statuses AND the underlying total.

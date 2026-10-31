@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {eveningReviewModal,validEveningReview,eveningPersonReviewMarkup,eveningFinaleStatus,REVIEW_QUESTIONS} from './evening-review.mjs';
 import {eveningHistoryMarkup} from './evening-calendar.mjs';
+import {premiumEveningHtml} from './premium-evening.mjs';
 const read=f=>readFileSync(new URL(f,import.meta.url),'utf8');
 const members=[{user_id:'fred',name:'Fred'},{user_id:'partner',name:'Partenaire'}];
 const sessions=[{id:'evening-1',started_at:'2026-10-16T17:00:00Z',finished_at:'2026-10-16T22:00:00Z',counted:true}];
@@ -150,4 +151,27 @@ test('Finale counts one review per partner and handles incomplete history safely
  assert.equal(eveningFinaleStatus({sessionId:null}),null);
  const app=read('app.js');
  assert.match(app,/const lastEvening=last\?eveningFinaleStatus\(/);
+});
+
+test('The Soirée aftercare primary action opens own review, never a disabled new game',()=>{
+ const base={session:null,members:[{user_id:'fred',name:'Fred'},
+  {user_id:'partner',name:'Partenaire'}],me:'fred',
+  weeklyCount:1,weeklyLimit:3,weeklyReady:true,canStartEvening:false};
+ const pending=premiumEveningHtml({...base,lastEvening:{
+  id:'closed-review',completed:2,myResponse:false,partnerResponse:false,responses:0}});
+ assert.match(pending,/data-action="review-open:closed-review"/);
+ assert.match(pending,/♡ REMPLIR MON BILAN/);
+ assert.doesNotMatch(pending,/class="evening-finale-start" data-action="new-session"/);
+ assert.match(pending,/data-action="evening-calendar"/);
+ assert.equal((pending.match(/class="evening-finale-start"/g)||[]).length,1);
+ const saved=premiumEveningHtml({...base,lastEvening:{
+  id:'closed-review',completed:2,myResponse:true,partnerResponse:false,responses:1}});
+ assert.match(saved,/data-action="review-open:closed-review"/);
+ assert.match(saved,/♡ MODIFIER MON BILAN/);
+ const fresh=premiumEveningHtml({...base,lastEvening:null});
+ assert.match(fresh,/data-action="new-session"[^>]*disabled/);
+ assert.doesNotMatch(fresh,/data-action="review-open:/);
+ const allowed=premiumEveningHtml({...base,canStartEvening:true,lastEvening:null});
+ assert.match(allowed,/data-action="new-session"/);
+ assert.doesNotMatch(allowed,/data-action="new-session"[^>]*disabled/);
 });

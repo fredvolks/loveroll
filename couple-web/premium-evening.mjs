@@ -280,7 +280,12 @@ export function premiumEveningHtml({
          '</strong><span>Défis distincts</span></div>'+
        '<div><strong>'+esc(weeklyCount)+'</strong><span>Soirées terminées</span></div></div>')+
     '<div class="evening-finale-actions">'+
-      bt('new-session','♡ COMMENCER NOTRE SOIRÉE','evening-finale-start',!canStartEvening)+
+      (lastEvening?
+       // Today's evening is closed: make the main action useful instead
+       // of leaving a disabled start button in the couple's aftercare.
+       bt('review-open:'+lastEvening.id,lastEvening.myResponse?
+        '♡ MODIFIER MON BILAN':'♡ REMPLIR MON BILAN','evening-finale-start'):
+       bt('new-session','♡ COMMENCER NOTRE SOIRÉE','evening-finale-start',!canStartEvening))+
       bt('evening-calendar','▦ Consulter notre calendrier','evening-finale-calendar')+
     '</div>'+
   '</div></section>')+
