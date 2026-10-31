@@ -789,3 +789,53 @@ test('LR-026: real private history refresh supplies a per-page account guard',as
  assert.equal(h.state.eclat.id,'new-session');
  assert.deepEqual(h.renders,[]);
 });
+
+test('LR-026: changed Éclat status respects the failed-history retry deadline',async()=>{
+ const h=harness({recoverHistory:true});
+ h.state.eclat={id:'original',access:true,active:true,session_id:'session-1'};
+ h.state.eclatHistoryError=true;
+ h.state.eclatHistoryRetryAt=30000;
+ let tick=h.tick();
+ h.requests[0].resolve({id:'updated-choice',access:true,active:true,session_id:'session-1'});
+ await tick;
+ assert.equal(h.state.eclat.id,'updated-choice','live status must still update immediately');
+ assert.deepEqual(h.history,[],'status changes must not bypass the gallery retry cooldown');
+ assert.deepEqual(h.renders,['updated-choice']);
+ h.advance(29999);
+ tick=h.tick();
+ h.requests[1].resolve({id:'updated-choice-2',access:true,active:true,session_id:'session-1'});
+ await tick;
+ assert.deepEqual(h.history,[]);
+ h.advance(1);
+ tick=h.tick();
+ h.requests[2].resolve({id:'updated-choice-2',access:true,active:true,session_id:'session-1'});
+ await tick;
+ assert.deepEqual(h.history,['alice'],'history recovers at the retry deadline');
+ assert.equal(h.state.eclatHistoryError,false);
+ assert.equal(h.state.eclatHistoryRetryAt,0);
+});
+
+test('LR-026: a new Éclat session refreshes private history despite old retry cooldown',async()=>{
+ const h=harness({recoverHistory:true});
+ h.state.eclat={id:'old',access:true,active:true,session_id:'session-1',coffret_id:1};
+ h.state.eclatHistoryError=true;
+ h.state.eclatHistoryRetryAt=30000;
+ const tick=h.tick();
+ h.requests[0].resolve({id:'new',access:true,active:true,session_id:'session-2',coffret_id:2});
+ await tick;
+ assert.deepEqual(h.history,['alice'],'new sessions must not inherit the old retry delay');
+ assert.equal(h.state.eclat.id,'new');
+ assert.equal(h.state.eclatHistoryError,false);
+});
+
+test('LR-026: closing the Éclat session refreshes history without waiting for retry',async()=>{
+ const h=harness({recoverHistory:true});
+ h.state.eclat={id:'old',access:true,active:true,session_id:'session-1',coffret_id:1};
+ h.state.eclatHistoryError=true;
+ h.state.eclatHistoryRetryAt=30000;
+ const tick=h.tick();
+ h.requests[0].resolve({id:'ended',access:true,active:false,session_id:'session-1',coffret_id:1});
+ await tick;
+ assert.deepEqual(h.history,['alice'],'a just-finished coffret must enter history immediately');
+ assert.equal(h.state.eclat.active,false);
+});
