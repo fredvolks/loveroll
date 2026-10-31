@@ -12,6 +12,18 @@ export function coupleInvitationView(invitations,coupleId,now=Date.now()){
   typeof row.expires_at==='string'&&Date.parse(row.expires_at)>now)||null;
  return {latest:active||rows[0]||null,active};
 }
+// A share sheet/composer being opened is NOT proof of delivery. Only show
+// the manual confirmation for the same signed-in account, couple and link.
+export function canConfirmInvitationShare(attempt,active,userId,coupleId,now=Date.now()){
+ return !!attempt&&!!active&&typeof userId==='string'&&!!userId&&
+  typeof coupleId==='string'&&!!coupleId&&
+  attempt.userId===userId&&attempt.coupleId===coupleId&&
+  attempt.inviteId===active.id&&active.couple_id===coupleId&&
+  ['sms','courriel','messenger','lien'].includes(attempt.method)&&
+  !active.cancelled_at&&!active.accepted_at&&
+  typeof active.expires_at==='string'&&Date.parse(active.expires_at)>now;
+}
+
 export function invitationStatus(invitation,connected,now=Date.now()){
  if(connected)return {code:'accepted',title:'Demande acceptée',hint:'Votre espace couple est connecté.'};
  if(!invitation)return {code:'none',title:'Aucune demande envoyée',hint:'Invitez votre partenaire quand vous serez prêts.'};

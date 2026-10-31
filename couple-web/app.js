@@ -62,7 +62,7 @@ import {normalizeInviteEmail,composeInviteEmail} from './invite-email.mjs';
 import {enablePush,disablePush,updatePushPreference,sendTestPush,notificationSettingsMarkup,safeNativePushToken,currentPushDevice} from './push-notifications.mjs?v=20261027-web247';
 import {shouldOfferInstall,markInstallOffered,dismissInstall,requestInstall,installOfferHtml,installStepsHtml,installStatus,isEmbeddedBrowser,isIos} from './home-install.mjs?v=20261017-complete127';
 import {messengerExternalBrowserHtml} from './messenger-browser.mjs?v=20261017-entry139';
-import {invitationStatus,coupleInvitationView,coupleStats,formatCoupleDate,invitationEmailText,invitationMessengerText,invitationPreviewMarkup} from './couple-dashboard.mjs';
+import {invitationStatus,coupleInvitationView,canConfirmInvitationShare,coupleStats,formatCoupleDate,invitationEmailText,invitationMessengerText,invitationPreviewMarkup} from './couple-dashboard.mjs';
 import {premiumConfirm,premiumCopyLink,focusInlineLoveDialog} from './premium-dialogs.mjs?v=20261017-complete127';
 
 
@@ -845,6 +845,7 @@ function adoptAuthenticatedIdentity(nextUser){
   state.timerCompletionRetryOwner=null;
   state.redrawBusy=false;state.redrawBusyContext=null;state.redrawReady=false;
   state.eveningInviteBusy=false;state.inviteDraft=null;state.inviteCopyFallback=false;
+  state.lastInviteShareAttempt=null;
   state.jsonPending=null;state.geoVenue=null;state.geoReservation=null;
   state.geoLookup='idle';state.geoBookingEdit=false;
   state.pushDevice=null;state.guidance='playful';
@@ -1671,7 +1672,8 @@ function renderInvitePanel(){
   }
   if(latest&&!active)html+='<p class="tiny-note">Ce lien n’est plus actif. Créez une invitation si votre duo n’est pas encore associé.</p>';
   if(state.inviteCopyFallback&&draft)html+='<label class="invite-copy-manual">Lien à sélectionner et copier<input id="invite-manual-link" readonly aria-label="Lien d’invitation à copier" value="'+safe(draft.link)+'"></label>';
-  if(draft)html+=button('confirm-invite-sent','J’ai envoyé l’invitation','class="settings-primary"');
+  if(draft&&canConfirmInvitationShare(state.lastInviteShareAttempt,liveInvite,state.user?.id,state.coupleId))
+  html+=button('confirm-invite-sent','J’ai envoyé l’invitation','class="settings-primary"');
  }
  if(latest)html+='<details class="partner-invite-options"><summary>Détails et options du lien</summary><div class="partner-invite-option-body">'+
   '<p class="tiny-note">Destinataire : '+safe(latest.invited_email)+'<br>Préparée le '+safe(new Date(latest.created_at).toLocaleDateString('fr-CA'))+'</p>'+
@@ -5345,62 +5347,91 @@ async function handle(action,element){
  if(verb==='invite'){
   if(state.invitations?.some(x=>!x.cancelled_at&&!x.accepted_at&&new Date(x.expires_at)>new Date())&&
      !(await premiumConfirm('L’ancien lien d’invitation cessera de fonctionner. Votre partenaire devra utiliser le nouveau lien.',{kind:'library',title:'Remplacer le lien sécurisé ?'})))return;
-  await ensureInviteDraft(true);state.inviteCopyFallback=false;state.lastShareMethod=null;render();
+  await ensureInviteDraft(true);state.inviteCopyFallback=false;state.lastInviteShareAttempt=null;render();
   notify('Nouveau lien prêt. L’ancien lien a été remplacé.');return;
  }
  if(verb==='send-sms'||verb==='send-email'||verb==='send-messenger'||verb==='copy-invite'){
-  // Reuse the unexpired invitation ID after reload. The server verifies email at acceptance.
+  const userId=state.user?.id,coupleId=state.coupleId;
+  // Only the active, server-listed link may be shared.
   const d=await ensureInviteDraft(false);
+  const current=()=>state.user?.id===userId&&state.coupleId===coupleId&&
+   coupleInvitationView(state.invitations,coupleId).active?.id===d.id;
+  if(!current())return;
+  const recordAttempt=method=>{
+   if(!current())return false;
+   state.lastInviteShareAttempt={userId,coupleId,inviteId:d.id,method};
+   render();
+   return true;
+  };
   if(verb==='copy-invite'){
    try{
     if(!navigator.clipboard?.writeText)throw Error('Presse-papiers indisponible');
     await navigator.clipboard.writeText(d.link);
-    state.inviteCopyFallback=false;notify('Lien copié, sans modifier votre invitation.');
-   }catch(error){
-    state.inviteCopyFallback=true;render();
+    if(recordAttempt('lien'))
+     notify('Lien copié. Après l’avoir envoyé, confirmez l’envoi ici.');
+   }catch{
+    if(!current())return;
+    state.inviteCopyFallback=true;
+    recordAttempt('lien');
     const field=id('invite-manual-link');
     field?.focus();field?.select();
-    notify('Copie automatique indisponible : sélectionnez le lien affiché pour le copier.');
+    notify('Sélectionnez le lien, envoyez-le, puis confirmez l’envoi ici.');
    }
    return;
   }
   const text=verb==='send-messenger'?invitationMessengerText(d.link):invitationEmailText(d.link);
-  state.lastShareMethod=verb==='send-sms'?'sms':verb==='send-email'?'courriel':'messenger';
+  const method=verb==='send-sms'?'sms':verb==='send-email'?'courriel':'messenger';
   if(verb==='send-messenger'){
-   if(window.LoveRollNativeAuth?.openShare)window.LoveRollNativeAuth.openShare(text);
+   if(window.LoveRollNativeAuth?.openShare)await window.LoveRollNativeAuth.openShare(text);
    else if(navigator.share){
     try{await navigator.share({url:d.link});}
-    catch(error){if(error.name!=='AbortError')throw error;}
+    catch(error){if(error?.name==='AbortError')return;throw error;}
    }else{
-    try{await navigator.clipboard.writeText(d.link);
-     notify('Lien copié : collez-le dans une conversation Messenger.');}
-    catch{state.inviteCopyFallback=true;render();id('invite-manual-link')?.select();
-     notify('Sélectionnez le lien affiché pour le partager sur Messenger.');}
+    try{
+     if(!navigator.clipboard?.writeText)throw Error('Presse-papiers indisponible');
+     await navigator.clipboard.writeText(d.link);
+     if(recordAttempt('lien'))
+      notify('Lien copié : envoyez-le dans Messenger, puis confirmez ici.');
+    }catch{
+     if(!current())return;
+     state.inviteCopyFallback=true;recordAttempt('lien');
+     id('invite-manual-link')?.select();
+     notify('Copiez ce lien dans Messenger, puis confirmez l’envoi ici.');
+    }
     return;
    }
   }else if(verb==='send-sms'){
-   if(window.LoveRollNativeAuth?.openSms)window.LoveRollNativeAuth.openSms(text);
+   if(window.LoveRollNativeAuth?.openSms)await window.LoveRollNativeAuth.openSms(text);
    else{
     const isApple=/iPhone|iPad|iPod/i.test(navigator.userAgent);
     window.location.href='sms:'+(isApple?'&':'?')+'body='+encodeURIComponent(text);
    }
   }else{
    const subject='LoveRoll ❤️ Une invitation juste pour nous deux';
-   if(window.LoveRollNativeAuth?.openEmail)window.LoveRollNativeAuth.openEmail(d.email,subject,text);
+   if(window.LoveRollNativeAuth?.openEmail)
+    await window.LoveRollNativeAuth.openEmail(d.email,subject,text);
    else window.location.href=composeInviteEmail(d.email,subject,text);
   }
-  notify('Choisissez le destinataire et confirmez vous-même le partage.');
+  if(recordAttempt(method))
+   notify('Terminez l’envoi dans votre messagerie, puis confirmez ici.');
   return;
  }
  if(verb==='confirm-invite-sent'){
-  const invitation=await ensureInviteDraft(false);
-  await rpc('mark_pair_invite_sent',{p_invitation:invitation.id,p_method:state.lastShareMethod||'partage'});
-  state.invitations=await query('couple_invitations',{eq:{couple_id:state.coupleId},order:'created_at'});
+  const userId=state.user?.id,coupleId=state.coupleId;
+  const active=coupleInvitationView(state.invitations,coupleId).active;
+  const attempt=state.lastInviteShareAttempt;
+  if(!canConfirmInvitationShare(attempt,active,userId,coupleId))
+   throw Error('Partagez d’abord le lien actif, puis confirmez son envoi.');
+  await rpc('mark_pair_invite_sent',{p_invitation:active.id,p_method:attempt.method});
+  if(state.user?.id!==userId||state.coupleId!==coupleId)return;
+  const invitations=await query('couple_invitations',{eq:{couple_id:coupleId},order:'created_at'});
+  if(state.user?.id!==userId||state.coupleId!==coupleId)return;
+  state.invitations=invitations;state.lastInviteShareAttempt=null;
   render();notify('Envoi confirmé manuellement.');return;
  }
  if(verb==='cancel-invite'){
   await rpc('cancel_pair_invite',{p_invitation:parts[0]});
-  state.inviteDraft=null;state.inviteCopyFallback=false;state.lastShareMethod=null;
+  state.inviteDraft=null;state.inviteCopyFallback=false;state.lastInviteShareAttempt=null;
   state.invitations=await query('couple_invitations',{eq:{couple_id:state.coupleId},order:'created_at'});
   render();notify('Invitation annulée.');return;
  }

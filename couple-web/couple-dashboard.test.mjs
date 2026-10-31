@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {readFileSync} from 'node:fs';
-import {invitationStatus,coupleInvitationView,coupleStats,formatCoupleDate,invitationEmailText,invitationMessengerText,invitationPreviewMarkup} from './couple-dashboard.mjs';
+import {invitationStatus,coupleInvitationView,canConfirmInvitationShare,coupleStats,formatCoupleDate,invitationEmailText,invitationMessengerText,invitationPreviewMarkup} from './couple-dashboard.mjs';
 import {shouldOfferInstall,dismissInstall,installOfferHtml,isStandalone} from './home-install.mjs';
 
 test('Invitation has accurate states and never claims unsent share was delivered',()=>{
@@ -78,6 +78,40 @@ test('Invitation UI only exposes sharing controls for active same-couple links',
  assert.match(panel,/Créer mon invitation/);
  assert.match(panel,/Copier le lien/);
  assert.match(app,/if\(!forceNew\)throw Error\('Aucun lien actif/);
+});
+
+test('Manual invitation sent confirmation is scoped to exact user, duo and link',()=>{
+ const NOW=Date.parse('2026-10-31T18:00:00Z');
+ const invite={id:'invite-a',couple_id:'couple-a',expires_at:'2026-11-07T18:00:00Z'};
+ const attempt={userId:'alice',coupleId:'couple-a',inviteId:'invite-a',method:'messenger'};
+ assert.equal(canConfirmInvitationShare(attempt,invite,'alice','couple-a',NOW),true);
+ for(const [a,i,u,c] of [
+  [null,invite,'alice','couple-a'],
+  [attempt,null,'alice','couple-a'],
+  [attempt,{...invite,id:'new-link'},'alice','couple-a'],
+  [attempt,invite,'bob','couple-a'],
+  [attempt,invite,'alice','other-couple'],
+  [{...attempt,method:'untrusted'},invite,'alice','couple-a'],
+  [attempt,{...invite,cancelled_at:'2026-10-30'},'alice','couple-a'],
+  [attempt,{...invite,accepted_at:'2026-10-30'},'alice','couple-a'],
+  [attempt,{...invite,expires_at:'2026-10-31T18:00:00Z'},'alice','couple-a']
+ ])assert.equal(canConfirmInvitationShare(a,i,u,c,NOW),false);
+});
+test('Share UI and confirmation block must follow a composer attempt, never silently mark delivery',()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const panel=app.slice(app.indexOf('function renderInvitePanel(){'),
+  app.indexOf('\nfunction renderPartnerInvitation(){'));
+ assert.match(panel,/canConfirmInvitationShare\(state\.lastInviteShareAttempt,liveInvite,state\.user\?\.id,state\.coupleId\)/);
+ const from=app.indexOf("if(verb==='send-sms'||verb==='send-email'||verb==='send-messenger'||verb==='copy-invite'){");
+ const to=app.indexOf("if(verb==='cancel-invite'){",from);
+ const code=app.slice(from,to);
+ assert.ok(from>=0&&to>from);
+ assert.match(code,/state\.lastInviteShareAttempt=\{userId,coupleId,inviteId:d\.id,method\}/);
+ assert.match(code,/if\(error\?\.name==='AbortError'\)return/);
+ assert.match(code,/if\(!canConfirmInvitationShare\(attempt,active,userId,coupleId\)\)/);
+ assert.match(code,/p_invitation:active\.id,p_method:attempt\.method/);
+ assert.match(code,/state\.lastInviteShareAttempt=null/);
+ assert.doesNotMatch(code,/lastShareMethod/);
 });
 
 test('Couple success rate counts fully finished sessions only',()=>{
