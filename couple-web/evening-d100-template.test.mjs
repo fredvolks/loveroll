@@ -69,6 +69,45 @@ test('Challenge-list navigation cannot interrupt an official D100 animation',()=
   'The challenge list returns immediately when the rolling state clears');
 });
 
+
+test('Stale Soirée actions cannot interrupt official dice state',async()=>{
+ const {runInNewContext}=await import('node:vm');
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const routes=[
+  ["evening-close-request","if(verb==='evening-close-request'){","if(verb==='evening-close-confirm'){",null],
+  ["evening-close-confirm","if(verb==='evening-close-confirm'){","if(verb==='evening-challenge'||verb==='evening-list'){","close_love_evening_preserve"],
+  ["evening-list","if(verb==='evening-challenge'||verb==='evening-list'){","if(verb==='evening-close'){",null],
+  ["give-challenge","if(verb==='give-challenge'){","if(verb==='new-challenge'){","give_love_challenge"],
+  ["finish-session","if(verb==='finish-session'){","if(verb==='cancel-session'){","finish_couple_session"]
+ ];
+ for(const [verb,begin,end,forbiddenRpc] of routes){
+  const from=source.indexOf(begin),to=source.indexOf(end,from+begin.length);
+  assert.ok(from>0&&to>from,'Production route must exist: '+verb);
+  const block=source.slice(from,to);
+  for(const status of ['pending','rolling','settled']){
+   const calls=[];
+   const state={
+    diceStatus:status,rollAnimationKind:'new-challenge',session:{id:'night-a'},
+    user:{id:'alice'},showEveningChallenges:false,confirmCancel:false,tab:'session'
+   };
+   const run=runInNewContext('(async verb=>{'+block+'})',{
+    state,
+    render:()=>calls.push('render'),
+    rpc:(...args)=>{calls.push(args[0]);return Promise.resolve();},
+    refreshAndShow:()=>{calls.push('refresh');return Promise.resolve();},
+    clearEveningSelection:()=>calls.push('bookmark-clear'),
+    safeEveningBookmarkStorage:()=>null
+   });
+   await run(verb);
+   assert.equal(calls.length,0,verb+' must have no side effects at '+status);
+   assert.equal(state.showEveningChallenges,false);
+   assert.equal(state.confirmCancel,false);
+   assert.equal(state.tab,'session');
+   if(forbiddenRpc)assert.ok(!calls.includes(forbiddenRpc));
+  }
+ }
+});
+
 test('Information uses the actual configured preference and preserves calendar and closure',()=>{
  const info=eveningPlayInfoHtml(74);
  assert.match(info,/74 % pour la catégorie choisie et 26 % pour l’autre/);
