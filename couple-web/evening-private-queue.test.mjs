@@ -2162,7 +2162,7 @@ test('LR-026: retry does not discard a private note while save pending',async()=
 });
 
 function privateAuthBoundaryFixture(state,getUser){
- const start=app.indexOf('let latestAuthReloadRequest=null;');
+ const start=app.indexOf('let latestAuthReloadRequest=null,authFeedbackGeneration=0;');
  const end=app.indexOf('function authMessage(',start);
  assert.ok(start>0&&end>start,'production identity boundary must be available');
  const drafts=new Map([['alice:session:1',{note:'PRIVATE'}]]);
@@ -2929,6 +2929,7 @@ function emailAuthTransitionFixture(state,signOutCurrentAccount){
  const calls={paint:0,routes:[]};
  const scope={
   state,signOutCurrentAccount,verifiedLoveEmail:()=>false,
+  authFeedbackGeneration:0,
   keepAuthModeInUrl:route=>calls.routes.push(route),
   render:()=>calls.paint++
  };
