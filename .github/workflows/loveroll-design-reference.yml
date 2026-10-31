@@ -8,7 +8,8 @@ permissions:
   contents: read
 jobs:
   design:
-    runs-on: ubuntu-latest
+    # Fixed runner for Playwright 1.56 Chromium compatibility.
+    runs-on: ubuntu-24.04
     timeout-minutes: 15
     services:
       postgres:
@@ -53,7 +54,8 @@ jobs:
           path: design-captures/
 
   editorial-details:
-    runs-on: ubuntu-latest
+    # Fixed runner for Playwright 1.56 Chromium compatibility.
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
