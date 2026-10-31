@@ -696,6 +696,7 @@ function adoptAuthenticatedIdentity(nextUser){
  const previousId=state.user?.id||null,nextId=nextUser?.id||null;
  if(previousId!==nextId){
   latestAuthReloadRequest=null;
+  currentSignoutRequest=null;
   currentProfileSave=null;
   inviteAcceptanceRequest=null;inviteAcceptanceBusy=false;
   state.inviteAttemptKey=null;state.inviteError=null;state.inviteWelcome=false;
@@ -775,6 +776,44 @@ async function saveProfileForCurrentAccount(name,birthday,gender,playStyle){
   }
   return true;
  }finally{if(currentProfileSave===owner)currentProfileSave=null;}
+}
+// Logout can await FCM and Realtime cleanup. Those awaits must not cause
+// another account that signed in meanwhile to be signed out by mistake.
+let currentSignoutRequest=null;
+async function signOutCurrentAccount(){
+ const ownerId=state.user?.id;
+ if(!ownerId)return false;
+ if(currentSignoutRequest?.ownerId===ownerId)return false;
+ const request={ownerId};currentSignoutRequest=request;
+ const current=()=>state.user?.id===ownerId&&currentSignoutRequest===request;
+ try{
+  if(safeNativePushToken()){
+   try{await disablePush(client,ownerId);}
+   catch(error){if(current())console.warn('Désinscription FCM',error?.code||'');}
+   if(!current())return false;
+  }
+  if(state.channel){
+   const channel=state.channel;
+   await client.removeChannel(channel);
+   if(!current())return false;
+   if(state.channel===channel)state.channel=null;
+  }
+  if(!current())return false;
+  const {error}=await client.auth.signOut();
+  // SIGNED_OUT may have already invalidated this owner and painted the
+  // anonymous view. Otherwise, explicitly finish clearing private state.
+  if(!current())return false;
+  if(error)throw error;
+  adoptAuthenticatedIdentity(null);
+  state.showAuth=false;state.passwordRecovery=false;
+  keepAuthModeInUrl(null);
+  state.installAfterSignup=false;state.installModalOpen=false;
+  state.showInstallSteps=false;state.forceInstallGuide=false;
+  render();
+  return true;
+ }finally{
+  if(currentSignoutRequest===request)currentSignoutRequest=null;
+ }
 }
 function authMessage(message){
  const feedback=id('auth-form-feedback');
@@ -4472,16 +4511,8 @@ async function handle(action,element){
   return;
  }
  if(verb==='signout'){
-  if(state.user&&safeNativePushToken()){
-   try{await disablePush(client,state.user.id);}catch(err){console.warn('Désinscription FCM',err.code||'');}
-  }
-  state.unlockKey=null;state.personalPass=null;state.personalJournal=[];
-  if(state.channel){await client.removeChannel(state.channel);state.channel=null;}
-  const {error}=await client.auth.signOut();if(error)throw error;
-  state.user=null;state.profile=null;state.coupleId=null;state.showAuth=false;state.passwordRecovery=false;
-  keepAuthModeInUrl(null);
-  state.installAfterSignup=false;state.installModalOpen=false;state.showInstallSteps=false;state.forceInstallGuide=false;
-  render();return;
+  await signOutCurrentAccount();
+  return;
  }
  if(verb==='complete-registration'){
   const name=id('profile-name')?.value.trim();
@@ -5262,6 +5293,10 @@ async function start(){
   if(event==='SIGNED_OUT'){
    adoptAuthenticatedIdentity(null);
    state.personalPass=null;state.emailVerificationPending=false;
+   state.showAuth=false;state.passwordRecovery=false;
+   state.installAfterSignup=false;state.installModalOpen=false;
+   state.showInstallSteps=false;state.forceInstallGuide=false;
+   keepAuthModeInUrl(null);
    render();
   }
  });
