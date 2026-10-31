@@ -2793,6 +2793,24 @@ test('LR-026: stale signout response cannot clear a fresh same-user session',asy
  assert.equal(state.coupleId,'current-duo');
 });
 
+test('LR-026: fresh same-user logout is not held hostage by the previous cleanup',async()=>{
+ let releaseOld,cleanups=0;
+ const firstPush=new Promise(resolve=>{releaseOld=resolve;});
+ const state={user:{id:'alice'},coupleId:'alice-duo'};
+ const f=ownedSignoutFixture(state,{token:'push-key',disablePush:()=>{
+  cleanups++;
+  return cleanups===1?firstPush:Promise.resolve();
+ }});
+ const old=f.signOutCurrentAccount();
+ f.bumpAuthGeneration();
+ const next=f.signOutCurrentAccount();
+ assert.equal(await next,true,'new session can sign out before old FCM reply');
+ assert.equal(f.calls.signouts,1);
+ releaseOld();
+ assert.equal(await old,false);
+ assert.equal(f.calls.clears,1,'old completion must not clear the fresh logout');
+});
+
 test('LR-026: logout waiting for old Realtime channel must not revoke replacement login',async()=>{
  let release;
  const closing=new Promise(resolve=>{release=resolve;});
@@ -2971,6 +2989,29 @@ test('LR-026: old password recovery failure is hidden after same-user relogin',a
  f.bumpAuthGeneration();
  reject(Error('Previous login recovery failed'));
  assert.equal(await update,false);
+ assert.equal(f.currentRequest(),null);
+});
+
+test('LR-026: new same-user recovery can run while old password RPC is pending',async()=>{
+ let releaseOld,releaseNew;
+ const pendingOld=new Promise(resolve=>{releaseOld=resolve;});
+ const pendingNew=new Promise(resolve=>{releaseNew=resolve;});
+ const state={user:{id:'alice'},passwordRecovery:true};
+ let count=0;
+ const f=ownedRecoveryFixture(state,()=>{
+  count++;
+  return count===1?pendingOld:pendingNew;
+ });
+ const old=f.updateRecoveryPasswordForCurrentAccount('Password2!');
+ f.bumpAuthGeneration();
+ const next=f.updateRecoveryPasswordForCurrentAccount('Password3!');
+ assert.equal(f.calls.length,2);
+ releaseOld({error:null});
+ assert.equal(await old,false);
+ await assert.rejects(f.updateRecoveryPasswordForCurrentAccount('DuplicatePassword!'),
+  /déjà en cours/,'old request must not release the newer request lock');
+ releaseNew({error:null});
+ assert.equal(await next,true);
  assert.equal(f.currentRequest(),null);
 });
 
