@@ -621,17 +621,18 @@ assert.ok(noteReadStart>=0&&noteReadEnd>noteReadStart&&
 const noteReadSource='let latestEclatHistoryRead=null,latestEclatAudioOwner=null;\n'+
  app.slice(noteReadStart,noteReadEnd)+'\n'+app.slice(noteDenialStart,noteDenialEnd);
 
-function privateNoteDenialHarness(){
+function privateNoteDenialHarness({scopedKeys=false}={}){
  const pendingRead=deferred(),pendingSave=deferred();
  const state={user:{id:'alice'},coupleId:'couple-a',tab:'eclat',
   members:[{id:'alice'},{id:'bob'}],
-  eclat:{access:true,active:true,session_id:'session-a'},
+  eclat:{access:true,active:true,session_id:'session-a',chapter_index:1},
   eclatHistory:[{id:'private-gallery'}],eclatMusic:true,
   eclatFinished:'Private completion'};
  const drafts=new Map(),renders=[];
  let audioStops=0;
  const ctx={state,client:{},authFeedbackGeneration:1,eclatNoteDrafts:drafts,
-  ownsCoupleAsyncRead,eclatNoteKey:()=> 'private-key',
+  ownsCoupleAsyncRead,eclatNoteKey:status=>scopedKeys?
+   (status?.active&&status?.session_id?`${status.session_id}:${status.chapter_index}`:null):'private-key',
   isSharedCoupleReady:(c,m)=>!!c&&m?.length===2,
   loadEclatNote:()=>pendingRead.promise,saveEclatNote:()=>pendingSave.promise,
   eclatAudio:{stop:()=>{audioStops++;}},root:{querySelector:()=>null},
@@ -868,5 +869,46 @@ test('LR-026: obsolete transient mutation error does not notify an already advan
  pending.reject(new Error('former chapter network error'));
  assert.equal((await writing).applied,false);
  assert.equal(h.state.eclat.chapter_index,3);
+ assert.deepEqual(h.renders,[]);
+});
+
+test('LR-026: obsolete private note read 42501 cannot revoke a newer chapter',async()=>{
+ const h=privateNoteDenialHarness({scopedKeys:true});
+ const old=h.eclatNoteState();
+ assert.equal(old.loading,true);
+ h.state.eclat={...h.state.eclat,chapter_index:2};
+ h.drafts.set('session-a:2',{generation:1,note:'Current chapter only'});
+ h.pendingRead.reject({status:400,code:'42501'});
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(h.state.eclat.chapter_index,2);
+ assert.equal(h.state.eclat.access,true);
+ assert.equal(h.drafts.get('session-a:2').note,'Current chapter only');
+ assert.equal(h.state.eclatHistory[0].id,'private-gallery');
+ assert.equal(h.audioStops(),0);
+ assert.deepEqual(h.renders,[]);
+});
+
+test('LR-026: obsolete private note read HTTP 403 cannot revoke a replacement coffret',async()=>{
+ const h=privateNoteDenialHarness({scopedKeys:true});
+ h.eclatNoteState();
+ h.state.eclat={...h.state.eclat,session_id:'new-coffret',chapter_index:1};
+ h.drafts.set('new-coffret:1',{generation:1,note:'Replacement scene'});
+ h.pendingRead.reject({status:403,code:'permission_denied'});
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(h.state.eclat.session_id,'new-coffret');
+ assert.equal(h.drafts.get('new-coffret:1').note,'Replacement scene');
+ assert.equal(h.state.eclatMusic,true);
+ assert.deepEqual(h.renders,[]);
+});
+
+test('LR-026: old note read success cannot write previous chapter draft',async()=>{
+ const h=privateNoteDenialHarness({scopedKeys:true});
+ const old=h.eclatNoteState();
+ h.state.eclat={...h.state.eclat,chapter_index:2};
+ h.pendingRead.resolve({note:'Previous chapter response',clue:'private',moment_done:false});
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(h.state.eclat.chapter_index,2);
+ assert.equal(old.note,'');
+ assert.equal(old.clue,'');
  assert.deepEqual(h.renders,[]);
 });
