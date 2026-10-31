@@ -696,6 +696,7 @@ function adoptAuthenticatedIdentity(nextUser){
  const previousId=state.user?.id||null,nextId=nextUser?.id||null;
  if(previousId!==nextId){
   latestAuthReloadRequest=null;
+  currentProfileSave=null;
   inviteAcceptanceRequest=null;inviteAcceptanceBusy=false;
   state.inviteAttemptKey=null;state.inviteError=null;state.inviteWelcome=false;
   // Close the previous couple's Realtime channel before the new account
@@ -750,6 +751,30 @@ async function refreshVerifiedIdentity(){
  }
  state.user=data.user;
  return verifiedLoveEmail(data.user);
+}
+// Avoid issuing later profile RPCs under a replacement Supabase login.
+let currentProfileSave=null;
+async function saveProfileForCurrentAccount(name,birthday,gender,playStyle){
+ const ownerId=state.user?.id;
+ if(!ownerId)throw Error('Connectez-vous pour enregistrer votre profil.');
+ if(currentProfileSave?.ownerId===ownerId)
+  throw Error('Enregistrement du profil déjà en cours…');
+ const owner={ownerId};currentProfileSave=owner;
+ const current=()=>state.user?.id===ownerId&&currentProfileSave===owner;
+ const steps=[
+  ['complete_love_registration',{p_name:name,p_birthday_md:birthday}],
+  ['save_my_gender',{p_gender:gender}],
+  ['save_my_play_style',{p_style:playStyle}]
+ ];
+ try{
+  for(const [method,args] of steps){
+   if(!current())return false;
+   try{await rpc(method,args);}
+   catch(error){if(!current())return false;throw error;}
+   if(!current())return false;
+  }
+  return true;
+ }finally{if(currentProfileSave===owner)currentProfileSave=null;}
 }
 function authMessage(message){
  const feedback=id('auth-form-feedback');
@@ -4467,9 +4492,9 @@ async function handle(action,element){
   if(!['him','her'].includes(gender))throw Error('Choisissez Homme ou Femme pour votre profil.');
   if(!['soft','medium','intense'].includes(playStyle))throw Error('Choisissez Soft, Medium ou Intense.');
   if(!id('age-confirm')?.checked)throw Error('LoveRoll est réservé aux personnes de 18 ans et plus.');
-  await rpc('complete_love_registration',{p_name:name,p_birthday_md:birthday});
-  await rpc('save_my_gender',{p_gender:gender});
-  await rpc('save_my_play_style',{p_style:playStyle});
+  const profileOwnerId=state.user?.id;
+  if(!(await saveProfileForCurrentAccount(name,birthday,gender,playStyle))||
+     state.user?.id!==profileOwnerId)return;
   // Invitation => accept existing duo. No invitation => own new admin duo.
   // Both decisions are authenticated and checked in one server transaction.
   // An account already linked to a duo is never duplicated.
@@ -4489,10 +4514,13 @@ async function handle(action,element){
   const playStyle=id('profile-play-style')?.value||'medium';
   if(!['him','her'].includes(gender))throw Error('Choisissez Homme ou Femme pour votre profil.');
   if(!['soft','medium','intense'].includes(playStyle))throw Error('Choisissez Soft, Medium ou Intense.');
-  await rpc('complete_love_registration',{p_name:name,p_birthday_md:birthday});
-  await rpc('save_my_gender',{p_gender:gender});
-  await rpc('save_my_play_style',{p_style:playStyle});
-  await reload();notify('Votre profil, votre style et votre date sont enregistrés.');return;
+  const profileOwnerId=state.user?.id;
+  if(!(await saveProfileForCurrentAccount(name,birthday,gender,playStyle))||
+     state.user?.id!==profileOwnerId)return;
+  await reload();
+  if(state.user?.id===profileOwnerId)
+   notify('Votre profil, votre style et votre date sont enregistrés.');
+  return;
  }
  if(verb==='prepare-cards'){
   if(pendingInviteReference(sessionStorage))throw Error('Une invitation est en attente.');
