@@ -359,3 +359,12 @@ main#app.loveroll-editorial{--nav-space:66px;box-sizing:border-box;width:100%;ma
 @media(max-width:767px){
  #app .is-finale .evening-finale-progress{display:none;}
 }
+
+/* Tablet portrait finale needs the same reserved nav clearance as phones.
+   Keep the D100 theatre full-size: reclaim only whitespace in the aftercare
+   side panel and leave all official 44px actions tappable. */
+@media(min-width:768px) and (orientation:portrait){
+ #app .is-finale .evening-aftercare{padding:7px;gap:3px;}
+ #app .is-finale .evening-finale-tiles>div{padding:4px 3px;min-height:48px;}
+ #app .is-finale .evening-finale-actions{gap:5px;}
+}
