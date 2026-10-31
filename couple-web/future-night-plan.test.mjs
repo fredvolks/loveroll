@@ -94,6 +94,34 @@ test('Existing dropdown values use strings but only four approved numeric length
  for(const invalid of ['0','8','five','15.0',' 15 ',{}])
   assert.throws(()=>buildFutureNightPlan({minutes:invalid}),/Durée/);
 });
+test('Future short evening balances woman, man and both when all three have eligible cards',()=>{
+ const audiences=['woman','man','both'];
+ const cards=['medium','intense'].flatMap(level=>Array.from({length:6},(_,i)=>
+  card(level,i,3,audiences[i%3])));
+ const plan=buildFutureNightPlan({
+  members,cards,styleA:'medium',styleB:'intense',minutes:18,
+  cardTickets:Array(6).fill(0)
+ });
+ assert.equal(plan.spentMinutes,18);
+ assert.deepEqual(plan.items.map(item=>item.level),
+  ['medium','intense','medium','intense','medium','intense']);
+ const targets=plan.items.map(item=>cards.find(c=>c.id===item.cardId).target);
+ assert.deepEqual(targets,['woman','man','both','woman','man','both']);
+ assert.deepEqual(plan.items.map(item=>item.recipientIds.length),[1,1,2,1,1,2]);
+ assert.equal(new Set(plan.items.map(item=>item.cardId)).size,6);
+});
+test('Target balancing never assigns a gender-specific card to an ambiguous pair',()=>{
+ const women=[{user_id:'a',gender:'her'},{user_id:'b',gender:'her'}];
+ const cards=[
+  card('medium',1,3,'woman'),card('medium',2,3,'both'),
+  card('medium',3,3,'man'),card('medium',4,3,'both')
+ ];
+ const plan=buildFutureNightPlan({members:women,cards,
+  styleA:'medium',styleB:'medium',minutes:15,cardTickets:[0,0,0]});
+ assert.equal(plan.items.length,2);
+ assert.ok(plan.items.every(item=>item.recipientIds.length===2));
+ assert.equal(plan.reason,'no-eligible-card');
+});
 test('Future planner rejects bad client input and missing partner without assigning cards',()=>{
  for(const minutes of [0,-5,8,Infinity,NaN,null]){
   assert.throws(()=>buildFutureNightPlan({minutes}),/Durée/);
