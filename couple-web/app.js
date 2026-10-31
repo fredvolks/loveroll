@@ -2739,7 +2739,7 @@ function renderSession(){
    playable:state.playableCounts||(isLoveAdmin()?playableEveningCount(state.customCards):null),
    rollingKind:state.rollAnimationKind,showMore:state.eveningMore,confirmCancel:state.confirmCancel,
    challengeOverlay:overlay,lastEvening,canStartEvening,
-   sessionLength:readSessionLength(uid,localStorage),
+   sessionLength:readSessionLength(uid),
    challengeHistory:[...state.challengesHistory,...state.eveningCalendarChallenges,...state.challenges],
    weeklyReady:!!state.weekly,weeklyCount:daily.counted,weeklyLimit:daily.limit,
    dailyLocked:daily.dailyLocked,ownChallengeCount:mineCards.length,
@@ -3279,7 +3279,7 @@ function renderSettings(){
   '<label class="settings-inline-name"><span>Prénom affiché</span>'+
   '<input id="profile-name" type="text" autocomplete="given-name" value="'+safe(state.profile.display_name)+'" maxlength="80" aria-label="Prénom affiché"></label>'+
   profileGenderSelect(state.profile.gender)+profilePlayStyleSelect(state.profile.play_style)+
-  sessionLengthSettingsHtml(readSessionLength(state.user?.id,localStorage))+
+  sessionLengthSettingsHtml(readSessionLength(state.user?.id))+
   '<div class="settings-birthday-edit"><span>Mon anniversaire</span>'+monthDayInputs('settings-birthday',state.profile.birthday_md)+'</div>'+
   '<label>Courriel du compte<input type="email" readonly aria-readonly="true" value="'+safe(state.user.email||'')+'" autocomplete="email"></label>'+
   (state.testModeEligible?
@@ -5473,7 +5473,7 @@ async function handle(action,element){
   if(verb==='session-length'){
    // A personal planning hint, not an instruction to end the server session.
    if(!state.user?.id||!state.profile)throw Error('Compte requis.');
-   if(!saveSessionLength(state.user.id,parts[0],localStorage))
+   if(!saveSessionLength(state.user.id,parts[0]))
     throw Error('Impossible de sauvegarder la durée souhaitée sur cet appareil.');
    render();return;
   }
