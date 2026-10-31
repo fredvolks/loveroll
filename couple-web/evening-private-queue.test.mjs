@@ -1718,10 +1718,10 @@ function eclatReadFixture(state,{rpc=async()=>null,loadEclatHistory=async()=>[]}
  const begin=app.indexOf('let latestEclatHistoryRead=null,latestEclatStatusRead=null;');
  const end=app.indexOf('function renderEclat(){',begin);
  assert.ok(begin>=0&&end>begin,'production Éclat read implementation must be tested');
- return runInNewContext(app.slice(begin,end)+
+ return runInNewContext('let latestEclatAudioOwner=null;\n'+app.slice(begin,end)+
   ';({refreshEclatHistory,refreshEclatStatus})',{
    state,authFeedbackGeneration:1,rpc,loadEclatHistory,ownsCoupleAsyncRead,client:{},
-   eclatNoteDrafts:new Map(),
+   eclatNoteDrafts:new Map(),eclatAudio:{stop:()=>{}},
    isSharedCoupleReady:(couple,members)=>!!couple&&members?.length===2,console
   });
 }
@@ -1779,9 +1779,9 @@ test('LR-026: delayed Éclat status cannot replace a different account or render
  assert.ok(pollBegin>0&&pollEnd>pollBegin);
  let tick,renderCount=0,releasePoll;
  const pollPending=new Promise(resolve=>{releasePoll=resolve;});
- runInNewContext(app.slice(start,end)+'let latestEclatPollPending=null;\n'+app.slice(pollBegin,pollEnd+8),{
+ runInNewContext('let latestEclatAudioOwner=null;\n'+app.slice(start,end)+'let latestEclatPollPending=null;\n'+app.slice(pollBegin,pollEnd+8),{
   state,authFeedbackGeneration:1,ownsCoupleAsyncRead,console,
-  eclatNoteDrafts:new Map(),
+  eclatNoteDrafts:new Map(),eclatAudio:{stop:()=>{}},
   isSharedCoupleReady:(c,m)=>!!c&&m?.length===2,
   rpc:()=>pollPending,loadEclatHistory:async()=>[],
   document:{hidden:false},setInterval:fn=>{tick=fn;},
@@ -1801,9 +1801,10 @@ test('LR-026: mutating Éclat responses belong to the initiating account, view a
  assert.ok(start>=0&&end>start);
  const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
   members:[{id:'alice'},{id:'bob'}],eclat:{id:'before'}};
- const scope=runInNewContext(app.slice(start,end)+
+ const scope=runInNewContext('let latestEclatAudioOwner=null;\n'+app.slice(start,end)+
   ';({beginEclatAction,ownsEclatAction,applyEclatActionResult})',{
    state,authFeedbackGeneration:1,ownsCoupleAsyncRead,console,
+   eclatNoteDrafts:new Map(),eclatAudio:{stop:()=>{}},
    isSharedCoupleReady:(couple,members)=>!!couple&&members?.length===2,
    rpc:async()=>null,loadEclatHistory:async()=>[]
   });
