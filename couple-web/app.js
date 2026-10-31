@@ -246,6 +246,10 @@ function backFromLoveRoll(){
  if(gameInfo){gameInfo.close();return true;}
  const modal=document.querySelector('dialog.lr-evening-category-dialog[open]');
  if(modal){modal.close();return true;}
+ // Generic native modal: Android/system Back must close the current dialog,
+ // not navigate away from Surprise/Éclat or discard the current game.
+ const nativeModal=document.querySelector('dialog[open]');
+ if(nativeModal){nativeModal.close();return true;}
  if(!document.querySelector('dialog[open],.lr-dialog-overlay')&&root._settingsMenuBack?.())return true;
  if(document.querySelector('.lr-dialog-overlay')){
   document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
@@ -297,9 +301,9 @@ function backFromLoveRoll(){
 }
 window.loveRollHandleBack=backFromLoveRoll;
 document.addEventListener('keydown',event=>{
- if(event.key==='Escape'&&!document.querySelector('.lr-dialog-overlay')&&
-    !document.querySelector('dialog.lr-evening-category-dialog[open]')&&
-    !document.querySelector('dialog#evening-play-info[open]')){
+ // Let the browser dispatch the native dialog cancel/close for Escape.
+ // Intercepting Escape here incorrectly navigated Surprise back to Home.
+ if(event.key==='Escape'&&!document.querySelector('.lr-dialog-overlay,dialog[open]')){
   if(backFromLoveRoll())event.preventDefault();
  }
 });

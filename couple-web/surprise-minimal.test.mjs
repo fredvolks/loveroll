@@ -24,9 +24,23 @@ test('Mobile Surprise uses a safe fallback for partial renders and preserves eve
  assert.match(code,/root\.classList\.remove\('has-surprise-minimal'\)/);
  assert.doesNotMatch(code,/eventsButton\.disabled=mainButton\.disabled/);
  assert.match(code,/if\(renderId!==activeRender\)return; \/\/ stale async event/);
- assert.match(code,/if\(opener\.isConnected\)opener\.focus/);
+ assert.match(code,/if\(!list\.open&&!info\.open&&opener\.isConnected\)/);
  assert.match(code,/else if\(infoOpen&&!view\.querySelector/);
  assert.match(code,/if\(!target\.open\)target\.showModal\(\)/);
  assert.match(code,/if\(other\.open\)other\.close\(\)/);
  assert.match(code,/if\(!list\.open&&!info\.open&&opener\.isConnected\)/);
+});
+
+test('Escape and native Android Back close native Surprise dialogs before navigating',()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const keydown=app.slice(app.indexOf("document.addEventListener('keydown',event=>{"),
+  app.indexOf('let diceView=null;'));
+ assert.match(keydown,/!document\.querySelector\('\.lr-dialog-overlay,dialog\[open\]'\)/);
+ assert.doesNotMatch(keydown,/!document\.querySelector\('dialog#evening-play-info\[open\]'\)/);
+ const back=app.slice(app.indexOf('function backFromLoveRoll(){'),keydown.length+
+  app.indexOf("document.addEventListener('keydown',event=>{"));
+ assert.match(back,/const nativeModal=document\.querySelector\('dialog\[open\]'\)/);
+ assert.match(back,/if\(nativeModal\)\{nativeModal\.close\(\);return true;\}/);
+ assert.ok(back.indexOf('if(nativeModal)')<back.indexOf("if(state.tab==='settings'"),
+  'native dialog must close before navigation');
 });

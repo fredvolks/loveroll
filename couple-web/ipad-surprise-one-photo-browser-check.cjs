@@ -97,6 +97,8 @@ const layouts=[
       'All six editable occasions must be reachable on mobile');
      await page.keyboard.press('Escape');
      await dialog.waitFor({state:'hidden'});
+     assert.match(await page.locator('main#app').getAttribute('class'),/loveroll-surprise/,
+      layout.name+' Escape must close events, not leave Surprise');
      const info=page.locator('.home-odds-info');
      await info.click();
      const infoDialog=page.locator('#surprise-info-dialog');
