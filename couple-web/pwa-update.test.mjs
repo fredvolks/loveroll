@@ -298,7 +298,10 @@ test('Personal evening length choices persist only for this account on this devi
  const restricted={getItem:()=>{throw Error('private browsing');},
   setItem:()=>{throw Error('private browsing');}};
  assert.equal(readSessionLength('fred',restricted),'libre');
- assert.equal(saveSessionLength('fred','10',restricted),false);
+ assert.equal(saveSessionLength('fred','10',restricted),true);
+ assert.equal(readSessionLength('fred',restricted),'10',
+  'blocked Safari storage still allows a temporary per-account choice');
+ assert.equal(readSessionLength('partner',restricted),'libre');
 });
 
 test('Evening duration settings have accessible choices without an automatic stop',()=>{
@@ -309,7 +312,7 @@ test('Evening duration settings have accessible choices without an automatic sto
  assert.match(settings,/data-action="session-length:15" aria-pressed="true"/);
  assert.match(settings,/Durée souhaitée de ma soirée/);
  assert.match(settings,/ne termine pas automatiquement/);
- assert.match(settings,/Préférence enregistrée sur cet appareil/);
+ assert.match(settings,/Enregistrée sur cet appareil si autorisé, sinon pour cette visite seulement/);
  assert.match(sessionLengthSettingsHtml('unknown'),/data-action="session-length:libre" aria-pressed="true"/);
  assert.match(app,/sessionLengthSettingsHtml\(readSessionLength\(state\.user\?\.id\)\)/);
  assert.match(app,/saveSessionLength\(state\.user\.id,parts\[0\]\)/);
@@ -326,9 +329,12 @@ test('Safari privacy restrictions cannot crash rendering of session duration pre
  });
  const safe=vm.runInNewContext(source,{globalThis:blocked});
  assert.equal(safe.readSessionLength('fred'),'libre');
- assert.equal(safe.saveSessionLength('fred','15'),false);
- assert.equal(safe.readSessionLength('fred',null),'libre');
- assert.equal(safe.saveSessionLength('fred','15',null),false);
+ assert.equal(safe.saveSessionLength('fred','15'),true);
+ assert.equal(safe.readSessionLength('fred',null),'15',
+  'a blocked browser keeps the temporary choice in memory');
+ assert.equal(safe.saveSessionLength('fred','30',null),true);
+ assert.equal(safe.readSessionLength('fred',null),'30');
+ assert.equal(safe.readSessionLength('another-user',null),'libre');
  assert.match(app,/sessionLength:readSessionLength\(uid\)/);
  assert.doesNotMatch(app,/sessionLength:readSessionLength\(uid,localStorage\)/);
 });
