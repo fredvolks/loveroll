@@ -121,7 +121,8 @@ test('A failed draw followed by a refresh outage unlocks the interface without a
  const state={tab:'special',diceStatus:null},tabs=Array.from({length:5},()=>({disabled:false}));
  const root={querySelector:()=>null,querySelectorAll:()=>tabs};let calls=0,renders=0;
  const render=()=>{renders++;for(const tab of tabs)tab.disabled=!!state.diceStatus;};
- const run=new Function('state','root','render','refreshShared','ROLL_TOTAL_MS',source+';return animateRoll;')(
+ const run=new Function('state','root','render','refreshShared','ROLL_TOTAL_MS',
+  'let authFeedbackGeneration=0,latestDiceRollRequest=null;'+source+';return animateRoll;')(
   state,root,render,async()=>{throw Error('Réseau indisponible');},ROLL_TOTAL_MS);
  await assert.rejects(()=>run(async()=>{calls++;throw Error('Tirage non confirmé');},'monthly_activity'),/Réseau indisponible/);
  assert.equal(calls,1);assert.equal(state.diceStatus,null);assert.equal(state.rollAnimationFace,null);
