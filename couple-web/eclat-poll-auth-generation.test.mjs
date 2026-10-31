@@ -433,6 +433,8 @@ test('LR-026: stale incomplete background response cannot purge new login cache'
 
 test('LR-026: reordered server status fields do not trigger redundant history refresh',async()=>{
  const h=harness();
+ h.state.eclatHistoryCouple='couple-a';
+ h.state.eclatHistoryUserId='alice';
  h.state.eclat={id:'original',access:true,active:true};
  const poll=h.tick();
  h.requests[0].resolve({active:true,access:true,id:'original'});
@@ -444,6 +446,8 @@ test('LR-026: reordered server status fields do not trigger redundant history re
 
 test('LR-026: nested server status field ordering is also ignored',async()=>{
  const h=harness();
+ h.state.eclatHistoryCouple='couple-a';
+ h.state.eclatHistoryUserId='alice';
  h.state.eclat={id:'original',access:true,active:true,
   progress:{chapter_index:1,chapter_total:6},choices:[{id:1,selected:false}]};
  const poll=h.tick();
@@ -643,6 +647,8 @@ test('LR-026: foreground 403 denial also clears private Éclat state',async()=>{
 
 test('LR-026: unchanged Éclat status retries failed history only after 30 seconds',async()=>{
  const h=harness({recoverHistory:true});
+ h.state.eclatHistoryCouple='couple-a';
+ h.state.eclatHistoryUserId='alice';
  h.state.eclatHistoryError=true;
  h.state.eclatHistoryRetryAt=30000;
  let poll=h.tick();
