@@ -246,3 +246,33 @@ test('LR-026: stale background null cannot erase a newer account history',async(
  assert.deepEqual(h.state.eclatHistory,[{id:'bob-private'}]);
  assert.deepEqual(h.renders,[]);
 });
+
+
+test('LR-026: background access revocation drops cached history without another fetch',async()=>{
+ const h=harness();
+ h.state.eclat={id:'private-session',access:true,active:true};
+ h.state.eclatHistory=[{id:'old-private-history'}];
+ h.state.eclatHistoryError=true;
+ const ticking=h.tick();
+ h.requests[0].resolve({id:'no-entitlement',access:false,active:false});
+ await ticking;
+ assert.equal(h.state.eclat?.id,'no-entitlement');
+ assert.deepEqual(Array.from(h.state.eclatHistory),[]);
+ assert.equal(h.state.eclatHistoryError,false);
+ assert.deepEqual(h.history,[],'revoked status must not load private history');
+ assert.deepEqual(h.renders,['no-entitlement']);
+});
+
+test('LR-026: background access revocation cannot erase a newly signed-in account',async()=>{
+ const h=harness();
+ h.state.eclat={id:'alice-session',access:true,active:true};
+ const previous=h.tick();
+ h.runtime.authFeedbackGeneration=2;
+ h.state.eclat={id:'new-login',access:true,active:true};
+ h.state.eclatHistory=[{id:'new-private-history'}];
+ h.requests[0].resolve({access:false,active:false});
+ await previous;
+ assert.equal(h.state.eclat.id,'new-login');
+ assert.deepEqual(h.state.eclatHistory,[{id:'new-private-history'}]);
+ assert.deepEqual(h.renders,[]);
+});
