@@ -1789,6 +1789,9 @@ async function refreshEclatHistory(){
   state.eclatHistoryRetryAt=0;
  }catch(error){
   if(!current())return;
+  // A definitive permission denial must never leave previously cached
+  // private notes or gallery visible, even when the status RPC was valid.
+  if(invalidateEclatOnAuthRejection(error)){render();return;}
   // Transient failures must not strand the gallery until a coffret changes.
   // A rejected read is retried at most once every 30 seconds per live owner.
   state.eclatHistoryError=true;
@@ -1868,7 +1871,9 @@ async function refreshEclatStatus(){
   // leaving a cached private coffret visible until the next poll.
   if(!applyEclatStatus(value))return current()?value:null;
   await refreshEclatHistory();
-  return current()?value:null;
+  // The history endpoint may have revoked access after a successful status
+  // response. Do not return that stale permission receipt to any caller.
+  return current()&&state.eclat?.access===true?value:null;
  }catch(error){
   if(current()&&invalidateEclatOnAuthRejection(error))render();
   throw error;
