@@ -24,6 +24,28 @@ export function eveningChallengeStatusLabel(status,closed=false){
 }
 const monthLabel=mo=>new Intl.DateTimeFormat('fr-CA',{month:'long',year:'numeric',timeZone:'UTC'})
  .format(new Date(mo+'-15T12:00:00Z'));
+/** Choose a real Québec date before rendering the shared calendar.
+ * Skip incomplete legacy rows and never read started_at from a null record.
+ * This does not disclose anything outside the member-checked server history.
+ */
+export function eveningCalendarInitialDate({sessions=[],month,selectedDate,now=new Date()}={}){
+ const currentDay=eveningLocalDay(now),currentMonth=currentDay?.slice(0,7);
+ const targetMonth=isoMonth(month)||currentMonth;
+ if(!targetMonth)return null;
+ const validInMonth=date=>{
+  if(typeof date!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(date)||
+     !date.startsWith(targetMonth+'-'))return false;
+  const [year,monthNum,day]=date.split('-').map(Number);
+  return day>=1&&day<=new Date(Date.UTC(year,monthNum,0)).getUTCDate();
+ };
+ if(validInMonth(selectedDate))return selectedDate;
+ const saved=Array.isArray(sessions)?sessions:[];
+ const archiveDate=saved.map(row=>
+  row&&typeof row.started_at==='string'?eveningLocalDay(row.started_at):null)
+  .filter(validInMonth).sort().at(-1);
+ return archiveDate||(targetMonth===currentMonth?currentDay:targetMonth+'-01');
+}
+
 export function eveningHistoryMarkup({
  sessions:rawSessions=[],members:rawMembers=[],stats:rawStats=[],
  historyChallenges:rawChallenges=[],reviews:rawReviews=[],me,month,selectedDate,
