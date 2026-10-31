@@ -267,7 +267,13 @@ function backFromLoveRoll(){
   return true;
  }
  if(state.installModalOpen||state.forceInstallGuide){handle('install-later').catch(fail);return true;}
- if(state.reviewModalSessionId){state.reviewDismissedSessionId=state.reviewModalSessionId;state.reviewModalSessionId=null;state.reviewDraft={};render();return true;}
+ if(state.reviewModalSessionId){
+  // Native Back/Escape must invalidate the same in-flight save as the close button.
+  // The server may still store its result, but the stale response cannot repaint us.
+  currentReviewSaveRequest=null;state.reviewSaving=false;
+  state.reviewDismissedSessionId=state.reviewModalSessionId;
+  state.reviewModalSessionId=null;state.reviewDraft={};render();return true;
+ }
  if(allowBackExit){allowBackExit=false;return false;}
  if(state.showEveningChallenge){state.showEveningChallenge=false;render();return true;}
  if(state.showSurpriseActivity){state.showSurpriseActivity=false;render();return true;}
