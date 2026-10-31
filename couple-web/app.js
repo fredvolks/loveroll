@@ -257,6 +257,9 @@ function backFromLoveRoll(){
  // not navigate away from Surprise/Éclat or discard the current game.
  const nativeModal=document.querySelector('dialog[open]');
  if(nativeModal){nativeModal.close();return true;}
+ // Keep the active recipient queue mounted until the gift's authoritative
+ // receipt returns. Native Back can still dismiss its confirmation dialog above.
+ if(state.tab==='session'&&isActiveEveningGiftPending())return true;
  if(!document.querySelector('dialog[open],.lr-dialog-overlay')&&root._settingsMenuBack?.())return true;
  if(document.querySelector('.lr-dialog-overlay')){
   document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
@@ -2714,10 +2717,10 @@ function renderSession(){
    (giftTransferPending?'<p class="evening-gift-pending" role="status" aria-live="polite">♡ Don en cours de confirmation…</p>':'')+
    (view?
     '<div class="evening-queue-nav">'+
-     button('evening-list','← Mes défis ('+mineCards.length+')','class="subtle"')+
-     button('evening-close','✕ Fermer','class="subtle"')+'</div>':
+     button('evening-list','← Mes défis ('+mineCards.length+')','class="subtle" '+(giftTransferPending?'disabled aria-disabled="true"':''))+
+     button('evening-close','✕ Fermer','class="subtle" '+(giftTransferPending?'disabled aria-disabled="true"':''))+'</div>':
     '<div class="evening-queue-heading"><h2>Mes '+mineCards.length+' défis</h2>'+
-     button('evening-close','✕ Fermer','class="subtle"')+'</div>')+
+     button('evening-close','✕ Fermer','class="subtle" '+(giftTransferPending?'disabled aria-disabled="true"':''))+'</div>')+
    (view?
     '<div class="evening-queue-detail">'+
      '<div class="evening-challenge-badge">♥ '+safe(names[view.category]||view.category)+
@@ -2772,8 +2775,8 @@ function renderSession(){
         button('evening-refuse-cancel','Annuler','class="subtle" '+(isActiveEveningRedrawPending()||giftTransferPending?'disabled':''))+
        '</div></div>':'')+
      '<div class="evening-queue-nav">'+
-       (idx>0?button('evening-open:'+mineCards[idx-1].id,'← Précédent','class="subtle"'):'<span></span>')+
-       (idx<mineCards.length-1?button('evening-open:'+mineCards[idx+1].id,'Suivant →','class="subtle"'):'<span></span>')+
+       (idx>0?button('evening-open:'+mineCards[idx-1].id,'← Précédent','class="subtle" '+(giftTransferPending?'disabled aria-disabled="true"':'')):'<span></span>')+
+       (idx<mineCards.length-1?button('evening-open:'+mineCards[idx+1].id,'Suivant →','class="subtle" '+(giftTransferPending?'disabled aria-disabled="true"':'')):'<span></span>')+
       '</div></div>':
     '<p class="evening-queue-instructions">Tous tes tirages restent ici. Pige maintenant, puis commence les défis dans l’ordre de ton choix.</p>'+
      '<div class="evening-queue-list">'+(mineCards.length?mineCards.map((card,i)=>
@@ -2784,7 +2787,7 @@ function renderSession(){
         (resolvedCard(card).minutes?resolvedCard(card).minutes+' min · ':'')+
         (card.status==='completed'?'✓ ':'')+
         safe(queueLabel(card.status))+'</small></span><span>›</span>',
-        'class="evening-queue-item'+(card.status==='completed'?' is-completed':'')+'"')).join(''):
+        'class="evening-queue-item'+(card.status==='completed'?' is-completed':'')+'" '+(giftTransferPending?'disabled aria-disabled="true"':''))).join(''):
        '<p>Aucun défi pigé pour le moment. Sélectionne Sensuel ou Sexuel, puis lance ton dé.</p>')+
      '</div>')+
    '</article></div>';
@@ -4205,7 +4208,7 @@ async function handle(action,element){
  }
  if(verb==='evening-challenge'||verb==='evening-list'){
   // Do not discard the authoritative RLS refresh or live WebGL canvas.
-  if(state.diceStatus||isActiveEveningRedrawPending())return;
+  if(state.diceStatus||isActiveEveningRedrawPending()||isActiveEveningGiftPending())return;
   if(state.user?.id&&state.session?.id)clearEveningSelection(safeEveningBookmarkStorage(),state.user.id,state.session.id);
   state.showEveningChallenges=true;state.selectedEveningChallengeId=null;render();
   // Give keyboard/screen-reader users a stable entry point into the modal.
@@ -4214,8 +4217,8 @@ async function handle(action,element){
   return;
  }
  if(verb==='evening-close'){
-  // Closing the queue before a repick settles would reopen it from a late reply.
-  if(state.diceStatus||isActiveEveningRedrawPending())return;
+  // A pending repick or gift owns the recipient-only queue until its receipt.
+  if(state.diceStatus||isActiveEveningRedrawPending()||isActiveEveningGiftPending())return;
   if(state.user?.id&&state.session?.id)clearEveningSelection(safeEveningBookmarkStorage(),state.user.id,state.session.id);
   state.showEveningChallenges=false;state.selectedEveningChallengeId=null;render();
   // Restore focus to the action which opens this drawer, never to the body.
@@ -4254,8 +4257,8 @@ async function handle(action,element){
   return;
  }
  if(verb==='evening-open'){
-  // A delayed queue touch must not replace the live D100 or its RLS refresh.
-  if(state.diceStatus||isActiveEveningRedrawPending())return;
+  // A delayed queue touch cannot replace a D100, repick or gift receipt.
+  if(state.diceStatus||isActiveEveningRedrawPending()||isActiveEveningGiftPending())return;
   if(!ownEveningChallenges(state.challenges,state.user?.id,state.session?.id).some(x=>x.id===parts[0]))
    throw Error('Ce défi ne fait pas partie de ta liste personnelle.');
   state.selectedEveningChallengeId=parts[0];state.showEveningChallenges=true;
