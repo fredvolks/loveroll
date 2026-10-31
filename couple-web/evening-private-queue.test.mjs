@@ -3881,3 +3881,55 @@ test('LR-026: real Chromium redraw mock respects strict persisted receipt valida
    'test-user-1','active-session-synthetic'),'redraw-replacement');
  }
 });
+
+test('LR-026: same-user reauthentication reloads a private Éclat note instead of retaining an old draft',async()=>{
+ const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
+  eclat:{active:true,session_id:'session-1',chapter_index:1},eclatBrowse:false};
+ let finishOld,reads=0;
+ const pending=new Promise(resolve=>{finishOld=resolve;});
+ const f=privateEclatReadFixture(state,()=>++reads===1?pending:
+  Promise.resolve({note:'Note de la nouvelle session',clue:'Indice récent',moment_done:false}));
+ const previous=f.eclatNoteState();
+ f.setAuthGeneration(2);
+ const current=f.eclatNoteState();
+ assert.notEqual(previous,current,'new Auth generation must not reuse an old private draft');
+ await settlePrivateNoteRead();
+ assert.equal(current.note,'Note de la nouvelle session');
+ finishOld({note:'Ancienne note',clue:'Vieil indice',moment_done:true});
+ await settlePrivateNoteRead();
+ assert.equal(current.note,'Note de la nouvelle session');
+ assert.equal(current.moment_done,false);
+ assert.equal(previous.note,'','old private reply is ignored');
+ assert.equal(f.paintCount(),1,'old request cannot repaint the reauthenticated account');
+ assert.equal(reads,2);
+});
+
+test('LR-026: private Éclat save finishing after same-user reauthentication is not a valid receipt',async()=>{
+ let finishSave;
+ const pending=new Promise(resolve=>{finishSave=resolve;});
+ const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
+  eclat:{active:true,session_id:'session-1',chapter_index:1}};
+ const f=privateEclatSaveFixture(state,()=>pending);
+ const previous=f.saveCurrentEclatNote(true);
+ f.setAuthGeneration(2);
+ finishSave();
+ assert.equal(await previous,null,'old saved note is not a receipt for the new login');
+ assert.equal(f.draft.moment_done,false);
+ assert.equal(f.draft.saved,false);
+ assert.equal(f.draft.saving,false);
+ assert.deepEqual(f.labels,[]);
+});
+
+test('LR-026: expired Éclat note-save error cannot report failure to the new login',async()=>{
+ let rejectSave;
+ const pending=new Promise((_,reject)=>{rejectSave=reject;});
+ const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
+  eclat:{active:true,session_id:'session-1',chapter_index:1}};
+ const f=privateEclatSaveFixture(state,()=>pending);
+ const previous=f.saveCurrentEclatNote(true);
+ f.setAuthGeneration(2);
+ rejectSave(new Error('Former session failed'));
+ assert.equal(await previous,null);
+ assert.deepEqual(f.labels,[],'the old request must not change the new login feedback');
+ assert.equal(f.draft.saving,false);
+});
