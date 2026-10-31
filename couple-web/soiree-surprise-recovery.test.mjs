@@ -6,7 +6,9 @@ const read=file=>readFileSync(new URL('./'+file,import.meta.url),'utf8');
 const app=read('app.js'),dice=read('dice3d.js'),style=read('surprise-dice-layout-v73.css');
 const index=read('index.html'),worker=read('service-worker.js');
 test('Soirée tolerates an absent review and no longer opens legacy feedback',()=>{
- assert.match(app,/const recentReviews=last\?\(state.eveningReviews\|\|\[\]\)/);
+ assert.match(app,/const lastEvening=last\?eveningFinaleStatus\(/);
+ assert.match(app,/reviews:state\.eveningReviews/);
+ assert.match(app,/partnerId:partner\?\.user_id/);
  assert.match(app,/reviewModalSessionId/);
  assert.doesNotMatch(app,/feedbackItemsFor|my_love_feedback_status|choose-feedback|save-feedback/);
  assert.doesNotMatch(app,/loveroll-aftercare-auto-recover-/);
