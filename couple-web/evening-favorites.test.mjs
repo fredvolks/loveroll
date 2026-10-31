@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
-import {EVENING_FAVORITES_LIMIT,eveningFavoriteId,readEveningFavorites,toggleEveningFavorite} from './evening-favorites.mjs';
+import {EVENING_FAVORITES_LIMIT,eveningFavoriteId,readEveningFavorites,toggleEveningFavorite,removeEveningFavorite,eveningFavoritesSettingsHtml} from './evening-favorites.mjs';
 
 const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
 const store=()=>{
@@ -105,4 +105,63 @@ test('A failed favorite read cannot overwrite an existing five-card list',()=>{
  const inaccessible={setItem:()=>{writes++;}};
  assert.equal(toggleEveningFavorite('fred','couple-a',card(1),inaccessible).reason,'storage');
  assert.equal(writes,0);
+});
+
+test('Previously drawn favorites can be removed from Settings after the evening is closed',()=>{
+ const storage=store();
+ for(let n=1;n<=5;n++)assert.equal(toggleEveningFavorite('fred','couple-a',card(n),storage).ok,true);
+ const initial=readEveningFavorites('fred','couple-a',storage);
+ const html=eveningFavoritesSettingsHtml(initial);
+ assert.match(html,/Gérer mes cartes favorites/);
+ assert.match(html,/Mes favoris D100 · 5 \/ 5/);
+ assert.equal((html.match(/data-action="favorite-remove:/g)||[]).length,5);
+ assert.match(html,/data-action="favorite-remove:SENSUEL:2"/);
+ assert.match(html,/aria-label="Retirer le favori Sensuel · carte 2"/);
+ const freed=removeEveningFavorite('fred','couple-a','SENSUEL:2',storage);
+ assert.equal(freed.ok,true);
+ assert.equal(freed.reason,'removed');
+ assert.deepEqual(freed.favorites,['SENSUEL:1','SENSUEL:3','SENSUEL:4','SENSUEL:5']);
+ assert.deepEqual(readEveningFavorites('fred','couple-a',storage),freed.favorites);
+ assert.equal(readEveningFavorites('partner','couple-a',storage).length,0);
+ assert.equal(toggleEveningFavorite('fred','couple-a',card(6),storage).ok,true);
+ assert.equal(removeEveningFavorite('fred','couple-a','SENSUEL:2',storage).reason,'not-found');
+ assert.equal(removeEveningFavorite('fred','couple-b','SENSUEL:1',storage).reason,'not-found');
+ assert.equal(removeEveningFavorite('partner','couple-a','SENSUEL:1',storage).reason,'not-found');
+});
+test('Settings favorite actions cannot inject markup or add arbitrary cards',()=>{
+ assert.match(eveningFavoritesSettingsHtml(),/Aucun favori/);
+ const html=eveningFavoritesSettingsHtml([
+  'SENSUEL:7','SEXUEL:100','MIXTE:50','SENSUEL:07',
+  'SEXUEL:101','bad','<img src=x onerror=alert(1)>',null
+ ]);
+ assert.equal((html.match(/data-action="favorite-remove:/g)||[]).length,3);
+ assert.doesNotMatch(html,/<img|onerror|favorite-remove:SENSUEL:07/);
+ assert.match(html,/Sensuel · carte 7/);
+ assert.match(html,/Sexuel · carte 100/);
+ assert.match(html,/Mixte · carte 50/);
+ for(const invalid of ['SENSUEL:07','SENSUEL:0','SENSUEL:101','SENSUEL:1:2','SEXUEL:bad',
+  'BAD:5','<script>','MIXTE:51']){
+  assert.equal(removeEveningFavorite('fred','couple-a',invalid,store()).reason,'invalid',invalid);
+ }
+});
+test('Settings never erase saved favorites after a failed read or write',()=>{
+ let writes=0;
+ const blocked={getItem(){throw Error('blocked');},setItem(){writes++;}};
+ assert.equal(removeEveningFavorite('fred','couple-a','SENSUEL:1',blocked).reason,'storage');
+ assert.equal(writes,0);
+ const storage=store();toggleEveningFavorite('fred','couple-a',card(1),storage);
+ const writeDenied={getItem:key=>storage.getItem(key),setItem(){throw Error('quota');}};
+ assert.equal(removeEveningFavorite('fred','couple-a','SENSUEL:1',writeDenied).reason,'storage');
+ assert.deepEqual(readEveningFavorites('fred','couple-a',storage),['SENSUEL:1']);
+});
+test('Favorite Settings controls are scoped to the current user and couple',()=>{
+ assert.match(app,/eveningFavoritesSettingsHtml\(\s*readEveningFavorites\(state\.user\?\.id,state\.coupleId\)\)/);
+ const handler=app.slice(app.indexOf("if(verb==='favorite-remove'){"),
+  app.indexOf("if(verb==='evening-favorite'){"));
+ assert.match(handler,/if\(!state\.user\?\.id\|\|!state\.coupleId/);
+ assert.match(handler,/element&&!root\.contains\(element\)/);
+ assert.match(handler,/removeEveningFavorite\(state\.user\.id,state\.coupleId,identity\)/);
+ assert.match(handler,/root\.querySelector\('\.lr-favorite-manager'\)\?\.focus/);
+ const css=readFileSync(new URL('./settings-premium.css',import.meta.url),'utf8');
+ assert.match(css,/\.lr-favorite-item button\{[^}]*min-height:44px/);
 });
