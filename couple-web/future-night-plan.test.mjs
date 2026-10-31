@@ -46,11 +46,17 @@ test('No eligible card never backfills from a third style or reuses a previous c
  assert.equal(plan.spentMinutes,10);
  assert.equal(plan.items.length,2);
  const missing=buildFutureNightPlan({members,cards,
-  styleA:'medium',styleB:'intense',minutes:5,cardTickets:[0,0]});
+  styleA:'medium',styleB:'intense',minutes:10,
+  excludedIds:['intense-2'],cardTickets:[0,0]});
  assert.equal(missing.items.length,1);
  assert.equal(missing.reason,'no-eligible-card');
- assert.equal(missing.remainingMinutes,1);
+ assert.equal(missing.remainingMinutes,6);
  assert.equal(missing.items[0].level,'medium');
+ const tooShort=buildFutureNightPlan({members,cards,
+  styleA:'medium',styleB:'intense',minutes:5,cardTickets:[0,0]});
+ assert.equal(tooShort.spentMinutes,4);
+ assert.equal(tooShort.remainingMinutes,1);
+ assert.equal(tooShort.reason,'duration');
  const excluded=buildFutureNightPlan({members,cards,
   styleA:'medium',styleB:'intense',minutes:10,excludedIds:['medium-1'],
   cardTickets:[0]});
@@ -61,7 +67,7 @@ test('User-selected 10/30 minute and free plans are bounded and keep both recipi
  assert.deepEqual(FUTURE_NIGHT_LENGTHS,[5,10,15,30,'free']);
  for(const minutes of [10,30]){
   const plan=buildFutureNightPlan({
-   members,cards:many(12,2),styleA:'medium',styleB:'medium',
+   members,cards:many(20,2),styleA:'medium',styleB:'medium',
    minutes,maxCards:20
   });
   assert.equal(plan.spentMinutes,minutes);
