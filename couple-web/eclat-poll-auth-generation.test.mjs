@@ -474,3 +474,67 @@ test('LR-026: reordered status with revoked entitlement still clears private sta
  assert.equal(h.audioStops(),1);
  assert.deepEqual(h.history,[]);
 });
+
+test('LR-026: confirmed Auth 401 response purges private Éclat cache',async()=>{
+ const h=harness();
+ h.state.eclat={id:'restricted-session',access:true,active:true};
+ h.state.eclatHistory=[{id:'private-photo'}];
+ h.state.eclatFinished={id:'private-ending'};
+ h.state.eclatMusic=true;
+ const pending=h.tick();
+ h.requests[0].reject({status:401,code:'auth_denied'});
+ await pending;
+ assert.equal(h.state.eclat,null,'rejected Auth must revoke the local entitlement receipt');
+ assert.deepEqual(Array.from(h.state.eclatHistory),[]);
+ assert.equal(h.state.eclatFinished,null);
+ assert.equal(h.state.eclatMusic,false);
+ assert.equal(h.audioStops(),1);
+ assert.deepEqual(h.history,[]); 
+ assert.deepEqual(h.renders,[undefined],'the now-locked screen must repaint');
+ assert.equal(h.warnings.length,1);
+});
+
+test('LR-026: PostgREST expired-JWT rejection also revokes local Éclat access',async()=>{
+ const h=harness();
+ h.state.eclatHistory=[{id:'former-private'}];
+ const pending=h.tick();
+ h.requests[0].reject({code:'PGRST301',message:'JWT expired'});
+ await pending;
+ assert.equal(h.state.eclat,null);
+ assert.deepEqual(Array.from(h.state.eclatHistory),[]);
+ assert.deepEqual(h.renders,[undefined]);
+});
+
+test('LR-026: a stale auth rejection cannot erase a replacement login',async()=>{
+ const h=harness();
+ const oldPoll=h.tick();
+ h.runtime.authFeedbackGeneration=2;
+ const newPoll=h.tick();
+ h.requests[1].resolve({id:'new-private-session',access:true});
+ await newPoll;
+ h.state.eclatHistory=[{id:'new-private'}];
+ h.state.eclatMusic=true;
+ h.requests[0].reject({status:401,code:'PGRST301'});
+ await oldPoll;
+ assert.equal(h.state.eclat.id,'new-private-session');
+ assert.deepEqual(h.state.eclatHistory,[{id:'new-private'}]);
+ assert.equal(h.state.eclatMusic,true);
+ assert.equal(h.audioStops(),0);
+ assert.deepEqual(h.renders,['new-private-session']);
+ assert.equal(h.warnings.length,0);
+});
+
+test('LR-026: temporary network failures do not erase valid cached Éclat access',async()=>{
+ const h=harness();
+ h.state.eclatHistory=[{id:'authorized-photo'}];
+ h.state.eclatMusic=true;
+ const pending=h.tick();
+ h.requests[0].reject(new Error('temporarily offline'));
+ await pending;
+ assert.equal(h.state.eclat.id,'original');
+ assert.deepEqual(h.state.eclatHistory,[{id:'authorized-photo'}]);
+ assert.equal(h.state.eclatMusic,true);
+ assert.equal(h.audioStops(),0);
+ assert.deepEqual(h.renders,[]);
+ assert.equal(h.warnings.length,1);
+});
