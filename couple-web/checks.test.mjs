@@ -231,6 +231,9 @@ test('Countdown uses a monotonic wall deadline, pause reset and optional signals
  }
  assert.match(app,/if\(!validChallengeTimerMinutes\(minutes\)\)return '<p class="tiny-note">♡ Sans minuteur/);
  assert.match(app,/if\(validChallengeTimerMinutes\(minutes\)\)\{/);
+ assert.match(app,/function optionalRolledTimer\(roll\)\{\s*if\(!validChallengeTimerMinutes\(roll\?\.timer_minutes\)\)return '';/);
+ assert.match(app,/timerHtml:state\.showSurpriseActivity&&validChallengeTimerMinutes\(activity\?\.timer_minutes\)\?/);
+ assert.match(app,/timerHtml:validChallengeTimerMinutes\(selected\?\.advent_timer_minutes\)\?/);
  assert.match(app,/challengeTimer\.deadline-Date\.now\(\)/);
  assert.match(app,/timer-reset/);
  assert.match(app,/timer-toggle/);
