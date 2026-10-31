@@ -17,7 +17,8 @@ function deferred(){
  return {promise,resolve,reject};
 }
 function harness(){
- const state={user:{id:'alice'},tab:'settings',referral:{enabled:true,credits:0}};
+ const state={user:{id:'alice'},coupleId:'couple-alice',tab:'settings',
+  referral:{enabled:true,credits:0}};
  const requests=[],renders=[],warnings=[];
  let interval=null;
  const context={
@@ -129,4 +130,22 @@ test('LR-026: polling refuses unrelated tabs, hidden screen, and disabled reward
  h.state.referral.enabled=false;
  await h.tick();
  assert.equal(h.requests.length,0);
+});
+
+test('LR-026: same user changing couples never receives the former couple ledger',async()=>{
+ const h=harness();
+ const prior=h.tick();
+ h.state.coupleId='couple-new';
+ h.state.referral={enabled:true,credits:5};
+ const current=h.tick();
+ assert.equal(h.requests.length,2,'a changed couple gets an independent query');
+ h.requests[0].resolve({enabled:true,credits:999});
+ await prior;
+ assert.equal(h.state.referral.credits,5,'prior couple data stays private');
+ await h.tick();
+ assert.equal(h.requests.length,2,'old completion does not unlock the new couple request');
+ h.requests[1].resolve({enabled:true,credits:14});
+ await current;
+ assert.equal(h.state.referral.credits,14);
+ assert.equal(h.renders.length,1);
 });
