@@ -4207,3 +4207,47 @@ test('LR-026: current invitation logout network rejection is not silently ignore
   assert.equal(f.renders(),0,command);
  }
 });
+
+
+test('LR-026: failed invitation sign-out retains journal, personal pass and unlock key',async()=>{
+ for(const command of ['use-existing-account','switch-account-invite']){
+  const f=invitationSwitchFixture(command,async()=>({error:Error('Logout denied')}));
+  f.state.unlockKey='owned-key';f.state.personalPass={id:'current-pass'};
+  f.state.personalJournal=[{id:'private-entry'}];
+  await assert.rejects(f.execute(),/Logout denied/,command);
+  assert.equal(f.state.user.id,'alice',command);
+  assert.equal(f.state.unlockKey,'owned-key',command);
+  assert.equal(f.state.personalPass?.id,'current-pass',command);
+  assert.equal(f.state.personalJournal[0]?.id,'private-entry',command);
+ }
+});
+
+test('LR-026: rejected invitation sign-out keeps private current account journal',async()=>{
+ for(const command of ['use-existing-account','switch-account-invite']){
+  const f=invitationSwitchFixture(command,async()=>{throw Error('Offline');});
+  f.state.unlockKey='unchanged';f.state.personalPass={id:'kept'};
+  f.state.personalJournal=[{id:'keep'}];
+  await assert.rejects(f.execute(),/Offline/,command);
+  assert.equal(f.state.unlockKey,'unchanged',command);
+  assert.equal(f.state.personalPass.id,'kept',command);
+  assert.deepEqual(f.state.personalJournal,[{id:'keep'}],command);
+ }
+});
+
+test('LR-026: invite sign-out keeps local private data while server request is in flight',async()=>{
+ for(const command of ['use-existing-account','switch-account-invite']){
+  let resolve;const delayed=new Promise(done=>{resolve=done;});
+  const f=invitationSwitchFixture(command,()=>delayed);
+  f.state.unlockKey='still-authorized';
+  f.state.personalPass={id:'pending'};
+  f.state.personalJournal=[{id:'not-lost'}];
+  const task=f.execute();
+  assert.equal(f.state.unlockKey,'still-authorized',command);
+  assert.equal(f.state.personalPass.id,'pending',command);
+  assert.equal(f.state.personalJournal[0]?.id,'not-lost',command);
+  resolve({error:null});await task;
+  assert.equal(f.state.user,null,command);
+  assert.equal(f.state.personalPass,null,command);
+  assert.deepEqual(Array.from(f.state.personalJournal),[],command);
+ }
+});
