@@ -3540,3 +3540,32 @@ test('LR-026: old getUser success cannot rewrite a new login of the same account
  assert.equal(state.user.email,'new@example.com');
  assert.equal(f.calls.paints,0);
 });
+
+test('LR-026: real Chromium redraw mock respects strict persisted receipt validation',async()=>{
+ const browser=readFileSync(new URL('./boot-smoke.cjs',import.meta.url),'utf8');
+ const begin=browser.indexOf('const fakeSupabase=\x60');
+ const end=browser.indexOf('\n\x60;',begin);
+ assert.ok(begin>=0&&end>begin,'browser fixture must be available');
+ const mock=browser.slice(begin+'const fakeSupabase=\x60'.length,end)
+  .replace('export function createClient(){','function createClient(){');
+ for(const [action,exclude] of [['pass',false],['refuse',false],['refuse',true]]){
+  const sandbox={window:{},location:{href:'https://test.invalid/?boot_case=paired-redraw-pass'}};
+  const client=runInNewContext(mock+';createClient()',sandbox);
+  const originalRows=await client.from('couple_challenges').select('*');
+  const original=originalRows.data.find(row=>row.id==='redraw-original');
+  const snapshot=snapshotEveningCardBeforeRedraw(original);
+  assert.ok(snapshot,'the original browser card must include every immutable field');
+  const {data:receipt,error}=await client.rpc('love_respond_and_redraw',{
+   p_challenge:'redraw-original',p_action:action,p_exclude:exclude
+  });
+  assert.equal(error,null);
+  assert.equal(isValidEveningRedrawReceipt(receipt,'redraw-original'),true,
+   'the browser mock must return the official receipt shape');
+  const persisted=await client.from('couple_challenges').select('*');
+  assert.equal(isPersistedEveningRedrawReceipt(receipt,persisted.data,
+   'test-user-1','active-session-synthetic',snapshot),true,
+   'the browser mock must persist valid D100 fields and timestamps');
+  assert.equal(activeEveningRedrawReplacementId(persisted.data,receipt,
+   'test-user-1','active-session-synthetic'),'redraw-replacement');
+ }
+});
