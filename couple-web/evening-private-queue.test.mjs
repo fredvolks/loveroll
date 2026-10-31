@@ -2225,7 +2225,14 @@ test('LR-026: pending Éclat private notes include blank deletions but exclude o
 
 test('LR-026: private Éclat input and save lifecycle track blank deletion and completion',()=>{
  assert.match(app,/hasPendingEclatNote\(eclatNoteDrafts,eclatNoteKey\(state\.eclat,state\.user\?\.id\),state\.tab\)/);
- assert.match(app,/draft\[field\.dataset\.eclatField\]=field\.value;draft\.saved=false;draft\.dirty=true/);
+ const privateInput=app.slice(app.indexOf('function bindEclatPrivateNoteFields(){'),
+  app.indexOf('function bindActions(){'));
+ assert.match(privateInput,/draft\[property\]=field\.value;draft\.saved=false;draft\.dirty=true/,
+  'valid private text inputs must still mark the scoped draft dirty');
+ assert.match(privateInput,/property!=='note'&&property!=='clue'/,
+  'arbitrary data attributes must never write unexpected draft properties');
+ assert.match(privateInput,/eclatNoteKey\(state\.eclat,state\.user\?\.id\)!==key/,
+  'input ownership must be scoped to the original Éclat chapter');
  assert.match(app,/const draft=\{note:'',clue:'',moment_done:false,loading:true,dirty:false,\s*generation:authFeedbackGeneration\}/);
  assert.match(app,/eclatNoteDrafts\.get\(key\)\?\.generation!==authFeedbackGeneration/);
  assert.match(app,/if\(snapshot\.moment_done!==draft\.moment_done\)draft\.dirty=true/);
