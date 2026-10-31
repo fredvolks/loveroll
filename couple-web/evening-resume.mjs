@@ -27,7 +27,7 @@ export function clearEveningSelection(storage,userId,sessionId){
  const k=key(userId,sessionId);if(!k)return;
  try{storage?.removeItem(k);}catch{}
 }
-export function restoreEveningSelection(storage,userId,sessionId,ownVisibleCards=[]){
+export function restoreEveningSelection(storage,userId,sessionId,ownVisibleCards=null){
  const k=key(userId,sessionId);if(!k)return null;
  // Network/RLS loading can temporarily return a malformed collection.
  // Avoid crashing or erasing a valid bookmark on a non-authoritative response.
