@@ -207,6 +207,8 @@ jobs:
         run: node --test couple-web/future-card-catalog.test.mjs
       - name: Verify future 100-card regeneration preview and safety
         run: node --test couple-web/future-card-regeneration.test.mjs
+      - name: Validate future 300-card admin import preview
+        run: node --test couple-web/future-card-studio.test.mjs
       - name: Verify assignment of future gender-specific and shared cards
         run: node --test couple-web/future-card-audience.test.mjs
       - name: Preview future nights from unique 2-6 minute cards
