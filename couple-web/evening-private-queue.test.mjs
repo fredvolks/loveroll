@@ -1993,7 +1993,7 @@ test('LR-026: a masked Éclat audio tap never repaints protected content',async(
 const privateEclatDenialStart=app.indexOf('function applyEclatStatus(value){');
 const privateEclatDenialEnd=app.indexOf('// Supabase may serialize the same status fields',privateEclatDenialStart);
 assert.ok(privateEclatDenialStart>0&&privateEclatDenialEnd>privateEclatDenialStart);
-const privateEclatDenialSource='let latestEclatHistoryRead=null,latestEclatAudioOwner=null;\\n'+
+const privateEclatDenialSource='let latestEclatHistoryRead=null,latestEclatAudioOwner=null;\n'+
  app.slice(privateEclatDenialStart,privateEclatDenialEnd);
 
 function privateEclatSaveFixture(state,saveEclatNote){
