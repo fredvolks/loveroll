@@ -12,6 +12,20 @@ export const PIP_POSITIONS=Object.freeze({
 });
 const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','"':'&quot;',"'":'&#39;'}[c]));
 let homeLayoutObserver=null;
+// Safari's visual viewport changes when its toolbar or on-screen keyboard
+// appears. Keep the photographed marble/velvet split within that viewport:
+// a raw roll button top below the fold previously produced negative CSS sizes.
+export function calculateMobileHomePhotoGeometry(viewportHeight,rollTop){
+ const height=Number(viewportHeight),top=Number(rollTop);
+ if(!Number.isFinite(height)||height<=0||!Number.isFinite(top))return null;
+ const margin=Math.min(24,height/4);
+ const split=Math.max(margin,Math.min(height-margin,top));
+ return {
+  split,topImageHeight:split/.438,
+  bottomImageHeight:(height-split)/.562,
+  contact:split*.342/.438
+ };
+}
 // Keep complete names and all seven rows visible in the two-column dashboard.
 // Only the lower panels compact when needed; the header and die keep their size.
 export function fitHomeLayout(root){
@@ -34,12 +48,12 @@ export function fitHomeLayout(root){
   if(!win.matchMedia('(max-width:767px)').matches){fitTabletRomanceStage(root);return;}
   const roll=shell.querySelector('.home-roll-area');
   if(!roll)return;
-  const split=roll.getBoundingClientRect().top;
-  const height=win.innerHeight;
-  root.style.setProperty('--home-scene-split',split+'px');
-  root.style.setProperty('--home-scene-top-image-height',split/.438+'px');
-  root.style.setProperty('--home-scene-bottom-image-height',(height-split)/.562+'px');
-  root.style.setProperty('--home-scene-contact',split*.342/.438+'px');
+  const photo=calculateMobileHomePhotoGeometry(win.innerHeight,roll.getBoundingClientRect().top);
+  if(!photo)return; // Keep last valid dimensions if Safari reports a transient zero viewport.
+  root.style.setProperty('--home-scene-split',photo.split+'px');
+  root.style.setProperty('--home-scene-top-image-height',photo.topImageHeight+'px');
+  root.style.setProperty('--home-scene-bottom-image-height',photo.bottomImageHeight+'px');
+  root.style.setProperty('--home-scene-contact',photo.contact+'px');
  };
  const fit=()=>{
   if(!shell.isConnected){observer?.disconnect();return;}
