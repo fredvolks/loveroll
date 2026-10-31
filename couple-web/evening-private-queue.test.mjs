@@ -2195,13 +2195,13 @@ test('LR-026: an auth identity switch closes the old couple channel and clears p
  assert.equal(state.user.id,'bob');
  assert.equal(state.coupleId,null);
  assert.equal(state.profile,null);
- assert.deepEqual(state.members,[]);
+ assert.equal(state.members.length,0);
  assert.equal(state.eclat,null);
- assert.deepEqual(state.eclatHistory,[]);
+ assert.equal(state.eclatHistory.length,0);
  assert.equal(state.eclatMusic,false);
- assert.deepEqual(state.customCards,[]);
- assert.deepEqual(state.challenges,[]);
- assert.deepEqual(state.personalJournal,[]);
+ assert.equal(state.customCards.length,0);
+ assert.equal(state.challenges.length,0);
+ assert.equal(state.personalJournal.length,0);
  assert.equal(state.channel,null);
  assert.equal(state.testModeEligible,false);
  assert.equal(f.drafts.size,0);
