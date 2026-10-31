@@ -2140,3 +2140,23 @@ test('LR-026: failed empty-text moment completion remains pending after network 
  assert.equal(fixture.draft.dirty,true);
  assert.equal(hasPendingEclatNote(fixture.drafts,'alice:session-1:1','eclat'),true);
 });
+
+test('LR-026: retry does not discard a private note while save pending',async()=>{
+ const begin=app.indexOf("if(kind==='note-retry'){",app.indexOf("if(verb==='eclat'){"));
+ const end=app.indexOf('const savedKey=await saveCurrentEclatNote',begin);
+ assert.ok(begin>0&&end>begin);
+ const action=runInNewContext(
+  '(async (kind,key,drafts,render)=>{const eclatNoteDrafts=drafts;'+
+   app.slice(begin,end)+'})',{});
+ const busy=new Map([['alice:s1:1',{saving:true,note:'En attente'}]]);
+ let renders=0;
+ await assert.rejects(action('note-retry','alice:s1:1',busy,()=>renders++),
+  /Enregistrement en cours/);
+ assert.equal(busy.get('alice:s1:1').note,'En attente',
+  'the in-flight draft must remain intact');
+ assert.equal(renders,0);
+ busy.get('alice:s1:1').saving=false;
+ await action('note-retry','alice:s1:1',busy,()=>renders++);
+ assert.equal(busy.has('alice:s1:1'),false,'retry can reload after save settles');
+ assert.equal(renders,1);
+});
