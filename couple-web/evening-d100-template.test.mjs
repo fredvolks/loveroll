@@ -741,3 +741,33 @@ test('LR-027: active server repick is explained and temporarily locks conflictin
  assert.match(renderSession,/redrawPending:isActiveEveningRedrawPending\(\)/,
   'The rendered state must come from the current authenticated session');
 });
+
+test('LR-027: personal completion and overlay buttons wait for a private server repick',async()=>{
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const {runInNewContext}=await import('node:vm');
+ const from=source.indexOf("if(verb==='answer'){");
+ const until=source.indexOf("if(verb==='finish-session'){",from);
+ assert.ok(from>0&&until>from,'Official completion route is present');
+ const route=source.slice(from,until);
+ assert.match(route,/if\(isActiveEveningRedrawPending\(\)\|\|isEveningCardCompleting\(parts\[0\]\)\)return;/);
+ let writes=0,renders=0;
+ const run=runInNewContext('(async (verb,parts)=>{'+route+'})',{
+  state:{user:{id:'alice'},session:{id:'night-one'},challenges:[]},
+  isActiveEveningRedrawPending:()=>true,
+  isEveningCardCompleting:()=>false,
+  rpc:()=>{writes++;throw Error('Completion must not race repick')},
+  render:()=>{renders++;}
+ });
+ await run('answer',['private-a','completed']);
+ assert.equal(writes,0,'No competing answer_challenge RPC');
+ assert.equal(renders,0,'No stale repaint while RLS refresh is pending');
+ const personalOverlay=source.slice(source.indexOf('const selected=mineCards.find('),
+  source.indexOf('frame(premiumEveningHtml({'));
+ assert.match(personalOverlay,/button\('evening-start:'\+view\.id,[\s\S]*?isActiveEveningRedrawPending\(\)/,
+  'The private Start control must expose its pending/disabled state');
+ assert.match(personalOverlay,/button\('answer:'\+view\.id\+':completed',[\s\S]*?isActiveEveningRedrawPending\(\)/,
+  'The private Complete control must expose its pending/disabled state');
+ assert.match(personalOverlay,/button\('evening-favorite:'\+view\.id,[\s\S]*?isActiveEveningRedrawPending\(\)/,
+  'Favorites must not repaint the view during a pending repick');
+ assert.match(personalOverlay,/Confirmation en cours/);
+});
