@@ -1718,6 +1718,9 @@ function eclatNoteState(){
  return eclatNoteDrafts.get(key);
 }
 async function saveCurrentEclatNote(momentDone){
+ // An unknown or revoked subscription cannot authorize a private write.
+ // Check before looking up the draft: a missing status has no note key.
+ if(state.eclat?.access!==true)return null;
  const owner={userId:state.user?.id,coupleId:state.coupleId,
   generation:authFeedbackGeneration};
  const key=eclatNoteKey(state.eclat,owner.userId),draft=eclatNoteDrafts.get(key);
