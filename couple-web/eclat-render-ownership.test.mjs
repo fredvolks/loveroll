@@ -36,6 +36,7 @@ function renderFixture(memberCount){
 test('LR-026: revoked couple cannot display cached Éclat status, history or completed title',()=>{
  const f=renderFixture(1);
  assert.equal(f.payload.status,null);
+ assert.equal(f.payload.coupleReady,false);
  assert.equal(f.payload.history.length,0);
  assert.equal(f.payload.finished,null);
  assert.equal(f.notes,0,'no private note can load while the couple is unavailable');
@@ -45,6 +46,7 @@ test('LR-026: revoked couple cannot display cached Éclat status, history or com
 test('LR-026: valid couple retains normal Éclat status, history and completion',()=>{
  const f=renderFixture(2);
  assert.equal(f.payload.status,f.status);
+ assert.equal(f.payload.coupleReady,true);
  assert.equal(f.payload.history,f.history);
  assert.equal(f.payload.finished,'private completed title');
  assert.equal(f.notes,1);
