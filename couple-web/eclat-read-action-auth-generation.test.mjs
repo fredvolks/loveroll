@@ -482,7 +482,7 @@ test('LR-026: stale history fetch cannot reintroduce data after membership chang
   eclatNoteDrafts:h.drafts,eclatAudio:{stop:()=>{}},
   loadEclatHistory:()=>{reads++;return waiting.promise;},
   client:{},console};
- const scripts=membershipSource+'\\n'+app.slice(start,end);
+ const scripts=membershipSource+'\n'+app.slice(start,end);
  // Status variables in the production slice are initialized in this VM.
  const f=runInNewContext(scripts+
   ';({acceptEclatMembership,refreshEclatHistory})',runtime);
