@@ -160,12 +160,12 @@ export function premiumEveningHtml({
  ready=!!status?.both_ready,
  myRoll=rolls.find(r=>r.user_id===me),
  theirRoll=rolls.find(r=>r.user_id===partner.user_id),
- canMyRoll=!!session&&!status?.my_rolled&&!rolling&&!redrawPending;
+ canMyRoll=!!session&&!status?.my_rolled&&!rolling&&!redrawPending&&!giftPending;
  const first=turn?.first?members.find(m=>m.user_id===turn.first)?.name?.split(' ')[0]:'';
  const totals=turn.targets||{},done=turn.completed||{};
  // A draw in flight owns the chosen category until its official receipt.
  // Prevent another tap from changing the visible choice mid-animation.
- const canDraw=ready&&turn.ready&&!turn.drawsFinished&&!rolling&&!redrawPending&&
+ const canDraw=ready&&turn.ready&&!turn.drawsFinished&&!rolling&&!redrawPending&&!giftPending&&
   Number(turn.remaining?.[me]||0)>0&&turn.next===me;
  const canGive=ready&&turn.ready&&!redrawPending&&!giftPending&&giftCount<3&&Number(turn.remaining?.[me])>0;
  const challengeText=rolling?'Brassage en cours…':pending?'♡ Voir notre défi en cours':turn.finished?'Tous les défis terminés':!ready?'En attente des deux D6':canDraw?'À toi de jouer':'En attente de '+esc(partner.name?.split(' ')[0]||'ton partenaire');
@@ -192,6 +192,7 @@ export function premiumEveningHtml({
  // already-drawn card. Never replace the D100 itself on the active turn.
  const primaryAction=rolling?waitingStatus('Brassage en cours…'):
   redrawPending?waitingStatus('Repige en cours de confirmation…'):
+  giftPending?waitingStatus('Don en cours de confirmation…'):
   turn.finished?bt('finish-session','✓ Terminer la soirée','evening-primary'):
   !ready?waitingStatus(status?.my_rolled?
    'En attente du D6 de ton partenaire':'Lance ton D6 pour continuer'):
@@ -203,7 +204,7 @@ export function premiumEveningHtml({
    resumeAction||waitingStatus('En attente du tour de ton partenaire');
  // Opening the challenge list remounts the die scene. Keep that action
  // unavailable until the official D100 animation has finished.
- const secondaryAction=ownChallengeCount>0&&!rolling&&!redrawPending&&!turn.finished&&
+ const secondaryAction=ownChallengeCount>0&&!rolling&&!redrawPending&&!giftPending&&!turn.finished&&
   (!turn.drawsFinished||!!resumeAction)?
   bt('evening-list','♡ Voir mes défis ('+ownChallengeCount+')','evening-queue-open-btn'):'';
  return '<div class="evening-premium-view '+(session?(ready?'is-ready':'is-waiting'):'is-inactive is-finale')+'" data-category-percent="'+esc(preferredOdds)+'">'+
