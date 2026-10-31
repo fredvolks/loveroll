@@ -2305,7 +2305,8 @@ function privateAuthBoundaryFixture(state,getUser){
   'let savedTimerScanOwner=null,savedTimerScanAfter=0,savedTimerSyncInFlight=null;'+
   'let inviteAcceptanceBusy=false,inviteAcceptanceRequest=null;'+app.slice(start,end)+
   ';({adoptAuthenticatedIdentity,refreshVerifiedIdentity,readRequest:()=>latestAuthReloadRequest})',{
-   state,drafts,timer,client:{auth:{getUser},removeChannel:async()=>{calls.channelRemovals++;}},
+   state,drafts,timer,readTimerAlertMode:userId=>userId==='alice'?'vibrate':'sound',
+   client:{auth:{getUser},removeChannel:async()=>{calls.channelRemovals++;}},
    eclatAudio:{stop:()=>calls.audioStops++},
    saveChallengeTimer:()=>calls.savedTimers.push({...timer}),
    clearTimeout:()=>{},setTimeout:()=>calls.timers++,
