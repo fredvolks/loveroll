@@ -106,6 +106,7 @@ let latestCalendarPassQuotaRequest=null;
 let currentReviewSaveRequest=null;
 // Ignore duplicate start taps for this Auth generation, but never block a new login.
 let currentNewSessionRequest=null;
+let currentWeeklyConfirmationRequest=null;
 let latestDiceRollRequest=null;
 const eveningClosureGate=createEveningClosureGate();
 let worldGpsDraft=null;
@@ -5624,9 +5625,22 @@ async function handle(action,element){
    if(!owner.userId||!owner.coupleId)return;
    const ownsOwner=()=>state.user?.id===owner.userId&&
     state.coupleId===owner.coupleId&&authFeedbackGeneration===owner.generation;
-   const confirmed=await premiumConfirm(
-    'Ce tirage est commun à votre couple et ne pourra pas être refait avant la semaine prochaine. Êtes-vous sûrs de vouloir brasser le dé ?',
-    {kind:'weekly',title:'Brasser le dé ?',accept:'Oui, brasser',cancel:'Annuler'});
+   // Multiple fast taps must open only ONE confirmation for this account.
+   // An older login's open dialog must not block a replacement user.
+   if(currentWeeklyConfirmationRequest&&
+      currentWeeklyConfirmationRequest.userId===owner.userId&&
+      currentWeeklyConfirmationRequest.coupleId===owner.coupleId&&
+      currentWeeklyConfirmationRequest.generation===owner.generation)return;
+   const confirmation={...owner};
+   currentWeeklyConfirmationRequest=confirmation;
+   let confirmed=false;
+   try{
+    confirmed=await premiumConfirm(
+     'Ce tirage est commun à votre couple et ne pourra pas être refait avant la semaine prochaine. Êtes-vous sûrs de vouloir brasser le dé ?',
+     {kind:'weekly',title:'Brasser le dé ?',accept:'Oui, brasser',cancel:'Annuler'});
+   }finally{
+    if(currentWeeklyConfirmationRequest===confirmation)currentWeeklyConfirmationRequest=null;
+   }
    if(!ownsOwner()||!confirmed||state.diceStatus||state.weekly)return;
    const request={};
    latestDiceRollRequest=request;
