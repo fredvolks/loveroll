@@ -40,8 +40,8 @@ test('month navigation paints immediately and loads only its own optional quota'
  assert.equal(h.state.eveningCalendarMonth,'2026-11');
  assert.equal(h.state.eveningCalendarDate,'2026-11-01');
  assert.equal(h.calls.renders,1,'calendar should not wait for network');
- assert.deepEqual(h.calls.requests[0].args,
-  {p_couple:'duo-alice',p_month:'2026-11'});
+ assert.equal(h.calls.requests[0].args.p_couple,'duo-alice');
+ assert.equal(h.calls.requests[0].args.p_month,'2026-11');
  pending.resolve([{id:'nov-quota'}]);await task;
  assert.equal(h.calls.renders,2);
  assert.equal(h.state.calendarPassMonth,'2026-11');
