@@ -595,7 +595,7 @@ function bindActions(){
 
 }
 
-let inviteAcceptanceBusy=false;
+let inviteAcceptanceBusy=false,inviteAcceptanceRequest=null;
 function pendingInviteUrl(recover=false){
  // A referral signup must return to the current website after Google OAuth
  // and after email verification, not to the legacy Mon Wallet Pages origin.
@@ -654,16 +654,33 @@ async function autoAcceptPendingInvite(){
  if(!verifiedLoveEmail(state.user)){
   state.inviteError='Confirmez votre adresse courriel pour terminer l’invitation.';return;
  }
- const key=state.user.id+':'+invite.kind+':'+invite.value;
+ const ownerId=state.user.id;
+ const key=ownerId+':'+invite.kind+':'+invite.value;
  if(inviteAcceptanceBusy||state.inviteAttemptKey===key)return;
+ const request={};
+ inviteAcceptanceRequest=request;
  state.inviteAttemptKey=key;inviteAcceptanceBusy=true;state.inviteError=null;
+ // A former account or replaced invitation cannot complete this UI action.
+ const current=()=>{
+  const pending=pendingInviteReference(sessionStorage);
+  return state.user?.id===ownerId&&inviteAcceptanceRequest===request&&
+   state.inviteAttemptKey===key&&pending?.kind===invite.kind&&pending?.value===invite.value;
+ };
  try{
-  if(invite.kind==='id')await rpc('accept_love_match_by_id',{p_invitation:invite.value});
-  else await rpc('accept_love_match',{p_token_hash:await hashToken(invite.value)});
+  const args=invite.kind==='id'?{p_invitation:invite.value}:
+   {p_token_hash:await hashToken(invite.value)};
+  if(!current())return;
+  await rpc(invite.kind==='id'?'accept_love_match_by_id':'accept_love_match',args);
+  if(!current())return;
   finishInviteReference();
   state.inviteWelcome=true;state.tab='home';state.showAuth=false;
- }catch(error){state.inviteError=invitationAuthMessage(error);}
- finally{inviteAcceptanceBusy=false;}
+ }catch(error){
+  if(current())state.inviteError=invitationAuthMessage(error);
+ }finally{
+  if(inviteAcceptanceRequest===request){
+   inviteAcceptanceBusy=false;inviteAcceptanceRequest=null;
+  }
+ }
 }
 function verificationPendingHtml(email){
  return emailConfirmationHtml(email,{needsSignIn:!state.user,invitation:!!pendingInviteReference(sessionStorage),google:CONFIG.oauthProviders?.includes('google')===true});
@@ -675,6 +692,8 @@ function adoptAuthenticatedIdentity(nextUser){
  const previousId=state.user?.id||null,nextId=nextUser?.id||null;
  if(previousId!==nextId){
   latestAuthReloadRequest=null;
+  inviteAcceptanceRequest=null;inviteAcceptanceBusy=false;
+  state.inviteAttemptKey=null;state.inviteError=null;state.inviteWelcome=false;
   // Close the previous couple's Realtime channel before the new account
   // can receive notifications or any private session refresh from it.
   if(state.channel){
