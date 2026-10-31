@@ -39,14 +39,31 @@ test('Accueil displays an in-app invitation even with Push disabled',()=>{
  for(const status of ['none','no','yes','ignored','obsolete','expired'])
   assert.equal(eveningInviteInboxHtml({state:status,direction:'received'}),'');
  assert.equal(eveningInviteInboxHtml({state:'pending',direction:'sent'}),'');
- const html=eveningInviteInboxHtml({state:'pending',direction:'received'},
+ const noId=eveningInviteInboxHtml({state:'pending',direction:'received'},
   {partnerName:'<script>Intrus</script>'});
+ assert.match(noId,/data-action="tab:session"/);
+ assert.match(noId,/&lt;script&gt;Intrus/);
+ assert.match(noId,/Répondre/);
+ assert.doesNotMatch(noId,/<script>|roll_my_evening_d6|evening-invite:yes/);
+ // Immediate acceptance is shown ONLY when the server provided a real
+ // received invitation ID; we never generate an invitation from the UI.
+ const html=eveningInviteInboxHtml({state:'pending',direction:'received',id:'abc'},
+  {partnerName:'Alex'});
+ assert.match(html,/data-action="evening-invite:yes"/);
  assert.match(html,/data-action="tab:session"/);
- assert.match(html,/&lt;script&gt;Intrus/);
- assert.doesNotMatch(html,/<script>|roll_my_evening_d6|evening-invite:yes/);
- const maybe=eveningInviteInboxHtml({state:'maybe',direction:'received'},{partnerName:'Alex'});
+ assert.match(html,/Autres choix/);
+ assert.match(html,/aria-label="Accepter l’invitation/);
+ assert.doesNotMatch(html,/roll_my_evening_d6|roll_couple_once|ensure_couple_session/);
+ const maybe=eveningInviteInboxHtml({state:'maybe',direction:'received',id:'def'},
+  {partnerName:'Alex'});
  assert.match(maybe,/Toujours partant/);
  assert.match(maybe,/Alex a envie de jouer ce soir/);
+ assert.match(maybe,/data-action="evening-invite:yes"/);
+ const responseStates=['no','yes','expired','ignored','obsolete','none'];
+ for(const state of responseStates)
+  assert.equal(eveningInviteInboxHtml({state,direction:'received',id:'z'}),'');
+ assert.equal(eveningInviteInboxHtml({state:'pending',direction:'sent',id:'z'}),'');
+ assert.equal(eveningInviteInboxHtml({state:'pending',direction:'received',id:null}).includes('evening-invite:yes'),false);
 });
 test('status changes only when official invitation read changes',()=>{
  assert.equal(eveningInviteChanged({state:'pending',id:'a'},{state:'yes',id:'a'}),true);
@@ -159,4 +176,20 @@ test('Real invitation response stays owned by its account through server setup a
  staleFailure.switchTo();staleFailure.response.reject(Error('Old failure'));
  await staleWork;
  assert.equal(staleFailure.events.includes('message'),false);
+});
+
+test('Accueil invitation shortcut preserves responsive touch targets and safe routing',async()=>{
+ const {readFileSync}=await import('node:fs');
+ const css=readFileSync(new URL('./evening-invitation.css',import.meta.url),'utf8');
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ assert.match(css,/\.lr-evening-inbox-yes\{min-height:44px/);
+ assert.match(css,/\.lr-evening-inbox-actions\{/);
+ assert.match(css,/@media\(max-width:530px\)/);
+ const handler=app.slice(app.indexOf("if(verb==='evening-invite'){"),
+  app.indexOf("if(verb==='account-test'){"));
+ assert.match(handler,/answer==='yes'/);
+ assert.match(handler,/ensure_couple_session/);
+ assert.doesNotMatch(handler,/roll_my_evening_d6|roll_couple_once/);
+ assert.match(handler,/generation=authFeedbackGeneration/);
+ assert.match(handler,/if\(!current\(\)\)return/);
 });
