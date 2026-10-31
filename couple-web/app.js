@@ -1774,6 +1774,12 @@ async function refreshEclatStatus(){
   // Keep the foreground path consistent with the background sync instead of
   // leaving a cached private coffret visible until the next poll.
   state.eclat=value??null;
+  if(value==null){
+   // The service no longer exposes this session. Erase stale private history
+   // without another read; the next authorized refresh can repopulate it.
+   state.eclatHistory=[];state.eclatHistoryError=false;
+   return null;
+  }
   await refreshEclatHistory();
   return current()?value:null;
  }finally{
