@@ -630,7 +630,13 @@ function privateNoteDenialHarness({scopedKeys=false,saveUi=false}={}){
   eclatFinished:'Private completion'};
  const drafts=new Map(),renders=[];
  const ui={button:{disabled:false,textContent:'Enregistrer ma note'},
-  label:{textContent:'Écris ici, puis enregistre.'}};
+  label:{textContent:'Écris ici, puis enregistre.'},
+  actions:['eclat:note-play','eclat:note-done','eclat:note-edit',
+   'eclat:choose:0','eclat:library'].map(action=>({
+    dataset:{action},disabled:false,attributes:new Map(),
+    setAttribute(name,value){this.attributes.set(name,value);},
+    removeAttribute(name){this.attributes.delete(name);}
+   }))};
  let audioStops=0;
  const ctx={state,client:{},authFeedbackGeneration:1,eclatNoteDrafts:drafts,
   ownsCoupleAsyncRead,eclatNoteKey:status=>scopedKeys?
@@ -639,7 +645,11 @@ function privateNoteDenialHarness({scopedKeys=false,saveUi=false}={}){
   loadEclatNote:()=>pendingRead.promise,saveEclatNote:()=>pendingSave.promise,
   eclatAudio:{stop:()=>{audioStops++;}},root:{querySelector:selector=>saveUi?
    (selector==='[data-action="eclat:note-save"]'?ui.button:
-    selector==='[data-eclat-note-status]'?ui.label:null):null},
+    selector==='[data-eclat-note-status]'?ui.label:null):null,
+   querySelectorAll:selector=>{
+    assert.equal(selector,'[data-action]');
+    return saveUi?ui.actions:[];
+   }},
   render:()=>renders.push(state.eclat?.access??null)};
  const functions=runInNewContext(noteReadSource+
   ';({eclatNoteState,saveCurrentEclatNote})',ctx);
@@ -991,11 +1001,23 @@ test('LR-026: saving private Éclat note announces progress and restores submit'
  assert.equal(h.ui.button.disabled,true);
  assert.equal(h.ui.button.textContent,'Enregistrement…');
  assert.equal(h.ui.label.textContent,'Enregistrement en cours…');
+ for(const action of h.ui.actions){
+  if(action.dataset.action==='eclat:library'){
+   assert.equal(action.disabled,false,'library remains accessible during a private save');
+   continue;
+  }
+  assert.equal(action.disabled,true,action.dataset.action+' waits for the saved note');
+  assert.equal(action.attributes.get('aria-busy'),'true');
+ }
  h.pendingSave.resolve();
  assert.equal(await pending,'private-key');
  assert.equal(h.ui.button.disabled,false);
  assert.equal(h.ui.button.textContent,'Enregistrer ma note');
  assert.equal(h.ui.label.textContent,'Note enregistrée pour toi');
+ for(const action of h.ui.actions){
+  assert.equal(action.disabled,false,action.dataset.action+' is unlocked after save');
+  assert.equal(action.attributes.has('aria-busy'),false);
+ }
  assert.equal(draft.dirty,false);
 });
 
@@ -1009,6 +1031,8 @@ test('LR-026: failed note save restores submit without hiding retry explanation'
  assert.equal(h.ui.button.disabled,false);
  assert.equal(h.ui.button.textContent,'Enregistrer ma note');
  assert.equal(h.ui.label.textContent,'Non enregistré. Ton texte est conservé ici; réessaie.');
+ assert.ok(h.ui.actions.every(action=>!action.disabled),
+  'a failed save must not strand the chapter controls');
  assert.equal(h.drafts.get('private-key').note,'Keep private text');
 });
 
