@@ -23,7 +23,7 @@ function harness({rpc=async()=>null,loadEclatHistory=async()=>[]}={}){
  const warnings=[];
  const ctx={state,authFeedbackGeneration:1,ownsCoupleAsyncRead,
   client:{},rpc,loadEclatHistory,
-  isSharedCoupleReady:()=>true,
+  isSharedCoupleReady:(couple,members)=>!!couple&&members?.length===2,
   console:{warn:(...args)=>warnings.push(args)}};
  const funcs=runInNewContext(source+
   ';({refreshEclatHistory,refreshEclatStatus,beginEclatAction,ownsEclatAction,applyEclatActionResult})',ctx);
@@ -80,4 +80,15 @@ test('LR-026: old history error cannot alter a fresh login error state',async()=
  await previous;
  assert.equal(h.state.eclatHistoryError,undefined);
  assert.equal(h.warnings.length,0);
+});
+
+test('LR-026: Éclat status cannot apply a reply after couple membership is lost',async()=>{
+ const pending=deferred();
+ const h=harness({rpc:()=>pending.promise});
+ const read=h.refreshEclatStatus();
+ h.state.members=[{id:'alice'}];
+ pending.resolve({id:'former-couple-status'});
+ assert.equal(await read,null);
+ assert.equal(h.state.eclat.id,'initial');
+ assert.deepEqual(h.state.eclatHistory,[{id:'initial-history'}]);
 });
