@@ -846,8 +846,12 @@ async function signOutCurrentAccount(){
  const ownerId=state.user?.id;
  if(!ownerId)return false;
  if(currentSignoutRequest?.ownerId===ownerId)return false;
- const request={ownerId};currentSignoutRequest=request;
- const current=()=>state.user?.id===ownerId&&currentSignoutRequest===request;
+ const request={ownerId,ownerGeneration:authFeedbackGeneration};
+ currentSignoutRequest=request;
+ // Cleanup may await FCM, Realtime or Supabase while the same account
+ // signs back in. The old logout must never revoke that new session.
+ const current=()=>state.user?.id===ownerId&&
+  authFeedbackGeneration===request.ownerGeneration&&currentSignoutRequest===request;
  try{
   if(safeNativePushToken()){
    try{await disablePush(client,ownerId);}
