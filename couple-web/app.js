@@ -4285,7 +4285,8 @@ async function handle(action,element){
    if(state.channel===channel)state.channel=null;
   }
   if(!signoutCurrent())return;
-  state.unlockKey=null;state.personalPass=null;state.personalJournal=[];
+  // Preserve the signed-in account's data until logout succeeds.
+  // adoptAuthenticatedIdentity(null) performs the full private cleanup.
   // No profile, couple, challenge, invitation or user row is deleted.
   // Do not erase a new login while the former local sign-out is awaiting.
   let signout;
@@ -4344,7 +4345,7 @@ async function handle(action,element){
    if(!signoutCurrent())return;
   }
   if(!pendingInviteReference(sessionStorage))throw Error('Invitation introuvable.');
-  state.unlockKey=null;state.personalPass=null;state.personalJournal=[];
+  // A failed invitation sign-out leaves the existing private state untouched.
   if(state.channel){
    const channel=state.channel;
    await client.removeChannel(channel);
