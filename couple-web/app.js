@@ -1269,7 +1269,7 @@ async function reload(){
  }
  const profilesAll=await query('couple_profiles');
  if(!current())return;
- state.members=members.sort((a,b)=>a.joined_at.localeCompare(b.joined_at)).map(m=>({...m,name:profilesAll.find(p=>p.id===m.user_id)?.display_name||'Profil à compléter',gender:profilesAll.find(p=>p.id===m.user_id)?.gender||null,playStyle:profilesAll.find(p=>p.id===m.user_id)?.play_style||'medium'}));
+ acceptEclatMembership(members.sort((a,b)=>a.joined_at.localeCompare(b.joined_at)).map(m=>({...m,name:profilesAll.find(p=>p.id===m.user_id)?.display_name||'Profil à compléter',gender:profilesAll.find(p=>p.id===m.user_id)?.gender||null,playStyle:profilesAll.find(p=>p.id===m.user_id)?.play_style||'medium'})));
  const guidance=state.wellbeing?await rpc('get_love_guidance',{p_couple:state.coupleId}):'gentle';
  if(!current())return;state.guidance=guidance;
  if(members.length===2)await refreshShared();
@@ -1657,6 +1657,30 @@ function renderWaitingPartner(){
 }
 // One private draft per account/session/step. No browser storage or text logs.
 const eclatNoteDrafts=new Map();
+// Member identities, not display names or array order, own private Éclat
+// data. A new partner or a different couple must never inherit old notes.
+function eclatMembershipScope(coupleId,members){
+ if(!isSharedCoupleReady(coupleId,members))return null;
+ const ids=members.map(m=>m?.user_id||m?.id);
+ if(ids.some(id=>typeof id!=='string'||!id)||ids[0]===ids[1])return null;
+ return JSON.stringify([coupleId,...ids.sort()]);
+}
+function acceptEclatMembership(nextMembers){
+ const scope=eclatMembershipScope(state.coupleId,nextMembers);
+ if(!scope||scope!==state.eclatMembershipScope){
+  // Invalidate pending reads/actions before their old responses can paint.
+  latestEclatHistoryRead=null;latestEclatStatusRead=null;
+  latestEclatExplicitRead=null;latestEclatActionRequest=null;
+  eclatNoteDrafts.clear();state.eclat=null;
+  state.eclatHistory=[];state.eclatHistoryError=false;
+  state.eclatHistoryCouple=null;state.eclatHistoryUserId=null;
+  state.eclatFinished=null;state.eclatGalleryScroll=0;
+  state.eclatBrowse=false;state.eclatDetails=false;
+  latestEclatAudioOwner=null;eclatAudio.stop();state.eclatMusic=false;
+ }
+ state.eclatMembershipScope=scope;
+ state.members=nextMembers;
+}
 function eclatNoteState(){
  const key=eclatNoteKey(state.eclat,state.user?.id);
  // An explicitly revoked entitlement must not read or reuse private drafts.
