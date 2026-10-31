@@ -2649,7 +2649,7 @@ function renderSession(){
  // Personal queue: each account sees only cards received by THAT user.
  // Draws can all be completed before any challenge is accepted or played.
  const selected=mineCards.find(c=>c.id===state.selectedEveningChallengeId);
- const favoriteKeys=readEveningFavorites(uid,state.coupleId,localStorage);
+ const favoriteKeys=readEveningFavorites(uid,state.coupleId);
  const selectedFavoriteId=eveningFavoriteId(selected);
  const isFavorite=selectedFavoriteId&&favoriteKeys.includes(selectedFavoriteId);
  if(session&&state.showEveningChallenges){
@@ -4016,7 +4016,7 @@ async function handle(action,element){
    .find(card=>card.id===parts[0]);
   if(!item||!state.coupleId||!state.user?.id)
    throw Error('Ce défi ne fait pas partie de ta soirée personnelle.');
-  const outcome=toggleEveningFavorite(state.user.id,state.coupleId,item,localStorage);
+  const outcome=toggleEveningFavorite(state.user.id,state.coupleId,item);
   if(!outcome.ok)throw Error(outcome.reason==='limit'?
    'Tu peux conserver au maximum cinq favoris. Retire-en un avant d’en ajouter un autre.':
    'Impossible d’enregistrer ce favori sur cet appareil.');
