@@ -1,4 +1,6 @@
 const {chromium}=require('playwright');
+// Exact canvas totals are part of the visual parity contract on every viewport.
+const expectedCanvasCount=pageName=>pageName==='evening'?5:pageName==='evening-idle'?2:1;
 (async()=>{
  const browser=await chromium.launch({headless:true,args:[
   '--enable-webgl','--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader'
@@ -15,7 +17,12 @@ const {chromium}=require('playwright');
   console.log('WEBGL_SCENE_START',device.name,pageName);
   await page.goto(url,{waitUntil:'load'});
   await page.locator(pageName.startsWith('evening')?'.evening-premium-view':'.surprise-premium-view').waitFor();
-  await page.waitForFunction(()=>{const dice=[...document.querySelectorAll('canvas[data-dice-sides]')];return dice.length>0&&dice.every(x=>x.dataset.webglReady==='true');},null,{timeout:20000});
+  // A partially mounted view must never pass before all official dice exist.
+  await page.waitForFunction(expected=>{
+   const panel=document.querySelector('.evening-premium-view,.surprise-premium-view');
+   const dice=[...(panel?.querySelectorAll('canvas[data-dice-sides]')||[])];
+   return dice.length===expected&&dice.every(x=>x.dataset.webglReady==='true');
+  },expectedCanvasCount(pageName),{timeout:20000});
   console.log('WEBGL_SCENE_READY',device.name,pageName,'elapsed_ms',Date.now()-sceneStartedAt);
   await page.waitForTimeout(450);
   const result=await page.evaluate(()=>{
@@ -108,8 +115,11 @@ const {chromium}=require('playwright');
   console.log('WEBGL_RESPONSIVE_START',device.name,pageName);
   await page.goto('http://127.0.0.1:8765/__premium-couple-pages-test.html?page='+pageName,{waitUntil:'load'});
   if(device.fontSize)await page.addStyleTag({content:'body{font-size:'+device.fontSize+'!important}'});
-  await page.waitForFunction(()=>{const dice=[...document.querySelectorAll('canvas[data-dice-sides]')];return dice.length>0&&dice.every(
-   el=>el.dataset.webglReady==='true');},null,{timeout:20000});
+  await page.waitForFunction(expected=>{
+   const panel=document.querySelector('.evening-premium-view,.surprise-premium-view');
+   const dice=[...(panel?.querySelectorAll('canvas[data-dice-sides]')||[])];
+   return dice.length===expected&&dice.every(el=>el.dataset.webglReady==='true');
+  },expectedCanvasCount(pageName),{timeout:20000});
   console.log('WEBGL_RESPONSIVE_READY',device.name,pageName,'elapsed_ms',Date.now()-responsiveStartedAt);
   const target=page.locator(pageName.startsWith('evening')?'.evening-small-roll':'.surprise-primary').first();
   await target.scrollIntoViewIfNeeded();
