@@ -1066,7 +1066,7 @@ function boundPrivateInputHarness(){
  const drafts=new Map([['alice:session-1:1',draft]]);
  const status={textContent:'Note enregistrée pour toi'};
  const fields=['note','clue','not-a-note'].map(property=>({
-  dataset:{eclatField:property},value:'',listener:null,
+  dataset:{eclatField:property},value:'',listener:null,mounted:true,
   addEventListener(type,listener){assert.equal(type,'input');this.listener=listener;},
   input(value){this.value=value;this.listener();}
  }));
@@ -1075,7 +1075,8 @@ function boundPrivateInputHarness(){
    [id,s.session_id,s.chapter_index].join(':'):null,
   ownsCoupleAsyncRead,
   isSharedCoupleReady:(c,m)=>!!c&&m?.length===2,
-  root:{querySelectorAll:()=>fields,
+  root:{contains:field=>fields.includes(field)&&field.mounted===true,
+   querySelectorAll:()=>fields,
    querySelector:selector=>selector==='[data-eclat-note-status]'?status:null}};
  runInNewContext(boundInputSource+';bindEclatPrivateNoteFields()',ctx);
  return {state,ctx,draft,drafts,status,fields};
@@ -1125,4 +1126,24 @@ test('LR-026: revoked Éclat entitlement or replaced draft rejects stale input',
  replaced.fields[0].input('Cannot overwrite retry');
  assert.equal(replaced.drafts.get('alice:session-1:1').note,'New retry draft');
  assert.equal(replaced.draft.note,'Before');
+});
+
+test('LR-026: a detached private text field cannot overwrite the same chapter after rerender',()=>{
+ const h=boundPrivateInputHarness();
+ h.fields[0].mounted=false;
+ h.status.textContent='Nouvel écran';
+ h.fields[0].input('Old DOM event after rerender');
+ assert.equal(h.draft.note,'Before','unmounted field is no longer authorized to edit');
+ assert.equal(h.draft.saved,true);
+ assert.equal(h.draft.dirty,false);
+ assert.equal(h.status.textContent,'Nouvel écran');
+ h.fields[1].input('New live clue');
+ assert.equal(h.draft.clue,'New live clue','live mounted inputs must still work');
+});
+
+test('LR-026: private field mounted outside the current app root cannot alter the draft',()=>{
+ const h=boundPrivateInputHarness();
+ h.fields[0].mounted=false;
+ h.fields[0].input('Stale textarea attached to unrelated view');
+ assert.equal(h.draft.note,'Before');
 });
