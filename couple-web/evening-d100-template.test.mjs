@@ -1009,9 +1009,14 @@ test('LR-027: duplicate Give taps cannot open a second dialog or write two gifts
  assert.ok(paints>=2,'Busy indicator is shown and reset');
  const busy=premiumEveningHtml({...ready,giftPending:true,giftCount:0});
  assert.match(busy,/Don en cours…/);
+ assert.match(busy,/Don en cours de confirmation…/);
  assert.match(busy,/data-action="give-challenge"[^>]*disabled/);
+ assert.match(busy,/data-action="my-d6"[^>]*disabled/);
+ assert.match(busy,/data-action="category:SENSUEL"[^>]*disabled/);
+ assert.doesNotMatch(busy,/data-action="new-challenge"/);
  const free=premiumEveningHtml({...ready,giftPending:false,giftCount:0});
  assert.doesNotMatch(free,/Don en cours…/);
+ assert.match(free,/data-action="new-challenge"/);
 });
 
 test('LR-027: cancelled gift unlocks and an old login cannot clear a newer gift',async()=>{
