@@ -18,7 +18,9 @@ export async function loadEclatHistory(client,coupleId,ownsRequest=()=>true){
  }
 }
 export function coffretMemo(history,id,status){
- const rows=(history||[]).filter(s=>Number(s.coffret_id)===Number(id));
+ const rows=(Array.isArray(history)?history:[]).filter(s=>
+  s&&typeof s==='object'&&!Array.isArray(s)&&
+  Number(s.coffret_id)===Number(id));
  const completed=[30,60,90].filter(n=>rows.some(s=>Number(s.minutes)===n&&s.ended_at&&s.cancelled===false));
  // Server status is authoritative whenever it explicitly states active/inactive.
  // Falling back to history is only safe while that status is genuinely absent.

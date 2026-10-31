@@ -10,6 +10,38 @@ const oneNight={id:'n1',started_at:'2026-10-17T23:00:00Z',finished_at:'2026-10-1
 const twoNights=[oneNight,{id:'n2',started_at:'2026-10-18T23:00:00Z',finished_at:'2026-10-19T01:00:00Z',counted:true}];
 const members=[{user_id:'a',name:'Fred'},{user_id:'b',name:'Émilie'}];
 
+
+test('Sparse calendar RPC snapshots do not crash or fabricate a monthly success',()=>{
+ const month='2026-10';
+ const night={id:'safe-night',started_at:'2026-10-25T20:00:00Z',
+  finished_at:'2026-10-25T22:00:00Z',counted:true};
+ const card={id:'done',session_id:night.id,recipient:'a',status:'completed'};
+ const params={month,members:[null,{user_id:'a',name:'A'},false,{}],
+  sessions:[null,undefined,false,{},night],
+  historyChallenges:[null,false,{},card],
+  sessionStats:[null,false,{},{
+   session_id:night.id,user_id:'a',target:2,completed:1,drawn:1}],
+  passQuota:[null,false,{},{
+   challenge_id:'missing',recipient:'a',free_pass:true}]};
+ const result=monthlyChallengeSuccess(params);
+ assert.equal(result.length,1);
+ assert.equal(result[0].done,1);
+ assert.equal(result[0].unpicked,1);
+ assert.equal(result[0].percent,50);
+ assert.equal(remainingWeekEvenings(null),0,'null time is not the epoch');
+ const week=calendarWeekSuccess({
+  date:'2026-10-25',
+  weeklyRolls:[null,false,{},{
+   kind:'weekly',key:'2026-10-19',face:3,
+   created_at:'2026-10-25T13:00:00Z'}],
+  sessions:[null,false,{},night]
+ });
+ assert.equal(week.hasRoll,true);
+ assert.equal(week.completed,0,'an evening before the D6 cannot be credited');
+ assert.deepEqual(monthlyChallengeSuccess({month,sessions:[null],members:[null]}),[]);
+ assert.equal(calendarWeekSuccess({date:'2026-10-25',weeklyRolls:[null]}).hasRoll,false);
+});
+
 test('Saturday D6 of 4: only two Quebec evenings possible; 1/2=50%, 2/2=100%',()=>{
  assert.equal(remainingWeekEvenings(saturdayRoll.created_at),2);
  assert.equal(mondayOf('2026-10-18'),'2026-10-12');

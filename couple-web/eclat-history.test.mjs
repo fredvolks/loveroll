@@ -3,6 +3,28 @@ import assert from 'node:assert/strict';
 import {coffretMemo,loadEclatHistory} from './eclat-history.mjs';
 import {eclatHtml} from './eclat-ui.mjs';
 const ended=(minutes,cancelled=false)=>({coffret_id:9,minutes,ended_at:'2026-10-21',cancelled});
+
+test('Éclat gallery ignores sparse historical rows without masking real progress',()=>{
+ const rows=[
+  null,undefined,false,{},'bad',
+  {coffret_id:9,minutes:30,ended_at:'2026-10-28T12:00:00Z',cancelled:false,
+   started_at:'2026-10-27T12:00:00Z'},
+  {coffret_id:9,minutes:60,ended_at:null,cancelled:false,
+   started_at:'2026-10-29T12:00:00Z'}
+ ];
+ const actual=coffretMemo(rows,9);
+ assert.deepEqual(actual.completed,[30]);
+ assert.equal(actual.active,true);
+ assert.equal(actual.minutes,60);
+ assert.deepEqual(coffretMemo([null,false,{}],9).completed,[]);
+ assert.equal(coffretMemo(null,9).started,false);
+ const html=eclatHtml({status:{access:true,active:false},history:rows});
+ assert.match(html,/Terminé · 1\/3 durées/);
+ assert.doesNotMatch(html,/undefined|NaN/);
+ assert.match(eclatHtml({status:{access:true,active:false},history:[null,false,{}]}),
+  /À découvrir/);
+});
+
 test('Only actually finished, uncancelled sessions complete a duration; repeats count once',()=>{
  const rows=[ended(30),ended(30),ended(60,true),{coffret_id:9,minutes:90,ended_at:null}];
  assert.deepEqual(coffretMemo(rows,9).completed,[30]);

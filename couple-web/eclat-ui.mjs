@@ -28,7 +28,8 @@ const ECLAT_INTENTIONS=[
 ];
 function eclatRecommendation(history){
  const lastStart=new Map();
- for(const row of history||[]){
+ for(const row of Array.isArray(history)?history:[]){
+  if(!row||typeof row!=='object'||Array.isArray(row))continue;
   const id=Number(row.coffret_id),date=Date.parse(row.started_at||'');
   if(!ECLAT_COFFRETS.some(c=>c.id===id))continue;
   lastStart.set(id,Math.max(lastStart.get(id)??0,Number.isFinite(date)?date:0));
