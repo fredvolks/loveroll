@@ -1840,10 +1840,10 @@ test('LR-026: every Éclat mutation checks ownership before applying its respons
   const branch=app.slice(from,until<0?from+1200:until);
   assert.match(branch,/beginEclatAction\(\)/,
    action+' must snapshot the user before the RPC');
-  assert.match(branch,new RegExp("await rpc\\('"+rpcName+"'"),
-   action+' must keep using the official SQL RPC');
-  assert.match(branch,/if\(!applyEclatActionResult\(value,owner\)\)return;/,
-   action+' may apply only the request owner response');
+  assert.ok(branch.includes("runEclatMutation(owner,'"+rpcName+"'"),
+   action+' must still invoke the official SQL RPC through its owner guard');
+  assert.match(branch,/if\(!result\.applied\|\|!applyEclatActionResult\(result\.value,owner\)\)return;/,
+   action+' may apply only the owner-validated server receipt');
  }
  assert.match(app,/if\(!yes\|\|!ownsEclatAction\(owner\)\|\|!canPlayEclat\(\)\)return;/,
   'confirming Quitter under an old account must never send a mutation');
