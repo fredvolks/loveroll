@@ -202,3 +202,29 @@ test('LR-003 monthly headline counts only CLOSED evenings in the selected Toront
  assert.match(nov,/<strong>0<\/strong> défis réalisés ce mois/);
  assert.match(nov,/<strong>0<\/strong> non réalisés ce mois/);
 });
+
+test('Sparse or unloaded historic rows never crash a mobile couple calendar',()=>{
+ const empty=eveningHistoryMarkup({
+  month:'2026-10',selectedDate:'2026-10-16',
+  sessions:null,members:null,stats:null,historyChallenges:null,reviews:null,
+  weeklyRolls:null,passQuota:null
+ });
+ assert.match(empty,/Notre calendrier/);
+ assert.match(empty,/Aucune soirée enregistrée/);
+ const html=eveningHistoryMarkup({
+  month:'2026-10',selectedDate:'2026-10-16',me:'a',
+  sessions:[null,{id:'sparse',started_at:'2026-10-16T17:00:00Z',
+   finished_at:'2026-10-16T21:00:00Z',counted:true},false,{}],
+  members:[null,{user_id:'a',name:'Partenaire'},{id:'missing'},false],
+  stats:[null,{session_id:'sparse',user_id:'a',completed:1,target:1,drawn:1}],
+  historyChallenges:[null,{id:'c1',session_id:'sparse',recipient:'a',
+   category:'SENSUEL',face:2,status:'completed',created_at:'2026-10-16T17:10:00Z'}],
+  reviews:[null,{session_id:'sparse',author_id:'a',
+   overall:5,connection:5,appreciation:5,again:5}],
+  weeklyRolls:null,passQuota:[null]
+ });
+ assert.match(html,/Soirée/);
+ assert.match(html,/evening-cal-person-group/);
+ assert.match(html,/Bilan de Partenaire/);
+ assert.equal((html.match(/evening-cal-person-group/g)||[]).length,1);
+});
