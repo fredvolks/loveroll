@@ -408,7 +408,7 @@ test('LR-027: the final D100 draw offers a single Start or Resume CTA and keeps 
  assert.doesNotMatch(rolling,/data-action="evening-start:old"|data-action="evening-list"/,
   'A live 3D die must not be unmounted by the resume shortcut');
 });
-test('LR-027: live Soirée chooses only this account’s unfinished card for the quick action',()=>{
+test('LR-027: live Soirée chooses only this account’s unfinished card for the quick action',async()=>{
  const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
  const start=source.indexOf('function renderSession(){');
  const end=source.indexOf('function eveningCalendarReturn(){',start);
