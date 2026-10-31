@@ -38,7 +38,19 @@ function eclatRecommendation(history){
  const oldOne=[...ECLAT_COFFRETS].sort((a,b)=>lastStart.get(a.id)-lastStart.get(b.id)||a.id-b.id)[0];
  return {coffret:oldOne,reason:'À retrouver · commencé depuis le plus longtemps'};
 }
-export function eclatHtml({status=null,selected=1,minutes=30,intent='all',discovery=true,details=false,members=[],userId=null,music=false,finished=null,history=[],historyError=false,browse=false,noteState={}}={}){
+export function eclatHtml({status=null,selected=1,minutes=30,intent='all',discovery=true,details=false,members=[],userId=null,music=false,finished=null,history=[],historyError=false,browse=false,noteState={},coupleReady=true}={}){
+ if(!coupleReady){
+  // A missing association is not a subscription failure. Do not show an
+  // old private coffret, price or history while the duo is unavailable.
+  return '<section class="eclat-shell" aria-label="Éclat · duo indisponible">'+
+   '<header class="eclat-top">'+ritualHeadingHtml('NOTRE RITUEL DE LA SOIRÉE')+'</header>'+
+   '<section class="eclat-offer" role="status" aria-label="Duo à vérifier">'+
+   '<div class="eclat-offer-symbol" aria-hidden="true">♡</div>'+
+   '<h2>Votre duo n’est pas prêt</h2>'+
+   '<p>Éclat est réservé aux deux partenaires associés. Vérifiez votre association avant de retrouver vos coffrets.</p>'+
+   btn('tab:session','← Retour à notre soirée','eclat-offer-back')+
+   '</section></section>';
+ }
  const access=status?.access===true,active=status?.active===true;
  const c=eclatCoffret(active&&!browse?status.coffret_id:selected)||ECLAT_COFFRETS[0];
  const heading='<header class="eclat-top">'+
