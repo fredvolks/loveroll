@@ -216,6 +216,11 @@ test('Countdown uses a monotonic wall deadline, pause reset and optional signals
  assert.equal(formatCountdown(600_000),'10:00');
  assert.equal(formatCountdown(61_200),'01:02');
  assert.equal(formatCountdown(-500),'00:00');
+ // A malformed challenge duration must never print NaN:NaN or Infinity:NaN.
+ for(const invalid of [NaN,Infinity,-Infinity,null,undefined,'invalid']){
+  assert.equal(formatCountdown(invalid),'00:00');
+ }
+ assert.equal(formatCountdown(1000),'00:01');
  assert.match(app,/challengeTimer\.deadline-Date\.now\(\)/);
  assert.match(app,/timer-reset/);
  assert.match(app,/timer-toggle/);
