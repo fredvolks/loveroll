@@ -351,3 +351,11 @@ main#app.loveroll-editorial{--nav-space:66px;box-sizing:border-box;width:100%;ma
  #app .is-finale .evening-finale-person{padding:2px;}
  #app .is-finale .evening-finale-progress{gap:4px;}
 }
+
+/* Both partners already have their own saved/waiting review state immediately
+   above this summary. On narrow phones the repeated "1 / 2 bilans déposés"
+   line steals touch space from Calendar. Keep both meaningful states visible,
+   preserve the real 44px actions and avoid viewport-specific 1px patches. */
+@media(max-width:767px){
+ #app .is-finale .evening-finale-progress{display:none;}
+}
