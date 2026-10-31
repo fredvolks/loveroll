@@ -239,7 +239,8 @@ export function premiumEveningHtml({
   '<div class="evening-aftercare">'+
     '<div class="evening-finale-ornament" aria-hidden="true"><span>♡</span></div>'+
     '<div class="evening-finale-weekly">♡ SOIRÉES CETTE SEMAINE · '+
-       esc(weeklyCount)+' / '+(weeklyReady?esc(weeklyLimit):'—')+'</div>'+
+       esc(weeklyCount)+' / '+(weeklyReady?esc(weeklyLimit):'—')+
+       (!lastEvening?sessionLengthChooserHtml(sessionLength):'')+'</div>'+
     (lastEvening?
       '<h2>Notre soirée est terminée</h2>'+
       '<p class="evening-finale-description"><strong>'+esc(lastEvening.completed)+
