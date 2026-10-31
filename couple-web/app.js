@@ -1764,14 +1764,16 @@ let latestEclatExplicitRead=null;
 async function refreshEclatHistory(){
  const owner={userId:state.user?.id,coupleId:state.coupleId,
   generation:authFeedbackGeneration};
+ // Only an explicit server-confirmed entitlement may query private history.
+ // A null or incomplete status is not proof of access.
  if(!ownsCoupleAsyncRead(state,owner)||
     !isSharedCoupleReady(owner.coupleId,state.members)||
-    state.eclat?.access===false)return;
+    state.eclat?.access!==true)return;
  const request={};latestEclatHistoryRead=request;
  const current=()=>ownsCoupleAsyncRead(state,owner)&&
   authFeedbackGeneration===owner.generation&&
   isSharedCoupleReady(owner.coupleId,state.members)&&
-  state.eclat?.access!==false&&latestEclatHistoryRead===request;
+  state.eclat?.access===true&&latestEclatHistoryRead===request;
  if(state.eclatHistoryCouple!==owner.coupleId||
     state.eclatHistoryUserId!==owner.userId){
   state.eclatHistory=[];state.eclatHistoryCouple=owner.coupleId;
