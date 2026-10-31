@@ -18,6 +18,14 @@
 - Commits : `c771b42` (sauvegarde), `5d4bbce` + `a1bacdf` (tests), `b2080ea` (lecture), `bbb7243` + `c4b579c` (tests et syntaxe). Syntaxes JS et tests ciblés des courses async exécutés en environnement JavaScript isolé et réussis; **pas de preuve d'une suite GitHub Actions complète verte au dernier SHA**, ni de recette Supabase Auth/RLS réelle ou d'essai physique.
 - **Statut :** PR #176 toujours en brouillon, aucune migration, fusion ou publication en production déclenchée par ce lot.
 
+### LR-026 — protection contre les modifications pendant la sauvegarde (30 octobre 2026)
+
+- Revue **Medium** avec méthodes Atelier Architecture, Qualité et Sécurité. Application LoveRoll non encore enregistrée dans la liste des projets Atelier : aucun expert autonome n'a été lancé et aucune mission n'a été synchronisée.
+- Défaut **reproduit avant correction** : si l'utilisateur modifie sa note privée ou son indice pendant une requête de sauvegarde, la réponse de l'ancien contenu était considérée comme un succès, alors que `draft.saved` restait `false`. Cela pouvait faire progresser « Choisir » ou « Note terminée » sans sauvegarder la nouvelle saisie.
+- Correction dans `couple-web/app.js` : `saveCurrentEclatNote` renvoie dorénavant une confirmation seulement si le brouillon affiché est encore celui effectivement sauvegardé et reste `saved=true`. Si la saisie change en cours d'appel, elle reste à sauvegarder. `note-retry` refuse maintenant de remplacer un brouillon dont la sauvegarde est encore en cours.
+- Régressions ajoutées dans `couple-web/evening-private-queue.test.mjs` : note modifiée en vol, indice modifié en vol, re-sauvegarde explicite, refus de « Réessayer » pendant une écriture, réessai permis une fois celle-ci terminée. Les scénarios ciblés ont été exécutés dans un moteur JavaScript isolé avec succès; **cela ne remplace pas la CI Node complète ni les tests Auth/RLS/physiques**.
+- Commits de code et tests : `fbfe632`, `283adbe`, `69fa4bc`, `d4ad0c7`. Aucune migration SQL ni publication de production autorisée par ces changements; PR #176 demeure en brouillon.
+
 ## Priorité immédiate ordonnée — audit global client/design/ergonomie/responsive (28 octobre 2026)
 
 **LR-AUDIT-GLOBAL-20261028 — EN COURS, intégration progressive et preuves CI.** Le propriétaire demande que l'audit de **toutes les pages, sous-pages, états et boutons**, ses corrections et les protections permanentes passent avant les nouveaux développements. Le bloc en tête du [prompt maître](LOVEROLL_MASTER_PROMPT.md), le [démarrage Work](LOVEROLL_WORK_START.md) et le [protocole complet](LOVEROLL_UX_UI_AUTONOME_WORKFLOW.md) décrivent ce mandat.
