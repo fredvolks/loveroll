@@ -3474,9 +3474,13 @@ async function handle(action,element){
    const owner=beginEclatAction();if(!owner)return;
    const value=await rpc('love_eclat_next');
    if(!applyEclatActionResult(value,owner))return;
-   if(last&&!state.eclat?.active){
+   // Completion is private. A server receipt may revoke Éclat access at
+   // the last chapter; never recreate its banner from a stale response.
+   if(last&&state.eclat?.access===true&&!state.eclat?.active){
     await refreshEclatHistory();
-    if(!ownsEclatAction(owner))return;
+    // History loading can race with a revoked entitlement or a new coffret.
+    if(!ownsEclatAction(owner)||state.eclat?.access!==true||
+       state.eclat?.active===true)return;
     state.eclatFinished=title||'Expérience terminée';
     state.eclatDetails=false;eclatAudio.stop();state.eclatMusic=false;
    }
