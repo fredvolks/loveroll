@@ -36,7 +36,13 @@ test('Rejected, replaced and foreign challenges never reopen',()=>{
 });
 test('Resume action is read-only, restores server private queue and reconciles timers',()=>{
  const handler=app.slice(app.indexOf("if(verb==='resume-evening'){"),app.indexOf("if(verb==='tab'){"));
- assert.match(handler,/await refreshShared\(\)/);
+ // Capture the refresh ownership token before awaiting its result: another
+ // account, official draw or newer refresh may finish first.
+ assert.match(handler,/const refreshing=refreshShared\(\)/);
+ assert.match(handler,/const request=state\.unscopedSharedRefreshRequest/);
+ assert.match(handler,/await refreshing/);
+ assert.match(handler,/state\.unscopedSharedRefreshRequest!==request/);
+ assert.match(handler,/isActiveEveningGiftPending\(\)/);
  assert.match(handler,/playableSessionForWeekly\(state\.session,state\.weekly\)/);
  assert.match(handler,/ownEveningChallenges\(state\.challenges,state\.user\.id,session\.id\)/);
  assert.match(handler,/restoreEveningSelection\(safeEveningBookmarkStorage\(\),state\.user\.id,session\.id,privateCards\)/);
