@@ -4160,3 +4160,50 @@ test('LR-026: new same-user login invalidates pending invitation logout',async()
   assert.equal(f.renders(),0,command);
  }
 });
+
+
+test('LR-026: stale invitation logout error result cannot report failure in replacement account',async()=>{
+ for(const command of ['use-existing-account','switch-account-invite']){
+  let finish;const pending=new Promise(resolve=>{finish=resolve;});
+  const f=invitationSwitchFixture(command,()=>pending);
+  const former=f.execute();
+  f.state.user={id:'carol'};f.state.coupleId='carol-duo';
+  finish({error:Error('Old session sign-out failed')});
+  await assert.doesNotReject(former,command);
+  assert.equal(f.state.user.id,'carol',command);
+  assert.equal(f.state.coupleId,'carol-duo',command);
+  assert.equal(f.renders(),0,command);
+ }
+});
+
+test('LR-026: rejected stale invitation logout cannot affect replacement account',async()=>{
+ for(const command of ['use-existing-account','switch-account-invite']){
+  let reject;const pending=new Promise((resolve,fail)=>{reject=fail;});
+  const f=invitationSwitchFixture(command,()=>pending);
+  const former=f.execute();
+  f.state.user={id:'carol'};f.state.coupleId='carol-duo';
+  reject(Error('Old session network error'));
+  await assert.doesNotReject(former,command);
+  assert.equal(f.state.user.id,'carol',command);
+  assert.equal(f.renders(),0,command);
+ }
+});
+
+test('LR-026: current invitation logout error remains visible and preserves account',async()=>{
+ for(const command of ['use-existing-account','switch-account-invite']){
+  const f=invitationSwitchFixture(command,async()=>({error:Error('Current signout failed')}));
+  await assert.rejects(f.execute(),/Current signout failed/,command);
+  assert.equal(f.state.user.id,'alice',command);
+  assert.equal(f.state.eclat?.id,'private-session',command);
+  assert.equal(f.renders(),0,command);
+ }
+});
+
+test('LR-026: current invitation logout network rejection is not silently ignored',async()=>{
+ for(const command of ['use-existing-account','switch-account-invite']){
+  const f=invitationSwitchFixture(command,async()=>{throw Error('Current logout network failure');});
+  await assert.rejects(f.execute(),/Current logout network failure/,command);
+  assert.equal(f.state.user.id,'alice',command);
+  assert.equal(f.renders(),0,command);
+ }
+});
