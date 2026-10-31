@@ -151,6 +151,7 @@ export function premiumEveningHtml({
  challengeOverlay='',showMore=false,confirmCancel=false,rollFace=null,rollingKind=null,
  lastEvening=null,lastD35Face=null,playable=null,ownChallengeCount=0,canStartEvening=true,sessionLength='libre',eveningIntensity='medium',
  weeklyReady=true,weeklyCount=0,weeklyLimit=1,dailyLocked=false,historyReady=true,invitationHtml='',
+ nextChallenge=null,
  showSensuel=true,showSexuel=true,categoryOdds=88,challengeHistory=[],eveningWeights,eveningWeightsEnabled=true
 }={}){
  const preferredOdds=categoryConfirmOdds('SENSUEL',categoryOdds).sensuel;
@@ -185,15 +186,20 @@ export function premiumEveningHtml({
   turn.finished?bt('finish-session','✓ Terminer la soirée','evening-primary'):
   !ready?waitingStatus(status?.my_rolled?
    'En attente du D6 de ton partenaire':'Lance ton D6 pour continuer'):
-  turn.drawsFinished?(ownChallengeCount>0?
-   bt('evening-list','♡ Voir mes défis ('+ownChallengeCount+')','evening-primary'):
-   waitingStatus('Tous les tirages sont terminés')):
+  turn.drawsFinished?(nextChallenge?.id&&['accepted','proposed'].includes(nextChallenge.status)?
+   bt('evening-open:'+nextChallenge.id,
+    nextChallenge.status==='accepted'?'▶ Reprendre mon défi':'▶ Commencer mon défi',
+    'evening-primary'):
+   ownChallengeCount>0?
+    bt('evening-list','♡ Voir mes défis ('+ownChallengeCount+')','evening-primary'):
+    waitingStatus('Tous les tirages sont terminés')):
   canDraw?bt('new-challenge','🎲 Brasser le D100','evening-primary'):
    waitingStatus('En attente du tour de ton partenaire');
  // Opening the challenge list remounts the die scene. Keep that action
  // unavailable until the official D100 animation has finished.
- const secondaryAction=ownChallengeCount>0&&!rolling&&
-  !(turn.drawsFinished&&!turn.finished)?
+ const secondaryAction=ownChallengeCount>0&&!rolling&&!turn.finished&&
+  (!turn.drawsFinished||(nextChallenge?.id&&
+   ['accepted','proposed'].includes(nextChallenge.status)))?
   bt('evening-list','♡ Voir mes défis ('+ownChallengeCount+')','evening-queue-open-btn'):'';
  return '<div class="evening-premium-view '+(session?(ready?'is-ready':'is-waiting'):'is-inactive is-finale')+'" data-category-percent="'+esc(preferredOdds)+'">'+
  '<div class="evening-toolbar">'+
