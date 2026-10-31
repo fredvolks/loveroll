@@ -2190,7 +2190,8 @@ test('LR-026: pending Éclat private notes include blank deletions but exclude o
 test('LR-026: private Éclat input and save lifecycle track blank deletion and completion',()=>{
  assert.match(app,/hasPendingEclatNote\(eclatNoteDrafts,eclatNoteKey\(state\.eclat,state\.user\?\.id\),state\.tab\)/);
  assert.match(app,/draft\[field\.dataset\.eclatField\]=field\.value;draft\.saved=false;draft\.dirty=true/);
- assert.match(app,/const draft=\{note:'',clue:'',moment_done:false,loading:true,dirty:false\}/);
+ assert.match(app,/const draft=\{note:'',clue:'',moment_done:false,loading:true,dirty:false,\s*generation:authFeedbackGeneration\}/);
+ assert.match(app,/eclatNoteDrafts\.get\(key\)\?\.generation!==authFeedbackGeneration/);
  assert.match(app,/if\(snapshot\.moment_done!==draft\.moment_done\)draft\.dirty=true/);
  assert.match(app,/draft\.dirty=!draft\.saved/);
 });
