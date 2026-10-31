@@ -1,6 +1,15 @@
 # LoveRoll — SUIVI OFFICIEL DU PROMPT MAÎTRE
 
 
+### LR-027 — réparations des régressions CI minuteur et réponse manuelle (31 octobre 2026)
+
+- [PR #176](https://github.com/fredvolks/loveroll/pull/176), toujours **brouillon non fusionné**. GitHub Actions `LoveRoll connected web checks` sur le commit `55db9f3` : tâche `static-tests` en **échec** dans `JavaScript syntax`, à cause de huit régressions `couple-web/timed-evening-completion.test.mjs` (notamment `isActiveEveningGiftPending is not defined` / `isActiveEveningRedrawPending is not defined` dans des isolats Node VM et des réponses manuelles sautées). Il s'agissait de contextes de test incomplets après les nouveaux gardes; ne pas supprimer les gardes de production.
+- **Correctif enregistré** `2e76848` : injection explicite du scénario normal `isActiveEveningRedrawPending:()=>false` et `isActiveEveningGiftPending:()=>false` dans les sept environnements isolés de réponse D100 et dans la protection D100 lorsque le minuteur automatique termine une carte.
+- **Validation exécutée** : les huit tests précédemment en échec ont été extraits de la version GitHub et exécutés dans V8 avec le véritable `app.js` courant : **8/8 réussis**, avec vérification des doubles RPC, du rendu `busy`, de la propriété compte/soirée et des confirmations de clôture. Les suites de GitHub Actions sont encore à confirmer pour le dernier SHA ; les tests réels navigateur/Supabase staging A/B/C ne sont pas revendiqués.
+- Atelier partagé : essais directs auprès des applications, de la liste des experts, de l'agent Architecture et de l'agent Qualité en mode MEDIUM, mais **erreurs internes**. **Non synchronisé avec Atelier**, aucun BOSS/expert autonome revendiqué. Aucun SQL de production, publication Pages, merge ni APK.
+
+
+
 ### LR-027 — déduplication des dons et protection du tour officiel (31 octobre 2026)
 
 - Un double toucher sur **Donner un défi** ne peut plus ouvrir deux confirmations ni envoyer deux RPC `give_love_challenge` pour la même identité, le même duo et la même soirée. La demande possède un jeton propre, libéré en `finally` après succès, annulation ou erreur. Un ancien compte ne peut pas effacer le verrou d'un nouveau compte.
