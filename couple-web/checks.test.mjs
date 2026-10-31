@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {test} from 'node:test';
+// The existing static CI explicitly executes checks.test.mjs.
+import './evening-favorites.test.mjs';
 import { marketingHtml,authHtml,profileHtml,matchHtml,monthDayInputs,parseMonthDay } from './onboarding.mjs';
 import { EVENING_CATEGORIES,EVENING_CHALLENGES,eveningCard,availableEveningCategories,formatCountdown,validChallengeTimerMinutes,customCardSlots,editableCardSlots,resolvedCard } from './evening-challenges.mjs';
 import {MONTHLY_ACTIVITIES,editableMonthlyActivities,monthlyActivityForRoll} from './monthly-activities.mjs';
