@@ -27,7 +27,7 @@ function deferred(){
 }
 function harness(){
  const state={user:{id:'alice'},coupleId:'couple-a',members:[{},{}],
-  tab:'eclat',eclat:{id:'original'}};
+  tab:'eclat',eclat:{id:'original',access:true}};
  const requests=[],renders=[],warnings=[],history=[];
  let tick=null,clock=0,audioStops=0;
  const runtime={
@@ -56,9 +56,9 @@ test('LR-026: late Éclat poll cannot repaint a new login for the same user',asy
  h.runtime.authFeedbackGeneration=2;
  const current=h.tick();
  assert.equal(h.requests.length,2,'new login can immediately start another poll');
- h.requests[1].resolve({id:'current'});
+ h.requests[1].resolve({access:true,id:'current'});
  await current;
- h.requests[0].resolve({id:'old-private-result'});
+ h.requests[0].resolve({access:true,id:'old-private-result'});
  await stale;
  assert.equal(h.state.eclat.id,'current');
  assert.deepEqual(h.history,['alice']);
@@ -71,11 +71,11 @@ test('LR-026: repeated Éclat ticks reuse one pending server read per session',a
  await h.tick();
  await h.tick();
  assert.equal(h.requests.length,1,'the 4.5s poll must not pile up pending requests');
- h.requests[0].resolve({id:'first'});
+ h.requests[0].resolve({access:true,id:'first'});
  await first;
  const second=h.tick();
  assert.equal(h.requests.length,2,'a completed request permits the next poll');
- h.requests[1].resolve({id:'second'});
+ h.requests[1].resolve({access:true,id:'second'});
  await second;
  assert.deepEqual(h.renders,['first','second']);
 });
@@ -89,9 +89,9 @@ test('LR-026: a stalled Éclat poll retries after 30 seconds and rejects the old
  h.advance(1);
  const replacement=h.tick();
  assert.equal(h.requests.length,2,'an overdue request cannot freeze synchronization');
- h.requests[1].resolve({id:'replacement'});
+ h.requests[1].resolve({access:true,id:'replacement'});
  await replacement;
- h.requests[0].resolve({id:'stale'});
+ h.requests[0].resolve({access:true,id:'stale'});
  await first;
  assert.equal(h.state.eclat.id,'replacement');
  assert.deepEqual(h.renders,['replacement']);
@@ -101,7 +101,7 @@ test('LR-026: a stalled Éclat poll retries after 30 seconds and rejects the old
 test('LR-026: identical Éclat status skips private history reads and redraws',async()=>{
  const h=harness();
  const poll=h.tick();
- h.requests[0].resolve({id:'original'});
+ h.requests[0].resolve({access:true,id:'original'});
  await poll;
  assert.deepEqual(h.history,[]);
  assert.deepEqual(h.renders,[]);
@@ -117,7 +117,7 @@ test('LR-026: old account or couple never receives private Éclat data',async()=
   const h=harness();
   const pending=h.tick();
   change(h);
-  h.requests[0].resolve({id:'alice-private'});
+  h.requests[0].resolve({access:true,id:'alice-private'});
   await pending;
   assert.equal(h.state.eclat.id,'original');
   assert.equal(h.renders.length,0);
@@ -137,7 +137,7 @@ test('LR-026: stale network errors do not notify a reauthenticated user',async()
 test('LR-026: Éclat poll ignores replies after couple membership disappears',async()=>{
  const h=harness(),pending=h.tick();
  h.state.members=[{id:'alice'}];
- h.requests[0].resolve({id:'no-longer-authorized'});
+ h.requests[0].resolve({access:true,id:'no-longer-authorized'});
  await pending;
  assert.equal(h.state.eclat.id,'original');
  assert.equal(h.renders.length,0);
@@ -147,7 +147,7 @@ test('LR-026: Éclat poll ignores replies after couple membership disappears',as
 test('LR-026: hidden Éclat tab never paints a pending status update',async()=>{
  const h=harness(),pending=h.tick();
  h.runtime.document.hidden=true;
- h.requests[0].resolve({id:'background-only'});
+ h.requests[0].resolve({access:true,id:'background-only'});
  await pending;
  assert.equal(h.state.eclat.id,'original');
  assert.equal(h.renders.length,0);
@@ -163,7 +163,7 @@ test('LR-026: failed Éclat poll releases the single-flight slot for retry',asyn
  assert.equal(h.warnings.length,1,'current network failures remain observable');
  const retry=h.tick();
  assert.equal(h.requests.length,2,'a failed read must not block further sync');
- h.requests[1].resolve({id:'recovered'});
+ h.requests[1].resolve({access:true,id:'recovered'});
  await retry;
  assert.equal(h.state.eclat.id,'recovered');
  assert.deepEqual(h.renders,['recovered']);
@@ -176,9 +176,9 @@ test('LR-026: explicit status refresh can supersede an unresolved background pol
  h.invalidate();
  const foreground=h.tick();
  assert.equal(h.requests.length,2);
- h.requests[1].resolve({id:'foreground'});
+ h.requests[1].resolve({access:true,id:'foreground'});
  await foreground;
- h.requests[0].resolve({id:'obsolete-background'});
+ h.requests[0].resolve({access:true,id:'obsolete-background'});
  await background;
  assert.equal(h.state.eclat.id,'foreground');
  assert.deepEqual(h.renders,['foreground']);
@@ -195,7 +195,7 @@ test('LR-026: the automatic Éclat poll does not supersede a pending foreground 
  h.release(request);
  const background=h.tick();
  assert.equal(h.requests.length,1,'background polling resumes after foreground completes');
- h.requests[0].resolve({id:'background'});
+ h.requests[0].resolve({access:true,id:'background'});
  await background;
  assert.equal(h.state.eclat.id,'background');
 });
@@ -206,7 +206,7 @@ test('LR-026: stalled foreground refresh does not disable Éclat polling permane
  h.advance(30000);
  const background=h.tick();
  assert.equal(h.requests.length,1,'background may retry after the 30-second deadline');
- h.requests[0].resolve({id:'retry'});
+ h.requests[0].resolve({access:true,id:'retry'});
  await background;
  assert.equal(h.state.eclat.id,'retry');
 });
@@ -217,7 +217,7 @@ test('LR-026: a previous login foreground refresh cannot block the current login
  h.runtime.authFeedbackGeneration=2;
  const background=h.tick();
  assert.equal(h.requests.length,1);
- h.requests[0].resolve({id:'new-session'});
+ h.requests[0].resolve({access:true,id:'new-session'});
  await background;
  assert.equal(h.state.eclat.id,'new-session');
 });
@@ -259,7 +259,7 @@ test('LR-026: background access revocation drops cached history without another 
  h.state.eclatHistory=[{id:'old-private-history'}];
  h.state.eclatHistoryError=true;
  const ticking=h.tick();
- h.requests[0].resolve({id:'no-entitlement',access:false,active:false});
+ h.requests[0].resolve({access:true,id:'no-entitlement',access:false,active:false});
  await ticking;
  assert.equal(h.state.eclat?.id,'no-entitlement');
  assert.deepEqual(Array.from(h.state.eclatHistory),[]);
@@ -340,7 +340,7 @@ test('LR-026: background normal completion stops music but retains authorized hi
  h.state.eclatHistory=[{id:'prior-activity'}];
  h.runtime.eclatNoteDrafts.set('private',{note:'Keep until session changes'});
  const pending=h.tick();
- h.requests[0].resolve({id:'finished',access:true,active:false});
+ h.requests[0].resolve({access:true,id:'finished',access:true,active:false});
  await pending;
  assert.equal(h.audioStops(),1);
  assert.equal(h.state.eclatMusic,false);
@@ -356,7 +356,7 @@ test('LR-026: stale background completion cannot silence new login music',async(
  const pending=h.tick();
  h.runtime.authFeedbackGeneration=2;
  h.state.eclatMusic=true;
- h.requests[0].resolve({id:'old-completion',access:true,active:false});
+ h.requests[0].resolve({access:true,id:'old-completion',access:true,active:false});
  await pending;
  assert.equal(h.audioStops(),0);
  assert.equal(h.state.eclatMusic,true);
@@ -369,7 +369,7 @@ test('LR-026: partner starting another coffret clears former completion on poll'
  h.state.eclat={id:'previous-finished',access:true,active:false};
  h.state.eclatFinished='Former coffret ending';
  const refreshing=h.tick();
- h.requests[0].resolve({id:'partner-new-session',access:true,active:true});
+ h.requests[0].resolve({access:true,id:'partner-new-session',access:true,active:true});
  await refreshing;
  assert.equal(h.state.eclat?.id,'partner-new-session');
  assert.equal(h.state.eclatFinished,null);
@@ -383,8 +383,44 @@ test('LR-026: obsolete background activation cannot clear the new login ending',
  const refreshing=h.tick();
  h.runtime.authFeedbackGeneration=2;
  h.state.eclatFinished='Only new login ending';
- h.requests[0].resolve({id:'old-account-new-session',access:true,active:true});
+ h.requests[0].resolve({access:true,id:'old-account-new-session',access:true,active:true});
  await refreshing;
  assert.equal(h.state.eclatFinished,'Only new login ending');
  assert.deepEqual(h.renders,[]);
+});
+
+
+test('LR-026: incomplete background permission purges cached notes and stops music',async()=>{
+ const h=harness();
+ h.state.eclat={id:'old',access:true,active:true};
+ h.state.eclatHistory=[{id:'old-private'}];
+ h.state.eclatFinished='Old completion';
+ h.state.eclatMusic=true;
+ h.runtime.eclatNoteDrafts.set('old',{note:'Old secret'});
+ const request=h.tick();
+ h.requests[0].resolve({id:'incomplete',active:true});
+ await request;
+ assert.equal(h.state.eclat.id,'incomplete');
+ assert.deepEqual(Array.from(h.state.eclatHistory),[]);
+ assert.equal(h.runtime.eclatNoteDrafts.size,0);
+ assert.equal(h.state.eclatFinished,null);
+ assert.equal(h.state.eclatMusic,false);
+ assert.equal(h.audioStops(),1);
+ assert.deepEqual(h.history,[]);
+ assert.deepEqual(h.renders,['incomplete']);
+});
+
+test('LR-026: stale incomplete background response cannot purge new login cache',async()=>{
+ const h=harness();
+ const request=h.tick();
+ h.runtime.authFeedbackGeneration=2;
+ h.state.eclat={id:'new-login',access:true,active:true};
+ h.state.eclatMusic=true;
+ h.state.eclatHistory=[{id:'new-private'}];
+ h.requests[0].resolve({id:'obsolete',active:true});
+ await request;
+ assert.equal(h.state.eclat.id,'new-login');
+ assert.equal(h.state.eclatMusic,true);
+ assert.deepEqual(h.state.eclatHistory,[{id:'new-private'}]);
+ assert.equal(h.audioStops(),0);
 });
