@@ -1011,3 +1011,41 @@ test('LR-026: failed note save restores submit without hiding retry explanation'
  assert.equal(h.ui.label.textContent,'Non enregistré. Ton texte est conservé ici; réessaie.');
  assert.equal(h.drafts.get('private-key').note,'Keep private text');
 });
+
+test('LR-026: new private typing during pending save remains dirty and editable',async()=>{
+ const h=privateNoteDenialHarness({saveUi:true});
+ const draft={generation:1,loading:false,error:false,saving:false,
+  note:'Original snapshot',clue:'',moment_done:false,dirty:true};
+ h.drafts.set('private-key',draft);
+ const pending=h.saveCurrentEclatNote();
+ assert.equal(h.ui.button.disabled,true);
+ // A user can continue typing in their private editor while Supabase saves.
+ draft.note='More recent private text';
+ draft.dirty=true;
+ draft.saved=false;
+ h.pendingSave.resolve();
+ assert.equal(await pending,null,'stale save cannot confirm newer unsaved edits');
+ assert.equal(draft.note,'More recent private text');
+ assert.equal(draft.saved,false);
+ assert.equal(draft.dirty,true);
+ assert.equal(h.ui.button.disabled,false);
+ assert.equal(h.ui.label.textContent,'Modifications non enregistrées');
+});
+
+test('LR-026: obsolete private note save cannot update replacement coffret status',async()=>{
+ const h=privateNoteDenialHarness({saveUi:true,scopedKeys:true});
+ const draft={generation:1,loading:false,error:false,saving:false,
+  note:'Old chapter',clue:'',moment_done:false,dirty:true};
+ h.drafts.set('session-a:1',draft);
+ const pending=h.saveCurrentEclatNote();
+ assert.equal(h.ui.label.textContent,'Enregistrement en cours…');
+ h.state.eclat={...h.state.eclat,session_id:'replacement',chapter_index:1};
+ h.drafts.set('replacement:1',{generation:1,note:'New private chapter'});
+ h.ui.label.textContent='Nouvelle séance';
+ h.pendingSave.resolve();
+ assert.equal(await pending,null);
+ assert.equal(h.ui.label.textContent,'Nouvelle séance',
+  'late completion from prior coffret must not overwrite active UI status');
+ assert.equal(h.drafts.get('replacement:1').note,'New private chapter');
+ assert.equal(h.state.eclat.access,true);
+});
