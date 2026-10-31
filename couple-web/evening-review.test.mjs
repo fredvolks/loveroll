@@ -24,6 +24,20 @@ test('One premium review modal, four heart questions and NO calendar CTA or pass
  assert.match(html,/maxlength="500"/);
  assert.doesNotMatch(html,/Plaisir des défis/);
 });
+test('saving state makes the entire review form read-only without hiding close',()=>{
+ const draft={overall:5,connection:4,appreciation:3,again:5,comment:'Notre moment'};
+ const saving=eveningReviewModal({sessionId:'evening-1',draft,saving:true});
+ assert.match(saving,/aria-busy="true"/);
+ assert.match(saving,/id="lr-review-comment"[^>]*readonly/);
+ assert.equal((saving.match(/class="lr-review-heart(?: is-lit)?"[^>]*disabled/g)||[]).length,20);
+ assert.match(saving,/data-action="review-save" disabled/);
+ assert.match(saving,/data-action="review-dismiss"/,'Closing remains possible during a slow request');
+ const normal=eveningReviewModal({sessionId:'evening-1',draft,saving:false});
+ assert.match(normal,/aria-busy="false"/);
+ assert.doesNotMatch(normal,/id="lr-review-comment"[^>]*readonly/);
+ assert.doesNotMatch(normal,/class="lr-review-heart[^"]*"[^>]*disabled/);
+ assert.doesNotMatch(normal,/data-action="review-save" disabled/);
+});
 test('Rating bounds, comment size and HTML escaping stay protected',()=>{
  assert.equal(validEveningReview(reviews[0]),true);
  assert.equal(validEveningReview({...reviews[0],appreciation:0}),false);
