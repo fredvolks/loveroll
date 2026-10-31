@@ -2943,7 +2943,11 @@ async function handle(action,element){
   if(kind.startsWith('note-')){
    if(!state.eclat?.active)throw Error('Aucun coffret actif');
    const key=eclatNoteKey(state.eclat,state.user?.id);
-   if(kind==='note-retry'){eclatNoteDrafts.delete(key);render();return;}
+   if(kind==='note-retry'){
+    // A refresh of the draft must not race with a still-pending write.
+    if(eclatNoteDrafts.get(key)?.saving)throw Error('Enregistrement en cours…');
+    eclatNoteDrafts.delete(key);render();return;
+   }
    const savedKey=await saveCurrentEclatNote(kind==='note-done'?true:kind==='note-edit'?false:undefined);
    if(!savedKey||state.tab!=='eclat'||
       savedKey!==eclatNoteKey(state.eclat,state.user?.id))return;
