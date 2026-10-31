@@ -1,7 +1,7 @@
 import {organizeSettingsMenus} from './settings-menus.mjs?v=20261022-home228';
 import {showEveningCategoryReminder} from './evening-d100-template.mjs?v=20261029-ipad258';
 import {eveningInviteHtml,eveningInviteInboxHtml,isEveningInviteAction} from './evening-invitation.mjs?v=20261028-web254';
-import {askEveningCategoryConfirmation,categoryConfirmEnabled,saveCategoryConfirmLocal} from './evening-category-confirm.mjs?v=20261027-web238';
+import {askEveningCategoryConfirmation,categoryConfirmEnabled,saveCategoryConfirmLocal,ownsEveningCategoryDraw} from './evening-category-confirm.mjs?v=20261031-owner';
 import {soundEnabled,setSoundEnabled,setLoveRollSoundUser,unlockLoveRollSounds,playLoveRollSound,soundSettingsHtml} from './loveroll-sounds.mjs?v=20261028-privacy250';
 import {isAcceptedTimedEveningChallenge,completeTimedEveningChallenge,timedEveningTimerControl} from './timed-evening-completion.mjs?v=20261029-timer259';
 import {fitSurpriseMinimal} from './surprise-minimal.mjs?v=20261022-home228';
@@ -5490,6 +5490,9 @@ async function handle(action,element){
   }
   // Never trigger a server draw or rotate the D100 before confirmation.
   const selectedCategory=state.category,sessionId=state.session.id;
+  const drawOwner={userId:state.user?.id,coupleId:state.coupleId,
+   sessionId,generation:authFeedbackGeneration};
+  const ownsDraw=()=>ownsEveningCategoryDraw(state,drawOwner,authFeedbackGeneration);
   eveningCategoryConfirmInFlight=true;
   try{
    let disableReminder=false;
@@ -5498,10 +5501,14 @@ async function handle(action,element){
      percentage:state.couple?.category_weights_enabled===false?50:
       state.couple?.category_preference_percent??88});
     if(!answer.confirmed)return;
+    if(!ownsDraw())return;
     if(state.category!==selectedCategory||state.session?.id!==sessionId||state.tab!=='session')
      throw Error('La soirée ou la catégorie a changé. Confirme ton nouveau choix.');
     disableReminder=answer.neverShow;
    }
+   // The confirmation may have been bypassed by a personal preference;
+   // never draw for an account or evening that has since been replaced.
+   if(!ownsDraw())return;
    // Existing official D100 RPC: Supabase owns probability, result and quota.
    const drawn=await animateRoll(()=>
     selectedCategory==='HASARD'?
@@ -5509,6 +5516,8 @@ async function handle(action,element){
      rpc('draw_for_partner',{p_session:sessionId,
        p_preference:selectedCategory,p_random:false}),
     'new-challenge');
+   if(!ownsDraw())return;
+   if(state.category!==selectedCategory)return;
    if(drawn?.id&&drawn.recipient===state.user.id&&
         state.tab==='session'&&state.session?.id===sessionId){
     state.selectedEveningChallengeId=drawn.id;
@@ -5517,9 +5526,13 @@ async function handle(action,element){
    // Only after a successful official roll, never after cancel/ESC/network failure.
    if(disableReminder){
     try{await persistEveningCategoryConfirmPref(false);}
-    catch(error){console.warn('Préférence du D100 non enregistrée',error);
-     notify('Lancer réussi, mais le réglage de confirmation n’a pas pu être enregistré.');}
+    catch(error){
+     if(!ownsDraw())return;
+     console.warn('Préférence du D100 non enregistrée',error);
+     notify('Lancer réussi, mais le réglage de confirmation n’a pas pu être enregistré.');
+    }
    }
+   if(!ownsDraw())return;
    try{sessionStorage.removeItem('loveroll-category-'+sessionId);}catch{}
    state.category=null; // Choix renouvelé à chaque défi.
    render();
