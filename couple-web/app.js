@@ -1785,6 +1785,9 @@ async function refreshEclatStatus(){
    // Keep denied status for public subscription details but never fetch or
    // retain private metadata until access is restored.
    latestEclatHistoryRead=null;
+   // Revocation must also invalidate draft objects and their pending network
+   // callbacks; a later reactivation cannot resurrect an old private note.
+   eclatNoteDrafts.clear();state.eclatFinished=null;
    state.eclatHistory=[];state.eclatHistoryError=false;
    return current()?value:null;
   }
@@ -5764,6 +5767,7 @@ setInterval(async()=>{
     // Missing status or access revocation clears cached private history
     // and invalidates earlier private history responses.
     latestEclatHistoryRead=null;
+    eclatNoteDrafts.clear();state.eclatFinished=null;
     state.eclatHistory=[];state.eclatHistoryError=false;
    }else await refreshEclatHistory();
    if(current())render();
