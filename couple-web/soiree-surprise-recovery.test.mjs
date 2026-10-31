@@ -57,7 +57,9 @@ test('Active Soirée does not pass an unbound pending challenge into premiumEven
  assert.doesNotMatch(app,/giftCount,pending,rolling/);
  assert.match(app,/turn,category:state\.category,/);
  assert.match(app,/showSensuel:state\.couple\?\.show_sensuel_button!==false/);
- assert.match(app,/giftCount,rolling:state\.diceStatus==='rolling'\|\|state\.diceStatus==='pending'/);
+ assert.match(app,/giftCount,giftPending:isActiveEveningGiftPending\(\),/);
+ assert.match(app,/rolling:state\.diceStatus==='rolling'\|\|state\.diceStatus==='pending'/);
+ assert.match(app,/redrawPending:isActiveEveningRedrawPending\(\)/);
  assert.match(app,/pendingInviteReference\(sessionStorage\)/);
 });
 
