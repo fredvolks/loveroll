@@ -141,3 +141,34 @@ test('LR-026: hidden Éclat tab never paints a pending status update',async()=>{
  assert.equal(h.state.eclat.id,'original');
  assert.equal(h.renders.length,0);
 });
+
+test('LR-026: failed Éclat poll releases the single-flight slot for retry',async()=>{
+ const h=harness();
+ const failing=h.tick();
+ await h.tick();
+ assert.equal(h.requests.length,1);
+ h.requests[0].reject(new Error('connection unavailable'));
+ await failing;
+ assert.equal(h.warnings.length,1,'current network failures remain observable');
+ const retry=h.tick();
+ assert.equal(h.requests.length,2,'a failed read must not block further sync');
+ h.requests[1].resolve({id:'recovered'});
+ await retry;
+ assert.equal(h.state.eclat.id,'recovered');
+ assert.deepEqual(h.renders,['recovered']);
+});
+
+test('LR-026: explicit status refresh can supersede an unresolved background poll',async()=>{
+ const h=harness();
+ const background=h.tick();
+ // An explicit refresh owns the status token, so a newer poll may resume.
+ h.runtime.latestEclatStatusRead={};
+ const foreground=h.tick();
+ assert.equal(h.requests.length,2);
+ h.requests[1].resolve({id:'foreground'});
+ await foreground;
+ h.requests[0].resolve({id:'obsolete-background'});
+ await background;
+ assert.equal(h.state.eclat.id,'foreground');
+ assert.deepEqual(h.renders,['foreground']);
+});
