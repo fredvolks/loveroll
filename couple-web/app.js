@@ -675,12 +675,27 @@ function adoptAuthenticatedIdentity(nextUser){
  const previousId=state.user?.id||null,nextId=nextUser?.id||null;
  if(previousId!==nextId){
   latestAuthReloadRequest=null;
+  // Close the previous couple's Realtime channel before the new account
+  // can receive notifications or any private session refresh from it.
+  if(state.channel){
+   const obsolete=state.channel;
+   state.channel=null;
+   void client.removeChannel(obsolete).catch(()=>{});
+  }
+  if(realtimeReconnectTimer){
+   clearTimeout(realtimeReconnectTimer);realtimeReconnectTimer=null;
+  }
   eclatNoteDrafts.clear();
   latestEclatAudioOwner=null;eclatAudio.stop();state.eclatMusic=false;
   latestEclatHistoryRead=null;latestEclatStatusRead=null;latestEclatActionRequest=null;
   state.eclat=null;state.eclatHistory=[];state.eclatHistoryCouple=null;
   state.eclatHistoryUserId=null;
   state.profile=null;state.coupleId=null;state.couple=null;state.members=[];
+  state.testModeEligible=false;state.testMode='real';
+  state.personalPass=null;state.eveningInvite=null;
+  state.eveningBoard=null;state.selectedEveningChallengeId=null;
+  state.showEveningChallenges=false;state.showEveningChallenge=false;
+  state.weekly=null;state.gifts=[];state.invitations=[];
   state.wellbeing=null;state.personalJournal=[];state.personal=null;
   state.personalSexualCardsReady=false;state.customCards=[];
   state.challenges=[];state.challengesHistory=[];
@@ -1178,17 +1193,21 @@ let realtimeReconnectTimer=null;
 function subscribe(){
  if(!state.coupleId)return;
  if(state.channel)client.removeChannel(state.channel);
- let channel=client.channel('shared-couple-'+state.coupleId);
+ const subscriberUserId=state.user?.id,subscriberCoupleId=state.coupleId;
+ let channel=client.channel('shared-couple-'+subscriberCoupleId);
+ const current=()=>state.channel===channel&&state.user?.id===subscriberUserId&&
+  state.coupleId===subscriberCoupleId;
  channel=channel.on('postgres_changes',{event:'*',schema:'public',table:'couple_members',
   filter:'couple_id=eq.'+state.coupleId},async()=>{
-   try{await reload();if(state.coupleId&&state.members.length===2)notify('♡ Votre partenaire a accepté le match !');}catch(e){fail(e);}
+   if(!current())return;
+   try{await reload();if(current()&&state.members.length===2)notify('♡ Votre partenaire a accepté le match !');}catch(e){fail(e);}
  });
  // Settings only: sync new odds to the other device without changing Soirée
  // visuals or resetting dice. Couples UPDATE is filtered by RLS membership.
  channel=channel.on('postgres_changes',{event:'UPDATE',schema:'public',table:'couples',
   filter:'id=eq.'+state.coupleId},payload=>{
   const updated=payload?.new;
-  if(!updated||updated.id!==state.coupleId||!state.couple)return;
+  if(!current()||!updated||updated.id!==state.coupleId||!state.couple)return;
   const earlierLimit=Number(state.couple.monthly_pass_limit??3);
   state.couple={...state.couple,...updated};
   if(Number(state.couple.monthly_pass_limit??3)!==earlierLimit){
@@ -1200,19 +1219,20 @@ function subscribe(){
    render();
  });
  if(state.members.length<2){
-  state.channel=channel.subscribe(status=>{if(status==='SUBSCRIBED')liveSync.request(200);});
+  state.channel=channel.subscribe(status=>{if(current()&&status==='SUBSCRIBED')liveSync.request(200);});
   return;
  }
  for(const table of ['couple_occasion_rolls','couple_occasion_settings','couple_rolls','couple_sessions','couple_challenges','couple_challenge_gifts',
   'couple_advent','couple_intimacy','couple_events'])
   channel=channel.on('postgres_changes',{event:'*',schema:'public',table,
    filter:'couple_id=eq.'+state.coupleId},async payload=>{
+    if(!current())return;
     if(payload.new?.actor_id&&payload.new.actor_id!==state.user.id)
      notify(person(payload.new.actor_id)+' a effectué une action dans votre jeu');
     liveSync.request(200);
    });
  channel=channel.on('postgres_changes',{event:'INSERT',schema:'public',
-  table:'couple_personal_rolls'},()=>liveSync.request(120));
+  table:'couple_personal_rolls'},()=>{if(current())liveSync.request(120);});
  // Keep the in-app invitation visible even if Push is blocked or delayed.
  // RLS limits this subscription to the two members of the exact couple.
  if(state.eveningInvite!==null){
@@ -1220,14 +1240,14 @@ function subscribe(){
   // channels working instead of subscribing to a non-existent table.
   channel=channel.on('postgres_changes',{event:'*',schema:'public',
    table:'love_evening_invitations',filter:'couple_id=eq.'+state.coupleId},
-   ()=>liveSync.request(80));
+   ()=>{if(current())liveSync.request(80);});
  }
  channel=channel.on('postgres_changes',{event:'*',schema:'public',table:'love_eclat_sessions',
   filter:'couple_id=eq.'+state.coupleId},()=>{
-  if(state.tab==='eclat')refreshEclatStatus().then(()=>{if(state.tab==='eclat')render();}).catch(console.warn);
+  if(current()&&state.tab==='eclat')refreshEclatStatus().then(()=>{if(current()&&state.tab==='eclat')render();}).catch(console.warn);
  });
  state.channel=channel.subscribe(status=>{
-   if(state.channel!==channel)return;
+   if(!current())return;
    if(status==='SUBSCRIBED'){
     if(realtimeReconnectTimer){clearTimeout(realtimeReconnectTimer);realtimeReconnectTimer=null;}
     liveSync.request(100);
