@@ -844,10 +844,11 @@ function adoptAuthenticatedIdentity(nextUser){
   Object.assign(challengeTimer,{id:null,ownerUserId:null,ownerSessionId:null,
    durationMs:0,remainingMs:0,deadline:0,running:false,notified:false,
    autoCompletePending:false,decisionPending:false});
-  // Preserve only the local timer sound/vibration preference, not its owner.
+  // Alert preference is reloaded for the next authenticated account below.
   state.tab='home';
  }
  state.user=nextUser;
+ if(previousId!==nextId)challengeTimer.mode=readTimerAlertMode(nextId);
  return previousId!==nextId;
 }
 async function refreshVerifiedIdentity(){
@@ -5506,14 +5507,26 @@ async function handle(action,element){
   }
   if(verb==='timer-mode'){
    if(parts[0]!=='vibrate'&&parts[0]!=='sound')throw Error('Signal inconnu');
+   const owner={userId:state.user?.id,sessionId:state.session?.id,
+    generation:authFeedbackGeneration};
+   if(!owner.userId||!owner.sessionId||state.tab!=='session')return;
+   const current=()=>state.user?.id===owner.userId&&
+    state.session?.id===owner.sessionId&&
+    authFeedbackGeneration===owner.generation&&state.tab==='session';
    if(parts[0]==='vibrate'&&typeof navigator.vibrate!=='function'){
     notify('Vibration indisponible sur cet appareil. Utilise le son du minuteur.');
     return;
    }
-   if(parts[0]==='sound'&&!await unlockLoveRollSounds())
-    notify('Autorise le son du navigateur avec un toucher, puis utilise Tester.');
+   if(parts[0]==='sound'){
+    const ready=await unlockLoveRollSounds();
+    // Safari may resolve WebAudio permission after switching accounts, tabs
+    // or sessions. Old gestures cannot overwrite the replacement account.
+    if(!current())return;
+    if(!ready)notify('Autorise le son du navigateur avec un toucher, puis utilise Tester.');
+   }
+   if(!current())return;
    challengeTimer.mode=parts[0];
-   if(!saveTimerAlertMode(parts[0]))
+   if(!saveTimerAlertMode(owner.userId,parts[0]))
     notify('Le signal reste actif pour cette visite, mais sa préférence ne peut pas être conservée sur cet appareil.');
    render();return;
  }
