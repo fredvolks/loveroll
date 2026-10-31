@@ -1796,11 +1796,13 @@ test('LR-026: mutating Éclat responses belong to the initiating account, view a
  const start=app.indexOf('let latestEclatHistoryRead=null,latestEclatStatusRead=null;');
  const end=app.indexOf('function renderEclat(){',start);
  assert.ok(start>=0&&end>start);
- const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',eclat:{id:'before'}};
+ const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
+  members:[{id:'alice'},{id:'bob'}],eclat:{id:'before'}};
  const scope=runInNewContext(app.slice(start,end)+
   ';({beginEclatAction,ownsEclatAction,applyEclatActionResult})',{
    state,authFeedbackGeneration:1,ownsCoupleAsyncRead,console,
-   isSharedCoupleReady:()=>true,rpc:async()=>null,loadEclatHistory:async()=>[]
+   isSharedCoupleReady:(couple,members)=>!!couple&&members?.length===2,
+   rpc:async()=>null,loadEclatHistory:async()=>[]
   });
  const old=scope.beginEclatAction();
  assert.equal(scope.ownsEclatAction(old),true);
