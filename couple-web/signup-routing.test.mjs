@@ -14,12 +14,39 @@ const complete=extract(" if(verb==='complete-registration'){"," if(verb==='profi
 const resolution=extract('async function resolveVerifiedSignup(', 'async function autoAcceptPendingInvite(){');
 const autoJoin=extract('async function autoAcceptPendingInvite(){','function verificationPendingHtml(');
 const profileSave=extract('let currentProfileSave=null;','// Logout can await');
+// The live application declares the generation at module scope; fixtures must too.
+const profileSaveFixture='let authFeedbackGeneration=0;'+profileSave;
+
+test('same user ID with a new authentication generation cannot inherit a stale profile save',async()=>{
+ const calls=[],state={user:{id:'account-A'}},ctx={state,authFeedbackGeneration:0};
+ let release;
+ const stalled=new Promise(resolve=>{release=resolve;});
+ ctx.rpc=name=>{
+  calls.push(name);
+  return calls.length===1?stalled:Promise.resolve();
+ };
+ const save=vm.runInNewContext(profileSave+';saveProfileForCurrentAccount',ctx);
+ const oldRequest=save('Ancien profil','10-18','her','soft');
+ assert.deepEqual(calls,['complete_love_registration']);
+ // The previous session signs out and the *same* UUID signs in again.
+ // An account ID comparison alone cannot distinguish the two sessions.
+ ctx.authFeedbackGeneration++;
+ release();
+ assert.equal(await oldRequest,false);
+ assert.deepEqual(calls,['complete_love_registration'],
+  'the old session must never write gender or play style under the new login');
+ assert.equal(await save('Nouveau profil','10-19','him','intense'),true);
+ assert.deepEqual(calls,[
+  'complete_love_registration','complete_love_registration',
+  'save_my_gender','save_my_play_style'
+ ]);
+});
 
 test('in-flight profile save cannot continue under a different account',async()=>{
  const calls=[],state={user:{id:'account-A'}};
  let finishFirstRpc;
  const firstRpc=new Promise(resolve=>{finishFirstRpc=resolve;});
- const save=vm.runInNewContext(profileSave+';saveProfileForCurrentAccount',{
+ const save=vm.runInNewContext(profileSaveFixture+';saveProfileForCurrentAccount',{
   state,rpc:(name,args)=>{
    calls.push({user:state.user.id,name,args});
    return calls.length===1?firstRpc:Promise.resolve();
@@ -41,7 +68,7 @@ test('double submission cannot issue duplicate RPCs or unlock another account sa
  const pendingRpcs={};
  const pause=key=>new Promise(resolve=>{pendingRpcs[key]=resolve;});
  const firstA=pause('account-A'),firstB=pause('account-B');
- const save=vm.runInNewContext(profileSave+';saveProfileForCurrentAccount',{
+ const save=vm.runInNewContext(profileSaveFixture+';saveProfileForCurrentAccount',{
   state,rpc:(name)=>{
    const owner=state.user.id;
    calls.push(owner+':'+name);
@@ -71,7 +98,7 @@ test('double submission cannot issue duplicate RPCs or unlock another account sa
 test('profile saving reopens safely after a same-account RPC failure',async()=>{
  const calls=[],state={user:{id:'account-A'}};
  let failOnce=true;
- const save=vm.runInNewContext(profileSave+';saveProfileForCurrentAccount',{
+ const save=vm.runInNewContext(profileSaveFixture+';saveProfileForCurrentAccount',{
   state,rpc:async name=>{
    calls.push(name);
    if(name==='save_my_gender'&&failOnce){failOnce=false;throw Error('RPC temporarily offline');}
@@ -100,7 +127,7 @@ test('new account with invitation completes profile but never creates own admin 
   resolveVerifiedSignup:async()=>{throw Error('Invited signup must not create a duo');},
   reload:async()=>{calls.push({name:'reload'});}
  };
- const handler=vm.runInNewContext(profileSave+';(async function(verb){'+complete+'})',ctx);
+ const handler=vm.runInNewContext(profileSaveFixture+';(async function(verb){'+complete+'})',ctx);
  await handler('complete-registration');
  assert.deepEqual(calls.map(x=>x.name),[
   'complete_love_registration','save_my_gender','save_my_play_style','reload']);
@@ -124,7 +151,7 @@ test('new account without invitation resolves owner creation server-side exactly
   },
   reload:async()=>{calls.push({name:'reload'});}
  };
- const handler=vm.runInNewContext(profileSave+';(async function(verb){'+complete+'})',ctx);
+ const handler=vm.runInNewContext(profileSaveFixture+';(async function(verb){'+complete+'})',ctx);
  await handler('complete-registration');
  assert.deepEqual(calls.map(x=>x.name),[
   'complete_love_registration','save_my_gender','save_my_play_style','resolveVerifiedSignup','reload']);
