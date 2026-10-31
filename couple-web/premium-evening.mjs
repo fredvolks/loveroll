@@ -271,7 +271,7 @@ export function premiumEveningHtml({
        '<div><strong>'+esc(weeklyCount)+' / '+(weeklyReady?esc(weeklyLimit):'—')+
          '</strong><span>Soirées cette semaine</span></div>'+
        '<div><strong>'+completedEveningLibraryCount(challengeHistory)+' / 200'+
-         '</strong><span>Défis complétés</span></div>'+
+         '</strong><span>Défis distincts</span></div>'+
        '<div><strong>'+esc(weeklyCount)+'</strong><span>Soirées terminées</span></div></div>')+
     '<div class="evening-finale-actions">'+
       bt('new-session','♡ COMMENCER NOTRE SOIRÉE','evening-finale-start',!canStartEvening)+
