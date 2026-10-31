@@ -2266,7 +2266,7 @@ test('LR-026: stale login reload cannot apply an obsolete test-mode permission',
  let release;
  const pending=new Promise(resolve=>{release=resolve;});
  let paints=0;
- const f=runInNewContext('let latestAuthReloadRequest=null;'+app.slice(first,end)+
+ const f=runInNewContext('let latestAuthReloadRequest=null,authFeedbackGeneration=0;'+app.slice(first,end)+
   ';({reload})',{
    state,document:{hidden:false},
    challengeTimer:{running:false},hasUnsavedForm:()=>false,
@@ -2362,7 +2362,7 @@ test('LR-026: obsolete account reload failure is suppressed after sign-in to ano
  const state={user:{id:'alice'},coupleId:'couple-alice',testModeEligible:false};
  let rejectProfiles,queries=0;
  const profiles=new Promise((_,reject)=>{rejectProfiles=reject;});
- const f=runInNewContext('let latestAuthReloadRequest=null;'+app.slice(first,end)+
+ const f=runInNewContext('let latestAuthReloadRequest=null,authFeedbackGeneration=0;'+app.slice(first,end)+
   ';({reload})',{
    state,document:{hidden:false},challengeTimer:{running:false},
    hasUnsavedForm:()=>false,root:{querySelector:()=>null},window:{},
@@ -2385,7 +2385,7 @@ test('LR-026: active account reload failure still reports its own network error'
  const first=app.indexOf('async function reload(){');
  const end=app.indexOf('// A redraw started under another account',first);
  const state={user:{id:'alice'},coupleId:'couple-alice',testModeEligible:false};
- const f=runInNewContext('let latestAuthReloadRequest=null;'+app.slice(first,end)+
+ const f=runInNewContext('let latestAuthReloadRequest=null,authFeedbackGeneration=0;'+app.slice(first,end)+
   ';({reload})',{
    state,document:{hidden:false},challengeTimer:{running:false},
    hasUnsavedForm:()=>false,root:{querySelector:()=>null},window:{},
@@ -2402,8 +2402,8 @@ function pendingAuthReloadFixture(state,rpc,query,overrides={}){
  const end=app.indexOf('// A redraw started under another account',first);
  assert.ok(first>=0&&end>first);
  const calls={render:0,warnings:0};
- const f=runInNewContext('let latestAuthReloadRequest=null;'+app.slice(first,end)+
-  ';({reload})',{
+ const f=runInNewContext('let latestAuthReloadRequest=null,authFeedbackGeneration=0;'+app.slice(first,end)+
+  ';({reload,bumpAuthGeneration:()=>authFeedbackGeneration++})',{
    state,document:{hidden:false,documentElement:{lang:'fr'}},
    sessionStorage:{},client:{},challengeTimer:{running:false},hasUnsavedForm:()=>false,
    root:{querySelector:()=>null},window:{},
@@ -2416,6 +2416,36 @@ function pendingAuthReloadFixture(state,rpc,query,overrides={}){
   });
  return {...f,calls};
 }
+
+test('LR-026: same-user reauthentication discards an obsolete private reload',async()=>{
+ const state={user:{id:'alice'},coupleId:'duo-alice',testModeEligible:false};
+ let finish,queries=0;
+ const permission=new Promise(resolve=>{finish=resolve;});
+ const f=pendingAuthReloadFixture(state,()=>permission,()=>{
+  queries++;return Promise.resolve([]);
+ });
+ const old=f.reload();
+ f.bumpAuthGeneration(); // new login has same user ID
+ finish(true);
+ await assert.doesNotReject(old);
+ assert.equal(state.testModeEligible,false,
+  'old session must never overwrite new session permissions');
+ assert.equal(queries,0,'old session must not issue private profile reads');
+ assert.equal(f.calls.render,0);
+});
+
+test('LR-026: stale same-user reload failure never surfaces after new login',async()=>{
+ const state={user:{id:'alice'},coupleId:'duo-alice',testModeEligible:false};
+ let reject;
+ const permission=new Promise((_,fail)=>{reject=fail;});
+ const f=pendingAuthReloadFixture(state,()=>permission,()=>Promise.resolve([]));
+ const old=f.reload();
+ f.bumpAuthGeneration();
+ reject(Error('Network failure from obsolete session'));
+ await assert.doesNotReject(old);
+ assert.equal(state.testModeEligible,false);
+ assert.equal(f.calls.render,0);
+});
 
 test('LR-026: simultaneous refreshes of the same account ignore the older test-mode response',async()=>{
  const state={user:{id:'alice'},coupleId:'duo-alice',testModeEligible:false};
