@@ -1705,7 +1705,12 @@ function eclatNoteState(){
   const current=()=>ownsCoupleAsyncRead(state,owner)&&
    authFeedbackGeneration===owner.generation&&
    isSharedCoupleReady(owner.coupleId,state.members)&&
-   state.eclat?.access===true&&eclatNoteDrafts.get(key)===draft;
+   state.eclat?.access===true&&
+   // A pending note belongs to a specific session AND chapter. A delayed
+   // response (including a 403/42501 denial) for an obsolete chapter must
+   // never clear the newer chapter's authorized private data.
+   eclatNoteKey(state.eclat,state.user?.id)===key&&
+   eclatNoteDrafts.get(key)===draft;
   loadEclatNote(client,status,owner.userId).then(value=>{
    if(current())Object.assign(draft,value,{saved:!!value.note||!!value.clue,dirty:false,error:false});
   }).catch(error=>{
