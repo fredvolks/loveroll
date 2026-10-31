@@ -5568,10 +5568,13 @@ setInterval(async()=>{
   const todayOnServer=await rpc('love_advent_server_date');
   if(!current())return;
   if(todayOnServer&&todayOnServer!==state.adventServerDate){
-   state.adventServerDate=todayOnServer;
-   state.adventYear=null;
+   // refreshShared reads the authoritative date again and owns its state
+   // update. Never mark the new day as fetched before that network refresh
+   // succeeds: a failure must leave the old date so the next tick retries.
    await refreshShared();
-   if(current())render();
+   if(!current()||state.adventServerDate!==todayOnServer)return;
+   state.adventYear=null;
+   render();
   }
  }catch(error){
   if(current())console.warn('Horloge Avent indisponible',error);
