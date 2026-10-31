@@ -5734,7 +5734,12 @@ setInterval(async()=>{
   if(!current())return;
   if(JSON.stringify(value)!==prior){
    state.eclat=value;
-   await refreshEclatHistory();
+   if(value==null){
+    // The server no longer exposes the Éclat session: retire its old
+    // history and invalidate any earlier private history response.
+    latestEclatHistoryRead=null;
+    state.eclatHistory=[];state.eclatHistoryError=false;
+   }else await refreshEclatHistory();
    if(current())render();
   }
  }catch(error){if(current())console.warn('Synchronisation Éclat',error?.code||'');}
