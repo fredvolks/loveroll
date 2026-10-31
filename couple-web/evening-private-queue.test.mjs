@@ -1777,7 +1777,7 @@ test('LR-026: delayed Éclat status cannot replace a different account or render
  assert.ok(pollBegin>0&&pollEnd>pollBegin);
  let tick,renderCount=0,releasePoll;
  const pollPending=new Promise(resolve=>{releasePoll=resolve;});
- runInNewContext(app.slice(start,end)+app.slice(pollBegin,pollEnd+8),{
+ runInNewContext(app.slice(start,end)+'let latestEclatPollPending=null;\n'+app.slice(pollBegin,pollEnd+8),{
   state,authFeedbackGeneration:1,ownsCoupleAsyncRead,console,
   isSharedCoupleReady:(c,m)=>!!c&&m?.length===2,
   rpc:()=>pollPending,loadEclatHistory:async()=>[],
