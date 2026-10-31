@@ -516,6 +516,18 @@ function bindEclatPrivateNoteFields(){
  }));
 }
 function bindActions(){
+ // Native select preserves the two approved Soirée action buttons and keeps
+ // the choice per-account. Do not accept delayed change events from old DOM.
+ const lengthSelect=root.querySelector('[data-session-length-select]');
+ const lengthUserId=state.user?.id,lengthGeneration=authFeedbackGeneration;
+ lengthSelect?.addEventListener('change',()=>{
+  if(!root.contains(lengthSelect)||state.user?.id!==lengthUserId||
+     authFeedbackGeneration!==lengthGeneration||state.tab!=='session')return;
+  handle('session-length:'+lengthSelect.value).then(()=>{
+   if(state.user?.id===lengthUserId&&authFeedbackGeneration===lengthGeneration)
+    root.querySelector('[data-session-length-select]')?.focus({preventScroll:true});
+  }).catch(fail);
+ });
  const categoryPref=root.querySelector('#evening-category-confirm-pref');
  categoryPref?.addEventListener('change',()=>handle('evening-confirm-pref-toggle').catch(fail));
  bindEclatPrivateNoteFields();
@@ -2716,6 +2728,7 @@ function renderSession(){
    playable:state.playableCounts||(isLoveAdmin()?playableEveningCount(state.customCards):null),
    rollingKind:state.rollAnimationKind,showMore:state.eveningMore,confirmCancel:state.confirmCancel,
    challengeOverlay:overlay,lastEvening,canStartEvening,
+   sessionLength:readSessionLength(uid,localStorage),
    challengeHistory:[...state.challengesHistory,...state.eveningCalendarChallenges,...state.challenges],
    weeklyReady:!!state.weekly,weeklyCount:daily.counted,weeklyLimit:daily.limit,
    dailyLocked:daily.dailyLocked,ownChallengeCount:mineCards.length,
