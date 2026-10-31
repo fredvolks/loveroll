@@ -62,7 +62,7 @@ import {normalizeInviteEmail,composeInviteEmail} from './invite-email.mjs';
 import {enablePush,disablePush,updatePushPreference,sendTestPush,notificationSettingsMarkup,safeNativePushToken,currentPushDevice} from './push-notifications.mjs?v=20261027-web247';
 import {shouldOfferInstall,markInstallOffered,dismissInstall,requestInstall,installOfferHtml,installStepsHtml,installStatus,isEmbeddedBrowser,isIos} from './home-install.mjs?v=20261017-complete127';
 import {messengerExternalBrowserHtml} from './messenger-browser.mjs?v=20261017-entry139';
-import {invitationStatus,coupleStats,formatCoupleDate,invitationEmailText,invitationMessengerText,invitationPreviewMarkup} from './couple-dashboard.mjs';
+import {invitationStatus,coupleInvitationView,coupleStats,formatCoupleDate,invitationEmailText,invitationMessengerText,invitationPreviewMarkup} from './couple-dashboard.mjs';
 import {premiumConfirm,premiumCopyLink,focusInlineLoveDialog} from './premium-dialogs.mjs?v=20261017-complete127';
 
 
@@ -1648,12 +1648,10 @@ function renderIdeas(){
   'NOS IDÉES DE SOIRÉE','Complicité et intimité selon votre rythme');
 }
 function renderInvitePanel(){
- const latest=state.invitations?.find(x=>!x.cancelled_at&&!x.accepted_at&&new Date(x.expires_at)>new Date())||
-  state.invitations?.[0];
+ const {latest,active:liveInvite}=coupleInvitationView(state.invitations,state.coupleId);
  const ready=state.members?.length===2;
  const status=invitationStatus(latest,ready);
- const active=latest&&!ready&&!latest.cancelled_at&&!latest.accepted_at&&
-  new Date(latest.expires_at)>new Date();
+ const active=!!liveInvite&&!ready;
  const draft=active?{id:latest.id,email:latest.invited_email,
   link:inviteLinkForId(CONFIG.siteUrl,latest.id)}:null;
  let html='<section class="partner-invite-panel" aria-label="Votre invitation">'+
@@ -1663,7 +1661,7 @@ function renderInvitePanel(){
   html+='<div class="partner-invite-fields"><label>Courriel de votre partenaire<input id="invite-email" type="email" autocomplete="email" aria-describedby="invite-email-hint" placeholder="partenaire@exemple.com" value="'+safe(draft?.email||latest?.invited_email||'')+'"></label>'+
    '<p id="invite-email-hint" class="tiny-note">Votre partenaire devra utiliser cette adresse pour accepter.</p>'+
    (!active?button('invite','Créer mon invitation','class="settings-primary"'):'')+'</div>';
-  if(active||!latest){
+  if(active){
    html+='<div class="partner-invite-share"><h2>Partager le lien</h2><div class="partner-invite-actions">'+
     button('send-messenger','Messenger','class="settings-secondary"')+
     button('send-sms','Texto SMS','class="settings-secondary"')+
@@ -1712,7 +1710,7 @@ function renderCoupleOverview(){
 }
 function renderWaitingPartner(){
  const name=safe(state.profile.display_name);
- const latest=state.invitations?.find(x=>!x.cancelled_at&&!x.accepted_at&&new Date(x.expires_at)>new Date())||state.invitations?.[0];
+ const {latest}=coupleInvitationView(state.invitations,state.coupleId);
  const status=invitationStatus(latest,false);
  frame('<section class="settings-editorial partner-editorial partner-waiting-page">'+editorialHeader('')+
   '<div class="settings-editorial-content"><div class="editorial-title"><h1>Votre espace est prêt</h1></div>'+
@@ -3581,18 +3579,18 @@ async function ensureInviteDraft(forceNew=false){
  if(!state.coupleId||state.members.length===2)throw Error('Le couple est déjà connecté.');
  const email=normalizeInviteEmail(id('invite-email')?.value);
  if(!CONFIG.siteUrl)throw Error('Adresse publique LoveRoll manquante.');
- const existing=state.invitations?.find(x=>!x.cancelled_at&&!x.accepted_at&&
-  new Date(x.expires_at)>new Date()&&x.invited_email?.toLowerCase()===email);
- // ID links are recoverable from server-visible invitation metadata; the
- // secret token hash is never exposed. Re-sending does not consume/invalidate it.
- if(!forceNew&&existing){
-  state.inviteDraft={id:existing.id,email,link:inviteLinkForId(CONFIG.siteUrl,existing.id)};
+ const {active}=coupleInvitationView(state.invitations,state.coupleId);
+ // The server-visible invite list is authoritative. Never reuse an expired,
+ // cancelled, accepted or other-couple link from state.inviteDraft memory.
+ if(!forceNew&&active?.invited_email?.toLowerCase()===email){
+  state.inviteDraft={id:active.id,email,link:inviteLinkForId(CONFIG.siteUrl,active.id)};
   return state.inviteDraft;
  }
- if(!forceNew&&state.inviteDraft&&state.inviteDraft.email===email)return state.inviteDraft;
- if(!forceNew&&state.invitations?.some(x=>!x.cancelled_at&&!x.accepted_at&&
-   new Date(x.expires_at)>new Date()))
+ if(!forceNew&&active)
   throw Error('Une invitation active existe pour un autre courriel. Utilisez « Remplacer le lien actuel ».');
+ // Share actions must never silently create an invitation or resurrect one
+ // left in memory. Creating/replacing requires the explicit Invite button.
+ if(!forceNew)throw Error('Aucun lien actif. Créez une invitation avant de la partager.');
  const token=randomInviteToken(),digest=await hashToken(token);
  const invitationId=await rpc('create_pair_invite',{p_couple:state.coupleId,p_email:email,p_token_hash:digest});
  state.inviteDraft={id:invitationId,email,link:inviteLinkForId(CONFIG.siteUrl,invitationId)};
@@ -5347,7 +5345,7 @@ async function handle(action,element){
  if(verb==='invite'){
   if(state.invitations?.some(x=>!x.cancelled_at&&!x.accepted_at&&new Date(x.expires_at)>new Date())&&
      !(await premiumConfirm('L’ancien lien d’invitation cessera de fonctionner. Votre partenaire devra utiliser le nouveau lien.',{kind:'library',title:'Remplacer le lien sécurisé ?'})))return;
-  await ensureInviteDraft(true);state.inviteCopyFallback=false;render();
+  await ensureInviteDraft(true);state.inviteCopyFallback=false;state.lastShareMethod=null;render();
   notify('Nouveau lien prêt. L’ancien lien a été remplacé.');return;
  }
  if(verb==='send-sms'||verb==='send-email'||verb==='send-messenger'||verb==='copy-invite'){
@@ -5402,7 +5400,7 @@ async function handle(action,element){
  }
  if(verb==='cancel-invite'){
   await rpc('cancel_pair_invite',{p_invitation:parts[0]});
-  state.inviteDraft=null;
+  state.inviteDraft=null;state.inviteCopyFallback=false;state.lastShareMethod=null;
   state.invitations=await query('couple_invitations',{eq:{couple_id:state.coupleId},order:'created_at'});
   render();notify('Invitation annulée.');return;
  }

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {readFileSync} from 'node:fs';
-import {invitationStatus,coupleStats,formatCoupleDate,invitationEmailText,invitationMessengerText,invitationPreviewMarkup} from './couple-dashboard.mjs';
+import {invitationStatus,coupleInvitationView,coupleStats,formatCoupleDate,invitationEmailText,invitationMessengerText,invitationPreviewMarkup} from './couple-dashboard.mjs';
 import {shouldOfferInstall,dismissInstall,installOfferHtml,isStandalone} from './home-install.mjs';
 
 test('Invitation has accurate states and never claims unsent share was delivered',()=>{
@@ -15,6 +15,71 @@ test('Invitation has accurate states and never claims unsent share was delivered
  assert.equal(invitationStatus({...prepared,expires_at:'2026-01-01T00:00:00Z'},false,NOW).code,'expired');
  assert.equal(invitationStatus(null,true).code,'accepted');
 });
+
+test('Invitation selection is scoped to the current couple and genuine unexpired records',()=>{
+ const NOW=Date.parse('2026-10-31T18:00:00Z');
+ const mine={id:'mine',couple_id:'couple-a',invited_email:'a@example.com',
+  expires_at:'2026-11-07T18:00:00Z'};
+ const other={id:'other',couple_id:'couple-b',invited_email:'x@example.com',
+  expires_at:'2026-11-07T18:00:00Z'};
+ assert.deepEqual(coupleInvitationView([other,mine],'couple-a',NOW),{latest:mine,active:mine});
+ assert.deepEqual(coupleInvitationView([other],'couple-a',NOW),{latest:null,active:null});
+ assert.deepEqual(coupleInvitationView([mine],'couple-a',Date.parse('2026-11-07T18:00:00Z')),
+  {latest:mine,active:null});
+ assert.equal(coupleInvitationView([{...mine,cancelled_at:'2026-10-30'}],'couple-a',NOW).active,null);
+ assert.equal(coupleInvitationView([{...mine,accepted_at:'2026-10-30'}],'couple-a',NOW).active,null);
+ assert.equal(coupleInvitationView([{...mine,expires_at:'invalid'}],'couple-a',NOW).active,null);
+ assert.equal(coupleInvitationView(null,'couple-a',NOW).active,null);
+});
+test('Expired cached invitation can never be shared or silently regenerated',async()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const start=app.indexOf('async function ensureInviteDraft(');
+ const end=app.indexOf('\nfunction keepAuthModeInUrl(',start);
+ assert.ok(start>=0&&end>start);
+ const code=app.slice(start,end);
+ const state={coupleId:'couple-a',members:[{user_id:'member'}],invitations:[],
+  inviteDraft:{id:'cached',email:'a@example.com',link:'https://old.test'}};
+ let created=0;
+ const invite={id:'fresh-id',couple_id:'couple-a',invited_email:'a@example.com',
+  expires_at:'2099-01-01T00:00:00Z'};
+ const ensure=new Function('state','id','normalizeInviteEmail','CONFIG',
+  'coupleInvitationView','inviteLinkForId','randomInviteToken','hashToken','rpc','query',
+  code+'\nreturn ensureInviteDraft;')(
+   state,()=>({value:'a@example.com'}),v=>v,{siteUrl:'https://example.test'},
+   coupleInvitationView,(site,id)=>site+'/?invite='+id,
+   ()=>'synthetic-token',async()=> 'synthetic-hash',
+   async()=>{created++;return invite.id;},async()=>[invite]
+  );
+ await assert.rejects(()=>ensure(false),/Aucun lien actif/);
+ assert.equal(created,0);
+ const draft=await ensure(true);
+ assert.equal(created,1);
+ assert.equal(draft.id,'fresh-id');
+ assert.equal((await ensure(false)).id,'fresh-id');
+ state.invitations=[{...invite,expires_at:'2026-01-01T00:00:00Z'}];
+ await assert.rejects(()=>ensure(false),/Aucun lien actif/);
+ assert.equal(created,1);
+ state.invitations=[{...invite,cancelled_at:'2026-10-30'}];
+ await assert.rejects(()=>ensure(false),/Aucun lien actif/);
+ state.invitations=[{...invite,couple_id:'couple-b'}];
+ await assert.rejects(()=>ensure(false),/Aucun lien actif/);
+ assert.equal(created,1);
+});
+test('Invitation UI only exposes sharing controls for active same-couple links',()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const panel=app.slice(app.indexOf('function renderInvitePanel(){'),
+  app.indexOf('\nfunction renderPartnerInvitation(){'));
+ const waiting=app.slice(app.indexOf('function renderWaitingPartner(){'),
+  app.indexOf('\n// One private draft',app.indexOf('function renderWaitingPartner(){')));
+ assert.match(panel,/coupleInvitationView\(state\.invitations,state\.coupleId\)/);
+ assert.match(waiting,/coupleInvitationView\(state\.invitations,state\.coupleId\)/);
+ assert.match(panel,/if\(active\)\{/);
+ assert.doesNotMatch(panel,/if\(active\|\|!latest\)/);
+ assert.match(panel,/Créer mon invitation/);
+ assert.match(panel,/Copier le lien/);
+ assert.match(app,/if\(!forceNew\)throw Error\('Aucun lien actif/);
+});
+
 test('Couple success rate counts fully finished sessions only',()=>{
  const stats=coupleStats([
   {finished_at:'2026-10-01',counted:true},
