@@ -143,3 +143,23 @@ test('native Back also invalidates the pending save before dismissing the modal'
  assert.ok(invalidate>=0&&close>invalidate,'Cancel ownership before closing UI');
  assert.match(block,/render\(\);return true;/);
 });
+
+test('native Back immediately closes a stalled review without waiting for RPC',()=>{
+ const start=app.indexOf('if(state.reviewModalSessionId){');
+ const end=app.indexOf('if(allowBackExit)',start);
+ assert.ok(start>0&&end>start);
+ const snippet=app.slice(start,end);
+ const state={reviewModalSessionId:'night-1',reviewDismissedSessionId:null,
+  reviewSaving:true,reviewDraft:{overall:5,comment:'Brouillon'}};
+ let renders=0;
+ const closed=runInNewContext(
+  '(function(){let currentReviewSaveRequest={};'+snippet+'return false;})()',
+  {state,render:()=>{renders++;}}
+ );
+ assert.equal(closed,true,'Back must be handled by the review dialog');
+ assert.equal(state.reviewModalSessionId,null);
+ assert.equal(state.reviewDismissedSessionId,'night-1');
+ assert.equal(state.reviewSaving,false,'A stalled request must not lock future edits');
+ assert.deepEqual(state.reviewDraft,{});
+ assert.equal(renders,1);
+});
