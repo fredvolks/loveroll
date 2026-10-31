@@ -30,9 +30,11 @@ function eclatRecommendation(history){
  const lastStart=new Map();
  for(const row of Array.isArray(history)?history:[]){
   if(!row||typeof row!=='object'||Array.isArray(row))continue;
-  const id=Number(row.coffret_id),date=Date.parse(row.started_at||'');
-  if(!ECLAT_COFFRETS.some(c=>c.id===id))continue;
-  lastStart.set(id,Math.max(lastStart.get(id)??0,Number.isFinite(date)?date:0));
+  const id=Number(row.coffret_id);
+  // An incomplete legacy record is not proof of a played coffret.
+  const date=typeof row.started_at==='string'?Date.parse(row.started_at):NaN;
+  if(!ECLAT_COFFRETS.some(c=>c.id===id)||!Number.isFinite(date))continue;
+  lastStart.set(id,Math.max(lastStart.get(id)??0,date));
  }
  const newOne=ECLAT_COFFRETS.find(c=>!lastStart.has(c.id));
  if(newOne)return {coffret:newOne,reason:'À découvrir · pas encore commencé'};

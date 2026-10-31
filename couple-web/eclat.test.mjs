@@ -246,3 +246,19 @@ test('Éclat controls prevent duplicate save transitions while a note is saving'
  assert.match(loading,/data-action="eclat:choose:0" class="eclat-skip">Passer ce moment<\/button>/,
   'skip remains available if the optional note has not loaded');
 });
+
+test('Incomplete Éclat history cannot falsely mark an unplayed coffret as already explored',()=>{
+ const status={access:true,active:false};
+ const incomplete=[
+  null,false,{},'garbage',
+  {coffret_id:1,started_at:null},
+  {coffret_id:1,started_at:'not-a-date'},
+  {coffret_id:99,started_at:'2026-10-30T17:00:00Z'}
+ ];
+ const html=eclatHtml({status,history:incomplete});
+ assert.match(html,/Voir notre suggestion : Les cinq secrets/);
+ assert.match(html,/À découvrir · pas encore commencé/);
+ const valid=eclatHtml({status,history:[
+  ...incomplete,{coffret_id:1,started_at:'2026-10-30T17:00:00Z'}]});
+ assert.match(valid,/Voir notre suggestion : Le double jeu/);
+});
