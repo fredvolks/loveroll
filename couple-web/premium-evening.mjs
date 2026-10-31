@@ -199,7 +199,7 @@ export function premiumEveningHtml({
  '<div class="evening-toolbar">'+
   '<span class="evening-header-balance" aria-hidden="true"></span>'+
   ritualHeadingHtml(session?(ready?'ÉTAPE 2 · DÉFI DU SOIR':'ÉTAPE 1 · NOMBRE DE DÉFIS'):'NOTRE RITUEL DE LA SOIRÉE')+
-  (session?'<button type="button" class="evening-manage" data-action="evening-more" aria-label="Gérer notre soirée">⋯</button>':'<span aria-hidden="true"></span>')+'</div>'+
+  (session?'<button type="button" class="evening-manage" data-action="evening-more" aria-label="Gérer notre soirée"'+(rolling?' disabled aria-disabled="true"':'')+'>⋯</button>':'<span aria-hidden="true"></span>')+'</div>'+
  '<div class="evening-intro">'+
  '<h2 class="ritual-page-title">'+(session?(ready?'Votre défi du soir':'À toi de brasser ton dé'):'200 défis à vivre à deux')+'</h2>'+eveningEclatSwitcher('session')+'</div>'+invitationHtml+
  (session?
@@ -292,7 +292,7 @@ export function premiumEveningHtml({
       bt('evening-calendar','▦ Consulter notre calendrier','evening-finale-calendar')+
     '</div>'+
   '</div></section>')+
- (showMore&&session?'<aside class="evening-more-menu" aria-label="Options de la soirée">'+
+ (showMore&&session&&!rolling?'<aside class="evening-more-menu" aria-label="Options de la soirée">'+
   bt('evening-close-request','♡ Clore la soirée','evening-menu-close',!session)+
   bt('evening-calendar','▦ Calendrier','evening-menu-calendar')+'</aside>':'')+
  (confirmCancel&&session?'<aside class="evening-confirm" role="dialog" aria-modal="true" aria-label="Clore la soirée ?">'+
