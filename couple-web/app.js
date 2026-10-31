@@ -3574,6 +3574,9 @@ async function handle(action,element){
     if(eclatNoteDrafts.get(key)?.saving)throw Error('Enregistrement en cours…');
     eclatNoteDrafts.delete(key);render();return;
    }
+   // A second tap while a note is saving is not a user-visible error.
+   // Keep the original write running and preserve the edit field's focus.
+   if(eclatNoteDrafts.get(key)?.saving)return;
    const savedKey=await saveCurrentEclatNote(kind==='note-done'?true:kind==='note-edit'?false:undefined);
    if(!savedKey||state.tab!=='eclat'||
       savedKey!==eclatNoteKey(state.eclat,state.user?.id))return;
