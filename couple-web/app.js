@@ -2155,19 +2155,32 @@ setInterval(updateChallengeClock,500);
 // Referral balances are updated while this Settings page is being viewed.
 // Both partners share the same renewal credit ledger; the server remains
 // authoritative and no browser event can create referral rewards.
-let referralPolling=false;
+let referralPolling=null;
 setInterval(async()=>{
- if(referralPolling||!state.user||document.hidden||state.tab!=='settings'||
+ if(!state.user||document.hidden||state.tab!=='settings'||
     settingsOpenSection!=='parrainage'||!state.referral?.enabled)return;
- referralPolling=true;
+ // The old HTTP response may arrive AFTER logout, account replacement, or
+ // same-user reauthentication. Keep the polling lock tied to its Auth owner.
+ // A newer account must not be held hostage by an older stalled request.
+ const owner={userId:state.user.id,generation:authFeedbackGeneration};
+ if(referralPolling?.userId===owner.userId&&
+    referralPolling.generation===owner.generation)return;
+ referralPolling=owner;
+ const current=()=>referralPolling===owner&&
+  state.user?.id===owner.userId&&
+  authFeedbackGeneration===owner.generation&&
+  state.tab==='settings'&&settingsOpenSection==='parrainage'&&
+  !!state.referral?.enabled;
  try{
   const next=await rpc('love_my_referral');
-  if(state.tab==='settings'&&settingsOpenSection==='parrainage'&&
-     JSON.stringify(next)!==JSON.stringify(state.referral)){
+  if(current()&&JSON.stringify(next)!==JSON.stringify(state.referral)){
    state.referral=next;render();
   }
- }catch(error){console.warn('Actualisation des crédits différée',error?.message||'error');}
- finally{referralPolling=false;}
+ }catch(error){
+  if(current())console.warn('Actualisation des crédits différée',error?.message||'error');
+ }finally{
+  if(referralPolling===owner)referralPolling=null;
+ }
 },15000);
 function timerWidget(challenge,minutes){
  if(minutes===null||minutes===undefined||minutes===0)return '<p class="tiny-note">♡ Sans minuteur · l’activité se termine quand vous le souhaitez.</p>';
