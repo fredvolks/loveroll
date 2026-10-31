@@ -283,6 +283,19 @@ export function ownedSavedEveningTimerSnapshot(saved,cardId,userId,sessionId){
     typeof userId!=='string'||!userId||
     typeof sessionId!=='string'||!sessionId||
     !Number.isFinite(saved.durationMs)||saved.durationMs<=0)return null;
+ // Browser storage can outlive a crash or be edited by stale code. Do not
+ // interpret truthy strings as an automatic completion, or invalid clock
+ // numbers as an elapsed timer. Missing optional keys remain compatible
+ // with legacy user+card timers from older builds.
+ for(const key of ['running','notified','autoCompletePending']){
+  if(Object.hasOwn(saved,key)&&typeof saved[key]!=='boolean')return null;
+ }
+ for(const key of ['remainingMs','deadline']){
+  if(Object.hasOwn(saved,key)&&
+     (!Number.isFinite(saved[key])||saved[key]<0))return null;
+ }
+ if(Object.hasOwn(saved,'remainingMs')&&saved.remainingMs>saved.durationMs)
+  return null;
  const identity=['cardId','ownerUserId','ownerSessionId'];
  const present=identity.map(key=>Object.hasOwn(saved,key));
  if(present.some(Boolean)){
