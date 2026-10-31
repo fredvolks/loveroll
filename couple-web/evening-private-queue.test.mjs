@@ -2526,3 +2526,56 @@ test('LR-026: rejected invitation from a former account cannot display errors on
  assert.equal(f.clears(),0);
  assert.equal(f.busy(),false);
 });
+
+function signupLookupFixture(state,rpc){
+ const start=app.indexOf('async function resolveVerifiedSignup(');
+ const end=app.indexOf('async function autoAcceptPendingInvite(',start);
+ assert.ok(start>0&&end>start);
+ const stored=[];
+ const f=runInNewContext(app.slice(start,end)+';({resolveVerifiedSignup})',{
+  state,rpc,rememberVerifiedInvitation:id=>stored.push(id)
+ });
+ return {...f,stored};
+}
+
+test('LR-026: a stale server-discovered invitation cannot overwrite the next account',async()=>{
+ let release;
+ const pending=new Promise(resolve=>{release=resolve;});
+ const state={user:{id:'alice'}};
+ const f=signupLookupFixture(state,()=>pending);
+ const lookup=f.resolveVerifiedSignup(false);
+ state.user={id:'bob'};
+ release({status:'invitation',invitation_id:'alice-private-invitation'});
+ const result=await lookup;
+ assert.equal(result.status,'account_changed');
+ assert.equal(f.stored.length,0);
+});
+
+test('LR-026: a superseded reload cannot cache an outdated invitation for the same user',async()=>{
+ let release;
+ const pending=new Promise(resolve=>{release=resolve;});
+ const state={user:{id:'alice'}};
+ const f=signupLookupFixture(state,()=>pending);
+ const lookup=f.resolveVerifiedSignup(false,()=>false);
+ release({status:'invitation',invitation_id:'older-invitation'});
+ assert.equal((await lookup).status,'account_changed');
+ assert.equal(f.stored.length,0);
+});
+
+test('LR-026: current signup invitation still records the verified server reference',async()=>{
+ const state={user:{id:'alice'}};
+ const f=signupLookupFixture(state,async()=>({status:'invitation',invitation_id:'valid-id'}));
+ const result=await f.resolveVerifiedSignup(false,()=>true);
+ assert.equal(result.status,'invitation');
+ assert.equal(f.stored.length,1);
+ assert.equal(f.stored[0],'valid-id');
+});
+
+test('LR-026: signup actions do not create a couple after an account_changed result',()=>{
+ assert.match(app,/const resolution=await resolveVerifiedSignup\(false,current\)/);
+ assert.match(app,/const result=await resolveVerifiedSignup\(true\);[\s\S]{0,140}result\?\.status==='account_changed'/);
+ const prepare=app.slice(app.indexOf("if(verb==='prepare-cards'){"),app.indexOf("if(verb==='create-couple'){"));
+ const create=app.slice(app.indexOf("if(verb==='create-couple'){"),app.indexOf("if(verb==='invite'){"));
+ assert.match(prepare,/if\(decision\?\.status==='account_changed'\)return;/);
+ assert.match(create,/if\(decision\?\.status==='account_changed'\)return;/);
+});
