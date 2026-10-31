@@ -1719,7 +1719,7 @@ function eclatReadFixture(state,{rpc=async()=>null,loadEclatHistory=async()=>[]}
  assert.ok(begin>=0&&end>begin,'production Éclat read implementation must be tested');
  return runInNewContext(app.slice(begin,end)+
   ';({refreshEclatHistory,refreshEclatStatus})',{
-   state,rpc,loadEclatHistory,ownsCoupleAsyncRead,client:{},
+   state,authFeedbackGeneration:1,rpc,loadEclatHistory,ownsCoupleAsyncRead,client:{},
    isSharedCoupleReady:(couple,members)=>!!couple&&members?.length===2,console
   });
 }
@@ -1778,7 +1778,7 @@ test('LR-026: delayed Éclat status cannot replace a different account or render
  let tick,renderCount=0,releasePoll;
  const pollPending=new Promise(resolve=>{releasePoll=resolve;});
  runInNewContext(app.slice(start,end)+app.slice(pollBegin,pollEnd+8),{
-  state,ownsCoupleAsyncRead,console,
+  state,authFeedbackGeneration:1,ownsCoupleAsyncRead,console,
   isSharedCoupleReady:(c,m)=>!!c&&m?.length===2,
   rpc:()=>pollPending,loadEclatHistory:async()=>[],
   document:{hidden:false},setInterval:fn=>{tick=fn;},
@@ -1799,7 +1799,7 @@ test('LR-026: mutating Éclat responses belong to the initiating account, view a
  const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',eclat:{id:'before'}};
  const scope=runInNewContext(app.slice(start,end)+
   ';({beginEclatAction,ownsEclatAction,applyEclatActionResult})',{
-   state,ownsCoupleAsyncRead,console,
+   state,authFeedbackGeneration:1,ownsCoupleAsyncRead,console,
    isSharedCoupleReady:()=>true,rpc:async()=>null,loadEclatHistory:async()=>[]
   });
  const old=scope.beginEclatAction();
