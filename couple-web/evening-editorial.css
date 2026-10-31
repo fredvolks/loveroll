@@ -233,3 +233,20 @@ main#app.loveroll-editorial{--nav-space:66px;box-sizing:border-box;width:100%;ma
  #app .lr-refusal-buttons{display:grid;grid-template-columns:minmax(0,1fr)}
 }
 
+
+/* Compact duration dropdown: preserves the two original action buttons and
+   fits inside the existing weekly-caption line on small phone viewports. */
+#app .evening-finale-weekly{display:flex;align-items:center;justify-content:center;gap:7px;min-width:0;white-space:nowrap;}
+#app .evening-length-compact{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-width:0;font:500 10px/1.2 system-ui,sans-serif;letter-spacing:0;white-space:nowrap;}
+#app .evening-length-compact>span{color:var(--ritual-muted);}
+#app .evening-length-compact select{box-sizing:border-box;min-height:30px;width:80px;max-width:100%;padding:4px 3px;border:1px solid var(--ritual-border);border-radius:9px;background:var(--ritual-card);color:var(--ritual-text);font:600 11px/1.2 system-ui,sans-serif;}
+#app .evening-length-compact select:focus-visible{outline:3px solid var(--ritual-rose);outline-offset:2px;}
+@media(max-width:380px){
+ #app .evening-finale-weekly{gap:4px;font-size:9px;letter-spacing:0;}
+ #app .evening-length-compact{gap:3px;font-size:9px;}
+ #app .evening-length-compact select{width:69px;min-height:28px;font-size:10px;}
+}
+@media(max-height:660px){
+ #app .is-finale .evening-aftercare{gap:4px;padding:6px;}
+ #app .is-finale .evening-finale-tiles>div{min-height:45px;padding:4px 3px;}
+}
