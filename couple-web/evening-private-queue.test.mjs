@@ -1988,17 +1988,25 @@ test('LR-026: a masked Éclat audio tap never repaints protected content',async(
  assert.equal(state.eclatMusic,false);
 });
 
+// Exercise the production Auth/RLS rejection boundary alongside note helpers.
+// Both VM fixtures must see the same handler as the actual LoveRoll app.
+const privateEclatDenialStart=app.indexOf('function applyEclatStatus(value){');
+const privateEclatDenialEnd=app.indexOf('// Supabase may serialize the same status fields',privateEclatDenialStart);
+assert.ok(privateEclatDenialStart>0&&privateEclatDenialEnd>privateEclatDenialStart);
+const privateEclatDenialSource='let latestEclatHistoryRead=null,latestEclatAudioOwner=null;\\n'+
+ app.slice(privateEclatDenialStart,privateEclatDenialEnd);
+
 function privateEclatSaveFixture(state,saveEclatNote){
  if(!state.members)state.members=[{id:'alice'},{id:'bob'}];
  const start=app.indexOf('const eclatNoteDrafts=new Map();');
  const end=app.indexOf('// Every Éclat response is tied',start);
  assert.ok(start>=0&&end>start,'real Éclat private-note helpers must be available');
  const labels=[];
- const scope=runInNewContext(app.slice(start,end)+
+ const scope=runInNewContext(app.slice(start,end)+'\n'+privateEclatDenialSource+
   ';({saveCurrentEclatNote,drafts:eclatNoteDrafts,setAuthGeneration:value=>{authFeedbackGeneration=value;}})',{
    state,authFeedbackGeneration:1,saveEclatNote,ownsCoupleAsyncRead,
    isSharedCoupleReady:(couple,members)=>!!couple&&Array.isArray(members)&&members.length===2,
-   console,client:{},
+   console,client:{},eclatAudio:{stop:()=>{}},render:()=>{},
    eclatNoteKey:(status,userId)=>status?.active&&status.session_id&&userId?
     [userId,status.session_id,status.chapter_index].join(':'):null,
    root:{querySelector:()=>({set textContent(value){labels.push(value);}})}
@@ -2085,11 +2093,11 @@ function privateEclatReadFixture(state,loadEclatNote){
  const end=app.indexOf('// Every Éclat response is tied',start);
  assert.ok(start>0&&end>start);
  let paints=0;
- const scope=runInNewContext(app.slice(start,end)+
+ const scope=runInNewContext(app.slice(start,end)+'\n'+privateEclatDenialSource+
   ';({eclatNoteState,drafts:eclatNoteDrafts,setAuthGeneration:value=>{authFeedbackGeneration=value;}})',{
   state,authFeedbackGeneration:1,loadEclatNote,ownsCoupleAsyncRead,
   isSharedCoupleReady:(couple,members)=>!!couple&&Array.isArray(members)&&members.length===2,
-  console,client:{},
+  console,client:{},eclatAudio:{stop:()=>{}},
   eclatNoteKey:(status,userId)=>status?.active&&status.session_id&&userId?
    [userId,status.session_id,status.chapter_index].join(':'):null,
   render:()=>paints++
