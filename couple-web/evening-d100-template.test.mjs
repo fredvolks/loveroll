@@ -38,6 +38,24 @@ test('D100 locks every category during a live roll and restores choices after it
  assert.match(idle,/<div class="evening-play-state">♥ C’est ton tour !<\/div>/);
  assert.match(idle,/data-action="new-challenge"/);
 });
+test('A server-complete turn cannot expose finish while its official die still spins',()=>{
+ const complete={...ready,category:'SENSUEL',turn:{
+  ...ready.turn,finished:true,drawsFinished:true,remaining:{a:0,b:0}
+ }};
+ const settled=premiumEveningHtml({...complete,rolling:false});
+ assert.match(settled,/data-action="finish-session"/);
+ const pending=premiumEveningHtml({...complete,rolling:true,rollingKind:'new-challenge'});
+ assert.doesNotMatch(pending,/data-action="finish-session"/,
+  'No live finish action until the server-confirmed face has settled');
+ assert.doesNotMatch(pending,/data-action="new-challenge"/);
+ assert.match(pending,/<div class="evening-play-state">🎲 Brassage en cours…<\/div>/);
+ assert.match(pending,/class="evening-primary-status" role="status">Brassage en cours…<\/p>/);
+ const allDrawn=premiumEveningHtml({...complete,turn:{...complete.turn,
+  finished:false},rolling:true,rollingKind:'new-challenge'});
+ assert.doesNotMatch(allDrawn,/data-action="finish-session"|data-action="new-challenge"/);
+ assert.match(allDrawn,/Brassage en cours/);
+});
+
 test('Information uses the actual configured preference and preserves calendar and closure',()=>{
  const info=eveningPlayInfoHtml(74);
  assert.match(info,/74 % pour la catégorie choisie et 26 % pour l’autre/);
