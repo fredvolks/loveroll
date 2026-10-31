@@ -277,7 +277,7 @@ test('accepted invitation automatically joins the existing duo after profile com
   tab:'invitation',showAuth:true
  };
  const ctx={
-  state,sessionStorage:{},inviteAcceptanceBusy:false,
+  state,sessionStorage:{},inviteAcceptanceBusy:false,authFeedbackGeneration:0,
   pendingInviteReference:()=>({kind:'id',value:'72aa640b-2644-4d0d-bcf7-575587d27f31'}),
   verifiedLoveEmail:()=>true,
   rpc:async(name,args)=>{calls.push({name,args});return 'existing-duo';},
@@ -294,6 +294,31 @@ test('accepted invitation automatically joins the existing duo after profile com
  assert.equal(state.inviteError,null);
 });
 
+test('same-account relogin cannot finalize stale acceptance after RPC response',async()=>{
+ let release;
+ const pending=new Promise(resolve=>{release=resolve;});
+ const state={user:{id:'verified-recipient'},profile:{birthday_md:'10-18'},
+  inviteAccepted:true,inviteAttemptKey:null,passwordRecovery:false,tab:'settings'};
+ let clears=0;
+ const ctx={
+  state,authFeedbackGeneration:0,sessionStorage:{},inviteAcceptanceBusy:false,
+  pendingInviteReference:()=>({kind:'id',value:'72aa640b-2644-4d0d-bcf7-575587d27f31'}),
+  verifiedLoveEmail:()=>true,rpc:()=>pending,
+  hashToken:async()=>{throw Error('UUID must not be hashed');},
+  finishInviteReference:()=>{clears++;},
+  invitationAuthMessage:()=> 'Invitation rejected'
+ };
+ const fn=vm.runInNewContext(autoJoin+';autoAcceptPendingInvite',ctx);
+ const accepting=fn();
+ ctx.authFeedbackGeneration++;
+ release('old-session-result');
+ await accepting;
+ assert.equal(clears,0);
+ assert.equal(state.tab,'settings');
+ assert.notEqual(state.inviteWelcome,true);
+ assert.equal(state.inviteError,null);
+});
+
 test('invitation cannot pair before birth date or email verification',async()=>{
  const calls=[];
  const state={
@@ -301,7 +326,7 @@ test('invitation cannot pair before birth date or email verification',async()=>{
   inviteAttemptKey:null,passwordRecovery:false
  };
  const ctx={
-  state,sessionStorage:{},inviteAcceptanceBusy:false,
+  state,sessionStorage:{},inviteAcceptanceBusy:false,authFeedbackGeneration:0,
   pendingInviteReference:()=>({kind:'id',value:'72aa640b-2644-4d0d-bcf7-575587d27f31'}),
   verifiedLoveEmail:()=>false,
   rpc:async name=>calls.push(name),
