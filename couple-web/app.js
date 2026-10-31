@@ -3613,12 +3613,16 @@ async function handle(action,element){
    if(!Number.isInteger(num)||num<0||num>3)throw Error('Choix invalide');
    const draft=eclatNoteDrafts.get(eclatNoteKey(state.eclat,state.user?.id));
    if(num>0&&!draft?.moment_done)throw Error('Vivez d’abord le moment ensemble, puis confirme que tu as terminé.');
-   const owner=beginEclatAction();if(!owner)return;
+   // Another tap during the private save must not supersede the original
+   // choice's action owner. Reserve the mutating action only AFTER the
+   // private note has been saved and the scene has been revalidated.
+   if(draft?.saving)return;
    if(draft&&!draft.loading&&!draft.error){
     const saved=await saveCurrentEclatNote();
     if(!saved)return; // A new account/chapter must not receive this choice.
    }
-   // A slow private-note save must not authorize a choice after access changes.
+   if(!canPlayEclat())return;
+   const owner=beginEclatAction();if(!owner)return;
    if(!ownsEclatAction(owner)||!canPlayEclat())return;
    const result=await runEclatMutation(owner,'love_eclat_choose',{p_choice:num});
    if(!result.applied||!applyEclatActionResult(result.value,owner))return;
