@@ -1,6 +1,16 @@
 # LoveRoll — SUIVI OFFICIEL DU PROMPT MAÎTRE
 
 
+### LR-027 — liste privée verrouillée pendant un don et récupération Soirée (31 octobre 2026)
+
+- **Livraison sur [PR #176](https://github.com/fredvolks/loveroll/pull/176)** : pendant un don en attente pour le même compte, duo et soirée, la liste privée **Mes défis** annonce « Don en cours de confirmation… » avec `role="status"` et `aria-live="polite"`. Les commandes Commencer, Défi réalisé, Passer, Refuser, choix de refus, Annuler le refus et favoris sont désactivées pour éviter une opération contre les anciens compteurs, tout en conservant leur visibilité. Les contrôles redeviennent utilisables à la fin du don.
+- **Code** : `couple-web/app.js`, commit `53c3a1a`. Le garde `isActiveEveningGiftPending()` venait du lot LR-027 précédent et bloque déjà les actions serveur correspondantes : le rendu est désormais cohérent avec la protection.
+- **Régression CI corrigée** : `couple-web/soiree-surprise-recovery.test.mjs`, commit `90383b3` : l'assertion trop ancienne `giftCount,rolling` ne reconnaissait pas l'ajout de `giftPending` et `redrawPending` ; les trois arguments sont vérifiés séparément.
+- **Tests** : `couple-web/evening-d100-template.test.mjs`, commits `b35e8ea`, `f697710`, `ed3819c`, adapte le rendu Passer/Refuser et vérifie que les vraies commandes privées sont désactivées pendant un don. `couple-web/evening-instructions.test.mjs`, commit `eda61a8`, reconnaît le message exact du défi réalisé pendant un don. **Six régressions ciblées vérifiées en V8** sur les fichiers GitHub actuels, toutes réussies. **Cinq analyses de syntaxe JavaScript réussies.** Le statut de GitHub Actions au commit final, les essais sur appareils et le staging Supabase Auth/RLS réel restent à vérifier.
+- **Mode MEDIUM demandé** : appels directs à Atelier (fiches LoveRoll, liste des experts, Architecture et Qualité) effectués, mais tous en erreur interne. **Non synchronisé avec Atelier**, BOSS/agents non consultables pour cette modification. Pas de fusion, aucun SQL de production ni déploiement.
+
+
+
 ### LR-027 — UI honnête pendant le don et corrections CI des actions Soirée (31 octobre 2026)
 
 - Branche `feat/lr026-server-variety-after-category-20261029`, [PR #176](https://github.com/fredvolks/loveroll/pull/176), encore **brouillon** et non fusionnée.
