@@ -582,3 +582,57 @@ test('LR-026: foreground offline error keeps authorized Éclat state for a retry
  assert.deepEqual(h.state.eclatHistory,[{id:'valid-photo'}]);
  assert.deepEqual(h.renders,[]);
 });
+
+test('LR-026: a 403 access denial clears private Éclat state',async()=>{
+ const h=harness();
+ h.state.eclatHistory=[{id:'private-gallery'}];
+ h.state.eclatMusic=true;
+ const pending=h.tick();
+ h.requests[0].reject({status:403,code:'42501'});
+ await pending;
+ assert.equal(h.state.eclat,null);
+ assert.deepEqual(Array.from(h.state.eclatHistory),[]);
+ assert.equal(h.state.eclatMusic,false);
+ assert.equal(h.audioStops(),1);
+ assert.deepEqual(h.renders,[undefined]);
+});
+
+test('LR-026: string HTTP authorization status is also treated as a denial',async()=>{
+ for(const status of ['401','403']){
+  const h=harness();
+  h.state.eclatHistory=[{id:'private-gallery'}];
+  const pending=h.tick();
+  h.requests[0].reject({status});
+  await pending;
+  assert.equal(h.state.eclat,null);
+  assert.deepEqual(Array.from(h.state.eclatHistory),[]);
+  assert.deepEqual(h.renders,[undefined]);
+ }
+});
+
+test('LR-026: obsolete 403 denial does not clear the replacement login',async()=>{
+ const h=harness();
+ const old=h.tick();
+ h.runtime.authFeedbackGeneration=2;
+ const next=h.tick();
+ h.requests[1].resolve({id:'new-session',access:true});
+ await next;
+ h.state.eclatHistory=[{id:'new-gallery'}];
+ h.requests[0].reject({status:403});
+ await old;
+ assert.equal(h.state.eclat.id,'new-session');
+ assert.deepEqual(h.state.eclatHistory,[{id:'new-gallery'}]);
+ assert.deepEqual(h.renders,['new-session']);
+});
+
+test('LR-026: foreground 403 denial also clears private Éclat state',async()=>{
+ const h=harness();
+ h.state.eclatHistory=[{id:'private-gallery'}];
+ const pending=h.runtime.refreshEclatStatus();
+ const rejection=Object.assign(new Error('access denied'),{status:403});
+ h.requests[0].reject(rejection);
+ await assert.rejects(pending,/access denied/);
+ assert.equal(h.state.eclat,null);
+ assert.deepEqual(Array.from(h.state.eclatHistory),[]);
+ assert.deepEqual(h.renders,[undefined]);
+});
