@@ -342,3 +342,12 @@ main#app.loveroll-editorial{--nav-space:66px;box-sizing:border-box;width:100%;ma
  #app.loveroll-editorial .is-finale .evening-aftercare{padding:0;gap:1px;}
  #app.loveroll-editorial .is-finale .evening-finale-actions{gap:2px;}
 }
+
+/* Completed night on 393–430px phones: the two member statuses remain
+   visible, but their generous vertical padding can obscure Calendar by a
+   few pixels. Preserve the actual button height and D100 hero artwork. */
+@media(min-width:381px) and (max-width:767px){
+ #app .is-finale .evening-finale-status{gap:0;}
+ #app .is-finale .evening-finale-person{padding:2px;}
+ #app .is-finale .evening-finale-progress{gap:4px;}
+}
