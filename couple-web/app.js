@@ -99,6 +99,8 @@ captureReferralFromUrl();
 const requestedSettingsSection=launchParams.get('section')||'';
 let settingsOpenSection=requestedSettingsSection||'';
 let notificationFeedback=null;
+// Only the newest month request may repaint this account's private calendar.
+let latestCalendarPassQuotaRequest=null;
 let worldGpsDraft=null;
 let worldFx=null,worldFxPending=null,worldFxFailed=null;
 let geoFetchActive=null,geoFetchSeen=new Set();
@@ -3988,19 +3990,43 @@ async function handle(action,element){
   state.tab='evening-calendar';render();return;
  }
  if(verb==='evening-month-prev'||verb==='evening-month-next'){
+  if(!state.user?.id||!state.coupleId||state.tab!=='evening-calendar')return;
+  const owner={userId:state.user.id,coupleId:state.coupleId,
+   generation:authFeedbackGeneration};
   const d=new Date((state.eveningCalendarMonth||month())+'-15T12:00:00Z');
   d.setUTCMonth(d.getUTCMonth()+(verb==='evening-month-next'?1:-1));
-  state.eveningCalendarMonth=d.toISOString().slice(0,7);
-  state.eveningCalendarDate=state.eveningCalendarMonth+'-01';
-  state.calendarPassQuota=await rpc('love_calendar_pass_quota',{
-   p_couple:state.coupleId,p_month:state.eveningCalendarMonth
-  });
-  state.calendarPassMonth=state.eveningCalendarMonth;
-  render();return;
+  const nextMonth=d.toISOString().slice(0,7),request={};
+  latestCalendarPassQuotaRequest=request;
+  state.eveningCalendarMonth=nextMonth;
+  state.eveningCalendarDate=nextMonth+'-01';
+  // The month is usable immediately, even if optional pass statistics fail.
+  render();
+  const current=()=>latestCalendarPassQuotaRequest===request&&
+   state.user?.id===owner.userId&&state.coupleId===owner.coupleId&&
+   authFeedbackGeneration===owner.generation&&
+   state.tab==='evening-calendar'&&state.eveningCalendarMonth===nextMonth;
+  try{
+   const quota=await rpc('love_calendar_pass_quota',{
+    p_couple:owner.coupleId,p_month:nextMonth
+   });
+   if(!current())return;
+   state.calendarPassQuota=Array.isArray(quota)?quota:[];
+   state.calendarPassMonth=nextMonth;
+   render();
+  }catch(error){
+   if(!current())return;
+   state.calendarPassQuota=[];state.calendarPassMonth=null;
+   console.warn('Statistiques des passes du calendrier indisponibles',error);
+   notify('Calendrier affiché. Les statistiques des passes sont temporairement indisponibles.');
+  }
+  return;
  }
  if(verb==='evening-date'){
-  const date=parts[0];
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||date.slice(0,7)!==(state.eveningCalendarMonth||month()))
+  const date=parts[0],calendarMonth=state.eveningCalendarMonth||month();
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||
+     date!==eveningCalendarInitialDate({
+      sessions:[],month:calendarMonth,selectedDate:date
+     }))
    throw Error('Date de calendrier invalide.');
   state.eveningCalendarDate=date;render();return;
  }
