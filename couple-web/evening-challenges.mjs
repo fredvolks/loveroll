@@ -271,7 +271,10 @@ export function availableEveningCategories(preferred){
  return EVENING_CATEGORIES.map(category=>({category,weight:category===preferred?88:12}));
 }
 export function formatCountdown(milliseconds){
- const seconds=Math.max(0,Math.ceil(milliseconds/1000));
+ // An incomplete saved timer or a malformed server value must never display
+ // "NaN:NaN" or "Infinity:NaN" on the challenge card.
+ const seconds=Number.isFinite(milliseconds)?
+  Math.max(0,Math.ceil(milliseconds/1000)):0;
  return String(Math.floor(seconds/60)).padStart(2,'0')+':'+String(seconds%60).padStart(2,'0');
 }
 
