@@ -186,7 +186,7 @@ main#app.loveroll-editorial{--nav-space:66px;box-sizing:border-box;width:100%;ma
 @media(min-width:768px) and (orientation:portrait){
  #app .evening-premium-view.is-finale{grid-template-columns:minmax(0,1fr);}
  #app .evening-empty{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;gap:12px;}
- #app .evening-aftercare{align-self:stretch;padding:18px;gap:12px;}
+ #app .evening-aftercare{align-self:stretch;padding:14px;gap:8px;}
  #app .evening-finale-dice>.love3d{width:min(68%,40dvh,440px);}
 }
 @media(max-height:720px){
