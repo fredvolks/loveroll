@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {runInNewContext} from 'node:vm';
 import {EVENING_FAVORITES_LIMIT,eveningFavoriteId,readEveningFavorites,toggleEveningFavorite} from './evening-favorites.mjs';
 
 const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
@@ -74,8 +75,34 @@ test('Favorite interaction verifies personal challenge ownership before saving',
  const action=app.slice(begin,end);
  assert.match(action,/ownEveningChallenges\(state\.challenges,state\.user\?\.id,state\.session\?\.id\)/);
  assert.match(action,/if\(!item\|\|!state\.coupleId\|\|!state\.user\?\.id\)/);
- assert.match(action,/toggleEveningFavorite\(state\.user\.id,state\.coupleId,item,localStorage\)/);
+ assert.match(action,/toggleEveningFavorite\(state\.user\.id,state\.coupleId,item\)/);
  assert.match(app,/eveningFavoriteId\(selected\)/);
- assert.match(app,/readEveningFavorites\(uid,state\.coupleId,localStorage\)/);
+ assert.match(app,/readEveningFavorites\(uid,state\.coupleId\)/);
  assert.match(app,/favoriteKeys\.length>=EVENING_FAVORITES_LIMIT/);
+});
+
+test('Blocked storage getter cannot crash a personal D100 favorite or expose another account',()=>{
+ const source=readFileSync(new URL('./evening-favorites.mjs',import.meta.url),'utf8')
+  .replace(/^export /gm,'')+'\n({readEveningFavorites,toggleEveningFavorite});';
+ const browser={};
+ Object.defineProperty(browser,'localStorage',{get(){throw Error('SecurityError');}});
+ const api=runInNewContext(source,{globalThis:browser});
+ assert.deepEqual(Array.from(api.readEveningFavorites('fred','couple-a')),[]);
+ const result=api.toggleEveningFavorite('fred','couple-a',card(7));
+ assert.equal(result.ok,false);
+ assert.equal(result.reason,'storage');
+ assert.deepEqual(Array.from(result.favorites),[]);
+});
+
+test('A failed favorite read cannot overwrite an existing five-card list',()=>{
+ let writes=0;
+ const halfBlocked={getItem:()=>{throw Error('temporary read failure');},
+  setItem:()=>{writes++;}};
+ const outcome=toggleEveningFavorite('fred','couple-a',card(9),halfBlocked);
+ assert.equal(outcome.ok,false);
+ assert.equal(outcome.reason,'storage');
+ assert.equal(writes,0,'a failed read must never silently replace older favorites');
+ const inaccessible={setItem:()=>{writes++;}};
+ assert.equal(toggleEveningFavorite('fred','couple-a',card(1),inaccessible).reason,'storage');
+ assert.equal(writes,0);
 });
