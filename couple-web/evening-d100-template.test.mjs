@@ -174,7 +174,7 @@ test("Delayed gift approval cannot change another player's evening",async()=>{
  changedDuringRpc.server.resolve(null);await delayed;
  assert.equal(changedDuringRpc.calls.writes.length,1);
  assert.equal(changedDuringRpc.calls.refresh,0,
-  'The former user's gift receipt cannot replace a new account view');
+  "The former user\'s gift receipt cannot replace a new account view");
  assert.equal(changedDuringRpc.calls.notifications,0);
 });
 
