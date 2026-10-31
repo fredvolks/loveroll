@@ -2780,3 +2780,53 @@ test('LR-026: current logout error must still be reported to the same user',asyn
  assert.equal(state.user.id,'alice');
  assert.equal(f.calls.clears,0);
 });
+
+test('LR-026: late successful signout cannot wipe the newly signed-in account',async()=>{
+ let release;
+ const pending=new Promise(resolve=>{release=resolve;});
+ const state={user:{id:'alice'},coupleId:'old-duo',channel:null};
+ const f=ownedSignoutFixture(state,{signOut:()=>pending});
+ const signingOut=f.signOutCurrentAccount();
+ state.user={id:'bob'};state.coupleId='new-duo';
+ release({error:null});
+ assert.equal(await signingOut,false);
+ assert.equal(state.user.id,'bob');
+ assert.equal(state.coupleId,'new-duo');
+ assert.equal(f.calls.clears,0);
+ assert.equal(f.calls.paints,0);
+});
+
+test('LR-026: push notification cleanup failure does not prevent current owner signout',async()=>{
+ const state={user:{id:'alice'},coupleId:'old-duo'};
+ const f=ownedSignoutFixture(state,{
+  token:'token-alice',
+  disablePush:async()=>{throw Error('FCM offline');}
+ });
+ assert.equal(await f.signOutCurrentAccount(),true);
+ assert.equal(f.calls.push[0],'alice');
+ assert.equal(f.calls.signouts,1);
+ assert.equal(state.user,null);
+});
+
+test('LR-026: active Realtime channel cleanup failures remain visible to its owner',async()=>{
+ const state={user:{id:'alice'},channel:{id:'old'}};
+ const f=ownedSignoutFixture(state,{
+  removeChannel:async()=>{throw Error('Realtime cleanup failed');}
+ });
+ await assert.rejects(f.signOutCurrentAccount(),/Realtime cleanup failed/);
+ assert.equal(state.user.id,'alice');
+ assert.equal(f.calls.signouts,0);
+ assert.equal(f.calls.clears,0);
+});
+
+test('LR-026: explicit signout and Supabase signed-out event both use the safe state reset',()=>{
+ const start=app.indexOf("if(verb==='signout'){");
+ const end=app.indexOf("if(verb==='complete-registration'){",start);
+ assert.ok(start>0&&end>start);
+ assert.match(app.slice(start,end),/await signOutCurrentAccount\(\)/);
+ const auth=app.slice(app.indexOf("client.auth.onAuthStateChange("),
+  app.indexOf('// Version probe bypasses WebView'));
+ assert.match(auth,/if\(event==='SIGNED_OUT'\)/);
+ assert.match(auth,/adoptAuthenticatedIdentity\(null\)/);
+ assert.match(auth,/state\.showAuth=false;state\.passwordRecovery=false/);
+});
