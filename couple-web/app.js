@@ -4389,9 +4389,9 @@ async function handle(action,element){
   // A stale start tap must not interrupt or remount a live D6/D100 scene.
   if(state.diceStatus)return;
   if(isEveningCardCompleting(parts[0]))return;
-  // A D100 decision has priority over stale start taps on the same card.
-  if(isActiveEveningRedrawPending()&&
-     state.redrawBusyContext?.challengeId===parts[0])return;
+  // A repick refreshes the entire recipient-only queue. Starting even a
+  // DIFFERENT private card before that confirmation can race the RLS view.
+  if(isActiveEveningRedrawPending())return;
   if(isSameEveningResponseContext(state,state.eveningStartContext))return;
   // Timer lecture and Commencer must not both accept this same D100 card.
   if(state.timerStartContext?.challengeId===parts[0]&&
