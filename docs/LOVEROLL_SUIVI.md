@@ -26,6 +26,14 @@
 - Régressions ajoutées dans `couple-web/evening-private-queue.test.mjs` : note modifiée en vol, indice modifié en vol, re-sauvegarde explicite, refus de « Réessayer » pendant une écriture, réessai permis une fois celle-ci terminée. Les scénarios ciblés ont été exécutés dans un moteur JavaScript isolé avec succès; **cela ne remplace pas la CI Node complète ni les tests Auth/RLS/physiques**.
 - Commits de code et tests : `fbfe632`, `283adbe`, `69fa4bc`, `d4ad0c7`. Aucune migration SQL ni publication de production autorisée par ces changements; PR #176 demeure en brouillon.
 
+### LR-026 — brouillons privés Éclat vides et sauvegardes en cours (30 octobre 2026)
+
+- Revue ciblée avec les méthodes Atelier **Architecture, Qualité/tests et Sécurité**, profondeur Medium. LoveRoll est absent des fiches d'applications Atelier reliées à la session : cette intervention GitHub n'est **pas synchronisée** en mission Atelier, aucun agent autonome séparé n'est revendiqué.
+- **Défaut corrigé :** la vérification précédente des brouillons reposait sur la présence de texte dans **tous** les brouillons Éclat du navigateur. Effacer complètement une ancienne note ne déclenchait aucun avertissement, alors que les brouillons d'autres chapitres pouvaient bloquer des écrans indépendants.
+- Nouveau contrat `hasPendingEclatNote` dans `couple-web/evening-private-queue.mjs` : vérifier **uniquement le brouillon actif** (compte + séance + chapitre, onglet Éclat) et ses indicateurs `dirty` ou `saving`. Dans `app.js`, les champs privés sont marqués modifiés même lorsqu'ils deviennent vides; un moment terminé sans texte est également une modification à sauvegarder. Une confirmation serveur rétablit le statut propre; un échec conserve les changements à enregistrer.
+- Quatre tests de non-régression ajoutés dans `couple-web/evening-private-queue.test.mjs` : suppression totale, brouillons d'autres comptes/chapitres, écriture en cours, échec hors ligne du moment terminé sans texte. Neuf contrôles ciblés ont été exécutés avec un moteur JavaScript V8 et réussis (dont syntaxe des fichiers et contrats de sauvegarde); **la suite Node complète et les tests sur navigateur, comptes Auth Supabase réels et appareils physiques ne sont pas validés par ces contrôles**.
+- Commits : `fada8a1`, `9e8b2c4`, `d269512`, `f7424ca`. La PR #176 demeure en brouillon; **aucune fusion, migration ni publication en production**.
+
 ## Priorité immédiate ordonnée — audit global client/design/ergonomie/responsive (28 octobre 2026)
 
 **LR-AUDIT-GLOBAL-20261028 — EN COURS, intégration progressive et preuves CI.** Le propriétaire demande que l'audit de **toutes les pages, sous-pages, états et boutons**, ses corrections et les protections permanentes passent avant les nouveaux développements. Le bloc en tête du [prompt maître](LOVEROLL_MASTER_PROMPT.md), le [démarrage Work](LOVEROLL_WORK_START.md) et le [protocole complet](LOVEROLL_UX_UI_AUTONOME_WORKFLOW.md) décrivent ce mandat.
