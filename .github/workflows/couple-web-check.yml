@@ -58,6 +58,7 @@ jobs:
           node --check couple-web/referral-program.mjs
           node --test couple-web/referral-program.test.mjs
           node --test couple-web/referral-polling-ownership.test.mjs
+          node --test couple-web/advent-date-polling-ownership.test.mjs
           node --check couple-web/world-preferences.mjs
           node --check couple-web/currency-exchange.mjs
           node --test couple-web/world-preferences.test.mjs
