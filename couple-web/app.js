@@ -1781,6 +1781,16 @@ async function saveCurrentEclatNote(momentDone){
    button.disabled=saving;
    button.textContent=saving?'Enregistrement…':'Enregistrer ma note';
   }
+  // Keep the editor mounted and editable, but visibly prevent any
+  // chapter transition from racing the note currently being saved.
+  const phaseActions=new Set(['eclat:note-play','eclat:note-done',
+   'eclat:note-edit','eclat:choose:0']);
+  for(const action of root.querySelectorAll?.('[data-action]')||[]){
+   if(!phaseActions.has(action.dataset?.action))continue;
+   action.disabled=saving;
+   if(saving)action.setAttribute('aria-busy','true');
+   else action.removeAttribute('aria-busy');
+  }
   if(message!==null){
    const label=root.querySelector('[data-eclat-note-status]');
    if(label)label.textContent=message;
