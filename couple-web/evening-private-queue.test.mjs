@@ -1840,7 +1840,7 @@ test('LR-026: every Éclat mutation checks ownership before applying its respons
   assert.match(branch,/if\(!applyEclatActionResult\(value,owner\)\)return;/,
    action+' may apply only the request owner response');
  }
- assert.match(app,/if\(!yes\|\|!ownsEclatAction\(owner\)\)return;/,
+ assert.match(app,/if\(!yes\|\|!ownsEclatAction\(owner\)\|\|!canPlayEclat\(\)\)return;/,
   'confirming Quitter under an old account must never send a mutation');
 });
 
