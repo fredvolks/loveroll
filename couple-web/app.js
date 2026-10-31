@@ -4113,7 +4113,9 @@ async function handle(action,element){
   return;
  }
  if(verb==='evening-more'){
-  if(state.tab==='session'&&(state.diceStatus||isActiveEveningRedrawPending()))return;
+  // Avoid toggling a stale management dialog while a gift owns the turn.
+  if(state.tab==='session'&&(state.diceStatus||isActiveEveningRedrawPending()||
+     isActiveEveningGiftPending()))return;
   state.eveningMore=!state.eveningMore;render();return;
  }
  if(verb==='evening-calendar'){
