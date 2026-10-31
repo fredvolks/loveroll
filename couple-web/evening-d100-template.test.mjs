@@ -91,7 +91,7 @@ test('Stale Soirée actions cannot interrupt official dice state',async()=>{
     user:{id:'alice'},showEveningChallenges:false,confirmCancel:false,tab:'session'
    };
    const run=runInNewContext('(async verb=>{'+block+'})',{
-    state,
+    state,isActiveEveningGiftPending:()=>false,
     render:()=>calls.push('render'),
     rpc:(...args)=>{calls.push(args[0]);return Promise.resolve();},
     refreshAndShow:()=>{calls.push('refresh');return Promise.resolve();},
@@ -205,6 +205,8 @@ test('Soirée management and calendar cannot interrupt an official D100 animatio
    confirmCancel:false,session:{started_at:'2026-10-31T19:00:00Z'}};
   const run=runInNewContext('(async verb=>{'+route+'})',{
    state,parts:[],render:()=>events.push('render'),
+   isActiveEveningRedrawPending:()=>false,
+   isActiveEveningGiftPending:()=>false,
    eveningLocalDay:()=>{events.push('date');return '2026-10-31';}
   });
   await run('evening-more');
@@ -217,6 +219,7 @@ test('Soirée management and calendar cannot interrupt an official D100 animatio
   confirmCancel:false,session:{started_at:'2026-10-31T19:00:00Z'}};
  const run=runInNewContext('(async verb=>{'+route+'})',{
   state,parts:[],render:()=>{},eveningLocalDay:()=> '2026-10-31',
+  isActiveEveningRedrawPending:()=>false,
   isActiveEveningGiftPending:()=>false
  });
  await run('evening-more');
@@ -1008,7 +1011,9 @@ test('LR-027: duplicate Give taps cannot open a second dialog or write two gifts
  await run('give-challenge');
  assert.equal(dialogs,1,'Duplicate tap never opens a second modal');
  confirmResolve(true);
- await Promise.resolve();
+ // The confirm promise, action handler and server spy each take microtasks;
+ // wait one actual event-loop turn rather than relying on their internal order.
+ await new Promise(resolve=>setImmediate(resolve));
  assert.equal(writes,1,'First confirmed gift starts exactly one RPC');
  await run('give-challenge');
  assert.equal(writes,1,'Duplicate tap during RPC never sends a second gift');
