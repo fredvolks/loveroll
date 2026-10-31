@@ -1822,6 +1822,15 @@ function applyEclatStatus(value){
  }
  return true;
 }
+// Supabase may serialize the same status fields in a different key order.
+// Compare values, not object insertion order, so unchanged polls do not
+// reload the private gallery or repaint the Éclat screen every 4.5s.
+function eclatStatusSignature(status){
+ return JSON.stringify(status,(_key,value)=>{
+  if(value===null||typeof value!=='object'||Array.isArray(value))return value;
+  return Object.fromEntries(Object.keys(value).sort().map(key=>[key,value[key]]));
+ });
+}
 async function refreshEclatStatus(){
  const owner={userId:state.user?.id,coupleId:state.coupleId,
   generation:authFeedbackGeneration};
@@ -5853,10 +5862,10 @@ setInterval(async()=>{
   isSharedCoupleReady(owner.coupleId,state.members)&&
   !document.hidden&&latestEclatStatusRead===request&&state.tab==='eclat';
  try{
-  const prior=JSON.stringify(state.eclat);
+  const prior=eclatStatusSignature(state.eclat);
   const value=await rpc('love_eclat_status');
   if(!current())return;
-  if(JSON.stringify(value)!==prior){
+  if(eclatStatusSignature(value)!==prior){
    if(applyEclatStatus(value))await refreshEclatHistory();
    if(current())render();
   }
