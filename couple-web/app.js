@@ -264,8 +264,9 @@ function backFromLoveRoll(){
  }
  // Preserve the private challenge dialog and pending server receipt when
  // Android Back or Escape arrives during a D100 roll or a repick.
- if(state.tab==='session'&&(state.eveningRefusalId||state.showEveningChallenges)&&
-    (state.diceStatus||isActiveEveningRedrawPending()))return true;
+ if(state.tab==='session'&&(
+    isActiveEveningRedrawPending()||
+    (state.diceStatus&&(state.eveningRefusalId||state.showEveningChallenges))))return true;
  if(state.eveningRefusalId){state.eveningRefusalId=null;render();return true;}
  // The recipient's private challenge card is an actual modal. Native Back
  // and Escape must close it BEFORE leaving Soirée or switching tabs.
@@ -4100,12 +4101,12 @@ async function handle(action,element){
   return;
  }
  if(verb==='evening-more'){
-  if(state.tab==='session'&&state.diceStatus)return;
+  if(state.tab==='session'&&(state.diceStatus||isActiveEveningRedrawPending()))return;
   state.eveningMore=!state.eveningMore;render();return;
  }
  if(verb==='evening-calendar'){
-  // Even a late touch event cannot navigate away and unmount a spinning die.
-  if(state.tab==='session'&&state.diceStatus)return;
+  // A redraw's recipient-only RLS refresh must finish before leaving Soirée.
+  if(state.tab==='session'&&(state.diceStatus||isActiveEveningRedrawPending()))return;
   state.eveningCalendarBack=parts[0]==='settings'||state.tab==='settings'?'settings-page:confidentialite':'tab:session';
   state.eveningMore=false;state.confirmCancel=false;
   const date=state.session?eveningLocalDay(state.session.started_at):null;
@@ -5611,7 +5612,8 @@ async function handle(action,element){
   return;
  }
  if(verb==='tab'){
-  if(state.diceStatus)return;
+  // A tab change would invalidate the private server repick response context.
+  if(state.diceStatus||(state.tab==='session'&&isActiveEveningRedrawPending()))return;
   const ready=isSharedCoupleReady(state.coupleId,state.members);
   const allowed=ready?
    ['home','session','special','occasions','advent','settings','eclat','library',
@@ -5957,6 +5959,9 @@ async function handle(action,element){
   return;
  }
  if(verb==='new-challenge'){
+  // Re-picking a private card and drawing the next official D100 must not
+  // race for the same session's refreshed challenge queue.
+  if(isActiveEveningRedrawPending())return;
   if(eveningCategoryConfirmInFlight)return; // One dialog and one official RPC only.
   if(!state.session)throw Error('Aucune soirée active.');
   if(!EVENING_CATEGORIES.includes(state.category)&&state.category!=='HASARD'){
