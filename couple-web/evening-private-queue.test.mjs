@@ -2039,6 +2039,6 @@ test('LR-026: old Éclat note load failure cannot repaint a different signed-in 
  state.user={id:'bob'};
  rejectOld(Error('Private read failed'));
  await settlePrivateNoteRead();
- assert.equal(old.error,undefined,'stale read failure must not flag another user's view');
+ assert.equal(old.error,undefined,'stale read failure must not flag another account view');
  assert.equal(f.paintCount(),0,'old session cannot repaint Bob’s Éclat page');
 });
