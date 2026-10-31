@@ -3789,7 +3789,7 @@ test('LR-026: switching accounts clears calendar, invitation and review caches',
  assert.equal(state.notifications,'intact','unrelated preferences are unchanged');
 });
 
-test('LR-026: auth account switch stops old challenge timer but keeps chosen vibration preference',()=>{
+test('LR-026: auth switch stops the old countdown and loads the next account alert',()=>{
  const state={user:{id:'alice'},coupleId:'duo-alice',
   timerCompletionContext:{userId:'alice'},timerCompletionRetryOwner:'alice',
   timerStartContext:{userId:'alice'},redrawBusy:true,redrawBusyContext:{userId:'alice'},
@@ -3804,7 +3804,7 @@ test('LR-026: auth account switch stops old challenge timer but keeps chosen vib
  assert.equal(f.timer.ownerSessionId,null);
  assert.equal(f.timer.deadline,0);
  assert.equal(f.timer.autoCompletePending,false);
- assert.equal(f.timer.mode,'vibrate');
+ assert.equal(f.timer.mode,'sound','Bob must not inherit Alice\'s vibration preference');
  assert.equal(state.timerCompletionContext,null);
  assert.equal(state.timerCompletionRetryOwner,null);
  assert.equal(state.timerStartContext,null);
@@ -3853,7 +3853,7 @@ test('LR-026: switching accounts saves the former owner\'s running timer before 
  assert.equal(f.calls.savedTimers[0].remainingMs,55000);
  assert.equal(f.timer.id,null);
  assert.equal(f.timer.ownerUserId,null);
- assert.equal(f.timer.mode,'vibrate');
+ assert.equal(f.timer.mode,'sound','new account starts with its own saved preference');
 });
 
 test('LR-026: refreshing the same account does not save or clear its current timer',()=>{
