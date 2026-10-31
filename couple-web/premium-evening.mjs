@@ -305,10 +305,10 @@ export function premiumEveningHtml({
       bt('evening-calendar','▦ Consulter notre calendrier','evening-finale-calendar')+
     '</div>'+
   '</div></section>')+
- (showMore&&session&&!rolling?'<aside class="evening-more-menu" aria-label="Options de la soirée">'+
+ (showMore&&session&&!rolling&&!redrawPending&&!giftPending?'<aside class="evening-more-menu" aria-label="Options de la soirée">'+
   bt('evening-close-request','♡ Clore la soirée','evening-menu-close',!session)+
   bt('evening-calendar','▦ Calendrier','evening-menu-calendar')+'</aside>':'')+
- (confirmCancel&&session?'<aside class="evening-confirm" role="dialog" aria-modal="true" aria-label="Clore la soirée ?">'+
+ (confirmCancel&&session&&!rolling&&!redrawPending&&!giftPending?'<aside class="evening-confirm" role="dialog" aria-modal="true" aria-label="Clore la soirée ?">'+
   '<h3>Clore la soirée ?</h3><p>Les défis réalisés et non réalisés seront conservés dans le calendrier et les statistiques du couple. Aucun résultat ne sera effacé.</p>'+
   bt('evening-close-confirm','♡ Clore et conserver','evening-primary')+
   bt('dismiss-cancel','Continuer la soirée','subtle')+'</aside>':'')+
