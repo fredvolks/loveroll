@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {premiumEveningHtml} from './premium-evening.mjs';
+import {premiumEveningHtml,completedEveningLibraryCount} from './premium-evening.mjs';
 const read=p=>readFileSync(new URL('./'+p,import.meta.url),'utf8');
 const base={session:null,lastEvening:{id:'s1',completed:0,responses:1,myResponse:true,partnerResponse:false}};
 test('Finished evening has exactly two real buttons, dark start when weekly quota full',()=>{
@@ -31,4 +31,36 @@ test('Premium finale uses one decorative 3D D100; mobile and desktop CSS is isol
  assert.match(read('evening-editorial.css'),/\.evening-finale-start:disabled/);
  assert.match(read('index.html'),/evening-editorial\.css\?v=20261028-lr027/);
  assert.match(read('service-worker.js'),/evening-editorial\.css/);
+});
+
+
+test('200-card progress uses stable card IDs, not the D100 roll face',()=>{
+ const completed=(category,card_id,face)=>({category,card_id,face,status:'completed'});
+ const history=[
+  completed('SENSUEL',12,48),completed('SENSUEL',12,65),
+  completed('SENSUEL',13,48),completed('SEXUEL',12,48),
+  {...completed('SEXUEL',12,99),status:'passed'},
+  {...completed('SEXUEL',14,99),status:'refused'}
+ ];
+ assert.equal(completedEveningLibraryCount(history),3);
+ const markup=premiumEveningHtml({
+  session:null,lastEvening:null,challengeHistory:history
+ });
+ assert.match(markup,/>3 \/ 200</);
+});
+test('200-card progress preserves legacy face-only records and rejects corrupt modern card IDs',()=>{
+ const history=[
+  {category:'SENSUEL',face:9,status:'completed'},
+  {category:'COQUIN',face:3,status:'completed'},
+  {category:'SEXUEL',card_id:4,face:3,status:'completed'},
+  {category:'SENSUEL',card_id:101,face:7,status:'completed'},
+  {category:'SENSUEL',card_id:'invalid',face:8,status:'completed'},
+  {category:'MIXTE',card_id:6,face:6,status:'completed'},
+  {category:'SENSUEL',card_id:4.5,face:4,status:'completed'}
+ ];
+ assert.equal(completedEveningLibraryCount(history),3);
+ for(const malformed of [null,{},'invalid',false]){
+  assert.equal(completedEveningLibraryCount(malformed),0);
+ }
+ assert.equal(history[0].face,9,'the original history must never change');
 });
