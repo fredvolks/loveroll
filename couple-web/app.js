@@ -835,13 +835,17 @@ function render(){
 }
 async function reload(){
  if(!state.user)return;
+ const ownerId=state.user.id,request={};latestAuthReloadRequest=request;
+ const current=()=>state.user?.id===ownerId&&latestAuthReloadRequest===request;
  // Only show after 150ms for slow data refreshes. Never interrupt a live
  // dice animation, timer, unsaved form or the initial static boot splash.
  const useLoad=!root.querySelector('[data-lr-boot]')&&!state.diceStatus&&
   !challengeTimer.running&&!hasUnsavedForm()&&!document.hidden;
  const loaderTicket=useLoad?window.LoveRollLoader?.begin(150):null;
  try{
- if(!(await refreshVerifiedIdentity())){
+ const verified=await refreshVerifiedIdentity();
+ if(!current())return;
+ if(!verified){
   state.profile=null;state.coupleId=null;state.members=[];state.wellbeing=null;
   state.personalJournal=[];state.pushPrefs=null;
   state.emailVerificationPending=true;state.showAuth=true;
@@ -849,8 +853,8 @@ async function reload(){
  }
  state.emailVerificationPending=false;
  // Verified by an authenticated, fixed-identity Supabase RPC. No public email allowlist.
- try{state.testModeEligible=(await rpc('love_test_mode_allowed'))===true;}
- catch{state.testModeEligible=false;}
+ try{const allowed=await rpc('love_test_mode_allowed');if(!current())return;state.testModeEligible=allowed===true;}
+ catch{if(!current())return;state.testModeEligible=false;}
  state.testMode=previewMode(state.testMode,state.testModeEligible);
  const [profiles,assessments,personal,pushSettings]=await Promise.all([
   query('couple_profiles',{eq:{id:state.user.id}}),
@@ -858,13 +862,17 @@ async function reload(){
   query('love_personal_intimacy',{eq:{user_id:state.user.id}}),
   query('love_push_preferences',{eq:{user_id:state.user.id}})
  ]);
+ if(!current())return;
  state.pushPrefs=pushSettings[0]||{enabled:false,weekly:true,invitation:true,monthly:true,special:true};
  const nativeToken=safeNativePushToken();
  if(state.pushPrefs.enabled&&nativeToken){
   const {error}=await client.rpc('love_claim_native_push_token',{p_token:nativeToken});
+  if(!current())return;
   if(error)console.warn('Enregistrement FCM impossible',error.code||'');
  }
- state.pushDevice=await currentPushDevice(client,state.user?.id);
+ const device=await currentPushDevice(client,ownerId);
+ if(!current())return;
+ state.pushDevice=device;
 
  state.profile=profiles[0]||null;
  document.documentElement.lang=localeOrDefault(state.profile?.preferred_locale);
@@ -873,32 +881,36 @@ async function reload(){
  // Safari can retain an old invitation while this verified account already
  // belongs to a duo. Check real Supabase membership FIRST: never attempt a
  // second acceptance, disconnect a member or hide their existing Home screen.
- const knownMembership=await query('couple_members',{eq:{user_id:state.user.id}});
- if(!knownMembership.length)await autoAcceptPendingInvite();
+ const knownMembership=await query('couple_members',{eq:{user_id:ownerId}});
+ if(!current())return;
+ if(!knownMembership.length){await autoAcceptPendingInvite();if(!current())return;}
  const membership=knownMembership.length?knownMembership:
-  await query('couple_members',{eq:{user_id:state.user.id}});
+  await query('couple_members',{eq:{user_id:ownerId}});
+ if(!current())return;
  const previousCouple=state.coupleId;
  state.coupleId=membership[0]?.couple_id||null;
  if(!state.coupleId&&!pendingInviteReference(sessionStorage)){
   // A verification email may open in a different browser; find the pending
   // invitation from the authenticated recipient before showing "Créer un duo".
   const resolution=await resolveVerifiedSignup(false);
+  if(!current())return;
   if(resolution?.status==='linked'){
-   const latest=await query('couple_members',{eq:{user_id:state.user.id}});
+   const latest=await query('couple_members',{eq:{user_id:ownerId}});
+   if(!current())return;
    state.coupleId=latest[0]?.couple_id||null;
   }
  }
- try{state.referral=await rpc('love_my_referral');}
- catch(error){state.referral=null;console.warn('Référencement indisponible',error?.message||'error');}
+ try{const referral=await rpc('love_my_referral');if(!current())return;state.referral=referral;}
+ catch(error){if(!current())return;state.referral=null;console.warn('Référencement indisponible',error?.message||'error');}
  if(!state.coupleId){
-  if(state.channel){await client.removeChannel(state.channel);state.channel=null;}
+  if(state.channel){const channel=state.channel;await client.removeChannel(channel);if(!current())return;if(state.channel===channel)state.channel=null;}
   state.couple=null;state.members=[];state.weekly=null;state.monthly={};state.customCards=[];state.monthlyActivities=[];state.rollStatus=null;state.gifts=[];
   state.session=null;state.sessions=[];state.events=[];state.journal=[];state.eveningHistoryStats=[];state.eveningCalendarChallenges=[];state.weeklyRollHistory=[];state.calendarPassQuota=[];state.monthlyPassQuota=null;state.calendarPassMonth=null;state.cycleStatus=null;state.cycleDeferred=null;state.eveningReviews=[];state.reviewModalSessionId=null;
   state.advent=[];state.adventYear=null;state.adventSelected=null;state.adventServerDate=null;state.advent2026Config=null;state.advent2026Days=[];state.specialEventsConfig=null;state.specialEventKeys=[];state.unlockKey=null;
   state.invitations=[];state.inviteDraft=null;state.eveningInvite=null;state.challengesHistory=[];state.eveningHistoryStats=[];state.eveningCalendarChallenges=[];state.eveningReviews=[];state.reviewModalSessionId=null;state.reviewDraft={};
   state.tab=['settings','personal-journal'].includes(state.tab)?state.tab:'home';
-  state.guidance=state.wellbeing?await rpc('get_love_guidance',{}):'gentle';
-  render();return;
+  const guidance=state.wellbeing?await rpc('get_love_guidance',{}):'gentle';
+  if(!current())return;state.guidance=guidance;render();return;
  }
  if(previousCouple&&previousCouple!==state.coupleId)state.unlockKey=null;
  const [couple,members,invitations]=await Promise.all([
@@ -906,6 +918,7 @@ async function reload(){
   query('couple_members',{eq:{couple_id:state.coupleId}}),
   query('couple_invitations',{eq:{couple_id:state.coupleId},order:'created_at'})
  ]);
+ if(!current())return;
  state.invitations=invitations;
  const completedInvite=pendingInviteReference(sessionStorage);
  // A full duo takes precedence over an old/wrong Messenger invitation on
@@ -931,6 +944,7 @@ async function reload(){
   if(state.couple?.owner_user_id===state.user.id){
    try{
     const result=await rpc('love_referral_claim',{p_code:pendingCode});
+    if(!current())return;
     if(result?.status!=='create_duo_first')clearPendingReferral();
    }catch(error){console.warn('Référencement en attente',error?.message||'error');}
   }else clearPendingReferral();
@@ -947,6 +961,7 @@ async function reload(){
    query('love_advent_2026_days',{eq:{couple_id:state.coupleId}}),
    query('love_special_event_catalogue',{eq:{couple_id:state.coupleId}})
   ]);
+  if(!current())return;
   // The original saved library is NEVER overwritten by the MEDIUM template.
   // In personal mode, use only this couple's editable 100-card copy.
   // The automatic secret pool is NEVER fetched into browser state.
@@ -962,10 +977,12 @@ async function reload(){
   state.advent2026Config=null;state.advent2026Days=[];state.specialEventsConfig=null;
  }
  const profilesAll=await query('couple_profiles');
+ if(!current())return;
  state.members=members.sort((a,b)=>a.joined_at.localeCompare(b.joined_at)).map(m=>({...m,name:profilesAll.find(p=>p.id===m.user_id)?.display_name||'Profil à compléter',gender:profilesAll.find(p=>p.id===m.user_id)?.gender||null,playStyle:profilesAll.find(p=>p.id===m.user_id)?.play_style||'medium'}));
- state.guidance=state.wellbeing?await rpc('get_love_guidance',{p_couple:state.coupleId}):'gentle';
+ const guidance=state.wellbeing?await rpc('get_love_guidance',{p_couple:state.coupleId}):'gentle';
+ if(!current())return;state.guidance=guidance;
  if(members.length===2)await refreshShared();
- subscribe();render();
+ if(!current())return;subscribe();render();
  }finally{if(loaderTicket!=null)window.LoveRollLoader?.end(loaderTicket);}
 }
 // A redraw started under another account or tab cannot disable the buttons
