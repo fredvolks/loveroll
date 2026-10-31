@@ -101,7 +101,7 @@ const ownerSource='let latestEclatActionRequest=null,pendingEclatMutation=null;\
  app.slice(ownerBegin,ownerEnd)+'\n';
 const actionSource=app.slice(permissionBegin,permissionEnd)+'\n'+
  app.slice(mutationBegin,mutationEnd)+
- '\nlet latestEclatAudioOwner=null;\n'+
+ '\nlet latestEclatAudioOwner=null,pendingEclatExitConfirmation=null;\n'+
  "async function invoke(command){const verb='eclat',parts=command.split(':'),element=null;\n"+
  app.slice(actionBegin,actionEnd)+'\n}\n;invoke;';
 
@@ -416,4 +416,37 @@ test('LR-026: a second Choisir tap during note save cannot cancel the first choi
  assert.deepEqual(h.calls,['love_eclat_choose'],
   'the first choice must still be sent after its private note is saved');
  assert.equal(h.renders.length,1);
+});
+
+test('LR-026: a second Quitter tap does not open two confirmation modals',async()=>{
+ let finish;
+ const confirmPromise=new Promise(resolve=>{finish=resolve;});
+ const h=actionFixture({access:true,active:true,session_id:'scene-a'},
+  {realOwnership:true,confirm:()=>confirmPromise});
+ const first=h.invoke('end');
+ assert.equal(h.confirms(),1);
+ const duplicate=h.invoke('end');
+ await duplicate;
+ assert.equal(h.confirms(),1,'the same scene may only show one exit confirmation');
+ assert.deepEqual(h.calls,[],'no exit mutation before the user confirms');
+ finish(false);
+ await first;
+ assert.deepEqual(h.calls,[],'cancelled confirmation cannot end the session');
+ await h.invoke('end');
+ assert.equal(h.confirms(),2,'after cancellation the same user can reopen the dialog');
+});
+
+test('LR-026: a pending old Quitter modal does not block a replacement coffret',async()=>{
+ let releaseOld;
+ const oldDecision=new Promise(resolve=>{releaseOld=resolve;});
+ let count=0;
+ const h=actionFixture({access:true,active:true,session_id:'first',coffret_id:1},
+  {realOwnership:true,confirm:()=>++count===1?oldDecision:Promise.resolve(false)});
+ const old=h.invoke('end');
+ h.state.eclat={...h.state.eclat,session_id:'new',coffret_id:2};
+ await h.invoke('end');
+ assert.equal(h.confirms(),2,'a new server-authorized coffret gets its own confirmation');
+ releaseOld(true);
+ await old;
+ assert.deepEqual(h.calls,[],'the former coffret confirmation cannot end the new session');
 });
