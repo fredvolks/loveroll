@@ -64,7 +64,7 @@ test('No eligible card never backfills from a third style or reuses a previous c
  assert.equal(excluded.reason,'no-eligible-card');
 });
 test('User-selected 10/30 minute and free plans are bounded and keep both recipients',()=>{
- assert.deepEqual(FUTURE_NIGHT_LENGTHS,[5,10,15,30,'free']);
+ assert.deepEqual(FUTURE_NIGHT_LENGTHS,[5,10,15,30,'libre']);
  for(const minutes of [10,30]){
   const plan=buildFutureNightPlan({
    members,cards:many(20,2),styleA:'medium',styleB:'medium',
@@ -75,11 +75,16 @@ test('User-selected 10/30 minute and free plans are bounded and keep both recipi
   assert.ok(plan.items.every(x=>x.level==='medium'));
  }
  const free=buildFutureNightPlan({members,cards:many(12,2),
-  styleA:'medium',styleB:'intense',minutes:'free',maxCards:4});
+  styleA:'medium',styleB:'intense',minutes:'libre',maxCards:4});
  assert.equal(free.items.length,4);
  assert.equal(free.spentMinutes,8);
  assert.equal(free.remainingMinutes,null);
  assert.equal(free.reason,'limit');
+ assert.equal(free.requestedMinutes,'libre');
+ const oldAlias=buildFutureNightPlan({members,cards:many(4,2),
+  styleA:'medium',styleB:'medium',minutes:'free',maxCards:2});
+ assert.equal(oldAlias.requestedMinutes,'libre');
+ assert.equal(oldAlias.items.length,2);
 });
 test('Existing dropdown values use strings but only four approved numeric lengths',()=>{
  const plan=buildFutureNightPlan({members,cards:many(10,3),
