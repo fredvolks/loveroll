@@ -33,13 +33,37 @@ test('Sparse calendar RPC snapshots do not crash or fabricate a monthly success'
   date:'2026-10-25',
   weeklyRolls:[null,false,{},{
    kind:'weekly',key:'2026-10-19',face:3,
-   created_at:'2026-10-25T13:00:00Z'}],
+   created_at:'2026-10-25T23:00:00Z'}],
   sessions:[null,false,{},night]
  });
  assert.equal(week.hasRoll,true);
  assert.equal(week.completed,0,'an evening before the D6 cannot be credited');
  assert.deepEqual(monthlyChallengeSuccess({month,sessions:[null],members:[null]}),[]);
  assert.equal(calendarWeekSuccess({date:'2026-10-25',weeklyRolls:[null]}).hasRoll,false);
+});
+
+test('A weekly D6 credits a single Québec calendar day, never duplicate sessions',()=>{
+ const roll={kind:'weekly',key:'2026-10-19',face:3,
+  created_at:'2026-10-22T16:00:00Z'};
+ const sessions=[
+  {id:'before-roll',started_at:'2026-10-22T15:00:00Z',
+   finished_at:'2026-10-22T15:30:00Z',counted:true},
+  {id:'thu-1',started_at:'2026-10-22T18:00:00Z',
+   finished_at:'2026-10-22T19:00:00Z',counted:true},
+  {id:'thu-2',started_at:'2026-10-22T21:00:00Z',
+   finished_at:'2026-10-22T22:00:00Z',counted:true},
+  {id:'fri',started_at:'2026-10-23T20:00:00Z',
+   finished_at:'2026-10-23T22:00:00Z',counted:true}
+ ];
+ const result=calendarWeekSuccess({
+  date:'2026-10-23',weeklyRolls:[roll],sessions});
+ assert.equal(result.possible,3);
+ assert.equal(result.completed,2,'Thursday duplicate is not another eligible day');
+ assert.equal(result.percent,67);
+ assert.equal(calendarWeekSuccess({
+  date:'2026-10-23',weeklyRolls:[roll],
+  sessions:sessions.slice(0,3)
+ }).completed,1,'Before-roll session and second Thursday night are not extra credits');
 });
 
 test('Saturday D6 of 4: only two Quebec evenings possible; 1/2=50%, 2/2=100%',()=>{
