@@ -1783,7 +1783,7 @@ async function refreshEclatHistory(){
   state.eclatHistoryUserId=owner.userId;state.eclatGalleryScroll=0;
  }
  try{
-  const rows=await loadEclatHistory(client,owner.coupleId);
+  const rows=await loadEclatHistory(client,owner.coupleId,current);
   if(!current())return;
   state.eclatHistory=rows;state.eclatHistoryError=false;
   state.eclatHistoryRetryAt=0;
