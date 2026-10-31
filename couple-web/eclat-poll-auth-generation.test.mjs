@@ -9,7 +9,13 @@ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
 const start=app.indexOf("setInterval(async()=>{\n if(document.hidden||state.tab!=='eclat'");
 const end=app.indexOf('},4500);',start);
 assert.ok(start>=0&&end>start,'real Éclat poll must remain available');
-const source='let latestEclatStatusRead=null,latestEclatPollPending=null;\n'+app.slice(start,end+8)+'\nfunction invalidateStatusRead(){latestEclatStatusRead={};}';
+const source='let latestEclatStatusRead=null,latestEclatPollPending=null,latestEclatExplicitRead=null;\n'+
+ app.slice(start,end+8)+
+ '\nfunction invalidateStatusRead(){latestEclatStatusRead={};}'+
+ '\nfunction holdForegroundRead(){const request={};latestEclatStatusRead=request;'+
+ 'latestEclatExplicitRead={userId:state.user.id,coupleId:state.coupleId,'+
+ 'generation:authFeedbackGeneration,request,startedAt:Date.now()};return request;}'+
+ '\nfunction releaseForegroundRead(request){if(latestEclatExplicitRead?.request===request)latestEclatExplicitRead=null;}';
 
 function deferred(){
  let resolve,reject;
@@ -35,7 +41,7 @@ function harness(){
  };
  runInNewContext(source,runtime);
  assert.equal(typeof tick,'function');
- return {state,runtime,requests,renders,warnings,history,tick:()=>tick(),advance:ms=>{clock+=ms;},invalidate:()=>runtime.invalidateStatusRead()};
+ return {state,runtime,requests,renders,warnings,history,tick:()=>tick(),advance:ms=>{clock+=ms;},invalidate:()=>runtime.invalidateStatusRead(),hold:()=>runtime.holdForegroundRead(),release:req=>runtime.releaseForegroundRead(req)};
 }
 
 test('LR-026: late Éclat poll cannot repaint a new login for the same user',async()=>{
@@ -171,4 +177,42 @@ test('LR-026: explicit status refresh can supersede an unresolved background pol
  await background;
  assert.equal(h.state.eclat.id,'foreground');
  assert.deepEqual(h.renders,['foreground']);
+});
+
+test('LR-026: the automatic Éclat poll does not supersede a pending foreground refresh',async()=>{
+ const h=harness();
+ const request=h.hold();
+ await h.tick();
+ h.advance(29999);
+ await h.tick();
+ assert.equal(h.requests.length,0,
+  'a user-triggered refresh retains priority until it completes or expires');
+ h.release(request);
+ const background=h.tick();
+ assert.equal(h.requests.length,1,'background polling resumes after foreground completes');
+ h.requests[0].resolve({id:'background'});
+ await background;
+ assert.equal(h.state.eclat.id,'background');
+});
+
+test('LR-026: stalled foreground refresh does not disable Éclat polling permanently',async()=>{
+ const h=harness();
+ h.hold();
+ h.advance(30000);
+ const background=h.tick();
+ assert.equal(h.requests.length,1,'background may retry after the 30-second deadline');
+ h.requests[0].resolve({id:'retry'});
+ await background;
+ assert.equal(h.state.eclat.id,'retry');
+});
+
+test('LR-026: a previous login foreground refresh cannot block the current login',async()=>{
+ const h=harness();
+ h.hold();
+ h.runtime.authFeedbackGeneration=2;
+ const background=h.tick();
+ assert.equal(h.requests.length,1);
+ h.requests[0].resolve({id:'new-session'});
+ await background;
+ assert.equal(h.state.eclat.id,'new-session');
 });
