@@ -692,3 +692,82 @@ test('LR-026: stale status retry cannot read history for the next login',async()
  assert.deepEqual(h.state.eclatHistory,[{id:'new-history'}]);
  assert.deepEqual(h.renders,[]);
 });
+
+const historyBegin=app.indexOf('let latestEclatHistoryRead=null,latestEclatStatusRead=null;');
+const historyEnd=app.indexOf('// Supabase may serialize the same status fields',historyBegin);
+assert.ok(historyBegin>=0&&historyEnd>historyBegin,'real private history ownership must remain available');
+const realHistorySource='let latestEclatAudioOwner=null;\n'+app.slice(historyBegin,historyEnd);
+
+function privateHistoryHarness(){
+ const state={user:{id:'alice'},coupleId:'couple-a',members:[{},{}],
+  eclat:{id:'original',access:true,active:true},
+  eclatHistory:[{id:'prior-private-photo'}],eclatHistoryCouple:'couple-a',
+  eclatHistoryUserId:'alice',eclatMusic:true,eclatFinished:'previous-finish'};
+ const loads=[],renders=[],warnings=[],drafts=new Map([['secret',{value:'note'}]]);
+ let clock=0,stops=0;
+ const runtime={state,authFeedbackGeneration:1,client:{},
+  Date:{now:()=>clock},eclatNoteDrafts:drafts,
+  eclatAudio:{stop:()=>{stops++;}},
+  ownsCoupleAsyncRead,isSharedCoupleReady:(couple,members)=>!!couple&&members?.length===2,
+  loadEclatHistory:(_client,coupleId)=>{
+   assert.equal(coupleId,'couple-a');
+   const task=deferred();loads.push(task);return task.promise;
+  },
+  render:()=>renders.push(state.eclat?.id??null),
+  console:{warn:(...args)=>warnings.push(args)}
+ };
+ runInNewContext(realHistorySource,runtime);
+ return {state,runtime,loads,renders,warnings,drafts,stops:()=>stops,
+  tick:()=>runtime.refreshEclatHistory(),advance:ms=>{clock+=ms;}};
+}
+
+test('LR-026: history 403 clears a still-visible private gallery',async()=>{
+ const h=privateHistoryHarness();
+ const pending=h.tick();
+ assert.equal(h.loads.length,1);
+ h.loads[0].reject({status:403,code:'42501'});
+ await pending;
+ assert.equal(h.state.eclat,null,'a denied history read revokes the cached entitlement');
+ assert.deepEqual(Array.from(h.state.eclatHistory),[]);
+ assert.equal(h.state.eclatFinished,null);
+ assert.equal(h.state.eclatMusic,false);
+ assert.equal(h.state.eclatHistoryError,false);
+ assert.equal(h.state.eclatHistoryRetryAt,0);
+ assert.equal(h.drafts.size,0);
+ assert.equal(h.stops(),1);
+ assert.deepEqual(h.renders,[null]);
+});
+
+test('LR-026: stale history denial cannot clear the new authenticated session',async()=>{
+ const h=privateHistoryHarness();
+ const old=h.tick();
+ h.runtime.authFeedbackGeneration=2;
+ h.state.eclat={id:'replacement',access:true,active:true};
+ h.state.eclatHistory=[{id:'replacement-private'}];
+ h.loads[0].reject({status:401});
+ await old;
+ assert.equal(h.state.eclat.id,'replacement');
+ assert.deepEqual(h.state.eclatHistory,[{id:'replacement-private'}]);
+ assert.equal(h.stops(),0);
+ assert.deepEqual(h.renders,[]);
+});
+
+test('LR-026: temporary history failure preserves access and schedules bounded recovery',async()=>{
+ const h=privateHistoryHarness();
+ const failing=h.tick();
+ h.loads[0].reject(new Error('offline'));
+ await failing;
+ assert.equal(h.state.eclat.id,'original');
+ assert.deepEqual(h.state.eclatHistory,[{id:'prior-private-photo'}]);
+ assert.equal(h.state.eclatHistoryError,true);
+ assert.equal(h.state.eclatHistoryRetryAt,30000);
+ assert.deepEqual(h.renders,[]);
+ assert.equal(h.warnings.length,1);
+ h.advance(30000);
+ const recovering=h.tick();
+ h.loads[1].resolve([{id:'fresh-photo'}]);
+ await recovering;
+ assert.deepEqual(h.state.eclatHistory,[{id:'fresh-photo'}]);
+ assert.equal(h.state.eclatHistoryError,false);
+ assert.equal(h.state.eclatHistoryRetryAt,0);
+});
