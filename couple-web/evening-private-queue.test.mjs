@@ -2004,6 +2004,9 @@ assert.ok(privateEclatDenialStart>0&&privateEclatDenialEnd>privateEclatDenialSta
 const privateEclatDenialSource='let latestEclatHistoryRead=null,latestEclatAudioOwner=null;\n'+
  app.slice(privateEclatDenialStart,privateEclatDenialEnd);
 
+// The live UI now announces the first save immediately. These older privacy
+// tests assert that no *additional* feedback leaks after the owner changes.
+const initialEclatSaveFeedback=['Enregistrement…','Enregistrement en cours…'];
 function privateEclatSaveFixture(state,saveEclatNote){
  if(!state.members)state.members=[{id:'alice'},{id:'bob'}];
  const start=app.indexOf('const eclatNoteDrafts=new Map();');
@@ -2038,7 +2041,7 @@ test('LR-026: private Éclat note save ignores a late response after account swi
   'a private save from Alice cannot mark Bob current moment as finished');
  assert.equal(draft.saved,false);
  assert.equal(draft.saving,false);
- assert.deepEqual(labels,[]);
+ assert.deepEqual(labels,initialEclatSaveFeedback);
 });
 
 test('LR-026: old Éclat chapter response cannot mark a new chapter saved',async()=>{
@@ -2063,7 +2066,7 @@ test('LR-026: stale Éclat save error never changes a new account error label',a
  state.user={id:'bob'};
  rejectSave(new Error('Network failed'));
  assert.equal(await saving,null);
- assert.deepEqual(labels,[],'stale failure cannot overwrite Bob error message');
+ assert.deepEqual(labels,initialEclatSaveFeedback,'stale failure cannot overwrite Bob error message');
 });
 
 test('LR-026: current Éclat note saves preserve normal success and visible failures',async()=>{
@@ -2081,7 +2084,10 @@ test('LR-026: current Éclat note saves preserve normal success and visible fail
  assert.equal(captured.snapshot.moment_done,true);
  const failed=privateEclatSaveFixture(state,async()=>{throw Error('Server failed');});
  await assert.rejects(failed.saveCurrentEclatNote(),/Server failed/);
- assert.equal(failed.labels.length,1);
+ assert.equal(failed.labels.filter(label=>label.startsWith('Non enregistré.')).length,1,
+  'only one real error is reported, distinct from progress and button labels');
+ assert.equal(failed.labels.at(-1),'Enregistrer ma note',
+  'a network failure restores the save control');
  assert.equal(failed.draft.saving,false);
 });
 
@@ -3952,7 +3958,7 @@ test('LR-026: private Éclat save finishing after same-user reauthentication is 
  assert.equal(f.draft.moment_done,false);
  assert.equal(f.draft.saved,false);
  assert.equal(f.draft.saving,false);
- assert.deepEqual(f.labels,[]);
+ assert.deepEqual(f.labels,initialEclatSaveFeedback);
 });
 
 test('LR-026: expired Éclat note-save error cannot report failure to the new login',async()=>{
@@ -3965,7 +3971,7 @@ test('LR-026: expired Éclat note-save error cannot report failure to the new lo
  f.setAuthGeneration(2);
  rejectSave(new Error('Former session failed'));
  assert.equal(await previous,null);
- assert.deepEqual(f.labels,[],'the old request must not change the new login feedback');
+ assert.deepEqual(f.labels,initialEclatSaveFeedback,'the old request must not change the new login feedback');
  assert.equal(f.draft.saving,false);
 });
 
@@ -4052,7 +4058,7 @@ test('LR-026: revoked private note save response must not acknowledge an older s
  assert.equal(f.draft.saved,false);
  assert.equal(f.draft.moment_done,false);
  assert.equal(f.draft.saving,false);
- assert.deepEqual(f.labels,[]);
+ assert.deepEqual(f.labels,initialEclatSaveFeedback);
 });
 
 
@@ -4098,7 +4104,7 @@ test('LR-026: pending note save cannot mark completion after Éclat access is re
  assert.equal(f.draft.moment_done,false);
  assert.equal(f.draft.saved,false);
  assert.equal(f.draft.saving,false);
- assert.deepEqual(f.labels,[]);
+ assert.deepEqual(f.labels,initialEclatSaveFeedback);
 });
 
 test('LR-026: already revoked Éclat access cannot initiate private note save',async()=>{
