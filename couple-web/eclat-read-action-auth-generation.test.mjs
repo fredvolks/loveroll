@@ -912,3 +912,67 @@ test('LR-026: old note read success cannot write previous chapter draft',async()
  assert.equal(old.clue,'');
  assert.deepEqual(h.renders,[]);
 });
+
+test('LR-026: double tap cannot send two mutations for the same Éclat scene',async()=>{
+ const first=deferred();
+ let calls=0;
+ const h=harness({rpc:()=>{calls++;return calls===1?first.promise:Promise.resolve({access:true});}});
+ h.state.eclat={access:true,active:true,session_id:'scene',coffret_id:1,chapter_index:2};
+ const original=h.beginEclatAction();
+ const pending=h.runEclatMutation(original,'love_eclat_next');
+ assert.equal(calls,1);
+ assert.equal(h.beginEclatAction(),null,'an in-flight mutation must reject the second tap');
+ assert.equal(calls,1,'the second tap must not reach Supabase');
+ first.resolve({access:true,active:true,session_id:'scene',coffret_id:1,chapter_index:3});
+ assert.equal((await pending).applied,true);
+ assert.ok(h.beginEclatAction(),'the next user action must work after the original settles');
+});
+
+test('LR-026: failed mutation releases the double-submit guard for retry',async()=>{
+ const first=deferred();
+ let calls=0;
+ const h=harness({rpc:()=>{calls++;return calls===1?first.promise:Promise.resolve({access:true});}});
+ h.state.eclat={access:true,active:true,session_id:'scene',coffret_id:1,chapter_index:2};
+ const pending=h.runEclatMutation(h.beginEclatAction(),'love_eclat_choose',{p_choice:0});
+ assert.equal(h.beginEclatAction(),null);
+ first.reject(new Error('network offline'));
+ await assert.rejects(pending,/network offline/);
+ const retry=h.beginEclatAction();
+ assert.ok(retry,'a temporary failure cannot permanently lock the controls');
+ assert.equal((await h.runEclatMutation(retry,'love_eclat_choose',{p_choice:0})).applied,true);
+ assert.equal(calls,2);
+});
+
+test('LR-026: old mutation completion cannot unlock newer chapter request',async()=>{
+ const older=deferred(),current=deferred();
+ let calls=0;
+ const h=harness({rpc:()=>++calls===1?older.promise:current.promise});
+ h.state.eclat={access:true,active:true,session_id:'scene',coffret_id:1,chapter_index:2};
+ const oldAction=h.runEclatMutation(h.beginEclatAction(),'love_eclat_next');
+ h.state.eclat={...h.state.eclat,chapter_index:3};
+ const next=h.beginEclatAction();
+ assert.ok(next,'chapter progress from server permits a new action');
+ const newAction=h.runEclatMutation(next,'love_eclat_choose',{p_choice:0});
+ assert.equal(calls,2);
+ older.resolve({access:true,active:true,session_id:'scene',coffret_id:1,chapter_index:2});
+ assert.equal((await oldAction).applied,false);
+ assert.equal(h.beginEclatAction(),null,'older finally must not release the newer mutation');
+ current.resolve({access:true,active:true,session_id:'scene',coffret_id:1,chapter_index:3});
+ assert.equal((await newAction).applied,true);
+ assert.ok(h.beginEclatAction(),'latest mutation finally must release its own guard');
+});
+
+test('LR-026: stalled Éclat mutation guard expires after 30 seconds',async()=>{
+ const pending=deferred();
+ const h=harness({rpc:()=>pending.promise});
+ let now=0;
+ h.ctx.Date={now:()=>now};
+ h.state.eclat={access:true,active:true,session_id:'scene',coffret_id:1,chapter_index:2};
+ const oldAction=h.runEclatMutation(h.beginEclatAction(),'love_eclat_next');
+ now=29999;
+ assert.equal(h.beginEclatAction(),null);
+ now=30000;
+ assert.ok(h.beginEclatAction(),'the guard must not block controls permanently after a stalled request');
+ pending.resolve({access:true,active:true,session_id:'scene',coffret_id:1,chapter_index:3});
+ assert.equal((await oldAction).applied,false,'expired action receipt is superseded');
+});
