@@ -38,4 +38,10 @@ test('disposable PostgreSQL checks client access, partner isolation, duplicates 
   assert.ok(smoke.includes(phrase),phrase);
  assert.match(workflow,/future-card-regeneration-transaction\.sql/);
  assert.match(workflow,/future-card-regeneration-transaction\.test\.sql/);
+ const race=readFileSync(new URL('./sql-proposals/future-card-regeneration-race.test.sh',import.meta.url),'utf8');
+ assert.match(workflow,/future-card-regeneration-race\.test\.sh/);
+ assert.match(race,/two-receipts/);
+ assert.match(race,/same-receipt/);
+ assert.match(race,/Refusing non-test database/);
+ assert.match(race,/Two-receipt race consumed more than one receipt/);
 });
