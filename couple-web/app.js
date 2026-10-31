@@ -717,6 +717,9 @@ function adoptAuthenticatedIdentity(nextUser){
   state.eclat=null;state.eclatHistory=[];state.eclatHistoryCouple=null;
   state.eclatHistoryUserId=null;
   state.profile=null;state.coupleId=null;state.couple=null;state.members=[];
+  // Recovery and verification UI also belongs to the previous login.
+  state.passwordRecovery=false;state.emailVerificationPending=false;
+  state.authNotice=null;state.authNeedsEmailConfirmation=false;
   state.testModeEligible=false;state.testMode='real';
   state.personalPass=null;state.eveningInvite=null;
   state.eveningBoard=null;state.selectedEveningChallengeId=null;
@@ -4448,9 +4451,10 @@ async function handle(action,element){
  }
  if(verb==='email-confirm-login'){
   if(state.user&&!verifiedLoveEmail(state.user)){
-   const {error}=await client.auth.signOut();
-   if(error)throw error;
-   state.user=null;
+   await signOutCurrentAccount();
+   // A SIGNED_IN may have replaced the unverified account while the old
+   // signout awaited FCM or Realtime. Never overwrite that new login.
+   if(state.user)return;
   }
   state.emailVerificationPending=false;state.showDiscover=false;state.showAuth=true;
   state.authMode='signin';keepAuthModeInUrl('signin');
@@ -4494,8 +4498,11 @@ async function handle(action,element){
   return;
  }
  if(verb==='email-confirm-edit'){
-  if(state.user)await client.auth.signOut();
-  state.user=null;state.emailVerificationPending=false;state.authDraftEmail='';
+  if(state.user){
+   await signOutCurrentAccount();
+   if(state.user)return;
+  }
+  state.emailVerificationPending=false;state.authDraftEmail='';
   state.authMode='signup';state.showAuth=true;render();return;
  }
  if(verb==='auth-reset-request'){
