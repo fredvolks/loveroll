@@ -1846,15 +1846,16 @@ function applyEclatActionResult(value,owner){
 function renderEclat(){
  const coupleReady=isSharedCoupleReady(state.coupleId,state.members);
  const e=coupleReady?previewEclatStatus(state.eclat,state.testMode,state.testModeEligible):null;
- const playable=e?.access===true&&e?.active===true;
+ const entitled=coupleReady&&e?.access===true;
+ const playable=entitled&&e?.active===true;
  if(playable){
   const current=eclatStage(e.coffret_id,e.chapter_number,e.variant_number);
   if(current)eclatAudio.setMood(current.mood);
  }else if(state.eclatMusic){eclatAudio.stop();state.eclatMusic=false;}
  frame(eclatHtml({status:e,coupleReady,selected:state.eclatSelection,minutes:state.eclatMinutes,
   details:state.eclatDetails,members:state.members,userId:state.user?.id,
-  music:state.eclatMusic,finished:coupleReady?state.eclatFinished:null,browse:state.eclatBrowse,intent:state.eclatIntent,noteState:playable&&!state.eclatBrowse?eclatNoteState():{},history:coupleReady&&state.eclatHistoryCouple===state.coupleId&&
-   state.eclatHistoryUserId===state.user?.id?state.eclatHistory:[],historyError:state.eclatHistoryError}), 'Éclat','Notre expérience à deux');
+  music:state.eclatMusic,finished:entitled?state.eclatFinished:null,browse:state.eclatBrowse,intent:state.eclatIntent,noteState:playable&&!state.eclatBrowse?eclatNoteState():{},history:entitled&&state.eclatHistoryCouple===state.coupleId&&
+   state.eclatHistoryUserId===state.user?.id?state.eclatHistory:[],historyError:entitled&&state.eclatHistoryError}), 'Éclat','Notre expérience à deux');
 }
 function renderHome(){
  const members=state.members||[];
