@@ -185,3 +185,41 @@ test('Saved favorite IDs show their current library titles with HTML escaping',(
  assert.doesNotMatch(bounded,/x{121}/);
  assert.match(bounded,/x{120}/);
 });
+
+test('D100 favorites announce pressed state and return focus after changing a card',async()=>{
+ assert.match(app,/evening-favorite-btn" aria-pressed/);
+ const from=app.indexOf("if(verb==='evening-favorite'){");
+ const to=app.indexOf("if(verb==='evening-open'){",from);
+ assert.ok(from>0&&to>from);
+ const route=app.slice(from,to);
+ const item={id:'draw-7',category:'SENSUEL',card_id:7};
+ const storage=store();
+ const events=[];
+ const state={user:{id:'fred'},coupleId:'couple-a',session:{id:'evening-1'},
+  challenges:[item]};
+ const scope={state,
+  ownEveningChallenges:(cards,user,session)=>{
+   assert.equal(user,'fred');assert.equal(session,'evening-1');
+   return cards;
+  },
+  toggleEveningFavorite:(user,couple,challenge)=>
+   toggleEveningFavorite(user,couple,challenge,storage),
+  render:()=>events.push('render'),
+  root:{querySelector:selector=>{
+   assert.equal(selector,'.evening-queue-detail button[data-action^="evening-favorite:"]');
+   return {focus:options=>events.push('focus:'+String(options.preventScroll))};
+  }}
+ };
+ const run=runInNewContext('(async verb=>{'+route+'})',scope);
+ await run('evening-favorite');
+ assert.deepEqual(events,['render','focus:true']);
+ assert.deepEqual(readEveningFavorites('fred','couple-a',storage),['SENSUEL:7']);
+ events.length=0;
+ await run('evening-favorite');
+ assert.deepEqual(events,['render','focus:true']);
+ assert.deepEqual(readEveningFavorites('fred','couple-a',storage),[]);
+ events.length=0;
+ state.challenges=[];
+ await assert.rejects(run('evening-favorite'),/soirée personnelle/);
+ assert.deepEqual(events,[],'An invalid favorite never repaints or steals focus');
+});
