@@ -168,9 +168,9 @@ export function premiumEveningHtml({
  const canDraw=ready&&turn.ready&&!turn.drawsFinished&&!rolling&&!redrawPending&&!giftPending&&
   Number(turn.remaining?.[me]||0)>0&&turn.next===me;
  const canGive=ready&&turn.ready&&!redrawPending&&!giftPending&&giftCount<3&&Number(turn.remaining?.[me])>0;
- const challengeText=rolling?'Brassage en cours…':pending?'♡ Voir notre défi en cours':turn.finished?'Tous les défis terminés':!ready?'En attente des deux D6':canDraw?'À toi de jouer':'En attente de '+esc(partner.name?.split(' ')[0]||'ton partenaire');
+ const challengeText=rolling?'Brassage en cours…':giftPending?'♡ Don en cours de confirmation…':pending?'♡ Voir notre défi en cours':turn.finished?'Tous les défis terminés':!ready?'En attente des deux D6':canDraw?'À toi de jouer':'En attente de '+esc(partner.name?.split(' ')[0]||'ton partenaire');
  const stateText=ready?'✓ Étape 2 débloquée':status?.my_rolled?'Ton lancer est enregistré. Attends ton partenaire.':status?.partner_rolled?'Le résultat de '+esc(partner.name?.split(' ')[0]||'ton partenaire')+' est prêt. À toi de brasser le dé.':'Chaque partenaire brasse son propre dé.';
- const currentStatus=rolling?'🎲 Brassage en cours…':redrawPending?'♡ Repige en cours de confirmation…':turn.finished?'♡ Tous les défis sont réalisés':turn.drawsFinished?'♡ Tous les défis sont pigés':canDraw?'♥ C’est ton tour !':ready?'Au tour de '+esc(partner.name?.split(' ')[0]||'ton partenaire'):'Étape 2 verrouillée';
+ const currentStatus=rolling?'🎲 Brassage en cours…':redrawPending?'♡ Repige en cours de confirmation…':giftPending?'♡ Don en cours de confirmation…':turn.finished?'♡ Tous les défis sont réalisés':turn.drawsFinished?'♡ Tous les défis sont pigés':canDraw?'♥ C’est ton tour !':ready?'Au tour de '+esc(partner.name?.split(' ')[0]||'ton partenaire'):'Étape 2 verrouillée';
  // An official challenge is persisted in Supabase; never show a provisional
  // animation face or guess a result while a D100 is being rolled.
  const d35Candidate=lastD35Face??pending?.face??turn?.pending?.face;
@@ -211,7 +211,7 @@ export function premiumEveningHtml({
  '<div class="evening-toolbar">'+
   '<span class="evening-header-balance" aria-hidden="true"></span>'+
   ritualHeadingHtml(session?(ready?'ÉTAPE 2 · DÉFI DU SOIR':'ÉTAPE 1 · NOMBRE DE DÉFIS'):'NOTRE RITUEL DE LA SOIRÉE')+
-  (session?'<button type="button" class="evening-manage" data-action="evening-more" aria-label="Gérer notre soirée"'+(rolling||redrawPending?' disabled aria-disabled="true"':'')+'>⋯</button>':'<span aria-hidden="true"></span>')+'</div>'+
+  (session?'<button type="button" class="evening-manage" data-action="evening-more" aria-label="Gérer notre soirée"'+(rolling||redrawPending||giftPending?' disabled aria-disabled="true"':'')+'>⋯</button>':'<span aria-hidden="true"></span>')+'</div>'+
  '<div class="evening-intro">'+
  '<h2 class="ritual-page-title">'+(session?(ready?'Votre défi du soir':'À toi de brasser ton dé'):'200 défis à vivre à deux')+'</h2>'+eveningEclatSwitcher('session')+'</div>'+invitationHtml+
  (session?
