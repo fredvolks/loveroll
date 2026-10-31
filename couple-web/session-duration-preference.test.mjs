@@ -68,5 +68,14 @@ test('Next-evening planner stays visible after closure without unlocking another
  assert.match(html,/Notre soirée est terminée/);
  assert.match(html,/<option value="30" selected>30 min<\/option>/);
  assert.equal((html.match(/data-session-length-select="true"/g)||[]).length,1);
- assert.match(html,/data-action="new-session"[^>]*disabled/);
+ // A closed evening always offers its own review and calendar, not a disabled
+ // "new session" action. The next-evening setting is only a local preference.
+ assert.match(html,/data-action="review-open:closed"/);
+ assert.match(html,/data-action="evening-calendar"/);
+ assert.doesNotMatch(html,/data-action="new-session"/);
+ const locked=premiumEveningHtml({
+  session:null,lastEvening:null,sessionLength:'30',canStartEvening:false,
+  dailyLocked:true
+ });
+ assert.match(locked,/data-action="new-session"[^>]*disabled/);
 });
