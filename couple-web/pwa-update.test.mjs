@@ -338,3 +338,22 @@ test('Safari privacy restrictions cannot crash rendering of session duration pre
  assert.match(app,/sessionLength:readSessionLength\(uid\)/);
  assert.doesNotMatch(app,/sessionLength:readSessionLength\(uid,localStorage\)/);
 });
+
+test('Web 260 offline release updates the invitation shortcut as one coherent bundle',()=>{
+ const build=release.build;
+ const releaseNumber=Number(build.split('.')[1]);
+ assert.ok(Number.isInteger(releaseNumber)&&releaseNumber>=260);
+ assert.ok(html.includes('app.js?v='+appTag));
+ assert.ok(app.includes("const WEB_RELEASE='"+build+"'"));
+ assert.ok(app.includes('service-worker.js?v='+appTag));
+ assert.ok(app.includes('evening-invitation.mjs?v=20261031-invite260'));
+ assert.ok(html.includes('evening-invitation.css?v=20261031-invite260'));
+ assert.ok(sw.includes("const CACHE='loveroll-static-v"+releaseNumber+"'"));
+ for(const asset of ['./evening-invitation.mjs','./evening-invitation.css','./web-version.json'])
+  assert.ok(sw.includes("'"+asset+"'"),'Offline bundle missing '+asset);
+ const invitation=read('evening-invitation.mjs');
+ assert.ok(invitation.includes('data-action="evening-invite:yes"'),
+  'The new quick acceptance control must be included in the offline bundle');
+ assert.ok(invitation.includes('data-action="tab:session"'),
+  'Other responses must remain accessible without automatic dice');
+});
