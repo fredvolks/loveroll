@@ -774,8 +774,12 @@ function adoptAuthenticatedIdentity(nextUser){
 async function refreshVerifiedIdentity(){
  if(!state.user)return false;
  const expectedId=state.user.id;
+ // A SIGNED_OUT followed by a fresh SIGNED_IN can return to the *same*
+ // user ID while this network request is still pending. Invalidate the
+ // old getUser response on every real identity-boundary transition.
+ const expectedGeneration=authFeedbackGeneration;
  const {data,error}=await client.auth.getUser();
- if(state.user?.id!==expectedId)return null;
+ if(state.user?.id!==expectedId||authFeedbackGeneration!==expectedGeneration)return null;
  if(error||!data?.user){
   adoptAuthenticatedIdentity(null);
   // reload() sees a different account after adopt() and correctly drops
@@ -5532,23 +5536,47 @@ document.addEventListener('visibilitychange',()=>{
  }
 });
 // Android native Google chooser passes the selected ID token to Supabase.
+// Native Android Google OAuth may resolve after an account switch or after
+// another Google chooser. A stale callback may never replace the current
+// player or put its error on someone else's private screen.
+let currentNativeGoogleLoginRequest=null;
 window.addEventListener('loveroll-native-google-result',async event=>{
- const {token,nonce,error}=event.detail||{};
- if(error){
-  state.authNotice=error;
-  authMessage(error);return;
- }
- if(!token){authMessage('Aucun identifiant Google reçu. Réessayez ou connectez-vous avec votre mot de passe.');return;}
+ const request={};
+ currentNativeGoogleLoginRequest=request;
+ authFeedbackGeneration++; // Also invalidates an earlier password form reply.
+ const originalUserId=state.user?.id??null;
+ const generation=authFeedbackGeneration;
+ const current=()=>currentNativeGoogleLoginRequest===request&&
+  authFeedbackGeneration===generation&&
+  (state.user?.id??null)===originalUserId;
  try{
-  const result=await client.auth.signInWithIdToken({provider:'google',token,nonce});
-  if(result.error)throw result.error;
-  if(result.data?.user){
-   state.user=result.data.user;state.showAuth=false;
-   await reload();
+  const {token,nonce,error}=event.detail||{};
+  if(error){
+   if(current()){state.authNotice=error;authMessage(error);}
+   return;
   }
-  }catch(err){
-  authMessage('Google n’a pas pu ouvrir la session LoveRoll. Vérifiez le compte choisi et réessayez, ou utilisez votre mot de passe.');
-  console.warn('Google Supabase auth failed',err?.code||'unknown');
+  if(!token){
+   if(current())authMessage('Aucun identifiant Google reçu. Réessayez ou connectez-vous avec votre mot de passe.');
+   return;
+  }
+  const result=await client.auth.signInWithIdToken({provider:'google',token,nonce});
+  // SIGNED_IN may have already adopted this result and queued its reload.
+  // In that case, never perform a duplicate or stale presentation update.
+  if(!current())return;
+  if(result.error)throw result.error;
+  if(!result.data?.user)throw Error('Aucune session Google ouverte.');
+  const acceptedUserId=result.data.user.id;
+  adoptAuthenticatedIdentity(result.data.user);
+  state.showAuth=false;
+  try{await reload();}
+  catch(err){if(state.user?.id===acceptedUserId)fail(err);}
+ }catch(err){
+  if(current()){
+   authMessage('Google n’a pas pu ouvrir la session LoveRoll. Vérifiez le compte choisi et réessayez, ou utilisez votre mot de passe.');
+   console.warn('Google Supabase auth failed',err?.code||'unknown');
+  }
+ }finally{
+  if(currentNativeGoogleLoginRequest===request)currentNativeGoogleLoginRequest=null;
  }
 });
 
