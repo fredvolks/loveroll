@@ -2703,12 +2703,15 @@ function renderSession(){
  const favoriteKeys=readEveningFavorites(uid,state.coupleId);
  const selectedFavoriteId=eveningFavoriteId(selected);
  const isFavorite=selectedFavoriteId&&favoriteKeys.includes(selectedFavoriteId);
+ // Gift receipt changes the turn counts; keep old private actions disabled.
+ const giftTransferPending=isActiveEveningGiftPending();
  if(session&&state.showEveningChallenges){
   const view=selected;
   const idx=view?queuePosition(mineCards,view.id):-1;
   overlay='<div class="surprise-modal evening-queue-modal'+(view?' is-detail':'')+'" role="dialog" aria-modal="true" aria-label="Mes défis de ce soir">'+
    '<article class="surprise-modal-content evening-queue-content'+(view?' is-detail':'')+'">'+
    '<div class="eyebrow">♡ MES DÉFIS DU SOIR</div>'+
+   (giftTransferPending?'<p class="evening-gift-pending" role="status" aria-live="polite">♡ Don en cours de confirmation…</p>':'')+
    (view?
     '<div class="evening-queue-nav">'+
      button('evening-list','← Mes défis ('+mineCards.length+')','class="subtle"')+
@@ -2729,26 +2732,27 @@ function renderSession(){
        'class="evening-favorite-btn" aria-pressed="'+(isFavorite?'true':'false')+'"'+
         (!isFavorite&&favoriteKeys.length>=EVENING_FAVORITES_LIMIT?
          ' disabled aria-disabled="true" title="Limite de cinq favoris atteinte"':
-         isActiveEveningRedrawPending()?' disabled aria-disabled="true"':'')):'')+
+         (isActiveEveningRedrawPending()||giftTransferPending)?' disabled aria-disabled="true"':'')):'')+
      (['proposed','accepted'].includes(view.status)?
        timerWidget(view,resolvedCard(view).minutes):
        '<p class="tiny-note">Ce défi est archivé dans votre historique.</p>')+
      (view.status==='proposed'?
        button('evening-start:'+view.id,'▶ Commencer ce défi',
-        'class="evening-primary" '+(isActiveEveningRedrawPending()||isEveningCardCompleting(view.id)?
+        'class="evening-primary" '+(isActiveEveningRedrawPending()||giftTransferPending||isEveningCardCompleting(view.id)?
          'disabled aria-disabled="true" aria-busy="true"':'')):'')+
      (view.status==='accepted'?
        button('answer:'+view.id+':completed',
+        giftTransferPending?'♡ Don en cours…':
         isActiveEveningRedrawPending()?'♡ Confirmation en cours':
         isEveningCardCompleting(view.id)?'♡ Réponse en cours':'✓ Défi réalisé',
-        'class="evening-primary" '+(isActiveEveningRedrawPending()||isEveningCardCompleting(view.id)?
+        'class="evening-primary" '+(isActiveEveningRedrawPending()||giftTransferPending||isEveningCardCompleting(view.id)?
         'disabled aria-disabled="true" aria-busy="true"':'')):'')+
      (['proposed','accepted'].includes(view.status)?
       '<div class="lr-redraw-actions" aria-label="Autres choix pour ce défi">'+
        button('evening-pass:'+view.id,'Passer ce défi','class="subtle" '+
-        (!state.redrawReady||isActiveEveningRedrawPending()||isEveningCardCompleting(view.id)||state.monthlyPassQuota?.can_pass===false?'disabled aria-disabled="true"':''))+
+        (!state.redrawReady||isActiveEveningRedrawPending()||giftTransferPending||isEveningCardCompleting(view.id)||state.monthlyPassQuota?.can_pass===false?'disabled aria-disabled="true"':''))+
        button('evening-refuse:'+view.id,'Refuser ce défi','class="subtle" '+
-        (!state.redrawReady||isActiveEveningRedrawPending()||isEveningCardCompleting(view.id)?'disabled aria-disabled="true"':''))+
+        (!state.redrawReady||isActiveEveningRedrawPending()||giftTransferPending||isEveningCardCompleting(view.id)?'disabled aria-disabled="true"':''))+
        '<small>'+(!state.redrawReady?
         'Passer et Refuser seront disponibles lorsque la repige sera confirmée par le serveur.':
         state.monthlyPassQuota?.can_pass===false?
@@ -2763,9 +2767,9 @@ function renderSession(){
        '<h3 id="lr-refusal-title">Tu préfères un autre défi ?</h3>'+
        '<p id="lr-refusal-description">Veux-tu retirer ce défi des prochaines piges pour le cycle en cours ?</p>'+
        '<div class="lr-refusal-buttons">'+
-        button('evening-refuse-choice:'+view.id+':yes','Oui, retirer du lot','class="evening-primary" '+(isActiveEveningRedrawPending()||isEveningCardCompleting(view.id)?'disabled':''))+
-        button('evening-refuse-choice:'+view.id+':no','Non, le garder dans le lot','class="subtle" '+(isActiveEveningRedrawPending()||isEveningCardCompleting(view.id)?'disabled':''))+
-        button('evening-refuse-cancel','Annuler','class="subtle" '+(isActiveEveningRedrawPending()?'disabled':''))+
+        button('evening-refuse-choice:'+view.id+':yes','Oui, retirer du lot','class="evening-primary" '+(isActiveEveningRedrawPending()||giftTransferPending||isEveningCardCompleting(view.id)?'disabled':''))+
+        button('evening-refuse-choice:'+view.id+':no','Non, le garder dans le lot','class="subtle" '+(isActiveEveningRedrawPending()||giftTransferPending||isEveningCardCompleting(view.id)?'disabled':''))+
+        button('evening-refuse-cancel','Annuler','class="subtle" '+(isActiveEveningRedrawPending()||giftTransferPending?'disabled':''))+
        '</div></div>':'')+
      '<div class="evening-queue-nav">'+
        (idx>0?button('evening-open:'+mineCards[idx-1].id,'← Précédent','class="subtle"'):'<span></span>')+
