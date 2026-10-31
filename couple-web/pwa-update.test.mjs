@@ -311,6 +311,24 @@ test('Evening duration settings have accessible choices without an automatic sto
  assert.match(settings,/ne termine pas automatiquement/);
  assert.match(settings,/Préférence enregistrée sur cet appareil/);
  assert.match(sessionLengthSettingsHtml('unknown'),/data-action="session-length:libre" aria-pressed="true"/);
- assert.match(app,/sessionLengthSettingsHtml\(readSessionLength\(state\.user\?\.id,localStorage\)\)/);
- assert.match(app,/saveSessionLength\(state\.user\.id,parts\[0\],localStorage\)/);
+ assert.match(app,/sessionLengthSettingsHtml\(readSessionLength\(state\.user\?\.id\)\)/);
+ assert.match(app,/saveSessionLength\(state\.user\.id,parts\[0\]\)/);
+});
+
+test('Safari privacy restrictions cannot crash rendering of session duration preferences',()=>{
+ // The localStorage PROPERTY getter may throw before getItem is reached.
+ // Evaluate the real implementation against a simulated blocked browser.
+ const source=read('session-duration-preference.mjs')
+  .replace(/^export /gm,'')+'\n({readSessionLength,saveSessionLength});';
+ const blocked={};
+ Object.defineProperty(blocked,'localStorage',{
+  get(){throw Error('SecurityError: storage access denied');}
+ });
+ const safe=vm.runInNewContext(source,{globalThis:blocked});
+ assert.equal(safe.readSessionLength('fred'),'libre');
+ assert.equal(safe.saveSessionLength('fred','15'),false);
+ assert.equal(safe.readSessionLength('fred',null),'libre');
+ assert.equal(safe.saveSessionLength('fred','15',null),false);
+ assert.match(app,/sessionLength:readSessionLength\(uid\)/);
+ assert.doesNotMatch(app,/sessionLength:readSessionLength\(uid,localStorage\)/);
 });
