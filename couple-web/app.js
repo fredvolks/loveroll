@@ -4117,8 +4117,9 @@ async function handle(action,element){
   state.eveningMore=!state.eveningMore;render();return;
  }
  if(verb==='evening-calendar'){
-  // A redraw's recipient-only RLS refresh must finish before leaving Soirée.
-  if(state.tab==='session'&&(state.diceStatus||isActiveEveningRedrawPending()))return;
+  // Stay in Soirée until the official die, redraw or gift receipt settles.
+  if(state.tab==='session'&&(state.diceStatus||isActiveEveningRedrawPending()||
+      isActiveEveningGiftPending()))return;
   state.eveningCalendarBack=parts[0]==='settings'||state.tab==='settings'?'settings-page:confidentialite':'tab:session';
   state.eveningMore=false;state.confirmCancel=false;
   const date=state.session?eveningLocalDay(state.session.started_at):null;
@@ -4168,15 +4169,15 @@ async function handle(action,element){
  }
  if(verb==='evening-close-request'){
   if(state.diceStatus)return; // Let the official D100/D6 settle before closing.
-  // Never offer closure while a private-card decision is being persisted.
-  if(isActiveEveningRedrawPending())return;
+  // Never offer closure while a private-card decision or gift is being persisted.
+  if(isActiveEveningRedrawPending()||isActiveEveningGiftPending())return;
   if(!state.session)throw Error('Aucune soirée à clore.');
   state.eveningMore=false;state.confirmCancel=true;render();return;
  }
  if(verb==='evening-close-confirm'){
   if(state.diceStatus)return; // A stale confirmation must not close mid-roll.
-  // A delayed confirmation cannot close the session ahead of its repick.
-  if(isActiveEveningRedrawPending())return;
+  // A delayed confirmation cannot close the session ahead of a repick or gift.
+  if(isActiveEveningRedrawPending()||isActiveEveningGiftPending())return;
   if(!state.session)throw Error('Cette soirée est déjà clôturée.');
   const ended=state.session;
   const owner={userId:state.user?.id,coupleId:state.coupleId,
@@ -4259,8 +4260,9 @@ async function handle(action,element){
   return;
  }
  if(verb==='evening-refuse'){
-  // A stale click cannot open a second decision while D100 or a repick runs.
-  if(state.diceStatus||isActiveEveningRedrawPending()||isEveningCardCompleting(parts[0]))return;
+  // Refusing a private card cannot race a gift that updates session turns.
+  if(state.diceStatus||isActiveEveningRedrawPending()||isActiveEveningGiftPending()||
+     isEveningCardCompleting(parts[0]))return;
   if(!state.redrawReady)throw Error('La repige sécurisée n’est pas encore disponible sur ce serveur.');
   const item=ownEveningChallenges(state.challenges,state.user?.id,state.session?.id).find(x=>x.id===parts[0]);
   if(!item||!['proposed','accepted'].includes(item.status))throw Error('Ce défi ne peut pas être refusé.');
@@ -4269,16 +4271,16 @@ async function handle(action,element){
   return;
  }
  if(verb==='evening-refuse-cancel'){
-  // A stale cancellation cannot remount a rolling 3D die.
-  if(state.diceStatus)return;
+  // A stale cancellation cannot remount a rolling 3D die or pending gift.
+  if(state.diceStatus||isActiveEveningGiftPending())return;
   const target=state.eveningRefusalId;
   if(!isActiveEveningRedrawPending()){state.eveningRefusalId=null;render();
    root.querySelector('[data-action="evening-refuse:'+target+'"]')?.focus();}
   return;
  }
  if(verb==='evening-pass'||verb==='evening-refuse-choice'){
-  // Old events from an unmounted queue must never race the official die.
-  if(state.diceStatus)return;
+  // Private Passer/Refuser cannot run against a gift's changing turn counts.
+  if(state.diceStatus||isActiveEveningGiftPending())return;
   if(!state.redrawReady)throw Error('La repige sécurisée n’est pas encore disponible sur ce serveur.');
   if(isActiveEveningRedrawPending())return;
   const refuse=verb==='evening-refuse-choice',challengeId=parts[0];
@@ -4414,8 +4416,8 @@ async function handle(action,element){
   return;
  }
  if(verb==='evening-start'){
-  // A stale start tap must not interrupt or remount a live D6/D100 scene.
-  if(state.diceStatus)return;
+  // A stale start tap must not race a live die or a pending gift transfer.
+  if(state.diceStatus||isActiveEveningGiftPending())return;
   if(isEveningCardCompleting(parts[0]))return;
   // A repick refreshes the entire recipient-only queue. Starting even a
   // DIFFERENT private card before that confirmation can race the RLS view.
@@ -5603,8 +5605,8 @@ async function handle(action,element){
  }
  if(verb==='resume-evening'){
   // LR-018: synchronize from Supabase, never create a session or new D6/D100.
-  // A pending repick already owns its scoped refresh of this same session.
-  if(state.diceStatus||isActiveEveningRedrawPending())return;
+  // A pending repick or gift already owns the next snapshot of this session.
+  if(state.diceStatus||isActiveEveningRedrawPending()||isActiveEveningGiftPending())return;
   if(!isSharedCoupleReady(state.coupleId,state.members))throw Error('Deux partenaires doivent être associés.');
   const owner={userId:state.user?.id,coupleId:state.coupleId,
    tab:state.tab,generation:authFeedbackGeneration};
@@ -5635,8 +5637,9 @@ async function handle(action,element){
   return;
  }
  if(verb==='tab'){
-  // A tab change would invalidate the private server repick response context.
-  if(state.diceStatus||(state.tab==='session'&&isActiveEveningRedrawPending()))return;
+  // A tab change cannot invalidate an in-flight repick or gift receipt.
+  if(state.diceStatus||(state.tab==='session'&&
+     (isActiveEveningRedrawPending()||isActiveEveningGiftPending())))return;
   const ready=isSharedCoupleReady(state.coupleId,state.members);
   const allowed=ready?
    ['home','session','special','occasions','advent','settings','eclat','library',
@@ -6068,9 +6071,9 @@ async function handle(action,element){
   }finally{eveningCategoryConfirmInFlight=false;}
  }
  if(verb==='answer'){
-  // The recipient-only refresh for Passer/Refuser must settle before any
-  // manual completion; otherwise its older snapshot could undo this reply.
-  if(isActiveEveningRedrawPending()||isEveningCardCompleting(parts[0]))return;
+  // Manual completion must not race a repick or a pending gift transfer.
+  if(isActiveEveningRedrawPending()||isActiveEveningGiftPending()||
+     isEveningCardCompleting(parts[0]))return;
   const item=ownEveningChallenges(state.challenges,state.user.id,state.session?.id).find(c=>c.id===parts[0]);
   if(!item)throw Error('Ce défi n’est pas dans ta liste personnelle.');
   const eveningId=state.session.id;
@@ -6168,8 +6171,8 @@ async function handle(action,element){
  }
  if(verb==='finish-session'){
   if(state.diceStatus)return; // Finishing before the receipt interrupts the die.
-  // Finishing while a Passer/Refuser RPC is in flight would race its receipt.
-  if(isActiveEveningRedrawPending())return;
+  // Never finish before a Passer/Refuser or gift transfer is confirmed.
+  if(isActiveEveningRedrawPending()||isActiveEveningGiftPending())return;
   if(!state.session)return;
   const finishedId=state.session.id;
   const owner={userId:state.user?.id,coupleId:state.coupleId,
@@ -6187,14 +6190,14 @@ async function handle(action,element){
  }
  if(verb==='cancel-session'){
   if(state.diceStatus)return; // The official result must settle before cancellation.
-  if(isActiveEveningRedrawPending())return;
+  if(isActiveEveningRedrawPending()||isActiveEveningGiftPending())return;
   state.confirmCancel=true;render();return;
  }
  if(verb==='dismiss-cancel'){state.confirmCancel=false;render();return;}
  if(verb==='confirm-cancel'){
   if(state.diceStatus||!state.session)return;
-  // A stale dialog must not cancel the evening during a committed redraw.
-  if(isActiveEveningRedrawPending())return;
+  // A stale dialog must not cancel an evening during a redraw or gift transfer.
+  if(isActiveEveningRedrawPending()||isActiveEveningGiftPending())return;
   const owner={userId:state.user?.id,coupleId:state.coupleId,
    sessionId:state.session.id,generation:authFeedbackGeneration};
   const ownsCancel=()=>state.user?.id===owner.userId&&
