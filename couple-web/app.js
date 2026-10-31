@@ -28,6 +28,7 @@ import {eclatStage} from './eclat-catalog.mjs?v=20261019-eclat174';
 import {createEclatAudio} from './eclat-audio.mjs?v=20261028-privacy250';
 import {futureCoupleStyleMix,playStyleLabel} from './play-style.mjs?v=20261018-styles149';
 import {readSessionLength,saveSessionLength,sessionLengthSettingsHtml} from './session-duration-preference.mjs?v=20261031-length262';
+import {readEveningIntensity,saveEveningIntensity} from './evening-intensity-preference.mjs?v=20261031-intensity265';
 import {eveningFavoriteId,readEveningFavorites,toggleEveningFavorite,removeEveningFavorite,eveningFavoritesSettingsHtml,EVENING_FAVORITES_LIMIT} from './evening-favorites.mjs?v=20261031-favs264';
 import {cycleIntensityQuestionnaireHtml,ownsCycleIntensityAnswer} from './cycle-questionnaire.mjs?v=20261031-cycle261';
 import {DICE_WEIGHT_CONFIG,configuredDiceWeights,parseDiceWeightInputs} from './dice-weighting.mjs?v=20261018-weights146';
@@ -531,6 +532,16 @@ function bindActions(){
   handle('session-length:'+lengthSelect.value).then(()=>{
    if(state.user?.id===lengthUserId&&authFeedbackGeneration===lengthGeneration)
     root.querySelector('[data-session-length-select]')?.focus({preventScroll:true});
+  }).catch(fail);
+ });
+ const intensitySelect=root.querySelector('[data-evening-intensity-select]');
+ const intensityUserId=state.user?.id,intensityGeneration=authFeedbackGeneration;
+ intensitySelect?.addEventListener('change',()=>{
+  if(!root.contains(intensitySelect)||state.user?.id!==intensityUserId||
+     authFeedbackGeneration!==intensityGeneration||state.tab!=='session')return;
+  handle('evening-intensity:'+intensitySelect.value).then(()=>{
+   if(state.user?.id===intensityUserId&&authFeedbackGeneration===intensityGeneration)
+    root.querySelector('[data-evening-intensity-select]')?.focus({preventScroll:true});
   }).catch(fail);
  });
  const categoryPref=root.querySelector('#evening-category-confirm-pref');
@@ -2744,6 +2755,7 @@ function renderSession(){
    rollingKind:state.rollAnimationKind,showMore:state.eveningMore,confirmCancel:state.confirmCancel,
    challengeOverlay:overlay,lastEvening,canStartEvening,
    sessionLength:readSessionLength(uid),
+   eveningIntensity:readEveningIntensity(uid,state.profile?.play_style),
    challengeHistory:[...state.challengesHistory,...state.eveningCalendarChallenges,...state.challenges],
    weeklyReady:!!state.weekly,weeklyCount:daily.counted,weeklyLimit:daily.limit,historyReady:daily.historyReady,
    dailyLocked:daily.dailyLocked,ownChallengeCount:mineCards.length,
@@ -5553,6 +5565,15 @@ async function handle(action,element){
    if(!state.user?.id||!state.profile)throw Error('Compte requis.');
    if(!saveSessionLength(state.user.id,parts[0]))
     throw Error('Impossible de sauvegarder la durée souhaitée sur cet appareil.');
+   render();return;
+  }
+  if(verb==='evening-intensity'){
+   // Preview for the upcoming evening only: do not rewrite profile or
+   // server-authorized category, deck, quota or current D100 result.
+   if(!state.user?.id||!state.profile||state.tab!=='session'||state.session)
+    throw Error('Choix disponible avant la prochaine soirée seulement.');
+   if(!saveEveningIntensity(state.user.id,parts[0]))
+    throw Error('Intensité souhaitée invalide.');
    render();return;
   }
   if(verb==='timer-mode'){
