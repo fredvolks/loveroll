@@ -1797,7 +1797,9 @@ async function refreshEclatHistory(){
 // authority; UI state must drop private data immediately on revoked access.
 function applyEclatStatus(value){
  state.eclat=value??null;
- if(value==null||value.access===false){
+ // An absent or malformed entitlement is not a valid permission receipt.
+ // Clear already cached private notes, gallery, completion and pending audio.
+ if(value?.access!==true){
   latestEclatHistoryRead=null;
   eclatNoteDrafts.clear();
   state.eclatFinished=null;
