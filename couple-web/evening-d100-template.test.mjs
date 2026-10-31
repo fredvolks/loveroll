@@ -1058,3 +1058,75 @@ test('LR-027: cancelled gift unlocks and an old login cannot clear a newer gift'
  await run('give-challenge');
  assert.equal(dialogCount,3,'The cancelled request releases its owner lock');
 });
+
+test('LR-027: a pending gift prevents thirteen conflicting Soirée actions',async()=>{
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const {runInNewContext}=await import('node:vm');
+ const protectedActions=[
+  'evening-close-request','evening-close-confirm','evening-refuse',
+  'evening-refuse-cancel','evening-pass','evening-start','answer',
+  'finish-session','cancel-session','confirm-cancel','evening-calendar',
+  'tab','resume-evening'
+ ];
+ for(const verb of protectedActions){
+  const marker=verb==='evening-pass'?
+   "if(verb==='evening-pass'||verb==='evening-refuse-choice'){":
+   "if(verb==='"+verb+"'){";
+  const from=source.indexOf(marker);
+  const until=verb==='tab'?
+   source.indexOf("\n if(['review-save'",from):
+   source.indexOf("\n if(verb===",from+marker.length);
+  assert.ok(from>0&&until>from,verb+' must exist in production');
+  const snippet=source.slice(from,until);
+  assert.match(snippet,/isActiveEveningGiftPending\(\)/,verb+' must check active gift');
+  let renders=0,writes=0;
+  const state={tab:'session',diceStatus:null,
+   user:{id:'alice'},session:{id:'night'},eveningRefusalId:'card'};
+  const forbidden=()=>{writes++;throw Error('Stale '+verb+' crossed pending gift')};
+  const action=runInNewContext('(async (verb,parts)=>{'+snippet+'})',{
+   state,isActiveEveningGiftPending:()=>true,
+   isActiveEveningRedrawPending:()=>false,
+   isEveningCardCompleting:forbidden,
+   render:()=>{renders++;throw Error('Unexpected repaint')},
+   rpc:forbidden,root:{querySelector:forbidden},
+   ownEveningChallenges:forbidden
+  });
+  await action(verb,['card']);
+  assert.equal(writes,0,'No server or state mutation during gift: '+verb);
+  assert.equal(renders,0,'No screen repaint during gift: '+verb);
+  assert.equal(state.tab,'session');
+ }
+});
+
+test('LR-027: gift completion restores cancellation and calendar navigation',async()=>{
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const {runInNewContext}=await import('node:vm');
+ for(const {verb,ending} of [
+  {verb:'cancel-session',ending:"if(verb==='dismiss-cancel'){"},
+  {verb:'evening-refuse-cancel',ending:"if(verb==='evening-pass'||verb==='evening-refuse-choice'){"},
+  {verb:'evening-calendar',ending:"if(verb==='evening-month-prev'||verb==='evening-month-next'){"}
+ ]){
+  const marker="if(verb==='"+verb+"'){";
+  const from=source.indexOf(marker);
+  const until=source.indexOf(ending,from);
+  assert.ok(from>0&&until>from);
+  const state={tab:'session',diceStatus:null,session:null,
+   confirmCancel:false,eveningRefusalId:'card',eveningMore:false};
+  let paints=0,focus=0;
+  const run=runInNewContext('(async (verb,parts)=>{'+source.slice(from,until)+'})',{
+   state,isActiveEveningGiftPending:()=>false,
+   isActiveEveningRedrawPending:()=>false,
+   render:()=>{paints++;},
+   root:{querySelector:()=>({focus:()=>{focus++;}})},
+   eveningLocalDay:()=>null
+  });
+  await run(verb,[]);
+  assert.equal(paints,1,'Control reactivates after gift: '+verb);
+  if(verb==='cancel-session')assert.equal(state.confirmCancel,true);
+  if(verb==='evening-refuse-cancel'){
+   assert.equal(state.eveningRefusalId,null);
+   assert.equal(focus,1);
+  }
+  if(verb==='evening-calendar')assert.equal(state.tab,'evening-calendar');
+ }
+});
