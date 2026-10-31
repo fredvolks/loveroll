@@ -1659,7 +1659,9 @@ function renderWaitingPartner(){
 const eclatNoteDrafts=new Map();
 function eclatNoteState(){
  const key=eclatNoteKey(state.eclat,state.user?.id);
- if(!key||!isSharedCoupleReady(state.coupleId,state.members))return {};
+ // An explicitly revoked entitlement must not read or reuse private drafts.
+ if(!key||state.eclat?.access===false||
+    !isSharedCoupleReady(state.coupleId,state.members))return {};
  // A fresh Auth session with the same account ID must reload its own note.
  // Discard any draft created under an older login before issuing a read.
  if(!eclatNoteDrafts.has(key)||
@@ -1676,7 +1678,7 @@ function eclatNoteState(){
   const current=()=>ownsCoupleAsyncRead(state,owner)&&
    authFeedbackGeneration===owner.generation&&
    isSharedCoupleReady(owner.coupleId,state.members)&&
-   eclatNoteDrafts.get(key)===draft;
+   state.eclat?.access!==false&&eclatNoteDrafts.get(key)===draft;
   loadEclatNote(client,status,owner.userId).then(value=>{
    if(current())Object.assign(draft,value,{saved:!!value.note||!!value.clue,dirty:false,error:false});
   }).catch(()=>{if(current())draft.error=true;})
@@ -1701,6 +1703,7 @@ async function saveCurrentEclatNote(momentDone){
  const current=()=>ownsCoupleAsyncRead(state,owner)&&
   authFeedbackGeneration===owner.generation&&
   isSharedCoupleReady(owner.coupleId,state.members)&&state.tab==='eclat'&&
+  state.eclat?.access!==false&&
   eclatNoteKey(state.eclat,state.user?.id)===key&&
   eclatNoteDrafts.get(key)===draft;
  if(!current())return null;
