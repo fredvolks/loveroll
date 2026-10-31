@@ -709,3 +709,35 @@ test('LR-027: pending repick protects tab, calendar and next D100 from stale eve
  assert.equal(back(),true);
  assert.equal(backState.tab,'session');
 });
+
+test('LR-027: active server repick is explained and temporarily locks conflicting gameplay',()=>{
+ const state={...ready,category:'SENSUEL',ownChallengeCount:2,
+  nextChallenge:{id:'private-a',status:'accepted'},giftCount:0,
+  turn:{...ready.turn,ready:true,next:'a',drawsFinished:false,remaining:{a:2,b:2}}};
+ const waiting=premiumEveningHtml({...state,redrawPending:true});
+ assert.match(waiting,/Repige en cours de confirmation…/);
+ assert.match(waiting,/class="evening-primary-status" role="status"/);
+ assert.doesNotMatch(waiting,/data-action="new-challenge"/,
+  'Do not show an apparently usable D100 while a server repick is pending');
+ assert.doesNotMatch(waiting,/data-action="evening-start:private-a"/,
+  'Do not show a start button blocked by the in-flight RLS refresh');
+ assert.doesNotMatch(waiting,/data-action="evening-list"/,
+  'Do not remount the private challenge queue during a repick');
+ assert.match(waiting,/data-action="category:SENSUEL"[^>]*disabled/);
+ assert.match(waiting,/data-action="my-d6"[^>]*disabled/);
+ assert.match(waiting,/data-action="give-challenge"[^>]*disabled/);
+ assert.match(waiting,/class="evening-manage"[^>]*disabled/);
+ const restored=premiumEveningHtml({...state,redrawPending:false});
+ assert.match(restored,/data-action="new-challenge"/);
+ assert.match(restored,/data-action="evening-list"/);
+ assert.doesNotMatch(restored,/Repige en cours de confirmation…/);
+ const otherTurn=premiumEveningHtml({...state,redrawPending:false,
+  turn:{...state.turn,next:'b'}});
+ assert.match(otherTurn,/data-action="evening-start:private-a"/,
+  'A completed repick restores personal challenge actions on the partner’s turn');
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const renderSession=source.slice(source.indexOf('function renderSession(){'),
+  source.indexOf('function eveningCalendarReturn(){'));
+ assert.match(renderSession,/redrawPending:isActiveEveningRedrawPending\(\)/,
+  'The rendered state must come from the current authenticated session');
+});
