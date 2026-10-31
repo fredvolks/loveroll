@@ -56,6 +56,19 @@ test('A server-complete turn cannot expose finish while its official die still s
  assert.match(allDrawn,/Brassage en cours/);
 });
 
+test('Challenge-list navigation cannot interrupt an official D100 animation',()=>{
+ const waiting=premiumEveningHtml({...ready,rolling:true,rollingKind:'new-challenge',
+  ownChallengeCount:2,category:'SENSUEL'});
+ assert.doesNotMatch(waiting,/class="evening-queue-open-btn"/,
+  'The secondary challenge drawer must not remount the rolling D100');
+ assert.doesNotMatch(waiting,/data-action="evening-list"/);
+ assert.match(waiting,/Brassage en cours/);
+ const after=premiumEveningHtml({...ready,rolling:false,ownChallengeCount:2,
+  category:'SENSUEL'});
+ assert.match(after,/class="evening-queue-open-btn" data-action="evening-list"/,
+  'The challenge list returns immediately when the rolling state clears');
+});
+
 test('Information uses the actual configured preference and preserves calendar and closure',()=>{
  const info=eveningPlayInfoHtml(74);
  assert.match(info,/74 % pour la catégorie choisie et 26 % pour l’autre/);
