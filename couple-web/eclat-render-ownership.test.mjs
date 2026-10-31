@@ -347,3 +347,40 @@ test('LR-026: active entitled couple still renders private history normally',()=
  assert.equal(f.payload.historyError,true);
  assert.equal(f.notes,1);
 });
+
+
+test('LR-026: revoked entitlement cannot prefill suggestion from cached private history',async()=>{
+ const h=actionFixture({access:false,active:true});
+ h.state.eclatHistory=[{coffret_id:2,minutes:90,private_note:'old private'}];
+ await h.invoke('detail:2');
+ assert.equal(h.state.eclatSelection,2);
+ assert.equal(h.state.eclatMinutes,30,
+  'stale private duration may not influence public coffret defaults');
+ assert.deepEqual(h.calls,[]);
+ assert.deepEqual(h.renders,['render']);
+});
+
+test('LR-026: member preview ignores old private history while suggesting coffret',async()=>{
+ const h=actionFixture({access:true,active:true},{mode:'member',eligible:true});
+ h.state.eclatHistory=[{coffret_id:4,minutes:60}];
+ await h.invoke('suggest:4');
+ assert.equal(h.state.eclatMinutes,30);
+ assert.equal(h.state.eclatSelection,4);
+ assert.deepEqual(h.calls,[]);
+});
+
+test('LR-026: entitled couple can still reuse previous coffret duration',async()=>{
+ const h=actionFixture({access:true,active:true});
+ h.state.eclatHistory=[{coffret_id:3,minutes:90}];
+ await h.invoke('detail:3');
+ assert.equal(h.state.eclatMinutes,90);
+ assert.equal(h.state.eclatSelection,3);
+ assert.deepEqual(h.calls,[]);
+});
+
+test('LR-026: missing prior coffret keeps the default 30-minute duration',async()=>{
+ const h=actionFixture({access:true,active:true});
+ h.state.eclatHistory=[{coffret_id:9,minutes:60}];
+ await h.invoke('detail:3');
+ assert.equal(h.state.eclatMinutes,30);
+});
