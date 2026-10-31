@@ -1915,6 +1915,26 @@ function ownsEclatAction(owner){
   isSharedCoupleReady(owner.coupleId,state.members)&&
   state.tab===owner.tab&&latestEclatActionRequest===owner.request;
 }
+// Run every Éclat mutation under the account/couple that initiated it.
+// A definitive server denial must revoke local private state, while an
+// ordinary outage must preserve drafts and let the UI show a retryable error.
+async function runEclatMutation(owner,name,args={}){
+ if(!ownsEclatAction(owner))return {applied:false};
+ try{
+  const value=await rpc(name,args);
+  return ownsEclatAction(owner)?{applied:true,value}:{applied:false};
+ }catch(error){
+  // A late denial from a former login may not touch the new account.
+  if(!ownsEclatAction(owner))return {applied:false};
+  if(invalidateEclatOnAuthRejection(error)){
+   // Invalidate an older background status that still claimed access.
+   latestEclatStatusRead=null;
+   render();
+   return {applied:false};
+  }
+  throw error;
+ }
+}
 function applyEclatActionResult(value,owner){
  if(!ownsEclatAction(owner))return false;
  // A background status fetch launched before this action is now obsolete.
@@ -3535,8 +3555,8 @@ async function handle(action,element){
    if(!Number.isInteger(num)||num<1||num>12)throw Error('Coffret inconnu');
    if(!previewEclatStatus(state.eclat,state.testMode,state.testModeEligible)?.access)throw Error('Ce coffret nécessite le forfait Éclat.');
    const owner=beginEclatAction();if(!owner)return;
-   const value=await rpc('love_eclat_start',{p_coffret:num,p_minutes:state.eclatMinutes});
-   if(!applyEclatActionResult(value,owner))return;
+   const result=await runEclatMutation(owner,'love_eclat_start',{p_coffret:num,p_minutes:state.eclatMinutes});
+   if(!result.applied||!applyEclatActionResult(result.value,owner))return;
    state.eclatBrowse=false;state.eclatDetails=false;state.eclatFinished=null;
    await refreshEclatHistory();
    if(ownsEclatAction(owner))render();
@@ -3554,8 +3574,8 @@ async function handle(action,element){
    }
    // A slow private-note save must not authorize a choice after access changes.
    if(!ownsEclatAction(owner)||!canPlayEclat())return;
-   const value=await rpc('love_eclat_choose',{p_choice:num});
-   if(!applyEclatActionResult(value,owner))return;
+   const result=await runEclatMutation(owner,'love_eclat_choose',{p_choice:num});
+   if(!result.applied||!applyEclatActionResult(result.value,owner))return;
    render();return;
   }
   if(kind==='next'){
@@ -3563,8 +3583,8 @@ async function handle(action,element){
    const last=state.eclat.chapter_index===state.eclat.chapter_total;
    const title=last?eclatStage(state.eclat.coffret_id,8,0)?.coffret?.title:null;
    const owner=beginEclatAction();if(!owner)return;
-   const value=await rpc('love_eclat_next');
-   if(!applyEclatActionResult(value,owner))return;
+   const result=await runEclatMutation(owner,'love_eclat_next');
+   if(!result.applied||!applyEclatActionResult(result.value,owner))return;
    // Completion is private. A server receipt may revoke Éclat access at
    // the last chapter; never recreate its banner from a stale response.
    if(last&&state.eclat?.access===true&&!state.eclat?.active){
@@ -3585,8 +3605,8 @@ async function handle(action,element){
    });
    // Confirmation may finish after the session or entitlement is revoked.
    if(!yes||!ownsEclatAction(owner)||!canPlayEclat())return;
-   const value=await rpc('love_eclat_end');
-   if(!applyEclatActionResult(value,owner))return;
+   const result=await runEclatMutation(owner,'love_eclat_end');
+   if(!result.applied||!applyEclatActionResult(result.value,owner))return;
    await refreshEclatHistory();
    if(!ownsEclatAction(owner))return;
    state.eclatDetails=false;state.eclatFinished=null;
