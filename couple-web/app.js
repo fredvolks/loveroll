@@ -9,7 +9,7 @@ import {eclatNoteKey,loadEclatNote,saveEclatNote} from './eclat-guidance.mjs?v=2
 import {captureEclatEditorFocus,restoreEclatEditorFocus} from './eclat-editor-focus.mjs?v=20261031-focus';
 import {loadEclatHistory} from './eclat-history.mjs?v=20261022-home228';
 import {enhanceGoldBacks} from './gold-arrows.mjs?v=20261022-home228';
-import {fitSoireeHomeTemplate,fitRubyCalendar} from './soiree-home-template.mjs?v=20261029-web259';
+import {fitSoireeHomeTemplate,fitRubyCalendar} from './soiree-home-template.mjs?v=20261031-web260';
 import { marketingHtml,authHtml,profileHtml,inviteProfileHtml,emailConfirmationHtml,profileGenderSelect,profilePlayStyleSelect,matchHtml,parseMonthDay,monthDayInputs } from './onboarding.mjs?v=20261018-style148';
 import {editorialHeader,editorialRow,editorialIcon} from './editorial-ui.mjs?v=20261017-ritual130';
 import {cardLibraryHtml,monthlyEditorHtml,adventEditorHtml,specialEditorHtml,importEditorHtml} from './editorial-editors.mjs?v=20261017-ritual130';
@@ -20,7 +20,7 @@ import {playableSessionForWeekly} from './couple-reset-view.mjs';
 import {eveningDailyAccess} from './evening-daily-policy.mjs?v=20261016-daily100';
 import {createEveningClosureGate} from './evening-closure-gate.mjs?v=20261031-closure';
 import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,snapshotEveningCardBeforeRedraw,isSameEveningResponseContext,isEveningRedrawBusyForCurrentView,ownsEveningRedrawRequest,ownsEveningTimerRecord,ownedSavedEveningTimerSnapshot,redrawTimerRecovery,mayApplyScopedEveningRefresh,ownsCoupleAsyncRead,hasPendingEclatNote} from './evening-private-queue.mjs';
-import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261029-web259';
+import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261031-web260';
 import {saveEveningSelection,restoreEveningSelection,clearEveningSelection,safeEveningBookmarkStorage} from './evening-resume.mjs?v=20261031-resume-safari';
 import {readTimerAlertMode,saveTimerAlertMode} from './timer-alert-preference.mjs?v=20261031-safari-timer';
 import {eclatHtml} from './eclat-ui.mjs?v=20261027-web242';
@@ -34,7 +34,7 @@ import {eveningFavoriteId,readEveningFavorites,toggleEveningFavorite,removeEveni
 import {cycleIntensityQuestionnaireHtml,ownsCycleIntensityAnswer} from './cycle-questionnaire.mjs?v=20261031-cycle261';
 import {DICE_WEIGHT_CONFIG,configuredDiceWeights,parseDiceWeightInputs} from './dice-weighting.mjs?v=20261018-weights146';
 import {premiumEveningHtml,updateEveningCategoryUi} from './premium-evening.mjs?v=20261028-lr027-web254';
-import {eveningHistoryMarkup,eveningLocalDay,eveningCalendarInitialDate} from './evening-calendar.mjs?v=20261029-web259';
+import {eveningHistoryMarkup,eveningLocalDay,eveningCalendarInitialDate} from './evening-calendar.mjs?v=20261031-web260';
 import {eveningReviewModal,validEveningReview,eveningFinaleStatus} from './evening-review.mjs?v=20261016-person-review97';
 import {premiumSurpriseHtml,sixSpecialEvents} from './premium-surprise.mjs?v=20261022-home228';
 import {surpriseSlot,surpriseCustom,surpriseTitle,formatSurpriseDateInput,parseSurpriseDateInput} from './surprise-event-config.mjs?v=20261016-surprise109';
@@ -67,7 +67,7 @@ import {invitationStatus,coupleInvitationView,canConfirmInvitationShare,coupleSt
 import {premiumConfirm,premiumCopyLink,focusInlineLoveDialog} from './premium-dialogs.mjs?v=20261017-complete127';
 
 
-const WEB_RELEASE='2026-10-29.259';
+const WEB_RELEASE='2026-10-31.260';
 const root=document.querySelector('#app');
 const enc=new TextEncoder(),dec=new TextDecoder();
 let diceCleanup=[],renderToken=0;
@@ -475,7 +475,7 @@ function frame(body,title='LOVEROLL',subtitle='Un jeu intime, juste pour vous de
  // never a fabricated pip result. Actual face comes from Supabase after rolling.
  const canvases=[...root.querySelectorAll('canvas[data-dice-sides]')];
  if(canvases.length){
-  import('./dice3d.js?v=20261029-web259').then(({dieOn})=>{
+  import('./dice3d.js?v=20261031-web260').then(({dieOn})=>{
    if(token!==renderToken)return;
    for(const canvas of canvases){
     if(!canvas.isConnected||canvas.loveRollDie)continue;
@@ -6596,6 +6596,6 @@ start().catch(error=>{fail(error);window.LoveRollBoot?.showFailure();});
 
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   window.addEventListener('load', () =>
-    navigator.serviceWorker.register('./service-worker.js?v=20261031-invite260',
+    navigator.serviceWorker.register('./service-worker.js?v=20261031-web260',
      {scope:'./',updateViaCache:'none'}).then(reg=>reg.update()).catch(console.warn));
 }
