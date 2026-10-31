@@ -1822,10 +1822,14 @@ function applyEclatStatus(value){
  }
  return true;
 }
-// Authentication errors require a different response from temporary network
-// failures. This helper only runs after the caller verifies request ownership.
+// A verified denial from Auth or PostgREST differs from a temporary outage.
+// Never keep a previously cached private coffret after a 401/403 response.
+// Both status types are accepted; adapters may expose HTTP status as a string.
+// Callers first verify ownership so an old login cannot clear a newer session.
 function invalidateEclatOnAuthRejection(error){
- if(error?.status!==401&&error?.code!=='PGRST301')return false;
+ const status=error?.status;
+ const denied=status===401||status===403||status==='401'||status==='403';
+ if(!denied&&error?.code!=='PGRST301')return false;
  applyEclatStatus(null);
  return true;
 }
