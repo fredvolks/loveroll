@@ -839,3 +839,57 @@ test('LR-026: closing the Éclat session refreshes history without waiting for r
  assert.deepEqual(h.history,['alice'],'a just-finished coffret must enter history immediately');
  assert.equal(h.state.eclat.active,false);
 });
+
+test('LR-026: unchanged chapter and session do not reload a completed Éclat history',async()=>{
+ const h=harness({recoverHistory:true});
+ h.state.eclat={id:'choice-before',access:true,active:true,
+  session_id:'session-1',coffret_id:2,chapter_index:3,my_choice:null};
+ h.state.eclatHistoryCouple='couple-a';
+ h.state.eclatHistoryUserId='alice';
+ h.state.eclatHistory=[{id:'loaded-row'}];
+ const tick=h.tick();
+ h.requests[0].resolve({id:'choice-after',access:true,active:true,
+  session_id:'session-1',coffret_id:2,chapter_index:3,my_choice:1});
+ await tick;
+ assert.equal(h.state.eclat.id,'choice-after','UI must update with the choice');
+ assert.deepEqual(h.state.eclatHistory,[{id:'loaded-row'}]);
+ assert.deepEqual(h.history,[],'no session metadata changed; avoid reloading private history');
+ assert.deepEqual(h.renders,['choice-after']);
+});
+
+test('LR-026: advancing a chapter still reloads the existing Éclat history',async()=>{
+ const h=harness({recoverHistory:true});
+ h.state.eclat={id:'chapter-3',access:true,active:true,
+  session_id:'session-1',coffret_id:2,chapter_index:3};
+ h.state.eclatHistoryCouple='couple-a';
+ h.state.eclatHistoryUserId='alice';
+ const tick=h.tick();
+ h.requests[0].resolve({id:'chapter-4',access:true,active:true,
+  session_id:'session-1',coffret_id:2,chapter_index:4});
+ await tick;
+ assert.deepEqual(h.history,['alice'],'the server history chapter index must be synchronized');
+ assert.deepEqual(h.renders,['chapter-4']);
+});
+
+test('LR-026: regained entitlement reloads history even when the old scope matches',async()=>{
+ const h=harness({recoverHistory:true});
+ h.state.eclat={id:'locked',access:false,active:false};
+ h.state.eclatHistoryCouple='couple-a';
+ h.state.eclatHistoryUserId='alice';
+ const tick=h.tick();
+ h.requests[0].resolve({id:'unlocked',access:true,active:false});
+ await tick;
+ assert.deepEqual(h.history,['alice'],'new entitlement needs a fresh authorized gallery');
+ assert.equal(h.state.eclat.id,'unlocked');
+});
+
+test('LR-026: newly known account and couple always load their own first Éclat history',async()=>{
+ const h=harness({recoverHistory:true});
+ h.state.eclat={id:'ready',access:true,active:true,
+  session_id:'session-1',coffret_id:1,chapter_index:1};
+ const tick=h.tick();
+ h.requests[0].resolve({id:'updated',access:true,active:true,
+  session_id:'session-1',coffret_id:1,chapter_index:1,my_choice:1});
+ await tick;
+ assert.deepEqual(h.history,['alice'],'missing history scope requires a first read');
+});
