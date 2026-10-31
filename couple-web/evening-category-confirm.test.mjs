@@ -26,6 +26,45 @@ test('LR-014: default on, per-user persistence and server preference precedence'
  assert.equal(categoryConfirmEnabled({confirm_evening_category:true},'user-a',storage),true);
  assert.equal(categoryConfirmEnabled({confirm_evening_category:false},'user-b',storage),false);
 });
+test('Queued D100 category taps cannot overwrite the in-flight confirmation or official roll',()=>{
+ const start=source.indexOf("if(verb==='category'){");
+ const end=source.indexOf("if(verb==='session-length'){",start);
+ assert.ok(start>0&&end>start,'The production category handler must be present');
+ const snippet=source.slice(start,end);
+ function tryChange({confirming=false,diceStatus=null,allowUi=true}={}){
+  const state={category:'SENSUEL',randomMode:false,
+   couple:{category_preference_percent:74},session:{id:'night-1'},diceStatus};
+  const writes=[],updates=[];
+  const scope={state,parts:['HASARD'],eveningCategoryConfirmInFlight:confirming,
+   EVENING_CATEGORIES:['SENSUEL','SEXUEL'],root:{},
+   updateEveningCategoryUi:(...args)=>{updates.push(args);return allowUi;},
+   sessionStorage:{setItem:(...args)=>writes.push(args)}};
+  const handle=runInNewContext('(function(verb){'+snippet+'})',scope);
+  handle('category');
+  return {state,writes,updates};
+ }
+ for(const scenario of [
+  {confirming:true},{diceStatus:'pending'},{diceStatus:'rolling'},
+  {diceStatus:'settled'}
+ ]){
+  const result=tryChange(scenario);
+  assert.equal(result.state.category,'SENSUEL');
+  assert.equal(result.state.randomMode,false);
+  assert.equal(result.writes.length,0,'No preference storage writes during a draw');
+  assert.equal(result.updates.length,0,'Do not alter live WebGL UI during draw');
+ }
+ const disabled=tryChange({allowUi:false});
+ assert.equal(disabled.state.category,'SENSUEL');
+ assert.equal(disabled.writes.length,0);
+ const allowed=tryChange();
+ assert.equal(allowed.state.category,'HASARD');
+ assert.equal(allowed.state.randomMode,true);
+ assert.equal(allowed.updates.length,1);
+ assert.equal(allowed.writes.length,1);
+ assert.equal(allowed.writes[0][0],'loveroll-category-night-1');
+ assert.equal(allowed.writes[0][1],'HASARD');
+});
+
 test('LR-014: the existing server draw is only reached after confirmation',()=>{
  const trigger=source.slice(source.indexOf("if(verb==='new-challenge'){"),source.indexOf("if(verb==='answer'){"));
  assert.ok(trigger.indexOf("askEveningCategoryConfirmation(")>0);
