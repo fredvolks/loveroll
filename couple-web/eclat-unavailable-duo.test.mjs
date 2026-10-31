@@ -27,3 +27,30 @@ test('LR-026: normal incomplete subscription still shows regular Éclat offer wi
  assert.match(html,/L’activation et le paiement en ligne ne sont pas encore disponibles/);
  assert.doesNotMatch(html,/Votre duo n’est pas prêt/);
 });
+
+test('LR-026: completion notice is hidden when Éclat access disappears',()=>{
+ const previous='Titre du dernier coffret privé';
+ for(const status of [null,{access:false,active:false},{access:false,active:true}]){
+  const html=eclatHtml({coupleReady:true,status,finished:previous});
+  assert.doesNotMatch(html,/Coffret terminé ensemble/);
+  assert.doesNotMatch(html,new RegExp(previous),
+   'a revoked or unknown entitlement cannot display an old completion');
+ }
+});
+
+test('LR-026: completion notice belongs to finished, authorized coffret only',()=>{
+ const finished='Notre coffret terminé';
+ const inactive=eclatHtml({
+  coupleReady:true,status:{access:true,active:false},finished
+ });
+ assert.match(inactive,/Coffret terminé ensemble/);
+ assert.match(inactive,new RegExp(finished));
+ const active=eclatHtml({
+  coupleReady:true,
+  status:{access:true,active:true,coffret_id:1,chapter_number:1,variant_number:0},
+  finished,userId:'alice',members:[{user_id:'alice'},{user_id:'bob'}]
+ });
+ assert.doesNotMatch(active,/Coffret terminé ensemble/);
+ assert.doesNotMatch(active,new RegExp(finished),
+  'starting another coffret must not replay a previous success banner');
+});
