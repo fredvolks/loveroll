@@ -1981,13 +1981,16 @@ test('LR-026: a masked Éclat audio tap never repaints protected content',async(
 });
 
 function privateEclatSaveFixture(state,saveEclatNote){
+ if(!state.members)state.members=[{id:'alice'},{id:'bob'}];
  const start=app.indexOf('const eclatNoteDrafts=new Map();');
  const end=app.indexOf('// Every Éclat response is tied',start);
  assert.ok(start>=0&&end>start,'real Éclat private-note helpers must be available');
  const labels=[];
  const scope=runInNewContext(app.slice(start,end)+
   ';({saveCurrentEclatNote,drafts:eclatNoteDrafts,setAuthGeneration:value=>{authFeedbackGeneration=value;}})',{
-   state,authFeedbackGeneration:1,saveEclatNote,ownsCoupleAsyncRead,console,client:{},
+   state,authFeedbackGeneration:1,saveEclatNote,ownsCoupleAsyncRead,
+   isSharedCoupleReady:(couple,members)=>!!couple&&Array.isArray(members)&&members.length===2,
+   console,client:{},
    eclatNoteKey:(status,userId)=>status?.active&&status.session_id&&userId?
     [userId,status.session_id,status.chapter_index].join(':'):null,
    root:{querySelector:()=>({set textContent(value){labels.push(value);}})}
@@ -2069,13 +2072,16 @@ test('LR-026: a private note superseded during Choose forbids the following RPC'
 });
 
 function privateEclatReadFixture(state,loadEclatNote){
+ if(!state.members)state.members=[{id:'alice'},{id:'bob'}];
  const start=app.indexOf('const eclatNoteDrafts=new Map();');
  const end=app.indexOf('// Every Éclat response is tied',start);
  assert.ok(start>0&&end>start);
  let paints=0;
  const scope=runInNewContext(app.slice(start,end)+
   ';({eclatNoteState,drafts:eclatNoteDrafts,setAuthGeneration:value=>{authFeedbackGeneration=value;}})',{
-  state,authFeedbackGeneration:1,loadEclatNote,ownsCoupleAsyncRead,console,client:{},
+  state,authFeedbackGeneration:1,loadEclatNote,ownsCoupleAsyncRead,
+  isSharedCoupleReady:(couple,members)=>!!couple&&Array.isArray(members)&&members.length===2,
+  console,client:{},
   eclatNoteKey:(status,userId)=>status?.active&&status.session_id&&userId?
    [userId,status.session_id,status.chapter_index].join(':'):null,
   render:()=>paints++
@@ -3965,4 +3971,58 @@ test('LR-026: a cached private note is allowed to save within its original login
  assert.equal(await f.saveCurrentEclatNote(true),'alice:session-1:1');
  assert.equal(calls,1);
  assert.equal(f.draft.moment_done,true);
+});
+
+test('LR-026: private Éclat note never loads without a ready couple',()=>{
+ const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
+  members:[{id:'alice'}],
+  eclat:{active:true,session_id:'session-1',chapter_index:1}};
+ let reads=0;
+ const f=privateEclatReadFixture(state,async()=>{reads++;return {note:'old-private'};});
+ assert.deepEqual(Object.keys(f.eclatNoteState()),[]);
+ assert.equal(reads,0,'must not send a private-note request without both partners');
+ assert.equal(f.drafts.size,0);
+});
+
+test('LR-026: private Éclat note load ignores membership revocation during request',async()=>{
+ const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
+  eclat:{active:true,session_id:'session-1',chapter_index:1},eclatBrowse:false};
+ let resolveRead;
+ const wait=new Promise(resolve=>{resolveRead=resolve;});
+ const f=privateEclatReadFixture(state,()=>wait);
+ const draft=f.eclatNoteState();
+ state.members=[{id:'alice'}];
+ resolveRead({note:'formerly authorized',clue:'private',moment_done:true});
+ await settlePrivateNoteRead();
+ assert.equal(draft.note,'','revoked partner private reply must not become visible');
+ assert.equal(draft.moment_done,false);
+ assert.equal(f.paintCount(),0);
+ assert.deepEqual(Object.keys(f.eclatNoteState()),[]);
+});
+
+test('LR-026: private Éclat note cannot be submitted once membership is revoked',async()=>{
+ const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
+  eclat:{active:true,session_id:'session-1',chapter_index:1}};
+ let writes=0;
+ const f=privateEclatSaveFixture(state,async()=>{writes++;});
+ state.members=[{id:'alice'}];
+ assert.equal(await f.saveCurrentEclatNote(true),null);
+ assert.equal(writes,0);
+ assert.equal(f.draft.moment_done,false);
+});
+
+test('LR-026: revoked private note save response must not acknowledge an older session',async()=>{
+ const state={user:{id:'alice'},coupleId:'duo',tab:'eclat',
+  eclat:{active:true,session_id:'session-1',chapter_index:1}};
+ let finish;
+ const waiting=new Promise(resolve=>{finish=resolve;});
+ const f=privateEclatSaveFixture(state,()=>waiting);
+ const inflight=f.saveCurrentEclatNote(true);
+ state.members=[{id:'alice'}];
+ finish();
+ assert.equal(await inflight,null);
+ assert.equal(f.draft.saved,false);
+ assert.equal(f.draft.moment_done,false);
+ assert.equal(f.draft.saving,false);
+ assert.deepEqual(f.labels,[]);
 });
