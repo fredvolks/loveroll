@@ -5890,7 +5890,15 @@ setInterval(async()=>{
   const value=await rpc('love_eclat_status');
   if(!current())return;
   if(eclatStatusSignature(value)!==prior){
-   if(applyEclatStatus(value))await refreshEclatHistory();
+   // A progress/choice update can change the status every 4.5 seconds.
+   // Do not bypass the 30-second history retry cooldown for such updates.
+   // A new coffret or a just-ended session DOES need an immediate reload.
+   const sessionChanged=(state.eclat?.session_id??null)!==(value?.session_id??null)||
+    (state.eclat?.coffret_id??null)!==(value?.coffret_id??null)||
+    (state.eclat?.active===true&&value?.active===false);
+   const historyReady=state.eclatHistoryError!==true||
+    Date.now()>=(state.eclatHistoryRetryAt??0)||sessionChanged;
+   if(applyEclatStatus(value)&&historyReady)await refreshEclatHistory();
    if(current())render();
   }else if(value?.access===true&&state.eclatHistoryError===true&&
     Date.now()>=(state.eclatHistoryRetryAt??0)){
