@@ -530,3 +530,57 @@ test('LR-027: one pending repick blocks starting another private card',async()=>
  assert.equal(called,0,
   'A repick on one card must settle before another card can be started');
 });
+
+test('LR-027: terminal session actions wait for an in-flight Passer or Refuser',async()=>{
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const {runInNewContext}=await import('node:vm');
+ const routes=[
+  ["evening-close-request","evening-close-confirm"],
+  ["evening-close-confirm","evening-challenge"],
+  ["finish-session","cancel-session"],
+  ["cancel-session","dismiss-cancel"],
+  ["confirm-cancel","advent-open"]
+ ];
+ for(const [verb,nextVerb] of routes){
+  const start=source.indexOf("if(verb==='"+verb+"'){");
+  const end=nextVerb==='evening-challenge'
+   ?source.indexOf("if(verb==='evening-challenge'||verb==='evening-list'){",start)
+   :source.indexOf("if(verb==='"+nextVerb+"'){",start);
+  assert.ok(start>0&&end>start,'Real production route '+verb);
+  const code=source.slice(start,end);
+  assert.match(code,/if\(isActiveEveningRedrawPending\(\)\)return;/,
+   'Session transition must check the pending redrawing decision');
+  for(const diceStatus of [null,'rolling']){
+   const state={diceStatus,session:{id:'night-one',started_at:'2026-10-31T19:00:00Z'},
+    user:{id:'alice'},coupleId:'couple-one',tab:'session',
+    confirmCancel:false,eveningMore:true,showEveningChallenges:true};
+   let writes=0,renders=0,closures=0;
+   const run=runInNewContext('(async verb=>{'+code+'})',{
+    state,isActiveEveningRedrawPending:()=>true,
+    render:()=>{renders++;},rpc:()=>{writes++;throw Error('Terminal RPC during redraw');},
+    eveningClosureGate:{begin:()=>{closures++;throw Error('Closure during redraw');}}
+   });
+   await run(verb);
+   assert.equal(writes,0,verb+' must not write while a redraw is pending');
+   assert.equal(closures,0,verb+' must not acquire closure lock');
+   assert.equal(renders,0,verb+' must preserve the in-flight view');
+   assert.equal(state.confirmCancel,false);
+   assert.equal(state.tab,'session');
+  }
+ }
+ // The restriction must not permanently disable normal closure dialogs.
+ for(const [verb,nextVerb] of [['evening-close-request','evening-close-confirm'],
+  ['cancel-session','dismiss-cancel']]){
+  const start=source.indexOf("if(verb==='"+verb+"'){");
+  const end=source.indexOf("if(verb==='"+nextVerb+"'){",start);
+  const state={diceStatus:null,session:{id:'night-one'},
+   confirmCancel:false,eveningMore:true};
+  let renders=0;
+  const run=runInNewContext('(async verb=>{'+source.slice(start,end)+'})',{
+   state,isActiveEveningRedrawPending:()=>false,render:()=>{renders++;}
+  });
+  await run(verb);
+  assert.equal(state.confirmCancel,true,'The normal closure request stays available');
+  assert.equal(renders,1);
+ }
+});
