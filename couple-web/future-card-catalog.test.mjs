@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {auditFutureCardCatalog,selectFutureCard,FUTURE_LEVELS,FUTURE_TARGETS}
+import {auditFutureCardCatalog,auditFuturePlayableCatalog,selectFutureCard,FUTURE_LEVELS,FUTURE_TARGETS}
  from './future-card-catalog.mjs';
 
 const balancedCatalog=()=>{
@@ -71,4 +71,35 @@ test('Invalid card metadata cannot pass the future-only 300-card quality gate',(
  assert.equal(auditFutureCardCatalog(unbalanced).valid,false);
  assert.throws(()=>selectFutureCard({styleTicket:-0.1}),/style|tirage|compris/i);
  assert.throws(()=>selectFutureCard({cardTicket:1}),/Tirage de carte invalide/);
+});
+
+test('A 300-slot metadata deck is not releasable until every real card has playable copy',()=>{
+ const cards=balancedCatalog();
+ assert.equal(auditFutureCardCatalog(cards).valid,true);
+ const draft=auditFuturePlayableCatalog(cards);
+ assert.equal(draft.valid,false);
+ assert.ok(draft.errors.some(error=>error.includes('consigne absente')));
+ const ready=cards.map((card,index)=>({...card,
+  title:'Rituel original '+(index+1),
+  description:'Proposition ludique rédigée et vérifiée pour la carte '+(index+1)+'.'
+ }));
+ assert.equal(auditFuturePlayableCatalog(ready).valid,true);
+ const duplicate=ready.map(card=>({...card}));
+ duplicate[1].title=duplicate[0].title;
+ duplicate[1].description=duplicate[0].description;
+ assert.equal(auditFuturePlayableCatalog(duplicate).valid,false);
+ assert.ok(auditFuturePlayableCatalog(duplicate).errors.some(e=>e.includes('Consigne répétée')));
+});
+test('Future release audit rejects HTML, control characters and very short instructions',()=>{
+ const cards=balancedCatalog().map((card,index)=>({...card,
+  title:'Rituel '+(index+1),
+  description:'Défi convivial numéro '+(index+1)+' avec consigne complète.'
+ }));
+ cards[2].title='<img src=x>';
+ cards[3].description='Trop court';
+ cards[4].description='Interdit <script>alert(1)</script>';
+ const result=auditFuturePlayableCatalog(cards);
+ assert.equal(result.valid,false);
+ assert.ok(result.errors.some(e=>e.includes('titre absent')));
+ assert.ok(result.errors.filter(e=>e.includes('consigne absente')).length>=2);
 });
