@@ -120,7 +120,7 @@ const worldText=key=>worldT(worldLocale(),key);
 const state={user:null,profile:null,members:[],coupleId:null,couple:null,
  tab:launchParams.has('settings')?'settings':(['home','session','special','advent'].includes(launchParams.get('open'))?launchParams.get('open'):'home'),weekly:null,monthly:{},session:null,personal:[],challenges:[],gifts:[],rollStatus:null,customCards:[],customCategory:'SENSUEL',customSlot:1,customSearch:'',customFilter:'all',monthlyActivities:[],monthlySlot:1,libraryScreen:'list',libraryImportKind:null,specialEditorKey:null,specialEditorStage:'D6_activite',specialEditorFace:1,adventEditorDay:1,pushDevice:null,
  events:[],journal:[],advent:[],advent2026Config:null,advent2026Days:[],selectedDay:1,adventYear:null,adventSelected:null,adventHistory:false,adventOpening:null,adventRevealing:false,adventServerDate:null,unlockKey:null,channel:null,
- occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningRefusalId:null,redrawReady:false,redrawBusy:false,redrawBusyContext:null,eveningStartContext:null,timerStartContext:null,legacyAnswerContext:null,timerCompletionContext:null,timerCompletionRetryOwner:null,loveExcludedCards:[],eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],monthlyPassQuota:null,calendarPassMonth:null,cycleStatus:null,cycleDeferred:null,cycleAnswerRequest:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,eveningInvite:null,eveningInviteBusy:false,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoBookingEdit:false,referral:null,eclat:null,eclatGalleryScroll:0,eclatHistory:[],eclatHistoryCouple:null,eclatHistoryUserId:null,eclatBrowse:false,eclatHistoryError:false,eclatSelection:1,eclatMinutes:30,eclatIntent:'all',eclatDetails:false,eclatMusic:false,eclatFinished:null,testModeEligible:false,testMode:'real'};
+ occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningRefusalId:null,redrawReady:false,redrawBusy:false,redrawBusyContext:null,eveningStartContext:null,timerStartContext:null,legacyAnswerContext:null,timerCompletionContext:null,timerCompletionRetryOwner:null,loveExcludedCards:[],eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],monthlyPassQuota:null,calendarPassMonth:null,cycleStatus:null,cycleDeferred:null,cycleAnswerRequest:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,eveningInvite:null,eveningInviteBusy:false,eveningGiftRequest:null,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoBookingEdit:false,referral:null,eclat:null,eclatGalleryScroll:0,eclatHistory:[],eclatHistoryCouple:null,eclatHistoryUserId:null,eclatBrowse:false,eclatHistoryError:false,eclatSelection:1,eclatMinutes:30,eclatIntent:'all',eclatDetails:false,eclatMusic:false,eclatFinished:null,testModeEligible:false,testMode:'real'};
 const names={SENSUEL:'Sensuel',COQUIN:'Coquin',SEXUEL:'Sexuel'};
 function isSharedCoupleReady(coupleId,members){
  return !!coupleId&&Array.isArray(members)&&members.length===2;
@@ -869,7 +869,8 @@ function adoptAuthenticatedIdentity(nextUser){
   state.legacyAnswerContext=null;state.timerCompletionContext=null;
   state.timerCompletionRetryOwner=null;
   state.redrawBusy=false;state.redrawBusyContext=null;state.redrawReady=false;
-  state.eveningInviteBusy=false;state.inviteDraft=null;state.inviteCopyFallback=false;
+  state.eveningInviteBusy=false;state.eveningGiftRequest=null;
+  state.inviteDraft=null;state.inviteCopyFallback=false;
   state.lastInviteShareAttempt=null;
   state.jsonPending=null;state.geoVenue=null;state.geoReservation=null;
   state.geoLookup='idle';state.geoBookingEdit=false;
@@ -2786,7 +2787,11 @@ function renderSession(){
    showSexuel:state.couple?.show_sexuel_button!==false,
    categoryOdds:state.couple?.category_weights_enabled===false?50:
     state.couple?.category_preference_percent??88,
-   giftCount,rolling:state.diceStatus==='rolling'||state.diceStatus==='pending',
+   giftCount,giftPending:state.eveningGiftRequest?.userId===uid&&
+    state.eveningGiftRequest?.coupleId===state.coupleId&&
+    state.eveningGiftRequest?.sessionId===session?.id&&
+    state.eveningGiftRequest?.generation===authFeedbackGeneration,
+   rolling:state.diceStatus==='rolling'||state.diceStatus==='pending',
    redrawPending:isActiveEveningRedrawPending(),rollFace:state.rollAnimationFace,
    playable:state.playableCounts||(isLoveAdmin()?playableEveningCount(state.customCards):null),
    rollingKind:state.rollAnimationKind,showMore:state.eveningMore,confirmCancel:state.confirmCancel,
@@ -5949,6 +5954,12 @@ async function handle(action,element){
    saveChallengeTimer();updateChallengeClock();return;
  }
  if(verb==='give-challenge'){
+  // One request at a time for the SAME authenticated owner and evening.
+  // Two fast taps must never open two confirmations or send two gifts.
+  if(state.eveningGiftRequest?.userId===state.user?.id&&
+     state.eveningGiftRequest?.coupleId===state.coupleId&&
+     state.eveningGiftRequest?.sessionId===state.session?.id&&
+     state.eveningGiftRequest?.generation===authFeedbackGeneration)return;
   // A stale gift action must not mutate the turn while its private deck is
   // being replaced by the recipient-only, server-confirmed repick.
   if(state.diceStatus||isActiveEveningRedrawPending())return;
@@ -5966,6 +5977,10 @@ async function handle(action,element){
    throw Error('Aucun défi non commencé à donner.');
   const monthCount=state.gifts.filter(g=>g.donor_user_id===me&&g.month_key?.slice(0,7)===month()).length;
   if(monthCount>=3)throw Error('Vos 3 dons du mois sont utilisés.');
+  const giftTicket={...giftOwner};
+  state.eveningGiftRequest=giftTicket;
+  render(); // Reflect the pending gift on screen before opening the dialog.
+  try{
   if(!(await premiumConfirm('Offrir un de tes défis restants à '+otherPerson.name+
    ' ? Son nombre de défis à recevoir augmentera de 1 et le tien diminuera de 1.',
    {kind:'gift'})))return;
@@ -5977,6 +5992,15 @@ async function handle(action,element){
   await refreshAndShow();
   if(ownsGift())notify('♥ Défi transféré ! '+otherPerson.name+' choisira la catégorie de son prochain défi.');
   return;
+  }finally{
+   // A late completion must never clear a newer login's gift lock.
+   if(state.eveningGiftRequest===giftTicket){
+    state.eveningGiftRequest=null;
+    if(state.user?.id===giftOwner.userId&&state.coupleId===giftOwner.coupleId&&
+       state.session?.id===giftOwner.sessionId&&state.tab==='session'&&
+       authFeedbackGeneration===giftOwner.generation)render();
+   }
+  }
  }
  if(verb==='new-challenge'){
   // Re-picking a private card and drawing the next official D100 must not
