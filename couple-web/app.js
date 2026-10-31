@@ -1897,6 +1897,7 @@ async function refreshEclatStatus(){
 // A user may switch accounts or leave Éclat while a mutating RPC awaits.
 // Keep its response local to the exact initiating account, couple and view.
 let latestEclatActionRequest=null;
+let pendingEclatMutation=null;
 // UI-only guard: Supabase RPCs remain the authority for membership and access.
 // Apply the same entitlement rule to controls, note requests and audio, not
 // just to the HTML renderer. An old cached active flag is not permission.
@@ -1911,6 +1912,19 @@ function beginEclatAction(){
   generation:authFeedbackGeneration,tab:state.tab,request:{}};
  if(!ownsCoupleAsyncRead(state,owner)||
     !isSharedCoupleReady(owner.coupleId,state.members))return null;
+ // Do not let two fast taps submit two non-idempotent RPCs for one chapter.
+ // An updated server chapter or a new Auth owner is independent. Bound the
+ // guard so a stalled request cannot disable the game forever.
+ const pending=pendingEclatMutation,scene=pending?.scene,e=state.eclat;
+ if(pending&&pending.userId===owner.userId&&
+    pending.coupleId===owner.coupleId&&
+    pending.generation===owner.generation&&
+    pending.tab===owner.tab&&
+    Date.now()-pending.startedAt<30000&&e?.access===true&&
+    (e.session_id??null)===scene.sessionId&&
+    (e.coffret_id??null)===scene.coffretId&&
+    (e.chapter_index??null)===scene.chapterIndex&&
+    (e.active??null)===scene.active)return null;
  latestEclatActionRequest=owner.request;
  return owner;
 }
@@ -1933,6 +1947,9 @@ async function runEclatMutation(owner,name,args={}){
   coffretId:previous?.coffret_id??null,
   chapterIndex:previous?.chapter_index??null,
   active:previous?.active??null};
+ const inFlight={userId:owner.userId,coupleId:owner.coupleId,
+  generation:owner.generation,tab:owner.tab,scene,startedAt:Date.now()};
+ pendingEclatMutation=inFlight;
  // A new server snapshot supersedes BOTH successful receipts and failures
  // from an older scene. A 403 for a chapter already left must not purge
  // the next chapter's authorized gallery, drafts or soundtrack.
@@ -1959,6 +1976,9 @@ async function runEclatMutation(owner,name,args={}){
    return {applied:false};
   }
   throw error;
+ }finally{
+  // A superseded old request must not clear the newer chapter's guard.
+  if(pendingEclatMutation===inFlight)pendingEclatMutation=null;
  }
 }
 function applyEclatActionResult(value,owner){
