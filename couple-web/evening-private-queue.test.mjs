@@ -2482,9 +2482,9 @@ function invitationAcceptanceFixture(state,rpc){
  assert.ok(start>0&&end>start);
  let pending={kind:'id',value:'invitation-alice'},clears=0;
  const context=runInNewContext(
-  'let inviteAcceptanceBusy=false,inviteAcceptanceRequest=null;'+
+  'let inviteAcceptanceBusy=false,inviteAcceptanceRequest=null,authFeedbackGeneration=0;'+
   'let inviteAcceptanceBusyState=()=>inviteAcceptanceBusy;'+app.slice(start,end)+
-  ';({autoAcceptPendingInvite,busy:inviteAcceptanceBusyState})',{
+  ';({autoAcceptPendingInvite,busy:inviteAcceptanceBusyState,bumpAuthGeneration:()=>authFeedbackGeneration++})',{
    state,sessionStorage:{},
    pendingInviteReference:()=>pending,
    verifiedLoveEmail:()=>true,rpc,
@@ -2518,6 +2518,23 @@ test('LR-026: late accepted invitation cannot switch another account tab or clea
  await accepting;
  assert.equal(state.tab,'eclat');
  assert.equal(state.inviteWelcome,false);
+ assert.equal(f.clears(),0);
+ assert.equal(f.busy(),false);
+});
+
+test('LR-026: a same-account relogin cannot clear a newer invitation or change the tab',async()=>{
+ let release;
+ const pending=new Promise(resolve=>{release=resolve;});
+ const state={user:{id:'alice'},inviteAccepted:true,
+  profile:{birthday_md:'06-22'},passwordRecovery:false,tab:'settings'};
+ const f=invitationAcceptanceFixture(state,()=>pending);
+ const accepting=f.autoAcceptPendingInvite();
+ f.bumpAuthGeneration(); // Same user ID, but a different auth session
+ state.tab='eclat';
+ release({status:'accepted'});
+ await accepting;
+ assert.equal(state.tab,'eclat');
+ assert.equal(state.inviteWelcome,undefined);
  assert.equal(f.clears(),0);
  assert.equal(f.busy(),false);
 });
