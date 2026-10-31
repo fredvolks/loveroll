@@ -794,16 +794,19 @@ async function signOutCurrentAccount(){
   }
   if(state.channel){
    const channel=state.channel;
-   await client.removeChannel(channel);
+   try{await client.removeChannel(channel);}
+   catch(error){if(!current())return false;throw error;}
    if(!current())return false;
    if(state.channel===channel)state.channel=null;
   }
   if(!current())return false;
-  const {error}=await client.auth.signOut();
+  let outcome;
+  try{outcome=await client.auth.signOut();}
+  catch(error){if(!current())return false;throw error;}
   // SIGNED_OUT may have already invalidated this owner and painted the
   // anonymous view. Otherwise, explicitly finish clearing private state.
   if(!current())return false;
-  if(error)throw error;
+  if(outcome?.error)throw outcome.error;
   adoptAuthenticatedIdentity(null);
   state.showAuth=false;state.passwordRecovery=false;
   keepAuthModeInUrl(null);
