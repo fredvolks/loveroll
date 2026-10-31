@@ -969,7 +969,10 @@ async function reload(){
     const result=await rpc('love_referral_claim',{p_code:pendingCode});
     if(!current())return;
     if(result?.status!=='create_duo_first')clearPendingReferral();
-   }catch(error){console.warn('Référencement en attente',error?.message||'error');}
+   }catch(error){
+    if(!current())return;
+    console.warn('Référencement en attente',error?.message||'error');
+   }
   }else clearPendingReferral();
  }
 
