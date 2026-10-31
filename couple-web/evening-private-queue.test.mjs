@@ -2482,7 +2482,8 @@ function pendingAuthReloadFixture(state,rpc,query,overrides={}){
    refreshVerifiedIdentity:async()=>true,
    previewMode:()=> 'real',rpc,query,
    safeNativePushToken:()=>null,currentPushDevice:async()=>null,
-   localeOrDefault:()=> 'fr',pendingInviteReference:()=>null,
+   localeOrDefault:()=> 'fr',acceptEclatMembership:members=>{state.members=members;},
+   pendingInviteReference:()=>null,
    pendingReferralCode:()=>null,render:()=>calls.render++,
    console:{warn:()=>calls.warnings++},...overrides
   });
