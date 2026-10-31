@@ -277,3 +277,23 @@ test('Soirée challenge drawer has keyboard focus on entry, detail and return',a
  assert.deepEqual(events,['render','focus:.evening-manage:true'],
   'The management button remains a keyboard fallback if no list opener exists');
 });
+
+test('LR-028: stale favorite taps during a gift never save or repaint the queue',async()=>{
+ const from=app.indexOf("if(verb==='evening-favorite'){");
+ const until=app.indexOf("if(verb==='evening-open'){",from);
+ assert.ok(from>0&&until>from,'Use the real saved-favorite handler');
+ const state={tab:'session',diceStatus:null,user:{id:'fred'},
+  coupleId:'duo',session:{id:'night'},challenges:[card(7)]};
+ let saves=0,renders=0,focus=0;
+ const route=runInNewContext('(async (verb,parts)=>{'+app.slice(from,until)+'})',{
+  state,isActiveEveningRedrawPending:()=>false,
+  isActiveEveningGiftPending:()=>true,
+  toggleEveningFavorite:()=>{saves++;throw Error('Old favorite clicked during gift');},
+  ownEveningChallenges:()=>{throw Error('Old queue reread during gift');},
+  render:()=>{renders++;},root:{querySelector:()=>{focus++;return null;}}
+ });
+ await route('evening-favorite',['draw-7']);
+ assert.equal(saves,0);
+ assert.equal(renders,0);
+ assert.equal(focus,0);
+});
