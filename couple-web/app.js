@@ -1770,7 +1770,10 @@ async function refreshEclatStatus(){
  try{
   const value=await rpc('love_eclat_status');
   if(!current())return null;
-  if(value)state.eclat=value;
+  // A null response means the old Éclat session is no longer available.
+  // Keep the foreground path consistent with the background sync instead of
+  // leaving a cached private coffret visible until the next poll.
+  state.eclat=value??null;
   await refreshEclatHistory();
   return current()?value:null;
  }finally{
