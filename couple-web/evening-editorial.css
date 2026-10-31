@@ -321,3 +321,16 @@ main#app.loveroll-editorial{--nav-space:66px;box-sizing:border-box;width:100%;ma
  #app .is-finale .evening-finale-description span{display:none;}
  #app .is-finale .evening-finale-progress{display:none;}
 }
+
+/* Finale mobile: the planning row must not push calendar/start behind the
+   persistent bottom tabs at 393–430px widths. Keep both 44px tap targets.
+   Save room from repeated explanatory copy, tile padding and grid gaps. */
+@media(max-width:767px){
+ #app .is-finale .evening-aftercare{padding:6px;gap:3px;}
+ #app .is-finale .evening-next-intensity>small{display:none;}
+ #app .is-finale .evening-finale-tiles{gap:5px;}
+ #app .is-finale .evening-finale-tiles>div{min-height:42px;gap:2px;padding:2px 3px;}
+ #app .is-finale .evening-finale-actions{gap:4px;}
+ #app .is-finale .evening-finale-description{line-height:1.15;}
+ #app .is-finale .evening-finale-progress small{display:none;}
+}
