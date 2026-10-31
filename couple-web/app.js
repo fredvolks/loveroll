@@ -2514,9 +2514,9 @@ function timerWidget(challenge,minutes){
    button('timer-reset','↻ Recommencer',
     'class="subtle"'+(presentation.resetDisabled?' disabled aria-disabled="true"':''))+'</div>'+
    '<div class="chipline" style="margin-top:9px">'+
-   '<button class="pill '+(challengeTimer.mode==='sound'?'selected':'')+'" data-action="timer-mode:sound">♫ Son doux</button>'+
-   '<button class="pill '+(challengeTimer.mode==='vibrate'?'selected':'')+'" data-action="timer-mode:vibrate">〰 Vibration</button>'+
-   '<button class="pill" data-action="timer-sound-test">♫ Tester</button></div>'+
+   '<button type="button" class="pill '+(challengeTimer.mode==='sound'?'selected':'')+'" data-action="timer-mode:sound" aria-pressed="'+(challengeTimer.mode==='sound')+'">♫ Son doux</button>'+
+   '<button type="button" class="pill '+(challengeTimer.mode==='vibrate'?'selected':'')+'" data-action="timer-mode:vibrate" aria-pressed="'+(challengeTimer.mode==='vibrate')+'">〰 Vibration</button>'+
+   '<button type="button" class="pill" data-action="timer-sound-test">♫ Tester</button></div>'+
    '<small>Sonnerie discrète en fin de compte à rebours; sur iPhone, la vibration peut être indisponible. Le minuteur n’oblige jamais à poursuivre.</small></div>';
 }
 function renderLegacySession(){
