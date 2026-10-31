@@ -3938,6 +3938,7 @@ async function handle(action,element){
   state.homeNotices=!state.homeNotices;render();return;
  }
  if(verb==='review-rate'){
+  if(state.reviewSaving)return;
   const key=parts[0],value=Number(parts[1]);
   if(!state.reviewModalSessionId||!['overall','connection','appreciation','again'].includes(key)||
     !Number.isInteger(value)||value<1||value>5)throw Error('Note invalide.');
@@ -3984,7 +3985,8 @@ async function handle(action,element){
    authFeedbackGeneration===owner.generation;
   const current=()=>ownsRequest()&&state.tab===owner.tab&&
    state.reviewModalSessionId===sessionId;
-  const draft={...state.reviewDraft,comment:root.querySelector('#lr-review-comment')?.value||''};
+  const commentInput=root.querySelector('#lr-review-comment');
+  const draft={...state.reviewDraft,comment:commentInput?.value||''};
   const err=root.querySelector('.lr-review-error');
   if(!validEveningReview(draft)){
    currentReviewSaveRequest=null;
@@ -3992,7 +3994,13 @@ async function handle(action,element){
    return;
   }
   const save=root.querySelector('.lr-review-save');
-  state.reviewSaving=true;if(save){save.disabled=true;save.textContent='♡ Enregistrement…';}
+  const ratingButtons=Array.from(root.querySelectorAll?.('.lr-review-heart')||[]);
+  // Freeze the exact answers sent to the server: edits during a slow save
+  // would otherwise be discarded when its success navigates to Calendar.
+  state.reviewSaving=true;
+  if(commentInput)commentInput.readOnly=true;
+  for(const rating of ratingButtons)rating.disabled=true;
+  if(save){save.disabled=true;save.textContent='♡ Enregistrement…';}
   try{
    await rpc('save_love_evening_review',{p_session:sessionId,p_overall:draft.overall,
     p_connection:draft.connection,p_appreciation:draft.appreciation,
@@ -4011,6 +4019,8 @@ async function handle(action,element){
   }finally{
    if(ownsRequest()){
     currentReviewSaveRequest=null;state.reviewSaving=false;
+    if(commentInput?.isConnected)commentInput.readOnly=false;
+    for(const rating of ratingButtons)if(rating.isConnected)rating.disabled=false;
     if(save?.isConnected){save.disabled=false;save.textContent='♡ Enregistrer notre bilan';}
    }
   }
