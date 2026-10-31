@@ -1920,9 +1920,23 @@ function ownsEclatAction(owner){
 // ordinary outage must preserve drafts and let the UI show a retryable error.
 async function runEclatMutation(owner,name,args={}){
  if(!ownsEclatAction(owner))return {applied:false};
+ // The request owner protects Auth/couple changes. The scene snapshot also
+ // protects against a NEWER server poll revoking or replacing this session
+ // while an earlier mutation is still waiting for its server receipt.
+ const previous=state.eclat;
+ const scene={sessionId:previous?.session_id??null,
+  coffretId:previous?.coffret_id??null,
+  chapterIndex:previous?.chapter_index??null,
+  active:previous?.active??null};
  try{
   const value=await rpc(name,args);
-  return ownsEclatAction(owner)?{applied:true,value}:{applied:false};
+  if(!ownsEclatAction(owner)||state.eclat?.access!==true)return {applied:false};
+  const current=state.eclat;
+  if((current.session_id??null)!==scene.sessionId||
+     (current.coffret_id??null)!==scene.coffretId||
+     (current.chapter_index??null)!==scene.chapterIndex||
+     (current.active??null)!==scene.active)return {applied:false};
+  return {applied:true,value};
  }catch(error){
   // A late denial from a former login may not touch the new account.
   if(!ownsEclatAction(owner))return {applied:false};
