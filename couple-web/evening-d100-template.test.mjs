@@ -420,6 +420,18 @@ test('LR-027: live Soirée chooses only this account’s unfinished card for the
  assert.match(code,/ownChallengeCount:mineCards\.length,nextChallenge/);
  const action=source.slice(source.indexOf("if(verb==='evening-start'){"),
   source.indexOf("if(verb==='surprise-activity'){"));
+ // A queued/rolling D100 remains the only active scene. An old tap
+ // on "Commencer" cannot trigger a private RPC while it is in motion.
+ const {runInNewContext}=await import('node:vm');
+ for(const diceStatus of ['pending','rolling','settled']){
+  let changed=false;
+  const route=runInNewContext('(async verb=>{'+action+'})',{
+   state:{diceStatus},parts:['private-card'],
+   isEveningCardCompleting:()=>{changed=true;throw Error('start continued');}
+  });
+  await route('evening-start');
+  assert.equal(changed,false,'Start must be blocked during '+diceStatus);
+ }
  assert.match(action,/ownEveningChallenges\(state\.challenges,startContext\.userId,startContext\.sessionId\)/,
   'The one-tap start route revalidates the original user and session');
  assert.match(action,/rpc\('answer_challenge',\{p_id:picked\.id,p_status:'accepted'\}\)/,
