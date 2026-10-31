@@ -70,8 +70,10 @@ const client=CONFIG.supabaseUrl&&CONFIG.supabasePublishableKey?
  createClient(CONFIG.supabaseUrl,CONFIG.supabasePublishableKey,opts):null;
 const launchParams=new URLSearchParams(location.search);
 const eclatAudio=createEclatAudio();
+let latestEclatAudioOwner=null;
 // Masking a LoveRoll card must also silence locally playing Éclat audio.
 document.addEventListener('loveroll:privacy-mask',()=>{
+ latestEclatAudioOwner=null;
  eclatAudio.stop();
  state.eclatMusic=false;
 });
@@ -2920,17 +2922,29 @@ async function handle(action,element){
   }
   if(kind==='back'){await handle('tab:session',element);return;}
   if(kind==='music'){
-   if(document.documentElement.classList.contains('lr-privacy-active')){
-    eclatAudio.stop();state.eclatMusic=false;return;
+   if(document.documentElement.classList.contains('lr-privacy-active')||
+      !state.eclat?.active||state.eclatMusic){
+    latestEclatAudioOwner=null;
+    eclatAudio.stop();state.eclatMusic=false;
+    if(state.tab==='eclat')render();
+    return;
    }
-   if(!state.eclat?.active){eclatAudio.stop();state.eclatMusic=false;return;}
-   if(state.eclatMusic){eclatAudio.stop();state.eclatMusic=false;}
-   else{
-    const current=state.eclat?.active?eclatStage(state.eclat.coffret_id,state.eclat.chapter_number,state.eclat.variant_number):null;
-    const ok=await eclatAudio.start(current?.mood||'romantique');
-    state.eclatMusic=ok;
-    if(!ok)notify('Audio non disponible sur cet appareil.');
+   // AudioContext.resume() may wait for an iOS/Android gesture; ownership
+   // must be checked again AFTER awaiting it. A second tap supersedes this.
+   const owner={userId:state.user?.id,coupleId:state.coupleId};
+   latestEclatAudioOwner=owner;
+   const current=eclatStage(state.eclat.coffret_id,
+    state.eclat.chapter_number,state.eclat.variant_number);
+   const ok=await eclatAudio.start(current?.mood||'romantique');
+   if(latestEclatAudioOwner!==owner)return;
+   if(!ownsCoupleAsyncRead(state,owner)||state.tab!=='eclat'||
+      !state.eclat?.active||
+      document.documentElement.classList.contains('lr-privacy-active')){
+    latestEclatAudioOwner=null;
+    eclatAudio.stop();return;
    }
+   state.eclatMusic=ok;
+   if(!ok)notify('Audio non disponible sur cet appareil.');
    render();return;
   }
   if(kind==='resume'){state.eclatBrowse=false;state.eclatDetails=false;render();return;}
@@ -5067,6 +5081,7 @@ async function start(){
     state.user=session?.user||state.user;render();
    }
    if(event==='SIGNED_OUT'){eclatNoteDrafts.clear();
+   latestEclatAudioOwner=null;eclatAudio.stop();state.eclatMusic=false;
    latestEclatHistoryRead=null;latestEclatStatusRead=null;latestEclatActionRequest=null;
    state.eclat=null;
    state.eclatHistory=[];state.eclatHistoryCouple=null;state.eclatHistoryUserId=null;
