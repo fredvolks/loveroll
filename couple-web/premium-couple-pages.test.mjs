@@ -304,7 +304,8 @@ test('Fullscreen v61 renders all six event choices in two columns and three rows
 });
 test('Soirée never crashes if the last session and feedback status are both missing',()=>{
  assert.doesNotMatch(app,/feedbackItemsFor|my_love_feedback_status|choose-feedback|save-feedback/);
- assert.match(app,/const recentReviews=last\?\(state.eveningReviews\|\|\[\]\)/);
+ assert.match(app,/const lastEvening=last\?eveningFinaleStatus\(/);
+ assert.match(app,/reviews:state\.eveningReviews/);
  assert.match(app,/eveningDailyAccess\(/);
  assert.doesNotMatch(app,/evening-locked-view/);
  assert.match(app,/weeklyReady:!!state.weekly/);
@@ -327,9 +328,10 @@ test('Soirée always keeps the two approved actions and a single decorative D100
  assert.doesNotMatch(active,/data-session-length-select/);
  const closed=premiumEveningHtml({members:people,me:'first',
   session:null,lastEvening:{completed:3,myResponse:true,partnerResponse:true,responses:2}});
- assert.doesNotMatch(closed,/data-session-length-select/);
- // The personal preference stays accessible from Settings even if another
- // visual release elects not to display the optional inline native picker.
+ assert.match(closed,/data-session-length-select="true"/);
+ assert.match(closed,/data-evening-intensity-select="true"/);
+ // The personal planner remains available after finishing a soirée, while
+ // the two real primary buttons and official session eligibility are unchanged.
  assert.match(app,/sessionLengthSettingsHtml\(readSessionLength\(state\.user\?\.id\)\)/);
  assert.match(app,/saveSessionLength\(state\.user\.id,parts\[0\]\)/);
  if(intro.includes('data-session-length-select="true"')){
