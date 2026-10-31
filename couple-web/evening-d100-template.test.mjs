@@ -1172,3 +1172,26 @@ test('LR-027: gift completion restores cancellation and calendar navigation',asy
   if(verb==='evening-calendar')assert.equal(state.tab,'evening-calendar');
  }
 });
+
+test('LR-027: private-card overlay honestly locks Start, Complete, Refuse during a gift',()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const from=app.indexOf('const selected=mineCards.find(');
+ const until=app.indexOf('frame(premiumEveningHtml({',from);
+ assert.ok(from>0&&until>from,'Use actual recipient-only overlay');
+ const overlay=app.slice(from,until);
+ assert.match(overlay,/const giftTransferPending=isActiveEveningGiftPending\(\)/,
+  'The lock derives from the current user and evening, not a shared global flag');
+ assert.match(overlay,/evening-gift-pending[^']*' role="status" aria-live="polite"/,
+  'Gift progress is described to keyboard and screen-reader users');
+ assert.match(overlay,/button\('evening-start:'\+view\.id[\s\S]*?isActiveEveningRedrawPending\(\)\|\|giftTransferPending\|\|isEveningCardCompleting\(view\.id\)/);
+ assert.match(overlay,/button\('answer:'\+view\.id\+':completed',[\s\S]*?giftTransferPending\?'♡ Don en cours…'/);
+ assert.match(overlay,/button\('evening-pass:'\+view\.id[\s\S]*?giftTransferPending\|\|isEveningCardCompleting/);
+ assert.match(overlay,/button\('evening-refuse:'\+view\.id[\s\S]*?giftTransferPending\|\|isEveningCardCompleting/);
+ assert.match(overlay,/button\('evening-refuse-choice:'\+view\.id\+':yes'[\s\S]*?giftTransferPending\|\|isEveningCardCompleting/);
+ assert.match(overlay,/button\('evening-refuse-choice:'\+view\.id\+':no'[\s\S]*?giftTransferPending\|\|isEveningCardCompleting/);
+ assert.match(overlay,/button\('evening-refuse-cancel'[\s\S]*?giftTransferPending\?'disabled'/);
+ const action=app.slice(app.indexOf("if(verb==='evening-start'){"),
+  app.indexOf("if(verb==='surprise-activity'){"));
+ assert.match(action,/if\(state\.diceStatus\|\|isActiveEveningGiftPending\(\)\)return;/,
+  'The server action also rejects an old tap, regardless of button state');
+});
