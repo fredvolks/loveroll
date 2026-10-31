@@ -1224,8 +1224,12 @@ test('LR-026: legacy answer path ignores late responses and never stops a foreig
  assert.match(handler,/const board=await rpc\('my_love_evening_board'[\s\S]*?if\(!ownsAnswer\(\)\)return;/);
  assert.match(handler,/await rpc\('finish_couple_session'[\s\S]*?if\(!ownsAnswer\(\)\)return;/);
  assert.match(handler,/const alreadyClosed=\(await query\('couple_sessions'[\s\S]*?if\(!ownsAnswer\(\)\)return;/);
- assert.match(handler,/finally\{[\s\S]*?if\(state\.legacyAnswerContext===answerContext\)state\.legacyAnswerContext=null/,
+ assert.match(handler,/finally\{[\s\S]*?if\(state\.legacyAnswerContext===answerContext\)\{[\s\S]*?state\.legacyAnswerContext=null;/,
   'the old promise must not unlock a newer response');
+ assert.match(handler,/const sameView=state\.user\?\.id===answerContext\.userId&&[\s\S]*?state\.coupleId===answerContext\.coupleId&&state\.tab===answerContext\.tab;/,
+  'no stale answer may repaint a different user or couple');
+ assert.match(handler,/const sameEvening=state\.session\?\.id===answerContext\.sessionId\|\|[\s\S]*?if\(sameView&&sameEvening\)render\(\);/,
+  'a released answer may repaint only its own evening');
  const origin={user:{id:'A'},session:{id:'night-1'},tab:'session'};
  const context={userId:'A',sessionId:'night-1',tab:'session'};
  assert.equal(isSameEveningResponseContext(origin,context),true);
