@@ -51,7 +51,9 @@ export function eclatHtml({status=null,selected=1,minutes=30,intent='all',discov
    btn('tab:session','← Retour à notre soirée','eclat-offer-back')+
    '</section></section>';
  }
- const access=status?.access===true,active=status?.active===true;
+ // A stale status can claim an active session after access was revoked.
+ // Access and active play must be authorized together before showing steps.
+ const access=status?.access===true,active=access&&status?.active===true;
  const c=eclatCoffret(active&&!browse?status.coffret_id:selected)||ECLAT_COFFRETS[0];
  const heading='<header class="eclat-top">'+
   (details||active&&!browse?'<button type="button" class="eclat-return" data-action="eclat:library" aria-label="Retour aux coffrets">‹</button>':'<span class="eclat-header-balance" aria-hidden="true"></span>')+
