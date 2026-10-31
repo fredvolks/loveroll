@@ -190,8 +190,10 @@ export function premiumEveningHtml({
    waitingStatus('Tous les tirages sont terminés')):
   canDraw?bt('new-challenge','🎲 Brasser le D100','evening-primary'):
    waitingStatus('En attente du tour de ton partenaire');
- const secondaryAction=ownChallengeCount>0&&
-  !(turn.drawsFinished&&!turn.finished&&!rolling)?
+ // Opening the challenge list remounts the die scene. Keep that action
+ // unavailable until the official D100 animation has finished.
+ const secondaryAction=ownChallengeCount>0&&!rolling&&
+  !(turn.drawsFinished&&!turn.finished)?
   bt('evening-list','♡ Voir mes défis ('+ownChallengeCount+')','evening-queue-open-btn'):'';
  return '<div class="evening-premium-view '+(session?(ready?'is-ready':'is-waiting'):'is-inactive is-finale')+'" data-category-percent="'+esc(preferredOdds)+'">'+
  '<div class="evening-toolbar">'+
