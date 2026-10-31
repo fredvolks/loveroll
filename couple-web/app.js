@@ -2728,11 +2728,15 @@ function renderSession(){
         isEveningCardCompleting(view.id)?'♡ Réponse en cours':'✓ Défi réalisé',
         'class="evening-primary" '+(isEveningCardCompleting(view.id)?
         'disabled aria-disabled="true" aria-busy="true"':'')):'')+
-     (['proposed','accepted'].includes(view.status)&&state.redrawReady?
+     (['proposed','accepted'].includes(view.status)?
       '<div class="lr-redraw-actions" aria-label="Autres choix pour ce défi">'+
-       button('evening-pass:'+view.id,'Passer ce défi','class="subtle" '+(isActiveEveningRedrawPending()||isEveningCardCompleting(view.id)||state.monthlyPassQuota?.can_pass===false?'disabled':''))+
-       button('evening-refuse:'+view.id,'Refuser ce défi','class="subtle" '+(isActiveEveningRedrawPending()||isEveningCardCompleting(view.id)?'disabled':''))+
-       '<small>'+(state.monthlyPassQuota?.can_pass===false?
+       button('evening-pass:'+view.id,'Passer ce défi','class="subtle" '+
+        (!state.redrawReady||isActiveEveningRedrawPending()||isEveningCardCompleting(view.id)||state.monthlyPassQuota?.can_pass===false?'disabled aria-disabled="true"':''))+
+       button('evening-refuse:'+view.id,'Refuser ce défi','class="subtle" '+
+        (!state.redrawReady||isActiveEveningRedrawPending()||isEveningCardCompleting(view.id)?'disabled aria-disabled="true"':''))+
+       '<small>'+(!state.redrawReady?
+        'Passer et Refuser seront disponibles lorsque la repige sera confirmée par le serveur.':
+        state.monthlyPassQuota?.can_pass===false?
         'Limite atteinte : '+safe(state.monthlyPassQuota?.used??'—')+
         ' / '+safe(state.monthlyPassQuota?.limit??'—')+
         '. Tu pourras passer à nouveau le 1er du mois prochain, ou choisir Refuser.':
