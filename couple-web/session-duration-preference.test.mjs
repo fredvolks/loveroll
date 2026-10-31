@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 import {
  readSessionLength,saveSessionLength,sessionLengthChooserHtml,sessionLengthSettingsHtml
 } from './session-duration-preference.mjs';
+import {premiumEveningHtml} from './premium-evening.mjs';
 
 const memory=()=>{
  const values=new Map();
@@ -55,4 +56,17 @@ test('The selected duration is visible in the compact pre-session picker and set
  const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
  assert.match(app,/saveSessionLength\(state\.user\.id,parts\[0\]\)/);
  assert.match(app,/sessionLength:readSessionLength\(uid\)/);
+});
+
+test('Next-evening planner stays visible after closure without unlocking another evening',()=>{
+ const last={id:'closed',completed:9,myResponse:true,partnerResponse:false,responses:1};
+ const html=premiumEveningHtml({
+  session:null,members:[{user_id:'alice',name:'Alice'},{user_id:'bob',name:'Bob'}],
+  me:'alice',lastEvening:last,sessionLength:'30',weeklyCount:1,weeklyLimit:3,
+  canStartEvening:false,dailyLocked:true
+ });
+ assert.match(html,/Notre soirée est terminée/);
+ assert.match(html,/<option value="30" selected>30 min<\/option>/);
+ assert.equal((html.match(/data-session-length-select="true"/g)||[]).length,1);
+ assert.match(html,/data-action="new-session"[^>]*disabled/);
 });
