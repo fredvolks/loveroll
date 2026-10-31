@@ -427,3 +427,33 @@ test('LR-027: live Soirée chooses only this account’s unfinished card for the
  assert.match(action,/if\(!isCurrentStart\(\)\)return/,
   'Old account responses cannot start a new login’s timer');
 });
+
+test('LR-027: private-card Passer and Refuser remain visible with truthful server availability',()=>{
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const from=source.indexOf("(['proposed','accepted'].includes(view.status)?");
+ const until=source.indexOf('(view&&state.eveningRefusalId===view.id?',from);
+ assert.ok(from>0&&until>from,'The original private-card choice template must exist');
+ const expr=source.slice(from,until).trim().replace(/\+\s*$/,'');
+ const render=new Function('view','state','button','safe',
+  'isActiveEveningRedrawPending','isEveningCardCompleting','return '+expr+';');
+ const button=(action,label,attr='')=>'<button data-action="'+action+'" '+attr+'>'+label+'</button>';
+ const pick=(status,ready,quota=null)=>render({id:'private-card',status},{
+  redrawReady:ready,monthlyPassQuota:quota
+ },button,x=>String(x),()=>false,()=>false);
+ for(const status of ['proposed','accepted']){
+  const offline=pick(status,false);
+  assert.match(offline,/data-action="evening-pass:private-card"/);
+  assert.match(offline,/data-action="evening-refuse:private-card"/);
+  assert.equal((offline.match(/disabled aria-disabled="true"/g)||[]).length,2,
+   'Both choices are visible but unclickable before server confirmation');
+  assert.match(offline,/repige sera confirmée par le serveur/);
+  const ready=pick(status,true,{used:1,limit:3,can_pass:true});
+  assert.doesNotMatch(ready,/disabled aria-disabled/);
+  assert.match(ready,/Passes ce mois : 1 \/ 3/);
+  const limit=pick(status,true,{used:3,limit:3,can_pass:false});
+  assert.match(limit,/data-action="evening-pass:private-card"[^>]*disabled/);
+  assert.doesNotMatch(limit,/data-action="evening-refuse:private-card"[^>]*disabled/,
+   'Monthly Passer limit never locks the separate Refuser action');
+ }
+ assert.equal(pick('completed',false),'','Archived cards cannot be redrawn');
+});
