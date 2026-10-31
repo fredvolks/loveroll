@@ -476,6 +476,9 @@ function bindEclatPrivateNoteFields(){
  const key=eclatNoteKey(state.eclat,owner.userId);
  const draft=key?eclatNoteDrafts.get(key):null;
  root.querySelectorAll('[data-eclat-field]').forEach(field=>field.addEventListener('input',()=>{
+  // A textarea from a prior render may still dispatch a queued input event.
+  // Even for the SAME chapter/draft it cannot overwrite the current editor.
+  if(!root.contains(field))return;
   const property=field.dataset.eclatField;
   if(property!=='note'&&property!=='clue')return;
   if(!draft||draft.loading||draft.error||draft.generation!==owner.generation||
