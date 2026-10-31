@@ -223,3 +223,53 @@ test('D100 favorites announce pressed state and return focus after changing a ca
  await assert.rejects(run('evening-favorite'),/soirée personnelle/);
  assert.deepEqual(events,[],'An invalid favorite never repaints or steals focus');
 });
+
+test('Soirée challenge drawer has keyboard focus on entry, detail and return',async()=>{
+ const text=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const section=(start,end)=>{
+  const a=text.indexOf(start),b=text.indexOf(end,a+start.length);
+  assert.ok(a>=0&&b>a,'Production route must exist');
+  return text.slice(a,b);
+ };
+ const list=section("if(verb==='evening-challenge'||verb==='evening-list'){",
+  "if(verb==='favorite-remove'){");
+ const open=section("if(verb==='evening-open'){","if(verb==='evening-refuse'){");
+ const events=[];
+ const state={user:{id:'fred'},coupleId:'duo',session:{id:'night'},
+  challenges:[{id:'draw-7'}],diceStatus:null,
+  selectedEveningChallengeId:null,showEveningChallenges:false};
+ let openerPresent=true;
+ const scope={state,parts:['draw-7'],
+  root:{querySelector:selector=>{
+   if(selector==='button[data-action="evening-list"]'&&!openerPresent)return null;
+   return {focus:opts=>events.push('focus:'+selector+':'+String(opts.preventScroll))};
+  }},
+  clearEveningSelection:()=>{},
+  safeEveningBookmarkStorage:()=>null,
+  ownEveningChallenges:cards=>cards,
+  saveEveningSelection:()=>{},
+  render:()=>events.push('render')
+ };
+ const listAction=runInNewContext('(async verb=>{'+list+'})',scope);
+ const detailAction=runInNewContext('(async verb=>{'+open+'})',scope);
+ await listAction('evening-list');
+ assert.equal(state.showEveningChallenges,true);
+ assert.deepEqual(events,['render',
+  'focus:.evening-queue-modal [data-action="evening-close"]:true']);
+ events.length=0;
+ await detailAction('evening-open');
+ assert.equal(state.selectedEveningChallengeId,'draw-7');
+ assert.deepEqual(events,['render',
+  'focus:.evening-queue-modal [data-action="evening-close"]:true']);
+ events.length=0;
+ await listAction('evening-close');
+ assert.equal(state.showEveningChallenges,false);
+ assert.deepEqual(events,['render','focus:button[data-action="evening-list"]:true']);
+ events.length=0;
+ openerPresent=false;
+ await listAction('evening-list');
+ events.length=0;
+ await listAction('evening-close');
+ assert.deepEqual(events,['render','focus:.evening-manage:true'],
+  'The management button remains a keyboard fallback if no list opener exists');
+});
