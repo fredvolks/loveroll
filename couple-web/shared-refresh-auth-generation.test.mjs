@@ -71,3 +71,46 @@ test('LR-026: scoped timer refresh still honors its original owner and generatio
  h.state.timerCompletionContext=null;
  assert.equal(next(),false,'request must still be owned by the action context');
 });
+
+test('LR-026: full shared SQL refresh discards same-user response after Auth replacement',async()=>{
+ const finishFirstRead=(()=>{let release;const promise=new Promise(ok=>{release=ok;});return {promise,release};})();
+ const state={
+  user:{id:'alice'},coupleId:'couple-a',tab:'session',
+  session:{id:'original-session'},cycleStatus:'keep-original',
+  monthlyPassQuota:'keep-original',challenges:[{id:'original-private-card'}]
+ };
+ let reads=0,postBatchCalls=0;
+ const runtime={
+  state,authFeedbackGeneration:1,
+  query:async table=>{
+   reads++;
+   if(table==='couple_sessions'){
+    await finishFirstRead.promise;
+    return [{id:'original-session',finished_at:null}];
+   }
+   return [];
+  },
+  rpc:async name=>{
+   if(name==='love_redraw_capabilities')postBatchCalls++;
+   if(name==='love_cycle_status')return {pending:false};
+   return [];
+  },
+  month:()=>'2026-10',week:()=>'2026-W44',
+  isSameEveningResponseContext:()=>true,
+  mayApplyScopedEveningRefresh:()=>true,
+  console
+ };
+ const end=app.indexOf('const liveSync=createCoupleLiveSync',start);
+ assert.ok(end>start,'the full production refresh remains extractable');
+ const refresh=runInNewContext(app.slice(start,end)+'; refreshShared;',runtime);
+ const pending=refresh();
+ assert.ok(reads>=8,'an actual private Supabase read batch began');
+ runtime.authFeedbackGeneration=2;
+ finishFirstRead.release();
+ assert.equal(await pending,undefined,'stale read must finish without committing');
+ assert.equal(postBatchCalls,0,'no further private calls from an expired Auth generation');
+ assert.equal(state.cycleStatus,'keep-original');
+ assert.equal(state.monthlyPassQuota,'keep-original');
+ assert.equal(state.session.id,'original-session');
+ assert.deepEqual(state.challenges,[{id:'original-private-card'}]);
+});
