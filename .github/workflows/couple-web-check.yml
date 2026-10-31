@@ -191,6 +191,8 @@ jobs:
         run: node --test couple-web/evening-resume.test.mjs
       - name: Safari timer alert choice without persistent storage
         run: node --test couple-web/timer-alert-preference.test.mjs
+      - name: Block stale Safari/iOS sound previews after account changes
+        run: node --test couple-web/sound-preview-ownership.test.mjs
       - name: Verify real weekly quota and daily lock access
         run: node --test couple-web/evening-daily-policy.test.mjs
       - name: Plan tonight's duration on Safari and multiple accounts
