@@ -2743,7 +2743,7 @@ function renderSession(){
    challengeOverlay:overlay,lastEvening,canStartEvening,
    sessionLength:readSessionLength(uid),
    challengeHistory:[...state.challengesHistory,...state.eveningCalendarChallenges,...state.challenges],
-   weeklyReady:!!state.weekly,weeklyCount:daily.counted,weeklyLimit:daily.limit,
+   weeklyReady:!!state.weekly,weeklyCount:daily.counted,weeklyLimit:daily.limit,historyReady:daily.historyReady,
    dailyLocked:daily.dailyLocked,ownChallengeCount:mineCards.length,
    lastD35Face:lastOfficialChallengeFace(
     session?state.challenges:state.challengesHistory,session?.id||last?.id||null)
