@@ -1727,7 +1727,8 @@ async function saveCurrentEclatNote(momentDone){
 }
 // Every Éclat response is tied to both the account and the couple.
 // Request tokens also stop an older poll from rolling back a newer status.
-let latestEclatHistoryRead=null,latestEclatStatusRead=null,latestEclatExplicitRead=null;
+let latestEclatHistoryRead=null,latestEclatStatusRead=null;
+let latestEclatExplicitRead=null;
 async function refreshEclatHistory(){
  const owner={userId:state.user?.id,coupleId:state.coupleId,
   generation:authFeedbackGeneration};
