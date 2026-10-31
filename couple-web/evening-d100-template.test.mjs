@@ -118,3 +118,20 @@ test('Server-rendered D100 category labels survive the next responsive refresh',
  const none=premiumEveningHtml({...base,category:null});
  assert.doesNotMatch(none,/class="evening-choice-odds"/);
 });
+
+
+test('D100 odds never print an invalid percentage across live and fresh views',()=>{
+ for(const [raw,expected] of [[Infinity,88],[NaN,88],[135,100],[-15,0]]){
+  const html=premiumEveningHtml({...ready,category:'SEXUEL',categoryOdds:raw});
+  assert.match(html,new RegExp('>'+expected+' % de chances <span>d’avoir cette catégorie'));
+  assert.doesNotMatch(html,/Infinity|NaN|135 %|-15 %/);
+
+  const live=categoryOddsFixture();
+  assert.equal(updateEveningCategoryUi(live.root,'SEXUEL',raw),true);
+  assert.equal(live.options.SEXUEL.odds?.textContent,
+   expected+' % de chances d’avoir cette catégorie');
+ }
+ const random=premiumEveningHtml({...ready,category:'HASARD',categoryOdds:Infinity});
+ assert.match(random,/50 % Sensuel · 50 % Sexuel/);
+ assert.doesNotMatch(random,/Infinity|NaN/);
+});
