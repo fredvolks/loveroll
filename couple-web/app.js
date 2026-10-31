@@ -1719,10 +1719,12 @@ let latestEclatHistoryRead=null,latestEclatStatusRead=null;
 async function refreshEclatHistory(){
  const owner={userId:state.user?.id,coupleId:state.coupleId,
   generation:authFeedbackGeneration};
- if(!ownsCoupleAsyncRead(state,owner))return;
+ if(!ownsCoupleAsyncRead(state,owner)||
+    !isSharedCoupleReady(owner.coupleId,state.members))return;
  const request={};latestEclatHistoryRead=request;
  const current=()=>ownsCoupleAsyncRead(state,owner)&&
   authFeedbackGeneration===owner.generation&&
+  isSharedCoupleReady(owner.coupleId,state.members)&&
   latestEclatHistoryRead===request;
  if(state.eclatHistoryCouple!==owner.coupleId||
     state.eclatHistoryUserId!==owner.userId){
@@ -3347,7 +3349,8 @@ async function handle(action,element){
    const ok=await eclatAudio.start(current?.mood||'romantique');
    if(latestEclatAudioOwner!==owner)return;
    if(!ownsCoupleAsyncRead(state,owner)||
-      authFeedbackGeneration!==owner.generation||state.tab!=='eclat'||
+      authFeedbackGeneration!==owner.generation||
+      !isSharedCoupleReady(owner.coupleId,state.members)||state.tab!=='eclat'||
       !state.eclat?.active||
       document.documentElement.classList.contains('lr-privacy-active')){
     latestEclatAudioOwner=null;
