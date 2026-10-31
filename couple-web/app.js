@@ -2162,12 +2162,15 @@ setInterval(async()=>{
  // The old HTTP response may arrive AFTER logout, account replacement, or
  // same-user reauthentication. Keep the polling lock tied to its Auth owner.
  // A newer account must not be held hostage by an older stalled request.
- const owner={userId:state.user.id,generation:authFeedbackGeneration};
+ const owner={userId:state.user.id,coupleId:state.coupleId||null,
+  generation:authFeedbackGeneration};
  if(referralPolling?.userId===owner.userId&&
+    referralPolling.coupleId===owner.coupleId&&
     referralPolling.generation===owner.generation)return;
  referralPolling=owner;
  const current=()=>referralPolling===owner&&
   state.user?.id===owner.userId&&
+  (state.coupleId||null)===owner.coupleId&&
   authFeedbackGeneration===owner.generation&&
   state.tab==='settings'&&settingsOpenSection==='parrainage'&&
   !!state.referral?.enabled;
