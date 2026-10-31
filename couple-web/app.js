@@ -5619,23 +5619,52 @@ async function handle(action,element){
     throw Error('Associez deux comptes pour le dé hebdomadaire.');
    if(state.weekly)throw Error('Le dé a déjà été brassé cette semaine.');
    if(state.diceStatus)return;
+   const owner={userId:state.user?.id,coupleId:state.coupleId,
+    generation:authFeedbackGeneration};
+   if(!owner.userId||!owner.coupleId)return;
+   const ownsOwner=()=>state.user?.id===owner.userId&&
+    state.coupleId===owner.coupleId&&authFeedbackGeneration===owner.generation;
    const confirmed=await premiumConfirm(
     'Ce tirage est commun à votre couple et ne pourra pas être refait avant la semaine prochaine. Êtes-vous sûrs de vouloir brasser le dé ?',
     {kind:'weekly',title:'Brasser le dé ?',accept:'Oui, brasser',cancel:'Annuler'});
-   if(!confirmed||state.diceStatus||state.weekly)return;
+   if(!ownsOwner()||!confirmed||state.diceStatus||state.weekly)return;
+   const request={};
+   latestDiceRollRequest=request;
+   const current=()=>ownsOwner()&&latestDiceRollRequest===request;
    state.diceStatus='pending';render();
    try{
-    // Supabase selects and persists the one true face under a couple row lock;
-    // only after the response do we animate the ACTUAL server result.
-    const result=await rpc('roll_couple_once',{p_couple:state.coupleId,p_kind:'weekly'});
-    state.rollAnimationFace=result.face;
+    // Supabase alone persists the real D6 face. A previous login cannot
+    // animate, cache or announce its receipt on the replacement account.
+    const result=await rpc('roll_couple_once',{p_couple:owner.coupleId,p_kind:'weekly'});
+    if(!current())return;
+    const face=Number(result?.face);
+    if(!Number.isInteger(face)||face<1||face>6)
+     throw Error('Le serveur n’a pas confirmé le résultat officiel du dé.');
+    state.rollAnimationFace=face;
     state.diceStatus='rolling';render();
     await new Promise(resolve=>setTimeout(resolve,window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches?180:ROLL_TOTAL_MS+140));
+    if(!current())return;
     state.diceStatus=null;state.rollAnimationFace=null;
     state.weekly=result;
-    await refreshAndShow();
+    await refreshShared();
+    if(!current())return;
+    render();
     notify('♡ Le dé s’est arrêté sur le résultat officiel.');
-    }catch(error){state.diceStatus=null;state.rollAnimationFace=null;await refreshAndShow();throw error;}
+   }catch(error){
+    if(!current())return;
+    state.diceStatus=null;state.rollAnimationFace=null;
+    try{await refreshShared();}finally{if(current())render();}
+    if(current())throw error;
+   }finally{
+    if(latestDiceRollRequest===request){
+     const wasCurrent=current();
+     latestDiceRollRequest=null;
+     if(!wasCurrent&&state.diceStatus){
+      state.diceStatus=null;state.rollAnimationFace=null;
+      if(state.user?.id===owner.userId&&state.coupleId===owner.coupleId)render();
+     }
+    }
+   }
    return;
   }
   const result=await animateRoll(()=>rpc('roll_couple_once',{p_couple:state.coupleId,p_kind:kind}),kind);
