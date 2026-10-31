@@ -698,6 +698,7 @@ function adoptAuthenticatedIdentity(nextUser){
   authFeedbackGeneration++;
   latestAuthReloadRequest=null;
   currentSignoutRequest=null;
+  currentPasswordAuthRequest=null;
   currentRecoveryPasswordRequest=null;
   currentProfileSave=null;
   inviteAcceptanceRequest=null;inviteAcceptanceBusy=false;
@@ -854,6 +855,66 @@ function captureAuthFeedbackContext(){
  return ()=>authFeedbackGeneration===generation&&
   (state.user?.id??null)===userId&&state.authMode===mode&&
   !!state.emailVerificationPending===verification&&!!state.showAuth===showAuth;
+}
+// Password sign-in/sign-up can settle after a newer Google login, another
+// email submission or a change of Auth screen. Only its original form may
+// display errors, set login state or request a reload.
+let currentPasswordAuthRequest=null;
+async function submitPasswordAuth(verb,email,password){
+ const ownerId=state.user?.id??null;
+ const validContext=captureAuthFeedbackContext();
+ if(currentPasswordAuthRequest?.current())return false;
+ const request={};
+ const current=()=>currentPasswordAuthRequest===request&&
+  validContext()&&(state.user?.id??null)===ownerId;
+ request.current=current;
+ currentPasswordAuthRequest=request;
+ let acceptedUserId=null;
+ try{
+  if(verb==='auth-signup-password'){
+   const {data,error}=await client.auth.signUp({email,password,
+    options:{emailRedirectTo:pendingInviteUrl()}});
+   if(!current())return false;
+   if(error)throw error;
+   state.authDraftEmail=email;
+   if(data?.session?.user&&verifiedLoveEmail(data.session.user)){
+    acceptedUserId=data.session.user.id;
+    adoptAuthenticatedIdentity(data.session.user);
+    state.showAuth=false;
+    await reload();
+    return true;
+   }
+   // No session can mean email verification or an existing identity;
+   // never claim that a confirmation email was actually delivered.
+   state.emailVerificationPending=true;state.authNotice=null;render();
+   return true;
+  }
+  const {data,error}=await client.auth.signInWithPassword({email,password});
+  if(!current())return false;
+  if(error){
+   state.authDraftEmail=email;
+   state.authNeedsEmailConfirmation=error.code==='email_not_confirmed'||
+    /email not confirmed|courriel non confirm/i.test(error.message||'');
+   if(state.authNeedsEmailConfirmation){
+    state.authNotice='Votre adresse courriel doit être confirmée avant de vous connecter. Vous pouvez demander un nouveau courriel ci-dessous.';
+    render();
+   }else authMessage(passwordAuthMessage(error));
+   return false;
+  }
+  if(!data?.user)throw Error('Aucune session ouverte.');
+  acceptedUserId=data.user.id;
+  adoptAuthenticatedIdentity(data.user);
+  state.authNeedsEmailConfirmation=false;
+  state.authNotice=null;state.showAuth=false;
+  await reload();
+  return true;
+ }catch(error){
+  if(current()||(acceptedUserId&&state.user?.id===acceptedUserId))
+   authMessage(passwordAuthMessage(error));
+  return false;
+ }finally{
+  if(currentPasswordAuthRequest===request)currentPasswordAuthRequest=null;
+ }
 }
 function authMessage(message){
  const feedback=id('auth-form-feedback');
@@ -4428,37 +4489,8 @@ async function handle(action,element){
     else if(!password)throw Error('Entrez votre mot de passe.');
   }catch(error){authMessage(error.message);return;}
   const btn=element;if(btn?.disabled)return;if(btn)btn.disabled=true;
-  try{
-   if(verb==='auth-signup-password'){
-    const {data,error}=await client.auth.signUp({email,password,
-     options:{emailRedirectTo:pendingInviteUrl()}});
-    if(error){authMessage(passwordAuthMessage(error));return;}
-    state.authDraftEmail=email;
-    if(data?.session?.user&&verifiedLoveEmail(data.session.user)){
-     state.user=data.session.user;state.showAuth=false;await reload();return;
-    }
-    // No session: this may be a new signup awaiting verification OR an
-    // existing Google identity. Never claim that a message was delivered.
-    state.emailVerificationPending=true;
-    state.authNotice=null;render();
-   }else{
-    const {data,error}=await client.auth.signInWithPassword({email,password});
-    if(error){
-     state.authDraftEmail=email;
-     state.authNeedsEmailConfirmation=error.code==='email_not_confirmed'||
-      /email not confirmed|courriel non confirm/i.test(error.message||'');
-     if(state.authNeedsEmailConfirmation){
-      state.authNotice='Votre adresse courriel doit être confirmée avant de vous connecter. Vous pouvez demander un nouveau courriel ci-dessous.';
-      render();
-     }else authMessage(passwordAuthMessage(error));
-     return;
-    }
-    if(!data?.user)throw Error('Aucune session ouverte.');
-    state.authNeedsEmailConfirmation=false;
-    state.user=data.user;state.authNotice=null;state.showAuth=false;
-    await reload();
-   }
-  }catch(error){authMessage(passwordAuthMessage(error));}
+  try{await submitPasswordAuth(verb,email,password);}
+  catch(error){authMessage(passwordAuthMessage(error));}
   finally{if(btn)btn.disabled=false;}
   return;
  }
