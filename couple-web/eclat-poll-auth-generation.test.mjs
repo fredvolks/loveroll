@@ -9,7 +9,7 @@ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
 const start=app.indexOf("setInterval(async()=>{\n if(document.hidden||state.tab!=='eclat'");
 const end=app.indexOf('},4500);',start);
 assert.ok(start>=0&&end>start,'real Éclat poll must remain available');
-const source='let latestEclatStatusRead=null,latestEclatPollPending=null,latestEclatExplicitRead=null;\n'+
+const source='let latestEclatHistoryRead=null,latestEclatStatusRead=null,latestEclatPollPending=null,latestEclatExplicitRead=null;\n'+
  app.slice(start,end+8)+
  '\nfunction invalidateStatusRead(){latestEclatStatusRead={};}'+
  '\nfunction holdForegroundRead(){const request={};latestEclatStatusRead=request;'+
@@ -215,4 +215,34 @@ test('LR-026: a previous login foreground refresh cannot block the current login
  h.requests[0].resolve({id:'new-session'});
  await background;
  assert.equal(h.state.eclat.id,'new-session');
+});
+
+test('LR-026: missing background Éclat status clears cached private history',async()=>{
+ const h=harness();
+ h.state.eclat={active:true,id:'previous-coffret'};
+ h.state.eclatHistory=[{id:'old-private-history'}];
+ h.state.eclatHistoryError=true;
+ const pending=h.tick();
+ h.requests[0].resolve(null);
+ await pending;
+ assert.equal(h.state.eclat,null,'old Éclat session must not remain visible');
+ assert.deepEqual(Array.from(h.state.eclatHistory),[],
+  'background refresh must clear the same private history as foreground');
+ assert.equal(h.state.eclatHistoryError,false);
+ assert.deepEqual(h.history,[],'null status must not launch a new history request');
+ assert.deepEqual(h.renders,[undefined],'Éclat must redraw after old session disappears');
+});
+
+test('LR-026: stale background null cannot erase a newer account history',async()=>{
+ const h=harness();
+ h.state.eclatHistory=[{id:'alice-private'}];
+ const pending=h.tick();
+ h.state.user={id:'bob'};
+ h.state.eclat={id:'bob'};
+ h.state.eclatHistory=[{id:'bob-private'}];
+ h.requests[0].resolve(null);
+ await pending;
+ assert.equal(h.state.eclat.id,'bob');
+ assert.deepEqual(h.state.eclatHistory,[{id:'bob-private'}]);
+ assert.deepEqual(h.renders,[]);
 });
