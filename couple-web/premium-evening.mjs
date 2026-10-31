@@ -2,6 +2,7 @@ import {eveningOddsHtml} from './evening-d6-template.mjs?v=20261022-home228';
 // LoveRoll connected couple — production UI, not a demo. All results are provided by Supabase.
 import {ritualHeadingHtml} from './brand.mjs?v=20261017-ritual130';
 import {eveningEclatSwitcher} from './evening-eclat-switcher.mjs?v=20261022-home228';
+import {categoryConfirmOdds} from './evening-category-confirm.mjs';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','"':'&quot;',"'":'&#39;'}[c]));
 const bt=(action,text,cls='',disabled=false)=>'<button type="button" class="'+cls+'" data-action="'+esc(action)+'"'+
  (action.startsWith('category:')?' aria-pressed="'+(cls.includes('selected')?'true':'false')+'"':'')+
@@ -46,6 +47,7 @@ export function premiumPolyDie(sides,face=null,caption='',spinning=false,preview
 // result, 3D geometry and dice engine stay untouched until an actual roll.
 export function updateEveningCategoryUi(root,category,percent=88){
  if(!['SENSUEL','HASARD','SEXUEL'].includes(category))return false;
+ const preferred=categoryConfirmOdds('SENSUEL',percent).sensuel;
  const group=root?.querySelector('.evening-step.two .evening-choice');
  const buttons=[...(group?.querySelectorAll('button[data-action^="category:"]')||[])];
  if(!buttons.length||buttons.every(button=>button.disabled)||!buttons.some(b=>b.dataset.action==='category:'+category))return false;
@@ -72,9 +74,9 @@ export function updateEveningCategoryUi(root,category,percent=88){
    // Keep an actual space between text and its styled detail so screen
    // readers do not announce "chancesd’avoir" as one joined word.
    const readable=category==='HASARD'?'50 % Sensuel · 50 % Sexuel':
-    String(percent)+' % de chances d’avoir cette catégorie';
+    String(preferred)+' % de chances d’avoir cette catégorie';
    if(odds.textContent!==readable){
-    odds.textContent=category==='HASARD'?readable:String(percent)+' % de chances ';
+    odds.textContent=category==='HASARD'?readable:String(preferred)+' % de chances ';
     if(category!=='HASARD'){
      const detail=button.ownerDocument.createElement('span');
      detail.textContent='d’avoir cette catégorie';
@@ -140,6 +142,7 @@ export function premiumEveningHtml({
  weeklyReady=true,weeklyCount=0,weeklyLimit=1,dailyLocked=false,invitationHtml='',
  showSensuel=true,showSexuel=true,categoryOdds=88,challengeHistory=[],eveningWeights,eveningWeightsEnabled=true
 }={}){
+ const preferredOdds=categoryConfirmOdds('SENSUEL',categoryOdds).sensuel;
  const mine=members.find(m=>m.user_id===me)||members[0]||{},
  partner=members.find(m=>m.user_id!==me)||members[1]||{},
  ready=!!status?.both_ready,
@@ -178,7 +181,7 @@ export function premiumEveningHtml({
  const secondaryAction=ownChallengeCount>0&&
   !(turn.drawsFinished&&!turn.finished&&!rolling)?
   bt('evening-list','♡ Voir mes défis ('+ownChallengeCount+')','evening-queue-open-btn'):'';
- return '<div class="evening-premium-view '+(session?(ready?'is-ready':'is-waiting'):'is-inactive is-finale')+'" data-category-percent="'+esc(categoryOdds)+'">'+
+ return '<div class="evening-premium-view '+(session?(ready?'is-ready':'is-waiting'):'is-inactive is-finale')+'" data-category-percent="'+esc(preferredOdds)+'">'+
  '<div class="evening-toolbar">'+
   '<span class="evening-header-balance" aria-hidden="true"></span>'+
   ritualHeadingHtml(session?(ready?'ÉTAPE 2 · DÉFI DU SOIR':'ÉTAPE 1 · NOMBRE DE DÉFIS'):'NOTRE RITUEL DE LA SOIRÉE')+
@@ -204,13 +207,13 @@ export function premiumEveningHtml({
        (!category&&canDraw?'<p id="lr-evening-category-hint" class="lr-category-hint" aria-live="polite">✨ Choisis ta catégorie pour lancer le dé</p>':'')+
        (showSensuel?'<div class="evening-choice-option">'+
          bt('category:SENSUEL',(category==='SENSUEL'?'✓ ':'♡ ')+'Sensuel','evening-choice-btn '+(category==='SENSUEL'?'selected':''),!canDraw)+
-         (category==='SENSUEL'?'<small class="evening-choice-odds" aria-live="polite">'+esc(categoryOdds)+' % de chances <span>d’avoir cette catégorie</span></small>':'')+'</div>':'')+
+         (category==='SENSUEL'?'<small class="evening-choice-odds" aria-live="polite">'+esc(preferredOdds)+' % de chances <span>d’avoir cette catégorie</span></small>':'')+'</div>':'')+
        '<div class="evening-choice-option">'+
          bt('category:HASARD',(category==='HASARD'?'✓ ':'🎲 ')+'Au hasard','evening-choice-btn '+(category==='HASARD'?'selected':''),!canDraw)+
          (category==='HASARD'?'<small class="evening-choice-odds" aria-live="polite">50 % Sensuel · 50 % Sexuel</small>':'')+'</div>'+
        (showSexuel?'<div class="evening-choice-option">'+
          bt('category:SEXUEL',(category==='SEXUEL'?'✓ ':'♡ ')+'Sexuel','evening-choice-btn '+(category==='SEXUEL'?'selected':''),!canDraw)+
-         (category==='SEXUEL'?'<small class="evening-choice-odds" aria-live="polite">'+esc(categoryOdds)+' % de chances <span>d’avoir cette catégorie</span></small>':'')+'</div>':'')+'</div>'+
+         (category==='SEXUEL'?'<small class="evening-choice-odds" aria-live="polite">'+esc(preferredOdds)+' % de chances <span>d’avoir cette catégorie</span></small>':'')+'</div>':'')+'</div>'+
     '<div class="evening-die-row">'+
       '<div class="evening-d35-col">'+premiumPolyDie(100,rolling&&rollingKind==='new-challenge'?rollFace:officialD100,'Notre dé 100 faces',rolling&&rollingKind==='new-challenge')+
        '<div class="evening-d100-result" role="status" aria-live="polite"'+(officialD100?'':' hidden')+'>'+(officialD100?'Résultat : '+officialD100:'')+'</div>'+
