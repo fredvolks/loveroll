@@ -2722,7 +2722,7 @@ function renderSession(){
        'class="evening-favorite-btn" aria-pressed="'+(isFavorite?'true':'false')+'"'+
         (!isFavorite&&favoriteKeys.length>=EVENING_FAVORITES_LIMIT?
          ' disabled aria-disabled="true" title="Limite de cinq favoris atteinte"':
-         isActiveEveningRedrawPending()?' disabled aria-disabled="true"':'') )):'')+
+         isActiveEveningRedrawPending()?' disabled aria-disabled="true"':'')):'')+
      (['proposed','accepted'].includes(view.status)?
        timerWidget(view,resolvedCard(view).minutes):
        '<p class="tiny-note">Ce défi est archivé dans votre historique.</p>')+
