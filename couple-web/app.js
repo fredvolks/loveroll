@@ -1689,7 +1689,8 @@ async function saveCurrentEclatNote(momentDone){
  const owner={userId:state.user?.id,coupleId:state.coupleId,
   generation:authFeedbackGeneration};
  const key=eclatNoteKey(state.eclat,owner.userId),draft=eclatNoteDrafts.get(key);
- if(!draft||draft.loading||draft.error)throw Error('Attends le chargement de ta note ou appuie sur Réessayer.');
+ if(!draft||draft.generation!==owner.generation)return null;
+ if(draft.loading||draft.error)throw Error('Attends le chargement de ta note ou appuie sur Réessayer.');
  if(draft.saving)throw Error('Enregistrement en cours…');
  // An account switch, new chapter or note retry must invalidate the pending
  // result even if the old network request is still settling.
