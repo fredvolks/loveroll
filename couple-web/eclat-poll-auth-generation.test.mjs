@@ -931,3 +931,44 @@ test('LR-026: a missing private-history scope bypasses a prior cooldown once',as
   'the first read for a new identity/couple must never inherit an obsolete cooldown');
  assert.equal(h.state.eclatHistoryError,false);
 });
+
+test('LR-026: SQLSTATE 42501 without HTTP 403 revokes the stale Éclat cache',async()=>{
+ const h=harness();
+ h.state.eclatHistory=[{id:'private-gallery'}];
+ h.state.eclatMusic=true;
+ const pending=h.tick();
+ h.requests[0].reject({status:400,code:'42501',message:'permission denied'});
+ await pending;
+ assert.equal(h.state.eclat,null,'insufficient privilege must revoke locally cached access');
+ assert.deepEqual(Array.from(h.state.eclatHistory),[]);
+ assert.equal(h.state.eclatMusic,false);
+ assert.equal(h.audioStops(),1);
+ assert.deepEqual(h.renders,[undefined]);
+});
+
+test('LR-026: SQLSTATE 42501 during gallery fetch clears notes and completion',async()=>{
+ const h=privateHistoryHarness();
+ const pending=h.tick();
+ h.loads[0].reject({status:400,code:'42501'});
+ await pending;
+ assert.equal(h.state.eclat,null);
+ assert.deepEqual(Array.from(h.state.eclatHistory),[]);
+ assert.equal(h.state.eclatFinished,null);
+ assert.equal(h.drafts.size,0);
+ assert.equal(h.state.eclatHistoryError,false,'do not retry a permission denial as an outage');
+ assert.deepEqual(h.renders,[null]);
+});
+
+test('LR-026: obsolete 42501 from a former Auth generation is ignored',async()=>{
+ const h=privateHistoryHarness();
+ const old=h.tick();
+ h.runtime.authFeedbackGeneration=2;
+ h.state.eclat={id:'replacement',access:true,active:true};
+ h.state.eclatHistory=[{id:'replacement-private'}];
+ h.loads[0].reject({status:400,code:'42501'});
+ await old;
+ assert.equal(h.state.eclat.id,'replacement');
+ assert.deepEqual(h.state.eclatHistory,[{id:'replacement-private'}]);
+ assert.equal(h.drafts.size,1);
+ assert.deepEqual(h.renders,[]);
+});
