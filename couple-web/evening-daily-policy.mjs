@@ -8,9 +8,15 @@ const localDay=(date)=>{
  return val('year')+'-'+val('month')+'-'+val('day');
 };
 export function eveningDailyAccess({sessions=[],weekly=null,now=new Date()}={}){
- const today=localDay(now),limit=weekly?Number(weekly.face)||0:0;
+ const today=localDay(now),rawLimit=Number(weekly?.face);
+ // The official weekly limit is a D6 face, never an arbitrary server value.
+ const limit=Number.isInteger(rawLimit)&&rawLimit>=1&&rawLimit<=6?rawLimit:0;
+ // A loading/failed session list is not proof that the couple has no active
+ // soirée; keep Start disabled until the server has returned a real list.
+ const historyReady=Array.isArray(sessions);
+ const history=historyReady?sessions.filter(s=>s&&typeof s==='object'&&!Array.isArray(s)):[];
  const weekStart=weekly?.key||null,weeklyCreated=Date.parse(weekly?.created_at||'');
- const weekSessions=weekStart?(sessions||[]).filter(s=>
+ const weekSessions=weekStart?history.filter(s=>
   localDay(s.started_at)>=weekStart):[];
  // Preserve old history but never consume a new weekly die with old sessions.
  // A reset creates a new weekly roll, used as the effective quota boundary.
@@ -23,5 +29,6 @@ export function eveningDailyAccess({sessions=[],weekly=null,now=new Date()}={}){
   localDay(s.finished_at)===today).sort((a,b)=>Date.parse(b.finished_at)-Date.parse(a.finished_at))[0]||null;
  const active=current.some(s=>!s.finished_at);
  return {today,counted,limit,dailyLocked,closedToday,
-  canStart:limit>0&&counted<limit&&!dailyLocked&&!active};
+  canStart:!!today&&historyReady&&!!weekStart&&limit>0&&
+   counted<limit&&!dailyLocked&&!active};
 }
