@@ -197,6 +197,8 @@ jobs:
         run: node --test couple-web/evening-daily-policy.test.mjs
       - name: Calendar monthly navigation and owner isolation
         run: node --test couple-web/evening-calendar-navigation.test.mjs
+      - name: Couple review save privacy and late network ownership
+        run: node --test couple-web/evening-review-ownership.test.mjs
       - name: Plan tonight's duration on Safari and multiple accounts
         run: node --test couple-web/session-duration-preference.test.mjs
       - name: LR-014 — category confirmation and private setting
