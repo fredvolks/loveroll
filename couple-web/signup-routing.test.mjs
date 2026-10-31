@@ -42,6 +42,35 @@ test('same user ID with a new authentication generation cannot inherit a stale p
  ]);
 });
 
+test('a fresh login can save its profile while the same UID has an obsolete pending RPC',async()=>{
+ const calls=[],state={user:{id:'account-A'}};
+ let releaseOld,releaseNew;
+ const oldPending=new Promise(resolve=>{releaseOld=resolve;});
+ const newPending=new Promise(resolve=>{releaseNew=resolve;});
+ const ctx={state,rpc:name=>{
+  calls.push(name);
+  if(calls.length===1)return oldPending;
+  if(calls.length===2)return newPending;
+  return Promise.resolve();
+ }};
+ const f=vm.runInNewContext(profileSaveFixture+
+  ';({saveProfileForCurrentAccount,bump:()=>authFeedbackGeneration++})',ctx);
+ const old=f.saveProfileForCurrentAccount('Old','10-18','her','soft');
+ f.bump(); // same UID, different authenticated session
+ const newer=f.saveProfileForCurrentAccount('Current','10-19','her','medium');
+ assert.equal(calls.length,2,'new session can start without waiting for old network');
+ releaseOld();
+ assert.equal(await old,false);
+ await assert.rejects(f.saveProfileForCurrentAccount('Duplicate','10-19','her','medium'),
+  /déjà en cours/,'old completion must not clear the newer request');
+ releaseNew();
+ assert.equal(await newer,true);
+ assert.deepEqual(calls,[
+  'complete_love_registration','complete_love_registration',
+  'save_my_gender','save_my_play_style'
+ ]);
+});
+
 test('in-flight profile save cannot continue under a different account',async()=>{
  const calls=[],state={user:{id:'account-A'}};
  let finishFirstRpc;
