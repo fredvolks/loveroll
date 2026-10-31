@@ -268,12 +268,14 @@ test('LR-026: authorized last chapter still displays completed-coffret banner',a
 });
 
 test('LR-026: revocation during final history read cannot restore completion',async()=>{
- let resolveHistory,reads=0;
+ let resolveHistory,reads=0,beginHistory;
  const pendingHistory=new Promise(resolve=>{resolveHistory=resolve;});
+ const historyStarted=new Promise(resolve=>{beginHistory=resolve;});
  const h=actionFixture({access:true,active:true,chapter_index:6,chapter_total:6},
   {rpcStatus:{access:true,active:false},
-   historyLoad:()=>{reads++;return pendingHistory;}});
+   historyLoad:()=>{reads++;beginHistory();return pendingHistory;}});
  const finishing=h.invoke('next');
+ await historyStarted;
  assert.equal(reads,1,'the final history request must have started');
  h.state.eclat={...h.state.eclat,access:false};
  resolveHistory();
@@ -285,11 +287,13 @@ test('LR-026: revocation during final history read cannot restore completion',as
 });
 
 test('LR-026: a new active coffret supersedes pending last-chapter completion',async()=>{
- let finishHistory;
+ let finishHistory,beginHistory;
  const pending=new Promise(resolve=>{finishHistory=resolve;});
+ const historyStarted=new Promise(resolve=>{beginHistory=resolve;});
  const h=actionFixture({access:true,active:true,chapter_index:6,chapter_total:6},
-  {rpcStatus:{access:true,active:false},historyLoad:()=>pending});
+  {rpcStatus:{access:true,active:false},historyLoad:()=>{beginHistory();return pending;}});
  const finishing=h.invoke('next');
+ await historyStarted;
  h.state.eclat={...h.state.eclat,session_id:'new-coffret',active:true};
  finishHistory();
  await finishing;
