@@ -208,7 +208,7 @@ test('LR-026: null Éclat status drops cached history without querying private r
  h.state.eclatHistoryError=true;
  assert.equal(await h.refreshEclatStatus(),null);
  assert.equal(h.state.eclat,null);
- assert.deepEqual(h.state.eclatHistory,[]);
+ assert.deepEqual(Array.from(h.state.eclatHistory),[]);
  assert.equal(h.state.eclatHistoryError,false);
  assert.equal(historyReads,0,'unavailable status must not trigger another private history fetch');
 });
@@ -231,7 +231,7 @@ test('LR-026: a pending history response cannot restore content after null statu
  const h=harness({rpc:async()=>null,loadEclatHistory:()=>delayed.promise});
  const stale=h.refreshEclatHistory();
  await h.refreshEclatStatus();
- assert.deepEqual(h.state.eclatHistory,[]);
+ assert.deepEqual(Array.from(h.state.eclatHistory),[]);
  delayed.resolve([{id:'stale-private-history'}]);
  await stale;
  assert.deepEqual(h.state.eclatHistory,[],
