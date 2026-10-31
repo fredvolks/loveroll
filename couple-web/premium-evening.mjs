@@ -204,12 +204,13 @@ export function premiumEveningHtml({
        (!category&&canDraw?'<p id="lr-evening-category-hint" class="lr-category-hint" aria-live="polite">✨ Choisis ta catégorie pour lancer le dé</p>':'')+
        (showSensuel?'<div class="evening-choice-option">'+
          bt('category:SENSUEL',(category==='SENSUEL'?'✓ ':'♡ ')+'Sensuel','evening-choice-btn '+(category==='SENSUEL'?'selected':''),!canDraw)+
-         (category==='SENSUEL'?'<small class="evening-choice-odds">'+esc(categoryOdds)+' % de chances<span>d’avoir cette catégorie</span></small>':'')+'</div>':'')+
+         (category==='SENSUEL'?'<small class="evening-choice-odds" aria-live="polite">'+esc(categoryOdds)+' % de chances <span>d’avoir cette catégorie</span></small>':'')+'</div>':'')+
        '<div class="evening-choice-option">'+
-         bt('category:HASARD',(category==='HASARD'?'✓ ':'🎲 ')+'Au hasard','evening-choice-btn '+(category==='HASARD'?'selected':''),!canDraw)+'</div>'+
+         bt('category:HASARD',(category==='HASARD'?'✓ ':'🎲 ')+'Au hasard','evening-choice-btn '+(category==='HASARD'?'selected':''),!canDraw)+
+         (category==='HASARD'?'<small class="evening-choice-odds" aria-live="polite">50 % Sensuel · 50 % Sexuel</small>':'')+'</div>'+
        (showSexuel?'<div class="evening-choice-option">'+
          bt('category:SEXUEL',(category==='SEXUEL'?'✓ ':'♡ ')+'Sexuel','evening-choice-btn '+(category==='SEXUEL'?'selected':''),!canDraw)+
-         (category==='SEXUEL'?'<small class="evening-choice-odds">'+esc(categoryOdds)+' % de chances<span>d’avoir cette catégorie</span></small>':'')+'</div>':'')+'</div>'+
+         (category==='SEXUEL'?'<small class="evening-choice-odds" aria-live="polite">'+esc(categoryOdds)+' % de chances <span>d’avoir cette catégorie</span></small>':'')+'</div>':'')+'</div>'+
     '<div class="evening-die-row">'+
       '<div class="evening-d35-col">'+premiumPolyDie(100,rolling&&rollingKind==='new-challenge'?rollFace:officialD100,'Notre dé 100 faces',rolling&&rollingKind==='new-challenge')+
        '<div class="evening-d100-result" role="status" aria-live="polite"'+(officialD100?'':' hidden')+'>'+(officialD100?'Résultat : '+officialD100:'')+'</div>'+
