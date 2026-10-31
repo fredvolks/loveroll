@@ -2704,7 +2704,7 @@ function renderSession(){
       button('evening-favorite:'+view.id,
        (isFavorite?'♥ Retirer de mes favoris':'♡ Ajouter à mes favoris')+
        ' ('+favoriteKeys.length+' / '+EVENING_FAVORITES_LIMIT+')',
-       'class="evening-favorite-btn"'+
+       'class="evening-favorite-btn" aria-pressed="'+(isFavorite?'true':'false')+'"'+
         (!isFavorite&&favoriteKeys.length>=EVENING_FAVORITES_LIMIT?
          ' disabled aria-disabled="true" title="Limite de cinq favoris atteinte"':'')):'')+
      (['proposed','accepted'].includes(view.status)?
@@ -4146,7 +4146,12 @@ async function handle(action,element){
   if(!outcome.ok)throw Error(outcome.reason==='limit'?
    'Tu peux conserver au maximum cinq favoris. Retire-en un avant d’en ajouter un autre.':
    'Impossible d’enregistrer ce favori sur cet appareil.');
-  render();return;
+  render();
+  // The button is recreated after toggling its state; keep keyboard and
+  // screen-reader focus on the same favorite control rather than on the body.
+  root.querySelector('.evening-queue-detail button[data-action^="evening-favorite:"]')
+   ?.focus({preventScroll:true});
+  return;
  }
  if(verb==='evening-open'){
   if(!ownEveningChallenges(state.challenges,state.user?.id,state.session?.id).some(x=>x.id===parts[0]))
