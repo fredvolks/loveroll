@@ -257,19 +257,20 @@ function backFromLoveRoll(){
  // not navigate away from Surprise/Éclat or discard the current game.
  const nativeModal=document.querySelector('dialog[open]');
  if(nativeModal){nativeModal.close();return true;}
- // Keep the active recipient queue mounted until the gift's authoritative
- // receipt returns. Native Back can still dismiss its confirmation dialog above.
- if(state.tab==='session'&&isActiveEveningGiftPending())return true;
- if(!document.querySelector('dialog[open],.lr-dialog-overlay')&&root._settingsMenuBack?.())return true;
+ // A gift confirmation can be a custom overlay, not only a native dialog.
+ // Consume Back as Escape BEFORE locking the underlying server-owned game;
+ // otherwise an offered gift cannot be cancelled with Android Back.
  if(document.querySelector('.lr-dialog-overlay')){
   document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
   return true;
  }
- // Preserve the private challenge dialog and pending server receipt when
- // Android Back or Escape arrives during a D100 roll or a repick.
+ // While the official D6/D100, private redraw or gift is pending, do not
+ // dismiss the card, navigate, exit, or invoke unrelated settings Back handlers.
+ // This also protects a rolling D100 with no private card currently open.
  if(state.tab==='session'&&(
-    isActiveEveningRedrawPending()||
-    (state.diceStatus&&(state.eveningRefusalId||state.showEveningChallenges))))return true;
+    state.diceStatus||isActiveEveningRedrawPending()||
+    isActiveEveningGiftPending()))return true;
+ if(root._settingsMenuBack?.())return true;
  if(state.eveningRefusalId){state.eveningRefusalId=null;render();return true;}
  // The recipient's private challenge card is an actual modal. Native Back
  // and Escape must close it BEFORE leaving Soirée or switching tabs.
