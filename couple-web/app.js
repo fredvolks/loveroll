@@ -3337,13 +3337,15 @@ async function handle(action,element){
    }
    // AudioContext.resume() may wait for an iOS/Android gesture; ownership
    // must be checked again AFTER awaiting it. A second tap supersedes this.
-   const owner={userId:state.user?.id,coupleId:state.coupleId};
+   const owner={userId:state.user?.id,coupleId:state.coupleId,
+    generation:authFeedbackGeneration};
    latestEclatAudioOwner=owner;
    const current=eclatStage(state.eclat.coffret_id,
     state.eclat.chapter_number,state.eclat.variant_number);
    const ok=await eclatAudio.start(current?.mood||'romantique');
    if(latestEclatAudioOwner!==owner)return;
-   if(!ownsCoupleAsyncRead(state,owner)||state.tab!=='eclat'||
+   if(!ownsCoupleAsyncRead(state,owner)||
+      authFeedbackGeneration!==owner.generation||state.tab!=='eclat'||
       !state.eclat?.active||
       document.documentElement.classList.contains('lr-privacy-active')){
     latestEclatAudioOwner=null;
