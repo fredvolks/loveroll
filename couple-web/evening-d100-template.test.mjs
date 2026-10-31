@@ -133,6 +133,10 @@ test("Delayed gift approval cannot change another player's evening",async()=>{
    state,authFeedbackGeneration:3,month:()=> '2026-10',
    other:()=>({name:'Partenaire'}),
    premiumConfirm:()=>confirmation.promise,
+   isActiveEveningGiftPending:()=>!!(state.eveningGiftRequest&&
+    state.eveningGiftRequest.userId===state.user?.id&&
+    state.eveningGiftRequest.sessionId===state.session?.id),
+   isActiveEveningRedrawPending:()=>false,render:()=>{},
    rpc:(name,args)=>{calls.writes.push({name,args});serverStarted.resolve();return server.promise;},
    refreshAndShow:async()=>{calls.refresh++;},
    notify:()=>{calls.notifications++;}
@@ -212,7 +216,8 @@ test('Soirée management and calendar cannot interrupt an official D100 animatio
  const state={tab:'session',diceStatus:null,eveningMore:false,
   confirmCancel:false,session:{started_at:'2026-10-31T19:00:00Z'}};
  const run=runInNewContext('(async verb=>{'+route+'})',{
-  state,parts:[],render:()=>{},eveningLocalDay:()=> '2026-10-31'
+  state,parts:[],render:()=>{},eveningLocalDay:()=> '2026-10-31',
+  isActiveEveningGiftPending:()=>false
  });
  await run('evening-more');
  assert.equal(state.eveningMore,true,'Menu returns immediately after settling');
@@ -487,6 +492,7 @@ test('LR-027: delayed personal-card touches cannot interrupt or mutate a rolling
   const state={diceStatus,redrawReady:true,eveningRefusalId:null};
   const context={state,rpc:()=>{writes++;throw Error('Stale touch reached RPC');},
    render:()=>{renders++;},isActiveEveningRedrawPending:()=>false,
+   isActiveEveningGiftPending:()=>false,
    isEveningCardCompleting:()=>false};
   const openRoute=runInNewContext('(async (verb,parts)=>{'+open+'})',context);
   const decisionRoute=runInNewContext('(async (verb,parts)=>{'+decide+'})',context);
@@ -521,6 +527,7 @@ test('LR-027: one pending repick blocks starting another private card',async()=>
  let called=0;
  const route=runInNewContext('(async (verb,parts)=>{'+source.slice(from,until)+'})',{
   state:{diceStatus:null,redrawBusyContext:{challengeId:'card-already-passing'}},
+  isActiveEveningGiftPending:()=>false,
   isActiveEveningRedrawPending:()=>true,
   isEveningCardCompleting:()=>false,
   unlockLoveRollSounds:()=>{called++;},
@@ -548,8 +555,8 @@ test('LR-027: terminal session actions wait for an in-flight Passer or Refuser',
    :source.indexOf("if(verb==='"+nextVerb+"'){",start);
   assert.ok(start>0&&end>start,'Real production route '+verb);
   const code=source.slice(start,end);
-  assert.match(code,/if\(isActiveEveningRedrawPending\(\)\)return;/,
-   'Session transition must check the pending redrawing decision');
+  assert.match(code,/isActiveEveningRedrawPending\(\)\|\|isActiveEveningGiftPending\(\)/,
+   'Session transition must block pending redraws and gifts');
   for(const diceStatus of [null,'rolling']){
    const state={diceStatus,session:{id:'night-one',started_at:'2026-10-31T19:00:00Z'},
     user:{id:'alice'},coupleId:'couple-one',tab:'session',
@@ -577,7 +584,8 @@ test('LR-027: terminal session actions wait for an in-flight Passer or Refuser',
    confirmCancel:false,eveningMore:true};
   let renders=0;
   const run=runInNewContext('(async verb=>{'+source.slice(start,end)+'})',{
-   state,isActiveEveningRedrawPending:()=>false,render:()=>{renders++;}
+   state,isActiveEveningRedrawPending:()=>false,
+   isActiveEveningGiftPending:()=>false,render:()=>{renders++;}
   });
   await run(verb);
   assert.equal(state.confirmCancel,true,'The normal closure request stays available');
@@ -614,6 +622,7 @@ test('LR-027: private queue and native Back preserve a rolling D100 or pending r
   for(const verb of route.verbs)await guarded(verb,['card']);
   const pending=runInNewContext('(async (verb,parts)=>{'+snippet+'})',{
    state:{diceStatus:null,tab:'session',eveningRefusalId:'card'},
+   isActiveEveningGiftPending:()=>false,
    isActiveEveningRedrawPending:()=>true,
    render:()=>{throw Error('Must not repaint before repick confirmation')}
   });
@@ -749,7 +758,7 @@ test('LR-027: personal completion and overlay buttons wait for a private server 
  const until=source.indexOf("if(verb==='finish-session'){",from);
  assert.ok(from>0&&until>from,'Official completion route is present');
  const route=source.slice(from,until);
- assert.match(route,/if\(isActiveEveningRedrawPending\(\)\|\|isEveningCardCompleting\(parts\[0\]\)\)return;/);
+ assert.match(route,/isActiveEveningRedrawPending\(\)\|\|isActiveEveningGiftPending\(\)/);
  let writes=0,renders=0;
  const run=runInNewContext('(async (verb,parts)=>{'+route+'})',{
   state:{user:{id:'alice'},session:{id:'night-one'},challenges:[]},
@@ -924,6 +933,7 @@ test('LR-027: Resume Soirée ignores stale identity, tab, superseding read and r
   const resume=runInNewContext('(async verb=>{'+code+'})',{
    state,authFeedbackGeneration:1,
    isActiveEveningRedrawPending:()=>pending,
+   isActiveEveningGiftPending:()=>false,
    isSharedCoupleReady:()=>true,
    refreshShared:()=>{
     state.unscopedSharedRefreshRequest=request;
@@ -950,6 +960,7 @@ test('LR-027: Resume Soirée ignores stale identity, tab, superseding read and r
  const resume=runInNewContext('(async verb=>{'+code+'})',{
   state,authFeedbackGeneration:1,
   isActiveEveningRedrawPending:()=>false,
+  isActiveEveningGiftPending:()=>false,
   isSharedCoupleReady:()=>true,
   refreshShared:async()=>{state.unscopedSharedRefreshRequest={};},
   playableSessionForWeekly:()=>null,
