@@ -853,3 +853,101 @@ test('LR-027: a gift confirmation that resolves after a repick starts never send
  assert.equal(refreshed,1,'The evening updates after an authorized gift');
  assert.equal(toasted,1,'Only a confirmed gift displays feedback');
 });
+
+test('LR-027: repick starting during category confirmation cancels the stale D100',async()=>{
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const start=source.indexOf("if(verb==='new-challenge'){");
+ const end=source.indexOf("if(verb==='answer'){",start);
+ assert.ok(start>0&&end>start);
+ const code=source.slice(start,end);
+ assert.match(code,/const ownsDraw=\(\)=>ownsEveningCategoryDraw\(state,drawOwner,authFeedbackGeneration\)&&\s*!isActiveEveningRedrawPending\(\)/);
+ const {runInNewContext}=await import('node:vm');
+ const createRun=(state,settings)=>runInNewContext(
+  '(()=>{let eveningCategoryConfirmInFlight=false;return async verb=>{'+code+'}})()',{
+   state,authFeedbackGeneration:1,EVENING_CATEGORIES:['SENSUEL','SEXUEL'],
+   isActiveEveningRedrawPending:()=>settings.pending,
+   ownsEveningCategoryDraw:()=>true,categoryConfirmEnabled:()=>true,
+   askEveningCategoryConfirmation:settings.confirm,
+   animateRoll:settings.roll,localStorage:{},
+   sessionStorage:{removeItem:()=>{}},
+   render:settings.render
+  });
+ const state=()=>({user:{id:'alice'},coupleId:'duo',session:{id:'night'},
+  tab:'session',category:'SENSUEL',couple:{},profile:{}});
+ let release,pending=false,rolls=0,renders=0;
+ const confirmation=new Promise(resolve=>{release=resolve;});
+ const stale=createRun(state(),{
+  get pending(){return pending;},confirm:()=>confirmation,
+  roll:()=>{rolls++;throw Error('Stale official D100 must not roll')},
+  render:()=>{renders++;}
+ });
+ const task=stale('new-challenge');
+ pending=true;release({confirmed:true,neverShow:false});
+ await task;
+ assert.equal(rolls,0);
+ assert.equal(renders,0);
+ // Confirmation remains useful when no private repick takes ownership.
+ const allowedState=state();
+ const allowed=createRun(allowedState,{
+  pending:false,confirm:async()=>({confirmed:true,neverShow:false}),
+  roll:async()=>{rolls++;return {id:'card-a',recipient:'partner'};},
+  render:()=>{renders++;}
+ });
+ await allowed('new-challenge');
+ assert.equal(rolls,1,'One confirmed D100 still runs normally');
+ assert.equal(renders,1);
+ assert.equal(allowedState.category,null,'Category resets after official draw');
+});
+
+test('LR-027: Resume Soirée ignores stale identity, tab, superseding read and repick',async()=>{
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const start=source.indexOf("if(verb==='resume-evening'){");
+ const end=source.indexOf("if(verb==='tab'){",start);
+ assert.ok(start>0&&end>start);
+ const code=source.slice(start,end);
+ const {runInNewContext}=await import('node:vm');
+ for(const stale of ['account','tab','new-refresh','repick','dice']){
+  const state={user:{id:'alice'},coupleId:'duo',tab:'home',session:null,
+   weekly:null,unscopedSharedRefreshRequest:null,diceStatus:null,
+   showEveningChallenges:false};
+  let finish,renderCount=0,notifications=0,pending=false;
+  const request={};
+  const resume=runInNewContext('(async verb=>{'+code+'})',{
+   state,authFeedbackGeneration:1,
+   isActiveEveningRedrawPending:()=>pending,
+   isSharedCoupleReady:()=>true,
+   refreshShared:()=>{
+    state.unscopedSharedRefreshRequest=request;
+    return new Promise(resolve=>{finish=resolve;});
+   },
+   playableSessionForWeekly:()=>null,
+   render:()=>{renderCount++;},
+   notify:()=>{notifications++;}
+  });
+  const operation=resume('resume-evening');
+  if(stale==='account')state.user={id:'bob'};
+  if(stale==='tab')state.tab='special';
+  if(stale==='new-refresh')state.unscopedSharedRefreshRequest={};
+  if(stale==='repick')pending=true;
+  if(stale==='dice')state.diceStatus='pending';
+  finish();await operation;
+  assert.equal(renderCount,0,'Do not repaint after '+stale);
+  assert.equal(notifications,0,'No outdated feedback after '+stale);
+ }
+ // The ordinary resume still reports a session that actually expired.
+ const state={user:{id:'alice'},coupleId:'duo',tab:'home',session:null,
+  weekly:null,diceStatus:null,unscopedSharedRefreshRequest:null};
+ let rendered=0,feedback=0;
+ const resume=runInNewContext('(async verb=>{'+code+'})',{
+  state,authFeedbackGeneration:1,
+  isActiveEveningRedrawPending:()=>false,
+  isSharedCoupleReady:()=>true,
+  refreshShared:async()=>{state.unscopedSharedRefreshRequest={};},
+  playableSessionForWeekly:()=>null,
+  render:()=>{rendered++;},notify:()=>{feedback++;}
+ });
+ await resume('resume-evening');
+ assert.equal(state.tab,'home');
+ assert.equal(rendered,1);
+ assert.equal(feedback,1);
+});
