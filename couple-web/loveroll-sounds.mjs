@@ -14,11 +14,19 @@ export function silenceLoveRollSounds(){
 }
 export const setLoveRollSoundUser=id=>{currentUser=String(id||'anonymous');};
 const key=()=>KEY+':'+currentUser;
-export function soundEnabled(store=globalThis.localStorage){
- try{return store?.getItem(key())!=='off';}catch{return true;}
+export function soundEnabled(store){
+ // Safari can throw when the localStorage PROPERTY is read, before getItem().
+ // Resolve it inside try so settings and a timer alarm never crash the game.
+ try{
+  const available=store===undefined?globalThis.localStorage:store;
+  return available?.getItem(key())!=='off';
+ }catch{return true;}
 }
-export function setSoundEnabled(enabled,store=globalThis.localStorage){
- try{store?.setItem(key(),enabled?'on':'off');}catch{}
+export function setSoundEnabled(enabled,store){
+ try{
+  const available=store===undefined?globalThis.localStorage:store;
+  available?.setItem(key(),enabled?'on':'off');
+ }catch{}
  return !!enabled;
 }
 export async function unlockLoveRollSounds(){
