@@ -1728,6 +1728,7 @@ function eclatReadFixture(state,{rpc=async()=>null,loadEclatHistory=async()=>[]}
 
 test('LR-026: an Éclat history result from a signed-out partner cannot cross into new account',async()=>{
  const state={user:{id:'alice'},coupleId:'same-duo',members:[1,2],
+  eclat:{access:true,active:true},
   eclatHistory:[{id:'previous'}],eclatHistoryCouple:'same-duo',
   eclatHistoryUserId:'alice',eclatGalleryScroll:2};
  let release;
@@ -1748,6 +1749,7 @@ test('LR-026: an Éclat history result from a signed-out partner cannot cross in
 
 test('LR-026: newer Éclat history refresh wins an older delayed response',async()=>{
  const state={user:{id:'alice'},coupleId:'duo',members:[1,2],
+  eclat:{access:true,active:true},
   eclatHistory:[],eclatHistoryCouple:'duo',eclatHistoryUserId:'alice'};
  let release,reads=0;
  const pending=new Promise(resolve=>{release=resolve;});
