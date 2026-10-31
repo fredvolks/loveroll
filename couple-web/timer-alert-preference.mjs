@@ -1,19 +1,25 @@
-// The private timer alert preference is optional. Safari private mode,
-// disabled browser storage and full quotas must not interrupt a live countdown.
-// No timer deadline, challenge state or private card content is persisted here.
+// Personal timer-alert preference, scoped to the authenticated player.
+// No countdown, card text or session details are stored in this key.
+// Safari may deny access to localStorage entirely; the active countdown
+// must still function with its in-memory sound/vibration mode.
 export const TIMER_ALERT_KEY='loveroll-timer-mode';
-export function readTimerAlertMode(storage){
+const keyFor=userId=>typeof userId==='string'&&userId.trim()?
+ TIMER_ALERT_KEY+':'+userId:null;
+export function readTimerAlertMode(userId,storage){
+ const key=keyFor(userId);
+ if(!key)return 'sound';
  try{
   const store=storage===undefined?globalThis.localStorage:storage;
-  return store?.getItem(TIMER_ALERT_KEY)==='vibrate'?'vibrate':'sound';
+  return store?.getItem(key)==='vibrate'?'vibrate':'sound';
  }catch{return 'sound';}
 }
-export function saveTimerAlertMode(mode,storage){
- if(mode!=='sound'&&mode!=='vibrate')return false;
+export function saveTimerAlertMode(userId,mode,storage){
+ const key=keyFor(userId);
+ if(!key||(mode!=='sound'&&mode!=='vibrate'))return false;
  try{
   const store=storage===undefined?globalThis.localStorage:storage;
   if(typeof store?.setItem!=='function')return false;
-  store.setItem(TIMER_ALERT_KEY,mode);
+  store.setItem(key,mode);
   return true;
  }catch{return false;}
 }
