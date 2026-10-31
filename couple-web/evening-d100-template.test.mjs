@@ -584,3 +584,68 @@ test('LR-027: terminal session actions wait for an in-flight Passer or Refuser',
   assert.equal(renders,1);
  }
 });
+
+test('LR-027: private queue and native Back preserve a rolling D100 or pending repick',async()=>{
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const {runInNewContext}=await import('node:vm');
+ const actionRoutes=[
+  {start:"if(verb==='evening-challenge'||verb==='evening-list'){",
+   end:"if(verb==='favorite-remove'){",
+   verbs:['evening-challenge','evening-list','evening-close']},
+  {start:"if(verb==='evening-favorite'){",
+   end:"if(verb==='evening-open'){",verbs:['evening-favorite']},
+  {start:"if(verb==='evening-open'){",
+   end:"if(verb==='evening-refuse'){",verbs:['evening-open']},
+  {start:"if(verb==='evening-refuse-cancel'){",
+   end:"if(verb==='evening-pass'||verb==='evening-refuse-choice'){",
+   verbs:['evening-refuse-cancel']}
+ ];
+ for(const route of actionRoutes){
+  const start=source.indexOf(route.start);
+  const end=source.indexOf(route.end,start);
+  assert.ok(start>0&&end>start,'Real queue route '+route.start);
+  const snippet=source.slice(start,end);
+  const guarded=runInNewContext('(async (verb,parts)=>{'+snippet+'})',{
+   state:{diceStatus:'rolling',tab:'session',eveningRefusalId:'card'},
+   isActiveEveningRedrawPending:()=>false,
+   render:()=>{throw Error('Must not remount D100')},
+   root:{querySelector:()=>{throw Error('Must not replace focus')}}
+  });
+  for(const verb of route.verbs)await guarded(verb,['card']);
+  const pending=runInNewContext('(async (verb,parts)=>{'+snippet+'})',{
+   state:{diceStatus:null,tab:'session',eveningRefusalId:'card'},
+   isActiveEveningRedrawPending:()=>true,
+   render:()=>{throw Error('Must not repaint before repick confirmation')}
+  });
+  for(const verb of route.verbs)await pending(verb,['card']);
+ }
+ const from=source.indexOf('function backFromLoveRoll(){');
+ const until=source.indexOf('window.loveRollHandleBack=backFromLoveRoll;',from);
+ assert.ok(from>0&&until>from,'Real native Back handler');
+ for(const reason of ['rolling','redraw']){
+  const state={tab:'session',diceStatus:reason==='rolling'?'rolling':null,
+   eveningRefusalId:'card',showEveningChallenges:true};
+  let renders=0;
+  const back=runInNewContext(source.slice(from,until)+'\nbackFromLoveRoll',{
+   state,isActiveEveningRedrawPending:()=>reason==='redraw',
+   document:{querySelector:()=>null},root:{_settingsMenuBack:()=>false},
+   render:()=>{renders++;}
+  });
+  assert.equal(back(),true,'System Back is consumed safely');
+  assert.equal(renders,0,'Pending card and 3D result must stay mounted');
+  assert.equal(state.eveningRefusalId,'card');
+  assert.equal(state.showEveningChallenges,true);
+ }
+ // No pending server decision: native Back must still dismiss the refusal.
+ const state={tab:'session',diceStatus:null,eveningRefusalId:'card',
+  showEveningChallenges:true};
+ let renders=0;
+ const back=runInNewContext(source.slice(from,until)+'\nbackFromLoveRoll',{
+  state,isActiveEveningRedrawPending:()=>false,
+  document:{querySelector:()=>null},root:{_settingsMenuBack:()=>false},
+  render:()=>{renders++;}
+ });
+ assert.equal(back(),true);
+ assert.equal(state.eveningRefusalId,null);
+ assert.equal(renders,1);
+});
