@@ -207,7 +207,26 @@ const {eveningD100Viewports}=require('./evening-d100-viewports.cjs');
   assert.equal(await page.locator('.evening-d35-col canvas').getAttribute('data-face'),'17');
   assert.equal(await page.locator('.evening-choice [aria-pressed=true]').count(),0,'Category resets after each official draw');
   assert.equal(await page.locator('[data-action="new-challenge"]').count(),0,'No fake disabled D100 during partner turn');
-  assert.match(await page.locator('.evening-primary-status').textContent(),/En attente du tour de ton partenaire/);
+  // LR-027: a member can now start their own card during the partner's
+  // remaining D100 turns; the previous waiting paragraph is not universal.
+  const nextStep=await page.evaluate(()=>{
+   const primary=document.querySelector('.evening-d100-roll');
+   const queue=document.querySelector('.evening-d100-utilities [data-action="evening-list"]');
+   return {action:primary?.getAttribute('data-action')||null,
+    label:primary?.textContent?.trim()||'',hasQueue:!!queue};
+  });
+  if(nextStep.action?.startsWith('evening-open:')){
+   assert.match(nextStep.label,/Commencer mon défi|Reprendre mon défi/,
+    'The shortcut must identify this player\'s personal next challenge');
+   assert.equal(nextStep.hasQueue,true,
+    'The private challenge list remains visible as a secondary action');
+   assert.ok(nextStep.action.length>'evening-open:'.length,
+    'The shortcut must reference a real private challenge ID');
+  }else{
+   assert.equal(nextStep.action,null,
+    'A partner-turn state must not offer an unrelated primary action');
+   assert.match(nextStep.label,/En attente du tour de ton partenaire/);
+  }
   checkpoint('capture-recorded');
   await capture('recorded');
   assert.deepEqual(errors,[]);await context.close();console.log('EVENING_D100_TEMPLATE_OK',width,height);
