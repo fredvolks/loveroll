@@ -2556,7 +2556,8 @@ function signupLookupFixture(state,rpc){
  const end=app.indexOf('async function autoAcceptPendingInvite(',start);
  assert.ok(start>0&&end>start);
  const stored=[];
- const f=runInNewContext(app.slice(start,end)+';({resolveVerifiedSignup})',{
+ const f=runInNewContext('let authFeedbackGeneration=0;\n'+app.slice(start,end)+
+  ';({resolveVerifiedSignup,bumpAuthGeneration:()=>authFeedbackGeneration++})',{
   state,rpc,rememberVerifiedInvitation:id=>stored.push(id)
  });
  return {...f,stored};
@@ -2573,6 +2574,18 @@ test('LR-026: a stale server-discovered invitation cannot overwrite the next acc
  const result=await lookup;
  assert.equal(result.status,'account_changed');
  assert.equal(f.stored.length,0);
+});
+
+test('LR-026: same-user relogin cannot cache an invitation from the previous session',async()=>{
+ let release;
+ const pending=new Promise(resolve=>{release=resolve;});
+ const state={user:{id:'alice'}};
+ const f=signupLookupFixture(state,()=>pending);
+ const lookup=f.resolveVerifiedSignup(false);
+ f.bumpAuthGeneration(); // SIGNED_OUT + SIGNED_IN reused the same account ID
+ release({status:'invitation',invitation_id:'stale-invitation'});
+ assert.equal((await lookup).status,'account_changed');
+ assert.deepEqual(f.stored,[],'never write a stale private invitation into the current session');
 });
 
 test('LR-026: a superseded reload cannot cache an outdated invitation for the same user',async()=>{
