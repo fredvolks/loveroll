@@ -26,6 +26,7 @@ test('Mobile Surprise uses a safe fallback for partial renders and preserves eve
  assert.match(code,/if\(renderId!==activeRender\)return; \/\/ stale async event/);
  assert.match(code,/if\(opener\.isConnected\)opener\.focus/);
  assert.match(code,/else if\(infoOpen&&!view\.querySelector/);
- assert.match(code,/if\(!list\.open\)list\.showModal\(\)/);
- assert.match(code,/if\(!info\.open\)info\.showModal\(\)/);
+ assert.match(code,/if\(!target\.open\)target\.showModal\(\)/);
+ assert.match(code,/if\(other\.open\)other\.close\(\)/);
+ assert.match(code,/if\(!list\.open&&!info\.open&&opener\.isConnected\)/);
 });

@@ -100,12 +100,26 @@ const layouts=[
      const info=page.locator('.home-odds-info');
      await info.click();
      const infoDialog=page.locator('#surprise-info-dialog');
-     await infoDialog.waitFor({state:'visible'});
+     // Assert the actual native open state, not only a CSS visibility guess.
+     const infoState=await page.evaluate(()=>{
+      const el=document.querySelector('#surprise-info-dialog');
+      return {present:!!el,open:!!el?.open,
+       displayed:el?getComputedStyle(el).display:null,
+       eventsOpen:!!document.querySelector('#surprise-events-dialog')?.open};
+     });
+     assert.equal(infoState.open,true,layout.name+' info dialog did not open: '+JSON.stringify(infoState));
+     assert.equal(infoState.eventsOpen,false,layout.name+' events dialog remained open');
+     await infoDialog.waitFor({state:'visible',timeout:8000});
      assert.match(await infoDialog.innerText(),/D100/);
      assert.match(await infoDialog.innerText(),/pair/);
      await page.keyboard.press('Escape');
      await infoDialog.waitFor({state:'hidden'});
      assert.equal(await page.locator('.surprise-events-summary').isVisible(),true);
+     // Both orders and repeat entry must work without a stale dialog lock.
+     await events.click();
+     await dialog.waitFor({state:'visible',timeout:8000});
+     await page.locator('#surprise-events-dialog .surprise-minimal-close').click();
+     await dialog.waitFor({state:'hidden'});
     }
     assert.deepEqual(errors,[],layout.name+' JavaScript errors');
     await page.screenshot({path:path.join('design-captures','lr-surprise-one-photo-'+layout.name+'.png')});

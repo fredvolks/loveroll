@@ -57,15 +57,21 @@ export function fitSurpriseMinimal(root){
  info.setAttribute('aria-labelledby','surprise-info-title');
  info.innerHTML='<button type="button" class="surprise-minimal-close" aria-label="Fermer les informations">×</button><h2 id="surprise-info-title">Notre surprise du mois</h2><p>Le D100 choisit votre activité du mois. Découvrez ensuite sa version de saison.</p><p>Le dé à six faces détermine qui invite : pair pour le premier partenaire, impair pour le second.</p><p>Votre activité et la personne qui invite restent enregistrées pour votre duo.</p>';
  const infoButton=hero.querySelector('.home-odds-info');
- eventsButton.addEventListener('click',()=>{
-  if(renderId!==activeRender)return;
-  eventsOpen=true;infoOpen=false;
-  if(!list.open)list.showModal();
+ // Native dialogs share one top layer. Always close the competing dialog
+ // before presenting another, and record state only after showModal succeeds.
+ const openDialog=(target,other,kind)=>{
+  if(renderId!==activeRender||!target.isConnected)return;
+  if(other.open)other.close();
+  if(!target.open)target.showModal();
+  eventsOpen=kind==='events';infoOpen=kind==='info';
+ };
+ eventsButton.addEventListener('click',event=>{
+  event.stopPropagation();
+  openDialog(list,info,'events');
  });
- infoButton.addEventListener('click',()=>{
-  if(renderId!==activeRender)return;
-  infoOpen=true;eventsOpen=false;
-  if(!info.open)info.showModal();
+ infoButton.addEventListener('click',event=>{
+  event.stopPropagation();
+  openDialog(info,list,'info');
  });
  for(const [dialog,opener,kind] of [[list,eventsButton,'events'],[info,infoButton,'info']]){
   dialog.querySelector('.surprise-minimal-close').addEventListener('click',()=>dialog.close());
@@ -73,7 +79,10 @@ export function fitSurpriseMinimal(root){
   dialog.addEventListener('close',()=>{
    if(renderId!==activeRender)return; // stale async event from replaced DOM
    if(kind==='events')eventsOpen=false;else infoOpen=false;
-   if(opener.isConnected)opener.focus({preventScroll:true});
+   // Close events are asynchronous. An old event must not steal focus from
+   // a newly opened native modal (notably Safari and mobile Chromium).
+   if(!list.open&&!info.open&&opener.isConnected)
+    opener.focus({preventScroll:true});
   });
  }
  // Move the real controls and canvas, preserving all existing action bindings.
