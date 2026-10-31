@@ -1344,6 +1344,9 @@ async function saveCurrentEclatNote(momentDone){
  if(!current())return null;
  const snapshot={note:draft.note,clue:draft.clue,moment_done:momentDone??draft.moment_done};
  const status={...state.eclat};
+ // "J’ai terminé" also changes the private note's persisted state even
+ // when both text fields are empty. A failed save must remain noticeable.
+ if(snapshot.moment_done!==draft.moment_done)draft.dirty=true;
  draft.saving=true;
  try{
   await saveEclatNote(client,status,owner.userId,snapshot);
