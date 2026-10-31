@@ -337,6 +337,9 @@ test('Soirée always keeps the two approved actions and a single decorative D100
  if(intro.includes('data-session-length-select="true"')){
   assert.match(intro,/aria-label="Durée souhaitée de ma soirée"/);
   assert.match(intro,/<option value="15" selected>15 min<\/option>/);
-  assert.equal((intro.match(/<option value="/g)||[]).length,5);
+  const durationOptions=intro.match(/<select data-session-length-select="true"[^>]*>([\s\S]*?)<\/select>/)?.[1];
+  const intensityOptions=intro.match(/<select data-evening-intensity-select="true"[^>]*>([\s\S]*?)<\/select>/)?.[1];
+  assert.equal((durationOptions?.match(/<option value="/g)||[]).length,5);
+  assert.equal((intensityOptions?.match(/<option value="/g)||[]).length,3);
  }
 });
