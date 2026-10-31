@@ -739,6 +739,9 @@ function adoptAuthenticatedIdentity(nextUser){
   // The completed-coffret banner belongs to the previous couple too.
   state.eclatFinished=null;
   state.profile=null;state.coupleId=null;state.couple=null;state.members=[];
+  // An identity switch must also invalidate the two-member privacy scope;
+  // the next account must establish its own membership before Éclat reloads.
+  state.eclatMembershipScope=null;
   // Recovery and verification UI also belongs to the previous login.
   state.passwordRecovery=false;state.emailVerificationPending=false;
   state.authNotice=null;state.authNeedsEmailConfirmation=false;
