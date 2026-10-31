@@ -22,7 +22,7 @@ function parseFavoriteEntries(raw){
  for(const entry of parsed){
   if(typeof entry!=='string')continue;
   const [category,idText,...rest]=entry.split(':');
-  if(rest.length||!/^\\d{1,3}$/.test(idText))continue;
+  if(rest.length||!/^\d{1,3}$/.test(idText))continue;
   const identity=eveningFavoriteId({category,card_id:Number(idText)});
   if(identity!==entry||seen.has(identity))continue;
   seen.add(identity);items.push(identity);
