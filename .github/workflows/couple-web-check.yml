@@ -207,6 +207,8 @@ jobs:
         run: node --test couple-web/future-card-catalog.test.mjs
       - name: Verify assignment of future gender-specific and shared cards
         run: node --test couple-web/future-card-audience.test.mjs
+      - name: Preview future nights from unique 2-6 minute cards
+        run: node --test couple-web/future-night-plan.test.mjs
       - name: LR-014 — category confirmation and private setting
         run: node --test couple-web/evening-category-confirm.test.mjs
       - name: Validate iPad Soirée one-HD-photo contract
