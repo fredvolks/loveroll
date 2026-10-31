@@ -155,7 +155,10 @@ test('Settings never erase saved favorites after a failed read or write',()=>{
  assert.deepEqual(readEveningFavorites('fred','couple-a',storage),['SENSUEL:1']);
 });
 test('Favorite Settings controls are scoped to the current user and couple',()=>{
- assert.match(app,/eveningFavoritesSettingsHtml\(\s*readEveningFavorites\(state\.user\?\.id,state\.coupleId\)\)/);
+ assert.match(app,/const savedFavorites=readEveningFavorites\(state\.user\?\.id,state\.coupleId\)/);
+ assert.match(app,/eveningFavoritesSettingsHtml\(savedFavorites,favoriteTitles\)/);
+ assert.match(app,/editableCardSlots\(category,state\.customCards\|\|\[\]\)/);
+ assert.match(app,/card\.filled&&savedFavorites\.includes\(key\)&&card\.title/);
  const handler=app.slice(app.indexOf("if(verb==='favorite-remove'){"),
   app.indexOf("if(verb==='evening-favorite'){"));
  assert.match(handler,/if\(!state\.user\?\.id\|\|!state\.coupleId/);
@@ -164,4 +167,21 @@ test('Favorite Settings controls are scoped to the current user and couple',()=>
  assert.match(handler,/root\.querySelector\('\.lr-favorite-manager'\)\?\.focus/);
  const css=readFileSync(new URL('./settings-premium.css',import.meta.url),'utf8');
  assert.match(css,/\.lr-favorite-item button\{[^}]*min-height:44px/);
+});
+
+test('Saved favorite IDs show their current library titles with HTML escaping',()=>{
+ const names=Object.create(null);
+ names['SENSUEL:7']='Baisers au clair de lune';
+ names['SEXUEL:3']='<img src=x onerror=alert(1)> & "Bonjour"';
+ const html=eveningFavoritesSettingsHtml(['SENSUEL:7','SEXUEL:3','MIXTE:2'],names);
+ assert.match(html,/Baisers au clair de lune/);
+ assert.match(html,/Sensuel · carte 7/);
+ assert.match(html,/&lt;img src=x onerror=alert\(1\)&gt; &amp; &quot;Bonjour&quot;/);
+ assert.doesNotMatch(html,/<img|src=x/);
+ assert.match(html,/Mixte · carte 2/);
+ assert.equal((html.match(/data-action="favorite-remove:/g)||[]).length,3);
+ const huge='x'.repeat(150);
+ const bounded=eveningFavoritesSettingsHtml(['SENSUEL:7'],{'SENSUEL:7':huge});
+ assert.doesNotMatch(bounded,/x{121}/);
+ assert.match(bounded,/x{120}/);
 });
