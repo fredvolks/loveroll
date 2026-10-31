@@ -94,7 +94,7 @@ const actionSource=app.slice(permissionBegin,permissionEnd)+
  "async function invoke(command){const verb='eclat',parts=command.split(':'),element=null;\n"+
  app.slice(actionBegin,actionEnd)+'\n}\n;invoke;';
 
-function actionFixture(status,{mode='real',eligible=false,startAudio=null,saveNote=null,confirm=null,withDraft=false}={}){
+function actionFixture(status,{mode='real',eligible=false,startAudio=null,saveNote=null,confirm=null,withDraft=false,rpcStatus=null,historyLoad=null}={}){
  const state={user:{id:'alice'},coupleId:'shared-duo',
   members:[{id:'alice'},{id:'bob'}],tab:'eclat',
   eclat:{coffret_id:1,chapter_number:1,chapter_index:1,chapter_total:6,variant_number:0,...status},
@@ -108,16 +108,16 @@ function actionFixture(status,{mode='real',eligible=false,startAudio=null,saveNo
   eclatNoteKey:()=> 'note-key',
   saveCurrentEclatNote:async()=>{notes++;return saveNote?await saveNote():'note-key';},
   beginEclatAction:()=>({}),ownsEclatAction:()=>true,
-  applyEclatActionResult:()=>true,
+  applyEclatActionResult:value=>{if(rpcStatus)state.eclat={...state.eclat,...value};return true;},
   eclatStage:()=>({mood:'romantique',coffret:{title:'Coffret'}}),
   eclatAudio:{
    stop:()=>{stops++;},
    start:async mood=>{played.push(mood);return startAudio?await startAudio():true;}
   },
   document:{documentElement:{classList:{contains:()=>false}}},
-  rpc:async name=>{calls.push(name);return {access:true,active:true};},
+  rpc:async name=>{calls.push(name);return rpcStatus||{access:true,active:true};},
   render:()=>renders.push('render'),
-  refreshEclatHistory:async()=>{},
+  refreshEclatHistory:async()=>{if(historyLoad)await historyLoad();},
   premiumConfirm:async()=>{confirms++;return confirm?await confirm():true;},
   notify:()=>{},
   root:{querySelector:()=>null},
@@ -242,5 +242,58 @@ test('LR-026: delayed audio is also cancelled when chapter changes',async()=>{
  await pending;
  assert.equal(h.stops(),1);
  assert.equal(h.state.eclatMusic,false);
+ assert.deepEqual(h.renders,[]);
+});
+
+
+test('LR-026: final chapter with server-revoked access cannot recreate private ending',async()=>{
+ const h=actionFixture({access:true,active:true,chapter_index:6,chapter_total:6},
+  {rpcStatus:{access:false,active:false}});
+ await h.invoke('next');
+ assert.deepEqual(h.calls,['love_eclat_next']);
+ assert.equal(h.state.eclatFinished,undefined,
+  'a revoked entitlement cannot produce a private completed-coffret message');
+ assert.equal(h.stops(),0,'revoked status handler owns soundtrack cleanup');
+ assert.equal(h.renders.length,1,'render the no-access state');
+});
+
+test('LR-026: authorized last chapter still displays completed-coffret banner',async()=>{
+ const h=actionFixture({access:true,active:true,chapter_index:6,chapter_total:6},
+  {rpcStatus:{access:true,active:false}});
+ await h.invoke('next');
+ assert.deepEqual(h.calls,['love_eclat_next']);
+ assert.equal(h.state.eclatFinished,'Coffret');
+ assert.equal(h.stops(),1);
+ assert.equal(h.renders.length,1);
+});
+
+test('LR-026: revocation during final history read cannot restore completion',async()=>{
+ let resolveHistory,reads=0;
+ const pendingHistory=new Promise(resolve=>{resolveHistory=resolve;});
+ const h=actionFixture({access:true,active:true,chapter_index:6,chapter_total:6},
+  {rpcStatus:{access:true,active:false},
+   historyLoad:()=>{reads++;return pendingHistory;}});
+ const finishing=h.invoke('next');
+ assert.equal(reads,1,'the final history request must have started');
+ h.state.eclat={...h.state.eclat,access:false};
+ resolveHistory();
+ await finishing;
+ assert.equal(h.state.eclatFinished,undefined);
+ assert.equal(h.stops(),0);
+ assert.equal(h.renders.length,0,
+  'a stale completion must not repaint revoked content');
+});
+
+test('LR-026: a new active coffret supersedes pending last-chapter completion',async()=>{
+ let finishHistory;
+ const pending=new Promise(resolve=>{finishHistory=resolve;});
+ const h=actionFixture({access:true,active:true,chapter_index:6,chapter_total:6},
+  {rpcStatus:{access:true,active:false},historyLoad:()=>pending});
+ const finishing=h.invoke('next');
+ h.state.eclat={...h.state.eclat,session_id:'new-coffret',active:true};
+ finishHistory();
+ await finishing;
+ assert.equal(h.state.eclatFinished,undefined);
+ assert.equal(h.stops(),0);
  assert.deepEqual(h.renders,[]);
 });
