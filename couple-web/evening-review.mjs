@@ -75,3 +75,21 @@ export function eveningPersonReviewMarkup({reviews=[],sessionId,person={},me}={}
   (review.comment?'<p class="evening-review-note">'+esc(review.comment)+'</p>':'')+
   edit+'</section>';
 }
+
+/** Read-only finale summary: count each partner's review once, never a stray
+ * or duplicated legacy row. Missing partner metadata is not "waiting".
+ * No private card text is read or stored here.
+ */
+export function eveningFinaleStatus({sessionId,reviews=[],challenges=[],selfId,partnerId}={}){
+ if(!sessionId)return null;
+ const validReviews=Array.isArray(reviews)?reviews.filter(row=>
+  row&&typeof row==='object'&&row.session_id===sessionId):null;
+ const owned=authorId=>!!authorId&&validReviews?.some(row=>row.author_id===authorId)===true;
+ const myResponse=owned(selfId);
+ const partnerResponse=partnerId?owned(partnerId):null;
+ const complete=Array.isArray(challenges)?challenges.filter(row=>
+  row&&row.session_id===sessionId&&row.status==='completed').length:0;
+ return {id:sessionId,completed:complete,
+  responses:validReviews===null?null:Number(myResponse)+Number(partnerResponse===true),
+  myResponse,partnerResponse};
+}
