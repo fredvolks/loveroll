@@ -183,7 +183,9 @@ export function premiumEveningHtml({
  // LR-027: waiting for another person is a state, not a fake disabled button.
  const waitingStatus=label=>'<p class="evening-primary-status" role="status">'+esc(label)+'</p>';
  const resumeAction=nextChallenge?.id&&['accepted','proposed'].includes(nextChallenge.status)?
-  bt('evening-open:'+nextChallenge.id,
+  // Use the existing server-verified start path: one tap accepts a proposed
+  // private card (or resumes an accepted one) and opens its timer/detail.
+  bt('evening-start:'+nextChallenge.id,
    nextChallenge.status==='accepted'?'▶ Reprendre mon défi':'▶ Commencer mon défi',
    'evening-primary'):'';
  // A member waiting for the other player's D100 can still play their own
