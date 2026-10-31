@@ -81,6 +81,14 @@ test('User-selected 10/30 minute and free plans are bounded and keep both recipi
  assert.equal(free.remainingMinutes,null);
  assert.equal(free.reason,'limit');
 });
+test('Existing dropdown values use strings but only four approved numeric lengths',()=>{
+ const plan=buildFutureNightPlan({members,cards:many(10,3),
+  styleA:'medium',styleB:'medium',minutes:'15'});
+ assert.equal(plan.requestedMinutes,15);
+ assert.equal(plan.spentMinutes,15);
+ for(const invalid of ['0','8','five','15.0',' 15 ',{}])
+  assert.throws(()=>buildFutureNightPlan({minutes:invalid}),/Durée/);
+});
 test('Future planner rejects bad client input and missing partner without assigning cards',()=>{
  for(const minutes of [0,-5,8,Infinity,NaN,null]){
   assert.throws(()=>buildFutureNightPlan({minutes}),/Durée/);
