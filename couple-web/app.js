@@ -1792,6 +1792,15 @@ async function refreshEclatStatus(){
 // A user may switch accounts or leave Éclat while a mutating RPC awaits.
 // Keep its response local to the exact initiating account, couple and view.
 let latestEclatActionRequest=null;
+// UI-only guard: Supabase RPCs remain the authority for membership and access.
+// Apply the same entitlement rule to controls, note requests and audio, not
+// just to the HTML renderer. An old cached active flag is not permission.
+function canPlayEclat(){
+ const visible=previewEclatStatus(state.eclat,state.testMode,state.testModeEligible);
+ return !!(state.user?.id&&state.tab==='eclat'&&
+  isSharedCoupleReady(state.coupleId,state.members)&&
+  visible?.access===true&&visible?.active===true);
+}
 function beginEclatAction(){
  const owner={userId:state.user?.id,coupleId:state.coupleId,
   generation:authFeedbackGeneration,tab:state.tab,request:{}};
@@ -1816,13 +1825,14 @@ function applyEclatActionResult(value,owner){
 function renderEclat(){
  const coupleReady=isSharedCoupleReady(state.coupleId,state.members);
  const e=coupleReady?previewEclatStatus(state.eclat,state.testMode,state.testModeEligible):null;
- if(e?.active){
+ const playable=e?.access===true&&e?.active===true;
+ if(playable){
   const current=eclatStage(e.coffret_id,e.chapter_number,e.variant_number);
   if(current)eclatAudio.setMood(current.mood);
  }else if(state.eclatMusic){eclatAudio.stop();state.eclatMusic=false;}
  frame(eclatHtml({status:e,coupleReady,selected:state.eclatSelection,minutes:state.eclatMinutes,
   details:state.eclatDetails,members:state.members,userId:state.user?.id,
-  music:state.eclatMusic,finished:coupleReady?state.eclatFinished:null,browse:state.eclatBrowse,intent:state.eclatIntent,noteState:e?.active&&!state.eclatBrowse?eclatNoteState():{},history:coupleReady&&state.eclatHistoryCouple===state.coupleId&&
+  music:state.eclatMusic,finished:coupleReady?state.eclatFinished:null,browse:state.eclatBrowse,intent:state.eclatIntent,noteState:playable&&!state.eclatBrowse?eclatNoteState():{},history:coupleReady&&state.eclatHistoryCouple===state.coupleId&&
    state.eclatHistoryUserId===state.user?.id?state.eclatHistory:[],historyError:state.eclatHistoryError}), 'Éclat','Notre expérience à deux');
 }
 function renderHome(){
@@ -3349,7 +3359,7 @@ async function handle(action,element){
   if(!isSharedCoupleReady(state.coupleId,state.members))throw Error('Éclat nécessite deux partenaires associés.');
   const kind=parts[0],num=Number(parts[1]);
   if(kind.startsWith('note-')){
-   if(!state.eclat?.active)throw Error('Aucun coffret actif');
+   if(!canPlayEclat())throw Error('Aucun coffret actif');
    const key=eclatNoteKey(state.eclat,state.user?.id);
    if(kind==='note-retry'){
     // A refresh of the draft must not race with a still-pending write.
@@ -3365,7 +3375,7 @@ async function handle(action,element){
   if(kind==='back'){await handle('tab:session',element);return;}
   if(kind==='music'){
    const privacyMasked=document.documentElement.classList.contains('lr-privacy-active');
-   if(privacyMasked||!state.eclat?.active||state.eclatMusic){
+   if(privacyMasked||!canPlayEclat()||state.eclatMusic){
     latestEclatAudioOwner=null;
     eclatAudio.stop();state.eclatMusic=false;
     // Never repaint private challenge content while its mask is active.
@@ -3384,7 +3394,7 @@ async function handle(action,element){
    if(!ownsCoupleAsyncRead(state,owner)||
       authFeedbackGeneration!==owner.generation||
       !isSharedCoupleReady(owner.coupleId,state.members)||state.tab!=='eclat'||
-      !state.eclat?.active||
+      !canPlayEclat()||
       document.documentElement.classList.contains('lr-privacy-active')){
     latestEclatAudioOwner=null;
     eclatAudio.stop();return;
@@ -3421,7 +3431,7 @@ async function handle(action,element){
    return;
   }
   if(kind==='choose'){
-   if(!state.eclat?.active)throw Error('Aucun coffret actif');
+   if(!canPlayEclat())throw Error('Aucun coffret actif');
    if(!Number.isInteger(num)||num<0||num>3)throw Error('Choix invalide');
    const draft=eclatNoteDrafts.get(eclatNoteKey(state.eclat,state.user?.id));
    if(num>0&&!draft?.moment_done)throw Error('Vivez d’abord le moment ensemble, puis confirme que tu as terminé.');
@@ -3436,7 +3446,7 @@ async function handle(action,element){
    render();return;
   }
   if(kind==='next'){
-   if(!state.eclat?.active)throw Error('Aucun coffret actif');
+   if(!canPlayEclat())throw Error('Aucun coffret actif');
    const last=state.eclat.chapter_index===state.eclat.chapter_total;
    const title=last?eclatStage(state.eclat.coffret_id,8,0)?.coffret?.title:null;
    const owner=beginEclatAction();if(!owner)return;
@@ -3451,7 +3461,7 @@ async function handle(action,element){
    render();return;
   }
   if(kind==='end'){
-   if(!state.eclat?.active)return;
+   if(!canPlayEclat())return;
    const owner=beginEclatAction();if(!owner)return;
    const yes=await premiumConfirm('Quitter ce coffret maintenant ? Les chapitres terminés restent dans votre historique de jeu, mais cette séance ne pourra pas être reprise.',{
     kind:'library',title:'Quitter Éclat ?',accept:'Quitter',cancel:'Continuer'
