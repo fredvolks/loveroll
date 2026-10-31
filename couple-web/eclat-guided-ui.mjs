@@ -17,6 +17,7 @@ export function eclatGuidedPlay({stage,status,members,userId,noteState={}}){
  const fieldKey=String(status.session_id)+'-'+status.chapter_index;
  const noteId='eclat-note-'+fieldKey,clueId='eclat-clue-'+fieldKey;
  const noteUnavailable=noteState.loading||noteState.error;
+ const saving=noteState.saving===true;
  const outcomeCopy=final?c.finales[outcome-1]:[
   'Prenez un instant calme ensemble. Prolongez seulement ce qui vous convient.',
   'Reprenez un détail de ce moment pour en faire un petit jeu spontané à deux.',
@@ -24,7 +25,7 @@ export function eclatGuidedPlay({stage,status,members,userId,noteState={}}){
  ][outcome-1];
  const fields='<label for="'+esc(noteId)+'">'+esc(guide.label)+' <span>· privé · facultatif</span></label>'+
   '<textarea id="'+esc(noteId)+'" data-draft-ignore data-eclat-field="note" maxlength="2000" rows="2" placeholder="'+esc(guide.placeholder)+'"'+(noteUnavailable?' disabled':'')+'>'+esc(noteState.note)+'</textarea>'+
-  '<div class="eclat-note-controls">'+button('note-save','Enregistrer ma note','eclat-note-save',!!noteUnavailable)+'<span data-eclat-note-status role="status">'+(noteState.loading?'Chargement…':noteState.error?'Lecture impossible. '+button('note-retry','Réessayer','eclat-note-save'):noteState.saved?'Note enregistrée pour toi':'Écris ici, puis enregistre.')+'</span></div>'+
+  '<div class="eclat-note-controls">'+button('note-save',saving?'Enregistrement…':'Enregistrer ma note','eclat-note-save',!!noteUnavailable||saving)+'<span data-eclat-note-status role="status">'+(noteState.loading?'Chargement…':noteState.error?'Lecture impossible. '+button('note-retry','Réessayer','eclat-note-save'):saving?'Enregistrement en cours…':noteState.dirty?'Modifications non enregistrées':noteState.saved?'Note enregistrée pour toi':'Écris ici, puis enregistre.')+'</span></div>'+
   (guide.clue?'<details class="eclat-clue-field"><summary>Préparer un indice · facultatif</summary><label for="'+esc(clueId)+'">Ton indice à dire à voix haute</label><textarea id="'+esc(clueId)+'" data-draft-ignore data-eclat-field="clue" maxlength="300" rows="2" placeholder="Un détail pour aider à deviner, sans donner la réponse…"'+(noteUnavailable?' disabled':'')+'>'+esc(noteState.clue)+'</textarea></details>':'');
  const help='<details class="eclat-rules"><summary>Les règles de ce moment</summary><ol>'+guide.steps.map(s=>'<li>'+esc(s)+'</li>').join('')+'</ol><p>Tu peux effacer ta note puis enregistrer pour supprimer son texte. Les durées sont indicatives. Vous pouvez adapter ou passer sans pénalité. Aucun texte n’est analysé; les choix de fin déterminent l’ambiance, pas une bonne réponse. Pour passer, utilisez chacun « Passer ce moment ». La suite apparaît après vos deux choix, puis avance après vos deux confirmations.</p></details>';
  const common='<section class="eclat-together"><small>ENSEMBLE</small><h3>'+esc(stage.title)+'</h3><p>'+esc(stage.story)+'</p>'+(guide.kind==='x'||guide.kind==='p'?'':'<p class="eclat-turn">'+esc(firstText)+'</p>')+'</section>';
