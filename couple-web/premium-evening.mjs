@@ -167,9 +167,9 @@ export function premiumEveningHtml({
  const canDraw=ready&&turn.ready&&!turn.drawsFinished&&!rolling&&
   Number(turn.remaining?.[me]||0)>0&&turn.next===me;
  const canGive=ready&&turn.ready&&giftCount<3&&Number(turn.remaining?.[me])>0;
- const challengeText=pending?'♡ Voir notre défi en cours':turn.finished?'Tous les défis terminés':rolling?'Brassage en cours…':!ready?'En attente des deux D6':canDraw?'À toi de jouer':'En attente de '+esc(partner.name?.split(' ')[0]||'ton partenaire');
+ const challengeText=rolling?'Brassage en cours…':pending?'♡ Voir notre défi en cours':turn.finished?'Tous les défis terminés':!ready?'En attente des deux D6':canDraw?'À toi de jouer':'En attente de '+esc(partner.name?.split(' ')[0]||'ton partenaire');
  const stateText=ready?'✓ Étape 2 débloquée':status?.my_rolled?'Ton lancer est enregistré. Attends ton partenaire.':status?.partner_rolled?'Le résultat de '+esc(partner.name?.split(' ')[0]||'ton partenaire')+' est prêt. À toi de brasser le dé.':'Chaque partenaire brasse son propre dé.';
- const currentStatus=turn.finished?'♡ Tous les défis sont réalisés':turn.drawsFinished?'♡ Tous les défis sont pigés':rolling?'🎲 Brassage en cours…':canDraw?'♥ C’est ton tour !':ready?'Au tour de '+esc(partner.name?.split(' ')[0]||'ton partenaire'):'Étape 2 verrouillée';
+ const currentStatus=rolling?'🎲 Brassage en cours…':turn.finished?'♡ Tous les défis sont réalisés':turn.drawsFinished?'♡ Tous les défis sont pigés':canDraw?'♥ C’est ton tour !':ready?'Au tour de '+esc(partner.name?.split(' ')[0]||'ton partenaire'):'Étape 2 verrouillée';
  // An official challenge is persisted in Supabase; never show a provisional
  // animation face or guess a result while a D100 is being rolled.
  const d35Candidate=lastD35Face??pending?.face??turn?.pending?.face;
@@ -181,9 +181,8 @@ export function premiumEveningHtml({
  const count=(uid)=>esc((done[uid]||0)+' / '+(totals[uid]??'—'));
  // LR-027: waiting for another person is a state, not a fake disabled button.
  const waitingStatus=label=>'<p class="evening-primary-status" role="status">'+esc(label)+'</p>';
- const primaryAction=turn.finished?
-  bt('finish-session','✓ Terminer la soirée','evening-primary'):
-  rolling?waitingStatus('Brassage en cours…'):
+ const primaryAction=rolling?waitingStatus('Brassage en cours…'):
+  turn.finished?bt('finish-session','✓ Terminer la soirée','evening-primary'):
   !ready?waitingStatus(status?.my_rolled?
    'En attente du D6 de ton partenaire':'Lance ton D6 pour continuer'):
   turn.drawsFinished?(ownChallengeCount>0?
