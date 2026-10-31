@@ -103,7 +103,11 @@ test('Music control is only shown inside an active coffret',()=>{
  assert.match(eclatHtml({status:active,members:people,userId:'a'}),/data-action="eclat:music"/);
  assert.match(eclatHtml({status:active,members:people,userId:'a',music:true}),/Couper le son/);
  const app=read('./app.js');
- assert.ok(app.includes("if(!state.eclat?.active){eclatAudio.stop();state.eclatMusic=false;return;}"));
+ // The current safety rule is stricter than the old inactive-only guard:
+ // a privacy mask also silences playback without repainting private content.
+ assert.match(app,/if\(privacyMasked\|\|!state\.eclat\?\.active\|\|state\.eclatMusic\)\{/);
+ assert.match(app,/eclatAudio\.stop\(\);state\.eclatMusic=false;/);
+ assert.match(app,/if\(!privacyMasked&&state\.tab==='eclat'\)render\(\);/);
  assert.ok(app.includes("state.eclatDetails=false;eclatAudio.stop();state.eclatMusic=false;"));
 });
 
