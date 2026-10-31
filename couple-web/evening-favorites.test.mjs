@@ -177,7 +177,7 @@ test('Saved favorite IDs show their current library titles with HTML escaping',(
  assert.match(html,/Baisers au clair de lune/);
  assert.match(html,/Sensuel · carte 7/);
  assert.match(html,/&lt;img src=x onerror=alert\(1\)&gt; &amp; &quot;Bonjour&quot;/);
- assert.doesNotMatch(html,/<img|src=x/);
+ assert.doesNotMatch(html,/<img/);
  assert.match(html,/Mixte · carte 2/);
  assert.equal((html.match(/data-action="favorite-remove:/g)||[]).length,3);
  const huge='x'.repeat(150);
