@@ -4,6 +4,9 @@ on:
     paths:
       - 'couple-web/sql-proposals/future-card-archive-locked.sql'
       - 'couple-web/sql-proposals/future-card-regeneration-transaction.sql'
+      - 'couple-web/sql-proposals/future-card-stripe-test-receipt-ledger.sql'
+      - 'couple-web/sql-proposals/future-card-stripe-test-receipt-ledger.test.sql'
+      - 'couple-web/future-card-stripe-test-receipt-ledger.test.mjs'
       - 'couple-web/sql-proposals/future-card-regeneration-receipts-fixture.sql'
       - 'couple-web/sql-proposals/future-card-regeneration-transaction.test.sql'
       - 'couple-web/sql-proposals/future-card-regeneration-race.test.sh'
@@ -66,3 +69,9 @@ jobs:
         run: |
           bash -n couple-web/sql-proposals/future-card-regeneration-race.test.sh
           bash couple-web/sql-proposals/future-card-regeneration-race.test.sh
+      - name: Verify no-client-access Stripe test proof-to-receipt ledger
+        run: node --test couple-web/future-card-stripe-test-receipt-ledger.test.mjs
+      - name: Apply future-only receipt ledger on disposable database
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/sql-proposals/future-card-stripe-test-receipt-ledger.sql
+      - name: Test proof matches stored intent and is idempotent on replay
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/sql-proposals/future-card-stripe-test-receipt-ledger.test.sql
