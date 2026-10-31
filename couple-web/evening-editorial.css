@@ -285,3 +285,13 @@ main#app.loveroll-editorial{--nav-space:66px;box-sizing:border-box;width:100%;ma
  #app .evening-intensity-compact select{min-height:36px;min-width:91px;}
  #app .evening-next-intensity>small{font-size:9px;}
 }
+
+/* One-row pre-evening planning: on short iPhone/Android screens, preserve
+   access to the existing two large action buttons above bottom navigation. */
+#app .evening-next-intensity .evening-length-compact{min-width:0;letter-spacing:0;}
+#app .evening-next-intensity .evening-length-compact select{min-height:40px;}
+@media(max-height:720px) and (max-width:767px){
+ #app .is-finale .evening-next-intensity{gap:3px 7px;}
+ #app .is-finale .evening-next-intensity>small{display:none;}
+ #app .is-finale .evening-aftercare{gap:4px;}
+}
