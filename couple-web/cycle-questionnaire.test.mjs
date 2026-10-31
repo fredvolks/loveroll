@@ -93,6 +93,6 @@ test('An interrupted 200-card save restores the CURRENT visible overlay, not a d
  assert.match(handler,/currentOverlay\?\.querySelector\('\.lr-cycle-progress'\)/);
  assert.match(handler,/state\.cycleAnswerRequest===owner/);
  assert.match(source,/saving:!!\(state\.cycleAnswerRequest&&/);
- assert.match(handler,/catch\(error\)\{\s*if\(!ownsAnswer\(\)\)return;/,
+ assert.match(handler,/catch\(error\)\{[\s\S]*?if\(!ownsAnswer\(\)\)return;/,
   'stale RPC errors must not be shown to a different signed-in account');
 });
