@@ -20,15 +20,16 @@ function harness({rpc=async()=>null,loadEclatHistory=async()=>[]}={}){
   members:[{id:'alice'},{id:'bob'}],eclat:{id:'initial',access:true},
   eclatHistory:[{id:'initial-history'}],
   eclatHistoryCouple:'couple-a',eclatHistoryUserId:'alice'};
- const warnings=[];let audioStops=0;
+ const warnings=[],renders=[];let audioStops=0;
  const ctx={state,authFeedbackGeneration:1,ownsCoupleAsyncRead,
   eclatNoteDrafts:new Map(),eclatAudio:{stop:()=>{audioStops++;}},
   client:{},rpc,loadEclatHistory,
   isSharedCoupleReady:(couple,members)=>!!couple&&members?.length===2,
+  render:()=>renders.push(state.eclat?.access??null),
   console:{warn:(...args)=>warnings.push(args)}};
  const funcs=runInNewContext(source+
-  ';({refreshEclatHistory,refreshEclatStatus,beginEclatAction,ownsEclatAction,applyEclatActionResult,getForeground:()=>latestEclatExplicitRead})',ctx);
- return {state,ctx,warnings,audioStops:()=>audioStops,...funcs};
+  ';({refreshEclatHistory,refreshEclatStatus,beginEclatAction,ownsEclatAction,runEclatMutation,applyEclatActionResult,getForeground:()=>latestEclatExplicitRead})',ctx);
+ return {state,ctx,warnings,renders,audioStops:()=>audioStops,...funcs};
 }
 
 test('LR-026: delayed Éclat history does not cross same-user reauthentication',async()=>{
@@ -692,5 +693,63 @@ test('LR-026: old note permission denial cannot revoke a new login',async()=>{
  await new Promise(resolve=>setImmediate(resolve));
  assert.equal(h.state.eclat.session_id,'new-session');
  assert.equal(h.drafts.get('private-key').note,'New login only');
+ assert.deepEqual(h.renders,[]);
+});
+
+test('LR-026: permission denied for active Éclat mutation clears private state',async()=>{
+ for(const error of [{status:403},{status:400,code:'42501'}]){
+  const h=harness({rpc:async()=>{throw error;}});
+  const owner=h.beginEclatAction();
+  h.state.eclatMusic=true;
+  h.ctx.eclatNoteDrafts.set('private',{note:'Sensitive'});
+  const receipt=await h.runEclatMutation(owner,'love_eclat_next');
+  assert.equal(receipt.applied,false);
+  assert.equal(h.state.eclat,null);
+  assert.deepEqual(Array.from(h.state.eclatHistory),[]);
+  assert.equal(h.ctx.eclatNoteDrafts.size,0);
+  assert.equal(h.state.eclatMusic,false);
+  assert.equal(h.audioStops(),1);
+  assert.deepEqual(h.renders,[null]);
+ }
+});
+
+test('LR-026: transient Éclat mutation outage preserves private state and propagates error',async()=>{
+ const h=harness({rpc:async()=>{throw new Error('offline');}});
+ const owner=h.beginEclatAction();
+ h.state.eclatMusic=true;
+ h.ctx.eclatNoteDrafts.set('private',{note:'Unsaved'});
+ await assert.rejects(h.runEclatMutation(owner,'love_eclat_choose',{p_choice:1}),/offline/);
+ assert.equal(h.state.eclat.access,true);
+ assert.equal(h.ctx.eclatNoteDrafts.get('private').note,'Unsaved');
+ assert.deepEqual(h.state.eclatHistory,[{id:'initial-history'}]);
+ assert.equal(h.state.eclatMusic,true);
+ assert.equal(h.audioStops(),0);
+ assert.deepEqual(h.renders,[]);
+});
+
+test('LR-026: stale mutation permission denial cannot revoke replacement login',async()=>{
+ const pending=deferred();
+ const h=harness({rpc:()=>pending.promise});
+ const owner=h.beginEclatAction();
+ const result=h.runEclatMutation(owner,'love_eclat_end');
+ h.ctx.authFeedbackGeneration=2;
+ h.state.eclat={access:true,id:'replacement'};
+ h.state.eclatHistory=[{id:'new-owner-private'}];
+ pending.reject({status:403,code:'42501'});
+ assert.equal((await result).applied,false);
+ assert.equal(h.state.eclat.id,'replacement');
+ assert.deepEqual(h.state.eclatHistory,[{id:'new-owner-private'}]);
+ assert.deepEqual(h.renders,[]);
+});
+
+test('LR-026: current mutation returns the authoritative server receipt unchanged',async()=>{
+ const receipt={access:false,active:false,id:'ended'};
+ const h=harness({rpc:async()=>receipt});
+ const owner=h.beginEclatAction();
+ const result=await h.runEclatMutation(owner,'love_eclat_end');
+ assert.equal(result.applied,true);
+ assert.equal(result.value,receipt);
+ assert.equal(h.applyEclatActionResult(result.value,owner),true);
+ assert.equal(h.state.eclat.id,'ended');
  assert.deepEqual(h.renders,[]);
 });
