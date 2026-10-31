@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
-import {categoryConfirmOdds,categoryConfirmEnabled,saveCategoryConfirmLocal,eveningCategoryConfirmMarkup,ownsEveningCategoryDraw} from './evening-category-confirm.mjs';
+import {categoryConfirmOdds,categoryConfirmEnabled,saveCategoryConfirmLocal,eveningCategoryConfirmMarkup,ownsEveningCategoryDraw,askEveningCategoryConfirmation} from './evening-category-confirm.mjs';
 
 const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
 const html=readFileSync(new URL('./index.html',import.meta.url),'utf8');
@@ -113,4 +113,58 @@ test('LR-014: delayed preference save cannot rewrite a replacement account',asyn
  await third;
  assert.equal(same.profile.confirm_evening_category,false,
   'the still-current account can persist its own preference');
+});
+
+function categoryDialogFixture(){
+ const focusCalls=[];
+ const opener={isConnected:true,focus:options=>focusCalls.push(options)};
+ const doc={activeElement:opener,dialog:null,body:{append:dialog=>{
+  doc.dialog=dialog;dialog.isConnected=true;
+ }}};
+ doc.createElement=tag=>{
+  assert.equal(tag,'dialog');
+  const events=new Map();
+  const yes={focus:()=>{doc.activeElement=yes;}};
+  const dialog={
+   open:false,isConnected:false,innerHTML:'',className:'',
+   setAttribute(){},
+   addEventListener:(type,fn)=>events.set(type,fn),
+   querySelector:selector=>selector==='[data-confirm-action="yes"]'?yes:
+    selector==='[data-confirm-optout]'?{checked:true}:null,
+   showModal(){dialog.open=true;},
+   close(){dialog.open=false;events.get('close')?.();},
+   remove(){dialog.isConnected=false;},
+   send(type,event){events.get(type)?.(event);}
+  };
+  return dialog;
+ };
+ return {doc,opener,focusCalls};
+}
+test('LR-014: confirmation dialog returns keyboard focus when dismissed or approved',async()=>{
+ for(const [action,confirmed] of [['change',false],['close',false],['yes',true]]){
+  const f=categoryDialogFixture();
+  const pending=askEveningCategoryConfirmation({category:'HASARD',doc:f.doc});
+  f.doc.dialog.send('click',{target:{closest:()=>({dataset:{confirmAction:action}})}});
+  const result=await pending;
+  assert.equal(result.confirmed,confirmed);
+  assert.equal(f.doc.dialog.isConnected,false);
+  assert.deepEqual(f.focusCalls,[{preventScroll:true}],
+   'keyboard and mobile focus must return without forcing scroll');
+ }
+});
+test('LR-014: Escape restores focus, but never focuses a detached old account control',async()=>{
+ const f=categoryDialogFixture();
+ const pending=askEveningCategoryConfirmation({category:'SENSUEL',doc:f.doc});
+ let prevented=false;
+ f.doc.dialog.send('cancel',{preventDefault:()=>{prevented=true;}});
+ assert.equal((await pending).confirmed,false);
+ assert.equal(prevented,true);
+ assert.equal(f.focusCalls.length,1);
+ const changed=categoryDialogFixture();
+ const waiting=askEveningCategoryConfirmation({category:'SEXUEL',doc:changed.doc});
+ changed.opener.isConnected=false;
+ changed.doc.dialog.send('click',{target:{closest:()=>({dataset:{confirmAction:'change'}})}});
+ await waiting;
+ assert.equal(changed.focusCalls.length,0,
+  'an old button must not reclaim focus after its screen was replaced');
 });
