@@ -5638,6 +5638,9 @@ async function handle(action,element){
     confirmed=await premiumConfirm(
      'Ce tirage est commun à votre couple et ne pourra pas être refait avant la semaine prochaine. Êtes-vous sûrs de vouloir brasser le dé ?',
      {kind:'weekly',title:'Brasser le dé ?',accept:'Oui, brasser',cancel:'Annuler'});
+   }catch(error){
+    if(!ownsOwner())return; // Ignore an old account's dismissed/failed dialog.
+    throw error;
    }finally{
     if(currentWeeklyConfirmationRequest===confirmation)currentWeeklyConfirmationRequest=null;
    }
