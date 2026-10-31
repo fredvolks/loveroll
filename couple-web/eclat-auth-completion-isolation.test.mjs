@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
+import {readTimerAlertMode} from './timer-alert-preference.mjs';
 
 // Exercise the actual account transition; Éclat's completion notice must
 // never be inherited from a different logged-in identity/couple.
@@ -23,22 +24,27 @@ function harness(previousId='alice'){
   eclatMusic:true
  };
  let audioStops=0,timerSaves=0;
+ const settings=new Map([['loveroll-timer-mode:alice','vibrate']]);
+ const store={getItem:key=>settings.get(key)??null};
+ const timer={running:false,ownerUserId:previousId,mode:'vibrate'};
  const fn=runInNewContext(source,{
   state,authFeedbackGeneration:1,realtimeReconnectTimer:null,
   eclatNoteDrafts:new Map([['former',{note:'private'}]]),
   eclatAudio:{stop:()=>{audioStops++;}},
   client:{removeChannel:async()=>{}},
-  challengeTimer:{running:false,ownerUserId:previousId},
+  challengeTimer:timer,
+  readTimerAlertMode:userId=>readTimerAlertMode(userId,store),
   saveChallengeTimer:()=>{timerSaves++;},
   clearTimeout:()=>{}
  });
- return {state,...fn,audioStops:()=>audioStops,timerSaves:()=>timerSaves};
+ return {state,timer,...fn,audioStops:()=>audioStops,timerSaves:()=>timerSaves};
 }
 
 test('LR-026: different account cannot inherit an Éclat completed banner or history error',()=>{
  const h=harness();
  assert.equal(h.adoptAuthenticatedIdentity({id:'bob'}),true);
  assert.equal(h.state.user.id,'bob');
+ assert.equal(h.timer.mode,'sound','a new account must not inherit the previous timer setting');
  assert.equal(h.state.eclatFinished,null);
  assert.equal(h.state.eclatHistoryError,false);
  assert.equal(h.state.eclat,null);
@@ -53,6 +59,7 @@ test('LR-026: sign-out also clears Éclat completion state before another login'
  const h=harness();
  assert.equal(h.adoptAuthenticatedIdentity(null),true);
  assert.equal(h.state.user,null);
+ assert.equal(h.timer.mode,'sound','sign-out restores the neutral timer alert mode');
  assert.equal(h.state.eclatFinished,null);
  assert.equal(h.state.eclatHistoryError,false);
  assert.equal(h.state.coupleId,null);
@@ -63,6 +70,7 @@ test('LR-026: unchanged identity retains current completion notice',()=>{
  const h=harness();
  assert.equal(h.adoptAuthenticatedIdentity({id:'alice'}),false);
  assert.equal(h.state.eclatFinished,'Former couple completion');
+ assert.equal(h.timer.mode,'vibrate','unchanged login keeps its in-memory preference');
  assert.equal(h.state.eclatHistoryError,true);
  assert.equal(h.state.eclatHistory.length,1);
  assert.equal(h.audioStops(),0);
