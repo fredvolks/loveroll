@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
 import {previewEclatStatus} from './account-preview-mode.mjs';
+import {captureEclatEditorFocus,restoreEclatEditorFocus} from './eclat-editor-focus.mjs';
 
 // Verify the live renderEclat function rather than duplicating its privacy rules.
 const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
@@ -483,4 +484,69 @@ test('LR-026: pending private save silently ignores duplicate note transitions',
  h.drafts.get('note-key').saving=false;
  await h.invoke('note-save');
  assert.equal(h.notes(),1,'the save control becomes usable after the request settles');
+});
+
+
+function privateEditorFocusFixture(){
+ const oldDetails={open:true},newDetails={open:false};
+ const oldField={
+  id:'eclat-note-session-1-2',dataset:{eclatField:'note'},
+  selectionStart:7,selectionEnd:11,selectionDirection:'forward',
+  matches:selector=>selector==='textarea[data-eclat-field]',
+  closest:selector=>selector==='details'?oldDetails:null
+ };
+ const focused=[],selection=[];
+ const newField={
+  id:oldField.id,dataset:{eclatField:'note'},disabled:false,
+  closest:selector=>selector==='details'?newDetails:null,
+  focus:options=>focused.push(options),
+  setSelectionRange:(...args)=>selection.push(args)
+ };
+ const root={contains:node=>node===oldField,
+  querySelectorAll:selector=>{
+   assert.equal(selector,'textarea[data-eclat-field]');
+   return [newField];
+  }};
+ return {oldField,newField,root,oldDetails,newDetails,focused,selection};
+}
+
+test('LR-026: Éclat private editor refresh preserves mobile cursor in the same scene',()=>{
+ const f=privateEditorFocusFixture();
+ const scope=JSON.stringify(['alice','couple-a',1,'alice:session-1:2']);
+ const stored=captureEclatEditorFocus(f.root,f.oldField,scope);
+ assert.equal(stored?.kind,'note');
+ assert.equal(restoreEclatEditorFocus(f.root,stored,scope),true);
+ assert.equal(f.newDetails.open,true,'expanded private details remain visible');
+ assert.deepEqual(f.focused,[{preventScroll:true}],'mobile page must not scroll to refocus');
+ assert.deepEqual(f.selection,[[7,11,'forward']]);
+});
+
+test('LR-026: private focus does not cross accounts, couples or chapters',()=>{
+ const f=privateEditorFocusFixture();
+ const original=JSON.stringify(['alice','couple-a',1,'alice:session-1:2']);
+ const stored=captureEclatEditorFocus(f.root,f.oldField,original);
+ for(const changed of [
+  ['bob','couple-a',1,'bob:session-1:2'],
+  ['alice','couple-b',1,'alice:session-1:2'],
+  ['alice','couple-a',2,'alice:session-1:2'],
+  ['alice','couple-a',1,'alice:session-1:3']
+ ]){
+  assert.equal(restoreEclatEditorFocus(f.root,stored,JSON.stringify(changed)),false);
+ }
+ f.newField.id='eclat-note-new-session-2';
+ assert.equal(restoreEclatEditorFocus(f.root,stored,original),false,
+  'even a changed server scene before render cannot receive the previous cursor');
+ assert.equal(f.focused.length,0);
+ assert.equal(f.newDetails.open,false);
+});
+
+test('LR-026: hidden, disabled or unfocused editors never regain focus',()=>{
+ const f=privateEditorFocusFixture();
+ const scope='same-authenticated-scene';
+ assert.equal(captureEclatEditorFocus(f.root,{dataset:{eclatField:'note'}},scope),null);
+ assert.equal(captureEclatEditorFocus(f.root,f.oldField,null),null);
+ const stored=captureEclatEditorFocus(f.root,f.oldField,scope);
+ f.newField.disabled=true;
+ assert.equal(restoreEclatEditorFocus(f.root,stored,scope),false);
+ assert.equal(f.focused.length,0);
 });
