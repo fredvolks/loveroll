@@ -32,7 +32,7 @@ test('Supabase account data never directly invokes dangerous Java getter',()=>{
 
 function nativeGoogleAuthFixture(state,signInWithIdToken){
  const start=app.indexOf('let currentNativeGoogleLoginRequest=null;');
- const end=app.indexOf('\n\nsetInterval(async()=>{',start);
+ const end=app.indexOf('\n// Keep background status reads single-flight per auth session.',start);
  assert.ok(start>0&&end>start,'real native Google callback required');
  const calls={messages:[],adopts:[],reloads:0,failures:0,warnings:0};
  let callback;
