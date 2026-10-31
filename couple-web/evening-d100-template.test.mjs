@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {premiumEveningHtml} from './premium-evening.mjs';
+import {premiumEveningHtml,updateEveningCategoryUi} from './premium-evening.mjs';
 import {eveningPlayInfoHtml,calculateEveningD100StageSize} from './evening-d100-template.mjs';
 const ready={session:{id:'s',paired_turns:true,self_draws:true},members:[{user_id:'a',name:'Fred'},{user_id:'b',name:'Émilie'}],me:'a',status:{both_ready:true},turn:{ready:true,next:'a',remaining:{a:2,b:3}}};
 test('No category is preselected; an eligible player can press roll to receive guidance',()=>{
@@ -55,4 +55,51 @@ test('Live D100 matches Surprise on iPad without changing the small-phone clamp'
  assert.equal(at(1180,820,660,276),352,'Playable landscape iPad uses the 43dvh cap even with a short theater');
  assert.equal(at(1024,768,640,490),330,'Landscape iPad uses the Surprise 43dvh cap');
  assert.equal(at(1024,600,620,200),258,'Landscape tablet never shrinks to the grid-row height');
+});
+
+
+function categoryOddsFixture(){
+ const doc={createElement:tag=>({
+  tag,className:'',children:[],_text:'',
+  get textContent(){return this._text+this.children.map(c=>c.textContent).join('');},
+  set textContent(value){this._text=String(value);this.children=[];},
+  appendChild(child){this.children.push(child);},
+  setAttribute(name,value){this[name]=value;}
+ })};
+ const options={};
+ const buttons=['SENSUEL','HASARD','SEXUEL'].map(type=>{
+  const option={odds:null,
+   querySelector:()=>option.odds,
+   appendChild(node){option.odds=node;node.remove=()=>{option.odds=null;};}
+  };
+  options[type]=option;
+  const attrs={};
+  return {dataset:{action:'category:'+type},ownerDocument:doc,disabled:false,attrs,
+   classList:{toggle(){}},closest:()=>option,setAttribute:(key,val)=>{attrs[key]=val;}};
+ });
+ const roll={disabled:true};
+ const group={querySelectorAll:()=>buttons,classList:{remove(){}},
+  querySelector:()=>null,closest:()=>({querySelector:()=>roll})};
+ return {root:{querySelector:()=>group},options,buttons,roll};
+}
+
+test('Live D100 odds show random category as 50/50 and preserve readable spacing',()=>{
+ const f=categoryOddsFixture();
+ assert.equal(updateEveningCategoryUi(f.root,'HASARD',74),true);
+ assert.equal(f.options.HASARD.odds?.textContent,'50 % Sensuel · 50 % Sexuel');
+ assert.equal(f.options.HASARD.odds?.['aria-live'],'polite');
+ assert.equal(f.roll.disabled,false);
+ assert.equal(f.buttons[1].attrs['aria-pressed'],'true');
+
+ assert.equal(updateEveningCategoryUi(f.root,'SENSUEL',74),true);
+ assert.equal(f.options.HASARD.odds,null);
+ assert.equal(f.options.SENSUEL.odds?.textContent,'74 % de chances d’avoir cette catégorie');
+ assert.equal(f.buttons[0].attrs['aria-pressed'],'true');
+ assert.equal(f.buttons[1].attrs['aria-pressed'],'false');
+
+ assert.equal(updateEveningCategoryUi(f.root,'SEXUEL',61),true);
+ assert.equal(f.options.SENSUEL.odds,null);
+ assert.equal(f.options.SEXUEL.odds?.textContent,'61 % de chances d’avoir cette catégorie');
+ assert.equal(updateEveningCategoryUi(f.root,'SEXUEL',61),true);
+ assert.equal(f.options.SEXUEL.odds?.textContent,'61 % de chances d’avoir cette catégorie');
 });
