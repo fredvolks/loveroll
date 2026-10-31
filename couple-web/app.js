@@ -5869,7 +5869,18 @@ setInterval(async()=>{
    if(applyEclatStatus(value))await refreshEclatHistory();
    if(current())render();
   }
- }catch(error){if(current())console.warn('Synchronisation Éclat',error?.code||'');}
+ }catch(error){
+  if(current()){
+   // A verified authentication rejection is not an ordinary network outage.
+   // Discard private history, drafts and sound immediately when Auth rejects
+   // the current session; a later successful poll may restore access.
+   if(error?.status===401||error?.code==='PGRST301'){
+    applyEclatStatus(null);
+    render();
+   }
+   console.warn('Synchronisation Éclat',error?.code||'');
+  }
+ }
  finally{if(latestEclatPollPending?.request===request)latestEclatPollPending=null;}
 },4500);
 start().catch(error=>{fail(error);window.LoveRollBoot?.showFailure();});
