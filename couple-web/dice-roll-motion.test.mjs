@@ -255,7 +255,8 @@ test('Weekly official D6 cannot use a former account confirmation or receipt',as
 
  const lateResult=fixture(),started=lateResult.run();
  lateResult.resolveConfirm(true);
- await Promise.resolve();
+ // vm async continuations can require a macrotask, not one host microtask.
+ await new Promise(resolve=>setImmediate(resolve));
  assert.equal(lateResult.calls.writes.length,1);
  assert.equal(lateResult.calls.writes[0].method,'roll_couple_once');
  assert.equal(lateResult.calls.writes[0].args.p_couple,'duo-a');
@@ -268,7 +269,7 @@ test('Weekly official D6 cannot use a former account confirmation or receipt',as
  assert.equal(lateResult.state.diceStatus,null);
 
  const ok=fixture(),valid=ok.run();
- ok.resolveConfirm(true);await Promise.resolve();
+ ok.resolveConfirm(true);await new Promise(resolve=>setImmediate(resolve));
  ok.resolveRpc({face:3});await valid;
  assert.equal(ok.state.weekly.face,3);
  assert.equal(ok.calls.refresh,1);
@@ -276,7 +277,7 @@ test('Weekly official D6 cannot use a former account confirmation or receipt',as
  assert.equal(ok.state.diceStatus,null);
 
  const bad=fixture(),invalid=bad.run();
- bad.resolveConfirm(true);await Promise.resolve();
+ bad.resolveConfirm(true);await new Promise(resolve=>setImmediate(resolve));
  bad.resolveRpc({face:99});
  await assert.rejects(invalid,/serveur n’a pas confirmé/);
  assert.equal(bad.state.weekly,null,'Unconfirmed D6 faces are never shown');
