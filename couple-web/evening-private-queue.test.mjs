@@ -3187,3 +3187,148 @@ test('LR-026: Auth navigations invalidate previous email/reset feedback generati
   app.indexOf('async function refreshVerifiedIdentity()'));
  assert.match(adopt,/authFeedbackGeneration\+\+/);
 });
+
+function passwordAuthSubmitFixture(state,{signIn=async()=>({data:{user:{id:'alice'}},error:null}),
+ signUp=async()=>({data:{session:null},error:null})}={}){
+ const start=app.indexOf('let currentPasswordAuthRequest=null;');
+ const end=app.indexOf('function authMessage(',start);
+ assert.ok(start>0&&end>start,'real password Auth helper must be available');
+ const calls={signins:[],signups:[],messages:[],renders:0,reloads:0,adopts:[]};
+ let generation=0;
+ const scope=runInNewContext(app.slice(start,end)+
+  ';({submitPasswordAuth,request:()=>currentPasswordAuthRequest})',{
+  state,client:{auth:{
+   signInWithPassword:async value=>{calls.signins.push(value);return signIn(value);},
+   signUp:async value=>{calls.signups.push(value);return signUp(value);}
+  }},
+  captureAuthFeedbackContext:()=>{
+   const owner=state.user?.id??null,mode=state.authMode,
+    currentGeneration=generation;
+   return ()=>generation===currentGeneration&&
+    (state.user?.id??null)===owner&&state.authMode===mode;
+  },
+  pendingInviteUrl:()=> 'https://love.example/verify',
+  verifiedLoveEmail:()=>true,
+  adoptAuthenticatedIdentity:user=>{generation++;calls.adopts.push(user.id);state.user=user;},
+  reload:async()=>{calls.reloads++;},
+  render:()=>{calls.renders++;},
+  authMessage:message=>calls.messages.push(message),
+  passwordAuthMessage:error=>error?.message||String(error)
+ });
+ return {...scope,calls,bump:()=>{generation++;}};
+}
+
+test('LR-026: late password sign-in reply cannot restore a former account',async()=>{
+ let release;
+ const pending=new Promise(resolve=>{release=resolve;});
+ const state={user:null,authMode:'signin',showAuth:true};
+ const f=passwordAuthSubmitFixture(state,{signIn:()=>pending});
+ const login=f.submitPasswordAuth('auth-signin-password','alice@example.com','secret');
+ state.user={id:'bob'};f.bump();
+ release({data:{user:{id:'alice'}},error:null});
+ assert.equal(await login,false);
+ assert.equal(state.user.id,'bob');
+ assert.equal(f.calls.adopts.length,0);
+ assert.equal(f.calls.reloads,0);
+});
+
+test('LR-026: stale password sign-in network error stays off new Auth view',async()=>{
+ let reject;
+ const pending=new Promise((_,bad)=>{reject=bad;});
+ const state={user:null,authMode:'signin',showAuth:true};
+ const f=passwordAuthSubmitFixture(state,{signIn:()=>pending});
+ const login=f.submitPasswordAuth('auth-signin-password','alice@example.com','secret');
+ state.authMode='signup';f.bump();
+ reject(Error('Alice authentication offline'));
+ assert.equal(await login,false);
+ assert.equal(f.calls.messages.length,0);
+ assert.equal(f.calls.reloads,0);
+});
+
+test('LR-026: normal password sign-in adopts identity and reloads',async()=>{
+ const state={user:null,authMode:'signin',showAuth:true};
+ const f=passwordAuthSubmitFixture(state);
+ assert.equal(await f.submitPasswordAuth('auth-signin-password','alice@example.com','secret'),true);
+ assert.equal(state.user.id,'alice');
+ assert.equal(state.showAuth,false);
+ assert.equal(f.calls.reloads,1);
+ assert.equal(f.calls.adopts[0],'alice');
+ assert.equal(f.request(),null);
+});
+
+test('LR-026: unconfirmed sign-in retains confirmation instructions for the originating form',async()=>{
+ const state={user:null,authMode:'signin',showAuth:true};
+ const f=passwordAuthSubmitFixture(state,{signIn:async()=>({
+  error:{code:'email_not_confirmed',message:'Email not confirmed'},data:null
+ })});
+ assert.equal(await f.submitPasswordAuth('auth-signin-password','alice@example.com','secret'),false);
+ assert.equal(state.authNeedsEmailConfirmation,true);
+ assert.match(state.authNotice,/doit être confirmée/);
+ assert.equal(f.calls.renders,1);
+ assert.equal(f.calls.adopts.length,0);
+});
+
+test('LR-026: password signup without a session preserves email verification',async()=>{
+ const state={user:null,authMode:'signup',showAuth:true};
+ const f=passwordAuthSubmitFixture(state);
+ assert.equal(await f.submitPasswordAuth('auth-signup-password','alice@example.com','secret'),true);
+ assert.equal(state.authDraftEmail,'alice@example.com');
+ assert.equal(state.emailVerificationPending,true);
+ assert.equal(f.calls.renders,1);
+ assert.equal(f.calls.reloads,0);
+});
+
+test('LR-026: old password signup result cannot show verification for another account',async()=>{
+ let release;
+ const pending=new Promise(resolve=>{release=resolve;});
+ const state={user:null,authMode:'signup',showAuth:true};
+ const f=passwordAuthSubmitFixture(state,{signUp:()=>pending});
+ const signup=f.submitPasswordAuth('auth-signup-password','alice@example.com','secret');
+ state.user={id:'bob'};f.bump();
+ release({data:{session:null},error:null});
+ assert.equal(await signup,false);
+ assert.equal(state.emailVerificationPending,undefined);
+ assert.equal(f.calls.renders,0);
+});
+
+test('LR-026: duplicate password submissions cannot start simultaneous Supabase Auth calls',async()=>{
+ let release;
+ const pending=new Promise(resolve=>{release=resolve;});
+ const state={user:null,authMode:'signin',showAuth:true};
+ const f=passwordAuthSubmitFixture(state,{signIn:()=>pending});
+ const first=f.submitPasswordAuth('auth-signin-password','alice@example.com','secret');
+ const duplicate=await f.submitPasswordAuth('auth-signin-password','alice@example.com','secret');
+ assert.equal(duplicate,false);
+ assert.equal(f.calls.signins.length,1);
+ release({data:{user:{id:'alice'}},error:null});
+ assert.equal(await first,true);
+ assert.equal(f.request(),null);
+});
+
+test('LR-026: changing Auth form allows a new attempt and ignores old request',async()=>{
+ let releaseOld;
+ const old=new Promise(resolve=>{releaseOld=resolve;});
+ const state={user:null,authMode:'signin',showAuth:true};
+ const f=passwordAuthSubmitFixture(state,{
+  signIn:()=>old,signUp:async()=>({data:{session:null},error:null})
+ });
+ const oldLogin=f.submitPasswordAuth('auth-signin-password','alice@example.com','secret');
+ state.authMode='signup';f.bump();
+ assert.equal(await f.submitPasswordAuth('auth-signup-password','bob@example.com','secret'),true);
+ releaseOld({data:{user:{id:'alice'}},error:null});
+ assert.equal(await oldLogin,false);
+ assert.equal(state.authDraftEmail,'bob@example.com');
+ assert.equal(state.emailVerificationPending,true);
+ assert.equal(f.calls.adopts.length,0);
+});
+
+test('LR-026: password Auth action delegates to account-owned helper',()=>{
+ const begin=app.indexOf("if(verb==='auth-signup-password'||verb==='auth-signin-password'){");
+ const end=app.indexOf("if(verb==='email-confirm-login'){",begin);
+ assert.ok(begin>0&&end>begin);
+ const action=app.slice(begin,end);
+ assert.match(action,/await submitPasswordAuth\(verb,email,password\)/);
+ assert.doesNotMatch(action,/state\.user\s*=\s*data\.user/);
+ assert.doesNotMatch(action,/client\.auth\.signInWithPassword\(/);
+ assert.doesNotMatch(action,/client\.auth\.signUp\(/);
+});
