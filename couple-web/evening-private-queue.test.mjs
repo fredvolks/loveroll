@@ -2371,3 +2371,80 @@ test('LR-026: active account reload failure still reports its own network error'
   });
  await assert.rejects(f.reload(),/Active Alice network failure/);
 });
+
+function pendingAuthReloadFixture(state,rpc,query,overrides={}){
+ const first=app.indexOf('async function reload(){');
+ const end=app.indexOf('// A redraw started under another account',first);
+ assert.ok(first>=0&&end>first);
+ const calls={render:0,warnings:0};
+ const f=runInNewContext('let latestAuthReloadRequest=null;'+app.slice(first,end)+
+  ';({reload})',{
+   state,document:{hidden:false,documentElement:{lang:'fr'}},
+   challengeTimer:{running:false},hasUnsavedForm:()=>false,
+   root:{querySelector:()=>null},window:{},
+   refreshVerifiedIdentity:async()=>true,
+   previewMode:()=> 'real',rpc,query,
+   safeNativePushToken:()=>null,currentPushDevice:async()=>null,
+   localeOrDefault:()=> 'fr',pendingInviteReference:()=>null,
+   pendingReferralCode:()=>null,render:()=>calls.render++,
+   console:{warn:()=>calls.warnings++},...overrides
+  });
+ return {...f,calls};
+}
+
+test('LR-026: simultaneous refreshes of the same account ignore the older test-mode response',async()=>{
+ const state={user:{id:'alice'},coupleId:'duo-alice',testModeEligible:false};
+ let firstResolve,reads=0;
+ const firstPermission=new Promise(resolve=>{firstResolve=resolve;});
+ const f=pendingAuthReloadFixture(state,async name=>{
+  if(name!=='love_test_mode_allowed')throw Error('Unexpected RPC '+name);
+  return ++reads===1?firstPermission:true;
+ },async()=>{throw Error('Latest profile read deliberately failed');});
+ const previous=f.reload();
+ const latest=f.reload();
+ await assert.rejects(latest,/Latest profile read deliberately failed/);
+ assert.equal(state.testModeEligible,true);
+ firstResolve(false);
+ await assert.doesNotReject(previous);
+ assert.equal(state.testModeEligible,true,
+  'the previous request must not override a newer verified permission');
+ assert.equal(f.calls.render,0);
+});
+
+test('LR-026: rejected referral from an earlier login cannot continue an obsolete couple reload',async()=>{
+ const state={user:{id:'alice'},coupleId:null,profile:null,
+  tab:'home',testModeEligible:false};
+ let rejectClaim,notifyClaim,cardQueries=0;
+ const claimReached=new Promise(resolve=>{notifyClaim=resolve;});
+ const pendingClaim=new Promise((_,reject)=>{rejectClaim=reject;});
+ const rpc=async name=>{
+  if(name==='love_test_mode_allowed')return true;
+  if(name==='love_my_referral')return null;
+  if(name==='love_referral_claim'){notifyClaim();return pendingClaim;}
+  throw Error('Unexpected RPC '+name);
+ };
+ const query=async table=>{
+  if(table==='couple_profiles')return [{id:'alice',preferred_locale:'fr',display_name:'Alice'}];
+  if(table==='love_wellbeing'||table==='love_personal_intimacy'||table==='love_push_preferences')return [];
+  if(table==='couple_members')return [{user_id:'alice',couple_id:'duo-alice',joined_at:'2026-01-01'}];
+  if(table==='couples')return [{id:'duo-alice',owner_user_id:'alice'}];
+  if(table==='couple_invitations')return [];
+  cardQueries++;
+  return [];
+ };
+ const f=pendingAuthReloadFixture(state,rpc,query,{
+  pendingReferralCode:()=> 'personal-code',
+  isSharedCoupleReady:()=>false
+ });
+ const loading=f.reload();
+ await claimReached;
+ state.user={id:'bob'};state.coupleId='duo-bob';
+ rejectClaim(Error('Alice referral request failed'));
+ await assert.doesNotReject(loading);
+ assert.equal(state.user.id,'bob');
+ assert.equal(state.coupleId,'duo-bob');
+ assert.equal(cardQueries,0,
+  'the old reload must never fetch private cards for the replacement account');
+ assert.equal(f.calls.render,0);
+ assert.equal(f.calls.warnings,0,'obsolete errors must not toast or log a referral warning');
+});
