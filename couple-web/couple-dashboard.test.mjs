@@ -85,6 +85,8 @@ test('Manual invitation sent confirmation is scoped to exact user, duo and link'
  const invite={id:'invite-a',couple_id:'couple-a',expires_at:'2026-11-07T18:00:00Z'};
  const attempt={userId:'alice',coupleId:'couple-a',inviteId:'invite-a',method:'messenger'};
  assert.equal(canConfirmInvitationShare(attempt,invite,'alice','couple-a',NOW),true);
+ assert.equal(canConfirmInvitationShare({...attempt,method:'partage'},invite,'alice','couple-a',NOW),true);
+ assert.equal(canConfirmInvitationShare({...attempt,method:'lien'},invite,'alice','couple-a',NOW),false);
  for(const [a,i,u,c] of [
   [null,invite,'alice','couple-a'],
   [attempt,null,'alice','couple-a'],
@@ -112,6 +114,9 @@ test('Share UI and confirmation block must follow a composer attempt, never sile
  assert.match(code,/p_invitation:active\.id,p_method:attempt\.method/);
  assert.match(code,/state\.lastInviteShareAttempt=null/);
  assert.doesNotMatch(code,/lastShareMethod/);
+ assert.match(code,/recordAttempt\('partage'\)/);
+ const sql=readFileSync(new URL('./invitation-status-couple-overview.sql',import.meta.url),'utf8');
+ assert.match(sql,/p_method not in \('partage','sms','courriel','messenger'\)/);
 });
 
 test('Couple success rate counts fully finished sessions only',()=>{

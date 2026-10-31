@@ -19,7 +19,7 @@ export function canConfirmInvitationShare(attempt,active,userId,coupleId,now=Dat
   typeof coupleId==='string'&&!!coupleId&&
   attempt.userId===userId&&attempt.coupleId===coupleId&&
   attempt.inviteId===active.id&&active.couple_id===coupleId&&
-  ['sms','courriel','messenger','lien'].includes(attempt.method)&&
+  ['sms','courriel','messenger','partage'].includes(attempt.method)&&
   !active.cancelled_at&&!active.accepted_at&&
   typeof active.expires_at==='string'&&Date.parse(active.expires_at)>now;
 }

@@ -5367,12 +5367,12 @@ async function handle(action,element){
    try{
     if(!navigator.clipboard?.writeText)throw Error('Presse-papiers indisponible');
     await navigator.clipboard.writeText(d.link);
-    if(recordAttempt('lien'))
+    if(recordAttempt('partage'))
      notify('Lien copié. Après l’avoir envoyé, confirmez l’envoi ici.');
    }catch{
     if(!current())return;
     state.inviteCopyFallback=true;
-    recordAttempt('lien');
+    recordAttempt('partage');
     const field=id('invite-manual-link');
     field?.focus();field?.select();
     notify('Sélectionnez le lien, envoyez-le, puis confirmez l’envoi ici.');
@@ -5390,11 +5390,11 @@ async function handle(action,element){
     try{
      if(!navigator.clipboard?.writeText)throw Error('Presse-papiers indisponible');
      await navigator.clipboard.writeText(d.link);
-     if(recordAttempt('lien'))
+     if(recordAttempt('partage'))
       notify('Lien copié : envoyez-le dans Messenger, puis confirmez ici.');
     }catch{
      if(!current())return;
-     state.inviteCopyFallback=true;recordAttempt('lien');
+     state.inviteCopyFallback=true;recordAttempt('partage');
      id('invite-manual-link')?.select();
      notify('Copiez ce lien dans Messenger, puis confirmez l’envoi ici.');
     }
