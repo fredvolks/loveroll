@@ -166,3 +166,34 @@ test('LR-026: old foreground completion cannot clear a newer request after reaut
  assert.equal(h.getForeground(),null);
  assert.equal(h.state.eclat.id,'new');
 });
+
+test('LR-026: missing foreground Éclat status clears a previously cached coffret',async()=>{
+ const h=harness({rpc:async()=>null});
+ h.state.eclat={active:true,id:'previous-coffret'};
+ assert.equal(await h.refreshEclatStatus(),null);
+ assert.equal(h.state.eclat,null,
+  'the foreground refresh must not display an old coffret after a null server status');
+ assert.equal(h.getForeground(),null);
+});
+
+test('LR-026: obsolete null Éclat status cannot clear a newer authenticated state',async()=>{
+ const pending=deferred();
+ const h=harness({rpc:()=>pending.promise});
+ const old=h.refreshEclatStatus();
+ h.ctx.authFeedbackGeneration=2;
+ h.state.eclat={active:true,id:'new-session'};
+ pending.resolve(null);
+ assert.equal(await old,null);
+ assert.equal(h.state.eclat.id,'new-session');
+ assert.equal(h.getForeground(),null);
+});
+
+test('LR-026: failed foreground status request preserves the displayed coffret',async()=>{
+ const pending=deferred();
+ const h=harness({rpc:()=>pending.promise});
+ const old=h.refreshEclatStatus();
+ pending.reject(new Error('temporary status outage'));
+ await assert.rejects(old,/temporary status outage/);
+ assert.equal(h.state.eclat.id,'initial');
+ assert.equal(h.getForeground(),null);
+});
