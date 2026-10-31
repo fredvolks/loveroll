@@ -35,7 +35,7 @@ function harness(){
    const task=deferred();requests.push(task);return task.promise;
   },
   refreshEclatHistory:async()=>{history.push(state.user?.id);},
-  render:()=>renders.push(state.eclat.id),
+  render:()=>renders.push(state.eclat?.id),
   console:{warn:(...args)=>warnings.push(args)},
   setInterval:(fn,ms)=>{assert.equal(ms,4500);tick=fn;}
  };
