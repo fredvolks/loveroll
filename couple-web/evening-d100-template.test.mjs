@@ -791,6 +791,7 @@ test('LR-027: delayed D6, category, gift and resume touches cannot race a privat
    category:null,user:{id:'alice'}};
   const route=runInNewContext('(async (verb,parts)=>{'+code+'})',{
    state,isActiveEveningRedrawPending:()=>true,
+   eveningCategoryConfirmInFlight:false,
    rpc:()=>{sideEffects++;throw Error('Unexpected RPC')},
    animateRoll:()=>{sideEffects++;throw Error('Unexpected D6')},
    updateEveningCategoryUi:()=>{sideEffects++;throw Error('Unexpected selection')},
