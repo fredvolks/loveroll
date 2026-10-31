@@ -2,6 +2,7 @@
 // weights, starts a session, charges a fee, or consumes active challenges.
 // Use this for previews until the 300 original cards pass the release audit.
 import {selectFutureAssignedCard} from './future-card-audience.mjs';
+import {FUTURE_TARGETS} from './future-card-catalog.mjs';
 
 export const FUTURE_NIGHT_LENGTHS=Object.freeze([5,10,15,30,'libre']);
 const VALID_CAP=20;
@@ -37,7 +38,7 @@ export function buildFutureNightPlan({
     (cardTickets!==undefined&&!Array.isArray(cardTickets)))
   throw Error('Liste de cartes ou de tirages invalide.');
  const free=selectedMinutes==='libre',selected=[],used=new Set(excludedIds),
-  seenIds=new Set();
+  seenIds=new Set(),audienceCounts=Object.fromEntries(FUTURE_TARGETS.map(t=>[t,0]));
  let spent=0,reason='limit';
  for(let index=0;index<maxCards;index++){
   const remaining=free?Infinity:selectedMinutes-spent;
@@ -46,15 +47,26 @@ export function buildFutureNightPlan({
   // selector used by the single-card preview. Invalid cards are ignored.
   const fitting=cards.filter(card=>Number.isInteger(card?.minutes)&&
    card.minutes<=remaining&&!seenIds.has(card.id));
-  const assigned=selectFutureAssignedCard({
-   members,cards:fitting,styleA,styleB,
-   styleTicket:index%2===0?0.25:0.75,
-   cardTicket:ticketAt(cardTickets,index),excludedIds:[...used]
-  });
-  if(!assigned.card){reason='no-eligible-card';break;}
+  const styleTicket=index%2===0?0.25:0.75,
+   cardTicket=ticketAt(cardTickets,index);
+  // Favor the least-used audience among VALID cards available at the
+  // selected level. Missing genders, exhausted cards and short timers are
+  // filtered by the existing fail-closed audience + catalog selectors.
+  // Stable audience order resolves ties, not the profile's list order.
+  const byAudience=FUTURE_TARGETS.map(target=>({
+   target,draw:selectFutureAssignedCard({
+    members,cards:fitting.filter(card=>card?.target===target),
+    styleA,styleB,styleTicket,cardTicket,excludedIds:[...used]
+   })
+  })).filter(candidate=>candidate.draw.card);
+  byAudience.sort((a,b)=>audienceCounts[a.target]-audienceCounts[b.target]||
+   FUTURE_TARGETS.indexOf(a.target)-FUTURE_TARGETS.indexOf(b.target));
+  const choice=byAudience[0],assigned=choice?.draw;
+  if(!assigned?.card){reason='no-eligible-card';break;}
   const card=assigned.card,fromMinute=spent;
   spent+=card.minutes;
   used.add(card.id);seenIds.add(card.id);
+  audienceCounts[choice.target]++;
   selected.push(Object.freeze({
    cardId:card.id,level:assigned.level,minutes:card.minutes,
    recipientIds:Object.freeze([...assigned.recipientIds]),
