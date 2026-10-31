@@ -26,7 +26,7 @@ function deferred(){
  const promise=new Promise((ok,fail)=>{resolve=ok;reject=fail;});
  return {promise,resolve,reject};
 }
-function harness(){
+function harness({recoverHistory=false}={}){
  const state={user:{id:'alice'},coupleId:'couple-a',members:[{},{}],
   tab:'eclat',eclat:{id:'original',access:true}};
  const requests=[],renders=[],warnings=[],history=[];
@@ -39,7 +39,9 @@ function harness(){
    assert.equal(name,'love_eclat_status');
    const task=deferred();requests.push(task);return task.promise;
   },
-  refreshEclatHistory:async()=>{history.push(state.user?.id);},
+  refreshEclatHistory:async()=>{history.push(state.user?.id);
+   if(recoverHistory){state.eclatHistoryError=false;state.eclatHistoryRetryAt=0;}
+  },
   render:()=>renders.push(state.eclat?.id),
   console:{warn:(...args)=>warnings.push(args)},
   setInterval:(fn,ms)=>{assert.equal(ms,4500);tick=fn;}
@@ -635,4 +637,58 @@ test('LR-026: foreground 403 denial also clears private Éclat state',async()=>{
  assert.equal(h.state.eclat,null);
  assert.deepEqual(Array.from(h.state.eclatHistory),[]);
  assert.deepEqual(h.renders,[undefined]);
+});
+
+test('LR-026: unchanged Éclat status retries failed history only after 30 seconds',async()=>{
+ const h=harness({recoverHistory:true});
+ h.state.eclatHistoryError=true;
+ h.state.eclatHistoryRetryAt=30000;
+ let poll=h.tick();
+ h.requests[0].resolve({id:'original',access:true});
+ await poll;
+ assert.deepEqual(h.history,[]);
+ assert.deepEqual(h.renders,[]);
+ h.advance(29999);
+ poll=h.tick();
+ h.requests[1].resolve({access:true,id:'original'});
+ await poll;
+ assert.deepEqual(h.history,[]);
+ h.advance(1);
+ poll=h.tick();
+ h.requests[2].resolve({id:'original',access:true});
+ await poll;
+ assert.deepEqual(h.history,['alice'],'authorized gallery should recover without a status change');
+ assert.equal(h.state.eclatHistoryError,false);
+ assert.equal(h.state.eclatHistoryRetryAt,0);
+ assert.deepEqual(h.renders,['original']);
+ poll=h.tick();
+ h.requests[3].resolve({id:'original',access:true});
+ await poll;
+ assert.deepEqual(h.history,['alice'],'successful recovery must not refetch every 4.5 seconds');
+});
+
+test('LR-026: revoked Éclat status cannot retry a private failed gallery',async()=>{
+ const h=harness({recoverHistory:true});
+ h.state.eclat={id:'original',access:false};
+ h.state.eclatHistoryError=true;
+ h.state.eclatHistoryRetryAt=0;
+ const poll=h.tick();
+ h.requests[0].resolve({access:false,id:'original'});
+ await poll;
+ assert.deepEqual(h.history,[]);
+ assert.deepEqual(h.renders,[]);
+});
+
+test('LR-026: stale status retry cannot read history for the next login',async()=>{
+ const h=harness({recoverHistory:true});
+ h.state.eclatHistoryError=true;
+ h.state.eclatHistoryRetryAt=0;
+ const stale=h.tick();
+ h.runtime.authFeedbackGeneration=2;
+ h.state.eclatHistory=[{id:'new-history'}];
+ h.requests[0].resolve({id:'original',access:true});
+ await stale;
+ assert.deepEqual(h.history,[]);
+ assert.deepEqual(h.state.eclatHistory,[{id:'new-history'}]);
+ assert.deepEqual(h.renders,[]);
 });
