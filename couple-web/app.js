@@ -4543,7 +4543,13 @@ async function handle(action,element){
   setSoundEnabled(!soundEnabled());render();setNotificationFeedback(soundEnabled()?'Son des défis activé.':'Son des défis désactivé.');return;
  }
  if(verb==='sound-test'){
+  const owner={userId:state.user?.id,tab:state.tab,
+   generation:authFeedbackGeneration};
+  if(!owner.userId||owner.tab!=='settings')return;
   const ready=await unlockLoveRollSounds();
+  // A Safari permission reply can arrive after a new account signs in.
+  if(state.user?.id!==owner.userId||state.tab!==owner.tab||
+     authFeedbackGeneration!==owner.generation)return;
   const played=ready&&playLoveRollSound('timer-preview',{force:true});
   setNotificationFeedback(played?'Son de fin de minuteur joué.':'Son bloqué par le navigateur : touche le bouton de nouveau après avoir activé le son du téléphone.',played?'status':'error');return;
  }
@@ -5531,7 +5537,14 @@ async function handle(action,element){
    render();return;
  }
  if(verb==='timer-sound-test'){
+   const owner={userId:state.user?.id,sessionId:state.session?.id,
+    challengeId:challengeTimer.id,generation:authFeedbackGeneration};
+   if(!owner.userId||!owner.sessionId||!owner.challengeId||
+      state.tab!=='session')return;
    const ready=await unlockLoveRollSounds();
+   if(state.user?.id!==owner.userId||state.session?.id!==owner.sessionId||
+      challengeTimer.id!==owner.challengeId||
+      authFeedbackGeneration!==owner.generation||state.tab!=='session')return;
    const played=ready&&playLoveRollSound('timer-preview',{force:true});
    notify(played?'♫ Voici le son de fin du minuteur.':'Son bloqué : vérifie le volume du téléphone, puis retouche Tester.');
    return;
