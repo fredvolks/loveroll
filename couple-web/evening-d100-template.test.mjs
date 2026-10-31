@@ -475,7 +475,7 @@ test('LR-027: delayed personal-card touches cannot interrupt or mutate a rolling
  const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
  const {runInNewContext}=await import('node:vm');
  const fromOpen=source.indexOf("if(verb==='evening-open'){");
- const untilOpen=source.indexOf("if(verb==='favorite-remove'){",fromOpen);
+ const untilOpen=source.indexOf("if(verb==='evening-refuse'){",fromOpen);
  const fromDecision=source.indexOf("if(verb==='evening-refuse'){");
  const untilDecision=source.indexOf("if(verb==='evening-start'){",fromDecision);
  assert.ok(fromOpen>=0&&untilOpen>fromOpen&&fromDecision>=0&&untilDecision>fromDecision,
