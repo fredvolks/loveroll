@@ -11,11 +11,13 @@ export function timedEveningTimerControl(timer){
   label:'♡ Réponse en cours',status:'Décision sur le défi en cours',
   disabled:true,resetDisabled:true
  };
- if(timer?.running)return {
-  label:'Ⅱ Pause',status:'En cours',disabled:false,resetDisabled:false
- };
+ // An expired timer must never offer "Pause", even if an old running flag
+ // remains true for one render while the completion handler is scheduled.
  if(!(Number(timer?.remainingMs)>0))return {
   label:'♡ Terminé',status:'Terminé',disabled:true,resetDisabled:false
+ };
+ if(timer?.running)return {
+  label:'Ⅱ Pause',status:'En cours',disabled:false,resetDisabled:false
  };
  const resumed=Number(timer?.remainingMs)<Number(timer?.durationMs);
  return {label:resumed?'▶ Reprendre':'▶ Démarrer',
