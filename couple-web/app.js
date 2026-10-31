@@ -668,8 +668,13 @@ async function autoAcceptPendingInvite(){
  }
  const ownerId=state.user.id,ownerGeneration=authFeedbackGeneration;
  const key=ownerId+':'+invite.kind+':'+invite.value;
- if(inviteAcceptanceBusy||state.inviteAttemptKey===key)return;
- const request={};
+ // An old network request must not block this user's newly authenticated
+ // session. Keep the duplicate-tap guard within the SAME auth generation.
+ const superseded=inviteAcceptanceRequest&&
+  (inviteAcceptanceRequest.ownerId!==ownerId||
+   inviteAcceptanceRequest.ownerGeneration!==ownerGeneration);
+ if(!superseded&&(inviteAcceptanceBusy||state.inviteAttemptKey===key))return;
+ const request={ownerId,ownerGeneration};
  inviteAcceptanceRequest=request;
  state.inviteAttemptKey=key;inviteAcceptanceBusy=true;state.inviteError=null;
  // A former account or replaced invitation cannot complete this UI action.
