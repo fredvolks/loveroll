@@ -8,7 +8,7 @@ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
 const start=app.indexOf('let latestEclatHistoryRead=null,latestEclatStatusRead=null;');
 const end=app.indexOf('function renderEclat(){',start);
 assert.ok(start>=0&&end>start,'real Éclat read and action implementation exists');
-const source=app.slice(start,end);
+const source='let latestEclatAudioOwner=null;\n'+app.slice(start,end);
 
 function deferred(){
  let resolve,reject;
@@ -20,14 +20,15 @@ function harness({rpc=async()=>null,loadEclatHistory=async()=>[]}={}){
   members:[{id:'alice'},{id:'bob'}],eclat:{id:'initial'},
   eclatHistory:[{id:'initial-history'}],
   eclatHistoryCouple:'couple-a',eclatHistoryUserId:'alice'};
- const warnings=[];
+ const warnings=[];let audioStops=0;
  const ctx={state,authFeedbackGeneration:1,ownsCoupleAsyncRead,
-  eclatNoteDrafts:new Map(),client:{},rpc,loadEclatHistory,
+  eclatNoteDrafts:new Map(),eclatAudio:{stop:()=>{audioStops++;}},
+  client:{},rpc,loadEclatHistory,
   isSharedCoupleReady:(couple,members)=>!!couple&&members?.length===2,
   console:{warn:(...args)=>warnings.push(args)}};
  const funcs=runInNewContext(source+
   ';({refreshEclatHistory,refreshEclatStatus,beginEclatAction,ownsEclatAction,applyEclatActionResult,getForeground:()=>latestEclatExplicitRead})',ctx);
- return {state,ctx,warnings,...funcs};
+ return {state,ctx,warnings,audioStops:()=>audioStops,...funcs};
 }
 
 test('LR-026: delayed Éclat history does not cross same-user reauthentication',async()=>{
@@ -308,4 +309,43 @@ test('LR-026: stale denied response must not erase newer login private drafts',a
  assert.equal(await old,null);
  assert.equal(h.ctx.eclatNoteDrafts.get('current').note,'New login only');
  assert.equal(h.state.eclatFinished,'New login completion');
+});
+
+
+test('LR-026: foreground revoked status stops Éclat audio immediately before any paint',async()=>{
+ const h=harness({rpc:async()=>({access:false,active:false})});
+ h.state.eclat={access:true,active:true};
+ h.state.eclatMusic=true;
+ h.ctx.eclatNoteDrafts.set('private',{note:'old'});
+ await h.refreshEclatStatus();
+ assert.equal(h.audioStops(),1);
+ assert.equal(h.state.eclatMusic,false);
+ assert.equal(h.ctx.eclatNoteDrafts.size,0);
+});
+
+test('LR-026: action receipt with lost entitlement purges private state and audio',()=>{
+ const h=harness();
+ h.state.eclatMusic=true;
+ h.state.eclatFinished='Private finish';
+ h.state.eclatHistory=[{id:'private-history'}];
+ h.ctx.eclatNoteDrafts.set('note',{note:'Private text'});
+ const owner=h.beginEclatAction();
+ assert.equal(h.applyEclatActionResult({access:false,active:false},owner),true);
+ assert.equal(h.state.eclat?.access,false);
+ assert.equal(h.audioStops(),1);
+ assert.equal(h.state.eclatMusic,false);
+ assert.equal(h.state.eclatFinished,null);
+ assert.deepEqual(Array.from(h.state.eclatHistory),[]);
+ assert.equal(h.ctx.eclatNoteDrafts.size,0);
+});
+
+test('LR-026: active Éclat action result keeps music and private cached history',()=>{
+ const h=harness();
+ h.state.eclatMusic=true;
+ h.ctx.eclatNoteDrafts.set('note',{note:'Owned draft'});
+ const owner=h.beginEclatAction();
+ assert.equal(h.applyEclatActionResult({access:true,active:true},owner),true);
+ assert.equal(h.audioStops(),0);
+ assert.equal(h.state.eclatMusic,true);
+ assert.equal(h.ctx.eclatNoteDrafts.get('note')?.note,'Owned draft');
 });
