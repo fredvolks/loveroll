@@ -4221,6 +4221,8 @@ async function handle(action,element){
   return;
  }
  if(verb==='evening-open'){
+  // A delayed queue touch must not replace the live D100 canvas.
+  if(state.diceStatus)return;
   if(!ownEveningChallenges(state.challenges,state.user?.id,state.session?.id).some(x=>x.id===parts[0]))
    throw Error('Ce défi ne fait pas partie de ta liste personnelle.');
   state.selectedEveningChallengeId=parts[0];state.showEveningChallenges=true;
@@ -4231,7 +4233,8 @@ async function handle(action,element){
   return;
  }
  if(verb==='evening-refuse'){
-  if(isEveningCardCompleting(parts[0]))return;
+  // A stale click cannot open a second decision while D100 or a repick runs.
+  if(state.diceStatus||isActiveEveningRedrawPending()||isEveningCardCompleting(parts[0]))return;
   if(!state.redrawReady)throw Error('La repige sécurisée n’est pas encore disponible sur ce serveur.');
   const item=ownEveningChallenges(state.challenges,state.user?.id,state.session?.id).find(x=>x.id===parts[0]);
   if(!item||!['proposed','accepted'].includes(item.status))throw Error('Ce défi ne peut pas être refusé.');
@@ -4246,6 +4249,8 @@ async function handle(action,element){
   return;
  }
  if(verb==='evening-pass'||verb==='evening-refuse-choice'){
+  // Old events from an unmounted queue must never race the official die.
+  if(state.diceStatus)return;
   if(!state.redrawReady)throw Error('La repige sécurisée n’est pas encore disponible sur ce serveur.');
   if(isActiveEveningRedrawPending())return;
   const refuse=verb==='evening-refuse-choice',challengeId=parts[0];
