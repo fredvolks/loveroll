@@ -2724,9 +2724,9 @@ function ownedSignoutFixture(state,{disablePush=async()=>{},removeChannel=async(
  const end=app.indexOf('function authMessage(',start);
  assert.ok(start>0&&end>start,'real sign-out helper must be available');
  const calls={push:[],channels:[],signouts:0,clears:0,paints:0,routes:0};
- const scope=runInNewContext('let currentSignoutRequest=null;'+
+ const scope=runInNewContext('let authFeedbackGeneration=0,currentSignoutRequest=null;'+
   app.slice(start+'let currentSignoutRequest=null;'.length,end)+
-  ';({signOutCurrentAccount,signoutRequest:()=>currentSignoutRequest})',{
+  ';({signOutCurrentAccount,signoutRequest:()=>currentSignoutRequest,bumpAuthGeneration:()=>authFeedbackGeneration++})',{
   state,client:{auth:{signOut:async()=>{
    calls.signouts++;return signOut();
   }},removeChannel:async channel=>{
@@ -2758,6 +2758,39 @@ test('LR-026: logout that waits for FCM must not sign out a new account',async()
  assert.equal(f.calls.channels.length,0);
  assert.equal(f.calls.clears,0);
  assert.equal(state.user.id,'bob');
+});
+
+test('LR-026: FCM-delayed logout cannot sign out a fresh same-user session',async()=>{
+ let release;
+ const pending=new Promise(resolve=>{release=resolve;});
+ const state={user:{id:'alice'},coupleId:'alice-duo',channel:{id:'old'}};
+ const f=ownedSignoutFixture(state,{token:'push-key',disablePush:()=>pending});
+ const signingOut=f.signOutCurrentAccount();
+ assert.equal(f.calls.push.length,1);
+ f.bumpAuthGeneration(); // Same account ID, but a new login
+ state.channel={id:'new-session'};
+ release();
+ assert.equal(await signingOut,false);
+ assert.equal(f.calls.signouts,0,'old cleanup must not revoke fresh login');
+ assert.equal(f.calls.channels.length,0);
+ assert.equal(f.calls.clears,0);
+ assert.equal(state.channel.id,'new-session');
+});
+
+test('LR-026: stale signout response cannot clear a fresh same-user session',async()=>{
+ let release;
+ const pending=new Promise(resolve=>{release=resolve;});
+ const state={user:{id:'alice'},coupleId:'current-duo'};
+ const f=ownedSignoutFixture(state,{signOut:()=>pending});
+ const signingOut=f.signOutCurrentAccount();
+ assert.equal(f.calls.signouts,1);
+ f.bumpAuthGeneration(); // New login happened before old response arrived
+ release({error:null});
+ assert.equal(await signingOut,false);
+ assert.equal(f.calls.clears,0);
+ assert.equal(f.calls.paints,0);
+ assert.equal(state.user.id,'alice');
+ assert.equal(state.coupleId,'current-duo');
 });
 
 test('LR-026: logout waiting for old Realtime channel must not revoke replacement login',async()=>{
