@@ -51,7 +51,7 @@ test('LR-026: delayed Éclat status after same-user login is ignored',async()=>{
  const h=harness({rpc:()=>waiting.promise});
  const old=h.refreshEclatStatus();
  h.ctx.authFeedbackGeneration=2;
- waiting.resolve({id:'old-private-status'});
+ waiting.resolve({access:true,id:'old-private-status'});
  assert.equal(await old,null);
  assert.equal(h.state.eclat.id,'initial');
  assert.deepEqual(h.state.eclatHistory,[{id:'initial-history'}]);
@@ -68,7 +68,7 @@ test('LR-026: old Éclat action receipt cannot mutate reauthenticated state',()=
  assert.equal(h.state.eclat.id,'initial');
  const current=h.beginEclatAction();
  assert.ok(current);
- assert.equal(h.applyEclatActionResult({id:'latest-receipt'},current),true);
+ assert.equal(h.applyEclatActionResult({id:'latest-receipt',access:true},current),true);
  assert.equal(h.state.eclat.id,'latest-receipt');
 });
 
@@ -88,7 +88,7 @@ test('LR-026: Éclat status cannot apply a reply after couple membership is lost
  const h=harness({rpc:()=>pending.promise});
  const read=h.refreshEclatStatus();
  h.state.members=[{id:'alice'}];
- pending.resolve({id:'former-couple-status'});
+ pending.resolve({access:true,id:'former-couple-status'});
  assert.equal(await read,null);
  assert.equal(h.state.eclat.id,'initial');
  assert.deepEqual(h.state.eclatHistory,[{id:'initial-history'}]);
@@ -133,7 +133,7 @@ test('LR-026: foreground Éclat status request releases its priority on success'
  assert.equal(h.getForeground()?.userId,'alice');
  assert.equal(h.getForeground()?.coupleId,'couple-a');
  assert.equal(h.getForeground()?.generation,1);
- delayed.resolve({id:'fresh'});
+ delayed.resolve({access:true,id:'fresh'});
  assert.equal((await reading).id,'fresh');
  assert.equal(h.getForeground(),null,'successful foreground reads release their priority');
  assert.equal(h.state.eclat.id,'fresh');
@@ -159,10 +159,10 @@ test('LR-026: old foreground completion cannot clear a newer request after reaut
  const second=h.refreshEclatStatus();
  const latest=h.getForeground();
  assert.notEqual(former,latest);
- old.resolve({id:'stale'});
+ old.resolve({access:true,id:'stale'});
  assert.equal(await first,null);
  assert.equal(h.getForeground(),latest,'the older finally cannot clear the current ticket');
- recent.resolve({id:'new'});
+ recent.resolve({access:true,id:'new'});
  assert.equal((await second).id,'new');
  assert.equal(h.getForeground(),null);
  assert.equal(h.state.eclat.id,'new');
@@ -577,4 +577,35 @@ test('LR-026: foreground status with missing access never fetches private histor
  await h.refreshEclatStatus();
  assert.equal(requests,0);
  assert.equal(h.state.eclat.active,true);
+});
+
+
+test('LR-026: incomplete foreground entitlement erases prior private state',async()=>{
+ const h=harness({rpc:async()=>({id:'incomplete',active:true})});
+ h.state.eclat={id:'previous',access:true,active:true};
+ h.state.eclatFinished='Private ending';
+ h.state.eclatHistory=[{id:'previous-private'}];
+ h.state.eclatMusic=true;
+ h.ctx.eclatNoteDrafts.set('private',{note:'Former private note'});
+ const result=await h.refreshEclatStatus();
+ assert.equal(result.id,'incomplete','public offer data remains available');
+ assert.equal(h.state.eclat.access,undefined);
+ assert.deepEqual(Array.from(h.state.eclatHistory),[]);
+ assert.equal(h.state.eclatFinished,null);
+ assert.equal(h.state.eclatMusic,false);
+ assert.equal(h.ctx.eclatNoteDrafts.size,0);
+ assert.equal(h.audioStops(),1);
+});
+
+test('LR-026: a later authorized status can load its own history after uncertainty',async()=>{
+ let calls=0;
+ const h=harness({rpc:async()=>++calls===1?
+  ({id:'unknown',active:false}):({id:'fresh',access:true,active:true}),
+  loadEclatHistory:async()=>[{id:'fresh-owned'}]});
+ h.state.eclat={id:'prior',access:true,active:true};
+ await h.refreshEclatStatus();
+ assert.deepEqual(Array.from(h.state.eclatHistory),[]);
+ const status=await h.refreshEclatStatus();
+ assert.equal(status.id,'fresh');
+ assert.deepEqual(Array.from(h.state.eclatHistory,x=>x.id),['fresh-owned']);
 });
