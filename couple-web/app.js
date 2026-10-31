@@ -640,10 +640,12 @@ function rememberVerifiedInvitation(invitationId){
  state.inviteError=null;state.inviteAttemptKey=null;
 }
 async function resolveVerifiedSignup(createOwner=false,isCurrent=null){
- const ownerId=state.user?.id;
+ const ownerId=state.user?.id,ownerGeneration=authFeedbackGeneration;
  const result=await rpc('resolve_love_signup',{p_create_owner:!!createOwner});
- // A stale lookup may never overwrite the next account's invitation.
- if(state.user?.id!==ownerId||(isCurrent&&!isCurrent()))
+ // A stale lookup must not cache the previous session's invitation, even
+ // when that person signs out and back into the same account.
+ if(state.user?.id!==ownerId||authFeedbackGeneration!==ownerGeneration||
+    (isCurrent&&!isCurrent()))
   return {status:'account_changed'};
  if(result?.status==='invitation'){
   if(!result.invitation_id)throw Error('Référence d’invitation manquante.');
