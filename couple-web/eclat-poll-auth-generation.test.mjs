@@ -29,7 +29,7 @@ function harness(){
  let tick=null,clock=0;
  const runtime={
   state,authFeedbackGeneration:1,document:{hidden:false},Date:{now:()=>clock},
-  ownsCoupleAsyncRead,isSharedCoupleReady:(couple,members)=>!!couple&&members?.length===2,
+  eclatNoteDrafts:new Map(),ownsCoupleAsyncRead,isSharedCoupleReady:(couple,members)=>!!couple&&members?.length===2,
   rpc:name=>{
    assert.equal(name,'love_eclat_status');
    const task=deferred();requests.push(task);return task.promise;
@@ -275,4 +275,30 @@ test('LR-026: background access revocation cannot erase a newly signed-in accoun
  assert.equal(h.state.eclat.id,'new-login');
  assert.deepEqual(h.state.eclatHistory,[{id:'new-private-history'}]);
  assert.deepEqual(h.renders,[]);
+});
+
+
+test('LR-026: denied background status erases cached drafts and completion',async()=>{
+ const h=harness();
+ h.state.eclat={access:true,active:true,id:'active'};
+ h.state.eclatFinished='Private ending';
+ h.runtime.eclatNoteDrafts.set('private',{note:'Former member note'});
+ const tick=h.tick();
+ h.requests[0].resolve({access:false,active:false});
+ await tick;
+ assert.equal(h.runtime.eclatNoteDrafts.size,0);
+ assert.equal(h.state.eclatFinished,null);
+ assert.equal(h.state.eclat.access,false);
+});
+
+test('LR-026: stale denied background response preserves new login drafts',async()=>{
+ const h=harness();
+ const tick=h.tick();
+ h.runtime.authFeedbackGeneration=2;
+ h.runtime.eclatNoteDrafts.set('new-session',{note:'New draft'});
+ h.state.eclatFinished='New ending';
+ h.requests[0].resolve({access:false,active:false});
+ await tick;
+ assert.equal(h.runtime.eclatNoteDrafts.get('new-session').note,'New draft');
+ assert.equal(h.state.eclatFinished,'New ending');
 });
