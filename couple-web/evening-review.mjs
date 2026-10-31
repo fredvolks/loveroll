@@ -12,7 +12,7 @@ export function validEveningReview(draft){
    draft[q.key]>=1&&draft[q.key]<=5)&&
    String(draft?.comment||'').length<=500;
 }
-export function eveningHeartRating(key,score){
+export function eveningHeartRating(key,score,saving=false){
  const raw=Number(score);
  const value=Number.isInteger(raw)&&raw>=1&&raw<=5?raw:0;
  return '<div class="lr-review-hearts" role="group" aria-label="Note sur 5 pour '+esc(REVIEW_QUESTIONS.find(x=>x.key===key)?.label)+'">'+
@@ -20,7 +20,7 @@ export function eveningHeartRating(key,score){
    const n=i+1;
    return '<button type="button" class="lr-review-heart'+(n<=value?' is-lit':'')+
     '" data-action="review-rate:'+key+':'+n+'" aria-label="'+n+' cœur'+(n>1?'s':'')+
-    ' sur 5" aria-pressed="'+(value===n)+'"><span aria-hidden="true">'+
+    ' sur 5" aria-pressed="'+(value===n)+'"'+(saving?' disabled':'')+'><span aria-hidden="true">'+
     (n<=value?'♥':'♡')+'</span><small>'+n+'</small></button>';
   }).join('')+'</div>';
 }
@@ -29,16 +29,16 @@ export function eveningReviewModal({sessionId,draft={},saving=false,partnerName=
  const answer=draft&&typeof draft==='object'&&!Array.isArray(draft)?draft:{};
  return '<div class="lr-review-backdrop" role="presentation">'+
  '<section class="lr-review-modal" role="dialog" aria-modal="true" aria-labelledby="lr-review-title" '+
-  'aria-describedby="lr-review-intro" data-review-session="'+esc(sessionId)+'">'+
+  'aria-describedby="lr-review-intro" aria-busy="'+saving+'" data-review-session="'+esc(sessionId)+'">'+
  '<button type="button" class="lr-review-x" data-action="review-dismiss" aria-label="Fermer le bilan">×</button>'+
  '<div class="lr-review-eyebrow">♡ FIN DE SOIRÉE</div>'+
  '<h2 id="lr-review-title">Notre bilan de la soirée</h2>'+
  '<p id="lr-review-intro">Chacun remplit son ressenti de son côté.</p>'+
  '<div class="lr-review-questions">'+REVIEW_QUESTIONS.map(q=>
    '<div class="lr-review-question"><span class="lr-review-icon" aria-hidden="true">'+q.icon+'</span>'+
-   '<strong>'+esc(q.label)+'</strong>'+eveningHeartRating(q.key,answer[q.key])+'</div>').join('')+'</div>'+
+   '<strong>'+esc(q.label)+'</strong>'+eveningHeartRating(q.key,answer[q.key],saving)+'</div>').join('')+'</div>'+
  '<label class="lr-review-comment-label" for="lr-review-comment">♧ Commentaire</label>'+
- '<div class="lr-review-note"><textarea id="lr-review-comment" maxlength="500" rows="3" '+
+ '<div class="lr-review-note"><textarea id="lr-review-comment" maxlength="500" rows="3"'+(saving?' readonly':'')+' '+
   'placeholder="Écrire une note ou un commentaire sur ce qu’on a aimé ou moins aimé...">'+
   esc(answer.comment||'')+'</textarea><span id="lr-review-counter">'+String(answer.comment||'').length+'/500</span></div>'+
  '<p class="lr-review-calendar-note">▦ Ce bilan sera sauvegardé dans votre calendrier commun. '+
