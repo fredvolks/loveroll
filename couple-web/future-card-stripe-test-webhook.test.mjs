@@ -107,6 +107,26 @@ test('signature rotation can include more than one signed v1 hash',async()=>{
   signatureHeader:'t='+ts+',v1='+'f'.repeat(64)+',v1='+v1};
  assert.equal((await verify(event(),{signature:sig})).valid,true);
 });
+test('signed binary body is snapshotted before any asynchronous verification',async()=>{
+ const signedEvent=signed(),input=new TextEncoder().encode(signedEvent.rawBody);
+ let loaded=0;
+ const pending=verifyFutureCardStripeTestWebhook({
+  rawBody:input,signatureHeader:signedEvent.signatureHeader,
+  webhookSecret:secret,now,lookupIntent:async id=>{
+   loaded++;
+   assert.equal(id,intentId);
+   return intent();
+  }
+ });
+ // Buffers may be reused by HTTP adapters as soon as they dispatch the handler.
+ // The verified event must be the original signed bytes, not the later mutation.
+ input.fill(0);
+ const result=await pending;
+ assert.equal(result.valid,true);
+ assert.equal(result.proof.intentId,intentId);
+ assert.equal(result.proof.providerRef,sessionId);
+ assert.equal(loaded,1);
+});
 test('prototype has no route, payment, database writes or embedded secrets',()=>{
  const module=readFileSync(new URL('./future-card-stripe-test-webhook.mjs',import.meta.url),'utf8');
  assert.doesNotMatch(module,/\bfetch\s*\(|\bclient\.rpc\s*\(|supabase\.from|localStorage|sessionStorage/);
