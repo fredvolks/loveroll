@@ -1,3 +1,4 @@
+import {sessionLengthChooserHtml} from './session-duration-preference.mjs';
 import {eveningOddsHtml} from './evening-d6-template.mjs?v=20261022-home228';
 // LoveRoll connected couple — production UI, not a demo. All results are provided by Supabase.
 import {ritualHeadingHtml} from './brand.mjs?v=20261017-ritual130';
@@ -141,7 +142,7 @@ export function premiumEveningHtml({
  session,members=[],me,rolls=[],status={},turn={},category=null,
  giftCount=0,receivedGifts=0,pending=null,rolling=false,
  challengeOverlay='',showMore=false,confirmCancel=false,rollFace=null,rollingKind=null,
- lastEvening=null,lastD35Face=null,playable=null,ownChallengeCount=0,canStartEvening=true,
+ lastEvening=null,lastD35Face=null,playable=null,ownChallengeCount=0,canStartEvening=true,sessionLength='libre',
  weeklyReady=true,weeklyCount=0,weeklyLimit=1,dailyLocked=false,invitationHtml='',
  showSensuel=true,showSexuel=true,categoryOdds=88,challengeHistory=[],eveningWeights,eveningWeightsEnabled=true
 }={}){
