@@ -295,3 +295,21 @@ main#app.loveroll-editorial{--nav-space:66px;box-sizing:border-box;width:100%;ma
  #app .is-finale .evening-next-intensity>small{display:none;}
  #app .is-finale .evening-aftercare{gap:4px;}
 }
+
+/* 360×640 / small Android devices: preserve BOTH full-size finale actions.
+   Recover the extra planner row from ornamental spacing/summary tiles, never
+   by covering the bottom navigation, clipping the buttons or hiding a control. */
+@media(max-width:380px) and (max-height:680px){
+ #app .is-finale .evening-aftercare{padding:0;gap:1px;}
+ #app .is-finale .evening-finale-tiles{gap:3px;}
+ #app .is-finale .evening-finale-tiles>div{min-height:32px;padding:0 2px;gap:1px;}
+ #app .is-finale .evening-finale-tiles strong{font-size:17px;}
+ #app .is-finale .evening-finale-tiles span{font-size:9px;line-height:1.06;}
+ #app .is-finale .evening-finale-actions{gap:2px;}
+ #app .is-finale .evening-aftercare h2{font-size:21px;line-height:1.05;}
+ #app .is-finale .evening-finale-description{font-size:11px;line-height:1.12;}
+ #app .is-finale .evening-next-intensity{gap:2px 5px;}
+ #app .is-finale .evening-finale-status{gap:0;}
+ #app .is-finale .evening-finale-person{padding:2px;}
+ #app .is-finale .evening-finale-progress small{font-size:9px;}
+}
