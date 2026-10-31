@@ -5905,9 +5905,10 @@ setInterval(async()=>{
    const regainedAccess=previous?.access!==true&&value?.access===true;
    const retryDue=state.eclatHistoryError===true&&
     Date.now()>=(state.eclatHistoryRetryAt??0);
-   const historyReady=state.eclatHistoryError!==true||retryDue||sessionChanged;
    const historyChanged=sessionChanged||chapterChanged||historyScopeMissing||regainedAccess;
-   if(applyEclatStatus(value)&&historyReady&&(historyChanged||retryDue))
+   // The cooldown applies only to retrying the SAME failed history snapshot.
+   // A new chapter, session or account scope requires its own timely read.
+   if(applyEclatStatus(value)&&(historyChanged||retryDue))
     await refreshEclatHistory();
    if(current())render();
   }else if(value?.access===true&&state.eclatHistoryError===true&&
