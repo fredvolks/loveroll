@@ -256,6 +256,15 @@ main#app.loveroll-editorial{--nav-space:66px;box-sizing:border-box;width:100%;ma
 #app .evening-queue-detail .evening-favorite-btn:disabled{opacity:.58;cursor:not-allowed;}
 #app .evening-queue-detail .evening-favorite-btn:focus-visible{outline:3px solid var(--ritual-rose);outline-offset:3px;}
 
+/* Medium-height phones: make room for the full calendar action above the
+   fixed bottom navigation. Compress decoration, never the 44px touch target,
+   the approved D100 artwork, or the two primary actions. */
+@media(min-width:381px) and (max-width:767px) and (min-height:721px){
+ #app .is-finale .evening-aftercare{gap:5px;padding:8px;}
+ #app .is-finale .evening-finale-tiles>div{min-height:55px;padding:6px 3px;}
+ #app .is-finale .evening-finale-actions{gap:5px;}
+}
+
 /* LR mobile 360x640 calendar clearance: retain both original 44px actions
    entirely above the bottom nav, without hiding controls or shrinking D100. */
 @media(max-width:380px) and (max-height:680px){
