@@ -135,3 +135,20 @@ test('D100 odds never print an invalid percentage across live and fresh views',(
  assert.match(random,/50 % Sensuel · 50 % Sexuel/);
  assert.doesNotMatch(random,/Infinity|NaN/);
 });
+
+test('Disabled D100 category is never selected by a stale touch or late event',()=>{
+ const f=categoryOddsFixture();
+ f.buttons[1].disabled=true; // e.g. server forbids a category during a turn switch
+ assert.equal(updateEveningCategoryUi(f.root,'HASARD',74),false);
+ assert.equal(f.options.HASARD.odds,null);
+ assert.equal(f.roll.disabled,true);
+ assert.equal(f.buttons[1].attrs['aria-pressed'],undefined);
+ // A different enabled choice is still valid; only the disabled target is refused.
+ assert.equal(updateEveningCategoryUi(f.root,'SENSUEL',74),true);
+ assert.equal(f.options.SENSUEL.odds?.textContent,'74 % de chances d’avoir cette catégorie');
+ assert.equal(f.roll.disabled,false);
+ const all=categoryOddsFixture();
+ all.buttons.forEach(button=>button.disabled=true);
+ assert.equal(updateEveningCategoryUi(all.root,'SEXUEL'),false);
+ assert.equal(all.roll.disabled,true);
+});
