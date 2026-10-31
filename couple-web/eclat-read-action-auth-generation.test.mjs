@@ -349,3 +349,46 @@ test('LR-026: active Éclat action result keeps music and private cached history
  assert.equal(h.state.eclatMusic,true);
  assert.equal(h.ctx.eclatNoteDrafts.get('note')?.note,'Owned draft');
 });
+
+
+test('LR-026: foreground completed session stops music before history request finishes',async()=>{
+ const history=deferred(),started=deferred();
+ const h=harness({rpc:async()=>({access:true,active:false}),
+  loadEclatHistory:()=>{started.resolve();return history.promise;}});
+ h.state.eclat={access:true,active:true};
+ h.state.eclatMusic=true;
+ h.ctx.eclatNoteDrafts.set('note',{note:'Retained private note'});
+ const reading=h.refreshEclatStatus();
+ await started.promise;
+ assert.equal(h.audioStops(),1,
+  'soundtrack stops immediately rather than waiting for history network');
+ assert.equal(h.state.eclatMusic,false);
+ assert.equal(h.ctx.eclatNoteDrafts.get('note').note,'Retained private note',
+  'normal completion must not erase authorized notes');
+ history.resolve([{id:'completed-coffret'}]);
+ await reading;
+ assert.deepEqual(Array.from(h.state.eclatHistory,x=>x.id),['completed-coffret']);
+});
+
+test('LR-026: completed action receipt stops audio without purging retained history',()=>{
+ const h=harness();
+ h.state.eclat={access:true,active:true};
+ h.state.eclatMusic=true;
+ h.state.eclatHistory=[{id:'already-finished'}];
+ h.ctx.eclatNoteDrafts.set('note',{note:'Keep this'});
+ const owner=h.beginEclatAction();
+ assert.equal(h.applyEclatActionResult({access:true,active:false},owner),true);
+ assert.equal(h.audioStops(),1);
+ assert.equal(h.state.eclatMusic,false);
+ assert.deepEqual(h.state.eclatHistory,[{id:'already-finished'}]);
+ assert.equal(h.ctx.eclatNoteDrafts.get('note').note,'Keep this');
+});
+
+test('LR-026: in-progress server receipt does not silence authorized soundtrack',()=>{
+ const h=harness({rpc:async()=>({access:true,active:true})});
+ h.state.eclatMusic=true;
+ const owner=h.beginEclatAction();
+ assert.equal(h.applyEclatActionResult({access:true,active:true},owner),true);
+ assert.equal(h.audioStops(),0);
+ assert.equal(h.state.eclatMusic,true);
+});
