@@ -14,7 +14,7 @@ CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$
  SELECT nullif(current_setting('request.jwt.claim.sub',true),'')::uuid;
 $$;
 CREATE FUNCTION public.love_verified_identity()
- RETURNS boolean LANGUAGE sql STABLE AS $$
+ RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path='' AS $
  SELECT EXISTS (SELECT 1 FROM auth.users u WHERE u.id=auth.uid());
 $$;
 CREATE FUNCTION couple_private.is_member(p_couple uuid)
