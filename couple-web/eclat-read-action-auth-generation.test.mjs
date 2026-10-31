@@ -26,7 +26,7 @@ function harness({rpc=async()=>null,loadEclatHistory=async()=>[]}={}){
   isSharedCoupleReady:(couple,members)=>!!couple&&members?.length===2,
   console:{warn:(...args)=>warnings.push(args)}};
  const funcs=runInNewContext(source+
-  ';({refreshEclatHistory,refreshEclatStatus,beginEclatAction,ownsEclatAction,applyEclatActionResult})',ctx);
+  ';({refreshEclatHistory,refreshEclatStatus,beginEclatAction,ownsEclatAction,applyEclatActionResult,getForeground:()=>latestEclatExplicitRead})',ctx);
  return {state,ctx,warnings,...funcs};
 }
 
@@ -123,4 +123,46 @@ test('LR-026: an Éclat action is invalid after couple membership is revoked',()
  assert.equal(h.beginEclatAction(),null,
   'cannot start another action after losing couple membership');
  assert.equal(h.state.eclat.id,'initial');
+});
+
+test('LR-026: foreground Éclat status request releases its priority on success',async()=>{
+ const delayed=deferred();
+ const h=harness({rpc:()=>delayed.promise});
+ const reading=h.refreshEclatStatus();
+ assert.equal(h.getForeground()?.userId,'alice');
+ assert.equal(h.getForeground()?.coupleId,'couple-a');
+ assert.equal(h.getForeground()?.generation,1);
+ delayed.resolve({id:'fresh'});
+ assert.equal((await reading).id,'fresh');
+ assert.equal(h.getForeground(),null,'successful foreground reads release their priority');
+ assert.equal(h.state.eclat.id,'fresh');
+});
+
+test('LR-026: foreground Éclat status request releases its priority on network error',async()=>{
+ const delayed=deferred();
+ const h=harness({rpc:()=>delayed.promise});
+ const reading=h.refreshEclatStatus();
+ assert.ok(h.getForeground());
+ delayed.reject(new Error('network offline'));
+ await assert.rejects(reading,/network offline/);
+ assert.equal(h.getForeground(),null,'a failed foreground read must not freeze background sync');
+});
+
+test('LR-026: old foreground completion cannot clear a newer request after reauthentication',async()=>{
+ const old=deferred(),recent=deferred();
+ let count=0;
+ const h=harness({rpc:()=>++count===1?old.promise:recent.promise});
+ const first=h.refreshEclatStatus();
+ const former=h.getForeground();
+ h.ctx.authFeedbackGeneration=2;
+ const second=h.refreshEclatStatus();
+ const latest=h.getForeground();
+ assert.notEqual(former,latest);
+ old.resolve({id:'stale'});
+ assert.equal(await first,null);
+ assert.equal(h.getForeground(),latest,'the older finally cannot clear the current ticket');
+ recent.resolve({id:'new'});
+ assert.equal((await second).id,'new');
+ assert.equal(h.getForeground(),null);
+ assert.equal(h.state.eclat.id,'new');
 });
