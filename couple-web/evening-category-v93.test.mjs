@@ -23,19 +23,20 @@ test('The weekly wording is replaced only for Soirée and all 3 category choices
  assert.equal((html.match(/aria-pressed="false"/g)||[]).length,3);
  assert.doesNotMatch(html,/88 %|evening-probability/);
 });
-test('Only a selected Sensuel or Sexuel button displays 88%, never in random mode',()=>{
+test('Only selected category shows its official probability; random is exactly 50/50',()=>{
  for(const category of ['SENSUEL','SEXUEL']){
   const html=premiumEveningHtml({...ready,category});
   assert.match(html,new RegExp('data-action="category:'+category+'" aria-pressed="true"'));
   assert.equal((html.match(/class="evening-choice-odds"/g)||[]).length,1);
-  assert.match(html,/class="evening-choice-odds">88 % de chances<span>d’avoir cette catégorie<\/span><\/small>/);
+  assert.match(html,/class="evening-choice-odds" aria-live="polite">88 % de chances <span>d’avoir cette catégorie<\/span><\/small>/);
   assert.equal((html.match(/d’avoir cette catégorie/g)||[]).length,1);
   assert.doesNotMatch(html,/class="evening-probability"/);
  }
  const random=premiumEveningHtml({...ready,category:'HASARD'});
  assert.match(random,/data-action="category:HASARD" aria-pressed="true"/);
  assert.match(random,/data-action="new-challenge"/);
- assert.doesNotMatch(random,/class="evening-choice-odds"|88 %|evening-probability/);
+ assert.match(random,/<small class="evening-choice-odds" aria-live="polite">50 % Sensuel · 50 % Sexuel<\/small>/);
+ assert.doesNotMatch(random,/88 %|evening-probability|chancesd’avoir/);
 });
 test('Existing 3D engine and the server-confirmed result remain unchanged',()=>{
  const html=premiumEveningHtml({...ready,category:'HASARD',
