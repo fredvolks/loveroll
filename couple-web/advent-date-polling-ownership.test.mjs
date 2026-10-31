@@ -18,14 +18,19 @@ function harness(){
  const state={user:{id:'alice'},coupleId:'couple-a',tab:'advent',
   adventOpening:null,adventServerDate:'2026-12-01',adventYear:2026};
  const document={hidden:false},requests=[],refreshes=[],renders=[],warnings=[];
- let tick=null;
+ let tick=null,latestServerDate=null;
  const context={
   state,document,authFeedbackGeneration:1,
   rpc:name=>{
    assert.equal(name,'love_advent_server_date');
-   const req=deferred();requests.push(req);return req.promise;
+   const req=deferred();requests.push(req);
+   return req.promise.then(date=>{latestServerDate=date;return date;});
   },
-  refreshShared:async()=>{refreshes.push(state.user?.id);},
+  refreshShared:async()=>{
+   refreshes.push(state.user?.id);
+   // A real refreshShared reads and persists the server date itself.
+   state.adventServerDate=latestServerDate;
+  },
   render:()=>renders.push([state.user?.id,state.adventServerDate]),
   console:{warn:(...args)=>warnings.push(args)},
   setInterval:(callback,delay)=>{
@@ -149,4 +154,43 @@ test('LR-026: auth switch while Advent refresh awaits suppresses stale repaint',
  refresh.resolve();
  await pending;
  assert.equal(h.renders.length,0,'old session cannot render after refresh await');
+});
+
+test('LR-026: a failed shared refresh cannot acknowledge the new day or stop retries',async()=>{
+ const h=harness();
+ h.context.refreshShared=async()=>{throw new Error('temporarily offline');};
+ const first=h.tick();
+ h.requests[0].resolve('2026-12-02');
+ await first;
+ assert.equal(h.state.adventServerDate,'2026-12-01',
+  'a failed refresh cannot advance the cached date');
+ assert.equal(h.state.adventYear,2026,'do not reset year on failed refresh');
+ assert.equal(h.renders.length,0);
+ assert.equal(h.warnings.length,1);
+
+ h.context.refreshShared=async()=>{
+  h.state.adventServerDate='2026-12-02';
+  h.refreshes.push('retry successful');
+ };
+ const retry=h.tick();
+ assert.equal(h.requests.length,2,'second poll must retry the same date');
+ h.requests[1].resolve('2026-12-02');
+ await retry;
+ assert.equal(h.state.adventServerDate,'2026-12-02');
+ assert.equal(h.state.adventYear,null);
+ assert.equal(h.renders.length,1);
+});
+
+test('LR-026: contradictory refresh date does not falsely confirm an older poll',async()=>{
+ const h=harness();
+ h.context.refreshShared=async()=>{
+  h.refreshes.push('newer date arrived');
+  h.state.adventServerDate='2026-12-03';
+ };
+ const pending=h.tick();
+ h.requests[0].resolve('2026-12-02');
+ await pending;
+ assert.equal(h.state.adventServerDate,'2026-12-03');
+ assert.equal(h.state.adventYear,2026,'do not reset for stale poll response');
+ assert.equal(h.renders.length,0,'newer refresh owns its own render');
 });
