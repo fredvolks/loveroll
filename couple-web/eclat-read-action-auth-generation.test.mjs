@@ -392,3 +392,105 @@ test('LR-026: in-progress server receipt does not silence authorized soundtrack'
  assert.equal(h.audioStops(),0);
  assert.equal(h.state.eclatMusic,true);
 });
+
+
+// Exercise the actual production membership transition, including its in-flight
+// request invalidation. Reordering the same two people must not wipe drafts.
+const membershipStart=app.indexOf('function eclatMembershipScope(coupleId,members){');
+const membershipEnd=app.indexOf('function eclatNoteState(){',membershipStart);
+assert.ok(membershipStart>=0&&membershipEnd>membershipStart,
+ 'Éclat membership privacy boundary must remain part of production code');
+const membershipSource=app.slice(membershipStart,membershipEnd);
+function membershipFixture(){
+ const members=[{user_id:'alice',name:'Alice'},{user_id:'bob',name:'Bob'}];
+ const state={user:{id:'alice'},coupleId:'duo',members,
+  eclatMembershipScope:JSON.stringify(['duo','alice','bob']),
+  eclat:{access:true,active:true,id:'old-session'},
+  eclatHistory:[{id:'old-private-history'}],eclatHistoryCouple:'duo',
+  eclatHistoryUserId:'alice',eclatFinished:'Completed private coffret',
+  eclatHistoryError:true,eclatGalleryScroll:5,eclatBrowse:true,
+  eclatDetails:true,eclatMusic:true};
+ let stops=0;
+ const drafts=new Map([['old',{note:'Old partner private note'}]]);
+ const ctx={state,eclatNoteDrafts:drafts,isSharedCoupleReady:(c,m)=>!!c&&m?.length===2,
+  latestEclatHistoryRead:{},latestEclatStatusRead:{},latestEclatExplicitRead:{},
+  latestEclatActionRequest:{},latestEclatAudioOwner:{},
+  eclatAudio:{stop:()=>{stops++;}}};
+ const funcs=runInNewContext(membershipSource+
+  ';({acceptEclatMembership,eclatMembershipScope})',ctx);
+ return {state,ctx,drafts,stops:()=>stops,...funcs};
+}
+
+test('LR-026: unchanged couple membership and display rename preserve Éclat drafts',()=>{
+ const h=membershipFixture();
+ h.acceptEclatMembership([{user_id:'bob',name:'Robert'},
+  {user_id:'alice',name:'Alice 2'}]);
+ assert.equal(h.state.members[0].name,'Robert');
+ assert.equal(h.state.eclat.id,'old-session');
+ assert.equal(h.state.eclatHistory[0].id,'old-private-history');
+ assert.equal(h.drafts.get('old').note,'Old partner private note');
+ assert.equal(h.stops(),0,'same members reordered must not interrupt soundtrack');
+});
+
+test('LR-026: membership change must clear previous partner private state',()=>{
+ const h=membershipFixture();
+ h.acceptEclatMembership([{user_id:'alice'},{user_id:'carol'}]);
+ assert.equal(h.state.eclat,null);
+ assert.deepEqual(Array.from(h.state.eclatHistory),[]);
+ assert.equal(h.state.eclatHistoryCouple,null);
+ assert.equal(h.state.eclatHistoryUserId,null);
+ assert.equal(h.state.eclatFinished,null);
+ assert.equal(h.state.eclatMusic,false);
+ assert.equal(h.state.eclatBrowse,false);
+ assert.equal(h.state.eclatDetails,false);
+ assert.equal(h.drafts.size,0);
+ assert.equal(h.stops(),1);
+ assert.equal(h.ctx.latestEclatHistoryRead,null);
+ assert.equal(h.ctx.latestEclatStatusRead,null);
+ assert.equal(h.ctx.latestEclatActionRequest,null);
+});
+
+test('LR-026: new couple ID with identical two users is a new Éclat privacy boundary',()=>{
+ const h=membershipFixture();
+ h.state.coupleId='new-duo';
+ h.acceptEclatMembership([{user_id:'alice'},{user_id:'bob'}]);
+ assert.equal(h.state.eclat,null);
+ assert.equal(h.drafts.size,0);
+ assert.equal(h.stops(),1);
+ assert.equal(h.state.eclatMembershipScope,JSON.stringify(['new-duo','alice','bob']));
+});
+
+test('LR-026: incomplete membership invalidates Éclat access and private cache',()=>{
+ const h=membershipFixture();
+ h.acceptEclatMembership([{user_id:'alice'}]);
+ assert.equal(h.state.eclatMembershipScope,null);
+ assert.deepEqual(Array.from(h.state.eclatHistory),[]);
+ assert.equal(h.drafts.size,0);
+ assert.equal(h.stops(),1);
+});
+
+test('LR-026: stale history fetch cannot reintroduce data after membership changes',async()=>{
+ const h=membershipFixture(),waiting=deferred();
+ const start=app.indexOf('let latestEclatHistoryRead=null,latestEclatStatusRead=null;');
+ const end=app.indexOf('function applyEclatStatus(value){',start);
+ assert.ok(start>=0&&end>start);
+ // Make the real history read and membership transition share the same VM
+ // request token so a retired partner response cannot repopulate the gallery.
+ let reads=0;
+ const runtime={state:h.state,authFeedbackGeneration:1,
+  isSharedCoupleReady:(c,m)=>!!c&&m?.length===2,ownsCoupleAsyncRead,
+  eclatNoteDrafts:h.drafts,eclatAudio:{stop:()=>{}},
+  loadEclatHistory:()=>{reads++;return waiting.promise;},
+  client:{},console};
+ const scripts=membershipSource+'\\n'+app.slice(start,end);
+ // Status variables in the production slice are initialized in this VM.
+ const f=runInNewContext(scripts+
+  ';({acceptEclatMembership,refreshEclatHistory})',runtime);
+ const pending=f.refreshEclatHistory();
+ assert.equal(reads,1);
+ f.acceptEclatMembership([{user_id:'alice'},{user_id:'carol'}]);
+ waiting.resolve([{id:'former-partner-only'}]);
+ await pending;
+ assert.deepEqual(Array.from(h.state.eclatHistory),[],
+  'retired member history must not overwrite new member boundary');
+});
