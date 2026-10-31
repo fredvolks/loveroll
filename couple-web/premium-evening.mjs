@@ -8,17 +8,23 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const bt=(action,text,cls='',disabled=false)=>'<button type="button" class="'+cls+'" data-action="'+esc(action)+'"'+
  (action.startsWith('category:')?' aria-pressed="'+(cls.includes('selected')?'true':'false')+'"':'')+
  (disabled?' disabled':'')+'>'+text+'</button>';
-// Progress through the 200 library slots is shared by the couple. A repeated
-// completion, or the same record loaded from two history views, counts once.
+// Progress through 200 distinct library CARDS, not 200 D100 outcomes.
+// A card keeps its card_id even when the D100 face used to draw it differs.
+// Historic rows that predate card_id retain their original face-based count.
 export function completedEveningLibraryCount(history=[]){
+ if(!Array.isArray(history))return 0;
  const slots=new Set();
- for(const challenge of history||[]){
+ for(const challenge of history){
   if(challenge?.status!=='completed')continue;
   const raw=String(challenge.category||'').toUpperCase();
   const category=raw==='COQUIN'?'SEXUEL':raw;
-  const face=Number(challenge.face);
-  if(!['SENSUEL','SEXUEL'].includes(category)||!Number.isInteger(face)||face<1||face>100)continue;
-  slots.add(category+':'+face);
+  if(!['SENSUEL','SEXUEL'].includes(category))continue;
+  const hasCardId=challenge.card_id!==undefined&&challenge.card_id!==null;
+  const slot=hasCardId?challenge.card_id:challenge.face;
+  // Corrupt modern IDs must not silently fall back to a plausible D100 face.
+  const number=Number(slot);
+  if(!Number.isInteger(number)||number<1||number>100)continue;
+  slots.add(category+':'+number);
  }
  return slots.size;
 }
