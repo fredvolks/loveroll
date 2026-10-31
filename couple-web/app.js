@@ -2716,6 +2716,7 @@ function renderSession(){
    playable:state.playableCounts||(isLoveAdmin()?playableEveningCount(state.customCards):null),
    rollingKind:state.rollAnimationKind,showMore:state.eveningMore,confirmCancel:state.confirmCancel,
    challengeOverlay:overlay,lastEvening,canStartEvening,
+   sessionLength:readSessionLength(uid,localStorage),
    challengeHistory:[...state.challengesHistory,...state.eveningCalendarChallenges,...state.challenges],
    weeklyReady:!!state.weekly,weeklyCount:daily.counted,weeklyLimit:daily.limit,
    dailyLocked:daily.dailyLocked,ownChallengeCount:mineCards.length,
