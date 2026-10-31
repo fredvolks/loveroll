@@ -178,6 +178,49 @@ test("Delayed gift approval cannot change another player's evening",async()=>{
  assert.equal(changedDuringRpc.calls.notifications,0);
 });
 
+
+test('Soirée management and calendar cannot interrupt an official D100 animation',async()=>{
+ const during=premiumEveningHtml({...ready,rolling:true,rollingKind:'new-challenge',
+  showMore:true,category:'SENSUEL'});
+ assert.match(during,/class="evening-manage" data-action="evening-more"[^>]*disabled/);
+ assert.doesNotMatch(during,/class="evening-more-menu"/);
+ const idle=premiumEveningHtml({...ready,rolling:false,showMore:true,category:'SENSUEL'});
+ assert.match(idle,/class="evening-manage" data-action="evening-more"/);
+ assert.doesNotMatch(idle,/class="evening-manage"[^>]*disabled/);
+ assert.match(idle,/class="evening-more-menu"/);
+
+ const {runInNewContext}=await import('node:vm');
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const start=source.indexOf("if(verb==='evening-more'){");
+ const end=source.indexOf("if(verb==='evening-month-prev'",start);
+ assert.ok(start>0&&end>start,'Real production menu/calendar route');
+ const route=source.slice(start,end);
+ for(const status of ['pending','rolling','settled']){
+  const events=[];
+  const state={tab:'session',diceStatus:status,eveningMore:false,
+   confirmCancel:false,session:{started_at:'2026-10-31T19:00:00Z'}};
+  const run=runInNewContext('(async verb=>{'+route+'})',{
+   state,parts:[],render:()=>events.push('render'),
+   eveningLocalDay:()=>{events.push('date');return '2026-10-31';}
+  });
+  await run('evening-more');
+  await run('evening-calendar');
+  assert.equal(events.length,0,'No screen change or date refresh while '+status);
+  assert.equal(state.eveningMore,false);
+  assert.equal(state.tab,'session');
+ }
+ const state={tab:'session',diceStatus:null,eveningMore:false,
+  confirmCancel:false,session:{started_at:'2026-10-31T19:00:00Z'}};
+ const run=runInNewContext('(async verb=>{'+route+'})',{
+  state,parts:[],render:()=>{},eveningLocalDay:()=> '2026-10-31'
+ });
+ await run('evening-more');
+ assert.equal(state.eveningMore,true,'Menu returns immediately after settling');
+ await run('evening-calendar');
+ assert.equal(state.tab,'evening-calendar');
+ assert.equal(state.eveningCalendarDate,'2026-10-31');
+});
+
 test('Information uses the actual configured preference and preserves calendar and closure',()=>{
  const info=eveningPlayInfoHtml(74);
  assert.match(info,/74 % pour la catégorie choisie et 26 % pour l’autre/);
