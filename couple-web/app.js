@@ -5591,7 +5591,14 @@ async function handle(action,element){
   if(!daily.canStart)throw Error(daily.dailyLocked?
    'Une seule soirée par jour. Revenez demain (heure du Québec).':
    'Le quota hebdomadaire est atteint.');
-  await rpc('ensure_couple_session',{p_couple:state.coupleId});
+  const owner={userId:state.user?.id,coupleId:state.coupleId,
+   generation:authFeedbackGeneration};
+  if(!owner.userId||!owner.coupleId)return;
+  const ownsSession=()=>state.user?.id===owner.userId&&
+   state.coupleId===owner.coupleId&&authFeedbackGeneration===owner.generation;
+  // A slow session-creation RPC must never navigate a replacement login.
+  await rpc('ensure_couple_session',{p_couple:owner.coupleId});
+  if(!ownsSession())return;
   state.tab='session';await refreshAndShow();return;
  }
  if(verb==='my-d6'){
