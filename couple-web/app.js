@@ -17,7 +17,7 @@ import {ROLL_TOTAL_MS} from './dice-roll-motion.mjs';
 import {createCoupleLiveSync} from './couple-live-sync.mjs?v=20261017-advent119';
 import {playableSessionForWeekly} from './couple-reset-view.mjs';
 import {eveningDailyAccess} from './evening-daily-policy.mjs?v=20261016-daily100';
-import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,snapshotEveningCardBeforeRedraw,isSameEveningResponseContext,isEveningRedrawBusyForCurrentView,ownsEveningRedrawRequest,ownsEveningTimerRecord,ownedSavedEveningTimerSnapshot,redrawTimerRecovery,mayApplyScopedEveningRefresh,ownsCoupleAsyncRead} from './evening-private-queue.mjs';
+import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,snapshotEveningCardBeforeRedraw,isSameEveningResponseContext,isEveningRedrawBusyForCurrentView,ownsEveningRedrawRequest,ownsEveningTimerRecord,ownedSavedEveningTimerSnapshot,redrawTimerRecovery,mayApplyScopedEveningRefresh,ownsCoupleAsyncRead,hasPendingEclatNote} from './evening-private-queue.mjs';
 import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261029-web259';
 import {saveEveningSelection,restoreEveningSelection,clearEveningSelection} from './evening-resume.mjs?v=20261027-web240';
 import {eclatHtml} from './eclat-ui.mjs?v=20261027-web242';
@@ -222,7 +222,8 @@ function snapshotDraft(){
  }));
 }
 function formRouteKey(){return [state.tab,settingsOpenSection,state.libraryScreen,state.libraryImportKind,state.customCategory,state.customSlot,state.monthlySlot,state.adventEditorDay,state.specialEditorKey,state.specialEditorStage,state.specialEditorFace].join('|');}
-function hasUnsavedForm(){return snapshotDraft().length>0||[...eclatNoteDrafts.values()].some(d=>!d.saved&&(!!d.note||!!d.clue));}
+function hasUnsavedForm(){return snapshotDraft().length>0||
+ hasPendingEclatNote(eclatNoteDrafts,eclatNoteKey(state.eclat,state.user?.id),state.tab);}
 function restoreDraft(draft){
  for(const field of draft||[]){
   const el=document.getElementById(field.id);
@@ -472,7 +473,7 @@ function bindActions(){
  root.querySelectorAll('[data-eclat-field]').forEach(field=>field.addEventListener('input',()=>{
   const draft=eclatNoteDrafts.get(eclatNoteKey(state.eclat,state.user?.id));
   if(!draft)return;
-  draft[field.dataset.eclatField]=field.value;draft.saved=false;
+  draft[field.dataset.eclatField]=field.value;draft.saved=false;draft.dirty=true;
   const label=root.querySelector('[data-eclat-note-status]');
   if(label)label.textContent='Modifications non enregistrées';
  }));
@@ -1310,7 +1311,7 @@ function eclatNoteState(){
  const key=eclatNoteKey(state.eclat,state.user?.id);
  if(!key)return {};
  if(!eclatNoteDrafts.has(key)){
-  const draft={note:'',clue:'',moment_done:false,loading:true};
+  const draft={note:'',clue:'',moment_done:false,loading:true,dirty:false};
   eclatNoteDrafts.set(key,draft);
   const status={...state.eclat};
   const owner={userId:state.user.id,coupleId:state.coupleId};
@@ -1320,7 +1321,7 @@ function eclatNoteState(){
   const current=()=>ownsCoupleAsyncRead(state,owner)&&
    eclatNoteDrafts.get(key)===draft;
   loadEclatNote(client,status,owner.userId).then(value=>{
-   if(current())Object.assign(draft,value,{saved:!!value.note||!!value.clue,error:false});
+   if(current())Object.assign(draft,value,{saved:!!value.note||!!value.clue,dirty:false,error:false});
   }).catch(()=>{if(current())draft.error=true;})
    .finally(()=>{
     draft.loading=false;
@@ -1349,6 +1350,7 @@ async function saveCurrentEclatNote(momentDone){
   if(!current())return null;
   draft.moment_done=snapshot.moment_done;
   draft.saved=draft.note===snapshot.note&&draft.clue===snapshot.clue;
+  draft.dirty=!draft.saved;
  }catch(error){
   if(!current())return null;
   const label=root.querySelector('[data-eclat-note-status]');
