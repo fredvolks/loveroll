@@ -1290,7 +1290,7 @@ test('LR-026: live refresh implementation aborts stale server evening without wr
   const query=async table=>{readCount++;return table==='couple_sessions'?sessions:[];};
   const rpc=async()=>{readCount++;return null;};
   const scoped=runInNewContext(source+'; refreshShared;',{
-   state,query,rpc,month:()=>'2026-10',
+   state,authFeedbackGeneration:1,query,rpc,month:()=>'2026-10',
    isSameEveningResponseContext,mayApplyScopedEveningRefresh
   });
   await scoped(request);
@@ -1313,7 +1313,7 @@ test('LR-026: scoped timer refresh rejects a different couple before any RPC',as
   legacyAnswerContext:null,cycleStatus:'unchanged'};
  let networkCalls=0;
  const refresh=runInNewContext(app.slice(start,end)+'; refreshShared;',{
-  state,query:async()=>{networkCalls++;return [];},
+  state,authFeedbackGeneration:1,query:async()=>{networkCalls++;return [];},
   rpc:async()=>{networkCalls++;return [];},
   isSameEveningResponseContext,mayApplyScopedEveningRefresh,
   month:()=>'2026-10',console
@@ -1343,7 +1343,7 @@ test('LR-026: full scoped refresh accepts timer closure but rejects another nigh
    {id:'s1',finished_at:'2026-10-30T20:00:00Z'}
   ]:[];
   const refresh=runInNewContext(code,{
-   state,query:async table=>table==='couple_sessions'?sessions:[],
+   state,authFeedbackGeneration:1,query:async table=>table==='couple_sessions'?sessions:[],
    rpc:async name=>name==='love_redraw_capabilities'?false:
     name==='love_cycle_status'?{pending:false}:[],
    isSameEveningResponseContext,mayApplyScopedEveningRefresh,
@@ -1554,7 +1554,7 @@ test('LR-026: unscoped refresh never commits an old account or couple after firs
    monthlyPassQuota:'previous',challenges:[{id:'keep-private'}]};
   let initialReads=0,additionalCalls=0;
   const refresh=runInNewContext(app.slice(start,end)+'; refreshShared;',{
-   state,
+   state,authFeedbackGeneration:1,
    query:async name=>{
     initialReads++;
     if(name==='couple_sessions'){
@@ -1593,7 +1593,7 @@ test('LR-026: unscoped refresh survives a harmless tab change on the same accoun
   session:{id:'session-A'},challenges:[],reviewModalSessionId:null,
   reviewDismissedSessionId:null,eveningCalendarMonth:'2026-10'};
  const refresh=runInNewContext(app.slice(start,end)+'; refreshShared;',{
-  state,
+  state,authFeedbackGeneration:1,
   query:async name=>{
    if(name==='couple_sessions'){
     state.tab='settings';
@@ -1628,7 +1628,7 @@ test('LR-026: later unscoped refresh wins when older same-account network finish
   reviewModalSessionId:null,reviewDismissedSessionId:null};
  let sessionReads=0,cycleReads=0;
  const requestContext={
-  state,
+  state,authFeedbackGeneration:1,
   query:async name=>{
    if(name==='couple_sessions'){
     sessionReads++;
@@ -1673,7 +1673,7 @@ test('LR-026: scoped D100 refresh supersedes older ordinary background request',
   reviewModalSessionId:null,reviewDismissedSessionId:null};
  let sessionReads=0,cycleReads=0;
  const refresh=runInNewContext(app.slice(begin,end)+'; refreshShared;',{
-  state,
+  state,authFeedbackGeneration:1,
   query:async name=>{
    if(name==='couple_sessions'){
     sessionReads++;
