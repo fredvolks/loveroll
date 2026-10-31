@@ -199,7 +199,7 @@ test('Éclat note saving progress disables repeat save but preserves editable dr
  const status={access:true,active:true,coffret_id:1,minutes:30,
   chapter_index:1,chapter_number:1,chapter_total:8,variant_number:0,
   session_id:'private-note-saving',my_choice:null,both_chosen:false};
- for(const phase of ['prepare','play','choose']){
+ for(const phase of ['prepare','play']){
   const noteState={note:'A note typed while saving',clue:'',saving:true,
    moment_done:phase==='choose',playing:phase==='play',dirty:true};
   const html=eclatHtml({status,members:people,userId:'a',noteState});
@@ -210,11 +210,16 @@ test('Éclat note saving progress disables repeat save but preserves editable dr
   assert.match(html,/data-eclat-note-status role="status">Enregistrement en cours…<\/span>/,
    'the current operation must be announced to assistive technology');
  }
+ const choosing=eclatHtml({status,members:people,userId:'a',
+  noteState:{moment_done:true,saving:true,dirty:true}});
+ assert.match(choosing,/data-eclat-phase="choose"/);
+ assert.doesNotMatch(choosing,/data-eclat-field="note"/,
+  'the private editor is deliberately absent on the choice-only screen');
  const completed=eclatHtml({status,members:people,userId:'a',
-  noteState:{moment_done:true,saving:false,dirty:true,saved:true}});
+  noteState:{playing:true,saving:false,dirty:true,saved:true}});
  assert.match(completed,/data-eclat-note-status role="status">Modifications non enregistrées<\/span>/,
   'stale saved flag must not override unsaved edits');
  const available=eclatHtml({status,members:people,userId:'a',
-  noteState:{moment_done:true,saving:false,saved:true,dirty:false}});
+  noteState:{playing:true,saving:false,saved:true,dirty:false}});
  assert.match(available,/data-eclat-note-status role="status">Note enregistrée pour toi<\/span>/);
 });
