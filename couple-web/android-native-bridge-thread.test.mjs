@@ -51,11 +51,33 @@ test('Android notification preferences remain editable without remote push',asyn
 
 test('Signed Android release is versioned, immutable and references the preceding official APK',()=>{
  const release=readFileSync(new URL('../.github/workflows/android.yml',import.meta.url),'utf8');
- assert.match(release,/TAG: des-a-deux-v0[.]13[.]14/);
- assert.ok(release.includes('https://github.com/fredvolks/loveroll/releases/download/des-a-deux-v0.13.13/LoveRoll-v0.13.13.apk'));
+ assert.match(release,/TAG: loveroll-newsign-v0[.]13[.]14/);
+ assert.ok(release.includes('secrets.LOVEROLL_ANDROID_SIGNING'));
+ assert.ok(release.includes('base64.b64decode(bundle["KEYSTORE"],validate=True)'));
+ assert.ok(release.includes('Invalid LoveRoll Android signing secret'));
+ assert.ok(release.includes('EXPECTED_SIGNER_SHA256'));
+
+ assert.ok(release.includes('EXPECTED_SIGNER_SHA256: fb41d117dc9952bf65876dd8d6f5c357b23145776eddeccd19d0b31fd410bbf8'));
+ assert.doesNotMatch(release,/previous-loveroll[.]apk/);
+ assert.match(readFileSync(new URL('../app/src/main/java/ca/desadeux/jeu/UpdateManager.java',import.meta.url),'utf8'),/PREFIX="loveroll-newsign-v"/);
+ assert.match(release,/installation propre obligatoire/);
  assert.ok(release.includes('gh release create "$TAG"'));
  assert.ok(!release.includes('gh release upload "$TAG"'));
  assert.ok(release.includes('if gh release view "$TAG"'));
  assert.match(release,/exit 1/);
  assert.match(gradle,/versionCode 130014/);
+});
+
+
+test('native Android updater can detect a release later the same day, with manual retry',()=>{
+ const src=readFileSync(new URL('../app/src/main/java/ca/desadeux/jeu/UpdateManager.java',import.meta.url),'utf8');
+ const policy=readFileSync(new URL('../app/src/main/java/ca/desadeux/jeu/UpdateCheckPolicy.java',import.meta.url),'utf8');
+ const junit=readFileSync(new URL('../app/src/test/java/ca/desadeux/jeu/UpdateCheckPolicyTest.java',import.meta.url),'utf8');
+ assert.match(src,/UpdateCheckPolicy\.postponeQuietCheck\(quiet,now,last\)/);
+ assert.match(src,/putLong\("last_success_ms",System\.currentTimeMillis\(\)\)/);
+ assert.doesNotMatch(src,/today\.equals\(prefs\.getString\("last_success"/);
+ assert.match(policy,/QUIET_INTERVAL_MILLIS=30L\*60L\*1000L/);
+ assert.match(policy,/quiet && lastSuccess>0L && now>=lastSuccess/);
+ assert.match(junit,/manualCheckNeverBlockedAfterSuccess/);
+ assert.match(junit,/futureReleaseSameDayCanBeFoundAfterCooldown/);
 });
