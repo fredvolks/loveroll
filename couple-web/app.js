@@ -4365,7 +4365,9 @@ async function handle(action,element){
    ownsCycleIntensityAnswer(state,owner,authFeedbackGeneration);
   const controls=[...root.querySelectorAll('.lr-cycle-overlay .lr-cycle-choice')];
   const overlay=root.querySelector('.lr-cycle-overlay');
+  const progress=overlay?.querySelector('.lr-cycle-progress');
   for(const control of controls)control.disabled=true;
+  if(progress)progress.hidden=false;
   overlay?.setAttribute('aria-busy','true');
   let committed=false;
   try{
@@ -4383,14 +4385,18 @@ async function handle(action,element){
     state.cycleAnswerRequest=null;
     if(!committed&&ownsCycleIntensityAnswer(state,owner,authFeedbackGeneration)){
      for(const control of controls)if(control.isConnected)control.disabled=false;
-     if(overlay?.isConnected)overlay.removeAttribute('aria-busy');
+     if(overlay?.isConnected){
+      overlay.removeAttribute('aria-busy');
+      if(progress)progress.hidden=true;
+     }
     }
    }
   }
  }
  if(verb==='cycle-later'){
   if(state.cycleAnswerRequest&&
-     ownsCycleIntensityAnswer(state,state.cycleAnswerRequest,authFeedbackGeneration))
+     ownsCycleIntensityAnswer(state,state.cycleAnswerRequest,authFeedbackGeneration)&&
+     state.cycleStatus?.cycle===state.cycleAnswerRequest.cycle)
    return;
   state.cycleDeferred=state.cycleStatus?.cycle||null;render();return;
  }
