@@ -11,9 +11,10 @@ const end=app.indexOf('},4500);',start);
 assert.ok(start>=0&&end>start,'real Éclat poll must remain available');
 const statusBegin=app.indexOf('function applyEclatStatus(value){');
 const statusEnd=app.indexOf('async function refreshEclatStatus(){',statusBegin);
-assert.ok(statusBegin>=0&&statusEnd>statusBegin,'real Éclat status handoff exists');
+const actionBegin=app.indexOf('// A user may switch accounts or leave Éclat',statusEnd);
+assert.ok(statusBegin>=0&&statusEnd>statusBegin&&actionBegin>statusEnd,'real Éclat status handoff exists');
 const source='let latestEclatHistoryRead=null,latestEclatStatusRead=null,latestEclatPollPending=null,latestEclatExplicitRead=null;\nlet latestEclatAudioOwner=null;\n'+
- app.slice(statusBegin,statusEnd)+'\n'+app.slice(start,end+8)+
+ app.slice(statusBegin,actionBegin)+'\n'+app.slice(start,end+8)+
  '\nfunction invalidateStatusRead(){latestEclatStatusRead={};}'+
  '\nfunction holdForegroundRead(){const request={};latestEclatStatusRead=request;'+
  'latestEclatExplicitRead={userId:state.user.id,coupleId:state.coupleId,'+
@@ -537,4 +538,47 @@ test('LR-026: temporary network failures do not erase valid cached Éclat access
  assert.equal(h.audioStops(),0);
  assert.deepEqual(h.renders,[]);
  assert.equal(h.warnings.length,1);
+});
+
+test('LR-026: foreground Auth rejection clears Éclat history and keeps the error visible',async()=>{
+ const h=harness();
+ h.state.eclatHistory=[{id:'private-coffret'}];
+ h.state.eclatMusic=true;
+ const pending=h.runtime.refreshEclatStatus();
+ assert.equal(h.requests.length,1);
+ const rejection=new Error('Auth required');
+ rejection.status=401;
+ h.requests[0].reject(rejection);
+ await assert.rejects(pending,(/Auth required/));
+ assert.equal(h.state.eclat,null);
+ assert.deepEqual(Array.from(h.state.eclatHistory),[]);
+ assert.equal(h.state.eclatMusic,false);
+ assert.equal(h.audioStops(),1);
+ assert.deepEqual(h.renders,[undefined]);
+});
+
+test('LR-026: obsolete foreground Auth denial cannot revoke the new login',async()=>{
+ const h=harness();
+ const pending=h.runtime.refreshEclatStatus();
+ h.runtime.authFeedbackGeneration=2;
+ h.state.eclat={id:'new-session',access:true,active:true};
+ h.state.eclatHistory=[{id:'new-photo'}];
+ const rejection=new Error('stale Auth failure');rejection.status=401;
+ h.requests[0].reject(rejection);
+ await assert.rejects(pending,(/stale Auth failure/));
+ assert.equal(h.state.eclat.id,'new-session');
+ assert.deepEqual(h.state.eclatHistory,[{id:'new-photo'}]);
+ assert.deepEqual(h.renders,[]);
+ assert.equal(h.audioStops(),0);
+});
+
+test('LR-026: foreground offline error keeps authorized Éclat state for a retry',async()=>{
+ const h=harness();
+ h.state.eclatHistory=[{id:'valid-photo'}];
+ const pending=h.runtime.refreshEclatStatus();
+ h.requests[0].reject(new Error('offline'));
+ await assert.rejects(pending,(/offline/));
+ assert.equal(h.state.eclat.id,'original');
+ assert.deepEqual(h.state.eclatHistory,[{id:'valid-photo'}]);
+ assert.deepEqual(h.renders,[]);
 });
