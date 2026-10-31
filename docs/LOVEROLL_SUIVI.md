@@ -1,6 +1,15 @@
 # LoveRoll — SUIVI OFFICIEL DU PROMPT MAÎTRE
 
 
+### LR-027 — D100 confirmé trop tard et reprise de soirée périmée (31 octobre 2026)
+
+- La validation de catégorie d'un D100 est asynchrone. Si une repige **Passer/Refuser** démarre pendant ce dialogue, le contrôle propriétaire `ownsDraw` refuse maintenant de déclencher le D100, même si la catégorie, le compte et la soirée n'ont pas changé. Les dés officiels restent exclusivement déterminés par le serveur.
+- `Reprendre la soirée` capture l'identité, le duo, l'onglet, la génération Auth et le jeton de rafraîchissement avant l'attente réseau; aucun résultat retardé ne peut rouvrir les cartes privées d'un ancien compte, remplacer une navigation plus récente ou interrompre un lancer/une repige. La reprise normale reste disponible.
+- Code `couple-web/app.js`, commit `0155009`; tests de régression `couple-web/evening-d100-template.test.mjs`, commit `02cd4e1`. Syntaxe JavaScript et scénarios V8 ciblés exécutés : D100 permis après confirmation, D100 périmé annulé, reprise normale et annulation après compte/onglet/rafraîchissement/repige/dé changés. **Suite CI complète au dernier SHA, authentification RLS réelle en staging et appareils physiques encore à confirmer**.
+- [PR #176](https://github.com/fredvolks/loveroll/pull/176) toujours en brouillon, sans merge ni publication. Atelier partagé consulté en MEDIUM (fiches, agents et architecture) : erreur interne du connecteur; **non synchronisé avec Atelier**, aucune mission BOSS enregistrée.
+
+
+
 ### LR-027 — état clair de la repige et blocage des actions concurrentes (31 octobre 2026)
 
 - Branche `feat/lr026-server-variety-after-category-20261029`, [PR #176](https://github.com/fredvolks/loveroll/pull/176), **brouillon non fusionné**.
