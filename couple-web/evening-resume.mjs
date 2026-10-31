@@ -1,5 +1,17 @@
 // An opaque bookmark only. Supabase owns all active game state.
 const key=(userId,sessionId)=>userId&&sessionId?'loveroll-evening-resume-v1:'+userId+':'+sessionId:null;
+// Resolve optional browser storage without throwing on Safari private mode,
+// opaque origins or browser policies that deny reading the property itself.
+// No private card contents are stored, only the selected opaque challenge ID.
+export function safeEveningBookmarkStorage(scope=globalThis){
+ try{
+  const storage=scope?.localStorage;
+  return storage&&typeof storage.getItem==='function'&&
+   typeof storage.setItem==='function'&&typeof storage.removeItem==='function'
+   ?storage:null;
+ }catch{return null;}
+}
+
 export function saveEveningSelection(storage,userId,sessionId,challengeId){
  const k=key(userId,sessionId);
  // Never acknowledge a bookmark that was not actually persisted. UUIDs are
