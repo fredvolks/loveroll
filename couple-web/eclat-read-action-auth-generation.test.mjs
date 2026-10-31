@@ -22,7 +22,7 @@ function harness({rpc=async()=>null,loadEclatHistory=async()=>[]}={}){
   eclatHistoryCouple:'couple-a',eclatHistoryUserId:'alice'};
  const warnings=[];
  const ctx={state,authFeedbackGeneration:1,ownsCoupleAsyncRead,
-  client:{},rpc,loadEclatHistory,
+  eclatNoteDrafts:new Map(),client:{},rpc,loadEclatHistory,
   isSharedCoupleReady:(couple,members)=>!!couple&&members?.length===2,
   console:{warn:(...args)=>warnings.push(args)}};
  const funcs=runInNewContext(source+
@@ -280,4 +280,32 @@ test('LR-026: stale history read cannot restore private data after access is den
  await earlier;
  assert.deepEqual(Array.from(h.state.eclatHistory),[]);
  assert.equal(h.state.eclat?.access,false);
+});
+
+
+test('LR-026: denied foreground status purges cached private draft and completion',async()=>{
+ const denied={access:false,active:false,total_cents:999};
+ const h=harness({rpc:async()=>denied});
+ h.state.eclat={access:true,active:true,session_id:'same-session'};
+ h.state.eclatFinished='Old private completion';
+ h.ctx.eclatNoteDrafts.set('alice:same-session:1',{note:'Old private draft'});
+ const status=await h.refreshEclatStatus();
+ assert.equal(status,denied);
+ assert.equal(h.ctx.eclatNoteDrafts.size,0,
+  'a revoked user must not reuse stale private drafts if access is regranted');
+ assert.equal(h.state.eclatFinished,null,
+  'revocation must remove old private completion from memory');
+});
+
+test('LR-026: stale denied response must not erase newer login private drafts',async()=>{
+ const waiting=deferred();
+ const h=harness({rpc:()=>waiting.promise});
+ const old=h.refreshEclatStatus();
+ h.ctx.authFeedbackGeneration=2;
+ h.state.eclatFinished='New login completion';
+ h.ctx.eclatNoteDrafts.set('current',{note:'New login only'});
+ waiting.resolve({access:false,active:false});
+ assert.equal(await old,null);
+ assert.equal(h.ctx.eclatNoteDrafts.get('current').note,'New login only');
+ assert.equal(h.state.eclatFinished,'New login completion');
 });
