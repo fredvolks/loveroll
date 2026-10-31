@@ -86,10 +86,15 @@ export function eveningFinaleStatus({sessionId,reviews=[],challenges=[],selfId,p
   row&&typeof row==='object'&&row.session_id===sessionId):null;
  const owned=authorId=>!!authorId&&validReviews?.some(row=>row.author_id===authorId)===true;
  const myResponse=owned(selfId);
- const partnerResponse=partnerId?owned(partnerId):null;
+ // If membership has not loaded or resolves to the same account, do not
+ // claim two bilans were received. The partner's status is unknown.
+ const confirmedPartner=typeof partnerId==='string'&&partnerId.length>0&&
+  partnerId!==selfId;
+ const partnerResponse=confirmedPartner?owned(partnerId):null;
  const complete=Array.isArray(challenges)?challenges.filter(row=>
   row&&row.session_id===sessionId&&row.status==='completed').length:0;
  return {id:sessionId,completed:complete,
-  responses:validReviews===null?null:Number(myResponse)+Number(partnerResponse===true),
+  responses:validReviews===null||partnerResponse===null?null:
+   Number(myResponse)+Number(partnerResponse),
   myResponse,partnerResponse};
 }
