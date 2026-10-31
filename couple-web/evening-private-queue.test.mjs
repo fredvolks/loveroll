@@ -2167,21 +2167,26 @@ function privateAuthBoundaryFixture(state,getUser){
  assert.ok(start>0&&end>start,'production identity boundary must be available');
  const drafts=new Map([['alice:session:1',{note:'PRIVATE'}]]);
  const channel={id:'previous-private-couple'};
+ const timer={id:'alice-card',ownerUserId:'alice',ownerSessionId:'alice-session',
+  durationMs:120000,remainingMs:55000,deadline:123456,running:true,
+  notified:false,autoCompletePending:true,decisionPending:false,mode:'vibrate'};
  const calls={audioStops:0,channelRemovals:0,paints:0,reloads:0,timers:0};
  state.channel=channel;
  const scope=runInNewContext(
-  'const eclatNoteDrafts=drafts;let latestEclatAudioOwner=null;'+
+  'const eclatNoteDrafts=drafts,challengeTimer=timer;let latestEclatAudioOwner=null;'+
   'let latestEclatHistoryRead=null,latestEclatStatusRead=null,latestEclatActionRequest=null;'+
-  'let realtimeReconnectTimer=null;'+
+  'let realtimeReconnectTimer=null,notificationFeedback=null,worldGpsDraft=null,worldFx=null,worldFxFailed=null;'+
+  'let timerCompletionInFlight=null,timerCompletionRetryAt=0;'+
+  'let savedTimerScanOwner=null,savedTimerScanAfter=0,savedTimerSyncInFlight=null;'+
   'let inviteAcceptanceBusy=false,inviteAcceptanceRequest=null;'+app.slice(start,end)+
   ';({adoptAuthenticatedIdentity,refreshVerifiedIdentity,readRequest:()=>latestAuthReloadRequest})',{
-   state,drafts,client:{auth:{getUser},removeChannel:async()=>{calls.channelRemovals++;}},
+   state,drafts,timer,client:{auth:{getUser},removeChannel:async()=>{calls.channelRemovals++;}},
    eclatAudio:{stop:()=>calls.audioStops++},
    clearTimeout:()=>{},setTimeout:()=>calls.timers++,
    reload:async()=>calls.reloads++,render:()=>calls.paints++,
    fail:()=>{},verifiedLoveEmail:()=>true
   });
- return {...scope,calls,drafts,channel};
+ return {...scope,calls,drafts,channel,timer};
 }
 
 test('LR-026: an auth identity switch closes the old couple channel and clears private Éclat memory',async()=>{
@@ -3376,4 +3381,97 @@ test('LR-026: switching to Google or Apple invalidates pending password form rep
  assert.ok(nativeStart>0&&browserStart>nativeStart&&end>browserStart);
  assert.match(app.slice(nativeStart,browserStart),/authFeedbackGeneration\+\+/);
  assert.match(app.slice(browserStart,end),/authFeedbackGeneration\+\+/);
+});
+
+test('LR-026: switching accounts clears calendar, invitation and review caches',async()=>{
+ const state={user:{id:'alice'},coupleId:'duo-alice',
+  monthly:{secret:'alice-month'},monthlyActivities:[{id:'private-activity'}],
+  rollStatus:{secret:'alice-roll'},events:[{id:'private-event'}],
+  journal:[{text:'private-journal'}],occasionSettings:{private:true},
+  occasionRolls:[{id:'alice-roll'}],advent:[{secret:true}],
+  advent2026Config:{secret:'alice'},advent2026Days:[{secret:'alice'}],
+  adventYear:2026,adventSelected:4,adventServerDate:'2026-12-04',
+  specialEventsConfig:{secret:'alice'},specialEventKeys:['alice'],
+  unlockKey:'alice-secret-key',weeklyRollHistory:[{id:'alice'}],
+  calendarPassQuota:[{id:'alice'}],monthlyPassQuota:{private:true},
+  calendarPassMonth:'2026-10',cycleStatus:{private:true},
+  eveningHistoryStats:[{id:'alice'}],eveningCalendarChallenges:[{id:'alice'}],
+  eveningReviews:[{id:'alice'}],reviewModalSessionId:'alice-session',
+  reviewDraft:{private:'alice'},reviewSaving:true,
+  inviteDraft:{link:'alice-private-link'},inviteCopyFallback:true,
+  eveninGPlaceholder:null,geoVenue:{secret:'alice'},
+  geoReservation:{secret:'alice'},pushDevice:{token:'alice-device'},
+  guidance:'alice-guidance',notifications:'intact'};
+ const f=privateAuthBoundaryFixture(state,async()=>({data:{user:state.user}}));
+ f.adoptAuthenticatedIdentity({id:'bob'});
+ await Promise.resolve();
+ for(const field of ['monthlyActivities','events','journal','occasionRolls','advent',
+  'advent2026Days','weeklyRollHistory','calendarPassQuota',
+  'eveningHistoryStats','eveningCalendarChallenges','eveningReviews','specialEventKeys']){
+  assert.equal(state[field].length,0,field+' must be empty on a different login');
+ }
+ for(const field of ['rollStatus','occasionSettings','advent2026Config','unlockKey',
+  'monthlyPassQuota','calendarPassMonth','cycleStatus','reviewModalSessionId',
+  'inviteDraft','geoVenue','geoReservation','pushDevice']){
+  assert.equal(state[field],null,field+' must be null for Bob');
+ }
+ assert.equal(Object.keys(state.monthly).length,0);
+ assert.equal(Object.keys(state.reviewDraft).length,0);
+ assert.equal(state.reviewSaving,false);
+ assert.equal(state.inviteCopyFallback,false);
+ assert.equal(state.guidance,'playful');
+ assert.equal(state.notifications,'intact','unrelated preferences are unchanged');
+});
+
+test('LR-026: auth account switch stops old challenge timer but keeps chosen vibration preference',()=>{
+ const state={user:{id:'alice'},coupleId:'duo-alice',
+  timerCompletionContext:{userId:'alice'},timerCompletionRetryOwner:'alice',
+  timerStartContext:{userId:'alice'},redrawBusy:true,redrawBusyContext:{userId:'alice'},
+  eveningInviteBusy:true,eveningQueueSeen:{private:'alice'}};
+ const f=privateAuthBoundaryFixture(state,async()=>({data:{user:state.user}}));
+ assert.equal(f.timer.running,true);
+ assert.equal(f.timer.mode,'vibrate');
+ f.adoptAuthenticatedIdentity({id:'bob'});
+ assert.equal(f.timer.running,false);
+ assert.equal(f.timer.id,null);
+ assert.equal(f.timer.ownerUserId,null);
+ assert.equal(f.timer.ownerSessionId,null);
+ assert.equal(f.timer.deadline,0);
+ assert.equal(f.timer.autoCompletePending,false);
+ assert.equal(f.timer.mode,'vibrate');
+ assert.equal(state.timerCompletionContext,null);
+ assert.equal(state.timerCompletionRetryOwner,null);
+ assert.equal(state.timerStartContext,null);
+ assert.equal(state.redrawBusy,false);
+ assert.equal(state.redrawBusyContext,null);
+ assert.equal(state.eveningInviteBusy,false);
+ assert.equal(state.eveningQueueSeen,null);
+});
+
+test('LR-026: an identity refresh for the same user retains the running timer and private month',()=>{
+ const state={user:{id:'alice'},coupleId:'duo-alice',
+  monthly:{secret:'alice-month'},inviteDraft:{link:'alice-link'}};
+ const f=privateAuthBoundaryFixture(state,async()=>({data:{user:state.user}}));
+ assert.equal(f.adoptAuthenticatedIdentity({id:'alice',email:'new@example.com'}),false);
+ assert.equal(state.user.email,'new@example.com');
+ assert.equal(state.monthly.secret,'alice-month');
+ assert.equal(state.inviteDraft.link,'alice-link');
+ assert.equal(f.timer.running,true);
+ assert.equal(f.timer.ownerUserId,'alice');
+ assert.equal(f.calls.channelRemovals,0);
+});
+
+test('LR-026: signing out clears account-specific presentation and pending installations',()=>{
+ const state={user:{id:'alice'},coupleId:'duo-alice',
+  installModalOpen:true,installAfterSignup:true,showInstallSteps:true,
+  forceInstallGuide:true,personalPass:'alice-private',jsonPending:{secret:'alice'}};
+ const f=privateAuthBoundaryFixture(state,async()=>({data:{user:state.user}}));
+ f.adoptAuthenticatedIdentity(null);
+ assert.equal(state.user,null);
+ assert.equal(state.installModalOpen,false);
+ assert.equal(state.installAfterSignup,false);
+ assert.equal(state.showInstallSteps,false);
+ assert.equal(state.forceInstallGuide,false);
+ assert.equal(state.personalPass,null);
+ assert.equal(state.jsonPending,null);
 });
