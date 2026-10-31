@@ -609,3 +609,88 @@ test('LR-026: a later authorized status can load its own history after uncertain
  assert.equal(status.id,'fresh');
  assert.deepEqual(Array.from(h.state.eclatHistory,x=>x.id),['fresh-owned']);
 });
+
+const noteReadStart=app.indexOf('function eclatNoteState(){');
+const noteReadEnd=app.indexOf('// Every Éclat response is tied',noteReadStart);
+const noteDenialStart=app.indexOf('function applyEclatStatus(value){');
+const noteDenialEnd=app.indexOf('// Supabase may serialize the same status fields',noteDenialStart);
+assert.ok(noteReadStart>=0&&noteReadEnd>noteReadStart&&
+ noteDenialStart>noteReadEnd&&noteDenialEnd>noteDenialStart,
+ 'real Éclat private note and denial handlers are required');
+const noteReadSource='let latestEclatHistoryRead=null,latestEclatAudioOwner=null;\\n'+
+ app.slice(noteReadStart,noteReadEnd)+'\\n'+app.slice(noteDenialStart,noteDenialEnd);
+
+function privateNoteDenialHarness(){
+ const pendingRead=deferred(),pendingSave=deferred();
+ const state={user:{id:'alice'},coupleId:'couple-a',tab:'eclat',
+  members:[{id:'alice'},{id:'bob'}],
+  eclat:{access:true,active:true,session_id:'session-a'},
+  eclatHistory:[{id:'private-gallery'}],eclatMusic:true,
+  eclatFinished:'Private completion'};
+ const drafts=new Map(),renders=[];
+ let audioStops=0;
+ const ctx={state,authFeedbackGeneration:1,eclatNoteDrafts:drafts,
+  ownsCoupleAsyncRead,eclatNoteKey:()=> 'private-key',
+  isSharedCoupleReady:(c,m)=>!!c&&m?.length===2,
+  loadEclatNote:()=>pendingRead.promise,saveEclatNote:()=>pendingSave.promise,
+  eclatAudio:{stop:()=>{audioStops++;}},root:{querySelector:()=>null},
+  render:()=>renders.push(state.eclat?.access??null)};
+ const functions=runInNewContext(noteReadSource+
+  ';({eclatNoteState,saveCurrentEclatNote})',ctx);
+ return {state,ctx,drafts,renders,pendingRead,pendingSave,...functions,
+  audioStops:()=>audioStops};
+}
+
+test('LR-026: private note read with SQLSTATE 42501 revokes cached Éclat access',async()=>{
+ const h=privateNoteDenialHarness();
+ const draft=h.eclatNoteState();
+ assert.equal(draft.loading,true);
+ h.pendingRead.reject({status:400,code:'42501'});
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(h.state.eclat,null);
+ assert.deepEqual(Array.from(h.state.eclatHistory),[]);
+ assert.equal(h.drafts.size,0);
+ assert.equal(h.state.eclatMusic,false);
+ assert.equal(h.audioStops(),1);
+ assert.deepEqual(h.renders,[null]);
+});
+
+test('LR-026: private note save with HTTP 403 revokes the local draft',async()=>{
+ const h=privateNoteDenialHarness();
+ h.drafts.set('private-key',{generation:1,loading:false,error:false,saving:false,
+  note:'My private text',clue:'',moment_done:false,dirty:true});
+ const saving=h.saveCurrentEclatNote();
+ h.pendingSave.reject({status:403,code:'permission_denied'});
+ assert.equal(await saving,null,'denied writes must not be treated as completed');
+ assert.equal(h.state.eclat,null);
+ assert.equal(h.drafts.size,0);
+ assert.deepEqual(h.renders,[null]);
+});
+
+test('LR-026: temporary private note failure keeps local edits and allows retry',async()=>{
+ const h=privateNoteDenialHarness();
+ const draft={generation:1,loading:false,error:false,saving:false,
+  note:'Unsent text',clue:'',moment_done:false,dirty:true};
+ h.drafts.set('private-key',draft);
+ const saving=h.saveCurrentEclatNote();
+ h.pendingSave.reject(new Error('offline'));
+ await assert.rejects(saving,/offline/);
+ assert.equal(h.state.eclat.access,true);
+ assert.equal(h.drafts.get('private-key'),draft);
+ assert.equal(draft.saving,false);
+ assert.deepEqual(h.renders,[]);
+});
+
+test('LR-026: old note permission denial cannot revoke a new login',async()=>{
+ const h=privateNoteDenialHarness();
+ h.eclatNoteState();
+ h.ctx.authFeedbackGeneration=2;
+ h.state.eclat={access:true,active:true,session_id:'new-session'};
+ h.drafts.clear();
+ h.drafts.set('private-key',{note:'New login only',generation:2});
+ h.pendingRead.reject({status:400,code:'42501'});
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(h.state.eclat.session_id,'new-session');
+ assert.equal(h.drafts.get('private-key').note,'New login only');
+ assert.deepEqual(h.renders,[]);
+});
