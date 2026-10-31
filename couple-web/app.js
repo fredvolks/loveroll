@@ -1708,8 +1708,13 @@ function eclatNoteState(){
    state.eclat?.access===true&&eclatNoteDrafts.get(key)===draft;
   loadEclatNote(client,status,owner.userId).then(value=>{
    if(current())Object.assign(draft,value,{saved:!!value.note||!!value.clue,dirty:false,error:false});
-  }).catch(()=>{if(current())draft.error=true;})
-   .finally(()=>{
+  }).catch(error=>{
+   if(!current())return;
+   // A rejected private note read revokes the same entitlement as history:
+   // do not leave the former couple's gallery, notes or soundtrack visible.
+   if(invalidateEclatOnAuthRejection(error)){render();return;}
+   draft.error=true;
+  }).finally(()=>{
     draft.loading=false;
     if(current()&&state.tab==='eclat'&&!state.eclatBrowse&&
        eclatNoteKey(state.eclat,state.user?.id)===key)render();
@@ -1751,6 +1756,9 @@ async function saveCurrentEclatNote(momentDone){
   draft.dirty=!draft.saved;
  }catch(error){
   if(!current())return null;
+  // A definitive Auth/RLS denial differs from an offline draft save.
+  // Drop private state rather than advertising an unsafe local retry.
+  if(invalidateEclatOnAuthRejection(error)){render();return null;}
   const label=root.querySelector('[data-eclat-note-status]');
   if(label)label.textContent='Non enregistré. Ton texte est conservé ici; réessaie.';
   throw error;
