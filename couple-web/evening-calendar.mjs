@@ -24,8 +24,18 @@ export function eveningChallengeStatusLabel(status,closed=false){
 }
 const monthLabel=mo=>new Intl.DateTimeFormat('fr-CA',{month:'long',year:'numeric',timeZone:'UTC'})
  .format(new Date(mo+'-15T12:00:00Z'));
-export function eveningHistoryMarkup({sessions=[],members=[],stats=[],historyChallenges=[],reviews=[],me,month,selectedDate,
- weeklyRolls=[],passQuota=[],backAction='tab:session',backLabel='Retour à Soirée'}={}){
+export function eveningHistoryMarkup({
+ sessions:rawSessions=[],members:rawMembers=[],stats:rawStats=[],
+ historyChallenges:rawChallenges=[],reviews:rawReviews=[],me,month,selectedDate,
+ weeklyRolls:rawWeeklyRolls=[],passQuota:rawPassQuota=[],
+ backAction='tab:session',backLabel='Retour à Soirée'}={}){
+ // Legacy or partially loaded RPC arrays can be null or include null rows.
+ // Keep the calendar navigable without inventing completed challenges.
+ const rows=value=>Array.isArray(value)?value.filter(row=>
+  row!==null&&typeof row==='object'&&!Array.isArray(row)):[];
+ const sessions=rows(rawSessions),members=rows(rawMembers).filter(m=>!!m.user_id);
+ const stats=rows(rawStats),historyChallenges=rows(rawChallenges);
+ const reviews=rows(rawReviews),weeklyRolls=rows(rawWeeklyRolls),passQuota=rows(rawPassQuota);
  // The calendar's fallback month follows the couple's Toronto timezone.
  // Previously it was frozen to October 2026, including in future years.
  const current=isoMonth(month)||eveningLocalDay(new Date().toISOString()).slice(0,7);
@@ -38,7 +48,9 @@ export function eveningHistoryMarkup({sessions=[],members=[],stats=[],historyCha
   cd>=1&&cd<=new Date(Date.UTC(cy,cm,0)).getUTCDate()?candidate:current+'-01';
  const firstDay=new Date(Date.UTC(year,m-1,1)).getUTCDay(),padding=(firstDay+6)%7;
  const days=new Date(Date.UTC(year,m,0)).getUTCDate();
- const archives=(sessions||[]).filter(s=>!!s.started_at).map(s=>({...s,localDay:eveningLocalDay(s.started_at)}));
+ const archives=sessions.filter(s=>typeof s.started_at==='string'&&!!s.started_at)
+  .map(s=>({...s,localDay:eveningLocalDay(s.started_at)}))
+  .filter(s=>s.localDay!==null);
  // The displayed totals must describe the selected Toronto calendar month.
  // Previously they summed EVERY archived year/month while the grid showed one.
  // Only CLOSED evenings count as final non-completions; never penalize open cards.
