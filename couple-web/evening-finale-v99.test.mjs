@@ -47,6 +47,7 @@ test('200-card progress uses stable card IDs, not the D100 roll face',()=>{
   session:null,lastEvening:null,challengeHistory:history
  });
  assert.match(markup,/>3 \/ 200</);
+ assert.match(markup,/Défis distincts/);
 });
 test('200-card progress preserves legacy face-only records and rejects corrupt modern card IDs',()=>{
  const history=[
