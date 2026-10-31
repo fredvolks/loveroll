@@ -306,7 +306,7 @@ test('accepted invitation automatically joins the existing duo after profile com
   tab:'invitation',showAuth:true
  };
  const ctx={
-  state,sessionStorage:{},inviteAcceptanceBusy:false,authFeedbackGeneration:0,
+  state,sessionStorage:{},inviteAcceptanceBusy:false,inviteAcceptanceRequest:null,authFeedbackGeneration:0,
   pendingInviteReference:()=>({kind:'id',value:'72aa640b-2644-4d0d-bcf7-575587d27f31'}),
   verifiedLoveEmail:()=>true,
   rpc:async(name,args)=>{calls.push({name,args});return 'existing-duo';},
@@ -330,7 +330,7 @@ test('same-account relogin cannot finalize stale acceptance after RPC response',
   inviteAccepted:true,inviteAttemptKey:null,passwordRecovery:false,tab:'settings'};
  let clears=0;
  const ctx={
-  state,authFeedbackGeneration:0,sessionStorage:{},inviteAcceptanceBusy:false,
+  state,authFeedbackGeneration:0,sessionStorage:{},inviteAcceptanceBusy:false,inviteAcceptanceRequest:null,
   pendingInviteReference:()=>({kind:'id',value:'72aa640b-2644-4d0d-bcf7-575587d27f31'}),
   verifiedLoveEmail:()=>true,rpc:()=>pending,
   hashToken:async()=>{throw Error('UUID must not be hashed');},
@@ -359,7 +359,7 @@ test('invitation cannot pair before birth date or email verification',async()=>{
   inviteAttemptKey:null,passwordRecovery:false
  };
  const ctx={
-  state,sessionStorage:{},inviteAcceptanceBusy:false,authFeedbackGeneration:0,
+  state,sessionStorage:{},inviteAcceptanceBusy:false,inviteAcceptanceRequest:null,authFeedbackGeneration:0,
   pendingInviteReference:()=>({kind:'id',value:'72aa640b-2644-4d0d-bcf7-575587d27f31'}),
   verifiedLoveEmail:()=>false,
   rpc:async name=>calls.push(name),
