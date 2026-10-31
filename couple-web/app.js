@@ -1822,6 +1822,13 @@ function applyEclatStatus(value){
  }
  return true;
 }
+// Authentication errors require a different response from temporary network
+// failures. This helper only runs after the caller verifies request ownership.
+function invalidateEclatOnAuthRejection(error){
+ if(error?.status!==401&&error?.code!=='PGRST301')return false;
+ applyEclatStatus(null);
+ return true;
+}
 // Supabase may serialize the same status fields in a different key order.
 // Compare values, not object insertion order, so unchanged polls do not
 // reload the private gallery or repaint the Éclat screen every 4.5s.
@@ -1853,6 +1860,9 @@ async function refreshEclatStatus(){
   if(!applyEclatStatus(value))return current()?value:null;
   await refreshEclatHistory();
   return current()?value:null;
+ }catch(error){
+  if(current()&&invalidateEclatOnAuthRejection(error))render();
+  throw error;
  }finally{
   if(latestEclatExplicitRead?.request===request)latestEclatExplicitRead=null;
  }
@@ -5874,10 +5884,7 @@ setInterval(async()=>{
    // A verified authentication rejection is not an ordinary network outage.
    // Discard private history, drafts and sound immediately when Auth rejects
    // the current session; a later successful poll may restore access.
-   if(error?.status===401||error?.code==='PGRST301'){
-    applyEclatStatus(null);
-    render();
-   }
+   if(invalidateEclatOnAuthRejection(error))render();
    console.warn('Synchronisation Éclat',error?.code||'');
   }
  }
