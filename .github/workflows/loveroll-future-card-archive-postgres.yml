@@ -1,0 +1,51 @@
+name: LoveRoll future card archive isolated PostgreSQL
+on:
+  pull_request:
+    paths:
+      - 'couple-web/sql-proposals/future-card-archive-locked.sql'
+      - 'couple-web/sql-proposals/future-card-archive-postgres-setup.sql'
+      - 'couple-web/sql-proposals/future-card-archive-postgres-fixture.sql'
+      - 'couple-web/sql-proposals/future-card-archive-postgres.test.sql'
+      - 'couple-web/future-card-archive-schema.test.mjs'
+      - '.github/workflows/loveroll-future-card-archive-postgres.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  staged-archive:
+    name: Read-only archive/RLS A-B-C test in disposable PostgreSQL 17
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: future_card_archive_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d future_card_archive_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: '5432'
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: future_card_archive_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify staged-only SQL contract
+        run: node --test couple-web/future-card-archive-schema.test.mjs
+      - name: Build fake A-B-C identities in disposable PostgreSQL
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/sql-proposals/future-card-archive-postgres-setup.sql
+      - name: Apply isolated proposal (NEVER real Supabase)
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/sql-proposals/future-card-archive-locked.sql
+      - name: Insert synthetic revision samples as the isolated test owner
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/sql-proposals/future-card-archive-postgres-fixture.sql
+      - name: Enforce member-only visibility and zero client writes
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/sql-proposals/future-card-archive-postgres.test.sql

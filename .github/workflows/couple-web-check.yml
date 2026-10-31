@@ -221,6 +221,8 @@ jobs:
         run: node --test couple-web/future-card-archive-studio.test.mjs
       - name: Compare future card history without mutating drafts
         run: node --test couple-web/future-card-compare.test.mjs
+      - name: Review read-only future archive SQL staging safeguards
+        run: node --test couple-web/future-card-archive-schema.test.mjs
       - name: Verify assignment of future gender-specific and shared cards
         run: node --test couple-web/future-card-audience.test.mjs
       - name: Preview future nights from unique 2-6 minute cards
