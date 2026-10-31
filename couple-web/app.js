@@ -21,6 +21,7 @@ import {eveningDailyAccess} from './evening-daily-policy.mjs?v=20261016-daily100
 import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,snapshotEveningCardBeforeRedraw,isSameEveningResponseContext,isEveningRedrawBusyForCurrentView,ownsEveningRedrawRequest,ownsEveningTimerRecord,ownedSavedEveningTimerSnapshot,redrawTimerRecovery,mayApplyScopedEveningRefresh,ownsCoupleAsyncRead,hasPendingEclatNote} from './evening-private-queue.mjs';
 import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261029-web259';
 import {saveEveningSelection,restoreEveningSelection,clearEveningSelection,safeEveningBookmarkStorage} from './evening-resume.mjs?v=20261031-resume-safari';
+import {readTimerAlertMode,saveTimerAlertMode} from './timer-alert-preference.mjs?v=20261031-safari-timer';
 import {eclatHtml} from './eclat-ui.mjs?v=20261027-web242';
 import {previewMode,previewCanEdit,previewEclatStatus} from './account-preview-mode.mjs?v=20261020-test180';
 import {eclatStage} from './eclat-catalog.mjs?v=20261019-eclat174';
@@ -115,7 +116,7 @@ function isSharedCoupleReady(coupleId,members){
 }
 const challengeTimer={id:null,ownerUserId:null,ownerSessionId:null,durationMs:0,remainingMs:0,deadline:0,running:false,notified:false,autoCompletePending:false,decisionPending:false,mode:'sound'};
 let timerCompletionInFlight=null,timerCompletionRetryAt=0;
-try{const saved=localStorage.getItem('loveroll-timer-mode');if(saved==='vibrate'||saved==='sound')challengeTimer.mode=saved;}catch(e){}
+challengeTimer.mode=readTimerAlertMode();
 
 const kinds={weekly:'Rituel de la semaine',monthly_activity:'Sortie du mois',
  monthly_host:'Qui invite',monthly_restaurant:'Type de restaurant'};
@@ -5512,7 +5513,8 @@ async function handle(action,element){
    if(parts[0]==='sound'&&!await unlockLoveRollSounds())
     notify('Autorise le son du navigateur avec un toucher, puis utilise Tester.');
    challengeTimer.mode=parts[0];
-   localStorage.setItem('loveroll-timer-mode',parts[0]);
+   if(!saveTimerAlertMode(parts[0]))
+    notify('Le signal reste actif pour cette visite, mais sa préférence ne peut pas être conservée sur cet appareil.');
    render();return;
  }
  if(verb==='timer-sound-test'){
