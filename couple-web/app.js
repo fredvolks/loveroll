@@ -26,6 +26,7 @@ import {previewMode,previewCanEdit,previewEclatStatus} from './account-preview-m
 import {eclatStage} from './eclat-catalog.mjs?v=20261019-eclat174';
 import {createEclatAudio} from './eclat-audio.mjs?v=20261028-privacy250';
 import {futureCoupleStyleMix,playStyleLabel} from './play-style.mjs?v=20261018-styles149';
+import {readSessionLength,saveSessionLength,sessionLengthSettingsHtml} from './session-duration-preference.mjs?v=20261031-length262';
 import {cycleIntensityQuestionnaireHtml,ownsCycleIntensityAnswer} from './cycle-questionnaire.mjs?v=20261031-cycle261';
 import {DICE_WEIGHT_CONFIG,configuredDiceWeights,parseDiceWeightInputs} from './dice-weighting.mjs?v=20261018-weights146';
 import {premiumEveningHtml,updateEveningCategoryUi} from './premium-evening.mjs?v=20261028-lr027-web254';
@@ -3254,6 +3255,7 @@ function renderSettings(){
   '<label class="settings-inline-name"><span>Prénom affiché</span>'+
   '<input id="profile-name" type="text" autocomplete="given-name" value="'+safe(state.profile.display_name)+'" maxlength="80" aria-label="Prénom affiché"></label>'+
   profileGenderSelect(state.profile.gender)+profilePlayStyleSelect(state.profile.play_style)+
+  sessionLengthSettingsHtml(readSessionLength(state.user?.id,localStorage))+
   '<div class="settings-birthday-edit"><span>Mon anniversaire</span>'+monthDayInputs('settings-birthday',state.profile.birthday_md)+'</div>'+
   '<label>Courriel du compte<input type="email" readonly aria-readonly="true" value="'+safe(state.user.email||'')+'" autocomplete="email"></label>'+
   (state.testModeEligible?
@@ -5433,6 +5435,13 @@ async function handle(action,element){
   if(state.session)try{sessionStorage.setItem('loveroll-category-'+state.session.id,parts[0]);}catch{}
   return;
  }
+  if(verb==='session-length'){
+   // A personal planning hint, not an instruction to end the server session.
+   if(!state.user?.id||!state.profile)throw Error('Compte requis.');
+   if(!saveSessionLength(state.user.id,parts[0],localStorage))
+    throw Error('Impossible de sauvegarder la durée souhaitée sur cet appareil.');
+   render();return;
+  }
   if(verb==='timer-mode'){
    if(parts[0]!=='vibrate'&&parts[0]!=='sound')throw Error('Signal inconnu');
    if(parts[0]==='vibrate'&&typeof navigator.vibrate!=='function'){
