@@ -735,7 +735,9 @@ function adoptAuthenticatedIdentity(nextUser){
   latestEclatAudioOwner=null;eclatAudio.stop();state.eclatMusic=false;
   latestEclatHistoryRead=null;latestEclatStatusRead=null;latestEclatActionRequest=null;
   state.eclat=null;state.eclatHistory=[];state.eclatHistoryCouple=null;
-  state.eclatHistoryUserId=null;
+  state.eclatHistoryUserId=null;state.eclatHistoryError=false;
+  // The completed-coffret banner belongs to the previous couple too.
+  state.eclatFinished=null;
   state.profile=null;state.coupleId=null;state.couple=null;state.members=[];
   // Recovery and verification UI also belongs to the previous login.
   state.passwordRecovery=false;state.emailVerificationPending=false;
