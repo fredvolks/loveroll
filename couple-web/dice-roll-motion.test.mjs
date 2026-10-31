@@ -214,3 +214,72 @@ test('Auth navigation invalidation releases a stale die without displaying its r
   assert.ok(renders>=2,'The active UI is restored after the abandoned roll');
  }
 });
+
+test('Weekly official D6 cannot use a former account confirmation or receipt',async()=>{
+ const {runInNewContext}=await import('node:vm');
+ const from=appSource.indexOf("if(verb==='roll'){");
+ const to=appSource.indexOf("if(verb==='new-session'){",from);
+ assert.ok(from>=0&&to>from,'Weekly production route must exist');
+ const route=appSource.slice(from,to);
+ const fixture=()=>{
+  let resolveConfirm,resolveRpc;
+  const confirmation=new Promise(resolve=>{resolveConfirm=resolve;});
+  const pending=new Promise(resolve=>{resolveRpc=resolve;});
+  const state={user:{id:'alice'},coupleId:'duo-a',members:[{user_id:'alice'}],
+   weekly:null,diceStatus:null,rollAnimationFace:null};
+  const calls={writes:[],renders:0,refresh:0,notices:0};
+  const scope={state,parts:['weekly'],authFeedbackGeneration:2,latestDiceRollRequest:null,
+   isSharedCoupleReady:()=>true,
+   premiumConfirm:()=>confirmation,
+   rpc:(method,args)=>{calls.writes.push({method,args});return pending;},
+   render:()=>{calls.renders++;},
+   refreshShared:async()=>{calls.refresh++;},
+   notify:()=>{calls.notices++;},
+   setTimeout:callback=>callback(),
+   window:{matchMedia:()=>({matches:true})},ROLL_TOTAL_MS
+  };
+  const run=runInNewContext('(async verb=>{'+route+'})',scope);
+  return {state,scope,calls,run:()=>run('roll'),resolveConfirm,resolveRpc,
+   switchAccount:()=>{
+    state.user={id:'bob'};state.coupleId='duo-b';
+    scope.authFeedbackGeneration++;scope.latestDiceRollRequest=null;
+    state.diceStatus=null;state.rollAnimationFace=null;
+   }};
+ };
+ const lateConfirm=fixture(),asked=lateConfirm.run();
+ lateConfirm.switchAccount();
+ lateConfirm.resolveConfirm(true);
+ await asked;
+ assert.equal(lateConfirm.calls.writes.length,0,'Old confirmation never calls RPC');
+ assert.equal(lateConfirm.state.weekly,null);
+
+ const lateResult=fixture(),started=lateResult.run();
+ lateResult.resolveConfirm(true);
+ await Promise.resolve();
+ assert.equal(lateResult.calls.writes.length,1);
+ assert.equal(lateResult.calls.writes[0].method,'roll_couple_once');
+ assert.equal(lateResult.calls.writes[0].args.p_couple,'duo-a');
+ lateResult.switchAccount();
+ lateResult.resolveRpc({face:5});
+ await started;
+ assert.equal(lateResult.state.weekly,null,'Former D6 cannot enter Bob’s cache');
+ assert.equal(lateResult.calls.notices,0);
+ assert.equal(lateResult.calls.refresh,0,'Former D6 cannot hydrate Bob’s screen');
+ assert.equal(lateResult.state.diceStatus,null);
+
+ const ok=fixture(),valid=ok.run();
+ ok.resolveConfirm(true);await Promise.resolve();
+ ok.resolveRpc({face:3});await valid;
+ assert.equal(ok.state.weekly.face,3);
+ assert.equal(ok.calls.refresh,1);
+ assert.equal(ok.calls.notices,1);
+ assert.equal(ok.state.diceStatus,null);
+
+ const bad=fixture(),invalid=bad.run();
+ bad.resolveConfirm(true);await Promise.resolve();
+ bad.resolveRpc({face:99});
+ await assert.rejects(invalid,/serveur n’a pas confirmé/);
+ assert.equal(bad.state.weekly,null,'Unconfirmed D6 faces are never shown');
+ assert.equal(bad.state.diceStatus,null);
+ assert.equal(bad.calls.notices,0);
+});
