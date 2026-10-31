@@ -35,16 +35,16 @@ export function sessionLengthSettingsHtml(value='libre'){
 
 // Compact pre-session choice. This changes only the local preference; the
 // official D6/D100 and evening close conditions are never derived from it.
+// Compact pre-session native selector: keep the two approved Soirée buttons
+// and D100 artwork on a single mobile screen. This is only a local hint.
 export function sessionLengthChooserHtml(value='libre'){
  const selected=normalizeSessionLength(value);
- const buttons=SESSION_LENGTH_OPTIONS.map(duration=>{
-  const active=duration===selected;
+ const options=SESSION_LENGTH_OPTIONS.map(duration=>{
   const label=duration==='libre'?'Libre':duration+' min';
-  return '<button type="button" class="evening-length-option'+
-   (active?' is-selected':'')+'" data-action="session-length:'+duration+'"'+
-   ' aria-pressed="'+active+'">'+label+'</button>';
+  return '<option value="'+duration+'"'+(duration===selected?' selected':'')+'>'+label+'</option>';
  }).join('');
- return '<div class="evening-length-choice" role="group" aria-label="Durée souhaitée de la soirée">'+
-  '<p class="evening-length-caption">Durée souhaitée <small>· repère personnel, sans arrêt automatique</small></p>'+
-  '<div class="evening-length-options">'+buttons+'</div></div>';
+ return '<label class="evening-length-compact">'+
+  '<span>Durée souhaitée</span>'+
+  '<select data-session-length-select="true" aria-label="Durée souhaitée de ma soirée">'+
+   options+'</select></label>';
 }
