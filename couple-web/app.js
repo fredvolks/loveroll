@@ -1775,6 +1775,13 @@ function applyEclatStatus(value){
   eclatAudio.stop();state.eclatMusic=false;
   return false;
  }
+ // A finished or cancelled session retains access to its history, but the
+ // soundtrack belongs to the active session. Stop it as soon as the RPC
+ // confirms the session is no longer active, before a slow history refresh.
+ if(value.active===false){
+  latestEclatAudioOwner=null;
+  eclatAudio.stop();state.eclatMusic=false;
+ }
  return true;
 }
 async function refreshEclatStatus(){
