@@ -1,0 +1,83 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {runInNewContext} from 'node:vm';
+import {ownsCoupleAsyncRead} from './evening-private-queue.mjs';
+
+const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+const start=app.indexOf('let latestEclatHistoryRead=null,latestEclatStatusRead=null;');
+const end=app.indexOf('function renderEclat(){',start);
+assert.ok(start>=0&&end>start,'real Éclat read and action implementation exists');
+const source=app.slice(start,end);
+
+function deferred(){
+ let resolve,reject;
+ const promise=new Promise((ok,fail)=>{resolve=ok;reject=fail;});
+ return {promise,resolve,reject};
+}
+function harness({rpc=async()=>null,loadEclatHistory=async()=>[]}={}){
+ const state={user:{id:'alice'},coupleId:'couple-a',tab:'eclat',
+  members:[{id:'alice'},{id:'bob'}],eclat:{id:'initial'},
+  eclatHistory:[{id:'initial-history'}],
+  eclatHistoryCouple:'couple-a',eclatHistoryUserId:'alice'};
+ const warnings=[];
+ const ctx={state,authFeedbackGeneration:1,ownsCoupleAsyncRead,
+  client:{},rpc,loadEclatHistory,
+  isSharedCoupleReady:()=>true,
+  console:{warn:(...args)=>warnings.push(args)}};
+ const funcs=runInNewContext(source+
+  ';({refreshEclatHistory,refreshEclatStatus,beginEclatAction,ownsEclatAction,applyEclatActionResult})',ctx);
+ return {state,ctx,warnings,...funcs};
+}
+
+test('LR-026: delayed Éclat history does not cross same-user reauthentication',async()=>{
+ const oldRead=deferred();
+ let requests=0;
+ const h=harness({loadEclatHistory:()=>++requests===1?
+  oldRead.promise:Promise.resolve([{id:'current-history'}])});
+ const old=h.refreshEclatHistory();
+ h.ctx.authFeedbackGeneration=2;
+ oldRead.resolve([{id:'old-private-history'}]);
+ await old;
+ assert.deepEqual(h.state.eclatHistory,[{id:'initial-history'}]);
+ await h.refreshEclatHistory();
+ assert.deepEqual(Array.from(h.state.eclatHistory,x=>x.id),['current-history']);
+ assert.equal(requests,2);
+});
+
+test('LR-026: delayed Éclat status after same-user login is ignored',async()=>{
+ const waiting=deferred();
+ const h=harness({rpc:()=>waiting.promise});
+ const old=h.refreshEclatStatus();
+ h.ctx.authFeedbackGeneration=2;
+ waiting.resolve({id:'old-private-status'});
+ assert.equal(await old,null);
+ assert.equal(h.state.eclat.id,'initial');
+ assert.deepEqual(h.state.eclatHistory,[{id:'initial-history'}]);
+});
+
+test('LR-026: old Éclat action receipt cannot mutate reauthenticated state',()=>{
+ const h=harness();
+ const previous=h.beginEclatAction();
+ assert.ok(previous);
+ assert.equal(h.ownsEclatAction(previous),true);
+ h.ctx.authFeedbackGeneration=2;
+ assert.equal(h.ownsEclatAction(previous),false);
+ assert.equal(h.applyEclatActionResult({id:'former-receipt'},previous),false);
+ assert.equal(h.state.eclat.id,'initial');
+ const current=h.beginEclatAction();
+ assert.ok(current);
+ assert.equal(h.applyEclatActionResult({id:'latest-receipt'},current),true);
+ assert.equal(h.state.eclat.id,'latest-receipt');
+});
+
+test('LR-026: old history error cannot alter a fresh login error state',async()=>{
+ const oldRead=deferred();
+ const h=harness({loadEclatHistory:()=>oldRead.promise});
+ const previous=h.refreshEclatHistory();
+ h.ctx.authFeedbackGeneration=2;
+ oldRead.reject(new Error('expired login'));
+ await previous;
+ assert.equal(h.state.eclatHistoryError,undefined);
+ assert.equal(h.warnings.length,0);
+});
