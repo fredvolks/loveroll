@@ -4442,6 +4442,8 @@ async function handle(action,element){
  }
  if(verb==='show-landing'){authFeedbackGeneration++;keepAuthModeInUrl(null);state.showDiscover=false;state.showAuth=false;render();return;}
  if(verb==='google'&&window.LoveRollNativeAuth?.googleSignIn){
+  // A different Auth provider supersedes any pending email/password reply.
+  authFeedbackGeneration++;
   try{
    state.authNotice='Connexion Google en cours… Sélectionnez votre compte dans la fenêtre Android.';
    const message=id('auth-form-feedback');
@@ -4455,6 +4457,8 @@ async function handle(action,element){
   return;
  }
  if(verb==='google'||verb==='apple'){
+  // Never let an older password response override a newer provider choice.
+  authFeedbackGeneration++;
   sessionStorage.setItem('authStarted','1');
   const redirectUrl=new URL(CONFIG.siteUrl||location.origin+location.pathname);
   const pendingId=sessionStorage.getItem('pendingInviteId');
