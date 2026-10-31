@@ -1355,7 +1355,10 @@ async function saveCurrentEclatNote(momentDone){
   if(label)label.textContent='Non enregistré. Ton texte est conservé ici; réessaie.';
   throw error;
  }finally{draft.saving=false;}
- return current()?key:null;
+ // A user may keep typing while the network saves the prior snapshot.
+ // The old snapshot was saved, but the current draft is STILL dirty.
+ // Never let « note-play » or « Choisir » advance as if those edits were saved.
+ return current()&&draft.saved?key:null;
 }
 // Every Éclat response is tied to both the account and the couple.
 // Request tokens also stop an older poll from rolling back a newer status.
