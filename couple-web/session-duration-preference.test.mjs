@@ -127,3 +127,58 @@ test('A delayed new-session RPC cannot navigate another account or couple',async
  assert.equal(missing.state.tab,'home');
 });
 
+
+test('Delayed close and finish responses cannot repaint a replacement login',async()=>{
+ const {runInNewContext}=await import('node:vm');
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const routes=[
+  ["finish-session","if(verb==='finish-session'){","if(verb==='cancel-session'){",
+   'finish_couple_session','session'],
+  ["evening-close-confirm","if(verb==='evening-close-confirm'){",
+   "if(verb==='evening-challenge'||verb==='evening-list'){",
+   'close_love_evening_preserve','evening-calendar']
+ ];
+ for(const [verb,start,end,rpcName,targetTab] of routes){
+  const from=source.indexOf(start),to=source.indexOf(end,from+start.length);
+  assert.ok(from>0&&to>from,'Production route missing: '+verb);
+  const block=source.slice(from,to);
+  function harness(){
+   let resolve;
+   const pending=new Promise(done=>{resolve=done;});
+   const state={
+    user:{id:'alice'},coupleId:'duo-a',diceStatus:null,tab:'home',
+    session:{id:'night-one',started_at:'2026-10-16T19:00:00Z'},
+    chosenSession:null,confirmCancel:true,showEveningChallenges:true
+   };
+   const calls={writes:[],refresh:0};
+   const scope={state,authFeedbackGeneration:5,
+    rpc:(name,args)=>{calls.writes.push({name,args});return pending;},
+    eveningLocalDay:()=> '2026-10-16',month:()=> '2026-10',
+    today:()=> '2026-10-16',
+    refreshAndShow:async()=>{calls.refresh++;}
+   };
+   const run=runInNewContext('(async verb=>{'+block+'})',scope);
+   return {state,scope,calls,resolve,execute:()=>run(verb)};
+  }
+  const success=harness(),ok=success.execute();
+  assert.equal(success.calls.writes[0].name,rpcName);
+  assert.equal(success.calls.writes[0].args.p_session,'night-one');
+  success.resolve(null);await ok;
+  assert.equal(success.state.tab,targetTab);
+  assert.equal(success.calls.refresh,1);
+  for(const change of [
+   h=>{h.state.user={id:'bob'};},
+   h=>{h.state.coupleId='duo-b';},
+   h=>{h.scope.authFeedbackGeneration++;},
+   h=>{h.state.session={id:'night-two'};}
+  ]){
+   const h=harness(),work=h.execute();
+   change(h);h.resolve(null);await work;
+   assert.equal(h.state.tab,'home','The new account keeps its own screen');
+   assert.equal(h.calls.refresh,0,'No stale data refresh');
+   assert.equal(h.state.chosenSession,null);
+   assert.equal(h.state.confirmCancel,true);
+   assert.equal(h.state.eveningCalendarDate,undefined);
+  }
+ }
+});
