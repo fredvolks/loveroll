@@ -12,6 +12,17 @@ const torontoDate=instant=>{
  const value=key=>parts.find(p=>p.type===key)?.value;
  return value('year')+'-'+value('month')+'-'+value('day');
 };
+// Shared month/day grouping for the couple archive and monthly success rate.
+// Officially counted and closed evenings belong to their Québec closure day.
+// Other sessions (in progress or interrupted) remain on their starting day.
+// This is display-only and never changes the server's weekly quota rules.
+export function eveningArchiveDay(session){
+ if(!session||typeof session!=='object'||Array.isArray(session))return null;
+ const started=torontoDate(session.started_at);
+ if(session.counted===true&&session.finished_at)
+  return torontoDate(session.finished_at)||started;
+ return started;
+}
 export function mondayOf(date){
  if(!/^\d{4}-\d{2}-\d{2}$/.test(date||''))return null;
  const time=new Date(date+'T12:00:00Z');
@@ -55,7 +66,7 @@ export function monthlyChallengeSuccess({
  const rows=value=>Array.isArray(value)?value.filter(x=>
   x&&typeof x==='object'&&!Array.isArray(x)):[];
  const chosenSessions=rows(sessions).filter(s=>
-  s.id!=null&&torontoDate(s.started_at)?.slice(0,7)===month);
+  s.id!=null&&eveningArchiveDay(s)?.slice(0,7)===month);
  const sessionsById=new Map(chosenSessions.map(s=>[s.id,s]));
  const passes=rows(passQuota);
  const history=rows(historyChallenges);
