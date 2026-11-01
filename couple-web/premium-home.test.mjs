@@ -394,3 +394,27 @@ test('LR-ACCUEIL-001: active evening remains primary over an outdated invitation
  assert.match(html,/data-action="resume-evening"/);
  assert.doesNotMatch(html,/Une invitation vous attend|Répondre à l’invitation/);
 });
+
+test('LR-ACCUEIL-001: own official D6 awaits partner without revealing a face or private challenge',()=>{
+ const weekly={face:2};
+ const turns={ready:false,reason:'personal-rolls'};
+ const readySelf=premiumHomeHtml({weekly,activeEvening:true,
+  ownEveningD6Ready:true,turn:turns});
+ assert.match(readySelf,/En attente du partenaire/);
+ assert.match(readySelf,/Ton dé est enregistré/);
+ assert.match(readySelf,/data-action="resume-evening"/);
+ assert.doesNotMatch(readySelf,/face personnelle|Ton résultat : [1-6]|Défi personnel :/);
+ const notRolled=premiumHomeHtml({weekly,activeEvening:true,
+  ownEveningD6Ready:false,turn:turns});
+ assert.match(notRolled,/Soirée commencée/);
+ assert.match(notRolled,/Préparez vos dés personnels/);
+ assert.doesNotMatch(notRolled,/En attente du partenaire/);
+ const readyBoth=premiumHomeHtml({weekly,activeEvening:true,ownEveningD6Ready:true,
+  turn:{ready:true,targets:{},remaining:{},completed:{}}});
+ assert.match(readyBoth,/Soirée en cours/);
+ assert.doesNotMatch(readyBoth,/En attente du partenaire/);
+ const noSession=premiumHomeHtml({weekly,ownEveningD6Ready:true});
+ assert.doesNotMatch(noSession,/En attente du partenaire/);
+ assert.match(app,/ownEveningD6Ready:!!activeEvening&&!!state\.user\?\.id/);
+ assert.match(app,/r\.user_id===state\.user\.id/);
+});
