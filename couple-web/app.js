@@ -3063,6 +3063,10 @@ async function handle(action,element){
   if(favoriteWriteBusy)return;
   const userId=state.user?.id,coupleId=state.coupleId;
   if(!userId||!coupleId)throw Error('Connexion requise.');
+  const favoriteFocusOrigin=verb==='evening-favorite-replace'?state.favoriteReplace:
+   verb==='evening-favorite'||verb==='evening-favorite-calendar'?
+    {source:verb==='evening-favorite-calendar'?'calendar':'session',challengeId:parts[0]}:null;
+  let favoriteWriteSucceeded=false;
   let key,action,oldFavorite=null;
   if(verb==='evening-favorite'||verb==='evening-favorite-calendar'){
    const fromCalendar=verb==='evening-favorite-calendar';
@@ -3106,6 +3110,7 @@ async function handle(action,element){
     p_replace_category:oldFavorite?.category||null,
     p_replace_card_id:oldFavorite?.cardId||null
    });
+   favoriteWriteSucceeded=true;
    if(state.user?.id!==userId||state.coupleId!==coupleId)return;
    state.favoriteReplace=null;
    try{
@@ -3122,7 +3127,12 @@ async function handle(action,element){
    }
   }finally{
    favoriteWriteBusy=false;
-   if(state.user?.id===userId&&state.coupleId===coupleId)render();
+   if(state.user?.id===userId&&state.coupleId===coupleId){
+    render();
+    if(favoriteWriteSucceeded)focusEveningFavoriteOrigin(favoriteFocusOrigin);
+    else if(state.favoriteReplace)
+     root.querySelector('[data-action^="evening-favorite-replace:"]:not([disabled])')?.focus();
+   }
   }
   return;
  }
