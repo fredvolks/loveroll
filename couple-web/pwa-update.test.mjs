@@ -238,9 +238,12 @@ test('PWA release refreshes the actual iPad D100 CSS and ONE shared stage module
  const home=read('premium-home.mjs');
  const evening=read('soiree-home-template.mjs');
  assert.ok(html.includes('ipad-soiree-one-photo-v237.css?v='+ipadTag));
- assert.ok(app.includes('evening-d100-template.mjs?v='+ipadTag));
- assert.ok(evening.includes('evening-d100-template.mjs?v='+ipadTag),
-  'Soirée and app must share exactly one D100 module instance');
+ // The iPad STAGE retains its tested image version. The D100 help content
+ // changed separately: both entry points must share its new module instance.
+ const d100Tag='20261031-d100-info274';
+ assert.ok(app.includes('evening-d100-template.mjs?v='+d100Tag));
+ assert.ok(evening.includes('evening-d100-template.mjs?v='+d100Tag),
+  'Soirée and app must share exactly one updated D100 module instance');
  for(const [source,name] of [[d100,'D100'],[d6,'D6'],[home,'Accueil'],[evening,'Soirée']]){
   assert.ok(source.includes('shared-stage.mjs?v='+ipadTag),name+' must use refreshed iPad scene');
  }

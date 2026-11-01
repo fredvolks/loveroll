@@ -308,7 +308,7 @@ test('D100 info 274 is loaded by online/PWA entry points and pre-cached offline'
  const index=readFileSync(new URL('./index.html',import.meta.url),'utf8');
  const worker=readFileSync(new URL('./service-worker.js',import.meta.url),'utf8');
  assert.match(app,/evening-d100-template\.mjs\?v=20261031-d100-info274/);
- assert.match(index,/app\.js\?v=20261031-d100-info274/);
+ assert.match(index,/app\.js\?v=20261031-web274/);
  assert.match(worker,/const CACHE='loveroll-static-v274'/);
  assert.match(worker,/'\.\/evening-d100-template\.mjs'/);
  assert.match(worker,/fetch\(req,\{cache:'no-store'\}\)/);

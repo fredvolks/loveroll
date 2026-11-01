@@ -9,7 +9,7 @@ import {eclatNoteKey,loadEclatNote,saveEclatNote} from './eclat-guidance.mjs?v=2
 import {captureEclatEditorFocus,restoreEclatEditorFocus} from './eclat-editor-focus.mjs?v=20261031-focus';
 import {loadEclatHistory} from './eclat-history.mjs?v=20261022-home228';
 import {enhanceGoldBacks} from './gold-arrows.mjs?v=20261022-home228';
-import {fitSoireeHomeTemplate,fitRubyCalendar} from './soiree-home-template.mjs?v=20261031-web273';
+import {fitSoireeHomeTemplate,fitRubyCalendar} from './soiree-home-template.mjs?v=20261031-web274';
 import { marketingHtml,authHtml,profileHtml,inviteProfileHtml,emailConfirmationHtml,profileGenderSelect,profilePlayStyleSelect,matchHtml,parseMonthDay,monthDayInputs } from './onboarding.mjs?v=20261018-style148';
 import {editorialHeader,editorialRow,editorialIcon} from './editorial-ui.mjs?v=20261017-ritual130';
 import {cardLibraryHtml,monthlyEditorHtml,adventEditorHtml,specialEditorHtml,importEditorHtml} from './editorial-editors.mjs?v=20261017-ritual130';
@@ -67,7 +67,7 @@ import {invitationStatus,coupleInvitationView,canConfirmInvitationShare,coupleSt
 import {premiumConfirm,premiumCopyLink,focusInlineLoveDialog} from './premium-dialogs.mjs?v=20261017-complete127';
 
 
-const WEB_RELEASE='2026-10-31.273';
+const WEB_RELEASE='2026-10-31.274';
 const root=document.querySelector('#app');
 const enc=new TextEncoder(),dec=new TextDecoder();
 let diceCleanup=[],renderToken=0;
@@ -507,7 +507,7 @@ function frame(body,title='LOVEROLL',subtitle='Un jeu intime, juste pour vous de
  // never a fabricated pip result. Actual face comes from Supabase after rolling.
  const canvases=[...root.querySelectorAll('canvas[data-dice-sides]')];
  if(canvases.length){
-  import('./dice3d.js?v=20261031-web273').then(({dieOn})=>{
+  import('./dice3d.js?v=20261031-web274').then(({dieOn})=>{
    if(token!==renderToken)return;
    for(const canvas of canvases){
     if(!canvas.isConnected||canvas.loveRollDie)continue;
@@ -6848,6 +6848,6 @@ start().catch(error=>{fail(error);window.LoveRollBoot?.showFailure();});
 
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   window.addEventListener('load', () =>
-    navigator.serviceWorker.register('./service-worker.js?v=20261031-web273',
+    navigator.serviceWorker.register('./service-worker.js?v=20261031-web274',
      {scope:'./',updateViaCache:'none'}).then(reg=>reg.update()).catch(console.warn));
 }
