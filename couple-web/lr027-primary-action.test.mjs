@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {premiumEveningHtml} from './premium-evening.mjs';
+import {premiumEveningHtml,canRollPersonalEveningD6} from './premium-evening.mjs';
 
 const members=[{user_id:'a',name:'Alice'},{user_id:'b',name:'Bob'}];
 const base={session:{id:'current'},members,me:'a',status:{both_ready:true,my_rolled:true,partner_rolled:true},
@@ -108,4 +108,28 @@ test('official personal D6 row blocks a second roll even when status is stale',(
  });
  assert.match(invalid,/data-action="my-d6"/,
   'An invalid placeholder is not a server-confirmed roll');
+});
+
+test('stale D6 tap cannot trigger another official server roll',()=>{
+ const base={session:{id:'s1',finished_at:null},userId:'a',rolls:[],status:{both_ready:false,my_rolled:false}};
+ assert.equal(canRollPersonalEveningD6(base),true);
+ assert.equal(canRollPersonalEveningD6({...base,rolls:[{user_id:'a',face:3}]}),false,
+  'A confirmed personal face closes the action even with stale RPC status');
+ assert.equal(canRollPersonalEveningD6({...base,rolls:[{user_id:'b',face:5}]}),true,
+  'Partner D6 must not block our own first roll');
+ assert.equal(canRollPersonalEveningD6({...base,rolls:[{user_id:'a',face:0}]}),true,
+  'Unknown or invalid face must not be mistaken for a result');
+ assert.equal(canRollPersonalEveningD6({...base,status:{my_rolled:true}}),false);
+ assert.equal(canRollPersonalEveningD6({...base,status:{both_ready:true}}),false);
+ assert.equal(canRollPersonalEveningD6({...base,rolling:true}),false);
+ assert.equal(canRollPersonalEveningD6({...base,session:{id:'s1',finished_at:'2026-11-01T12:00:00Z'}}),false);
+ assert.equal(canRollPersonalEveningD6({...base,session:null}),false);
+ assert.equal(canRollPersonalEveningD6({...base,userId:null}),false);
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const handler=app.slice(app.indexOf("if(verb==='my-d6'){"),app.indexOf("if(verb==='category'){"));
+ assert.match(handler,/playableSessionForWeekly\(state\.session,state\.weekly\)/);
+ assert.match(handler,/if\(state\.diceStatus\)return/);
+ assert.match(handler,/canRollPersonalEveningD6\(\{session,status:state\.rollStatus/);
+ assert.ok(handler.indexOf('canRollPersonalEveningD6(')<handler.indexOf("rpc('roll_my_evening_d6'"),
+  'Official RPC must run only after the shared guard');
 });
