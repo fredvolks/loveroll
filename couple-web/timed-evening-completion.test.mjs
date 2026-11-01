@@ -34,6 +34,32 @@ test('Completes shared Soirée only if server board is finished',async()=>{
  assert.deepEqual(result,{outcome:'completed',finished:true});
  assert.deepEqual(calls,['answer_challenge','my_love_evening_board','finish_couple_session']);
 });
+test('P0 simultaneous closure needs a persisted matching session timestamp',async()=>{
+ const conflict=Error('concurrent close');
+ const rpc=async name=>{
+  if(name==='my_love_evening_board')return {finished:true};
+  if(name==='finish_couple_session')throw conflict;
+ };
+ const run=row=>completeTimedEveningChallenge({
+  challenge:card,userId:'alice',sessionId:'session-a',rpc,
+  query:async()=>row===null?[]:[row]
+ });
+ for(const row of [
+  null,{id:'other',finished_at:'2026-10-30T19:00:00Z'},
+  {id:'session-a',finished_at:true},
+  {id:'session-a',finished_at:'closed'},
+  {id:'session-a',finished_at:'2026-10-30'},
+  {id:'session-a',finished_at:''},
+  {finished_at:'2026-10-30T19:00:00Z'}
+ ]){
+  await assert.rejects(run(row),error=>error===conflict,
+   'only the original server session can confirm concurrent closure');
+ }
+ const valid={id:'session-a',finished_at:'2026-10-30T19:00:00.123+00:00'};
+ const result=await run(valid);
+ assert.deepEqual(result,{outcome:'completed',finished:true});
+});
+
 test('P0 timer cannot close a couple session on a malformed board response',async()=>{
  for(const finished of ['false','true',1,0,{},[],null,undefined]){
   const calls=[];

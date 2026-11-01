@@ -72,7 +72,14 @@ export async function completeTimedEveningChallenge({
    // A simultaneous confirmation by the other partner can close it first.
    const previous=(await query('couple_sessions',{eq:{id:sessionId}}))?.[0];
    if(!ownsRequest())return stale();
-   if(!previous?.finished_at)throw error;
+   // A conflicting device may have closed THIS night first. Only its
+   // matching persisted session and an actual timestamp prove that fact.
+   // A truthy string, unrelated row or partial snapshot is not a receipt.
+   const stamp=previous?.finished_at;
+   const closed=previous?.id===sessionId&&typeof stamp==='string'&&
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(stamp)&&
+    Number.isFinite(Date.parse(stamp));
+   if(!closed)throw error;
   }
  }
  if(!ownsRequest())return stale();
