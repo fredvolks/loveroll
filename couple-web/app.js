@@ -5,7 +5,7 @@ import {askEveningCategoryConfirmation,categoryConfirmEnabled,saveCategoryConfir
 import {soundEnabled,setSoundEnabled,setLoveRollSoundUser,unlockLoveRollSounds,playLoveRollSound,soundSettingsHtml} from './loveroll-sounds.mjs?v=20261028-privacy250';
 import {isAcceptedTimedEveningChallenge,isSameCompletedEveningChallenge,completeTimedEveningChallenge,timedEveningTimerControl,refreshAfterTimedEveningConfirmation,refreshAfterConfirmedWrite,timerBelongsToUser,canControlTimedEveningChallenge} from './timed-evening-completion.mjs?v=20261101-timer260';
 import {fitSurpriseMinimal} from './surprise-minimal.mjs?v=20261022-home228';
-import {createBookingMutationGate} from './monthly-geo-ui.mjs?v=20261101-booking261';
+import {createBookingMutationGate,geoLookupAfterRefresh} from './monthly-geo-ui.mjs?v=20261101-booking261';
 import {eclatNoteKey,loadEclatNote,saveEclatNote} from './eclat-guidance.mjs?v=20261022-home228';
 import {loadEclatHistory} from './eclat-history.mjs?v=20261022-home228';
 import {enhanceGoldBacks} from './gold-arrows.mjs?v=20261022-home228';
@@ -993,16 +993,23 @@ async function refreshShared(){
  state.specialEventKeys=Array.isArray(keys)?keys:[];
  state.weeklyRollHistory=rolls.filter(r=>r.kind==='weekly');
  state.weekly=rolls.find(r=>r.kind==='weekly'&&r.key===week());
+ const previousRollId=state.monthly?.monthly_activity?.id;
+ const previousGeoLookup=state.geoLookup;
  state.monthly={};
  for(const r of rolls.filter(r=>r.key===month()))state.monthly[r.kind]=r;
  const activeMonthlyRoll=state.monthly.monthly_activity;
+ if(activeMonthlyRoll?.id!==previousRollId){
+  // An editor started for last month's invitation cannot save on this roll.
+  state.geoBookingEdit=false;
+ }
  if(activeMonthlyRoll){
   const [places,bookings]=await Promise.all([
    query('love_monthly_places',{eq:{roll_id:activeMonthlyRoll.id}}),
    query('love_monthly_reservations',{eq:{roll_id:activeMonthlyRoll.id}})
   ]);
   state.geoVenue=places[0]||null;state.geoReservation=bookings[0]||null;
-  state.geoLookup=state.geoVenue?.state||'idle';
+  state.geoLookup=geoLookupAfterRefresh({rollId:activeMonthlyRoll.id,
+   previousRollId,venue:state.geoVenue,previousLookup:previousGeoLookup});
  }else{state.geoVenue=null;state.geoReservation=null;state.geoLookup='idle';state.geoBookingEdit=false;}
  state.session=sessions.find(s=>s.finished_at===null)||null;
  state.sessions=sessions;state.events=events;state.journal=diary;state.advent=advents;state.adventServerDate=adventServerDate;
