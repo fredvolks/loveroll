@@ -138,9 +138,20 @@ export function coupleHomeStats(challenges=[],sessions=[],members=[],now=new Dat
  const rows=value=>Array.isArray(value)?value.filter(row=>
   row&&typeof row==='object'&&!Array.isArray(row)):[];
  const safeSessions=rows(sessions);
- const safeMembers=rows(members);
+ const safeMembers=rows(members).filter(m=>typeof m.user_id==='string'&&m.user_id);
  const byId=new Map(safeSessions.filter(s=>s.id!=null).map(s=>[s.id,s]));
- const completed=rows(challenges).filter(c=>c.status==='completed');
+ // The same saved challenge can appear twice in incremental history snapshots.
+ // Count a persisted challenge ID once; do not collapse distinct legacy rows
+ // which lack an ID. This affects display statistics only, never the draws.
+ const seenChallenges=new Set();
+ const completed=rows(challenges).filter(c=>{
+  if(c.status!=='completed')return false;
+  if(typeof c.id==='string'&&c.id){
+   if(seenChallenges.has(c.id))return false;
+   seenChallenges.add(c.id);
+  }
+  return true;
+ });
  const monthDone=completed.filter(c=>{
   const session=byId.get(c.session_id);
   return monthKeyToronto(session?.finished_at||c.created_at)===month;
@@ -154,7 +165,7 @@ export function coupleHomeStats(challenges=[],sessions=[],members=[],now=new Dat
  const sensual=monthDone.filter(c=>String(c.category||'').toUpperCase()==='SENSUEL').length;
  const sexual=monthDone.filter(c=>['SEXUEL','COQUIN'].includes(String(c.category||'').toUpperCase())).length;
  const categorized=sensual+sexual;
- const activeWeeks=new Set(safeSessions.filter(s=>s.counted&&s.finished_at)
+ const activeWeeks=new Set(safeSessions.filter(s=>s.id&&s.counted===true&&s.finished_at)
   .map(s=>torontoWeekIndex(s.finished_at)).filter(index=>index!==null));
  let current=torontoWeekIndex(now);
  if(!activeWeeks.has(current))current--;
