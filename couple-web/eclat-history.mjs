@@ -15,7 +15,11 @@ export function coffretMemo(history,id,status){
  const completed=[30,60,90].filter(n=>rows.some(s=>Number(s.minutes)===n&&s.ended_at&&s.cancelled===false));
  // A cancelled session can have no ended_at: it is history, never a
  // resumable coffret. Prefer the live authoritative status when available.
- const active=status?.active&&Number(status.coffret_id)===Number(id)?status:
+ // The authenticated live status is authoritative, including active=false.
+ // A stale history row must not resurrect a coffret another device ended.
+ // Fall back to history only if no live status was supplied at all.
+ const active=status&&typeof status.active==='boolean'?
+  (status.active&&Number(status.coffret_id)===Number(id)?status:null):
   rows.find(s=>!s.ended_at&&s.cancelled!==true);
  return {completed,started:rows.length>0||!!active,active:!!active,
   minutes:Number(active?.minutes)||null,chapter:Number(active?.chapter_index)||null};
