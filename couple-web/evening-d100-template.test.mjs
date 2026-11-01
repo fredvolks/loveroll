@@ -62,7 +62,10 @@ test('320px Soirée keeps real D100 above the photo marble without changing othe
  const base=Math.max(230,568-215);
  assert.equal(sharedStageSplit(320,568,true),base+40);
  assert.equal(sharedStageSplit(359,600,true),Math.max(230,600-215)+40);
- for(const [width,height] of [[360,568],[393,852],[412,915],[768,1024],[820,1180],[1180,820],[320,640]]){
+ assert.equal(sharedStageSplit(360,640,true),Math.max(230,640-215)+20,
+  '360x640 D100 must clear the real ruby silhouette above the theater');
+ assert.equal(sharedStageSplit(360,568,true),Math.max(230,568-215)+20);
+ for(const [width,height] of [[360,740],[393,852],[412,915],[768,1024],[820,1180],[1180,820],[320,640]]){
   assert.equal(sharedStageSplit(width,height,true),Math.max(230,height-215),
    'Noncompact viewports retain the approved photographic contact: '+width+'x'+height);
  }
