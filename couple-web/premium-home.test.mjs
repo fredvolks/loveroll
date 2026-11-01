@@ -237,3 +237,20 @@ test('LR-ACCUEIL-001: monthly Surprise copy reflects whether an activity has bee
  assert.doesNotMatch(drawn,/Surprise du mois à découvrir/);
  assert.match(drawn,/data-action="tab:special"/);
 });
+
+test('LR-ACCUEIL-001: official quota reports available weekly evenings, not daily eligibility',()=>{
+ const weekly={face:3,key:'2026-10-26',created_at:'2026-10-26T12:00:00Z'};
+ const summary={historyReady:true,limit:3,counted:1,dailyLocked:true,canStart:false};
+ const html=premiumHomeHtml({weekly,weeklyProgress:summary});
+ assert.match(html,/1 soirée partagée cette semaine · 2 disponibles cette semaine/);
+ assert.match(html,/data-action="tab:session"/);
+ assert.doesNotMatch(html,/2 disponibles aujourd’hui|2 disponibles aujourd'hui/);
+ const spent=premiumHomeHtml({weekly,weeklyProgress:{...summary,counted:3}});
+ assert.match(spent,/3 soirées partagées cette semaine · 0 disponibles cette semaine/);
+ const missing=premiumHomeHtml({weekly,weeklyProgress:{...summary,historyReady:false}});
+ assert.doesNotMatch(missing,/class="home-weekly-progress"/,
+  'Unknown history must never be displayed as zero completed evenings');
+ const invalid=premiumHomeHtml({weekly,weeklyProgress:{...summary,limit:2}});
+ assert.doesNotMatch(invalid,/class="home-weekly-progress"/,
+  'Unexpected quota input does not override the official D6 face');
+});
