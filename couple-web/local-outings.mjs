@@ -50,7 +50,7 @@ export function chooseNearbyVenue(places,roadRoutes,maxKm,{category=null}={}){
   if(!id||!name||!isRouteWithinRadius(route,maxKm))return null;
   if(category&&!String(place?.categories||'').split(',').some(x=>x===category||x.startsWith(category+'.')))return null;
   return {place_id:id,name,address:String(place.address||'').trim(),distance_km:km,distance_meters:Number(route.distance_meters),source:'Geoapify'};
- }).filter(Boolean).sort((a,b)=>a.distance_km-b.distance_km||a.place_id.localeCompare(b.place_id));
+ }).filter(Boolean).sort((a,b)=>a.distance_meters-b.distance_meters||a.place_id.localeCompare(b.place_id));
  return candidate[0]||null;
 }
 export function localActivityResult(roll,venue,shared){
