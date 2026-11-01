@@ -252,7 +252,11 @@ function backFromLoveRoll(){
   return true;
  }
  if(state.installModalOpen||state.forceInstallGuide){handle('install-later').catch(fail);return true;}
- if(state.reviewModalSessionId){state.reviewDismissedSessionId=state.reviewModalSessionId;state.reviewModalSessionId=null;state.reviewDraft={};render();return true;}
+ if(state.reviewModalSessionId){
+  // Back/Escape cannot discard a review while its server save is pending.
+  if(state.reviewSaving)return true;
+  state.reviewDismissedSessionId=state.reviewModalSessionId;state.reviewModalSessionId=null;state.reviewDraft={};render();return true;
+ }
  if(allowBackExit){allowBackExit=false;return false;}
  if(state.showEveningChallenge){state.showEveningChallenge=false;render();return true;}
  if(state.showSurpriseActivity){state.showSurpriseActivity=false;render();return true;}
@@ -2796,6 +2800,7 @@ async function handle(action,element){
   state.homeNotices=!state.homeNotices;render();return;
  }
  if(verb==='review-rate'){
+  if(state.reviewSaving)return;
   const key=parts[0],value=Number(parts[1]);
   if(!state.reviewModalSessionId||!['overall','connection','appreciation','again'].includes(key)||
     !Number.isInteger(value)||value<1||value>5)throw Error('Note invalide.');
@@ -2812,10 +2817,12 @@ async function handle(action,element){
   return;
  }
  if(verb==='review-dismiss'){
+  if(state.reviewSaving)return;
   state.reviewDismissedSessionId=state.reviewModalSessionId;
   state.reviewModalSessionId=null;state.reviewDraft={};render();return;
  }
  if(verb==='review-open'){
+  if(state.reviewSaving)return;
   const sessionId=parts[0],session=state.sessions?.find(s=>s.id===sessionId&&s.finished_at&&s.counted);
   if(!session||!isSharedCoupleReady(state.coupleId,state.members))
    throw Error('Bilan inaccessible.');
@@ -2849,7 +2856,14 @@ async function handle(action,element){
    state.eveningCalendarDate=date||today();
    state.eveningCalendarBack='tab:session';
    state.tab='evening-calendar';
-   await refreshAndShow();
+   // The RPC has already committed the review. A subsequent read failure is
+   // NOT a failed save: do not prompt the couple to submit it a second time.
+   try{await refreshAndShow();}
+   catch(refreshError){
+    console.warn('Bilan enregistré, calendrier non actualisé',refreshError);
+    render();
+    notify('♡ Bilan enregistré. Le calendrier n’a pas pu être actualisé. Réessaie de l’ouvrir.');
+   }
   }catch(error){
    if(err){err.hidden=false;err.textContent=String(error?.message||'Enregistrement impossible. Réessaie.');}
   }finally{state.reviewSaving=false;if(save?.isConnected){save.disabled=false;save.textContent='♡ Enregistrer notre bilan';}}
