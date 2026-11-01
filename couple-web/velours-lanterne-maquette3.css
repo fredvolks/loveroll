@@ -1687,3 +1687,96 @@ body.lr-velours-lanterne .evening-review-edit {
     }
   }
 }
+
+/* LOT 10 — Options avancées : cartes de pondération lisibles au doigt.
+   La page, ses deux types de probabilités et le serveur restent inchangés.
+   Couleurs et surfaces sont héritées du thème Velours & Rose Lanterne. */
+@layer loveroll-settings-menus {
+  body.lr-velours-lanterne #app.loveroll-settings-page
+  [data-settings-page="admin"] .settings-help-item {
+    min-width:0;
+    border-bottom-color:var(--lr-vl-edge);
+  }
+  body.lr-velours-lanterne #app.loveroll-settings-page
+  [data-settings-page="admin"] .admin-dice-weight-section>summary {
+    min-height:48px;
+    gap:10px;
+    color:var(--lr-vl-ivory)!important;
+    overflow-wrap:anywhere;
+    cursor:pointer;
+  }
+  body.lr-velours-lanterne #app.loveroll-settings-page
+  [data-settings-page="admin"] .admin-dice-weight-section>summary small {
+    color:var(--lr-vl-champagne)!important;
+    white-space:normal;
+    text-align:right;
+    line-height:1.25;
+  }
+  body.lr-velours-lanterne #app.loveroll-settings-page
+  [data-settings-page="admin"] .admin-dice-weight-section[open] {
+    background:var(--lr-vl-panel);
+    border:1px solid var(--lr-vl-edge);
+    border-radius:16px;
+    padding:8px 12px 12px;
+    margin-block:10px;
+    box-shadow:var(--lr-vl-relief);
+  }
+  body.lr-velours-lanterne #app.loveroll-settings-page
+  [data-settings-page="admin"] :is(.admin-dice-weight-face,.admin-dice-weight-total) {
+    color:var(--lr-vl-muted)!important;
+  }
+  body.lr-velours-lanterne #app.loveroll-settings-page
+  [data-settings-page="admin"] .admin-dice-weight-input input[type="number"] {
+    min-width:0;
+    width:100%;
+    min-height:46px!important;
+    height:auto!important;
+    border-color:var(--lr-vl-field-edge)!important;
+    background-color:var(--lr-vl-field)!important;
+    color:var(--lr-vl-ivory)!important;
+    font-size:16px!important;
+    font-variant-numeric:tabular-nums;
+  }
+  body.lr-velours-lanterne #app.loveroll-settings-page
+  [data-settings-page="admin"] .admin-dice-weight-input>span {
+    color:var(--lr-vl-champagne);
+    pointer-events:none;
+  }
+  body.lr-velours-lanterne #app.loveroll-settings-page
+  [data-settings-page="admin"] .admin-dice-weight-total[data-valid="false"],
+  body.lr-velours-lanterne #app.loveroll-settings-page
+  [data-settings-page="admin"] .admin-dice-weight-feedback:not(:empty) {
+    color:var(--lr-vl-rose)!important;
+    font-weight:600;
+  }
+  body.lr-velours-lanterne #app.loveroll-settings-page
+  [data-settings-page="admin"] .admin-dice-weight-save:not(:disabled) {
+    min-height:46px!important;
+    border-color:var(--lr-vl-edge)!important;
+    background:var(--lr-vl-action)!important;
+    color:var(--lr-vl-ivory)!important;
+  }
+  body.lr-velours-lanterne #app.loveroll-settings-page
+  [data-settings-page="admin"] .admin-dice-weight-save:disabled {
+    min-height:46px!important;
+    opacity:.55;
+    box-shadow:none!important;
+  }
+  @media(max-width:380px) {
+    body.lr-velours-lanterne #app.loveroll-settings-page
+    [data-settings-page="admin"] .admin-dice-weight-grid {
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:10px;
+    }
+    body.lr-velours-lanterne #app.loveroll-settings-page
+    [data-settings-page="admin"] .admin-dice-weight-section[open] {
+      padding:7px 9px 10px;
+    }
+  }
+  @media(prefers-contrast:more) {
+    body.lr-velours-lanterne #app.loveroll-settings-page
+    [data-settings-page="admin"] .admin-dice-weight-section[open] {
+      border-width:2px;
+    }
+  }
+}
