@@ -138,6 +138,11 @@ export function coupleHomeStats(challenges=[],sessions=[],members=[],now=new Dat
   return monthKeyToronto(session?.finished_at||c.created_at)===month;
  });
  const counts=(members||[]).map(m=>monthDone.filter(c=>c.recipient===m.user_id).length);
+ // Finished and officially counted couple evenings only; an open session,
+ // weekly dice roll or duplicated sync row must not inflate this total.
+ const monthlyEvenings=new Set((sessions||[]).filter(session=>
+  session?.id&&session.counted===true&&session.finished_at&&
+  monthKeyToronto(session.finished_at)===month).map(session=>session.id)).size;
  const sensual=monthDone.filter(c=>String(c.category||'').toUpperCase()==='SENSUEL').length;
  const sexual=monthDone.filter(c=>['SEXUEL','COQUIN'].includes(String(c.category||'').toUpperCase())).length;
  const categorized=sensual+sexual;
@@ -148,7 +153,7 @@ export function coupleHomeStats(challenges=[],sessions=[],members=[],now=new Dat
  let streak=0;
  while(activeWeeks.has(current)){streak++;current--;}
  return {
-  completed:monthDone.length,byPartner:counts,
+  completed:monthDone.length,monthlyEvenings,byPartner:counts,
   sensualPercent:categorized?Math.round(sensual*100/categorized):null,
   sexualPercent:categorized?100-Math.round(sensual*100/categorized):null,
   streak,
@@ -270,7 +275,7 @@ export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,d
    '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M1 11h3v8H1zm5-7h3v15H6zm5 3h3v12h-3zm5-6h3v18h-3z"/></svg>Ce mois <span aria-hidden="true">›</span></button></h3>'+
    '<div class="home-stats-grid" aria-label="Statistiques réelles du couple">'+
    statistic(String(coupleStats.completed),'Défis réalisés','Ce mois · Couple','completed')+
-   statistic(coupleStats.byPartner.join(' / '),'Répartition',nameA+' / '+nameB,'partners')+
+   statistic(String(coupleStats.monthlyEvenings),'Soirées partagées','Ce mois · Couple','partners')+
    statistic(percent,'Sensuel / Sexuel','Ce mois','categories')+
    statistic(String(coupleStats.streak),'Semaines consécutives','Série actuelle','streak')+
    '</div></section>'+'</div></div></section>';
