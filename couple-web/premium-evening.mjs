@@ -182,7 +182,8 @@ export function premiumEveningHtml({
   rolling?waitingStatus('Brassage en cours…'):
   !ready?waitingStatus(myRollRecorded?
    'En attente du D6 de ton partenaire':'Lance ton D6 pour continuer'):
-  ownPending?bt('evening-open:'+pending.id,'♡ Voir mon défi','evening-primary'):
+  ownPending?bt('evening-open:'+pending.id,
+   pending.status==='accepted'?'↻ Reprendre mon défi':'♡ Voir mon défi','evening-primary'):
   !turn.ready?waitingStatus('Synchronisation de nos défis…'):
   turn.drawsFinished?(ownChallengeCount>0?
    bt('evening-list','♡ Voir mes défis ('+ownChallengeCount+')','evening-primary'):
