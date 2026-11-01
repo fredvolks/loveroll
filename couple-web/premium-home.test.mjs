@@ -236,7 +236,7 @@ test('LR-ACCUEIL-001: monthly Surprise copy reflects whether an activity has bee
  const newMonth=premiumHomeHtml({monthly:{},weekly:{face:1}});
  assert.match(newMonth,/Surprise du mois à découvrir/);
  const drawn=premiumHomeHtml({monthly:{monthly_activity:{face:7,activity_title:'Notre sortie'}}});
- assert.match(drawn,/Notre surprise du mois/);
+ assert.match(drawn,/Choisir qui invite/);
  assert.doesNotMatch(drawn,/Surprise du mois à découvrir/);
  assert.match(drawn,/data-action="tab:special"/);
 });
@@ -322,4 +322,33 @@ test('LR-ACCUEIL-001: only real completed counted sessions appear in the correct
  const html=premiumHomeHtml({sessions,now:new Date('2026-10-31T21:00:00Z')});
  assert.match(html,/Soirées partagées/);
  assert.doesNotMatch(html,/Répartition/);
+});
+
+test('LR-ACCUEIL-001: Surprise follows official host, planned and confirmed booking states',()=>{
+ const monthly={monthly_activity:{face:7},monthly_host:{face:2}};
+ const members=[{user_id:'a',name:'Alice'},{user_id:'b',name:'Bob'}];
+ const base={monthly,members,monthlyActivity:{title:'Notre restaurant'}};
+ const pending=premiumHomeHtml(base);
+ assert.match(pending,/À planifier/);
+ assert.match(pending,/Alice invite Bob/);
+ assert.doesNotMatch(pending,/Sortie réalisée|Rendez-vous réalisé/);
+ const planned=premiumHomeHtml({...base,
+  reservation:{status:'planned',reserved_for:'2026-11-11T23:00:00Z'}});
+ assert.match(planned,/Date prévue/);
+ assert.match(planned,/nov\. 2026/);
+ assert.doesNotMatch(planned,/Réservation déclarée confirmée/);
+ const confirmed=premiumHomeHtml({...base,
+  reservation:{status:'confirmed',reserved_for:'2026-11-11T23:00:00Z'}});
+ assert.match(confirmed,/Réservation déclarée confirmée/);
+ assert.match(confirmed,/nov\. 2026/);
+ assert.doesNotMatch(confirmed,/Sortie réalisée|Rendez-vous réalisé/);
+ const cancelled=premiumHomeHtml({...base,
+  reservation:{status:'cancelled',reserved_for:'2026-11-11T23:00:00Z'}});
+ assert.match(cancelled,/À replanifier/);
+ assert.doesNotMatch(cancelled,/Date prévue/);
+ const invalid=premiumHomeHtml({...base,
+  reservation:{status:'planned',reserved_for:'not-a-date'}});
+ assert.match(invalid,/À planifier/);
+ assert.doesNotMatch(invalid,/Date prévue/);
+ assert.match(app,/reservation:state\.geoReservation/);
 });
