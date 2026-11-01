@@ -133,22 +133,28 @@ function torontoWeekIndex(date){
 // Never infer completions from "proposed", "accepted" or a mockup value.
 export function coupleHomeStats(challenges=[],sessions=[],members=[],now=new Date()){
  const month=inToronto(now).slice(0,7);
- const byId=new Map((sessions||[]).map(s=>[s.id,s]));
- const completed=(challenges||[]).filter(c=>c?.status==='completed');
+ // Legacy / partially loaded RPC snapshots may contain null or non-row values.
+ // Ignore them, without fabricating counts or changing official server results.
+ const rows=value=>Array.isArray(value)?value.filter(row=>
+  row&&typeof row==='object'&&!Array.isArray(row)):[];
+ const safeSessions=rows(sessions);
+ const safeMembers=rows(members);
+ const byId=new Map(safeSessions.filter(s=>s.id!=null).map(s=>[s.id,s]));
+ const completed=rows(challenges).filter(c=>c.status==='completed');
  const monthDone=completed.filter(c=>{
   const session=byId.get(c.session_id);
   return monthKeyToronto(session?.finished_at||c.created_at)===month;
  });
- const counts=(members||[]).map(m=>monthDone.filter(c=>c.recipient===m.user_id).length);
+ const counts=safeMembers.map(m=>monthDone.filter(c=>c.recipient===m.user_id).length);
  // Finished and officially counted couple evenings only; an open session,
  // weekly dice roll or duplicated sync row must not inflate this total.
- const monthlyEvenings=new Set((sessions||[]).filter(session=>
+ const monthlyEvenings=new Set(safeSessions.filter(session=>
   session?.id&&session.counted===true&&session.finished_at&&
   monthKeyToronto(session.finished_at)===month).map(session=>session.id)).size;
  const sensual=monthDone.filter(c=>String(c.category||'').toUpperCase()==='SENSUEL').length;
  const sexual=monthDone.filter(c=>['SEXUEL','COQUIN'].includes(String(c.category||'').toUpperCase())).length;
  const categorized=sensual+sexual;
- const activeWeeks=new Set((sessions||[]).filter(s=>s.counted&&s.finished_at)
+ const activeWeeks=new Set(safeSessions.filter(s=>s.counted&&s.finished_at)
   .map(s=>torontoWeekIndex(s.finished_at)).filter(index=>index!==null));
  let current=torontoWeekIndex(now);
  if(!activeWeeks.has(current))current--;
