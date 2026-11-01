@@ -495,6 +495,12 @@ jobs:
         if: matrix.group == 'entry'
         run: node couple-web/boot-smoke.cjs
 
+      # Keep the production Pages Android pressed-state test in PR checks too:
+      # :active / .lr-pressed must visibly change the real Home D6 surface.
+      - name: Verify Android Home pressed state before Pages deployment
+        if: matrix.group == 'entry'
+        run: node couple-web/android-ruby-browser-check.cjs
+
       - name: Verify REAL account and invite behaviors against mocked Supabase API
         if: matrix.group == 'entry'
         run: node couple-web/auth-behavior-v58.cjs
