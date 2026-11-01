@@ -28,3 +28,19 @@ test('Gallery and detail retain persistent completed-duration memos and safe res
  assert.match(detail,/data-action="eclat:resume"/);
  assert.doesNotMatch(detail,/data-action="eclat:start:/);
 });
+
+test('A cancelled Eclat session without ended_at never offers Resume',()=>{
+ const cancelled={coffret_id:9,minutes:60,chapter_index:2,ended_at:null,cancelled:true};
+ const before=coffretMemo([cancelled],9,{access:true,active:false});
+ assert.deepEqual(before.completed,[]);
+ assert.equal(before.started,true,'A cancelled attempt remains part of history');
+ assert.equal(before.active,false,'Cancelled sessions are never resumable');
+ assert.equal(before.minutes,null);
+ assert.equal(before.chapter,null);
+ const next=eclatHtml({status:{access:true,active:false},history:[cancelled],browse:true,
+  details:true,selected:9});
+ assert.doesNotMatch(next,/data-action="eclat:resume"/);
+ const live={...cancelled,cancelled:false};
+ assert.equal(coffretMemo([cancelled,live],9).active,true,
+  'A different live noncancelled session remains resumable');
+});
