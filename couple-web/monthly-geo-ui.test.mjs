@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {monthlyGeoCardHtml,localBookingDateTime} from './monthly-geo-ui.mjs';
 const venue={state:'ready',place_id:'geo-1',name:'Café du centre',driving_meters:16200,
  latitude:45.6,longitude:-73.7,address:'Rue Exemple'};
@@ -67,4 +68,23 @@ test('LR-SURPRISE-001: website is never passed off as a reservation URL',()=>{
   website_url:'https://example.com/official',booking_url:'https://example.com/book'},canReserve:false});
  assert.doesNotMatch(guest,/Réserver auprès du lieu/);
  assert.match(guest,/Site officiel/);
+});
+
+test('LR-SURPRISE-001 pending or temporary Geoapify failure is polled with a safe cooldown',()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const start=app.indexOf('async function resolveMonthlyGeo(){');
+ const end=app.indexOf('function renderSpecial(){',start);
+ assert.ok(start>=0&&end>start);
+ const resolver=app.slice(start,end);
+ assert.match(resolver,/geoFetchNextAt\.set\(roll\.id,now\+12000\)/);
+ assert.match(resolver,/geoFetchNextAt\.set\(roll\.id,Date\.now\(\)\+30000\)/);
+ assert.match(resolver,/geoFetchActive===roll\.id/);
+ assert.match(resolver,/state\.geoLookup==='pending'\|\|state\.geoLookup==='error'/);
+ assert.match(resolver,/!document\.hidden/);
+ assert.match(resolver,/if\(!stillCurrent\(\)\)return/);
+ assert.match(resolver,/if\(stillCurrent\(\)&&state\.tab==='special'/);
+ assert.match(app,/geoFetchNextAt\.delete\(state\.monthly\.monthly_activity\.id\)/,
+  'Manual reopening may request the current official roll again');
+ assert.doesNotMatch(app,/geoFetchSeen/,
+  'A one-time seen set must not permanently strand pending or failed lookups');
 });
