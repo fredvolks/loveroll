@@ -106,3 +106,52 @@ test('Safari denied storage access cannot interrupt opening, closing or resuming
  assert.doesNotMatch(app,/(?:saveEveningSelection|restoreEveningSelection|clearEveningSelection)\(localStorage,/);
  assert.match(app,/evening-resume\.mjs\?v=20261031-resume-safari/);
 });
+
+test('LR-028: gift starting during the home resume cannot reopen an outdated private queue',async()=>{
+ const {runInNewContext}=await import('node:vm');
+ const from=app.indexOf("if(verb==='resume-evening'){");
+ const to=app.indexOf("if(verb==='tab'){",from);
+ assert.ok(from>=0&&to>from,'Production resume route must remain extractable');
+ const state={tab:'home',user:{id:'alice'},coupleId:'duo-a',
+  session:{id:'night-a'},weekly:{id:'week-a'},
+  members:[{user_id:'alice'},{user_id:'bob'}],challenges:[],
+  showEveningChallenges:false,diceStatus:null};
+ let giftPending=false,resolveRefresh,refreshCount=0,renderCount=0,queueReads=0;
+ const token={};
+ const scope={state,authFeedbackGeneration:5,
+  isActiveEveningRedrawPending:()=>false,
+  isActiveEveningGiftPending:()=>giftPending,
+  isSharedCoupleReady:()=>true,
+  refreshShared:()=>{
+   refreshCount++;
+   state.unscopedSharedRefreshRequest=token;
+   return new Promise(resolve=>{resolveRefresh=resolve;});
+  },
+  playableSessionForWeekly:()=>state.session,
+  ownEveningChallenges:()=>{queueReads++;return [];},
+  visibleEveningQueue:cards=>cards,
+  restoreEveningSelection:()=>null,
+  safeEveningBookmarkStorage:()=>({}),
+  render:()=>{renderCount++;},
+  reconcileSavedEveningTimers:async()=>{},
+  notify:()=>{},console:{warn(){}}
+ };
+ const action=runInNewContext('(async verb=>{'+app.slice(from,to)+'})',scope);
+ giftPending=true;
+ await action('resume-evening');
+ assert.equal(refreshCount,0,'An active gift blocks resume immediately');
+ giftPending=false;
+ const pending=action('resume-evening');
+ assert.equal(refreshCount,1,'Home resume uses the official refresh');
+ giftPending=true;
+ resolveRefresh(true);await pending;
+ assert.equal(state.tab,'home','Do not remount stale private D100 cards');
+ assert.equal(queueReads,0,'No private queue lookup during an active gift');
+ assert.equal(renderCount,0,'Do not replace the gift confirmation screen');
+ giftPending=false;
+ const retry=action('resume-evening');
+ resolveRefresh(true);await retry;
+ assert.equal(state.tab,'session','Resume is available again once the gift settles');
+ assert.equal(queueReads,1);
+ assert.equal(renderCount,1);
+});
