@@ -20,7 +20,7 @@ import {playableSessionForWeekly} from './couple-reset-view.mjs';
 import {eveningDailyAccess} from './evening-daily-policy.mjs?v=20261016-daily100';
 import {createEveningClosureGate} from './evening-closure-gate.mjs?v=20261031-closure';
 import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,snapshotEveningCardBeforeRedraw,isSameEveningResponseContext,isEveningRedrawBusyForCurrentView,ownsEveningRedrawRequest,ownsEveningTimerRecord,ownedSavedEveningTimerSnapshot,redrawTimerRecovery,mayApplyScopedEveningRefresh,ownsCoupleAsyncRead,hasPendingEclatNote} from './evening-private-queue.mjs';
-import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261031-home261';
+import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261031-home262';
 import {saveEveningSelection,restoreEveningSelection,clearEveningSelection,safeEveningBookmarkStorage} from './evening-resume.mjs?v=20261031-resume-safari';
 import {readTimerAlertMode,saveTimerAlertMode} from './timer-alert-preference.mjs?v=20261031-safari-timer';
 import {eclatHtml} from './eclat-ui.mjs?v=20261027-web242';
