@@ -146,8 +146,8 @@ const {eveningD100Viewports}=require('./evening-d100-viewports.cjs');
    postRoll=await page.evaluate(()=>{
     const die=document.querySelector('.evening-d35-col canvas');
     const close=document.querySelector('.evening-queue-modal [data-action="evening-close"]');
-    const status=document.querySelector('.evening-roll-actions .evening-primary-status')?.textContent||'';
-    const ownedCardAction=document.querySelector('.evening-roll-actions [data-action^="evening-open:"]')?.dataset.action||null;
+    const status=document.querySelector('.evening-d100-roll.evening-primary-status')?.textContent||'';
+    const ownedCardAction=document.querySelector('.evening-d100-roll[data-action^="evening-open:"]')?.dataset.action||null;
     return {face:die?.dataset.face,spinning:die?.loveRollDie?.readState()?.spinning,
      result:document.querySelector('.evening-d100-result')?.textContent,
      primary:status,ownedCardAction,closeCount:document.querySelectorAll('.evening-queue-modal [data-action="evening-close"]').length,
@@ -174,7 +174,7 @@ const {eveningD100Viewports}=require('./evening-d100-viewports.cjs');
      const button=modal?.querySelector('[data-action="evening-close"]');
      const rect=button?.getBoundingClientRect();
      return {face:die?.dataset.face,spinning:die?.loveRollDie?.readState()?.spinning,
-      primary:document.querySelector('.evening-roll-actions .evening-primary-status')?.textContent,
+      primary:document.querySelector('.evening-d100-roll.evening-primary-status')?.textContent,
       modalClass:modal?.className,close:button?{width:rect?.width,height:rect?.height,
        display:getComputedStyle(button).display,visibility:getComputedStyle(button).visibility}:null};
     });
@@ -207,12 +207,12 @@ const {eveningD100Viewports}=require('./evening-d100-viewports.cjs');
   assert.equal(await page.locator('[data-action="new-challenge"]').count(),0,'No fake disabled D100 during partner turn');
   // LR-027: an unfinished personal card becomes the one main Soirée action.
   // Reopening it must never roll the server-authoritative D100 a second time.
-  const ownCard=page.locator('.evening-roll-actions button.evening-primary[data-action^="evening-open:"]');
+  const ownCard=page.locator('button.evening-d100-roll.evening-primary[data-action^="evening-open:"]');
   if(await ownCard.count()){
    const action=await ownCard.getAttribute('data-action');
    assert.match(action,/^evening-open:[^:]+$/);
    assert.match(await ownCard.textContent(),/Voir mon défi/);
-   assert.equal(await page.locator('.evening-roll-actions .evening-primary-status').count(),0,
+   assert.equal(await page.locator('.evening-d100-roll.evening-primary-status').count(),0,
     'A usable private challenge takes priority over partner waiting');
    await ownCard.evaluate(button=>button.click());
    await queueModal.waitFor({state:'visible',timeout:5000});
@@ -221,7 +221,7 @@ const {eveningD100Viewports}=require('./evening-d100-viewports.cjs');
    await queueModal.locator('[data-action="evening-close"]').evaluate(button=>button.click());
    await queueModal.waitFor({state:'detached',timeout:5000});
   }else{
-   assert.match(await page.locator('.evening-roll-actions .evening-primary-status').textContent(),/En attente du tour de ton partenaire/);
+   assert.match(await page.locator('.evening-d100-roll.evening-primary-status').textContent(),/En attente du tour de ton partenaire/);
   }
   checkpoint('capture-recorded');
   await capture('recorded');
