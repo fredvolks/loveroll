@@ -1416,8 +1416,11 @@ async function retryExpiredTimedEvening(){
   }
  }catch(error){
   timerCompletionRetryAt=Date.now()+15000;
-  console.warn('Défi terminé : validation serveur en attente',error);
-  if(!document.hidden)notify('Le minuteur est terminé. Validation du défi en attente de connexion.');
+  const recorded=error?.challengeCompletionConfirmed===true;
+  console.warn(recorded?'Défi enregistré : synchronisation Soirée en attente':'Défi terminé : validation serveur en attente',error);
+  if(!document.hidden)notify(recorded?
+   '♡ Défi enregistré. Synchronisation de Soirée en attente de connexion.':
+   'Le minuteur est terminé. Validation du défi en attente de connexion.');
  }finally{timerCompletionInFlight=null;}
 }
 // LR-002: recover ALL due challenge timers from per-account session storage
@@ -1460,8 +1463,11 @@ async function reconcileSavedEveningTimers(){
    }
   }catch(error){
    savedTimerScanAfter=Date.now()+15000;
-   console.warn('Minuteur expiré : validation à reprendre après reconnexion',error);
-   if(!document.hidden)notify('Le minuteur est terminé. Validation du défi en attente de connexion.');
+   const recorded=error?.challengeCompletionConfirmed===true;
+   console.warn(recorded?'Défi enregistré : synchronisation Soirée à reprendre':'Minuteur expiré : validation à reprendre après reconnexion',error);
+   if(!document.hidden)notify(recorded?
+    '♡ Défi enregistré. Synchronisation de Soirée en attente de connexion.':
+    'Le minuteur est terminé. Validation du défi en attente de connexion.');
   }finally{timerCompletionInFlight=null;savedTimerSyncInFlight=false;}
   return;
  }
