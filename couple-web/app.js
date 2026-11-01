@@ -112,6 +112,7 @@ const challengeTimer={id:null,ownerUserId:null,durationMs:0,remainingMs:0,deadli
 let timerCompletionInFlight=null,timerCompletionRetryAt=0;
 // Prevent simultaneous acceptance RPCs from rapid Start/Pause taps.
 let timerActivationInFlight=false;
+let eveningStartInFlight=false;
 try{const saved=localStorage.getItem('loveroll-timer-mode');if(saved==='vibrate'||saved==='sound')challengeTimer.mode=saved;}catch(e){}
 
 const kinds={weekly:'Rituel de la semaine',monthly_activity:'Sortie du mois',
@@ -3041,25 +3042,44 @@ async function handle(action,element){
   return;
  }
  if(verb==='evening-start'){
-  // Prime WebAudio immediately during the user's tap, before awaiting the server.
-  if(challengeTimer.mode==='sound')void unlockLoveRollSounds();
-  const picked=ownEveningChallenges(state.challenges,state.user?.id,state.session?.id).find(x=>x.id===parts[0]);
-  if(!picked||!['proposed','accepted'].includes(picked.status))throw Error('Ce défi ne peut pas être commencé.');
-  if(picked.status==='proposed')
-   await rpc('answer_challenge',{p_id:picked.id,p_status:'accepted'});
-  state.showEveningChallenges=true;state.selectedEveningChallengeId=picked.id;
-  await refreshAndShow();
-  const active=state.challenges.find(c=>c.id===picked.id);
-  const minutes=resolvedCard(active||picked).minutes;
-  if(minutes>0){
-   activeTimer(active||picked,minutes);
-   if(!challengeTimer.running&&challengeTimer.remainingMs>0){
-    challengeTimer.deadline=Date.now()+challengeTimer.remainingMs;
-    challengeTimer.running=true;challengeTimer.notified=false;
-    saveChallengeTimer();
+  if(eveningStartInFlight)return; // Prevent two acceptance RPCs on rapid taps.
+  eveningStartInFlight=true;
+  try{
+   const ownerId=state.user?.id,sessionId=state.session?.id;
+   // Prime WebAudio immediately during the user's tap, before awaiting the server.
+   if(challengeTimer.mode==='sound')void unlockLoveRollSounds();
+   const picked=ownEveningChallenges(state.challenges,ownerId,sessionId).find(x=>x.id===parts[0]);
+   if(!picked||!['proposed','accepted'].includes(picked.status))
+    throw Error('Ce défi ne peut pas être commencé.');
+   if(picked.status==='proposed'){
+    await rpc('answer_challenge',{p_id:picked.id,p_status:'accepted'});
+    // Server accepted the card: a later display refresh failure is not a
+    // denied acceptance, and must not encourage another server submission.
+    picked.status='accepted';
    }
-   updateChallengeClock();
-  }
+   if(state.user?.id!==ownerId||state.session?.id!==sessionId)return;
+   state.showEveningChallenges=true;state.selectedEveningChallengeId=picked.id;
+   const refreshed=await refreshAfterConfirmedWrite(refreshAndShow);
+   if(state.user?.id!==ownerId||state.session?.id!==sessionId)return;
+   if(!refreshed){
+    render();
+    notify('♡ Défi accepté sur le serveur. Affichage à synchroniser après reconnexion.');
+   }
+   const active=state.challenges.find(c=>c.id===picked.id);
+   if(active&&['completed','passed','refused'].includes(active.status))return;
+   const challenge=active?.status==='accepted'?active:picked;
+   if(!isAcceptedTimedEveningChallenge(challenge,ownerId,sessionId))return;
+   const minutes=resolvedCard(challenge).minutes;
+   if(minutes>0){
+    activeTimer(challenge,minutes);
+    if(!challengeTimer.running&&challengeTimer.remainingMs>0){
+     challengeTimer.deadline=Date.now()+challengeTimer.remainingMs;
+     challengeTimer.running=true;challengeTimer.notified=false;
+     saveChallengeTimer();
+    }
+    updateChallengeClock();
+   }
+  }finally{eveningStartInFlight=false;}
   return;
  }
  if(verb==='surprise-activity'){
