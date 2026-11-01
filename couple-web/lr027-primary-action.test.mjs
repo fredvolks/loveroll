@@ -177,6 +177,8 @@ test('official D100 action cannot bypass server-derived turn or a confirmation t
  assert.equal(hasTurnToDraw(eligible,'a'),true);
  assert.equal(hasTurnToDraw(eligible,'b'),false);
  assert.equal(hasTurnToDraw({...eligible,drawsFinished:true},'a'),false);
+ assert.equal(hasTurnToDraw({...eligible,finished:true},'a'),false,
+  'A finalized evening cannot emit a fresh D100 roll from a stale button');
  assert.equal(hasTurnToDraw({...eligible,remaining:{a:0}},'a'),false);
  assert.equal(hasTurnToDraw({...eligible,ready:false},'a'),false);
  const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
