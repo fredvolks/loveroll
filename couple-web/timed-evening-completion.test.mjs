@@ -81,7 +81,9 @@ test('LR-002 a reset after the real deadline cannot cancel automatic completion'
  assert.match(source,/if\(challengeTimer\.running&&challengeTimer\.deadline>0&&Date\.now\(\)>=challengeTimer\.deadline\)/);
  assert.match(source,/const autoComplete=!challengeTimer\.decisionPending&&isAcceptedTimedEveningChallenge\(item,state\.user\?\.id,state\.session\?\.id\)/);
  assert.match(source,/if\(!challengeTimer\.autoCompletePending\|\|challengeTimer\.decisionPending\|\|timerCompletionInFlight/);
- assert.match(source,/if\(\['completed','passed','refused'\]\.includes\(item\.status\)\)/);
+ assert.match(source,/if\(\['passed','refused'\]\.includes\(item\.status\)\)/);
+ assert.match(source,/isSameCompletedEveningChallenge\(item,item,state\.user\.id,state\.session\.id\)/,
+  'A server-confirmed card may still need its last Soirée board synchronization');
  assert.match(source,/Validation automatique du défi en cours/);
  assert.doesNotMatch(source,/À vous de décider si le défi continue/);
 });
