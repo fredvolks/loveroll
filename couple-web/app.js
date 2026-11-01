@@ -4543,8 +4543,20 @@ async function handle(action,element){
   return;
  }
  if(verb==='new-challenge'){
-  if(eveningCategoryConfirmInFlight)return; // One dialog and one official RPC only.
-  if(!state.session)throw Error('Aucune soirée active.');
+  if(eveningCategoryConfirmInFlight||state.diceStatus)return; // One official roll at a time.
+  const session=playableSessionForWeekly(state.session,state.weekly);
+  if(!session)throw Error('Aucune soirée active.');
+  const playerId=state.user?.id;
+  // A stale button (or an outdated confirmation dialog) cannot bypass the
+  // private turn/remaining quota shown on the current Soirée screen.
+  const canStillDraw=()=>state.user?.id===playerId&&state.session?.id===session.id&&
+   state.rollStatus?.both_ready&&hasTurnToDraw(
+    state.eveningBoard||sharedEveningTurns(session,state.members,state.personal,state.challenges,state.gifts),playerId);
+  if(!canStillDraw()){
+   await refreshAndShow();
+   notify('Le tour de Soirée a changé. Vérifie tes défis et réessaie.');
+   return;
+  }
   if(!EVENING_CATEGORIES.includes(state.category)&&state.category!=='HASARD'){
    if(showEveningCategoryReminder(root))return;
    throw Error('Choisis une catégorie avant de brasser le dé.');
@@ -4562,6 +4574,13 @@ async function handle(action,element){
     if(state.category!==selectedCategory||state.session?.id!==sessionId||state.tab!=='session')
      throw Error('La soirée ou la catégorie a changé. Confirme ton nouveau choix.');
     disableReminder=answer.neverShow;
+   }
+   // The partner may have advanced the official turn while this dialog was open.
+   // Supabase still enforces the final authorization on every draw.
+   if(!canStillDraw()){
+    await refreshAndShow();
+    notify('Le tour de Soirée a changé pendant la confirmation.');
+    return;
    }
    // Existing official D100 RPC: Supabase owns probability, result and quota.
    const drawn=await animateRoll(()=>
