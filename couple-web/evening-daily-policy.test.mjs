@@ -58,6 +58,29 @@ test('New weekly roll reset ignores historical closed sessions and unlocks the b
  assert.equal(result.closedToday,null);
  assert.equal(result.canStart,true);
 });
+test('P0 an unfinished soirée remains exclusive after Monday or a weekly D6 reset',()=>{
+ const previousWeek={id:'still-open',started_at:'2026-10-18T23:30:00Z',
+  finished_at:null,counted:false};
+ const nextWeek={face:6,key:'2026-10-19',created_at:'2026-10-19T12:00:00Z'};
+ const now=new Date('2026-10-19T17:00:00Z');
+ const pending=eveningDailyAccess({sessions:[previousWeek],weekly:nextWeek,now});
+ assert.equal(pending.counted,0,'past week does not consume new quota');
+ assert.equal(pending.dailyLocked,false,'yesterday does not lock the new day');
+ assert.equal(pending.canStart,false,'open previous-week session blocks second soirée');
+ const closed=eveningDailyAccess({sessions:[{...previousWeek,
+  finished_at:'2026-10-19T15:00:00Z'}],weekly:nextWeek,now});
+ assert.equal(closed.canStart,true,'closed old evening does not use a new D6');
+ const reset={...nextWeek,key:'2026-10-12',created_at:'2026-10-19T12:00:00Z'};
+ const afterReset=eveningDailyAccess({sessions:[previousWeek],weekly:reset,now});
+ assert.equal(afterReset.canStart,false,'reset cannot create parallel active nights');
+ const ghost=eveningDailyAccess({sessions:[{},previousWeek,{id:null,finished_at:null}],
+  weekly:nextWeek,now});
+ assert.equal(ghost.canStart,false,'malformed rows do not hide actual open evening');
+ const onlyMalformed=eveningDailyAccess({sessions:[{}, {finished_at:null}],
+  weekly:nextWeek,now});
+ assert.equal(onlyMalformed.canStart,true,'incomplete rows do not invent a real session ID');
+});
+
 test('Actual finished evening after new weekly roll disables button until tomorrow',()=>{
  const roll={face:3,key:'2026-10-12',created_at:'2026-10-16T12:48:10Z'};
  const fresh={id:'session',started_at:'2026-10-16T13:00:00Z',

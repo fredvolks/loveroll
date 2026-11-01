@@ -40,7 +40,12 @@ export function eveningDailyAccess({sessions=null,weekly=null,now=new Date()}={}
   (s.finished_at&&localDay(s.finished_at)===today));
  const closedToday=current.filter(s=>s.counted===true&&s.finished_at&&
   localDay(s.finished_at)===today).sort((a,b)=>Date.parse(b.finished_at)-Date.parse(a.finished_at))[0]||null;
- const active=current.some(s=>!s.finished_at);
+ // Resetting the weekly D6 resets quota accounting, NOT an unfinished
+ // evening. An earlier week's open session still blocks a second session.
+ // Only persisted session IDs qualify; malformed legacy rows cannot create
+ // a phantom active evening.
+ const active=history.some(s=>
+  typeof s.id==='string'&&s.id.trim()&&!s.finished_at);
  return {today,counted,limit,dailyLocked,closedToday,historyReady,
   canStart:!!today&&historyReady&&!!weekStart&&limit>0&&
    counted<limit&&!dailyLocked&&!active};
