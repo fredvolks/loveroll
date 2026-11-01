@@ -12,7 +12,8 @@ test('Home exposes resume only while an official weekly evening is open',()=>{
  assert.doesNotMatch(active,/data-action="roll:weekly"/);
  const inactive=premiumHomeHtml({weekly,activeEvening:false});
  assert.doesNotMatch(inactive,/data-action="resume-evening"/);
- assert.match(inactive,/home-roll-button is-used[^"]*" type="button" disabled/);
+ assert.match(inactive,/home-roll-button is-used[^"]*" type="button" data-action="tab:session"/);
+ assert.match(inactive,/♡ Aller à notre soirée/);
  assert.doesNotMatch(premiumHomeHtml({weekly:null}),/data-action="resume-evening"/);
 });
 test('Bookmark is scoped by account/session, stores no private card text and rejects stale IDs',()=>{
