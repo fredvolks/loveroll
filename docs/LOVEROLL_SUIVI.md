@@ -1,5 +1,14 @@
 # LoveRoll — SUIVI OFFICIEL DU PROMPT MAÎTRE
 
+### LR-ACCUEIL-001 — Synchronisation du bilan mensuel et de l'archive (31 octobre 2026)
+
+- **Produit** : `monthlyChallengeSuccess` classe désormais une soirée terminée et officiellement `counted=true` au mois civil de sa **clôture en heure du Québec**, comme la grille du calendrier et le bilan Accueil. Les soirées ouvertes ou interrompues non comptabilisées restent rattachées au mois de leur début. Une soirée entamée le 31 octobre et clôturée le 1er novembre est visible le 1er novembre dans le calendrier et entre dans le taux de défis réalisés de novembre, pas d'octobre. Le moteur de quota hebdomadaire `calendarWeekSuccess` continue à appliquer ses règles officielles sans changement.
+- **Code source unique** : `eveningArchiveDay(session)` est défini dans `couple-web/calendar-success-stats.mjs` (`7596423`) et réutilisé/réexporté par `couple-web/evening-calendar.mjs` (`6b46a02`). Aucune migration SQL, changement du nombre de soirées ou lecture de cartes privées.
+- **Contrôles** : `calendar-success-stats.test.mjs` (`f3967b6`) couvre les séances clôturées entre octobre et novembre, les séances actives, interrompues et les dates invalides. Une exécution JavaScript ciblée des sources actuelles montre, sur une fermeture `2026-11-01T05:15:00Z`, un bilan d'octobre de 0, un bilan de novembre de 1/2 défis (50 %) et une date d'archive `2026-11-01`. Ceci **ne remplace pas** l'exécution de la CI GitHub.
+- **Web/PWA** : modules `archive270`, cache `loveroll-static-v270`, commits `8ce5d94`, `99fd407`, `04ea40c`. **Pas déployé**.
+- **Suivi** : PR [#176](https://github.com/fredvolks/loveroll/pull/176) **en brouillon**, non fusionnée. Test sur staging Supabase avec deux comptes et validations téléphones/tablettes/PC avant production. Les cinq méthodes Architecture, Qualité, Produit, Mobile et Sécurité ont été lues réellement via Atelier MEDIUM; aucun BOSS exécutable ni fiche LoveRoll dans Atelier, donc aucune mission autonome n'a été lancée.
+
+
 ### LR-ACCUEIL-001 — Une soirée commencée avant minuit se retrouve à sa clôture (31 octobre 2026)
 
 - **Problème corrigé** : le raccourci « Voir notre soirée terminée » depuis l'Accueil sélectionne le jour réel de fin en heure du Québec, mais l'ancien calendrier indexait toutes les soirées par leur début. Une soirée traversant minuit pouvait donc sembler absente au jour choisi et son total mensuel pouvait être associé au mauvais mois.
