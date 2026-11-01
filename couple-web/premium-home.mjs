@@ -105,14 +105,23 @@ export function nextMonthly(now=new Date()){
 // never reveal individual rolls on Home before both official dice are available.
 export function assignedTonight(turn={},members=[]){
  const ready=turn?.ready===true;
- const [first,second]=members||[];
- const value=(field,person)=>ready?Math.max(0,Number(turn[field]?.[person?.user_id])||0):null;
+ // Partial RPC snapshots must not turn unknown personal targets into zero.
+ // Only a complete, finite, non-negative count can enter the shared summary.
+ const [first,second]=Array.isArray(members)?members:[];
+ const value=(field,person)=>{
+  if(!ready||typeof person?.user_id!=='string'||!person.user_id)return null;
+  const raw=turn?.[field]?.[person.user_id];
+  const number=typeof raw==='number'?raw:
+   typeof raw==='string'&&/^(0|[1-9]\\d*)$/.test(raw)?Number(raw):NaN;
+  return Number.isSafeInteger(number)&&number>=0?number:null;
+ };
+ const sum=(a,b)=>a===null||b===null||!Number.isSafeInteger(a+b)?null:a+b;
  const forFirst=value('targets',first),forSecond=value('targets',second);
  const completedFirst=value('completed',first),completedSecond=value('completed',second);
  const remainingFirst=value('remaining',first),remainingSecond=value('remaining',second);
- return {ready,total:ready?forFirst+forSecond:null,forFirst,forSecond,
-  completed:ready?completedFirst+completedSecond:null,
-  remaining:ready?remainingFirst+remainingSecond:null,
+ return {ready,total:sum(forFirst,forSecond),forFirst,forSecond,
+  completed:sum(completedFirst,completedSecond),
+  remaining:sum(remainingFirst,remainingSecond),
   completedFirst,completedSecond,remainingFirst,remainingSecond};
 }
 
@@ -198,7 +207,8 @@ export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,d
   '<span class="home-weight" title="'+(i+1)+' soirée'+(i===0?'':'s')+' : '+displayedDicePercent(pct)+' %">'+pipFace(i+1)+
   '<b>'+(i+1)+'x</b><span>'+displayedDicePercent(pct)+'%</span></span>').join('');
  const odds=weights.replaceAll('class="home-weight"','class="home-odds-entry"').replace(/<b>[^<]*<\/b>/g,'');
- const stats=assignedTonight(turn,members),m=nextMonthly(now);
+ const safeMembers=Array.isArray(members)?members:[];
+ const stats=assignedTonight(turn,safeMembers),m=nextMonthly(now);
  const activity=monthly?.monthly_activity||null;
  const shown=value=>value===null?'—':String(value);
  // Fail closed when an existing server snapshot has an invalid D6 result.
@@ -207,7 +217,7 @@ export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,d
   (!Number.isInteger(weekly.face)||weekly.face<1||weekly.face>6);
  const ready=!rolling&&!invalidWeekly&&weekly&&
   Number.isInteger(weekly.face),next=nextMonday(now);
- const coupleStats=coupleHomeStats(history,sessions,members,now);
+ const coupleStats=coupleHomeStats(history,sessions,safeMembers,now);
   const weeklyTitle=ready?weekly.face+' soirée'+(weekly.face===1?'':'s')+' de défi':'Cette semaine, on joue ?';
  // Use the exact shared daily/weekly policy result passed by the app.
  // Never derive another quota from visible private cards or local history.
@@ -222,12 +232,12 @@ export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,d
  const statistic=(value,label,subtitle,cls='')=>
   '<div class="home-stat-card '+cls+'"><div class="home-stat-content"><i aria-hidden="true">'+({completed:'★',partners:'♧',categories:'♡',streak:'▥'}[cls]||'')+'</i><strong>'+escape(value)+'</strong>'+
   '<span>'+escape(label)+'</span><small>'+escape(subtitle)+'</small></div></div>';
-  const displayNames=[0,1].map(i=>String(members[i]?.name||'Partenaire '+(i+1)).trim());
+  const displayNames=[0,1].map(i=>String(safeMembers[i]?.name||'Partenaire '+(i+1)).trim());
  const shortNames=displayNames.map(n=>n.split(/\s+/)[0]);
  const [nameA,nameB]=shortNames[0]===shortNames[1]?displayNames:shortNames;
  const percent=coupleStats.sensualPercent==null?'—':
   coupleStats.sensualPercent+' / '+coupleStats.sexualPercent+' %';
- const invitation=monthlyInvitation(monthly,members);
+ const invitation=monthlyInvitation(monthly,safeMembers);
  const monthlyTitle=monthlyActivity?.title||activity?.activity_title||'Activité tirée';
  const invitationText=invitation?.host&&invitation?.guest?
   [nameA,nameB][invitation.index]+' invite '+[nameA,nameB][1-invitation.index]:
