@@ -22,5 +22,8 @@ export function coffretMemo(history,id,status){
   (status.active&&Number(status.coffret_id)===Number(id)?status:null):
   rows.find(s=>!s.ended_at&&s.cancelled!==true);
  return {completed,started:rows.length>0||!!active,active:!!active,
-  minutes:Number(active?.minutes)||null,chapter:Number(active?.chapter_index)||null};
+  minutes:Number(active?.minutes)||null,
+  // The live RPC calls this chapter_number; stored history uses chapter_index.
+  // Prefer the server's live stage when available (including stage 1).
+  chapter:Number(active?.chapter_number??active?.chapter_index)||null};
 }
