@@ -65,6 +65,34 @@ test('Home uses server-authoritative assigned targets, not already drawn cards',
  assert.equal(assigned.completed,2);
  assert.equal(assignedTonight({ready:false},members).total,null);
 });
+test('Shared evening counts reject incomplete and unsafe RPC values without fake zeros',()=>{
+ const members=[{user_id:'a'},{user_id:'b'}];
+ const partial=assignedTonight({ready:true,targets:{a:4},
+  completed:{a:1,b:0},remaining:{a:3,b:0}},members);
+ assert.equal(partial.ready,true);
+ assert.equal(partial.forFirst,4);
+ assert.equal(partial.forSecond,null);
+ assert.equal(partial.total,null,'missing partner target stays unknown, never zero');
+ assert.equal(partial.completed,1,'genuine completed counts remain visible');
+ assert.equal(assignedTonight({ready:true,targets:{a:4,b:6}},{}).total,null);
+ assert.equal(assignedTonight({ready:true,targets:{a:4,b:6}},null).total,null);
+ assert.equal(assignedTonight({ready:true,targets:{a:4,b:6}},[null,false]).total,null);
+ for(const bad of [-2,1.5,Infinity,NaN,'', ' ', 'Infinity','-1','1.5',true,{},null]){
+  const summary=assignedTonight({ready:true,targets:{a:bad,b:3}},members);
+  assert.equal(summary.total,null,'invalid server target: '+String(bad));
+  assert.equal(summary.forFirst,null);
+ }
+ const legacy=assignedTonight({ready:true,targets:{a:'4',b:'6'},
+  completed:{a:'1',b:'0'},remaining:{a:'3',b:'6'}},members);
+ assert.equal(legacy.total,10,'canonical historic numeric strings remain supported');
+ assert.equal(legacy.completed,1);
+ assert.equal(legacy.remaining,9);
+ const overflow=assignedTonight({ready:true,targets:{a:Number.MAX_SAFE_INTEGER,b:2}},members);
+ assert.equal(overflow.total,null,'unsafe sums are not shown as official totals');
+ assert.match(premiumHomeHtml({members:{},turn:{ready:true}}),/real-home-shell/,
+  'incomplete member container does not crash the Home screen');
+ assert.match(premiumHomeHtml({members:null}),/real-home-shell/);
+});
 test('Production home uses actual saved weekly result, disabled state and live cards',()=>{
  const args={weekly:{face:2,actor:'a'},members:[{user_id:'a',name:'Fred'},{user_id:'b',name:'Camille'}],
  turn:{ready:true,targets:{a:4,b:6},remaining:{a:4,b:6},completed:{a:0,b:0}},now:new Date('2026-10-14T16:00:00Z')};
