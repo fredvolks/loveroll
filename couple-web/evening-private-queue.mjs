@@ -1,6 +1,10 @@
 // A challenge list belongs exclusively to the recipient, never to the other
 // partner. The database RLS repeats this rule even for direct API requests.
 export function ownEveningChallenges(rows=[],userId,sessionId){
+ // Missing identity or session is never an authorization to show unscoped
+ // cards, including malformed rows without a recipient/session identifier.
+ if(typeof userId!=='string'||!userId.trim()||
+    typeof sessionId!=='string'||!sessionId.trim())return [];
  return (rows||[]).filter(r=>r?.recipient===userId&&r.session_id===sessionId)
   .sort((a,b)=>Date.parse(a.created_at||'')-Date.parse(b.created_at||'')||
    String(a.id).localeCompare(String(b.id)));
@@ -28,6 +32,14 @@ export function visibleEveningQueue(cards=[]){
   .sort((left,right)=>slotFor(left)-slotFor(right)||
    (originalOrder.get(left.id)??0)-(originalOrder.get(right.id)??0));
 }
+// LR-027: resume the card that has actually started, rather than the oldest
+// unstarted draw. Caller must pass the recipient-only, session-scoped queue.
+// Preserve queue order when multiple cards share the same live status.
+export function primaryEveningChallenge(cards=[]){
+ const mine=cards||[];
+ return mine.find(card=>card?.status==='accepted')||
+  mine.find(card=>card?.status==='proposed')||null;
+}
 export function queuePosition(cards=[],id){
  return cards.findIndex(c=>c.id===id);
 }
@@ -35,6 +47,6 @@ export function queueLabel(status){
  return ({proposed:'À commencer',accepted:'En cours',completed:'Terminé',passed:'Passé',refused:'Refusé'})[status]||'À faire';
 }
 export function hasTurnToDraw(board,userId){
- return !!(board?.ready&&!board?.drawsFinished&&board?.next===userId&&
+ return !!(board?.ready&&!board?.finished&&!board?.drawsFinished&&board?.next===userId&&
   Number(board?.remaining?.[userId]||0)>0);
 }

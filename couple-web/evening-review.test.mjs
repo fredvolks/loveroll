@@ -84,3 +84,25 @@ test('New per-person reviews remain authenticated and protected',()=>{
  assert.match(sql,/auth\.uid\(\)/);
  assert.match(sql,/REVOKE ALL ON TABLE public\.couple_evening_reviews FROM PUBLIC, anon, authenticated/);
 });
+
+test('Saving a review remains successful even if the calendar refresh fails',()=>{
+ const app=read('app.js');
+ const start=app.indexOf("if(verb==='review-save'){");
+ const end=app.indexOf("if(verb==='evening-more')",start);
+ assert.ok(start>=0&&end>start);
+ const save=app.slice(start,end);
+ assert.ok(save.indexOf("await rpc('save_love_evening_review'")<
+  save.indexOf("try{await refreshAndShow();}"),
+  'Server write must succeed before any calendar refresh');
+ assert.match(save,/catch\(refreshError\)\{[\s\S]*?Bilan enregistré[\s\S]*?\}/);
+ assert.match(save,/catch\(error\)\{[\s\S]*?Enregistrement impossible/);
+ assert.match(save,/state\.reviewModalSessionId=null;state\.reviewDraft=\{\};/);
+ assert.match(save,/if\(state\.reviewSaving\)return/);
+});
+test('Review cannot be dismissed or switched mid-save with Escape or close button',()=>{
+ const app=read('app.js');
+ assert.match(app,/if\(state\.reviewModalSessionId\)\{[\s\S]*?if\(state\.reviewSaving\)return true;/);
+ assert.match(app,/if\(verb==='review-dismiss'\)\{\s*if\(state\.reviewSaving\)return;/);
+ assert.match(app,/if\(verb==='review-open'\)\{\s*if\(state\.reviewSaving\)return;/);
+ assert.match(app,/if\(verb==='review-rate'\)\{\s*if\(state\.reviewSaving\)return;/);
+});

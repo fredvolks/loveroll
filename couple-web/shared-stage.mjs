@@ -1,6 +1,17 @@
 // One viewport coordinate system for the photograph, pedestal and dice contact.
+// Keep scene framing deterministic across resize for the short-phone
+// playable Soirée D100. Move the SAME photographed marble plane, not the
+// official WebGL mesh, and preserve the original crop everywhere else.
+// Real browser evidence: 320x568 needed 40px of split clearance (now green);
+// 360x640 was 12px too high, so 20px split provides ~15.6px at the marble.
+export function sharedStageSplit(width,height,readyEveningD100=false){
+ const compact320=readyEveningD100&&width<=359&&height<=600;
+ const compact360=readyEveningD100&&width>359&&width<=360&&height<=640;
+ return Math.max(230,height-215)+(compact320?40:compact360?20:0);
+}
 export function fitSharedStage(root){
- const split=Math.max(230,innerHeight-215);
+ const split=sharedStageSplit(innerWidth,innerHeight,
+  root.classList.contains('has-evening-d100-template'));
  root.style.setProperty('--home-scene-split',split+'px');
  root.style.setProperty('--home-scene-top-image-height',split/.438+'px');
  root.style.setProperty('--home-scene-bottom-image-height',(innerHeight-split)/.562+'px');

@@ -10,13 +10,17 @@ const click=async(p,name)=>{await revealSetting(p,'[data-action="'+name+'"]');co
  const open=async(world,options)=>{const result=await setupEditorial(browser,world,options);contexts.push(result.context);return result;};
  try{
   const {page:auth}=await open(createWorld(),{actor:'guest',query:'auth=signup'});
+  // Le formulaire fictif vide désactive le CTA : mesurer son état actif
+  // pour comparer les composants, sans déclencher aucune soumission.
+  await auth.locator('.entry-auth-submit').evaluate(el=>{el.disabled=false;el.removeAttribute('aria-disabled');});
   const reference=await auth.locator('.entry-auth-submit').evaluate(appearance);
   const selected=await auth.locator('.entry-auth-segments .is-active').evaluate(appearance);
-  assert.match(reference.background,/101, 0, 22/,'Account reference uses the shared Home ruby surface');
+  assert.match(reference.background,/198, 56, 104/,'Account reference uses the approved lantern-rose ruby gradient');
   for(const [width,height] of [[360,640],[412,824],[820,1180]]){
    // Android has its new ruby material; tablet keeps its existing palette.
    // Compare each page to the account CTA in the SAME viewport.
    const {page:viewportAuth}=await open(createWorld(),{actor:'guest',query:'auth=signup',width,height});
+   await viewportAuth.locator('.entry-auth-submit').evaluate(el=>{el.disabled=false;el.removeAttribute('aria-disabled');});
    const reference=await viewportAuth.locator('.entry-auth-submit').evaluate(appearance);
    const selected=await viewportAuth.locator('.entry-auth-segments .is-active').evaluate(appearance);
    const world=createWorld(),{page:p,errors}=await open(world,{width,height,query:''});

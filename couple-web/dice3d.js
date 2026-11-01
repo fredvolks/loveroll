@@ -444,6 +444,16 @@ export function dieOn(canvas,sides,value,rolling){
   new ResizeObserver(resizeDie):null;
  resizeObserver?.observe(canvas);
  const podiumObserver=typeof ResizeObserver==='function'?new ResizeObserver(()=>{alignPodium();request();}):null;
+ // fitTabletRomanceStage updates the photo's marble CSS variable AFTER the
+ // canvas is created. That moves the fixed marker without resizing the
+ // theater, so ResizeObserver alone misses it and the D100 floats above
+ // the marble by the late layout delta (5px on portrait iPad in CI).
+ const photoRoot=canvas.closest('#app');
+ const photoContactObserver=sides===100&&photoRoot&&
+  typeof MutationObserver==='function'?
+  new MutationObserver(()=>{if(canvas.isConnected){alignPodium();request();}}):null;
+ if(photoContactObserver&&canvas.closest('.evening-d100-theater'))
+  photoContactObserver.observe(photoRoot,{attributes:true,attributeFilter:['style']});
  window.addEventListener('resize',resizeDie);
  const glass=glassEnvironment(renderer,referenceRuby,sides===100);scene.environment=glass.texture;
  const backdrop=crystalBackdrop(renderer,scene,canvas,()=>request());
@@ -490,7 +500,7 @@ export function dieOn(canvas,sides,value,rolling){
   (photoStage?new THREE.Euler(-.12,-.055,0):new THREE.Euler(.015,-.055,0)):
   new THREE.Euler(.075,-.09,0);
  const tilt=new THREE.Quaternion().setFromEuler(restEuler);
- const podiumSelector='.home-die-theater,.surprise-main-die-scene,.evening-user-die>.love3d,.evening-die-row,.evening-finale-hero';
+ const podiumSelector='.home-die-theater,.surprise-main-die-scene,.evening-user-die>.love3d,.evening-die-row,.evening-finale-hero,.evening-d100-theater';
  let podium=canvas.closest(podiumSelector);
  const orientationFor=face=>{
   const normal=built.normals.get(Number(face));
@@ -535,6 +545,44 @@ export function dieOn(canvas,sides,value,rolling){
   }
   if(!podium)return;
   const stage=canvas.parentElement,pose=built.group.quaternion.clone(),position=built.group.position.clone();
+  // On the live Soirée D100 the official WebGL camera is already fitted to
+  // Surprise's mesh size. Previously the theater was absent from the podium
+  // selector, so its real die never received the marble contact correction.
+  // Translate only the real canvas stage; preserve camera zoom, face and dice
+  // probabilities. Recalculate from an untransformed box on each resize.
+  if(sides===100&&podium.matches('.evening-d100-theater')){
+   const marker=podium.querySelector('.home-pedestal-contact');
+   const markerVisible=marker&&marker.getBoundingClientRect().width===0&&
+    getComputedStyle(marker.parentElement).display!=='none';
+   if(markerVisible){
+    // Only tablet layouts need inline-important. On compact phones the
+    // existing layered CSS already owns mesh headroom; overriding it pushes
+    // the real die above the hero. Keep phone behavior unchanged.
+    const tablet=window.matchMedia('(min-width:768px)').matches;
+    const priority=tablet?'important':'';
+    // The ready iPad D100 starts ~6.4% narrower than the Surprise reference
+    // even though both occupy a 440px WebGL stage. Match the SAME physical
+    // ruby silhouette, then re-anchor its projected bottom on the marble.
+    // Set an absolute camera zoom (not *=) so repeated ResizeObserver calls
+    // never accumulate scale, and leave phones, D6 and inactive stages alone.
+    // iPad paysage : le théâtre mesure 352×276 plutôt que 440×440 en
+    // portrait. Le D100 rendait 201px contre 257px dans Surprise.
+    // Zoom absolu sur le même mesh, sans cumul au redimensionnement.
+    const landscapeTablet=tablet&&window.matchMedia('(orientation:landscape)').matches;
+    const podiumZoom=landscapeTablet?1.36:1.065;
+    if(tablet&&camera.zoom!==podiumZoom){
+     camera.zoom=podiumZoom;
+     camera.updateProjectionMatrix();
+    }
+    stage.style.setProperty('transform','none',priority);
+    const rect=canvas.getBoundingClientRect(),bounds=projectedBounds();
+    if(rect.width>0&&rect.height>0){
+     const dy=marker.getBoundingClientRect().top-(rect.top+bounds.bottom*rect.height);
+     if(Number.isFinite(dy))stage.style.setProperty('transform','translateY('+dy.toFixed(2)+'px)',priority);
+    }
+   }
+   return;
+  }
   built.group.quaternion.copy(target);built.group.position.set(0,0,0);
   stage.style.transform='none';camera.zoom=1;camera.updateProjectionMatrix();
   const sceneRect=podium.getBoundingClientRect(),rect=canvas.getBoundingClientRect();
@@ -676,17 +724,23 @@ export function dieOn(canvas,sides,value,rolling){
     if(hero){
      const rect=canvas.getBoundingClientRect(),region=hero.getBoundingClientRect();
      if(rect.height>0&&region.height>0){
-      const bounds=projectedBounds();
-      const top=rect.top+bounds.top*rect.height;
-      const bottom=rect.top+bounds.bottom*rect.height;
-      let correction=0;
-      if(top<region.top+3)correction=region.top+3-top;
-      if(bottom+correction>region.bottom-3)correction=region.bottom-3-bottom;
-      if(Math.abs(correction)>.1){
-       const origin=new THREE.Vector3(0,0,0).project(camera);
-       const raised=new THREE.Vector3(0,1,0).project(camera);
-       const pixelsPerUnit=(raised.y-origin.y)*rect.height/2;
-       if(pixelsPerUnit>1)built.group.position.y-=correction/pixelsPerUnit;
+      // NDC Y increases UP while CSS Y increases DOWN. Convert the
+      // projected derivative with the correct sign, then remeasure the true
+      // rotated mesh once after correction for perspective on tiny phones.
+      const origin=new THREE.Vector3(0,0,0).project(camera);
+      const raised=new THREE.Vector3(0,1,0).project(camera);
+      const pixelsPerUnit=(raised.y-origin.y)*rect.height/2;
+      if(pixelsPerUnit>1){
+       for(let pass=0;pass<2;pass++){
+        const bounds=projectedBounds();
+        const top=rect.top+bounds.top*rect.height;
+        const bottom=rect.top+bounds.bottom*rect.height;
+        let correction=0;
+        if(top<region.top+3)correction=region.top+3-top;
+        if(bottom+correction>region.bottom-3)correction=region.bottom-3-bottom;
+        if(Math.abs(correction)<=.1)break;
+        built.group.position.y-=correction/pixelsPerUnit;
+       }
       }
      }
     }
@@ -799,7 +853,8 @@ export function dieOn(canvas,sides,value,rolling){
  document.addEventListener('visibilitychange',onVisible);request();
  const clean=()=>{if(frame)cancelAnimationFrame(frame);obs.disconnect();
   if(canvas.loveRollDie?.rollTo===rollTo)delete canvas.loveRollDie;
-  resizeObserver?.disconnect();podiumObserver?.disconnect();window.removeEventListener('resize',resizeDie);
+  resizeObserver?.disconnect();podiumObserver?.disconnect();photoContactObserver?.disconnect();
+  window.removeEventListener('resize',resizeDie);
   document.removeEventListener('visibilitychange',onVisible);
   canvas.removeEventListener('pointerdown',down);canvas.removeEventListener('pointermove',move);
   canvas.removeEventListener('pointerup',up);canvas.removeEventListener('pointercancel',up);

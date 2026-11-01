@@ -168,3 +168,16 @@
   }
  }
 }
+
+/* LR-001: ultra-compact phones keep the rotating WebGL silhouette inside its theater.
+   The underlying canvas is already limited by its 109px grid row at 320x568,
+   but a rotated D100 silhouette can rise ~7px above the theater. Scale the
+   ACTUAL WebGL canvas from its photographed contact point (84% vertical):
+   its bottom stays aligned with the existing marble and no 3D geometry is
+   concealed or clipped. The larger phone/tablet/desktop models are untouched. */
+@media (max-width:359px) and (max-height:600px){
+ #app.has-evening-d100-template .evening-d100-theater .dice-canvas{
+  transform:scale(.90)!important;
+  transform-origin:50% 84%!important;
+ }
+}

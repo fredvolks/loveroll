@@ -6,7 +6,11 @@ exports.revealSetting=async function(page,selector){
   if(!hidden)return;
   const path=await target.evaluate(el=>el.closest('[data-settings-path]')?.dataset.settingsPath||'');
   const current=await page.locator('.settings-detail-body').first().getAttribute('data-settings-location')||'';
-  if(current&&current!==path){await page.locator('.settings-back').click();continue;}
+  // A parent route is on the way TO a nested leaf, not a wrong destination.
+  // Back only if the current branch is genuinely outside the requested path.
+  if(current&&current!==path&&!path.startsWith(current+'/')){
+   await page.locator('.settings-back').click();continue;
+  }
   const keys=path.split('/').filter(Boolean),done=current.split('/').filter(Boolean).length;
   if(keys[done])await page.locator('[data-settings-open="'+keys[done]+'"]').click();
   else throw Error('Unreachable setting '+selector+' in '+current+' -> '+path);

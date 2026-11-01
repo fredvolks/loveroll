@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {isAcceptedTimedEveningChallenge,isSameCompletedEveningChallenge,completeTimedEveningChallenge,timedEveningTimerControl} from './timed-evening-completion.mjs';
+import {isAcceptedTimedEveningChallenge,isSameCompletedEveningChallenge,completeTimedEveningChallenge,timedEveningTimerControl,refreshAfterTimedEveningConfirmation,timerBelongsToUser,canControlTimedEveningChallenge} from './timed-evening-completion.mjs';
 const card={id:'card-a',recipient:'alice',session_id:'session-a',status:'accepted'};
 test('Only accepted, recipient-owned Soirée cards qualify; unrelated timers never count',()=>{
  assert.equal(isAcceptedTimedEveningChallenge(card,'alice','session-a'),true);
@@ -81,7 +81,9 @@ test('LR-002 a reset after the real deadline cannot cancel automatic completion'
  assert.match(source,/if\(challengeTimer\.running&&challengeTimer\.deadline>0&&Date\.now\(\)>=challengeTimer\.deadline\)/);
  assert.match(source,/const autoComplete=!challengeTimer\.decisionPending&&isAcceptedTimedEveningChallenge\(item,state\.user\?\.id,state\.session\?\.id\)/);
  assert.match(source,/if\(!challengeTimer\.autoCompletePending\|\|challengeTimer\.decisionPending\|\|timerCompletionInFlight/);
- assert.match(source,/if\(\['completed','passed','refused'\]\.includes\(item\.status\)\)/);
+ assert.match(source,/if\(\['passed','refused'\]\.includes\(item\.status\)\)/);
+ assert.match(source,/isSameCompletedEveningChallenge\(item,item,state\.user\.id,state\.session\.id\)/,
+  'A server-confirmed card may still need its last Soirée board synchronization');
  assert.match(source,/Validation automatique du défi en cours/);
  assert.doesNotMatch(source,/À vous de décider si le défi continue/);
 });
@@ -159,4 +161,180 @@ test('LR-002 live countdown and rerender cannot revive an inert Reprendre button
  assert.match(render,/presentation\.disabled\?' disabled aria-disabled="true"'/);
  assert.match(render,/presentation\.resetDisabled\?' disabled aria-disabled="true"'/);
  assert.match(render,/presentation\.label/);
+});
+
+test('LR-002 server-confirmed timed challenge remains completed when the screen refresh fails',async()=>{
+ let tries=0;
+ assert.equal(await refreshAfterTimedEveningConfirmation(async()=>{tries++;}),true);
+ assert.equal(await refreshAfterTimedEveningConfirmation(async()=>{tries++;throw Error('offline after save');}),false);
+ assert.equal(tries,2,'Refresh is attempted only once; helper never re-submits completion');
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const start=app.indexOf('async function retryExpiredTimedEvening(){');
+ const end=app.indexOf('function endSignal(){',start);
+ const timers=app.slice(start,end);
+ assert.equal((timers.match(/await refreshConfirmedTimedEvening\(\)/g)||[]).length,2,
+  'Active timer and reload recovery use the same safe refresh');
+ assert.doesNotMatch(timers,/await refreshAndShow\(\)/,
+  'Post-save display refresh must not be caught as a failed server write');
+ assert.match(app,/Défi accompli sur le serveur\. L’affichage n’a pas pu être actualisé/);
+ assert.match(app,/const updated=await refreshAfterTimedEveningConfirmation\(refreshAndShow\)/);
+});
+
+test('LR-002 timers belong only to the account which opened the challenge',()=>{
+ const timer={id:'same-card',ownerUserId:'alice'};
+ assert.equal(timerBelongsToUser(timer,'alice'),true);
+ assert.equal(timerBelongsToUser(timer,'bob'),false);
+ assert.equal(timerBelongsToUser(timer,null),false);
+ assert.equal(timerBelongsToUser({id:'same-card'},'alice'),false);
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ assert.match(source,/challengeTimer\.ownerUserId!==ownerId/);
+ assert.match(source,/challengeTimer\.ownerUserId=ownerId/);
+ assert.match(source,/if\(!timerBelongsToUser\(challengeTimer,state\.user\?\.id\)\)return;/);
+ assert.match(source,/if\(!state\.user\?\.id\)return;/);
+ assert.match(source,/challengeTimer\.decisionPending=false;/);
+ // Neither the old timer's saved key nor its pending confirmation can ever
+ // be written/sent as the new account merely because the card ID is reused.
+ const save=source.slice(source.indexOf('function saveChallengeTimer(){'),source.indexOf('function activeTimer('));
+ assert.ok(save.indexOf('timerBelongsToUser')<save.indexOf('writeSavedChallengeTimer'));
+ const retry=source.slice(source.indexOf('async function retryExpiredTimedEvening(){'),source.indexOf('async function reconcileSavedEveningTimers()'));
+ assert.match(retry,/timerBelongsToUser\(challengeTimer,state\.user\?\.id\)/);
+});
+
+test('LR-002 stale card or account cannot reset or restart a timed Soirée challenge',()=>{
+ const owner={id:'a',ownerUserId:'alice'};
+ const open={id:'a',recipient:'alice',session_id:'evening',status:'proposed'};
+ assert.equal(canControlTimedEveningChallenge(owner,open,'alice','evening'),true);
+ assert.equal(canControlTimedEveningChallenge(owner,{...open,status:'accepted'},'alice','evening'),true);
+ for(const card of [
+  {...open,status:'completed'}, {...open,status:'passed'}, {...open,status:'refused'},
+  {...open,recipient:'bob'}, {...open,session_id:'another'}, {...open,id:'b'},null
+ ])assert.equal(canControlTimedEveningChallenge(owner,card,'alice','evening'),false);
+ assert.equal(canControlTimedEveningChallenge(owner,open,'bob','evening'),false);
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ for(const verb of ['timer-reset','timer-toggle']){
+  const start=app.indexOf("if(verb==='"+verb+"')");
+  const stop=app.indexOf("if(verb==='",start+5);
+  const block=app.slice(start,stop);
+  assert.ok(start>=0&&stop>start);
+  assert.match(block,/canControlTimedEveningChallenge\(challengeTimer,timedEveningItem\(challengeTimer.id\)/);
+ }
+ const toggle=app.slice(app.indexOf("if(verb==='timer-toggle')"),app.indexOf("if(verb==='give-challenge')"));
+ assert.equal((toggle.match(/canControlTimedEveningChallenge\(/g)||[]).length,2,
+  'Revalidate after the asynchronous server acceptance or sound permission');
+});
+
+test('LR-002 rapid-tap accept is serialized and Reset cannot race the server acceptance',()=>{
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ assert.match(source,/let timerActivationInFlight=false/);
+ const reset=source.slice(source.indexOf("if(verb==='timer-reset')"),source.indexOf("if(verb==='timer-toggle')"));
+ assert.match(reset,/if\(timerActivationInFlight\)/,
+  'Reset cannot silently rewind a timer while the acceptance is pending');
+ const start=source.indexOf("if(verb==='timer-toggle')"),stop=source.indexOf("if(verb==='give-challenge')",start);
+ const toggle=source.slice(start,stop);
+ assert.ok(start>=0&&stop>start);
+ assert.match(toggle,/if\(timerActivationInFlight\)return/);
+ assert.match(toggle,/timerActivationInFlight=true/);
+ assert.match(toggle,/try\{/);
+ assert.match(toggle,/finally\{/);
+ assert.match(toggle,/timerActivationInFlight=false/);
+ assert.ok(toggle.indexOf('timerActivationInFlight=true')<
+  toggle.indexOf("await rpc('answer_challenge'"),
+  'The first tap owns the lock BEFORE the async server write');
+ assert.ok(toggle.indexOf('timerActivationInFlight=false')>
+  toggle.indexOf('await rpc(\'answer_challenge\''),
+  'Release lock only after the server callback resolves or rejects');
+});
+
+test('LR-002 board outage after saved completion reports the card as persisted, but retries session sync',async()=>{
+ const calls=[];
+ const rpc=async name=>{
+  calls.push(name);
+  if(name==='my_love_evening_board')throw Error('temporary board outage');
+ };
+ await assert.rejects(completeTimedEveningChallenge({challenge:card,userId:'alice',
+  sessionId:'session-a',rpc,query:async()=>[]}),error=>{
+  assert.equal(error.challengeCompletionConfirmed,true);
+  assert.match(error.message,/Défi enregistré/);
+  assert.match(error.cause.message,/temporary board outage/);
+  return true;
+ });
+ assert.deepEqual(calls,['answer_challenge','my_love_evening_board'],
+  'A stored card is not submitted twice in the same attempt');
+ // Later retry uses the existing exact-identity idempotency guard.
+ const confirmAgain=async name=>{
+  if(name==='answer_challenge')throw Error('already saved');
+  if(name==='my_love_evening_board')return {finished:true};
+ };
+ const result=await completeTimedEveningChallenge({challenge:card,userId:'alice',
+  sessionId:'session-a',rpc:confirmAgain,
+  query:async name=>name==='couple_challenges'?[{...card,status:'completed'}]:[]});
+ assert.equal(result.outcome,'already-completed');
+ assert.equal(result.finished,true);
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ assert.equal((app.match(/error\?\.challengeCompletionConfirmed===true/g)||[]).length,2,
+  'Active and restored timers distinguish server save from board synchronization');
+ assert.equal((app.match(/Synchronisation de Soirée en attente de connexion/g)||[]).length,2);
+});
+
+test('LR-002 a completed card can finish a pending Soirée board after app restart without re-answering',async()=>{
+ const completed={...card,status:'completed'},calls=[];
+ const rpc=async(name,args)=>{
+  calls.push({name,args});
+  if(name==='my_love_evening_board')return {finished:true};
+ };
+ const result=await completeTimedEveningChallenge({
+  challenge:completed,userId:'alice',sessionId:'session-a',rpc,
+  query:async()=>{throw Error('No challenge lookup needed for confirmed local server record');}
+ });
+ assert.deepEqual(result,{outcome:'already-completed',finished:true});
+ assert.deepEqual(calls.map(x=>x.name),['my_love_evening_board','finish_couple_session'],
+  'Resume only board and finish RPC: answer_challenge must not run again');
+ for(const wrong of [{...completed,recipient:'bob'},
+  {...completed,session_id:'other'}, {...completed,status:'passed'}]){
+  const out=await completeTimedEveningChallenge({challenge:wrong,userId:'alice',
+   sessionId:'session-a',rpc,query:async()=>[]});
+  assert.equal(out.outcome,'ineligible');
+ }
+ assert.equal(calls.length,2,'Invalid partner/session cannot call any RPC');
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const retry=app.slice(app.indexOf('async function retryExpiredTimedEvening(){'),
+  app.indexOf('async function reconcileSavedEveningTimers()'));
+ const recovery=app.slice(app.indexOf('async function reconcileSavedEveningTimers(){'),app.indexOf('function endSignal(){'));
+ for(const code of [retry,recovery]){
+  assert.match(code,/isSameCompletedEveningChallenge\(item,item,state\.user\.id,state\.session\.id\)/);
+  assert.match(code,/completeTimedEveningChallenge\(\{challenge:item,userId,sessionId,rpc,query\}\)/);
+ }
+ assert.doesNotMatch(retry,/\['completed','passed','refused'\]/);
+ assert.doesNotMatch(recovery,/\['completed','passed','refused'\]/);
+});
+
+test('LR-002 pending responses never mutate or display previous account timers after sign-out',()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const retry=app.slice(app.indexOf('async function retryExpiredTimedEvening(){'),
+  app.indexOf('async function reconcileSavedEveningTimers()'));
+ const recovery=app.slice(app.indexOf('async function reconcileSavedEveningTimers(){'),app.indexOf('function endSignal(){'));
+ assert.match(retry,/if\(timerBelongsToUser\(challengeTimer,userId\)&&challengeTimer\.id===id\)/);
+ for(const section of [retry,recovery]){
+  assert.match(section,/if\(state\.user\?\.id===userId&&state\.session\?\.id===sessionId&&!document\.hidden\)/,
+   'An offline response for the previous account must not notify a newly signed-in user');
+ }
+});
+
+test('LR-002 initial Soirée start blocks double acceptance and respects an acknowledged write',()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const start=app.indexOf("if(verb==='evening-start')");
+ const end=app.indexOf("if(verb==='surprise-activity')",start);
+ assert.ok(start>=0&&end>start);
+ const block=app.slice(start,end);
+ assert.match(app,/let eveningStartInFlight=false/);
+ assert.match(block,/if\(eveningStartInFlight\)return/);
+ assert.match(block,/eveningStartInFlight=true/);
+ assert.match(block,/finally\{eveningStartInFlight=false;\}/);
+ assert.match(block,/picked\.status='accepted'/);
+ assert.ok(block.indexOf("picked.status='accepted'")>block.indexOf("await rpc('answer_challenge'"));
+ assert.match(block,/const refreshed=await refreshAfterConfirmedWrite\(refreshAndShow\)/);
+ assert.match(block,/if\(state\.user\?\.id!==ownerId\|\|state\.session\?\.id!==sessionId\)return;/);
+ assert.match(block,/isAcceptedTimedEveningChallenge\(challenge,ownerId,sessionId\)/);
+ assert.match(block,/if\(active&&\['completed','passed','refused'\]\.includes\(active\.status\)\)return;/);
+ assert.match(block,/Défi accepté sur le serveur/);
 });

@@ -34,35 +34,44 @@ export function monthlyGeoCardHtml({
 }={}){
  if(!enabled)return '';
  let body='';
- if(venue?.state==='ready'&&venue?.place_id&&venue?.name){
+ // A named POI is not a verified driving destination until its road route
+ // is confirmed. Do not offer GPS/site booking as a resolved Surprise venue
+ // when the provider's matrix was empty, unreachable or invalid.
+ const roadMetres=finiteProviderNumber(venue?.driving_meters);
+ const roadVerified=roadMetres!==null&&roadMetres>=0;
+ if(venue?.state==='ready'&&venue?.place_id&&venue?.name&&roadVerified){
   const lat=finiteProviderNumber(venue.latitude),lon=finiteProviderNumber(venue.longitude),
    gps=lat!==null&&lon!==null&&Math.abs(lat)<=90&&Math.abs(lon)<=180?
     'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(lat+','+lon):null;
   const site=https(venue.website_url),booking=https(venue.booking_url),menu=https(venue.menu_url);
-  const roadMetres=finiteProviderNumber(venue.driving_meters);
-  const distance=roadMetres!==null&&roadMetres>=0?
-   Math.round(roadMetres/100)/10:null;
+  const distance=Math.round(roadMetres/100)/10;
   body='<div class="surprise-geo-venue">'+geoPhoto(venue)+
     '<div class="surprise-geo-venue-info"><strong>'+esc(venue.name)+'</strong>'+
     (venue.address?'<span>'+esc(venue.address)+'</span>':'')+
     (distance!==null?'<small>'+esc(distance.toLocaleString(locale))+' km par la route</small>':'')+
     '</div><div class="surprise-geo-links">'+a(gps,'⌖ GPS')+
-    (canReserve?a(booking||site,'♡ Réserver / site du lieu'):'')+
-    (menu?a(menu,'☷ Menu / activités'):a(site,'☷ Site du lieu'))+'</div>'+
+    (canReserve?a(booking,'♡ Réserver auprès du lieu'):'')+
+    a(menu,'☷ Menu / activités')+
+    (site===booking&&canReserve?'':a(site,'☷ Site officiel'))+'</div>'+
     (!canReserve&&host?'<p class="surprise-geo-muted">♡ '+esc(host)+' organise la réservation et le paiement.</p>':'')+
     '</div>';
  }else{
   const message=lookup==='loading'||lookup==='pending'?'Recherche d’un vrai lieu à proximité…':
    lookup==='error'?'Geoapify n’est pas encore disponible. Votre activité D100 reste enregistrée.':
    lookup==='unavailable'?'Aucun établissement avec trajet routier vérifié dans votre rayon. Votre activité D100 est conservée.':
+   venue?.state==='ready'&&!roadVerified?'Le trajet routier vers ce lieu n’est pas vérifié. Votre activité D100 est conservée.':
    'Votre activité D100 est enregistrée. La recherche locale se lance automatiquement.';
-  body='<div class="surprise-geo-pending" role="status">'+esc(message)+'</div>';
+  body='<div class="surprise-geo-pending" role="status">'+esc(message)+'</div>'+
+   (lookup==='error'?'<button type="button" class="surprise-geo-text-button" data-action="geo-retry">Réessayer la recherche</button>':'');
  }
  let bookingHtml='';
  if(reservation&&reservation.status!=='cancelled'){
   bookingHtml='<div class="surprise-geo-booked"><strong>'+
    (reservation.status==='confirmed'?'♡ Réservation déclarée confirmée':'♡ Projet de sortie')+
-   '</strong><span>'+esc(humanDate(reservation.reserved_for,locale))+'</span>'+
+   '</strong>'+
+   (reservation.venue_name?'<span class="surprise-geo-reserved-place">'+esc(reservation.venue_name)+'</span>':'')+
+   (reservation.venue_address?'<small>'+esc(reservation.venue_address)+'</small>':'')+
+   '<span>'+esc(humanDate(reservation.reserved_for,locale))+'</span>'+
    '<small>'+(reservation.paid_by_host?'Paiement déclaré effectué par la personne qui invite':'Paiement non confirmé dans LoveRoll')+
    '</small><small>'+(reservation.status==='confirmed'?
     'Les rappels dépendent de leur programmation et de vos notifications.':
@@ -93,4 +102,50 @@ export function monthlyGeoCardHtml({
   '<div class="surprise-geo-eyebrow">♡ NOTRE LIEU DU MOIS</div>'+
   body+bookingHtml+
   '<p class="surprise-geo-credit">Lieux et distances : données Geoapify / OpenStreetMap. Photos, menus, prix et réservations selon les informations disponibles.</p></section>';
+}
+
+/**
+ * One mutable Surprise booking operation at a time (save, edit or cancel).
+ * A rapid second tap must never reorder two official reservation RPCs.
+ * Failed writes release the gate so the player can retry immediately.
+ */
+export function createBookingMutationGate(){
+ let active=false;
+ return async operation=>{
+  if(active)return false;
+  active=true;
+  try{await operation();return true;}
+  finally{active=false;}
+ };
+}
+
+/**
+ * Server refresh can return before the Geoapify Edge claim finishes.
+ * Preserve pending/error only for the SAME official monthly D100 roll:
+ * a new roll must never inherit the old pending search or booking editor.
+ */
+export function geoLookupAfterRefresh({rollId,previousRollId,venue,previousLookup}={}){
+ if(!rollId)return 'idle';
+ if(venue?.state)return venue.state;
+ return rollId===previousRollId&&['pending','error'].includes(previousLookup)?
+  previousLookup:'idle';
+}
+
+/**
+ * A manual venue change must not silently keep another business's official
+ * booking/menu/photo URLs. These links belong exclusively to the verified
+ * Geoapify suggestion, never to a user-entered replacement establishment.
+ */
+export function trustedBookingVenueLinks(venue,{title='',address=''}={}){
+ const sameText=(a,b)=>String(a??'').trim().replace(/\s+/g,' ').toLocaleLowerCase('fr-CA')===
+  String(b??'').trim().replace(/\s+/g,' ').toLocaleLowerCase('fr-CA');
+ const roadMetres=finiteProviderNumber(venue?.driving_meters);
+ const sameVerifiedVenue=venue?.state==='ready'&&!!venue.place_id&&
+  roadMetres!==null&&roadMetres>=0&&!!String(title).trim()&&
+  sameText(venue.name,title)&&sameText(venue.address,address);
+ return {
+  p_booking_url:sameVerifiedVenue?https(venue.booking_url):null,
+  p_menu_url:sameVerifiedVenue?https(venue.menu_url):null,
+  p_photo_url:sameVerifiedVenue?https(venue.photo_url):null
+ };
 }

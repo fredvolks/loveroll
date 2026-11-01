@@ -8,17 +8,22 @@ export const VENUE_CATEGORIES=Object.freeze({
  adventure:'entertainment',general:'tourism.attraction'
 });
 const norms=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-export function activityCategory(activity={}){
- const source=norms([activity.title,activity.description].filter(Boolean).join(' '));
- if(/\b(spa|therm|sauna|massage|bain nordique|hammam)\b/.test(source))return 'spa';
+const categoryFromText=source=>{
+ // A title is the player's actual activity; venue mentions in a longer
+ // itinerary description (e.g. "restaurant after our hike") are secondary.
+ if(/\b(spa|therm[a-z]*|sauna|massage|bain nordique|hammam)\b/.test(source))return 'spa';
  if(/\b(vignoble|vinicole|degustation de vin|oenolog)/.test(source))return 'winery';
  if(/\b(hotel|chalet|cabane|heberg|nuit insolite|dome|gite)\b/.test(source))return 'hotel';
- if(/\b(restaur|brunch|gastronom|repas|souper|table d.hote|bistro|brasserie)\b/.test(source))return 'restaurant';
+ if(/\b(restaur[a-z]*|brunch|gastronom[a-z]*|repas|souper|table d.hote|bistro|brasserie)\b/.test(source))return 'restaurant';
  if(/\b(musee|theatre|galerie d.art|concert|spectacle|exposition)\b/.test(source))return 'culture';
  if(/\b(bateau|croisiere|kayak|canot|voilier|phare|observation des baleines)\b/.test(source))return 'water';
  if(/\b(randonnee|foret|sentier|parc|pique.nique|jardin)\b/.test(source))return 'nature';
  if(/\b(aventure|escalade|tyrolienne|motoneige|kart|velo|ski)\b/.test(source))return 'adventure';
  return 'general';
+};
+export function activityCategory(activity={}){
+ const byTitle=categoryFromText(norms(activity.title));
+ return byTitle!=='general'?byTitle:categoryFromText(norms(activity.description));
 }
 // Absent and unrouteable Geoapify matrix entries must never become 0 km.
 export function verifiedRoadMetres(value){
@@ -48,9 +53,19 @@ export function chooseNearbyVenue(places,roadRoutes,maxKm,{category=null}={}){
   const id=String(place?.place_id||'').trim(),name=String(place?.name||'').trim();
   const route=id&&roadRoutes?.[id],km=drivingKilometres(route);
   if(!id||!name||!isRouteWithinRadius(route,maxKm))return null;
-  if(category&&!String(place?.categories||'').split(',').some(x=>x===category||x.startsWith(category+'.')))return null;
+  if(category){
+   // Geoapify commonly returns categories as an array, while imported
+   // providers may supply comma-separated text. Treat surrounding spaces
+   // equally, without accepting unrelated category prefixes.
+   const values=Array.isArray(place?.categories)?place.categories:
+    String(place?.categories||'').split(',');
+   if(!values.some(value=>{
+    const key=String(value||'').trim();
+    return key===category||key.startsWith(category+'.');
+   }))return null;
+  }
   return {place_id:id,name,address:String(place.address||'').trim(),distance_km:km,distance_meters:Number(route.distance_meters),source:'Geoapify'};
- }).filter(Boolean).sort((a,b)=>a.distance_km-b.distance_km||a.place_id.localeCompare(b.place_id));
+ }).filter(Boolean).sort((a,b)=>a.distance_meters-b.distance_meters||a.place_id.localeCompare(b.place_id));
  return candidate[0]||null;
 }
 export function localActivityResult(roll,venue,shared){

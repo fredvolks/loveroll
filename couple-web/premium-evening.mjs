@@ -79,6 +79,14 @@ export function updateEveningCategoryUi(root,category,percent=88){
  if(roll)roll.disabled=false; // Choices are enabled only when this player may draw.
  return true;
 }
+// The same local safety rule drives the visible D6 button AND its click handler.
+// Server remains authoritative if another device rolled after our last refresh.
+export function canRollPersonalEveningD6({session,status={},rolls=[],userId,rolling=false}={}){
+ if(!session||session.finished_at||rolling||status?.my_rolled||status?.both_ready||!userId)return false;
+ const own=rolls.find(r=>r.user_id===userId);
+ const face=own?.face;
+ return !(Number.isInteger(face)&&face>=1&&face<=6);
+}
 const d6=(m,roll,localUser,canRoll,ready,rolling,rollFace,effectiveTarget=null)=>{
  // Reveal a player's real server-confirmed result as soon as THEY roll.
  // Their face is immutable; the second player's roll cannot modify it.
@@ -97,7 +105,9 @@ const d6=(m,roll,localUser,canRoll,ready,rolling,rollFace,effectiveTarget=null)=
    '<small>défi'+(displayCount>1?'s':'')+' ce soir</small>'+
    (adjusted?'<span class="evening-original-d6">Dé initial : '+esc(roll.face)+'</span>':'')+'</div>':
    '<div class="evening-face-result is-empty" aria-hidden="true"></div>')+
-  bt('my-d6',canRoll?'🎲 Brasser mon dé':rolling&&localUser?'Brassage en cours…':'Lancer enregistré','evening-small-roll',!canRoll)+
+  (canRoll?bt('my-d6','🎲 Brasser mon D6','evening-small-roll'):
+   '<p class="evening-primary-status evening-d6-status" role="status">'+
+    (rolling&&localUser?'Brassage en cours…':has?'✓ Lancer enregistré':'Vérification du lancer…')+'</p>')+
   '</article>';
 };
 const partnerStatusCard=(partner,roll)=>{
@@ -136,15 +146,25 @@ export function premiumEveningHtml({
  partner=members.find(m=>m.user_id!==me)||members[1]||{},
  ready=!!status?.both_ready,
  myRoll=rolls.find(r=>r.user_id===me),
- theirRoll=rolls.find(r=>r.user_id===partner.user_id),
- canMyRoll=!!session&&!status?.my_rolled&&!rolling;
+ theirRoll=rolls.find(r=>r.user_id===partner.user_id);
+ // The immutable official D6 row wins over a lagging status RPC.
+ // Never offer another roll when its face is already server-confirmed.
+ const hasMyOfficialRoll=Number.isInteger(myRoll?.face)&&myRoll.face>=1&&myRoll.face<=6;
+ const myRollRecorded=!!status?.my_rolled||hasMyOfficialRoll;
+ const partnerRollRecorded=!!status?.partner_rolled||
+  (Number.isInteger(theirRoll?.face)&&theirRoll.face>=1&&theirRoll.face<=6);
+ const canMyRoll=canRollPersonalEveningD6({session,status,rolls,userId:me,rolling});
  const first=turn?.first?members.find(m=>m.user_id===turn.first)?.name?.split(' ')[0]:'';
  const totals=turn.targets||{},done=turn.completed||{};
  const canDraw=ready&&turn.ready&&!turn.drawsFinished&&
   Number(turn.remaining?.[me]||0)>0&&turn.next===me;
  const canGive=ready&&turn.ready&&giftCount<3&&Number(turn.remaining?.[me])>0;
+ // A private, unfinished challenge deserves the main action before another roll.
+ // Never expose a partner's pending card through the primary button.
+ const ownPending=!!(pending?.id&&pending.recipient===me&&pending.session_id===session?.id&&
+  ['proposed','accepted'].includes(pending.status));
  const challengeText=pending?'♡ Voir notre défi en cours':turn.finished?'Tous les défis terminés':!ready?'En attente des deux D6':canDraw?'À toi de jouer':'En attente de '+esc(partner.name?.split(' ')[0]||'ton partenaire');
- const stateText=ready?'✓ Étape 2 débloquée':status?.my_rolled?'Ton lancer est enregistré. Attends ton partenaire.':status?.partner_rolled?'Le résultat de '+esc(partner.name?.split(' ')[0]||'ton partenaire')+' est prêt. À toi de brasser le dé.':'Chaque partenaire brasse son propre dé.';
+ const stateText=ready?'✓ Étape 2 débloquée':myRollRecorded?'Ton lancer est enregistré. Attends ton partenaire.':partnerRollRecorded?'Le résultat de '+esc(partner.name?.split(' ')[0]||'ton partenaire')+' est prêt. À toi de brasser le dé.':'Chaque partenaire brasse son propre dé.';
  const currentStatus=turn.finished?'♡ Tous les défis sont réalisés':turn.drawsFinished?'♡ Tous les défis sont pigés':canDraw?'♥ C’est ton tour !':ready?'Au tour de '+esc(partner.name?.split(' ')[0]||'ton partenaire'):'Étape 2 verrouillée';
  // An official challenge is persisted in Supabase; never show a provisional
  // animation face or guess a result while a D100 is being rolled.
@@ -160,14 +180,18 @@ export function premiumEveningHtml({
  const primaryAction=turn.finished?
   bt('finish-session','✓ Terminer la soirée','evening-primary'):
   rolling?waitingStatus('Brassage en cours…'):
-  !ready?waitingStatus(status?.my_rolled?
+  !ready?waitingStatus(myRollRecorded?
    'En attente du D6 de ton partenaire':'Lance ton D6 pour continuer'):
+  ownPending?bt('evening-open:'+pending.id,'♡ Voir mon défi','evening-primary'):
+  !turn.ready?waitingStatus('Synchronisation de nos défis…'):
   turn.drawsFinished?(ownChallengeCount>0?
    bt('evening-list','♡ Voir mes défis ('+ownChallengeCount+')','evening-primary'):
    waitingStatus('Tous les tirages sont terminés')):
   canDraw?bt('new-challenge','🎲 Brasser le D100','evening-primary'):
    waitingStatus('En attente du tour de ton partenaire');
- const secondaryAction=ownChallengeCount>0&&
+ // Keep the private list reachable when multiple cards remain accessible.
+ // The active card is still the only dominant action.
+ const secondaryAction=ownChallengeCount>0&&(!ownPending||ownChallengeCount>1)&&
   !(turn.drawsFinished&&!turn.finished&&!rolling)?
   bt('evening-list','♡ Voir mes défis ('+ownChallengeCount+')','evening-queue-open-btn'):'';
  return '<div class="evening-premium-view '+(session?(ready?'is-ready':'is-waiting'):'is-inactive is-finale')+'" data-category-percent="'+esc(categoryOdds)+'">'+

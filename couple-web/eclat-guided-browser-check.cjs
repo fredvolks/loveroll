@@ -27,6 +27,7 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   assert.equal(await page.locator('[data-eclat-field="note"]').inputValue(),'Notre souvenir privé de test');
   await page.setViewportSize({width,height});
   await page.locator('.eclat-clue-field summary').click();
+  assert.equal(await page.locator('.eclat-clue-field').evaluate(el=>el.open),true,'The optional clue expands before typing');
   await page.locator('[data-eclat-field="clue"]').fill('Un indice de test');
   world.noteSaveError=true;
   await page.locator('[data-action="eclat:note-save"]').click();
@@ -35,6 +36,9 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   world.noteSaveError=false;
   await page.locator('[data-action="eclat:note-save"]').click();
   await page.waitForFunction(()=>document.querySelector('[data-eclat-note-status]')?.textContent.includes('enregistrée'));
+  assert.equal(await page.locator('.eclat-clue-field').evaluate(el=>el.open),true,
+   'Saving and repainting the note must not silently collapse the open clue field');
+  assert.equal(await page.locator('[data-eclat-field="clue"]').inputValue(),'Un indice de test');
   await page.reload();await enter(page);
   assert.equal(await page.locator('[data-eclat-field="note"]').inputValue(),'Notre souvenir privé de test');
   assert.equal(await page.locator('[data-eclat-field="clue"]').inputValue(),'Un indice de test');

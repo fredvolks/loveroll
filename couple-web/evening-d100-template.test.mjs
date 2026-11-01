@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {premiumEveningHtml} from './premium-evening.mjs';
 import {eveningPlayInfoHtml,calculateEveningD100StageSize} from './evening-d100-template.mjs';
+import {sharedStageSplit} from './shared-stage.mjs';
 const ready={session:{id:'s',paired_turns:true,self_draws:true},members:[{user_id:'a',name:'Fred'},{user_id:'b',name:'Émilie'}],me:'a',status:{both_ready:true},turn:{ready:true,next:'a',remaining:{a:2,b:3}}};
 test('No category is preselected; an eligible player can press roll to receive guidance',()=>{
  const html=premiumEveningHtml(ready);
@@ -55,4 +56,36 @@ test('Live D100 matches Surprise on iPad without changing the small-phone clamp'
  assert.equal(at(1180,820,660,276),352,'Playable landscape iPad uses the 43dvh cap even with a short theater');
  assert.equal(at(1024,768,640,490),330,'Landscape iPad uses the Surprise 43dvh cap');
  assert.equal(at(1024,600,620,200),258,'Landscape tablet never shrinks to the grid-row height');
+});
+
+test('320px Soirée keeps real D100 above the photo marble without changing other tabs',()=>{
+ const base=Math.max(230,568-215);
+ assert.equal(sharedStageSplit(320,568,true),base+40);
+ assert.equal(sharedStageSplit(359,600,true),Math.max(230,600-215)+40);
+ assert.equal(sharedStageSplit(360,640,true),Math.max(230,640-215)+20,
+  '360x640 D100 must clear the real ruby silhouette above the theater');
+ assert.equal(sharedStageSplit(360,568,true),Math.max(230,568-215)+20);
+ for(const [width,height] of [[360,740],[393,852],[412,915],[768,1024],[820,1180],[1180,820],[320,640]]){
+  assert.equal(sharedStageSplit(width,height,true),Math.max(230,height-215),
+   'Noncompact viewports retain the approved photographic contact: '+width+'x'+height);
+ }
+ assert.equal(sharedStageSplit(320,568,false),base,
+  'Home, inactive Soirée and Surprise keep original 320px photograph');
+});
+
+test('LR-001 ultra-compact die remains inside the real theater while photo contact stays fixed',()=>{
+ const css=readFileSync(new URL('./evening-d100-template.css',import.meta.url),'utf8');
+ assert.match(css,/@media \(max-width:359px\) and \(max-height:600px\)/,
+  'Small phone correction must not shrink all mobile, iPad or desktop dice');
+ assert.match(css,/\.evening-d100-theater \.dice-canvas\{[\s\S]*?transform:scale\(\.90\)!important;/);
+ assert.match(css,/transform-origin:50% 84%!important;/,
+  'Scale anchored near the real photographed D100 contact, not its center');
+ assert.doesNotMatch(css,/\.evening-d100-theater \.dice-canvas\{[^}]*?(?:display:none|clip-path|visibility:hidden)/);
+ // CI observed top=217.8, bottom/contact=306.9 and theater top=225.
+ // This CSS genuinely projects the 3D die smaller from its unchanged bottom.
+ const before={top:217.8,bottom:306.9,theaterTop:225};
+ const afterTop=before.bottom+(before.top-before.bottom)*.90;
+ assert.ok(afterTop>=before.theaterTop, 'The transformed 3D silhouette fits the theater');
+ assert.ok(Math.abs(before.bottom-(before.bottom+(before.bottom-before.bottom)*.90))<.001,
+  'The real contact stays in place');
 });

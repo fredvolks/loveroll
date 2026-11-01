@@ -120,6 +120,31 @@ const client=`export function createClient(){
   await revealSetting(a,'#show-sensuel-button');await a.locator('#show-sensuel-button').uncheck();await a.locator('#show-sexuel-button').uncheck();await a.locator('[data-action="save-evening-buttons"]').click();
   await a.waitForFunction(()=>document.querySelector('#show-sensuel-button')?.defaultChecked===false);
   assert.equal(world.couple.show_sexuel_button,false);await revealSetting(a,'[data-action="settings-page:admin"]');await a.locator('[data-action="settings-page:admin"]').click();assert.equal(await a.locator('[data-action="admin-reset-all-dice"]').count(),1);
+  // Test the REAL admin category form, not a simulated local validator.
+  // Two percentages must remain independent of the six-face D6 form.
+  // Navigate through the REAL nested Probabilités > Sensuel et Sexuel menus.
+  // Only the editor has a settings path; the surrounding <summary> does not.
+  await revealSetting(a,'#admin-category-preferred');
+  const categoryPanel=a.locator('details[data-category-weights]');
+  if(!await categoryPanel.evaluate(el=>el.open))await categoryPanel.locator('summary').click();
+  assert.equal(await categoryPanel.evaluate(el=>el.open),true,'The category editor must be disclosed after real navigation');
+  const preferred=categoryPanel.locator('#admin-category-preferred');
+  const otherCategory=categoryPanel.locator('#admin-category-other');
+  const categorySave=categoryPanel.locator('.admin-category-save');
+  assert.equal(await preferred.inputValue(),'88');
+  assert.equal(await otherCategory.inputValue(),'12');
+  assert.equal(await categorySave.isEnabled(),true,'Initial 88/12 category odds must be saveable');
+  const touchHeight=await preferred.evaluate(el=>el.getBoundingClientRect().height);
+  assert.ok(touchHeight>=44,'Category odds must offer a 44px touch target: '+touchHeight);
+  await preferred.fill('70');
+  assert.equal(await otherCategory.inputValue(),'30');
+  assert.equal(await categorySave.isEnabled(),true,'Editing 70/30 remains saveable');
+  await preferred.fill('101');
+  assert.equal(await categorySave.isDisabled(),true,'Out-of-range percentage cannot save');
+  await otherCategory.fill('60');
+  assert.equal(await preferred.inputValue(),'40');
+  assert.equal(await categorySave.isEnabled(),true,'Corrected 40/60 can save');
+  console.log('CATEGORY_ODDS_BROWSER_OK initial, synchronized, invalid and recovered at 412px');
   await a.locator('[data-action="settings-page:jeu"]').click();await a.locator('.nav [data-action="tab:settings"]').click();
   for(const key of ['couple','notifications','confidentialite','application']){
    await a.locator('[data-action="settings-page:'+key+'"]').click();assert.equal(await a.locator('.nav button.active').innerText(),'Réglages');
