@@ -2182,7 +2182,7 @@ function renderHome(){
   rolling:state.diceStatus==='rolling',
   disabled:!!state.diceStatus,
   members,
-  turn,monthly:state.monthly,monthlyActivity,
+  turn,monthly:state.monthly,monthlyActivity,reservation:state.geoReservation,
   history:state.challengesHistory||[],
   sessions:state.sessions||[],
   rollFace:state.rollAnimationFace||1,
