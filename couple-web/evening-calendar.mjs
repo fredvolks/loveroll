@@ -1,6 +1,7 @@
 // LoveRoll evening archive. Challenge titles and outcomes are shared ONLY
 // through the member-checked calendar RPC; the live game's RLS stays personal.
 import {resolvedCard} from './evening-challenges.mjs';
+import {favoriteCardIdentity,isEveningFavorite,MAX_EVENING_FAVORITES} from './evening-favorites.mjs?v=20261101-hearts265';
 import {eveningPersonReviewMarkup} from './evening-review.mjs';
 import {ritualHeadingHtml} from './brand.mjs?v=20261017-ritual130';
 import {calendarWeekSuccess,monthlyChallengeSuccess} from './calendar-success-stats.mjs?v=20261018-stats148';
@@ -25,7 +26,8 @@ export function eveningChallengeStatusLabel(status,closed=false){
 const monthLabel=mo=>new Intl.DateTimeFormat('fr-CA',{month:'long',year:'numeric',timeZone:'UTC'})
  .format(new Date(mo+'-15T12:00:00Z'));
 export function eveningHistoryMarkup({sessions=[],members=[],stats=[],historyChallenges=[],reviews=[],me,month,selectedDate,
- weeklyRolls=[],passQuota=[],backAction='tab:session',backLabel='Retour à Soirée'}={}){
+ weeklyRolls=[],passQuota=[],favorites=[],favoritesReady=false,favoriteWriteBusy=false,
+ favoriteReplace=null,backAction='tab:session',backLabel='Retour à Soirée'}={}){
  // The calendar's fallback month follows the couple's Toronto timezone.
  // Previously it was frozen to October 2026, including in future years.
  const current=isoMonth(month)||eveningLocalDay(new Date().toISOString()).slice(0,7);
@@ -75,6 +77,16 @@ export function eveningHistoryMarkup({sessions=[],members=[],stats=[],historyCha
    '" aria-pressed="'+(date===validDate)+'"><span>'+d+'</span>'+
    (has?'<span class="evening-cal-dot" aria-hidden="true">♥</span>':'')+'</button>';
  }
+ const favoriteSwap=favoritesReady&&favoriteReplace?.source==='calendar'?
+  '<div class="lr-favorite-calendar-dialog" role="alertdialog" aria-modal="true" aria-label="Remplacer un coup de cœur">'+
+   '<h3>Nos 5 coups de cœur sont occupés</h3>'+
+   '<p>Choisis quel défi retirer pour garder cette nouvelle carte.</p>'+
+   favorites.map(row=>
+    '<button type="button" data-action="evening-favorite-replace:'+safe(row.category)+':'+safe(row.card_id)+
+    '" '+(favoriteWriteBusy?'disabled ':'')+'aria-label="Remplacer le favori '+safe(row.category)+' n° '+safe(row.card_id)+'">'+
+    safe(row.category==='SEXUEL'?'Sexuel':'Sensuel')+' · Carte '+safe(row.card_id)+'</button>').join('')+
+   '<button type="button" data-action="evening-favorite-cancel" '+(favoriteWriteBusy?'disabled':'')+'>Annuler</button>'+
+   '</div>':'';
  const content=forDay.length?forDay.map((s,i)=>{
   const rolls=stats.filter(r=>r.session_id===s.id);
   const personSections=members.map(m=>{
@@ -100,7 +112,14 @@ export function eveningHistoryMarkup({sessions=[],members=[],stats=[],historyCha
        (freeByChallenge.has(c.id)?'↷ Passé sans pénalité':
         chargedByChallenge.has(c.id)?'↷ Passé, comptabilisé':eveningChallengeStatusLabel(c.status,closed)):
        eveningChallengeStatusLabel(c.status,closed))+'</span><strong>'+safe(card.title)+'</strong>'+
-      '<small>'+safe(c.category==='SEXUEL'?'Sexuel':'Sensuel')+'</small></li>';
+      '<small>'+safe(c.category==='SEXUEL'?'Sexuel':'Sensuel')+'</small>'+
+      (closed&&favoritesReady&&favoriteCardIdentity(c)?
+       '<button type="button" class="evening-cal-favorite" data-action="evening-favorite-calendar:'+safe(c.id)+
+       '" '+(favoriteWriteBusy?'disabled ':'')+
+       'aria-label="'+(isEveningFavorite(favorites,c)?'Retirer des coups de cœur : ':'Ajouter aux coups de cœur : ')+
+       safe(card.title)+'">'+
+       (isEveningFavorite(favorites,c)?'♥ Retirer des coups de cœur':'♡ Coup de cœur')+'</button>':'')+
+      '</li>';
    }).join('');
    const unpicked=row?.target==null?0:Math.max(0,Number(row.target)-Number(row.drawn||cards.length));
    const extras=unpicked?'<p class="evening-cal-unpicked">♡ '+unpicked+
@@ -127,7 +146,9 @@ export function eveningHistoryMarkup({sessions=[],members=[],stats=[],historyCha
   '<div class="evening-cal-stats"><span><strong>'+history+'</strong> soirées clôturées ce mois</span>'+
    '<span><strong>'+done+'</strong> défis réalisés ce mois</span>'+
    '<span><strong>'+incomplete+'</strong> non réalisés ce mois</span></div>'+
-  extraStats+
+  extraStats+favoriteSwap+
+  (favoritesReady?'<p class="evening-cal-favorite-total">♡ Nos coups de cœur · '+
+   favorites.length+'/'+MAX_EVENING_FAVORITES+'</p>':'')+
   '<section class="evening-cal-month"><div class="evening-cal-toolbar">'+
    '<button data-action="evening-month-prev" aria-label="Mois précédent">‹</button>'+
    '<h3>'+safe(monthLabel(current))+'</h3>'+
