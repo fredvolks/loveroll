@@ -153,3 +153,15 @@ test('LR-019: calendar 5-heart modal displays real titles and scoped card descri
  assert.match(html,/lr-favorite-replace-entry/);
  assert.doesNotMatch(html,/Titre secret/);
 });
+
+
+test('LR-019: 5-heart replacement restores keyboard focus on a closed archive',()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ // Inserting an alertdialog with innerHTML does not automatically focus it.
+ assert.match(app,/state\.favoriteReplace=\{\.\.\.key,challengeId:view\.id,[\s\S]{0,180}render\(\);\s*root\.querySelector\('\[data-action\^="evening-favorite-replace:"\]:not\(\[disabled\]\)'\)\?\.focus\(\)/);
+ // Cancelling must reopen the original archived <details> before focus().
+ assert.match(app,/function focusEveningFavoriteOrigin\(pending\)/);
+ assert.match(app,/target\.closest\('details\.evening-cal-person-group'\)/);
+ assert.match(app,/if\(section\)section\.open=true;\s*target\.focus\(\)/);
+ assert.match(app,/const pending=state\.favoriteReplace;\s*state\.favoriteReplace=null;render\(\);\s*focusEveningFavoriteOrigin\(pending\)/);
+});
