@@ -1281,3 +1281,13 @@ Pour **chacun des douze identifiants**, renseigner un état réel et les preuves
 - **PWA 263 cohérente** : publication des fichiers fonctionnels avec `web-version.json` en 2026-11-01.263, le tag `20261101-web263` pour les imports/entrée/worker, et cache `loveroll-static-v263`. Commits `a34d712`, `1cf42f4`, `2fd6ce1`, `dd47cc3`.
 - **Contrôle avant fusion** : tests statiques, navigateurs mobile/iPad/PC, accessibilité, cohérence visuelle, navigation responsive, Éclat et Surprise sur le SHA courant. Si des tests restent en cours ou échouent, ne pas fusionner ni annoncer GitHub Pages mis à jour. Prioriser ensuite les parcours complets du jeu, non les retouches isolées.
 
+
+
+## LoveRoll — Lot 22 : socle serveur LR-019, coups de cœur communs (1 novembre 2026)
+
+**Branche officielle :** PR #179 ; @Boss réellement consulté en GOD MODE, expertises Architecture et Qualité. Ne créer aucune nouvelle PR concurrente.
+
+- **Ajout du contrat serveur** `couple-web/love-evening-favorites.sql` : liste d'une seule paire/couple, cinq cartes maximum toutes catégories confondues, clé unique `(couple_id,category,card_id)`, origine `added_by`, lecture réservée aux membres par RLS et aucune écriture directe accordée au navigateur. Les deux membres peuvent appeler `save_love_evening_favorite` pour ajouter, retirer ou remplacer une entrée ; le verrou du couple sérialise les demandes de deux appareils, et le remplacement retrait+ajout est transactionnel. Les cartes personnalisées doivent encore exister dans le catalogue du couple. Commit `566f907`.
+- **Contrats de sécurité** dans `love-evening-favorites.test.mjs` : unicité, appartenance au couple, 5 places, anti-doublon, remplacement atomique, restriction des privilèges et absence d'écriture implicite dans l'historique/les compteurs. Commit `e7b0377`. Tests statiques GitHub réussis sur cette révision; la validation sur une vraie base PostgreSQL avec deux comptes reste à faire.
+- **Limite explicite :** cette migration n'a pas été installée ni validée contre une base de production. Les boutons « Coup de cœur », le pop-up interactif de remplacement 5/5, la liste dans le calendrier et la rééligibilité lors de futures piges D100 **ne sont pas livrés** par ce lot. La prochaine intégration doit d'abord identifier le véritable RPC de tirage déployé, sans remplacer une ancienne migration ou rendre une carte rééligible dans la même soirée, et intégrer le client seulement avec le backend prêt. Ne pas maquiller cette fondation en fonctionnalité utilisateur finale.
+
