@@ -1,5 +1,5 @@
 import {organizeSettingsMenus} from './settings-menus.mjs?v=20261022-home228';
-import {showEveningCategoryReminder} from './evening-d100-template.mjs?v=20261029-ipad258';
+import {showEveningCategoryReminder} from './evening-d100-template.mjs?v=20261031-d100-info274';
 import {eveningInviteHtml,eveningInviteInboxHtml,isEveningInviteAction} from './evening-invitation.mjs?v=20261031-invite260';
 import {askEveningCategoryConfirmation,categoryConfirmEnabled,saveCategoryConfirmLocal,ownsEveningCategoryDraw} from './evening-category-confirm.mjs?v=20261031-owner';
 import {soundEnabled,setSoundEnabled,setLoveRollSoundUser,unlockLoveRollSounds,playLoveRollSound,soundSettingsHtml} from './loveroll-sounds.mjs?v=20261028-privacy250';

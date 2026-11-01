@@ -303,6 +303,18 @@ test('D100 info reads only validated public D6 numbers and works on phone and PC
   'same formatter used for desktop and touch layouts');
 });
 
+test('D100 info 274 is loaded by online/PWA entry points and pre-cached offline',()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const index=readFileSync(new URL('./index.html',import.meta.url),'utf8');
+ const worker=readFileSync(new URL('./service-worker.js',import.meta.url),'utf8');
+ assert.match(app,/evening-d100-template\.mjs\?v=20261031-d100-info274/);
+ assert.match(index,/app\.js\?v=20261031-d100-info274/);
+ assert.match(worker,/const CACHE='loveroll-static-v274'/);
+ assert.match(worker,/'\.\/evening-d100-template\.mjs'/);
+ assert.match(worker,/fetch\(req,\{cache:'no-store'\}\)/);
+ assert.match(worker,/cache\.put\(fallback\.href,offlineCopy\)/);
+});
+
 test('The D100 information button also exists on desktop, without rolling the die',()=>{
  const source=readFileSync(new URL('./evening-d100-template.mjs',import.meta.url),'utf8');
  const css=readFileSync(new URL('./evening-d100-template.css',import.meta.url),'utf8');
