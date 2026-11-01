@@ -192,8 +192,11 @@ export function premiumEveningHtml({
    waitingStatus('En attente du tour de ton partenaire');
  // Keep the private list reachable when multiple cards remain accessible.
  // The active card is still the only dominant action.
+ // Keep the private list available after the last D100 whenever another
+ // accepted/proposed challenge is the primary action. Hide a duplicate list
+ // button only when the list itself is already the primary action.
  const secondaryAction=ownChallengeCount>0&&(!ownPending||ownChallengeCount>1)&&
-  !(turn.drawsFinished&&!turn.finished&&!rolling)?
+  !(turn.drawsFinished&&!turn.finished&&!rolling&&ready&&turn.ready&&!ownPending)?
   bt('evening-list','♡ Voir mes défis ('+ownChallengeCount+')','evening-queue-open-btn'):'';
  return '<div class="evening-premium-view '+(session?(ready?'is-ready':'is-waiting'):'is-inactive is-finale')+'" data-category-percent="'+esc(categoryOdds)+'">'+
  '<div class="evening-toolbar">'+
