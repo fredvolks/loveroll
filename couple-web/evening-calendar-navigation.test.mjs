@@ -138,6 +138,15 @@ test('LR-ACCUEIL-001: other calendar entry keeps the existing session context',a
  assert.equal(settings.goBack(),'settings-page:confidentialite');
 });
 
+test('LR-ACCUEIL-001: official weekly Home D6 cannot be interrupted by monthly shortcut',async()=>{
+ const h=calendarOpenHarness('home');
+ h.setBusy('dice');
+ await h.open('evening-calendar',['month']);
+ assert.equal(h.state.tab,'home');
+ assert.equal(h.state.eveningCalendarMonth,'2026-09');
+ assert.equal(h.renderCount(),0);
+});
+
 test('LR-ACCUEIL-001: an official dice, redraw or gift blocks calendar navigation',async()=>{
  for(const busy of ['dice','redraw','gift']){
   const h=calendarOpenHarness('session');h.setBusy(busy);
