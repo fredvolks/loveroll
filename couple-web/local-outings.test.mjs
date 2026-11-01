@@ -17,6 +17,21 @@ test('All 100 monthly activity themes can map to a supported places category',()
  assert.equal(activityCategory({title:'Découvrir les thermes'}),'spa');
  assert.equal(activityCategory({title:'Brunch romantique'}),'restaurant');
 });
+test('Surprise prioritizes the activity title over incidental places mentioned in the description',()=>{
+ assert.equal(activityCategory({
+  title:'Randonnée au parc',
+  description:'Après la marche, un massage au spa puis un brunch au restaurant.'
+ }),'nature');
+ assert.equal(activityCategory({
+  title:'Brunch romantique',
+  description:'Une petite balade dans la forêt après le repas.'
+ }),'restaurant');
+ assert.equal(activityCategory({
+  title:'Soirée surprise',
+  description:'Visiter un musée puis choisir une exposition.'
+ }),'culture','A title without a clear venue still falls back to its description');
+ assert.equal(activityCategory({title:'Détente thermale panoramique',description:'Repas après le bain'}),'spa');
+});
 test('Never use straight-line distance or fabricated names; road radius is strict',()=>{
  const places=[
   {place_id:'one',name:'Spa vérifié',address:'Rue A'},
