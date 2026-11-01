@@ -2855,6 +2855,8 @@ function renderEveningCalendar(){
   sessions:state.sessions||[],members:state.members||[],
   stats:state.eveningHistoryStats||[],historyChallenges:state.eveningCalendarChallenges||[],
   weeklyRolls:state.weeklyRollHistory||[],passQuota:state.calendarPassMonth===mo?state.calendarPassQuota:[],
+  passHistoryReady:state.calendarPassMonth===mo,
+  passLimit:state.monthlyPassQuota?.limit??state.couple?.monthly_pass_limit??null,
   reviews:state.eveningReviews||[],
   me:state.user?.id,month:mo,selectedDate:date,
   backAction:eveningCalendarReturn(),backLabel:eveningCalendarReturn().startsWith('settings-page:')?'Retour à la confidentialité':'Retour à Soirée'
