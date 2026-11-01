@@ -1590,3 +1590,100 @@ body.lr-velours-lanterne .evening-review-edit {
   body.lr-velours-lanterne .lr-review-note,
   body.lr-velours-lanterne .evening-review-person {border-width:2px;}
 }
+
+/* LOT 9 — Compte, duo et options de jeu : écrin cohérent et cibles tactiles.
+   La feuille settings-menus.css fixe encore certains champs/boutons à 36–40px
+   via @layer + !important. Corriger DANS cette même couche sans toucher à la
+   structure des formulaires, à l'authentification ou aux permissions. */
+@layer loveroll-settings-menus {
+  body.lr-velours-lanterne #app.loveroll-settings-page .settings-menu-source
+  :is(.settings-premium-glass-group,.settings-premium-section-head,
+      .settings-duo-card,.settings-category-options,.admin-sexual-card-mode,
+      .account-test-modes,.settings-couple-invite) {
+    border-color:var(--lr-vl-edge)!important;
+    background:var(--lr-vl-panel)!important;
+    box-shadow:var(--lr-vl-relief)!important;
+    color:var(--lr-vl-ivory)!important;
+  }
+  body.lr-velours-lanterne #app.loveroll-settings-page .settings-menu-source
+  :is(.settings-premium-section-head h2,.settings-premium-glass-group h3,
+      .settings-category-options h3,.admin-sexual-card-mode h3,
+      .settings-duo-card strong) {
+    color:var(--lr-vl-ivory)!important;
+  }
+  body.lr-velours-lanterne #app.loveroll-settings-page .settings-menu-source
+  :is(.settings-premium-section-head p,.settings-duo-card small,
+      .settings-category-options .tiny-note,.settings-danger-zone .tiny-note,
+      .settings-account-style-note) {
+    color:var(--lr-vl-muted)!important;
+  }
+  body.lr-velours-lanterne #app.loveroll-settings-page .settings-menu-source
+  :is(.settings-inline-name input,.settings-inline-name select,
+      .settings-birthday-edit select,.settings-birthday-edit input,
+      .settings-category-options input:not([type="checkbox"]),
+      .admin-sexual-card-mode select) {
+    border-color:var(--lr-vl-field-edge)!important;
+    background-color:var(--lr-vl-field)!important;
+    color:var(--lr-vl-ivory)!important;
+  }
+  /* Compte compact : ne plus réduire les commandes sous 44px pour gagner
+     artificiellement de la place. Le panneau possède déjà son scroll natif. */
+  body.lr-velours-lanterne #app.loveroll-settings-page
+  .settings-account-overview.settings-account-overview
+  :is(input:not([type="checkbox"]):not([type="radio"]),
+      select,.lr-premium-picker-trigger,
+      .account-test-option,[data-action="profile"],[data-action="signout"]) {
+    min-height:44px!important;
+    height:auto!important;
+  }
+  body.lr-velours-lanterne #app.loveroll-settings-page
+  .settings-account-overview.settings-account-overview
+  :is(.account-test-option,[data-action="profile"],[data-action="signout"]) {
+    padding-block:9px!important;
+    overflow-wrap:anywhere;
+    line-height:1.25!important;
+  }
+  body.lr-velours-lanterne #app.loveroll-settings-page
+  .settings-account-overview.settings-account-overview
+  :is(input:not([type="checkbox"]):not([type="radio"]),select) {
+    font-size:16px!important; /* iOS Safari : pas de zoom automatique. */
+  }
+  body.lr-velours-lanterne #app.loveroll-settings-page
+  .settings-detail-body:is(.has-settings-menus,.settings-account-overview) {
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    overscroll-behavior-y:contain;
+    scroll-padding-block:12px 20px;
+    -webkit-overflow-scrolling:touch;
+  }
+  body.lr-velours-lanterne #app.loveroll-settings-page .settings-menu-source
+  .account-test-option[aria-pressed="true"] {
+    border-color:var(--lr-vl-champagne)!important;
+    background:var(--lr-vl-action)!important;
+    color:var(--lr-vl-ivory)!important;
+    box-shadow:var(--lr-vl-active-shadow)!important;
+  }
+  body.lr-velours-lanterne #app.loveroll-settings-page .settings-menu-source
+  .settings-danger-zone .settings-signout:not(:disabled) {
+    border-color:var(--lr-vl-edge)!important;
+    background:var(--lr-vl-muted-panel)!important;
+    color:var(--lr-vl-ivory)!important;
+  }
+  @media(max-width:380px) {
+    body.lr-velours-lanterne #app.loveroll-settings-page
+    .settings-account-overview.settings-account-overview .account-test-options {
+      grid-template-columns:repeat(2,minmax(0,1fr))!important;
+      gap:6px!important;
+    }
+    body.lr-velours-lanterne #app.loveroll-settings-page
+    .settings-account-overview.settings-account-overview .settings-premium-glass-group {
+      grid-template-columns:minmax(0,1fr)!important;
+    }
+  }
+  @media(prefers-contrast:more) {
+    body.lr-velours-lanterne #app.loveroll-settings-page .settings-menu-source
+    :is(.settings-premium-glass-group,.settings-category-options,.settings-duo-card) {
+      border-width:2px!important;
+    }
+  }
+}
