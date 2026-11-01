@@ -44,3 +44,18 @@ test('A cancelled Eclat session without ended_at never offers Resume',()=>{
  assert.equal(coffretMemo([cancelled,live],9).active,true,
   'A different live noncancelled session remains resumable');
 });
+
+test('The authoritative Eclat status overrides stale unfinished history rows',()=>{
+ const stale={coffret_id:9,minutes:90,chapter_index:2,ended_at:null,cancelled:false};
+ const closed=coffretMemo([stale],9,{active:false,access:true});
+ assert.equal(closed.active,false,'Live server says no active coffret');
+ assert.equal(closed.started,true,'Do not delete historical attempts');
+ assert.equal(closed.minutes,null);
+ const playingOther=coffretMemo([stale],9,{active:true,coffret_id:3,minutes:30});
+ assert.equal(playingOther.active,false,'A different active coffret cannot revive this one');
+ const real=coffretMemo([stale],9,{active:true,coffret_id:9,minutes:60,chapter_index:1});
+ assert.equal(real.active,true);
+ assert.equal(real.minutes,60,'Authoritative live minutes win over stale history');
+ assert.equal(coffretMemo([stale],9).active,true,
+  'A history-only view can still show a noncancelled unfinished attempt');
+});
