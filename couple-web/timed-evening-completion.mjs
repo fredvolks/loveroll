@@ -33,15 +33,18 @@ export function isSameCompletedEveningChallenge(challenge,current,userId,session
   current?.session_id===sessionId&&current?.status==='completed');
 }
 export async function completeTimedEveningChallenge({challenge,userId,sessionId,rpc,query}){
- if(!isAcceptedTimedEveningChallenge(challenge,userId,sessionId))
-  return {outcome:'ineligible',finished:false};
- let outcome='completed';
- try{await rpc('answer_challenge',{p_id:challenge.id,p_status:'completed'});}
- catch(error){
-  // Another device may have completed the exact same card first.
-  const current=(await query('couple_challenges',{eq:{id:challenge.id}}))?.[0];
-  if(!isSameCompletedEveningChallenge(challenge,current,userId,sessionId))throw error;
-  outcome='already-completed';
+ const accepted=isAcceptedTimedEveningChallenge(challenge,userId,sessionId);
+ const alreadyCompleted=isSameCompletedEveningChallenge(challenge,challenge,userId,sessionId);
+ if(!accepted&&!alreadyCompleted)return {outcome:'ineligible',finished:false};
+ let outcome=alreadyCompleted?'already-completed':'completed';
+ if(!alreadyCompleted){
+  try{await rpc('answer_challenge',{p_id:challenge.id,p_status:'completed'});}
+  catch(error){
+   // Another device may have completed the exact same card first.
+   const current=(await query('couple_challenges',{eq:{id:challenge.id}}))?.[0];
+   if(!isSameCompletedEveningChallenge(challenge,current,userId,sessionId))throw error;
+   outcome='already-completed';
+  }
  }
  // The card is already saved at this point. A subsequent board/closure
  // outage is a different failure: keep retrying session synchronization,
