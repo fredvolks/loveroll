@@ -1121,3 +1121,13 @@ Pour **chacun des douze identifiants**, renseigner un état réel et les preuves
 - Sur iPad et PC : hiérarchie sobre, grands boutons au bon endroit, tableaux lisibles, navigation et états explicites, comparaison A/B fluide. Sur mobile : accès rapide aux actions essentielles, sans sacrifier la sécurité ni créer une nouvelle application.
 - Tester réellement : création des deux utilisateurs, ouverture de deux Auth indépendantes, absence de fuite entre A/B, D6 hebdomadaire et D6 personnels, D100 Soirée/Surprise, choix de catégorie, cartes affichées et progression, défis privés, Éclat, Avent, minuteries, pause/reprise, refresh, changement de siège, onglets, reset, erreurs réseau, refus d'un compte réel et purge complète.
 - Exécuter les tests Node/CI, les tests SQL/RLS et **la recette sur le vrai projet Supabase** avec identités strictement techniques avant fusion. Vérifier iPad portrait/paysage, PC et Android, distinguer émulation et appareil physique. Les captures et logs documentent le code testé et le SHA exact. Tant que ces preuves manquent, le Studio reste en **brouillon non déployable**, même si la suite statique est verte.
+
+## Refonte LoveRoll — Lot 7 installation et notifications (1 novembre 2026)
+
+**Implémentation sur la branche `feat/velours-lanterne-maquette3-responsive-20261031` de la PR #179**, commit `9e2975fd30e251ae16aaf9199e45ed5db5f53a41` (modification CSS, pas fusionnée ni déployée).
+
+- Dans `couple-web/velours-lanterne-maquette3.css`, uniformiser les vrais dialogues d'installation Web/PWA, le guide iOS à quatre étapes et les paramètres de notifications avec l'écrin de la maquette 3 : velours bordeaux, rubis/rose lanterne, champagne, typographie éditoriale, boutons accessibles et états de retour compréhensibles.
+- En petit téléphone ou avec le clavier affiché : permettre le défilement du guide et des panneaux plutôt que couper l'action finale; conserver les touches d'au moins 44 px, les marges de sécurité et les retours.
+- Ne modifier **aucune** permission native, inscription FCM, logique de mise à jour, activation d'alerte, comportement des interrupteurs, donnée utilisateur ou règle de jeu. Un interrupteur désactivé reste distinct visuellement.
+- Les contrôles automatiques GitHub doivent être lus sur le SHA final et les navigateurs/appareils physiques restent à contrôler avant tout verdict de conformité. Aucun test d'installation réelle Android/iOS ni notification reçue n'est démontré par cette retouche CSS.
+- Les prochains lots doivent prioriser les parcours de jeu/fonctionnalités incomplets plutôt qu'ajouter une nouvelle feuille de style concurrente ou recommencer l'audit global.
