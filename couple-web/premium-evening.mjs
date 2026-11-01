@@ -189,7 +189,9 @@ export function premiumEveningHtml({
    waitingStatus('Tous les tirages sont terminés')):
   canDraw?bt('new-challenge','🎲 Brasser le D100','evening-primary'):
    waitingStatus('En attente du tour de ton partenaire');
- const secondaryAction=ownChallengeCount>0&&!ownPending&&
+ // Keep the private list reachable when multiple cards remain accessible.
+ // The active card is still the only dominant action.
+ const secondaryAction=ownChallengeCount>0&&(!ownPending||ownChallengeCount>1)&&
   !(turn.drawsFinished&&!turn.finished&&!rolling)?
   bt('evening-list','♡ Voir mes défis ('+ownChallengeCount+')','evening-queue-open-btn'):'';
  return '<div class="evening-premium-view '+(session?(ready?'is-ready':'is-waiting'):'is-inactive is-finale')+'" data-category-percent="'+esc(categoryOdds)+'">'+
