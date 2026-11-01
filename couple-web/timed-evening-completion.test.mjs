@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {isAcceptedTimedEveningChallenge,isSameCompletedEveningChallenge,completeTimedEveningChallenge,timedEveningTimerControl,refreshAfterTimedEveningConfirmation,timerBelongsToUser} from './timed-evening-completion.mjs';
+import {isAcceptedTimedEveningChallenge,isSameCompletedEveningChallenge,completeTimedEveningChallenge,timedEveningTimerControl,refreshAfterTimedEveningConfirmation,timerBelongsToUser,canControlTimedEveningChallenge} from './timed-evening-completion.mjs';
 const card={id:'card-a',recipient:'alice',session_id:'session-a',status:'accepted'};
 test('Only accepted, recipient-owned Soirée cards qualify; unrelated timers never count',()=>{
  assert.equal(isAcceptedTimedEveningChallenge(card,'alice','session-a'),true);
@@ -196,4 +196,27 @@ test('LR-002 timers belong only to the account which opened the challenge',()=>{
  assert.ok(save.indexOf('timerBelongsToUser')<save.indexOf('writeSavedChallengeTimer'));
  const retry=source.slice(source.indexOf('async function retryExpiredTimedEvening(){'),source.indexOf('async function reconcileSavedEveningTimers()'));
  assert.match(retry,/timerBelongsToUser\(challengeTimer,state\.user\?\.id\)/);
+});
+
+test('LR-002 stale card or account cannot reset or restart a timed Soirée challenge',()=>{
+ const owner={id:'a',ownerUserId:'alice'};
+ const open={id:'a',recipient:'alice',session_id:'evening',status:'proposed'};
+ assert.equal(canControlTimedEveningChallenge(owner,open,'alice','evening'),true);
+ assert.equal(canControlTimedEveningChallenge(owner,{...open,status:'accepted'},'alice','evening'),true);
+ for(const card of [
+  {...open,status:'completed'}, {...open,status:'passed'}, {...open,status:'refused'},
+  {...open,recipient:'bob'}, {...open,session_id:'another'}, {...open,id:'b'},null
+ ])assert.equal(canControlTimedEveningChallenge(owner,card,'alice','evening'),false);
+ assert.equal(canControlTimedEveningChallenge(owner,open,'bob','evening'),false);
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ for(const verb of ['timer-reset','timer-toggle']){
+  const start=app.indexOf("if(verb==='"+verb+"')");
+  const stop=app.indexOf("if(verb==='",start+5);
+  const block=app.slice(start,stop);
+  assert.ok(start>=0&&stop>start);
+  assert.match(block,/canControlTimedEveningChallenge\(challengeTimer,timedEveningItem\(challengeTimer.id\)/);
+ }
+ const toggle=app.slice(app.indexOf("if(verb==='timer-toggle')"),app.indexOf("if(verb==='give-challenge')"));
+ assert.equal((toggle.match(/canControlTimedEveningChallenge\(/g)||[]).length,2,
+  'Revalidate after the asynchronous server acceptance or sound permission');
 });
