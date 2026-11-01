@@ -31,6 +31,19 @@ test('Weekly faces 1-6 use true standard dice spot geometry and 100% total',()=>
  assert.deepEqual(PIP_POSITIONS[6],[[29,22],[71,22],[29,50],[71,50],[29,78],[71,78]]);
  assert.throws(()=>pipFace(7));
 });
+test('Invalid saved weekly D6 never invents a face or permits a duplicate official draw',()=>{
+ for(const face of [0,7,-1,2.5,Infinity,NaN,'3',null]){
+  const home=premiumHomeHtml({weekly:{face}});
+  assert.match(home,/Cette semaine, on joue \\?/);
+  assert.match(home,/Résultat hebdomadaire indisponible/);
+  assert.match(home,/data-dice-preview="true"/);
+  assert.doesNotMatch(home,/data-action="roll:weekly"/);
+  assert.doesNotMatch(home,/[0-9]+ soirées? de défi/);
+  assert.match(home,/disabled aria-disabled="true"/);
+ }
+ const empty=premiumHomeHtml({weekly:null});
+ assert.match(empty,/data-action="roll:weekly"/,'a truly undrawn week still offers the official throw');
+});
 test('Next weekly roll is Monday at Toronto midnight, including Sunday and DST',()=>{
  assert.equal(nextMonday(new Date('2026-10-14T18:00:00Z')),'2026-10-19');
  assert.equal(nextMonday(new Date('2026-10-18T14:00:00Z')),'2026-10-19');
