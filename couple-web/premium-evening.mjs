@@ -163,6 +163,17 @@ export function premiumEveningHtml({
  canMyRoll=!!session&&!status?.my_rolled&&!rolling&&!redrawPending&&!giftPending;
  const first=turn?.first?members.find(m=>m.user_id===turn.first)?.name?.split(' ')[0]:'';
  const totals=turn.targets||{},done=turn.completed||{};
+ // Only the already-public shared D6 budget can appear in the D100 help.
+ // Never infer a number from a partner's profile, unconfirmed dice or
+ // missing server fields.
+ const memberIds=members.map(member=>member?.user_id);
+ const confirmedTargets=ready&&turn.ready===true&&memberIds.length===2&&
+  memberIds.every(id=>typeof id==='string'&&id)&&
+  new Set(memberIds).size===2&&
+  memberIds.every(id=>Number.isSafeInteger(totals[id])&&
+   totals[id]>=0&&totals[id]<=100);
+ const officialTotal=confirmedTargets?
+  memberIds.reduce((sum,id)=>sum+totals[id],0):null;
  // A draw in flight owns the chosen category until its official receipt.
  // Prevent another tap from changing the visible choice mid-animation.
  const canDraw=ready&&turn.ready&&!turn.drawsFinished&&!rolling&&!redrawPending&&!giftPending&&
@@ -207,7 +218,7 @@ export function premiumEveningHtml({
  const secondaryAction=ownChallengeCount>0&&!rolling&&!redrawPending&&!giftPending&&!turn.finished&&
   (!turn.drawsFinished||!!resumeAction)?
   bt('evening-list','♡ Voir mes défis ('+ownChallengeCount+')','evening-queue-open-btn'):'';
- return '<div class="evening-premium-view '+(session?(ready?'is-ready':'is-waiting'):'is-inactive is-finale')+'" data-category-percent="'+esc(preferredOdds)+'">'+
+ return '<div class="evening-premium-view '+(session?(ready?'is-ready':'is-waiting'):'is-inactive is-finale')+'" data-category-percent="'+esc(preferredOdds)+'" data-official-challenge-total="'+(officialTotal===null?'':officialTotal)+'">'+
  '<div class="evening-toolbar">'+
   '<span class="evening-header-balance" aria-hidden="true"></span>'+
   ritualHeadingHtml(session?(ready?'ÉTAPE 2 · DÉFI DU SOIR':'ÉTAPE 1 · NOMBRE DE DÉFIS'):'NOTRE RITUEL DE LA SOIRÉE')+

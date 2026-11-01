@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {premiumEveningHtml,updateEveningCategoryUi} from './premium-evening.mjs';
-import {eveningPlayInfoHtml,calculateEveningD100StageSize} from './evening-d100-template.mjs';
+import {eveningPlayInfoHtml,eveningPlayInfoForView,calculateEveningD100StageSize} from './evening-d100-template.mjs';
 const ready={session:{id:'s',paired_turns:true,self_draws:true},members:[{user_id:'a',name:'Fred'},{user_id:'b',name:'Émilie'}],me:'a',status:{both_ready:true},turn:{ready:true,next:'a',remaining:{a:2,b:3}}};
 test('No category is preselected; an eligible player can press roll to receive guidance',()=>{
  const html=premiumEveningHtml(ready);
@@ -259,6 +259,49 @@ test('Information uses the actual configured preference and preserves calendar a
  assert.doesNotMatch(info,/88 %/);
 });
 
+
+test('D100 information explains the game with only server-confirmed public totals',()=>{
+ const pending=eveningPlayInfoHtml(74);
+ assert.match(pending,/Nos intensités/);
+ assert.match(pending,/Le tirage/);
+ assert.match(pending,/Minuterie/);
+ assert.match(pending,/Coups de cœur/);
+ assert.match(pending,/lorsque les deux D6 auront été confirmés/);
+ const confirmed=eveningPlayInfoHtml(74,{officialTargetCount:7});
+ assert.match(confirmed,/>7 défis<\/strong> attribués officiellement/);
+ assert.doesNotMatch(confirmed,/nombre de défis sera affiché/);
+ assert.match(confirmed,/74 % pour la catégorie choisie et 26 % pour l’autre/);
+ for(const bad of [-1,201,1.5,'7',true,Infinity,NaN]){
+  assert.doesNotMatch(eveningPlayInfoHtml(74,{officialTargetCount:bad}),
+   /attribués officiellement/,'untrusted shared D6 count: '+String(bad));
+ }
+ assert.doesNotMatch(confirmed,/titre|consigne sexuel|préférence du partenaire/i);
+ assert.match(confirmed,/data-action="evening-calendar"/);
+ assert.match(confirmed,/data-action="evening-close-request"/);
+});
+test('D100 info reads only validated public D6 numbers and works on phone and PC',()=>{
+ const view={dataset:{officialChallengeTotal:'8',categoryPercent:'62'}};
+ const html=eveningPlayInfoForView(view);
+ assert.match(html,/>8 défis<\/strong> attribués officiellement/);
+ assert.match(html,/62 % pour la catégorie choisie et 38 % pour l’autre/);
+ for(const bad of ['','true','7.5','-1','999','0x4',' 4','4e0','<img>']){
+  assert.doesNotMatch(eveningPlayInfoForView({
+   dataset:{officialChallengeTotal:bad,categoryPercent:'62'}
+  }),/attribués officiellement/,'reject invalid DOM value: '+bad);
+ }
+ assert.match(eveningPlayInfoForView(null),/88 % pour la catégorie choisie/);
+ const actual=premiumEveningHtml({session:{id:'s',paired_turns:true,self_draws:true},
+  members:[{user_id:'alice'},{user_id:'bob'}],me:'alice',
+  status:{both_ready:true},turn:{ready:true,targets:{alice:3,bob:5}}});
+ assert.match(actual,/data-official-challenge-total="8"/);
+ const partial=premiumEveningHtml({session:{id:'s',paired_turns:true,self_draws:true},
+  members:[{user_id:'alice'},{user_id:'bob'}],me:'alice',
+  status:{both_ready:true},turn:{ready:true,targets:{alice:3}}});
+ assert.match(partial,/data-official-challenge-total=""/);
+ const template=readFileSync(new URL('./evening-d100-template.mjs',import.meta.url),'utf8');
+ assert.equal((template.match(/eveningPlayInfoForView\(view\)/g)||[]).length,3,
+  'same formatter used for desktop and touch layouts');
+});
 
 test('The D100 information button also exists on desktop, without rolling the die',()=>{
  const source=readFileSync(new URL('./evening-d100-template.mjs',import.meta.url),'utf8');

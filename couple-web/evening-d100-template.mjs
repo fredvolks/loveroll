@@ -14,15 +14,40 @@ export function calculateEveningD100StageSize({viewportWidth,viewportHeight,hero
  const available=tablet?reference:Math.max(heroHeight*.94,viewportHeight*.24);
  return Math.floor(Math.max(1,Math.min(reference,heroWidth*.96,available)));
 }
-export function eveningPlayInfoHtml(percent=88){
- const preferred=Math.min(100,Math.max(0,Number(percent)||0));
+// The D100 help contains ONLY shared, server-confirmed counts, never private
+// card titles, partner preferences, responses or provisional animation faces.
+export function eveningPlayInfoHtml(percent=88,{officialTargetCount=null}={}){
+ const preferred=Number.isFinite(percent)?Math.min(100,Math.max(0,percent)):88;
+ const target=Number.isSafeInteger(officialTargetCount)&&
+  officialTargetCount>=0&&officialTargetCount<=200?officialTargetCount:null;
  return '<dialog id="evening-play-info" class="evening-play-dialog lr-surface" aria-labelledby="evening-play-info-title"><button type="button" class="evening-play-close" aria-label="Fermer les informations">×</button>'+
-  '<h2 id="evening-play-info-title">Votre défi du soir</h2>'+
+  '<h2 id="evening-play-info-title">Comment jouer ce soir ?</h2>'+
+  '<section aria-label="Nos intensités"><h3>Nos intensités</h3>'+
+  '<p>Les préférences préparées pour une prochaine soirée ne changent pas les cartes ni les dés déjà confirmés. Les choix privés de chaque personne ne sont pas dévoilés ici.</p></section>'+
+  '<section aria-label="Le tirage"><h3>Le tirage</h3>'+
+  (target===null?
+   '<p>Le nombre de défis sera affiché lorsque les deux D6 auront été confirmés par le serveur.</p>':
+   '<p><strong>'+esc(target)+' défis</strong> attribués officiellement pour cette soirée par les deux D6.</p>')+
   '<p>Vos deux D6 déterminent le nombre de défis de chacun. Vous pigez à tour de rôle, selon le joueur indiqué à l’écran.</p>'+
   '<p>Choisissez une catégorie avant chaque lancer. Sensuel ou Sexuel : '+esc(preferred)+' % pour la catégorie choisie et '+esc(100-preferred)+' % pour l’autre. Au hasard choisit entre les deux catégories à parts égales.</p>'+
   '<p>Le D100 choisit un défi de la catégorie tirée. Le résultat officiel reste affiché et vos cartes se retrouvent dans « Voir mes défis ».</p>'+
-  '<p>Vous pouvez transférer un défi non commencé à votre partenaire, jusqu’à 3 dons par personne et par mois. Le bouton reste indisponible si aucun défi ne peut être donné.</p>'+
+  '<p>Vous pouvez transférer un défi non commencé à votre partenaire, jusqu’à 3 dons par personne et par mois. Le bouton reste indisponible si aucun défi ne peut être donné.</p></section>'+
+  '<section aria-label="Minuterie"><h3>Minuterie</h3>'+
+  '<p>Chaque carte indique sa propre durée lorsqu’un minuteur est prévu. À 00:00, la fin du défi est vérifiée par le serveur. Une carte sans minuteur se termine à votre rythme.</p></section>'+
+  '<section aria-label="Coups de cœur"><h3>Coups de cœur</h3>'+
+  '<p>Le cœur permet de retrouver vos cartes favorites depuis vos défis et votre historique. Il ne relance jamais le dé et ne remplace ni Passer ni Refuser.</p></section>'+
   '<nav class="evening-play-menu" aria-label="Options de la soirée"><button type="button" class="lr-surface" data-action="evening-calendar">Calendrier</button><button type="button" class="lr-surface" data-action="evening-close-request">Clore la soirée</button></nav></dialog>';
+}
+// Both mobile/iPad and desktop read only the validated, public D6 total
+// carried by the current server-rendered Soirée view.
+export function eveningPlayInfoForView(view){
+ const raw=view?.dataset?.officialChallengeTotal;
+ const count=typeof raw==='string'&&/^(?:0|[1-9][0-9]{0,2})$/.test(raw)?
+  Number(raw):null;
+ const rawPercent=view?.dataset?.categoryPercent;
+ const percent=typeof rawPercent==='string'&&/^(?:0|[1-9][0-9]{0,2})$/.test(rawPercent)?
+  Number(rawPercent):88;
+ return eveningPlayInfoHtml(percent,{officialTargetCount:count});
 }
 export function showEveningCategoryReminder(root){
  if(!root?.querySelector('.evening-step.two'))return false;
@@ -49,8 +74,7 @@ function installDesktopEveningInfo(view){
  info.setAttribute('aria-controls','evening-play-info');
  info.innerHTML='<span aria-hidden="true">i</span>';
  hero.append(info);
- const percent=Number(view.dataset.categoryPercent??88);
- if(!view.querySelector('#evening-play-info'))view.insertAdjacentHTML('beforeend',eveningPlayInfoHtml(percent));
+ if(!view.querySelector('#evening-play-info'))view.insertAdjacentHTML('beforeend',eveningPlayInfoForView(view));
  const dialog=view.querySelector('#evening-play-info');
  info.addEventListener('click',()=>{if(!dialog.open)dialog.showModal();});
  dialog.querySelector('.evening-play-close').addEventListener('click',()=>dialog.close());
@@ -98,8 +122,7 @@ export function fitEveningD100(root){
  }
  step.replaceChildren(choice,hero,state,progress,roll,utilities,quota);
  view.querySelector('.evening-step.one')?.remove();view.querySelector('.evening-gift')?.remove();
- const percent=Number(view.dataset.categoryPercent??88);
- view.insertAdjacentHTML('beforeend',eveningPlayInfoHtml(percent));
+ view.insertAdjacentHTML('beforeend',eveningPlayInfoForView(view));
  const dialog=view.querySelector('#evening-play-info'),info=hero.querySelector('.home-odds-info');
  info.addEventListener('click',()=>dialog.showModal());
  dialog.querySelector('.evening-play-close').addEventListener('click',()=>dialog.close());
