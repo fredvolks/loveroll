@@ -714,19 +714,23 @@ export function dieOn(canvas,sides,value,rolling){
     if(hero){
      const rect=canvas.getBoundingClientRect(),region=hero.getBoundingClientRect();
      if(rect.height>0&&region.height>0){
-      const bounds=projectedBounds();
-      const top=rect.top+bounds.top*rect.height;
-      const bottom=rect.top+bounds.bottom*rect.height;
-      let correction=0;
-      if(top<region.top+3)correction=region.top+3-top;
-      if(bottom+correction>region.bottom-3)correction=region.bottom-3-bottom;
-      if(Math.abs(correction)>.1){
-       const origin=new THREE.Vector3(0,0,0).project(camera);
-       const raised=new THREE.Vector3(0,1,0).project(camera);
-       // Monter le mesh diminue sa coordonnée Y écran : le signe inverse
-       // empêchait la correction du dépassement durant le lancer réel.
-       const pixelsPerUnit=(origin.y-raised.y)*rect.height/2;
-       if(pixelsPerUnit>1)built.group.position.y-=correction/pixelsPerUnit;
+      // NDC Y increases UP while CSS Y increases DOWN. Convert the
+      // projected derivative with the correct sign, then remeasure the true
+      // rotated mesh once after correction for perspective on tiny phones.
+      const origin=new THREE.Vector3(0,0,0).project(camera);
+      const raised=new THREE.Vector3(0,1,0).project(camera);
+      const pixelsPerUnit=(raised.y-origin.y)*rect.height/2;
+      if(pixelsPerUnit>1){
+       for(let pass=0;pass<2;pass++){
+        const bounds=projectedBounds();
+        const top=rect.top+bounds.top*rect.height;
+        const bottom=rect.top+bounds.bottom*rect.height;
+        let correction=0;
+        if(top<region.top+3)correction=region.top+3-top;
+        if(bottom+correction>region.bottom-3)correction=region.bottom-3-bottom;
+        if(Math.abs(correction)<=.1)break;
+        built.group.position.y-=correction/pixelsPerUnit;
+       }
       }
      }
     }
