@@ -100,6 +100,7 @@ jobs:
           node --test couple-web/privacy-screen.test.mjs
           node --test couple-web/evening-variety.test.mjs
           node --test couple-web/lr026-server-variety.test.mjs
+          node --test couple-web/async-tab-navigation-owner.test.mjs
           node --test couple-web/evening-d100-template.test.mjs
           node --test couple-web/pages-soiree-privacy-header.test.mjs
           node --test couple-web/monthly-pass-limit-sql.test.mjs
