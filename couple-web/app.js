@@ -1409,7 +1409,7 @@ async function retryExpiredTimedEvening(){
   const result=await completeTimedEveningChallenge({challenge:item,userId,sessionId,rpc,query});
   if(result.outcome==='ineligible')return;
   timerCompletionRetryAt=0;
-  if(challengeTimer.id===id){
+  if(timerBelongsToUser(challengeTimer,userId)&&challengeTimer.id===id){
    challengeTimer.autoCompletePending=false;saveChallengeTimer();
   }
   if(state.user?.id===userId&&state.session?.id===sessionId){
@@ -1421,9 +1421,10 @@ async function retryExpiredTimedEvening(){
   timerCompletionRetryAt=Date.now()+15000;
   const recorded=error?.challengeCompletionConfirmed===true;
   console.warn(recorded?'Défi enregistré : synchronisation Soirée en attente':'Défi terminé : validation serveur en attente',error);
-  if(!document.hidden)notify(recorded?
-   '♡ Défi enregistré. Synchronisation de Soirée en attente de connexion.':
-   'Le minuteur est terminé. Validation du défi en attente de connexion.');
+  if(state.user?.id===userId&&state.session?.id===sessionId&&!document.hidden)
+   notify(recorded?
+    '♡ Défi enregistré. Synchronisation de Soirée en attente de connexion.':
+    'Le minuteur est terminé. Validation du défi en attente de connexion.');
  }finally{timerCompletionInFlight=null;}
 }
 // LR-002: recover ALL due challenge timers from per-account session storage
@@ -1471,9 +1472,10 @@ async function reconcileSavedEveningTimers(){
    savedTimerScanAfter=Date.now()+15000;
    const recorded=error?.challengeCompletionConfirmed===true;
    console.warn(recorded?'Défi enregistré : synchronisation Soirée à reprendre':'Minuteur expiré : validation à reprendre après reconnexion',error);
-   if(!document.hidden)notify(recorded?
-    '♡ Défi enregistré. Synchronisation de Soirée en attente de connexion.':
-    'Le minuteur est terminé. Validation du défi en attente de connexion.');
+   if(state.user?.id===userId&&state.session?.id===sessionId&&!document.hidden)
+    notify(recorded?
+     '♡ Défi enregistré. Synchronisation de Soirée en attente de connexion.':
+     'Le minuteur est terminé. Validation du défi en attente de connexion.');
   }finally{timerCompletionInFlight=null;savedTimerSyncInFlight=false;}
   return;
  }
