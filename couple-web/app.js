@@ -4154,8 +4154,15 @@ async function handle(action,element){
   state.eveningCalendarBack=parts[0]==='settings'||state.tab==='settings'?'settings-page:confidentialite':
    state.tab==='home'?'tab:home':'tab:session';
   state.eveningMore=false;state.confirmCancel=false;
-  const date=state.session?eveningLocalDay(state.session.started_at):null;
-  if(date){state.eveningCalendarDate=date;state.eveningCalendarMonth=date.slice(0,7);}
+  // Monthly dashboard opens THIS month, not a stale session from a prior month.
+  // Opening the calendar only changes navigation; it never draws or completes.
+  if(parts[0]==='month'){
+   state.eveningCalendarMonth=month();
+   state.eveningCalendarDate=state.eveningCalendarMonth+'-01';
+  }else{
+   const date=state.session?eveningLocalDay(state.session.started_at):null;
+   if(date){state.eveningCalendarDate=date;state.eveningCalendarMonth=date.slice(0,7);}
+  }
   state.tab='evening-calendar';render();return;
  }
  if(verb==='evening-month-prev'||verb==='evening-month-next'){
