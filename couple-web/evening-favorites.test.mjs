@@ -374,7 +374,7 @@ test('LR-019 local exchange cannot erase hearts if storage write fails',()=>{
 test('Sixth favorite opens a choice in the private queue; does not silently evict',()=>{
  const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
  assert.match(app,/favoriteReplacement:\s*null/);
- assert.match(app,/if\(outcome.reason==='limit'\)\{/);
+ assert.match(app,/if\(!outcome\.ok&&outcome\.reason==='limit'\)\{/);
  assert.match(app,/state\.favoriteReplacement=\{/);
  assert.match(app,/if\(verb==='evening-favorite-replace'\)\{/);
  assert.match(app,/replaceEveningFavorite\(/);
