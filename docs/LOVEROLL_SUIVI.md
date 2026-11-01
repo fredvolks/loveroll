@@ -1,5 +1,15 @@
 # LoveRoll — SUIVI OFFICIEL DU PROMPT MAÎTRE
 
+### LR-ACCUEIL-001 — Soirée terminée aujourd'hui et calendrier à jour (31 octobre 2026)
+
+- **Fonctionnel** : le bandeau « Notre soirée » s'appuie sur `eveningDailyAccess.closedToday` pour afficher « Notre soirée est terminée ♥ » seulement lorsqu'une séance officiellement `counted=true` a été clôturée **aujourd'hui en heure du Québec**. La soirée en cours et les invitations officielles conservent leur priorité. Le bouton ouvre le calendrier en lecture seule, sans reprendre/créer une soirée ni lancer de dé. Si aucune fermeture n'a lieu aujourd'hui, l'Accueil revient au message fondé sur quota journalier/hebdomadaire.
+- **Navigation** : toute ouverture du calendrier depuis l'Accueil réinitialise le mois affiché au **mois civil courant de Québec** ; ne réutilise pas une séance ancienne ou un mois précédemment consulté. Les liens depuis Soirée ou Réglages préservent leurs habitudes et leur retour. `app.js` commit `a2924e9`, `evening-calendar-navigation.test.mjs` `852e229`, assertion de `premium-home.test.mjs` `40e8e07`.
+- **Robustesse** : `coupleHomeStats` ignore désormais une date `finished_at` non analysable dans le calcul des semaines consécutives, plutôt que de provoquer un `RangeError` qui masquait tout le tableau de bord. Également testé avec une séance valide et un historique entièrement invalide. `premium-home.mjs` `23ee610`, `premium-home.test.mjs` `86911e5` ; statut de clôture `2474170`.
+- **Cache** : versions `home267` / `loveroll-static-v267` préparées pour l'actualisation mobile/ordinateur, commits `ba718d1`, `66f0030`, `b006430`. Ce ne sont **pas** des preuves de publication.
+- **Limites** : PR [#176](https://github.com/fredvolks/loveroll/pull/176) encore en brouillon, non fusionnée. Résultats GitHub Actions sur SHA courant à vérifier ; validation Auth/RLS sur staging distinct et appareils réels à effectuer avant toute fusion. Aucune modification en production.
+- **MEDIUM** : lecture directe de cinq méthodes d'experts Atelier et de la liste des applications ; **aucune fiche LoveRoll** ni BOSS exécutable, donc aucune mission d'agent autonome ne peut être déclarée accomplie.
+
+
 ### LR-ACCUEIL-001 — Invitation et attente des deux D6 (31 octobre 2026)
 
 - **Accueil** : état reçu `direction=received` avec `state=pending|maybe` affiché « Une invitation vous attend » et « Répondre à l’invitation » ; état envoyé `direction=sent`, `state=pending` affiché « En attente de la réponse ». Ces états proviennent de `love_evening_invite_status` déjà chargé dans `state.eveningInvite`. L'appui ouvre Soirée et laisse les réponses au mécanisme de consentement existant. **Aucune acceptation, D6, D100 ou création de séance automatique.**
