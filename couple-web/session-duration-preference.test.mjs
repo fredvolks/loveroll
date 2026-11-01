@@ -209,6 +209,9 @@ test('Delayed close and finish responses cannot repaint a replacement login',asy
    };
    const calls={writes:[],refresh:0};
    const scope={state,authFeedbackGeneration:5,
+    // No gift or redraw is active in these closure fixtures.
+    isActiveEveningRedrawPending:()=>false,
+    isActiveEveningGiftPending:()=>false,
     eveningClosureGate:createEveningClosureGate(),
     rpc:(name,args)=>{calls.writes.push({name,args});return pending;},
     eveningLocalDay:()=> '2026-10-16',month:()=> '2026-10',
@@ -255,6 +258,9 @@ test('Cancel confirmation is safe during an official roll and after an Auth chan
    session:{id:'night-a'},confirmCancel:false,diceStatus:null};
   const calls={writes:[],refresh:0,renders:0};
   const scope={state,authFeedbackGeneration:4,
+   // No gift or redraw is active in these closure fixtures.
+   isActiveEveningRedrawPending:()=>false,
+   isActiveEveningGiftPending:()=>false,
    eveningClosureGate:createEveningClosureGate(),
    rpc:(name,args)=>{calls.writes.push({name,args});return pending;},
    render:()=>{calls.renders++;},
@@ -323,6 +329,9 @@ test('Terminal soirée actions are single-flight across finish, cancel and calen
    diceStatus:null,confirmCancel:true};
   const writes=[],pending=[];
   const scope={state,authFeedbackGeneration:7,
+   // No gift or redraw is active in these closure fixtures.
+   isActiveEveningRedrawPending:()=>false,
+   isActiveEveningGiftPending:()=>false,
    eveningClosureGate:createEveningClosureGate(),
    rpc:(method,args)=>{
     writes.push({method,args});
