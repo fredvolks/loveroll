@@ -1,5 +1,13 @@
 # LoveRoll — SUIVI OFFICIEL DU PROMPT MAÎTRE
 
+### LR-ACCUEIL-001 — États vérifiables de la carte Surprise (31 octobre 2026)
+
+- **Code** : `premium-home.mjs` utilise le tirage mensuel officiel, le D6 de la personne qui invite et la réservation associée réellement chargée (`state.geoReservation`) pour afficher « Surprise à découvrir », « Choisir qui invite », « À planifier », « Date prévue », « Réservation déclarée confirmée » ou « À replanifier » si annulée. La date formatée vient de `reserved_for` en `America/Toronto`; une date invalide ne devient pas un faux rendez-vous. Il n'existe **pas de preuve métier de réalisation explicite dans ce parcours** : ne jamais confondre une réservation avec une sortie réalisée ni afficher une réalisation fictive.
+- **Commits** : `49e0d4c` (interface), `36c222e` (raccord à l'état Supabase déjà disponible), `bcb8af1` (régressions réelles sur les états). Le rendu et les titres des cartes existantes ne sont pas altérés.
+- **PWA** : renouvellement des versions `home264`/`loveroll-static-v264` (`57f9666`, `79e2bbb`, `8b8474a`) pour préparer l'actualisation mobile/hors ligne. **Aucun déploiement n'a été fait**.
+- **Livraison** : [PR #176](https://github.com/fredvolks/loveroll/pull/176) encore **brouillon** ; validations du dernier commit GitHub Actions et recettes iPhone/Android/tablette/PC, GoTrue/RLS sur staging distinct toujours à confirmer. Aucune migration production.
+
+
 ### LR-ACCUEIL-001 — Total mensuel des soirées du couple (31 octobre 2026)
 
 - **Interface** : la carte du bilan mensuel de l'Accueil affiche maintenant **« Soirées partagées »** avec le nombre de séances réellement terminées et `counted=true` sur le mois civil `America/Toronto`, au lieu du compteur de « Répartition » par partenaire. La vue de suivi reste accessible via le bouton « Ce mois ». Les défis individuels restent absents du résumé.
