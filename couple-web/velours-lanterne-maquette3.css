@@ -816,7 +816,7 @@ body.lr-velours-lanterne .invite-copy-manual input {
 }
 body.lr-velours-lanterne .invite-auth-field:focus-within {
   border-color:var(--lr-vl-focus)!important;
-  box-shadow:0 0 0 2px rgba(255,223,156,.25);
+  box-shadow:var(--lr-vl-active-shadow);
 }
 body.lr-velours-lanterne .invite-field-body>span,
 body.lr-velours-lanterne .invite-profile-card label,
@@ -828,7 +828,7 @@ body.lr-velours-lanterne .invite-field-body input {
   font-size:max(16px,1rem); /* iOS Safari : éviter le zoom au focus. */
 }
 body.lr-velours-lanterne .invite-field-body input::placeholder {
-  color:#dbb1c3;
+  color:var(--lr-vl-muted);
   opacity:1;
 }
 body.lr-velours-lanterne .invite-account-screen .invite-password-eye {
@@ -858,7 +858,7 @@ body.lr-velours-lanterne .invite-existing-space button:is([data-action="switch-a
   border-radius:14px;
   background:var(--lr-vl-muted-panel);
   color:var(--lr-vl-ivory);
-  box-shadow:inset 0 1px 0 rgba(255,225,220,.16);
+  box-shadow:var(--lr-vl-relief);
 }
 body.lr-velours-lanterne .invite-account-screen :is(.invite-auth-link,.invite-auth-back) {
   min-height:44px;
@@ -978,7 +978,7 @@ body.lr-velours-lanterne #app .entry-access-screen .entry-input {
 }
 body.lr-velours-lanterne #app .entry-access-screen .entry-input:focus-within {
   border-color:var(--lr-vl-focus);
-  box-shadow:0 0 0 2px rgba(255,223,156,.25);
+  box-shadow:var(--lr-vl-active-shadow);
 }
 body.lr-velours-lanterne #app .entry-access-screen .entry-auth-field>span:first-child {
   color:var(--lr-vl-champagne);
@@ -988,7 +988,7 @@ body.lr-velours-lanterne #app .entry-access-screen .entry-input input {
   font-size:16px;
 }
 body.lr-velours-lanterne #app .entry-access-screen input::placeholder {
-  color:#d6acc0;
+  color:var(--lr-vl-muted);
   opacity:1;
 }
 body.lr-velours-lanterne #app .entry-access-screen .entry-password-eye {
