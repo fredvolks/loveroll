@@ -63,7 +63,7 @@ export function fitEveningD6(root){
  }
  const footer=document.createElement('div');footer.className='evening-d6-next lr-surface';
  const nextMessage=eveningD6NextMessage({
-  ownRecorded:!!own.querySelector('.evening-face-result:not(.is-empty)'),
+  ownRecorded:!!me.querySelector('.evening-face-result:not(.is-empty)'),
   partnerRecorded:partner.classList.contains('is-confirmed'),
   rolling:!roll.matches('button')&&roll.textContent.includes('Brassage en cours'),
   verifying:!roll.matches('button')&&roll.textContent.includes('Vérification du lancer')
