@@ -34,7 +34,7 @@ import {eveningFavoriteId,readEveningFavorites,toggleEveningFavorite,removeEveni
 import {cycleIntensityQuestionnaireHtml,ownsCycleIntensityAnswer} from './cycle-questionnaire.mjs?v=20261031-cycle261';
 import {DICE_WEIGHT_CONFIG,configuredDiceWeights,parseDiceWeightInputs} from './dice-weighting.mjs?v=20261018-weights146';
 import {premiumEveningHtml,updateEveningCategoryUi} from './premium-evening.mjs?v=20261028-lr027-web254';
-import {eveningHistoryMarkup,eveningLocalDay,eveningCalendarInitialDate} from './evening-calendar.mjs?v=20261031-archive269';
+import {eveningHistoryMarkup,eveningLocalDay,eveningCalendarInitialDate} from './evening-calendar.mjs?v=20261031-archive270';
 import {eveningReviewModal,validEveningReview,eveningFinaleStatus} from './evening-review.mjs?v=20261016-person-review97';
 import {premiumSurpriseHtml,sixSpecialEvents} from './premium-surprise.mjs?v=20261022-home228';
 import {surpriseSlot,surpriseCustom,surpriseTitle,formatSurpriseDateInput,parseSurpriseDateInput} from './surprise-event-config.mjs?v=20261016-surprise109';
