@@ -49,8 +49,13 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   const changed=(a,b)=>Math.abs(a.quaternion.reduce((sum,v,i)=>sum+v*b.quaternion[i],0))<.995;
   const flat=state=>{
    assert.ok(state.restingUp[1]>.999999,'A face must remain flat on the horizontal support plane');
-   assert.ok(Math.abs(state.support.y-initial.support.y)<.1,
-    'Dragging must not lift or lower the die: '+JSON.stringify({before:initial.support,after:state.support}));
+   // Canvas/page fitting can shift all viewport coordinates by a pixel while
+   // fonts and photography settle. Check the actual 3D model instead: a drag
+   // must never change its height above the physical support plane.
+   assert.ok(Math.abs(state.modelPositionY-initial.modelPositionY)<1e-9,
+    'Dragging must not lift or lower the 3D model: '+JSON.stringify({
+     before:initial.modelPositionY,after:state.modelPositionY,
+     photoPixelsBefore:initial.support,photoPixelsAfter:state.support}));
   };
   const horizontal=await drag(70,40);
   assert.ok(changed(initial,horizontal.held),'A finger swipe must visibly turn the model');

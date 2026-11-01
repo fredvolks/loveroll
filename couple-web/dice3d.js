@@ -766,6 +766,8 @@ export function dieOn(canvas,sides,value,rolling){
    quaternion:built.group.quaternion.toArray(),renderedFrames,
    observerVisible:shown,documentVisible:!document.hidden,frameScheduled:!!frame,
    modelId:built.group.uuid,model:flatHome?'ruby-reference-205':'rose-crystal',
+   // Model-space height, unaffected by responsive photo/canvas reflow.
+   modelPositionY:built.group.position.y,
    support:flatHome?projectedSupport():null,
    restingUp:flatHome?upNormal.toArray():null,upFace,
    spinning:canvas.dataset.spinning==='true',optics:{...backdrop.state(),transmission:built.material.transmission,roughness:built.material.roughness,inkOpacity:built.ink.opacity,inkTransparent:built.ink.transparent,engravings:built.engravings}};
