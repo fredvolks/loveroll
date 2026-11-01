@@ -1,5 +1,12 @@
 # LoveRoll — SUIVI OFFICIEL DU PROMPT MAÎTRE
 
+### LR-028 — navigation après confirmation asynchrone (31 octobre 2026)
+
+- Sur la PR #176, encore **brouillon non fusionnée**, un changement d'onglet avec modifications non enregistrées retient désormais l'identité du compte, du couple, de la soirée, de l'onglet et la génération Auth **avant** l'attente du dialogue. Après confirmation, la navigation est abandonnée si une de ces données a changé ou si un D6/D100, une repige ou un don officiel est en cours. Un refus de quitter conserve la page initiale. Fichier : `couple-web/app.js`, commit `513c4db`.
+- Quatre tests Node dans `couple-web/async-tab-navigation-owner.test.mjs` (commit `cd9106a`) couvrent : départ normal, annulation, trois opérations serveur concurrentes, cinq dérives d'identité ou de session. Intégration explicite à la CI de PR `276dbd4` et à la CI de déploiement `c36854f` ; **résultat complet en attente**, ne pas assimiler l'ajout des tests à leur succès.
+- Aucun changement aux RPC SQL, aux tirages officiels, à Supabase production ou à GitHub Pages. Recette Android/iOS réelle et staging Auth/RLS toujours requis avant une fusion.
+
+
 
 ### LR-028 — Retour Android : fenêtre cadeau et D100 sans liste privée (31 octobre 2026)
 
