@@ -3,7 +3,7 @@ import {showEveningCategoryReminder} from './evening-d100-template.mjs?v=2026102
 import {eveningInviteHtml,eveningInviteInboxHtml,isEveningInviteAction} from './evening-invitation.mjs?v=20261028-web254';
 import {askEveningCategoryConfirmation,categoryConfirmEnabled,saveCategoryConfirmLocal} from './evening-category-confirm.mjs?v=20261027-web238';
 import {soundEnabled,setSoundEnabled,setLoveRollSoundUser,unlockLoveRollSounds,playLoveRollSound,soundSettingsHtml} from './loveroll-sounds.mjs?v=20261028-privacy250';
-import {isAcceptedTimedEveningChallenge,completeTimedEveningChallenge,timedEveningTimerControl} from './timed-evening-completion.mjs?v=20261029-timer259';
+import {isAcceptedTimedEveningChallenge,completeTimedEveningChallenge,timedEveningTimerControl,refreshAfterTimedEveningConfirmation} from './timed-evening-completion.mjs?v=20261029-timer259';
 import {fitSurpriseMinimal} from './surprise-minimal.mjs?v=20261022-home228';
 import {eclatNoteKey,loadEclatNote,saveEclatNote} from './eclat-guidance.mjs?v=20261022-home228';
 import {loadEclatHistory} from './eclat-history.mjs?v=20261022-home228';
@@ -1374,6 +1374,15 @@ function timedEveningItem(timerId){
  return ownEveningChallenges(state.challenges,state.user.id,state.session.id)
   .find(item=>item.id===timerId)||null;
 }
+async function refreshConfirmedTimedEvening(){
+ const updated=await refreshAfterTimedEveningConfirmation(refreshAndShow);
+ if(!updated){
+  // The server has already accepted the completion. A stale screen is NOT
+  // permission to retry answer_challenge or claim the write was rejected.
+  console.warn('Défi Soirée enregistré, affichage à actualiser après reconnexion');
+  if(!document.hidden)notify('♡ Défi accompli sur le serveur. L’affichage n’a pas pu être actualisé. Rouvre Soirée.');
+ }
+}
 async function retryExpiredTimedEvening(){
  if(!challengeTimer.autoCompletePending||challengeTimer.decisionPending||timerCompletionInFlight||
     Date.now()<timerCompletionRetryAt||!state.user||!state.session)return;
@@ -1395,7 +1404,7 @@ async function retryExpiredTimedEvening(){
   if(state.user?.id===userId&&state.session?.id===sessionId){
    if(result.finished){state.showEveningChallenges=false;state.selectedEveningChallengeId=null;}
    notify('♡ Défi accompli ♥');
-   await refreshAndShow();
+   await refreshConfirmedTimedEvening();
   }
  }catch(error){
   timerCompletionRetryAt=Date.now()+15000;
@@ -1439,7 +1448,7 @@ async function reconcileSavedEveningTimers(){
    if(state.user?.id===userId&&state.session?.id===sessionId){
     if(result.finished){state.showEveningChallenges=false;state.selectedEveningChallengeId=null;}
     notify('♡ Défi accompli ♥');
-    await refreshAndShow();
+    await refreshConfirmedTimedEvening();
    }
   }catch(error){
    savedTimerScanAfter=Date.now()+15000;
