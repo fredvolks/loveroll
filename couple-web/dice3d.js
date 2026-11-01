@@ -545,11 +545,15 @@ export function dieOn(canvas,sides,value,rolling){
    const markerVisible=marker&&marker.getBoundingClientRect().width===0&&
     getComputedStyle(marker.parentElement).display!=='none';
    if(markerVisible){
-    stage.style.transform='none';
+    // The tablet templates contain layered !important transforms. Normal
+    // inline assignments lose to those rules and leave a visible marble gap.
+    // Reset AND apply the measured offset at the same priority, only for the
+    // real Soirée D100 stage; never resize or fake the WebGL mesh.
+    stage.style.setProperty('transform','none','important');
     const rect=canvas.getBoundingClientRect(),bounds=projectedBounds();
     if(rect.width>0&&rect.height>0){
      const dy=marker.getBoundingClientRect().top-(rect.top+bounds.bottom*rect.height);
-     if(Number.isFinite(dy))stage.style.transform='translateY('+dy.toFixed(2)+'px)';
+     if(Number.isFinite(dy))stage.style.setProperty('transform','translateY('+dy.toFixed(2)+'px)','important');
     }
    }
    return;
