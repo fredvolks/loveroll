@@ -141,7 +141,7 @@ test('owner-private active challenge becomes the single main action',()=>{
   const html=view({pending:{...mine,status:active},turn:{...base.turn,next:'b'}});
   assert.equal(dominant(html).length,1);
   assert.match(dominant(html)[0],/data-action="evening-open:card-a"/);
-  assert.match(html,/♡ Voir mon défi/);
+  assert.match(html,active==='accepted'?/↻ Reprendre mon défi/:/♡ Voir mon défi/);
   assert.equal((html.match(/data-action="evening-list"/g)||[]).length,1,
    'Other private cards remain reachable through a secondary list action');
   assert.doesNotMatch(html,/data-action="new-challenge"/);
