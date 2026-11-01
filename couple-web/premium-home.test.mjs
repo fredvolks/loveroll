@@ -286,3 +286,14 @@ test('LR-ACCUEIL-001: loading history never presents an invented quota or closed
  assert.match(html,/data-action="tab:session"/);
  assert.doesNotMatch(html,/data-action="evening-calendar"/);
 });
+
+test('LR-ACCUEIL-001: the monthly recap links to current-month history without mutating play',()=>{
+ const html=premiumHomeHtml({weekly:{face:2},sessions:[],history:[]});
+ assert.match(html,/<h3 id="home-statistics-title"><button type="button" class="home-monthly-link" data-action="evening-calendar:month"/);
+ assert.match(html,/aria-label="Voir le détail de nos statistiques du mois dans le calendrier"/);
+ assert.equal((html.match(/data-action="evening-calendar:month"/g)||[]).length,1);
+ assert.match(html,/Semaines consécutives/);
+ assert.doesNotMatch(html,/data-action="new-session"|data-action="roll:challenge"/);
+ assert.match(css,/\.home-monthly-link:focus-visible/);
+ assert.match(app,/if\(parts\[0\]==='month'\)/);
+});
