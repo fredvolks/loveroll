@@ -220,3 +220,25 @@ test('LR-002 stale card or account cannot reset or restart a timed Soirée chall
  assert.equal((toggle.match(/canControlTimedEveningChallenge\(/g)||[]).length,2,
   'Revalidate after the asynchronous server acceptance or sound permission');
 });
+
+test('LR-002 rapid-tap accept is serialized and Reset cannot race the server acceptance',()=>{
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ assert.match(source,/let timerActivationInFlight=false/);
+ const reset=source.slice(source.indexOf("if(verb==='timer-reset')"),source.indexOf("if(verb==='timer-toggle')"));
+ assert.match(reset,/if\(timerActivationInFlight\)/,
+  'Reset cannot silently rewind a timer while the acceptance is pending');
+ const start=source.indexOf("if(verb==='timer-toggle')"),stop=source.indexOf("if(verb==='give-challenge')",start);
+ const toggle=source.slice(start,stop);
+ assert.ok(start>=0&&stop>start);
+ assert.match(toggle,/if\(timerActivationInFlight\)return/);
+ assert.match(toggle,/timerActivationInFlight=true/);
+ assert.match(toggle,/try\{/);
+ assert.match(toggle,/finally\{/);
+ assert.match(toggle,/timerActivationInFlight=false/);
+ assert.ok(toggle.indexOf('timerActivationInFlight=true')<
+  toggle.indexOf("await rpc('answer_challenge'"),
+  'The first tap owns the lock BEFORE the async server write');
+ assert.ok(toggle.indexOf('timerActivationInFlight=false')>
+  toggle.indexOf('await rpc(\'answer_challenge\''),
+  'Release lock only after the server callback resolves or rejects');
+});
