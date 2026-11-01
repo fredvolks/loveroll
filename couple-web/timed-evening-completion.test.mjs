@@ -34,6 +34,32 @@ test('Completes shared Soirée only if server board is finished',async()=>{
  assert.deepEqual(result,{outcome:'completed',finished:true});
  assert.deepEqual(calls,['answer_challenge','my_love_evening_board','finish_couple_session']);
 });
+test('P0 timer cannot close a couple session on a malformed board response',async()=>{
+ for(const finished of ['false','true',1,0,{},[],null,undefined]){
+  const calls=[];
+  const rpc=async(name,args)=>{
+   calls.push({name,args});
+   if(name==='my_love_evening_board')return {finished};
+  };
+  const result=await completeTimedEveningChallenge({
+   challenge:card,userId:'alice',sessionId:'session-a',rpc,query:async()=>[]
+  });
+  assert.deepEqual(result,{outcome:'completed',finished:false},
+   'untrusted board value: '+String(finished));
+  assert.deepEqual(calls.map(call=>call.name),
+   ['answer_challenge','my_love_evening_board'],
+   'never call finish_couple_session without boolean true');
+ }
+ const verified=[];
+ const good=await completeTimedEveningChallenge({challenge:card,userId:'alice',
+  sessionId:'session-a',rpc:async name=>{
+   verified.push(name);
+   if(name==='my_love_evening_board')return {finished:true};
+  },query:async()=>[]});
+ assert.equal(good.finished,true);
+ assert.deepEqual(verified,['answer_challenge','my_love_evening_board','finish_couple_session']);
+});
+
 test('Concurrent device completion is idempotent; passed challenge is not silently completed',async()=>{
  const rpc=async name=>{
   if(name==='answer_challenge')throw Error('Défi déjà terminé');

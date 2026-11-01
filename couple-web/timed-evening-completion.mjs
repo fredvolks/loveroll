@@ -62,7 +62,10 @@ export async function completeTimedEveningChallenge({
  if(!ownsRequest())return stale();
  const board=await rpc('my_love_evening_board',{p_session:sessionId});
  if(!ownsRequest())return stale();
- if(board?.finished){
+ // The official board RPC returns a boolean. A malformed response like
+ // {finished:'false'} or {finished:1} must never close a real couple's night.
+ const finished=board?.finished===true;
+ if(finished){
   try{await rpc('finish_couple_session',{p_session:sessionId,p_count:true});}
   catch(error){
    if(!ownsRequest())return stale();
@@ -73,5 +76,5 @@ export async function completeTimedEveningChallenge({
   }
  }
  if(!ownsRequest())return stale();
- return {outcome,finished:!!board?.finished};
+ return {outcome,finished};
 }
