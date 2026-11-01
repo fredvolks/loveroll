@@ -49,3 +49,22 @@ test('LR-SURPRISE-001: a ready POI without verified driving route is not present
  assert.match(monthlyGeoCardHtml({enabled:true,venue:{...venue,driving_meters:0}}),/0 km par la route/);
  assert.match(monthlyGeoCardHtml({enabled:true,venue:{...venue,driving_meters:16200}}),/16,2 km par la route/);
 });
+
+
+test('LR-SURPRISE-001: website is never passed off as a reservation URL',()=>{
+ const simple=monthlyGeoCardHtml({enabled:true,venue:{...venue,
+  website_url:'https://example.com/official',booking_url:null},canReserve:true});
+ assert.match(simple,/Site officiel/);
+ assert.doesNotMatch(simple,/Réserver auprès du lieu/);
+ assert.equal((simple.match(/href="https:\/\/example\.com\/official"/g)||[]).length,1);
+ const real=monthlyGeoCardHtml({enabled:true,venue:{...venue,
+  website_url:'https://example.com/official',booking_url:'https://example.com/book'},canReserve:true});
+ assert.match(real,/Réserver auprès du lieu/);
+ assert.match(real,/Site officiel/);
+ assert.match(real,/https:\/\/example\.com\/book/);
+ assert.match(real,/https:\/\/example\.com\/official/);
+ const guest=monthlyGeoCardHtml({enabled:true,venue:{...venue,
+  website_url:'https://example.com/official',booking_url:'https://example.com/book'},canReserve:false});
+ assert.doesNotMatch(guest,/Réserver auprès du lieu/);
+ assert.match(guest,/Site officiel/);
+});
