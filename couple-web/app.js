@@ -5,6 +5,7 @@ import {askEveningCategoryConfirmation,categoryConfirmEnabled,saveCategoryConfir
 import {soundEnabled,setSoundEnabled,setLoveRollSoundUser,unlockLoveRollSounds,playLoveRollSound,soundSettingsHtml} from './loveroll-sounds.mjs?v=20261028-privacy250';
 import {isAcceptedTimedEveningChallenge,isSameCompletedEveningChallenge,completeTimedEveningChallenge,timedEveningTimerControl,refreshAfterTimedEveningConfirmation,refreshAfterConfirmedWrite,timerBelongsToUser,canControlTimedEveningChallenge} from './timed-evening-completion.mjs?v=20261101-timer260';
 import {fitSurpriseMinimal} from './surprise-minimal.mjs?v=20261022-home228';
+import {createBookingMutationGate} from './monthly-geo-ui.mjs?v=20261101-booking261';
 import {eclatNoteKey,loadEclatNote,saveEclatNote} from './eclat-guidance.mjs?v=20261022-home228';
 import {loadEclatHistory} from './eclat-history.mjs?v=20261022-home228';
 import {enhanceGoldBacks} from './gold-arrows.mjs?v=20261022-home228';
@@ -96,6 +97,7 @@ let notificationFeedback=null;
 let worldGpsDraft=null;
 let worldFx=null,worldFxPending=null,worldFxFailed=null;
 let geoFetchActive=null,geoFetchNextAt=new Map();
+const geoBookingMutationGate=createBookingMutationGate();
 const worldGeoEnabled=()=>state.couple?.activity_localization_enabled===true&&!!state.monthly?.monthly_activity&&state.monthly.monthly_activity.activity_region===null;
 const currentHost=()=>{const h=state.monthly?.monthly_host;return h?state.members[h.face%2===0?0:1]:null;};
 const worldLocale=()=>localeOrDefault(state.profile?.preferred_locale);
@@ -3100,6 +3102,7 @@ async function handle(action,element){
   state.geoBookingEdit=!state.geoBookingEdit;render();return;
  }
  if(verb==='geo-booking-save'){
+  const executed=await geoBookingMutationGate(async()=>{
   const ownerId=state.user?.id,rollId=state.monthly?.monthly_activity?.id;
   if(!ownerId||!rollId||currentHost()?.user_id!==ownerId)
    throw Error('Réservation réservée à la personne qui invite.');
@@ -3127,9 +3130,12 @@ async function handle(action,element){
    render();
    notify('♡ Sortie enregistrée dans LoveRoll. Affichage actualisé localement; reconnecte-toi pour synchroniser.');
   }
+  });
+  if(!executed)notify('Une opération de réservation est déjà en cours.');
   return;
  }
  if(verb==='geo-booking-cancel'){
+  const executed=await geoBookingMutationGate(async()=>{
   const ownerId=state.user?.id,rollId=state.monthly?.monthly_activity?.id;
   if(!ownerId||!rollId||currentHost()?.user_id!==ownerId)
    throw Error('Seule la personne qui invite peut annuler.');
@@ -3147,6 +3153,8 @@ async function handle(action,element){
    render();
    notify('♡ Sortie annulée dans LoveRoll. Actualise après reconnexion pour vérifier la synchronisation.');
   }
+  });
+  if(!executed)notify('Une opération de réservation est déjà en cours.');
   return;
  }
  if(verb==='surprise-season'){if(!['hiver','ete'].includes(parts[0])||!state.showSurpriseActivity)return;state.surpriseSeason=parts[0];render();return;}
