@@ -72,9 +72,12 @@ export async function completeTimedEveningChallenge({challenge,userId,sessionId,
  * A successful server write is final even if the subsequent UI refresh fails.
  * Return a display state, never turn a confirmed completion into an RPC retry.
  */
-export async function refreshAfterTimedEveningConfirmation(refresh){
+export async function refreshAfterConfirmedWrite(refresh){
  try{await refresh();return true;}catch{return false;}
 }
+// Keep the existing Soirée interface while sharing the verified-write
+// contract with Surprise reservation saves and cancellations.
+export const refreshAfterTimedEveningConfirmation=refreshAfterConfirmedWrite;
 
 // Browser timer state is transient and cannot be carried across sign-in accounts.
 // The stored deadline is still restored from that account's own scoped key.
