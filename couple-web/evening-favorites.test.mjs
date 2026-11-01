@@ -41,7 +41,7 @@ test('LR-019: Soirée UI is gated by installed server table and handles full 5/5
  assert.match(app,/state\.eveningFavorites=\[\];state\.favoritesReady=false/);
  assert.match(app,/favoriteCardIdentity\(view\)/);
  assert.match(app,/state\.favoritesReady&&favoriteKey/);
- assert.match(app,/evening-favorite:\+view\.id/);
+ assert.match(app,/evening-favorite:'\+view\.id/);
  assert.match(app,/evening-favorite-replace:/);
  assert.match(app,/role="alertdialog" aria-modal="true" aria-label="Remplacer un coup de cœur"/);
  assert.match(app,/state\.eveningFavorites\.length>=MAX_EVENING_FAVORITES/);
