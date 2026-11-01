@@ -50,8 +50,14 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
    assert.equal(await page.locator('.evening-progress>span').nth(1).locator('small').innerText(),'Dé personnel : 4');
    assert.deepEqual(errors,[]);await context.close();console.log('EVENING_D6_TEMPLATE_OK',width,height,'partner first');continue;
   }
-  await page.waitForFunction(()=>document.querySelector('[data-action="my-d6"]')?.textContent==='Lancer enregistré');
-  assert.equal(await page.locator('[data-action="my-d6"]').isDisabled(),true);
+  // Once Supabase confirms the roll, the UI replaces the action button with
+  // an accessible status rather than leaving an inert button in the tab order.
+  await page.waitForFunction(()=>
+   document.querySelector('.evening-my-die .evening-d6-status[role="status"]')
+    ?.textContent?.includes('Lancer enregistré'),null,{timeout:30000});
+  assert.equal(await page.locator('[data-action="my-d6"]').count(),0,
+   'A confirmed personal D6 must not offer a second roll');
+  assert.match(await page.locator('.evening-my-die .evening-d6-status[role="status"]').innerText(),/Lancer enregistré/);
   assert.match(await page.locator('.evening-own-capsule').innerText(),/Fred.*2/s);
   assert.equal(world.calls.filter(c=>c.name==='roll_my_evening_d6').length,1);
   assert.equal((await page.locator('.evening-d6-theater canvas').getAttribute('data-face')),'2');
