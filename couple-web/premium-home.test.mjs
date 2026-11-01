@@ -428,7 +428,7 @@ test('LR-ACCUEIL-001: officially closed evening today is a read-only history sho
  assert.match(html,/Notre soirée est terminée ♥/);
  assert.match(html,/Voir notre soirée terminée/);
  assert.match(html,/Retrouvez notre soirée terminée dans le calendrier/);
- assert.match(html,/data-action="evening-calendar"/);
+ assert.match(html,/data-action="evening-calendar:today"/);
  assert.doesNotMatch(html,/data-action="new-session"|data-action="roll:weekly"/);
  const atLimit=premiumHomeHtml({weekly,weeklyProgress:{...progress,counted:3}});
  assert.match(atLimit,/Notre soirée est terminée ♥/);
