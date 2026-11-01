@@ -10,10 +10,10 @@ const end=source.indexOf("\n if(['review-save'",start);
 assert.ok(start>=0&&end>start,'The production navigation handler is extractable');
 const handlerSource='(async (verb,parts)=>{'+source.slice(start,end)+'\n})';
 
-function pendingNavigation(){
+function pendingNavigation(target='settings',couple={}){
  const state={tab:'session',user:{id:'alice'},coupleId:'duo-a',
   session:{id:'night-a'},members:[{user_id:'alice'},{user_id:'bob'}],
-  diceStatus:null,couple:{},eveningMore:false};
+  diceStatus:null,couple,eveningMore:false};
  let resolveChoice,renderCount=0,probeCount=0,stopCount=0;
  let giftPending=false,redrawPending=false,formRoute='session|editor-a';
  const context={
@@ -29,7 +29,7 @@ function pendingNavigation(){
   console:{warn(){}}
  };
  const action=runInNewContext(handlerSource,context);
- const request=action('tab',['settings']);
+ const request=action('tab',[target]);
  assert.equal(typeof resolveChoice,'function','Unsaved draft opened a confirmation');
  return {
   state,context,request,
@@ -37,6 +37,7 @@ function pendingNavigation(){
   setGift(value){giftPending=value;},
   setRedraw(value){redrawPending=value;},
   setFormRoute(value){formRoute=value;},
+  section:()=>context.settingsOpenSection,
   metrics(){return {renderCount,probeCount,stopCount};}
  };
 }
@@ -239,4 +240,22 @@ test('LR-028: settings navigation respects an active roll, gift or redraw immedi
  clean.setDirty(false);
  await clean.open();
  assert.equal(clean.changes(),1,'Unedited settings remain directly navigable');
+});
+
+test('LR-028: an automatic library redirect preserves drafts until user confirms',async()=>{
+ const auto={sexual_card_mode:'automatic'};
+ const refused=pendingNavigation('library',auto);
+ refused.confirm(false);await refused.request;
+ assert.equal(refused.state.tab,'session','Cancel keeps the edited page');
+ assert.equal(refused.metrics().renderCount,0,'No implicit admin redirect');
+ const approved=pendingNavigation('library',auto);
+ approved.confirm(true);await approved.request;
+ assert.equal(approved.state.tab,'settings');
+ assert.equal(approved.section(),'admin');
+ assert.equal(approved.metrics().renderCount,1);
+ const changed=pendingNavigation('library',auto);
+ changed.setFormRoute('session|other-editor');
+ changed.confirm(true);await changed.request;
+ assert.equal(changed.state.tab,'session','Old confirmation cannot redirect a replacement editor');
+ assert.equal(changed.metrics().renderCount,0);
 });
