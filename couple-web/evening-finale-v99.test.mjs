@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {runInNewContext} from 'node:vm';
 import {premiumEveningHtml,completedEveningLibraryCount} from './premium-evening.mjs';
 const read=p=>readFileSync(new URL('./'+p,import.meta.url),'utf8');
 const base={session:null,lastEvening:{id:'s1',completed:0,responses:1,myResponse:true,partnerResponse:false}};
@@ -71,4 +72,73 @@ test('200-card progress preserves legacy face-only records and rejects corrupt m
   assert.equal(completedEveningLibraryCount(malformed),0);
  }
  assert.equal(history[0].face,9,'the original history must never change');
+});
+
+test('LR-003 closure is visibly pending and cannot submit a second close',async()=>{
+ const app=read('app.js');
+ const from=app.indexOf("if(verb==='evening-close-confirm'){");
+ const to=app.indexOf("if(verb==='evening-challenge'||verb==='evening-list'){",from);
+ assert.ok(from>=0&&to>from,'test must exercise the actual close action');
+ const actionSource=app.slice(from,to);
+ const make=()=>{
+  const state={diceStatus:null,user:{id:'alice'},coupleId:'couple',
+   session:{id:'old',started_at:'2026-10-18T19:00:00Z'},
+   tab:'session',confirmCancel:true,eveningClosePending:null};
+  const calls=[],renders=[],refreshes=[],tickets=[];
+  let settle,reject;
+  const scope={state,authFeedbackGeneration:7,
+   isActiveEveningRedrawPending:()=>false,isActiveEveningGiftPending:()=>false,
+   eveningClosureGate:{
+    begin:owner=>{tickets.push(owner);return owner;},
+    release:()=>{}
+   },
+   render:()=>renders.push(state.tab),
+   rpc:(name,args)=>{
+    calls.push({name,args});
+    return new Promise((res,rej)=>{settle=res;reject=rej;});
+   },
+   eveningLocalDay:()=> '2026-10-18',month:()=> '2026-10',today:()=> '2026-10-18',
+   refreshAndShow:async()=>{refreshes.push(state.tab);}
+  };
+  const action=runInNewContext('(async (verb,parts)=>{'+actionSource+'})',scope);
+  return {state,calls,renders,refreshes,action:()=>action('evening-close-confirm',[]),
+   resolve:()=>settle(),fail:()=>reject(Error('offline'))};
+ };
+ const busy=make(),first=busy.action();
+ assert.equal(busy.calls.length,1);
+ assert.equal(busy.state.eveningClosePending.sessionId,'old');
+ const pendingHtml=premiumEveningHtml({session:null,staleActiveSession:true,
+  confirmCancel:true,closePending:true});
+ assert.match(pendingHtml,/Enregistrement de la clôture en cours/);
+ assert.match(pendingHtml,/role="status" aria-live="polite"/);
+ assert.match(pendingHtml,/data-action="evening-close-confirm" disabled/);
+ assert.match(pendingHtml,/data-action="dismiss-cancel" disabled/);
+ await busy.action();
+ assert.equal(busy.calls.length,1,'double confirm must not issue a second RPC');
+ busy.resolve();await first;
+ assert.equal(busy.state.tab,'evening-calendar');
+ assert.equal(busy.refreshes.length,1);
+ assert.equal(busy.state.eveningClosePending,null);
+
+ const changed=make(),delayed=changed.action();
+ changed.state.tab='home';
+ changed.resolve();await delayed;
+ assert.equal(changed.state.tab,'home','late server response cannot hijack Home');
+ assert.equal(changed.refreshes.length,0);
+ assert.equal(changed.state.eveningClosePending,null);
+
+ const rejected=make(),failed=rejected.action();
+ rejected.fail();
+ await assert.rejects(failed,/offline/);
+ assert.equal(rejected.state.eveningClosePending,null);
+ assert.equal(rejected.state.confirmCancel,true,'failed close stays retryable');
+ const retry=rejected.action();
+ assert.equal(rejected.calls.length,2);
+ rejected.resolve();await retry;
+ assert.equal(rejected.state.tab,'evening-calendar');
+
+ const normal=premiumEveningHtml({session:null,staleActiveSession:true,
+  confirmCancel:true,closePending:false});
+ assert.match(normal,/data-action="evening-close-confirm">/);
+ assert.match(normal,/data-action="dismiss-cancel">/);
 });

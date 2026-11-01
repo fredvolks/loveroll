@@ -120,7 +120,7 @@ const worldText=key=>worldT(worldLocale(),key);
 const state={user:null,profile:null,members:[],coupleId:null,couple:null,
  tab:launchParams.has('settings')?'settings':(['home','session','special','advent'].includes(launchParams.get('open'))?launchParams.get('open'):'home'),weekly:null,monthly:{},session:null,personal:[],challenges:[],gifts:[],rollStatus:null,customCards:[],customCategory:'SENSUEL',customSlot:1,customSearch:'',customFilter:'all',monthlyActivities:[],monthlySlot:1,libraryScreen:'list',libraryImportKind:null,specialEditorKey:null,specialEditorStage:'D6_activite',specialEditorFace:1,adventEditorDay:1,pushDevice:null,
  events:[],journal:[],advent:[],advent2026Config:null,advent2026Days:[],selectedDay:1,adventYear:null,adventSelected:null,adventHistory:false,adventOpening:null,adventRevealing:false,adventServerDate:null,unlockKey:null,channel:null,
- occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningRefusalId:null,redrawReady:false,redrawBusy:false,redrawBusyContext:null,eveningStartContext:null,timerStartContext:null,legacyAnswerContext:null,timerCompletionContext:null,timerCompletionRetryOwner:null,loveExcludedCards:[],eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],monthlyPassQuota:null,calendarPassMonth:null,cycleStatus:null,cycleDeferred:null,cycleAnswerRequest:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,eveningInvite:null,eveningInviteBusy:false,eveningGiftRequest:null,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoBookingEdit:false,referral:null,eclat:null,eclatGalleryScroll:0,eclatHistory:[],eclatHistoryCouple:null,eclatHistoryUserId:null,eclatBrowse:false,eclatHistoryError:false,eclatSelection:1,eclatMinutes:30,eclatIntent:'all',eclatDetails:false,eclatMusic:false,eclatFinished:null,testModeEligible:false,testMode:'real'};
+ occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningRefusalId:null,redrawReady:false,redrawBusy:false,redrawBusyContext:null,eveningStartContext:null,timerStartContext:null,legacyAnswerContext:null,timerCompletionContext:null,timerCompletionRetryOwner:null,loveExcludedCards:[],eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],monthlyPassQuota:null,calendarPassMonth:null,cycleStatus:null,cycleDeferred:null,cycleAnswerRequest:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,eveningClosePending:null,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,eveningInvite:null,eveningInviteBusy:false,eveningGiftRequest:null,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoBookingEdit:false,referral:null,eclat:null,eclatGalleryScroll:0,eclatHistory:[],eclatHistoryCouple:null,eclatHistoryUserId:null,eclatBrowse:false,eclatHistoryError:false,eclatSelection:1,eclatMinutes:30,eclatIntent:'all',eclatDetails:false,eclatMusic:false,eclatFinished:null,testModeEligible:false,testMode:'real'};
 const names={SENSUEL:'Sensuel',COQUIN:'Coquin',SEXUEL:'Sexuel'};
 function isSharedCoupleReady(coupleId,members){
  return !!coupleId&&Array.isArray(members)&&members.length===2;
@@ -307,7 +307,10 @@ function backFromLoveRoll(){
  if(state.adventHistory){state.adventHistory=false;render();return true;}
  if(state.eveningMore){state.eveningMore=false;render();return true;}
  if(state.homeNotices){state.homeNotices=false;render();return true;}
- if(state.confirmCancel){state.confirmCancel=false;render();return true;}
+ if(state.confirmCancel){
+  if(state.eveningClosePending)return true;
+  state.confirmCancel=false;render();return true;
+ }
  if(state.specialFocus){state.specialFocus=null;state.tab='special';render();return true;}
  if(state.tab==='settings'&&settingsOpenSection){handle('settings-page:'+(['admin'].includes(settingsOpenSection)?'jeu':settingsOpenSection.startsWith('aide')?'application':'')).catch(fail);return true;}
  if(state.tab==='evening-calendar'){handle(eveningCalendarReturn()).catch(fail);return true;}
@@ -2836,6 +2839,8 @@ function renderSession(){
    redrawPending:isActiveEveningRedrawPending(),rollFace:state.rollAnimationFace,
    playable:state.playableCounts||(isLoveAdmin()?playableEveningCount(state.customCards):null),
    rollingKind:state.rollAnimationKind,showMore:state.eveningMore,confirmCancel:state.confirmCancel,
+   closePending:state.eveningClosePending?.userId===uid&&
+    state.eveningClosePending?.sessionId===state.session?.id,
    challengeOverlay:overlay,lastEvening,canStartEvening,
    // The old server session is intentionally NOT playable under a new
    // weekly D6. Offer a safe closure instead of trapping the couple.
@@ -4229,25 +4234,28 @@ async function handle(action,element){
   state.eveningCalendarDate=date;render();return;
  }
  if(verb==='evening-close-request'){
-  if(state.diceStatus)return; // Let the official D100/D6 settle before closing.
+  if(state.diceStatus||state.eveningClosePending)return; // Let the official D100/D6 settle before closing.
   // Never offer closure while a private-card decision or gift is being persisted.
   if(isActiveEveningRedrawPending()||isActiveEveningGiftPending())return;
   if(!state.session)throw Error('Aucune soirée à clore.');
   state.eveningMore=false;state.confirmCancel=true;render();return;
  }
  if(verb==='evening-close-confirm'){
-  if(state.diceStatus)return; // A stale confirmation must not close mid-roll.
+  if(state.diceStatus||!state.confirmCancel||state.eveningClosePending)return; // A stale confirmation must not close mid-roll.
   // A delayed confirmation cannot close the session ahead of a repick or gift.
   if(isActiveEveningRedrawPending()||isActiveEveningGiftPending())return;
   if(!state.session)throw Error('Cette soirée est déjà clôturée.');
   const ended=state.session;
   const owner={userId:state.user?.id,coupleId:state.coupleId,
-   sessionId:ended.id,generation:authFeedbackGeneration};
+   sessionId:ended.id,generation:authFeedbackGeneration,tab:state.tab};
   const ownsClose=()=>state.user?.id===owner.userId&&
    state.coupleId===owner.coupleId&&state.session?.id===owner.sessionId&&
-   authFeedbackGeneration===owner.generation;
+   authFeedbackGeneration===owner.generation&&state.tab===owner.tab;
   const ticket=eveningClosureGate.begin(owner);
   if(!ticket)return; // A terminal request for this evening is already pending.
+  // The live RPC is owned by the original account/session/tab. No stale
+  // response can navigate another screen or submit a second close.
+  state.eveningClosePending=owner;render();
   try{
    await rpc('close_love_evening_preserve',{p_session:ended.id});
    if(!ownsClose())return;
@@ -4256,7 +4264,13 @@ async function handle(action,element){
    state.eveningCalendarDate=date||today();
    state.confirmCancel=false;state.eveningMore=false;state.showEveningChallenges=false;
    state.tab='evening-calendar';await refreshAndShow();return;
-  }finally{eveningClosureGate.release(ticket);}
+  }finally{
+   eveningClosureGate.release(ticket);
+   if(state.eveningClosePending===owner){
+    state.eveningClosePending=null;
+    if(ownsClose())render(); // An unsuccessful RPC can be retried.
+   }
+  }
  }
  if(verb==='evening-challenge'||verb==='evening-list'){
   // Do not discard the authoritative RLS refresh or live WebGL canvas.
@@ -6333,7 +6347,10 @@ async function handle(action,element){
   if(isActiveEveningRedrawPending()||isActiveEveningGiftPending())return;
   state.confirmCancel=true;render();return;
  }
- if(verb==='dismiss-cancel'){state.confirmCancel=false;render();return;}
+ if(verb==='dismiss-cancel'){
+  if(state.eveningClosePending)return; // Already being committed.
+  state.confirmCancel=false;render();return;
+ }
  if(verb==='confirm-cancel'){
   if(state.diceStatus||!state.session)return;
   // A stale dialog must not cancel an evening during a redraw or gift transfer.

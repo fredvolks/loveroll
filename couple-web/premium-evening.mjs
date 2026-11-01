@@ -148,7 +148,7 @@ const step1Summary=(mine,partner,myRoll,theirRoll,totals)=>{
 export function premiumEveningHtml({
  session,members=[],me,rolls=[],status={},turn={},category=null,
  giftCount=0,receivedGifts=0,pending=null,rolling=false,redrawPending=false,giftPending=false,
- challengeOverlay='',showMore=false,confirmCancel=false,rollFace=null,rollingKind=null,
+ challengeOverlay='',showMore=false,confirmCancel=false,closePending=false,rollFace=null,rollingKind=null,
  lastEvening=null,lastD35Face=null,playable=null,ownChallengeCount=0,canStartEvening=true,staleActiveSession=false,sessionLength='libre',eveningIntensity='medium',
  weeklyReady=true,weeklyCount=0,weeklyLimit=1,dailyLocked=false,historyReady=true,invitationHtml='',
  nextChallenge=null,
@@ -300,8 +300,8 @@ export function premiumEveningHtml({
        '<div><strong>'+esc(weeklyCount)+'</strong><span>Soirées terminées</span></div></div>')+
     '<div class="evening-finale-actions">'+
       (staleActiveSession?
-       bt('evening-close-request','♡ CLÔTURER LA SOIRÉE PRÉCÉDENTE',
-        'evening-finale-start',rolling||redrawPending||giftPending):
+       bt('evening-close-request',closePending?'♡ CLÔTURE EN COURS…':'♡ CLÔTURER LA SOIRÉE PRÉCÉDENTE',
+        'evening-finale-start',rolling||redrawPending||giftPending||closePending):
        lastEvening?
        // Today's evening is closed: make the main action useful instead
        // of leaving a disabled start button in the couple's aftercare.
@@ -315,9 +315,11 @@ export function premiumEveningHtml({
   bt('evening-close-request','♡ Clore la soirée','evening-menu-close',!session)+
   bt('evening-calendar','▦ Calendrier','evening-menu-calendar')+'</aside>':'')+
  (confirmCancel&&(session||staleActiveSession)&&!rolling&&!redrawPending&&!giftPending?'<aside class="evening-confirm" role="dialog" aria-modal="true" aria-label="Clore la soirée ?">'+
-  '<h3>Clore la soirée ?</h3><p>Les défis réalisés et non réalisés seront conservés dans le calendrier et les statistiques du couple. Aucun résultat ne sera effacé.</p>'+
-  bt('evening-close-confirm','♡ Clore et conserver','evening-primary')+
-  bt('dismiss-cancel','Continuer la soirée','subtle')+'</aside>':'')+
+  '<h3>'+(closePending?'Clôture en cours…':'Clore la soirée ?')+'</h3>'+
+  '<p>Les défis réalisés et non réalisés seront conservés dans le calendrier et les statistiques du couple. Aucun résultat ne sera effacé.</p>'+
+  (closePending?'<p role="status" aria-live="polite">Enregistrement de la clôture en cours…</p>':'')+
+  bt('evening-close-confirm',closePending?'♡ Clôture en cours…':'♡ Clore et conserver','evening-primary',closePending)+
+  bt('dismiss-cancel','Continuer la soirée','subtle',closePending)+'</aside>':'')+
  (session&&!ready?eveningOddsHtml(eveningWeights,eveningWeightsEnabled):'')+
  (session?challengeOverlay:'')+
  '</div>';
