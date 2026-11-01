@@ -133,3 +133,36 @@ test('stale D6 tap cannot trigger another official server roll',()=>{
  assert.ok(handler.indexOf('canRollPersonalEveningD6(')<handler.indexOf("rpc('roll_my_evening_d6'"),
   'Official RPC must run only after the shared guard');
 });
+
+test('owner-private active challenge becomes the single main action',()=>{
+ const mine={id:'card-a',session_id:'current',recipient:'a',status:'proposed',face:19};
+ for(const active of ['proposed','accepted']){
+  const html=view({pending:{...mine,status:active},turn:{...base.turn,next:'b'}});
+  assert.equal(dominant(html).length,1);
+  assert.match(dominant(html)[0],/data-action="evening-open:card-a"/);
+  assert.match(html,/♡ Voir mon défi/);
+  assert.equal((html.match(/data-action="evening-list"/g)||[]).length,0,
+   'Avoid a duplicate secondary link when the active challenge already opens directly');
+  assert.doesNotMatch(html,/data-action="new-challenge"/);
+ }
+ const foreign=view({pending:{...mine,recipient:'b'}});
+ assert.match(dominant(foreign)[0],/data-action="new-challenge"/);
+ assert.doesNotMatch(foreign,/data-action="evening-open:card-a"/);
+ const wrongSession=view({pending:{...mine,session_id:'another'}});
+ assert.doesNotMatch(wrongSession,/data-action="evening-open:card-a"/);
+ const completed=view({pending:{...mine,status:'completed'}});
+ assert.doesNotMatch(completed,/data-action="evening-open:card-a"/);
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ assert.match(app,/const ownPending=mineCards\.find\(card=>\['proposed','accepted'\]\.includes\(card\.status\)\)\|\|null/);
+ assert.match(app,/pending:ownPending/);
+ assert.match(app,/if\(verb==='evening-open'\)/);
+ assert.match(app,/ownEveningChallenges\(state\.challenges,state\.user\?\.id,state\.session\?\.id\)/);
+});
+
+test('unfinished server turn synchronization never blames the partner',()=>{
+ const html=view({turn:{ready:false},pending:null});
+ assert.equal(dominant(html).length,0);
+ assert.equal(status(html),'Synchronisation de nos défis…');
+ assert.doesNotMatch(html,/data-action="new-challenge"/);
+ assert.match(html,/data-action="evening-list"/,'Own queue remains available');
+});
