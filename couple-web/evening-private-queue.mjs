@@ -28,6 +28,14 @@ export function visibleEveningQueue(cards=[]){
   .sort((left,right)=>slotFor(left)-slotFor(right)||
    (originalOrder.get(left.id)??0)-(originalOrder.get(right.id)??0));
 }
+// LR-027: resume the card that has actually started, rather than the oldest
+// unstarted draw. Caller must pass the recipient-only, session-scoped queue.
+// Preserve queue order when multiple cards share the same live status.
+export function primaryEveningChallenge(cards=[]){
+ const mine=cards||[];
+ return mine.find(card=>card?.status==='accepted')||
+  mine.find(card=>card?.status==='proposed')||null;
+}
 export function queuePosition(cards=[],id){
  return cards.findIndex(c=>c.id===id);
 }
