@@ -50,6 +50,7 @@ export function eveningHistoryMarkup({
  sessions:rawSessions=[],members:rawMembers=[],stats:rawStats=[],
  historyChallenges:rawChallenges=[],reviews:rawReviews=[],me,month,selectedDate,
  weeklyRolls:rawWeeklyRolls=[],passQuota:rawPassQuota=[],
+ passHistoryReady=true,passLimit=null,
  backAction='tab:session',backLabel='Retour à Soirée'}={}){
  // Legacy or partially loaded RPC arrays can be null or include null rows.
  // Keep the calendar navigable without inventing completed challenges.
@@ -94,15 +95,25 @@ export function eveningHistoryMarkup({
  const monthlyResults=monthlyChallengeSuccess({
   month:current,members,sessions,historyChallenges,sessionStats:stats,passQuota
  });
+ // The monthly limit is configurable per couple. It is the current setting,
+ // not a promise that older months had the same limit.
+ const numberLimit=passLimit==null?null:Number(passLimit);
+ const currentPassLimit=Number.isInteger(numberLimit)&&numberLimit>=0&&numberLimit<=30?
+  numberLimit:null;
+ const passLimitLabel=currentPassLimit===null?'':' · Limite actuelle : '+currentPassLimit;
  const freeByChallenge=new Set((passQuota||[]).filter(p=>p.free_pass).map(p=>p.challenge_id));
  const chargedByChallenge=new Set((passQuota||[]).filter(p=>!p.free_pass).map(p=>p.challenge_id));
  const extraStats='<div class="evening-cal-stats evening-cal-extra" aria-label="Taux de réussite et passes mensuelles">'+
   '<span><strong>'+(weekResult.percent!==null?weekResult.percent+' %':'—')+'</strong>'+
    (weekResult.hasRoll?weekResult.completed+' / '+weekResult.possible+' soirées possibles':'Aucun dé cette semaine')+'</span>'+
-  monthlyResults.slice(0,2).map(item=>'<span><strong>'+(item.percent===null?'—':item.percent+' %')+'</strong>'+
+  monthlyResults.slice(0,2).map(item=>'<span><strong>'+
+   (!passHistoryReady||item.percent===null?'—':item.percent+' %')+'</strong>'+
    safe(item.name)+' · défis réalisés'+
-   '<small>Passes gratuites : '+item.freeUsed+'/3'+
-   (item.penalizedPasses?' · pénalisées : '+item.penalizedPasses:'')+'</small></span>').join('')+
+   '<small>'+(passHistoryReady?
+    'Passes enregistrées : '+(item.freeUsed+item.penalizedPasses)+
+    (item.penalizedPasses?' · sans exonération : '+item.penalizedPasses:''):
+    'Passes du mois : données indisponibles')+
+    passLimitLabel+'</small></span>').join('')+
   '</div>';
  const byDay=new Map();
  for(const row of monthSessions){byDay.set(row.localDay,(byDay.get(row.localDay)||0)+1);}
