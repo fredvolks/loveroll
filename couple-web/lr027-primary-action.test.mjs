@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {premiumEveningHtml,canRollPersonalEveningD6} from './premium-evening.mjs';
-import {hasTurnToDraw} from './evening-private-queue.mjs';
+import {hasTurnToDraw,primaryEveningChallenge,ownEveningChallenges,visibleEveningQueue} from './evening-private-queue.mjs';
 
 const members=[{user_id:'a',name:'Alice'},{user_id:'b',name:'Bob'}];
 const base={session:{id:'current'},members,me:'a',status:{both_ready:true,my_rolled:true,partner_rolled:true},
@@ -158,7 +158,7 @@ test('owner-private active challenge becomes the single main action',()=>{
  const completed=view({pending:{...mine,status:'completed'}});
  assert.doesNotMatch(completed,/data-action="evening-open:card-a"/);
  const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
- assert.match(app,/const ownPending=mineCards\.find\(card=>\['proposed','accepted'\]\.includes\(card\.status\)\)\|\|null/);
+ assert.match(app,/const ownPending=primaryEveningChallenge\(mineCards\)/);
  assert.match(app,/pending:ownPending/);
  assert.match(app,/if\(verb==='evening-open'\)/);
  assert.match(app,/ownEveningChallenges\(state\.challenges,state\.user\?\.id,state\.session\?\.id\)/);
@@ -195,4 +195,23 @@ test('official D100 action cannot bypass server-derived turn or a confirmation t
  assert.match(handler,/await refreshAndShow\(\)/,
   'A stale button must show the updated official turn rather than rolling');
  assert.match(handler,/finally\{eveningCategoryConfirmInFlight=false;\}/);
+});
+
+test('an already accepted personal challenge wins over a proposed challenge',()=>{
+ const cards=[
+  {id:'older-proposal',recipient:'a',session_id:'night',status:'proposed',created_at:'2026-10-30T18:00:00Z'},
+  {id:'other-player',recipient:'b',session_id:'night',status:'accepted',created_at:'2026-10-30T18:01:00Z'},
+  {id:'started',recipient:'a',session_id:'night',status:'accepted',created_at:'2026-10-30T18:02:00Z'},
+  {id:'old-session',recipient:'a',session_id:'earlier',status:'accepted',created_at:'2026-10-29T18:00:00Z'},
+  {id:'completed',recipient:'a',session_id:'night',status:'completed',created_at:'2026-10-30T18:03:00Z'}
+ ];
+ const queue=visibleEveningQueue(ownEveningChallenges(cards,'a','night'));
+ assert.equal(primaryEveningChallenge(queue)?.id,'started',
+  'The current accepted card has priority despite an earlier proposed draw');
+ assert.equal(primaryEveningChallenge(queue.filter(card=>card.status!=='accepted'))?.id,'older-proposal');
+ assert.equal(primaryEveningChallenge(queue.filter(card=>card.status==='completed')),null);
+ assert.equal(primaryEveningChallenge([]),null);
+ const current=view({pending:primaryEveningChallenge(queue),turn:{...base.turn,next:'b'},ownChallengeCount:queue.length});
+ assert.match(dominant(current)[0],/data-action="evening-open:started"/);
+ assert.doesNotMatch(current,/data-action="evening-open:other-player"/);
 });
