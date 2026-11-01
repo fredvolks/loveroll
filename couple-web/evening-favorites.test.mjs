@@ -381,3 +381,36 @@ test('Sixth favorite opens a choice in the private queue; does not silently evic
  assert.match(app,/eveningFavoriteReplacementHtml\(/);
  assert.match(app,/favoriteReplacement:\s*null/);
 });
+
+test('LR-019 abandoned session/card cannot confirm a stale replacement',async()=>{
+ const text=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const from=text.indexOf("if(verb==='evening-favorite-replace'){");
+ const to=text.indexOf("if(verb==='evening-favorite'){",from);
+ assert.ok(from>=0&&to>from);
+ const snapshot=['SENSUEL:1','SENSUEL:2','SENSUEL:3','SENSUEL:4','SENSUEL:5'];
+ const storage=store();
+ for(let n=1;n<=5;n++)toggleEveningFavorite('alice','duo',card(n),storage);
+ const state={user:{id:'alice'},coupleId:'duo',session:{id:'night'},
+  tab:'session',showEveningChallenges:true,selectedEveningChallengeId:'draw-6',
+  favoriteReplacement:{userId:'alice',coupleId:'duo',sessionId:'night',
+   cardId:'draw-6',expectedIds:snapshot},
+  challenges:[{...card(6),recipient:'alice',session_id:'night'}],diceStatus:null};
+ const scope={state,parts:['SENSUEL','2'],
+  isActiveEveningRedrawPending:()=>false,isActiveEveningGiftPending:()=>false,
+  ownEveningChallenges:cards=>cards,
+  replaceEveningFavorite:(user,couple,target,removed,expected)=>
+   replaceEveningFavorite(user,couple,target,removed,expected,storage),
+  render:()=>{throw Error('Stale action must not repaint');}
+ };
+ const action=runInNewContext('(async verb=>{'+text.slice(from,to)+'})',scope);
+ for(const change of [
+  ()=>{state.tab='home';},
+  ()=>{state.tab='session';state.showEveningChallenges=false;},
+  ()=>{state.showEveningChallenges=true;state.selectedEveningChallengeId='another-draw';},
+  ()=>{state.selectedEveningChallengeId='draw-6';state.user.id='bob';}
+ ]){
+  change();
+  await assert.rejects(action('evening-favorite-replace'),/plus disponible/);
+  assert.deepEqual(readEveningFavorites('alice','duo',storage),snapshot);
+ }
+});

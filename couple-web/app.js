@@ -4289,6 +4289,7 @@ async function handle(action,element){
   // Do not discard the authoritative RLS refresh or live WebGL canvas.
   if(state.diceStatus||isActiveEveningRedrawPending()||isActiveEveningGiftPending())return;
   if(state.user?.id&&state.session?.id)clearEveningSelection(safeEveningBookmarkStorage(),state.user.id,state.session.id);
+  state.favoriteReplacement=null;
   state.showEveningChallenges=true;state.selectedEveningChallengeId=null;render();
   // Give keyboard/screen-reader users a stable entry point into the modal.
   root.querySelector('.evening-queue-modal [data-action="evening-close"]')
@@ -4299,6 +4300,7 @@ async function handle(action,element){
   // A pending repick or gift owns the recipient-only queue until its receipt.
   if(state.diceStatus||isActiveEveningRedrawPending()||isActiveEveningGiftPending())return;
   if(state.user?.id&&state.session?.id)clearEveningSelection(safeEveningBookmarkStorage(),state.user.id,state.session.id);
+  state.favoriteReplacement=null;
   state.showEveningChallenges=false;state.selectedEveningChallengeId=null;render();
   // Restore focus to the action which opens this drawer, never to the body.
   (root.querySelector('button[data-action="evening-list"]')||
@@ -4372,7 +4374,9 @@ async function handle(action,element){
   const item=ownEveningChallenges(state.challenges,owner,state.session?.id)
    .find(card=>card.id===choice?.cardId);
   if(!choice||!item||!owner||choice.userId!==owner||
-     choice.coupleId!==state.coupleId||choice.sessionId!==state.session?.id)
+     choice.coupleId!==state.coupleId||choice.sessionId!==state.session?.id||
+     state.tab!=='session'||!state.showEveningChallenges||
+     state.selectedEveningChallengeId!==choice.cardId)
    throw Error('Ce remplacement de favori n’est plus disponible.');
   const outcome=replaceEveningFavorite(owner,state.coupleId,item,
    parts.join(':'),choice.expectedIds);
@@ -4420,6 +4424,7 @@ async function handle(action,element){
   if(state.diceStatus||isActiveEveningRedrawPending()||isActiveEveningGiftPending())return;
   if(!ownEveningChallenges(state.challenges,state.user?.id,state.session?.id).some(x=>x.id===parts[0]))
    throw Error('Ce défi ne fait pas partie de ta liste personnelle.');
+  state.favoriteReplacement=null; // Changing cards cancels any old replacement.
   state.selectedEveningChallengeId=parts[0];state.showEveningChallenges=true;
   saveEveningSelection(safeEveningBookmarkStorage(),state.user.id,state.session.id,parts[0]);
   render();
