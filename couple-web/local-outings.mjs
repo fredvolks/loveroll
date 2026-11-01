@@ -10,7 +10,7 @@ export const VENUE_CATEGORIES=Object.freeze({
 const norms=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 export function activityCategory(activity={}){
  const source=norms([activity.title,activity.description].filter(Boolean).join(' '));
- if(/\b(spa|therm|sauna|massage|bain nordique|hammam)\b/.test(source))return 'spa';
+ if(/\b(spa|therm[a-z]*|sauna|massage|bain nordique|hammam)\b/.test(source))return 'spa';
  if(/\b(vignoble|vinicole|degustation de vin|oenolog)/.test(source))return 'winery';
  if(/\b(hotel|chalet|cabane|heberg|nuit insolite|dome|gite)\b/.test(source))return 'hotel';
  if(/\b(restaur|brunch|gastronom|repas|souper|table d.hote|bistro|brasserie)\b/.test(source))return 'restaurant';
