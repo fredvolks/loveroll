@@ -319,3 +319,22 @@ test('LR-002 pending responses never mutate or display previous account timers a
    'An offline response for the previous account must not notify a newly signed-in user');
  }
 });
+
+test('LR-002 initial Soirée start blocks double acceptance and respects an acknowledged write',()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const start=app.indexOf("if(verb==='evening-start')");
+ const end=app.indexOf("if(verb==='surprise-activity')",start);
+ assert.ok(start>=0&&end>start);
+ const block=app.slice(start,end);
+ assert.match(app,/let eveningStartInFlight=false/);
+ assert.match(block,/if\(eveningStartInFlight\)return/);
+ assert.match(block,/eveningStartInFlight=true/);
+ assert.match(block,/finally\{eveningStartInFlight=false;\}/);
+ assert.match(block,/picked\.status='accepted'/);
+ assert.ok(block.indexOf("picked.status='accepted'")>block.indexOf("await rpc('answer_challenge'"));
+ assert.match(block,/const refreshed=await refreshAfterConfirmedWrite\(refreshAndShow\)/);
+ assert.match(block,/if\(state\.user\?\.id!==ownerId\|\|state\.session\?\.id!==sessionId\)return;/);
+ assert.match(block,/isAcceptedTimedEveningChallenge\(challenge,ownerId,sessionId\)/);
+ assert.match(block,/if\(active&&\['completed','passed','refused'\]\.includes\(active\.status\)\)return;/);
+ assert.match(block,/Défi accepté sur le serveur/);
+});
