@@ -44,6 +44,34 @@ test('Invalid saved weekly D6 never invents a face or permits a duplicate offici
  const empty=premiumHomeHtml({weekly:null});
  assert.match(empty,/data-action="roll:weekly"/,'a truly undrawn week still offers the official throw');
 });
+test('P0 Home guides a previous-week unfinished soirée to closure without restarting a D6',()=>{
+ const current={face:3,key:'2026-10-19'};
+ const stale={staleActiveSession:true,activeEvening:false,
+  weekly:current,weeklyProgress:{historyReady:true,counted:0,limit:3,canStart:false}};
+ for(const weekly of [current,null]){
+  const html=premiumHomeHtml({...stale,weekly});
+  assert.match(html,/Soirée précédente à clôturer/);
+  assert.match(html,/Clôturer la soirée précédente/);
+  assert.match(html,/Ouvrir Soirée pour clôturer la soirée précédente/);
+  assert.match(html,/data-action="tab:session"/);
+  assert.doesNotMatch(html,/data-action="roll:weekly"/,
+   'old active session must not offer a new official weekly throw');
+  assert.doesNotMatch(html,/data-action="resume-evening"/,
+   'old D6 card cannot be replayed as a current week');
+  assert.doesNotMatch(html,/Une invitation vous attend/,
+   'stale active session takes priority over invitations');
+ }
+ const invited=premiumHomeHtml({...stale,eveningInvite:{
+  direction:'received',state:'pending',id:'invite-old'
+ }});
+ assert.match(invited,/Soirée précédente à clôturer/);
+ assert.doesNotMatch(invited,/Répondre à l’invitation/);
+ const ordinary=premiumHomeHtml({weekly:null,staleActiveSession:false});
+ assert.match(ordinary,/data-action="roll:weekly"/,
+  'normal weekly die is still available with no stale evening');
+ assert.match(app,/staleActiveSession:!!state\.session&&!activeEvening&&state\.session\.finished_at===null/);
+});
+
 test('Next weekly roll is Monday at Toronto midnight, including Sunday and DST',()=>{
  assert.equal(nextMonday(new Date('2026-10-14T18:00:00Z')),'2026-10-19');
  assert.equal(nextMonday(new Date('2026-10-18T14:00:00Z')),'2026-10-19');

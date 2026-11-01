@@ -2177,6 +2177,9 @@ function renderHome(){
   weekly:state.weekly,
   weeklyProgress:eveningDailyAccess({sessions:state.sessions,weekly:state.weekly}),
   activeEvening:!!activeEvening,
+  // A server session from a previous week cannot reuse the new week's dice.
+  // Home must offer its existing safe close route, not a new D6 throw.
+  staleActiveSession:!!state.session&&!activeEvening&&state.session.finished_at===null,
   weeklyWeights:state.couple?.weekly_face_weights,
   weeklyWeightsEnabled:state.couple?.weekly_weights_enabled!==false,
   rolling:state.diceStatus==='rolling',

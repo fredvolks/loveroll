@@ -203,7 +203,7 @@ const iconSvg=(kind)=>{
 
 export {ritualBrandHtml} from './brand.mjs?v=20261017-ritual130';
 import {ritualHeadingHtml} from './brand.mjs?v=20261017-ritual130';
-export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,disabled=false,members=[],
+export function premiumHomeHtml({weekly=null,activeEvening=false,staleActiveSession=false,rolling=false,disabled=false,members=[],
   turn=null,monthly={},history=[],sessions=[],events=[],rollFace=1,now=new Date(),
   weeklyWeights=WEEKLY_ODDS,weeklyWeightsEnabled=true,monthlyActivity=null,weeklyProgress=null,reservation=null,eveningInvite=null,ownEveningD6Ready=false}={}){
  const weights=effectiveDicePercentages(weeklyWeights,weeklyWeightsEnabled,WEEKLY_ODDS).map((pct,i)=>
@@ -260,24 +260,27 @@ export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,d
   bookingDate?'Date prévue · '+bookingDate:'À planifier';
  // Quota exhausted and daily lock are different: both come from the same
  // policy as the server-owned Start action. Neither launches a new evening.
- const weeklyExhausted=!activeEvening&&progressReady&&weeklyRemaining===0;
- const dailyLocked=!activeEvening&&progressReady&&weeklyRemaining>0&&weeklyProgress.dailyLocked===true;
- const historyUnknown=!activeEvening&&ready&&weeklyProgress?.historyReady===false;
- const closedToday=!activeEvening&&progressReady&&!!weeklyProgress.closedToday;
+ const weeklyExhausted=!activeEvening&&!staleActiveSession&&progressReady&&weeklyRemaining===0;
+ const dailyLocked=!activeEvening&&!staleActiveSession&&progressReady&&weeklyRemaining>0&&weeklyProgress.dailyLocked===true;
+ const historyUnknown=!activeEvening&&!staleActiveSession&&ready&&weeklyProgress?.historyReady===false;
+ const closedToday=!activeEvening&&!staleActiveSession&&progressReady&&!!weeklyProgress.closedToday;
  // Invitation is a server-backed notification, never an implicit answer or die.
  // An active game takes precedence over an old invitation from the same duo.
- const invitationReceived=!activeEvening&&eveningInvite?.direction==='received'&&
+ const invitationReceived=!activeEvening&&!staleActiveSession&&eveningInvite?.direction==='received'&&
   ['pending','maybe'].includes(eveningInvite.state);
- const invitationSent=!activeEvening&&eveningInvite?.direction==='sent'&&
+ const invitationSent=!activeEvening&&!staleActiveSession&&eveningInvite?.direction==='sent'&&
   eveningInvite.state==='pending';
- const eveningStatus=activeEvening?(stats.ready?'Soirée en cours':ownEveningD6Ready?'En attente du partenaire':'Soirée commencée'):
+ const eveningStatus=staleActiveSession?'Soirée précédente à clôturer':
+  activeEvening?(stats.ready?'Soirée en cours':ownEveningD6Ready?'En attente du partenaire':'Soirée commencée'):
   invitationReceived?'Une invitation vous attend':
   invitationSent?'En attente de la réponse':
   closedToday?'Notre soirée est terminée ♥':
   weeklyExhausted?'Notre semaine est complète':
   dailyLocked?'Soirée déjà partagée aujourd’hui':
   historyUnknown?'Synchronisation des soirées…':'Aucune soirée en cours';
- const eveningHint=activeEvening?(stats.ready?'Retrouvez vos défis dans Soirée.':
+ const eveningHint=staleActiveSession?
+  'Une soirée de la semaine précédente est encore ouverte. Clôturez-la dans Soirée pour conserver vos défis.':
+  activeEvening?(stats.ready?'Retrouvez vos défis dans Soirée.':
   ownEveningD6Ready?'Ton dé est enregistré. Le deuxième dé se brasse dans Soirée.':'Préparez vos dés personnels dans Soirée.'):
   invitationReceived?'Ton partenaire propose une soirée. Tu es libre de répondre.':
   invitationSent?'Ton partenaire peut répondre à son rythme.':
@@ -286,17 +289,21 @@ export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,d
   dailyLocked?'Une seule soirée par jour. Les autres restent disponibles cette semaine.':
   historyUnknown?'L’historique se recharge. Aucun nouveau tirage n’est lancé.':
   'Consultez les étapes et l’historique dans Soirée.';
- const homeAction=closedToday&&!invitationReceived&&!invitationSent?'evening-calendar:today':
+ const homeAction=staleActiveSession?'tab:session':
+  closedToday&&!invitationReceived&&!invitationSent?'evening-calendar:today':
   weeklyExhausted&&!invitationReceived&&!invitationSent?'evening-calendar':'tab:session';
- const homeLabel=invitationReceived?'Répondre à l’invitation':
+ const homeLabel=staleActiveSession?'Clôturer la soirée précédente':
+  invitationReceived?'Répondre à l’invitation':
   invitationSent?'Voir mon invitation':
   closedToday?'Voir notre soirée terminée':
   weeklyExhausted?'Voir nos soirées':'Ouvrir Soirée';
- const mainShortcutLabel=invitationReceived?'♡ Répondre à l’invitation':
+ const mainShortcutLabel=staleActiveSession?'♡ Clôturer la soirée précédente':
+  invitationReceived?'♡ Répondre à l’invitation':
   invitationSent?'♡ Voir mon invitation':
   closedToday?'Voir notre soirée terminée':
   weeklyExhausted?'Voir nos soirées':'♡ Aller à notre soirée';
- const mainShortcutAria=invitationReceived?'Répondre à l’invitation de soirée':
+ const mainShortcutAria=staleActiveSession?'Ouvrir Soirée pour clôturer la soirée précédente':
+  invitationReceived?'Répondre à l’invitation de soirée':
   invitationSent?'Consulter l’invitation envoyée':
   closedToday?'Voir notre soirée terminée dans le calendrier':
   weeklyExhausted?'Voir l’historique de nos soirées':
@@ -324,7 +331,9 @@ export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,d
    '<div class="home-odds-grid">'+odds+'</div><p>Un seul tirage commun par semaine.</p>'+
    '</section></dialog>'+
    '<div class="home-roll-area">'+
-   (ready?
+   (staleActiveSession?
+    '<button class="home-roll-button is-used lr-ruby-control lr-ruby-action lr-surface" type="button" data-action="tab:session" aria-label="Ouvrir Soirée pour clôturer la soirée précédente"><span>♡ Clôturer la soirée précédente</span></button>':
+    ready?
     (activeEvening?
      '<button class="home-roll-button home-resume-evening lr-ruby-control lr-ruby-action lr-surface" type="button" data-action="resume-evening" aria-label="Reprendre notre soirée en cours"><span>♡ Reprendre notre soirée</span></button>':
      '<button class="home-roll-button is-used lr-ruby-control lr-ruby-action lr-surface" type="button" data-action="'+homeAction+'" aria-label="'+escape(mainShortcutAria)+'">'+
