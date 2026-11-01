@@ -87,7 +87,7 @@ test('Malformed historic entries do not crash access or alter valid couples sess
  assert.equal(result.dailyLocked,false);
 });
 test('Invalid weekly D6 result and invalid device date cannot open soirée',()=>{
- for(const face of [0,7,100,-1,2.5,'invalid',null]){
+ for(const face of [0,7,100,-1,2.5,'invalid',null,true,false,'3','1',[3],{value:3}]){
   const state=eveningDailyAccess({sessions:[],weekly:{...weekly,face},now:new Date('2026-10-16T12:00:00Z')});
   assert.equal(state.canStart,false,'invalid D6 face '+String(face));
  }

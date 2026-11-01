@@ -8,9 +8,11 @@ const localDay=(date)=>{
  return val('year')+'-'+val('month')+'-'+val('day');
 };
 export function eveningDailyAccess({sessions=null,weekly=null,now=new Date()}={}){
- const today=localDay(now),rawLimit=Number(weekly?.face);
- // The official weekly limit is a D6 face, never an arbitrary server value.
- const limit=Number.isInteger(rawLimit)&&rawLimit>=1&&rawLimit<=6?rawLimit:0;
+ const today=localDay(now);
+ // Match Home's official D6 validation exactly. Number(true) and
+ // Number('3') are not persisted die faces, so never unlock a soirée.
+ const face=weekly?.face;
+ const limit=Number.isInteger(face)&&face>=1&&face<=6?face:0;
  // A loading/failed session list is not proof that the couple has no active
  // soirée; keep Start disabled until the server has returned a real list.
  const historyReady=Array.isArray(sessions);
