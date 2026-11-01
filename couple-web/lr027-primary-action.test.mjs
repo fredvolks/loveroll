@@ -61,3 +61,24 @@ test('actual dice animation never offers a second trigger and stays accessible',
  assert.match(mobile,/if\(roll\.matches\('button'\)\)/,'Waiting statuses must not receive button controls');
  assert.match(mobile,/if\(!button\|\|button===roll\)continue/,'The main View cards button must not be duplicated on mobile');
 });
+
+test('personal D6 trigger is a real button only before the roll',()=>{
+ const unrolled=view({status:{both_ready:false,my_rolled:false,partner_rolled:false},
+  turn:{ready:false},rolls:[]});
+ assert.equal((unrolled.match(/data-action="my-d6"/g)||[]).length,1);
+ assert.match(unrolled,/<button[^>]*class="evening-small-roll"[^>]*data-action="my-d6"[^>]*>🎲 Brasser mon D6<\/button>/);
+ const confirmed=view({status:{both_ready:false,my_rolled:true,partner_rolled:false},
+  turn:{ready:false},rolls:[{user_id:'a',face:4}]});
+ assert.doesNotMatch(confirmed,/data-action="my-d6"/,
+  'An already confirmed personal roll is not displayed as a disabled fake action');
+ assert.match(confirmed,/<p class="evening-primary-status evening-d6-status" role="status">✓ Lancer enregistré<\/p>/);
+ assert.equal(dominant(confirmed).length,0);
+ const spinning=view({status:{both_ready:false,my_rolled:false,partner_rolled:false},
+  turn:{ready:false},rolls:[],rolling:true,rollingKind:'my-d6',rollFace:3});
+ assert.doesNotMatch(spinning,/data-action="my-d6"/);
+ assert.match(spinning,/<p class="evening-primary-status evening-d6-status" role="status">Brassage en cours…<\/p>/);
+ const syncing=view({status:{both_ready:false,my_rolled:true,partner_rolled:false},
+  turn:{ready:false},rolls:[]});
+ assert.doesNotMatch(syncing,/data-action="my-d6"/);
+ assert.match(syncing,/Vérification du lancer…/);
+});
