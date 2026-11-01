@@ -4151,7 +4151,8 @@ async function handle(action,element){
   // Stay in Soirée until the official die, redraw or gift receipt settles.
   if(state.tab==='session'&&(state.diceStatus||isActiveEveningRedrawPending()||
       isActiveEveningGiftPending()))return;
-  state.eveningCalendarBack=parts[0]==='settings'||state.tab==='settings'?'settings-page:confidentialite':'tab:session';
+  state.eveningCalendarBack=parts[0]==='settings'||state.tab==='settings'?'settings-page:confidentialite':
+   state.tab==='home'?'tab:home':'tab:session';
   state.eveningMore=false;state.confirmCancel=false;
   const date=state.session?eveningLocalDay(state.session.started_at):null;
   if(date){state.eveningCalendarDate=date;state.eveningCalendarMonth=date.slice(0,7);}
