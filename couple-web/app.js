@@ -5648,7 +5648,8 @@ async function handle(action,element){
   if(state.user?.id!==owner.userId||state.coupleId!==owner.coupleId||
      state.tab!==owner.tab||authFeedbackGeneration!==owner.generation||
      state.unscopedSharedRefreshRequest!==request||
-     state.diceStatus||isActiveEveningRedrawPending())return;
+     state.diceStatus||isActiveEveningRedrawPending()||
+     isActiveEveningGiftPending())return;
   const session=playableSessionForWeekly(state.session,state.weekly);
   if(!session){
    state.tab='home';state.showEveningChallenges=false;state.selectedEveningChallengeId=null;
