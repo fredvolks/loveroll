@@ -138,15 +138,21 @@ export function premiumEveningHtml({
  partner=members.find(m=>m.user_id!==me)||members[1]||{},
  ready=!!status?.both_ready,
  myRoll=rolls.find(r=>r.user_id===me),
- theirRoll=rolls.find(r=>r.user_id===partner.user_id),
- canMyRoll=!!session&&!status?.my_rolled&&!rolling;
+ theirRoll=rolls.find(r=>r.user_id===partner.user_id);
+ // The immutable official D6 row wins over a lagging status RPC.
+ // Never offer another roll when its face is already server-confirmed.
+ const hasMyOfficialRoll=Number.isInteger(myRoll?.face)&&myRoll.face>=1&&myRoll.face<=6;
+ const myRollRecorded=!!status?.my_rolled||hasMyOfficialRoll;
+ const partnerRollRecorded=!!status?.partner_rolled||
+  (Number.isInteger(theirRoll?.face)&&theirRoll.face>=1&&theirRoll.face<=6);
+ const canMyRoll=!!session&&!myRollRecorded&&!rolling;
  const first=turn?.first?members.find(m=>m.user_id===turn.first)?.name?.split(' ')[0]:'';
  const totals=turn.targets||{},done=turn.completed||{};
  const canDraw=ready&&turn.ready&&!turn.drawsFinished&&
   Number(turn.remaining?.[me]||0)>0&&turn.next===me;
  const canGive=ready&&turn.ready&&giftCount<3&&Number(turn.remaining?.[me])>0;
  const challengeText=pending?'♡ Voir notre défi en cours':turn.finished?'Tous les défis terminés':!ready?'En attente des deux D6':canDraw?'À toi de jouer':'En attente de '+esc(partner.name?.split(' ')[0]||'ton partenaire');
- const stateText=ready?'✓ Étape 2 débloquée':status?.my_rolled?'Ton lancer est enregistré. Attends ton partenaire.':status?.partner_rolled?'Le résultat de '+esc(partner.name?.split(' ')[0]||'ton partenaire')+' est prêt. À toi de brasser le dé.':'Chaque partenaire brasse son propre dé.';
+ const stateText=ready?'✓ Étape 2 débloquée':myRollRecorded?'Ton lancer est enregistré. Attends ton partenaire.':partnerRollRecorded?'Le résultat de '+esc(partner.name?.split(' ')[0]||'ton partenaire')+' est prêt. À toi de brasser le dé.':'Chaque partenaire brasse son propre dé.';
  const currentStatus=turn.finished?'♡ Tous les défis sont réalisés':turn.drawsFinished?'♡ Tous les défis sont pigés':canDraw?'♥ C’est ton tour !':ready?'Au tour de '+esc(partner.name?.split(' ')[0]||'ton partenaire'):'Étape 2 verrouillée';
  // An official challenge is persisted in Supabase; never show a provisional
  // animation face or guess a result while a D100 is being rolled.
@@ -162,7 +168,7 @@ export function premiumEveningHtml({
  const primaryAction=turn.finished?
   bt('finish-session','✓ Terminer la soirée','evening-primary'):
   rolling?waitingStatus('Brassage en cours…'):
-  !ready?waitingStatus(status?.my_rolled?
+  !ready?waitingStatus(myRollRecorded?
    'En attente du D6 de ton partenaire':'Lance ton D6 pour continuer'):
   turn.drawsFinished?(ownChallengeCount>0?
    bt('evening-list','♡ Voir mes défis ('+ownChallengeCount+')','evening-primary'):
