@@ -1,5 +1,14 @@
 # LoveRoll — SUIVI OFFICIEL DU PROMPT MAÎTRE
 
+### LR-ACCUEIL-001 — Raccourci vers le jour réel de la soirée terminée (31 octobre 2026)
+
+- **Parcours utilisateur** : si le bilan officiel `eveningDailyAccess.closedToday` indique une soirée comptabilisée et terminée à la date locale du Québec, « Voir notre soirée terminée » lance maintenant l'action de lecture seule `evening-calendar:today`. Le calendrier sélectionne `eveningLocalDay(closed.finished_at)`, pas un jour inventé ni la date d'une ancienne séance; le retour pointe sur Accueil.
+- **Concurrence et sécurité** : si une synchronisation sur l'autre appareil fait disparaître cette clôture entre le rendu et le clic, la destination retombe sur le jour courant sans créer de session et sans lancer de dé. Les protections des tirages, repiges et dons continuent de bloquer la navigation pendant une opération.
+- **Preuves de code** : `couple-web/premium-home.mjs` commit `be8df30` ; `couple-web/app.js` commit `c1b53bc`; tests `premium-home.test.mjs` commit `0481f30`, `evening-calendar-navigation.test.mjs` commit `41e53ae`. Les tests du dernier SHA ne sont pas encore validés par GitHub Actions.
+- **Web / PWA** : modules `home268` et cache `loveroll-static-v268`, commits `f8379e0`, `b37b3b7`, `512a663`. Versions inscrites dans le code seulement, **aucun déploiement ni fusion**.
+- **Atelier** : `list_applications` confirme toujours l'absence de fiche LoveRoll. Cinq méthodes réelles Architecture, QA, Produit, Mobile et Sécurité ont été consultées en mode MEDIUM; aucun BOSS exécutable ni mission Atelier synchronisée. PR [#176](https://github.com/fredvolks/loveroll/pull/176) toujours brouillon. Les essais Auth/RLS sur staging et appareils physiques restent requis.
+
+
 ### LR-ACCUEIL-001 — Soirée terminée aujourd'hui et calendrier à jour (31 octobre 2026)
 
 - **Fonctionnel** : le bandeau « Notre soirée » s'appuie sur `eveningDailyAccess.closedToday` pour afficher « Notre soirée est terminée ♥ » seulement lorsqu'une séance officiellement `counted=true` a été clôturée **aujourd'hui en heure du Québec**. La soirée en cours et les invitations officielles conservent leur priorité. Le bouton ouvre le calendrier en lecture seule, sans reprendre/créer une soirée ni lancer de dé. Si aucune fermeture n'a lieu aujourd'hui, l'Accueil revient au message fondé sur quota journalier/hebdomadaire.
