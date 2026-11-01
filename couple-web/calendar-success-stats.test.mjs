@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {remainingWeekEvenings,mondayOf,calendarWeekSuccess,monthlyChallengeSuccess} from './calendar-success-stats.mjs';
+import {remainingWeekEvenings,mondayOf,calendarWeekSuccess,monthlyChallengeSuccess,eveningArchiveDay} from './calendar-success-stats.mjs';
 import {futureCoupleStyleMix,normalizePlayStyle} from './play-style.mjs';
 import {eveningHistoryMarkup} from './evening-calendar.mjs';
 const read=name=>readFileSync(new URL('./'+name,import.meta.url),'utf8');
@@ -245,4 +245,45 @@ test('LR-015: replacement chains consume one D6 slot, while all original events 
  assert.equal(active.unpicked,0,'Open evening unpicked slots are not yet failures');
  assert.equal(active.denominator,1);
  assert.equal(active.percent,100);
+});
+
+test('LR-ACCUEIL-001: monthly success follows the actual Québec closure date, not the start',()=>{
+ const overnight={id:'overnight',counted:true,
+  started_at:'2026-11-01T03:50:00Z',finished_at:'2026-11-01T05:15:00Z'};
+ const stats=[{session_id:'overnight',user_id:'a',target:2,completed:1,drawn:1}];
+ const cards=[{id:'challenge',session_id:'overnight',recipient:'a',status:'completed'}];
+ const opts={members:[{user_id:'a',name:'Alice'}],
+  sessions:[overnight],sessionStats:stats,historyChallenges:cards,passQuota:[]};
+ assert.equal(eveningArchiveDay(overnight),'2026-11-01');
+ const oct=monthlyChallengeSuccess({...opts,month:'2026-10'});
+ const nov=monthlyChallengeSuccess({...opts,month:'2026-11'});
+ assert.equal(oct[0].done,0);
+ assert.equal(oct[0].unpicked,0);
+ assert.equal(oct[0].percent,null);
+ assert.equal(nov[0].done,1);
+ assert.equal(nov[0].unpicked,1);
+ assert.equal(nov[0].percent,50);
+ // The calendar and monthly rate must render the same authoritative month.
+ const calendarOct=eveningHistoryMarkup({...opts,stats,month:'2026-10',selectedDate:'2026-10-31'});
+ const calendarNov=eveningHistoryMarkup({...opts,stats,month:'2026-11',selectedDate:'2026-11-01'});
+ assert.match(calendarOct,/<strong>0<\/strong> soirées clôturées ce mois/);
+ assert.match(calendarNov,/<strong>1<\/strong> soirées clôturées ce mois/);
+ assert.match(calendarNov,/Alice · défis réalisés/);
+});
+
+test('LR-ACCUEIL-001: open and interrupted evenings still use Québec start day',()=>{
+ const open={id:'open',counted:true,
+  started_at:'2026-11-01T03:50:00Z',finished_at:null};
+ const interrupted={...open,id:'interrupted',counted:false,
+  finished_at:'2026-11-01T05:15:00Z'};
+ assert.equal(eveningArchiveDay(open),'2026-10-31');
+ assert.equal(eveningArchiveDay(interrupted),'2026-10-31');
+ const options={members:[{user_id:'a',name:'Alice'}],
+  sessions:[open,interrupted],
+  historyChallenges:[{id:'done',session_id:'open',recipient:'a',status:'completed'}],
+  sessionStats:[]};
+ assert.equal(monthlyChallengeSuccess({...options,month:'2026-10'})[0].done,1);
+ assert.equal(monthlyChallengeSuccess({...options,month:'2026-11'})[0].done,0);
+ assert.equal(eveningArchiveDay({counted:true,started_at:null,
+  finished_at:'invalid'}),null);
 });
