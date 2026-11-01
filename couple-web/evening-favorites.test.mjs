@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {favoriteCardIdentity,isEveningFavorite,canAddEveningFavorite,closedCalendarFavoriteCandidate,MAX_EVENING_FAVORITES}
+import {favoriteCardIdentity,isEveningFavorite,canAddEveningFavorite,closedCalendarFavoriteCandidate,favoriteCardPreview,MAX_EVENING_FAVORITES}
  from './evening-favorites.mjs';
 import {eveningHistoryMarkup} from './evening-calendar.mjs';
 
@@ -101,7 +101,7 @@ test('LR-019: only closed authorized calendar rows expose hearts and a direct 5/
  assert.doesNotMatch(html,/data-action="evening-favorite-calendar:secret-pending"/);
  assert.match(html,/Nos coups de cœur · 5\/5/);
  assert.match(html,/♥ Retirer des coups de cœur/);
- assert.match(html,/role="alertdialog" aria-modal="true" aria-label="Remplacer un coup de cœur"/);
+ assert.match(html,/role="alertdialog" aria-modal="true" aria-labelledby="lr-calendar-fav-title"/);
  assert.equal((html.match(/data-action="evening-favorite-replace:/g)||[]).length,5);
  assert.match(html,/data-action="evening-favorite-cancel"/);
  assert.doesNotMatch(render({favoritesReady:false}),/evening-favorite-calendar:/);
@@ -109,4 +109,47 @@ test('LR-019: only closed authorized calendar rows expose hearts and a direct 5/
  const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
  assert.match(app,/closedCalendarFavoriteCandidate\(state\.eveningCalendarChallenges,state\.sessions,parts\[0\]\)/);
  assert.match(app,/favoriteReplace=\{\.\.\.key,challengeId:view\.id,source:fromCalendar\?'calendar':'session'\}/);
+});
+
+test('LR-019: replacement previews distinguish closed archive titles and never leak active secrets',()=>{
+ const sessions=[{id:'closed',finished_at:'2026-11-01T03:00:00Z'},
+  {id:'open',finished_at:null}];
+ const history=[{id:'old',session_id:'closed',category:'SEXUEL',
+   card_id:90,card_title:'Souvenir sur mesure',card_description:'Consigne partagée'},
+  {id:'secret',session_id:'open',category:'SEXUEL',
+   card_id:91,card_title:'Titre secret',card_description:'Consigne secrète'}];
+ const first=favoriteCardPreview({category:'SEXUEL',card_id:90},{history,sessions});
+ assert.equal(first.title,'Souvenir sur mesure');
+ assert.equal(first.description,'Consigne partagée');
+ const hidden=favoriteCardPreview({category:'SEXUEL',card_id:91},{history,sessions});
+ assert.equal(hidden.title,'Carte n° 91');
+ assert.equal(hidden.description,'');
+ const builtin=(cat,id)=>({title:cat+' '+id,description:'Consigne de catalogue'});
+ assert.equal(favoriteCardPreview({category:'SENSUEL',card_id:2},{builtinCard:builtin}).title,'SENSUEL 2');
+ assert.equal(favoriteCardPreview({category:'SENSUEL',card_id:27},{customCards:[
+  {category:'SENSUEL',card_id:27,title:'Carte modifiée',description:'Texte du couple'}]}).title,'Carte modifiée');
+ assert.equal(favoriteCardPreview({category:'SENSUEL',card_id:0}),null);
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ assert.match(app,/favoriteCardPreview\(row,\{/);
+ assert.match(app,/history:state\.eveningCalendarChallenges,sessions:state\.sessions/);
+});
+
+test('LR-019: calendar 5-heart modal displays real titles and scoped card descriptions',()=>{
+ const sessions=[{id:'closed',started_at:'2026-10-16T01:00:00Z',
+  finished_at:'2026-10-16T02:00:00Z',counted:true}];
+ const data=[{id:'archived',session_id:'closed',recipient:'a',category:'SEXUEL',
+  card_id:80,face:10,status:'completed',card_title:'Défi archivé',
+  card_description:'Consigne historique'}];
+ const html=eveningHistoryMarkup({
+  sessions,members:[{user_id:'a',name:'A'}],
+  historyChallenges:data,me:'a',month:'2026-10',selectedDate:'2026-10-15',
+  favorites:[{category:'SEXUEL',card_id:80}],favoritesReady:true,
+  favoriteReplace:{source:'calendar',challengeId:'archived'}
+ });
+ assert.match(html,/Pour ajouter « Défi archivé »/);
+ assert.match(html,/Retirer « Défi archivé » et ajouter/);
+ assert.match(html,/Consigne historique/);
+ assert.match(html,/Voir la consigne/);
+ assert.match(html,/lr-favorite-replace-entry/);
+ assert.doesNotMatch(html,/Titre secret/);
 });
