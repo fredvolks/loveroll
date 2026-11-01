@@ -1,0 +1,231 @@
+/* LoveRoll · Maquette 3 — Velours & Rose Lanterne
+   Socle rubis / lumière rose / écrin champagne. Lot 1 : base visuelle partagée.
+   Cette feuille est chargée EN DERNIER dans les trois entrées HTML et ne change
+   ni logique de pige, ni WebGL, ni prix, ni permissions. */
+body.lr-velours-lanterne {
+  --lr-vl-night:#180711;
+  --lr-vl-velvet:#300819;
+  --lr-vl-wine:#5a0d2a;
+  --lr-vl-ruby:#a11343;
+  --lr-vl-lantern:#ff6b9c;
+  --lr-vl-rose:#ffb6ce;
+  --lr-vl-champagne:#f5d7ac;
+  --lr-vl-ivory:#fff3ed;
+  --lr-vl-muted:#e8bece;
+  --lr-vl-edge:rgba(255,174,199,.64);
+  --lr-vl-focus:#ffdf9c;
+  --lr-vl-panel:radial-gradient(ellipse at 48% -24%,rgba(255,133,173,.24),transparent 54%),linear-gradient(152deg,rgba(99,17,51,.96),rgba(39,6,22,.98) 72%,rgba(64,9,31,.96));
+  --lr-vl-relief:inset 0 1px 1px rgba(255,239,229,.37),inset 0 -1px 0 rgba(126,23,62,.7),0 12px 28px rgba(9,0,8,.34);
+  --lr-vl-action:radial-gradient(ellipse at 50% -35%,rgba(255,215,224,.65),transparent 60%),linear-gradient(180deg,#c63868 0%,#a31346 36%,#670d31 79%,#8b163c 100%);
+  --lr-control-glass:var(--lr-vl-action);
+  --lr-control-feature-surface:var(--lr-vl-panel);
+  --lr-control-edge-solid:#f0749d;
+  --lr-control-ink:var(--lr-vl-ivory);
+  --lr-control-focus:var(--lr-vl-focus);
+  --lr-control-shadow:inset 0 1px 1px #ffdfecbd,inset 0 -2px 2px #58071a,0 3px 9px #180008ae,0 0 12px #ee448a42;
+  --lr-surface-fill:var(--lr-vl-panel);
+  --lr-surface-edge:#d17b98;
+  --lr-surface-shadow:var(--lr-vl-relief);
+  color:var(--lr-vl-ivory);
+  background:radial-gradient(ellipse 58% 33% at 50% 0%,#7a234779,transparent),radial-gradient(ellipse 40% 36% at 100% 52%,#7e1a4a4a,transparent),linear-gradient(155deg,#290819,#180711 56%,#270818);
+  color-scheme:dark;
+}
+body.lr-velours-lanterne,body.lr-velours-lanterne * {box-sizing:border-box}
+body.lr-velours-lanterne :is(button,a,[role="button"],input,select,textarea,summary) {
+  -webkit-tap-highlight-color:transparent;
+}
+body.lr-velours-lanterne :is(button,a,[role="button"],input,select,textarea,summary):focus-visible {
+  outline:2px solid var(--lr-vl-focus)!important;
+  outline-offset:3px!important;
+}
+body.lr-velours-lanterne :is(input,textarea,select) {max-width:100%}
+body.lr-velours-lanterne :is(p,small,label) {overflow-wrap:break-word}
+body.lr-velours-lanterne :is(button,a,[role="button"]):disabled,
+body.lr-velours-lanterne :is(button,a,[role="button"])[aria-disabled="true"] {
+  cursor:not-allowed;
+}
+@media (hover:hover) and (pointer:fine) {
+  body.lr-velours-lanterne :is(.lr-ruby-control,.checkout-card button:not(:disabled),.studio-quick-grid button):hover {
+    filter:brightness(1.08);
+  }
+}
+@media (prefers-reduced-motion:reduce) {
+  body.lr-velours-lanterne *,body.lr-velours-lanterne *::before,body.lr-velours-lanterne *::after {
+    scroll-behavior:auto!important;
+    animation-duration:.01ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.01ms!important;
+  }
+}
+/* ACCUEIL ET JEUX : fond photographique et vrai socle existants conservés.
+   Les textes, éléments de jeu et surfaces se rattachent à la même palette. */
+body.lr-velours-lanterne #app:is(.loveroll-real-home,.loveroll-evening-page,.loveroll-eclat-page,.loveroll-surprise-ecrin,.loveroll-advent-letters,.loveroll-settings-page) {
+  --lr-vl-page-edge:var(--lr-vl-edge);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #app .ritual-brand b,
+body.lr-velours-lanterne #app .home-ritual .ritual-brand b {
+  color:#ffe6d8!important;
+  text-shadow:0 2px 9px rgba(18,0,9,.88),0 0 22px rgba(255,118,160,.36);
+}
+body.lr-velours-lanterne #app :is(.ritual-kicker,.eyebrow,.home-ritual small) {
+  color:var(--lr-vl-champagne);
+}
+body.lr-velours-lanterne #app.loveroll-real-home .home-die-platform {
+  filter:drop-shadow(0 0 20px rgba(255,74,127,.22));
+}
+body.lr-velours-lanterne #app.loveroll-real-home .home-ritual .home-title h2 {
+  color:var(--lr-vl-ivory)!important;
+  text-shadow:0 1px 11px #180010b3;
+}
+body.lr-velours-lanterne #app :is(.lr-ruby-feature,.lr-ruby-control,.lr-surface) {
+  border-color:var(--lr-vl-edge);
+}
+body.lr-velours-lanterne #app .lr-ruby-nav {
+  background:linear-gradient(155deg,rgba(68,7,29,.97),rgba(22,3,13,.98) 72%,rgba(65,9,30,.97))!important;
+  border-color:rgba(255,165,192,.62)!important;
+  box-shadow:inset 0 1px 1px #ffe0dd69,0 -2px 19px #ed4f8b30!important;
+}
+body.lr-velours-lanterne #app .lr-ruby-nav .lr-ruby-tab.active {
+  border-color:var(--lr-vl-lantern)!important;
+  box-shadow:inset 0 1px 2px #ffe0e3a6,0 0 12px #fc4c9155!important;
+}
+body.lr-velours-lanterne #app .settings-submenu-list :is(button,.settings-link-row),
+body.lr-velours-lanterne #app .settings-menu-source :is(.settings-primary,.settings-secondary),
+body.lr-velours-lanterne #app .editorial-card-list :is(button,.editorial-row) {
+  border-color:var(--lr-vl-edge)!important;
+}
+body.lr-velours-lanterne #app .settings-submenu-list :is(button,.settings-link-row) {
+  background:var(--lr-vl-panel)!important;
+  box-shadow:var(--lr-vl-relief)!important;
+  min-height:48px!important;
+}
+/* Les menus secondaires restent navigables même avec le texte agrandi. */
+body.lr-velours-lanterne #app .settings-submenu-list :is(button,.settings-link-row),
+body.lr-velours-lanterne #app .settings-menu-source button {
+  overflow-wrap:anywhere;
+}
+body.lr-velours-lanterne #app .settings-menu-source :is(input:not([type=checkbox]):not([type=radio]),select,textarea) {
+  min-height:44px;
+}
+/* Une seule finition pour le chargement PWA et le chargement en jeu. */
+body.lr-velours-lanterne .lr-splash {
+  --splash-bg:radial-gradient(ellipse at 50% 30%,#781b4666,transparent 56%),linear-gradient(175deg,#2b081a,#180711 73%,#330a20);
+  --splash-text:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .lr-splash__scene::before {
+  background:radial-gradient(ellipse,rgba(255,92,148,.34),transparent 71%);
+}
+body.lr-velours-lanterne .lr-splash__dots i {background:var(--lr-vl-lantern)}
+body.lr-velours-lanterne :is(#toast,.loading,[role="status"]) {color:var(--lr-vl-ivory)}
+/* ABONNEMENT : même écrin que les rubriques de jeu.
+   Les prix et l'état désactivé du paiement ne sont pas modifiés. */
+body.lr-velours-lanterne .checkout-card {
+  background:var(--lr-vl-panel);
+  border-color:var(--lr-vl-edge);
+  border-radius:clamp(19px,3vw,28px);
+  box-shadow:var(--lr-vl-relief),0 0 44px #c42b6840;
+}
+body.lr-velours-lanterne .checkout-header .wordmark {
+  color:var(--lr-vl-ivory);
+  text-shadow:0 0 19px #ff7ca34d;
+}
+body.lr-velours-lanterne .checkout-card :is(.eyebrow,.description,.period-note,.safety) {color:var(--lr-vl-muted)}
+body.lr-velours-lanterne .checkout-card h1 {color:var(--lr-vl-ivory)}
+body.lr-velours-lanterne .checkout-card :is(input,select) {
+  border:1px solid rgba(255,183,207,.62);
+  border-radius:12px;
+  background:#260c1a;
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .checkout-card button:not(:disabled) {
+  background:var(--lr-vl-action);
+  border-color:var(--lr-vl-edge);
+  color:var(--lr-vl-ivory);
+  box-shadow:var(--lr-vl-relief);
+}
+body.lr-velours-lanterne .checkout-card button:disabled {
+  opacity:.78;
+  color:#f2d2df;
+}
+body.lr-velours-lanterne .checkout-card .line.total strong {color:var(--lr-vl-champagne)}
+body.lr-velours-lanterne .checkout-conditions summary {color:var(--lr-vl-rose)}
+/* STUDIO / ADMIN : l'identité romantique ne masque jamais l'information. */
+body.lr-velours-lanterne .studio-app {
+  background:radial-gradient(ellipse at 60% 0%,#a52c6740,transparent 46%);
+}
+body.lr-velours-lanterne .studio-header {
+  border-bottom-color:var(--lr-vl-edge);
+  box-shadow:inset 0 -1px 0 #ffd1cc26,0 12px 32px #14000c66;
+}
+body.lr-velours-lanterne .studio-mark :is(strong,span) {
+  color:var(--lr-vl-ivory);
+  text-shadow:0 0 18px #e8468970;
+}
+body.lr-velours-lanterne .studio-mark small,
+body.lr-velours-lanterne .studio-heading .eyebrow {color:var(--lr-vl-champagne)}
+body.lr-velours-lanterne :is(.studio-gate-card,.studio-quick-grid button,.studio-content,.studio-sidebar,.studio-heading) {
+  border-color:var(--lr-vl-edge);
+}
+body.lr-velours-lanterne .studio-gate-card {
+  background:var(--lr-vl-panel);
+  box-shadow:var(--lr-vl-relief),0 22px 60px #10000a80;
+}
+body.lr-velours-lanterne .studio-top-nav :is(a,button) {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:44px;
+  padding:8px 12px;
+  color:var(--lr-vl-ivory);
+  border-radius:12px;
+}
+body.lr-velours-lanterne .studio-app :is(input,select,textarea) {
+  accent-color:var(--lr-vl-lantern);
+}
+body.lr-velours-lanterne .studio-app :is(.primary,button[data-pane]):not(:disabled) {
+  border-color:var(--lr-vl-edge);
+}
+body.lr-velours-lanterne .studio-app .primary:not(:disabled) {
+  background:var(--lr-vl-action);
+  box-shadow:var(--lr-vl-relief);
+}
+/* RESPONSIVE FLUIDE : aucun changement aux règles/aux dés.
+   Empêche les entrées secondaires de déborder aux écrans étroits. */
+@media (max-width:767px) {
+  body.lr-velours-lanterne #app .lr-ruby-nav .lr-ruby-tab {
+    min-height:44px;
+    min-width:0;
+  }
+  body.lr-velours-lanterne #app.loveroll-settings-page .settings-submenu-list :is(button,.settings-link-row) {
+    font-size:clamp(19px,5.1vw,24px)!important;
+    padding-inline:clamp(11px,3.4vw,16px)!important;
+  }
+}
+@media (min-width:768px) {
+  body.lr-velours-lanterne #app .lr-ruby-control {
+    box-shadow:var(--lr-control-shadow)!important;
+  }
+  body.lr-velours-lanterne .checkout-shell {width:min(800px,100%);}
+}
+@media (max-width:600px) and (max-height:700px), (orientation:landscape) and (max-height:500px) {
+  /* Le clavier, le zoom et les petits écrans ne doivent pas piéger le paiement. */
+  html:has(body.lr-velours-lanterne .checkout-shell),
+  body.lr-velours-lanterne:has(.checkout-shell) {height:auto;overflow-y:auto!important}
+  body.lr-velours-lanterne .checkout-shell {
+    height:auto!important;min-height:100dvh!important;max-height:none!important;
+    overflow:visible!important;
+  }
+  body.lr-velours-lanterne .checkout-card {overflow:visible!important}
+  body.lr-velours-lanterne .checkout-card :is(button,select,input) {min-height:44px!important}
+}
+@media (max-width:480px) {
+  body.lr-velours-lanterne .studio-top-nav {gap:6px}
+  body.lr-velours-lanterne .studio-top-nav :is(a,button) {
+    min-height:44px!important;
+    height:auto!important;
+    padding:8px 9px!important;
+    font-size:12px!important;
+    line-height:1.25!important;
+  }
+}
