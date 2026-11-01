@@ -3,7 +3,7 @@
 import {resolvedCard} from './evening-challenges.mjs';
 import {eveningPersonReviewMarkup} from './evening-review.mjs';
 import {ritualHeadingHtml} from './brand.mjs?v=20261017-ritual130';
-import {calendarWeekSuccess,monthlyChallengeSuccess,eveningArchiveDay} from './calendar-success-stats.mjs?v=20261031-archive270';
+import {calendarWeekSuccess,monthlyChallengeSuccess,eveningArchiveDay} from './calendar-success-stats.mjs?v=20261031-stats271';
 export {eveningArchiveDay};
 const safe=x=>String(x??'').replace(/[&<>"']/g,k=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','"':'&quot;',"'":'&#39;'}[k]));
 const isoMonth=v=>/^\d{4}-(0[1-9]|1[0-2])$/.test(v||'')?v:null;
