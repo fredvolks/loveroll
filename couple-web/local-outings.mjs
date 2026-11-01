@@ -14,7 +14,7 @@ const categoryFromText=source=>{
  if(/\b(spa|therm[a-z]*|sauna|massage|bain nordique|hammam)\b/.test(source))return 'spa';
  if(/\b(vignoble|vinicole|degustation de vin|oenolog)/.test(source))return 'winery';
  if(/\b(hotel|chalet|cabane|heberg|nuit insolite|dome|gite)\b/.test(source))return 'hotel';
- if(/\b(restaur|brunch|gastronom|repas|souper|table d.hote|bistro|brasserie)\b/.test(source))return 'restaurant';
+ if(/\b(restaur[a-z]*|brunch|gastronom[a-z]*|repas|souper|table d.hote|bistro|brasserie)\b/.test(source))return 'restaurant';
  if(/\b(musee|theatre|galerie d.art|concert|spectacle|exposition)\b/.test(source))return 'culture';
  if(/\b(bateau|croisiere|kayak|canot|voilier|phare|observation des baleines)\b/.test(source))return 'water';
  if(/\b(randonnee|foret|sentier|parc|pique.nique|jardin)\b/.test(source))return 'nature';
