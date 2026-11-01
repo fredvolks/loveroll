@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {monthlyGeoCardHtml,localBookingDateTime,createBookingMutationGate} from './monthly-geo-ui.mjs';
+import {monthlyGeoCardHtml,localBookingDateTime,createBookingMutationGate,geoLookupAfterRefresh} from './monthly-geo-ui.mjs';
 import {refreshAfterConfirmedWrite} from './timed-evening-completion.mjs';
 const venue={state:'ready',place_id:'geo-1',name:'Café du centre',driving_meters:16200,
  latitude:45.6,longitude:-73.7,address:'Rue Exemple'};
@@ -159,4 +159,27 @@ test('LR-SURPRISE-001 booking actions are serialized and unlock after failure',a
   assert.ok(handler.indexOf('await rpc(')>handler.indexOf('geoBookingMutationGate('));
   assert.match(handler,/if\(!executed\)notify\('Une opération de réservation est déjà en cours\.'\)/);
  }
+});
+
+test('LR-SURPRISE-001 refresh retains pending/error Geoapify discovery for same roll only',()=>{
+ const lookup=(rollId,previousRollId,previousLookup,venue=null)=>
+  geoLookupAfterRefresh({rollId,previousRollId,previousLookup,venue});
+ assert.equal(lookup('roll-a','roll-a','pending'),'pending',
+  'An empty places query while Edge is pending must not stop polling');
+ assert.equal(lookup('roll-a','roll-a','error'),'error',
+  'A temporary network outage remains eligible for the manual retry');
+ for(const status of ['idle','loading','ready','unavailable']){
+  assert.equal(lookup('roll-a','roll-a',status),'idle');
+ }
+ assert.equal(lookup('roll-b','roll-a','pending'),'idle');
+ assert.equal(lookup('roll-b','roll-a','error'),'idle');
+ assert.equal(lookup(null,'roll-a','pending'),'idle');
+ assert.equal(lookup('roll-b','roll-a','pending',{state:'ready'}),'ready');
+ assert.equal(lookup('roll-a','roll-a','pending',{state:'unavailable'}),'unavailable');
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ assert.match(app,/const previousRollId=state\.monthly\?\.monthly_activity\?\.id/);
+ assert.match(app,/const previousGeoLookup=state\.geoLookup/);
+ assert.match(app,/if\(activeMonthlyRoll\?\.id!==previousRollId\)\{[\s\S]*?state\.geoBookingEdit=false/);
+ assert.match(app,/state\.geoLookup=geoLookupAfterRefresh\(\{rollId:activeMonthlyRoll\.id,/);
+ assert.match(app,/\(state\.geoLookup==='pending'\|\|state\.geoLookup==='error'\)/);
 });
