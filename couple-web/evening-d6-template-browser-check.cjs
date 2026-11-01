@@ -27,6 +27,7 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   const capture=async name=>{if(process.env.LOVEROLL_CAPTURE_DIR)await page.screenshot({path:path.join(process.env.LOVEROLL_CAPTURE_DIR,`d6-${name}-${width}-${height}.png`)});};
   assert.equal(await page.locator('.evening-d6-tools button:visible').count(),0);
   assert.equal(await page.locator('.evening-premium-view > .evening-d6-tools').count(),0);
+  assert.match(await page.locator('.evening-d6-next span').innerText(),/Brasse ton D6/);
   await capture('initial');
   await page.locator('[data-home-odds-open]').click();await page.waitForSelector('#evening-odds-dialog[open]');
   assert.deepEqual(await page.locator('.home-odds-entry>span').allTextContents(),['30 %','25 %','20 %','12 %','8 %','5 %']);
@@ -39,6 +40,8 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   if(partnerFirst){
    world.personalRolls.push({id:'d6-b',session_id:'evening-test',user_id:'b',face:4});
    await page.waitForFunction(()=>document.querySelector('.evening-partner-mobile-status')?.textContent.includes('4'),{timeout:16000});
+   await page.waitForFunction(()=>document.querySelector('.evening-d6-next span')?.textContent.includes('À ton tour'));
+   assert.match(await page.locator('.evening-d6-next span').innerText(),/Ton partenaire a lancé/);
    assert.equal(await page.evaluate(()=>window.__ownD6===document.querySelector('.evening-d6-theater canvas')),true,'Partner refresh keeps the same live model');
    const anchored=await measure();assert.ok(Math.abs(anchored.bottom-anchored.contact)<2);
   }
@@ -73,6 +76,7 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   assert.equal(await page.locator('[data-action="my-d6"]').count(),0,
    'A confirmed personal D6 must not offer a second roll');
   assert.match(await page.locator('.evening-premium-view .evening-d6-status[role="status"]').innerText(),/Lancer enregistré/);
+  assert.match(await page.locator('.evening-d6-next span').innerText(),/Attends ton partenaire/);
   assert.match(await page.locator('.evening-own-capsule').innerText(),/Fred.*2/s);
   assert.equal(world.calls.filter(c=>c.name==='roll_my_evening_d6').length,1);
   assert.equal((await page.locator('.evening-d6-theater canvas').getAttribute('data-face')),'2');
