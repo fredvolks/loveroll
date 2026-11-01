@@ -1,13 +1,14 @@
 // One viewport coordinate system for the photograph, pedestal and dice contact.
+// Keep scene framing deterministic across resize, with a narrow exception
+// for the 320–359px playable Soirée D100. The real marble and mesh remain
+// paired; never resize the official die or alter a server-confirmed face.
+export function sharedStageSplit(width,height,readyEveningD100=false){
+ const compact=readyEveningD100&&width<=359&&height<=600;
+ return Math.max(230,height-215)+(compact?40:0);
+}
 export function fitSharedStage(root){
- // On the shortest 320px Soirée phone, the photograph's original marble
- // contact is above the playable WebGL D100's top clearance. Extend the
- // SAME photographed top image (and its split) instead of moving the 3D die
- // away from the marble or reducing the official mesh to a tiny token.
- // Keep Accueil, Surprise, 360px phones and tablets at their existing crop.
- const compactEveningD100=root.classList.contains('has-evening-d100-template')&&
-  innerWidth<=359&&innerHeight<=600;
- const split=Math.max(230,innerHeight-215)+(compactEveningD100?40:0);
+ const split=sharedStageSplit(innerWidth,innerHeight,
+  root.classList.contains('has-evening-d100-template'));
  root.style.setProperty('--home-scene-split',split+'px');
  root.style.setProperty('--home-scene-top-image-height',split/.438+'px');
  root.style.setProperty('--home-scene-bottom-image-height',(innerHeight-split)/.562+'px');
