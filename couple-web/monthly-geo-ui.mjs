@@ -34,14 +34,17 @@ export function monthlyGeoCardHtml({
 }={}){
  if(!enabled)return '';
  let body='';
- if(venue?.state==='ready'&&venue?.place_id&&venue?.name){
+ // A named POI is not a verified driving destination until its road route
+ // is confirmed. Do not offer GPS/site booking as a resolved Surprise venue
+ // when the provider's matrix was empty, unreachable or invalid.
+ const roadMetres=finiteProviderNumber(venue?.driving_meters);
+ const roadVerified=roadMetres!==null&&roadMetres>=0;
+ if(venue?.state==='ready'&&venue?.place_id&&venue?.name&&roadVerified){
   const lat=finiteProviderNumber(venue.latitude),lon=finiteProviderNumber(venue.longitude),
    gps=lat!==null&&lon!==null&&Math.abs(lat)<=90&&Math.abs(lon)<=180?
     'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(lat+','+lon):null;
   const site=https(venue.website_url),booking=https(venue.booking_url),menu=https(venue.menu_url);
-  const roadMetres=finiteProviderNumber(venue.driving_meters);
-  const distance=roadMetres!==null&&roadMetres>=0?
-   Math.round(roadMetres/100)/10:null;
+  const distance=Math.round(roadMetres/100)/10;
   body='<div class="surprise-geo-venue">'+geoPhoto(venue)+
     '<div class="surprise-geo-venue-info"><strong>'+esc(venue.name)+'</strong>'+
     (venue.address?'<span>'+esc(venue.address)+'</span>':'')+
@@ -55,6 +58,7 @@ export function monthlyGeoCardHtml({
   const message=lookup==='loading'||lookup==='pending'?'Recherche d’un vrai lieu à proximité…':
    lookup==='error'?'Geoapify n’est pas encore disponible. Votre activité D100 reste enregistrée.':
    lookup==='unavailable'?'Aucun établissement avec trajet routier vérifié dans votre rayon. Votre activité D100 est conservée.':
+   venue?.state==='ready'&&!roadVerified?'Le trajet routier vers ce lieu n’est pas vérifié. Votre activité D100 est conservée.':
    'Votre activité D100 est enregistrée. La recherche locale se lance automatiquement.';
   body='<div class="surprise-geo-pending" role="status">'+esc(message)+'</div>';
  }
