@@ -3,7 +3,7 @@ import {showEveningCategoryReminder} from './evening-d100-template.mjs?v=2026102
 import {eveningInviteHtml,eveningInviteInboxHtml,isEveningInviteAction} from './evening-invitation.mjs?v=20261028-web254';
 import {askEveningCategoryConfirmation,categoryConfirmEnabled,saveCategoryConfirmLocal} from './evening-category-confirm.mjs?v=20261027-web238';
 import {soundEnabled,setSoundEnabled,setLoveRollSoundUser,unlockLoveRollSounds,playLoveRollSound,soundSettingsHtml} from './loveroll-sounds.mjs?v=20261028-privacy250';
-import {isAcceptedTimedEveningChallenge,completeTimedEveningChallenge,timedEveningTimerControl,refreshAfterTimedEveningConfirmation,timerBelongsToUser,canControlTimedEveningChallenge} from './timed-evening-completion.mjs?v=20261101-timer260';
+import {isAcceptedTimedEveningChallenge,isSameCompletedEveningChallenge,completeTimedEveningChallenge,timedEveningTimerControl,refreshAfterTimedEveningConfirmation,timerBelongsToUser,canControlTimedEveningChallenge} from './timed-evening-completion.mjs?v=20261101-timer260';
 import {fitSurpriseMinimal} from './surprise-minimal.mjs?v=20261022-home228';
 import {eclatNoteKey,loadEclatNote,saveEclatNote} from './eclat-guidance.mjs?v=20261022-home228';
 import {loadEclatHistory} from './eclat-history.mjs?v=20261022-home228';
@@ -1396,10 +1396,13 @@ async function retryExpiredTimedEvening(){
     Date.now()<timerCompletionRetryAt||!timerBelongsToUser(challengeTimer,state.user?.id)||!state.session)return;
  const id=challengeTimer.id,item=timedEveningItem(id);
  if(!item)return; // Keep pending until the corresponding session is loaded again.
- if(['completed','passed','refused'].includes(item.status)){
+ // A recorded card may still have pending Soirée board/finish RPC work.
+ // Resume that work without calling answer_challenge a second time.
+ if(['passed','refused'].includes(item.status)){
   challengeTimer.autoCompletePending=false;saveChallengeTimer();return;
  }
- if(!isAcceptedTimedEveningChallenge(item,state.user.id,state.session.id))return;
+ if(!isAcceptedTimedEveningChallenge(item,state.user.id,state.session.id)&&
+    !isSameCompletedEveningChallenge(item,item,state.user.id,state.session.id))return;
  const sessionId=state.session.id,userId=state.user.id;
  timerCompletionInFlight=id;
  try{
@@ -1438,12 +1441,15 @@ async function reconcileSavedEveningTimers(){
   const due=!!saved.autoCompletePending||
    (saved.running&&Number.isFinite(saved.deadline)&&saved.deadline>0&&saved.deadline<=now);
   if(!due||challengeTimer.decisionPending&&challengeTimer.id===item.id)continue;
-  if(['completed','passed','refused'].includes(item.status)){
+  if(['passed','refused'].includes(item.status)){
    writeSavedChallengeTimer(key,{...saved,running:false,
     remainingMs:0,autoCompletePending:false});
    continue;
   }
-  if(!isAcceptedTimedEveningChallenge(item,state.user.id,state.session.id))continue;
+  // A completed card with a pending stored timer still needs to finish its
+  // session board after a lost connection; do not silently discard that work.
+  if(!isAcceptedTimedEveningChallenge(item,state.user.id,state.session.id)&&
+     !isSameCompletedEveningChallenge(item,item,state.user.id,state.session.id))continue;
   const userId=state.user.id,sessionId=state.session.id;
   savedTimerSyncInFlight=true;timerCompletionInFlight=item.id;
   const expired={...saved,running:false,remainingMs:0,notified:true,autoCompletePending:true};
