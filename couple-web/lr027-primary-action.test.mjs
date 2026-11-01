@@ -3,6 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {premiumEveningHtml,canRollPersonalEveningD6} from './premium-evening.mjs';
+import {hasTurnToDraw} from './evening-private-queue.mjs';
 
 const members=[{user_id:'a',name:'Alice'},{user_id:'b',name:'Bob'}];
 const base={session:{id:'current'},members,me:'a',status:{both_ready:true,my_rolled:true,partner_rolled:true},
@@ -165,4 +166,29 @@ test('unfinished server turn synchronization never blames the partner',()=>{
  assert.equal(status(html),'Synchronisation de nos défis…');
  assert.doesNotMatch(html,/data-action="new-challenge"/);
  assert.match(html,/data-action="evening-list"/,'Own queue remains available');
+});
+
+test('official D100 action cannot bypass server-derived turn or a confirmation that became stale',()=>{
+ const eligible={ready:true,drawsFinished:false,next:'a',remaining:{a:2,b:1}};
+ assert.equal(hasTurnToDraw(eligible,'a'),true);
+ assert.equal(hasTurnToDraw(eligible,'b'),false);
+ assert.equal(hasTurnToDraw({...eligible,drawsFinished:true},'a'),false);
+ assert.equal(hasTurnToDraw({...eligible,remaining:{a:0}},'a'),false);
+ assert.equal(hasTurnToDraw({...eligible,ready:false},'a'),false);
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const handler=app.slice(app.indexOf("if(verb==='new-challenge'){"),app.indexOf("if(verb==='answer'){"));
+ const guard=handler.indexOf('const canStillDraw=()');
+ const first=handler.indexOf('if(!canStillDraw()){');
+ const confirmation=handler.indexOf('askEveningCategoryConfirmation(');
+ const second=handler.lastIndexOf('if(!canStillDraw()){');
+ const official=handler.indexOf("rpc('draw_for_partner_random'");
+ assert.ok(guard>=0&&first>guard&&confirmation>first&&second>confirmation&&official>second,
+  'Both an initial and post-confirmation guard must precede the real D100 RPC');
+ assert.match(handler,/state\.rollStatus\?\.both_ready&&hasTurnToDraw\(/);
+ assert.match(handler,/state\.eveningBoard\|\|sharedEveningTurns\(/);
+ assert.match(handler,/state\.user\?\.id===playerId&&state\.session\?\.id===session\.id/);
+ assert.match(handler,/if\(eveningCategoryConfirmInFlight\|\|state\.diceStatus\)return/);
+ assert.match(handler,/await refreshAndShow\(\)/,
+  'A stale button must show the updated official turn rather than rolling');
+ assert.match(handler,/finally\{eveningCategoryConfirmInFlight=false;\}/);
 });
