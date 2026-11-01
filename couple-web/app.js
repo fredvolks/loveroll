@@ -485,6 +485,15 @@ function bindActions(){
   const label=root.querySelector('[data-eclat-note-status]');
   if(label)label.textContent='Modifications non enregistrées';
  }));
+ // Keep the optional clue disclosure open while a live update redraws Éclat.
+ // This is transient UI state scoped to the current person/session/chapter.
+ root.querySelectorAll('.eclat-clue-field').forEach(disclosure=>{
+  const key=eclatNoteKey(state.eclat,state.user?.id);
+  disclosure.addEventListener('toggle',()=>{
+   const draft=eclatNoteDrafts.get(key);
+   if(draft)draft.clueOpen=disclosure.open;
+  });
+ });
  const librarySearch=root.querySelector('#custom-card-search');
  const libraryFilter=root.querySelector('#custom-card-filter');
  const updateLibraryFilter=()=>{
@@ -1270,7 +1279,7 @@ function eclatNoteState(){
  const key=eclatNoteKey(state.eclat,state.user?.id);
  if(!key)return {};
  if(!eclatNoteDrafts.has(key)){
-  const draft={note:'',clue:'',moment_done:false,loading:true};
+  const draft={note:'',clue:'',clueOpen:false,moment_done:false,loading:true};
   eclatNoteDrafts.set(key,draft);
   const status={...state.eclat},userId=state.user.id;
   loadEclatNote(client,status,userId).then(value=>Object.assign(draft,value,{saved:!!value.note||!!value.clue,error:false}))
