@@ -4148,9 +4148,10 @@ async function handle(action,element){
   state.eveningMore=!state.eveningMore;render();return;
  }
  if(verb==='evening-calendar'){
-  // Stay in Soirée until the official die, redraw or gift receipt settles.
-  if(state.tab==='session'&&(state.diceStatus||isActiveEveningRedrawPending()||
-      isActiveEveningGiftPending()))return;
+  // Do not navigate away from any official die (including Home's D6).
+  // On Soirée, repick/gift also own the private turn until their receipt settles.
+  if(state.diceStatus||(state.tab==='session'&&
+      (isActiveEveningRedrawPending()||isActiveEveningGiftPending())))return;
   state.eveningCalendarBack=parts[0]==='settings'||state.tab==='settings'?'settings-page:confidentialite':
    state.tab==='home'?'tab:home':'tab:session';
   state.eveningMore=false;state.confirmCancel=false;
