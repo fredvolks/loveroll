@@ -122,7 +122,9 @@ function monthKeyToronto(date){
  return Number.isFinite(d.getTime())?inToronto(d).slice(0,7):null;
 }
 function torontoWeekIndex(date){
- const key=inToronto(new Date(date));
+ const instant=date instanceof Date?date:new Date(date);
+ if(!Number.isFinite(instant.getTime()))return null;
+ const key=inToronto(instant);
  const noon=new Date(key+'T12:00:00Z');
  const day=(noon.getUTCDay()+6)%7;
  return Math.floor((noon.getTime()-day*86400000)/604800000);
@@ -147,7 +149,7 @@ export function coupleHomeStats(challenges=[],sessions=[],members=[],now=new Dat
  const sexual=monthDone.filter(c=>['SEXUEL','COQUIN'].includes(String(c.category||'').toUpperCase())).length;
  const categorized=sensual+sexual;
  const activeWeeks=new Set((sessions||[]).filter(s=>s.counted&&s.finished_at)
-  .map(s=>torontoWeekIndex(s.finished_at)));
+  .map(s=>torontoWeekIndex(s.finished_at)).filter(index=>index!==null));
  let current=torontoWeekIndex(now);
  if(!activeWeeks.has(current))current--;
  let streak=0;
