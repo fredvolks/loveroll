@@ -4161,9 +4161,10 @@ async function handle(action,element){
   state.eveningCalendarBack=parts[0]==='settings'||state.tab==='settings'?'settings-page:confidentialite':
    state.tab==='home'?'tab:home':'tab:session';
   state.eveningMore=false;state.confirmCancel=false;
-  // Monthly dashboard opens THIS month, not a stale session from a prior month.
-  // Opening the calendar only changes navigation; it never draws or completes.
-  if(parts[0]==='month'){
+  // All Home history shortcuts open THIS month, never a stale session
+  // or the last browsed month. Soirée keeps its historical session context.
+  // This only changes navigation; it never draws or completes a challenge.
+  if(parts[0]==='month'||state.tab==='home'){
    state.eveningCalendarMonth=month();
    state.eveningCalendarDate=state.eveningCalendarMonth+'-01';
   }else{
