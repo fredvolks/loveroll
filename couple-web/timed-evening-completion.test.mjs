@@ -307,3 +307,15 @@ test('LR-002 a completed card can finish a pending Soirée board after app resta
  assert.doesNotMatch(retry,/\['completed','passed','refused'\]/);
  assert.doesNotMatch(recovery,/\['completed','passed','refused'\]/);
 });
+
+test('LR-002 pending responses never mutate or display previous account timers after sign-out',()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const retry=app.slice(app.indexOf('async function retryExpiredTimedEvening(){'),
+  app.indexOf('async function reconcileSavedEveningTimers()'));
+ const recovery=app.slice(app.indexOf('async function reconcileSavedEveningTimers(){'),app.indexOf('function endSignal(){'));
+ assert.match(retry,/if\(timerBelongsToUser\(challengeTimer,userId\)&&challengeTimer\.id===id\)/);
+ for(const section of [retry,recovery]){
+  assert.match(section,/if\(state\.user\?\.id===userId&&state\.session\?\.id===sessionId&&!document\.hidden\)/,
+   'An offline response for the previous account must not notify a newly signed-in user');
+ }
+});
