@@ -201,7 +201,12 @@ export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,d
  const stats=assignedTonight(turn,members),m=nextMonthly(now);
  const activity=monthly?.monthly_activity||null;
  const shown=value=>value===null?'—':String(value);
- const ready=!rolling&&weekly&&Number.isInteger(weekly.face),next=nextMonday(now);
+ // Fail closed when an existing server snapshot has an invalid D6 result.
+ // A malformed row is not an undrawn week: do not offer a second official roll.
+ const invalidWeekly=weekly!==null&&weekly!==undefined&&
+  (!Number.isInteger(weekly.face)||weekly.face<1||weekly.face>6);
+ const ready=!rolling&&!invalidWeekly&&weekly&&
+  Number.isInteger(weekly.face),next=nextMonday(now);
  const coupleStats=coupleHomeStats(history,sessions,members,now);
   const weeklyTitle=ready?weekly.face+' soirée'+(weekly.face===1?'':'s')+' de défi':'Cette semaine, on joue ?';
  // Use the exact shared daily/weekly policy result passed by the app.
@@ -283,7 +288,7 @@ export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,d
   closedToday?'Voir notre soirée terminée dans le calendrier':
   weeklyExhausted?'Voir l’historique de nos soirées':
   'Aller à notre soirée, sans lancer de nouveau dé';
- const pending=rolling||disabled;
+ const pending=rolling||disabled||invalidWeekly;
  return '<section class="real-home-shell" aria-label="Tableau de bord du couple">'+
    '<div class="home-ritual">'+ritualHeadingHtml('NOTRE RITUEL DE LA SEMAINE')+
    '<div class="home-title"><h2 class="ritual-page-title">'+escape(weeklyTitle)+'</h2>'+ 
@@ -311,8 +316,10 @@ export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,d
      '<button class="home-roll-button home-resume-evening lr-ruby-control lr-ruby-action lr-surface" type="button" data-action="resume-evening" aria-label="Reprendre notre soirée en cours"><span>♡ Reprendre notre soirée</span></button>':
      '<button class="home-roll-button is-used lr-ruby-control lr-ruby-action lr-surface" type="button" data-action="'+homeAction+'" aria-label="'+escape(mainShortcutAria)+'">'+
      escape(mainShortcutLabel)+'</button>'):
-    '<button class="home-roll-button lr-ruby-control lr-ruby-action lr-surface" type="button" data-action="roll:weekly" '+(pending?'disabled':'')+'>'+
-    (rolling?'Brassage 3D en cours…':disabled?'Préparation du brassage…':'<span class="home-action-die lr-ruby-icon" aria-hidden="true"><svg class="lr-ruby-die-icon" viewBox="0 0 34 38"><path fill="#fffdf5" d="m17 2 13 6-13 7L4 8Z"/><path fill="#f7e9dc" d="m4 8 13 7v20L5 28Q3 27 3 24V11Q3 9 4 8Z"/><path fill="#cdbdb4" d="m17 15 13-7q1 1 1 3v13q0 3-2 4l-12 7Z"/><path fill="none" stroke="#fff8ed" stroke-width=".8" d="m4 8 13 7 13-7M17 15v20"/><ellipse cx="17" cy="8" rx="2.5" ry="1.2" fill="#3d1020"/><g fill="#421521"><ellipse cx="7.6" cy="15" rx="1.5" ry="2.1" transform="rotate(-18 7.6 15)"/><ellipse cx="10.1" cy="21.5" rx="1.5" ry="2.1" transform="rotate(-18 10.1 21.5)"/><ellipse cx="12.7" cy="28" rx="1.5" ry="2.1" transform="rotate(-18 12.7 28)"/><ellipse cx="26.8" cy="15.5" rx="1.5" ry="2.1" transform="rotate(18 26.8 15.5)"/><ellipse cx="21.6" cy="27.3" rx="1.5" ry="2.1" transform="rotate(18 21.6 27.3)"/></g></svg></span><span class="home-action-label lr-ruby-title">Brasser le dé</span>')+'</button>')+
+    '<button class="home-roll-button lr-ruby-control lr-ruby-action lr-surface" type="button" '+
+    (invalidWeekly?'disabled aria-disabled="true"':
+     'data-action="roll:weekly" '+(pending?'disabled':''))+'>'+
+    (invalidWeekly?'Résultat hebdomadaire indisponible — actualisez LoveRoll':rolling?'Brassage 3D en cours…':disabled?'Préparation du brassage…':'<span class="home-action-die lr-ruby-icon" aria-hidden="true"><svg class="lr-ruby-die-icon" viewBox="0 0 34 38"><path fill="#fffdf5" d="m17 2 13 6-13 7L4 8Z"/><path fill="#f7e9dc" d="m4 8 13 7v20L5 28Q3 27 3 24V11Q3 9 4 8Z"/><path fill="#cdbdb4" d="m17 15 13-7q1 1 1 3v13q0 3-2 4l-12 7Z"/><path fill="none" stroke="#fff8ed" stroke-width=".8" d="m4 8 13 7 13-7M17 15v20"/><ellipse cx="17" cy="8" rx="2.5" ry="1.2" fill="#3d1020"/><g fill="#421521"><ellipse cx="7.6" cy="15" rx="1.5" ry="2.1" transform="rotate(-18 7.6 15)"/><ellipse cx="10.1" cy="21.5" rx="1.5" ry="2.1" transform="rotate(-18 10.1 21.5)"/><ellipse cx="12.7" cy="28" rx="1.5" ry="2.1" transform="rotate(-18 12.7 28)"/><ellipse cx="26.8" cy="15.5" rx="1.5" ry="2.1" transform="rotate(18 26.8 15.5)"/><ellipse cx="21.6" cy="27.3" rx="1.5" ry="2.1" transform="rotate(18 21.6 27.3)"/></g></svg></span><span class="home-action-label lr-ruby-title">Brasser le dé</span>')+'</button>')+
    '</div>'+
    '<div class="home-bottom-stack">'+
    '<button class="home-next-month lr-ruby-control lr-ruby-feature lr-surface'+(activity?' has-monthly-activity':'')+'" data-action="tab:special" type="button" aria-label="'+escape(activity?surpriseStage+'. '+monthlyTitle+'. '+invitationText:'Brasser notre surprise mensuelle')+'">'+
