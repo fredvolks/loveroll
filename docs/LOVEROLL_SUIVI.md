@@ -1,5 +1,15 @@
 # LoveRoll — SUIVI OFFICIEL DU PROMPT MAÎTRE
 
+### LR-ACCUEIL-001 — Robustesse des résultats D6 et du bilan Soirée (31 octobre 2026)
+
+- **D6 hebdomadaire du calendrier** : `calendarWeekSuccess` ne transforme plus un tirage historique `null`, hors de [1,6], fractionnaire, infini ou non numérique en face 1 ou 6. Un tirage invalide ou une date de tirage illisible signifie **résultat indisponible**, sans résultat fabriqué ni récupération opportuniste d'un ancien D6. `mondayOf` rejette une date civile impossible avant d'en déduire la semaine.
+- **Bilan des défis** : `monthlyChallengeSuccess` ignore les cibles historiques de défi `target` non entières, infinies, négatives ou hors des entiers sûrs, évitant `NaN`/`Infinity` dans le dénominateur. Une cible valide en chaîne `'4'` reste acceptée pour les anciens RPC. Les défis réellement terminés et passes restent pris en compte selon les règles existantes.
+- **Source / preuves** : `couple-web/calendar-success-stats.mjs` commit `aca8fcd`, `couple-web/calendar-success-stats.test.mjs` commit `263b145`. Exécution JavaScript ciblée sur la logique issue de GitHub : 7 cas D6 invalides, 5 cibles invalides et une date impossible vérifiés; cas valide face 3 avec 1 soirée : 33 % confirmé. Les tests du nouveau SHA sous GitHub Actions sont à contrôler avant toute annonce de succès global.
+- **Propagation PWA** : `evening-calendar.mjs` importe `stats271` (`863ce17`), `app.js` importe `archive271` (`0e5c6c6`), `index.html` importe l'app `archive271` (`4f8ef4f`) et `loveroll-static-v271` (`9ad7047`). Aucun déploiement en production.
+- **Atelier MEDIUM** : consultation directe des méthodes Architecture, Qualité, Produit et Sécurité; `list_applications` ne retourne aucune fiche LoveRoll et aucun outil BOSS exécutable n'est présent. Donc **pas de mission agent/BOSS autonome confirmée**.
+- **Livraison** : PR [#176](https://github.com/fredvolks/loveroll/pull/176) toujours brouillon/non fusionnée. Tests CI, staging Supabase Auth/RLS et validations réelles téléphone/tablette/PC nécessaires avant publication.
+
+
 ### LR-ACCUEIL-001 — Synchronisation du bilan mensuel et de l'archive (31 octobre 2026)
 
 - **Produit** : `monthlyChallengeSuccess` classe désormais une soirée terminée et officiellement `counted=true` au mois civil de sa **clôture en heure du Québec**, comme la grille du calendrier et le bilan Accueil. Les soirées ouvertes ou interrompues non comptabilisées restent rattachées au mois de leur début. Une soirée entamée le 31 octobre et clôturée le 1er novembre est visible le 1er novembre dans le calendrier et entre dans le taux de défis réalisés de novembre, pas d'octobre. Le moteur de quota hebdomadaire `calendarWeekSuccess` continue à appliquer ses règles officielles sans changement.
