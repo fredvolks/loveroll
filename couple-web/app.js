@@ -3091,9 +3091,16 @@ async function handle(action,element){
    if(state.user?.id!==userId||state.coupleId!==coupleId)return;
    state.favoriteReplace=null;
    try{
-    state.eveningFavorites=await query('love_evening_favorites',{eq:{couple_id:coupleId}});
+    const saved=await query('love_evening_favorites',{eq:{couple_id:coupleId}});
+    if(state.user?.id!==userId||state.coupleId!==coupleId)return;
+    state.eveningFavorites=saved;
    }catch{
-    notify('♡ Choix enregistré sur le serveur. Rouvre Soirée pour actualiser les cœurs.');
+    // The write was accepted, but the official list could not be reread.
+    // Disable all further mutations rather than acting on stale 5/5 state.
+    if(state.user?.id===userId&&state.coupleId===coupleId){
+     state.eveningFavorites=[];state.favoritesReady=false;
+     notify('♡ Choix enregistré sur le serveur. Reconnecte-toi pour retrouver les coups de cœur synchronisés.');
+    }
    }
   }finally{
    favoriteWriteBusy=false;
