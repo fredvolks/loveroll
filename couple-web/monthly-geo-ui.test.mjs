@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {monthlyGeoCardHtml,localBookingDateTime} from './monthly-geo-ui.mjs';
+import {refreshAfterConfirmedWrite} from './timed-evening-completion.mjs';
 const venue={state:'ready',place_id:'geo-1',name:'Café du centre',driving_meters:16200,
  latitude:45.6,longitude:-73.7,address:'Rue Exemple'};
 test('LR-SURPRISE-001: known road route and GPS are displayed, missing values never become zero',()=>{
@@ -105,4 +106,28 @@ test('LR-SURPRISE-001 temporary provider error offers a real retry action withou
  assert.match(action,/geoFetchActive===rollId/);
  assert.match(action,/geoFetchNextAt\.delete\(rollId\)/);
  assert.match(action,/void resolveMonthlyGeo\(\)/);
+});
+
+test('LR-SURPRISE-001 confirmed booking writes stay successful if only screen refresh fails',async()=>{
+ let attempts=0;
+ assert.equal(await refreshAfterConfirmedWrite(async()=>{attempts++;}),true);
+ assert.equal(await refreshAfterConfirmedWrite(async()=>{attempts++;throw Error('offline after server save');}),false);
+ assert.equal(attempts,2,'No second server write or extra refresh');
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const saveStart=app.indexOf("if(verb==='geo-booking-save')");
+ const cancelStart=app.indexOf("if(verb==='geo-booking-cancel')",saveStart);
+ const end=app.indexOf("if(verb==='surprise-season')",cancelStart);
+ const save=app.slice(saveStart,cancelStart),cancel=app.slice(cancelStart,end);
+ assert.ok(saveStart>=0&&cancelStart>saveStart&&end>cancelStart);
+ for(const block of [save,cancel]){
+  assert.match(block,/const ownerId=state\.user\?\.id,rollId=state\.monthly\?\.monthly_activity\?\.id/);
+  assert.match(block,/if\(state\.user\?\.id!==ownerId\|\|state\.monthly\?\.monthly_activity\?\.id!==rollId\)return;/);
+  assert.match(block,/if\(!await refreshAfterConfirmedWrite\(refreshAndShow\)\)/);
+  assert.ok(block.indexOf('await rpc(')<block.indexOf('refreshAfterConfirmedWrite'),
+   'Refresh must follow the confirmed server write, not the reverse');
+ }
+ assert.match(save,/if\(!title\|\|title\.length>140\|\|address\.length>240\)/);
+ assert.match(save,/status:confirmed\?'confirmed':'planned'/);
+ assert.match(cancel,/state\.geoReservation=null/);
+ assert.match(cancel,/currentHost\(\)\?\.user_id!==ownerId/);
 });
