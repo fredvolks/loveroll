@@ -253,9 +253,15 @@ function backFromLoveRoll(){
  if(state.showEveningChallenges){
   if(state.user?.id&&state.session?.id)
    clearEveningSelection(localStorage,state.user.id,state.session.id);
+  const closedChallengeId=state.selectedEveningChallengeId;
   state.showEveningChallenges=false;state.selectedEveningChallengeId=null;
   render();
-  root.querySelector('[data-action="evening-list"]')?.focus();
+  // LR-027: a single active card opens directly, with no list button.
+  // Restore focus to the exact card trigger before falling back to the list.
+  const returnTo=closedChallengeId?
+   Array.from(root.querySelectorAll('[data-action^="evening-open:"]'))
+    .find(node=>node.dataset.action==='evening-open:'+closedChallengeId):null;
+  (returnTo||root.querySelector('[data-action="evening-list"]'))?.focus();
   return true;
  }
  if(state.installModalOpen||state.forceInstallGuide){handle('install-later').catch(fail);return true;}
