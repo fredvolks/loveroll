@@ -1,8 +1,16 @@
 # LoveRoll — SUIVI OFFICIEL DU PROMPT MAÎTRE
 
+## Relance prioritaire — 31 octobre 2026 : sorties concrètes, audit non bloquant
+
+**Constat GitHub contrôlé :** `main` au commit `5cf2b528d876f517b7284535d2cf7cc2b3084799` (29 octobre 2026, 22 h 51, Québec), correctif LR-026 sur la face D100 versus l'identité de la carte; #174 préparait un filtrage consultatif, sans démontrer son intégration serveur. Le présent suivi est une photographie datée, pas une lecture automatique. Les états plus bas datés du 29 octobre peuvent être dépassés par des fusions plus récentes.
+
+**Nouvel ordre exécutable :** (1) reprendre le P0 LR-002/LR-003 seulement sur l'écart de fonctionnement réel après #171/Web 259, livrer code + tests + PR + déploiement lorsque autorisé; (2) reprendre le prochain parcours métier engagé et indépendamment livrable (LR-027, LR-019, LR-017, LR-026 selon dépendances); (3) auditer l'UX/UI/responsive au fil des écrans modifiés, sans suspendre tous les travaux jusqu'à la clôture globale. **Blocages distincts :** Android APK 0.13.14 sans signature d'origine, issue #117; Studio A/B et favoris SQL sans staging/recette authentifiée suffisants. Un lot bloqué ne suspend pas les autres.
+
+**Critère de progression :** ne cocher que les comportements prouvés avec SHA, test, version publiée et limite physique déclarée. Ne plus compter les relectures du prompt, la création de documents ou les contrôles répétés comme des fonctionnalités livrées. Le mandat global du 28 octobre reste ouvert, mais ne bloque plus les développements indépendants.
+
 ## Priorité immédiate ordonnée — audit global client/design/ergonomie/responsive (28 octobre 2026)
 
-**LR-AUDIT-GLOBAL-20261028 — EN COURS, intégration progressive et preuves CI.** Le propriétaire demande que l'audit de **toutes les pages, sous-pages, états et boutons**, ses corrections et les protections permanentes passent avant les nouveaux développements. Le bloc en tête du [prompt maître](LOVEROLL_MASTER_PROMPT.md), le [démarrage Work](LOVEROLL_WORK_START.md) et le [protocole complet](LOVEROLL_UX_UI_AUTONOME_WORKFLOW.md) décrivent ce mandat.
+**LR-AUDIT-GLOBAL-20261028 — EN COURS, intégration progressive et preuves CI.** Décision historique du 28 octobre : couverture de **toutes les pages, sous-pages, états et boutons**; depuis la reprise du 31 octobre, cet audit s'effectue en parallèle des développements indépendants. Le bloc en tête du [prompt maître](LOVEROLL_MASTER_PROMPT.md), le [démarrage Work](LOVEROLL_WORK_START.md) et le [protocole complet](LOVEROLL_UX_UI_AUTONOME_WORKFLOW.md) décrivent ce mandat.
 
 - **Décision enregistrée :** un pilote intégrateur et **six spécialités en lecture seule** dès le départ : direction artistique, **gardien du système de design visuel** (placé immédiatement après elle : tokens, composants, cohérence inter-pages et preuves), UX/ergonomie/accessibilité, responsive, client/couple dont un joueur peu technophile et QA ; un seul intégrateur applique les corrections.
 - **Avancement applicatif réel (29 octobre) :** les PR #140 et #145 à #150 ont été fusionnées : audit des 12 coffrets Éclat et de leurs formats, contrôles visibles/menus, Soirée/Accueil et « As-tu envie de jouer ce soir ? », navigation des Réglages sur petits écrans, retour de focus, texte agrandi et confirmations tactiles. La PR #152 a ensuite corrigé la fraîcheur des fichiers Web hors ligne. Ne pas transformer ces parcours partiels en validation de toutes les pages ou en recette physique.
