@@ -1,5 +1,14 @@
 # LoveRoll — SUIVI OFFICIEL DU PROMPT MAÎTRE
 
+### LR-ACCUEIL-001 — Total mensuel des soirées du couple (31 octobre 2026)
+
+- **Interface** : la carte du bilan mensuel de l'Accueil affiche maintenant **« Soirées partagées »** avec le nombre de séances réellement terminées et `counted=true` sur le mois civil `America/Toronto`, au lieu du compteur de « Répartition » par partenaire. La vue de suivi reste accessible via le bouton « Ce mois ». Les défis individuels restent absents du résumé.
+- **Calcul et cohérence** : `coupleHomeStats` utilise `finished_at` et les identifiants de séance distincts pour ne compter ni une soirée encore ouverte, ni une séance non comptabilisée, ni une duplication de la lecture. Aucun recalcul de quotas ni mutation des résultats D6/D100; l'historique et les règles serveur sont inchangés.
+- **Code et tests** : `couple-web/premium-home.mjs` (`1b55e71`), `premium-home.test.mjs` (`d82b4c4`). Tests renforcés à l'heure du Québec lors du passage octobre/novembre, pour les séances ouvertes ou non comptabilisées et les doublons. Cache Web/PWA `home263` / `loveroll-static-v263` (`a0499fb`, `8d06838`, `7b6236d`) ; changements **non déployés**.
+- **Contrôles** : la PR [#176](https://github.com/fredvolks/loveroll/pull/176) demeure **brouillon et non fusionnée**. Relire les GitHub Actions du SHA final : ne pas annoncer les nouveaux tests comme réussis tant qu'ils sont en file d'attente. Validation physique mobile/tablette/PC et recette Supabase Auth/RLS réelle en staging distinct encore nécessaires.
+- **Atelier MEDIUM** : `list_agents`, `list_applications`, et les méthodes `architecture-review`, `quality-testing`, `mobile-platforms`, `domain-product` ont été consultés réellement. La liste contient vingt profils. LoveRoll n'a pas de fiche dans cet Atelier ; aucun outil de dispatch BOSS ni mission d'agent LoveRoll n'est disponible. Ne pas confondre consultation de méthode et exécution autonome d'un agent.
+
+
 ### LR-ACCUEIL-001 — Bilan mensuel cliquable et retour à l'Accueil (31 octobre 2026)
 
 - **Produit** : le bilan « Ce mois » dans le vrai Accueil est maintenant un bouton clavier/tactile accessible vers `evening-calendar:month`. Il ouvre le **mois courant de Québec** même si la dernière séance chargée était plus ancienne. Ce raccourci navigue seulement ; il ne déclenche aucun tirage, création de séance, réponse à un défi ou mise à jour SQL.
