@@ -19,3 +19,15 @@ export function canAddEveningFavorite(rows,card){
  return !!favoriteCardIdentity(card)&&(
   isEveningFavorite(rows,card)||((rows||[]).length<MAX_EVENING_FAVORITES));
 }
+
+/**
+ * Calendar RPC rows are already scoped by the server to the current couple.
+ * The UI must ALSO require a CLOSED session: no secret or live challenge
+ * becomes a shared heart by merely guessing its UUID.
+ */
+export function closedCalendarFavoriteCandidate(history=[],sessions=[],challengeId){
+ const row=(history||[]).find(c=>c?.id===challengeId);
+ if(!row||!favoriteCardIdentity(row))return null;
+ const closed=(sessions||[]).some(s=>s?.id===row.session_id&&!!s.finished_at);
+ return closed?row:null;
+}
