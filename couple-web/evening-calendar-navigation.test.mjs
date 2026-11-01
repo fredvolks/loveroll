@@ -127,6 +127,16 @@ test('LR-ACCUEIL-001: Home monthly shortcut opens October instead of an old sess
  assert.equal(h.state.eveningMore,false);
 });
 
+test('LR-ACCUEIL-001: completed evening shortcut from Home never restores a stale calendar month',async()=>{
+ const h=calendarOpenHarness('home');
+ await h.open('evening-calendar',[]);
+ assert.equal(h.state.eveningCalendarMonth,'2026-10');
+ assert.equal(h.state.eveningCalendarDate,'2026-10-01');
+ assert.equal(h.state.eveningCalendarBack,'tab:home');
+ assert.equal(h.goBack(),'tab:home');
+ assert.equal(h.renderCount(),1);
+});
+
 test('LR-ACCUEIL-001: other calendar entry keeps the existing session context',async()=>{
  const h=calendarOpenHarness('session');
  await h.open('evening-calendar',[]);
