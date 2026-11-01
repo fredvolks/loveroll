@@ -13,7 +13,10 @@ export async function loadEclatHistory(client,coupleId){
 export function coffretMemo(history,id,status){
  const rows=(history||[]).filter(s=>Number(s.coffret_id)===Number(id));
  const completed=[30,60,90].filter(n=>rows.some(s=>Number(s.minutes)===n&&s.ended_at&&s.cancelled===false));
- const active=status?.active&&Number(status.coffret_id)===Number(id)?status:rows.find(s=>!s.ended_at);
+ // A cancelled session can have no ended_at: it is history, never a
+ // resumable coffret. Prefer the live authoritative status when available.
+ const active=status?.active&&Number(status.coffret_id)===Number(id)?status:
+  rows.find(s=>!s.ended_at&&s.cancelled!==true);
  return {completed,started:rows.length>0||!!active,active:!!active,
   minutes:Number(active?.minutes)||null,chapter:Number(active?.chapter_index)||null};
 }
