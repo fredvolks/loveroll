@@ -21,6 +21,7 @@ body.lr-velours-lanterne {
   --lr-vl-field:#260c1a;
   --lr-vl-relief:inset 0 1px 1px rgba(255,239,229,.37),inset 0 -1px 0 rgba(126,23,62,.7),0 12px 28px rgba(9,0,8,.34);
   --lr-vl-action:radial-gradient(ellipse at 50% -35%,rgba(255,215,224,.65),transparent 60%),linear-gradient(180deg,#c63868 0%,#a31346 36%,#670d31 79%,#8b163c 100%);
+  --lr-vl-action-pressed:linear-gradient(180deg,#4e0008,#72000e 70%,#a70924);
   /* Même palette sur les actions, les comptes et les dialogues hors #app. */
   --control-primary:var(--lr-vl-action);
   --control-border:var(--lr-vl-action-edge);

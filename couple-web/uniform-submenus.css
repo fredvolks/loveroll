@@ -102,3 +102,16 @@
   background-image:var(--lr-vl-action)!important;
  }
 }
+
+
+/* Pages Android pressed-state regression (PR #179): this later, more
+   specific rule must outrank the Maquette 3 idle CTA within the SAME
+   important cascade layer. Pointerdown adds .lr-pressed; native :active
+   also works. The press feedback must differ from the idle surface. */
+@layer loveroll-uniform-submenus {
+ body.lr-velours-lanterne #app.loveroll-real-home
+ .home-roll-button:not(.is-used):not(:disabled):is(:active,.lr-pressed) {
+  background:var(--lr-vl-action-pressed)!important;
+  box-shadow:var(--lr-control-pressed)!important;
+ }
+}
