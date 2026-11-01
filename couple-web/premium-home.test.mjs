@@ -62,7 +62,10 @@ test('Production home uses actual saved weekly result, disabled state and live c
  assert.match(h,/data-face="2"/);
  assert.equal((h.match(/class="home-weight"/g)||[]).length,6);
  assert.equal((h.match(/class="home-stat-card /g)||[]).length,4);
- assert.match(h,/Fred/);assert.match(h,/Camille/);
+ // The compact dashboard reports only shared totals; private per-person
+ // card counts and even first names stay on the authenticated Soirée screen.
+ assert.doesNotMatch(h,/Fred|Camille/);
+ assert.match(h,/Soirées partagées/);
  assert.match(h,/Surprise du mois à découvrir/);
  assert.match(h,/tab:special/);
  assert.doesNotMatch(h,/data-action="roll:weekly"/);
