@@ -463,3 +463,28 @@ test('LR-ACCUEIL-001: malformed finished-at dates never crash weekly streak',()=
  assert.equal(onlyBad.streak,0);
  assert.equal(onlyBad.monthlyEvenings,0);
 });
+
+test('LR-ACCUEIL-001: incomplete RPC snapshots stay safe on Home',()=>{
+ const now=new Date('2026-10-31T22:00:00Z');
+ const night={id:'night-1',counted:true,finished_at:'2026-10-31T20:00:00Z'};
+ const challenges=[null,false,{},{
+  id:'challenge-1',session_id:'night-1',recipient:'a',
+  status:'completed',category:'SENSUEL'
+ }];
+ const sessions=[null,false,'legacy',{},night,{...night}];
+ const members=[null,false,{}, {user_id:'a',name:'Alice'},{user_id:'b',name:'Bob'}];
+ const summary=coupleHomeStats(challenges,sessions,members,now);
+ assert.equal(summary.completed,1);
+ assert.equal(summary.monthlyEvenings,1,'duplicate session IDs count once');
+ assert.deepEqual(summary.byPartner,[1,0]);
+ assert.equal(summary.sensualPercent,100);
+ assert.equal(summary.sexualPercent,0);
+ assert.equal(summary.streak,1);
+ assert.deepEqual(coupleHomeStats({},false,null,now),{
+  completed:0,monthlyEvenings:0,byPartner:[],
+  sensualPercent:null,sexualPercent:null,streak:0
+ },'invalid snapshot containers are empty, not crashes or fictitious numbers');
+ assert.doesNotThrow(()=>premiumHomeHtml({
+  history:[null,false,{}],sessions:[null,false,{}],members:[],now
+ }),'Home can still render while a partial history loads');
+});
