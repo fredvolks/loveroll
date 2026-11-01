@@ -1,5 +1,15 @@
 # LoveRoll — SUIVI OFFICIEL DU PROMPT MAÎTRE
 
+### LR-016 — Affichage exact des passes dans le calendrier (31 octobre 2026)
+
+- **Correction visible** : le calendrier ne prétend plus que le maximum de passes est systématiquement « 3 ». Il montre le nombre de passes enregistrées pour chaque partenaire et la **limite actuelle configurée** dans le duo (`state.monthlyPassQuota.limit` ou `state.couple.monthly_pass_limit`, validée entre 0 et 30). Le libellé distingue explicitement la limite **actuelle** des périodes historiques. Les éventuelles anciennes passes sans exonération restent signalées sans être effacées.
+- **Absence de données** : `state.calendarPassMonth===mo` indique qu'une réponse serveur pour ce mois a été chargée. Quand la réponse est indisponible, « Passes du mois : données indisponibles » remplace tout faux « zéro » et le taux mensuel correspondant est « — », car l'exonération ne peut être vérifiée. Une fois l'historique chargé, l'affichage normal réapparaît, même avec aucune passe.
+- **Code et tests** : `couple-web/evening-calendar.mjs` (`afbe548`), `couple-web/app.js` (`e0f41ef`), `couple-web/calendar-success-stats.test.mjs` (`260b436`). Vérification directe du rendu de la version GitHub sur limites 0 et 7 et historique indisponible, sans production ni migration SQL.
+- **Propagation PWA** : `archive272` dans les modules (`610eb4a`, `7e2f586`), `loveroll-static-v272` (`dd155bf`). C'est une version de branche et pas une publication.
+- **Validation** : les GitHub Actions du nouveau SHA et la recette sur appareils / deux comptes doivent encore être confirmés avant une fusion. La PR [#176](https://github.com/fredvolks/loveroll/pull/176) reste **brouillon**.
+- **Atelier MEDIUM** : méthodes Architecture, Qualité, Produit et Mobile réellement consultées. Aucune application LoveRoll liée à l'Atelier disponible, aucun BOSS autonome contactable.
+
+
 ### LR-ACCUEIL-001 — Robustesse des résultats D6 et du bilan Soirée (31 octobre 2026)
 
 - **D6 hebdomadaire du calendrier** : `calendarWeekSuccess` ne transforme plus un tirage historique `null`, hors de [1,6], fractionnaire, infini ou non numérique en face 1 ou 6. Un tirage invalide ou une date de tirage illisible signifie **résultat indisponible**, sans résultat fabriqué ni récupération opportuniste d'un ancien D6. `mondayOf` rejette une date civile impossible avant d'en déduire la semaine.
