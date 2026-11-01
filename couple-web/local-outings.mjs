@@ -8,8 +8,9 @@ export const VENUE_CATEGORIES=Object.freeze({
  adventure:'entertainment',general:'tourism.attraction'
 });
 const norms=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-export function activityCategory(activity={}){
- const source=norms([activity.title,activity.description].filter(Boolean).join(' '));
+const categoryFromText=source=>{
+ // A title is the player's actual activity; venue mentions in a longer
+ // itinerary description (e.g. "restaurant after our hike") are secondary.
  if(/\b(spa|therm[a-z]*|sauna|massage|bain nordique|hammam)\b/.test(source))return 'spa';
  if(/\b(vignoble|vinicole|degustation de vin|oenolog)/.test(source))return 'winery';
  if(/\b(hotel|chalet|cabane|heberg|nuit insolite|dome|gite)\b/.test(source))return 'hotel';
@@ -19,6 +20,10 @@ export function activityCategory(activity={}){
  if(/\b(randonnee|foret|sentier|parc|pique.nique|jardin)\b/.test(source))return 'nature';
  if(/\b(aventure|escalade|tyrolienne|motoneige|kart|velo|ski)\b/.test(source))return 'adventure';
  return 'general';
+};
+export function activityCategory(activity={}){
+ const byTitle=categoryFromText(norms(activity.title));
+ return byTitle!=='general'?byTitle:categoryFromText(norms(activity.description));
 }
 // Absent and unrouteable Geoapify matrix entries must never become 0 km.
 export function verifiedRoadMetres(value){
