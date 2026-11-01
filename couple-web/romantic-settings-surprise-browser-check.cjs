@@ -122,9 +122,12 @@ const client=`export function createClient(){
   assert.equal(world.couple.show_sexuel_button,false);await revealSetting(a,'[data-action="settings-page:admin"]');await a.locator('[data-action="settings-page:admin"]').click();assert.equal(await a.locator('[data-action="admin-reset-all-dice"]').count(),1);
   // Test the REAL admin category form, not a simulated local validator.
   // Two percentages must remain independent of the six-face D6 form.
-  await revealSetting(a,'details[data-category-weights] > summary');
+  // Navigate through the REAL nested Probabilités > Sensuel et Sexuel menus.
+  // Only the editor has a settings path; the surrounding <summary> does not.
+  await revealSetting(a,'#admin-category-preferred');
   const categoryPanel=a.locator('details[data-category-weights]');
-  await categoryPanel.locator('summary').click();
+  if(!await categoryPanel.evaluate(el=>el.open))await categoryPanel.locator('summary').click();
+  assert.equal(await categoryPanel.evaluate(el=>el.open),true,'The category editor must be disclosed after real navigation');
   const preferred=categoryPanel.locator('#admin-category-preferred');
   const otherCategory=categoryPanel.locator('#admin-category-other');
   const categorySave=categoryPanel.locator('.admin-category-save');
