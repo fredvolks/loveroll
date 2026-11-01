@@ -112,7 +112,7 @@ export function assignedTonight(turn={},members=[]){
   if(!ready||typeof person?.user_id!=='string'||!person.user_id)return null;
   const raw=turn?.[field]?.[person.user_id];
   const number=typeof raw==='number'?raw:
-   typeof raw==='string'&&/^(0|[1-9]\\d*)$/.test(raw)?Number(raw):NaN;
+   typeof raw==='string'&&/^(0|[1-9]\d*)$/.test(raw)?Number(raw):NaN;
   return Number.isSafeInteger(number)&&number>=0?number:null;
  };
  const sum=(a,b)=>a===null||b===null||!Number.isSafeInteger(a+b)?null:a+b;
