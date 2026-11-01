@@ -418,3 +418,45 @@ test('LR-ACCUEIL-001: own official D6 awaits partner without revealing a face or
  assert.match(app,/ownEveningD6Ready:!!activeEvening&&!!state\.user\?\.id/);
  assert.match(app,/r\.user_id===state\.user\.id/);
 });
+
+test('LR-ACCUEIL-001: officially closed evening today is a read-only history shortcut',()=>{
+ const weekly={face:3,key:'2026-10-26'};
+ const closedToday={id:'closed-1',counted:true,finished_at:'2026-10-31T20:00:00Z'};
+ const progress={historyReady:true,limit:3,counted:1,dailyLocked:true,
+  closedToday,canStart:false};
+ const html=premiumHomeHtml({weekly,weeklyProgress:progress});
+ assert.match(html,/Notre soirée est terminée ♥/);
+ assert.match(html,/Voir notre soirée terminée/);
+ assert.match(html,/Retrouvez notre soirée terminée dans le calendrier/);
+ assert.match(html,/data-action="evening-calendar"/);
+ assert.doesNotMatch(html,/data-action="new-session"|data-action="roll:weekly"/);
+ const atLimit=premiumHomeHtml({weekly,weeklyProgress:{...progress,counted:3}});
+ assert.match(atLimit,/Notre soirée est terminée ♥/);
+ assert.match(atLimit,/3 soirées partagées cette semaine · 0 disponibles cette semaine/);
+ assert.doesNotMatch(atLimit,/Notre semaine est complète/);
+ const nextDay=premiumHomeHtml({weekly,weeklyProgress:{...progress,closedToday:null,dailyLocked:false}});
+ assert.doesNotMatch(nextDay,/Notre soirée est terminée ♥/);
+ assert.match(nextDay,/data-action="tab:session"/);
+ const active=premiumHomeHtml({weekly,weeklyProgress:progress,activeEvening:true,
+  turn:{ready:false},ownEveningD6Ready:true});
+ assert.match(active,/En attente du partenaire/);
+ assert.doesNotMatch(active,/Notre soirée est terminée/);
+ const received=premiumHomeHtml({weekly,weeklyProgress:progress,
+  eveningInvite:{id:'server-1',direction:'received',state:'pending'}});
+ assert.match(received,/Une invitation vous attend/);
+ assert.doesNotMatch(received,/Notre soirée est terminée/);
+});
+
+test('LR-ACCUEIL-001: malformed finished-at dates never crash weekly streak',()=>{
+ const sessions=[
+  {id:'bad',counted:true,finished_at:'invalid'},
+  {id:'good',counted:true,finished_at:'2026-10-14T20:00:00Z'}
+ ];
+ const stats=coupleHomeStats([],sessions,[],new Date('2026-10-14T21:00:00Z'));
+ assert.equal(stats.monthlyEvenings,1);
+ assert.equal(stats.streak,1);
+ const onlyBad=coupleHomeStats([],sessions.filter(s=>s.id==='bad'),[],
+  new Date('2026-10-14T21:00:00Z'));
+ assert.equal(onlyBad.streak,0);
+ assert.equal(onlyBad.monthlyEvenings,0);
+});
