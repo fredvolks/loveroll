@@ -95,7 +95,7 @@ let settingsOpenSection=requestedSettingsSection||'';
 let notificationFeedback=null;
 let worldGpsDraft=null;
 let worldFx=null,worldFxPending=null,worldFxFailed=null;
-let geoFetchActive=null,geoFetchSeen=new Set();
+let geoFetchActive=null,geoFetchNextAt=new Map();
 const worldGeoEnabled=()=>state.couple?.activity_localization_enabled===true&&!!state.monthly?.monthly_activity&&state.monthly.monthly_activity.activity_region===null;
 const currentHost=()=>{const h=state.monthly?.monthly_host;return h?state.members[h.face%2===0?0:1]:null;};
 const worldLocale=()=>localeOrDefault(state.profile?.preferred_locale);
@@ -1802,28 +1802,47 @@ function optionalRolledTimer(roll){
   button('special-timer:'+key,editorialIcon('clock')+' Minuteur · '+roll.timer_minutes+' min','class="subtle occasion-timer"');
 }
 async function resolveMonthlyGeo(){
- const roll=state.monthly?.monthly_activity;
- if(!worldGeoEnabled()||!roll||state.geoVenue?.state==='ready'||state.geoVenue?.state==='unavailable')return;
- if(geoFetchActive===roll.id||geoFetchSeen.has(roll.id))return;
- geoFetchSeen.add(roll.id);geoFetchActive=roll.id;state.geoLookup='loading';
+ const roll=state.monthly?.monthly_activity,ownerId=state.user?.id;
+ if(!ownerId||!worldGeoEnabled()||!roll||state.geoVenue?.state==='ready'||
+    state.geoVenue?.state==='unavailable'||state.geoLookup==='unavailable')return;
+ const now=Date.now();
+ // Edge owns the single billable Geoapify claim. The client polls its
+ // persisted pending result with a cooldown, never hammering the endpoint.
+ if(geoFetchActive===roll.id||now<(geoFetchNextAt.get(roll.id)||0))return;
+ geoFetchNextAt.set(roll.id,now+12000);
+ geoFetchActive=roll.id;state.geoLookup='loading';
  if(state.tab==='special'&&state.showSurpriseActivity)render();
+ const stillCurrent=()=>state.user?.id===ownerId&&state.monthly?.monthly_activity?.id===roll.id;
  try{
   const {data,error}=await client.functions.invoke('love-geo-surprise',{body:{roll_id:roll.id}});
   if(error)throw error;
   if(data?.error)throw Error(data.error);
-  if(state.monthly?.monthly_activity?.id!==roll.id)return;
+  if(!stillCurrent())return;
   if(data?.status==='ready'&&data.venue){state.geoVenue=data.venue;state.geoLookup='ready';}
   else if(data?.status==='unavailable')state.geoLookup='unavailable';
-  else if(data?.status==='disabled')state.geoLookup='idle';
-  else if(data?.status==='pending')state.geoLookup='pending';
-  else state.geoLookup='error';
+  else if(data?.status==='disabled'){
+   state.geoLookup='idle';geoFetchNextAt.set(roll.id,Date.now()+60000);
+  }else if(data?.status==='pending'){
+   state.geoLookup='pending';geoFetchNextAt.set(roll.id,Date.now()+12000);
+  }else{
+   state.geoLookup='error';geoFetchNextAt.set(roll.id,Date.now()+30000);
+  }
  }catch(error){
-  state.geoLookup='error';console.warn('Localisation de la sortie indisponible',error?.message||'unknown');
+  if(!stillCurrent())return;
+  state.geoLookup='error';geoFetchNextAt.set(roll.id,Date.now()+30000);
+  console.warn('Localisation de la sortie indisponible',error?.message||'unknown');
  }finally{
   if(geoFetchActive===roll.id)geoFetchActive=null;
-  if(state.tab==='special'&&state.showSurpriseActivity)render();
+  if(stillCurrent()&&state.tab==='special'&&state.showSurpriseActivity)render();
  }
 }
+// Pending means the server has accepted a single claim, not that discovery
+// finished. Poll only while the activity screen is actually being viewed.
+setInterval(()=>{
+ if(state.user&&state.tab==='special'&&state.showSurpriseActivity&&!document.hidden&&
+    (state.geoLookup==='pending'||state.geoLookup==='error'))
+  void resolveMonthlyGeo();
+},12000);
 function renderSpecial(){
  const quote=currencyOrDefault(state.profile?.preferred_currency);
  if(state.showSurpriseActivity&&quote!=='CAD'&&worldFx?.quote!==quote&&worldFxPending!==quote&&worldFxFailed!==quote){
@@ -3046,7 +3065,7 @@ async function handle(action,element){
  if(verb==='surprise-activity'){
   state.showSurpriseActivity=!state.showSurpriseActivity;state.geoBookingEdit=false;
   render();
-  if(state.showSurpriseActivity&&worldGeoEnabled()){geoFetchSeen.delete(state.monthly.monthly_activity.id);void resolveMonthlyGeo();}
+  if(state.showSurpriseActivity&&worldGeoEnabled()){geoFetchNextAt.delete(state.monthly.monthly_activity.id);void resolveMonthlyGeo();}
   return;
  }
  if(verb==='geo-booking-editor'){
