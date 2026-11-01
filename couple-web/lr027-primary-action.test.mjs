@@ -50,6 +50,28 @@ test('when draws are complete, viewing own challenges becomes the one main actio
  assert.match(dominant(finale)[0],/data-action="finish-session"/);
 });
 
+test('completed D100 draws keep other private challenges accessible while resuming one',()=>{
+ const accepted={id:'current-card',session_id:'current',recipient:'a',status:'accepted',face:19};
+ const finishedDraws={...base.turn,drawsFinished:true,next:'b'};
+ const html=view({turn:finishedDraws,pending:accepted});
+ assert.equal(dominant(html).length,1);
+ assert.match(dominant(html)[0],/data-action="evening-open:current-card"/);
+ assert.match(html,/↻ Reprendre mon défi/);
+ assert.equal((html.match(/data-action="evening-list"/g)||[]).length,1,
+  'The other personal cards must stay reachable after all D100 draws');
+ assert.doesNotMatch(html,/data-action="new-challenge"/);
+ const oneCard=view({turn:finishedDraws,pending:accepted,ownChallengeCount:1});
+ assert.doesNotMatch(oneCard,/data-action="evening-list"/,
+  'Do not duplicate the only personal card');
+ const syncing=view({turn:{...finishedDraws,ready:false},pending:null});
+ assert.equal(status(syncing),'Synchronisation de nos défis…');
+ assert.match(syncing,/data-action="evening-list"/,
+  'A delayed server turn must not hide an existing private queue');
+ const listing=view({turn:finishedDraws,pending:null});
+ assert.equal((listing.match(/data-action="evening-list"/g)||[]).length,1,
+  'When the queue itself is primary, no duplicate secondary button is created');
+});
+
 test('actual dice animation never offers a second trigger and stays accessible',()=>{
  const rolling=view({rolling:true,rollingKind:'new-challenge'});
  assert.equal(dominant(rolling).length,0);
