@@ -21,6 +21,14 @@ body.lr-velours-lanterne {
   --lr-vl-field:#260c1a;
   --lr-vl-relief:inset 0 1px 1px rgba(255,239,229,.37),inset 0 -1px 0 rgba(126,23,62,.7),0 12px 28px rgba(9,0,8,.34);
   --lr-vl-action:radial-gradient(ellipse at 50% -35%,rgba(255,215,224,.65),transparent 60%),linear-gradient(180deg,#c63868 0%,#a31346 36%,#670d31 79%,#8b163c 100%);
+  /* Même palette sur les actions, les comptes et les dialogues hors #app. */
+  --control-primary:var(--lr-vl-action);
+  --control-border:var(--lr-vl-action-edge);
+  --control-text:var(--lr-vl-ivory);
+  --control-shadow:var(--lr-vl-cta-shadow);
+  --control-selected:var(--lr-vl-action);
+  --control-selected-border:var(--lr-vl-champagne);
+  --control-selected-shadow:var(--lr-vl-active-shadow);
   --lr-control-glass:var(--lr-vl-action);
   --lr-control-feature-surface:var(--lr-vl-panel);
   --lr-control-edge-solid:#f0749d;
