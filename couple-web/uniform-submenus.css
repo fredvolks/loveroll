@@ -80,3 +80,25 @@
  }
  @media(max-height:620px) {#app .eclat-guided-content {overflow:auto!important;}}
 }
+
+
+/* Maquette 3 — a control is not a glass panel. The first important layer
+   previously painted primary CTAs with --lr-surface-fill, which the Velours
+   theme correctly uses for cards. Keep panel tokens on menus/dialog shells,
+   but paint actual actions with the shared lantern-ruby control material.
+   Scope this override so other LoveRoll themes retain their existing skin. */
+@layer loveroll-uniform-submenus {
+ body.lr-velours-lanterne #app :is(
+  .entry-auth-submit,.home-roll-button,.evening-primary,.evening-finale-start,
+  .surprise-primary,.advent-primary,.settings-primary
+ ):not(:disabled):not([aria-disabled="true"]):not(.is-used),
+ body.lr-velours-lanterne #lr-dialog-overlay .lr-dialog-accept:not(:disabled) {
+  background:var(--lr-vl-action)!important;
+  border-color:var(--lr-vl-action-edge)!important;
+  color:var(--lr-vl-ivory)!important;
+  box-shadow:var(--lr-vl-cta-shadow)!important;
+ }
+ body.lr-velours-lanterne #app input[type=checkbox]:checked {
+  background-image:var(--lr-vl-action)!important;
+ }
+}
