@@ -31,12 +31,14 @@ test('Queued D100 category taps cannot overwrite the in-flight confirmation or o
  const end=source.indexOf("if(verb==='session-length'){",start);
  assert.ok(start>0&&end>start,'The production category handler must be present');
  const snippet=source.slice(start,end);
- function tryChange({confirming=false,diceStatus=null,allowUi=true}={}){
+ function tryChange({confirming=false,diceStatus=null,allowUi=true,giftPending=false,redrawPending=false}={}){
   const state={category:'SENSUEL',randomMode:false,
    couple:{category_preference_percent:74},session:{id:'night-1'},diceStatus};
   const writes=[],updates=[];
   const scope={state,parts:['HASARD'],eveningCategoryConfirmInFlight:confirming,
    EVENING_CATEGORIES:['SENSUEL','SEXUEL'],root:{},
+   isActiveEveningRedrawPending:()=>redrawPending,
+   isActiveEveningGiftPending:()=>giftPending,
    updateEveningCategoryUi:(...args)=>{updates.push(args);return allowUi;},
    sessionStorage:{setItem:(...args)=>writes.push(args)}};
   const handle=runInNewContext('(function(verb){'+snippet+'})',scope);
@@ -45,7 +47,7 @@ test('Queued D100 category taps cannot overwrite the in-flight confirmation or o
  }
  for(const scenario of [
   {confirming:true},{diceStatus:'pending'},{diceStatus:'rolling'},
-  {diceStatus:'settled'}
+  {diceStatus:'settled'},{giftPending:true},{redrawPending:true}
  ]){
   const result=tryChange(scenario);
   assert.equal(result.state.category,'SENSUEL');
