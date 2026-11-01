@@ -81,6 +81,37 @@ test('P0 an unfinished soirée remains exclusive after Monday or a weekly D6 res
  assert.equal(onlyMalformed.canStart,true,'incomplete rows do not invent a real session ID');
 });
 
+test('P0 UI offers a safe closure when a previous-week server soirée is still open',()=>{
+ const old={id:'previous-week',started_at:'2026-10-18T22:00:00Z',
+  finished_at:null,counted:false};
+ const rollover={face:5,key:'2026-10-19',created_at:'2026-10-19T12:00:00Z'};
+ const access=eveningDailyAccess({sessions:[old],weekly:rollover,
+  now:new Date('2026-10-19T17:00:00Z')});
+ assert.equal(access.canStart,false);
+ const state={session:null,staleActiveSession:true,weeklyReady:true,
+  weeklyCount:access.counted,weeklyLimit:access.limit,
+  canStartEvening:access.canStart,historyReady:access.historyReady};
+ const html=premiumEveningHtml(state);
+ assert.match(html,/Une soirée précédente est encore ouverte/);
+ assert.match(html,/data-action="evening-close-request"/);
+ assert.match(html,/CLÔTURER LA SOIRÉE PRÉCÉDENTE/);
+ assert.doesNotMatch(html,/data-action="new-session"/);
+ assert.doesNotMatch(html,/data-action="my-d6"/);
+ const confirmation=premiumEveningHtml({...state,confirmCancel:true});
+ assert.match(confirmation,/role="dialog"/);
+ assert.match(confirmation,/data-action="evening-close-confirm"/);
+ assert.match(confirmation,/data-action="dismiss-cancel"/);
+ const busy=premiumEveningHtml({...state,rolling:true});
+ assert.match(busy,/data-action="evening-close-request"[^>]*disabled/);
+ const ordinary=premiumEveningHtml({...state,staleActiveSession:false,
+  canStartEvening:true});
+ assert.match(ordinary,/data-action="new-session"/);
+ assert.doesNotMatch(ordinary,/data-action="evening-close-request"/);
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ assert.match(app,/staleActiveSession:!!state\.session&&!session&&state\.session\.finished_at===null/);
+ assert.match(app,/rpc\('close_love_evening_preserve',\{p_session:ended\.id\}\)/);
+});
+
 test('Actual finished evening after new weekly roll disables button until tomorrow',()=>{
  const roll={face:3,key:'2026-10-12',created_at:'2026-10-16T12:48:10Z'};
  const fresh={id:'session',started_at:'2026-10-16T13:00:00Z',

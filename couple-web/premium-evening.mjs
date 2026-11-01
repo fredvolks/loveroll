@@ -149,7 +149,7 @@ export function premiumEveningHtml({
  session,members=[],me,rolls=[],status={},turn={},category=null,
  giftCount=0,receivedGifts=0,pending=null,rolling=false,redrawPending=false,giftPending=false,
  challengeOverlay='',showMore=false,confirmCancel=false,rollFace=null,rollingKind=null,
- lastEvening=null,lastD35Face=null,playable=null,ownChallengeCount=0,canStartEvening=true,sessionLength='libre',eveningIntensity='medium',
+ lastEvening=null,lastD35Face=null,playable=null,ownChallengeCount=0,canStartEvening=true,staleActiveSession=false,sessionLength='libre',eveningIntensity='medium',
  weeklyReady=true,weeklyCount=0,weeklyLimit=1,dailyLocked=false,historyReady=true,invitationHtml='',
  nextChallenge=null,
  showSensuel=true,showSexuel=true,categoryOdds=88,challengeHistory=[],eveningWeights,eveningWeightsEnabled=true
@@ -269,7 +269,10 @@ export function premiumEveningHtml({
     '<div class="evening-next-intensity">'+sessionLengthChooserHtml(sessionLength)+
       eveningIntensityChooserHtml(eveningIntensity)+
      '<small>Pour préparer une prochaine soirée; les tirages actuels ne changent pas.</small></div>'+ 
-    (lastEvening?
+    (staleActiveSession?
+      '<h2>Une soirée précédente est encore ouverte</h2>'+
+      '<p class="evening-finale-description" role="status">Le nouveau dé hebdomadaire est prêt, mais une ancienne soirée doit d’abord être clôturée. Vous pourrez conserver vos défis dans le calendrier et commencer la prochaine soirée selon vos accès.</p>':
+     lastEvening?
       '<h2>Notre soirée est terminée</h2>'+
       '<p class="evening-finale-description"><strong>'+esc(lastEvening.completed)+
        '</strong> défis réalisés ensemble.<span>Prenez le temps de donner votre avis.</span></p>'+
@@ -296,7 +299,10 @@ export function premiumEveningHtml({
          '</strong><span>Défis distincts</span></div>'+
        '<div><strong>'+esc(weeklyCount)+'</strong><span>Soirées terminées</span></div></div>')+
     '<div class="evening-finale-actions">'+
-      (lastEvening?
+      (staleActiveSession?
+       bt('evening-close-request','♡ CLÔTURER LA SOIRÉE PRÉCÉDENTE',
+        'evening-finale-start',rolling||redrawPending||giftPending):
+       lastEvening?
        // Today's evening is closed: make the main action useful instead
        // of leaving a disabled start button in the couple's aftercare.
        bt('review-open:'+lastEvening.id,lastEvening.myResponse?
@@ -308,7 +314,7 @@ export function premiumEveningHtml({
  (showMore&&session&&!rolling&&!redrawPending&&!giftPending?'<aside class="evening-more-menu" aria-label="Options de la soirée">'+
   bt('evening-close-request','♡ Clore la soirée','evening-menu-close',!session)+
   bt('evening-calendar','▦ Calendrier','evening-menu-calendar')+'</aside>':'')+
- (confirmCancel&&session&&!rolling&&!redrawPending&&!giftPending?'<aside class="evening-confirm" role="dialog" aria-modal="true" aria-label="Clore la soirée ?">'+
+ (confirmCancel&&(session||staleActiveSession)&&!rolling&&!redrawPending&&!giftPending?'<aside class="evening-confirm" role="dialog" aria-modal="true" aria-label="Clore la soirée ?">'+
   '<h3>Clore la soirée ?</h3><p>Les défis réalisés et non réalisés seront conservés dans le calendrier et les statistiques du couple. Aucun résultat ne sera effacé.</p>'+
   bt('evening-close-confirm','♡ Clore et conserver','evening-primary')+
   bt('dismiss-cancel','Continuer la soirée','subtle')+'</aside>':'')+

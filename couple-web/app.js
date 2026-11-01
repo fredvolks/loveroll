@@ -2834,6 +2834,9 @@ function renderSession(){
    playable:state.playableCounts||(isLoveAdmin()?playableEveningCount(state.customCards):null),
    rollingKind:state.rollAnimationKind,showMore:state.eveningMore,confirmCancel:state.confirmCancel,
    challengeOverlay:overlay,lastEvening,canStartEvening,
+   // The old server session is intentionally NOT playable under a new
+   // weekly D6. Offer a safe closure instead of trapping the couple.
+   staleActiveSession:!!state.session&&!session&&state.session.finished_at===null,
    sessionLength:readSessionLength(uid),
    eveningIntensity:readEveningIntensity(uid,state.profile?.play_style),
    challengeHistory:[...state.challengesHistory,...state.eveningCalendarChallenges,...state.challenges],
