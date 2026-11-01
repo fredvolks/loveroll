@@ -1,5 +1,14 @@
 # LoveRoll — SUIVI OFFICIEL DU PROMPT MAÎTRE
 
+### LR-ACCUEIL-001 — Invitation et attente des deux D6 (31 octobre 2026)
+
+- **Accueil** : état reçu `direction=received` avec `state=pending|maybe` affiché « Une invitation vous attend » et « Répondre à l’invitation » ; état envoyé `direction=sent`, `state=pending` affiché « En attente de la réponse ». Ces états proviennent de `love_evening_invite_status` déjà chargé dans `state.eveningInvite`. L'appui ouvre Soirée et laisse les réponses au mécanisme de consentement existant. **Aucune acceptation, D6, D100 ou création de séance automatique.**
+- **Soirée active** : sa reprise reste prioritaire sur une invitation encore en mémoire. Si seul le D6 de l'utilisateur authentifié est confirmé dans les lignes officielles de la séance courante, le petit panneau affiche « En attente du partenaire » sans présenter la face, l'état privé du partenaire ni les cartes. Si les deux dés sont prêts, retour à « Soirée en cours ».
+- **Code** : `premium-home.mjs` et `app.js` ; commits `2554c78`, `0b40286`, `39fbc6c`, `3923c11`, `1905bb3`. Régressions `premium-home.test.mjs` commits `6c70331` et `9712dd6` : reçue, envoyée, expirée, refusée, active, D6 du compte courant. PWA `home266` et `loveroll-static-v266` : `2d6bc47`, `a65b156`, `48e1fc9`.
+- **Coordination** : méthodes de cinq profils Atelier MEDIUM consultées (Architecture, Qualité, Mobile, Produit et UX/accessibilité). LoveRoll n'étant **pas lié à Atelier**, aucun BOSS exécutable ou équipe d'agents autonome n'est confirmé. Ne pas déclarer de mission Atelier réalisée.
+- **Validation / déploiement** : les tests GitHub Actions du SHA final sont à vérifier avant de déclarer un succès. La PR [#176](https://github.com/fredvolks/loveroll/pull/176) reste **brouillon/non fusionnée** ; aucune publication ou écriture sur Supabase production. Recette staging Auth/RLS et appareils physiques requise.
+
+
 ### LR-ACCUEIL-001 — États vérifiables de la carte Surprise (31 octobre 2026)
 
 - **Code** : `premium-home.mjs` utilise le tirage mensuel officiel, le D6 de la personne qui invite et la réservation associée réellement chargée (`state.geoReservation`) pour afficher « Surprise à découvrir », « Choisir qui invite », « À planifier », « Date prévue », « Réservation déclarée confirmée » ou « À replanifier » si annulée. La date formatée vient de `reserved_for` en `America/Toronto`; une date invalide ne devient pas un faux rendez-vous. Il n'existe **pas de preuve métier de réalisation explicite dans ce parcours** : ne jamais confondre une réservation avec une sortie réalisée ni afficher une réalisation fictive.
