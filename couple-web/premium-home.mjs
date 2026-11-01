@@ -174,7 +174,7 @@ export {ritualBrandHtml} from './brand.mjs?v=20261017-ritual130';
 import {ritualHeadingHtml} from './brand.mjs?v=20261017-ritual130';
 export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,disabled=false,members=[],
   turn=null,monthly={},history=[],sessions=[],events=[],rollFace=1,now=new Date(),
-  weeklyWeights=WEEKLY_ODDS,weeklyWeightsEnabled=true,monthlyActivity=null,weeklyProgress=null,reservation=null}={}){
+  weeklyWeights=WEEKLY_ODDS,weeklyWeightsEnabled=true,monthlyActivity=null,weeklyProgress=null,reservation=null,eveningInvite=null}={}){
  const weights=effectiveDicePercentages(weeklyWeights,weeklyWeightsEnabled,WEEKLY_ODDS).map((pct,i)=>
   '<span class="home-weight" title="'+(i+1)+' soirée'+(i===0?'':'s')+' : '+displayedDicePercent(pct)+' %">'+pipFace(i+1)+
   '<b>'+(i+1)+'x</b><span>'+displayedDicePercent(pct)+'%</span></span>').join('');
@@ -226,17 +226,29 @@ export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,d
  const weeklyExhausted=!activeEvening&&progressReady&&weeklyRemaining===0;
  const dailyLocked=!activeEvening&&progressReady&&weeklyRemaining>0&&weeklyProgress.dailyLocked===true;
  const historyUnknown=!activeEvening&&ready&&weeklyProgress?.historyReady===false;
+ // Invitation is a server-backed notification, never an implicit answer or die.
+ // An active game takes precedence over an old invitation from the same duo.
+ const invitationReceived=!activeEvening&&eveningInvite?.direction==='received'&&
+  ['pending','maybe'].includes(eveningInvite.state);
+ const invitationSent=!activeEvening&&eveningInvite?.direction==='sent'&&
+  eveningInvite.state==='pending';
  const eveningStatus=activeEvening?(stats.ready?'Soirée en cours':'Soirée commencée'):
+  invitationReceived?'Une invitation vous attend':
+  invitationSent?'En attente de la réponse':
   weeklyExhausted?'Notre semaine est complète':
   dailyLocked?'Soirée déjà partagée aujourd’hui':
   historyUnknown?'Synchronisation des soirées…':'Aucune soirée en cours';
  const eveningHint=activeEvening?(stats.ready?'Retrouvez vos défis dans Soirée.':'Préparez vos dés personnels dans Soirée.'):
+  invitationReceived?'Ton partenaire propose une soirée. Tu es libre de répondre.':
+  invitationSent?'Ton partenaire peut répondre à son rythme.':
   weeklyExhausted?'Retrouvez notre historique sans relancer le dé.':
   dailyLocked?'Une seule soirée par jour. Les autres restent disponibles cette semaine.':
   historyUnknown?'L’historique se recharge. Aucun nouveau tirage n’est lancé.':
   'Consultez les étapes et l’historique dans Soirée.';
- const homeAction=weeklyExhausted?'evening-calendar':'tab:session';
- const homeLabel=weeklyExhausted?'Voir nos soirées':'Ouvrir Soirée';
+ const homeAction=weeklyExhausted&&!invitationReceived&&!invitationSent?'evening-calendar':'tab:session';
+ const homeLabel=invitationReceived?'Répondre à l’invitation':
+  invitationSent?'Voir mon invitation':
+  weeklyExhausted?'Voir nos soirées':'Ouvrir Soirée';
  const pending=rolling||disabled;
  return '<section class="real-home-shell" aria-label="Tableau de bord du couple">'+
    '<div class="home-ritual">'+ritualHeadingHtml('NOTRE RITUEL DE LA SEMAINE')+
