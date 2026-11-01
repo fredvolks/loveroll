@@ -91,16 +91,18 @@ test('calendar day selection refuses invalid dates, not just malformed months',a
   selectedDate:'2027-02-29'}),'2027-02-01');
 });
 
-function calendarOpenHarness(tab='home'){
+function calendarOpenHarness(tab='home',closedToday=null){
  const from=app.indexOf("if(verb==='evening-calendar'){");
  const to=app.indexOf("if(verb==='evening-month-prev'",from);
  assert.ok(from>=0&&to>from,'The actual calendar action is extractable');
  const state={tab,session:{id:'older',started_at:'2026-09-14T18:00:00Z'},
   eveningCalendarMonth:'2026-09',eveningCalendarDate:'2026-09-14',
-  eveningMore:true,confirmCancel:true,diceStatus:null};
+  eveningMore:true,confirmCancel:true,diceStatus:null,
+  weekly:{face:2,key:'2026-10-26'},sessions:closedToday?[closedToday]:[]};
  let redraw=false,gift=false,renders=0;
- const context={state,month:()=> '2026-10',
-  eveningLocalDay:()=> '2026-09-14',
+ const context={state,month:()=> '2026-10',today:()=> '2026-10-31',
+  eveningDailyAccess:()=>({closedToday}),
+  eveningLocalDay:stamp=>stamp==='2026-10-31T20:00:00Z'?'2026-10-31':'2026-09-14',
   isActiveEveningRedrawPending:()=>redraw,
   isActiveEveningGiftPending:()=>gift,
   render:()=>{renders++;}};
@@ -133,6 +135,24 @@ test('LR-ACCUEIL-001: completed evening shortcut from Home never restores a stal
  assert.equal(h.state.eveningCalendarMonth,'2026-10');
  assert.equal(h.state.eveningCalendarDate,'2026-10-01');
  assert.equal(h.state.eveningCalendarBack,'tab:home');
+ assert.equal(h.goBack(),'tab:home');
+ assert.equal(h.renderCount(),1);
+});
+
+test('LR-ACCUEIL-001: Home finished-today action selects server-closed day without a dice roll',async()=>{
+ const h=calendarOpenHarness('home',{id:'night',finished_at:'2026-10-31T20:00:00Z',counted:true});
+ await h.open('evening-calendar',['today']);
+ assert.equal(h.state.eveningCalendarMonth,'2026-10');
+ assert.equal(h.state.eveningCalendarDate,'2026-10-31');
+ assert.equal(h.goBack(),'tab:home');
+ assert.equal(h.renderCount(),1);
+});
+
+test('LR-ACCUEIL-001: stale completed-today shortcut falls back when closure disappears',async()=>{
+ const h=calendarOpenHarness('home',null);
+ await h.open('evening-calendar',['today']);
+ assert.equal(h.state.eveningCalendarMonth,'2026-10');
+ assert.equal(h.state.eveningCalendarDate,'2026-10-31');
  assert.equal(h.goBack(),'tab:home');
  assert.equal(h.renderCount(),1);
 });
