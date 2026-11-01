@@ -15,11 +15,12 @@ function pendingNavigation(){
   session:{id:'night-a'},members:[{user_id:'alice'},{user_id:'bob'}],
   diceStatus:null,couple:{},eveningMore:false};
  let resolveChoice,renderCount=0,probeCount=0,stopCount=0;
- let giftPending=false,redrawPending=false;
+ let giftPending=false,redrawPending=false,formRoute='session|editor-a';
  const context={
   state,authFeedbackGeneration:1,settingsOpenSection:'',lastFormTab:null,
   allowBackExit:false,sessionStorage:{setItem(){}},
   isSharedCoupleReady:()=>true,isLoveAdmin:()=>true,hasUnsavedForm:()=>true,
+  formRouteKey:()=>formRoute,
   isActiveEveningRedrawPending:()=>redrawPending,
   isActiveEveningGiftPending:()=>giftPending,
   premiumConfirm:()=>new Promise(resolve=>{resolveChoice=resolve;}),
@@ -35,6 +36,7 @@ function pendingNavigation(){
   confirm(choice){resolveChoice(choice);},
   setGift(value){giftPending=value;},
   setRedraw(value){redrawPending=value;},
+  setFormRoute(value){formRoute=value;},
   metrics(){return {renderCount,probeCount,stopCount};}
  };
 }
@@ -74,7 +76,8 @@ test('LR-028: a stale unsaved-form confirmation cannot navigate another account 
   nav=>{nav.state.coupleId='duo-b';},
   nav=>{nav.state.session={id:'night-b'};},
   nav=>{nav.state.tab='home';},
-  nav=>{nav.context.authFeedbackGeneration=2;}
+  nav=>{nav.context.authFeedbackGeneration=2;},
+  nav=>{nav.setFormRoute('session|editor-b');}
  ];
  for(const mutate of variations){
   const nav=pendingNavigation();mutate(nav);
@@ -160,4 +163,80 @@ test('LR-028: an approved Android exit expires when the form or Auth changes',as
   h.dialogResolvers[1](false);
   await Promise.resolve();
  }
+});
+
+function pendingSettingsSection(){
+ const first=source.indexOf(" if(verb==='settings-page'){");
+ const last=source.indexOf("\n if(verb==='resume-evening'){",first);
+ assert.ok(first>=0&&last>first,'Production settings-page handler is available');
+ const state={tab:'settings',user:{id:'alice'},coupleId:'duo-a',
+  session:{id:'night-a'},diceStatus:null};
+ let route='settings|admin',giftPending=false,redrawPending=false,dirty=true;
+ let resolveChoice,opened=0;
+ const context={state,authFeedbackGeneration:1,
+  formRouteKey:()=>route,hasUnsavedForm:()=>dirty,
+  isActiveEveningRedrawPending:()=>redrawPending,
+  isActiveEveningGiftPending:()=>giftPending,
+  premiumConfirm:()=>new Promise(resolve=>{resolveChoice=resolve;}),
+  openSettingsPage:()=>{opened++;}
+ };
+ const handler=runInNewContext('(async (verb,parts)=>{'+source.slice(first,last)+'\n})',context);
+ return {state,context,
+  open:()=>handler('settings-page',['jeu']),
+  confirm:(value)=>resolveChoice(value),
+  hasConfirmation:()=>typeof resolveChoice==='function',
+  changes:()=>opened,
+  changeRoute:value=>{route=value;},
+  setGift:value=>{giftPending=value;},
+  setRedraw:value=>{redrawPending=value;},
+  setDirty:value=>{dirty=value;}
+ };
+}
+
+test('LR-028: settings subsection opens after a valid discard approval only',async()=>{
+ const h=pendingSettingsSection();
+ const pending=h.open();
+ assert.equal(h.changes(),0);
+ h.confirm(true);await pending;
+ assert.equal(h.changes(),1,'Approved editor navigation reaches settings');
+ const cancelled=pendingSettingsSection();
+ const work=cancelled.open();
+ cancelled.confirm(false);await work;
+ assert.equal(cancelled.changes(),0);
+});
+
+test('LR-028: delayed settings confirmation cannot replace a newer form or official game',async()=>{
+ for(const mutate of [
+  h=>{h.state.user={id:'bob'};},
+  h=>{h.state.coupleId='duo-b';},
+  h=>{h.state.session={id:'night-b'};},
+  h=>{h.state.tab='home';},
+  h=>{h.context.authFeedbackGeneration=2;},
+  h=>{h.changeRoute('settings|other-editor');},
+  h=>{h.state.diceStatus='rolling';},
+  h=>{h.setGift(true);},
+  h=>{h.setRedraw(true);}
+ ]){
+  const h=pendingSettingsSection();
+  const work=h.open();
+  mutate(h);
+  h.confirm(true);await work;
+  assert.equal(h.changes(),0,'A stale confirmation must not navigate');
+ }
+});
+
+test('LR-028: settings navigation respects an active roll, gift or redraw immediately',async()=>{
+ for(const kind of ['dice','gift','redraw']){
+  const h=pendingSettingsSection();
+  if(kind==='dice')h.state.diceStatus='rolling';
+  if(kind==='gift')h.setGift(true);
+  if(kind==='redraw')h.setRedraw(true);
+  await h.open();
+  assert.equal(h.changes(),0);
+  assert.equal(h.hasConfirmation(),false,'No confirmation while the game owns the screen');
+ }
+ const clean=pendingSettingsSection();
+ clean.setDirty(false);
+ await clean.open();
+ assert.equal(clean.changes(),1,'Unedited settings remain directly navigable');
 });
