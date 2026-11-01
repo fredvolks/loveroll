@@ -1,5 +1,14 @@
 # LoveRoll — SUIVI OFFICIEL DU PROMPT MAÎTRE
 
+### LR-ACCUEIL-001 — Une soirée commencée avant minuit se retrouve à sa clôture (31 octobre 2026)
+
+- **Problème corrigé** : le raccourci « Voir notre soirée terminée » depuis l'Accueil sélectionne le jour réel de fin en heure du Québec, mais l'ancien calendrier indexait toutes les soirées par leur début. Une soirée traversant minuit pouvait donc sembler absente au jour choisi et son total mensuel pouvait être associé au mauvais mois.
+- **Règle partagée** : `eveningArchiveDay(session)` dans `couple-web/evening-calendar.mjs` classe une soirée **comptabilisée et terminée** au jour `finished_at` de `America/Toronto`. Une soirée **encore ouverte** ou **non comptabilisée** conserve son jour `started_at`. Une séance figure dans une seule journée de la grille; ce classement n'altère ni les tirages, ni la comptabilisation hebdomadaire du serveur, ni les textes des défis, ni la base SQL.
+- **Preuves et tests** : changement `e21c0d0` ; tests `76db2f0` couvrant le passage de minuit au Québec, le changement d'octobre à novembre, le passage UTC non local, les séances non comptabilisées et ouvertes, les historiques invalides et la sélection automatique du jour approprié. Un test d'exécution JavaScript direct sur les vrais fichiers récupérés de GitHub confirme la présence de la soirée terminée le 16 octobre plutôt que le 15, et la prise en compte au mois de novembre de la clôture du 1er novembre. Les tests complets CI ne sont **pas encore validés**.
+- **Livraison Web/PWA** : import calendrier `archive269`, fichier `app.js` version `archive269`, cache `loveroll-static-v269` : commits `c394903`, `01a90ee`, `19d867a`. Aucune publication, fusion ou écriture Supabase production.
+- **Coordination MEDIUM** : méthodes d'Architecture, Qualité, Produit, Mobile et Sécurité consultées via le connecteur Atelier réellement disponible. `list_applications` ne retourne aucune fiche LoveRoll ; **aucun BOSS exécutable** ni mission LoveRoll enregistrée. PR [#176](https://github.com/fredvolks/loveroll/pull/176) toujours brouillon ; vérifier la CI et tester staging Auth/RLS + appareils physiques avant fusion.
+
+
 ### LR-ACCUEIL-001 — Raccourci vers le jour réel de la soirée terminée (31 octobre 2026)
 
 - **Parcours utilisateur** : si le bilan officiel `eveningDailyAccess.closedToday` indique une soirée comptabilisée et terminée à la date locale du Québec, « Voir notre soirée terminée » lance maintenant l'action de lecture seule `evening-calendar:today`. Le calendrier sélectionne `eveningLocalDay(closed.finished_at)`, pas un jour inventé ni la date d'une ancienne séance; le retour pointe sur Accueil.
