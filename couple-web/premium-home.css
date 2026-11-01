@@ -193,3 +193,30 @@ main#app :is(.evening-toolbar,.advent-top,.surprise-header,.settings-page-header
   aspect-ratio:1;align-self:center;justify-self:center;
  }
 }
+
+/* LR-ACCUEIL-001: the dashboard summarizes the shared evening without
+   exposing individual assignments before the two private D6 have settled. */
+#app.loveroll-real-home .home-evening-overview{
+ display:flex;flex-direction:column;justify-content:center;gap:5px;
+ flex:1;min-width:0;padding:9px 0 2px;
+}
+#app.loveroll-real-home .home-evening-status{
+ color:#f7dce6;font-size:clamp(13px,1.45vw,17px);line-height:1.25;
+}
+#app.loveroll-real-home .home-evening-overview p{
+ margin:0;color:#d7bdc9;font-size:clamp(10px,1.1vw,13px);line-height:1.3;
+ overflow-wrap:anywhere;
+}
+#app.loveroll-real-home .home-evening-link{
+ display:inline-flex;align-self:flex-start;align-items:center;justify-content:center;
+ min-height:36px;max-width:100%;padding:6px 13px;margin-top:4px;
+ border:1px solid #d58e9c88;border-radius:999px;background:#542136b8;
+ color:#fff0f2;font:600 12px/1.3 inherit;cursor:pointer;
+}
+#app.loveroll-real-home .home-evening-link:focus-visible{
+ outline:3px solid #ffdfaa;outline-offset:3px;
+}
+@media (max-width:767px){
+ #app.loveroll-real-home .home-evening-overview{padding:3px 0 0;gap:3px;}
+ #app.loveroll-real-home .home-evening-link{min-height:32px;padding:5px 12px;}
+}
