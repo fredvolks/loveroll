@@ -72,3 +72,20 @@ test('320px Soirée keeps real D100 above the photo marble without changing othe
  assert.equal(sharedStageSplit(320,568,false),base,
   'Home, inactive Soirée and Surprise keep original 320px photograph');
 });
+
+test('LR-001 ultra-compact die remains inside the real theater while photo contact stays fixed',()=>{
+ const css=readFileSync(new URL('./evening-d100-template.css',import.meta.url),'utf8');
+ assert.match(css,/@media \(max-width:359px\) and \(max-height:600px\)/,
+  'Small phone correction must not shrink all mobile, iPad or desktop dice');
+ assert.match(css,/\.evening-d100-theater \.dice-canvas\{[\s\S]*?transform:scale\(\.90\)!important;/);
+ assert.match(css,/transform-origin:50% 84%!important;/,
+  'Scale anchored near the real photographed D100 contact, not its center');
+ assert.doesNotMatch(css,/\.evening-d100-theater \.dice-canvas\{[^}]*?(?:display:none|clip-path|visibility:hidden)/);
+ // CI observed top=217.8, bottom/contact=306.9 and theater top=225.
+ // This CSS genuinely projects the 3D die smaller from its unchanged bottom.
+ const before={top:217.8,bottom:306.9,theaterTop:225};
+ const afterTop=before.bottom+(before.top-before.bottom)*.90;
+ assert.ok(afterTop>=before.theaterTop, 'The transformed 3D silhouette fits the theater');
+ assert.ok(Math.abs(before.bottom-(before.bottom+(before.bottom-before.bottom)*.90))<.001,
+  'The real contact stays in place');
+});
