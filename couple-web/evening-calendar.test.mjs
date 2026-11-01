@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {runInNewContext} from 'node:vm';
 import {eveningHistoryMarkup,eveningLocalDay,eveningArchiveDay,eveningChallengeStatusLabel,eveningCalendarInitialDate} from './evening-calendar.mjs';
 const files=p=>readFileSync(new URL(p,import.meta.url),'utf8');
 const sessions=[
@@ -55,6 +56,49 @@ test('LR-019: calendar favorites are local, account-checked and never trigger a 
  assert.match(source,/toggleEveningFavorite\(state\.user\.id,state\.coupleId,card\)/);
  assert.match(source,/outcome\.favorites\.length>=EVENING_FAVORITES_LIMIT/);
  assert.doesNotMatch(source,/rpc\(|roll_couple_once|finish_couple_session/);
+});
+test('LR-019: actual calendar favorite handler rejects foreign ownership and leaves UI open',async()=>{
+ const app=files('./app.js');
+ const from=app.indexOf("if(verb==='calendar-favorite'){");
+ const until=app.indexOf("if(verb==='favorite-remove'){",from);
+ assert.ok(from>0&&until>from);
+ const code=app.slice(from,until);
+ const session={id:'s1',couple_id:'c1',finished_at:'2026-10-16T02:00:00Z'};
+ const saved={id:'d1',session_id:'s1',recipient:'alice',status:'completed',
+  category:'SENSUEL',card_id:2};
+ const state={tab:'evening-calendar',user:{id:'alice'},coupleId:'c1',
+  members:[{user_id:'alice'},{user_id:'bob'}],sessions:[session],
+  eveningCalendarChallenges:[saved]};
+ let writes=0,buttonUpdates=0;
+ const button={dataset:{favoriteId:'SENSUEL:2'},setAttribute(){buttonUpdates++;},
+  removeAttribute(){},disabled:false,textContent:'',title:''};
+ const element={getAttribute:key=>key==='data-favorite-id'?'SENSUEL:2':null};
+ const root={contains:x=>x===element,querySelectorAll:()=>[button]};
+ const ctx={state,root,EVENING_FAVORITES_LIMIT:5,
+  eveningFavoriteId:c=>c.category==='SENSUEL'&&c.card_id===2?'SENSUEL:2':null,
+  toggleEveningFavorite:()=>{writes++;return {ok:true,favorites:['SENSUEL:2']};}};
+ const run=runInNewContext('(async (verb,parts,element)=>{'+code+'})',ctx);
+ const click=()=>run('calendar-favorite',['d1'],element);
+ await click();
+ assert.equal(writes,1);
+ assert.ok(buttonUpdates>0);
+ assert.equal(button.disabled,false);
+ assert.equal(button.textContent,'♥ Dans mes favoris');
+ state.eveningCalendarChallenges=[{...saved,recipient:'bob'}];
+ await assert.rejects(click(),/historique personnel/);
+ assert.equal(writes,1);
+ state.eveningCalendarChallenges=[saved];
+ state.sessions=[{...session,couple_id:'other'}];
+ await assert.rejects(click(),/historique personnel/);
+ assert.equal(writes,1);
+ state.sessions=[session];
+ state.tab='home';
+ await click();
+ assert.equal(writes,1,'old calendar actions are ignored after navigation');
+ state.tab='evening-calendar';
+ ctx.toggleEveningFavorite=()=>({ok:false,reason:'limit',favorites:[]});
+ await assert.rejects(click(),/cinq favoris/);
+ assert.equal(writes,1);
 });
 test('Québec calendar honors local dates for day and year',()=>{
  assert.equal(eveningLocalDay('2026-10-16T01:00:00Z'),'2026-10-15');
