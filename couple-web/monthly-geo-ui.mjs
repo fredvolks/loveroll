@@ -61,7 +61,8 @@ export function monthlyGeoCardHtml({
    lookup==='unavailable'?'Aucun établissement avec trajet routier vérifié dans votre rayon. Votre activité D100 est conservée.':
    venue?.state==='ready'&&!roadVerified?'Le trajet routier vers ce lieu n’est pas vérifié. Votre activité D100 est conservée.':
    'Votre activité D100 est enregistrée. La recherche locale se lance automatiquement.';
-  body='<div class="surprise-geo-pending" role="status">'+esc(message)+'</div>';
+  body='<div class="surprise-geo-pending" role="status">'+esc(message)+'</div>'+
+   (lookup==='error'?'<button type="button" class="surprise-geo-text-button" data-action="geo-retry">Réessayer la recherche</button>':'');
  }
  let bookingHtml='';
  if(reservation&&reservation.status!=='cancelled'){
