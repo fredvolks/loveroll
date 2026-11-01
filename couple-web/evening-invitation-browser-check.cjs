@@ -56,7 +56,8 @@ const origin='http://127.0.0.1:8765';
     metrics.bottom<=metrics.navTop+1&&metrics.documentWidth<=width+2&&
     metrics.buttonHeight>=44,'Accueil invitation does not fit: '+JSON.stringify(metrics));
    assert.match(await inbox.innerText(),/Alex a envie de jouer ce soir/);
-   await inbox.locator('button').click();
+   // The inbox offers both Oui and a route to Soirée; test the route.
+   await inbox.locator('.lr-evening-inbox-open[data-action="tab:session"]').click();
    assert.deepEqual(await page.evaluate(()=>window.__clicked),['tab:session']);
    await page.screenshot({path:'design-captures/lr028-'+label+'-accueil.png'});
    await page.evaluate(()=>window.__setInvite('evening','pending'));
