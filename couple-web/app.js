@@ -5694,9 +5694,6 @@ async function handle(action,element){
   if(!allowed.includes(parts[0]))throw Error('Les jeux exigent deux comptes associés.');
   if(['library','monthly-library','advent-editor','special-editor'].includes(parts[0])&&!isLoveAdmin())
    throw Error('Modification réservée à l’administrateur du couple.');
-  if(parts[0]==='library'&&state.couple?.sexual_card_mode==='automatic'){
-   state.libraryImportKind=null;state.tab='settings';settingsOpenSection='admin';render();return;
-  }
   if(parts[0]!==state.tab&&hasUnsavedForm()){
    // Confirmation is asynchronous. Another login, official roll, repick or
    // gift may take ownership before the user chooses to leave the form.
@@ -5715,6 +5712,10 @@ async function handle(action,element){
       authFeedbackGeneration!==navigationOwner.generation||
       state.diceStatus||(state.tab==='session'&&
        (isActiveEveningRedrawPending()||isActiveEveningGiftPending())))return;
+  }
+  // Automatic cards open admin settings, but must never bypass the draft warning.
+  if(parts[0]==='library'&&state.couple?.sexual_card_mode==='automatic'){
+   state.libraryImportKind=null;state.tab='settings';settingsOpenSection='admin';render();return;
   }
   if(parts[0]==='settings'&&state.tab==='occasions'){
    settingsOpenSection='couple';
