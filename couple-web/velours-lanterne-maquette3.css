@@ -925,3 +925,129 @@ body.lr-velours-lanterne .invite-welcome>div {color:var(--lr-vl-rose)}
     border-width:2px!important;
   }
 }
+/* LOT 5 — Authentification réelle depuis l'accueil (entry-ritual-v139).
+   Ce parcours n'utilise pas .invite-account-screen : préserver les deux. */
+body.lr-velours-lanterne #app:has(>.entry-access-screen.auth-editorial) {
+  background:radial-gradient(ellipse 60% 32% at 50% 0%,rgba(255,103,155,.18),transparent 72%),
+    linear-gradient(155deg,#29091a,#180711 66%,#2a091c)!important;
+}
+body.lr-velours-lanterne #app>.entry-access-screen.auth-editorial {
+  color:var(--lr-vl-ivory);
+  max-width:100%;
+  padding-bottom:max(14px,env(safe-area-inset-bottom,0px));
+}
+body.lr-velours-lanterne #app .entry-access-screen .entry-auth-card {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-panel);
+  box-shadow:var(--lr-vl-relief),0 12px 40px rgba(10,0,8,.4);
+}
+body.lr-velours-lanterne #app .entry-access-screen .entry-auth-title h1,
+body.lr-velours-lanterne #app .entry-access-screen .entry-auth-card>h1,
+body.lr-velours-lanterne #app .entry-profile-screen h1 {
+  font-family:var(--lr-vl-editorial);
+  font-weight:600;
+  color:var(--lr-vl-ivory);
+  letter-spacing:-.025em;
+}
+body.lr-velours-lanterne #app .entry-access-screen .entry-auth-title em {
+  color:var(--lr-vl-champagne);
+}
+body.lr-velours-lanterne #app .entry-access-screen .entry-auth-lead,
+body.lr-velours-lanterne #app .entry-access-screen .entry-footer p,
+body.lr-velours-lanterne #app .entry-access-screen .entry-small-note {
+  color:var(--lr-vl-muted);
+  line-height:1.45;
+}
+body.lr-velours-lanterne #app .entry-access-screen .entry-auth-segments {
+  border-color:var(--lr-vl-field-edge);
+  background:var(--lr-vl-field);
+}
+body.lr-velours-lanterne #app .entry-access-screen .entry-auth-segments button {
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #app .entry-access-screen .entry-auth-segments button.is-active {
+  background:var(--lr-vl-action);
+  border-color:var(--lr-vl-champagne);
+  color:var(--lr-vl-ivory);
+  box-shadow:var(--lr-vl-active-shadow);
+}
+body.lr-velours-lanterne #app .entry-access-screen .entry-input {
+  border-color:var(--lr-vl-field-edge);
+  background:var(--lr-vl-field);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #app .entry-access-screen .entry-input:focus-within {
+  border-color:var(--lr-vl-focus);
+  box-shadow:0 0 0 2px rgba(255,223,156,.25);
+}
+body.lr-velours-lanterne #app .entry-access-screen .entry-auth-field>span:first-child {
+  color:var(--lr-vl-champagne);
+}
+body.lr-velours-lanterne #app .entry-access-screen .entry-input input {
+  color:var(--lr-vl-ivory);
+  font-size:16px;
+}
+body.lr-velours-lanterne #app .entry-access-screen input::placeholder {
+  color:#d6acc0;
+  opacity:1;
+}
+body.lr-velours-lanterne #app .entry-access-screen .entry-password-eye {
+  min-width:44px;
+  min-height:44px;
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #app .entry-access-screen :is(.entry-auth-submit,.entry-auth-resend) {
+  min-height:48px;
+  border-color:var(--lr-vl-action-edge);
+  background:var(--lr-vl-action);
+  color:var(--lr-vl-ivory);
+  box-shadow:var(--lr-vl-cta-shadow);
+}
+body.lr-velours-lanterne #app .entry-access-screen :is(.entry-auth-submit,.entry-auth-resend):disabled {
+  opacity:.6;
+  box-shadow:none;
+}
+body.lr-velours-lanterne #app .entry-access-screen :is(.entry-google,.entry-auth-back,.entry-auth-link,.entry-switch-account) {
+  min-height:44px;
+  color:var(--lr-vl-champagne);
+}
+body.lr-velours-lanterne #app .entry-access-screen .entry-google {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-muted-panel);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #app .entry-access-screen :is(.entry-confirm-resend,.entry-account-choice) {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-muted-panel);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #app .entry-access-screen .entry-auth-feedback:not(:empty),
+body.lr-velours-lanterne #app .entry-access-screen :is(#email-confirm-status,#auth-resend-status):not(:empty) {
+  color:var(--lr-vl-ivory);
+  border-color:var(--lr-vl-edge);
+  overflow-wrap:anywhere;
+}
+body.lr-velours-lanterne #app .entry-access-screen :is(.editorial-form input,.editorial-form select) {
+  max-width:100%;
+  background:var(--lr-vl-field);
+  color:var(--lr-vl-ivory);
+  border-color:var(--lr-vl-field-edge);
+}
+/* Ne pas contraindre les champs de profil, messages d'erreur ou le clavier
+   dans un viewport fixe lorsque le contenu dépasse. */
+@media(max-height:600px), (max-width:380px) {
+  body.lr-velours-lanterne #app>.entry-access-screen.auth-editorial {
+    min-height:100dvh;
+    height:auto;
+    max-height:none;
+    overflow:visible;
+  }
+  body.lr-velours-lanterne #app .entry-access-screen .entry-auth-card {
+    min-width:0;
+  }
+}
+@media(prefers-contrast:more) {
+  body.lr-velours-lanterne #app .entry-access-screen :is(.entry-auth-card,.entry-input,.entry-auth-submit) {
+    border-width:2px;
+  }
+}
