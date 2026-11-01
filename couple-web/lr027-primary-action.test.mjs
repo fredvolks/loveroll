@@ -36,6 +36,19 @@ test('before both personal D6, status is text not an unavailable primary button'
  assert.match(noRoll,/data-action="my-d6"/);
 });
 
+test('both recorded personal D6 announce syncing, not a missing partner roll',()=>{
+ const syncing=view({
+  status:{both_ready:false,my_rolled:true,partner_rolled:true},
+  turn:{ready:false},
+  rolls:[{user_id:'a',face:2},{user_id:'b',face:4}]
+ });
+ assert.equal(dominant(syncing).length,0,'Step 2 must remain server locked');
+ assert.equal(status(syncing),'Nos deux D6 sont enregistrés · Synchronisation…');
+ assert.match(syncing,/Nos deux lancers sont enregistrés\. Synchronisation…/);
+ assert.doesNotMatch(syncing,/En attente du D6 de ton partenaire/);
+ assert.doesNotMatch(syncing,/data-action="new-challenge"/);
+});
+
 test('when draws are complete, viewing own challenges becomes the one main action',()=>{
  const done=view({turn:{...base.turn,drawsFinished:true}});
  assert.equal(dominant(done).length,1);
