@@ -1,5 +1,14 @@
 # LoveRoll — PROMPT MAÎTRE OFFICIEL
 
+## DÉCISION VISUELLE PRIORITAIRE — MAQUETTE 3 — VELOURS & ROSE LANTERNE (31 octobre 2026)
+
+**Décision du propriétaire :** la troisième des cinq maquettes HD présentées dans le clavardage du projet Jeu/LoveRoll est la nouvelle cible de la refonte complète. Elle remplace les règles antérieures qui figeaient le visuel de l'accueil Android comme résultat à conserver inchangé : garder ses qualités fonctionnelles, les vrais dés 3D et la scène/socle existants jusqu'à leur remplacement validé, mais moderniser librement son habillage. Ambiance : velours bordeaux profond, lanternes roses diffusant une lumière chaude, rubis lumineux sur socle précieux, rose lanterne, champagne/dorures fines, typographie romantique lisible et cartes vitrées cohérentes. La maquette est une **intention artistique**, jamais une capture de l'application réelle.
+
+**Périmètre obligatoire :** accueil, Soirée/D6/D100, Surprise, Éclat, calendriers, bibliothèque, Réglages et ses sous-menus, invitations, menus, dialogue/erreur/confirmation/chargement, abonnement/checkout et Studio/Admin. Même identité visuelle sur mobile compact, grand téléphone, tablette portrait/paysage, ordinateur portable et grand écran ; safe areas, clavier affiché, zoom et textes longs. Préserver navigation, accès tactile, préférences de mouvement réduit, données, consentement, règles du jeu, WebGL, sécurité et paiements non activés.
+
+**Implémentation active :** PR GitHub [#179](https://github.com/fredvolks/loveroll/pull/179), branche `feat/velours-lanterne-maquette3-responsive-20261031`, introduisant le thème partagé `couple-web/velours-lanterne-maquette3.css`, intégré à `index.html`, `checkout.html`, `admin.html` et au cache PWA. C'est un **premier lot**, et non une refonte globale terminée. Continuer par écrans complets et preuves sur la même source de vérité, sans empiler des feuilles contradictoires ni prétendre que des captures conceptuelles sont des tests. @Boss : consultation réelle GOD MODE, experts Designer, Ergonomie, Mobile, Architecture, Qualité, Performance et Capture selon besoin.
+
+
 ## Coordination obligatoire avec `@Boss` — Atelier connecté
 
 **Référence explicite : `@Boss` est le point d'entrée du plugin BOSS Atelier**, pas un simple nom de rôle fictif. Lors de toute reprise substantielle de LoveRoll et chaque fois que le propriétaire demande « utilise/consulte @Boss et les agents », **exécuter une vraie consultation du plugin connecté**. Charger la méthode officielle `skills://plugins/boss/boss/skill.md`, puis utiliser les outils disponibles : `list_applications`, `get_application` lorsque LoveRoll possède une fiche réellement accessible, `consult_boss`, `list_agents` et `get_agent` pour les spécialités réellement utiles. Un projet absent d'Atelier ne doit pas être inventé; le dépôt `fredvolks/loveroll` reste la source du code et du prompt.
