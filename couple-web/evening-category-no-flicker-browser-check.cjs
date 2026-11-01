@@ -41,8 +41,13 @@ const origin='http://127.0.0.1:8765';
      const selected=root.querySelectorAll('.evening-choice-btn.selected');
      if(selected.length!==1||selected[0].dataset.action!=='category:'+category)valid=false;
      const odds=[...root.querySelectorAll('.evening-choice-odds')];
-     if(odds.length===(category==='HASARD'?0:1)===false)valid=false;
-     if(category!=='HASARD'&&odds[0]?.textContent!=='88 % de chancesd’avoir cette catégorie')valid=false;
+     // All selected categories now disclose their actual odds. Random
+     // visibly explains 50/50; never require the old blank random label.
+     if(odds.length!==1)valid=false;
+     const expected=category==='HASARD'?'50 % Sensuel · 50 % Sexuel':
+      '88 % de chances d’avoir cette catégorie';
+     if(odds[0]?.textContent!==expected||
+        odds[0]?.getAttribute('aria-live')!=='polite')valid=false;
      if(root.querySelector('button[data-action="new-challenge"]')?.disabled)valid=false;
      if(root.querySelector('canvas[data-dice-sides="100"]')!==d35||
        initialDice.some(canvas=>!canvas.isConnected))valid=false;

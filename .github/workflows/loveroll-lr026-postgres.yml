@@ -1,0 +1,215 @@
+name: LoveRoll LR-026 isolated PostgreSQL
+
+on:
+  pull_request:
+    paths:
+      - "couple-web/lr026-server-variety.sql"
+      - "couple-web/lr026-server-variety-smoke.sql"
+      - "couple-web/lr026-server-variety.test.mjs"
+      - "couple-web/lr026-live-schema-preflight.sql"
+      - "couple-web/lr026-preflight-negative.test.sh"
+      - "couple-web/lr026-postgres-fixture.sql"
+      - "couple-web/lr026-postgres-rank.test.sql"
+      - "couple-web/lr026-exact-fast-path.test.sql"
+      - "couple-web/lr026-performance-profile.test.sql"
+      - "couple-web/lr026-similarity-parity.test.sql"
+      - "couple-web/lr026-eligible-performance.test.sql"
+      - "couple-web/lr026-live-pick-order.test.sql"
+      - "couple-web/lr026-real-rpc-schema.sql"
+      - "couple-web/lr026-real-rpc-snapshot.sql"
+      - "couple-web/lr026-real-rpc-e2e.test.sql"
+      - "couple-web/lr026-real-rpc-paired-turns.test.sql"
+      - "couple-web/lr026-real-rpc-race.seed.sql"
+      - "couple-web/lr026-real-rpc-draw-race.seed.sql"
+      - "couple-web/lr026-real-rpc-mixed-race.seed.sql"
+      - "couple-web/lr026-real-rpc-response-race.seed.sql"
+      - "couple-web/lr026-real-rpc-refuse-choices-race.seed.sql"
+      - "couple-web/lr026-real-rpc-concurrent.test.sh"
+      - "couple-web/lr026-real-rpc.test.sh"
+      - "couple-web/lr026-staging-recipe.mjs"
+      - "couple-web/lr026-staging-verify.mjs"
+      - "couple-web/lr026-staging-recipe.test.mjs"
+      - "couple-web/lr026-staging-audit.test.mjs"
+      - "couple-web/lr026-staging-readiness.sql"
+      - "couple-web/lr026-staging-rls-fixture.sql"
+      - "couple-web/lr026-staging-rls.test.sql"
+      - "couple-web/lr026-staging-rls.test.sh"
+      - "couple-web/lr026-evening-flow.test.sql"
+      - "couple-web/lr026-extract-helpers.cjs"
+      - "couple-web/lr026-postgres-rpc-fixture.sql"
+      - "couple-web/lr026-fixture-migration.cjs"
+      - "couple-web/lr026-full-migration.test.sql"
+      - "couple-web/lr026-capture-original-rpcs.sql"
+      - "couple-web/lr026-source-preservation.test.sql"
+      - "couple-web/lr026-eligibility-boundary.test.sql"
+      - "couple-web/lr026-response-transaction.test.sql"
+      - "couple-web/lr026-authenticated-partners.test.sql"
+      - "couple-web/lr026-pass-stamp-fixture.sql"
+      - "couple-web/lr026-concurrent-pass-fixture.sql"
+      - "couple-web/lr026-concurrent-pass.test.sh"
+      - "couple-web/lr026-rpc-role-security.test.sql"
+      - "couple-web/lr026-failed-migration-fixture.sql"
+      - "couple-web/lr026-atomic-rollback.test.sql"
+      - ".github/workflows/loveroll-lr026-postgres.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  postgres-smoke:
+    name: Test private SQL helpers on disposable PostgreSQL 17
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: lr026_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d lr026_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: "5432"
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: lr026_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify staging-only A/B Auth and RPC guards without any Supabase credentials
+        run: |
+          node --check couple-web/lr026-staging-recipe.mjs
+          node --check couple-web/lr026-staging-verify.mjs
+          node --test couple-web/lr026-staging-recipe.test.mjs
+          node --test couple-web/lr026-staging-audit.test.mjs
+      - name: Check LR-026 SQL patch contracts with Node tests
+        run: node --test couple-web/lr026-server-variety.test.mjs
+      - name: Verify migration helper extraction syntax
+        run: node --check couple-web/lr026-extract-helpers.cjs
+      - name: Validate preflight regression Bash syntax early
+        run: bash -n couple-web/lr026-preflight-negative.test.sh
+      - name: Create isolated synthetic test schema
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-postgres-fixture.sql
+      - name: Extract exact private SQL helpers (never patch production RPC)
+        run: |
+          node couple-web/lr026-extract-helpers.cjs > "$RUNNER_TEMP/lr026-private.sql"
+          psql -X -v ON_ERROR_STOP=1 -f "$RUNNER_TEMP/lr026-private.sql"
+      - name: Smoke test helper functions and privileges
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-server-variety-smoke.sql
+      - name: Prove exact 200-card history skips expensive semantic comparison
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-exact-fast-path.test.sql
+      - name: Test official category and couple/session scoping
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-postgres-rank.test.sql
+      - name: Compare original and optimized similarity over 415 synthetic text cases
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-similarity-parity.test.sql
+      - name: Profile old and exact-first ranking over identical 200 cards
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-performance-profile.test.sql
+      - name: Benchmark realistic eligible D100 cards after 0, 20, 50 and 80 draws
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-eligible-performance.test.sql
+      - name: Prove D100 novel-first draw and all-similar random fallback with actual ORDER BY
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-live-pick-order.test.sql
+      - name: Simulate an evening, two couples and a 200-card cycle
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-evening-flow.test.sql
+      - name: Reject roles, cycle exclusions, bag history and favorite bypass
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-eligibility-boundary.test.sql
+      - name: Simulate pass quota, free refusal, idempotency and exhausted redraw rollback
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-response-transaction.test.sql
+      - name: Create synthetic normal and replacement RPCs
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-postgres-rpc-fixture.sql
+      - name: Save exact unpatched RPC code for invariant verification
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-capture-original-rpcs.sql
+      - name: Derive fixture fingerprints for guard verification
+        run: |
+          node --check couple-web/lr026-fixture-migration.cjs
+          DRAW_SHA="$(psql -X -At -v ON_ERROR_STOP=1 -c "SELECT md5(pg_get_functiondef('public.draw_for_partner(uuid,text,boolean)'::regprocedure))")"
+          REDRAW_SHA="$(psql -X -At -v ON_ERROR_STOP=1 -c "SELECT md5(pg_get_functiondef('public.love_respond_and_redraw(uuid,text,boolean)'::regprocedure))")"
+          node couple-web/lr026-fixture-migration.cjs "$DRAW_SHA" "$REDRAW_SHA" > "$RUNNER_TEMP/lr026-fixture-migration.sql"
+      - name: Execute entire guarded migration in disposable PostgreSQL
+        run: psql -X -v ON_ERROR_STOP=1 -f "$RUNNER_TEMP/lr026-fixture-migration.sql"
+      - name: Prove every existing RPC rule is byte-identical except ordering
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-source-preservation.test.sql
+      - name: Verify both patched RPCs and preserved execution rights
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-full-migration.test.sql
+      - name: Install fingerprint-checked production pass stamp in throwaway PostgreSQL
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-pass-stamp-fixture.sql
+          TRIGGER_SHA="$(psql -X -At -v ON_ERROR_STOP=1 -c "SELECT pg_catalog.md5(pg_catalog.pg_get_functiondef('couple_private.love_stamp_challenge_pass()'::pg_catalog.regprocedure))")"
+          if [ "$TRIGGER_SHA" != "3241da749bd0647c6106c613c7e3615a" ]; then
+            echo "::error::Timestamp trigger does not match reviewed live function"
+            exit 1
+          fi
+      - name: Test authenticated A/B and outsider isolation with RLS and pass quotas
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-authenticated-partners.test.sql
+      - name: Prove concurrent same-player quotas, A/B independence and double-click idempotency
+        run: |
+          bash -n couple-web/lr026-concurrent-pass.test.sh
+          bash couple-web/lr026-concurrent-pass.test.sh
+      - name: Execute actual LoveRoll D100 and redraw RPCs with synthetic partners
+        run: |
+          bash -n couple-web/lr026-real-rpc.test.sh
+          bash couple-web/lr026-real-rpc.test.sh
+      - name: Run actual PostgreSQL RLS under authenticated A/B/C and test fail-closed drift guards
+        run: |
+          bash -n couple-web/lr026-staging-rls.test.sh
+          bash couple-web/lr026-staging-rls.test.sh
+      - name: Verify anon denial and authenticated server-side RPC execution
+        run: psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-rpc-role-security.test.sql
+      - name: Recheck rank and permissions after full migration
+        run: |
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-server-variety-smoke.sql
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-postgres-rank.test.sql
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-evening-flow.test.sql
+      - name: Reject a stale migration without changing the patched RPCs
+        run: |
+          set -euo pipefail
+          if psql -X -v ON_ERROR_STOP=1 -f "$RUNNER_TEMP/lr026-fixture-migration.sql" > "$RUNNER_TEMP/lr026-rejected.log" 2>&1; then
+            echo "::error::A stale SQL migration was unexpectedly accepted."
+            exit 1
+          fi
+          grep -q 'les fonctions de pige ont changé' "$RUNNER_TEMP/lr026-rejected.log" || {
+            echo "::error::The stale migration failed for the wrong reason."
+            cat "$RUNNER_TEMP/lr026-rejected.log"
+            exit 1
+          }
+          psql -X -v ON_ERROR_STOP=1 -f couple-web/lr026-full-migration.test.sql
+      - name: Prove transactional rollback if second RPC patch fails
+        run: |
+          set -euo pipefail
+          # Fully isolated DB: cannot affect the successful main fixture.
+          createdb lr026_rollback_test
+          psql -X -d lr026_rollback_test -v ON_ERROR_STOP=1 -f couple-web/lr026-postgres-fixture.sql
+          psql -X -d lr026_rollback_test -v ON_ERROR_STOP=1 -f couple-web/lr026-postgres-rpc-fixture.sql
+          psql -X -d lr026_rollback_test -v ON_ERROR_STOP=1 -f couple-web/lr026-failed-migration-fixture.sql
+          # Both expected MD5 values match the deliberately drifted fixture.
+          # The first CREATE OR REPLACE must run, then the second anchor
+          # must fail, forcing BEGIN's entire transaction to roll back.
+          BEFORE="$(psql -X -d lr026_rollback_test -At -v ON_ERROR_STOP=1 -c "SELECT md5(pg_get_functiondef('public.draw_for_partner(uuid,text,boolean)'::regprocedure)) || ',' || md5(pg_get_functiondef('public.love_respond_and_redraw(uuid,text,boolean)'::regprocedure))")"
+          DRAW_SHA="${BEFORE%%,*}"
+          REDRAW_SHA="${BEFORE##*,}"
+          node couple-web/lr026-fixture-migration.cjs "$DRAW_SHA" "$REDRAW_SHA" > "$RUNNER_TEMP/lr026-rollback-migration.sql"
+          if psql -X -d lr026_rollback_test -v ON_ERROR_STOP=1 -f "$RUNNER_TEMP/lr026-rollback-migration.sql" > "$RUNNER_TEMP/lr026-rollback-error.log" 2>&1; then
+            echo "::error::Partially broken RPC migration incorrectly committed."
+            exit 1
+          fi
+          grep -q 'point de branchement Passer/Refuser absent ou ambigu' "$RUNNER_TEMP/lr026-rollback-error.log" || {
+            echo "::error::Failed migration rejected for the wrong reason."
+            cat "$RUNNER_TEMP/lr026-rollback-error.log"
+            exit 1
+          }
+          AFTER="$(psql -X -d lr026_rollback_test -At -v ON_ERROR_STOP=1 -c "SELECT md5(pg_get_functiondef('public.draw_for_partner(uuid,text,boolean)'::regprocedure)) || ',' || md5(pg_get_functiondef('public.love_respond_and_redraw(uuid,text,boolean)'::regprocedure))")"
+          if [ "$BEFORE" != "$AFTER" ]; then
+            echo "::error::At least one RPC changed after failed migration."
+            exit 1
+          fi
+          psql -X -d lr026_rollback_test -v ON_ERROR_STOP=1 -f couple-web/lr026-atomic-rollback.test.sql
+      - name: Test live schema preflight fail-closed regressions
+        run: bash couple-web/lr026-preflight-negative.test.sh

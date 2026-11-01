@@ -28,18 +28,35 @@ const ECLAT_INTENTIONS=[
 ];
 function eclatRecommendation(history){
  const lastStart=new Map();
- for(const row of history||[]){
-  const id=Number(row.coffret_id),date=Date.parse(row.started_at||'');
-  if(!ECLAT_COFFRETS.some(c=>c.id===id))continue;
-  lastStart.set(id,Math.max(lastStart.get(id)??0,Number.isFinite(date)?date:0));
+ for(const row of Array.isArray(history)?history:[]){
+  if(!row||typeof row!=='object'||Array.isArray(row))continue;
+  const id=Number(row.coffret_id);
+  // An incomplete legacy record is not proof of a played coffret.
+  const date=typeof row.started_at==='string'?Date.parse(row.started_at):NaN;
+  if(!ECLAT_COFFRETS.some(c=>c.id===id)||!Number.isFinite(date))continue;
+  lastStart.set(id,Math.max(lastStart.get(id)??0,date));
  }
  const newOne=ECLAT_COFFRETS.find(c=>!lastStart.has(c.id));
  if(newOne)return {coffret:newOne,reason:'À découvrir · pas encore commencé'};
  const oldOne=[...ECLAT_COFFRETS].sort((a,b)=>lastStart.get(a.id)-lastStart.get(b.id)||a.id-b.id)[0];
  return {coffret:oldOne,reason:'À retrouver · commencé depuis le plus longtemps'};
 }
-export function eclatHtml({status=null,selected=1,minutes=30,intent='all',discovery=true,details=false,members=[],userId=null,music=false,finished=null,history=[],historyError=false,browse=false,noteState={}}={}){
- const access=status?.access===true,active=status?.active===true;
+export function eclatHtml({status=null,selected=1,minutes=30,intent='all',discovery=true,details=false,members=[],userId=null,music=false,finished=null,history=[],historyError=false,browse=false,noteState={},coupleReady=true}={}){
+ if(!coupleReady){
+  // A missing association is not a subscription failure. Do not show an
+  // old private coffret, price or history while the duo is unavailable.
+  return '<section class="eclat-shell" aria-label="Éclat · duo indisponible">'+
+   '<header class="eclat-top">'+ritualHeadingHtml('NOTRE RITUEL DE LA SOIRÉE')+'</header>'+
+   '<section class="eclat-offer" role="status" aria-label="Duo à vérifier">'+
+   '<div class="eclat-offer-symbol" aria-hidden="true">♡</div>'+
+   '<h2>Votre duo n’est pas prêt</h2>'+
+   '<p>Éclat est réservé aux deux partenaires associés. Vérifiez votre association avant de retrouver vos coffrets.</p>'+
+   btn('tab:session','← Retour à notre soirée','eclat-offer-back')+
+   '</section></section>';
+ }
+ // A stale status can claim an active session after access was revoked.
+ // Access and active play must be authorized together before showing steps.
+ const access=status?.access===true,active=access&&status?.active===true;
  const c=eclatCoffret(active&&!browse?status.coffret_id:selected)||ECLAT_COFFRETS[0];
  const heading='<header class="eclat-top">'+
   (details||active&&!browse?'<button type="button" class="eclat-return" data-action="eclat:library" aria-label="Retour aux coffrets">‹</button>':'<span class="eclat-header-balance" aria-hidden="true"></span>')+
@@ -47,7 +64,9 @@ export function eclatHtml({status=null,selected=1,minutes=30,intent='all',discov
   (active?btn('eclat:music',headphones+'<span>'+(music?'Couper le son':'Musique')+'</span>','eclat-audio-toggle'+(music?' is-on':'')):'<span class="eclat-header-balance" aria-hidden="true"></span>')+'</header>'+
   '<div class="eclat-page-title"><h2 class="ritual-page-title">'+esc(active&&!browse?c.title:'Nos 12 coffrets à deux')+'</h2></div>'+
   eveningEclatSwitcher('eclat');
- const lead=finished?'<div class="eclat-complete" role="status">♡ Coffret terminé ensemble · '+esc(finished)+'</div>':'';
+ // A completion notice is private and only valid with confirmed Éclat access.
+ // A revoked/absent status or a newly active coffret must not inherit it.
+ const lead=finished&&access&&!active?'<div class="eclat-complete" role="status">♡ Coffret terminé ensemble · '+esc(finished)+'</div>':'';
  const premiumNote='<p class="eclat-disclaimer">Vos 200 défis et les 100 activités Surprise restent indépendants. Aucun achat n’est effectué depuis cet écran.</p>';
  let body='';
  if(active&&!browse){

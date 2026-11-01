@@ -69,9 +69,18 @@ export function eveningInviteInboxHtml(invite,{partnerName='Ton partenaire'}={})
   return '';
  const name=String(partnerName||'Ton partenaire').trim().split(/\s+/)[0];
  const prefix=invite.state==='maybe'?'Toujours partant·e ? ':'';
+ // A verified invitation can be accepted immediately from Accueil.
+ // The existing account-scoped handler records consent and opens Soirée,
+ // but NEVER throws a D6 for either person. Other answers stay in Soirée.
+ const accept=invite.id?
+  '<button type="button" data-action="evening-invite:yes" class="lr-evening-inbox-yes"'+
+  ' aria-label="Accepter l’invitation à jouer ce soir">Oui ♥</button>':'';
  return '<aside class="lr-evening-inbox" role="region" aria-label="Invitation à jouer">'+
   '<span aria-hidden="true" class="lr-evening-inbox-heart">♥</span>'+
   '<span class="lr-evening-inbox-copy">'+escapeHtml(prefix+name+' a envie de jouer ce soir.')+'</span>'+
-  '<button type="button" data-action="tab:session" class="lr-evening-inbox-open">'+
-   'Répondre<span class="sr-only"> dans Soirée</span></button></aside>';
+  '<span class="lr-evening-inbox-actions">'+accept+
+   '<button type="button" data-action="tab:session" class="lr-evening-inbox-open">'+
+   (accept?'Autres choix':'Répondre')+
+   '<span class="sr-only"> dans Soirée : oui, non, peut-être ou ignorer</span></button>'+
+  '</span></aside>';
 }

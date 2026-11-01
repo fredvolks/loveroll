@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {eveningReviewModal,validEveningReview,eveningPersonReviewMarkup,REVIEW_QUESTIONS} from './evening-review.mjs';
+import {eveningReviewModal,validEveningReview,eveningPersonReviewMarkup,eveningFinaleStatus,REVIEW_QUESTIONS} from './evening-review.mjs';
 import {eveningHistoryMarkup} from './evening-calendar.mjs';
+import {premiumEveningHtml} from './premium-evening.mjs';
 const read=f=>readFileSync(new URL(f,import.meta.url),'utf8');
 const members=[{user_id:'fred',name:'Fred'},{user_id:'partner',name:'Partenaire'}];
 const sessions=[{id:'evening-1',started_at:'2026-10-16T17:00:00Z',finished_at:'2026-10-16T22:00:00Z',counted:true}];
@@ -23,14 +24,36 @@ test('One premium review modal, four heart questions and NO calendar CTA or pass
  assert.match(html,/maxlength="500"/);
  assert.doesNotMatch(html,/Plaisir des défis/);
 });
+test('saving state makes the entire review form read-only without hiding close',()=>{
+ const draft={overall:5,connection:4,appreciation:3,again:5,comment:'Notre moment'};
+ const saving=eveningReviewModal({sessionId:'evening-1',draft,saving:true});
+ assert.match(saving,/aria-busy="true"/);
+ assert.match(saving,/id="lr-review-comment"[^>]*readonly/);
+ assert.equal((saving.match(/class="lr-review-heart(?: is-lit)?"[^>]*disabled/g)||[]).length,20);
+ assert.match(saving,/data-action="review-save" disabled/);
+ assert.match(saving,/data-action="review-dismiss"/,'Closing remains possible during a slow request');
+ const normal=eveningReviewModal({sessionId:'evening-1',draft,saving:false});
+ assert.match(normal,/aria-busy="false"/);
+ assert.doesNotMatch(normal,/id="lr-review-comment"[^>]*readonly/);
+ assert.doesNotMatch(normal,/class="lr-review-heart[^"]*"[^>]*disabled/);
+ assert.doesNotMatch(normal,/data-action="review-save" disabled/);
+});
 test('Rating bounds, comment size and HTML escaping stay protected',()=>{
  assert.equal(validEveningReview(reviews[0]),true);
  assert.equal(validEveningReview({...reviews[0],appreciation:0}),false);
  assert.equal(validEveningReview({...reviews[0],connection:6}),false);
  assert.equal(validEveningReview({...reviews[0],comment:'x'.repeat(501)}),false);
+ assert.equal(validEveningReview({...reviews[0],comment:null}),true);
+ assert.equal(validEveningReview({...reviews[0],comment:undefined}),true);
+ for(const comment of [0,42,false,['note'],{text:'note'}])
+  assert.equal(validEveningReview({...reviews[0],comment}),false,
+   'Only a string or an empty optional comment is accepted');
  const html=eveningReviewModal({sessionId:'evening-1',draft:{comment:'<script>alert(1)</script>'}});
  assert.match(html,/&lt;script&gt;/);
  assert.doesNotMatch(html,/<script>/);
+ const malformed=eveningReviewModal({sessionId:'evening-1',draft:{comment:{secret:'not text'}}});
+ assert.match(malformed,/id="lr-review-counter">0\/500/);
+ assert.doesNotMatch(malformed,/object Object|not text/);
 });
 test('Each person accordion owns ONLY their challenges and their own review',()=>{
  const historyChallenges=[
@@ -83,4 +106,106 @@ test('New per-person reviews remain authenticated and protected',()=>{
  assert.match(sql,/couple_private\.is_member\(p_couple\)/);
  assert.match(sql,/auth\.uid\(\)/);
  assert.match(sql,/REVOKE ALL ON TABLE public\.couple_evening_reviews FROM PUBLIC, anon, authenticated/);
+});
+
+test('Partial legacy reviews and an empty draft never break the calendar',()=>{
+ const empty=eveningReviewModal({sessionId:'evening-1',draft:null});
+ assert.match(empty,/Notre bilan de la soirée/);
+ assert.equal((empty.match(/class="lr-review-question"/g)||[]).length,4);
+ const mine=eveningPersonReviewMarkup({
+  reviews:[null,false,{},...reviews],sessionId:'evening-1',person:members[0],me:'fred'
+ });
+ assert.match(mine,/Une belle soirée/);
+ assert.doesNotMatch(mine,/J’ai aimé notre moment/);
+ const missing=eveningPersonReviewMarkup({
+  reviews:null,sessionId:'evening-1',person:null,me:'fred'
+ });
+ assert.match(missing,/En attente de son bilan/);
+ assert.doesNotMatch(missing,/data-action="review-open:/);
+ const stray=eveningPersonReviewMarkup({
+  reviews:[{session_id:'evening-1',comment:'Orphaned comment',overall:5}],
+  sessionId:'evening-1',person:{name:'Personne inconnue'},me:'fred'
+ });
+ assert.doesNotMatch(stray,/Orphaned comment|5 sur 5/,
+  'A review with no author ID must not be assigned to an unknown calendar member');
+ assert.match(stray,/En attente de son bilan/);
+ const malformedNote=eveningPersonReviewMarkup({
+  reviews:[{...reviews[0],comment:{text:'not a saved note'}}],
+  sessionId:'evening-1',person:members[0],me:'fred'
+ });
+ assert.doesNotMatch(malformedNote,/object Object|not a saved note/);
+});
+test('Malformed past heart scores cannot blank the couple calendar',()=>{
+ const weird={...reviews[0],overall:3.5,connection:100,appreciation:-1,again:'NaN'};
+ const html=eveningPersonReviewMarkup({
+  reviews:[weird],sessionId:'evening-1',person:members[0],me:'fred'
+ });
+ assert.equal((html.match(/aria-label="0 sur 5"/g)||[]).length,4);
+ assert.doesNotMatch(html,/aria-label="3\.5 sur 5"/);
+ assert.equal((html.match(/♡♡♡♡♡/g)||[]).length,4);
+ const rating=eveningReviewModal({sessionId:'evening-1',draft:weird});
+ assert.match(rating,/data-review-session="evening-1"/);
+});
+
+test('Finale counts one review per partner and handles incomplete history safely',()=>{
+ const summary=eveningFinaleStatus({
+  sessionId:'evening-1',selfId:'fred',partnerId:'partner',
+  reviews:[null,{session_id:'evening-1',author_id:'fred'},
+   {session_id:'evening-1',author_id:'fred'},
+   {session_id:'evening-1',author_id:'different-user'},
+   {session_id:'older',author_id:'partner'}],
+  challenges:[null,{session_id:'evening-1',status:'completed'},
+   {session_id:'evening-1',status:'proposed'},
+   {session_id:'older',status:'completed'}]
+ });
+ assert.deepEqual(summary,{id:'evening-1',completed:1,responses:1,
+  myResponse:true,partnerResponse:false});
+ const both=eveningFinaleStatus({
+  sessionId:'evening-1',selfId:'fred',partnerId:'partner',reviews
+ });
+ assert.equal(both.responses,2);
+ assert.equal(both.partnerResponse,true);
+ const unavailable=eveningFinaleStatus({
+  sessionId:'evening-1',selfId:'fred',reviews:null,challenges:null
+ });
+ assert.equal(unavailable.responses,null);
+ assert.equal(unavailable.partnerResponse,null);
+ assert.equal(unavailable.completed,0);
+ const unknownPartner=eveningFinaleStatus({
+  sessionId:'evening-1',selfId:'fred',reviews
+ });
+ assert.equal(unknownPartner.myResponse,true);
+ assert.equal(unknownPartner.partnerResponse,null);
+ assert.equal(unknownPartner.responses,null,'not enough member data to claim 2 / 2');
+ const duplicateMember=eveningFinaleStatus({
+  sessionId:'evening-1',selfId:'fred',partnerId:'fred',reviews
+ });
+ assert.equal(duplicateMember.partnerResponse,null);
+ assert.equal(duplicateMember.responses,null,'one member must never count twice');
+ assert.equal(eveningFinaleStatus({sessionId:null}),null);
+ const app=read('app.js');
+ assert.match(app,/const lastEvening=last\?eveningFinaleStatus\(/);
+});
+
+test('The Soirée aftercare primary action opens own review, never a disabled new game',()=>{
+ const base={session:null,members:[{user_id:'fred',name:'Fred'},
+  {user_id:'partner',name:'Partenaire'}],me:'fred',
+  weeklyCount:1,weeklyLimit:3,weeklyReady:true,canStartEvening:false};
+ const pending=premiumEveningHtml({...base,lastEvening:{
+  id:'closed-review',completed:2,myResponse:false,partnerResponse:false,responses:0}});
+ assert.match(pending,/data-action="review-open:closed-review"/);
+ assert.match(pending,/♡ REMPLIR MON BILAN/);
+ assert.doesNotMatch(pending,/class="evening-finale-start" data-action="new-session"/);
+ assert.match(pending,/data-action="evening-calendar"/);
+ assert.equal((pending.match(/class="evening-finale-start"/g)||[]).length,1);
+ const saved=premiumEveningHtml({...base,lastEvening:{
+  id:'closed-review',completed:2,myResponse:true,partnerResponse:false,responses:1}});
+ assert.match(saved,/data-action="review-open:closed-review"/);
+ assert.match(saved,/♡ MODIFIER MON BILAN/);
+ const fresh=premiumEveningHtml({...base,lastEvening:null});
+ assert.match(fresh,/data-action="new-session"[^>]*disabled/);
+ assert.doesNotMatch(fresh,/data-action="review-open:/);
+ const allowed=premiumEveningHtml({...base,canStartEvening:true,lastEvening:null});
+ assert.match(allowed,/data-action="new-session"/);
+ assert.doesNotMatch(allowed,/data-action="new-session"[^>]*disabled/);
 });

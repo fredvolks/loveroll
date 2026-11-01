@@ -57,7 +57,7 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   try{
    await page.locator('.evening-premium-view.is-inactive').waitFor();
    assert.equal(await page.locator('.evening-intro h2').innerText(),'200 défis à vivre à deux');
-   assert.equal(await page.locator('.evening-finale-tiles>div').nth(1).innerText(),'3 / 200\nDéfis complétés');
+   assert.equal(await page.locator('.evening-finale-tiles>div').nth(1).innerText(),'3 / 200\nDéfis distincts');
    // LR-001: genuine idle D100 geometry must fit its stage on mobile and
    // keep Surprise's on-screen proportion (not just its CSS canvas size).
    await page.waitForFunction(()=>document.querySelector('.evening-finale-dice canvas')?.loveRollDie?.projectedBounds);

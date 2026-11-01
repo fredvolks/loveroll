@@ -1,22 +1,31 @@
+import {sessionLengthChooserHtml} from './session-duration-preference.mjs';
+import {eveningIntensityChooserHtml} from './evening-intensity-preference.mjs';
 import {eveningOddsHtml} from './evening-d6-template.mjs?v=20261022-home228';
 // LoveRoll connected couple — production UI, not a demo. All results are provided by Supabase.
 import {ritualHeadingHtml} from './brand.mjs?v=20261017-ritual130';
 import {eveningEclatSwitcher} from './evening-eclat-switcher.mjs?v=20261022-home228';
+import {categoryConfirmOdds} from './evening-category-confirm.mjs';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','"':'&quot;',"'":'&#39;'}[c]));
 const bt=(action,text,cls='',disabled=false)=>'<button type="button" class="'+cls+'" data-action="'+esc(action)+'"'+
  (action.startsWith('category:')?' aria-pressed="'+(cls.includes('selected')?'true':'false')+'"':'')+
  (disabled?' disabled':'')+'>'+text+'</button>';
-// Progress through the 200 library slots is shared by the couple. A repeated
-// completion, or the same record loaded from two history views, counts once.
+// Progress through 200 distinct library CARDS, not 200 D100 outcomes.
+// A card keeps its card_id even when the D100 face used to draw it differs.
+// Historic rows that predate card_id retain their original face-based count.
 export function completedEveningLibraryCount(history=[]){
+ if(!Array.isArray(history))return 0;
  const slots=new Set();
- for(const challenge of history||[]){
+ for(const challenge of history){
   if(challenge?.status!=='completed')continue;
   const raw=String(challenge.category||'').toUpperCase();
   const category=raw==='COQUIN'?'SEXUEL':raw;
-  const face=Number(challenge.face);
-  if(!['SENSUEL','SEXUEL'].includes(category)||!Number.isInteger(face)||face<1||face>100)continue;
-  slots.add(category+':'+face);
+  if(!['SENSUEL','SEXUEL'].includes(category))continue;
+  const hasCardId=challenge.card_id!==undefined&&challenge.card_id!==null;
+  const slot=hasCardId?challenge.card_id:challenge.face;
+  // Corrupt modern IDs must not silently fall back to a plausible D100 face.
+  const number=Number(slot);
+  if(!Number.isInteger(number)||number<1||number>100)continue;
+  slots.add(category+':'+number);
  }
  return slots.size;
 }
@@ -46,9 +55,13 @@ export function premiumPolyDie(sides,face=null,caption='',spinning=false,preview
 // result, 3D geometry and dice engine stay untouched until an actual roll.
 export function updateEveningCategoryUi(root,category,percent=88){
  if(!['SENSUEL','HASARD','SEXUEL'].includes(category))return false;
+ const preferred=categoryConfirmOdds('SENSUEL',percent).sensuel;
  const group=root?.querySelector('.evening-step.two .evening-choice');
  const buttons=[...(group?.querySelectorAll('button[data-action^="category:"]')||[])];
- if(!buttons.length||buttons.every(button=>button.disabled)||!buttons.some(b=>b.dataset.action==='category:'+category))return false;
+ // A delayed touch from a previous turn must not select a now-disabled
+ // category or re-enable the official D100 draw button.
+ const target=buttons.find(button=>button.dataset.action==='category:'+category);
+ if(!target||target.disabled)return false;
  group.classList.remove('lr-choose-category');group.querySelector('.lr-category-hint')?.remove();
  const names={SENSUEL:'Sensuel',HASARD:'Au hasard',SEXUEL:'Sexuel'};
  for(const button of buttons){
@@ -61,17 +74,25 @@ export function updateEveningCategoryUi(root,category,percent=88){
   const option=button.closest('.evening-choice-option');
   if(!option)continue;
   let odds=option.querySelector('.evening-choice-odds');
-  if(selected&&category!=='HASARD'){
+  if(selected){
    if(!odds){
     odds=button.ownerDocument.createElement('small');
     odds.className='evening-choice-odds';
+    odds.setAttribute('aria-live','polite');
     option.appendChild(odds);
    }
-   if(odds.textContent!==String(percent)+' % de chancesd’avoir cette catégorie'){
-    odds.textContent=String(percent)+' % de chances';
-    const detail=button.ownerDocument.createElement('span');
-    detail.textContent='d’avoir cette catégorie';
-    odds.appendChild(detail);
+   // "Au hasard" always uses 50/50, regardless of the preferred odds.
+   // Keep an actual space between text and its styled detail so screen
+   // readers do not announce "chancesd’avoir" as one joined word.
+   const readable=category==='HASARD'?'50 % Sensuel · 50 % Sexuel':
+    String(preferred)+' % de chances d’avoir cette catégorie';
+   if(odds.textContent!==readable){
+    odds.textContent=category==='HASARD'?readable:String(preferred)+' % de chances ';
+    if(category!=='HASARD'){
+     const detail=button.ownerDocument.createElement('span');
+     detail.textContent='d’avoir cette catégorie';
+     odds.appendChild(detail);
+    }
    }
   }else odds?.remove();
  }
@@ -126,26 +147,30 @@ const step1Summary=(mine,partner,myRoll,theirRoll,totals)=>{
 };
 export function premiumEveningHtml({
  session,members=[],me,rolls=[],status={},turn={},category=null,
- giftCount=0,receivedGifts=0,pending=null,rolling=false,
+ giftCount=0,receivedGifts=0,pending=null,rolling=false,redrawPending=false,giftPending=false,
  challengeOverlay='',showMore=false,confirmCancel=false,rollFace=null,rollingKind=null,
- lastEvening=null,lastD35Face=null,playable=null,ownChallengeCount=0,canStartEvening=true,
- weeklyReady=true,weeklyCount=0,weeklyLimit=1,dailyLocked=false,invitationHtml='',
+ lastEvening=null,lastD35Face=null,playable=null,ownChallengeCount=0,canStartEvening=true,sessionLength='libre',eveningIntensity='medium',
+ weeklyReady=true,weeklyCount=0,weeklyLimit=1,dailyLocked=false,historyReady=true,invitationHtml='',
+ nextChallenge=null,
  showSensuel=true,showSexuel=true,categoryOdds=88,challengeHistory=[],eveningWeights,eveningWeightsEnabled=true
 }={}){
+ const preferredOdds=categoryConfirmOdds('SENSUEL',categoryOdds).sensuel;
  const mine=members.find(m=>m.user_id===me)||members[0]||{},
  partner=members.find(m=>m.user_id!==me)||members[1]||{},
  ready=!!status?.both_ready,
  myRoll=rolls.find(r=>r.user_id===me),
  theirRoll=rolls.find(r=>r.user_id===partner.user_id),
- canMyRoll=!!session&&!status?.my_rolled&&!rolling;
+ canMyRoll=!!session&&!status?.my_rolled&&!rolling&&!redrawPending&&!giftPending;
  const first=turn?.first?members.find(m=>m.user_id===turn.first)?.name?.split(' ')[0]:'';
  const totals=turn.targets||{},done=turn.completed||{};
- const canDraw=ready&&turn.ready&&!turn.drawsFinished&&
+ // A draw in flight owns the chosen category until its official receipt.
+ // Prevent another tap from changing the visible choice mid-animation.
+ const canDraw=ready&&turn.ready&&!turn.drawsFinished&&!rolling&&!redrawPending&&!giftPending&&
   Number(turn.remaining?.[me]||0)>0&&turn.next===me;
- const canGive=ready&&turn.ready&&giftCount<3&&Number(turn.remaining?.[me])>0;
- const challengeText=pending?'♡ Voir notre défi en cours':turn.finished?'Tous les défis terminés':!ready?'En attente des deux D6':canDraw?'À toi de jouer':'En attente de '+esc(partner.name?.split(' ')[0]||'ton partenaire');
+ const canGive=ready&&turn.ready&&!redrawPending&&!giftPending&&giftCount<3&&Number(turn.remaining?.[me])>0;
+ const challengeText=rolling?'Brassage en cours…':giftPending?'♡ Don en cours de confirmation…':pending?'♡ Voir notre défi en cours':turn.finished?'Tous les défis terminés':!ready?'En attente des deux D6':canDraw?'À toi de jouer':'En attente de '+esc(partner.name?.split(' ')[0]||'ton partenaire');
  const stateText=ready?'✓ Étape 2 débloquée':status?.my_rolled?'Ton lancer est enregistré. Attends ton partenaire.':status?.partner_rolled?'Le résultat de '+esc(partner.name?.split(' ')[0]||'ton partenaire')+' est prêt. À toi de brasser le dé.':'Chaque partenaire brasse son propre dé.';
- const currentStatus=turn.finished?'♡ Tous les défis sont réalisés':turn.drawsFinished?'♡ Tous les défis sont pigés':canDraw?'♥ C’est ton tour !':ready?'Au tour de '+esc(partner.name?.split(' ')[0]||'ton partenaire'):'Étape 2 verrouillée';
+ const currentStatus=rolling?'🎲 Brassage en cours…':redrawPending?'♡ Repige en cours de confirmation…':giftPending?'♡ Don en cours de confirmation…':turn.finished?'♡ Tous les défis sont réalisés':turn.drawsFinished?'♡ Tous les défis sont pigés':canDraw?'♥ C’est ton tour !':ready?'Au tour de '+esc(partner.name?.split(' ')[0]||'ton partenaire'):'Étape 2 verrouillée';
  // An official challenge is persisted in Supabase; never show a provisional
  // animation face or guess a result while a D100 is being rolled.
  const d35Candidate=lastD35Face??pending?.face??turn?.pending?.face;
@@ -157,24 +182,36 @@ export function premiumEveningHtml({
  const count=(uid)=>esc((done[uid]||0)+' / '+(totals[uid]??'—'));
  // LR-027: waiting for another person is a state, not a fake disabled button.
  const waitingStatus=label=>'<p class="evening-primary-status" role="status">'+esc(label)+'</p>';
- const primaryAction=turn.finished?
-  bt('finish-session','✓ Terminer la soirée','evening-primary'):
-  rolling?waitingStatus('Brassage en cours…'):
+ const resumeAction=nextChallenge?.id&&['accepted','proposed'].includes(nextChallenge.status)?
+  // Use the existing server-verified start path: one tap accepts a proposed
+  // private card (or resumes an accepted one) and opens its timer/detail.
+  bt('evening-start:'+nextChallenge.id,
+   nextChallenge.status==='accepted'?'▶ Reprendre mon défi':'▶ Commencer mon défi',
+   'evening-primary'):'';
+ // A member waiting for the other player's D100 can still play their own
+ // already-drawn card. Never replace the D100 itself on the active turn.
+ const primaryAction=rolling?waitingStatus('Brassage en cours…'):
+  redrawPending?waitingStatus('Repige en cours de confirmation…'):
+  giftPending?waitingStatus('Don en cours de confirmation…'):
+  turn.finished?bt('finish-session','✓ Terminer la soirée','evening-primary'):
   !ready?waitingStatus(status?.my_rolled?
    'En attente du D6 de ton partenaire':'Lance ton D6 pour continuer'):
-  turn.drawsFinished?(ownChallengeCount>0?
-   bt('evening-list','♡ Voir mes défis ('+ownChallengeCount+')','evening-primary'):
-   waitingStatus('Tous les tirages sont terminés')):
+  turn.drawsFinished?(resumeAction||
+   (ownChallengeCount>0?
+    bt('evening-list','♡ Voir mes défis ('+ownChallengeCount+')','evening-primary'):
+    waitingStatus('Tous les tirages sont terminés'))):
   canDraw?bt('new-challenge','🎲 Brasser le D100','evening-primary'):
-   waitingStatus('En attente du tour de ton partenaire');
- const secondaryAction=ownChallengeCount>0&&
-  !(turn.drawsFinished&&!turn.finished&&!rolling)?
+   resumeAction||waitingStatus('En attente du tour de ton partenaire');
+ // Opening the challenge list remounts the die scene. Keep that action
+ // unavailable until the official D100 animation has finished.
+ const secondaryAction=ownChallengeCount>0&&!rolling&&!redrawPending&&!giftPending&&!turn.finished&&
+  (!turn.drawsFinished||!!resumeAction)?
   bt('evening-list','♡ Voir mes défis ('+ownChallengeCount+')','evening-queue-open-btn'):'';
- return '<div class="evening-premium-view '+(session?(ready?'is-ready':'is-waiting'):'is-inactive is-finale')+'" data-category-percent="'+esc(categoryOdds)+'">'+
+ return '<div class="evening-premium-view '+(session?(ready?'is-ready':'is-waiting'):'is-inactive is-finale')+'" data-category-percent="'+esc(preferredOdds)+'">'+
  '<div class="evening-toolbar">'+
   '<span class="evening-header-balance" aria-hidden="true"></span>'+
   ritualHeadingHtml(session?(ready?'ÉTAPE 2 · DÉFI DU SOIR':'ÉTAPE 1 · NOMBRE DE DÉFIS'):'NOTRE RITUEL DE LA SOIRÉE')+
-  (session?'<button type="button" class="evening-manage" data-action="evening-more" aria-label="Gérer notre soirée">⋯</button>':'<span aria-hidden="true"></span>')+'</div>'+
+  (session?'<button type="button" class="evening-manage" data-action="evening-more" aria-label="Gérer notre soirée"'+(rolling||redrawPending||giftPending?' disabled aria-disabled="true"':'')+'>⋯</button>':'<span aria-hidden="true"></span>')+'</div>'+
  '<div class="evening-intro">'+
  '<h2 class="ritual-page-title">'+(session?(ready?'Votre défi du soir':'À toi de brasser ton dé'):'200 défis à vivre à deux')+'</h2>'+eveningEclatSwitcher('session')+'</div>'+invitationHtml+
  (session?
@@ -196,12 +233,13 @@ export function premiumEveningHtml({
        (!category&&canDraw?'<p id="lr-evening-category-hint" class="lr-category-hint" aria-live="polite">✨ Choisis ta catégorie pour lancer le dé</p>':'')+
        (showSensuel?'<div class="evening-choice-option">'+
          bt('category:SENSUEL',(category==='SENSUEL'?'✓ ':'♡ ')+'Sensuel','evening-choice-btn '+(category==='SENSUEL'?'selected':''),!canDraw)+
-         (category==='SENSUEL'?'<small class="evening-choice-odds">'+esc(categoryOdds)+' % de chances<span>d’avoir cette catégorie</span></small>':'')+'</div>':'')+
+         (category==='SENSUEL'?'<small class="evening-choice-odds" aria-live="polite">'+esc(preferredOdds)+' % de chances <span>d’avoir cette catégorie</span></small>':'')+'</div>':'')+
        '<div class="evening-choice-option">'+
-         bt('category:HASARD',(category==='HASARD'?'✓ ':'🎲 ')+'Au hasard','evening-choice-btn '+(category==='HASARD'?'selected':''),!canDraw)+'</div>'+
+         bt('category:HASARD',(category==='HASARD'?'✓ ':'🎲 ')+'Au hasard','evening-choice-btn '+(category==='HASARD'?'selected':''),!canDraw)+
+         (category==='HASARD'?'<small class="evening-choice-odds" aria-live="polite">50 % Sensuel · 50 % Sexuel</small>':'')+'</div>'+
        (showSexuel?'<div class="evening-choice-option">'+
          bt('category:SEXUEL',(category==='SEXUEL'?'✓ ':'♡ ')+'Sexuel','evening-choice-btn '+(category==='SEXUEL'?'selected':''),!canDraw)+
-         (category==='SEXUEL'?'<small class="evening-choice-odds">'+esc(categoryOdds)+' % de chances<span>d’avoir cette catégorie</span></small>':'')+'</div>':'')+'</div>'+
+         (category==='SEXUEL'?'<small class="evening-choice-odds" aria-live="polite">'+esc(preferredOdds)+' % de chances <span>d’avoir cette catégorie</span></small>':'')+'</div>':'')+'</div>'+
     '<div class="evening-die-row">'+
       '<div class="evening-d35-col">'+premiumPolyDie(100,rolling&&rollingKind==='new-challenge'?rollFace:officialD100,'Notre dé 100 faces',rolling&&rollingKind==='new-challenge')+
        '<div class="evening-d100-result" role="status" aria-live="polite"'+(officialD100?'':' hidden')+'>'+(officialD100?'Résultat : '+officialD100:'')+'</div>'+
@@ -213,7 +251,8 @@ export function premiumEveningHtml({
 
   '<section class="evening-gift"><div><strong>🎁 UN PETIT CADEAU</strong>'+
    '<p>Transfère un défi non commencé · '+giftCount+'/3 dons ce mois</p></div>'+
-   bt('give-challenge','♡ Donner 1 défi à '+esc(partner.name?.split(' ')[0]||'mon partenaire'),
+   bt('give-challenge',giftPending?'♡ Don en cours…':
+    '♡ Donner 1 défi à '+esc(partner.name?.split(' ')[0]||'mon partenaire'),
     'evening-gift-btn',!canGive||rolling)+'</section>'
   :
   '<section class="evening-empty is-finale ritual-gallery">'+
@@ -225,6 +264,11 @@ export function premiumEveningHtml({
     '<div class="evening-finale-ornament" aria-hidden="true"><span>♡</span></div>'+
     '<div class="evening-finale-weekly">♡ SOIRÉES CETTE SEMAINE · '+
        esc(weeklyCount)+' / '+(weeklyReady?esc(weeklyLimit):'—')+'</div>'+
+    // Place both local next-night preferences on ONE compact responsive row.
+    // Neither can modify the active or server-confirmed D6/D100 game.
+    '<div class="evening-next-intensity">'+sessionLengthChooserHtml(sessionLength)+
+      eveningIntensityChooserHtml(eveningIntensity)+
+     '<small>Pour préparer une prochaine soirée; les tirages actuels ne changent pas.</small></div>'+ 
     (lastEvening?
       '<h2>Notre soirée est terminée</h2>'+
       '<p class="evening-finale-description"><strong>'+esc(lastEvening.completed)+
@@ -241,6 +285,7 @@ export function premiumEveningHtml({
       '<h2>Votre soirée vous attend</h2>'+
       '<p class="evening-finale-description">'+
         (!weeklyReady?'Brassez d’abord le dé hebdomadaire depuis l’accueil.':
+         !historyReady?'Chargement de votre historique de soirées. Réessayez dans un instant.':
          dailyLocked?'Une soirée a déjà eu lieu aujourd’hui. Prochaine soirée au plus tôt demain.':
          canStartEvening?'Votre prochain moment à deux vous attend.':
          'Toutes les soirées de la semaine ont été utilisées.')+'</p>'+
@@ -248,17 +293,22 @@ export function premiumEveningHtml({
        '<div><strong>'+esc(weeklyCount)+' / '+(weeklyReady?esc(weeklyLimit):'—')+
          '</strong><span>Soirées cette semaine</span></div>'+
        '<div><strong>'+completedEveningLibraryCount(challengeHistory)+' / 200'+
-         '</strong><span>Défis complétés</span></div>'+
+         '</strong><span>Défis distincts</span></div>'+
        '<div><strong>'+esc(weeklyCount)+'</strong><span>Soirées terminées</span></div></div>')+
     '<div class="evening-finale-actions">'+
-      bt('new-session','♡ COMMENCER NOTRE SOIRÉE','evening-finale-start',!canStartEvening)+
+      (lastEvening?
+       // Today's evening is closed: make the main action useful instead
+       // of leaving a disabled start button in the couple's aftercare.
+       bt('review-open:'+lastEvening.id,lastEvening.myResponse?
+        '♡ MODIFIER MON BILAN':'♡ REMPLIR MON BILAN','evening-finale-start'):
+       bt('new-session','♡ COMMENCER NOTRE SOIRÉE','evening-finale-start',!canStartEvening))+
       bt('evening-calendar','▦ Consulter notre calendrier','evening-finale-calendar')+
     '</div>'+
   '</div></section>')+
- (showMore&&session?'<aside class="evening-more-menu" aria-label="Options de la soirée">'+
+ (showMore&&session&&!rolling&&!redrawPending&&!giftPending?'<aside class="evening-more-menu" aria-label="Options de la soirée">'+
   bt('evening-close-request','♡ Clore la soirée','evening-menu-close',!session)+
   bt('evening-calendar','▦ Calendrier','evening-menu-calendar')+'</aside>':'')+
- (confirmCancel&&session?'<aside class="evening-confirm" role="dialog" aria-modal="true" aria-label="Clore la soirée ?">'+
+ (confirmCancel&&session&&!rolling&&!redrawPending&&!giftPending?'<aside class="evening-confirm" role="dialog" aria-modal="true" aria-label="Clore la soirée ?">'+
   '<h3>Clore la soirée ?</h3><p>Les défis réalisés et non réalisés seront conservés dans le calendrier et les statistiques du couple. Aucun résultat ne sera effacé.</p>'+
   bt('evening-close-confirm','♡ Clore et conserver','evening-primary')+
   bt('dismiss-cancel','Continuer la soirée','subtle')+'</aside>':'')+

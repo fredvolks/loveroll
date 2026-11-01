@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {
  WEEKLY_ODDS,PIP_POSITIONS,pipFace,nextMonday,nextMonthly,
- assignedTonight,coupleHomeStats,premiumHomeHtml
+ assignedTonight,coupleHomeStats,premiumHomeHtml,calculateMobileHomePhotoGeometry
 } from './premium-home.mjs';
 
 const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
@@ -31,6 +31,19 @@ test('Weekly faces 1-6 use true standard dice spot geometry and 100% total',()=>
  assert.deepEqual(PIP_POSITIONS[6],[[29,22],[71,22],[29,50],[71,50],[29,78],[71,78]]);
  assert.throws(()=>pipFace(7));
 });
+test('Invalid saved weekly D6 never invents a face or permits a duplicate official draw',()=>{
+ for(const face of [0,7,-1,2.5,Infinity,NaN,'3',null]){
+  const home=premiumHomeHtml({weekly:{face}});
+  assert.match(home,/Cette semaine, on joue \?/);
+  assert.match(home,/Résultat hebdomadaire indisponible/);
+  assert.match(home,/data-dice-preview="true"/);
+  assert.doesNotMatch(home,/data-action="roll:weekly"/);
+  assert.doesNotMatch(home,/[0-9]+ soirées? de défi/);
+  assert.match(home,/disabled aria-disabled="true"/);
+ }
+ const empty=premiumHomeHtml({weekly:null});
+ assert.match(empty,/data-action="roll:weekly"/,'a truly undrawn week still offers the official throw');
+});
 test('Next weekly roll is Monday at Toronto midnight, including Sunday and DST',()=>{
  assert.equal(nextMonday(new Date('2026-10-14T18:00:00Z')),'2026-10-19');
  assert.equal(nextMonday(new Date('2026-10-18T14:00:00Z')),'2026-10-19');
@@ -52,18 +65,49 @@ test('Home uses server-authoritative assigned targets, not already drawn cards',
  assert.equal(assigned.completed,2);
  assert.equal(assignedTonight({ready:false},members).total,null);
 });
+test('Shared evening counts reject incomplete and unsafe RPC values without fake zeros',()=>{
+ const members=[{user_id:'a'},{user_id:'b'}];
+ const partial=assignedTonight({ready:true,targets:{a:4},
+  completed:{a:1,b:0},remaining:{a:3,b:0}},members);
+ assert.equal(partial.ready,true);
+ assert.equal(partial.forFirst,4);
+ assert.equal(partial.forSecond,null);
+ assert.equal(partial.total,null,'missing partner target stays unknown, never zero');
+ assert.equal(partial.completed,1,'genuine completed counts remain visible');
+ assert.equal(assignedTonight({ready:true,targets:{a:4,b:6}},{}).total,null);
+ assert.equal(assignedTonight({ready:true,targets:{a:4,b:6}},null).total,null);
+ assert.equal(assignedTonight({ready:true,targets:{a:4,b:6}},[null,false]).total,null);
+ for(const bad of [-2,1.5,Infinity,NaN,'', ' ', 'Infinity','-1','1.5',true,{},null]){
+  const summary=assignedTonight({ready:true,targets:{a:bad,b:3}},members);
+  assert.equal(summary.total,null,'invalid server target: '+String(bad));
+  assert.equal(summary.forFirst,null);
+ }
+ const legacy=assignedTonight({ready:true,targets:{a:'4',b:'6'},
+  completed:{a:'1',b:'0'},remaining:{a:'3',b:'6'}},members);
+ assert.equal(legacy.total,10,'canonical historic numeric strings remain supported');
+ assert.equal(legacy.completed,1);
+ assert.equal(legacy.remaining,9);
+ const overflow=assignedTonight({ready:true,targets:{a:Number.MAX_SAFE_INTEGER,b:2}},members);
+ assert.equal(overflow.total,null,'unsafe sums are not shown as official totals');
+ assert.match(premiumHomeHtml({members:{},turn:{ready:true}}),/real-home-shell/,
+  'incomplete member container does not crash the Home screen');
+ assert.match(premiumHomeHtml({members:null}),/real-home-shell/);
+});
 test('Production home uses actual saved weekly result, disabled state and live cards',()=>{
  const args={weekly:{face:2,actor:'a'},members:[{user_id:'a',name:'Fred'},{user_id:'b',name:'Camille'}],
  turn:{ready:true,targets:{a:4,b:6},remaining:{a:4,b:6},completed:{a:0,b:0}},now:new Date('2026-10-14T16:00:00Z')};
  const h=premiumHomeHtml(args);
  assert.match(h,/2 soirées de défi/);
- assert.match(h,/Déjà brassé cette semaine, revenez la semaine prochaine/);
+ assert.match(h,/data-action="tab:session" aria-label="Aller à notre soirée, sans lancer de nouveau dé"/);
  assert.match(h,/data-dice-sides="6"/);
  assert.match(h,/data-face="2"/);
  assert.equal((h.match(/class="home-weight"/g)||[]).length,6);
  assert.equal((h.match(/class="home-stat-card /g)||[]).length,4);
- assert.match(h,/Fred/);assert.match(h,/Camille/);
- assert.match(h,/Surprise du mois disponible/);
+ // The compact dashboard reports only shared totals; private per-person
+ // card counts and even first names stay on the authenticated Soirée screen.
+ assert.doesNotMatch(h,/Fred|Camille/);
+ assert.match(h,/Soirées partagées/);
+ assert.match(h,/Surprise du mois à découvrir/);
  assert.match(h,/tab:special/);
  assert.doesNotMatch(h,/data-action="roll:weekly"/);
  const waiting=premiumHomeHtml({...args,weekly:null});
@@ -82,7 +126,7 @@ test('Production home uses actual saved weekly result, disabled state and live c
  assert.match(rolling,/data-dice-markers="pips"/);
  assert.doesNotMatch(rolling,/data-dice-preview="true"/);
  assert.doesNotMatch(rolling,/2 soirées de défi/);
- assert.doesNotMatch(rolling,/Déjà brassé cette semaine, revenez la semaine prochaine/);
+ assert.doesNotMatch(rolling,/data-action="tab:session" aria-label="Aller à notre soirée/);
  assert.match(rolling,/Brassage 3D en cours/);
  assert.match(rolling,/<strong class="dice-fallback" aria-hidden="true">—<\/strong>/);
 });
@@ -130,19 +174,46 @@ test('Monthly stats only use completed records, real categories, partner IDs and
   {session_id:'old',recipient:'a',status:'completed',category:'SENSUEL',created_at:'2026-09-23T18:00:00Z'}
  ];
  const stats=coupleHomeStats(challenges,sessions,members,new Date('2026-10-14T20:00:00Z'));
- assert.deepEqual(stats,{completed:3,byPartner:[2,1],sensualPercent:33,sexualPercent:67,streak:2});
+ assert.deepEqual(stats,{completed:3,monthlyEvenings:2,byPartner:[2,1],sensualPercent:33,sexualPercent:67,streak:2});
  const html=premiumHomeHtml({history:challenges,sessions,members,now:new Date('2026-10-14T20:00:00Z')});
  assert.match(html,/class="home-stat-card completed"/);
  assert.match(html,/class="home-stat-card partners"/);
  assert.match(html,/class="home-stat-card categories"/);
  assert.match(html,/class="home-stat-card streak"/);
  assert.match(html,/33 \/ 67 %/);
- assert.match(html,/Fred \/ Émilie/);
+ assert.match(html,/Soirées partagées/);
  assert.doesNotMatch(html,/class="home-shortcut /);
+});
+test('Current-month recap survives stale duplicate history and repeated membership rows',()=>{
+ const now=new Date('2026-10-31T22:00:00Z');
+ const members=[{user_id:'alice'},{user_id:'alice'},{user_id:'bob'}];
+ const sessions=[
+  {id:'last-month',counted:true,finished_at:'2026-09-26T20:00:00Z'},
+  {id:'this-month',counted:true,finished_at:'2026-10-18T20:00:00Z'}
+ ];
+ const challenges=[
+  {id:'saved-one',session_id:'last-month',status:'completed',
+   recipient:'alice',category:'SENSUEL'},
+  {id:'saved-one',session_id:'this-month',status:'completed',
+   recipient:'alice',category:'SEXUEL'},
+  {id:'saved-one',session_id:'this-month',status:'completed',
+   recipient:'alice',category:'SEXUEL'},
+  {id:'saved-two',session_id:'this-month',status:'completed',
+   recipient:'bob',category:'SENSUEL'}
+ ];
+ const summary=coupleHomeStats(challenges,sessions,members,now);
+ assert.equal(summary.completed,2,'previous month must not hide current challenge');
+ assert.deepEqual(summary.byPartner,[1,1],'membership duplicates do not multiply counts');
+ assert.equal(summary.monthlyEvenings,1);
+ assert.equal(summary.sensualPercent,50);
+ assert.equal(summary.sexualPercent,50);
+ const reordered=coupleHomeStats([...challenges].reverse(),sessions,members,now);
+ assert.deepEqual(reordered.byPartner,[1,1],'snapshot order cannot change partner totals');
+ assert.equal(reordered.completed,2);
 });
 test('Unpaired statistics are zero or no-data instead of invented sample figures',()=>{
  const noData=coupleHomeStats([],[],[{user_id:'x'},{user_id:'y'}]);
- assert.deepEqual(noData,{completed:0,byPartner:[0,0],sensualPercent:null,sexualPercent:null,streak:0});
+ assert.deepEqual(noData,{completed:0,monthlyEvenings:0,byPartner:[0,0],sensualPercent:null,sexualPercent:null,streak:0});
 });
 test('D6 uses an actual bevel and no neon wireframe; fallback hidden during throws',()=>{
  assert.match(die,/RoundedBoxGeometry\(1\.8,1\.8,1\.8,9,\.18\)/);
@@ -160,9 +231,9 @@ test('Connected Home restores centered LoveRoll brand and preserves weekly statu
  const html=premiumHomeHtml({
   weekly:{face:1,actor:'a'},members:[{user_id:'a',name:'Fred'},{user_id:'b',name:'Émilie'}]
  });
- assert.match(html,/Déjà brassé cette semaine, revenez la semaine prochaine/);
+ assert.match(html,/♡ Aller à notre soirée/);
  assert.doesNotMatch(html,/♡ Dé déjà brassé cette semaine|Mon dé/);
- assert.match(html,/<button class="home-roll-button is-used[^"]*" type="button" disabled>/);
+ assert.match(html,/<button class="home-roll-button is-used[^"]*" type="button" data-action="tab:session"/);
  assert.equal((html.match(/home-gift-icon/g)||[]).length,1);
  assert.match(html,/ritual-brand/);
  assert.match(css,/min-height:48px/);
@@ -175,9 +246,321 @@ test('Connected Home restores centered LoveRoll brand and preserves weekly statu
  assert.doesNotMatch(afterDraw,/Voir notre résultat/);
 });
 
-test('Partner statistics distinguish saved profiles with the same first name',()=>{
- const h=premiumHomeHtml({members:[{user_id:'a',name:'Fred'},{user_id:'b',name:'Fred Messely'}]});
- const partners=h.match(/class="home-stat-card partners"[\s\S]*?<\/div>/)?.[0];
- assert.match(partners,/<small>Fred \/ Fred Messely<\/small>/);
- assert.doesNotMatch(partners,/<small>Fred \/ Fred<\/small>/);
+test('Monthly couple recap is collective and never shows private partner allocation',()=>{
+ const h=premiumHomeHtml({members:[{user_id:'a',name:'Alice'},{user_id:'b',name:'Bob'}],
+  sessions:[{id:'s1',counted:true,finished_at:'2026-10-14T20:00:00Z'}],
+  now:new Date('2026-10-15T12:00:00Z')});
+ const monthly=h.match(/class="home-stat-card partners"[\s\S]*?<\/div>/)?.[0];
+ assert.match(monthly,/>1<\/strong>/);
+ assert.match(monthly,/Soirées partagées/);
+ assert.doesNotMatch(monthly,/Alice|Bob|Répartition|Restants :/);
+});
+
+test('Mobile Home scene geometry never produces negative artwork heights when Safari viewport shrinks',()=>{
+ const normal=calculateMobileHomePhotoGeometry(852,512);
+ assert.equal(normal.split,512,'existing Android/iPhone portrait alignment is untouched');
+ assert.equal(normal.topImageHeight,512/.438);
+ assert.equal(normal.bottomImageHeight,(852-512)/.562);
+ assert.equal(normal.contact,512*.342/.438);
+ for(const [viewportHeight,rollTop] of [
+  [320,800], // keyboard opened: roll button moved below visible viewport
+  [568,-120], // vertical scrolling moved the roll above viewport
+  [220,1000], // short landscape viewport
+  [95,-20], // compact landscape
+  [600,600]
+ ]){
+  const photo=calculateMobileHomePhotoGeometry(viewportHeight,rollTop);
+  assert.ok(photo.split>0&&photo.split<viewportHeight);
+  assert.ok(photo.topImageHeight>0&&Number.isFinite(photo.topImageHeight));
+  assert.ok(photo.bottomImageHeight>0&&Number.isFinite(photo.bottomImageHeight));
+  assert.ok(photo.contact>0&&Number.isFinite(photo.contact));
+ }
+ for(const bad of [[0,300],[-5,80],[Infinity,80],[700,NaN],[700,Infinity]]){
+  assert.equal(calculateMobileHomePhotoGeometry(...bad),null);
+ }
+});
+
+test('LR-ACCUEIL-001: Home uses an actionable shortcut and a non-private shared status',()=>{
+ const members=[{user_id:'alice',name:'Alice'},{user_id:'bob',name:'Bob'}];
+ const weekly={face:2,actor:'alice'};
+ const unopened=premiumHomeHtml({weekly,activeEvening:false,members});
+ assert.match(unopened,/Aucune soirée en cours/);
+ assert.match(unopened,/data-action="tab:session"/);
+ assert.doesNotMatch(unopened,/Déjà brassé cette semaine, revenez la semaine prochaine/);
+ const preparing=premiumHomeHtml({weekly,activeEvening:true,members,turn:{ready:false}});
+ assert.match(preparing,/Soirée commencée/);
+ assert.match(preparing,/Préparez vos dés personnels/);
+ assert.match(preparing,/class="home-evening-link" data-action="resume-evening"/);
+ assert.doesNotMatch(preparing,/Restants : —|Défis attribués<br>ce soir/);
+ const active=premiumHomeHtml({weekly,activeEvening:true,members,
+  turn:{ready:true,targets:{alice:5,bob:2},remaining:{alice:4,bob:1},completed:{alice:1,bob:1}}});
+ assert.match(active,/Soirée en cours/);
+ assert.match(active,/Retrouvez vos défis dans Soirée/);
+ assert.doesNotMatch(active,/Restants : 4|Restants : 1|Défis attribués<br>ce soir/);
+ assert.match(active,/Semaines consécutives/);
+ const pending=premiumHomeHtml({weekly:null,rolling:true});
+ assert.match(pending,/data-action="roll:weekly" disabled/);
+ assert.doesNotMatch(pending,/class="home-evening-link" data-action="resume-evening"/);
+});
+
+test('LR-ACCUEIL-001: monthly Surprise copy reflects whether an activity has been drawn',()=>{
+ const newMonth=premiumHomeHtml({monthly:{},weekly:{face:1}});
+ assert.match(newMonth,/Surprise du mois à découvrir/);
+ const drawn=premiumHomeHtml({monthly:{monthly_activity:{face:7,activity_title:'Notre sortie'}}});
+ assert.match(drawn,/Choisir qui invite/);
+ assert.doesNotMatch(drawn,/Surprise du mois à découvrir/);
+ assert.match(drawn,/data-action="tab:special"/);
+});
+
+test('LR-ACCUEIL-001: official quota reports available weekly evenings, not daily eligibility',()=>{
+ const weekly={face:3,key:'2026-10-26',created_at:'2026-10-26T12:00:00Z'};
+ const summary={historyReady:true,limit:3,counted:1,dailyLocked:true,canStart:false};
+ const html=premiumHomeHtml({weekly,weeklyProgress:summary});
+ assert.match(html,/1 soirée partagée cette semaine · 2 disponibles cette semaine/);
+ assert.match(html,/data-action="tab:session"/);
+ assert.doesNotMatch(html,/2 disponibles aujourd’hui|2 disponibles aujourd'hui/);
+ const spent=premiumHomeHtml({weekly,weeklyProgress:{...summary,counted:3}});
+ assert.match(spent,/3 soirées partagées cette semaine · 0 disponibles cette semaine/);
+ assert.match(spent,/data-action="evening-calendar"/);
+ assert.match(spent,/Voir nos soirées/);
+ assert.match(spent,/Notre semaine est complète/);
+ assert.doesNotMatch(spent,/data-action="roll:weekly"|data-action="new-session"/);
+ const missing=premiumHomeHtml({weekly,weeklyProgress:{...summary,historyReady:false}});
+ assert.doesNotMatch(missing,/class="home-weekly-progress"/,
+  'Unknown history must never be displayed as zero completed evenings');
+ const invalid=premiumHomeHtml({weekly,weeklyProgress:{...summary,limit:2}});
+ assert.doesNotMatch(invalid,/class="home-weekly-progress"/,
+  'Unexpected quota input does not override the official D6 face');
+});
+
+test('LR-ACCUEIL-001: daily lock does not claim that all weekly evenings are spent',()=>{
+ const weekly={face:3,key:'2026-10-26'};
+ const progress={historyReady:true,limit:3,counted:1,dailyLocked:true,canStart:false};
+ const today=premiumHomeHtml({weekly,weeklyProgress:progress});
+ assert.match(today,/Soirée déjà partagée aujourd’hui/);
+ assert.match(today,/Une seule soirée par jour/);
+ assert.match(today,/2 disponibles cette semaine/);
+ assert.match(today,/data-action="tab:session"/);
+ assert.doesNotMatch(today,/data-action="evening-calendar"/);
+ const quota=premiumHomeHtml({weekly,weeklyProgress:{...progress,counted:3}});
+ assert.match(quota,/Notre semaine est complète/);
+ assert.match(quota,/data-action="evening-calendar"/);
+ assert.match(app,/if\(verb==='evening-calendar'\)/,
+  'The quota shortcut must lead to an implemented read-only history route');
+ const active=premiumHomeHtml({weekly,activeEvening:true,weeklyProgress:{...progress,counted:3},
+  turn:{ready:true,targets:{},remaining:{},completed:{}}});
+ assert.match(active,/data-action="resume-evening"/);
+ assert.doesNotMatch(active,/Notre semaine est complète|data-action="evening-calendar"/);
+});
+test('LR-ACCUEIL-001: loading history never presents an invented quota or closed week',()=>{
+ const weekly={face:2,key:'2026-10-26'};
+ const html=premiumHomeHtml({weekly,weeklyProgress:{historyReady:false,counted:0,limit:2}});
+ assert.match(html,/Synchronisation des soirées/);
+ assert.doesNotMatch(html,/0 soirée partagée|Notre semaine est complète/);
+ assert.match(html,/data-action="tab:session"/);
+ assert.doesNotMatch(html,/data-action="evening-calendar"/);
+});
+
+test('LR-ACCUEIL-001: the monthly recap links to current-month history without mutating play',()=>{
+ const html=premiumHomeHtml({weekly:{face:2},sessions:[],history:[]});
+ assert.match(html,/<h3 id="home-statistics-title"><button type="button" class="home-monthly-link" data-action="evening-calendar:month"/);
+ assert.match(html,/aria-label="Voir le détail de nos statistiques du mois dans le calendrier"/);
+ assert.equal((html.match(/data-action="evening-calendar:month"/g)||[]).length,1);
+ const rolling=premiumHomeHtml({weekly:{face:2},rolling:true,disabled:true});
+ assert.match(rolling,/data-action="evening-calendar:month" disabled aria-label=/,
+  'While the official Home die rolls the history control must not accept input');
+ assert.match(html,/Semaines consécutives/);
+ assert.doesNotMatch(html,/data-action="new-session"|data-action="roll:challenge"/);
+ assert.match(css,/\.home-monthly-link:focus-visible/);
+ assert.match(app,/if\(parts\[0\]==='month'\|\|state\.tab==='home'\)/);
+});
+
+test('LR-ACCUEIL-001: only real completed counted sessions appear in the correct Québec month',()=>{
+ const sessions=[
+  {id:'oct',counted:true,finished_at:'2026-11-01T02:59:00Z'},
+  {id:'oct',counted:true,finished_at:'2026-11-01T02:59:00Z'},
+  {id:'nov',counted:true,finished_at:'2026-11-01T04:30:00Z'},
+  {id:'draft',counted:true,finished_at:null},
+  {id:'uncounted',counted:false,finished_at:'2026-10-25T21:00:00Z'},
+  {id:'invalid',counted:true,finished_at:'invalid'}
+ ];
+ const october=coupleHomeStats([],sessions,[],new Date('2026-10-31T21:00:00Z'));
+ const november=coupleHomeStats([],sessions,[],new Date('2026-11-01T17:00:00Z'));
+ assert.equal(october.monthlyEvenings,1,'October evening finished before Québec midnight');
+ assert.equal(november.monthlyEvenings,1,'November evening finished after Québec midnight');
+ assert.equal(october.completed,0,'No fabricated challenge completion');
+ assert.equal(november.completed,0);
+ const html=premiumHomeHtml({sessions,now:new Date('2026-10-31T21:00:00Z')});
+ assert.match(html,/Soirées partagées/);
+ assert.doesNotMatch(html,/Répartition/);
+});
+
+test('LR-ACCUEIL-001: Surprise follows official host, planned and confirmed booking states',()=>{
+ const monthly={monthly_activity:{face:7},monthly_host:{face:2}};
+ const members=[{user_id:'a',name:'Alice'},{user_id:'b',name:'Bob'}];
+ const base={monthly,members,monthlyActivity:{title:'Notre restaurant'}};
+ const pending=premiumHomeHtml(base);
+ assert.match(pending,/À planifier/);
+ assert.match(pending,/Alice invite Bob/);
+ assert.doesNotMatch(pending,/Sortie réalisée|Rendez-vous réalisé/);
+ const planned=premiumHomeHtml({...base,
+  reservation:{status:'planned',reserved_for:'2026-11-11T23:00:00Z'}});
+ assert.match(planned,/Date prévue/);
+ assert.match(planned,/nov\. 2026/);
+ assert.doesNotMatch(planned,/Réservation déclarée confirmée/);
+ const confirmed=premiumHomeHtml({...base,
+  reservation:{status:'confirmed',reserved_for:'2026-11-11T23:00:00Z'}});
+ assert.match(confirmed,/Réservation déclarée confirmée/);
+ assert.match(confirmed,/nov\. 2026/);
+ assert.doesNotMatch(confirmed,/Sortie réalisée|Rendez-vous réalisé/);
+ const cancelled=premiumHomeHtml({...base,
+  reservation:{status:'cancelled',reserved_for:'2026-11-11T23:00:00Z'}});
+ assert.match(cancelled,/À replanifier/);
+ assert.doesNotMatch(cancelled,/Date prévue/);
+ const invalid=premiumHomeHtml({...base,
+  reservation:{status:'planned',reserved_for:'not-a-date'}});
+ assert.match(invalid,/À planifier/);
+ assert.doesNotMatch(invalid,/Date prévue/);
+ assert.match(app,/reservation:state\.geoReservation/);
+});
+
+test('LR-ACCUEIL-001: received invitation appears on Home without auto-acceptance or dice',()=>{
+ const weekly={face:2,key:'2026-10-26'};
+ const weeklyProgress={historyReady:true,counted:2,limit:2,dailyLocked:true};
+ const invitation={id:'verified-invite',direction:'received',state:'pending'};
+ const html=premiumHomeHtml({weekly,weeklyProgress,eveningInvite:invitation});
+ assert.match(html,/Une invitation vous attend/);
+ assert.match(html,/Répondre à l’invitation/);
+ assert.match(html,/data-action="tab:session"/);
+ assert.doesNotMatch(html,/data-action="evening-calendar"/);
+ assert.doesNotMatch(html,/data-action="evening-invite:yes"|data-action="roll:weekly"|data-action="new-session"/);
+ assert.match(app,/eveningInvite:state\.eveningInvite/);
+ const maybe=premiumHomeHtml({weekly,eveningInvite:{...invitation,state:'maybe'}});
+ assert.match(maybe,/Une invitation vous attend/);
+ const noId=premiumHomeHtml({weekly,eveningInvite:{direction:'received',state:'pending'}});
+ assert.match(noId,/data-action="tab:session"/);
+ assert.doesNotMatch(noId,/data-action="evening-invite:yes"/);
+});
+
+test('LR-ACCUEIL-001: sent invitation waits without nudging or rolling for partner',()=>{
+ const weekly={face:2};
+ const sent=premiumHomeHtml({weekly,eveningInvite:{id:'official',direction:'sent',state:'pending'}});
+ assert.match(sent,/En attente de la réponse/);
+ assert.match(sent,/Ton partenaire peut répondre à son rythme/);
+ assert.match(sent,/Voir mon invitation/);
+ assert.doesNotMatch(sent,/data-action="evening-invite:send"|data-action="evening-invite:yes"/);
+ const no=premiumHomeHtml({weekly,eveningInvite:{direction:'received',state:'no'}});
+ assert.doesNotMatch(no,/Une invitation vous attend|En attente de la réponse/);
+ const expired=premiumHomeHtml({weekly,eveningInvite:{direction:'sent',state:'expired'}});
+ assert.doesNotMatch(expired,/En attente de la réponse/);
+ const other=premiumHomeHtml({weekly,eveningInvite:{direction:'received',state:'obsolete'}});
+ assert.doesNotMatch(other,/Une invitation vous attend/);
+});
+
+test('LR-ACCUEIL-001: active evening remains primary over an outdated invitation',()=>{
+ const weekly={face:1};
+ const html=premiumHomeHtml({weekly,activeEvening:true,
+  turn:{ready:false},eveningInvite:{direction:'received',state:'pending'}});
+ assert.match(html,/Soirée commencée/);
+ assert.match(html,/data-action="resume-evening"/);
+ assert.doesNotMatch(html,/Une invitation vous attend|Répondre à l’invitation/);
+});
+
+test('LR-ACCUEIL-001: own official D6 awaits partner without revealing a face or private challenge',()=>{
+ const weekly={face:2};
+ const turns={ready:false,reason:'personal-rolls'};
+ const readySelf=premiumHomeHtml({weekly,activeEvening:true,
+  ownEveningD6Ready:true,turn:turns});
+ assert.match(readySelf,/En attente du partenaire/);
+ assert.match(readySelf,/Ton dé est enregistré/);
+ assert.match(readySelf,/data-action="resume-evening"/);
+ assert.doesNotMatch(readySelf,/face personnelle|Ton résultat : [1-6]|Défi personnel :/);
+ const notRolled=premiumHomeHtml({weekly,activeEvening:true,
+  ownEveningD6Ready:false,turn:turns});
+ assert.match(notRolled,/Soirée commencée/);
+ assert.match(notRolled,/Préparez vos dés personnels/);
+ assert.doesNotMatch(notRolled,/En attente du partenaire/);
+ const readyBoth=premiumHomeHtml({weekly,activeEvening:true,ownEveningD6Ready:true,
+  turn:{ready:true,targets:{},remaining:{},completed:{}}});
+ assert.match(readyBoth,/Soirée en cours/);
+ assert.doesNotMatch(readyBoth,/En attente du partenaire/);
+ const noSession=premiumHomeHtml({weekly,ownEveningD6Ready:true});
+ assert.doesNotMatch(noSession,/En attente du partenaire/);
+ assert.match(app,/ownEveningD6Ready:!!activeEvening&&!!state\.user\?\.id/);
+ assert.match(app,/r\.user_id===state\.user\.id/);
+});
+
+test('LR-ACCUEIL-001: officially closed evening today is a read-only history shortcut',()=>{
+ const weekly={face:3,key:'2026-10-26'};
+ const closedToday={id:'closed-1',counted:true,finished_at:'2026-10-31T20:00:00Z'};
+ const progress={historyReady:true,limit:3,counted:1,dailyLocked:true,
+  closedToday,canStart:false};
+ const html=premiumHomeHtml({weekly,weeklyProgress:progress});
+ assert.match(html,/Notre soirée est terminée ♥/);
+ assert.match(html,/Voir notre soirée terminée/);
+ assert.match(html,/Retrouvez notre soirée terminée dans le calendrier/);
+ assert.match(html,/data-action="evening-calendar:today"/);
+ assert.doesNotMatch(html,/data-action="new-session"|data-action="roll:weekly"/);
+ const atLimit=premiumHomeHtml({weekly,weeklyProgress:{...progress,counted:3}});
+ assert.match(atLimit,/Notre soirée est terminée ♥/);
+ assert.match(atLimit,/3 soirées partagées cette semaine · 0 disponibles cette semaine/);
+ assert.doesNotMatch(atLimit,/Notre semaine est complète/);
+ const nextDay=premiumHomeHtml({weekly,weeklyProgress:{...progress,closedToday:null,dailyLocked:false}});
+ assert.doesNotMatch(nextDay,/Notre soirée est terminée ♥/);
+ assert.match(nextDay,/data-action="tab:session"/);
+ const active=premiumHomeHtml({weekly,weeklyProgress:progress,activeEvening:true,
+  turn:{ready:false},ownEveningD6Ready:true});
+ assert.match(active,/En attente du partenaire/);
+ assert.doesNotMatch(active,/Notre soirée est terminée/);
+ const received=premiumHomeHtml({weekly,weeklyProgress:progress,
+  eveningInvite:{id:'server-1',direction:'received',state:'pending'}});
+ assert.match(received,/Une invitation vous attend/);
+ assert.doesNotMatch(received,/Notre soirée est terminée/);
+});
+
+test('LR-ACCUEIL-001: malformed finished-at dates never crash weekly streak',()=>{
+ const sessions=[
+  {id:'bad',counted:true,finished_at:'invalid'},
+  {id:'good',counted:true,finished_at:'2026-10-14T20:00:00Z'}
+ ];
+ const stats=coupleHomeStats([],sessions,[],new Date('2026-10-14T21:00:00Z'));
+ assert.equal(stats.monthlyEvenings,1);
+ assert.equal(stats.streak,1);
+ const onlyBad=coupleHomeStats([],sessions.filter(s=>s.id==='bad'),[],
+  new Date('2026-10-14T21:00:00Z'));
+ assert.equal(onlyBad.streak,0);
+ assert.equal(onlyBad.monthlyEvenings,0);
+});
+
+test('LR-ACCUEIL-001: incomplete RPC snapshots stay safe on Home',()=>{
+ const now=new Date('2026-10-31T22:00:00Z');
+ const night={id:'night-1',counted:true,finished_at:'2026-10-31T20:00:00Z'};
+ const challenges=[null,false,{},{
+  id:'challenge-1',session_id:'night-1',recipient:'a',
+  status:'completed',category:'SENSUEL'
+ }];
+ const sessions=[null,false,'legacy',{},night,{...night},
+  {counted:true,finished_at:'2026-10-31T20:00:00Z'}];
+ const members=[null,false,{}, {user_id:'a',name:'Alice'},{user_id:'b',name:'Bob'}];
+ const summary=coupleHomeStats(challenges,sessions,members,now);
+ assert.equal(summary.completed,1);
+ assert.equal(summary.monthlyEvenings,1,'duplicate session IDs count once');
+ assert.deepEqual(summary.byPartner,[1,0]);
+ assert.equal(summary.sensualPercent,100);
+ assert.equal(summary.sexualPercent,0);
+ assert.equal(summary.streak,1,'a phantom session without ID cannot extend the streak');
+ const duplicate=coupleHomeStats([
+  ...challenges,{id:'challenge-1',session_id:'night-1',recipient:'a',
+   status:'completed',category:'SENSUEL'}
+ ],sessions,members,now);
+ assert.equal(duplicate.completed,1,'the same persisted challenge ID is counted once');
+ assert.deepEqual(duplicate.byPartner,[1,0],'duplicates do not inflate partner totals');
+ assert.equal(duplicate.sensualPercent,100);
+ assert.deepEqual(coupleHomeStats({},false,null,now),{
+  completed:0,monthlyEvenings:0,byPartner:[],
+  sensualPercent:null,sexualPercent:null,streak:0
+ },'invalid snapshot containers are empty, not crashes or fictitious numbers');
+ assert.doesNotThrow(()=>premiumHomeHtml({
+  history:[null,false,{}],sessions:[null,false,{}],members:[],now
+ }),'Home can still render while a partial history loads');
 });

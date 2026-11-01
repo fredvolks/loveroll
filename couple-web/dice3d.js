@@ -400,6 +400,11 @@ outgoingLight += vec3(0.06,0.0005,0.005) * pow(crystalFacing,2.0);
 }
 export function dieOn(canvas,sides,value,rolling){
  const flatHome=sides===6&&!!canvas.closest('.home-die-platform');
+ // Reserve horizontal finger gestures for inspecting the Home die. Without
+ // touch-action:none, Chromium/Safari can pan the page during a swipe and
+ // move the photographed marble under an otherwise stationary 3D model.
+ // The official roll still requires the separate confirmation button.
+ if(flatHome)canvas.style.touchAction='none';
  // The idle Soirée D100 on phones MUST use the same camera-fit and full
  // WebGL clipping guard as Surprise. Previously only iPad idle qualified:
  // Android was enlarged by photoSoiree's 1.65 zoom without the final fit.
@@ -761,6 +766,8 @@ export function dieOn(canvas,sides,value,rolling){
    quaternion:built.group.quaternion.toArray(),renderedFrames,
    observerVisible:shown,documentVisible:!document.hidden,frameScheduled:!!frame,
    modelId:built.group.uuid,model:flatHome?'ruby-reference-205':'rose-crystal',
+   // Model-space height, unaffected by responsive photo/canvas reflow.
+   modelPositionY:built.group.position.y,
    support:flatHome?projectedSupport():null,
    restingUp:flatHome?upNormal.toArray():null,upFace,
    spinning:canvas.dataset.spinning==='true',optics:{...backdrop.state(),transmission:built.material.transmission,roughness:built.material.roughness,inkOpacity:built.ink.opacity,inkTransparent:built.ink.transparent,engravings:built.engravings}};

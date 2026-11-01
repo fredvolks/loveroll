@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {shouldShowIosTour,isIosSafari,IOS_TOUR_KEY} from './ios-install-tour.mjs';
-import {soundEnabled,setSoundEnabled,unlockLoveRollSounds,playLoveRollSound,setLoveRollSoundUser} from './loveroll-sounds.mjs';
+import {soundEnabled,setSoundEnabled,unlockLoveRollSounds,playLoveRollSound,setLoveRollSoundUser,soundSettingsHtml} from './loveroll-sounds.mjs';
 const read=name=>readFileSync(new URL('./'+name,import.meta.url),'utf8');
 test('iPhone Safari first-visit install tutorial does not repeat immediately',()=>{
  const values=new Map(),store={getItem:k=>values.get(k),setItem:(k,v)=>values.set(k,v)};
@@ -108,5 +108,28 @@ test('LR-004: a new gesture resumes the timer melody after an iOS-style audio su
  }finally{
   if(originalWindow===undefined)delete globalThis.window;else globalThis.window=originalWindow;
   if(originalDocument===undefined)delete globalThis.document;else globalThis.document=originalDocument;
+ }
+});
+
+test('Safari blocked localStorage keeps the private sound switch usable per account',()=>{
+ const original=Object.getOwnPropertyDescriptor(globalThis,'localStorage');
+ try{
+  Object.defineProperty(globalThis,'localStorage',{configurable:true,get(){throw Error('SecurityError');}});
+  setLoveRollSoundUser('safari-sound-alice');
+  assert.equal(soundEnabled(),true);
+  assert.equal(setSoundEnabled(false),false);
+  assert.equal(soundEnabled(),false);
+  assert.match(soundSettingsHtml(),/aria-checked="false"/);
+  setLoveRollSoundUser('safari-sound-bob');
+  assert.equal(soundEnabled(),true,'Bob cannot inherit Alice\'s disabled alarm');
+  assert.match(soundSettingsHtml(),/aria-checked="true"/);
+  setLoveRollSoundUser('safari-sound-alice');
+  assert.equal(soundEnabled(),false);
+  assert.equal(setSoundEnabled(true),true);
+  assert.equal(soundEnabled(),true);
+ }finally{
+  if(original)Object.defineProperty(globalThis,'localStorage',original);
+  else delete globalThis.localStorage;
+  setLoveRollSoundUser('anonymous');
  }
 });

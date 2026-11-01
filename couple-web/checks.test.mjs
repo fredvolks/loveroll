@@ -1,8 +1,11 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {test} from 'node:test';
+// The existing static CI explicitly executes checks.test.mjs.
+import './evening-favorites.test.mjs';
+import './evening-card-index.test.mjs';
 import { marketingHtml,authHtml,profileHtml,matchHtml,monthDayInputs,parseMonthDay } from './onboarding.mjs';
-import { EVENING_CATEGORIES,EVENING_CHALLENGES,eveningCard,availableEveningCategories,formatCountdown,customCardSlots,editableCardSlots,resolvedCard } from './evening-challenges.mjs';
+import { EVENING_CATEGORIES,EVENING_CHALLENGES,eveningCard,availableEveningCategories,formatCountdown,validChallengeTimerMinutes,customCardSlots,editableCardSlots,resolvedCard } from './evening-challenges.mjs';
 import {MONTHLY_ACTIVITIES,editableMonthlyActivities,monthlyActivityForRoll} from './monthly-activities.mjs';
 import {ADVENT_YEAR,validateAdventJson,calendarFromSaved} from './advent-calendar.mjs';
 import {validateSpecialEventsJson,privateSpecialKey,SPECIAL_EVENT_KEYS} from './private-special-events.mjs';
@@ -216,6 +219,24 @@ test('Countdown uses a monotonic wall deadline, pause reset and optional signals
  assert.equal(formatCountdown(600_000),'10:00');
  assert.equal(formatCountdown(61_200),'01:02');
  assert.equal(formatCountdown(-500),'00:00');
+ // A malformed challenge duration must never print NaN:NaN or Infinity:NaN.
+ for(const invalid of [NaN,Infinity,-Infinity,null,undefined,'invalid']){
+  assert.equal(formatCountdown(invalid),'00:00');
+ }
+ assert.equal(formatCountdown(1000),'00:01');
+ assert.equal(validChallengeTimerMinutes(2),true);
+ assert.equal(validChallengeTimerMinutes(6),true);
+ assert.equal(validChallengeTimerMinutes(60),true);
+ assert.equal(validChallengeTimerMinutes(240),true);
+ for(const malformed of [null,undefined,0,-5,NaN,Infinity,-Infinity,1.5,
+  '5','invalid',1441,Number.MAX_SAFE_INTEGER]){
+  assert.equal(validChallengeTimerMinutes(malformed),false,String(malformed));
+ }
+ assert.match(app,/if\(!validChallengeTimerMinutes\(minutes\)\)return '<p class="tiny-note">♡ Sans minuteur/);
+ assert.match(app,/if\(validChallengeTimerMinutes\(minutes\)\)\{/);
+ assert.match(app,/function optionalRolledTimer\(roll\)\{\s*if\(!validChallengeTimerMinutes\(roll\?\.timer_minutes\)\)return '';/);
+ assert.match(app,/timerHtml:state\.showSurpriseActivity&&validChallengeTimerMinutes\(activity\?\.timer_minutes\)\?/);
+ assert.match(app,/timerHtml:validChallengeTimerMinutes\(selected\?\.advent_timer_minutes\)\?/);
  assert.match(app,/challengeTimer\.deadline-Date\.now\(\)/);
  assert.match(app,/timer-reset/);
  assert.match(app,/timer-toggle/);

@@ -20,6 +20,10 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   const {page,context,errors}=await setupEditorial(browser,world,{width:412,height:824,query:'open=home',motion:'no-preference'});
   await page.waitForFunction(()=>document.querySelector('.home-die-platform canvas')?.loveRollDie?.readState().optics.loaded);
   const read=()=>page.evaluate(()=>document.querySelector('.home-die-platform canvas').loveRollDie.readState());
+  // The gesture target must not scroll the viewport on real touch browsers.
+  assert.equal(await page.locator('.home-die-platform canvas').evaluate(el=>
+   getComputedStyle(el).touchAction),'none',
+   'Home D6 canvas owns its finger gestures; the page must not pan');
   const initial=await read();
   if(process.env.LOVEROLL_CAPTURE_DIR)await page.screenshot({path:path.join(process.env.LOVEROLL_CAPTURE_DIR,'ruby-resting.png')});
   await page.evaluate(()=>window.__originalRuby=document.querySelector('.home-die-platform canvas'));
@@ -45,7 +49,13 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   const changed=(a,b)=>Math.abs(a.quaternion.reduce((sum,v,i)=>sum+v*b.quaternion[i],0))<.995;
   const flat=state=>{
    assert.ok(state.restingUp[1]>.999999,'A face must remain flat on the horizontal support plane');
-   assert.ok(Math.abs(state.support.y-initial.support.y)<.1,'Dragging must not lift or lower the die');
+   // Canvas/page fitting can shift all viewport coordinates by a pixel while
+   // fonts and photography settle. Check the actual 3D model instead: a drag
+   // must never change its height above the physical support plane.
+   assert.ok(Math.abs(state.modelPositionY-initial.modelPositionY)<1e-9,
+    'Dragging must not lift or lower the 3D model: '+JSON.stringify({
+     before:initial.modelPositionY,after:state.modelPositionY,
+     photoPixelsBefore:initial.support,photoPixelsAfter:state.support}));
   };
   const horizontal=await drag(70,40);
   assert.ok(changed(initial,horizontal.held),'A finger swipe must visibly turn the model');
@@ -105,7 +115,16 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   assert.ok(changed(final,afterRoll.held),'Finger inspection must still work after the official roll');
   assert.equal(afterRoll.released.face,5);flat(afterRoll.released);
   assert.equal(world.calls.filter(c=>c.name==='roll_couple_once').length,1);
-  assert.equal(await page.locator('.home-roll-button').isDisabled(),true);
+  // After an official weekly roll, the button becomes a usable shortcut.
+  // An enabled navigation action must never trigger a second D6 throw.
+  const shortcut=page.locator('.home-roll-button.is-used');
+  assert.equal(await shortcut.isEnabled(),true,
+   'The Soirée shortcut stays accessible after the official roll');
+  assert.notEqual(await shortcut.getAttribute('data-action'),'roll:weekly',
+   'The shortcut must not offer another weekly draw');
+  await shortcut.click();
+  assert.equal(world.calls.filter(c=>c.name==='roll_couple_once').length,1,
+   'Opening Soirée never draws the official D6 a second time');
   assert.deepEqual(errors,[]);
   console.log('HOME_RUBY_TOUCH_OK: flat yaw before/after roll, one model, one official result');
   await context.close();

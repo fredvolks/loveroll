@@ -8,7 +8,7 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
  try{for(const [width,height] of [[360,740],[412,824],[412,915]]){
   const world=createWorld();world.eclat={access:true,active:true,coffret_id:1,minutes:60,chapter_index:1,chapter_number:1,chapter_total:6,variant_number:0,session_id:'synthetic-guided',my_choice:null,both_chosen:false};
   const own=await setupEditorial(browser,world,{width,height,query:'open=home'}),{page}=own;
-  const enter=async p=>{await p.waitForSelector('.home-dashboard');await p.locator('[data-action="tab:session"]').click();await p.locator('[data-action="tab:eclat"]').click();await p.waitForSelector('[data-eclat-field="note"]:enabled');};
+  const enter=async p=>{await p.waitForSelector('.home-dashboard');await p.locator('.home-evening-link[data-action="tab:session"]').click();await p.locator('[data-action="tab:eclat"]').click();await p.waitForSelector('[data-eclat-field="note"]:enabled');};
   await enter(page);
   const nav=await page.locator('.nav').boundingBox();
   const fits=async()=>{const b=await page.locator('.eclat-guided-actions').boundingBox();assert.ok(b.y+b.height<=nav.y,'Actions stay above the common bottom nav');assert.equal(await page.evaluate(()=>document.documentElement.scrollHeight>innerHeight+1),false);};

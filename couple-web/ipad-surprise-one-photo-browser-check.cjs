@@ -85,6 +85,44 @@ const layouts=[
       assert.equal(style.shadow,'none',layout.name+' extra shadow/frame in '+part);
      }
     }
+    if(layout.width<768){
+     // Exercise actual native mobile dialogs, not a static HTML snapshot.
+     const events=page.locator('.surprise-events-summary');
+     await events.waitFor({state:'visible'});
+     assert.equal(await events.isDisabled(),false,'Events must be available independent of D100 roll');
+     await events.click();
+     const dialog=page.locator('#surprise-events-dialog');
+     await dialog.waitFor({state:'visible'});
+     assert.equal(await dialog.locator('.surprise-event-card').count(),6,
+      'All six editable occasions must be reachable on mobile');
+     await page.keyboard.press('Escape');
+     await dialog.waitFor({state:'hidden'});
+     assert.match(await page.locator('main#app').getAttribute('class'),/loveroll-surprise/,
+      layout.name+' Escape must close events, not leave Surprise');
+     const info=page.locator('.home-odds-info');
+     await info.click();
+     const infoDialog=page.locator('#surprise-info-dialog');
+     // Assert the actual native open state, not only a CSS visibility guess.
+     const infoState=await page.evaluate(()=>{
+      const el=document.querySelector('#surprise-info-dialog');
+      return {present:!!el,open:!!el?.open,
+       displayed:el?getComputedStyle(el).display:null,
+       eventsOpen:!!document.querySelector('#surprise-events-dialog')?.open};
+     });
+     assert.equal(infoState.open,true,layout.name+' info dialog did not open: '+JSON.stringify(infoState));
+     assert.equal(infoState.eventsOpen,false,layout.name+' events dialog remained open');
+     await infoDialog.waitFor({state:'visible',timeout:8000});
+     assert.match(await infoDialog.innerText(),/D100/);
+     assert.match(await infoDialog.innerText(),/pair/);
+     await page.keyboard.press('Escape');
+     await infoDialog.waitFor({state:'hidden'});
+     assert.equal(await page.locator('.surprise-events-summary').isVisible(),true);
+     // Both orders and repeat entry must work without a stale dialog lock.
+     await events.click();
+     await dialog.waitFor({state:'visible',timeout:8000});
+     await page.locator('#surprise-events-dialog .surprise-minimal-close').click();
+     await dialog.waitFor({state:'hidden'});
+    }
     assert.deepEqual(errors,[],layout.name+' JavaScript errors');
     await page.screenshot({path:path.join('design-captures','lr-surprise-one-photo-'+layout.name+'.png')});
     console.log('LR_SURPRISE_ONE_PHOTO_OK',layout.name,data);

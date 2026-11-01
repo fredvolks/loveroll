@@ -37,3 +37,22 @@ test('Only current author/session/step is read or saved; errors do not turn into
  const failing={from(){return {select(){return this;},eq(){return this;},then(ok){return Promise.resolve({error:new Error('Read failed')}).then(ok);}};}};
  await assert.rejects(loadEclatNote(failing,status,'a'),/Read failed/);
 });
+
+test('Éclat guided flow survives incomplete duo snapshots and private note load errors',()=>{
+ const stage=eclatStage(1,1,0);
+ const args={stage,status,members:[null,{},false,{user_id:'a',name:42},{user_id:'b',name:'Camille Duo'}],userId:'a'};
+ const first=eclatGuidedPlay({...args,noteState:null});
+ assert.match(first,/data-eclat-phase="prepare"/);
+ assert.match(first,/Tu commences, puis vous échangez les rôles/);
+ assert.doesNotMatch(first,/undefined|NaN|>42 commence/);
+ const waiting=eclatGuidedPlay({
+  ...args,members:[null,false,{}],status:{...status,chapter_index:0,my_choice:2},
+  noteState:{error:true,note:'<em>secret</em>'}
+ });
+ assert.match(waiting,/data-eclat-phase="wait"/);
+ assert.doesNotMatch(waiting,/<em>secret<\/em>|undefined|NaN/);
+ const unavailable=eclatGuidedPlay({...args,noteState:{error:true,note:'<b>private</b>'}});
+ assert.match(unavailable,/Lecture impossible/);
+ assert.match(unavailable,/&lt;b&gt;private&lt;\/b&gt;/);
+ assert.doesNotMatch(unavailable,/<b>private<\/b>/);
+});

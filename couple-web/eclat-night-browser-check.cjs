@@ -10,7 +10,11 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   world.eclatSessions=[30,60].map(n=>({id:'done-'+n,couple_id:'c',coffret_id:9,minutes:n,chapter_index:6,started_at:'2026-10-20',ended_at:'2026-10-21',cancelled:false}));
   const {page,context,errors}=await setupEditorial(browser,world,{width,height,query:'open=home'});
   await page.waitForSelector('.home-dashboard');
-  await page.locator('[data-action="tab:session"]').click();await page.waitForSelector('.has-home-soiree-template');
+  // Two legitimate 'tab:session' buttons are now present (Home shortcut and
+  // bottom navigation). Click the actual Home shortcut without relying on
+  // DOM order or relaxing Playwright's strict locator rules.
+  await page.locator('.home-evening-link[data-action="tab:session"]').click();
+  await page.waitForSelector('.has-home-soiree-template');
   const metrics=()=>page.evaluate(()=>{const rect=n=>{const r=n.getBoundingClientRect();return [r.x,r.y,r.width,r.height]};return {nav:rect(document.querySelector('.nav')),brand:rect(document.querySelector('.ritual-brand')),kicker:rect(document.querySelector('.ritual-kicker')),title:rect(document.querySelector('.ritual-page-title')),gold:getComputedStyle(document.querySelector('.ritual-mode-premium')).backgroundImage,labels:['.ritual-mode-name','.ritual-premium-copy strong','.ritual-premium-copy small','.ritual-crown'].map(s=>{const n=document.querySelector(s),c=getComputedStyle(n);return {rect:rect(n),font:c.font,color:c.color,gap:c.gap};})};});
   const before=await metrics();
   await page.locator('[data-action="tab:eclat"]').click();await page.waitForSelector('.has-night-gallery .eclat-tile');await page.evaluate(()=>document.fonts.ready);

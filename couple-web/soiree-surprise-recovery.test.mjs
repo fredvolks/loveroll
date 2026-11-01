@@ -6,7 +6,9 @@ const read=file=>readFileSync(new URL('./'+file,import.meta.url),'utf8');
 const app=read('app.js'),dice=read('dice3d.js'),style=read('surprise-dice-layout-v73.css');
 const index=read('index.html'),worker=read('service-worker.js');
 test('Soirée tolerates an absent review and no longer opens legacy feedback',()=>{
- assert.match(app,/const recentReviews=last\?\(state.eveningReviews\|\|\[\]\)/);
+ assert.match(app,/const lastEvening=last\?eveningFinaleStatus\(/);
+ assert.match(app,/reviews:state\.eveningReviews/);
+ assert.match(app,/partnerId:partner\?\.user_id/);
  assert.match(app,/reviewModalSessionId/);
  assert.doesNotMatch(app,/feedbackItemsFor|my_love_feedback_status|choose-feedback|save-feedback/);
  assert.doesNotMatch(app,/loveroll-aftercare-auto-recover-/);
@@ -55,7 +57,9 @@ test('Active Soirée does not pass an unbound pending challenge into premiumEven
  assert.doesNotMatch(app,/giftCount,pending,rolling/);
  assert.match(app,/turn,category:state\.category,/);
  assert.match(app,/showSensuel:state\.couple\?\.show_sensuel_button!==false/);
- assert.match(app,/giftCount,rolling:state\.diceStatus==='rolling'\|\|state\.diceStatus==='pending'/);
+ assert.match(app,/giftCount,giftPending:isActiveEveningGiftPending\(\),/);
+ assert.match(app,/rolling:state\.diceStatus==='rolling'\|\|state\.diceStatus==='pending'/);
+ assert.match(app,/redrawPending:isActiveEveningRedrawPending\(\)/);
  assert.match(app,/pendingInviteReference\(sessionStorage\)/);
 });
 

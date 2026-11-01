@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {eveningDailyAccess} from './evening-daily-policy.mjs';
+import {premiumEveningHtml} from './premium-evening.mjs';
+import {readFileSync} from 'node:fs';
 const weekly={face:3,key:'2026-10-12',created_at:'2026-10-12T15:00:00Z'};
 const past={id:'one',started_at:'2026-10-15T20:00:00Z',finished_at:'2026-10-16T00:00:00Z',counted:true};
 test('At 8am Québec Friday, yesterday closed game does not block',()=>{
@@ -46,4 +48,54 @@ test('Actual finished evening after new weekly roll disables button until tomorr
  const tomorrow=eveningDailyAccess({sessions:[fresh],weekly:roll,
   now:new Date('2026-10-17T13:00:00Z')});
  assert.deepEqual([tomorrow.counted,tomorrow.dailyLocked,tomorrow.canStart],[1,false,true]);
+});
+
+test('Missing/failed session history never opens another evening optimistically',()=>{
+ for(const sessions of [null,undefined,{},'not yet loaded']){
+  const result=eveningDailyAccess({sessions,weekly,now:new Date('2026-10-16T12:00:00Z')});
+  assert.equal(result.canStart,false,'missing history must never enable an official draw');
+  assert.equal(result.counted,0);
+ }
+});
+test('Malformed historic entries do not crash access or alter valid couples sessions',()=>{
+ const result=eveningDailyAccess({
+  sessions:[null,undefined,false,[],{},past,'unparseable'],
+  weekly,now:new Date('2026-10-16T12:00:00Z')
+ });
+ assert.equal(result.counted,1);
+ assert.equal(result.canStart,true);
+ assert.equal(result.dailyLocked,false);
+});
+test('Invalid weekly D6 result and invalid device date cannot open soirée',()=>{
+ for(const face of [0,7,100,-1,2.5,'invalid',null]){
+  const state=eveningDailyAccess({sessions:[],weekly:{...weekly,face},now:new Date('2026-10-16T12:00:00Z')});
+  assert.equal(state.canStart,false,'invalid D6 face '+String(face));
+ }
+ assert.equal(eveningDailyAccess({sessions:[],weekly,now:new Date('invalid')}).canStart,false);
+ assert.equal(eveningDailyAccess({sessions:[],weekly:{face:3},now:new Date('2026-10-16T12:00:00Z')}).canStart,false);
+});
+
+test('Unavailable history keeps Start disabled and explains why instead of claiming quota exhausted',()=>{
+ const pending=eveningDailyAccess({sessions:null,weekly,now:new Date('2026-10-16T12:00:00Z')});
+ assert.equal(pending.historyReady,false);
+ assert.equal(pending.canStart,false);
+ const html=premiumEveningHtml({
+  members:[{user_id:'alice',name:'Alice'},{user_id:'bob',name:'Bob'}],
+  me:'alice',weeklyReady:true,weeklyLimit:pending.limit,weeklyCount:pending.counted,
+  historyReady:pending.historyReady,canStartEvening:pending.canStart
+ });
+ assert.match(html,/Chargement de votre historique de soirées/);
+ assert.doesNotMatch(html,/Toutes les soirées de la semaine ont été utilisées/);
+ assert.match(html,/data-action="new-session"[^>]*disabled/);
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ assert.match(app,/historyReady:daily\.historyReady/);
+});
+test('A loaded empty history is distinct from a failed history request',()=>{
+ const loaded=eveningDailyAccess({sessions:[],weekly,now:new Date('2026-10-16T12:00:00Z')});
+ assert.equal(loaded.historyReady,true);
+ assert.equal(loaded.canStart,true);
+ const html=premiumEveningHtml({weeklyReady:true,weeklyLimit:loaded.limit,
+  historyReady:true,canStartEvening:true});
+ assert.doesNotMatch(html,/Chargement de votre historique de soirées/);
+ assert.match(html,/Votre prochain moment à deux vous attend/);
 });

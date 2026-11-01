@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {remainingWeekEvenings,mondayOf,calendarWeekSuccess,monthlyChallengeSuccess} from './calendar-success-stats.mjs';
+import {remainingWeekEvenings,mondayOf,calendarWeekSuccess,monthlyChallengeSuccess,eveningArchiveDay} from './calendar-success-stats.mjs';
 import {futureCoupleStyleMix,normalizePlayStyle} from './play-style.mjs';
 import {eveningHistoryMarkup} from './evening-calendar.mjs';
 const read=name=>readFileSync(new URL('./'+name,import.meta.url),'utf8');
@@ -9,6 +9,62 @@ const saturdayRoll={kind:'weekly',key:'2026-10-12',face:4,created_at:'2026-10-17
 const oneNight={id:'n1',started_at:'2026-10-17T23:00:00Z',finished_at:'2026-10-18T01:00:00Z',counted:true};
 const twoNights=[oneNight,{id:'n2',started_at:'2026-10-18T23:00:00Z',finished_at:'2026-10-19T01:00:00Z',counted:true}];
 const members=[{user_id:'a',name:'Fred'},{user_id:'b',name:'Émilie'}];
+
+
+test('Sparse calendar RPC snapshots do not crash or fabricate a monthly success',()=>{
+ const month='2026-10';
+ const night={id:'safe-night',started_at:'2026-10-25T20:00:00Z',
+  finished_at:'2026-10-25T22:00:00Z',counted:true};
+ const card={id:'done',session_id:night.id,recipient:'a',status:'completed'};
+ const params={month,members:[null,{user_id:'a',name:'A'},false,{}],
+  sessions:[null,undefined,false,{},night],
+  historyChallenges:[null,false,{},card],
+  sessionStats:[null,false,{},{
+   session_id:night.id,user_id:'a',target:2,completed:1,drawn:1}],
+  passQuota:[null,false,{},{
+   challenge_id:'missing',recipient:'a',free_pass:true}]};
+ const result=monthlyChallengeSuccess(params);
+ assert.equal(result.length,1);
+ assert.equal(result[0].done,1);
+ assert.equal(result[0].unpicked,1);
+ assert.equal(result[0].percent,50);
+ assert.equal(remainingWeekEvenings(null),0,'null time is not the epoch');
+ const week=calendarWeekSuccess({
+  date:'2026-10-25',
+  weeklyRolls:[null,false,{},{
+   kind:'weekly',key:'2026-10-19',face:3,
+   created_at:'2026-10-25T23:00:00Z'}],
+  sessions:[null,false,{},night]
+ });
+ assert.equal(week.hasRoll,true);
+ assert.equal(week.completed,0,'an evening before the D6 cannot be credited');
+ assert.deepEqual(monthlyChallengeSuccess({month,sessions:[null],members:[null]}),[]);
+ assert.equal(calendarWeekSuccess({date:'2026-10-25',weeklyRolls:[null]}).hasRoll,false);
+});
+
+test('A weekly D6 credits a single Québec calendar day, never duplicate sessions',()=>{
+ const roll={kind:'weekly',key:'2026-10-19',face:3,
+  created_at:'2026-10-22T16:00:00Z'};
+ const sessions=[
+  {id:'before-roll',started_at:'2026-10-22T15:00:00Z',
+   finished_at:'2026-10-22T15:30:00Z',counted:true},
+  {id:'thu-1',started_at:'2026-10-22T18:00:00Z',
+   finished_at:'2026-10-22T19:00:00Z',counted:true},
+  {id:'thu-2',started_at:'2026-10-22T21:00:00Z',
+   finished_at:'2026-10-22T22:00:00Z',counted:true},
+  {id:'fri',started_at:'2026-10-23T20:00:00Z',
+   finished_at:'2026-10-23T22:00:00Z',counted:true}
+ ];
+ const result=calendarWeekSuccess({
+  date:'2026-10-23',weeklyRolls:[roll],sessions});
+ assert.equal(result.possible,3);
+ assert.equal(result.completed,2,'Thursday duplicate is not another eligible day');
+ assert.equal(result.percent,67);
+ assert.equal(calendarWeekSuccess({
+  date:'2026-10-23',weeklyRolls:[roll],
+  sessions:sessions.slice(0,3)
+ }).completed,1,'Before-roll session and second Thursday night are not extra credits');
+});
 
 test('Saturday D6 of 4: only two Quebec evenings possible; 1/2=50%, 2/2=100%',()=>{
  assert.equal(remainingWeekEvenings(saturdayRoll.created_at),2);
@@ -85,7 +141,8 @@ test('Calendar original three top bubbles remain untouched; new row uses same vi
  assert.match(html,/<div class="evening-cal-stats"><span><strong>2<\/strong> soirées clôturées/);
  assert.match(html,/div class="evening-cal-stats evening-cal-extra"/);
  assert.match(html,/<strong>100 %<\/strong>2 \/ 2 soirées possibles/);
- assert.match(html,/Passes gratuites : 0\/3/);
+ assert.match(html,/Passes enregistrées : 0/);
+ assert.doesNotMatch(html,/Passes gratuites : 0\/3/);
  assert.equal((html.match(/class="evening-cal-stats"/g)||[]).length,1);
  assert.equal((html.match(/class="evening-cal-stats evening-cal-extra"/g)||[]).length,1);
 });
@@ -102,7 +159,8 @@ test('Profile style mixing is prepared for 200x3 future cards, without touching 
  const onboarding=read('onboarding.mjs'),app=read('app.js'),
   engine=read('evening-challenges.mjs');
  assert.match(onboarding,/profilePlayStyleSelect\(profile\?\.play_style\)/);
- assert.match(app,/rpc\('save_my_play_style'/);
+ assert.match(app,/\['save_my_play_style',\{p_style:playStyle\}\]/);
+  assert.match(app,/await saveProfileForCurrentAccount\(name,birthday,gender,playStyle\)/);
  assert.match(app,/futureCoupleStyleMix/);
  assert.doesNotMatch(engine,/play_style|futureCoupleStyleMix/);
 });
@@ -188,4 +246,124 @@ test('LR-015: replacement chains consume one D6 slot, while all original events 
  assert.equal(active.unpicked,0,'Open evening unpicked slots are not yet failures');
  assert.equal(active.denominator,1);
  assert.equal(active.percent,100);
+});
+
+test('LR-ACCUEIL-001: monthly success follows the actual Québec closure date, not the start',()=>{
+ const overnight={id:'overnight',counted:true,
+  started_at:'2026-11-01T03:50:00Z',finished_at:'2026-11-01T05:15:00Z'};
+ const stats=[{session_id:'overnight',user_id:'a',target:2,completed:1,drawn:1}];
+ const cards=[{id:'challenge',session_id:'overnight',recipient:'a',status:'completed'}];
+ const opts={members:[{user_id:'a',name:'Alice'}],
+  sessions:[overnight],sessionStats:stats,historyChallenges:cards,passQuota:[]};
+ assert.equal(eveningArchiveDay(overnight),'2026-11-01');
+ const oct=monthlyChallengeSuccess({...opts,month:'2026-10'});
+ const nov=monthlyChallengeSuccess({...opts,month:'2026-11'});
+ assert.equal(oct[0].done,0);
+ assert.equal(oct[0].unpicked,0);
+ assert.equal(oct[0].percent,null);
+ assert.equal(nov[0].done,1);
+ assert.equal(nov[0].unpicked,1);
+ assert.equal(nov[0].percent,50);
+ // The calendar and monthly rate must render the same authoritative month.
+ const calendarOct=eveningHistoryMarkup({...opts,stats,month:'2026-10',selectedDate:'2026-10-31'});
+ const calendarNov=eveningHistoryMarkup({...opts,stats,month:'2026-11',selectedDate:'2026-11-01'});
+ assert.match(calendarOct,/<strong>0<\/strong> soirées clôturées ce mois/);
+ assert.match(calendarNov,/<strong>1<\/strong> soirées clôturées ce mois/);
+ assert.match(calendarNov,/Alice · défis réalisés/);
+});
+
+test('LR-ACCUEIL-001: open and interrupted evenings still use Québec start day',()=>{
+ const open={id:'open',counted:true,
+  started_at:'2026-11-01T03:50:00Z',finished_at:null};
+ const interrupted={...open,id:'interrupted',counted:false,
+  finished_at:'2026-11-01T05:15:00Z'};
+ assert.equal(eveningArchiveDay(open),'2026-10-31');
+ assert.equal(eveningArchiveDay(interrupted),'2026-10-31');
+ const options={members:[{user_id:'a',name:'Alice'}],
+  sessions:[open,interrupted],
+  historyChallenges:[{id:'done',session_id:'open',recipient:'a',status:'completed'}],
+  sessionStats:[]};
+ assert.equal(monthlyChallengeSuccess({...options,month:'2026-10'})[0].done,1);
+ assert.equal(monthlyChallengeSuccess({...options,month:'2026-11'})[0].done,0);
+ assert.equal(eveningArchiveDay({counted:true,started_at:null,
+  finished_at:'invalid'}),null);
+});
+
+test('LR-ACCUEIL-001: corrupt weekly D6 or impossible date never fabricates a success rate',()=>{
+ const date='2026-10-22',key='2026-10-19',created_at='2026-10-22T16:00:00Z';
+ const rolls=face=>[{kind:'weekly',key,created_at,face}];
+ for(const face of [null,0,7,-1,2.5,'invalid','Infinity',1e20]){
+  assert.deepEqual(calendarWeekSuccess({date,weeklyRolls:rolls(face)}),{
+   hasRoll:false,possible:0,completed:0,percent:null,face:null
+  },'corrupted roll must never be clamped into a valid face: '+String(face));
+ }
+ for(const date of ['2026-02-31','2026-10-32','2026-13-01','not-a-date']){
+  assert.equal(mondayOf(date),null);
+  assert.equal(calendarWeekSuccess({date,weeklyRolls:rolls(3)}).hasRoll,false);
+ }
+ const valid=calendarWeekSuccess({date,weeklyRolls:rolls(3),sessions:[{
+  id:'real',counted:true,started_at:'2026-10-22T18:00:00Z',
+  finished_at:'2026-10-22T19:00:00Z'
+ }]});
+ assert.deepEqual(valid,{hasRoll:true,possible:3,completed:1,percent:33,face:3});
+});
+
+test('LR-ACCUEIL-001: legacy invalid personal targets cannot poison the monthly rate',()=>{
+ const night={id:'complete',counted:true,started_at:'2026-10-22T18:00:00Z',
+  finished_at:'2026-10-22T19:00:00Z'};
+ const base={month:'2026-10',sessions:[night],
+  members:[{user_id:'a',name:'Alice'}],
+  historyChallenges:[{id:'real',session_id:'complete',recipient:'a',status:'completed'}]};
+ for(const target of [null,'Infinity','NaN','-Infinity',-4,2.25,1e20]){
+  const result=monthlyChallengeSuccess({...base,sessionStats:[{
+   session_id:'complete',user_id:'a',completed:1,target
+  }]})[0];
+  assert.equal(result.done,1);
+  assert.equal(result.unpicked,0,'invalid target is not an invented shortage');
+  assert.equal(result.denominator,1);
+  assert.equal(result.percent,100);
+ }
+ const valid=monthlyChallengeSuccess({...base,sessionStats:[{
+  session_id:'complete',user_id:'a',completed:1,target:'4'
+ }]})[0];
+ assert.equal(valid.unpicked,3);
+ assert.equal(valid.denominator,4);
+ assert.equal(valid.percent,25);
+});
+
+test('LR-016: calendar displays the current server pass limit, not a hardcoded three',()=>{
+ const base={month:'2026-10',selectedDate:'2026-10-20',
+  members:[{user_id:'a',name:'Alice'}],
+  sessions:[{id:'s',started_at:'2026-10-20T18:00:00Z',
+   finished_at:'2026-10-20T20:00:00Z',counted:true}],
+  historyChallenges:[{id:'c',session_id:'s',recipient:'a',status:'passed'}],
+  passQuota:[{challenge_id:'c',recipient:'a',free_pass:true}],
+  passHistoryReady:true};
+ const seven=eveningHistoryMarkup({...base,passLimit:7});
+ assert.match(seven,/Passes enregistrées : 1 · Limite actuelle : 7/);
+ assert.doesNotMatch(seven,/Passes gratuites : 1\/3/);
+ const zero=eveningHistoryMarkup({...base,passLimit:0});
+ assert.match(zero,/Limite actuelle : 0/);
+ const invalid=eveningHistoryMarkup({...base,passLimit:'not-a-limit'});
+ assert.doesNotMatch(invalid,/Limite actuelle :/);
+ const app=read('app.js');
+ assert.match(app,/passLimit:state\.monthlyPassQuota\?\.limit\?\?state\.couple\?\.monthly_pass_limit/);
+});
+
+test('LR-016: missing pass history never claims zero or a definitive success rate',()=>{
+ const base={month:'2026-10',selectedDate:'2026-10-20',
+  members:[{user_id:'a',name:'Alice'}],
+  sessions:[{id:'s',started_at:'2026-10-20T18:00:00Z',
+   finished_at:'2026-10-20T20:00:00Z',counted:true}],
+  historyChallenges:[{id:'c',session_id:'s',recipient:'a',status:'completed'}],
+  passHistoryReady:false,passQuota:[],passLimit:5};
+ const missing=eveningHistoryMarkup(base);
+ assert.match(missing,/Passes du mois : données indisponibles · Limite actuelle : 5/);
+ assert.match(missing,/<strong>—<\/strong>Alice · défis réalisés/);
+ assert.doesNotMatch(missing,/Passes enregistrées : 0/);
+ const loaded=eveningHistoryMarkup({...base,passHistoryReady:true});
+ assert.match(loaded,/<strong>100 %<\/strong>Alice · défis réalisés/);
+ assert.match(loaded,/Passes enregistrées : 0 · Limite actuelle : 5/);
+ const app=read('app.js');
+ assert.match(app,/passHistoryReady:state\.calendarPassMonth===mo/);
 });

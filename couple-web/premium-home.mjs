@@ -12,6 +12,20 @@ export const PIP_POSITIONS=Object.freeze({
 });
 const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','"':'&quot;',"'":'&#39;'}[c]));
 let homeLayoutObserver=null;
+// Safari's visual viewport changes when its toolbar or on-screen keyboard
+// appears. Keep the photographed marble/velvet split within that viewport:
+// a raw roll button top below the fold previously produced negative CSS sizes.
+export function calculateMobileHomePhotoGeometry(viewportHeight,rollTop){
+ const height=Number(viewportHeight),top=Number(rollTop);
+ if(!Number.isFinite(height)||height<=0||!Number.isFinite(top))return null;
+ const margin=Math.min(24,height/4);
+ const split=Math.max(margin,Math.min(height-margin,top));
+ return {
+  split,topImageHeight:split/.438,
+  bottomImageHeight:(height-split)/.562,
+  contact:split*.342/.438
+ };
+}
 // Keep complete names and all seven rows visible in the two-column dashboard.
 // Only the lower panels compact when needed; the header and die keep their size.
 export function fitHomeLayout(root){
@@ -34,12 +48,12 @@ export function fitHomeLayout(root){
   if(!win.matchMedia('(max-width:767px)').matches){fitTabletRomanceStage(root);return;}
   const roll=shell.querySelector('.home-roll-area');
   if(!roll)return;
-  const split=roll.getBoundingClientRect().top;
-  const height=win.innerHeight;
-  root.style.setProperty('--home-scene-split',split+'px');
-  root.style.setProperty('--home-scene-top-image-height',split/.438+'px');
-  root.style.setProperty('--home-scene-bottom-image-height',(height-split)/.562+'px');
-  root.style.setProperty('--home-scene-contact',split*.342/.438+'px');
+  const photo=calculateMobileHomePhotoGeometry(win.innerHeight,roll.getBoundingClientRect().top);
+  if(!photo)return; // Keep last valid dimensions if Safari reports a transient zero viewport.
+  root.style.setProperty('--home-scene-split',photo.split+'px');
+  root.style.setProperty('--home-scene-top-image-height',photo.topImageHeight+'px');
+  root.style.setProperty('--home-scene-bottom-image-height',photo.bottomImageHeight+'px');
+  root.style.setProperty('--home-scene-contact',photo.contact+'px');
  };
  const fit=()=>{
   if(!shell.isConnected){observer?.disconnect();return;}
@@ -91,14 +105,23 @@ export function nextMonthly(now=new Date()){
 // never reveal individual rolls on Home before both official dice are available.
 export function assignedTonight(turn={},members=[]){
  const ready=turn?.ready===true;
- const [first,second]=members||[];
- const value=(field,person)=>ready?Math.max(0,Number(turn[field]?.[person?.user_id])||0):null;
+ // Partial RPC snapshots must not turn unknown personal targets into zero.
+ // Only a complete, finite, non-negative count can enter the shared summary.
+ const [first,second]=Array.isArray(members)?members:[];
+ const value=(field,person)=>{
+  if(!ready||typeof person?.user_id!=='string'||!person.user_id)return null;
+  const raw=turn?.[field]?.[person.user_id];
+  const number=typeof raw==='number'?raw:
+   typeof raw==='string'&&/^(0|[1-9]\d*)$/.test(raw)?Number(raw):NaN;
+  return Number.isSafeInteger(number)&&number>=0?number:null;
+ };
+ const sum=(a,b)=>a===null||b===null||!Number.isSafeInteger(a+b)?null:a+b;
  const forFirst=value('targets',first),forSecond=value('targets',second);
  const completedFirst=value('completed',first),completedSecond=value('completed',second);
  const remainingFirst=value('remaining',first),remainingSecond=value('remaining',second);
- return {ready,total:ready?forFirst+forSecond:null,forFirst,forSecond,
-  completed:ready?completedFirst+completedSecond:null,
-  remaining:ready?remainingFirst+remainingSecond:null,
+ return {ready,total:sum(forFirst,forSecond),forFirst,forSecond,
+  completed:sum(completedFirst,completedSecond),
+  remaining:sum(remainingFirst,remainingSecond),
   completedFirst,completedSecond,remainingFirst,remainingSecond};
 }
 
@@ -108,7 +131,9 @@ function monthKeyToronto(date){
  return Number.isFinite(d.getTime())?inToronto(d).slice(0,7):null;
 }
 function torontoWeekIndex(date){
- const key=inToronto(new Date(date));
+ const instant=date instanceof Date?date:new Date(date);
+ if(!Number.isFinite(instant.getTime()))return null;
+ const key=inToronto(instant);
  const noon=new Date(key+'T12:00:00Z');
  const day=(noon.getUTCDay()+6)%7;
  return Math.floor((noon.getTime()-day*86400000)/604800000);
@@ -117,24 +142,49 @@ function torontoWeekIndex(date){
 // Never infer completions from "proposed", "accepted" or a mockup value.
 export function coupleHomeStats(challenges=[],sessions=[],members=[],now=new Date()){
  const month=inToronto(now).slice(0,7);
- const byId=new Map((sessions||[]).map(s=>[s.id,s]));
- const completed=(challenges||[]).filter(c=>c?.status==='completed');
- const monthDone=completed.filter(c=>{
-  const session=byId.get(c.session_id);
-  return monthKeyToronto(session?.finished_at||c.created_at)===month;
+ // Legacy / partially loaded RPC snapshots may contain null or non-row values.
+ // Ignore them, without fabricating counts or changing official server results.
+ const rows=value=>Array.isArray(value)?value.filter(row=>
+  row&&typeof row==='object'&&!Array.isArray(row)):[];
+ const safeSessions=rows(sessions);
+ // Repeated membership rows are not additional partners in the same couple.
+ const seenMembers=new Set();
+ const safeMembers=rows(members).filter(m=>{
+  if(typeof m.user_id!=='string'||!m.user_id||seenMembers.has(m.user_id))return false;
+  seenMembers.add(m.user_id);return true;
  });
- const counts=(members||[]).map(m=>monthDone.filter(c=>c.recipient===m.user_id).length);
+ const byId=new Map(safeSessions.filter(s=>s.id!=null).map(s=>[s.id,s]));
+ // Only dedupe completed challenges AFTER checking the requested month.
+ // Otherwise an old copy encountered first can hide the valid current
+ // snapshot with the same persisted ID (and silently undercount a month).
+ const seenChallenges=new Set();
+ const monthDone=rows(challenges).filter(c=>{
+  if(c.status!=='completed')return false;
+  const session=byId.get(c.session_id);
+  if(monthKeyToronto(session?.finished_at||c.created_at)!==month)return false;
+  if(typeof c.id==='string'&&c.id){
+   if(seenChallenges.has(c.id))return false;
+   seenChallenges.add(c.id);
+  }
+  return true;
+ });
+ const counts=safeMembers.map(m=>monthDone.filter(c=>c.recipient===m.user_id).length);
+ // Finished and officially counted couple evenings only; an open session,
+ // weekly dice roll or duplicated sync row must not inflate this total.
+ const monthlyEvenings=new Set(safeSessions.filter(session=>
+  session?.id&&session.counted===true&&session.finished_at&&
+  monthKeyToronto(session.finished_at)===month).map(session=>session.id)).size;
  const sensual=monthDone.filter(c=>String(c.category||'').toUpperCase()==='SENSUEL').length;
  const sexual=monthDone.filter(c=>['SEXUEL','COQUIN'].includes(String(c.category||'').toUpperCase())).length;
  const categorized=sensual+sexual;
- const activeWeeks=new Set((sessions||[]).filter(s=>s.counted&&s.finished_at)
-  .map(s=>torontoWeekIndex(s.finished_at)));
+ const activeWeeks=new Set(safeSessions.filter(s=>s.id&&s.counted===true&&s.finished_at)
+  .map(s=>torontoWeekIndex(s.finished_at)).filter(index=>index!==null));
  let current=torontoWeekIndex(now);
  if(!activeWeeks.has(current))current--;
  let streak=0;
  while(activeWeeks.has(current)){streak++;current--;}
  return {
-  completed:monthDone.length,byPartner:counts,
+  completed:monthDone.length,monthlyEvenings,byPartner:counts,
   sensualPercent:categorized?Math.round(sensual*100/categorized):null,
   sexualPercent:categorized?100-Math.round(sensual*100/categorized):null,
   streak,
@@ -155,41 +205,107 @@ export {ritualBrandHtml} from './brand.mjs?v=20261017-ritual130';
 import {ritualHeadingHtml} from './brand.mjs?v=20261017-ritual130';
 export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,disabled=false,members=[],
   turn=null,monthly={},history=[],sessions=[],events=[],rollFace=1,now=new Date(),
-  weeklyWeights=WEEKLY_ODDS,weeklyWeightsEnabled=true,monthlyActivity=null}={}){
+  weeklyWeights=WEEKLY_ODDS,weeklyWeightsEnabled=true,monthlyActivity=null,weeklyProgress=null,reservation=null,eveningInvite=null,ownEveningD6Ready=false}={}){
  const weights=effectiveDicePercentages(weeklyWeights,weeklyWeightsEnabled,WEEKLY_ODDS).map((pct,i)=>
   '<span class="home-weight" title="'+(i+1)+' soirée'+(i===0?'':'s')+' : '+displayedDicePercent(pct)+' %">'+pipFace(i+1)+
   '<b>'+(i+1)+'x</b><span>'+displayedDicePercent(pct)+'%</span></span>').join('');
  const odds=weights.replaceAll('class="home-weight"','class="home-odds-entry"').replace(/<b>[^<]*<\/b>/g,'');
- const stats=assignedTonight(turn,members),m=nextMonthly(now);
+ const safeMembers=Array.isArray(members)?members:[];
+ const stats=assignedTonight(turn,safeMembers),m=nextMonthly(now);
  const activity=monthly?.monthly_activity||null;
  const shown=value=>value===null?'—':String(value);
- const ready=!rolling&&weekly&&Number.isInteger(weekly.face),next=nextMonday(now);
- const coupleStats=coupleHomeStats(history,sessions,members,now);
- const memberA=escape(members[0]?.name||'Partenaire 1');
- const memberB=escape(members[1]?.name||'Partenaire 2');
- const weeklyTitle=ready?weekly.face+' soirée'+(weekly.face===1?'':'s')+' de défi':'Cette semaine, on joue ?';
+ // Fail closed when an existing server snapshot has an invalid D6 result.
+ // A malformed row is not an undrawn week: do not offer a second official roll.
+ const invalidWeekly=weekly!==null&&weekly!==undefined&&
+  (!Number.isInteger(weekly.face)||weekly.face<1||weekly.face>6);
+ const ready=!rolling&&!invalidWeekly&&weekly&&
+  Number.isInteger(weekly.face),next=nextMonday(now);
+ const coupleStats=coupleHomeStats(history,sessions,safeMembers,now);
+  const weeklyTitle=ready?weekly.face+' soirée'+(weekly.face===1?'':'s')+' de défi':'Cette semaine, on joue ?';
+ // Use the exact shared daily/weekly policy result passed by the app.
+ // Never derive another quota from visible private cards or local history.
+ const progressReady=ready&&weeklyProgress?.historyReady===true&&
+  Number.isInteger(weeklyProgress.counted)&&weeklyProgress.counted>=0&&
+  weeklyProgress.limit===weekly.face;
+ const weeklyRemaining=progressReady?Math.max(0,weekly.face-weeklyProgress.counted):null;
+ const progressText=progressReady?
+  weeklyProgress.counted+' soirée'+(weeklyProgress.counted===1?'':'s')+
+  ' partagée'+(weeklyProgress.counted===1?'':'s')+' cette semaine · '+
+  weeklyRemaining+' disponible'+(weeklyRemaining===1?'':'s')+' cette semaine':null;
  const statistic=(value,label,subtitle,cls='')=>
   '<div class="home-stat-card '+cls+'"><div class="home-stat-content"><i aria-hidden="true">'+({completed:'★',partners:'♧',categories:'♡',streak:'▥'}[cls]||'')+'</i><strong>'+escape(value)+'</strong>'+
   '<span>'+escape(label)+'</span><small>'+escape(subtitle)+'</small></div></div>';
- const summary=(icon,value,label)=>'<div><div class="home-summary-content">'+
-  '<div class="home-summary-value"><span aria-hidden="true">'+icon+'</span><strong>'+shown(value)+'</strong></div>'+
-  '<small>'+label+'</small></div></div>';
- const displayNames=[0,1].map(i=>String(members[i]?.name||'Partenaire '+(i+1)).trim());
+  const displayNames=[0,1].map(i=>String(safeMembers[i]?.name||'Partenaire '+(i+1)).trim());
  const shortNames=displayNames.map(n=>n.split(/\s+/)[0]);
  const [nameA,nameB]=shortNames[0]===shortNames[1]?displayNames:shortNames;
  const percent=coupleStats.sensualPercent==null?'—':
   coupleStats.sensualPercent+' / '+coupleStats.sexualPercent+' %';
- const invitation=monthlyInvitation(monthly,members);
+ const invitation=monthlyInvitation(monthly,safeMembers);
  const monthlyTitle=monthlyActivity?.title||activity?.activity_title||'Activité tirée';
  const invitationText=invitation?.host&&invitation?.guest?
   [nameA,nameB][invitation.index]+' invite '+[nameA,nameB][1-invitation.index]:
   activity?'Déterminer qui invite':'Un tirage commun ce mois-ci';
- const memberLabel=(name,remaining)=>'<span class="home-member-prefix">Attribués à</span><br class="home-member-break">'+
-  '<span class="home-member-name">'+name+'</span><br class="home-member-break"><span class="home-member-remaining">Restants : '+shown(remaining)+'</span>';
- const pending=rolling||disabled;
+ // Booking status is a declared plan, never proof that an outing happened.
+ // Invalid dates and cancelled reservations must not imply a confirmed trip.
+ const activeReservation=reservation&&reservation.status!=='cancelled'?reservation:null;
+ const bookingInstant=activeReservation?.reserved_for?new Date(activeReservation.reserved_for):null;
+ const bookingDate=bookingInstant&&Number.isFinite(bookingInstant.getTime())?
+  new Intl.DateTimeFormat('fr-CA',{day:'numeric',month:'short',year:'numeric',
+   timeZone:'America/Toronto'}).format(bookingInstant):null;
+ const surpriseStage=!activity?'Surprise du mois à découvrir':
+  !invitation?'Choisir qui invite':
+  reservation?.status==='cancelled'?'À replanifier':
+  activeReservation?.status==='confirmed'?
+   (bookingDate?'Réservation déclarée confirmée · '+bookingDate:'Réservation déclarée confirmée'):
+  bookingDate?'Date prévue · '+bookingDate:'À planifier';
+ // Quota exhausted and daily lock are different: both come from the same
+ // policy as the server-owned Start action. Neither launches a new evening.
+ const weeklyExhausted=!activeEvening&&progressReady&&weeklyRemaining===0;
+ const dailyLocked=!activeEvening&&progressReady&&weeklyRemaining>0&&weeklyProgress.dailyLocked===true;
+ const historyUnknown=!activeEvening&&ready&&weeklyProgress?.historyReady===false;
+ const closedToday=!activeEvening&&progressReady&&!!weeklyProgress.closedToday;
+ // Invitation is a server-backed notification, never an implicit answer or die.
+ // An active game takes precedence over an old invitation from the same duo.
+ const invitationReceived=!activeEvening&&eveningInvite?.direction==='received'&&
+  ['pending','maybe'].includes(eveningInvite.state);
+ const invitationSent=!activeEvening&&eveningInvite?.direction==='sent'&&
+  eveningInvite.state==='pending';
+ const eveningStatus=activeEvening?(stats.ready?'Soirée en cours':ownEveningD6Ready?'En attente du partenaire':'Soirée commencée'):
+  invitationReceived?'Une invitation vous attend':
+  invitationSent?'En attente de la réponse':
+  closedToday?'Notre soirée est terminée ♥':
+  weeklyExhausted?'Notre semaine est complète':
+  dailyLocked?'Soirée déjà partagée aujourd’hui':
+  historyUnknown?'Synchronisation des soirées…':'Aucune soirée en cours';
+ const eveningHint=activeEvening?(stats.ready?'Retrouvez vos défis dans Soirée.':
+  ownEveningD6Ready?'Ton dé est enregistré. Le deuxième dé se brasse dans Soirée.':'Préparez vos dés personnels dans Soirée.'):
+  invitationReceived?'Ton partenaire propose une soirée. Tu es libre de répondre.':
+  invitationSent?'Ton partenaire peut répondre à son rythme.':
+  closedToday?'Retrouvez notre soirée terminée dans le calendrier.':
+  weeklyExhausted?'Retrouvez notre historique sans relancer le dé.':
+  dailyLocked?'Une seule soirée par jour. Les autres restent disponibles cette semaine.':
+  historyUnknown?'L’historique se recharge. Aucun nouveau tirage n’est lancé.':
+  'Consultez les étapes et l’historique dans Soirée.';
+ const homeAction=closedToday&&!invitationReceived&&!invitationSent?'evening-calendar:today':
+  weeklyExhausted&&!invitationReceived&&!invitationSent?'evening-calendar':'tab:session';
+ const homeLabel=invitationReceived?'Répondre à l’invitation':
+  invitationSent?'Voir mon invitation':
+  closedToday?'Voir notre soirée terminée':
+  weeklyExhausted?'Voir nos soirées':'Ouvrir Soirée';
+ const mainShortcutLabel=invitationReceived?'♡ Répondre à l’invitation':
+  invitationSent?'♡ Voir mon invitation':
+  closedToday?'Voir notre soirée terminée':
+  weeklyExhausted?'Voir nos soirées':'♡ Aller à notre soirée';
+ const mainShortcutAria=invitationReceived?'Répondre à l’invitation de soirée':
+  invitationSent?'Consulter l’invitation envoyée':
+  closedToday?'Voir notre soirée terminée dans le calendrier':
+  weeklyExhausted?'Voir l’historique de nos soirées':
+  'Aller à notre soirée, sans lancer de nouveau dé';
+ const pending=rolling||disabled||invalidWeekly;
  return '<section class="real-home-shell" aria-label="Tableau de bord du couple">'+
    '<div class="home-ritual">'+ritualHeadingHtml('NOTRE RITUEL DE LA SEMAINE')+
-   '<div class="home-title"><h2 class="ritual-page-title">'+escape(weeklyTitle)+'</h2></div></div>'+
+   '<div class="home-title"><h2 class="ritual-page-title">'+escape(weeklyTitle)+'</h2>'+ 
+   (progressText?'<p class="home-weekly-progress">'+escape(progressText)+'</p>':'')+'</div></div>'+
    '<div class="home-die-theater" aria-label="Dé à six faces en trois dimensions">'+
    '<div class="home-fabric-photo" aria-hidden="true"></div>'+
    '<div class="home-satin-orbit" aria-hidden="true"></div>'+
@@ -211,29 +327,34 @@ export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,d
    (ready?
     (activeEvening?
      '<button class="home-roll-button home-resume-evening lr-ruby-control lr-ruby-action lr-surface" type="button" data-action="resume-evening" aria-label="Reprendre notre soirée en cours"><span>♡ Reprendre notre soirée</span></button>':
-     '<button class="home-roll-button is-used lr-ruby-control lr-ruby-action lr-surface" type="button" disabled>Déjà brassé cette semaine, revenez la semaine prochaine</button>'):
-    '<button class="home-roll-button lr-ruby-control lr-ruby-action lr-surface" type="button" data-action="roll:weekly" '+(pending?'disabled':'')+'>'+
-    (rolling?'Brassage 3D en cours…':disabled?'Préparation du brassage…':'<span class="home-action-die lr-ruby-icon" aria-hidden="true"><svg class="lr-ruby-die-icon" viewBox="0 0 34 38"><path fill="#fffdf5" d="m17 2 13 6-13 7L4 8Z"/><path fill="#f7e9dc" d="m4 8 13 7v20L5 28Q3 27 3 24V11Q3 9 4 8Z"/><path fill="#cdbdb4" d="m17 15 13-7q1 1 1 3v13q0 3-2 4l-12 7Z"/><path fill="none" stroke="#fff8ed" stroke-width=".8" d="m4 8 13 7 13-7M17 15v20"/><ellipse cx="17" cy="8" rx="2.5" ry="1.2" fill="#3d1020"/><g fill="#421521"><ellipse cx="7.6" cy="15" rx="1.5" ry="2.1" transform="rotate(-18 7.6 15)"/><ellipse cx="10.1" cy="21.5" rx="1.5" ry="2.1" transform="rotate(-18 10.1 21.5)"/><ellipse cx="12.7" cy="28" rx="1.5" ry="2.1" transform="rotate(-18 12.7 28)"/><ellipse cx="26.8" cy="15.5" rx="1.5" ry="2.1" transform="rotate(18 26.8 15.5)"/><ellipse cx="21.6" cy="27.3" rx="1.5" ry="2.1" transform="rotate(18 21.6 27.3)"/></g></svg></span><span class="home-action-label lr-ruby-title">Brasser le dé</span>')+'</button>')+
+     '<button class="home-roll-button is-used lr-ruby-control lr-ruby-action lr-surface" type="button" data-action="'+homeAction+'" aria-label="'+escape(mainShortcutAria)+'">'+
+     escape(mainShortcutLabel)+'</button>'):
+    '<button class="home-roll-button lr-ruby-control lr-ruby-action lr-surface" type="button" '+
+    (invalidWeekly?'disabled aria-disabled="true"':
+     'data-action="roll:weekly" '+(pending?'disabled':''))+'>'+
+    (invalidWeekly?'Résultat hebdomadaire indisponible — actualisez LoveRoll':rolling?'Brassage 3D en cours…':disabled?'Préparation du brassage…':'<span class="home-action-die lr-ruby-icon" aria-hidden="true"><svg class="lr-ruby-die-icon" viewBox="0 0 34 38"><path fill="#fffdf5" d="m17 2 13 6-13 7L4 8Z"/><path fill="#f7e9dc" d="m4 8 13 7v20L5 28Q3 27 3 24V11Q3 9 4 8Z"/><path fill="#cdbdb4" d="m17 15 13-7q1 1 1 3v13q0 3-2 4l-12 7Z"/><path fill="none" stroke="#fff8ed" stroke-width=".8" d="m4 8 13 7 13-7M17 15v20"/><ellipse cx="17" cy="8" rx="2.5" ry="1.2" fill="#3d1020"/><g fill="#421521"><ellipse cx="7.6" cy="15" rx="1.5" ry="2.1" transform="rotate(-18 7.6 15)"/><ellipse cx="10.1" cy="21.5" rx="1.5" ry="2.1" transform="rotate(-18 10.1 21.5)"/><ellipse cx="12.7" cy="28" rx="1.5" ry="2.1" transform="rotate(-18 12.7 28)"/><ellipse cx="26.8" cy="15.5" rx="1.5" ry="2.1" transform="rotate(18 26.8 15.5)"/><ellipse cx="21.6" cy="27.3" rx="1.5" ry="2.1" transform="rotate(18 21.6 27.3)"/></g></svg></span><span class="home-action-label lr-ruby-title">Brasser le dé</span>')+'</button>')+
    '</div>'+
    '<div class="home-bottom-stack">'+
-   '<button class="home-next-month lr-ruby-control lr-ruby-feature lr-surface'+(activity?' has-monthly-activity':'')+'" data-action="tab:special" type="button" aria-label="'+escape(activity?monthlyTitle+'. '+invitationText:'Brasser notre surprise mensuelle')+'">'+
+   '<button class="home-next-month lr-ruby-control lr-ruby-feature lr-surface'+(activity?' has-monthly-activity':'')+'" data-action="tab:special" type="button" aria-label="'+escape(activity?surpriseStage+'. '+monthlyTitle+'. '+invitationText:'Brasser notre surprise mensuelle')+'">'+
    '<span class="home-calendar-icon home-present lr-ruby-icon" aria-hidden="true">'+iconSvg('surprises')+'</span>'+
-   '<span class="lr-ruby-copy"><small class="lr-ruby-eyebrow">Surprise du mois disponible</small>'+
+   '<span class="lr-ruby-copy"><small class="lr-ruby-eyebrow">'+escape(surpriseStage)+'</small>'+
    '<strong class="lr-ruby-title" title="'+escape(activity?monthlyTitle:'Brasser notre surprise')+'">'+escape(activity?monthlyTitle:'Brasser notre surprise')+'</strong>'+
    '<em class="lr-ruby-caption">'+escape(invitationText)+'</em></span>'+
    '<span class="home-gift-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></svg></span></button>'+ 
    '<div class="home-dashboard home-duo-dashboard lr-surface">'+
    '<section class="home-panel home-tonight-panel" aria-labelledby="home-tonight-title">'+
-   '<h3 id="home-tonight-title"><span aria-hidden="true">♢</span>Ce soir <strong class="home-duo-heading-total" aria-label="Défis attribués ce soir">'+shown(stats.total)+'</strong></h3><div class="home-challenge-stats">'+
-   summary('♢',stats.total,'Défis attribués<br>ce soir')+
-   summary('♡',stats.forFirst,memberLabel(memberA,stats.remainingFirst))+
-   summary('♡',stats.forSecond,memberLabel(memberB,stats.remainingSecond))+'</div></section>'+
+   '<h3 id="home-tonight-title"><span aria-hidden="true">♢</span>Notre soirée</h3>'+
+   '<div class="home-evening-overview"><strong class="home-evening-status">'+eveningStatus+'</strong>'+
+   '<p>'+eveningHint+'</p><button type="button" class="home-evening-link" data-action="'+
+   (activeEvening?'resume-evening':homeAction)+'">'+
+   (activeEvening?'Reprendre notre soirée':homeLabel)+'</button></div></section>'+
    '<section class="home-panel home-monthly-panel" aria-labelledby="home-statistics-title">'+
-   '<h3 id="home-statistics-title" aria-label="Nos statistiques du mois"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M1 11h3v8H1zm5-7h3v15H6zm5 3h3v12h-3zm5-6h3v18h-3z"/></svg>Ce mois</h3>'+
+   '<h3 id="home-statistics-title"><button type="button" class="home-monthly-link" data-action="evening-calendar:month" '+(pending?'disabled ':'')+'aria-label="Voir le détail de nos statistiques du mois dans le calendrier">'+
+   '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M1 11h3v8H1zm5-7h3v15H6zm5 3h3v12h-3zm5-6h3v18h-3z"/></svg>Ce mois <span aria-hidden="true">›</span></button></h3>'+
    '<div class="home-stats-grid" aria-label="Statistiques réelles du couple">'+
    statistic(String(coupleStats.completed),'Défis réalisés','Ce mois · Couple','completed')+
-   statistic(coupleStats.byPartner.join(' / '),'Répartition',nameA+' / '+nameB,'partners')+
+   statistic(String(coupleStats.monthlyEvenings),'Soirées partagées','Ce mois · Couple','partners')+
    statistic(percent,'Sensuel / Sexuel','Ce mois','categories')+
-   statistic(String(coupleStats.streak),'Semaines actives','Série actuelle','streak')+
+   statistic(String(coupleStats.streak),'Semaines consécutives','Série actuelle','streak')+
    '</div></section>'+'</div></div></section>';
 }

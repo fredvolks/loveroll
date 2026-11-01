@@ -5,11 +5,19 @@ export function timedEveningTimerControl(timer){
   label:'♡ Validation en cours',status:'Validation du défi en cours',
   disabled:true,resetDisabled:true
  };
- if(timer?.running)return {
-  label:'Ⅱ Pause',status:'En cours',disabled:false,resetDisabled:false
+ // A Passer/Refuser RPC is deciding this card's authoritative status.
+ // Keep the timer and its reset locked until server reconciliation completes.
+ if(timer?.decisionPending)return {
+  label:'♡ Réponse en cours',status:'Décision sur le défi en cours',
+  disabled:true,resetDisabled:true
  };
+ // An expired timer must never offer "Pause", even if an old running flag
+ // remains true for one render while the completion handler is scheduled.
  if(!(Number(timer?.remainingMs)>0))return {
   label:'♡ Terminé',status:'Terminé',disabled:true,resetDisabled:false
+ };
+ if(timer?.running)return {
+  label:'Ⅱ Pause',status:'En cours',disabled:false,resetDisabled:false
  };
  const resumed=Number(timer?.remainingMs)<Number(timer?.durationMs);
  return {label:resumed?'▶ Reprendre':'▶ Démarrer',
@@ -32,25 +40,38 @@ export function isSameCompletedEveningChallenge(challenge,current,userId,session
   current?.id===challenge.id&&current?.recipient===userId&&
   current?.session_id===sessionId&&current?.status==='completed');
 }
-export async function completeTimedEveningChallenge({challenge,userId,sessionId,rpc,query}){
+export async function completeTimedEveningChallenge({
+ challenge,userId,sessionId,rpc,query,ownsRequest=()=>true
+}){
  if(!isAcceptedTimedEveningChallenge(challenge,userId,sessionId))
   return {outcome:'ineligible',finished:false};
+ // Authentication or evening ownership can change while a server request is
+ // awaiting its response. No later RPC may inherit the replacement account.
+ const stale=()=>({outcome:'superseded',finished:false});
+ if(!ownsRequest())return stale();
  let outcome='completed';
  try{await rpc('answer_challenge',{p_id:challenge.id,p_status:'completed'});}
  catch(error){
+  if(!ownsRequest())return stale();
   // Another device may have completed the exact same card first.
   const current=(await query('couple_challenges',{eq:{id:challenge.id}}))?.[0];
+  if(!ownsRequest())return stale();
   if(!isSameCompletedEveningChallenge(challenge,current,userId,sessionId))throw error;
   outcome='already-completed';
  }
+ if(!ownsRequest())return stale();
  const board=await rpc('my_love_evening_board',{p_session:sessionId});
+ if(!ownsRequest())return stale();
  if(board?.finished){
   try{await rpc('finish_couple_session',{p_session:sessionId,p_count:true});}
   catch(error){
+   if(!ownsRequest())return stale();
    // A simultaneous confirmation by the other partner can close it first.
    const previous=(await query('couple_sessions',{eq:{id:sessionId}}))?.[0];
+   if(!ownsRequest())return stale();
    if(!previous?.finished_at)throw error;
   }
  }
+ if(!ownsRequest())return stale();
  return {outcome,finished:!!board?.finished};
 }

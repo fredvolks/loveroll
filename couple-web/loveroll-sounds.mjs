@@ -3,6 +3,9 @@
 const KEY='loveroll-timer-sound-v229';
 let context=null;
 let currentUser='anonymous';
+// Keep this visit's sound switch usable when Safari denies persistence.
+// Preferences remain scoped to each account and contain no card contents.
+const sessionSoundEnabled=new Map();
 const recent=new Set();
 const activeMelodyOscillators=new Set();
 export function silenceLoveRollSounds(){
@@ -14,12 +17,24 @@ export function silenceLoveRollSounds(){
 }
 export const setLoveRollSoundUser=id=>{currentUser=String(id||'anonymous');};
 const key=()=>KEY+':'+currentUser;
-export function soundEnabled(store=globalThis.localStorage){
- try{return store?.getItem(key())!=='off';}catch{return true;}
+export function soundEnabled(store){
+ if(sessionSoundEnabled.has(key()))return sessionSoundEnabled.get(key());
+ // Safari can throw when the localStorage PROPERTY is read, before getItem().
+ // Resolve it inside try so settings and a timer alarm never crash the game.
+ try{
+  const available=store===undefined?globalThis.localStorage:store;
+  return available?.getItem(key())!=='off';
+ }catch{return true;}
 }
-export function setSoundEnabled(enabled,store=globalThis.localStorage){
- try{store?.setItem(key(),enabled?'on':'off');}catch{}
- return !!enabled;
+export function setSoundEnabled(enabled,store){
+ const selected=!!enabled;
+ try{
+  const available=store===undefined?globalThis.localStorage:store;
+  if(typeof available?.setItem!=='function')throw Error('Storage unavailable');
+  available.setItem(key(),selected?'on':'off');
+  sessionSoundEnabled.delete(key());
+ }catch{sessionSoundEnabled.set(key(),selected);}
+ return selected;
 }
 export async function unlockLoveRollSounds(){
  const target=globalThis.window;
