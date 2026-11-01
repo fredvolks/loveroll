@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {monthlyGeoCardHtml,localBookingDateTime} from './monthly-geo-ui.mjs';
+import {monthlyGeoCardHtml,localBookingDateTime,createBookingMutationGate} from './monthly-geo-ui.mjs';
 import {refreshAfterConfirmedWrite} from './timed-evening-completion.mjs';
 const venue={state:'ready',place_id:'geo-1',name:'Café du centre',driving_meters:16200,
  latitude:45.6,longitude:-73.7,address:'Rue Exemple'};
@@ -130,4 +130,33 @@ test('LR-SURPRISE-001 confirmed booking writes stay successful if only screen re
  assert.match(save,/status:confirmed\?'confirmed':'planned'/);
  assert.match(cancel,/state\.geoReservation=null/);
  assert.match(cancel,/currentHost\(\)\?\.user_id!==ownerId/);
+});
+
+test('LR-SURPRISE-001 booking actions are serialized and unlock after failure',async()=>{
+ const gate=createBookingMutationGate(),calls=[];
+ let release;
+ const first=gate(async()=>{
+  calls.push('save-start');
+  await new Promise(resolve=>{release=resolve;});
+  calls.push('save-done');
+ });
+ assert.equal(await gate(async()=>{calls.push('duplicate-save');}),false);
+ assert.equal(await gate(async()=>{calls.push('cancel-during-save');}),false);
+ assert.deepEqual(calls,['save-start']);
+ release();
+ assert.equal(await first,true);
+ assert.equal(await gate(async()=>{calls.push('cancel-after-save');}),true);
+ await assert.rejects(gate(async()=>{throw Error('save offline');}),/save offline/);
+ assert.equal(await gate(async()=>{calls.push('retry-after-error');}),true);
+ assert.deepEqual(calls,['save-start','save-done','cancel-after-save','retry-after-error']);
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ assert.match(app,/const geoBookingMutationGate=createBookingMutationGate\(\)/);
+ for(const action of ['geo-booking-save','geo-booking-cancel']){
+  const start=app.indexOf("if(verb==='"+action+"')");
+  const end=app.indexOf('if(verb===',start+12);
+  const handler=app.slice(start,end);
+  assert.match(handler,/const executed=await geoBookingMutationGate\(async\(\)=>\{/);
+  assert.ok(handler.indexOf('await rpc(')>handler.indexOf('geoBookingMutationGate('));
+  assert.match(handler,/if\(!executed\)notify\('Une opération de réservation est déjà en cours\.'\)/);
+ }
 });
