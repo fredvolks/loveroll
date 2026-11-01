@@ -3,7 +3,7 @@ import {showEveningCategoryReminder} from './evening-d100-template.mjs?v=2026102
 import {eveningInviteHtml,eveningInviteInboxHtml,isEveningInviteAction} from './evening-invitation.mjs?v=20261028-web254';
 import {askEveningCategoryConfirmation,categoryConfirmEnabled,saveCategoryConfirmLocal} from './evening-category-confirm.mjs?v=20261027-web238';
 import {soundEnabled,setSoundEnabled,setLoveRollSoundUser,unlockLoveRollSounds,playLoveRollSound,soundSettingsHtml} from './loveroll-sounds.mjs?v=20261028-privacy250';
-import {isAcceptedTimedEveningChallenge,completeTimedEveningChallenge,timedEveningTimerControl,refreshAfterTimedEveningConfirmation} from './timed-evening-completion.mjs?v=20261029-timer259';
+import {isAcceptedTimedEveningChallenge,completeTimedEveningChallenge,timedEveningTimerControl,refreshAfterTimedEveningConfirmation,timerBelongsToUser} from './timed-evening-completion.mjs?v=20261029-timer259';
 import {fitSurpriseMinimal} from './surprise-minimal.mjs?v=20261022-home228';
 import {eclatNoteKey,loadEclatNote,saveEclatNote} from './eclat-guidance.mjs?v=20261022-home228';
 import {loadEclatHistory} from './eclat-history.mjs?v=20261022-home228';
@@ -108,7 +108,7 @@ const names={SENSUEL:'Sensuel',COQUIN:'Coquin',SEXUEL:'Sexuel'};
 function isSharedCoupleReady(coupleId,members){
  return !!coupleId&&Array.isArray(members)&&members.length===2;
 }
-const challengeTimer={id:null,durationMs:0,remainingMs:0,deadline:0,running:false,notified:false,autoCompletePending:false,decisionPending:false,mode:'sound'};
+const challengeTimer={id:null,ownerUserId:null,durationMs:0,remainingMs:0,deadline:0,running:false,notified:false,autoCompletePending:false,decisionPending:false,mode:'sound'};
 let timerCompletionInFlight=null,timerCompletionRetryAt=0;
 try{const saved=localStorage.getItem('loveroll-timer-mode');if(saved==='vibrate'||saved==='sound')challengeTimer.mode=saved;}catch(e){}
 
@@ -1332,18 +1332,24 @@ function writeSavedChallengeTimer(key,value){
  try{sessionStorage.setItem(key,json);}catch{}
 }
 function saveChallengeTimer(){
- if(!challengeTimer.id||!state.user)return;
+ if(!timerBelongsToUser(challengeTimer,state.user?.id))return;
  writeSavedChallengeTimer('loveroll-challenge-clock:'+state.user.id+':'+challengeTimer.id,
   {durationMs:challengeTimer.durationMs,remainingMs:clockMs(),
    deadline:challengeTimer.deadline,running:challengeTimer.running,notified:challengeTimer.notified,
    autoCompletePending:challengeTimer.autoCompletePending});
 }
 function activeTimer(challenge,minutes){
- const millis=minutes*60000;
- if(challengeTimer.id!==challenge.id){
+ if(!state.user?.id)return;
+ const ownerId=state.user.id,millis=minutes*60000;
+ if(challengeTimer.id!==challenge.id||challengeTimer.ownerUserId!==ownerId){
+  // When an account changes, saveChallengeTimer ignores the previous owner's
+  // volatile timer rather than persisting it under the new account.
   saveChallengeTimer();
-  const stored=readSavedChallengeTimer('loveroll-challenge-clock:'+state.user.id+':'+challenge.id);
+  const stored=readSavedChallengeTimer('loveroll-challenge-clock:'+ownerId+':'+challenge.id);
   challengeTimer.id=challenge.id;
+  challengeTimer.ownerUserId=ownerId;
+  challengeTimer.decisionPending=false;
+  timerCompletionRetryAt=0;
   challengeTimer.durationMs=millis;
   challengeTimer.remainingMs=stored?.durationMs===millis&&Number.isFinite(stored.remainingMs)?
    Math.max(0,Math.min(millis,stored.remainingMs)):millis;
@@ -1385,7 +1391,7 @@ async function refreshConfirmedTimedEvening(){
 }
 async function retryExpiredTimedEvening(){
  if(!challengeTimer.autoCompletePending||challengeTimer.decisionPending||timerCompletionInFlight||
-    Date.now()<timerCompletionRetryAt||!state.user||!state.session)return;
+    Date.now()<timerCompletionRetryAt||!timerBelongsToUser(challengeTimer,state.user?.id)||!state.session)return;
  const id=challengeTimer.id,item=timedEveningItem(id);
  if(!item)return; // Keep pending until the corresponding session is loaded again.
  if(['completed','passed','refused'].includes(item.status)){
@@ -1441,7 +1447,7 @@ async function reconcileSavedEveningTimers(){
    const result=await completeTimedEveningChallenge({challenge:item,userId,sessionId,rpc,query});
    if(result.outcome==='ineligible')return;
    writeSavedChallengeTimer(key,{...expired,autoCompletePending:false});
-   if(challengeTimer.id===item.id){
+   if(timerBelongsToUser(challengeTimer,userId)&&challengeTimer.id===item.id){
     challengeTimer.running=false;challengeTimer.remainingMs=0;
     challengeTimer.autoCompletePending=false;saveChallengeTimer();
    }
@@ -1481,7 +1487,9 @@ function endSignal(){
 }
 function updateChallengeClock(){
  void reconcileSavedEveningTimers();
- if(!challengeTimer.id)return;
+ // A signed-out user's timer must not tick, signal, or call the server under
+ // a different login. Reloading the original account restores its deadline.
+ if(!timerBelongsToUser(challengeTimer,state.user?.id))return;
  if(challengeTimer.running&&Date.now()>=challengeTimer.deadline){
   challengeTimer.running=false;challengeTimer.remainingMs=0;endSignal();saveChallengeTimer();
  }
