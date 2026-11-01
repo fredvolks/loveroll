@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {isAcceptedTimedEveningChallenge,isSameCompletedEveningChallenge,completeTimedEveningChallenge,timedEveningTimerControl,refreshAfterTimedEveningConfirmation} from './timed-evening-completion.mjs';
+import {isAcceptedTimedEveningChallenge,isSameCompletedEveningChallenge,completeTimedEveningChallenge,timedEveningTimerControl,refreshAfterTimedEveningConfirmation,timerBelongsToUser} from './timed-evening-completion.mjs';
 const card={id:'card-a',recipient:'alice',session_id:'session-a',status:'accepted'};
 test('Only accepted, recipient-owned Soirée cards qualify; unrelated timers never count',()=>{
  assert.equal(isAcceptedTimedEveningChallenge(card,'alice','session-a'),true);
@@ -176,4 +176,24 @@ test('LR-002 server-confirmed timed challenge remains completed when the screen 
   'Post-save display refresh must not be caught as a failed server write');
  assert.match(app,/Défi accompli sur le serveur\. L’affichage n’a pas pu être actualisé/);
  assert.match(app,/const updated=await refreshAfterTimedEveningConfirmation\(refreshAndShow\)/);
+});
+
+test('LR-002 timers belong only to the account which opened the challenge',()=>{
+ const timer={id:'same-card',ownerUserId:'alice'};
+ assert.equal(timerBelongsToUser(timer,'alice'),true);
+ assert.equal(timerBelongsToUser(timer,'bob'),false);
+ assert.equal(timerBelongsToUser(timer,null),false);
+ assert.equal(timerBelongsToUser({id:'same-card'},'alice'),false);
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ assert.match(source,/challengeTimer\.ownerUserId!==ownerId/);
+ assert.match(source,/challengeTimer\.ownerUserId=ownerId/);
+ assert.match(source,/if\(!timerBelongsToUser\(challengeTimer,state\.user\?\.id\)\)return;/);
+ assert.match(source,/if\(!state\.user\?\.id\)return;/);
+ assert.match(source,/challengeTimer\.decisionPending=false;/);
+ // Neither the old timer's saved key nor its pending confirmation can ever
+ // be written/sent as the new account merely because the card ID is reused.
+ const save=source.slice(source.indexOf('function saveChallengeTimer(){'),source.indexOf('function activeTimer('));
+ assert.ok(save.indexOf('timerBelongsToUser')<save.indexOf('writeSavedChallengeTimer'));
+ const retry=source.slice(source.indexOf('async function retryExpiredTimedEvening(){'),source.indexOf('async function reconcileSavedEveningTimers()'));
+ assert.match(retry,/timerBelongsToUser\(challengeTimer,state\.user\?\.id\)/);
 });
