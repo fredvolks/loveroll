@@ -100,3 +100,18 @@ export function monthlyGeoCardHtml({
   body+bookingHtml+
   '<p class="surprise-geo-credit">Lieux et distances : données Geoapify / OpenStreetMap. Photos, menus, prix et réservations selon les informations disponibles.</p></section>';
 }
+
+/**
+ * One mutable Surprise booking operation at a time (save, edit or cancel).
+ * A rapid second tap must never reorder two official reservation RPCs.
+ * Failed writes release the gate so the player can retry immediately.
+ */
+export function createBookingMutationGate(){
+ let active=false;
+ return async operation=>{
+  if(active)return false;
+  active=true;
+  try{await operation();return true;}
+  finally{active=false;}
+ };
+}
