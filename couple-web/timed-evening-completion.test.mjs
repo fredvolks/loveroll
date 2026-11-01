@@ -242,3 +242,34 @@ test('LR-002 rapid-tap accept is serialized and Reset cannot race the server acc
   toggle.indexOf('await rpc(\'answer_challenge\''),
   'Release lock only after the server callback resolves or rejects');
 });
+
+test('LR-002 board outage after saved completion reports the card as persisted, but retries session sync',async()=>{
+ const calls=[];
+ const rpc=async name=>{
+  calls.push(name);
+  if(name==='my_love_evening_board')throw Error('temporary board outage');
+ };
+ await assert.rejects(completeTimedEveningChallenge({challenge:card,userId:'alice',
+  sessionId:'session-a',rpc,query:async()=>[]}),error=>{
+  assert.equal(error.challengeCompletionConfirmed,true);
+  assert.match(error.message,/Défi enregistré/);
+  assert.match(error.cause.message,/temporary board outage/);
+  return true;
+ });
+ assert.deepEqual(calls,['answer_challenge','my_love_evening_board'],
+  'A stored card is not submitted twice in the same attempt');
+ // Later retry uses the existing exact-identity idempotency guard.
+ const confirmAgain=async name=>{
+  if(name==='answer_challenge')throw Error('already saved');
+  if(name==='my_love_evening_board')return {finished:true};
+ };
+ const result=await completeTimedEveningChallenge({challenge:card,userId:'alice',
+  sessionId:'session-a',rpc:confirmAgain,
+  query:async name=>name==='couple_challenges'?[{...card,status:'completed'}]:[]});
+ assert.equal(result.outcome,'already-completed');
+ assert.equal(result.finished,true);
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ assert.equal((app.match(/error\?\.challengeCompletionConfirmed===true/g)||[]).length,2,
+  'Active and restored timers distinguish server save from board synchronization');
+ assert.equal((app.match(/Synchronisation de Soirée en attente de connexion/g)||[]).length,2);
+});
