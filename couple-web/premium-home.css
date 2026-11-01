@@ -211,7 +211,7 @@ main#app :is(.evening-toolbar,.advent-top,.surprise-header,.settings-page-header
  display:inline-flex;align-self:flex-start;align-items:center;justify-content:center;
  min-height:36px;max-width:100%;padding:6px 13px;margin-top:4px;
  border:1px solid #d58e9c88;border-radius:999px;background:#542136b8;
- color:#fff0f2;font:600 12px/1.3 inherit;cursor:pointer;
+ color:#fff0f2;font-family:inherit;font-size:12px;font-weight:600;line-height:1.3;cursor:pointer;
 }
 #app.loveroll-real-home .home-evening-link:focus-visible{
  outline:3px solid #ffdfaa;outline-offset:3px;
