@@ -1303,3 +1303,13 @@ Pour **chacun des douze identifiants**, renseigner un état réel et les preuves
 - **PWA Web 266** : `web-version.json` déclare `2026-11-01.266`, `app.js` / `index.html` emploient `20261101-web266`, et `service-worker.js` invalide le cache via `loveroll-static-v266`. Dernier lot de commits de synchronisation `a7108a6`, `6a31ebe`, `cc4a240`, `33ac959`.
 - **Non terminé / interdiction de surpromettre** : le SQL des favoris n'est pas prouvé installé sur la base réelle, et la **rééligibilité des défis favoris dans le moteur D100 officiel lors des soirées futures (LR-019)** n'est pas implémentée ni vérifiée sur une base de production. Ne pas confondre l'UI conditionnelle et la livraison complète. Ne pas fusionner ni déployer jusqu'au succès de la CI sur le dernier SHA, à la vérification des droits et aux essais authentifiés sur deux comptes. Priorité au moteur réel, aux régressions CI et aux fonctions de jeu, pas à un nouveau thème concurrent.
 
+
+
+## LoveRoll — Lot 24 : favoris ajoutés en soirée, attente du prochain D100 (1 novembre 2026)
+
+**Reprise réelle de la PR #179 avec @Boss GOD MODE** et les méthodes Atelier Architecture, Interface, Mobile. LoveRoll n'a pas de fiche Atelier enregistrée; les changements sont dans le dépôt GitHub existant, sans prétendre à une mission autonome.
+
+- **Défaut corrigé :** le nouveau script serveur LR-019 autorisait une carte marquée en favori *après le début d'une soirée* à contourner immédiatement son historique de non-répétition dans cette même soirée, lorsqu'elle n'avait pas encore été pigée au cours de la séance. Ce cas contrevient à la règle « prochaine soirée » même si la protection anti-repige de la même carte fonctionne.
+- **Code :** dans `couple-web/migrations/20261101_lr019_favorites_future_evenings.sql`, les deux contrôles du D100 officiel (`draw_for_partner` : capacité et sélection) exigent maintenant `fav.added_at < s.started_at` ; le remplacement `love_respond_and_redraw` exige `fav.added_at < v_session.started_at`. Les probabilités par catégorie, exclusions volontaires, locks et filtres de la soirée sont inchangés.
+- **Régression :** le test structurel `couple-web/lr019-future-favorites.test.mjs` impose ces trois conditions et vérifie le maintien des contrôles anti-repige de la soirée. Commits `604943a` et `79a7a45` sur la branche de la PR #179.
+- **Limites :** migration préparatoire uniquement : aucun SQL n'a été appliqué à Supabase/production. Tests de PostgreSQL intégrés avec deux vraies sessions authentifiées, sécurité RLS et captures D100 mobiles/tablettes/PC encore nécessaires avant fusion et publication. Un test statique n'atteste pas de l'exécution de la migration en base.
