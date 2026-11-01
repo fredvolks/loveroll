@@ -184,6 +184,33 @@ test('Monthly stats only use completed records, real categories, partner IDs and
  assert.match(html,/Soirées partagées/);
  assert.doesNotMatch(html,/class="home-shortcut /);
 });
+test('Current-month recap survives stale duplicate history and repeated membership rows',()=>{
+ const now=new Date('2026-10-31T22:00:00Z');
+ const members=[{user_id:'alice'},{user_id:'alice'},{user_id:'bob'}];
+ const sessions=[
+  {id:'last-month',counted:true,finished_at:'2026-09-26T20:00:00Z'},
+  {id:'this-month',counted:true,finished_at:'2026-10-18T20:00:00Z'}
+ ];
+ const challenges=[
+  {id:'saved-one',session_id:'last-month',status:'completed',
+   recipient:'alice',category:'SENSUEL'},
+  {id:'saved-one',session_id:'this-month',status:'completed',
+   recipient:'alice',category:'SEXUEL'},
+  {id:'saved-one',session_id:'this-month',status:'completed',
+   recipient:'alice',category:'SEXUEL'},
+  {id:'saved-two',session_id:'this-month',status:'completed',
+   recipient:'bob',category:'SENSUEL'}
+ ];
+ const summary=coupleHomeStats(challenges,sessions,members,now);
+ assert.equal(summary.completed,2,'previous month must not hide current challenge');
+ assert.deepEqual(summary.byPartner,[1,1],'membership duplicates do not multiply counts');
+ assert.equal(summary.monthlyEvenings,1);
+ assert.equal(summary.sensualPercent,50);
+ assert.equal(summary.sexualPercent,50);
+ const reordered=coupleHomeStats([...challenges].reverse(),sessions,members,now);
+ assert.deepEqual(reordered.byPartner,[1,1],'snapshot order cannot change partner totals');
+ assert.equal(reordered.completed,2);
+});
 test('Unpaired statistics are zero or no-data instead of invented sample figures',()=>{
  const noData=coupleHomeStats([],[],[{user_id:'x'},{user_id:'y'}]);
  assert.deepEqual(noData,{completed:0,monthlyEvenings:0,byPartner:[0,0],sensualPercent:null,sexualPercent:null,streak:0});

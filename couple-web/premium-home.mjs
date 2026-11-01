@@ -147,23 +147,26 @@ export function coupleHomeStats(challenges=[],sessions=[],members=[],now=new Dat
  const rows=value=>Array.isArray(value)?value.filter(row=>
   row&&typeof row==='object'&&!Array.isArray(row)):[];
  const safeSessions=rows(sessions);
- const safeMembers=rows(members).filter(m=>typeof m.user_id==='string'&&m.user_id);
+ // Repeated membership rows are not additional partners in the same couple.
+ const seenMembers=new Set();
+ const safeMembers=rows(members).filter(m=>{
+  if(typeof m.user_id!=='string'||!m.user_id||seenMembers.has(m.user_id))return false;
+  seenMembers.add(m.user_id);return true;
+ });
  const byId=new Map(safeSessions.filter(s=>s.id!=null).map(s=>[s.id,s]));
- // The same saved challenge can appear twice in incremental history snapshots.
- // Count a persisted challenge ID once; do not collapse distinct legacy rows
- // which lack an ID. This affects display statistics only, never the draws.
+ // Only dedupe completed challenges AFTER checking the requested month.
+ // Otherwise an old copy encountered first can hide the valid current
+ // snapshot with the same persisted ID (and silently undercount a month).
  const seenChallenges=new Set();
- const completed=rows(challenges).filter(c=>{
+ const monthDone=rows(challenges).filter(c=>{
   if(c.status!=='completed')return false;
+  const session=byId.get(c.session_id);
+  if(monthKeyToronto(session?.finished_at||c.created_at)!==month)return false;
   if(typeof c.id==='string'&&c.id){
    if(seenChallenges.has(c.id))return false;
    seenChallenges.add(c.id);
   }
   return true;
- });
- const monthDone=completed.filter(c=>{
-  const session=byId.get(c.session_id);
-  return monthKeyToronto(session?.finished_at||c.created_at)===month;
  });
  const counts=safeMembers.map(m=>monthDone.filter(c=>c.recipient===m.user_id).length);
  // Finished and officially counted couple evenings only; an open session,
