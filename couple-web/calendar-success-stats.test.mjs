@@ -141,7 +141,8 @@ test('Calendar original three top bubbles remain untouched; new row uses same vi
  assert.match(html,/<div class="evening-cal-stats"><span><strong>2<\/strong> soirées clôturées/);
  assert.match(html,/div class="evening-cal-stats evening-cal-extra"/);
  assert.match(html,/<strong>100 %<\/strong>2 \/ 2 soirées possibles/);
- assert.match(html,/Passes gratuites : 0\/3/);
+ assert.match(html,/Passes enregistrées : 0/);
+ assert.doesNotMatch(html,/Passes gratuites : 0\/3/);
  assert.equal((html.match(/class="evening-cal-stats"/g)||[]).length,1);
  assert.equal((html.match(/class="evening-cal-stats evening-cal-extra"/g)||[]).length,1);
 });
@@ -328,4 +329,41 @@ test('LR-ACCUEIL-001: legacy invalid personal targets cannot poison the monthly 
  assert.equal(valid.unpicked,3);
  assert.equal(valid.denominator,4);
  assert.equal(valid.percent,25);
+});
+
+test('LR-016: calendar displays the current server pass limit, not a hardcoded three',()=>{
+ const base={month:'2026-10',selectedDate:'2026-10-20',
+  members:[{user_id:'a',name:'Alice'}],
+  sessions:[{id:'s',started_at:'2026-10-20T18:00:00Z',
+   finished_at:'2026-10-20T20:00:00Z',counted:true}],
+  historyChallenges:[{id:'c',session_id:'s',recipient:'a',status:'passed'}],
+  passQuota:[{challenge_id:'c',recipient:'a',free_pass:true}],
+  passHistoryReady:true};
+ const seven=eveningHistoryMarkup({...base,passLimit:7});
+ assert.match(seven,/Passes enregistrées : 1 · Limite actuelle : 7/);
+ assert.doesNotMatch(seven,/Passes gratuites : 1\/3/);
+ const zero=eveningHistoryMarkup({...base,passLimit:0});
+ assert.match(zero,/Limite actuelle : 0/);
+ const invalid=eveningHistoryMarkup({...base,passLimit:'not-a-limit'});
+ assert.doesNotMatch(invalid,/Limite actuelle :/);
+ const app=read('app.js');
+ assert.match(app,/passLimit:state\.monthlyPassQuota\?\.limit\?\?state\.couple\?\.monthly_pass_limit/);
+});
+
+test('LR-016: missing pass history never claims zero or a definitive success rate',()=>{
+ const base={month:'2026-10',selectedDate:'2026-10-20',
+  members:[{user_id:'a',name:'Alice'}],
+  sessions:[{id:'s',started_at:'2026-10-20T18:00:00Z',
+   finished_at:'2026-10-20T20:00:00Z',counted:true}],
+  historyChallenges:[{id:'c',session_id:'s',recipient:'a',status:'completed'}],
+  passHistoryReady:false,passQuota:[],passLimit:5};
+ const missing=eveningHistoryMarkup(base);
+ assert.match(missing,/Passes du mois : données indisponibles · Limite actuelle : 5/);
+ assert.match(missing,/<strong>—<\/strong>Alice · défis réalisés/);
+ assert.doesNotMatch(missing,/Passes enregistrées : 0/);
+ const loaded=eveningHistoryMarkup({...base,passHistoryReady:true});
+ assert.match(loaded,/<strong>100 %<\/strong>Alice · défis réalisés/);
+ assert.match(loaded,/Passes enregistrées : 0 · Limite actuelle : 5/);
+ const app=read('app.js');
+ assert.match(app,/passHistoryReady:state\.calendarPassMonth===mo/);
 });
