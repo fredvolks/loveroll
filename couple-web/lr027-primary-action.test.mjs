@@ -82,3 +82,30 @@ test('personal D6 trigger is a real button only before the roll',()=>{
  assert.doesNotMatch(syncing,/data-action="my-d6"/);
  assert.match(syncing,/Vérification du lancer…/);
 });
+
+test('official personal D6 row blocks a second roll even when status is stale',()=>{
+ const stale=view({
+  status:{both_ready:false,my_rolled:false,partner_rolled:false},
+  turn:{ready:false},rolls:[{user_id:'a',face:3}]
+ });
+ assert.doesNotMatch(stale,/data-action="my-d6"/,
+  'A lagging status RPC must not permit rerolling a confirmed D6');
+ assert.match(stale,/evening-d6-status" role="status">✓ Lancer enregistré/);
+ assert.equal(status(stale),'En attente du D6 de ton partenaire');
+ assert.match(stale,/Ton lancer est enregistré. Attends ton partenaire/);
+ assert.match(stale,/data-dice-sides="6" data-face="3"/);
+ const partnerAlreadyRolled=view({
+  status:{both_ready:false,my_rolled:false,partner_rolled:false},
+  turn:{ready:false},rolls:[{user_id:'b',face:5}]
+ });
+ assert.match(partnerAlreadyRolled,/data-action="my-d6"/,
+  'The other person rolling must never disable my D6');
+ assert.match(partnerAlreadyRolled,/Le résultat de Bob est prêt/);
+ assert.equal(status(partnerAlreadyRolled),'Lance ton D6 pour continuer');
+ const invalid=view({
+  status:{both_ready:false,my_rolled:false,partner_rolled:false},
+  turn:{ready:false},rolls:[{user_id:'a',face:0}]
+ });
+ assert.match(invalid,/data-action="my-d6"/,
+  'An invalid placeholder is not a server-confirmed roll');
+});
