@@ -79,6 +79,14 @@ export function updateEveningCategoryUi(root,category,percent=88){
  if(roll)roll.disabled=false; // Choices are enabled only when this player may draw.
  return true;
 }
+// The same local safety rule drives the visible D6 button AND its click handler.
+// Server remains authoritative if another device rolled after our last refresh.
+export function canRollPersonalEveningD6({session,status={},rolls=[],userId,rolling=false}={}){
+ if(!session||session.finished_at||rolling||status?.my_rolled||status?.both_ready||!userId)return false;
+ const own=rolls.find(r=>r.user_id===userId);
+ const face=own?.face;
+ return !(Number.isInteger(face)&&face>=1&&face<=6);
+}
 const d6=(m,roll,localUser,canRoll,ready,rolling,rollFace,effectiveTarget=null)=>{
  // Reveal a player's real server-confirmed result as soon as THEY roll.
  // Their face is immutable; the second player's roll cannot modify it.
@@ -145,7 +153,7 @@ export function premiumEveningHtml({
  const myRollRecorded=!!status?.my_rolled||hasMyOfficialRoll;
  const partnerRollRecorded=!!status?.partner_rolled||
   (Number.isInteger(theirRoll?.face)&&theirRoll.face>=1&&theirRoll.face<=6);
- const canMyRoll=!!session&&!myRollRecorded&&!rolling;
+ const canMyRoll=canRollPersonalEveningD6({session,status,rolls,userId:me,rolling});
  const first=turn?.first?members.find(m=>m.user_id===turn.first)?.name?.split(' ')[0]:'';
  const totals=turn.targets||{},done=turn.completed||{};
  const canDraw=ready&&turn.ready&&!turn.drawsFinished&&
