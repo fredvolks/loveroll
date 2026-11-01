@@ -3068,6 +3068,13 @@ async function handle(action,element){
   if(state.showSurpriseActivity&&worldGeoEnabled()){geoFetchNextAt.delete(state.monthly.monthly_activity.id);void resolveMonthlyGeo();}
   return;
  }
+ if(verb==='geo-retry'){
+  if(!worldGeoEnabled()||!state.user?.id||!state.monthly?.monthly_activity)return;
+  const rollId=state.monthly.monthly_activity.id;
+  if(geoFetchActive===rollId){notify('Recherche déjà en cours.');return;}
+  geoFetchNextAt.delete(rollId);
+  void resolveMonthlyGeo();return;
+ }
  if(verb==='geo-booking-editor'){
   if(currentHost()?.user_id!==state.user?.id)throw Error('Seule la personne qui invite peut réserver.');
   state.geoBookingEdit=!state.geoBookingEdit;render();return;
