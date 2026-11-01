@@ -444,6 +444,16 @@ export function dieOn(canvas,sides,value,rolling){
   new ResizeObserver(resizeDie):null;
  resizeObserver?.observe(canvas);
  const podiumObserver=typeof ResizeObserver==='function'?new ResizeObserver(()=>{alignPodium();request();}):null;
+ // fitTabletRomanceStage updates the photo's marble CSS variable AFTER the
+ // canvas is created. That moves the fixed marker without resizing the
+ // theater, so ResizeObserver alone misses it and the D100 floats above
+ // the marble by the late layout delta (5px on portrait iPad in CI).
+ const photoRoot=canvas.closest('#app');
+ const photoContactObserver=sides===100&&photoRoot&&
+  typeof MutationObserver==='function'?
+  new MutationObserver(()=>{if(canvas.isConnected){alignPodium();request();}}):null;
+ if(photoContactObserver&&canvas.closest('.evening-d100-theater'))
+  photoContactObserver.observe(photoRoot,{attributes:true,attributeFilter:['style']});
  window.addEventListener('resize',resizeDie);
  const glass=glassEnvironment(renderer,referenceRuby,sides===100);scene.environment=glass.texture;
  const backdrop=crystalBackdrop(renderer,scene,canvas,()=>request());
@@ -843,7 +853,8 @@ export function dieOn(canvas,sides,value,rolling){
  document.addEventListener('visibilitychange',onVisible);request();
  const clean=()=>{if(frame)cancelAnimationFrame(frame);obs.disconnect();
   if(canvas.loveRollDie?.rollTo===rollTo)delete canvas.loveRollDie;
-  resizeObserver?.disconnect();podiumObserver?.disconnect();window.removeEventListener('resize',resizeDie);
+  resizeObserver?.disconnect();podiumObserver?.disconnect();photoContactObserver?.disconnect();
+  window.removeEventListener('resize',resizeDie);
   document.removeEventListener('visibilitychange',onVisible);
   canvas.removeEventListener('pointerdown',down);canvas.removeEventListener('pointermove',move);
   canvas.removeEventListener('pointerup',up);canvas.removeEventListener('pointercancel',up);
