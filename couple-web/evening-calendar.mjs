@@ -1,6 +1,7 @@
 // LoveRoll evening archive. Challenge titles and outcomes are shared ONLY
 // through the member-checked calendar RPC; the live game's RLS stays personal.
 import {resolvedCard} from './evening-challenges.mjs';
+import {eveningFavoriteId,EVENING_FAVORITES_LIMIT} from './evening-favorites.mjs';
 import {eveningPersonReviewMarkup} from './evening-review.mjs';
 import {ritualHeadingHtml} from './brand.mjs?v=20261017-ritual130';
 import {calendarWeekSuccess,monthlyChallengeSuccess,eveningArchiveDay} from './calendar-success-stats.mjs?v=20261031-stats271';
@@ -49,6 +50,7 @@ export function eveningCalendarInitialDate({sessions=[],month,selectedDate,now=n
 export function eveningHistoryMarkup({
  sessions:rawSessions=[],members:rawMembers=[],stats:rawStats=[],
  historyChallenges:rawChallenges=[],reviews:rawReviews=[],me,month,selectedDate,
+ favoriteIds:rawFavoriteIds=[],
  weeklyRolls:rawWeeklyRolls=[],passQuota:rawPassQuota=[],
  passHistoryReady=true,passLimit=null,
  backAction='tab:session',backLabel='Retour à Soirée'}={}){
@@ -64,6 +66,7 @@ export function eveningHistoryMarkup({
  };
  const sessions=rows(rawSessions),members=rows(rawMembers).filter(m=>!!m.user_id);
  const stats=rows(rawStats),historyChallenges=rows(rawChallenges);
+ const favoriteIds=Array.isArray(rawFavoriteIds)?rawFavoriteIds.filter(x=>typeof x==='string'):[];
  const reviews=rows(rawReviews),weeklyRolls=rows(rawWeeklyRolls),passQuota=rows(rawPassQuota);
  // The calendar's fallback month follows the couple's Toronto timezone.
  // Previously it was frozen to October 2026, including in future years.
@@ -146,12 +149,23 @@ export function eveningHistoryMarkup({
     :'<span>Bilan indisponible</span>';
    const picked=cards.map(c=>{
     const card=resolvedCard(c);
+    // Only the personal recipient of a finished challenge can favorite it.
+    const identity=m.user_id===me&&closed&&c.status==='completed'?
+     eveningFavoriteId({...c,category:c.category==='COQUIN'?'SEXUEL':c.category}):null;
+    const saved=!!identity&&favoriteIds.includes(identity);
+    const available=saved||favoriteIds.length<EVENING_FAVORITES_LIMIT;
+    const favorite=identity&&typeof c.id==='string'&&c.id.length>0?
+     '<button type="button" class="evening-cal-favorite" data-action="calendar-favorite:'+safe(c.id)+
+     '" data-favorite-id="'+safe(identity)+'" aria-pressed="'+saved+
+     '" aria-label="'+(saved?'Retirer ce défi de mes favoris':'Ajouter ce défi à mes favoris')+'"'+
+     (available?'':' disabled aria-disabled="true" title="Limite de cinq favoris atteinte"')+'>'+
+     (saved?'♥ Dans mes favoris':'♡ Ajouter aux favoris')+'</button>':'';
     return '<li class="evening-cal-challenge '+(c.status==='completed'?'is-done':'is-open')+'">'+
       '<span>'+safe(c.status==='passed'?
        (freeByChallenge.has(c.id)?'↷ Passé sans pénalité':
         chargedByChallenge.has(c.id)?'↷ Passé, comptabilisé':eveningChallengeStatusLabel(c.status,closed)):
        eveningChallengeStatusLabel(c.status,closed))+'</span><strong>'+safe(card.title)+'</strong>'+
-      '<small>'+safe(c.category==='SEXUEL'?'Sexuel':'Sensuel')+'</small></li>';
+      '<small>'+safe(c.category==='SEXUEL'?'Sexuel':'Sensuel')+'</small>'+favorite+'</li>';
    }).join('');
    const unpicked=row?.target==null?0:Math.max(0,count(row.target)-
     count(row.drawn??cards.length));

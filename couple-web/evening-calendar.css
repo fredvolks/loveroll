@@ -153,3 +153,20 @@ main#app.loveroll-evening-calendar-page .evening-cal-extra small{
  display:block;color:#eed0e1;font-size:clamp(.51rem,1.5vw,.70rem);
  font-weight:400;line-height:1.15;
 }
+
+/* LR-019: archive favorites preserve the layout and accessible focus. */
+main#app.loveroll-evening-calendar-page .evening-cal-favorite{
+ grid-column:1/-1;justify-self:start;min-height:40px;max-width:100%;
+ border:1px solid #d885ab;border-radius:10px;background:#54213e;
+ color:#fff1f7;font-size:.78rem;font-weight:650;padding:8px 12px;
+ white-space:normal;text-align:left;
+}
+main#app.loveroll-evening-calendar-page .evening-cal-favorite[aria-pressed="true"]{
+ border-color:#e8bd77;background:#65412f;color:#fff3d4;
+}
+main#app.loveroll-evening-calendar-page .evening-cal-favorite:focus-visible{
+ outline:3px solid #ffe0a9;outline-offset:2px;
+}
+main#app.loveroll-evening-calendar-page .evening-cal-favorite:disabled{
+ opacity:.55;cursor:not-allowed;
+}

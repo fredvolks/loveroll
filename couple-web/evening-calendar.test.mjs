@@ -27,6 +27,35 @@ const historyChallenges=[
 ];
 const render=(date='2026-10-15',extra={})=>eveningHistoryMarkup({
  sessions,members,stats,historyChallenges,me:'a',month:'2026-10',selectedDate:date,...extra});
+test('LR-019: archived completed cards expose favorites only to their owner',()=>{
+ const html=render('2026-10-15',{favoriteIds:['SENSUEL:2']});
+ assert.match(html,/data-action="calendar-favorite:d1" data-favorite-id="SENSUEL:2" aria-pressed="true"/);
+ assert.match(html,/♥ Dans mes favoris/);
+ assert.doesNotMatch(html,/data-action="calendar-favorite:d2"/);
+ assert.doesNotMatch(html,/data-action="calendar-favorite:d3"/);
+ assert.doesNotMatch(html,/data-action="calendar-favorite:d4"/);
+ assert.match(render('2026-10-15',{favoriteIds:[]}),/calendar-favorite:d1"[^>]*aria-pressed="false"/);
+ const full=render('2026-10-15',{favoriteIds:['SENSUEL:1','SENSUEL:3','SENSUEL:4','SENSUEL:5','SEXUEL:2']});
+ assert.match(full,/calendar-favorite:d1"[^>]*disabled aria-disabled="true"/);
+ const already=render('2026-10-15',{favoriteIds:['SENSUEL:1','SENSUEL:2','SENSUEL:3','SENSUEL:4','SENSUEL:5']});
+ assert.match(already,/calendar-favorite:d1"[^>]*aria-pressed="true"/);
+ assert.doesNotMatch(already,/calendar-favorite:d1"[^>]*disabled/);
+ assert.doesNotMatch(render('2026-10-15',{me:null}),/data-action="calendar-favorite:/);
+});
+test('LR-019: calendar favorites are local, account-checked and never trigger a roll',()=>{
+ const app=files('./app.js');
+ const begin=app.indexOf("if(verb==='calendar-favorite'){");
+ const end=app.indexOf("if(verb==='favorite-remove'){",begin);
+ assert.ok(begin>0&&end>begin);
+ const source=app.slice(begin,end);
+ assert.match(source,/state\.tab!=='evening-calendar'/);
+ assert.match(source,/c\.recipient===state\.user\.id&&c\.status==='completed'/);
+ assert.match(source,/s\.finished_at/);
+ assert.match(source,/state\.coupleId/);
+ assert.match(source,/toggleEveningFavorite\(state\.user\.id,state\.coupleId,card\)/);
+ assert.match(source,/outcome\.favorites\.length>=EVENING_FAVORITES_LIMIT/);
+ assert.doesNotMatch(source,/rpc\(|roll_couple_once|finish_couple_session/);
+});
 test('Québec calendar honors local dates for day and year',()=>{
  assert.equal(eveningLocalDay('2026-10-16T01:00:00Z'),'2026-10-15');
  assert.equal(eveningLocalDay('2026-01-02T02:00:00Z'),'2026-01-01');

@@ -2858,6 +2858,7 @@ function renderEveningCalendar(){
   passHistoryReady:state.calendarPassMonth===mo,
   passLimit:state.monthlyPassQuota?.limit??state.couple?.monthly_pass_limit??null,
   reviews:state.eveningReviews||[],
+  favoriteIds:state.user?.id&&state.coupleId?readEveningFavorites(state.user.id,state.coupleId):[],
   me:state.user?.id,month:mo,selectedDate:date,
   backAction:eveningCalendarReturn(),backLabel:eveningCalendarReturn().startsWith('settings-page:')?'Retour à la confidentialité':'Retour à Soirée'
  }), 'CALENDRIER DES SOIRÉES', 'Un souvenir de chaque moment à deux');
@@ -4269,6 +4270,45 @@ async function handle(action,element){
   // Restore focus to the action which opens this drawer, never to the body.
   (root.querySelector('button[data-action="evening-list"]')||
    root.querySelector('.evening-manage'))?.focus({preventScroll:true});
+  return;
+ }
+ if(verb==='calendar-favorite'){
+  // Personal historical favorite only; no roll, RPC or session mutation.
+  if(state.tab!=='evening-calendar'||!state.user?.id||!state.coupleId||
+     !element||!root.contains(element))return;
+  const challengeId=parts.join(':');
+  const item=(Array.isArray(state.eveningCalendarChallenges)?state.eveningCalendarChallenges:[])
+   .find(c=>c?.id===challengeId&&c.recipient===state.user.id&&c.status==='completed');
+  const session=(Array.isArray(state.sessions)?state.sessions:[])
+   .find(s=>s?.id===item?.session_id&&s.finished_at&&
+    (!s.couple_id||s.couple_id===state.coupleId));
+  if(!item||!session||!state.members?.some(m=>m?.user_id===state.user.id))
+   throw Error('Ce défi terminé ne fait pas partie de ton historique personnel.');
+  const card={...item,category:item.category==='COQUIN'?'SEXUEL':item.category};
+  const identity=eveningFavoriteId(card);
+  if(!identity||element.getAttribute('data-favorite-id')!==identity)
+   throw Error('Cette carte favorite n’est pas disponible.');
+  const outcome=toggleEveningFavorite(state.user.id,state.coupleId,card);
+  if(!outcome.ok)throw Error(outcome.reason==='limit'?
+   'Tes cinq favoris sont remplis. Retire un favori pour libérer une place.':
+   'Impossible d’enregistrer ce favori sur cet appareil.');
+  // Update in place: keep open accordions, scroll position and keyboard focus.
+  root.querySelectorAll('.evening-cal-favorite[data-favorite-id]').forEach(button=>{
+   const selected=outcome.favorites.includes(button.dataset.favoriteId);
+   const atLimit=outcome.favorites.length>=EVENING_FAVORITES_LIMIT;
+   button.setAttribute('aria-pressed',String(selected));
+   button.setAttribute('aria-label',selected?
+    'Retirer ce défi de mes favoris':'Ajouter ce défi à mes favoris');
+   button.textContent=selected?'♥ Dans mes favoris':'♡ Ajouter aux favoris';
+   button.disabled=!selected&&atLimit;
+   if(button.disabled){
+    button.setAttribute('aria-disabled','true');
+    button.title='Limite de cinq favoris atteinte';
+   }else{
+    button.removeAttribute('aria-disabled');
+    button.removeAttribute('title');
+   }
+  });
   return;
  }
  if(verb==='favorite-remove'){
