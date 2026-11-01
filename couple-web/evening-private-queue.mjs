@@ -43,6 +43,6 @@ export function queueLabel(status){
  return ({proposed:'À commencer',accepted:'En cours',completed:'Terminé',passed:'Passé',refused:'Refusé'})[status]||'À faire';
 }
 export function hasTurnToDraw(board,userId){
- return !!(board?.ready&&!board?.drawsFinished&&board?.next===userId&&
+ return !!(board?.ready&&!board?.finished&&!board?.drawsFinished&&board?.next===userId&&
   Number(board?.remaining?.[userId]||0)>0);
 }
