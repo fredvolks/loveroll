@@ -31,12 +31,12 @@ test('LR-019: favorites marked after session start wait for a future evening',()
  const draw=definition('draw_for_partner','function');
  const redraw=definition('love_respond_and_redraw','replace');
  // Both the category capacity check and the actual random pick must agree.
- assert.equal((draw.match(/fav\\.added_at\\s*<\\s*s\\.started_at/g)||[]).length,2);
+ assert.equal((draw.match(/fav\.added_at\s*<\s*s\.started_at/g)||[]).length,2);
  // Passing/refusing a card must obey the exact same time boundary.
- assert.equal((redraw.match(/fav\\.added_at\\s*<\\s*v_session\\.started_at/g)||[]).length,1);
+ assert.equal((redraw.match(/fav\.added_at\s*<\s*v_session\.started_at/g)||[]).length,1);
  // Time eligibility never replaces the same-session exclusion guards.
- assert.match(draw,/used\\.session_id=p_session AND used\\.recipient=target/i);
- assert.match(redraw,/seen\\.session_id=v_old\\.session_id/i);
+ assert.match(draw,/used\.session_id=p_session AND used\.recipient=target/i);
+ assert.match(redraw,/seen\.session_id=v_old\.session_id/i);
 });
 
 test('LR-019: replacement obeys same-evening lockout and voluntary exclusion',()=>{
