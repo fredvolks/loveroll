@@ -2175,6 +2175,7 @@ function renderHome(){
   state.eveningBoard||sharedEveningTurns(activeEvening,members,state.personal,state.challenges,state.gifts):null;
  frame(premiumHomeHtml({
   weekly:state.weekly,
+  weeklyProgress:eveningDailyAccess({sessions:state.sessions,weekly:state.weekly}),
   activeEvening:!!activeEvening,
   weeklyWeights:state.couple?.weekly_face_weights,
   weeklyWeightsEnabled:state.couple?.weekly_weights_enabled!==false,
