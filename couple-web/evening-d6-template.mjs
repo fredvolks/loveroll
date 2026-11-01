@@ -39,9 +39,18 @@ export function fitEveningD6(root){
  partnerLabel.textContent=(duplicate?theirName:short(theirName))+' · '+(result||'En attente');
  partner.replaceChildren(partnerLabel);partner.setAttribute('aria-label',fullStatus);partner.classList.add('lr-surface');
  pills.append(me,partner);
- const roll=own.querySelector('.evening-small-roll');
- roll.classList.add('home-roll-button','lr-ruby-control','lr-ruby-action','lr-surface');
- if(!roll.disabled)roll.textContent='Brasser mon dé';
+ // After an official D6 roll, premiumEveningHtml replaces the action
+ // button with a live status paragraph. Keep the same grid slot during
+ // "Brassage en cours…" and "Lancer enregistré", without turning a status
+ // back into a clickable primary action.
+ const roll=own.querySelector('.evening-small-roll,.evening-d6-status');
+ if(!roll)throw new Error('Contrôle ou statut du D6 personnel introuvable');
+ if(roll.matches('button')){
+  roll.classList.add('home-roll-button','lr-ruby-control','lr-ruby-action','lr-surface');
+  if(!roll.disabled)roll.textContent='Brasser mon dé';
+ }else{
+  roll.classList.add('evening-small-roll','evening-saved-roll','lr-surface');
+ }
  const footer=document.createElement('div');footer.className='evening-d6-next lr-surface';
  footer.innerHTML='<strong>Étape 1 / 2</strong><span>Deux lancers pour continuer</span>';
  const content=view.querySelector('.evening-step.one');
