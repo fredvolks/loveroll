@@ -13,6 +13,16 @@ export function eveningLocalDay(iso){
  const get=t=>parts.find(p=>p.type===t)?.value;
  return get('year')+'-'+get('month')+'-'+get('day');
 }
+// Completed, counted evenings belong to the Québec day their final result
+// became official. An ongoing/interrupted evening keeps its start day.
+// One archive day per session avoids duplicate calendar dots and totals.
+export function eveningArchiveDay(session){
+ if(!session||typeof session!=='object'||Array.isArray(session))return null;
+ const started=eveningLocalDay(session.started_at);
+ if(session.counted===true&&session.finished_at)
+  return eveningLocalDay(session.finished_at)||started;
+ return started;
+}
 // Unfinished cards are not failures until their evening is closed.
 export function eveningChallengeStatusLabel(status,closed=false){
  if(status==='completed')return '✓ Réalisé';
@@ -40,8 +50,7 @@ export function eveningCalendarInitialDate({sessions=[],month,selectedDate,now=n
  };
  if(validInMonth(selectedDate))return selectedDate;
  const saved=Array.isArray(sessions)?sessions:[];
- const archiveDate=saved.map(row=>
-  row&&typeof row.started_at==='string'?eveningLocalDay(row.started_at):null)
+ const archiveDate=saved.map(eveningArchiveDay)
   .filter(validInMonth).sort().at(-1);
  return archiveDate||(targetMonth===currentMonth?currentDay:targetMonth+'-01');
 }
@@ -76,8 +85,7 @@ export function eveningHistoryMarkup({
   cd>=1&&cd<=new Date(Date.UTC(cy,cm,0)).getUTCDate()?candidate:current+'-01';
  const firstDay=new Date(Date.UTC(year,m-1,1)).getUTCDay(),padding=(firstDay+6)%7;
  const days=new Date(Date.UTC(year,m,0)).getUTCDate();
- const archives=sessions.filter(s=>typeof s.started_at==='string'&&!!s.started_at)
-  .map(s=>({...s,localDay:eveningLocalDay(s.started_at)}))
+ const archives=sessions.map(s=>({...s,localDay:eveningArchiveDay(s)}))
   .filter(s=>s.localDay!==null);
  // The displayed totals must describe the selected Toronto calendar month.
  // Previously they summed EVERY archived year/month while the grid showed one.
