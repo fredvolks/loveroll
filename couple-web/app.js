@@ -5,7 +5,7 @@ import {askEveningCategoryConfirmation,categoryConfirmEnabled,saveCategoryConfir
 import {soundEnabled,setSoundEnabled,setLoveRollSoundUser,unlockLoveRollSounds,playLoveRollSound,soundSettingsHtml} from './loveroll-sounds.mjs?v=20261028-privacy250';
 import {isAcceptedTimedEveningChallenge,isSameCompletedEveningChallenge,completeTimedEveningChallenge,timedEveningTimerControl,refreshAfterTimedEveningConfirmation,refreshAfterConfirmedWrite,timerBelongsToUser,canControlTimedEveningChallenge} from './timed-evening-completion.mjs?v=20261101-timer260';
 import {fitSurpriseMinimal} from './surprise-minimal.mjs?v=20261022-home228';
-import {createBookingMutationGate,geoLookupAfterRefresh} from './monthly-geo-ui.mjs?v=20261101-booking262';
+import {createBookingMutationGate,geoLookupAfterRefresh,trustedBookingVenueLinks} from './monthly-geo-ui.mjs?v=20261101-booking262';
 import {eclatNoteKey,loadEclatNote,saveEclatNote} from './eclat-guidance.mjs?v=20261022-home228';
 import {loadEclatHistory} from './eclat-history.mjs?v=20261022-home228';
 import {enhanceGoldBacks} from './gold-arrows.mjs?v=20261022-home228';
@@ -3122,8 +3122,8 @@ async function handle(action,element){
   if(paid&&!confirmed)throw Error('La réservation doit être confirmée avant de marquer le paiement.');
   await rpc('save_love_monthly_reservation',{
    p_roll:rollId,p_when:date.toISOString(),p_venue:title,p_address:address,
-   p_booking_url:state.geoVenue?.booking_url||null,p_menu_url:state.geoVenue?.menu_url||null,
-   p_photo_url:state.geoVenue?.photo_url||null,p_notes:'',p_confirmed:confirmed,p_paid:paid
+   ...trustedBookingVenueLinks(state.geoVenue,{title,address}),
+   p_notes:'',p_confirmed:confirmed,p_paid:paid
   });
   // A completed write belongs to its original user and official D100 roll,
   // even if the login changes while the network request is in flight.
