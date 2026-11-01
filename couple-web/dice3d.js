@@ -550,6 +550,15 @@ export function dieOn(canvas,sides,value,rolling){
     // the real die above the hero. Keep phone behavior unchanged.
     const tablet=window.matchMedia('(min-width:768px)').matches;
     const priority=tablet?'important':'';
+    // The ready iPad D100 starts ~6.4% narrower than the Surprise reference
+    // even though both occupy a 440px WebGL stage. Match the SAME physical
+    // ruby silhouette, then re-anchor its projected bottom on the marble.
+    // Set an absolute camera zoom (not *=) so repeated ResizeObserver calls
+    // never accumulate scale, and leave phones, D6 and inactive stages alone.
+    if(tablet&&camera.zoom!==1.065){
+     camera.zoom=1.065;
+     camera.updateProjectionMatrix();
+    }
     stage.style.setProperty('transform','none',priority);
     const rect=canvas.getBoundingClientRect(),bounds=projectedBounds();
     if(rect.width>0&&rect.height>0){
