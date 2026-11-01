@@ -110,6 +110,8 @@ function isSharedCoupleReady(coupleId,members){
 }
 const challengeTimer={id:null,ownerUserId:null,durationMs:0,remainingMs:0,deadline:0,running:false,notified:false,autoCompletePending:false,decisionPending:false,mode:'sound'};
 let timerCompletionInFlight=null,timerCompletionRetryAt=0;
+// Prevent simultaneous acceptance RPCs from rapid Start/Pause taps.
+let timerActivationInFlight=false;
 try{const saved=localStorage.getItem('loveroll-timer-mode');if(saved==='vibrate'||saved==='sound')challengeTimer.mode=saved;}catch(e){}
 
 const kinds={weekly:'Rituel de la semaine',monthly_activity:'Sortie du mois',
@@ -4184,6 +4186,9 @@ async function handle(action,element){
    return;
  }
  if(verb==='timer-reset'){
+   if(timerActivationInFlight){
+    notify('Défi en cours de préparation. Réessaie dans un instant.');return;
+   }
    if(!canControlTimedEveningChallenge(challengeTimer,timedEveningItem(challengeTimer.id),
      state.user?.id,state.session?.id))
     throw Error('Ce défi n’est plus disponible. Actualise Soirée.');
@@ -4198,6 +4203,9 @@ async function handle(action,element){
    challengeTimer.notified=false;saveChallengeTimer();updateChallengeClock();return;
  }
  if(verb==='timer-toggle'){
+   if(timerActivationInFlight)return;
+   timerActivationInFlight=true;
+   try{
    if(!challengeTimer.id)throw Error('Aucun défi avec minuteur');
    if(!canControlTimedEveningChallenge(challengeTimer,timedEveningItem(challengeTimer.id),
      state.user?.id,state.session?.id))
@@ -4231,6 +4239,11 @@ async function handle(action,element){
     challengeTimer.notified=false;
    }
    saveChallengeTimer();updateChallengeClock();return;
+   }finally{
+    // On success, RPC denial or a sign-out during sound permission, a
+    // second tap must be able to proceed only after the first has settled.
+    timerActivationInFlight=false;
+   }
  }
  if(verb==='give-challenge'){
   if(!state.session?.paired_turns||!state.session?.self_draws||!state.rollStatus?.both_ready)
