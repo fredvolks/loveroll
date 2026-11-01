@@ -1134,7 +1134,7 @@ Pour **chacun des douze identifiants**, renseigner un état réel et les preuves
 
 ## Refonte LoveRoll — Lot 8 : évaluation de fin de Soirée (1 novembre 2026)
 
-**Statut : code CSS commité, en attente des contrôles sur SHA final.** La feuille commune \`couple-web/velours-lanterne-maquette3.css\` habille désormais la fenêtre réelle de fin de Soirée (cinq cœurs), les champs de commentaires et les notes accessibles dans l'historique/calendrier. Travaux ciblés dans la PR #179, commits \`505cfd47\` puis \`42d5178b\`.
+**Statut : code CSS commité, en attente des contrôles sur SHA final.** La feuille commune `couple-web/velours-lanterne-maquette3.css` habille désormais la fenêtre réelle de fin de Soirée (cinq cœurs), les champs de commentaires et les notes accessibles dans l'historique/calendrier. Travaux ciblés dans la PR #179, commits `505cfd47` puis `42d5178b`.
 
 - Reprendre les matériaux approuvés de la maquette 3 : velours bordeaux, rose lanterne, champagne et écrin rubis, sans nouvelle feuille concurrente.
 - Les cœurs, la fermeture et le bouton d'édition ont des cibles tactiles de 44 px. À largeur ≤ 380 px, les cinq boutons de note occupent une rangée entière au lieu d'être comprimés contre le texte de la question. Sur écran court, la fenêtre peut défiler sans perdre ses actions.
