@@ -583,6 +583,7 @@ body.lr-velours-lanterne {
   --lr-vl-action-edge:#f4a3bc;
   --lr-vl-stage-sheen:inset 0 1px 0 rgba(255,226,218,.29),0 0 14px rgba(240,85,146,.18);
   --lr-vl-action-text-shadow:0 1px 3px rgba(20,1,12,.68);
+  --lr-vl-cta-shadow:var(--lr-vl-relief),0 0 13px rgba(248,93,151,.23);
 }
 /* Accueil: un halo discret autour du dé, sur l'écrin photographique préservé. */
 @media(max-width:767px) {
@@ -603,7 +604,7 @@ body.lr-velours-lanterne main#app.loveroll-real-home .home-ritual .ritual-kicker
 body.lr-velours-lanterne main#app.loveroll-real-home .home-roll-button:not(.is-used):not(:disabled) {
   background:var(--lr-vl-action)!important;
   border-color:var(--lr-vl-action-edge)!important;
-  box-shadow:var(--lr-vl-relief),0 0 13px rgba(248,93,151,.23)!important;
+  box-shadow:var(--lr-vl-cta-shadow)!important;
   color:var(--lr-vl-ivory)!important;
   font-family:var(--lr-vl-editorial)!important;
   text-shadow:var(--lr-vl-action-text-shadow);
@@ -646,7 +647,7 @@ body.lr-velours-lanterne main#app.has-evening-d100-template .ritual-page-title {
 body.lr-velours-lanterne main#app button:is(.evening-finale-start,.evening-primary,.surprise-primary):not(:disabled) {
   background:var(--lr-vl-action)!important;
   border-color:var(--lr-vl-action-edge)!important;
-  box-shadow:var(--lr-vl-relief),0 0 13px rgba(246,101,159,.20)!important;
+  box-shadow:var(--lr-vl-cta-shadow)!important;
   color:var(--lr-vl-ivory)!important;
   font-family:var(--lr-vl-editorial)!important;
   text-shadow:var(--lr-vl-action-text-shadow);
