@@ -352,3 +352,45 @@ test('LR-ACCUEIL-001: Surprise follows official host, planned and confirmed book
  assert.doesNotMatch(invalid,/Date prévue/);
  assert.match(app,/reservation:state\.geoReservation/);
 });
+
+test('LR-ACCUEIL-001: received invitation appears on Home without auto-acceptance or dice',()=>{
+ const weekly={face:2,key:'2026-10-26'};
+ const weeklyProgress={historyReady:true,counted:2,limit:2,dailyLocked:true};
+ const invitation={id:'verified-invite',direction:'received',state:'pending'};
+ const html=premiumHomeHtml({weekly,weeklyProgress,eveningInvite:invitation});
+ assert.match(html,/Une invitation vous attend/);
+ assert.match(html,/Répondre à l’invitation/);
+ assert.match(html,/data-action="tab:session"/);
+ assert.doesNotMatch(html,/data-action="evening-calendar"/);
+ assert.doesNotMatch(html,/data-action="evening-invite:yes"|data-action="roll:weekly"|data-action="new-session"/);
+ assert.match(app,/eveningInvite:state\.eveningInvite/);
+ const maybe=premiumHomeHtml({weekly,eveningInvite:{...invitation,state:'maybe'}});
+ assert.match(maybe,/Une invitation vous attend/);
+ const noId=premiumHomeHtml({weekly,eveningInvite:{direction:'received',state:'pending'}});
+ assert.match(noId,/data-action="tab:session"/);
+ assert.doesNotMatch(noId,/data-action="evening-invite:yes"/);
+});
+
+test('LR-ACCUEIL-001: sent invitation waits without nudging or rolling for partner',()=>{
+ const weekly={face:2};
+ const sent=premiumHomeHtml({weekly,eveningInvite:{id:'official',direction:'sent',state:'pending'}});
+ assert.match(sent,/En attente de la réponse/);
+ assert.match(sent,/Ton partenaire peut répondre à son rythme/);
+ assert.match(sent,/Voir mon invitation/);
+ assert.doesNotMatch(sent,/data-action="evening-invite:send"|data-action="evening-invite:yes"/);
+ const no=premiumHomeHtml({weekly,eveningInvite:{direction:'received',state:'no'}});
+ assert.doesNotMatch(no,/Une invitation vous attend|En attente de la réponse/);
+ const expired=premiumHomeHtml({weekly,eveningInvite:{direction:'sent',state:'expired'}});
+ assert.doesNotMatch(expired,/En attente de la réponse/);
+ const other=premiumHomeHtml({weekly,eveningInvite:{direction:'received',state:'obsolete'}});
+ assert.doesNotMatch(other,/Une invitation vous attend/);
+});
+
+test('LR-ACCUEIL-001: active evening remains primary over an outdated invitation',()=>{
+ const weekly={face:1};
+ const html=premiumHomeHtml({weekly,activeEvening:true,
+  turn:{ready:false},eveningInvite:{direction:'received',state:'pending'}});
+ assert.match(html,/Soirée commencée/);
+ assert.match(html,/data-action="resume-evening"/);
+ assert.doesNotMatch(html,/Une invitation vous attend|Répondre à l’invitation/);
+});
