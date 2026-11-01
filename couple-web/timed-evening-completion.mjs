@@ -68,3 +68,12 @@ export async function refreshAfterTimedEveningConfirmation(refresh){
 export function timerBelongsToUser(timer,userId){
  return !!(timer?.id&&userId&&timer.ownerUserId===userId);
 }
+
+// Only a live, recipient-owned Soirée card may control an existing countdown.
+// A stale popup, previous account or completed card cannot restart it.
+export function canControlTimedEveningChallenge(timer,challenge,userId,sessionId){
+ return timerBelongsToUser(timer,userId)&&
+  challenge?.id===timer.id&&challenge?.recipient===userId&&
+  challenge?.session_id===sessionId&&
+  (challenge.status==='proposed'||challenge.status==='accepted');
+}
