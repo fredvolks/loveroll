@@ -53,7 +53,17 @@ export function chooseNearbyVenue(places,roadRoutes,maxKm,{category=null}={}){
   const id=String(place?.place_id||'').trim(),name=String(place?.name||'').trim();
   const route=id&&roadRoutes?.[id],km=drivingKilometres(route);
   if(!id||!name||!isRouteWithinRadius(route,maxKm))return null;
-  if(category&&!String(place?.categories||'').split(',').some(x=>x===category||x.startsWith(category+'.')))return null;
+  if(category){
+   // Geoapify commonly returns categories as an array, while imported
+   // providers may supply comma-separated text. Treat surrounding spaces
+   // equally, without accepting unrelated category prefixes.
+   const values=Array.isArray(place?.categories)?place.categories:
+    String(place?.categories||'').split(',');
+   if(!values.some(value=>{
+    const key=String(value||'').trim();
+    return key===category||key.startsWith(category+'.');
+   }))return null;
+  }
   return {place_id:id,name,address:String(place.address||'').trim(),distance_km:km,distance_meters:Number(route.distance_meters),source:'Geoapify'};
  }).filter(Boolean).sort((a,b)=>a.distance_meters-b.distance_meters||a.place_id.localeCompare(b.place_id));
  return candidate[0]||null;
