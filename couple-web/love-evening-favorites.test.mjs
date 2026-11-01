@@ -11,7 +11,7 @@ test('LR-019: the five-heart list is unique, shared by couple, and member-privat
  assert.match(sql,/couple_id uuid not null references public\.couples\(id\) on delete cascade/);
  assert.match(sql,/primary key\(couple_id,category,card_id\)/);
  assert.match(sql,/category in \('SENSUEL','SEXUEL'\)/);
- assert.match(sql,/card_id between 1 and 35/);
+ assert.match(sql,/card_id between 1 and 100/);
  assert.match(sql,/added_by uuid not null references auth\.users\(id\)/);
  assert.match(sql,/enable row level security/);
  assert.match(sql,/for select to authenticated\s+using\(couple_private\.is_member\(couple_id\)\)/);
