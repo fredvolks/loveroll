@@ -3,7 +3,7 @@ import {showEveningCategoryReminder} from './evening-d100-template.mjs?v=2026102
 import {eveningInviteHtml,eveningInviteInboxHtml,isEveningInviteAction} from './evening-invitation.mjs?v=20261028-web254';
 import {askEveningCategoryConfirmation,categoryConfirmEnabled,saveCategoryConfirmLocal} from './evening-category-confirm.mjs?v=20261027-web238';
 import {soundEnabled,setSoundEnabled,setLoveRollSoundUser,unlockLoveRollSounds,playLoveRollSound,soundSettingsHtml} from './loveroll-sounds.mjs?v=20261028-privacy250';
-import {isAcceptedTimedEveningChallenge,completeTimedEveningChallenge,timedEveningTimerControl,refreshAfterTimedEveningConfirmation,timerBelongsToUser} from './timed-evening-completion.mjs?v=20261101-timer260';
+import {isAcceptedTimedEveningChallenge,completeTimedEveningChallenge,timedEveningTimerControl,refreshAfterTimedEveningConfirmation,timerBelongsToUser,canControlTimedEveningChallenge} from './timed-evening-completion.mjs?v=20261101-timer260';
 import {fitSurpriseMinimal} from './surprise-minimal.mjs?v=20261022-home228';
 import {eclatNoteKey,loadEclatNote,saveEclatNote} from './eclat-guidance.mjs?v=20261022-home228';
 import {loadEclatHistory} from './eclat-history.mjs?v=20261022-home228';
@@ -4184,6 +4184,9 @@ async function handle(action,element){
    return;
  }
  if(verb==='timer-reset'){
+   if(!canControlTimedEveningChallenge(challengeTimer,timedEveningItem(challengeTimer.id),
+     state.user?.id,state.session?.id))
+    throw Error('Ce défi n’est plus disponible. Actualise Soirée.');
    // Reject a reset after the real deadline, even between two clock ticks.
    if(challengeTimer.running&&challengeTimer.deadline>0&&Date.now()>=challengeTimer.deadline){
     challengeTimer.running=false;challengeTimer.remainingMs=0;endSignal();saveChallengeTimer();
@@ -4196,6 +4199,9 @@ async function handle(action,element){
  }
  if(verb==='timer-toggle'){
    if(!challengeTimer.id)throw Error('Aucun défi avec minuteur');
+   if(!canControlTimedEveningChallenge(challengeTimer,timedEveningItem(challengeTimer.id),
+     state.user?.id,state.session?.id))
+    throw Error('Ce défi n’est plus disponible. Actualise Soirée.');
    // Observe an already-expired deadline before a pause tap can zero out
    // the running state (timer ticks are only scheduled every 500ms).
    updateChallengeClock();
@@ -4216,6 +4222,10 @@ async function handle(action,element){
     }
     if(challengeTimer.mode==='sound'&&!await unlockLoveRollSounds())
      notify('Son non autorisé. Utilise le bouton ♫ Tester pour le débloquer.');
+    // The acceptance RPC or sound permission can outlive a sign-out or a
+    // partner-driven completion. Never start a stale countdown afterward.
+    if(!canControlTimedEveningChallenge(challengeTimer,timedEveningItem(challengeTimer.id),
+      state.user?.id,state.session?.id))return;
     challengeTimer.deadline=Date.now()+challengeTimer.remainingMs;
     challengeTimer.running=true;
     challengeTimer.notified=false;
