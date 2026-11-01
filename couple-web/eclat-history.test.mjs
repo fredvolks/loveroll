@@ -13,10 +13,15 @@ test('Only actually finished, uncancelled sessions complete a duration; repeats 
 });
 test('History is restricted to its couple, paginated, and contains no private instructions or choices',async()=>{
  const requests=[];
- const client={from(table){const q={table};requests.push(q);return {select(columns){q.columns=columns;return this},eq(k,v){q.filter=[k,v];return this},order(k,v){q.order=[k,v];return this},range(a,b){q.range=[a,b];return Promise.resolve({data:a===0?Array.from({length:1000},(_,i)=>({id:i})):[{id:1000}],error:null})}}}};
+ const client={from(table){const q={table};requests.push(q);return {select(columns){q.columns=columns;return this},eq(k,v){q.filter=[k,v];return this},order(k,v){(q.orders??=[]).push([k,v]);return this},range(a,b){q.range=[a,b];return Promise.resolve({data:a===0?Array.from({length:1000},(_,i)=>({id:i})):[{id:1000}],error:null})}}}};
  assert.equal((await loadEclatHistory(client,'couple-a')).length,1001);
  assert.equal(requests.length,2);
- for(const r of requests){assert.deepEqual(r.filter,['couple_id','couple-a']);assert.doesNotMatch(r.columns,/choice|variant_plan|outcome|started_by/);}
+ for(const r of requests){
+  assert.deepEqual(r.filter,['couple_id','couple-a']);
+  assert.deepEqual(r.orders,[['started_at',{ascending:false}],['id',{ascending:false}]],
+   'Every 1000-row page must use stable tie-breaking on unique session ID');
+  assert.doesNotMatch(r.columns,/choice|variant_plan|outcome|started_by/);
+ }
 });
 test('Gallery and detail retain persistent completed-duration memos and safe resume actions',()=>{
  const status={access:true,active:false};
