@@ -3,7 +3,8 @@
 import {resolvedCard} from './evening-challenges.mjs';
 import {eveningPersonReviewMarkup} from './evening-review.mjs';
 import {ritualHeadingHtml} from './brand.mjs?v=20261017-ritual130';
-import {calendarWeekSuccess,monthlyChallengeSuccess} from './calendar-success-stats.mjs?v=20261018-stats148';
+import {calendarWeekSuccess,monthlyChallengeSuccess,eveningArchiveDay} from './calendar-success-stats.mjs?v=20261031-archive270';
+export {eveningArchiveDay};
 const safe=x=>String(x??'').replace(/[&<>"']/g,k=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','"':'&quot;',"'":'&#39;'}[k]));
 const isoMonth=v=>/^\d{4}-(0[1-9]|1[0-2])$/.test(v||'')?v:null;
 export function eveningLocalDay(iso){
@@ -12,16 +13,6 @@ export function eveningLocalDay(iso){
   year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(iso));
  const get=t=>parts.find(p=>p.type===t)?.value;
  return get('year')+'-'+get('month')+'-'+get('day');
-}
-// Completed, counted evenings belong to the Québec day their final result
-// became official. An ongoing/interrupted evening keeps its start day.
-// One archive day per session avoids duplicate calendar dots and totals.
-export function eveningArchiveDay(session){
- if(!session||typeof session!=='object'||Array.isArray(session))return null;
- const started=eveningLocalDay(session.started_at);
- if(session.counted===true&&session.finished_at)
-  return eveningLocalDay(session.finished_at)||started;
- return started;
 }
 // Unfinished cards are not failures until their evening is closed.
 export function eveningChallengeStatusLabel(status,closed=false){
