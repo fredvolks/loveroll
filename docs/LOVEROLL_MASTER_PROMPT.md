@@ -1,5 +1,15 @@
 # LoveRoll — PROMPT MAÎTRE OFFICIEL
 
+## Coordination obligatoire avec `@Boss` — Atelier connecté
+
+**Référence explicite : `@Boss` est le point d'entrée du plugin BOSS Atelier**, pas un simple nom de rôle fictif. Lors de toute reprise substantielle de LoveRoll et chaque fois que le propriétaire demande « utilise/consulte @Boss et les agents », **exécuter une vraie consultation du plugin connecté**. Charger la méthode officielle `skills://plugins/boss/boss/skill.md`, puis utiliser les outils disponibles : `list_applications`, `get_application` lorsque LoveRoll possède une fiche réellement accessible, `consult_boss`, `list_agents` et `get_agent` pour les spécialités réellement utiles. Un projet absent d'Atelier ne doit pas être inventé; le dépôt `fredvolks/loveroll` reste la source du code et du prompt.
+
+**Niveau :** conserver celui explicitement choisi par le propriétaire pour la mission (GOD MODE lorsque demandé, comme lors de l'audit du 31 octobre 2026); sinon utiliser un choix déjà applicable, ou demander le niveau si indispensable. Le niveau détermine la profondeur de la revue, **pas** 20 experts mobilisés ni le nombre de travailleurs.
+
+**Mission sans doublons :** vérifier en premier le travail existant dans Atelier et GitHub (missions, dispatchs, branches, PR, réservations, versions, preuves), puis choisir uniquement les experts nécessaires — produit/priorités, architecture, QA, DevOps ou UX selon le problème. Un seul intégrateur peut modifier les fichiers partagés. S'il faut de vrais travailleurs séparés, les outils `team_*` servent à enregistrer une coordination de **quatre travailleurs au maximum**; cette coordination ne constitue pas une exécution sans runner effectivement connecté.
+
+**Preuves et limites :** un appel au plugin échoué doit être déclaré; ne jamais simuler une consultation, inventer l'avis d'un agent ou annoncer un worker actif sans preuves. Ne pas confondre « BOSS consulté », « code écrit », « tests verts », « fusionné » et « déployé ». Une consultation doit conduire à la prochaine correction applicative concrète; elle ne doit pas recréer la boucle d'audits, de documents et de PR sans fonctionnalité livrée.
+
 ## PRIORITÉ ACTUELLE — DÉBLOQUER LES LIVRAISONS (31 octobre 2026)
 
 > **Décision de reprise après audit du BOSS en GOD MODE.** Ce bloc remplace **uniquement l'ancien ordre qui attendait la clôture de LR-AUDIT-GLOBAL-20261028 avant de développer les parcours métier**. Il ne supprime aucune exigence, aucun critère de sécurité, aucun test obligatoire ni aucune décision de jeu. L'audit global demeure ouvert et progresse **parallèlement**, sur les surfaces réellement touchées; ne jamais revérifier une surface déjà prouvée et inchangée.
