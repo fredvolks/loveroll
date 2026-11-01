@@ -15,6 +15,10 @@ body.lr-velours-lanterne {
   --lr-vl-edge:rgba(255,174,199,.64);
   --lr-vl-focus:#ffdf9c;
   --lr-vl-panel:radial-gradient(ellipse at 48% -24%,rgba(255,133,173,.24),transparent 54%),linear-gradient(152deg,rgba(99,17,51,.96),rgba(39,6,22,.98) 72%,rgba(64,9,31,.96));
+  --lr-vl-nav-surface:linear-gradient(155deg,rgba(68,7,29,.97),rgba(22,3,13,.98) 72%,rgba(65,9,30,.97));
+  --lr-vl-nav-shadow:inset 0 1px 1px #ffe0dd69,0 -2px 19px #ed4f8b30;
+  --lr-vl-active-shadow:inset 0 1px 2px #ffe0e3a6,0 0 12px #fc4c9155;
+  --lr-vl-field:#260c1a;
   --lr-vl-relief:inset 0 1px 1px rgba(255,239,229,.37),inset 0 -1px 0 rgba(126,23,62,.7),0 12px 28px rgba(9,0,8,.34);
   --lr-vl-action:radial-gradient(ellipse at 50% -35%,rgba(255,215,224,.65),transparent 60%),linear-gradient(180deg,#c63868 0%,#a31346 36%,#670d31 79%,#8b163c 100%);
   --lr-control-glass:var(--lr-vl-action);
@@ -82,13 +86,13 @@ body.lr-velours-lanterne #app :is(.lr-ruby-feature,.lr-ruby-control,.lr-surface)
   border-color:var(--lr-vl-edge);
 }
 body.lr-velours-lanterne #app .lr-ruby-nav {
-  background:linear-gradient(155deg,rgba(68,7,29,.97),rgba(22,3,13,.98) 72%,rgba(65,9,30,.97))!important;
-  border-color:rgba(255,165,192,.62)!important;
-  box-shadow:inset 0 1px 1px #ffe0dd69,0 -2px 19px #ed4f8b30!important;
+  background:var(--lr-vl-nav-surface)!important;
+  border-color:var(--lr-vl-edge)!important;
+  box-shadow:var(--lr-vl-nav-shadow)!important;
 }
 body.lr-velours-lanterne #app .lr-ruby-nav .lr-ruby-tab.active {
   border-color:var(--lr-vl-lantern)!important;
-  box-shadow:inset 0 1px 2px #ffe0e3a6,0 0 12px #fc4c9155!important;
+  box-shadow:var(--lr-vl-active-shadow)!important;
 }
 body.lr-velours-lanterne #app .settings-submenu-list :is(button,.settings-link-row),
 body.lr-velours-lanterne #app .settings-menu-source :is(.settings-primary,.settings-secondary),
@@ -133,9 +137,9 @@ body.lr-velours-lanterne .checkout-header .wordmark {
 body.lr-velours-lanterne .checkout-card :is(.eyebrow,.description,.period-note,.safety) {color:var(--lr-vl-muted)}
 body.lr-velours-lanterne .checkout-card h1 {color:var(--lr-vl-ivory)}
 body.lr-velours-lanterne .checkout-card :is(input,select) {
-  border:1px solid rgba(255,183,207,.62);
+  border-color:var(--lr-vl-edge);
   border-radius:12px;
-  background:#260c1a;
+  background:var(--lr-vl-field);
   color:var(--lr-vl-ivory);
 }
 body.lr-velours-lanterne .checkout-card button:not(:disabled) {
@@ -146,7 +150,7 @@ body.lr-velours-lanterne .checkout-card button:not(:disabled) {
 }
 body.lr-velours-lanterne .checkout-card button:disabled {
   opacity:.78;
-  color:#f2d2df;
+  color:var(--lr-vl-muted);
 }
 body.lr-velours-lanterne .checkout-card .line.total strong {color:var(--lr-vl-champagne)}
 body.lr-velours-lanterne .checkout-conditions summary {color:var(--lr-vl-rose)}
