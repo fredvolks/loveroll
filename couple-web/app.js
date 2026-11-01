@@ -6,7 +6,7 @@ import {soundEnabled,setSoundEnabled,setLoveRollSoundUser,unlockLoveRollSounds,p
 import {isAcceptedTimedEveningChallenge,isSameCompletedEveningChallenge,completeTimedEveningChallenge,timedEveningTimerControl,refreshAfterTimedEveningConfirmation,refreshAfterConfirmedWrite,timerBelongsToUser,canControlTimedEveningChallenge} from './timed-evening-completion.mjs?v=20261101-timer260';
 import {fitSurpriseMinimal} from './surprise-minimal.mjs?v=20261022-home228';
 import {createBookingMutationGate,geoLookupAfterRefresh,trustedBookingVenueLinks} from './monthly-geo-ui.mjs?v=20261101-booking263';
-import {favoriteCardIdentity,isEveningFavorite,MAX_EVENING_FAVORITES} from './evening-favorites.mjs?v=20261101-hearts264';
+import {favoriteCardIdentity,isEveningFavorite,closedCalendarFavoriteCandidate,MAX_EVENING_FAVORITES} from './evening-favorites.mjs?v=20261101-hearts265';
 import {eclatNoteKey,loadEclatNote,saveEclatNote} from './eclat-guidance.mjs?v=20261022-home228';
 import {loadEclatHistory} from './eclat-history.mjs?v=20261022-home228';
 import {enhanceGoldBacks} from './gold-arrows.mjs?v=20261022-home228';
@@ -1847,6 +1847,8 @@ function renderEveningCalendar(){
   stats:state.eveningHistoryStats||[],historyChallenges:state.eveningCalendarChallenges||[],
   weeklyRolls:state.weeklyRollHistory||[],passQuota:state.calendarPassMonth===mo?state.calendarPassQuota:[],
   reviews:state.eveningReviews||[],
+  favorites:state.eveningFavorites||[],favoritesReady:state.favoritesReady,
+  favoriteWriteBusy,favoriteReplace:state.favoriteReplace,
   me:state.user?.id,month:mo,selectedDate:date,
   backAction:eveningCalendarReturn(),backLabel:eveningCalendarReturn().startsWith('settings-page:')?'Retour à la confidentialité':'Retour à Soirée'
  }), 'CALENDRIER DES SOIRÉES', 'Un souvenir de chaque moment à deux');
@@ -3035,20 +3037,22 @@ async function handle(action,element){
   if(!favoriteWriteBusy){state.favoriteReplace=null;render();}
   return;
  }
- if(['evening-favorite','evening-favorite-remove','evening-favorite-replace'].includes(verb)){
+ if(['evening-favorite','evening-favorite-calendar','evening-favorite-remove','evening-favorite-replace'].includes(verb)){
   if(!state.favoritesReady)throw Error('Coups de cœur indisponibles sur ce serveur.');
   if(favoriteWriteBusy)return;
   const userId=state.user?.id,coupleId=state.coupleId;
   if(!userId||!coupleId)throw Error('Connexion requise.');
   let key,action,oldFavorite=null;
-  if(verb==='evening-favorite'){
-   const view=ownEveningChallenges(state.challenges,userId,state.session?.id)
-    .find(x=>x.id===parts[0]);
+  if(verb==='evening-favorite'||verb==='evening-favorite-calendar'){
+   const fromCalendar=verb==='evening-favorite-calendar';
+   const view=fromCalendar?
+    closedCalendarFavoriteCandidate(state.eveningCalendarChallenges,state.sessions,parts[0]):
+    ownEveningChallenges(state.challenges,userId,state.session?.id).find(x=>x.id===parts[0]);
    key=favoriteCardIdentity(view);
    if(!key)throw Error('Cette carte ne peut pas être ajoutée aux favoris.');
    action=isEveningFavorite(state.eveningFavorites,view)?'remove':'add';
    if(action==='add'&&state.eveningFavorites.length>=MAX_EVENING_FAVORITES){
-    state.favoriteReplace={...key,challengeId:view.id};
+    state.favoriteReplace={...key,challengeId:view.id,source:fromCalendar?'calendar':'session'};
     render();return;
    }
   }else if(verb==='evening-favorite-remove'){
@@ -3058,9 +3062,12 @@ async function handle(action,element){
    action='remove';
   }else{
    const pending=state.favoriteReplace;
-   const sameChallenge=ownEveningChallenges(state.challenges,userId,state.session?.id)
-    .some(x=>x.id===pending?.challengeId&&
-     x.category===pending.category&&Number(x.card_id)===pending.cardId);
+   const candidate=pending?.source==='calendar'?
+    closedCalendarFavoriteCandidate(state.eveningCalendarChallenges,state.sessions,pending.challengeId):
+    ownEveningChallenges(state.challenges,userId,state.session?.id)
+     .find(x=>x.id===pending?.challengeId);
+   const sameChallenge=!!candidate&&candidate.category===pending.category&&
+    Number(candidate.card_id)===pending.cardId;
    if(!sameChallenge)throw Error('Ce défi n’est plus disponible.');
    key=favoriteCardIdentity({category:pending.category,card_id:pending.cardId});
    oldFavorite=favoriteCardIdentity({category:parts[0],card_id:parts[1]});
