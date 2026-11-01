@@ -5629,8 +5629,23 @@ async function handle(action,element){
   await reload();return;
  }
  if(verb==='settings-page'){
-  if(hasUnsavedForm()&&!(await premiumConfirm('Vos modifications non enregistrées seront perdues. Voulez-vous quitter cette page ?',{
-   kind:'library',title:'Quitter sans enregistrer ?',accept:'Quitter',cancel:'Rester'})))return;
+  // A confirmation may outlive the editor, account or currently active game.
+  if(state.diceStatus||isActiveEveningRedrawPending()||isActiveEveningGiftPending())return;
+  if(hasUnsavedForm()){
+   const owner={userId:state.user?.id,coupleId:state.coupleId,
+    sessionId:state.session?.id,tab:state.tab,route:formRouteKey(),
+    generation:authFeedbackGeneration};
+   const confirmed=await premiumConfirm(
+    'Vos modifications non enregistrées seront perdues. Voulez-vous quitter cette page ?',{
+     kind:'library',title:'Quitter sans enregistrer ?',accept:'Quitter',cancel:'Rester'
+    });
+   if(!confirmed||state.user?.id!==owner.userId||
+      state.coupleId!==owner.coupleId||state.session?.id!==owner.sessionId||
+      state.tab!==owner.tab||formRouteKey()!==owner.route||
+      authFeedbackGeneration!==owner.generation||
+      state.diceStatus||isActiveEveningRedrawPending()||
+      isActiveEveningGiftPending())return;
+  }
   openSettingsPage(parts[0]||'');return;
  }
  if(verb==='resume-evening'){
@@ -5686,7 +5701,8 @@ async function handle(action,element){
    // Confirmation is asynchronous. Another login, official roll, repick or
    // gift may take ownership before the user chooses to leave the form.
    const navigationOwner={userId:state.user?.id,coupleId:state.coupleId,
-    sessionId:state.session?.id,tab:state.tab,generation:authFeedbackGeneration};
+    sessionId:state.session?.id,tab:state.tab,route:formRouteKey(),
+    generation:authFeedbackGeneration};
    const confirmed=await premiumConfirm(
     'Vos modifications non enregistrées seront perdues. Voulez-vous quitter cette page ?',{
      kind:'library',title:'Quitter sans enregistrer ?',accept:'Quitter',cancel:'Rester'
@@ -5695,6 +5711,7 @@ async function handle(action,element){
       state.coupleId!==navigationOwner.coupleId||
       state.session?.id!==navigationOwner.sessionId||
       state.tab!==navigationOwner.tab||
+      formRouteKey()!==navigationOwner.route||
       authFeedbackGeneration!==navigationOwner.generation||
       state.diceStatus||(state.tab==='session'&&
        (isActiveEveningRedrawPending()||isActiveEveningGiftPending())))return;
