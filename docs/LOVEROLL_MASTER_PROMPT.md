@@ -1313,3 +1313,13 @@ Pour **chacun des douze identifiants**, renseigner un état réel et les preuves
 - **Code :** dans `couple-web/migrations/20261101_lr019_favorites_future_evenings.sql`, les deux contrôles du D100 officiel (`draw_for_partner` : capacité et sélection) exigent maintenant `fav.added_at < s.started_at` ; le remplacement `love_respond_and_redraw` exige `fav.added_at < v_session.started_at`. Les probabilités par catégorie, exclusions volontaires, locks et filtres de la soirée sont inchangés.
 - **Régression :** le test structurel `couple-web/lr019-future-favorites.test.mjs` impose ces trois conditions et vérifie le maintien des contrôles anti-repige de la soirée. Commits `604943a` et `79a7a45` sur la branche de la PR #179.
 - **Limites :** migration préparatoire uniquement : aucun SQL n'a été appliqué à Supabase/production. Tests de PostgreSQL intégrés avec deux vraies sessions authentifiées, sécurité RLS et captures D100 mobiles/tablettes/PC encore nécessaires avant fusion et publication. Un test statique n'atteste pas de l'exécution de la migration en base.
+
+
+## LoveRoll — Lot 25 : navigation clavier des coups de cœur 5/5 (1 novembre 2026)
+
+**Reprise sur la même PR #179**, sans branche concurrente. Consultation réelle de **@Boss GOD MODE** et des méthodes Interface, Ergonomie, Architecture, Mobile. L'application LoveRoll n'a pas de fiche Atelier enregistrée : ne pas inventer de mission autonome.
+
+- **Code utilisateur, LR-019 :** après « ♡ Coup de cœur » lorsque les cinq places sont prises, la boîte de remplacement place le focus clavier sur le premier choix actif. Au clic « Annuler », le focus revient au bouton d'origine ; si la carte vient du calendrier, le groupe d'historique `details` est rouvert avant la restitution du focus.
+- **Sauvegarde et erreurs :** après l'écriture RPC réussie, le focus revient à l'action de la carte lorsque celle-ci existe toujours. Si la RPC échoue en conservant le dialogue, le premier remplacement actif récupère le focus. Le verrou de double écriture, la logique des cinq favoris, les droits et la sélection D100 restent inchangés.
+- **Régression :** `couple-web/evening-favorites.test.mjs` protège le comportement de focus d'ouverture, d'annulation, de succès et d'erreur; `couple-web/app.js` implémente la correction. Commits `239f664`, `b5056a6`, `c83d0bd`, `a5798c8` sur la PR #179.
+- **Limite de validation :** contrôle CI sur le SHA final de la branche avant toute fusion, plus un essai clavier/lecteur d'écran sur appareils réels restant à faire. Aucune migration SQL déployée ni publication de LoveRoll annoncée.
