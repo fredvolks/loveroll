@@ -66,3 +66,17 @@ test('LR-SURPRISE-001: Edge function rejects null and absent Geoapify road matri
  assert.deepEqual(verifiedMatrixCandidates(candidates,undefined,null),[]);
  assert.deepEqual(verifiedMatrixCandidates(candidates,matrix,-5),[]);
 });
+
+test('Nearby Surprise places are ranked by real metres, not rounded display kilometres',()=>{
+ // Both routes round to 12.0 km. The nearer route (12,010m) must win
+ // even when the farther place id would sort first alphabetically.
+ const places=[{place_id:'a-farther',name:'Vignoble plus loin'},
+  {place_id:'z-nearer',name:'Vignoble le plus proche'}];
+ const routes={'a-farther':{distance_meters:12045},'z-nearer':{distance_meters:12010}};
+ const selected=chooseNearbyVenue(places,routes,15);
+ assert.equal(selected.place_id,'z-nearer');
+ assert.equal(selected.distance_meters,12010);
+ assert.equal(selected.distance_km,12,'Rounded kilometres are presentation only');
+ assert.equal(chooseNearbyVenue(places,routes,12),null,
+  '12.0 km displayed must never bypass a strict 12,000m couple limit');
+});
