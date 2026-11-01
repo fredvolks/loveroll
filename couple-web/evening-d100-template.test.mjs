@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {premiumEveningHtml} from './premium-evening.mjs';
 import {eveningPlayInfoHtml,calculateEveningD100StageSize} from './evening-d100-template.mjs';
+import {sharedStageSplit} from './shared-stage.mjs';
 const ready={session:{id:'s',paired_turns:true,self_draws:true},members:[{user_id:'a',name:'Fred'},{user_id:'b',name:'Émilie'}],me:'a',status:{both_ready:true},turn:{ready:true,next:'a',remaining:{a:2,b:3}}};
 test('No category is preselected; an eligible player can press roll to receive guidance',()=>{
  const html=premiumEveningHtml(ready);
@@ -55,4 +56,16 @@ test('Live D100 matches Surprise on iPad without changing the small-phone clamp'
  assert.equal(at(1180,820,660,276),352,'Playable landscape iPad uses the 43dvh cap even with a short theater');
  assert.equal(at(1024,768,640,490),330,'Landscape iPad uses the Surprise 43dvh cap');
  assert.equal(at(1024,600,620,200),258,'Landscape tablet never shrinks to the grid-row height');
+});
+
+test('320px Soirée keeps real D100 above the photo marble without changing other tabs',()=>{
+ const base=Math.max(230,568-215);
+ assert.equal(sharedStageSplit(320,568,true),base+40);
+ assert.equal(sharedStageSplit(359,600,true),Math.max(230,600-215)+40);
+ for(const [width,height] of [[360,568],[393,852],[412,915],[768,1024],[820,1180],[1180,820],[320,640]]){
+  assert.equal(sharedStageSplit(width,height,true),Math.max(230,height-215),
+   'Noncompact viewports retain the approved photographic contact: '+width+'x'+height);
+ }
+ assert.equal(sharedStageSplit(320,568,false),base,
+  'Home, inactive Soirée and Surprise keep original 320px photograph');
 });
