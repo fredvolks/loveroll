@@ -57,13 +57,13 @@ test('Production home uses actual saved weekly result, disabled state and live c
  turn:{ready:true,targets:{a:4,b:6},remaining:{a:4,b:6},completed:{a:0,b:0}},now:new Date('2026-10-14T16:00:00Z')};
  const h=premiumHomeHtml(args);
  assert.match(h,/2 soirées de défi/);
- assert.match(h,/Déjà brassé cette semaine, revenez la semaine prochaine/);
+ assert.match(h,/data-action="tab:session" aria-label="Aller à notre soirée, sans lancer de nouveau dé"/);
  assert.match(h,/data-dice-sides="6"/);
  assert.match(h,/data-face="2"/);
  assert.equal((h.match(/class="home-weight"/g)||[]).length,6);
  assert.equal((h.match(/class="home-stat-card /g)||[]).length,4);
  assert.match(h,/Fred/);assert.match(h,/Camille/);
- assert.match(h,/Surprise du mois disponible/);
+ assert.match(h,/Surprise du mois à découvrir/);
  assert.match(h,/tab:special/);
  assert.doesNotMatch(h,/data-action="roll:weekly"/);
  const waiting=premiumHomeHtml({...args,weekly:null});
@@ -82,7 +82,7 @@ test('Production home uses actual saved weekly result, disabled state and live c
  assert.match(rolling,/data-dice-markers="pips"/);
  assert.doesNotMatch(rolling,/data-dice-preview="true"/);
  assert.doesNotMatch(rolling,/2 soirées de défi/);
- assert.doesNotMatch(rolling,/Déjà brassé cette semaine, revenez la semaine prochaine/);
+ assert.doesNotMatch(rolling,/data-action="tab:session" aria-label="Aller à notre soirée/);
  assert.match(rolling,/Brassage 3D en cours/);
  assert.match(rolling,/<strong class="dice-fallback" aria-hidden="true">—<\/strong>/);
 });
@@ -160,9 +160,9 @@ test('Connected Home restores centered LoveRoll brand and preserves weekly statu
  const html=premiumHomeHtml({
   weekly:{face:1,actor:'a'},members:[{user_id:'a',name:'Fred'},{user_id:'b',name:'Émilie'}]
  });
- assert.match(html,/Déjà brassé cette semaine, revenez la semaine prochaine/);
+ assert.match(html,/♡ Aller à notre soirée/);
  assert.doesNotMatch(html,/♡ Dé déjà brassé cette semaine|Mon dé/);
- assert.match(html,/<button class="home-roll-button is-used[^"]*" type="button" disabled>/);
+ assert.match(html,/<button class="home-roll-button is-used[^"]*" type="button" data-action="tab:session"/);
  assert.equal((html.match(/home-gift-icon/g)||[]).length,1);
  assert.match(html,/ritual-brand/);
  assert.match(css,/min-height:48px/);
@@ -204,4 +204,36 @@ test('Mobile Home scene geometry never produces negative artwork heights when Sa
  for(const bad of [[0,300],[-5,80],[Infinity,80],[700,NaN],[700,Infinity]]){
   assert.equal(calculateMobileHomePhotoGeometry(...bad),null);
  }
+});
+
+test('LR-ACCUEIL-001: Home uses an actionable shortcut and a non-private shared status',()=>{
+ const members=[{user_id:'alice',name:'Alice'},{user_id:'bob',name:'Bob'}];
+ const weekly={face:2,actor:'alice'};
+ const unopened=premiumHomeHtml({weekly,activeEvening:false,members});
+ assert.match(unopened,/Aucune soirée en cours/);
+ assert.match(unopened,/data-action="tab:session"/);
+ assert.doesNotMatch(unopened,/Déjà brassé cette semaine, revenez la semaine prochaine/);
+ const preparing=premiumHomeHtml({weekly,activeEvening:true,members,turn:{ready:false}});
+ assert.match(preparing,/Soirée commencée/);
+ assert.match(preparing,/Préparez vos dés personnels/);
+ assert.match(preparing,/class="home-evening-link" data-action="resume-evening"/);
+ assert.doesNotMatch(preparing,/Restants : —|Défis attribués<br>ce soir/);
+ const active=premiumHomeHtml({weekly,activeEvening:true,members,
+  turn:{ready:true,targets:{alice:5,bob:2},remaining:{alice:4,bob:1},completed:{alice:1,bob:1}}});
+ assert.match(active,/Soirée en cours/);
+ assert.match(active,/Retrouvez vos défis dans Soirée/);
+ assert.doesNotMatch(active,/Restants : 4|Restants : 1|Défis attribués<br>ce soir/);
+ assert.match(active,/Semaines consécutives/);
+ const pending=premiumHomeHtml({weekly:null,rolling:true});
+ assert.match(pending,/data-action="roll:weekly" disabled/);
+ assert.doesNotMatch(pending,/class="home-evening-link" data-action="resume-evening"/);
+});
+
+test('LR-ACCUEIL-001: monthly Surprise copy reflects whether an activity has been drawn',()=>{
+ const newMonth=premiumHomeHtml({monthly:{},weekly:{face:1}});
+ assert.match(newMonth,/Surprise du mois à découvrir/);
+ const drawn=premiumHomeHtml({monthly:{monthly_activity:{face:7,activity_title:'Notre sortie'}}});
+ assert.match(drawn,/Notre surprise du mois/);
+ assert.doesNotMatch(drawn,/Surprise du mois à découvrir/);
+ assert.match(drawn,/data-action="tab:special"/);
 });
