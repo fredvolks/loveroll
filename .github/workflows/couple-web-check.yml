@@ -527,6 +527,12 @@ jobs:
         if: matrix.group == 'dice-stage'
         run: node couple-web/ipad-romance-scene-browser-check.cjs
 
+      # Match the Pages deploy gate before merge: a confirmed D6 replaces its
+      # roll button with an accessible status, while keeping the same WebGL die.
+      - name: Verify real Soirée D6 official roll and recorded status before Pages
+        if: matrix.group == 'dice-stage'
+        run: node couple-web/evening-d6-template-browser-check.cjs
+
       - name: LR-001 — verify the actual idle Soirée and Surprise D100 projected mesh on Android
         if: matrix.group == 'dice-stage'
         run: node couple-web/soiree-home-template-browser-check.cjs
