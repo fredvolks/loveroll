@@ -1,5 +1,15 @@
 # LoveRoll — SUIVI OFFICIEL DU PROMPT MAÎTRE
 
+### LR-ACCUEIL-001 — Bilan mensuel cliquable et retour à l'Accueil (31 octobre 2026)
+
+- **Produit** : le bilan « Ce mois » dans le vrai Accueil est maintenant un bouton clavier/tactile accessible vers `evening-calendar:month`. Il ouvre le **mois courant de Québec** même si la dernière séance chargée était plus ancienne. Ce raccourci navigue seulement ; il ne déclenche aucun tirage, création de séance, réponse à un défi ou mise à jour SQL.
+- **Navigation** : `evening-calendar` conserve la page d'origine pour que Retour mène à **Accueil** lorsqu'on vient du bilan ou du raccourci « Voir nos soirées ». Les parcours existants depuis Soirée et Réglages conservent leurs destinations. Un D100, une repige ou un don en attente protège toujours l'écran Soirée contre une sortie.
+- **Code** : `couple-web/premium-home.mjs`, `premium-home.css` et `app.js`. Tests ciblés dans `premium-home.test.mjs` et `evening-calendar-navigation.test.mjs`. Commits : `c2ce13f` (retour Accueil), `e16a732` (bouton mensuel), `8cab150` (styles), `4e3f288` (mois courant), `7da665a` et `20d4004` (régressions).
+- **Mise en cache** : versions Home JavaScript/CSS `home262` et shell PWA `loveroll-static-v262`, commits `d8c8345`, `2b40fc4`, `e74db75`. La publication de ces fichiers **n'a pas été effectuée**.
+- **CI** : vérifier les résultats GitHub Actions sur le SHA final avant d'annoncer un succès. Les recettes iPhone, Android, tablette, PC et les tests réels Auth/RLS en staging restent en attente. PR [#176](https://github.com/fredvolks/loveroll/pull/176) **brouillon, non fusionnée**, sans déploiement ni écriture sur Supabase production.
+- **Atelier/BOSS MEDIUM** : dans cette conversation, aucun outil BOSS ou Atelier n'est exposé ; ne pas prétendre avoir exécuté une consultation d'agents ou une mission commune. Développement effectué directement via le connecteur GitHub.
+
+
 ### LR-028 — Android Retour, identité et reprise pendant un don (31 octobre 2026)
 
 - **Développement dans la PR #176**, branche `feat/lr026-server-variety-after-category-20261029` (toujours **brouillon** et **non fusionnée**). Après correction des anciens environnements Node des tests de fermeture (`6a083fa`) et de choix D100 (`6449a8b`), les **tests statiques du commit `6449a8b` sont réussis** dans GitHub Actions, sans prétendre que toute la matrice navigateur est terminée.
