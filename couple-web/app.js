@@ -1690,6 +1690,18 @@ function favoritePreview(row){
  });
 }
 function favoriteTitle(row){return favoritePreview(row)?.title||'Carte indisponible';}
+// LR-019: a dynamic 5/5 dialog must return keyboard focus to the action that
+// opened it, including an archived challenge inside a collapsed <details>.
+function focusEveningFavoriteOrigin(pending){
+ if(!pending?.challengeId)return;
+ const action=(pending.source==='calendar'?'evening-favorite-calendar:':'evening-favorite:')+pending.challengeId;
+ const target=Array.from(root.querySelectorAll('[data-action]'))
+  .find(node=>node.getAttribute('data-action')===action);
+ if(!target)return;
+ const section=target.closest('details.evening-cal-person-group');
+ if(section)section.open=true;
+ target.focus();
+}
 function renderSession(){
  // Always show the same Soirée page, even when the weekly die is unrolled.
  // In that case the launch control is disabled, not replaced with a separate page.
@@ -3039,7 +3051,11 @@ async function handle(action,element){
   render();return;
  }
  if(verb==='evening-favorite-cancel'){
-  if(!favoriteWriteBusy){state.favoriteReplace=null;render();}
+  if(!favoriteWriteBusy){
+   const pending=state.favoriteReplace;
+   state.favoriteReplace=null;render();
+   focusEveningFavoriteOrigin(pending);
+  }
   return;
  }
  if(['evening-favorite','evening-favorite-calendar','evening-favorite-remove','evening-favorite-replace'].includes(verb)){
@@ -3058,7 +3074,9 @@ async function handle(action,element){
    action=isEveningFavorite(state.eveningFavorites,view)?'remove':'add';
    if(action==='add'&&state.eveningFavorites.length>=MAX_EVENING_FAVORITES){
     state.favoriteReplace={...key,challengeId:view.id,source:fromCalendar?'calendar':'session'};
-    render();return;
+    render();
+    root.querySelector('[data-action^="evening-favorite-replace:"]:not([disabled])')?.focus();
+    return;
    }
   }else if(verb==='evening-favorite-remove'){
    key=favoriteCardIdentity({category:parts[0],card_id:parts[1]});
