@@ -292,6 +292,9 @@ test('LR-ACCUEIL-001: the monthly recap links to current-month history without m
  assert.match(html,/<h3 id="home-statistics-title"><button type="button" class="home-monthly-link" data-action="evening-calendar:month"/);
  assert.match(html,/aria-label="Voir le détail de nos statistiques du mois dans le calendrier"/);
  assert.equal((html.match(/data-action="evening-calendar:month"/g)||[]).length,1);
+ const rolling=premiumHomeHtml({weekly:{face:2},rolling:true,disabled:true});
+ assert.match(rolling,/data-action="evening-calendar:month" disabled aria-label=/,
+  'While the official Home die rolls the history control must not accept input');
  assert.match(html,/Semaines consécutives/);
  assert.doesNotMatch(html,/data-action="new-session"|data-action="roll:challenge"/);
  assert.match(css,/\.home-monthly-link:focus-visible/);
