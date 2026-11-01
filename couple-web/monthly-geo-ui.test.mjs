@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {monthlyGeoCardHtml,localBookingDateTime,createBookingMutationGate,geoLookupAfterRefresh} from './monthly-geo-ui.mjs';
+import {monthlyGeoCardHtml,localBookingDateTime,createBookingMutationGate,geoLookupAfterRefresh,trustedBookingVenueLinks} from './monthly-geo-ui.mjs';
 import {refreshAfterConfirmedWrite} from './timed-evening-completion.mjs';
 const venue={state:'ready',place_id:'geo-1',name:'Café du centre',driving_meters:16200,
  latitude:45.6,longitude:-73.7,address:'Rue Exemple'};
@@ -182,4 +182,46 @@ test('LR-SURPRISE-001 refresh retains pending/error Geoapify discovery for same 
  assert.match(app,/if\(activeMonthlyRoll\?\.id!==previousRollId\)\{[\s\S]*?state\.geoBookingEdit=false/);
  assert.match(app,/state\.geoLookup=geoLookupAfterRefresh\(\{rollId:activeMonthlyRoll\.id,/);
  assert.match(app,/\(state\.geoLookup==='pending'\|\|state\.geoLookup==='error'\)/);
+});
+
+test('LR-SURPRISE-001 manual venue changes never inherit unrelated Geoapify booking links',()=>{
+ const place={...venue,booking_url:'https://cafe.test/reserver',
+  menu_url:'https://cafe.test/menu',photo_url:'https://cafe.test/photo.png'};
+ const links={p_booking_url:'https://cafe.test/reserver',p_menu_url:'https://cafe.test/menu',
+  p_photo_url:'https://cafe.test/photo.png'};
+ assert.deepEqual(trustedBookingVenueLinks(place,{title:'Café du centre',address:'Rue Exemple'}),links);
+ assert.deepEqual(trustedBookingVenueLinks(place,{title:' café DU centre ',address:' Rue   Exemple '}),links);
+ for(const proposed of [{title:'Un autre café',address:'Rue Exemple'},
+  {title:'Café du centre',address:'Une autre rue'},{title:'',address:'Rue Exemple'}]){
+  assert.deepEqual(trustedBookingVenueLinks(place,proposed),
+   {p_booking_url:null,p_menu_url:null,p_photo_url:null});
+ }
+ for(const invalid of [{state:'pending'},{place_id:null},{driving_meters:null},
+  {driving_meters:-3}]){
+  assert.equal(trustedBookingVenueLinks({...place,...invalid},
+   {title:'Café du centre',address:'Rue Exemple'}).p_booking_url,null);
+ }
+ assert.deepEqual(trustedBookingVenueLinks({...place,booking_url:'javascript:alert(1)',
+  menu_url:'https://login:secret@cafe.test/menu',photo_url:'http://cafe.test/photo'},
+  {title:'Café du centre',address:'Rue Exemple'}),
+  {p_booking_url:null,p_menu_url:null,p_photo_url:null});
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const save=app.slice(app.indexOf("if(verb==='geo-booking-save')"),
+  app.indexOf("if(verb==='geo-booking-cancel')"));
+ assert.match(save,/\.\.\.trustedBookingVenueLinks\(state\.geoVenue,\{title,address\}\)/);
+ assert.doesNotMatch(save,/p_booking_url:state\.geoVenue\?\.booking_url/);
+});
+
+test('LR-SURPRISE-001 confirms the actual reserved venue, not just a suggested POI',()=>{
+ const html=monthlyGeoCardHtml({enabled:true,venue,canReserve:true,
+  reservation:{status:'confirmed',venue_name:'Autre café',
+   venue_address:'125 rue du Port',reserved_for:'2026-11-21T19:00:00Z'}});
+ assert.match(html,/class="surprise-geo-reserved-place">Autre café<\/span>/);
+ assert.match(html,/125 rue du Port/);
+ assert.match(html,/Café du centre/);
+ const unsafe=monthlyGeoCardHtml({enabled:true,venue,canReserve:true,
+  reservation:{status:'confirmed',venue_name:'<img src=x onerror=alert(1)>',
+   venue_address:'<script>bad<\/script>',reserved_for:'2026-11-21T19:00:00Z'}});
+ assert.doesNotMatch(unsafe,/<script>|<img src=x/);
+ assert.match(unsafe,/&lt;img src=x/);
 });
