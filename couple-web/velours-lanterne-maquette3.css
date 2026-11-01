@@ -713,3 +713,215 @@ body.lr-velours-lanterne main#app .home-odds-close {
     border-width:2px!important;
   }
 }
+/* LOT 4 — Invitation, connexion, inscription et confirmation email.
+   Réutilise les écrans réels (Auth Supabase) et préserve leur structure/leurs
+   états, sans modifier l'identité, les accès ou les événements des boutons. */
+body.lr-velours-lanterne main#app:has(.invite-account-screen),
+body.lr-velours-lanterne main#app:has(.invite-existing-space) {
+  color:var(--lr-vl-ivory);
+  background:radial-gradient(ellipse 65% 35% at 50% 0%,rgba(177,48,98,.20),transparent 76%);
+}
+body.lr-velours-lanterne .invite-account-screen {
+  --pink:var(--lr-vl-lantern);
+  --white:var(--lr-vl-ivory);
+  --mute:var(--lr-vl-muted);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .invite-account-screen::before {
+  background:radial-gradient(ellipse 68% 35% at 50% 6%,rgba(182,44,97,.23),transparent 74%),
+    linear-gradient(165deg,#290a1b,#180711 66%,#29091c);
+}
+body.lr-velours-lanterne .invite-account-hero {
+  border:1px solid var(--lr-vl-edge);
+  border-bottom-color:rgba(255,191,213,.26);
+  background:radial-gradient(ellipse 75% 80% at 50% 72%,rgba(255,116,165,.20),transparent 74%),
+    var(--lr-vl-velvet-card);
+  box-shadow:inset 0 1px 0 rgba(255,226,225,.31),0 9px 30px rgba(20,0,10,.30);
+}
+body.lr-velours-lanterne .invite-account-hero::before {
+  opacity:.43;
+}
+body.lr-velours-lanterne .invite-auth-brand {
+  font-family:var(--lr-vl-editorial);
+  font-style:normal;
+  font-weight:700;
+  letter-spacing:-.025em;
+}
+body.lr-velours-lanterne .invite-auth-brand :is(span,strong) {
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .invite-auth-brand strong,
+body.lr-velours-lanterne .invite-account-hero>p,
+body.lr-velours-lanterne .invite-progress-item.is-current {
+  color:var(--lr-vl-champagne);
+}
+body.lr-velours-lanterne .invite-account-progress {
+  max-width:100%;
+}
+body.lr-velours-lanterne .invite-progress-item b {
+  background:var(--lr-vl-field);
+  border-color:var(--lr-vl-edge);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .invite-progress-item.is-current b,
+body.lr-velours-lanterne .invite-auth-segments button.is-active {
+  background:var(--lr-vl-action);
+  border-color:var(--lr-vl-champagne)!important;
+  box-shadow:var(--lr-vl-active-shadow);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .invite-auth-card,
+body.lr-velours-lanterne .invite-existing-space {
+  min-width:0;
+  border-color:var(--lr-vl-edge);
+  border-radius:clamp(18px,4vw,26px);
+  background:var(--lr-vl-panel);
+  box-shadow:var(--lr-vl-dialog-shadow);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .invite-auth-title :is(h1,h2),
+body.lr-velours-lanterne .invite-profile-card h1,
+body.lr-velours-lanterne .invite-error-card h1,
+body.lr-velours-lanterne .email-confirm-screen h1,
+body.lr-velours-lanterne .invite-existing-space h2 {
+  font-family:var(--lr-vl-editorial);
+  font-weight:600;
+  color:var(--lr-vl-ivory);
+  letter-spacing:-.015em;
+}
+body.lr-velours-lanterne .invite-account-icon,
+body.lr-velours-lanterne .invite-auth-trust,
+body.lr-velours-lanterne .invite-confirm-resend,
+body.lr-velours-lanterne .invite-existing-space .invite-archive-note {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-muted-panel);
+  color:var(--lr-vl-rose);
+}
+body.lr-velours-lanterne .invite-auth-lead,
+body.lr-velours-lanterne .invite-auth-trust p,
+body.lr-velours-lanterne .invite-profile-card>p,
+body.lr-velours-lanterne .invite-error-card p,
+body.lr-velours-lanterne .invite-confirm-resend p,
+body.lr-velours-lanterne .invite-existing-space p {
+  color:var(--lr-vl-muted);
+  line-height:1.48;
+}
+body.lr-velours-lanterne .invite-auth-segments button,
+body.lr-velours-lanterne .invite-auth-field,
+body.lr-velours-lanterne .invite-copy-manual input {
+  min-width:0;
+  border-color:var(--lr-vl-field-edge)!important;
+  background:var(--lr-vl-field);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .invite-auth-field:focus-within {
+  border-color:var(--lr-vl-focus)!important;
+  box-shadow:0 0 0 2px rgba(255,223,156,.25);
+}
+body.lr-velours-lanterne .invite-field-body>span,
+body.lr-velours-lanterne .invite-profile-card label,
+body.lr-velours-lanterne .invite-copy-manual {
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .invite-field-body input {
+  color:var(--lr-vl-ivory);
+  font-size:max(16px,1rem); /* iOS Safari : éviter le zoom au focus. */
+}
+body.lr-velours-lanterne .invite-field-body input::placeholder {
+  color:#dbb1c3;
+  opacity:1;
+}
+body.lr-velours-lanterne .invite-account-screen .invite-password-eye {
+  min-width:44px;
+  min-height:44px;
+  flex-basis:44px;
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .invite-account-screen :is(.invite-auth-submit,.invite-auth-resend),
+body.lr-velours-lanterne .invite-existing-space button[data-action="join-invite-from-solo"] {
+  min-height:52px;
+  border-color:var(--lr-vl-action-edge)!important;
+  background:var(--lr-vl-action);
+  color:var(--lr-vl-ivory);
+  box-shadow:var(--lr-vl-cta-shadow);
+  text-shadow:var(--lr-vl-action-text-shadow);
+}
+body.lr-velours-lanterne .invite-account-screen :is(.invite-auth-submit,.invite-auth-resend):disabled {
+  opacity:.6;
+  cursor:not-allowed;
+  box-shadow:none;
+}
+body.lr-velours-lanterne .invite-account-screen .invite-google,
+body.lr-velours-lanterne .invite-existing-space button:is([data-action="switch-account-invite"],[data-action="invite-return"]) {
+  min-height:48px;
+  border-color:var(--lr-vl-edge)!important;
+  border-radius:14px;
+  background:var(--lr-vl-muted-panel);
+  color:var(--lr-vl-ivory);
+  box-shadow:inset 0 1px 0 rgba(255,225,220,.16);
+}
+body.lr-velours-lanterne .invite-account-screen :is(.invite-auth-link,.invite-auth-back) {
+  min-height:44px;
+  color:var(--lr-vl-champagne);
+}
+body.lr-velours-lanterne .invite-auth-feedback:not(:empty) {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-muted-panel);
+  color:var(--lr-vl-ivory);
+  overflow-wrap:anywhere;
+}
+body.lr-velours-lanterne .email-confirm-envelope {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-velvet-card);
+  color:var(--lr-vl-champagne);
+}
+body.lr-velours-lanterne .invite-welcome {
+  background:radial-gradient(ellipse at 50% 35%,#802044 0%,#2e0a1d 52%,#180711 100%);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .invite-welcome :is(h1,p) {color:var(--lr-vl-ivory)}
+body.lr-velours-lanterne .invite-welcome>div {color:var(--lr-vl-rose)}
+/* Clavier ouvert, zoom 200 %, iPhone SE et paysage : autoriser le défilement
+   des formulaires; ne jamais masquer les appels à l'action sous le clavier. */
+@media(max-width:767px), (max-height:620px) {
+  body.lr-velours-lanterne main#app:has(.invite-account-screen) {
+    min-height:100dvh;
+    height:auto;
+    overflow-y:visible;
+  }
+  body.lr-velours-lanterne .invite-account-screen {
+    height:auto;
+    min-height:100dvh;
+    max-height:none;
+    padding-bottom:max(20px,env(safe-area-inset-bottom,0px));
+  }
+  body.lr-velours-lanterne .invite-account-screen .invite-auth-card {
+    overflow:visible;
+  }
+}
+@media(max-width:380px) {
+  body.lr-velours-lanterne .invite-account-hero {border-radius:20px 20px 10px 10px}
+  body.lr-velours-lanterne .invite-account-screen .invite-auth-card {padding-inline:12px}
+  body.lr-velours-lanterne .invite-auth-title {gap:9px}
+  body.lr-velours-lanterne .invite-auth-segments {min-width:0}
+  body.lr-velours-lanterne .invite-auth-segments button {
+    min-width:0;
+    white-space:normal;
+    overflow-wrap:anywhere;
+  }
+}
+@media(min-width:768px) {
+  body.lr-velours-lanterne .invite-account-screen {
+    width:min(660px,100%);
+  }
+  body.lr-velours-lanterne .invite-auth-card {
+    padding:clamp(22px,3vw,32px);
+  }
+}
+@media(prefers-contrast:more) {
+  body.lr-velours-lanterne .invite-auth-card,
+  body.lr-velours-lanterne .invite-auth-field,
+  body.lr-velours-lanterne .invite-account-screen button {
+    border-width:2px!important;
+  }
+}
