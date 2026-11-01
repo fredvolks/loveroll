@@ -203,9 +203,22 @@ export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,d
  const invitationText=invitation?.host&&invitation?.guest?
   [nameA,nameB][invitation.index]+' invite '+[nameA,nameB][1-invitation.index]:
   activity?'Déterminer qui invite':'Un tirage commun ce mois-ci';
- const eveningStatus=activeEvening?(stats.ready?'Soirée en cours':'Soirée commencée'):'Aucune soirée en cours';
+ // Quota exhausted and daily lock are different: both come from the same
+ // policy as the server-owned Start action. Neither launches a new evening.
+ const weeklyExhausted=!activeEvening&&progressReady&&weeklyRemaining===0;
+ const dailyLocked=!activeEvening&&progressReady&&weeklyRemaining>0&&weeklyProgress.dailyLocked===true;
+ const historyUnknown=!activeEvening&&ready&&weeklyProgress?.historyReady===false;
+ const eveningStatus=activeEvening?(stats.ready?'Soirée en cours':'Soirée commencée'):
+  weeklyExhausted?'Notre semaine est complète':
+  dailyLocked?'Soirée déjà partagée aujourd’hui':
+  historyUnknown?'Synchronisation des soirées…':'Aucune soirée en cours';
  const eveningHint=activeEvening?(stats.ready?'Retrouvez vos défis dans Soirée.':'Préparez vos dés personnels dans Soirée.'):
+  weeklyExhausted?'Retrouvez notre historique sans relancer le dé.':
+  dailyLocked?'Une seule soirée par jour. Les autres restent disponibles cette semaine.':
+  historyUnknown?'L’historique se recharge. Aucun nouveau tirage n’est lancé.':
   'Consultez les étapes et l’historique dans Soirée.';
+ const homeAction=weeklyExhausted?'evening-calendar':'tab:session';
+ const homeLabel=weeklyExhausted?'Voir nos soirées':'Ouvrir Soirée';
  const pending=rolling||disabled;
  return '<section class="real-home-shell" aria-label="Tableau de bord du couple">'+
    '<div class="home-ritual">'+ritualHeadingHtml('NOTRE RITUEL DE LA SEMAINE')+
@@ -232,7 +245,9 @@ export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,d
    (ready?
     (activeEvening?
      '<button class="home-roll-button home-resume-evening lr-ruby-control lr-ruby-action lr-surface" type="button" data-action="resume-evening" aria-label="Reprendre notre soirée en cours"><span>♡ Reprendre notre soirée</span></button>':
-     '<button class="home-roll-button is-used lr-ruby-control lr-ruby-action lr-surface" type="button" data-action="tab:session" aria-label="Aller à notre soirée, sans lancer de nouveau dé">♡ Aller à notre soirée</button>'):
+     '<button class="home-roll-button is-used lr-ruby-control lr-ruby-action lr-surface" type="button" data-action="'+homeAction+'" aria-label="'+
+     (weeklyExhausted?'Voir l’historique de nos soirées':'Aller à notre soirée, sans lancer de nouveau dé')+'">'+
+     (weeklyExhausted?'Voir nos soirées':'♡ Aller à notre soirée')+'</button>'):
     '<button class="home-roll-button lr-ruby-control lr-ruby-action lr-surface" type="button" data-action="roll:weekly" '+(pending?'disabled':'')+'>'+
     (rolling?'Brassage 3D en cours…':disabled?'Préparation du brassage…':'<span class="home-action-die lr-ruby-icon" aria-hidden="true"><svg class="lr-ruby-die-icon" viewBox="0 0 34 38"><path fill="#fffdf5" d="m17 2 13 6-13 7L4 8Z"/><path fill="#f7e9dc" d="m4 8 13 7v20L5 28Q3 27 3 24V11Q3 9 4 8Z"/><path fill="#cdbdb4" d="m17 15 13-7q1 1 1 3v13q0 3-2 4l-12 7Z"/><path fill="none" stroke="#fff8ed" stroke-width=".8" d="m4 8 13 7 13-7M17 15v20"/><ellipse cx="17" cy="8" rx="2.5" ry="1.2" fill="#3d1020"/><g fill="#421521"><ellipse cx="7.6" cy="15" rx="1.5" ry="2.1" transform="rotate(-18 7.6 15)"/><ellipse cx="10.1" cy="21.5" rx="1.5" ry="2.1" transform="rotate(-18 10.1 21.5)"/><ellipse cx="12.7" cy="28" rx="1.5" ry="2.1" transform="rotate(-18 12.7 28)"/><ellipse cx="26.8" cy="15.5" rx="1.5" ry="2.1" transform="rotate(18 26.8 15.5)"/><ellipse cx="21.6" cy="27.3" rx="1.5" ry="2.1" transform="rotate(18 21.6 27.3)"/></g></svg></span><span class="home-action-label lr-ruby-title">Brasser le dé</span>')+'</button>')+
    '</div>'+
@@ -248,8 +263,8 @@ export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,d
    '<h3 id="home-tonight-title"><span aria-hidden="true">♢</span>Notre soirée</h3>'+
    '<div class="home-evening-overview"><strong class="home-evening-status">'+eveningStatus+'</strong>'+
    '<p>'+eveningHint+'</p><button type="button" class="home-evening-link" data-action="'+
-   (activeEvening?'resume-evening':'tab:session')+'">'+
-   (activeEvening?'Reprendre notre soirée':'Ouvrir Soirée')+'</button></div></section>'+
+   (activeEvening?'resume-evening':homeAction)+'">'+
+   (activeEvening?'Reprendre notre soirée':homeLabel)+'</button></div></section>'+
    '<section class="home-panel home-monthly-panel" aria-labelledby="home-statistics-title">'+
    '<h3 id="home-statistics-title" aria-label="Nos statistiques du mois"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M1 11h3v8H1zm5-7h3v15H6zm5 3h3v12h-3zm5-6h3v18h-3z"/></svg>Ce mois</h3>'+
    '<div class="home-stats-grid" aria-label="Statistiques réelles du couple">'+
