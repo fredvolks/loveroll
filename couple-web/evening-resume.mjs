@@ -39,3 +39,22 @@ export function restoreEveningSelection(storage,userId,sessionId,ownVisibleCards
  if(!card){clearEveningSelection(storage,userId,sessionId);return null;}
  return card.id;
 }
+
+/** LR-018: a second device has no local bookmark. Open a server-accepted
+ * personal card only when the recipient-only queue gives one unambiguous ID.
+ * Never start a draw, store a private card or guess between two open cards.
+ */
+export function serverResumableEveningChallenge(cards,userId,sessionId){
+ if(!Array.isArray(cards)||typeof userId!=='string'||!userId.trim()||
+    typeof sessionId!=='string'||!sessionId.trim())return null;
+ const ids=new Set();
+ for(const card of cards){
+  if(!card||typeof card!=='object'||Array.isArray(card)||
+     typeof card.id!=='string'||!card.id.trim()||
+     card.recipient!==userId||card.session_id!==sessionId||
+     card.status!=='accepted')continue;
+  ids.add(card.id);
+  if(ids.size>1)return null;
+ }
+ return ids.size===1?[...ids][0]:null;
+}

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {premiumHomeHtml} from './premium-home.mjs';
-import {saveEveningSelection,clearEveningSelection,restoreEveningSelection,safeEveningBookmarkStorage} from './evening-resume.mjs';
+import {saveEveningSelection,clearEveningSelection,restoreEveningSelection,safeEveningBookmarkStorage,serverResumableEveningChallenge} from './evening-resume.mjs';
 const read=p=>readFileSync(new URL('./'+p,import.meta.url),'utf8'),app=read('app.js'),sw=read('service-worker.js');
 const memory=()=>{const map=new Map();return {map,getItem:k=>map.get(k)??null,setItem:(k,v)=>map.set(k,v),removeItem:k=>map.delete(k)};};
 test('Home exposes resume only while an official weekly evening is open',()=>{
@@ -16,6 +16,32 @@ test('Home exposes resume only while an official weekly evening is open',()=>{
  assert.match(inactive,/♡ Aller à notre soirée/);
  assert.doesNotMatch(premiumHomeHtml({weekly:null}),/data-action="resume-evening"/);
 });
+test('LR-018 cross-device resume opens a single accepted server-owned card',()=>{
+ const queue=[
+  {id:'pending',recipient:'alice',session_id:'s1',status:'proposed'},
+  {id:'done',recipient:'alice',session_id:'s1',status:'completed'},
+  {id:'active',recipient:'alice',session_id:'s1',status:'accepted'},
+  {id:'foreign',recipient:'bob',session_id:'s1',status:'accepted'},
+  {id:'previous',recipient:'alice',session_id:'s0',status:'accepted'},
+  null,false,{id:42,recipient:'alice',session_id:'s1',status:'accepted'}
+ ];
+ assert.equal(serverResumableEveningChallenge(queue,'alice','s1'),'active');
+ assert.equal(serverResumableEveningChallenge(queue,'bob','s1'),'foreign');
+ assert.equal(serverResumableEveningChallenge([...queue,queue[2]],'alice','s1'),
+  'active','duplicated sync row does not create an ambiguous challenge');
+ assert.equal(serverResumableEveningChallenge([...queue,{
+  id:'other-active',recipient:'alice',session_id:'s1',status:'accepted'
+ }],'alice','s1'),null,'two accepted cards demand an explicit user choice');
+ assert.equal(serverResumableEveningChallenge(queue,'charlie','s1'),null);
+ assert.equal(serverResumableEveningChallenge(queue,'alice','s2'),null);
+ for(const malformed of [null,undefined,{},'loading',false]){
+  assert.equal(serverResumableEveningChallenge(malformed,'alice','s1'),null);
+ }
+ assert.equal(serverResumableEveningChallenge(queue,'','s1'),null);
+ assert.equal(serverResumableEveningChallenge(queue,'alice',''),null);
+ assert.equal(serverResumableEveningChallenge(queue.filter(c=>c?.id!=='active'),'alice','s1'),null);
+});
+
 test('Bookmark is scoped by account/session, stores no private card text and rejects stale IDs',()=>{
  const store=memory(),card={id:'a',recipient:'alice',session_id:'s1',status:'accepted',title:'private'};
  assert.equal(saveEveningSelection(store,'alice','s1','a'),true);
@@ -47,6 +73,7 @@ test('Resume action is read-only, restores server private queue and reconciles t
  assert.match(handler,/playableSessionForWeekly\(state\.session,state\.weekly\)/);
  assert.match(handler,/ownEveningChallenges\(state\.challenges,state\.user\.id,session\.id\)/);
  assert.match(handler,/restoreEveningSelection\(safeEveningBookmarkStorage\(\),state\.user\.id,session\.id,privateCards\)/);
+ assert.match(handler,/serverResumableEveningChallenge\(privateCards,state\.user\.id,session\.id\)/);
  assert.match(handler,/reconcileSavedEveningTimers\(\)/);
  assert.doesNotMatch(handler,/rpc\('|animateRoll|new-session|new-challenge|roll_my_evening_d6/);
  assert.match(app,/activeEvening:!!activeEvening/);
@@ -175,7 +202,7 @@ test('Safari denied storage access cannot interrupt opening, closing or resuming
  const callsites=app.match(/(?:saveEveningSelection|restoreEveningSelection|clearEveningSelection)\(safeEveningBookmarkStorage\(\),/g)||[];
  assert.equal(callsites.length,5);
  assert.doesNotMatch(app,/(?:saveEveningSelection|restoreEveningSelection|clearEveningSelection)\(localStorage,/);
- assert.match(app,/evening-resume\.mjs\?v=20261031-resume-safari/);
+ assert.match(app,/evening-resume\.mjs\?v=20261101-server-resume/);
 });
 
 test('LR-028: gift starting during the home resume cannot reopen an outdated private queue',async()=>{

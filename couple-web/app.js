@@ -21,7 +21,7 @@ import {eveningDailyAccess} from './evening-daily-policy.mjs?v=20261016-daily100
 import {createEveningClosureGate} from './evening-closure-gate.mjs?v=20261031-closure';
 import {ownEveningChallenges,visibleEveningQueue,queuePosition,queueLabel,hasTurnToDraw,eveningRedrawFeedback,isValidEveningRedrawReceipt,isPersistedEveningRedrawReceipt,activeEveningRedrawReplacementId,snapshotEveningCardBeforeRedraw,isSameEveningResponseContext,isEveningRedrawBusyForCurrentView,ownsEveningRedrawRequest,ownsEveningTimerRecord,ownedSavedEveningTimerSnapshot,redrawTimerRecovery,mayApplyScopedEveningRefresh,ownsCoupleAsyncRead,hasPendingEclatNote} from './evening-private-queue.mjs';
 import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261031-home268';
-import {saveEveningSelection,restoreEveningSelection,clearEveningSelection,safeEveningBookmarkStorage} from './evening-resume.mjs?v=20261031-resume-safari';
+import {saveEveningSelection,restoreEveningSelection,clearEveningSelection,safeEveningBookmarkStorage,serverResumableEveningChallenge} from './evening-resume.mjs?v=20261101-server-resume';
 import {readTimerAlertMode,saveTimerAlertMode} from './timer-alert-preference.mjs?v=20261031-safari-timer';
 import {eclatHtml} from './eclat-ui.mjs?v=20261027-web242';
 import {previewMode,previewCanEdit,previewEclatStatus} from './account-preview-mode.mjs?v=20261020-test180';
@@ -5741,7 +5741,10 @@ async function handle(action,element){
    return;
   }
   const privateCards=visibleEveningQueue(ownEveningChallenges(state.challenges,state.user.id,session.id));
-  const selected=restoreEveningSelection(safeEveningBookmarkStorage(),state.user.id,session.id,privateCards);
+  const selected=restoreEveningSelection(safeEveningBookmarkStorage(),state.user.id,session.id,privateCards)||
+   // A second device can resume the single in-progress server card without
+   // a local bookmark. An ambiguous queue remains a manual choice.
+   serverResumableEveningChallenge(privateCards,state.user.id,session.id);
   state.tab='session';state.eveningRefusalId=null;state.eveningMore=false;
   state.selectedEveningChallengeId=selected;
   state.showEveningChallenges=privateCards.length>0;
