@@ -169,7 +169,7 @@ export {ritualBrandHtml} from './brand.mjs?v=20261017-ritual130';
 import {ritualHeadingHtml} from './brand.mjs?v=20261017-ritual130';
 export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,disabled=false,members=[],
   turn=null,monthly={},history=[],sessions=[],events=[],rollFace=1,now=new Date(),
-  weeklyWeights=WEEKLY_ODDS,weeklyWeightsEnabled=true,monthlyActivity=null}={}){
+  weeklyWeights=WEEKLY_ODDS,weeklyWeightsEnabled=true,monthlyActivity=null,weeklyProgress=null}={}){
  const weights=effectiveDicePercentages(weeklyWeights,weeklyWeightsEnabled,WEEKLY_ODDS).map((pct,i)=>
   '<span class="home-weight" title="'+(i+1)+' soirée'+(i===0?'':'s')+' : '+displayedDicePercent(pct)+' %">'+pipFace(i+1)+
   '<b>'+(i+1)+'x</b><span>'+displayedDicePercent(pct)+'%</span></span>').join('');
@@ -180,6 +180,16 @@ export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,d
  const ready=!rolling&&weekly&&Number.isInteger(weekly.face),next=nextMonday(now);
  const coupleStats=coupleHomeStats(history,sessions,members,now);
   const weeklyTitle=ready?weekly.face+' soirée'+(weekly.face===1?'':'s')+' de défi':'Cette semaine, on joue ?';
+ // Use the exact shared daily/weekly policy result passed by the app.
+ // Never derive another quota from visible private cards or local history.
+ const progressReady=ready&&weeklyProgress?.historyReady===true&&
+  Number.isInteger(weeklyProgress.counted)&&weeklyProgress.counted>=0&&
+  weeklyProgress.limit===weekly.face;
+ const weeklyRemaining=progressReady?Math.max(0,weekly.face-weeklyProgress.counted):null;
+ const progressText=progressReady?
+  weeklyProgress.counted+' soirée'+(weeklyProgress.counted===1?'':'s')+
+  ' partagée'+(weeklyProgress.counted===1?'':'s')+' cette semaine · '+
+  weeklyRemaining+' disponible'+(weeklyRemaining===1?'':'s')+' cette semaine':null;
  const statistic=(value,label,subtitle,cls='')=>
   '<div class="home-stat-card '+cls+'"><div class="home-stat-content"><i aria-hidden="true">'+({completed:'★',partners:'♧',categories:'♡',streak:'▥'}[cls]||'')+'</i><strong>'+escape(value)+'</strong>'+
   '<span>'+escape(label)+'</span><small>'+escape(subtitle)+'</small></div></div>';
@@ -199,7 +209,8 @@ export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,d
  const pending=rolling||disabled;
  return '<section class="real-home-shell" aria-label="Tableau de bord du couple">'+
    '<div class="home-ritual">'+ritualHeadingHtml('NOTRE RITUEL DE LA SEMAINE')+
-   '<div class="home-title"><h2 class="ritual-page-title">'+escape(weeklyTitle)+'</h2></div></div>'+
+   '<div class="home-title"><h2 class="ritual-page-title">'+escape(weeklyTitle)+'</h2>'+ 
+   (progressText?'<p class="home-weekly-progress">'+escape(progressText)+'</p>':'')+'</div></div>'+
    '<div class="home-die-theater" aria-label="Dé à six faces en trois dimensions">'+
    '<div class="home-fabric-photo" aria-hidden="true"></div>'+
    '<div class="home-satin-orbit" aria-hidden="true"></div>'+
