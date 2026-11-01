@@ -1163,3 +1163,14 @@ Pour **chacun des douze identifiants**, renseigner un état réel et les preuves
 - **CI à poursuivre séparément :** le D100 Soirée 320 × 568 avait échoué au contrôle d'emprise géométrique sur une révision antérieure. Une autre révision de `dice3d.js` est arrivée entre-temps : ne pas la réécrire sans nouveau résultat CI. Conserver le contrôle rigoureux du vrai modèle WebGL.
 
 **Prochaine priorité :** poursuivre l'implémentation globale des fonctions de jeu déjà spécifiées et les validations de bout en bout; ne pas réduire toute la mission à des retouches d'apparence.
+
+## Refonte LoveRoll — Lot 11 : bilan de soirée sécurisé après sauvegarde (1 novembre 2026)
+
+**Statut : correctif applicatif commité en PR #179, sans fusion ni mise en production confirmée.**
+
+- Problème observé dans le code : après un RPC `save_love_evening_review` réussi, un échec de `refreshAndShow()` était capturé dans le même `catch` que l'échec de sauvegarde. Cela pouvait afficher « Enregistrement impossible » alors que le serveur avait déjà écrit le bilan, incitant à une seconde soumission.
+- Dans `couple-web/app.js`, le succès du RPC clôture le formulaire et établit la navigation calendrier. L'actualisation suivante a son traitement d'erreur distinct : en cas de panne de lecture, afficher le calendrier sans données prétendument fraîchement récupérées et notifier explicitement « Bilan enregistré. Le calendrier n’a pas pu être actualisé. Réessaie de l’ouvrir. » Ne jamais revendiquer une nouvelle sauvegarde ou effacer le bilan.
+- Durant `reviewSaving`, empêcher la fermeture de la fenêtre via Retour/Escape ou bouton Fermer, la sélection d'un autre bilan et le changement de cœur. Préserver les quatre notes, l'édition, les droits serveur par personne et la longueur maximale du commentaire; aucun changement de questionnaire ni de données historiques.
+- Commits : `842ad2e` (code) et `e549c53` (tests dans `couple-web/evening-review.test.mjs`). Les tests statiques vérifient l'ordre écriture serveur → rechargement calendrier, la distinction des échecs et les garde-fous de fermeture pendant une écriture.
+- Preuves à finaliser : contrôles CI sur le SHA exact, essais réels avec deux utilisateurs techniques et panne réseau simulée *après* réponse positive du RPC. Au SHA `e549c53`, les tests unitaires et UI étaient déclarés réussis, mais pas tous les parcours navigateur; ne pas annoncer de livraison ni de fusion sans preuve.
+- Les anomalies indépendantes D100 sur téléphone 320×568 et iPad restent ouvertes dans la CI; poursuivre les correctifs sans masquer ou affaiblir les tests de géométrie, sans détourner l'ensemble du développement vers ce seul point.
