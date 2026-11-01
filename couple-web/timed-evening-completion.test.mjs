@@ -170,10 +170,10 @@ test('LR-002 server-confirmed timed challenge remains completed when the screen 
  const start=app.indexOf('async function retryExpiredTimedEvening(){');
  const end=app.indexOf('function endSignal(){',start);
  const timers=app.slice(start,end);
- assert.equal((timers.match(/await refreshConfirmedTimedEvening\\(\\)/g)||[]).length,2,
+ assert.equal((timers.match(/await refreshConfirmedTimedEvening\(\)/g)||[]).length,2,
   'Active timer and reload recovery use the same safe refresh');
- assert.doesNotMatch(timers,/await refreshAndShow\\(\\)/,
+ assert.doesNotMatch(timers,/await refreshAndShow\(\)/,
   'Post-save display refresh must not be caught as a failed server write');
- assert.match(app,/Défi accompli sur le serveur\\. L’affichage n’a pas pu être actualisé/);
- assert.match(app,/const updated=await refreshAfterTimedEveningConfirmation\\(refreshAndShow\\)/);
+ assert.match(app,/Défi accompli sur le serveur\. L’affichage n’a pas pu être actualisé/);
+ assert.match(app,/const updated=await refreshAfterTimedEveningConfirmation\(refreshAndShow\)/);
 });
