@@ -147,21 +147,22 @@ const {eveningD100Viewports}=require('./evening-d100-viewports.cjs');
     const die=document.querySelector('.evening-d35-col canvas');
     const close=document.querySelector('.evening-queue-modal [data-action="evening-close"]');
     const status=document.querySelector('.evening-primary-status')?.textContent||'';
+    const ownedCardAction=document.querySelector('.evening-roll-actions [data-action^="evening-open:"]')?.dataset.action||null;
     return {face:die?.dataset.face,spinning:die?.loveRollDie?.readState()?.spinning,
      result:document.querySelector('.evening-d100-result')?.textContent,
-     primary:status,closeCount:document.querySelectorAll('.evening-queue-modal [data-action="evening-close"]').length,
+     primary:status,ownedCardAction,closeCount:document.querySelectorAll('.evening-queue-modal [data-action="evening-close"]').length,
      hasClose:!!close,partnerTurn:/En attente du tour de ton partenaire/.test(status),
      overlays:[...document.querySelectorAll('.evening-queue-modal')].map(e=>e.className)};
    });
-   if(postRoll.hasClose||postRoll.partnerTurn)break;
+   if(postRoll.hasClose||postRoll.partnerTurn||postRoll.ownedCardAction)break;
    await page.waitForTimeout(250);
   }
-  if(!postRoll?.hasClose&&!postRoll?.partnerTurn){
+  if(!postRoll?.hasClose&&!postRoll?.partnerTurn&&!postRoll?.ownedCardAction){
    console.error('LR_D100_POST_ROLL_DIAGNOSTIC',JSON.stringify({width,height,state:postRoll,
     draws:world.calls.filter(c=>c.name?.startsWith('draw_for_partner')).map(c=>c.name)}));
   }
-  assert.ok(postRoll?.hasClose||postRoll?.partnerTurn,
-   'Official D100 draw must open a private challenge or display the partner turn: '+JSON.stringify({width,height,postRoll}));
+  assert.ok(postRoll?.hasClose||postRoll?.partnerTurn||postRoll?.ownedCardAction,
+   'Official D100 draw must open a private challenge, offer its owner access, or display the partner turn: '+JSON.stringify({width,height,postRoll}));
   const queueModal=page.locator('.evening-queue-modal');
   checkpoint('challenge-modal');
   if(await queueModal.count()){
@@ -204,7 +205,24 @@ const {eveningD100Viewports}=require('./evening-d100-viewports.cjs');
   assert.equal(await page.locator('.evening-d35-col canvas').getAttribute('data-face'),'17');
   assert.equal(await page.locator('.evening-choice [aria-pressed=true]').count(),0,'Category resets after each official draw');
   assert.equal(await page.locator('[data-action="new-challenge"]').count(),0,'No fake disabled D100 during partner turn');
-  assert.match(await page.locator('.evening-primary-status').textContent(),/En attente du tour de ton partenaire/);
+  // LR-027: an unfinished personal card becomes the one main Soirée action.
+  // Reopening it must never roll the server-authoritative D100 a second time.
+  const ownCard=page.locator('.evening-roll-actions button.evening-primary[data-action^="evening-open:"]');
+  if(await ownCard.count()){
+   const action=await ownCard.getAttribute('data-action');
+   assert.match(action,/^evening-open:[^:]+$/);
+   assert.match(await ownCard.textContent(),/Voir mon défi/);
+   assert.equal(await page.locator('.evening-primary-status').count(),0,
+    'A usable private challenge takes priority over partner waiting');
+   await ownCard.evaluate(button=>button.click());
+   await queueModal.waitFor({state:'visible',timeout:5000});
+   assert.match(await queueModal.locator('.evening-queue-detail').innerText(),/Résultat : 17/);
+   assert.equal(world.calls.filter(c=>c.name?.startsWith('draw_for_partner')).length,1);
+   await queueModal.locator('[data-action="evening-close"]').evaluate(button=>button.click());
+   await queueModal.waitFor({state:'detached',timeout:5000});
+  }else{
+   assert.match(await page.locator('.evening-primary-status').textContent(),/En attente du tour de ton partenaire/);
+  }
   checkpoint('capture-recorded');
   await capture('recorded');
   assert.deepEqual(errors,[]);await context.close();console.log('EVENING_D100_TEMPLATE_OK',width,height);
