@@ -287,3 +287,45 @@ test('LR-ACCUEIL-001: open and interrupted evenings still use Québec start day'
  assert.equal(eveningArchiveDay({counted:true,started_at:null,
   finished_at:'invalid'}),null);
 });
+
+test('LR-ACCUEIL-001: corrupt weekly D6 or impossible date never fabricates a success rate',()=>{
+ const date='2026-10-22',key='2026-10-19',created_at='2026-10-22T16:00:00Z';
+ const rolls=face=>[{kind:'weekly',key,created_at,face}];
+ for(const face of [null,0,7,-1,2.5,'invalid','Infinity',1e20]){
+  assert.deepEqual(calendarWeekSuccess({date,weeklyRolls:rolls(face)}),{
+   hasRoll:false,possible:0,completed:0,percent:null,face:null
+  },'corrupted roll must never be clamped into a valid face: '+String(face));
+ }
+ for(const date of ['2026-02-31','2026-10-32','2026-13-01','not-a-date']){
+  assert.equal(mondayOf(date),null);
+  assert.equal(calendarWeekSuccess({date,weeklyRolls:rolls(3)}).hasRoll,false);
+ }
+ const valid=calendarWeekSuccess({date,weeklyRolls:rolls(3),sessions:[{
+  id:'real',counted:true,started_at:'2026-10-22T18:00:00Z',
+  finished_at:'2026-10-22T19:00:00Z'
+ }]});
+ assert.deepEqual(valid,{hasRoll:true,possible:3,completed:1,percent:33,face:3});
+});
+
+test('LR-ACCUEIL-001: legacy invalid personal targets cannot poison the monthly rate',()=>{
+ const night={id:'complete',counted:true,started_at:'2026-10-22T18:00:00Z',
+  finished_at:'2026-10-22T19:00:00Z'};
+ const base={month:'2026-10',sessions:[night],
+  members:[{user_id:'a',name:'Alice'}],
+  historyChallenges:[{id:'real',session_id:'complete',recipient:'a',status:'completed'}]};
+ for(const target of [null,'Infinity','NaN','-Infinity',-4,2.25,1e20]){
+  const result=monthlyChallengeSuccess({...base,sessionStats:[{
+   session_id:'complete',user_id:'a',completed:1,target
+  }]})[0];
+  assert.equal(result.done,1);
+  assert.equal(result.unpicked,0,'invalid target is not an invented shortage');
+  assert.equal(result.denominator,1);
+  assert.equal(result.percent,100);
+ }
+ const valid=monthlyChallengeSuccess({...base,sessionStats:[{
+  session_id:'complete',user_id:'a',completed:1,target:'4'
+ }]})[0];
+ assert.equal(valid.unpicked,3);
+ assert.equal(valid.denominator,4);
+ assert.equal(valid.percent,25);
+});
