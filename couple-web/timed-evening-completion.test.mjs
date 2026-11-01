@@ -273,3 +273,35 @@ test('LR-002 board outage after saved completion reports the card as persisted, 
   'Active and restored timers distinguish server save from board synchronization');
  assert.equal((app.match(/Synchronisation de Soirée en attente de connexion/g)||[]).length,2);
 });
+
+test('LR-002 a completed card can finish a pending Soirée board after app restart without re-answering',async()=>{
+ const completed={...card,status:'completed'},calls=[];
+ const rpc=async(name,args)=>{
+  calls.push({name,args});
+  if(name==='my_love_evening_board')return {finished:true};
+ };
+ const result=await completeTimedEveningChallenge({
+  challenge:completed,userId:'alice',sessionId:'session-a',rpc,
+  query:async()=>{throw Error('No challenge lookup needed for confirmed local server record');}
+ });
+ assert.deepEqual(result,{outcome:'already-completed',finished:true});
+ assert.deepEqual(calls.map(x=>x.name),['my_love_evening_board','finish_couple_session'],
+  'Resume only board and finish RPC: answer_challenge must not run again');
+ for(const wrong of [{...completed,recipient:'bob'},
+  {...completed,session_id:'other'}, {...completed,status:'passed'}]){
+  const out=await completeTimedEveningChallenge({challenge:wrong,userId:'alice',
+   sessionId:'session-a',rpc,query:async()=>[]});
+  assert.equal(out.outcome,'ineligible');
+ }
+ assert.equal(calls.length,2,'Invalid partner/session cannot call any RPC');
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const retry=app.slice(app.indexOf('async function retryExpiredTimedEvening(){'),
+  app.indexOf('async function reconcileSavedEveningTimers()'));
+ const recovery=app.slice(app.indexOf('async function reconcileSavedEveningTimers(){'),app.indexOf('function endSignal(){'));
+ for(const code of [retry,recovery]){
+  assert.match(code,/isSameCompletedEveningChallenge\(item,item,state\.user\.id,state\.session\.id\)/);
+  assert.match(code,/completeTimedEveningChallenge\(\{challenge:item,userId,sessionId,rpc,query\}\)/);
+ }
+ assert.doesNotMatch(retry,/\['completed','passed','refused'\]/);
+ assert.doesNotMatch(recovery,/\['completed','passed','refused'\]/);
+});
