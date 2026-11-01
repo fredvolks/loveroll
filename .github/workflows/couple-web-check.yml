@@ -501,6 +501,12 @@ jobs:
         if: matrix.group == 'entry'
         run: node couple-web/android-ruby-browser-check.cjs
 
+      # Production Pages also verifies the monthly duo recap and the
+      # intentional distinction between ruby primary and velvet panels.
+      - name: Verify Home duo recap and shared materials before Pages
+        if: matrix.group == 'entry'
+        run: node couple-web/home-duo-browser-check.cjs
+
       - name: Verify REAL account and invite behaviors against mocked Supabase API
         if: matrix.group == 'entry'
         run: node couple-web/auth-behavior-v58.cjs
