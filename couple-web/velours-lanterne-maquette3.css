@@ -938,7 +938,9 @@ body.lr-velours-lanterne #app>.entry-access-screen.auth-editorial {
 }
 body.lr-velours-lanterne #app .entry-access-screen .entry-auth-card {
   border-color:var(--lr-vl-edge);
-  background:var(--lr-vl-panel);
+  background-color:var(--lr-vl-velvet)!important;
+  background-image:var(--lr-vl-panel)!important;
+  background-repeat:no-repeat!important;
   box-shadow:var(--lr-vl-relief),0 12px 40px rgba(10,0,8,.4);
 }
 body.lr-velours-lanterne #app .entry-access-screen .entry-auth-title h1,
