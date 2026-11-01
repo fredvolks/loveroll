@@ -1051,3 +1051,213 @@ body.lr-velours-lanterne #app .entry-access-screen :is(.editorial-form input,.ed
     border-width:2px;
   }
 }
+
+
+/* LOT 6 — Calendrier, bibliothèques et activités : écrin commun
+   Le calendrier conserve ses jours, sa navigation et ses résultats.
+   Les cartes et les formulaires restent de vrais éléments interactifs. */
+body.lr-velours-lanterne main#app.loveroll-evening-calendar-page {
+  --ritual-border:var(--lr-vl-edge);
+  --ritual-card:var(--lr-vl-muted-panel);
+  --ritual-button:var(--lr-vl-action);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne main#app.loveroll-evening-calendar-page .evening-cal-head h2,
+body.lr-velours-lanterne main#app.loveroll-evening-calendar-page .evening-cal-toolbar h3,
+body.lr-velours-lanterne main#app.loveroll-evening-calendar-page .evening-cal-history h3 {
+  color:var(--lr-vl-ivory);
+  font-family:var(--lr-vl-editorial);
+  font-weight:600;
+  letter-spacing:-.02em;
+}
+body.lr-velours-lanterne main#app.loveroll-evening-calendar-page .evening-cal-head>span {
+  color:var(--lr-vl-champagne);
+}
+body.lr-velours-lanterne main#app.loveroll-evening-calendar-page .evening-cal-head p {
+  color:var(--lr-vl-muted);
+}
+body.lr-velours-lanterne main#app.loveroll-evening-calendar-page :is(.evening-cal-month,.evening-cal-history,.evening-cal-stats span) {
+  background:var(--lr-vl-panel);
+  border-color:var(--lr-vl-edge);
+  box-shadow:var(--lr-vl-relief);
+}
+body.lr-velours-lanterne main#app.loveroll-evening-calendar-page .evening-cal-stats strong {
+  color:var(--lr-vl-champagne);
+  font-family:var(--lr-vl-editorial);
+  font-weight:700;
+}
+body.lr-velours-lanterne main#app.loveroll-evening-calendar-page .evening-cal-toolbar button {
+  width:44px;
+  min-width:44px;
+  height:44px;
+  min-height:44px;
+  color:var(--lr-vl-ivory);
+  background:var(--lr-vl-muted-panel);
+  border-color:var(--lr-vl-edge);
+}
+body.lr-velours-lanterne main#app.loveroll-evening-calendar-page .evening-cal-weekday {
+  color:var(--lr-vl-muted);
+}
+body.lr-velours-lanterne main#app.loveroll-evening-calendar-page .evening-cal-day {
+  color:var(--lr-vl-ivory);
+  border-color:var(--lr-vl-field-edge)!important;
+  background:var(--lr-vl-muted-panel);
+}
+body.lr-velours-lanterne main#app.loveroll-evening-calendar-page .evening-cal-day.has-evening {
+  border-color:var(--lr-vl-champagne)!important;
+  background:var(--lr-vl-velvet-card);
+}
+body.lr-velours-lanterne main#app.loveroll-evening-calendar-page .evening-cal-day.selected {
+  background:var(--lr-vl-action);
+  border-color:var(--lr-vl-champagne)!important;
+  box-shadow:var(--lr-vl-active-shadow);
+}
+body.lr-velours-lanterne main#app.loveroll-evening-calendar-page :is(.evening-cal-person,.evening-cal-challenge) {
+  background:var(--lr-vl-muted-panel);
+  border-color:var(--lr-vl-field-edge);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne main#app.loveroll-evening-calendar-page :is(.evening-cal-session header strong,.evening-cal-person b) {
+  color:var(--lr-vl-rose);
+}
+body.lr-velours-lanterne main#app.loveroll-evening-calendar-page :is(.evening-cal-person span,.evening-cal-challenge>span,.evening-cal-empty,.evening-cal-privacy) {
+  color:var(--lr-vl-muted);
+}
+body.lr-velours-lanterne main#app.loveroll-evening-calendar-page .evening-cal-return {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-action);
+  color:var(--lr-vl-ivory);
+}
+/* Bibliothèques : mêmes contenus, catégories, menus et formulaires.
+   Conserver leurs zones scrollables et les éléments [hidden]. */
+body.lr-velours-lanterne main#app:is(.loveroll-library-page,.loveroll-library-list) {
+  --ritual-border:var(--lr-vl-edge);
+  --ritual-card:var(--lr-vl-panel);
+  --ritual-button:var(--lr-vl-action);
+  --ritual-text:var(--lr-vl-ivory);
+  --ritual-muted:var(--lr-vl-muted);
+  --ritual-rose:var(--lr-vl-rose);
+  --ritual-shadow:var(--lr-vl-relief);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne main#app:is(.loveroll-library-page,.loveroll-library-list) :is(.editorial-title h1,.editorial-library-title) {
+  color:var(--lr-vl-ivory);
+  font-family:var(--lr-vl-editorial);
+  font-weight:600;
+}
+body.lr-velours-lanterne main#app:is(.loveroll-library-page,.loveroll-library-list) :is(.editorial-segments,.editorial-filter-panel,.editorial-library-header,.editorial-detail-card) {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-panel);
+  box-shadow:var(--lr-vl-relief);
+}
+body.lr-velours-lanterne main#app:is(.loveroll-library-page,.loveroll-library-list) .editorial-row {
+  border-bottom-color:var(--lr-vl-field-edge);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne main#app:is(.loveroll-library-page,.loveroll-library-list) :is(.editorial-row-icon,.custom-tile-number,.editorial-badge) {
+  color:var(--lr-vl-rose);
+}
+body.lr-velours-lanterne main#app:is(.loveroll-library-page,.loveroll-library-list) :is(input:not([type=checkbox]):not([type=radio]),textarea,select) {
+  max-width:100%;
+  min-width:0;
+  min-height:44px;
+  color:var(--lr-vl-ivory);
+  border-color:var(--lr-vl-field-edge);
+  background:var(--lr-vl-field);
+}
+body.lr-velours-lanterne main#app:is(.loveroll-library-page,.loveroll-library-list) :is(.editorial-segments button.selected,.editorial-primary,.editorial-save):not(:disabled) {
+  background:var(--lr-vl-action);
+  border-color:var(--lr-vl-edge);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne main#app:is(.loveroll-library-page,.loveroll-library-list) .editorial-card-list .custom-card-tile {
+  min-height:48px;
+  border-bottom-color:var(--lr-vl-field-edge);
+  color:var(--lr-vl-ivory);
+}
+/* Activité surprise et réservation : couleurs unifiées sans toucher aux
+   coordonnées, aux liens externes, au formulaire ni au statut de réservation. */
+body.lr-velours-lanterne main#app.loveroll-surprise-ecrin :is(.surprise-geo-card,.surprise-geo-booked,.surprise-geo-pending) {
+  background:var(--lr-vl-panel);
+  border-color:var(--lr-vl-edge);
+  color:var(--lr-vl-ivory);
+  box-shadow:var(--lr-vl-relief);
+}
+body.lr-velours-lanterne main#app.loveroll-surprise-ecrin .surprise-geo-eyebrow {
+  color:var(--lr-vl-champagne);
+}
+body.lr-velours-lanterne main#app.loveroll-surprise-ecrin .surprise-geo-venue-info strong {
+  color:var(--lr-vl-ivory);
+  font-family:var(--lr-vl-editorial);
+  font-weight:600;
+}
+body.lr-velours-lanterne main#app.loveroll-surprise-ecrin :is(.surprise-geo-photo-placeholder,.surprise-geo-link) {
+  background:var(--lr-vl-muted-panel);
+  border-color:var(--lr-vl-field-edge);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne main#app.loveroll-surprise-ecrin .surprise-geo-link {
+  min-height:44px;
+}
+body.lr-velours-lanterne main#app.loveroll-surprise-ecrin .surprise-geo-booking-form input:not([type=checkbox]) {
+  min-height:44px;
+  color:var(--lr-vl-ivory);
+  border-color:var(--lr-vl-field-edge);
+  background:var(--lr-vl-field);
+}
+body.lr-velours-lanterne main#app.loveroll-surprise-ecrin .surprise-geo-host-tools>.surprise-primary:not(:disabled) {
+  min-height:44px;
+  background:var(--lr-vl-action);
+  border-color:var(--lr-vl-edge);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne main#app.loveroll-surprise-ecrin :is(.surprise-geo-credit,.surprise-geo-muted,.surprise-geo-venue-info small) {
+  color:var(--lr-vl-muted);
+}
+/* Éclat : cohérence sur les 12 coffrets et leurs contrôles sans casser
+   les photos, le minutage, le défilement ni les hauteurs compactes. */
+body.lr-velours-lanterne main#app.loveroll-eclat-page :is(.eclat-tile,.eclat-duration,.eclat-choices .eclat-choice,.eclat-library-offer) {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-panel);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne main#app.loveroll-eclat-page :is(.eclat-tile-number,.eclat-top small,.eclat-detail>small) {
+  color:var(--lr-vl-champagne);
+}
+body.lr-velours-lanterne main#app.loveroll-eclat-page :is(.eclat-top h1,.eclat-detail h2) {
+  color:var(--lr-vl-ivory);
+  font-family:var(--lr-vl-editorial);
+}
+body.lr-velours-lanterne main#app.loveroll-eclat-page :is(.eclat-return,.eclat-audio-toggle) {
+  min-height:44px;
+  min-width:44px;
+  color:var(--lr-vl-ivory);
+}
+@media(max-width:380px) {
+  body.lr-velours-lanterne main#app.loveroll-evening-calendar-page .evening-cal-toolbar {
+    gap:4px;
+  }
+  body.lr-velours-lanterne main#app.loveroll-evening-calendar-page .evening-cal-grid {
+    gap:3px;
+  }
+  body.lr-velours-lanterne main#app.loveroll-surprise-ecrin .surprise-geo-links {
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:4px;
+  }
+  body.lr-velours-lanterne main#app.loveroll-surprise-ecrin .surprise-geo-link {
+    padding-inline:3px;
+    overflow-wrap:anywhere;
+  }
+}
+/* Zoom texte : utiliser les capacités de défilement existantes sans forcer
+   un nouveau gabarit qui cacherait une case de calendrier ou un bouton. */
+@media(max-height:610px) {
+  body.lr-velours-lanterne main#app.loveroll-evening-calendar-page .evening-calendar-shell {
+    overscroll-behavior:contain;
+    scrollbar-width:thin;
+  }
+  body.lr-velours-lanterne main#app:is(.loveroll-library-page,.loveroll-library-list) .editorial-content {
+    overscroll-behavior:contain;
+    scrollbar-width:thin;
+  }
+}
