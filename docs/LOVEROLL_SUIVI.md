@@ -1,5 +1,14 @@
 # LoveRoll — SUIVI OFFICIEL DU PROMPT MAÎTRE
 
+### LR-028 — Android Retour, identité et reprise pendant un don (31 octobre 2026)
+
+- **Développement dans la PR #176**, branche `feat/lr026-server-variety-after-category-20261029` (toujours **brouillon** et **non fusionnée**). Après correction des anciens environnements Node des tests de fermeture (`6a083fa`) et de choix D100 (`6449a8b`), les **tests statiques du commit `6449a8b` sont réussis** dans GitHub Actions, sans prétendre que toute la matrice navigateur est terminée.
+- **Retour Android** : une approbation « quitter sans enregistrer » porte maintenant une identité précise : utilisateur, couple, soirée, onglet, formulaire actif et génération Auth. Une confirmation devenue obsolète ne peut pas autoriser la sortie d'un autre compte ; même une approbation encore valide ne fonctionne que pour son formulaire d'origine. `couple-web/app.js`, commit `e99a552`. Trois tests ajoutés dans `async-tab-navigation-owner.test.mjs`, commit `33d7f37`.
+- **Reprendre la soirée** : revérification d'un don en cours **après** `await refreshShared()` ; si le don s'est ouvert pendant la lecture, la reprise n'affiche pas la liste privée périmée. Après la fin du don, la reprise reste possible. `couple-web/app.js`, commit `2e18f72`, et régression dans `evening-resume.test.mjs`, commit `8067798`.
+- **Limites vérifiées** : ces protections sont côté navigateur. Le lot GitHub Actions de `8067798` et les essais Android/iOS physiques ne sont pas confirmés au moment de cette note ; les sessions Auth/RLS réelles sur un Supabase de préproduction distinct restent nécessaires avant fusion. Aucune migration, publication GitHub Pages ni écriture en production.
+- **Coordination Atelier MEDIUM** : consultation directe des méthodes Architecture, Qualité et Mobile (versions 1.0.0) et de la liste des applications ; LoveRoll ne possède pas de fiche dans cet Atelier partagé. Aucun BOSS exécutable ni mission LoveRoll synchronisée confirmés. Ne pas prétendre que les agents tournent de façon autonome.
+
+
 ### LR-028 — navigation après confirmation asynchrone (31 octobre 2026)
 
 - Sur la PR #176, encore **brouillon non fusionnée**, un changement d'onglet avec modifications non enregistrées retient désormais l'identité du compte, du couple, de la soirée, de l'onglet et la génération Auth **avant** l'attente du dialogue. Après confirmation, la navigation est abandonnée si une de ces données a changé ou si un D6/D100, une repige ou un don officiel est en cours. Un refus de quitter conserve la page initiale. Fichier : `couple-web/app.js`, commit `513c4db`.
