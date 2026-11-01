@@ -471,7 +471,8 @@ test('LR-ACCUEIL-001: incomplete RPC snapshots stay safe on Home',()=>{
   id:'challenge-1',session_id:'night-1',recipient:'a',
   status:'completed',category:'SENSUEL'
  }];
- const sessions=[null,false,'legacy',{},night,{...night}];
+ const sessions=[null,false,'legacy',{},night,{...night},
+  {counted:true,finished_at:'2026-10-31T20:00:00Z'}];
  const members=[null,false,{}, {user_id:'a',name:'Alice'},{user_id:'b',name:'Bob'}];
  const summary=coupleHomeStats(challenges,sessions,members,now);
  assert.equal(summary.completed,1);
@@ -479,7 +480,14 @@ test('LR-ACCUEIL-001: incomplete RPC snapshots stay safe on Home',()=>{
  assert.deepEqual(summary.byPartner,[1,0]);
  assert.equal(summary.sensualPercent,100);
  assert.equal(summary.sexualPercent,0);
- assert.equal(summary.streak,1);
+ assert.equal(summary.streak,1,'a phantom session without ID cannot extend the streak');
+ const duplicate=coupleHomeStats([
+  ...challenges,{id:'challenge-1',session_id:'night-1',recipient:'a',
+   status:'completed',category:'SENSUEL'}
+ ],sessions,members,now);
+ assert.equal(duplicate.completed,1,'the same persisted challenge ID is counted once');
+ assert.deepEqual(duplicate.byPartner,[1,0],'duplicates do not inflate partner totals');
+ assert.equal(duplicate.sensualPercent,100);
  assert.deepEqual(coupleHomeStats({},false,null,now),{
   completed:0,monthlyEvenings:0,byPartner:[],
   sensualPercent:null,sexualPercent:null,streak:0
