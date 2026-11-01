@@ -23,6 +23,21 @@ test('D100 favorites use stable card identities, not changing draw IDs',()=>{
  }
 });
 
+test('D100 favorite identity rejects coercible non-card values',()=>{
+ assert.equal(eveningFavoriteId({category:'SENSUEL',card_id:'7'}),'SENSUEL:7');
+ assert.equal(eveningFavoriteId({category:'MIXTE',face:'050'}),'MIXTE:50');
+ for(const raw of [true,false,[],[7],{},'7e0','7.0',' 7','+7','0x7',Infinity,NaN,-1,0]){
+  assert.equal(eveningFavoriteId({category:'SENSUEL',card_id:raw}),null,
+   'Non-canonical D100 card ID: '+String(raw));
+ }
+ const storage=store();
+ assert.equal(toggleEveningFavorite('alice','duo',{category:'SENSUEL',card_id:[7]},storage).reason,'invalid');
+ assert.deepEqual(readEveningFavorites('alice','duo',storage),[],
+  'Malformed ID must not consume any personal favorite slots');
+ assert.equal(toggleEveningFavorite('alice','duo',{category:'SENSUEL',card_id:'7'},storage).ok,true);
+ assert.deepEqual(readEveningFavorites('alice','duo',storage),['SENSUEL:7']);
+});
+
 test('Each member has at most five favorites per couple, with removal and reuse',()=>{
  const storage=store();
  assert.equal(EVENING_FAVORITES_LIMIT,5);

@@ -5,7 +5,12 @@ export const EVENING_FAVORITES_LIMIT=5;
 const KEY_PREFIX='loveroll-evening-favorites:';
 export function eveningFavoriteId(card){
  const category=card?.category;
- const number=Number(card?.card_id??card?.face);
+ const raw=card?.card_id??card?.face;
+ // Legacy server rows may carry decimal strings. Reject other coercions:
+ // booleans, arrays, objects or exponent notation are not real D100 IDs.
+ const validType=typeof raw==='number'||
+  (typeof raw==='string'&&/^\d{1,3}$/.test(raw));
+ const number=validType?Number(raw):NaN;
  if(!['SENSUEL','SEXUEL','MIXTE'].includes(category)||
   !Number.isInteger(number)||number<1||number>(category==='MIXTE'?50:100))return null;
  return category+':'+number;
