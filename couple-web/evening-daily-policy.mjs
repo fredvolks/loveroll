@@ -22,7 +22,18 @@ export function eveningDailyAccess({sessions=null,weekly=null,now=new Date()}={}
  // A reset creates a new weekly roll, used as the effective quota boundary.
  const current=weekSessions.filter(s=>!Number.isFinite(weeklyCreated)||
   Date.parse(s.started_at)>=weeklyCreated);
- const counted=current.filter(s=>s.counted===true).length;
+ // Incremental/retried sync snapshots may contain the same persisted
+ // session twice. One official evening ID consumes only one weekly slot;
+ // duplicate rows must never prematurely exhaust the couple's D6 quota.
+ const countedIds=new Set();
+ const counted=current.filter(s=>{
+  if(s.counted!==true)return false;
+  if(typeof s.id==='string'&&s.id){
+   if(countedIds.has(s.id))return false;
+   countedIds.add(s.id);
+  }
+  return true;
+ }).length;
  const dailyLocked=current.some(s=>localDay(s.started_at)===today||
   (s.finished_at&&localDay(s.finished_at)===today));
  const closedToday=current.filter(s=>s.counted===true&&s.finished_at&&

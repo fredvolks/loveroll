@@ -10,6 +10,26 @@ test('At 8am Québec Friday, yesterday closed game does not block',()=>{
  assert.deepEqual([x.counted,x.limit,x.canStart,x.dailyLocked],[1,3,true,false]);
  assert.equal(x.closedToday,null);
 });
+test('P0 daily quota counts the same saved evening once across duplicate sync rows',()=>{
+ const duplicate={...past},now=new Date('2026-10-16T12:00:00Z');
+ const state=eveningDailyAccess({sessions:[past,duplicate],weekly:{...weekly,face:2},now});
+ assert.equal(state.historyReady,true);
+ assert.equal(state.counted,1,'one server session ID consumes one weekly place');
+ assert.equal(state.canStart,true,'a repeated sync row cannot exhaust the quota');
+ assert.equal(state.dailyLocked,false,'a previous Québec day does not lock today');
+ const realSecond={...past,id:'two',started_at:'2026-10-16T09:00:00Z',
+  finished_at:'2026-10-16T10:00:00Z'};
+ const two=eveningDailyAccess({sessions:[past,duplicate,realSecond,{...realSecond}],
+  weekly:{...weekly,face:2},now});
+ assert.equal(two.counted,2,'two DISTINCT completed evenings consume two places');
+ assert.equal(two.canStart,false);
+ assert.equal(two.dailyLocked,true);
+ const active={id:'in-progress',started_at:'2026-10-16T09:00:00Z',counted:false};
+ const open=eveningDailyAccess({sessions:[past,duplicate,active,{...active}],
+  weekly:{...weekly,face:2},now});
+ assert.equal(open.canStart,false,'an active session remains a blocking server fact');
+});
+
 test('After a finished game on the same Québec day, start is disabled',()=>{
  const x=eveningDailyAccess({sessions:[past],weekly,now:new Date('2026-10-15T23:00:00Z')});
  assert.equal(x.dailyLocked,true);
