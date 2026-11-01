@@ -251,7 +251,8 @@ export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,d
   dailyLocked?'Une seule soirée par jour. Les autres restent disponibles cette semaine.':
   historyUnknown?'L’historique se recharge. Aucun nouveau tirage n’est lancé.':
   'Consultez les étapes et l’historique dans Soirée.';
- const homeAction=(weeklyExhausted||closedToday)&&!invitationReceived&&!invitationSent?'evening-calendar':'tab:session';
+ const homeAction=closedToday&&!invitationReceived&&!invitationSent?'evening-calendar:today':
+  weeklyExhausted&&!invitationReceived&&!invitationSent?'evening-calendar':'tab:session';
  const homeLabel=invitationReceived?'Répondre à l’invitation':
   invitationSent?'Voir mon invitation':
   closedToday?'Voir notre soirée terminée':
