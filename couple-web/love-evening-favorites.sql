@@ -5,7 +5,7 @@
 create table if not exists public.love_evening_favorites(
  couple_id uuid not null references public.couples(id) on delete cascade,
  category text not null check(category in ('SENSUEL','SEXUEL')),
- card_id smallint not null check(card_id between 1 and 35),
+ card_id smallint not null check(card_id between 1 and 100),
  added_by uuid not null references auth.users(id),
  added_at timestamptz not null default now(),
  primary key(couple_id,category,card_id)
@@ -47,7 +47,7 @@ begin
   raise exception 'Action de favori invalide';
  end if;
  if p_category not in ('SENSUEL','SEXUEL') or p_category is null
-    or p_card_id not between 1 and 35 or p_card_id is null then
+    or p_card_id not between 1 and 100 or p_card_id is null then
   raise exception 'Carte invalide';
  end if;
 
@@ -55,7 +55,7 @@ begin
   delete from public.love_evening_favorites
   where couple_id=p_couple and category=p_category and card_id=p_card_id;
  else
-  -- Built-in cards 1..25 always exist; 26..35 require the current
+  -- Built-in cards 1..25 always exist; 26..100 require the current
   -- couple-owned custom definition. A removed card cannot be favorited.
   if p_card_id>25 and not exists(
    select 1 from public.love_custom_challenges c
@@ -70,7 +70,7 @@ begin
    if p_action='replace' then
     if p_replace_category not in ('SENSUEL','SEXUEL')
        or p_replace_category is null or
-       p_replace_card_id not between 1 and 35 or p_replace_card_id is null then
+       p_replace_card_id not between 1 and 100 or p_replace_card_id is null then
      raise exception 'Favori à remplacer invalide';
     end if;
     delete from public.love_evening_favorites
