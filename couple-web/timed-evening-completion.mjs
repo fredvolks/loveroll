@@ -43,14 +43,24 @@ export async function completeTimedEveningChallenge({challenge,userId,sessionId,
   if(!isSameCompletedEveningChallenge(challenge,current,userId,sessionId))throw error;
   outcome='already-completed';
  }
- const board=await rpc('my_love_evening_board',{p_session:sessionId});
- if(board?.finished){
-  try{await rpc('finish_couple_session',{p_session:sessionId,p_count:true});}
-  catch(error){
-   // A simultaneous confirmation by the other partner can close it first.
-   const previous=(await query('couple_sessions',{eq:{id:sessionId}}))?.[0];
-   if(!previous?.finished_at)throw error;
+ // The card is already saved at this point. A subsequent board/closure
+ // outage is a different failure: keep retrying session synchronization,
+ // but never tell the player that their completed challenge was rejected.
+ let board;
+ try{
+  board=await rpc('my_love_evening_board',{p_session:sessionId});
+  if(board?.finished){
+   try{await rpc('finish_couple_session',{p_session:sessionId,p_count:true});}
+   catch(error){
+    // A simultaneous confirmation by the other partner can close it first.
+    const previous=(await query('couple_sessions',{eq:{id:sessionId}}))?.[0];
+    if(!previous?.finished_at)throw error;
+   }
   }
+ }catch(error){
+  const pending=new Error('Défi enregistré, synchronisation de Soirée en attente',{cause:error});
+  pending.challengeCompletionConfirmed=true;
+  throw pending;
  }
  return {outcome,finished:!!board?.finished};
 }
