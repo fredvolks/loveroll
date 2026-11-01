@@ -228,6 +228,7 @@ export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,d
  const weeklyExhausted=!activeEvening&&progressReady&&weeklyRemaining===0;
  const dailyLocked=!activeEvening&&progressReady&&weeklyRemaining>0&&weeklyProgress.dailyLocked===true;
  const historyUnknown=!activeEvening&&ready&&weeklyProgress?.historyReady===false;
+ const closedToday=!activeEvening&&progressReady&&!!weeklyProgress.closedToday;
  // Invitation is a server-backed notification, never an implicit answer or die.
  // An active game takes precedence over an old invitation from the same duo.
  const invitationReceived=!activeEvening&&eveningInvite?.direction==='received'&&
@@ -237,6 +238,7 @@ export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,d
  const eveningStatus=activeEvening?(stats.ready?'Soirée en cours':ownEveningD6Ready?'En attente du partenaire':'Soirée commencée'):
   invitationReceived?'Une invitation vous attend':
   invitationSent?'En attente de la réponse':
+  closedToday?'Notre soirée est terminée ♥':
   weeklyExhausted?'Notre semaine est complète':
   dailyLocked?'Soirée déjà partagée aujourd’hui':
   historyUnknown?'Synchronisation des soirées…':'Aucune soirée en cours';
@@ -244,19 +246,23 @@ export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,d
   ownEveningD6Ready?'Ton dé est enregistré. Le deuxième dé se brasse dans Soirée.':'Préparez vos dés personnels dans Soirée.'):
   invitationReceived?'Ton partenaire propose une soirée. Tu es libre de répondre.':
   invitationSent?'Ton partenaire peut répondre à son rythme.':
+  closedToday?'Retrouvez notre soirée terminée dans le calendrier.':
   weeklyExhausted?'Retrouvez notre historique sans relancer le dé.':
   dailyLocked?'Une seule soirée par jour. Les autres restent disponibles cette semaine.':
   historyUnknown?'L’historique se recharge. Aucun nouveau tirage n’est lancé.':
   'Consultez les étapes et l’historique dans Soirée.';
- const homeAction=weeklyExhausted&&!invitationReceived&&!invitationSent?'evening-calendar':'tab:session';
+ const homeAction=(weeklyExhausted||closedToday)&&!invitationReceived&&!invitationSent?'evening-calendar':'tab:session';
  const homeLabel=invitationReceived?'Répondre à l’invitation':
   invitationSent?'Voir mon invitation':
+  closedToday?'Voir notre soirée terminée':
   weeklyExhausted?'Voir nos soirées':'Ouvrir Soirée';
  const mainShortcutLabel=invitationReceived?'♡ Répondre à l’invitation':
   invitationSent?'♡ Voir mon invitation':
+  closedToday?'Voir notre soirée terminée':
   weeklyExhausted?'Voir nos soirées':'♡ Aller à notre soirée';
  const mainShortcutAria=invitationReceived?'Répondre à l’invitation de soirée':
   invitationSent?'Consulter l’invitation envoyée':
+  closedToday?'Voir notre soirée terminée dans le calendrier':
   weeklyExhausted?'Voir l’historique de nos soirées':
   'Aller à notre soirée, sans lancer de nouveau dé';
  const pending=rolling||disabled;
