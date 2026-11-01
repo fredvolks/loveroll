@@ -29,7 +29,7 @@ import {createEclatAudio} from './eclat-audio.mjs?v=20261028-privacy250';
 import {futureCoupleStyleMix,playStyleLabel} from './play-style.mjs?v=20261018-styles149';
 import {cycleIntensityQuestionnaireHtml} from './cycle-questionnaire.mjs?v=20261018-cycle149';
 import {DICE_WEIGHT_CONFIG,configuredDiceWeights,parseDiceWeightInputs} from './dice-weighting.mjs?v=20261018-weights146';
-import {premiumEveningHtml,updateEveningCategoryUi} from './premium-evening.mjs?v=20261028-lr027-web254';
+import {premiumEveningHtml,updateEveningCategoryUi,canRollPersonalEveningD6} from './premium-evening.mjs?v=20261028-lr027-web254';
 import {eveningHistoryMarkup,eveningLocalDay} from './evening-calendar.mjs?v=20261101-web266';
 import {eveningReviewModal,validEveningReview} from './evening-review.mjs?v=20261016-person-review97';
 import {premiumSurpriseHtml,sixSpecialEvents} from './premium-surprise.mjs?v=20261022-home228';
@@ -4420,8 +4420,17 @@ async function handle(action,element){
   state.tab='session';await refreshAndShow();return;
  }
  if(verb==='my-d6'){
-  if(!state.session)throw Error('Aucune soirée active.');
-  await animateRoll(()=>rpc('roll_my_evening_d6',{p_session:state.session.id}),'my-d6');
+  const session=playableSessionForWeekly(state.session,state.weekly);
+  if(!session)throw Error('Aucune soirée active.');
+  if(state.diceStatus)return; // Two fast taps must never launch two official rolls.
+  if(!canRollPersonalEveningD6({session,status:state.rollStatus,
+       rolls:state.personal,userId:state.user?.id})){
+   // A click from an older render must not bypass the same rule as the button.
+   await refreshAndShow();
+   notify('Ton D6 est déjà enregistré. Le résultat officiel est conservé.');
+   return;
+  }
+  await animateRoll(()=>rpc('roll_my_evening_d6',{p_session:session.id}),'my-d6');
   // La carte de l'étape 1 affiche l'état du lancer; aucun toast supplémentaire.
   return;
  }
