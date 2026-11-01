@@ -4161,10 +4161,15 @@ async function handle(action,element){
   state.eveningCalendarBack=parts[0]==='settings'||state.tab==='settings'?'settings-page:confidentialite':
    state.tab==='home'?'tab:home':'tab:session';
   state.eveningMore=false;state.confirmCancel=false;
-  // All Home history shortcuts open THIS month, never a stale session
-  // or the last browsed month. Soirée keeps its historical session context.
-  // This only changes navigation; it never draws or completes a challenge.
-  if(parts[0]==='month'||state.tab==='home'){
+  // Calendar navigation is read-only. The completed-today shortcut must
+  // open the exact server-counted evening, rather than yesterday's selection.
+  // If a different device closed/reset it meanwhile, fall back safely to today.
+  if(parts[0]==='today'&&state.tab==='home'){
+   const closed=eveningDailyAccess({sessions:state.sessions,weekly:state.weekly}).closedToday;
+   const selected=closed?.finished_at?eveningLocalDay(closed.finished_at):null;
+   state.eveningCalendarMonth=(selected||today()).slice(0,7);
+   state.eveningCalendarDate=selected||today();
+  }else if(parts[0]==='month'||state.tab==='home'){
    state.eveningCalendarMonth=month();
    state.eveningCalendarDate=state.eveningCalendarMonth+'-01';
   }else{
