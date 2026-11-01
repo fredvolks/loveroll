@@ -5661,10 +5661,23 @@ async function handle(action,element){
   if(parts[0]==='library'&&state.couple?.sexual_card_mode==='automatic'){
    state.libraryImportKind=null;state.tab='settings';settingsOpenSection='admin';render();return;
   }
-  if(parts[0]!==state.tab&&hasUnsavedForm()&&
-    !(await premiumConfirm('Vos modifications non enregistrées seront perdues. Voulez-vous quitter cette page ?',{
-      kind:'library',title:'Quitter sans enregistrer ?',accept:'Quitter',cancel:'Rester'
-    })))return;
+  if(parts[0]!==state.tab&&hasUnsavedForm()){
+   // Confirmation is asynchronous. Another login, official roll, repick or
+   // gift may take ownership before the user chooses to leave the form.
+   const navigationOwner={userId:state.user?.id,coupleId:state.coupleId,
+    sessionId:state.session?.id,tab:state.tab,generation:authFeedbackGeneration};
+   const confirmed=await premiumConfirm(
+    'Vos modifications non enregistrées seront perdues. Voulez-vous quitter cette page ?',{
+     kind:'library',title:'Quitter sans enregistrer ?',accept:'Quitter',cancel:'Rester'
+    });
+   if(!confirmed||state.user?.id!==navigationOwner.userId||
+      state.coupleId!==navigationOwner.coupleId||
+      state.session?.id!==navigationOwner.sessionId||
+      state.tab!==navigationOwner.tab||
+      authFeedbackGeneration!==navigationOwner.generation||
+      state.diceStatus||(state.tab==='session'&&
+       (isActiveEveningRedrawPending()||isActiveEveningGiftPending())))return;
+  }
   if(parts[0]==='settings'&&state.tab==='occasions'){
    settingsOpenSection='couple';
    try{sessionStorage.setItem('loveroll-settings-section','couple');}catch{}
