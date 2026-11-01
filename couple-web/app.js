@@ -3,7 +3,7 @@ import {showEveningCategoryReminder} from './evening-d100-template.mjs?v=2026102
 import {eveningInviteHtml,eveningInviteInboxHtml,isEveningInviteAction} from './evening-invitation.mjs?v=20261028-web254';
 import {askEveningCategoryConfirmation,categoryConfirmEnabled,saveCategoryConfirmLocal} from './evening-category-confirm.mjs?v=20261027-web238';
 import {soundEnabled,setSoundEnabled,setLoveRollSoundUser,unlockLoveRollSounds,playLoveRollSound,soundSettingsHtml} from './loveroll-sounds.mjs?v=20261028-privacy250';
-import {isAcceptedTimedEveningChallenge,isSameCompletedEveningChallenge,completeTimedEveningChallenge,timedEveningTimerControl,refreshAfterTimedEveningConfirmation,timerBelongsToUser,canControlTimedEveningChallenge} from './timed-evening-completion.mjs?v=20261101-timer260';
+import {isAcceptedTimedEveningChallenge,isSameCompletedEveningChallenge,completeTimedEveningChallenge,timedEveningTimerControl,refreshAfterTimedEveningConfirmation,refreshAfterConfirmedWrite,timerBelongsToUser,canControlTimedEveningChallenge} from './timed-evening-completion.mjs?v=20261101-timer260';
 import {fitSurpriseMinimal} from './surprise-minimal.mjs?v=20261022-home228';
 import {eclatNoteKey,loadEclatNote,saveEclatNote} from './eclat-guidance.mjs?v=20261022-home228';
 import {loadEclatHistory} from './eclat-history.mjs?v=20261022-home228';
@@ -3080,26 +3080,54 @@ async function handle(action,element){
   state.geoBookingEdit=!state.geoBookingEdit;render();return;
  }
  if(verb==='geo-booking-save'){
-  if(currentHost()?.user_id!==state.user?.id)throw Error('Réservation réservée à la personne qui invite.');
+  const ownerId=state.user?.id,rollId=state.monthly?.monthly_activity?.id;
+  if(!ownerId||!rollId||currentHost()?.user_id!==ownerId)
+   throw Error('Réservation réservée à la personne qui invite.');
   const raw=id('geo-booking-date')?.value||'',date=new Date(raw);
   if(!raw||!Number.isFinite(date.getTime())||date.getTime()<=Date.now())throw Error('Choisissez une date et une heure futures.');
   const title=String(id('geo-booking-name')?.value||'').trim(),address=String(id('geo-booking-address')?.value||'').trim();
   const confirmed=!!id('geo-booking-confirmed')?.checked,paid=!!id('geo-booking-paid')?.checked;
+  if(!title||title.length>140||address.length>240)
+   throw Error('Vérifie le nom et l’adresse de l’établissement.');
   if(paid&&!confirmed)throw Error('La réservation doit être confirmée avant de marquer le paiement.');
   await rpc('save_love_monthly_reservation',{
-   p_roll:state.monthly.monthly_activity.id,p_when:date.toISOString(),p_venue:title,p_address:address,
+   p_roll:rollId,p_when:date.toISOString(),p_venue:title,p_address:address,
    p_booking_url:state.geoVenue?.booking_url||null,p_menu_url:state.geoVenue?.menu_url||null,
    p_photo_url:state.geoVenue?.photo_url||null,p_notes:'',p_confirmed:confirmed,p_paid:paid
   });
-  state.geoBookingEdit=false;await refreshAndShow();return;
+  // A completed write belongs to its original user and official D100 roll,
+  // even if the login changes while the network request is in flight.
+  if(state.user?.id!==ownerId||state.monthly?.monthly_activity?.id!==rollId)return;
+  state.geoBookingEdit=false;
+  if(!await refreshAfterConfirmedWrite(refreshAndShow)){
+   if(state.user?.id!==ownerId||state.monthly?.monthly_activity?.id!==rollId)return;
+   state.geoReservation={...state.geoReservation,
+    status:confirmed?'confirmed':'planned',reserved_for:date.toISOString(),
+    venue_name:title,venue_address:address,paid_by_host:paid};
+   render();
+   notify('♡ Sortie enregistrée dans LoveRoll. Affichage actualisé localement; reconnecte-toi pour synchroniser.');
+  }
+  return;
  }
  if(verb==='geo-booking-cancel'){
-  if(currentHost()?.user_id!==state.user?.id)throw Error('Seule la personne qui invite peut annuler.');
+  const ownerId=state.user?.id,rollId=state.monthly?.monthly_activity?.id;
+  if(!ownerId||!rollId||currentHost()?.user_id!==ownerId)
+   throw Error('Seule la personne qui invite peut annuler.');
   if(!(await premiumConfirm('Annuler le rappel dans LoveRoll ? Cela n’annule pas la réservation auprès du lieu.',{
    kind:'library',title:'Annuler notre sortie ?',accept:'Oui, annuler',cancel:'Conserver'
   })))return;
-  await rpc('cancel_love_monthly_reservation',{p_roll:state.monthly.monthly_activity.id});
-  state.geoBookingEdit=false;await refreshAndShow();return;
+  if(state.user?.id!==ownerId||state.monthly?.monthly_activity?.id!==rollId||
+     currentHost()?.user_id!==ownerId)return;
+  await rpc('cancel_love_monthly_reservation',{p_roll:rollId});
+  if(state.user?.id!==ownerId||state.monthly?.monthly_activity?.id!==rollId)return;
+  state.geoBookingEdit=false;
+  if(!await refreshAfterConfirmedWrite(refreshAndShow)){
+   if(state.user?.id!==ownerId||state.monthly?.monthly_activity?.id!==rollId)return;
+   state.geoReservation=null;
+   render();
+   notify('♡ Sortie annulée dans LoveRoll. Actualise après reconnexion pour vérifier la synchronisation.');
+  }
+  return;
  }
  if(verb==='surprise-season'){if(!['hiver','ete'].includes(parts[0])||!state.showSurpriseActivity)return;state.surpriseSeason=parts[0];render();return;}
  if(verb==='surprise-how'){
