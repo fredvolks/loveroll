@@ -62,3 +62,9 @@ export async function completeTimedEveningChallenge({challenge,userId,sessionId,
 export async function refreshAfterTimedEveningConfirmation(refresh){
  try{await refresh();return true;}catch{return false;}
 }
+
+// Browser timer state is transient and cannot be carried across sign-in accounts.
+// The stored deadline is still restored from that account's own scoped key.
+export function timerBelongsToUser(timer,userId){
+ return !!(timer?.id&&userId&&timer.ownerUserId===userId);
+}
