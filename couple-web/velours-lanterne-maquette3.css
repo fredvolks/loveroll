@@ -1530,7 +1530,9 @@ body.lr-velours-lanterne .evening-review-person h4 {
   font-family:var(--lr-vl-editorial);
   color:var(--lr-vl-champagne);
 }
-body.lr-velours-lanterne .evening-review-person :is(>strong,>p,.evening-review-score span) {
+body.lr-velours-lanterne .evening-review-person>strong,
+body.lr-velours-lanterne .evening-review-person>p,
+body.lr-velours-lanterne .evening-review-person .evening-review-score span {
   color:var(--lr-vl-ivory);
 }
 body.lr-velours-lanterne .evening-review-score strong {
