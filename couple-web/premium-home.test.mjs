@@ -301,7 +301,7 @@ test('LR-ACCUEIL-001: the monthly recap links to current-month history without m
  assert.match(html,/Semaines consécutives/);
  assert.doesNotMatch(html,/data-action="new-session"|data-action="roll:challenge"/);
  assert.match(css,/\.home-monthly-link:focus-visible/);
- assert.match(app,/if\(parts\[0\]==='month'\)/);
+ assert.match(app,/if\(parts\[0\]==='month'\|\|state\.tab==='home'\)/);
 });
 
 test('LR-ACCUEIL-001: only real completed counted sessions appear in the correct Québec month',()=>{
