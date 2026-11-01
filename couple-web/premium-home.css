@@ -220,3 +220,10 @@ main#app :is(.evening-toolbar,.advent-top,.surprise-header,.settings-page-header
  #app.loveroll-real-home .home-evening-overview{padding:3px 0 0;gap:3px;}
  #app.loveroll-real-home .home-evening-link{min-height:32px;padding:5px 12px;}
 }
+
+/* Quota derives from the same official weekly/day policy used by Soirée. */
+#app.loveroll-real-home .home-weekly-progress{
+ margin:3px auto 0;max-width:100%;padding:0 12px;
+ color:#ecd2db;font-size:clamp(10px,1.2vw,13px);
+ line-height:1.3;text-align:center;text-wrap:balance;
+}
