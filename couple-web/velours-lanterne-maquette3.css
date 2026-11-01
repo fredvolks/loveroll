@@ -233,3 +233,224 @@ body.lr-velours-lanterne .studio-app .primary:not(:disabled) {
     line-height:1.25!important;
   }
 }
+
+
+/* LOT 2 — Hierarchie, dialogues et ergonomie responsive */
+/* Une seule police éditoriale locale, sans requête de police distante. */
+@font-face {
+  font-family:"LoveRoll Velours";
+  src:url("./assets/fonts/cormorant-garamond-latin.woff") format("woff");
+  font-style:normal;
+  font-weight:400 700;
+  font-display:swap;
+}
+body.lr-velours-lanterne {
+  --lr-vl-editorial:"LoveRoll Velours",Georgia,"Times New Roman",serif;
+  --lr-vl-dialog-shadow:0 22px 65px #120009aa,0 0 26px #b622684a,inset 0 1px 0 #ffdfdf88;
+  --lr-vl-muted-panel:linear-gradient(157deg,#490d2bec,#22091bf5);
+  --lr-vl-field-edge:rgba(255,184,202,.52);
+  --lr-vl-veil:rgba(15,2,11,.87);
+}
+body.lr-velours-lanterne #app :is(.editorial-title h1,.settings-editorial h1,.settings-page-header h1) {
+  font-family:var(--lr-vl-editorial)!important;
+  font-weight:600!important;
+  color:var(--lr-vl-ivory)!important;
+  text-shadow:0 2px 15px #19020c77;
+}
+body.lr-velours-lanterne #app .ritual-kicker {
+  letter-spacing:.14em;
+  line-height:1.4;
+}
+body.lr-velours-lanterne :is(.studio-heading h1,.studio-gate-card h1,.studio-content .section-head h2,.checkout-card h1,.checkout-header .wordmark,.studio-mark strong) {
+  font-family:var(--lr-vl-editorial)!important;
+  font-weight:600;
+  letter-spacing:-.016em;
+}
+body.lr-velours-lanterne :is(.studio-gate-card h1,.studio-heading h1,.checkout-card h1) {
+  color:var(--lr-vl-ivory);
+  text-shadow:0 3px 19px #16000db3;
+}
+body.lr-velours-lanterne .checkout-card h1 {
+  font-size:clamp(29px,5.7vw,43px);
+}
+body.lr-velours-lanterne .studio-mark strong {
+  font-size:clamp(28px,3.5vw,45px);
+}
+/* Fenêtres : même verre rubis et les mêmes contrôles, mais focus et contenus
+   restent lisibles (annulation, messages longs, erreurs, clavier ouvert). */
+body.lr-velours-lanterne #lr-dialog-overlay.lr-dialog-overlay {
+  background:var(--lr-vl-veil);
+  overscroll-behavior:contain;
+}
+body.lr-velours-lanterne #lr-dialog-overlay .lr-dialog-card {
+  width:min(100%,460px);
+  max-height:calc(100dvh - max(22px,env(safe-area-inset-top,0px)) - max(22px,env(safe-area-inset-bottom,0px)));
+  border-color:var(--lr-vl-edge);
+  border-radius:clamp(19px,4vw,28px);
+  background:var(--lr-vl-panel);
+  box-shadow:var(--lr-vl-dialog-shadow);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #lr-dialog-overlay .lr-dialog-card h2 {
+  font-family:var(--lr-vl-editorial);
+  font-weight:600;
+  font-size:clamp(27px,5.8vw,38px);
+  line-height:1.08;
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #lr-dialog-overlay .lr-dialog-eyebrow {
+  color:var(--lr-vl-champagne);
+}
+body.lr-velours-lanterne #lr-dialog-overlay .lr-dialog-icon {
+  color:var(--lr-vl-rose);
+}
+body.lr-velours-lanterne #lr-dialog-overlay .lr-dialog-actions button {
+  min-height:48px;
+  border-color:var(--lr-vl-edge);
+  border-radius:16px;
+  color:var(--lr-vl-ivory);
+  background:var(--lr-vl-action);
+  box-shadow:var(--lr-vl-relief);
+  font-weight:650;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+body.lr-velours-lanterne #lr-dialog-overlay .lr-dialog-actions .lr-dialog-cancel {
+  min-height:48px;
+  border-color:var(--lr-vl-field-edge);
+  background:var(--lr-vl-muted-panel);
+  color:var(--lr-vl-ivory);
+  box-shadow:none;
+}
+body.lr-velours-lanterne #lr-dialog-overlay .lr-dialog-actions .lr-dialog-danger {
+  background:var(--lr-vl-muted-panel);
+  border-color:var(--lr-vl-edge);
+}
+body.lr-velours-lanterne #lr-dialog-overlay .lr-dialog-copy textarea {
+  max-height:30dvh;
+  border-color:var(--lr-vl-field-edge);
+  background:var(--lr-vl-field);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #lr-dialog-overlay .lr-dialog-card .lr-dialog-close {
+  min-height:44px;
+  min-width:44px;
+  color:var(--lr-vl-ivory);
+}
+@media(max-height:620px) {
+  body.lr-velours-lanterne #lr-dialog-overlay.lr-dialog-overlay {
+    align-items:flex-start;
+    overflow-y:auto;
+    padding-block:max(9px,env(safe-area-inset-top,0px)) max(9px,env(safe-area-inset-bottom,0px));
+  }
+  body.lr-velours-lanterne #lr-dialog-overlay .lr-dialog-card {
+    margin:auto;
+    max-height:calc(100dvh - 18px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
+    padding:16px;
+  }
+  body.lr-velours-lanterne #lr-dialog-overlay .lr-dialog-actions button {
+    min-height:44px;
+  }
+}
+/* Réglages : rangées et menus distincts, sans supprimer les sous-écrans. */
+body.lr-velours-lanterne #app.loveroll-settings-page :is(.settings-profile-row,.settings-section-row) {
+  border-color:var(--lr-vl-edge);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #app.loveroll-settings-page .settings-profile-row {
+  background:var(--lr-vl-panel);
+  box-shadow:var(--lr-vl-relief);
+  border-radius:18px;
+}
+body.lr-velours-lanterne #app.loveroll-settings-page .settings-row-icon,
+body.lr-velours-lanterne #app.loveroll-settings-page .settings-initial {
+  color:var(--lr-vl-rose);
+}
+body.lr-velours-lanterne #app.loveroll-settings-page .settings-menu-source :is(input:not([type=checkbox]):not([type=radio]),textarea,select) {
+  border-color:var(--lr-vl-field-edge)!important;
+  background:var(--lr-vl-field)!important;
+  color:var(--lr-vl-ivory)!important;
+  border-radius:12px!important;
+}
+body.lr-velours-lanterne #app.loveroll-settings-page :is(.settings-detail-intro,.tiny-note,.settings-footer-hint) {
+  color:var(--lr-vl-muted);
+  line-height:1.48;
+}
+/* Tableau de bord / autres rubriques : un écrin commun plutôt que des surfaces
+   qui reprennent les anciennes couleurs. N'altère pas l'accès ni les actions. */
+body.lr-velours-lanterne #app.loveroll-real-home :is(.home-panel,.home-stat-card) {
+  border-color:var(--lr-vl-edge);
+  box-shadow:var(--lr-vl-relief);
+}
+body.lr-velours-lanterne .studio-quick-grid button,
+body.lr-velours-lanterne .studio-content {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-panel);
+  box-shadow:var(--lr-vl-relief);
+}
+body.lr-velours-lanterne .studio-quick-grid button:hover,
+body.lr-velours-lanterne .studio-quick-grid button:focus-visible,
+body.lr-velours-lanterne .studio-quick-grid button.active {
+  border-color:var(--lr-vl-champagne);
+  box-shadow:var(--lr-vl-dialog-shadow);
+}
+body.lr-velours-lanterne .studio-quick-grid button strong {
+  color:var(--lr-vl-ivory);
+  overflow-wrap:anywhere;
+}
+body.lr-velours-lanterne .studio-content :is(input,textarea,select) {
+  max-width:100%;
+}
+/* Checkout accessible au doigt; les formats courts défilent grâce au lot 1. */
+body.lr-velours-lanterne .checkout-card :is(#checkout-audience,#checkout-code,#checkout-apply,#checkout-pay) {
+  min-height:44px;
+}
+body.lr-velours-lanterne .checkout-card :is(#checkout-apply,#checkout-pay):not(:disabled) {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-action);
+}
+body.lr-velours-lanterne .checkout-card .promo-status {
+  color:var(--lr-vl-muted);
+  overflow-wrap:anywhere;
+}
+/* Tablette et PC : titres harmonieux et panels fluides; pas de largeur
+   forcée sur le rendu 3D ni sur le plateau de jeu. */
+@media(min-width:768px) {
+  body.lr-velours-lanterne .studio-app main {
+    width:min(1440px,100%);
+  }
+  body.lr-velours-lanterne .studio-content {
+    border-radius:24px;
+  }
+  body.lr-velours-lanterne #lr-dialog-overlay .lr-dialog-card {
+    padding:clamp(22px,2.8vw,30px);
+  }
+}
+@media(max-width:767px) {
+  body.lr-velours-lanterne #app.loveroll-settings-page :is(.settings-profile-row,.settings-section-row,.settings-link-row) {
+    min-height:48px;
+  }
+  body.lr-velours-lanterne .studio-quick-grid button {
+    min-width:0;
+    min-height:96px;
+    padding:clamp(10px,3.2vw,16px);
+  }
+  body.lr-velours-lanterne .studio-content {
+    min-width:0;
+  }
+}
+@media(max-width:380px) {
+  body.lr-velours-lanterne #lr-dialog-overlay.lr-dialog-overlay {
+    padding-inline:10px;
+  }
+  body.lr-velours-lanterne #lr-dialog-overlay .lr-dialog-card {
+    padding-inline:13px;
+  }
+  body.lr-velours-lanterne .checkout-card .promo-entry {
+    min-width:0;
+  }
+  body.lr-velours-lanterne .checkout-card #checkout-code {
+    min-width:0;
+    font-size:16px;
+  }
+}
