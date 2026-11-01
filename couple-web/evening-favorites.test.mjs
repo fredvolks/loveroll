@@ -164,4 +164,9 @@ test('LR-019: 5-heart replacement restores keyboard focus on a closed archive',(
  assert.match(app,/target\.closest\('details\.evening-cal-person-group'\)/);
  assert.match(app,/if\(section\)section\.open=true;\s*target\.focus\(\)/);
  assert.match(app,/const pending=state\.favoriteReplace;\s*state\.favoriteReplace=null;render\(\);\s*focusEveningFavoriteOrigin\(pending\)/);
+ // After saving, the newly synchronized heart should retain a keyboard target;
+ // after an RPC error, keep focus in the still-open replacement choice.
+ assert.match(app,/favoriteWriteSucceeded=true/);
+ assert.match(app,/if\(favoriteWriteSucceeded\)focusEveningFavoriteOrigin\(favoriteFocusOrigin\)/);
+ assert.match(app,/else if\(state\.favoriteReplace\)[\s\S]{0,120}root\.querySelector\('\[data-action\^="evening-favorite-replace:"\]:not\(\[disabled\]\)'\)\?\.focus\(\)/);
 });
