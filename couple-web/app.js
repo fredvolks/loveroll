@@ -2184,6 +2184,11 @@ function renderHome(){
   members,
   turn,monthly:state.monthly,monthlyActivity,reservation:state.geoReservation,
   eveningInvite:state.eveningInvite,
+  // This is only a boolean derived from the current user's official D6 row.
+  // Never pass the face, other partner's roll or private cards to Home.
+  ownEveningD6Ready:!!activeEvening&&!!state.user?.id&&
+   state.personal?.some(r=>r.user_id===state.user.id&&
+    Number.isInteger(Number(r.face))&&Number(r.face)>=1&&Number(r.face)<=6),
   history:state.challengesHistory||[],
   sessions:state.sessions||[],
   rollFace:state.rollAnimationFace||1,
