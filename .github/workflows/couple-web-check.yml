@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   changes:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       code: ${{ steps.scope.outputs.code }}
     steps:
@@ -41,7 +41,7 @@ jobs:
   static-tests:
     needs: changes
     if: needs.changes.outputs.code == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -199,7 +199,7 @@ jobs:
   browser-tests:
     needs: changes
     if: needs.changes.outputs.code == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 35
     strategy:
       fail-fast: false
@@ -666,7 +666,7 @@ jobs:
   web-tests:
     if: always()
     needs: [changes, static-tests, browser-tests]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Require all applicable checks
         env:
