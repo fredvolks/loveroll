@@ -11,6 +11,10 @@ test('All 100 monthly activity themes can map to a supported places category',()
   assert.ok(VENUE_CATEGORIES[activityCategory(activity)],'Unrecognized card '+activity.id);
  }
  assert.equal(activityCategory({title:'Détente au spa'}),'spa');
+ assert.equal(activityCategory({title:'Détente thermale panoramique'}),'spa',
+  'Monthly thermal activities must discover spas, not generic tourist attractions');
+ assert.equal(activityCategory({title:'Bains thermaux'}),'spa');
+ assert.equal(activityCategory({title:'Découvrir les thermes'}),'spa');
  assert.equal(activityCategory({title:'Brunch romantique'}),'restaurant');
 });
 test('Never use straight-line distance or fabricated names; road radius is strict',()=>{
