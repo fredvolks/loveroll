@@ -34,7 +34,7 @@ test('Weekly faces 1-6 use true standard dice spot geometry and 100% total',()=>
 test('Invalid saved weekly D6 never invents a face or permits a duplicate official draw',()=>{
  for(const face of [0,7,-1,2.5,Infinity,NaN,'3',null]){
   const home=premiumHomeHtml({weekly:{face}});
-  assert.match(home,/Cette semaine, on joue \\?/);
+  assert.match(home,/Cette semaine, on joue \?/);
   assert.match(home,/Résultat hebdomadaire indisponible/);
   assert.match(home,/data-dice-preview="true"/);
   assert.doesNotMatch(home,/data-action="roll:weekly"/);
