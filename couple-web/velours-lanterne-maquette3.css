@@ -1439,3 +1439,144 @@ body.lr-velours-lanterne #app.loveroll-settings-page [data-settings-page="notifi
     border-width:2px;
   }
 }
+/* LOT 8 — Fin de Soirée, 5 cœurs et historique.
+   Respecte les vrais composants et les états JS (sauvegarde, disabled,
+   valeurs choisies, notes privées) sans retoucher le moteur de jeu. */
+body.lr-velours-lanterne .lr-review-backdrop {
+  background:var(--lr-vl-veil);
+}
+body.lr-velours-lanterne .lr-review-modal {
+  min-width:0;
+  border:1px solid var(--lr-vl-edge);
+  background:var(--lr-vl-panel);
+  color:var(--lr-vl-ivory);
+  box-shadow:var(--lr-vl-dialog-shadow);
+  scrollbar-width:thin;
+  scrollbar-color:var(--lr-vl-edge) transparent;
+}
+body.lr-velours-lanterne .lr-review-modal h2 {
+  font-family:var(--lr-vl-editorial)!important;
+  font-weight:600!important;
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .lr-review-eyebrow,
+body.lr-velours-lanterne .lr-review-calendar-note {
+  color:var(--lr-vl-champagne);
+}
+body.lr-velours-lanterne .lr-review-modal #lr-review-intro,
+body.lr-velours-lanterne .lr-review-heart>small {
+  color:var(--lr-vl-muted);
+}
+body.lr-velours-lanterne .lr-review-question {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-muted-panel);
+}
+body.lr-velours-lanterne .lr-review-icon {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-field);
+  color:var(--lr-vl-champagne);
+}
+body.lr-velours-lanterne .lr-review-question>strong,
+body.lr-velours-lanterne .lr-review-comment-label {
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .lr-review-heart {
+  min-height:44px!important;
+  touch-action:manipulation;
+}
+body.lr-velours-lanterne .lr-review-heart>span {
+  color:#cf83a6;
+}
+body.lr-velours-lanterne .lr-review-heart.is-lit>span {
+  color:var(--lr-vl-lantern);
+  text-shadow:0 0 13px rgba(255,107,156,.58),0 0 3px rgba(255,242,232,.8);
+}
+body.lr-velours-lanterne .lr-review-note {
+  border-color:var(--lr-vl-field-edge);
+  background:var(--lr-vl-field);
+}
+body.lr-velours-lanterne .lr-review-note textarea {
+  min-width:0;
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .lr-review-note textarea::placeholder {
+  color:var(--lr-vl-muted);
+}
+body.lr-velours-lanterne .lr-review-note span,
+body.lr-velours-lanterne .lr-review-error {
+  color:var(--lr-vl-champagne);
+}
+body.lr-velours-lanterne .lr-review-save:not(:disabled) {
+  border-color:var(--lr-vl-edge)!important;
+  background:var(--lr-vl-action);
+  color:var(--lr-vl-ivory);
+  box-shadow:var(--lr-vl-relief);
+}
+body.lr-velours-lanterne .lr-review-x {
+  width:44px;
+  height:44px;
+  min-width:44px;
+  min-height:44px!important;
+  border-color:var(--lr-vl-edge)!important;
+  background:var(--lr-vl-muted-panel);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .evening-review-person {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-muted-panel);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .evening-review-person h4 {
+  font-family:var(--lr-vl-editorial);
+  color:var(--lr-vl-champagne);
+}
+body.lr-velours-lanterne .evening-review-person :is(>strong,>p,.evening-review-score span) {
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .evening-review-score strong {
+  color:var(--lr-vl-rose);
+}
+body.lr-velours-lanterne .evening-review-note {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-field);
+}
+body.lr-velours-lanterne .evening-review-edit {
+  min-height:44px!important;
+  border-color:var(--lr-vl-edge)!important;
+  background:var(--lr-vl-action);
+  color:var(--lr-vl-ivory);
+}
+@media(max-width:380px) {
+  /* Conserver les cinq notes interactives à 44 px même à 320 px.
+     Les cœurs passent sur leur propre ligne au lieu d'être compressés. */
+  body.lr-velours-lanterne .lr-review-question {
+    grid-template-columns:32px minmax(0,1fr);
+    gap:5px 9px;
+    padding:8px;
+  }
+  body.lr-velours-lanterne .lr-review-hearts {
+    grid-column:1/-1;
+    width:100%;
+  }
+  body.lr-velours-lanterne .lr-review-heart {
+    min-width:0!important;
+    min-height:44px!important;
+  }
+}
+@media(max-height:620px) {
+  body.lr-velours-lanterne .lr-review-backdrop {
+    align-items:flex-start;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    padding:max(8px,env(safe-area-inset-top,0px)) 8px max(8px,env(safe-area-inset-bottom,0px));
+  }
+  body.lr-velours-lanterne .lr-review-modal {
+    margin:auto;
+    max-height:calc(100dvh - 16px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
+  }
+}
+@media(prefers-contrast:more) {
+  body.lr-velours-lanterne .lr-review-question,
+  body.lr-velours-lanterne .lr-review-note,
+  body.lr-velours-lanterne .evening-review-person {border-width:2px;}
+}
