@@ -454,3 +454,116 @@ body.lr-velours-lanterne .checkout-card .promo-status {
     font-size:16px;
   }
 }
+
+/* LOT 3 — PARCOURS DE JEU : mêmes matériaux, sans modifier les règles. */
+/* Les variables natives du rituel habillent les sous-pages sans changer
+   les grilles, les dés WebGL, les états de jeu ou la navigation. */
+body.lr-velours-lanterne #app:is(.loveroll-editorial,.loveroll-advent-letters,.loveroll-surprise-ecrin) {
+  --ritual-page:radial-gradient(ellipse at 50% -18%,rgba(148,36,83,.52),transparent 58%),linear-gradient(160deg,#300b20,#180711 67%,#270819);
+  --ritual-card:var(--lr-vl-panel);
+  --ritual-border:var(--lr-vl-edge);
+  --ritual-button:var(--lr-vl-action);
+  --ritual-text:var(--lr-vl-ivory);
+  --ritual-muted:var(--lr-vl-muted);
+  --ritual-rose:var(--lr-vl-rose);
+  --ritual-shadow:var(--lr-vl-relief);
+  --ritual-bg:var(--lr-vl-panel);
+}
+/* Surprise : calendrier, événements et fenêtres reposent sur le même écrin. */
+body.lr-velours-lanterne #app.loveroll-surprise-ecrin :is(.surprise-month,.surprise-event-card,.surprise-modal-content) {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-panel);
+  color:var(--lr-vl-ivory);
+  box-shadow:var(--lr-vl-relief);
+}
+body.lr-velours-lanterne #app.loveroll-surprise-ecrin :is(.surprise-header h2,.surprise-month-title,.surprise-event-title) {
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #app.loveroll-surprise-ecrin :is(.surprise-primary,.surprise-edit-actions button:not(:disabled)) {
+  border-color:var(--lr-vl-edge);
+  color:var(--lr-vl-ivory);
+  background:var(--lr-vl-action);
+}
+body.lr-velours-lanterne #app.loveroll-surprise-ecrin .surprise-edit-close {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-field);
+  color:var(--lr-vl-ivory);
+}
+/* Avent : ne pas maquiller la lettre blanche ni les sceaux animés.
+   Seul le cadre de l'enveloppe et le dialogue rejoignent le thème. */
+body.lr-velours-lanterne #app.loveroll-advent-letters :is(.advent-envelope,.advent-dialog) {
+  border-color:var(--lr-vl-edge);
+  box-shadow:var(--lr-vl-relief);
+}
+body.lr-velours-lanterne #app.loveroll-advent-letters .advent-dialog {
+  background:var(--lr-vl-panel);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #app.loveroll-advent-letters :is(.advent-intro h1,.advent-reveal-heading) {
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #app.loveroll-advent-letters .advent-primary:not(:disabled) {
+  background:var(--lr-vl-action);
+  border-color:var(--lr-vl-edge);
+  color:var(--lr-vl-ivory);
+}
+/* Soirée : une carte, un dialogue, une confirmation, le même contraste. */
+body.lr-velours-lanterne #app.loveroll-editorial :is(.evening-step,.evening-gift,.evening-aftercare,.evening-partner-card,.evening-summary-person,.timer-panel,.evening-confirm,.evening-more-menu) {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-panel);
+  color:var(--lr-vl-ivory);
+  box-shadow:var(--lr-vl-relief);
+}
+body.lr-velours-lanterne #app.loveroll-editorial :is(.evening-primary,.evening-small-roll,.evening-finale-start):not(:disabled) {
+  background:var(--lr-vl-action);
+  border-color:var(--lr-vl-edge);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #app.loveroll-editorial .evening-choice-btn.selected {
+  border-color:var(--lr-vl-champagne);
+  box-shadow:var(--lr-vl-active-shadow);
+}
+/* Éclat est volontairement compact et conserve sa galerie scrollable :
+   pas de hauteur forcée ni de modification des 12 coffrets. */
+body.lr-velours-lanterne #app.loveroll-eclat-page :is(.eclat-paywall,.eclat-detail .eclat-progress) {
+  border-color:var(--lr-vl-edge);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #app.loveroll-eclat-page button.eclat-primary:not(:disabled) {
+  background:var(--lr-vl-action)!important;
+  border-color:var(--lr-vl-edge)!important;
+  color:var(--lr-vl-ivory)!important;
+}
+/* Textes longs et dialogues : accessible aussi aux petits écrans et au zoom. */
+body.lr-velours-lanterne #app:is(.loveroll-surprise-ecrin,.loveroll-advent-letters,.loveroll-editorial)
+  :is(.surprise-modal-content,.advent-dialog,.evening-confirm,.evening-more-menu) {
+  max-width:calc(100vw - 24px);
+  overflow-wrap:anywhere;
+}
+body.lr-velours-lanterne #app:is(.loveroll-surprise-ecrin,.loveroll-advent-letters,.loveroll-editorial)
+  :is(.surprise-primary,.advent-primary,.evening-primary,.evening-small-roll,.evening-finale-start) {
+  min-height:44px;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+@media (max-width:380px) {
+  body.lr-velours-lanterne #app.loveroll-surprise-ecrin .surprise-month {
+    padding-inline:clamp(8px,3.2vw,14px);
+  }
+  body.lr-velours-lanterne #app:is(.loveroll-surprise-ecrin,.loveroll-advent-letters,.loveroll-editorial)
+    :is(.surprise-modal-content,.advent-dialog,.evening-confirm) {
+    padding-inline:14px;
+  }
+}
+@media (max-height:620px) {
+  body.lr-velours-lanterne #app.loveroll-surprise-ecrin .surprise-modal,
+  body.lr-velours-lanterne #app.loveroll-advent-letters .advent-dialog-shade {
+    align-items:start;
+    overflow-y:auto;
+  }
+  body.lr-velours-lanterne #app.loveroll-surprise-ecrin .surprise-modal-content,
+  body.lr-velours-lanterne #app.loveroll-advent-letters .advent-dialog {
+    max-height:calc(100dvh - 24px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
+    overflow-y:auto;
+  }
+}
