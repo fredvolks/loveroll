@@ -59,3 +59,17 @@ test('The authoritative Eclat status overrides stale unfinished history rows',()
  assert.equal(coffretMemo([stale],9).active,true,
   'A history-only view can still show a noncancelled unfinished attempt');
 });
+
+test('Live Éclat chapter_number takes priority over stored chapter_index',()=>{
+ const historical={coffret_id:9,minutes:30,chapter_index:2,ended_at:null,cancelled:false};
+ const live={active:true,coffret_id:9,minutes:60,chapter_number:3};
+ const memo=coffretMemo([historical],9,live);
+ assert.equal(memo.active,true);
+ assert.equal(memo.minutes,60);
+ assert.equal(memo.chapter,3,'Live RPC chapter_number must render in the progression memo');
+ assert.equal(coffretMemo([historical],9).chapter,2,
+  'Historical chapter_index must remain supported in a read-only history view');
+ const html=eclatHtml({status:{...live,access:true},history:[historical],
+  browse:true,details:true,selected:9});
+ assert.match(html,/En cours · 60 min · étape 3/);
+});
