@@ -1,7 +1,7 @@
 // LoveRoll evening archive. Challenge titles and outcomes are shared ONLY
 // through the member-checked calendar RPC; the live game's RLS stays personal.
-import {resolvedCard} from './evening-challenges.mjs';
-import {favoriteCardIdentity,isEveningFavorite,MAX_EVENING_FAVORITES} from './evening-favorites.mjs?v=20261101-hearts265';
+import {resolvedCard,eveningCard} from './evening-challenges.mjs';
+import {favoriteCardIdentity,isEveningFavorite,closedCalendarFavoriteCandidate,favoriteCardPreview,MAX_EVENING_FAVORITES} from './evening-favorites.mjs?v=20261101-hearts266';
 import {eveningPersonReviewMarkup} from './evening-review.mjs';
 import {ritualHeadingHtml} from './brand.mjs?v=20261017-ritual130';
 import {calendarWeekSuccess,monthlyChallengeSuccess} from './calendar-success-stats.mjs?v=20261018-stats148';
@@ -77,14 +77,24 @@ export function eveningHistoryMarkup({sessions=[],members=[],stats=[],historyCha
    '" aria-pressed="'+(date===validDate)+'"><span>'+d+'</span>'+
    (has?'<span class="evening-cal-dot" aria-hidden="true">♥</span>':'')+'</button>';
  }
- const favoriteSwap=favoritesReady&&favoriteReplace?.source==='calendar'?
-  '<div class="lr-favorite-calendar-dialog" role="alertdialog" aria-modal="true" aria-label="Remplacer un coup de cœur">'+
-   '<h3>Nos 5 coups de cœur sont occupés</h3>'+
-   '<p>Choisis quel défi retirer pour garder cette nouvelle carte.</p>'+
-   favorites.map(row=>
-    '<button type="button" data-action="evening-favorite-replace:'+safe(row.category)+':'+safe(row.card_id)+
-    '" '+(favoriteWriteBusy?'disabled ':'')+'aria-label="Remplacer le favori '+safe(row.category)+' n° '+safe(row.card_id)+'">'+
-    safe(row.category==='SEXUEL'?'Sexuel':'Sensuel')+' · Carte '+safe(row.card_id)+'</button>').join('')+
+ const targetHistory=favoriteReplace?.source==='calendar'?
+  closedCalendarFavoriteCandidate(historyChallenges,sessions,favoriteReplace.challengeId):null;
+ const favoriteSwap=favoritesReady&&targetHistory?
+  '<div class="lr-favorite-calendar-dialog" role="alertdialog" aria-modal="true" aria-labelledby="lr-calendar-fav-title" aria-describedby="lr-calendar-fav-desc">'+
+   '<h3 id="lr-calendar-fav-title">Nos 5 coups de cœur sont occupés</h3>'+
+   '<p id="lr-calendar-fav-desc">Pour ajouter « '+safe(resolvedCard(targetHistory).title)+' », choisis le favori à retirer.</p>'+
+   favorites.map(row=>{
+    const preview=favoriteCardPreview(row,{history:historyChallenges,sessions,builtinCard:eveningCard});
+    return '<div class="lr-favorite-replace-entry">'+
+     '<button type="button" data-action="evening-favorite-replace:'+safe(row.category)+':'+safe(row.card_id)+
+     '" '+(favoriteWriteBusy?'disabled ':'')+'aria-label="Retirer '+safe(preview?.title||'Carte inconnue')+
+     ' et ajouter '+safe(resolvedCard(targetHistory).title)+'">'+
+     'Retirer « '+safe(preview?.title||'Carte inconnue')+' » et ajouter</button>'+
+     '<small>'+safe(row.category==='SEXUEL'?'Sexuel':'Sensuel')+'</small>'+
+     (preview?.description?'<details><summary>Voir la consigne</summary><p>'+
+      safe(preview.description)+'</p></details>':'')+
+    '</div>';
+   }).join('')+
    '<button type="button" data-action="evening-favorite-cancel" '+(favoriteWriteBusy?'disabled':'')+'>Annuler</button>'+
    '</div>':'';
  const content=forDay.length?forDay.map((s,i)=>{
