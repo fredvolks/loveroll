@@ -26,7 +26,8 @@ export function eveningArchiveDay(session){
 export function mondayOf(date){
  if(!/^\d{4}-\d{2}-\d{2}$/.test(date||''))return null;
  const time=new Date(date+'T12:00:00Z');
- if(!Number.isFinite(time.getTime()))return null;
+ // Reject impossible ISO days instead of normalizing them into another week.
+ if(!Number.isFinite(time.getTime())||time.toISOString().slice(0,10)!==date)return null;
  const weekday=(time.getUTCDay()+6)%7;
  time.setUTCDate(time.getUTCDate()-weekday);
  return time.toISOString().slice(0,10);
@@ -41,12 +42,16 @@ export function calendarWeekSuccess({date,weeklyRolls=[],sessions=[]}={}){
  const start=mondayOf(date);
  // Sparse Supabase history may contain null or invalid legacy rows.
  const safeRows=value=>Array.isArray(value)?value.filter(x=>x&&typeof x==='object'&&!Array.isArray(x)):[];
+ const empty={hasRoll:false,possible:0,completed:0,percent:null,face:null};
+ if(!start)return empty;
  const roll=safeRows(weeklyRolls).filter(r=>r.kind==='weekly'&&r.key===start)
   .sort((a,b)=>Date.parse(b.created_at)-Date.parse(a.created_at))[0];
- if(!roll)return {hasRoll:false,possible:0,completed:0,percent:null,face:null};
- const face=Math.max(1,Math.min(6,Number(roll.face)||1));
+ if(!roll)return empty;
+ // A malformed latest roll is not a face 1, nor can it resurrect an older die.
+ const face=Number(roll.face),since=Date.parse(roll.created_at);
+ if(!Number.isInteger(face)||face<1||face>6||
+    !Number.isFinite(since)||!torontoDate(roll.created_at))return empty;
  const possible=Math.min(face,remainingWeekEvenings(roll.created_at));
- const since=Date.parse(roll.created_at);
  // Count a maximum of one eligible counted night per Québec calendar day.
  // Two historical records on the same local day never increase D6 success.
  const completedDays=new Set(safeRows(sessions).filter(s=>s.counted===true&&s.finished_at&&
@@ -91,11 +96,13 @@ export function monthlyChallengeSuccess({
   // Missing challenge slots become non-realized only after the night is closed.
   const undrawn=stats.filter(row=>row.user_id===m.user_id&&
    sessionsById.get(row.session_id)?.finished_at).reduce((acc,row)=>{
-    if(row.target==null)return acc;
-    // Count every assigned challenge, INCLUDING a pass, so it cannot count
-   // again as a fictitious unpicked challenge.
+    // Historic RPC values may be null, NaN, Infinity, negative or fractional.
+   // Ignore invalid targets rather than poisoning the entire couple summary.
+   const target=Number(row.target);
+   if(row.target==null||!Number.isSafeInteger(target)||target<0)return acc;
+   // Include passes in the assigned count; they are not a second missing card.
    const assigned=allocated.filter(c=>c.session_id===row.session_id).length;
-   return acc+Math.max(0,Number(row.target)-assigned);
+   return acc+Math.max(0,target-assigned);
    },0);
   const denominator=reportable.length-free+undrawn;
   const done=complete;
