@@ -31,3 +31,24 @@ export function closedCalendarFavoriteCandidate(history=[],sessions=[],challenge
  const closed=(sessions||[]).some(s=>s?.id===row.session_id&&!!s.finished_at);
  return closed?row:null;
 }
+
+/**
+ * Human-readable 5/5 replacement cards. Historical text is used only after
+ * server-authorized calendar data is associated with a CLOSED session.
+ * Never treat a random D100 face as a stable favorite card identifier.
+ */
+export function favoriteCardPreview(row,{customCards=[],history=[],sessions=[],builtinCard=null}={}){
+ const key=favoriteCardIdentity(row);
+ if(!key)return null;
+ const {category,cardId}=key;
+ const custom=(customCards||[]).find(c=>c?.category===category&&Number(c.card_id)===cardId);
+ const archived=(history||[]).find(c=>
+  c?.category===category&&Number(c.card_id)===cardId&&
+  (sessions||[]).some(s=>s?.id===c.session_id&&!!s.finished_at));
+ const original=cardId<=25&&typeof builtinCard==='function'?builtinCard(category,cardId):null;
+ return {
+  category,cardId,
+  title:String(custom?.title||archived?.card_title||original?.title||'Carte n° '+cardId),
+  description:String(custom?.description||archived?.card_description||original?.description||''),
+ };
+}
