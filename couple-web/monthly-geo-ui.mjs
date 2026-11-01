@@ -50,8 +50,9 @@ export function monthlyGeoCardHtml({
     (venue.address?'<span>'+esc(venue.address)+'</span>':'')+
     (distance!==null?'<small>'+esc(distance.toLocaleString(locale))+' km par la route</small>':'')+
     '</div><div class="surprise-geo-links">'+a(gps,'⌖ GPS')+
-    (canReserve?a(booking||site,'♡ Réserver / site du lieu'):'')+
-    (menu?a(menu,'☷ Menu / activités'):a(site,'☷ Site du lieu'))+'</div>'+
+    (canReserve?a(booking,'♡ Réserver auprès du lieu'):'')+
+    a(menu,'☷ Menu / activités')+
+    (site===booking&&canReserve?'':a(site,'☷ Site officiel'))+'</div>'+
     (!canReserve&&host?'<p class="surprise-geo-muted">♡ '+esc(host)+' organise la réservation et le paiement.</p>':'')+
     '</div>';
  }else{
