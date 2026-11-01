@@ -174,7 +174,7 @@ export {ritualBrandHtml} from './brand.mjs?v=20261017-ritual130';
 import {ritualHeadingHtml} from './brand.mjs?v=20261017-ritual130';
 export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,disabled=false,members=[],
   turn=null,monthly={},history=[],sessions=[],events=[],rollFace=1,now=new Date(),
-  weeklyWeights=WEEKLY_ODDS,weeklyWeightsEnabled=true,monthlyActivity=null,weeklyProgress=null}={}){
+  weeklyWeights=WEEKLY_ODDS,weeklyWeightsEnabled=true,monthlyActivity=null,weeklyProgress=null,reservation=null}={}){
  const weights=effectiveDicePercentages(weeklyWeights,weeklyWeightsEnabled,WEEKLY_ODDS).map((pct,i)=>
   '<span class="home-weight" title="'+(i+1)+' soirée'+(i===0?'':'s')+' : '+displayedDicePercent(pct)+' %">'+pipFace(i+1)+
   '<b>'+(i+1)+'x</b><span>'+displayedDicePercent(pct)+'%</span></span>').join('');
@@ -208,6 +208,19 @@ export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,d
  const invitationText=invitation?.host&&invitation?.guest?
   [nameA,nameB][invitation.index]+' invite '+[nameA,nameB][1-invitation.index]:
   activity?'Déterminer qui invite':'Un tirage commun ce mois-ci';
+ // Booking status is a declared plan, never proof that an outing happened.
+ // Invalid dates and cancelled reservations must not imply a confirmed trip.
+ const activeReservation=reservation&&reservation.status!=='cancelled'?reservation:null;
+ const bookingInstant=activeReservation?.reserved_for?new Date(activeReservation.reserved_for):null;
+ const bookingDate=bookingInstant&&Number.isFinite(bookingInstant.getTime())?
+  new Intl.DateTimeFormat('fr-CA',{day:'numeric',month:'short',year:'numeric',
+   timeZone:'America/Toronto'}).format(bookingInstant):null;
+ const surpriseStage=!activity?'Surprise du mois à découvrir':
+  !invitation?'Choisir qui invite':
+  reservation?.status==='cancelled'?'À replanifier':
+  activeReservation?.status==='confirmed'?
+   (bookingDate?'Réservation déclarée confirmée · '+bookingDate:'Réservation déclarée confirmée'):
+  bookingDate?'Date prévue · '+bookingDate:'À planifier';
  // Quota exhausted and daily lock are different: both come from the same
  // policy as the server-owned Start action. Neither launches a new evening.
  const weeklyExhausted=!activeEvening&&progressReady&&weeklyRemaining===0;
@@ -257,9 +270,9 @@ export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,d
     (rolling?'Brassage 3D en cours…':disabled?'Préparation du brassage…':'<span class="home-action-die lr-ruby-icon" aria-hidden="true"><svg class="lr-ruby-die-icon" viewBox="0 0 34 38"><path fill="#fffdf5" d="m17 2 13 6-13 7L4 8Z"/><path fill="#f7e9dc" d="m4 8 13 7v20L5 28Q3 27 3 24V11Q3 9 4 8Z"/><path fill="#cdbdb4" d="m17 15 13-7q1 1 1 3v13q0 3-2 4l-12 7Z"/><path fill="none" stroke="#fff8ed" stroke-width=".8" d="m4 8 13 7 13-7M17 15v20"/><ellipse cx="17" cy="8" rx="2.5" ry="1.2" fill="#3d1020"/><g fill="#421521"><ellipse cx="7.6" cy="15" rx="1.5" ry="2.1" transform="rotate(-18 7.6 15)"/><ellipse cx="10.1" cy="21.5" rx="1.5" ry="2.1" transform="rotate(-18 10.1 21.5)"/><ellipse cx="12.7" cy="28" rx="1.5" ry="2.1" transform="rotate(-18 12.7 28)"/><ellipse cx="26.8" cy="15.5" rx="1.5" ry="2.1" transform="rotate(18 26.8 15.5)"/><ellipse cx="21.6" cy="27.3" rx="1.5" ry="2.1" transform="rotate(18 21.6 27.3)"/></g></svg></span><span class="home-action-label lr-ruby-title">Brasser le dé</span>')+'</button>')+
    '</div>'+
    '<div class="home-bottom-stack">'+
-   '<button class="home-next-month lr-ruby-control lr-ruby-feature lr-surface'+(activity?' has-monthly-activity':'')+'" data-action="tab:special" type="button" aria-label="'+escape(activity?monthlyTitle+'. '+invitationText:'Brasser notre surprise mensuelle')+'">'+
+   '<button class="home-next-month lr-ruby-control lr-ruby-feature lr-surface'+(activity?' has-monthly-activity':'')+'" data-action="tab:special" type="button" aria-label="'+escape(activity?surpriseStage+'. '+monthlyTitle+'. '+invitationText:'Brasser notre surprise mensuelle')+'">'+
    '<span class="home-calendar-icon home-present lr-ruby-icon" aria-hidden="true">'+iconSvg('surprises')+'</span>'+
-   '<span class="lr-ruby-copy"><small class="lr-ruby-eyebrow">'+(activity?'Notre surprise du mois':'Surprise du mois à découvrir')+'</small>'+
+   '<span class="lr-ruby-copy"><small class="lr-ruby-eyebrow">'+escape(surpriseStage)+'</small>'+
    '<strong class="lr-ruby-title" title="'+escape(activity?monthlyTitle:'Brasser notre surprise')+'">'+escape(activity?monthlyTitle:'Brasser notre surprise')+'</strong>'+
    '<em class="lr-ruby-caption">'+escape(invitationText)+'</em></span>'+
    '<span class="home-gift-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></svg></span></button>'+ 
