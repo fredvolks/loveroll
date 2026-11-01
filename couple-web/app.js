@@ -3,7 +3,7 @@ import {showEveningCategoryReminder} from './evening-d100-template.mjs?v=2026102
 import {eveningInviteHtml,eveningInviteInboxHtml,isEveningInviteAction} from './evening-invitation.mjs?v=20261028-web254';
 import {askEveningCategoryConfirmation,categoryConfirmEnabled,saveCategoryConfirmLocal} from './evening-category-confirm.mjs?v=20261027-web238';
 import {soundEnabled,setSoundEnabled,setLoveRollSoundUser,unlockLoveRollSounds,playLoveRollSound,soundSettingsHtml} from './loveroll-sounds.mjs?v=20261028-privacy250';
-import {isAcceptedTimedEveningChallenge,completeTimedEveningChallenge,timedEveningTimerControl,refreshAfterTimedEveningConfirmation,timerBelongsToUser} from './timed-evening-completion.mjs?v=20261029-timer259';
+import {isAcceptedTimedEveningChallenge,completeTimedEveningChallenge,timedEveningTimerControl,refreshAfterTimedEveningConfirmation,timerBelongsToUser} from './timed-evening-completion.mjs?v=20261101-timer260';
 import {fitSurpriseMinimal} from './surprise-minimal.mjs?v=20261022-home228';
 import {eclatNoteKey,loadEclatNote,saveEclatNote} from './eclat-guidance.mjs?v=20261022-home228';
 import {loadEclatHistory} from './eclat-history.mjs?v=20261022-home228';
@@ -61,7 +61,7 @@ import {invitationStatus,coupleStats,formatCoupleDate,invitationEmailText,invita
 import {premiumConfirm,premiumCopyLink,focusInlineLoveDialog} from './premium-dialogs.mjs?v=20261017-complete127';
 
 
-const WEB_RELEASE='2026-10-29.259';
+const WEB_RELEASE='2026-11-01.260';
 const root=document.querySelector('#app');
 const enc=new TextEncoder(),dec=new TextDecoder();
 let diceCleanup=[],renderToken=0;
@@ -4692,6 +4692,6 @@ start().catch(error=>{fail(error);window.LoveRollBoot?.showFailure();});
 
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   window.addEventListener('load', () =>
-    navigator.serviceWorker.register('./service-worker.js?v=20261029-web259',
+    navigator.serviceWorker.register('./service-worker.js?v=20261101-web260',
      {scope:'./',updateViaCache:'none'}).then(reg=>reg.update()).catch(console.warn));
 }
