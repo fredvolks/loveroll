@@ -72,6 +72,76 @@ test('Resume bookmark acknowledges only a real successful storage write',()=>{
   id:'a',recipient:'alice',session_id:'s1',status:'accepted'
  }]),'a');
 });
+test('Starting an official D100 saves a resumable bookmark only after recipient RLS acceptance',async()=>{
+ const {runInNewContext}=await import('node:vm');
+ const from=app.indexOf("if(verb==='evening-start'){");
+ const to=app.indexOf("if(verb==='surprise-activity'){",from);
+ assert.ok(from>=0&&to>from,'The real D100 start route is present');
+ const route=app.slice(from,to);
+ const make=(initial='accepted')=>{
+  const state={user:{id:'alice'},session:{id:'night-1'},tab:'session',
+   challenges:[{id:'card-1',recipient:'alice',session_id:'night-1',status:initial}],
+   diceStatus:null,eveningStartContext:null};
+  const events={saves:[],rpc:[],render:0,notify:[]};
+  const challengeTimer={mode:'vibrate',remainingMs:120000,running:false};
+  let settleRpc=null;
+  const scope={state,challengeTimer,
+   isActiveEveningGiftPending:()=>false,isEveningCardCompleting:()=>false,
+   isActiveEveningRedrawPending:()=>false,
+   isSameEveningResponseContext:(st,ctx)=>!!ctx&&st.user?.id===ctx.userId&&
+    st.session?.id===ctx.sessionId&&st.tab===ctx.tab,
+   ownEveningChallenges:(rows,userId,sessionId)=>rows.filter(x=>
+    x.recipient===userId&&x.session_id===sessionId),
+   rpc:(name,args)=>{events.rpc.push([name,args]);
+    return new Promise(resolve=>{settleRpc=resolve;});},
+   refreshShared:async()=>true,resolvedCard:()=>({minutes:3}),
+   validChallengeTimerMinutes:()=>true,
+   activeTimer:()=>{},saveChallengeTimer:()=>{},
+   render:()=>{events.render++;},updateChallengeClock:()=>{},
+   notify:message=>{events.notify.push(message);},
+   safeEveningBookmarkStorage:()=>({kind:'local'}),
+   saveEveningSelection:(store,userId,sessionId,cardId)=>{
+    events.saves.push({store,userId,sessionId,cardId});return true;}
+  };
+  const go=runInNewContext('(async (verb,parts)=>{'+route+'})',scope);
+  return {state,events,go:()=>go('evening-start',['card-1']),
+   settleRpc:()=>settleRpc?.(),scope};
+ };
+ const resumed=make('accepted');
+ await resumed.go();
+ assert.equal(resumed.events.rpc.length,0,'Already-accepted challenge needs no new acceptance');
+ assert.equal(resumed.events.saves.length,1);
+ assert.equal(resumed.events.saves[0].userId,'alice');
+ assert.equal(resumed.events.saves[0].sessionId,'night-1');
+ assert.equal(resumed.events.saves[0].cardId,'card-1');
+ assert.equal(resumed.events.render,1);
+
+ const pending=make('proposed'),started=pending.go();
+ assert.equal(pending.events.saves.length,0,'No bookmark while RPC is pending');
+ pending.settleRpc();
+ await started;
+ assert.equal(pending.events.saves.length,0,'No bookmark for unconfirmed RLS status');
+ assert.equal(pending.events.render,1);
+
+ const switcher=make('proposed'),late=switcher.go();
+ switcher.state.user={id:'bob'};
+ switcher.settleRpc();
+ await late;
+ assert.equal(switcher.events.saves.length,0,'Late response cannot bookmark another account');
+ assert.equal(switcher.events.render,0);
+
+ const confirmed=make('proposed');
+ confirmed.scope.refreshShared=async()=>{
+  confirmed.state.challenges=[{id:'card-1',recipient:'alice',
+   session_id:'night-1',status:'accepted'}];return true;};
+ const accepted=confirmed.go();
+ assert.equal(confirmed.events.saves.length,0);
+ confirmed.settleRpc();
+ await accepted;
+ assert.equal(confirmed.events.saves.length,1,'Confirmed server acceptance is resumable');
+ assert.equal(confirmed.events.saves[0].cardId,'card-1');
+});
+
 test('A transient malformed private queue cannot crash resume or erase its bookmark',()=>{
  const store=memory();
  saveEveningSelection(store,'alice','s1','a');

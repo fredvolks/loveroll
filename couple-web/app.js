@@ -4516,6 +4516,11 @@ async function handle(action,element){
    }
    state.showEveningChallenges=true;
    state.selectedEveningChallengeId=active.id;
+   // LR-018: an accepted D100 from the recipient-only server refresh is
+   // the only moment when a freshly started card becomes resumable.
+   // Store its opaque ID, never the private challenge text or a pending RPC.
+   saveEveningSelection(safeEveningBookmarkStorage(),
+    startContext.userId,startContext.sessionId,active.id);
    const minutes=resolvedCard(active).minutes;
    if(validChallengeTimerMinutes(minutes)){
     activeTimer(active,minutes);
