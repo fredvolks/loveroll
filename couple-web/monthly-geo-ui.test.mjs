@@ -33,3 +33,19 @@ test('LR-SURPRISE-001: an unconfirmed plan does not promise a notification',()=>
  assert.match(html,/Aucun rappel confirmé/);
  assert.doesNotMatch(html,/Un rappel est prévu/);
 });
+
+test('LR-SURPRISE-001: a ready POI without verified driving route is not presented as bookable',()=>{
+ for(const invalid of [null,undefined,'',false,NaN,-1,'unknown']){
+  const rendered=monthlyGeoCardHtml({enabled:true,venue:{...venue,driving_meters:invalid,
+   website_url:'https://example.com',booking_url:'https://example.com/book'},canReserve:false});
+  assert.match(rendered,/trajet routier vers ce lieu n’est pas vérifié/);
+  assert.doesNotMatch(rendered,/surprise-geo-venue-info/);
+  assert.doesNotMatch(rendered,/destination=/);
+  assert.doesNotMatch(rendered,/https:\/\/example\.com\/book/);
+ }
+ const saved=monthlyGeoCardHtml({enabled:true,venue:{...venue,driving_meters:null},
+  reservation:{status:'confirmed',reserved_for:'2026-11-10T23:45:00Z'},canReserve:false});
+ assert.match(saved,/Réservation déclarée confirmée/,'An existing saved reservation remains visible');
+ assert.match(monthlyGeoCardHtml({enabled:true,venue:{...venue,driving_meters:0}}),/0 km par la route/);
+ assert.match(monthlyGeoCardHtml({enabled:true,venue:{...venue,driving_meters:16200}}),/16,2 km par la route/);
+});
