@@ -16,6 +16,8 @@ test('All 100 monthly activity themes can map to a supported places category',()
  assert.equal(activityCategory({title:'Bains thermaux'}),'spa');
  assert.equal(activityCategory({title:'Découvrir les thermes'}),'spa');
  assert.equal(activityCategory({title:'Brunch romantique'}),'restaurant');
+ assert.equal(activityCategory({title:'Restaurant panoramique'}),'restaurant');
+ assert.equal(activityCategory({title:'Expérience gastronomique'}),'restaurant');
 });
 test('Surprise prioritizes the activity title over incidental places mentioned in the description',()=>{
  assert.equal(activityCategory({
