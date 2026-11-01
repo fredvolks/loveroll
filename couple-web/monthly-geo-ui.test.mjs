@@ -88,3 +88,21 @@ test('LR-SURPRISE-001 pending or temporary Geoapify failure is polled with a saf
  assert.doesNotMatch(app,/geoFetchSeen/,
   'A one-time seen set must not permanently strand pending or failed lookups');
 });
+
+test('LR-SURPRISE-001 temporary provider error offers a real retry action without fake results',()=>{
+ const pending=monthlyGeoCardHtml({enabled:true,venue:null,lookup:'pending'});
+ assert.match(pending,/Recherche d’un vrai lieu à proximité/);
+ assert.doesNotMatch(pending,/data-action="geo-retry"/,
+  'Pending server claims are polled, not manually multiplied');
+ const error=monthlyGeoCardHtml({enabled:true,venue:null,lookup:'error'});
+ assert.match(error,/data-action="geo-retry"/);
+ assert.match(error,/Réessayer la recherche/);
+ assert.doesNotMatch(error,/surprise-geo-venue-info/,
+  'An offline search cannot invent a destination');
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const action=app.slice(app.indexOf("if(verb==='geo-retry')"),app.indexOf("if(verb==='geo-booking-editor')"));
+ assert.match(action,/worldGeoEnabled\(\)/);
+ assert.match(action,/geoFetchActive===rollId/);
+ assert.match(action,/geoFetchNextAt\.delete\(rollId\)/);
+ assert.match(action,/void resolveMonthlyGeo\(\)/);
+});
