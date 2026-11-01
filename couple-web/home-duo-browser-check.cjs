@@ -33,8 +33,28 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
     const card=document.querySelector('.home-dashboard').getBoundingClientRect(),nav=document.querySelector('.nav').getBoundingClientRect();
     return {height:card.height,bottom:card.bottom,nav:nav.top,scroll:document.documentElement.scrollHeight-innerHeight,horizontal:document.documentElement.scrollWidth-innerWidth};
    });
-   const surfaces=await page.locator('.lr-surface').evaluateAll(nodes=>nodes.map(n=>{const c=getComputedStyle(n);return [c.borderRadius,c.border,c.background,c.boxShadow]}));
-   assert.equal(surfaces.length,4);for(const style of surfaces)assert.deepEqual(style,surfaces[0]);
+   // Velours & Rose Lanterne deliberately gives primary ruby actions a
+   // different material from the velvet information cards. Keep shared
+   // geometry and depth without requiring identical gradients everywhere.
+   const surfaces=await page.locator('.lr-surface').evaluateAll(nodes=>nodes.map(n=>{
+    const c=getComputedStyle(n);
+    return {radius:c.borderRadius,border:c.border,background:c.backgroundImage,shadow:c.boxShadow};
+   }));
+   assert.equal(surfaces.length,4,'Home has navigation, D6 action, monthly card and duo dashboard');
+   for(const surface of surfaces){
+    assert.equal(surface.radius,'18px','Shared LoveRoll surface shape');
+    assert.notEqual(surface.border.split(' ')[0],'0px','Surface border remains visible');
+    assert.match(surface.background,/gradient/,'Surface has an actual material');
+    assert.notEqual(surface.shadow,'none','Surface retains depth');
+   }
+   const materials=await page.evaluate(()=>{
+    const background=selector=>getComputedStyle(document.querySelector(selector)).backgroundImage;
+    return {action:background('.home-roll-button'),
+     monthly:background('.home-next-month'),
+     duo:background('.home-duo-dashboard')};
+   });
+   assert.notEqual(materials.action,materials.monthly,'D6 action stays ruby, not a velvet card');
+   assert.notEqual(materials.action,materials.duo,'Duo information panel is not a CTA');
    assert.equal(await page.locator('.home-monthly-recap').count(),0);
    assert.equal(await page.locator('.home-present svg g').getAttribute('stroke'),'#fff0e5');
    assert.equal(layout.height,140);assert.ok(layout.bottom<=layout.nav-6);assert.equal(layout.scroll,0);assert.equal(layout.horizontal,0);
