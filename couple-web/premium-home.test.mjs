@@ -247,10 +247,42 @@ test('LR-ACCUEIL-001: official quota reports available weekly evenings, not dail
  assert.doesNotMatch(html,/2 disponibles aujourd’hui|2 disponibles aujourd'hui/);
  const spent=premiumHomeHtml({weekly,weeklyProgress:{...summary,counted:3}});
  assert.match(spent,/3 soirées partagées cette semaine · 0 disponibles cette semaine/);
+ assert.match(spent,/data-action="evening-calendar"/);
+ assert.match(spent,/Voir nos soirées/);
+ assert.match(spent,/Notre semaine est complète/);
+ assert.doesNotMatch(spent,/data-action="roll:weekly"|data-action="new-session"/);
  const missing=premiumHomeHtml({weekly,weeklyProgress:{...summary,historyReady:false}});
  assert.doesNotMatch(missing,/class="home-weekly-progress"/,
   'Unknown history must never be displayed as zero completed evenings');
  const invalid=premiumHomeHtml({weekly,weeklyProgress:{...summary,limit:2}});
  assert.doesNotMatch(invalid,/class="home-weekly-progress"/,
   'Unexpected quota input does not override the official D6 face');
+});
+
+test('LR-ACCUEIL-001: daily lock does not claim that all weekly evenings are spent',()=>{
+ const weekly={face:3,key:'2026-10-26'};
+ const progress={historyReady:true,limit:3,counted:1,dailyLocked:true,canStart:false};
+ const today=premiumHomeHtml({weekly,weeklyProgress:progress});
+ assert.match(today,/Soirée déjà partagée aujourd’hui/);
+ assert.match(today,/Une seule soirée par jour/);
+ assert.match(today,/2 disponibles cette semaine/);
+ assert.match(today,/data-action="tab:session"/);
+ assert.doesNotMatch(today,/data-action="evening-calendar"/);
+ const quota=premiumHomeHtml({weekly,weeklyProgress:{...progress,counted:3}});
+ assert.match(quota,/Notre semaine est complète/);
+ assert.match(quota,/data-action="evening-calendar"/);
+ assert.match(app,/if\(verb==='evening-calendar'\)/,
+  'The quota shortcut must lead to an implemented read-only history route');
+ const active=premiumHomeHtml({weekly,activeEvening:true,weeklyProgress:{...progress,counted:3},
+  turn:{ready:true,targets:{},remaining:{},completed:{}}});
+ assert.match(active,/data-action="resume-evening"/);
+ assert.doesNotMatch(active,/Notre semaine est complète|data-action="evening-calendar"/);
+});
+test('LR-ACCUEIL-001: loading history never presents an invented quota or closed week',()=>{
+ const weekly={face:2,key:'2026-10-26'};
+ const html=premiumHomeHtml({weekly,weeklyProgress:{historyReady:false,counted:0,limit:2}});
+ assert.match(html,/Synchronisation des soirées/);
+ assert.doesNotMatch(html,/0 soirée partagée|Notre semaine est complète/);
+ assert.match(html,/data-action="tab:session"/);
+ assert.doesNotMatch(html,/data-action="evening-calendar"/);
 });
