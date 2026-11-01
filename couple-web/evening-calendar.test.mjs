@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {eveningHistoryMarkup,eveningLocalDay,eveningChallengeStatusLabel,eveningCalendarInitialDate} from './evening-calendar.mjs';
+import {eveningHistoryMarkup,eveningLocalDay,eveningArchiveDay,eveningChallengeStatusLabel,eveningCalendarInitialDate} from './evening-calendar.mjs';
 const files=p=>readFileSync(new URL(p,import.meta.url),'utf8');
 const sessions=[
  {id:'s1',started_at:'2026-10-16T01:00:00Z',finished_at:'2026-10-16T02:00:00Z',counted:true},
@@ -272,4 +272,48 @@ test('Soirée calendar never prints NaN, Infinity or negative challenge counts f
  assert.doesNotMatch(html,/NaN|Infinity|<b>-\d+<\/b>/);
  assert.match(html,/Fred \(moi\)/);
  assert.match(html,/Camille \(partenaire\)/);
+});
+
+test('LR-ACCUEIL-001: an officially counted overnight evening lives on its Québec completion day',()=>{
+ const finished={id:'overnight',counted:true,
+  started_at:'2026-10-16T03:55:00Z',finished_at:'2026-10-16T04:30:00Z'};
+ assert.equal(eveningLocalDay(finished.started_at),'2026-10-15');
+ assert.equal(eveningLocalDay(finished.finished_at),'2026-10-16');
+ assert.equal(eveningArchiveDay(finished),'2026-10-16');
+ const opts={sessions:[finished],members:[{user_id:'alice',name:'Alice'}],
+  stats:[{session_id:'overnight',user_id:'alice',target:2,completed:1,drawn:2}],
+  me:'alice',month:'2026-10'};
+ const closed=eveningHistoryMarkup({...opts,selectedDate:'2026-10-16'});
+ assert.match(closed,/2026-10-16 · Historique/);
+ assert.match(closed,/evening-cal-person-group/);
+ assert.match(closed,/<strong>1<\/strong> soirées clôturées ce mois/);
+ assert.match(closed,/class="evening-cal-day has-evening selected" data-action="evening-date:2026-10-16"/);
+ const previous=eveningHistoryMarkup({...opts,selectedDate:'2026-10-15'});
+ assert.match(previous,/Aucune soirée enregistrée pour cette journée/);
+ assert.equal(eveningCalendarInitialDate({sessions:[finished],month:'2026-10',
+  now:new Date('2026-10-20T12:00:00Z')}),'2026-10-16');
+});
+
+test('LR-ACCUEIL-001: monthly calendar boundary matches Home finished-at accounting',()=>{
+ const counted={id:'nov',counted:true,started_at:'2026-11-01T03:50:00Z',
+  finished_at:'2026-11-01T05:15:00Z'};
+ assert.equal(eveningArchiveDay(counted),'2026-11-01');
+ const show=(mo,day)=>eveningHistoryMarkup({
+  sessions:[counted],members:[{user_id:'alice',name:'Alice'}],
+  month:mo,selectedDate:day,me:'alice'});
+ const oct=show('2026-10','2026-10-31');
+ assert.match(oct,/<strong>0<\/strong> soirées clôturées ce mois/);
+ assert.match(oct,/Aucune soirée enregistrée pour cette journée/);
+ const nov=show('2026-11','2026-11-01');
+ assert.match(nov,/<strong>1<\/strong> soirées clôturées ce mois/);
+ assert.match(nov,/Clôturée/);
+ assert.equal(eveningCalendarInitialDate({sessions:[counted],month:'2026-11',
+  now:new Date('2026-11-02T15:00:00Z')}),'2026-11-01');
+ const active={id:'active',counted:true,started_at:'2026-10-31T23:30:00Z',finished_at:null};
+ const interrupted={...counted,id:'cancelled',counted:false};
+ assert.equal(eveningArchiveDay(active),'2026-10-31');
+ assert.equal(eveningArchiveDay(interrupted),'2026-10-31');
+ assert.equal(eveningArchiveDay({id:'invalid',counted:true,
+  started_at:'not-a-date',finished_at:'invalid'}),null);
+ assert.equal(eveningArchiveDay(null),null);
 });
