@@ -88,6 +88,23 @@ test('LR-SURPRISE-001: Edge function rejects null and absent Geoapify road matri
  assert.deepEqual(verifiedMatrixCandidates(candidates,matrix,-5),[]);
 });
 
+test('Surprise venue provider accepts real category arrays and trimmed category strings',()=>{
+ const places=[
+  {place_id:'a',name:'Restaurant A',categories:['tourism','catering.restaurant.french']},
+  {place_id:'b',name:'Restaurant B',categories:'tourism, catering.restaurant'},
+  {place_id:'c',name:'Autre commerce',categories:'catering.restaurantfake'},
+  {place_id:'d',name:'Pas de catégorie',categories:null}
+ ];
+ const roads={a:{distance_meters:3000},b:{distance_meters:2000},
+  c:{distance_meters:1000},d:{distance_meters:500}};
+ const category=VENUE_CATEGORIES.restaurant;
+ assert.equal(chooseNearbyVenue(places,roads,10,{category}).place_id,'b',
+  'A valid category string with whitespace should be eligible and nearest');
+ assert.equal(chooseNearbyVenue([places[0]],roads,10,{category}).place_id,'a',
+  'Geoapify categories arrays must be accepted');
+ assert.equal(chooseNearbyVenue([places[2],places[3]],roads,10,{category}),null,
+  'A matching prefix without a category separator is not a valid restaurant');
+});
 test('Nearby Surprise places are ranked by real metres, not rounded display kilometres',()=>{
  // Both routes round to 12.0 km. The nearer route (12,010m) must win
  // even when the farther place id would sort first alphabetically.
