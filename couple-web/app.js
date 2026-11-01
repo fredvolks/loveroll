@@ -6,7 +6,7 @@ import {soundEnabled,setSoundEnabled,setLoveRollSoundUser,unlockLoveRollSounds,p
 import {isAcceptedTimedEveningChallenge,isSameCompletedEveningChallenge,completeTimedEveningChallenge,timedEveningTimerControl,refreshAfterTimedEveningConfirmation,refreshAfterConfirmedWrite,timerBelongsToUser,canControlTimedEveningChallenge} from './timed-evening-completion.mjs?v=20261101-timer260';
 import {fitSurpriseMinimal} from './surprise-minimal.mjs?v=20261022-home228';
 import {createBookingMutationGate,geoLookupAfterRefresh,trustedBookingVenueLinks} from './monthly-geo-ui.mjs?v=20261101-booking263';
-import {favoriteCardIdentity,isEveningFavorite,closedCalendarFavoriteCandidate,MAX_EVENING_FAVORITES} from './evening-favorites.mjs?v=20261101-hearts265';
+import {favoriteCardIdentity,isEveningFavorite,closedCalendarFavoriteCandidate,favoriteCardPreview,MAX_EVENING_FAVORITES} from './evening-favorites.mjs?v=20261101-hearts266';
 import {eclatNoteKey,loadEclatNote,saveEclatNote} from './eclat-guidance.mjs?v=20261022-home228';
 import {loadEclatHistory} from './eclat-history.mjs?v=20261022-home228';
 import {enhanceGoldBacks} from './gold-arrows.mjs?v=20261022-home228';
@@ -1683,14 +1683,13 @@ function renderLegacySession(){
   'Notre soirée',s?'Vos défis à offrir et à recevoir':'Un nouveau moment à deux');
  root.classList.add('loveroll-settings-page');
 }
-function favoriteTitle(row){
- const number=Number(row?.card_id),category=row?.category;
- const custom=state.customCards?.find(card=>card.category===category&&Number(card.card_id)===number);
- if(custom?.title)return custom.title;
- if(number>=1&&number<=25&&['SENSUEL','SEXUEL'].includes(category))
-  return eveningCard(category,number).title;
- return 'Carte n° '+number;
+function favoritePreview(row){
+ return favoriteCardPreview(row,{
+  customCards:state.customCards,
+  history:state.eveningCalendarChallenges,sessions:state.sessions,builtinCard:eveningCard
+ });
 }
+function favoriteTitle(row){return favoritePreview(row)?.title||'Carte indisponible';}
 function renderSession(){
  // Always show the same Soirée page, even when the weekly die is unrolled.
  // In that case the launch control is disabled, not replaced with a separate page.
@@ -1753,10 +1752,16 @@ function renderSession(){
       '<div class="lr-refusal-dialog" role="alertdialog" aria-modal="true" aria-label="Remplacer un coup de cœur">'+
        '<h3>Nos 5 coups de cœur sont occupés</h3>'+
        '<p>Choisis le défi à retirer pour ajouter « '+safe(resolvedCard(view).title)+' ».</p>'+
-       state.eveningFavorites.map(row=>
-        button('evening-favorite-replace:'+row.category+':'+row.card_id,
-         'Remplacer « '+safe(favoriteTitle(row))+' »',
-         'class="subtle" '+(favoriteWriteBusy?'disabled':''))).join('')+
+       state.eveningFavorites.map(row=>{
+        const preview=favoritePreview(row);
+        return '<div class="lr-favorite-replace-entry">'+
+         button('evening-favorite-replace:'+row.category+':'+row.card_id,
+          'Retirer « '+safe(preview?.title||'Carte inconnue')+' » et ajouter',
+          'class="subtle" '+(favoriteWriteBusy?'disabled':''))+
+         '<small>'+safe(row.category==='SEXUEL'?'Sexuel':'Sensuel')+'</small>'+
+         (preview?.description?'<details><summary>Voir la consigne</summary><p>'+
+          safe(preview.description)+'</p></details>':'')+'</div>';
+       }).join('')+
        button('evening-favorite-cancel','Annuler','class="subtle" '+(favoriteWriteBusy?'disabled':''))+
       '</div>':'')+
      (['proposed','accepted'].includes(view.status)?
