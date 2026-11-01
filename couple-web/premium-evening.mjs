@@ -159,6 +159,10 @@ export function premiumEveningHtml({
  const canDraw=ready&&turn.ready&&!turn.drawsFinished&&
   Number(turn.remaining?.[me]||0)>0&&turn.next===me;
  const canGive=ready&&turn.ready&&giftCount<3&&Number(turn.remaining?.[me])>0;
+ // A private, unfinished challenge deserves the main action before another roll.
+ // Never expose a partner's pending card through the primary button.
+ const ownPending=!!(pending?.id&&pending.recipient===me&&pending.session_id===session?.id&&
+  ['proposed','accepted'].includes(pending.status));
  const challengeText=pending?'♡ Voir notre défi en cours':turn.finished?'Tous les défis terminés':!ready?'En attente des deux D6':canDraw?'À toi de jouer':'En attente de '+esc(partner.name?.split(' ')[0]||'ton partenaire');
  const stateText=ready?'✓ Étape 2 débloquée':myRollRecorded?'Ton lancer est enregistré. Attends ton partenaire.':partnerRollRecorded?'Le résultat de '+esc(partner.name?.split(' ')[0]||'ton partenaire')+' est prêt. À toi de brasser le dé.':'Chaque partenaire brasse son propre dé.';
  const currentStatus=turn.finished?'♡ Tous les défis sont réalisés':turn.drawsFinished?'♡ Tous les défis sont pigés':canDraw?'♥ C’est ton tour !':ready?'Au tour de '+esc(partner.name?.split(' ')[0]||'ton partenaire'):'Étape 2 verrouillée';
@@ -178,12 +182,14 @@ export function premiumEveningHtml({
   rolling?waitingStatus('Brassage en cours…'):
   !ready?waitingStatus(myRollRecorded?
    'En attente du D6 de ton partenaire':'Lance ton D6 pour continuer'):
+  ownPending?bt('evening-open:'+pending.id,'♡ Voir mon défi','evening-primary'):
+  !turn.ready?waitingStatus('Synchronisation de nos défis…'):
   turn.drawsFinished?(ownChallengeCount>0?
    bt('evening-list','♡ Voir mes défis ('+ownChallengeCount+')','evening-primary'):
    waitingStatus('Tous les tirages sont terminés')):
   canDraw?bt('new-challenge','🎲 Brasser le D100','evening-primary'):
    waitingStatus('En attente du tour de ton partenaire');
- const secondaryAction=ownChallengeCount>0&&
+ const secondaryAction=ownChallengeCount>0&&!ownPending&&
   !(turn.drawsFinished&&!turn.finished&&!rolling)?
   bt('evening-list','♡ Voir mes défis ('+ownChallengeCount+')','evening-queue-open-btn'):'';
  return '<div class="evening-premium-view '+(session?(ready?'is-ready':'is-waiting'):'is-inactive is-finale')+'" data-category-percent="'+esc(categoryOdds)+'">'+
