@@ -2183,6 +2183,7 @@ function renderHome(){
   disabled:!!state.diceStatus,
   members,
   turn,monthly:state.monthly,monthlyActivity,reservation:state.geoReservation,
+  eveningInvite:state.eveningInvite,
   history:state.challengesHistory||[],
   sessions:state.sessions||[],
   rollFace:state.rollAnimationFace||1,
