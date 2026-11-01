@@ -28,7 +28,9 @@ test('LoveRoll build versions agree between endpoint, app, HTML and imported mod
  assert.ok(html.includes('ritual-titles.css?v=20261020-switch178'));
  assert.ok(sw.includes('./ritual-titles.css'));
  assert.ok(app.includes('premium-advent.mjs?v=20261019-bubble175'));
- assert.ok(app.includes('evening-calendar.mjs?v='+appTag));
+ // A changed feature module has its own content revision; do not force it
+ // to share the main PWA build tag when its bytes have not changed.
+ assert.match(app,/evening-calendar[.]mjs[?]v=20261031-archive[0-9]+/);
  assert.ok(app.includes('play-style.mjs?v=20261018-styles149'));
  assert.ok(sw.includes('./calendar-success-stats.mjs'));
  assert.ok(sw.includes('./play-style.mjs'));
@@ -51,8 +53,8 @@ test('LoveRoll build versions agree between endpoint, app, HTML and imported mod
   assert.ok(html.includes(css+'?v='+tag),css);
  }
  assert.ok(html.includes('styles.css?v=20261017-glass123'));
- assert.match(html,/premium-home\.css\?v=20261019-ipad155/);
- assert.ok(app.includes('premium-home.mjs?v='+appTag));
+ assert.match(html,/premium-home[.]css[?]v=20261031-home[0-9]+/);
+ assert.match(app,/premium-home[.]mjs[?]v=20261031-home[0-9]+/);
  assert.match(app,new RegExp("dice3d\\.js\\?v="+diceTag));
  assert.ok(app.includes('premium-evening.mjs?v=20261028-lr027-web254'));
  assert.ok(html.includes('evening-editorial.css?v=20261028-lr027'));
