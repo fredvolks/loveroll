@@ -1261,3 +1261,179 @@ body.lr-velours-lanterne main#app.loveroll-eclat-page :is(.eclat-return,.eclat-a
     scrollbar-width:thin;
   }
 }
+/* LOT 7 — Installation et notifications : même écrin que l'accueil.
+   Ces styles n'affectent ni l'inscription push/FCM, ni le parcours PWA,
+   ni les permissions système ; toutes les actions restent natives. */
+body.lr-velours-lanterne #app .install-overlay {
+  background:var(--lr-vl-veil);
+  overscroll-behavior:contain;
+}
+body.lr-velours-lanterne #app .install-overlay .install-modal {
+  min-width:0;
+  width:min(100%,460px);
+  border-color:var(--lr-vl-edge);
+  border-radius:clamp(19px,4vw,28px);
+  background:var(--lr-vl-panel);
+  box-shadow:var(--lr-vl-dialog-shadow);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #app .install-modal :is(.install-recommend,.install-symbol) {
+  color:var(--lr-vl-champagne);
+}
+body.lr-velours-lanterne #app .install-modal :is(h2,#lr-install-description) {
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #app .install-modal h2 {
+  font-family:var(--lr-vl-editorial);
+  font-size:clamp(27px,5.5vw,38px);
+  font-weight:600;
+}
+body.lr-velours-lanterne #app .install-modal .install-actions button {
+  min-width:0;
+  min-height:48px;
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-action);
+  color:var(--lr-vl-ivory);
+  box-shadow:var(--lr-vl-relief);
+  overflow-wrap:anywhere;
+}
+body.lr-velours-lanterne #app .install-modal .install-actions :is(.install-later,.install-secondary) {
+  background:var(--lr-vl-muted-panel);
+  border-color:var(--lr-vl-field-edge);
+  box-shadow:none;
+}
+body.lr-velours-lanterne #app .install-modal .install-close {
+  min-height:44px;
+  min-width:44px;
+  color:var(--lr-vl-ivory);
+}
+/* Guide Safari installé hors de #app : conserver les quatre étapes et
+   les boutons réels avec une alternative défilante en affichage court. */
+body.lr-velours-lanterne .lr-ios-tour {
+  background:var(--lr-vl-veil);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .lr-ios-tour-card {
+  min-width:0;
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-panel);
+  box-shadow:var(--lr-vl-dialog-shadow);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .lr-ios-tour :is(.lr-ios-tour-kicker,.lr-ios-tour-symbol) {
+  color:var(--lr-vl-champagne);
+}
+body.lr-velours-lanterne .lr-ios-tour :is(h2,p#lr-ios-tour-desc) {
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .lr-ios-tour h2 {
+  font-family:var(--lr-vl-editorial);
+  font-weight:600;
+}
+body.lr-velours-lanterne .lr-ios-tour-dots .active {
+  background:var(--lr-vl-champagne);
+}
+body.lr-velours-lanterne .lr-ios-tour-secondary,
+body.lr-velours-lanterne .lr-ios-tour-primary {
+  min-height:44px;
+  min-width:0;
+  border:1px solid var(--lr-vl-edge);
+  border-radius:14px;
+  color:var(--lr-vl-ivory);
+  background:var(--lr-vl-muted-panel);
+  overflow-wrap:anywhere;
+}
+body.lr-velours-lanterne .lr-ios-tour-primary {
+  background:var(--lr-vl-action);
+  box-shadow:var(--lr-vl-relief);
+}
+body.lr-velours-lanterne .lr-ios-tour-close {
+  min-height:44px;
+  min-width:44px;
+  color:var(--lr-vl-ivory);
+}
+/* Notifications : états réels et actions conservés. Ne pas colorer un
+   interrupteur désactivé comme s'il recevait effectivement des alertes. */
+body.lr-velours-lanterne #app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings {
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #app.loveroll-settings-page [data-settings-page="notifications"] :is(.notification-summary,.notification-local) {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-panel);
+  box-shadow:var(--lr-vl-relief);
+}
+body.lr-velours-lanterne #app.loveroll-settings-page [data-settings-page="notifications"] :is(.notification-section-heading h2,.notification-summary strong,.notification-choice-copy strong) {
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #app.loveroll-settings-page [data-settings-page="notifications"] :is(.notification-summary p,.notification-choice-copy small,.notification-section-heading>span,.notification-privacy) {
+  color:var(--lr-vl-muted);
+}
+body.lr-velours-lanterne #app.loveroll-settings-page [data-settings-page="notifications"] :is(.notification-option,.notification-options) {
+  border-color:var(--lr-vl-field-edge);
+}
+body.lr-velours-lanterne #app.loveroll-settings-page [data-settings-page="notifications"] :is(.notification-row-icon,.notification-emblem) {
+  color:var(--lr-vl-rose);
+}
+body.lr-velours-lanterne #app.loveroll-settings-page [data-settings-page="notifications"] .notification-actions .notification-action:not(:disabled) {
+  min-width:0;
+  min-height:44px;
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-action);
+  color:var(--lr-vl-ivory);
+  overflow-wrap:anywhere;
+}
+body.lr-velours-lanterne #app.loveroll-settings-page [data-settings-page="notifications"] .notification-actions .settings-signout {
+  background:var(--lr-vl-muted-panel);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #app.loveroll-settings-page [data-settings-page="notifications"] .notification-feedback:not([hidden]) {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-muted-panel);
+  color:var(--lr-vl-ivory);
+  overflow-wrap:anywhere;
+}
+body.lr-velours-lanterne #app.loveroll-settings-page [data-settings-page="notifications"] .notification-feedback[data-tone="error"]:not([hidden]) {
+  border-color:var(--lr-vl-rose);
+  background:var(--lr-vl-velvet-card);
+  color:var(--lr-vl-ivory);
+}
+@media(max-width:380px), (max-height:620px) {
+  body.lr-velours-lanterne #app .install-overlay {
+    align-items:flex-start;
+    overflow-y:auto;
+    padding:max(8px,env(safe-area-inset-top,0px)) 10px max(8px,env(safe-area-inset-bottom,0px));
+  }
+  body.lr-velours-lanterne #app .install-overlay .install-modal {
+    margin:auto;
+    max-height:calc(100dvh - 16px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
+    padding:16px;
+  }
+  body.lr-velours-lanterne .lr-ios-tour {
+    place-items:start center;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    padding:max(8px,env(safe-area-inset-top,0px)) 10px max(8px,env(safe-area-inset-bottom,0px));
+  }
+  body.lr-velours-lanterne .lr-ios-tour-card {
+    margin:auto;
+    min-height:0;
+    max-height:none;
+    overflow:visible;
+    grid-template-rows:auto auto auto auto auto;
+  }
+  body.lr-velours-lanterne .lr-ios-tour-illustration {
+    height:min(18dvh,105px);
+    min-height:65px;
+  }
+  body.lr-velours-lanterne #app.loveroll-settings-page [data-settings-page="notifications"] .notification-actions {
+    grid-auto-flow:row;
+    grid-template-columns:minmax(0,1fr);
+  }
+}
+@media(prefers-contrast:more) {
+  body.lr-velours-lanterne .lr-ios-tour-card,
+  body.lr-velours-lanterne #app .install-modal,
+  body.lr-velours-lanterne #app.loveroll-settings-page [data-settings-page="notifications"] .notification-summary {
+    border-width:2px;
+  }
+}
