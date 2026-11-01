@@ -221,7 +221,7 @@ async function query(table,options={}){
 // Unsaved form text lives ONLY in process memory: no LocalStorage, logs or cloud.
 // It is restored after partner realtime refreshes and activity resume.
 let lastFormTab=null;
-let allowBackExit=false;
+let allowBackExit=false,allowBackExitOwner=null;
 function snapshotDraft(){
  const inputs=[...root.querySelectorAll('input[id],select[id],textarea[id]')].filter(el=>
   !el.disabled&&!el.readOnly&&!el.hasAttribute('data-draft-ignore')&&!['password','file','hidden'].includes(el.type));
@@ -290,7 +290,16 @@ function backFromLoveRoll(){
   state.reviewDismissedSessionId=state.reviewModalSessionId;
   state.reviewModalSessionId=null;state.reviewDraft={};render();return true;
  }
- if(allowBackExit){allowBackExit=false;return false;}
+ if(allowBackExit){
+  const owner=allowBackExitOwner;
+  allowBackExit=false;allowBackExitOwner=null;
+  // A second Android Back may exit only the exact form and signed-in owner
+  // who accepted its unsaved-changes warning, never a replacement login.
+  if(owner&&state.user?.id===owner.userId&&state.coupleId===owner.coupleId&&
+     state.session?.id===owner.sessionId&&state.tab===owner.tab&&
+     authFeedbackGeneration===owner.generation&&
+     formRouteKey()===owner.route)return false;
+ }
  if(state.showEveningChallenge){state.showEveningChallenge=false;render();return true;}
  if(state.showSurpriseActivity){state.showSurpriseActivity=false;render();return true;}
  if(state.surpriseEditSlot){state.surpriseEditSlot=null;render();return true;}
@@ -314,9 +323,20 @@ function backFromLoveRoll(){
   return true;
  }
  if(hasUnsavedForm()){
+  const owner={userId:state.user?.id,coupleId:state.coupleId,
+   sessionId:state.session?.id,tab:state.tab,route:formRouteKey(),
+   generation:authFeedbackGeneration};
   premiumConfirm('Vous avez une saisie non enregistrée. La quitter sans enregistrer ?',{
    kind:'library',title:'Quitter le formulaire ?',accept:'Quitter',cancel:'Continuer'
-  }).then(ok=>{if(ok){allowBackExit=true;notify('Appuyez de nouveau sur Retour pour quitter.');}});
+  }).then(ok=>{
+   if(ok&&state.user?.id===owner.userId&&state.coupleId===owner.coupleId&&
+      state.session?.id===owner.sessionId&&state.tab===owner.tab&&
+      authFeedbackGeneration===owner.generation&&formRouteKey()===owner.route&&
+      hasUnsavedForm()){
+    allowBackExitOwner=owner;allowBackExit=true;
+    notify('Appuyez de nouveau sur Retour pour quitter.');
+   }
+  }).catch(fail);
   return true;
  }
  return false;
