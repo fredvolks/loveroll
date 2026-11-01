@@ -115,3 +115,15 @@ export function createBookingMutationGate(){
   finally{active=false;}
  };
 }
+
+/**
+ * Server refresh can return before the Geoapify Edge claim finishes.
+ * Preserve pending/error only for the SAME official monthly D100 roll:
+ * a new roll must never inherit the old pending search or booking editor.
+ */
+export function geoLookupAfterRefresh({rollId,previousRollId,venue,previousLookup}={}){
+ if(!rollId)return 'idle';
+ if(venue?.state)return venue.state;
+ return rollId===previousRollId&&['pending','error'].includes(previousLookup)?
+  previousLookup:'idle';
+}
