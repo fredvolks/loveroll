@@ -242,6 +242,9 @@ main#app :is(.evening-toolbar,.advent-top,.surprise-header,.settings-page-header
 #app.loveroll-real-home .home-monthly-link:focus-visible{
  outline:3px solid #ffdfaa;outline-offset:2px;
 }
+#app.loveroll-real-home .home-monthly-link:disabled{
+ opacity:.55;cursor:default;pointer-events:none;
+}
 #app.loveroll-real-home .home-monthly-link>span{
  font-size:19px;line-height:1;color:#e9b7c7;
 }
