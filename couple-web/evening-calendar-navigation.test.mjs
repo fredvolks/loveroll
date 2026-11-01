@@ -90,3 +90,60 @@ test('calendar day selection refuses invalid dates, not just malformed months',a
  assert.equal(eveningCalendarInitialDate({sessions:[],month:'2027-02',
   selectedDate:'2027-02-29'}),'2027-02-01');
 });
+
+function calendarOpenHarness(tab='home'){
+ const from=app.indexOf("if(verb==='evening-calendar'){");
+ const to=app.indexOf("if(verb==='evening-month-prev'",from);
+ assert.ok(from>=0&&to>from,'The actual calendar action is extractable');
+ const state={tab,session:{id:'older',started_at:'2026-09-14T18:00:00Z'},
+  eveningCalendarMonth:'2026-09',eveningCalendarDate:'2026-09-14',
+  eveningMore:true,confirmCancel:true,diceStatus:null};
+ let redraw=false,gift=false,renders=0;
+ const context={state,month:()=> '2026-10',
+  eveningLocalDay:()=> '2026-09-14',
+  isActiveEveningRedrawPending:()=>redraw,
+  isActiveEveningGiftPending:()=>gift,
+  render:()=>{renders++;}};
+ const open=runInNewContext('(async (verb,parts=[])=>{'+app.slice(from,to)+'})',context);
+ const backFrom=app.indexOf('function eveningCalendarReturn(){');
+ const backTo=app.indexOf('function renderEveningCalendar(){',backFrom);
+ const goBack=runInNewContext(app.slice(backFrom,backTo)+'; eveningCalendarReturn',Object.assign(context,{
+  isSharedCoupleReady:()=>true
+ }));
+ return {state,open,goBack,renderCount:()=>renders,
+  setBusy:(kind)=>{if(kind==='dice')state.diceStatus='rolling';
+   if(kind==='redraw')redraw=true;if(kind==='gift')gift=true;}};
+}
+
+test('LR-ACCUEIL-001: Home monthly shortcut opens October instead of an old session',async()=>{
+ const h=calendarOpenHarness('home');
+ await h.open('evening-calendar',['month']);
+ assert.equal(h.state.tab,'evening-calendar');
+ assert.equal(h.state.eveningCalendarMonth,'2026-10');
+ assert.equal(h.state.eveningCalendarDate,'2026-10-01');
+ assert.equal(h.state.eveningCalendarBack,'tab:home');
+ assert.equal(h.goBack(),'tab:home');
+ assert.equal(h.renderCount(),1);
+ assert.equal(h.state.eveningMore,false);
+});
+
+test('LR-ACCUEIL-001: other calendar entry keeps the existing session context',async()=>{
+ const h=calendarOpenHarness('session');
+ await h.open('evening-calendar',[]);
+ assert.equal(h.state.eveningCalendarMonth,'2026-09');
+ assert.equal(h.state.eveningCalendarDate,'2026-09-14');
+ assert.equal(h.goBack(),'tab:session');
+ const settings=calendarOpenHarness('settings');
+ await settings.open('evening-calendar',['settings']);
+ assert.equal(settings.goBack(),'settings-page:confidentialite');
+});
+
+test('LR-ACCUEIL-001: an official dice, redraw or gift blocks calendar navigation',async()=>{
+ for(const busy of ['dice','redraw','gift']){
+  const h=calendarOpenHarness('session');h.setBusy(busy);
+  await h.open('evening-calendar',['month']);
+  assert.equal(h.state.tab,'session');
+  assert.equal(h.renderCount(),0);
+  assert.equal(h.state.eveningCalendarMonth,'2026-09');
+ }
+});
