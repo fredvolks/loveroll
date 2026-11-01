@@ -1131,3 +1131,13 @@ Pour **chacun des douze identifiants**, renseigner un état réel et les preuves
 - Ne modifier **aucune** permission native, inscription FCM, logique de mise à jour, activation d'alerte, comportement des interrupteurs, donnée utilisateur ou règle de jeu. Un interrupteur désactivé reste distinct visuellement.
 - Les contrôles automatiques GitHub doivent être lus sur le SHA final et les navigateurs/appareils physiques restent à contrôler avant tout verdict de conformité. Aucun test d'installation réelle Android/iOS ni notification reçue n'est démontré par cette retouche CSS.
 - Les prochains lots doivent prioriser les parcours de jeu/fonctionnalités incomplets plutôt qu'ajouter une nouvelle feuille de style concurrente ou recommencer l'audit global.
+
+## Refonte LoveRoll — Lot 8 : évaluation de fin de Soirée (1 novembre 2026)
+
+**Statut : code CSS commité, en attente des contrôles sur SHA final.** La feuille commune \`couple-web/velours-lanterne-maquette3.css\` habille désormais la fenêtre réelle de fin de Soirée (cinq cœurs), les champs de commentaires et les notes accessibles dans l'historique/calendrier. Travaux ciblés dans la PR #179, commits \`505cfd47\` puis \`42d5178b\`.
+
+- Reprendre les matériaux approuvés de la maquette 3 : velours bordeaux, rose lanterne, champagne et écrin rubis, sans nouvelle feuille concurrente.
+- Les cœurs, la fermeture et le bouton d'édition ont des cibles tactiles de 44 px. À largeur ≤ 380 px, les cinq boutons de note occupent une rangée entière au lieu d'être comprimés contre le texte de la question. Sur écran court, la fenêtre peut défiler sans perdre ses actions.
+- Préserver les cinq niveaux de note, le bouton enregistrer, les contrôles désactivés, le texte libre, la confidentialité des commentaires, les dates et les données enregistrées. Aucun changement des événements ou règles métier.
+- Vérification à effectuer sur le SHA final : ouverture/fermeture, cinq notes avec et sans sélection, enregistrement/erreur, zoom et clavier mobile, historique sur Android, iPad portrait/paysage et PC. Ne pas déclarer ces essais effectués tant qu'aucune exécution/résultat n'est fourni.
+- Priorité ensuite : fonctionnalités de jeu et parcours utilisateur encore incomplets; éviter l'acharnement sur le seul CSS.
