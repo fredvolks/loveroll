@@ -115,7 +115,16 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   assert.ok(changed(final,afterRoll.held),'Finger inspection must still work after the official roll');
   assert.equal(afterRoll.released.face,5);flat(afterRoll.released);
   assert.equal(world.calls.filter(c=>c.name==='roll_couple_once').length,1);
-  assert.equal(await page.locator('.home-roll-button').isDisabled(),true);
+  // After an official weekly roll, the button becomes a usable shortcut.
+  // An enabled navigation action must never trigger a second D6 throw.
+  const shortcut=page.locator('.home-roll-button.is-used');
+  assert.equal(await shortcut.isEnabled(),true,
+   'The Soirée shortcut stays accessible after the official roll');
+  assert.notEqual(await shortcut.getAttribute('data-action'),'roll:weekly',
+   'The shortcut must not offer another weekly draw');
+  await shortcut.click();
+  assert.equal(world.calls.filter(c=>c.name==='roll_couple_once').length,1,
+   'Opening Soirée never draws the official D6 a second time');
   assert.deepEqual(errors,[]);
   console.log('HOME_RUBY_TOUCH_OK: flat yaw before/after roll, one model, one official result');
   await context.close();

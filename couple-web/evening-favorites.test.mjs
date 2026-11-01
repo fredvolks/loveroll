@@ -128,6 +128,20 @@ test('Previously drawn favorites can be removed from Settings after the evening 
  assert.equal(removeEveningFavorite('fred','couple-b','SENSUEL:1',storage).reason,'not-found');
  assert.equal(removeEveningFavorite('partner','couple-a','SENSUEL:1',storage).reason,'not-found');
 });
+test('Favorites manager keeps valid cards despite malformed leading rows and duplicate IDs',()=>{
+ const html=eveningFavoritesSettingsHtml([
+  null,'BOGUS:2','SENSUEL:01','SENSUEL:7','SENSUEL:7',
+  '<img src=x onerror=alert(1)>','SEXUEL:100','MIXTE:50',
+  'SENSUEL:3','SEXUEL:4','SEXUEL:5'
+ ]);
+ assert.match(html,/Mes favoris D100 · 5 \/ 5/);
+ assert.equal((html.match(/data-action="favorite-remove:/g)||[]).length,5);
+ assert.equal((html.match(/favorite-remove:SENSUEL:7"/g)||[]).length,1);
+ assert.match(html,/favorite-remove:SEXUEL:100"/);
+ assert.match(html,/favorite-remove:MIXTE:50"/);
+ assert.doesNotMatch(html,/onerror|favorite-remove:SEXUEL:5"/);
+});
+
 test('Settings favorite actions cannot inject markup or add arbitrary cards',()=>{
  assert.match(eveningFavoritesSettingsHtml(),/Aucun favori/);
  const html=eveningFavoritesSettingsHtml([

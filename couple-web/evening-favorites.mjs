@@ -88,13 +88,18 @@ export function removeEveningFavorite(userId,coupleId,id,storage){
 // The list contains only verified canonical IDs, not untrusted card titles.
 // A small self-contained section remains usable on phone and desktop.
 export function eveningFavoritesSettingsHtml(favorites=[],titles={}){
- const items=Array.isArray(favorites)?favorites.slice(0,EVENING_FAVORITES_LIMIT):[];
- const valid=items.filter(value=>{
-  if(typeof value!=='string')return false;
+ // Clean first, then enforce the limit: malformed leading entries and
+ // repeated IDs must not hide real favorites further down the list.
+ const valid=[],seen=new Set();
+ for(const value of Array.isArray(favorites)?favorites:[]){
+  if(typeof value!=='string')continue;
   const [category,number,extra]=value.split(':');
-  return extra===undefined&&
-   eveningFavoriteId({category,card_id:Number(number)})===value;
- });
+  if(extra!==undefined||
+     eveningFavoriteId({category,card_id:Number(number)})!==value||
+     seen.has(value))continue;
+  seen.add(value);valid.push(value);
+  if(valid.length===EVENING_FAVORITES_LIMIT)break;
+ }
  const rows=valid.map(value=>{
   const [category,number]=value.split(':');
   const name=category==='SENSUEL'?'Sensuel':category==='SEXUEL'?'Sexuel':'Mixte';
