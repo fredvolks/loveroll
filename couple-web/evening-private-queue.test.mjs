@@ -21,6 +21,9 @@ test('Alternation is based on DRAWN challenges rather than COMPLETED challenges'
  assert.equal(hasTurnToDraw(base,'partner'),false);
  assert.equal(hasTurnToDraw({...base,remaining:{fred:0,partner:5}},'fred'),false);
  assert.equal(hasTurnToDraw({...base,drawsFinished:true},'fred'),false);
+ assert.equal(hasTurnToDraw({...base,finished:true},'fred'),false,
+  'A closed evening must not permit a stale D100 click even if quotas still show remaining draws');
+ assert.equal(hasTurnToDraw({...base,ready:false},'fred'),false);
  assert.match(migration,/status<>'passed'/);
  assert.doesNotMatch(migration,/All couples share ONE active challenge/);
  assert.match(migration,/my_love_evening_board/);
