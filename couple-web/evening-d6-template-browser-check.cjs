@@ -52,9 +52,23 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   }
   // Once Supabase confirms the roll, the UI replaces the action button with
   // an accessible status rather than leaving an inert button in the tab order.
-  await page.waitForFunction(()=>
-   document.querySelector('.evening-my-die .evening-d6-status[role="status"]')
-    ?.textContent?.includes('Lancer enregistré'),null,{timeout:30000});
+  try {
+   await page.waitForFunction(()=>
+    document.querySelector('.evening-my-die .evening-d6-status[role="status"]')
+     ?.textContent?.includes('Lancer enregistré'),null,{timeout:30000});
+  } catch(error) {
+   const snapshot=await page.evaluate(()=>({
+    tab:document.querySelector('#app')?.className,
+    personal:document.querySelector('.evening-my-die')?.innerText?.slice(-600),
+    statuses:[...document.querySelectorAll('.evening-d6-status,[role="alert"]')].map(n=>n.textContent),
+    actions:[...document.querySelectorAll('[data-action="my-d6"]')].map(n=>({text:n.textContent,disabled:n.disabled})),
+    cards:[...document.querySelectorAll('.evening-premium-view,.evening-my-die,.evening-progress')].map(n=>({cls:n.className,text:n.textContent.slice(0,160)}))
+   }));
+   console.error('D6_OFFICIAL_RESULT_DIAGNOSTIC',JSON.stringify({snapshot,
+    calls:world.calls.filter(c=>/roll_my_evening_d6|my_love_roll_status|couple_personal_rolls/.test(c.name)).slice(-25),
+    errors}));
+   throw error;
+  }
   assert.equal(await page.locator('[data-action="my-d6"]').count(),0,
    'A confirmed personal D6 must not offer a second roll');
   assert.match(await page.locator('.evening-my-die .evening-d6-status[role="status"]').innerText(),/Lancer enregistré/);
