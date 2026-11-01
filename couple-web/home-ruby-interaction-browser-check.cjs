@@ -20,6 +20,10 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   const {page,context,errors}=await setupEditorial(browser,world,{width:412,height:824,query:'open=home',motion:'no-preference'});
   await page.waitForFunction(()=>document.querySelector('.home-die-platform canvas')?.loveRollDie?.readState().optics.loaded);
   const read=()=>page.evaluate(()=>document.querySelector('.home-die-platform canvas').loveRollDie.readState());
+  // The gesture target must not scroll the viewport on real touch browsers.
+  assert.equal(await page.locator('.home-die-platform canvas').evaluate(el=>
+   getComputedStyle(el).touchAction),'none',
+   'Home D6 canvas owns its finger gestures; the page must not pan');
   const initial=await read();
   if(process.env.LOVEROLL_CAPTURE_DIR)await page.screenshot({path:path.join(process.env.LOVEROLL_CAPTURE_DIR,'ruby-resting.png')});
   await page.evaluate(()=>window.__originalRuby=document.querySelector('.home-die-platform canvas'));
@@ -45,7 +49,8 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   const changed=(a,b)=>Math.abs(a.quaternion.reduce((sum,v,i)=>sum+v*b.quaternion[i],0))<.995;
   const flat=state=>{
    assert.ok(state.restingUp[1]>.999999,'A face must remain flat on the horizontal support plane');
-   assert.ok(Math.abs(state.support.y-initial.support.y)<.1,'Dragging must not lift or lower the die');
+   assert.ok(Math.abs(state.support.y-initial.support.y)<.1,
+    'Dragging must not lift or lower the die: '+JSON.stringify({before:initial.support,after:state.support}));
   };
   const horizontal=await drag(70,40);
   assert.ok(changed(initial,horizontal.held),'A finger swipe must visibly turn the model');
