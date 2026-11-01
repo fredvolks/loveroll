@@ -26,7 +26,7 @@ test('Bookmark is scoped by account/session, stores no private card text and rej
  assert.equal(restoreEveningSelection(store,'alice','s1',[card]),null);
 });
 test('Rejected, replaced and foreign challenges never reopen',()=>{
- for(const status of ['passed','refused']){
+ for(const status of ['completed','passed','refused','cancelled','unknown']){
   const store=memory();saveEveningSelection(store,'alice','s1','a');
   assert.equal(restoreEveningSelection(store,'alice','s1',[{id:'a',recipient:'alice',session_id:'s1',status}]),null);
  }
@@ -48,4 +48,16 @@ test('Resume action is read-only, restores server private queue and reconciles t
  assert.ok(sw.includes("const CACHE='loveroll-static-v"+build.split('.')[1]+"'"));
  assert.match(sw,/\.\/evening-resume\.mjs/);
  assert.ok(app.includes("const WEB_RELEASE='"+build+"'"));
+});
+
+test('Only current proposed or accepted cards can resume after a server refresh',()=>{
+ for(const status of ['proposed','accepted']){
+  const store=memory(),card={id:'a',recipient:'alice',session_id:'s1',status};
+  saveEveningSelection(store,'alice','s1','a');
+  assert.equal(restoreEveningSelection(store,'alice','s1',[card]),'a');
+ }
+ const store=memory();saveEveningSelection(store,'alice','s1','a');
+ const completed={id:'a',recipient:'alice',session_id:'s1',status:'completed'};
+ assert.equal(restoreEveningSelection(store,'alice','s1',[completed]),null);
+ assert.equal(store.map.size,0,'The obsolete bookmark must be cleared');
 });
