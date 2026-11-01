@@ -35,7 +35,7 @@ test('LoveRoll build versions agree between endpoint, app, HTML and imported mod
  assert.ok(app.includes('cycle-questionnaire.mjs?v=20261018-cycle149'));
  assert.ok(app.includes("rpc('love_cycle_status'"));
  assert.ok(app.includes("rpc('reset_love_challenges_admin'"));
- assert.ok(html.includes('evening-calendar.css?v=20261018-stats148'));
+ assert.ok(html.includes('evening-calendar.css?v=20261101-hearts266'));
  assert.ok(app.includes('couple-live-sync.mjs?v=20261017-advent119'));
  assert.ok(html.includes('premium-advent.css?v=20261019-ipad155'));
   assert.ok(app.includes("const WEB_RELEASE='"+build+"'"));
