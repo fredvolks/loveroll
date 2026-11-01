@@ -266,7 +266,8 @@ export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,d
    (activeEvening?'resume-evening':homeAction)+'">'+
    (activeEvening?'Reprendre notre soirée':homeLabel)+'</button></div></section>'+
    '<section class="home-panel home-monthly-panel" aria-labelledby="home-statistics-title">'+
-   '<h3 id="home-statistics-title" aria-label="Nos statistiques du mois"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M1 11h3v8H1zm5-7h3v15H6zm5 3h3v12h-3zm5-6h3v18h-3z"/></svg>Ce mois</h3>'+
+   '<h3 id="home-statistics-title"><button type="button" class="home-monthly-link" data-action="evening-calendar:month" aria-label="Voir le détail de nos statistiques du mois dans le calendrier">'+
+   '<svg viewBox="0 0 20 20" aria-hidden="true"><path d="M1 11h3v8H1zm5-7h3v15H6zm5 3h3v12h-3zm5-6h3v18h-3z"/></svg>Ce mois <span aria-hidden="true">›</span></button></h3>'+
    '<div class="home-stats-grid" aria-label="Statistiques réelles du couple">'+
    statistic(String(coupleStats.completed),'Défis réalisés','Ce mois · Couple','completed')+
    statistic(coupleStats.byPartner.join(' / '),'Répartition',nameA+' / '+nameB,'partners')+
