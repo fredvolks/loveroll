@@ -130,19 +130,19 @@ test('Monthly stats only use completed records, real categories, partner IDs and
   {session_id:'old',recipient:'a',status:'completed',category:'SENSUEL',created_at:'2026-09-23T18:00:00Z'}
  ];
  const stats=coupleHomeStats(challenges,sessions,members,new Date('2026-10-14T20:00:00Z'));
- assert.deepEqual(stats,{completed:3,byPartner:[2,1],sensualPercent:33,sexualPercent:67,streak:2});
+ assert.deepEqual(stats,{completed:3,monthlyEvenings:2,byPartner:[2,1],sensualPercent:33,sexualPercent:67,streak:2});
  const html=premiumHomeHtml({history:challenges,sessions,members,now:new Date('2026-10-14T20:00:00Z')});
  assert.match(html,/class="home-stat-card completed"/);
  assert.match(html,/class="home-stat-card partners"/);
  assert.match(html,/class="home-stat-card categories"/);
  assert.match(html,/class="home-stat-card streak"/);
  assert.match(html,/33 \/ 67 %/);
- assert.match(html,/Fred \/ Émilie/);
+ assert.match(html,/Soirées partagées/);
  assert.doesNotMatch(html,/class="home-shortcut /);
 });
 test('Unpaired statistics are zero or no-data instead of invented sample figures',()=>{
  const noData=coupleHomeStats([],[],[{user_id:'x'},{user_id:'y'}]);
- assert.deepEqual(noData,{completed:0,byPartner:[0,0],sensualPercent:null,sexualPercent:null,streak:0});
+ assert.deepEqual(noData,{completed:0,monthlyEvenings:0,byPartner:[0,0],sensualPercent:null,sexualPercent:null,streak:0});
 });
 test('D6 uses an actual bevel and no neon wireframe; fallback hidden during throws',()=>{
  assert.match(die,/RoundedBoxGeometry\(1\.8,1\.8,1\.8,9,\.18\)/);
@@ -175,11 +175,14 @@ test('Connected Home restores centered LoveRoll brand and preserves weekly statu
  assert.doesNotMatch(afterDraw,/Voir notre résultat/);
 });
 
-test('Partner statistics distinguish saved profiles with the same first name',()=>{
- const h=premiumHomeHtml({members:[{user_id:'a',name:'Fred'},{user_id:'b',name:'Fred Messely'}]});
- const partners=h.match(/class="home-stat-card partners"[\s\S]*?<\/div>/)?.[0];
- assert.match(partners,/<small>Fred \/ Fred Messely<\/small>/);
- assert.doesNotMatch(partners,/<small>Fred \/ Fred<\/small>/);
+test('Monthly couple recap is collective and never shows private partner allocation',()=>{
+ const h=premiumHomeHtml({members:[{user_id:'a',name:'Alice'},{user_id:'b',name:'Bob'}],
+  sessions:[{id:'s1',counted:true,finished_at:'2026-10-14T20:00:00Z'}],
+  now:new Date('2026-10-15T12:00:00Z')});
+ const monthly=h.match(/class="home-stat-card partners"[\s\S]*?<\/div>/)?.[0];
+ assert.match(monthly,/>1<\/strong>/);
+ assert.match(monthly,/Soirées partagées/);
+ assert.doesNotMatch(monthly,/Alice|Bob|Répartition|Restants :/);
 });
 
 test('Mobile Home scene geometry never produces negative artwork heights when Safari viewport shrinks',()=>{
@@ -299,4 +302,24 @@ test('LR-ACCUEIL-001: the monthly recap links to current-month history without m
  assert.doesNotMatch(html,/data-action="new-session"|data-action="roll:challenge"/);
  assert.match(css,/\.home-monthly-link:focus-visible/);
  assert.match(app,/if\(parts\[0\]==='month'\)/);
+});
+
+test('LR-ACCUEIL-001: only real completed counted sessions appear in the correct Québec month',()=>{
+ const sessions=[
+  {id:'oct',counted:true,finished_at:'2026-11-01T02:59:00Z'},
+  {id:'oct',counted:true,finished_at:'2026-11-01T02:59:00Z'},
+  {id:'nov',counted:true,finished_at:'2026-11-01T04:30:00Z'},
+  {id:'draft',counted:true,finished_at:null},
+  {id:'uncounted',counted:false,finished_at:'2026-10-25T21:00:00Z'},
+  {id:'invalid',counted:true,finished_at:'invalid'}
+ ];
+ const october=coupleHomeStats([],sessions,[],new Date('2026-10-31T21:00:00Z'));
+ const november=coupleHomeStats([],sessions,[],new Date('2026-11-01T17:00:00Z'));
+ assert.equal(october.monthlyEvenings,1,'October evening finished before Québec midnight');
+ assert.equal(november.monthlyEvenings,1,'November evening finished after Québec midnight');
+ assert.equal(october.completed,0,'No fabricated challenge completion');
+ assert.equal(november.completed,0);
+ const html=premiumHomeHtml({sessions,now:new Date('2026-10-31T21:00:00Z')});
+ assert.match(html,/Soirées partagées/);
+ assert.doesNotMatch(html,/Répartition/);
 });
