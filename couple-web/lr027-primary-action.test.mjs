@@ -211,7 +211,7 @@ test('an already accepted personal challenge wins over a proposed challenge',()=
  assert.equal(primaryEveningChallenge(queue.filter(card=>card.status!=='accepted'))?.id,'older-proposal');
  assert.equal(primaryEveningChallenge(queue.filter(card=>card.status==='completed')),null);
  assert.equal(primaryEveningChallenge([]),null);
- const current=view({pending:primaryEveningChallenge(queue),turn:{...base.turn,next:'b'},ownChallengeCount:queue.length});
+ const current=view({session:{id:'night'},pending:primaryEveningChallenge(queue),turn:{...base.turn,next:'b'},ownChallengeCount:queue.length});
  assert.match(dominant(current)[0],/data-action="evening-open:started"/);
  assert.doesNotMatch(current,/data-action="evening-open:other-player"/);
 });
