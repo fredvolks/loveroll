@@ -174,7 +174,7 @@ export {ritualBrandHtml} from './brand.mjs?v=20261017-ritual130';
 import {ritualHeadingHtml} from './brand.mjs?v=20261017-ritual130';
 export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,disabled=false,members=[],
   turn=null,monthly={},history=[],sessions=[],events=[],rollFace=1,now=new Date(),
-  weeklyWeights=WEEKLY_ODDS,weeklyWeightsEnabled=true,monthlyActivity=null,weeklyProgress=null,reservation=null,eveningInvite=null}={}){
+  weeklyWeights=WEEKLY_ODDS,weeklyWeightsEnabled=true,monthlyActivity=null,weeklyProgress=null,reservation=null,eveningInvite=null,ownEveningD6Ready=false}={}){
  const weights=effectiveDicePercentages(weeklyWeights,weeklyWeightsEnabled,WEEKLY_ODDS).map((pct,i)=>
   '<span class="home-weight" title="'+(i+1)+' soirée'+(i===0?'':'s')+' : '+displayedDicePercent(pct)+' %">'+pipFace(i+1)+
   '<b>'+(i+1)+'x</b><span>'+displayedDicePercent(pct)+'%</span></span>').join('');
@@ -232,13 +232,14 @@ export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,d
   ['pending','maybe'].includes(eveningInvite.state);
  const invitationSent=!activeEvening&&eveningInvite?.direction==='sent'&&
   eveningInvite.state==='pending';
- const eveningStatus=activeEvening?(stats.ready?'Soirée en cours':'Soirée commencée'):
+ const eveningStatus=activeEvening?(stats.ready?'Soirée en cours':ownEveningD6Ready?'En attente du partenaire':'Soirée commencée'):
   invitationReceived?'Une invitation vous attend':
   invitationSent?'En attente de la réponse':
   weeklyExhausted?'Notre semaine est complète':
   dailyLocked?'Soirée déjà partagée aujourd’hui':
   historyUnknown?'Synchronisation des soirées…':'Aucune soirée en cours';
- const eveningHint=activeEvening?(stats.ready?'Retrouvez vos défis dans Soirée.':'Préparez vos dés personnels dans Soirée.'):
+ const eveningHint=activeEvening?(stats.ready?'Retrouvez vos défis dans Soirée.':
+  ownEveningD6Ready?'Ton dé est enregistré. Le deuxième dé se brasse dans Soirée.':'Préparez vos dés personnels dans Soirée.'):
   invitationReceived?'Ton partenaire propose une soirée. Tu es libre de répondre.':
   invitationSent?'Ton partenaire peut répondre à son rythme.':
   weeklyExhausted?'Retrouvez notre historique sans relancer le dé.':
