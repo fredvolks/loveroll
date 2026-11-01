@@ -129,3 +129,66 @@ export function eveningFavoritesSettingsHtml(favorites=[],titles={}){
   '<small>Favoris personnels enregistrés sur cet appareil pour ce duo.</small>'+
   '</section>';
 }
+
+/* LR-019 intermediate local UX only. The couple-wide server transaction
+ * mandated by the master prompt is NOT implemented here. A single local
+ * storage write replaces one explicit favorite; never remove the old entry
+ * first, silently evict a choice, or assume a stale five-card view is current.
+ */
+export function replaceEveningFavorite(userId,coupleId,card,removeId,expectedIds,storage){
+ const addition=eveningFavoriteId(card);
+ if(!validScope(userId,coupleId)||!addition||typeof removeId!=='string'||
+    !Array.isArray(expectedIds)||expectedIds.length!==EVENING_FAVORITES_LIMIT)
+  return {ok:false,reason:'invalid',favorites:[]};
+ let available,current;
+ try{
+  available=storage===undefined?globalThis.localStorage:storage;
+  if(!available?.getItem||!available?.setItem)
+   return {ok:false,reason:'storage',favorites:[]};
+  current=parseFavoriteEntries(available.getItem(key(userId,coupleId)));
+ }catch{return {ok:false,reason:'storage',favorites:[]};}
+ // All five current choices must still match the snapshot shown in the
+ // dialog, even if another local tab edited this account meanwhile.
+ if(current.length!==EVENING_FAVORITES_LIMIT||
+    current.some((id,index)=>id!==expectedIds[index]))
+  return {ok:false,reason:'stale',favorites:current};
+ if(!current.includes(removeId)||current.includes(addition)||removeId===addition)
+  return {ok:false,reason:'invalid',favorites:current};
+ const next=current.map(id=>id===removeId?addition:id);
+ try{
+  available.setItem(key(userId,coupleId),JSON.stringify(next));
+  return {ok:true,reason:'replaced',favorites:next};
+ }catch{return {ok:false,reason:'storage',favorites:current};}
+}
+const escapeFavoriteHtml=value=>String(value??'').replace(/[&<>"']/g,c=>
+ ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+export function eveningFavoriteReplacementHtml({target=null,favorites=[],titles={}}={}){
+ const newId=eveningFavoriteId(target);
+ if(!newId||!Array.isArray(favorites)||favorites.length!==EVENING_FAVORITES_LIMIT||
+    new Set(favorites).size!==EVENING_FAVORITES_LIMIT||favorites.includes(newId)||
+    favorites.some(id=>{
+     const [category,number,extra]=String(id).split(':');
+     return extra!==undefined||eveningFavoriteId({category,card_id:number})!==id;
+    }))return '';
+ const name=typeof target?.title==='string'&&target.title.trim()?
+  target.title.trim().slice(0,120):newId;
+ const rows=favorites.map(id=>{
+  const [category,number]=id.split(':');
+  const title=typeof titles?.[id]==='string'&&titles[id].trim()?
+   titles[id].trim().slice(0,120):category+' · carte '+number;
+  return '<li class="lr-favorite-replace-row"><span>'+
+   escapeFavoriteHtml(title)+'</span>'+
+   '<button type="button" data-action="evening-favorite-replace:'+id+'"'+
+   ' aria-label="Retirer '+escapeFavoriteHtml(title)+' et ajouter '+escapeFavoriteHtml(name)+'">'+
+   'Retirer et ajouter le nouveau</button></li>';
+ }).join('');
+ return '<aside class="lr-favorite-replace-dialog" role="dialog" aria-modal="true"'+
+  ' aria-label="Choisir un coup de cœur à remplacer">'+
+  '<h3>Vous avez déjà 5 défis en favoris</h3>'+
+  '<p>Lequel voulez-vous retirer pour ajouter <strong>'+
+   escapeFavoriteHtml(name)+'</strong> ?</p>'+
+  '<p>Mes favoris sur cet appareil · 5 / 5</p>'+
+  '<ul class="lr-favorite-replace-list">'+rows+'</ul>'+
+  '<button type="button" data-action="evening-favorite-replace-cancel"'+
+  ' class="subtle">Annuler</button></aside>';
+}

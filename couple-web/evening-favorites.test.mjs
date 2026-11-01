@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {runInNewContext} from 'node:vm';
-import {EVENING_FAVORITES_LIMIT,eveningFavoriteId,readEveningFavorites,toggleEveningFavorite,removeEveningFavorite,eveningFavoritesSettingsHtml} from './evening-favorites.mjs';
+import {EVENING_FAVORITES_LIMIT,eveningFavoriteId,readEveningFavorites,toggleEveningFavorite,removeEveningFavorite,eveningFavoritesSettingsHtml,replaceEveningFavorite,eveningFavoriteReplacementHtml} from './evening-favorites.mjs';
 
 const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
 const store=()=>{
@@ -325,4 +325,59 @@ test('LR-028: stale favorite taps during a gift never save or repaint the queue'
  assert.equal(saves,0);
  assert.equal(renders,0);
  assert.equal(focus,0);
+});
+
+test('LR-019 local sixth heart prompts an explicit atomic five-to-five exchange',()=>{
+ const storage=store();let writes=0;
+ const tracked={getItem:key=>storage.getItem(key),setItem:(key,value)=>{
+  writes++;storage.setItem(key,value);
+ }};
+ for(let n=1;n<=5;n++)toggleEveningFavorite('alice','duo',card(n),tracked);
+ const snapshot=readEveningFavorites('alice','duo',tracked);
+ const beforeWrites=writes;
+ const html=eveningFavoriteReplacementHtml({target:{...card(6),title:'Nouveau & <privé>'},
+  favorites:snapshot,titles:{'SENSUEL:1':'Ancien <défi>'}});
+ assert.match(html,/role="dialog" aria-modal="true"/);
+ assert.equal((html.match(/data-action="evening-favorite-replace:SENSUEL:/g)||[]).length,5);
+ assert.match(html,/data-action="evening-favorite-replace-cancel"/);
+ assert.match(html,/Retirer et ajouter le nouveau/);
+ assert.match(html,/Ancien &lt;défi&gt;/);
+ assert.match(html,/Nouveau &amp; &lt;privé&gt;/);
+ assert.doesNotMatch(html,/<privé>|<défi>/);
+ assert.equal(writes,beforeWrites,'rendering does not mutate saved hearts');
+ const result=replaceEveningFavorite('alice','duo',card(6),'SENSUEL:2',snapshot,tracked);
+ assert.equal(result.ok,true);
+ assert.equal(result.reason,'replaced');
+ assert.equal(writes,beforeWrites+1,'one local write; never delete then add');
+ assert.deepEqual(readEveningFavorites('alice','duo',tracked),
+  ['SENSUEL:1','SENSUEL:6','SENSUEL:3','SENSUEL:4','SENSUEL:5']);
+ assert.deepEqual(readEveningFavorites('bob','duo',tracked),[]);
+ assert.equal(replaceEveningFavorite('alice','duo',card(7),'SENSUEL:1',snapshot,tracked).reason,'stale',
+  'an older dialog must not delete a different current favorite');
+ assert.equal(writes,beforeWrites+1);
+ const next=readEveningFavorites('alice','duo',tracked);
+ assert.equal(replaceEveningFavorite('alice','duo',card(7),'SENSUEL:99',next,tracked).reason,'invalid');
+ assert.equal(replaceEveningFavorite('alice','duo',card(7),'SENSUEL:1',
+  ['SENSUEL:6',...next.slice(1)],tracked).reason,'stale');
+ assert.equal(writes,beforeWrites+1);
+});
+test('LR-019 local exchange cannot erase hearts if storage write fails',()=>{
+ const storage=store();
+ for(let n=1;n<=5;n++)toggleEveningFavorite('alice','duo',card(n),storage);
+ const before=readEveningFavorites('alice','duo',storage);
+ const blocked={getItem:key=>storage.getItem(key),setItem:()=>{throw Error('denied');}};
+ assert.equal(replaceEveningFavorite('alice','duo',card(6),'SENSUEL:1',before,blocked).reason,'storage');
+ assert.deepEqual(readEveningFavorites('alice','duo',storage),before);
+ const malformed=eveningFavoriteReplacementHtml({target:{title:'x'},favorites:before});
+ assert.equal(malformed,'');
+});
+test('Sixth favorite opens a choice in the private queue; does not silently evict',()=>{
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ assert.match(app,/favoriteReplacement:\s*null/);
+ assert.match(app,/if\(outcome.reason==='limit'\)\{/);
+ assert.match(app,/state\.favoriteReplacement=\{/);
+ assert.match(app,/if\(verb==='evening-favorite-replace'\)\{/);
+ assert.match(app,/replaceEveningFavorite\(/);
+ assert.match(app,/eveningFavoriteReplacementHtml\(/);
+ assert.match(app,/favoriteReplacement:\s*null/);
 });
