@@ -4,7 +4,11 @@ export async function loadEclatHistory(client,coupleId){
  for(let offset=0;;offset+=1000){
   const {data,error}=await client.from('love_eclat_sessions')
    .select('id,coffret_id,minutes,chapter_index,started_at,ended_at,cancelled')
-   .eq('couple_id',coupleId).order('started_at',{ascending:false}).range(offset,offset+999);
+   .eq('couple_id',coupleId)
+   // Several starts can share the same timestamp. Sorting by a unique ID
+   // keeps pagination deterministic across boundaries of 1000 sessions.
+   .order('started_at',{ascending:false}).order('id',{ascending:false})
+   .range(offset,offset+999);
   if(error)throw error;
   rows.push(...(data||[]));
   if(!data||data.length<1000)return rows;
