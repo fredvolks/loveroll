@@ -188,3 +188,23 @@ test('Éclat regroupe clairement les trois choix privés pour lecteurs d’écra
  assert.match(waiting,/On attend ton partenaire/);
  assert.match(revealed,/VOTRE SUITE COMMUNE/);
 });
+
+test('Optional Éclat clue disclosure survives redraws within the private chapter',()=>{
+ const active={access:true,active:true,coffret_id:1,minutes:60,chapter_index:1,
+  chapter_number:1,variant_number:0,chapter_total:6,session_id:'clue-test',
+  my_choice:null,both_chosen:false};
+ const base={status:active,members:people,userId:'a'};
+ const closed=eclatHtml({...base,noteState:{note:'Souvenir',clue:'Indice',clueOpen:false}});
+ const open=eclatHtml({...base,noteState:{note:'Souvenir',clue:'Indice',clueOpen:true}});
+ assert.match(closed,/<details class="eclat-clue-field"><summary>/);
+ assert.doesNotMatch(closed,/<details class="eclat-clue-field" open>/);
+ assert.match(open,/<details class="eclat-clue-field" open><summary>/);
+ assert.match(open,/data-eclat-field="clue"/);
+ assert.match(open,/>Indice<\/textarea>/);
+ assert.match(open,/>Souvenir<\/textarea>/);
+ const app=read('./app.js');
+ assert.match(app,/clueOpen:false,moment_done:false/);
+ assert.match(app,/querySelectorAll\('\.eclat-clue-field'\)/);
+ assert.match(app,/addEventListener\('toggle'/);
+ assert.match(app,/draft\.clueOpen=disclosure\.open/);
+});
