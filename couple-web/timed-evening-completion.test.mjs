@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {isAcceptedTimedEveningChallenge,isSameCompletedEveningChallenge,completeTimedEveningChallenge,timedEveningTimerControl} from './timed-evening-completion.mjs';
+import {isAcceptedTimedEveningChallenge,isSameCompletedEveningChallenge,completeTimedEveningChallenge,timedEveningTimerControl,refreshAfterTimedEveningConfirmation} from './timed-evening-completion.mjs';
 const card={id:'card-a',recipient:'alice',session_id:'session-a',status:'accepted'};
 test('Only accepted, recipient-owned Soirée cards qualify; unrelated timers never count',()=>{
  assert.equal(isAcceptedTimedEveningChallenge(card,'alice','session-a'),true);
@@ -159,4 +159,21 @@ test('LR-002 live countdown and rerender cannot revive an inert Reprendre button
  assert.match(render,/presentation\.disabled\?' disabled aria-disabled="true"'/);
  assert.match(render,/presentation\.resetDisabled\?' disabled aria-disabled="true"'/);
  assert.match(render,/presentation\.label/);
+});
+
+test('LR-002 server-confirmed timed challenge remains completed when the screen refresh fails',async()=>{
+ let tries=0;
+ assert.equal(await refreshAfterTimedEveningConfirmation(async()=>{tries++;}),true);
+ assert.equal(await refreshAfterTimedEveningConfirmation(async()=>{tries++;throw Error('offline after save');}),false);
+ assert.equal(tries,2,'Refresh is attempted only once; helper never re-submits completion');
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const start=app.indexOf('async function retryExpiredTimedEvening(){');
+ const end=app.indexOf('function endSignal(){',start);
+ const timers=app.slice(start,end);
+ assert.equal((timers.match(/await refreshConfirmedTimedEvening\\(\\)/g)||[]).length,2,
+  'Active timer and reload recovery use the same safe refresh');
+ assert.doesNotMatch(timers,/await refreshAndShow\\(\\)/,
+  'Post-save display refresh must not be caught as a failed server write');
+ assert.match(app,/Défi accompli sur le serveur\\. L’affichage n’a pas pu être actualisé/);
+ assert.match(app,/const updated=await refreshAfterTimedEveningConfirmation\\(refreshAndShow\\)/);
 });
