@@ -54,3 +54,11 @@ export async function completeTimedEveningChallenge({challenge,userId,sessionId,
  }
  return {outcome,finished:!!board?.finished};
 }
+
+/**
+ * A successful server write is final even if the subsequent UI refresh fails.
+ * Return a display state, never turn a confirmed completion into an RPC retry.
+ */
+export async function refreshAfterTimedEveningConfirmation(refresh){
+ try{await refresh();return true;}catch{return false;}
+}
