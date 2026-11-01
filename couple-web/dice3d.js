@@ -555,8 +555,13 @@ export function dieOn(canvas,sides,value,rolling){
     // ruby silhouette, then re-anchor its projected bottom on the marble.
     // Set an absolute camera zoom (not *=) so repeated ResizeObserver calls
     // never accumulate scale, and leave phones, D6 and inactive stages alone.
-    if(tablet&&camera.zoom!==1.065){
-     camera.zoom=1.065;
+    // iPad paysage : le théâtre mesure 352×276 plutôt que 440×440 en
+    // portrait. Le D100 rendait 201px contre 257px dans Surprise.
+    // Zoom absolu sur le même mesh, sans cumul au redimensionnement.
+    const landscapeTablet=tablet&&window.matchMedia('(orientation:landscape)').matches;
+    const podiumZoom=landscapeTablet?1.36:1.065;
+    if(tablet&&camera.zoom!==podiumZoom){
+     camera.zoom=podiumZoom;
      camera.updateProjectionMatrix();
     }
     stage.style.setProperty('transform','none',priority);
@@ -718,7 +723,9 @@ export function dieOn(canvas,sides,value,rolling){
       if(Math.abs(correction)>.1){
        const origin=new THREE.Vector3(0,0,0).project(camera);
        const raised=new THREE.Vector3(0,1,0).project(camera);
-       const pixelsPerUnit=(raised.y-origin.y)*rect.height/2;
+       // Monter le mesh diminue sa coordonnée Y écran : le signe inverse
+       // empêchait la correction du dépassement durant le lancer réel.
+       const pixelsPerUnit=(origin.y-raised.y)*rect.height/2;
        if(pixelsPerUnit>1)built.group.position.y-=correction/pixelsPerUnit;
       }
      }
