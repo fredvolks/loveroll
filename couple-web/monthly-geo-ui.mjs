@@ -68,7 +68,10 @@ export function monthlyGeoCardHtml({
  if(reservation&&reservation.status!=='cancelled'){
   bookingHtml='<div class="surprise-geo-booked"><strong>'+
    (reservation.status==='confirmed'?'♡ Réservation déclarée confirmée':'♡ Projet de sortie')+
-   '</strong><span>'+esc(humanDate(reservation.reserved_for,locale))+'</span>'+
+   '</strong>'+
+   (reservation.venue_name?'<span class="surprise-geo-reserved-place">'+esc(reservation.venue_name)+'</span>':'')+
+   (reservation.venue_address?'<small>'+esc(reservation.venue_address)+'</small>':'')+
+   '<span>'+esc(humanDate(reservation.reserved_for,locale))+'</span>'+
    '<small>'+(reservation.paid_by_host?'Paiement déclaré effectué par la personne qui invite':'Paiement non confirmé dans LoveRoll')+
    '</small><small>'+(reservation.status==='confirmed'?
     'Les rappels dépendent de leur programmation et de vos notifications.':
@@ -126,4 +129,23 @@ export function geoLookupAfterRefresh({rollId,previousRollId,venue,previousLooku
  if(venue?.state)return venue.state;
  return rollId===previousRollId&&['pending','error'].includes(previousLookup)?
   previousLookup:'idle';
+}
+
+/**
+ * A manual venue change must not silently keep another business's official
+ * booking/menu/photo URLs. These links belong exclusively to the verified
+ * Geoapify suggestion, never to a user-entered replacement establishment.
+ */
+export function trustedBookingVenueLinks(venue,{title='',address=''}={}){
+ const sameText=(a,b)=>String(a??'').trim().replace(/\s+/g,' ').toLocaleLowerCase('fr-CA')===
+  String(b??'').trim().replace(/\s+/g,' ').toLocaleLowerCase('fr-CA');
+ const roadMetres=finiteProviderNumber(venue?.driving_meters);
+ const sameVerifiedVenue=venue?.state==='ready'&&!!venue.place_id&&
+  roadMetres!==null&&roadMetres>=0&&!!String(title).trim()&&
+  sameText(venue.name,title)&&sameText(venue.address,address);
+ return {
+  p_booking_url:sameVerifiedVenue?https(venue.booking_url):null,
+  p_menu_url:sameVerifiedVenue?https(venue.menu_url):null,
+  p_photo_url:sameVerifiedVenue?https(venue.photo_url):null
+ };
 }
