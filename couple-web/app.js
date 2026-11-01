@@ -502,7 +502,7 @@ function bindActions(){
  libraryFilter?.addEventListener('change',updateLibraryFilter);
  if(librarySearch)updateLibraryFilter();
  // Admin weighting editors: show live total and require exactly 100%.
- root.querySelectorAll('.admin-dice-weight-section').forEach(section=>{
+ root.querySelectorAll('.admin-dice-weight-section[data-dice-weight]').forEach(section=>{
   const fields=[...section.querySelectorAll('.admin-dice-weight-face input')];
   const total=section.querySelector('.admin-dice-weight-total');
   const saveButton=section.querySelector('.admin-dice-weight-save');
@@ -523,10 +523,9 @@ function bindActions(){
  const categoryFirst=id('admin-category-preferred'),categoryOther=id('admin-category-other');
  if(categoryFirst&&categoryOther){
   const total=id('admin-category-total'),save=root.querySelector('.admin-category-save');
-  const sync=(input,sibling)=>{
-   const value=input.value.trim();
-   if(/^[0-9]+$/.test(value)&&Number(value)<=100)
-    sibling.value=String(100-Number(value));
+  // Category odds have TWO values; the D6 validator above requires SIX.
+  // Validate the saved 88/12 (or custom) pair on first render too.
+  const validatePair=()=>{
    const good=[categoryFirst.value,categoryOther.value].every(v=>/^[0-9]+$/.test(v)&&Number(v)<=100)
     &&Number(categoryFirst.value)+Number(categoryOther.value)===100;
    if(total){
@@ -535,8 +534,15 @@ function bindActions(){
    }
    if(save)save.disabled=!good;
   };
+  const sync=(input,sibling)=>{
+   const value=input.value.trim();
+   if(/^[0-9]+$/.test(value)&&Number(value)<=100)
+    sibling.value=String(100-Number(value));
+   validatePair();
+  };
   categoryFirst.addEventListener('input',()=>sync(categoryFirst,categoryOther));
   categoryOther.addEventListener('input',()=>sync(categoryOther,categoryFirst));
+  validatePair();
  }
  document.querySelectorAll('[data-action]').forEach(el=>{
   el.addEventListener('click',()=>{
