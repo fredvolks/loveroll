@@ -142,9 +142,13 @@ test('owner-private active challenge becomes the single main action',()=>{
   assert.equal(dominant(html).length,1);
   assert.match(dominant(html)[0],/data-action="evening-open:card-a"/);
   assert.match(html,/♡ Voir mon défi/);
-  assert.equal((html.match(/data-action="evening-list"/g)||[]).length,0,
-   'Avoid a duplicate secondary link when the active challenge already opens directly');
+  assert.equal((html.match(/data-action="evening-list"/g)||[]).length,1,
+   'Other private cards remain reachable through a secondary list action');
   assert.doesNotMatch(html,/data-action="new-challenge"/);
+  const single=view({pending:{...mine,status:active},turn:{...base.turn,next:'b'},ownChallengeCount:1});
+  assert.equal(dominant(single).length,1);
+  assert.doesNotMatch(single,/data-action="evening-list"/,
+   'A single card does not need a duplicate secondary list button');
  }
  const foreign=view({pending:{...mine,recipient:'b'}});
  assert.match(dominant(foreign)[0],/data-action="new-challenge"/);
