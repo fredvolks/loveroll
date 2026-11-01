@@ -13,7 +13,9 @@ BEGIN
 END;
 $lr019$;
 
--- Only history suppression gains a heart exception. Existing same-night guards,
+-- Only history suppression gains a heart exception. Hearts added DURING an
+-- active evening are eligible no sooner than the next evening (added_at).
+-- Existing same-night guards,
 -- category weighting, permissions, exclusions and atomic locks are preserved.
 -- Ordinary shuffle-bag reset is deliberately unchanged.
 CREATE OR REPLACE FUNCTION public.draw_for_partner(p_session uuid, p_preference text, p_random boolean DEFAULT false)
@@ -164,7 +166,8 @@ BEGIN
     where history.couple_id=s.couple_id and history.recipient_user_id=target
      and history.category=v_cat and history.card_id=card)
     OR EXISTS(SELECT 1 FROM public.love_evening_favorites fav
-     WHERE fav.couple_id=s.couple_id AND fav.category=v_cat AND fav.card_id=card))
+     WHERE fav.couple_id=s.couple_id AND fav.category=v_cat AND fav.card_id=card
+       AND fav.added_at < s.started_at))
    and not exists(select 1 from public.couple_challenges used
     where used.session_id=p_session and used.recipient=target
      and used.category=v_cat and used.card_id=card);
@@ -205,7 +208,8 @@ BEGIN
    where history.couple_id=s.couple_id and history.recipient_user_id=target
     and history.category=v_cat and history.card_id=card)
     OR EXISTS(SELECT 1 FROM public.love_evening_favorites fav
-     WHERE fav.couple_id=s.couple_id AND fav.category=v_cat AND fav.card_id=card))
+     WHERE fav.couple_id=s.couple_id AND fav.category=v_cat AND fav.card_id=card
+       AND fav.added_at < s.started_at))
  and not exists(select 1 from public.couple_challenges used
    where used.session_id=p_session and used.recipient=target
     and used.category=v_cat and used.card_id=card)
@@ -363,7 +367,8 @@ BEGIN
   WHERE h.couple_id=v_couple AND h.recipient_user_id=v_old.recipient
    AND h.category=v_old.category AND h.card_id=candidate.card)
     OR EXISTS(SELECT 1 FROM public.love_evening_favorites fav
-     WHERE fav.couple_id=v_couple AND fav.category=v_old.category AND fav.card_id=candidate.card))
+     WHERE fav.couple_id=v_couple AND fav.category=v_old.category AND fav.card_id=candidate.card
+       AND fav.added_at < v_session.started_at))
  AND NOT EXISTS(
   SELECT 1 FROM public.couple_challenges seen
   WHERE seen.session_id=v_old.session_id AND seen.recipient=v_old.recipient
