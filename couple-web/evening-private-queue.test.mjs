@@ -15,6 +15,24 @@ test('Each user sees ONLY their own challenge cards, sorted chronologically',()=
  assert.equal(queuePosition([a,c],'challenge-c'),1);
  assert.equal(queueLabel('accepted'),'En cours');
 });
+test('A missing recipient or session fails closed before showing private challenge cards',()=>{
+ const malformed=[
+  {id:'unowned',recipient:undefined,session_id:undefined,status:'proposed'},
+  {id:'no-session',recipient:'fred',session_id:undefined,status:'accepted'},
+  {id:'no-owner',recipient:undefined,session_id:'s1',status:'proposed'},
+  a,b
+ ];
+ for(const uid of [undefined,null,'',0,'  ']){
+  assert.deepEqual(ownEveningChallenges(malformed,uid,'s1'),[],
+   'An unresolved login cannot expose a malformed card');
+ }
+ for(const session of [undefined,null,'',0,'  ']){
+  assert.deepEqual(ownEveningChallenges(malformed,'fred',session),[],
+   'An unresolved evening cannot expose a malformed card');
+ }
+ assert.deepEqual(ownEveningChallenges(malformed,'fred','s1').map(x=>x.id),['challenge-a']);
+ assert.deepEqual(ownEveningChallenges(malformed,'partner','s1').map(x=>x.id),['challenge-b']);
+});
 test('Alternation is based on DRAWN challenges rather than COMPLETED challenges',()=>{
  const base={ready:true,next:'fred',drawsFinished:false,remaining:{fred:2,partner:5}};
  assert.equal(hasTurnToDraw(base,'fred'),true);
