@@ -43,22 +43,19 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
     // A pending challenge can open automatically after sync.
     const queue=page.locator('.evening-queue-modal');
     if(await queue.count())await queue.locator('[data-action="evening-close"]').click();
-    const open=page.locator('[data-action="evening-list"]').first();
+    // LR-027: one unfinished personal card has a direct primary action,
+    // without a duplicate list trigger. Back must restore focus to THIS card.
+    const open=page.locator('.evening-premium-view [data-action="evening-open:back-test-challenge"]').first();
     await open.waitFor({state:'visible',timeout:10000});
     await open.click();
-    await queue.waitFor({state:'visible'});
-    const card=queue.locator('[data-action="evening-open:back-test-challenge"]');
-    await card.click();
     await page.locator('.evening-queue-content.is-detail').waitFor({state:'visible'});
     const handled=await page.evaluate(()=>window.loveRollHandleBack());
     assert.equal(handled,true,'Android native Back must be consumed by open challenge');
     await queue.waitFor({state:'detached',timeout:4000});
     assert.equal(await active.count(),1,'Android Back must not leave Soirée');
     assert.equal(await open.evaluate(el=>document.activeElement===el),true,
-     'Focus must return to the private challenge list trigger');
+     'Focus must return to the direct personal challenge trigger');
     await open.click();
-    await queue.waitFor({state:'visible'});
-    await queue.locator('[data-action="evening-open:back-test-challenge"]').click();
     await page.locator('.evening-queue-content.is-detail').waitFor({state:'visible'});
     await page.keyboard.press('Escape');
     await queue.waitFor({state:'detached',timeout:4000});
