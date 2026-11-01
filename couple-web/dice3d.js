@@ -490,7 +490,7 @@ export function dieOn(canvas,sides,value,rolling){
   (photoStage?new THREE.Euler(-.12,-.055,0):new THREE.Euler(.015,-.055,0)):
   new THREE.Euler(.075,-.09,0);
  const tilt=new THREE.Quaternion().setFromEuler(restEuler);
- const podiumSelector='.home-die-theater,.surprise-main-die-scene,.evening-user-die>.love3d,.evening-die-row,.evening-finale-hero';
+ const podiumSelector='.home-die-theater,.surprise-main-die-scene,.evening-user-die>.love3d,.evening-die-row,.evening-finale-hero,.evening-d100-theater';
  let podium=canvas.closest(podiumSelector);
  const orientationFor=face=>{
   const normal=built.normals.get(Number(face));
@@ -535,6 +535,25 @@ export function dieOn(canvas,sides,value,rolling){
   }
   if(!podium)return;
   const stage=canvas.parentElement,pose=built.group.quaternion.clone(),position=built.group.position.clone();
+  // On the live Soirée D100 the official WebGL camera is already fitted to
+  // Surprise's mesh size. Previously the theater was absent from the podium
+  // selector, so its real die never received the marble contact correction.
+  // Translate only the real canvas stage; preserve camera zoom, face and dice
+  // probabilities. Recalculate from an untransformed box on each resize.
+  if(sides===100&&podium.matches('.evening-d100-theater')){
+   const marker=podium.querySelector('.home-pedestal-contact');
+   const markerVisible=marker&&marker.getBoundingClientRect().width===0&&
+    getComputedStyle(marker.parentElement).display!=='none';
+   if(markerVisible){
+    stage.style.transform='none';
+    const rect=canvas.getBoundingClientRect(),bounds=projectedBounds();
+    if(rect.width>0&&rect.height>0){
+     const dy=marker.getBoundingClientRect().top-(rect.top+bounds.bottom*rect.height);
+     if(Number.isFinite(dy))stage.style.transform='translateY('+dy.toFixed(2)+'px)';
+    }
+   }
+   return;
+  }
   built.group.quaternion.copy(target);built.group.position.set(0,0,0);
   stage.style.transform='none';camera.zoom=1;camera.updateProjectionMatrix();
   const sceneRect=podium.getBoundingClientRect(),rect=canvas.getBoundingClientRect();
