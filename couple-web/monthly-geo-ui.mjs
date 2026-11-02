@@ -116,6 +116,7 @@ export function monthlyGeoCardHtml({
     '<option value="other">Autre idée à deux</option></select>'+
     '<p class="surprise-geo-muted">Ce lieu est choisi par vous, et non vérifié par Geoapify. Vérifiez son adresse, le trajet, les prix et les disponibilités.</p>'+
     (reservation&&reservation.status!=='cancelled'?'<p class="surprise-geo-muted">La réservation extérieure précédente ne sera pas annulée automatiquement.</p>':''):'')+
+   (experienceTitle?'<label class="surprise-geo-check"><input id="geo-booking-activity-ack" type="checkbox"> J’ai vérifié que l’établissement propose notre activité D100 (ou la variante que nous avons choisie). Requis pour confirmer une réservation.</label>':'')+
    '<label class="surprise-geo-check"><input id="geo-booking-confirmed" type="checkbox"'+(reservation?.status==='confirmed'&&!adapting?' checked':'')+'> J’ai effectué la réservation auprès de l’établissement</label>'+
    '<label class="surprise-geo-check"><input id="geo-booking-paid" type="checkbox"'+(reservation?.paid_by_host&&!adapting?' checked':'')+'> J’ai payé la réservation</label>'+
    (budgetLimited?'<label class="surprise-geo-check"><input id="geo-booking-budget-ack" type="checkbox"> J’accepte de préparer cette sortie même si son prix réel n’est pas confirmé par Geoapify et pourrait dépasser notre budget.</label>':'')+
