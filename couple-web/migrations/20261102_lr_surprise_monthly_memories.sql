@@ -13,10 +13,11 @@ CREATE TABLE IF NOT EXISTS public.love_monthly_feedback (
  author_id uuid NOT NULL REFERENCES auth.users(id),
  rating integer CHECK (rating BETWEEN 1 AND 5),
  memory_text text NOT NULL DEFAULT '' CHECK (char_length(memory_text)<=500),
+ photo_path text CHECK (photo_path IS NULL OR char_length(photo_path)<=160),
  created_at timestamptz NOT NULL DEFAULT now(),
  updated_at timestamptz NOT NULL DEFAULT now(),
  PRIMARY KEY (roll_id, author_id),
- CHECK (rating IS NOT NULL OR char_length(trim(memory_text))>0)
+ CHECK (rating IS NOT NULL OR char_length(trim(memory_text))>0 OR photo_path IS NOT NULL)
 );
 ALTER TABLE public.love_monthly_completions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.love_monthly_feedback ENABLE ROW LEVEL SECURITY;
@@ -146,3 +147,56 @@ REVOKE ALL ON FUNCTION public.mark_love_monthly_completed(uuid) FROM PUBLIC, ano
 REVOKE ALL ON FUNCTION public.save_love_monthly_feedback(uuid,integer,text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.mark_love_monthly_completed(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.save_love_monthly_feedback(uuid,integer,text) TO authenticated;
+
+
+-- One optional image per author and official D100, stored in a PRIVATE bucket.
+-- Authenticated owners cannot register someone else's uploaded path.
+CREATE OR REPLACE FUNCTION public.save_love_monthly_photo(
+ p_roll uuid, p_path text
+) RETURNS public.love_monthly_feedback
+LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
+AS $function$
+DECLARE
+ v_roll public.couple_rolls%rowtype;
+ v_completion public.love_monthly_completions%rowtype;
+ v_result public.love_monthly_feedback%rowtype;
+BEGIN
+ PERFORM public.love_require_verified_identity();
+ SELECT * INTO v_roll FROM public.couple_rolls
+  WHERE id=p_roll AND kind='monthly_activity';
+ IF NOT FOUND OR NOT couple_private.is_member(v_roll.couple_id) OR
+    (SELECT COUNT(*) FROM public.couple_members WHERE couple_id=v_roll.couple_id)<>2 THEN
+  RAISE EXCEPTION 'Tirage Surprise inaccessible' USING errcode='42501';
+ END IF;
+ SELECT * INTO v_completion FROM public.love_monthly_completions WHERE roll_id=p_roll;
+ IF NOT FOUND OR NOT EXISTS(
+   SELECT 1 FROM public.couple_members current_author
+   WHERE current_author.couple_id=v_roll.couple_id
+    AND current_author.user_id=v_completion.completed_by
+ ) OR EXISTS(
+   SELECT 1 FROM public.couple_members newly_joined
+   WHERE newly_joined.couple_id=v_roll.couple_id
+    AND newly_joined.joined_at>v_completion.completed_at
+ ) THEN
+  RAISE EXCEPTION 'Aucun souvenir de ce duo actif' USING errcode='42501';
+ END IF;
+ IF p_path IS NULL OR char_length(p_path)>160 OR
+    p_path !~ ('^'||auth.uid()::text||'/'||p_roll::text||
+     '/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.jpg$') OR
+    NOT EXISTS(SELECT 1 FROM storage.objects obj
+      WHERE obj.bucket_id='loveroll-memories'
+       AND obj.name=p_path AND obj.owner_id=auth.uid()::text) THEN
+  RAISE EXCEPTION 'Photo privée introuvable ou chemin invalide' USING errcode='22023';
+ END IF;
+ INSERT INTO public.love_monthly_feedback
+  (roll_id,couple_id,author_id,rating,memory_text,photo_path)
+ VALUES (p_roll,v_roll.couple_id,auth.uid(),NULL,'',p_path)
+ ON CONFLICT (roll_id,author_id) DO UPDATE SET
+  photo_path=excluded.photo_path,updated_at=now()
+ RETURNING * INTO v_result;
+ RETURN v_result;
+END;
+$function$;
+
+REVOKE ALL ON FUNCTION public.save_love_monthly_photo(uuid,text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.save_love_monthly_photo(uuid,text) TO authenticated;
