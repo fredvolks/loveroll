@@ -38,7 +38,7 @@ test('agreed date explicitly is NOT a confirmed venue booking',()=>{
   monthly:{monthly_activity:{face:31},monthly_host:{face:2}},
   members:[{user_id:'A',name:'Alice'},{user_id:'B',name:'Bob'}],
   showActivity:true,geoEnabled:false,activity:{title:'Sortie D100'},
-  datePlan:plan,viewerId:'B'
+  datePlan:plan,datePlanAvailable:true,viewerId:'B'
  });
  assert.match(screen,/Notre date est choisie/);
  assert.match(screen,/D100 · 31/);
@@ -78,4 +78,18 @@ test('client uses existing RPC and one-at-a-time gate, polling only visible coup
  assert.match(app,/new Date\(state\.geoDatePlan\.proposed_for\)\.getTime\(\)!==date\.getTime\(\)/);
  assert.match(app,/state\.geoDatePlanAvailable/);
  assert.match(app,/!state\.showSurpriseActivity\|\|document\.hidden/);
+});
+
+
+test('new date controls are hidden before the SQL migration is deployed',()=>{
+ const base={
+  monthly:{monthly_activity:{face:31},monthly_host:{face:2}},
+  members:[{user_id:'A',name:'Alice'},{user_id:'B',name:'Bob'}],
+  showActivity:true,activity:{title:'Sortie'},
+  viewerId:'A'
+ };
+ const absent=premiumSurpriseHtml({...base,datePlanAvailable:false});
+ assert.doesNotMatch(absent,/data-action="geo-date-propose"/);
+ const ready=premiumSurpriseHtml({...base,datePlanAvailable:true});
+ assert.match(ready,/data-action="geo-date-propose"/);
 });
