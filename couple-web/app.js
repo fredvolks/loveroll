@@ -3321,7 +3321,18 @@ async function handle(action,element){
   const reasonLabels={visited:'Déjà visité',closed:'Lieu fermé',far:'Trop loin',expensive:'Trop cher',other:'Autre idée à deux'};
   const reason=id('geo-adapt-reason')?.value||'';
   if(adapting&&!reasonLabels[reason])throw Error('Choisissez une raison pour adapter la sortie.');
-  const notes=adapting?'Adaptation : '+reasonLabels[reason]:String(state.geoReservation?.notes||'').slice(0,500);
+  // Geoapify does not supply verified venue pricing. A capped budget is
+  // never silently interpreted as "affordable".
+  const budgetCapped=state.couple?.surprise_budget_max!==null&&
+   state.couple?.surprise_budget_max!==undefined;
+  const priceAcknowledged=!!id('geo-booking-budget-ack')?.checked;
+  if(budgetCapped&&!priceAcknowledged)
+   throw Error('Le prix du lieu n’est pas confirmé. Acceptez explicitement de vérifier le tarif malgré votre plafond de budget.');
+  const baseNotes=adapting?'Adaptation : '+reasonLabels[reason]:
+   String(state.geoReservation?.notes||'');
+  const acknowledgement='Prix à vérifier malgré le plafond choisi.';
+  const notes=(priceAcknowledged&&budgetCapped?
+   [baseNotes,acknowledgement].filter(Boolean).join(' · '):baseNotes).slice(0,500);
   if(!title||title.length>140||address.length>240)
    throw Error('Vérifie le nom et l’adresse de l’établissement.');
   if(paid&&!confirmed)throw Error('La réservation doit être confirmée avant de marquer le paiement.');
