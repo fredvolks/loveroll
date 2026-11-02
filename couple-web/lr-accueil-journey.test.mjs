@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {homeEveningStep,homeSurpriseStep} from './home-journey.mjs';
+import {homeEveningStep,homeSurpriseStep,homeTonightSummary} from './home-journey.mjs';
 import {premiumHomeHtml} from './premium-home.mjs';
 
 const weekly={face:2,key:'2026-11-02',created_at:'2026-11-02T10:00:00Z'};
@@ -85,4 +85,45 @@ test('Home view keeps headings and statistics grounded in existing data',()=>{
  assert.match(empty,/Cette semaine, on joue \?/);
  assert.match(empty,/Semaines consécutives/);
  assert.doesNotMatch(empty,/data-action="tab:session"[^>]*disabled/);
+});
+
+
+
+test('Ce soir stays compact and never reveals unreconciled per-player draws',()=>{
+ const hidden=homeTonightSummary({now});
+ assert.equal(hidden.title,'Aucune soirée commencée');
+ const ready=homeTonightSummary({weekly,now});
+ assert.equal(ready.title,'Notre prochaine soirée');
+ assert.match(ready.detail,/2 soirées encore disponibles cette semaine/);
+ const inProgress=homeTonightSummary({weekly,sessions:[
+  session('active','2026-11-03T18:00:00Z')
+ ],activeEvening:true,now});
+ assert.equal(inProgress.title,'Soirée en cours');
+ const locked=homeTonightSummary({weekly,sessions:[
+  session('today','2026-11-04T10:00:00Z','2026-11-04T11:00:00Z')
+ ],now});
+ assert.match(locked.title,/déjà eu lieu aujourd’hui/);
+ assert.match(locked.detail,/pas de nouvelle soirée aujourd’hui/);
+ const finished=homeTonightSummary({weekly,sessions:[
+  session('first','2026-11-02T18:00:00Z','2026-11-02T20:00:00Z'),
+  session('second','2026-11-03T18:00:00Z','2026-11-03T20:00:00Z')
+ ],now});
+ assert.match(finished.title,/terminées/);
+ const html=premiumHomeHtml({weekly,now,members:[{user_id:'a',name:'Personne A'},{user_id:'b',name:'Personne B'}]});
+ assert.match(html,/class="home-evening-status"/);
+ assert.match(html,/Notre prochaine soirée/);
+ assert.match(html,/2 soirées disponibles cette semaine/);
+ assert.doesNotMatch(html,/Attribués à/);
+ assert.doesNotMatch(html,/Restants :/);
+});
+
+test('summary fits the existing Home geometry on phone without duplicating the engine',()=>{
+ const css=readFileSync(new URL('./home-duo-card.css',import.meta.url),'utf8');
+ assert.match(css,/LR-ACCUEIL-001 — view-only summary/);
+ assert.match(css,/grid-template-rows:44px!important/);
+ assert.match(css,/grid-template-columns:minmax\(0,1fr\)!important/);
+ assert.match(css,/var\(--ritual-muted\)/);
+ const source=readFileSync(new URL('./home-journey.mjs',import.meta.url),'utf8');
+ assert.match(source,/eveningDailyAccess\(\{weekly,sessions,now\}\)/);
+ assert.doesNotMatch(source,/rpc\(|fetch\(|insert\(|update\(|roll_couple_once/);
 });
