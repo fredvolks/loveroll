@@ -79,7 +79,7 @@ main#app.loveroll-surprise-ecrin .surprise-date-plan label{font-size:12px;color:
 main#app.loveroll-surprise-ecrin .surprise-date-plan input[type=datetime-local],
 main#app.loveroll-surprise-ecrin .surprise-geo-booking-form select{
  width:100%;min-width:0;min-height:44px;padding:9px 10px;border-radius:10px;
- border:1px solid #dc9ab6;background:#200e19;color:#fff;color-scheme:dark;
+ border:1px solid var(--control-border);background:var(--control-secondary);color:var(--control-text);color-scheme:dark;
 }
 main#app.loveroll-surprise-ecrin .surprise-date-plan button,
 main#app.loveroll-surprise-ecrin .surprise-geo-text-button{
@@ -115,8 +115,8 @@ main#app.loveroll-surprise-ecrin .surprise-completion label{
 main#app.loveroll-surprise-ecrin .surprise-completion select,
 main#app.loveroll-surprise-ecrin .surprise-completion textarea{
  width:100%;min-width:0;min-height:44px;padding:9px 10px;
- border-radius:10px;border:1px solid #dc9ab6;
- background:#200e19;color:white;color-scheme:dark;
+ border-radius:10px;border:1px solid var(--control-border);
+ background:var(--control-secondary);color:var(--control-text);color-scheme:dark;
  font:400 14px/1.4 system-ui,sans-serif;
 }
 main#app.loveroll-surprise-ecrin .surprise-completion textarea{
