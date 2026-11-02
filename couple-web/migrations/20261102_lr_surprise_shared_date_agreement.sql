@@ -15,7 +15,19 @@ ALTER TABLE public.love_monthly_date_plans ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.love_monthly_date_plans FROM PUBLIC, anon, authenticated;
 GRANT SELECT ON public.love_monthly_date_plans TO authenticated;
 CREATE POLICY love_monthly_date_plans_couple_read ON public.love_monthly_date_plans
- FOR SELECT TO authenticated USING (couple_private.is_member(couple_id));
+ FOR SELECT TO authenticated USING (
+  couple_private.is_member(couple_id)
+  AND EXISTS(
+   SELECT 1 FROM public.couple_members active_member
+   WHERE active_member.couple_id=love_monthly_date_plans.couple_id
+    AND active_member.user_id=love_monthly_date_plans.proposed_by
+  )
+  AND (agreed_by IS NULL OR EXISTS(
+   SELECT 1 FROM public.couple_members agreeing_member
+   WHERE agreeing_member.couple_id=love_monthly_date_plans.couple_id
+    AND agreeing_member.user_id=love_monthly_date_plans.agreed_by
+  ))
+ );
 
 CREATE OR REPLACE FUNCTION public.manage_love_monthly_date(
  p_roll uuid, p_action text, p_when timestamptz DEFAULT NULL,
@@ -50,6 +62,21 @@ BEGIN
   LIMIT 1 OFFSET (CASE WHEN mod(v_hostroll.face,2)=0 THEN 0 ELSE 1 END);
  SELECT * INTO v_plan FROM public.love_monthly_date_plans
   WHERE roll_id=p_roll FOR UPDATE;
+ -- When members change, a former partner's date must not be approved
+ -- or exposed to the newly associated person.
+ IF v_plan.roll_id IS NOT NULL AND (
+  NOT EXISTS(SELECT 1 FROM public.couple_members active_member
+   WHERE active_member.couple_id=v_roll.couple_id
+    AND active_member.user_id=v_plan.proposed_by)
+  OR (v_plan.agreed_by IS NOT NULL AND NOT EXISTS(
+   SELECT 1 FROM public.couple_members agreeing_member
+   WHERE agreeing_member.couple_id=v_roll.couple_id
+    AND agreeing_member.user_id=v_plan.agreed_by
+  ))
+ ) THEN
+  RAISE EXCEPTION 'Cette proposition appartient à un ancien duo'
+    USING errcode='42501';
+ END IF;
 
  IF p_action='propose' THEN
   IF v_actor IS DISTINCT FROM v_host THEN
