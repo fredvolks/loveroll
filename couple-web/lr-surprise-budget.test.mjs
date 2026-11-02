@@ -13,7 +13,7 @@ test('budget empty is null, zero is a genuine free-activity cap',()=>{
  assert.equal(parseSurpriseBudget('0,00'),0);
  assert.equal(parseSurpriseBudget('300,50'),300.5);
  assert.equal(parseSurpriseBudget('300.50'),300.5);
- assert.equal(formatSharedBudget(null,'CAD'),'');
+ assert.equal(formatSharedBudget(null,'CAD'),null);
 });
 
 test('invalid budgets are not converted silently into zero or infinity',()=>{
