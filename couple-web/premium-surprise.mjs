@@ -63,7 +63,7 @@ export function premiumSurpriseHtml({
  geoEnabled=false,geoVenue=null,geoLookup='idle',reservation=null,canReserve=false,bookingEditor=false,bookingAlternative=false,
  budgetMax=null,budgetCurrency='CAD',travelRadiusKm=null,travelOriginLabel='',
  datePlan=null,datePlanAvailable=false,viewerId=null,
- completionAvailable=false,completion=null,monthlyFeedback=[]
+ completionAvailable=false,completion=null,monthlyFeedback=[],monthlyPhotoUrls={}
 }={}){
  const a=monthly.monthly_activity,h=monthly.monthly_host;
  const phase=monthlySurprisePhase({monthly,datePlan,reservation,completion});
@@ -183,7 +183,7 @@ export function premiumSurpriseHtml({
      '<small class="surprise-season-disclaimer">Tarifs variables selon les dates, les réservations et la météo. Vérifiez les horaires et la disponibilité avant de partir.</small>'+
      (datePlanAvailable?monthlyDatePlanHtml({plan:datePlan,hostId:host?.user_id||null,me:viewerId,locale}):'')+
      monthlyCompletionHtml({available:completionAvailable,completion,feedback:monthlyFeedback,
-       viewerId,locale})+
+       photoUrls:monthlyPhotoUrls,viewerId,locale})+
      monthlyGeoCardHtml({venue:geoVenue,lookup:geoLookup,enabled:geoEnabled,
        host:host?.name||null,canReserve,reservation,editing:bookingEditor,adapting:bookingAlternative,
        budgetLimited:budgetMax!==null&&budgetMax!==undefined,
