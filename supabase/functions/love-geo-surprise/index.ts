@@ -108,6 +108,7 @@ Deno.serve(async req=>{
  if(decision.status==='stored')return json({status:existing.state,venue:existing.state==='ready'?existing:null});
  if(decision.status==='pending')return json({status:'pending'});
  if(decision.status==='retry_exhausted')return json({status:'retry_exhausted'});
+ if(decision.status==='retry_limit_reached')return json({status:'retry_limit_reached'});
  // Never consume Geoapify credits without a configured server-side secret.
  if(apiKey.length<10)return json({error:'Clé Geoapify manquante dans les secrets Supabase'},503);
  const searchRadii=boundedSearchRadii(settings.travel_radius_km,Number(policy.geo_max_radius_km));
@@ -118,7 +119,7 @@ Deno.serve(async req=>{
  if(!existing){
   const inserted=await admin.from('love_monthly_places').insert({
    roll_id:roll.id,couple_id:roll.couple_id,roll_key:roll.key,state:'pending',
-   geo_attempts:decision.attempt
+   geo_attempts:decision.attempt,geo_total_attempts:1
   }).select('roll_id,claimed_at').maybeSingle();
   if(inserted.error){
    if(inserted.error.code==='23505')return json({status:'pending'});
@@ -131,12 +132,16 @@ Deno.serve(async req=>{
   // Compare-and-swap by both claim time and attempt count: two partners
   // must never win the same paid Geoapify retry simultaneously.
   const previousAttempts=Number(existing.geo_attempts)||0;
+  const previousTotal=Number(existing.geo_total_attempts)||0;
+  const totalAfterClaim=Math.max(previousAttempts,previousTotal)+1;
   const cooldown=previousAttempts>=MAX_GEO_ATTEMPTS?
     GEO_MANUAL_RETRY_WAIT_MS:GEO_CLAIM_WAIT_MS;
   const retry=await admin.from('love_monthly_places').update({
-   claimed_at:new Date().toISOString(),geo_attempts:decision.attempt
+   claimed_at:new Date().toISOString(),geo_attempts:decision.attempt,
+   geo_total_attempts:totalAfterClaim
   }).eq('roll_id',roll.id).eq('state','pending')
    .eq('geo_attempts',previousAttempts)
+   .eq('geo_total_attempts',previousTotal)
    .lt('claimed_at',new Date(Date.now()-cooldown).toISOString()).select('roll_id,claimed_at');
   if(retry.error)return json({error:'Relance de recherche indisponible'},503);
   if(retry.data?.length!==1)return json({status:'pending'});
