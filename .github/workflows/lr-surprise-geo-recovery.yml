@@ -13,6 +13,7 @@ on:
       - 'couple-web/lr-surprise-short-mobile.test.mjs'
       - 'couple-web/lr-surprise-weekly-idea.test.mjs'
       - 'couple-web/lr-surprise-private-photo.test.mjs'
+      - 'couple-web/lr-surprise-driving-time.test.mjs'
       - 'couple-web/monthly-private-photo.mjs'
       - 'couple-web/weekly-surprise-idea.mjs'
       - 'couple-web/surprise-minimal.css'
@@ -61,6 +62,7 @@ jobs:
           node --test couple-web/lr-surprise-weekly-idea.test.mjs
           node --check couple-web/monthly-private-photo.mjs
           node --test couple-web/lr-surprise-private-photo.test.mjs
+          node --test couple-web/lr-surprise-driving-time.test.mjs
           node --test couple-web/world-preferences.test.mjs
       - name: Run existing Surprise integration regressions
         run: |
