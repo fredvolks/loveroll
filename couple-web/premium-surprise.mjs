@@ -56,7 +56,7 @@ export function premiumSurpriseHtml({
  monthly={},members=[],settings={},now=new Date(),activity=null,
  rolling=false,rollingKind=null,rollFace=1,settlingHost=false,showActivity=false,timerHtml='',editSlot=null,season=null,
  currency='CAD',locale='fr-CA',exchange=null,
- geoEnabled=false,geoVenue=null,geoLookup='idle',reservation=null,canReserve=false,bookingEditor=false,
+ geoEnabled=false,geoVenue=null,geoLookup='idle',reservation=null,canReserve=false,bookingEditor=false,bookingAlternative=false,
  budgetMax=null,budgetCurrency='CAD'
 }={}){
  const a=monthly.monthly_activity,h=monthly.monthly_host;
@@ -164,7 +164,7 @@ export function premiumSurpriseHtml({
        '</div>'+ 
      '<small class="surprise-season-disclaimer">Tarifs variables selon les dates, les réservations et la météo. Vérifiez les horaires et la disponibilité avant de partir.</small>'+
      monthlyGeoCardHtml({venue:geoVenue,lookup:geoLookup,enabled:geoEnabled,
-       host:host?.name||null,canReserve,reservation,editing:bookingEditor,locale,experienceTitle:activity?.title||''})+
+       host:host?.name||null,canReserve,reservation,editing:bookingEditor,adapting:bookingAlternative,locale,experienceTitle:activity?.title||''})+
      timerHtml+button('surprise-activity','Fermer','surprise-primary')+
     '</article></div>':'')+
  '</div>';
