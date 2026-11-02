@@ -23,7 +23,14 @@ ALTER TABLE public.love_monthly_feedback ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON public.love_monthly_completions, public.love_monthly_feedback FROM PUBLIC, anon, authenticated;
 GRANT SELECT ON public.love_monthly_completions, public.love_monthly_feedback TO authenticated;
 CREATE POLICY love_monthly_completions_read ON public.love_monthly_completions
- FOR SELECT TO authenticated USING (couple_private.is_member(couple_id));
+ FOR SELECT TO authenticated USING (
+  couple_private.is_member(couple_id)
+  AND EXISTS(
+   SELECT 1 FROM public.couple_members active_member
+   WHERE active_member.couple_id=love_monthly_completions.couple_id
+    AND active_member.user_id=love_monthly_completions.completed_by
+  )
+ );
 CREATE POLICY love_monthly_feedback_read ON public.love_monthly_feedback
  FOR SELECT TO authenticated USING (
   couple_private.is_member(couple_id)
@@ -49,6 +56,17 @@ BEGIN
     (SELECT COUNT(*) FROM public.couple_members WHERE couple_id=v_roll.couple_id)<>2 THEN
   RAISE EXCEPTION 'Tirage Surprise inaccessible' USING errcode='42501';
  END IF;
+ -- A previous couple's completion cannot be inherited when a member changes.
+ IF EXISTS(
+  SELECT 1 FROM public.love_monthly_completions old
+  WHERE old.roll_id=p_roll AND NOT EXISTS(
+   SELECT 1 FROM public.couple_members active_member
+   WHERE active_member.couple_id=v_roll.couple_id
+    AND active_member.user_id=old.completed_by
+  )
+ ) THEN
+  RAISE EXCEPTION 'Ce souvenir appartient à un ancien duo' USING errcode='42501';
+ END IF;
  INSERT INTO public.love_monthly_completions(roll_id,couple_id,completed_by)
  VALUES(p_roll,v_roll.couple_id,auth.uid())
  ON CONFLICT (roll_id) DO NOTHING;
@@ -72,6 +90,16 @@ BEGIN
  IF NOT FOUND OR NOT couple_private.is_member(v_roll.couple_id) OR
     (SELECT COUNT(*) FROM public.couple_members WHERE couple_id=v_roll.couple_id)<>2 THEN
   RAISE EXCEPTION 'Tirage Surprise inaccessible' USING errcode='42501';
+ END IF;
+ IF EXISTS(
+  SELECT 1 FROM public.love_monthly_completions old
+  WHERE old.roll_id=p_roll AND NOT EXISTS(
+   SELECT 1 FROM public.couple_members active_member
+   WHERE active_member.couple_id=v_roll.couple_id
+    AND active_member.user_id=old.completed_by
+  )
+ ) THEN
+  RAISE EXCEPTION 'Ce souvenir appartient à un ancien duo' USING errcode='42501';
  END IF;
  IF NOT EXISTS(SELECT 1 FROM public.love_monthly_completions WHERE roll_id=p_roll) THEN
   RAISE EXCEPTION 'Marquez la sortie réalisée avant de garder un souvenir' USING errcode='22023';
