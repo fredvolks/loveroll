@@ -238,7 +238,8 @@ test('LR-SURPRISE-001: outages are distinct from a real empty result and offer a
  assert.equal(geoLookupAfterRefresh({rollId:'r2',previousRollId:'r1',previousLookup:'retry_exhausted'}),'idle');
  const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
  const manual=app.slice(app.indexOf("if(verb==='geo-retry')"),app.indexOf("if(verb==='geo-booking-editor')"));
- assert.match(manual,/resolveMonthlyGeo\(\{manual:true\}\)/);
+ assert.match(manual,/geoManualRetryRollId=rollId/);
+ assert.match(manual,/void resolveMonthlyGeo\(\)/);
  assert.match(app,/retry:manual/);
 });
 
