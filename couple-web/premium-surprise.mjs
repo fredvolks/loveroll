@@ -167,7 +167,9 @@ export function premiumSurpriseHtml({
      monthlyDatePlanHtml({plan:datePlan,hostId:host?.user_id||null,me:viewerId,locale})+
      monthlyGeoCardHtml({venue:geoVenue,lookup:geoLookup,enabled:geoEnabled,
        host:host?.name||null,canReserve,reservation,editing:bookingEditor,adapting:bookingAlternative,
-       budgetLimited:budgetMax!==null&&budgetMax!==undefined,locale,experienceTitle:activity?.title||''})+
+       budgetLimited:budgetMax!==null&&budgetMax!==undefined,
+       agreedDate:datePlan?.status==='agreed'?datePlan.proposed_for:null,
+       locale,experienceTitle:activity?.title||''})+
      timerHtml+button('surprise-activity','Fermer','surprise-primary')+
     '</article></div>':'')+
  '</div>';
