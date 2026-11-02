@@ -23,6 +23,16 @@ const finiteProviderNumber=value=>{
  const number=Number(value);
  return Number.isFinite(number)?number:null;
 };
+// Verified routing ETA (Geoapify matrix seconds). Zero is valid; unknown is not.
+export function verifiedDriveTimeLabel(value){
+ const n=finiteProviderNumber(value);
+ if(n===null||n<0||n>86400)return null;
+ const minutes=Math.round(n/60);
+ if(minutes===0)return 'moins d’une minute';
+ if(minutes<60)return minutes+' min';
+ const hours=Math.floor(minutes/60),rest=minutes%60;
+ return hours+' h'+(rest?' '+rest+' min':'');
+}
 export function geoPhoto(venue){
  const src=https(venue?.photo_url);
  return src?'<img class="surprise-geo-photo" alt="Photo du lieu : '+esc(venue.name)+'" src="'+esc(src)+'" loading="lazy" referrerpolicy="no-referrer">':
@@ -45,10 +55,12 @@ export function monthlyGeoCardHtml({
     'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(lat+','+lon):null;
   const site=https(venue.website_url),booking=https(venue.booking_url),menu=https(venue.menu_url);
   const distance=Math.round(roadMetres/100)/10;
+  const driveTime=verifiedDriveTimeLabel(venue.driving_seconds);
   body='<div class="surprise-geo-venue">'+geoPhoto(venue)+
     '<div class="surprise-geo-venue-info"><strong>'+esc(venue.name)+'</strong>'+
     (venue.address?'<span>'+esc(venue.address)+'</span>':'')+
     (distance!==null?'<small>'+esc(distance.toLocaleString(locale))+' km par la route</small>':'')+
+    (driveTime!==null?'<small>Environ '+esc(driveTime)+' en voiture · hors trafic en temps réel</small>':'')+
     '</div><div class="surprise-geo-links">'+a(gps,'⌖ GPS')+
     (canReserve?a(booking,'♡ Réserver auprès du lieu'):'')+
     a(menu,'☷ Menu / activités')+
