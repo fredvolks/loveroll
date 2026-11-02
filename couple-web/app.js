@@ -1944,6 +1944,25 @@ async function resolveMonthlyGeo(){
   if(stillCurrent()&&state.tab==='special'&&state.showSurpriseActivity)render();
  }
 }
+// Keep the second partner up to date while the Surprise screen is visible.
+// A separate tiny SELECT does not call Geoapify or consume another D100 roll.
+let geoDatePollActive=false;
+setInterval(async()=>{
+ const actor=state.user?.id,rollId=state.monthly?.monthly_activity?.id;
+ if(!actor||!rollId||!state.geoDatePlanAvailable||state.tab!=='special'||
+    !state.showSurpriseActivity||document.hidden||geoDatePollActive)return;
+ geoDatePollActive=true;
+ try{
+  const latest=(await query('love_monthly_date_plans',{eq:{roll_id:rollId}}))[0]||null;
+  if(state.user?.id!==actor||state.monthly?.monthly_activity?.id!==rollId)return;
+  const before=state.geoDatePlan;
+  if((latest?.version??0)!==(before?.version??0)||
+     (latest?.proposed_for||'')!==(before?.proposed_for||'')){
+   state.geoDatePlan=latest;render();
+  }
+ }catch{ /* Optional migration may still be unavailable; no paid API calls. */ }
+ finally{geoDatePollActive=false;}
+},30000);
 // Pending means the server has accepted a single claim, not that discovery
 // finished. Poll only while the activity screen is actually being viewed.
 setInterval(()=>{
@@ -3357,6 +3376,9 @@ async function handle(action,element){
    throw Error('Réservation réservée à la personne qui invite.');
   const raw=id('geo-booking-date')?.value||'',date=new Date(raw);
   if(!raw||!Number.isFinite(date.getTime())||date.getTime()<=Date.now())throw Error('Choisissez une date et une heure futures.');
+  if(state.geoDatePlan?.status==='agreed'&&
+     new Date(state.geoDatePlan.proposed_for).getTime()!==date.getTime())
+   throw Error('Cette date diffère de celle acceptée par votre partenaire. Choisissez la date convenue avant d’enregistrer la réservation.');
   const title=String(id('geo-booking-name')?.value||'').trim(),address=String(id('geo-booking-address')?.value||'').trim();
   const confirmed=!!id('geo-booking-confirmed')?.checked,paid=!!id('geo-booking-paid')?.checked;
   const adapting=state.geoBookingAlternative===true;
