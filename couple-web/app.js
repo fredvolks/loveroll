@@ -2007,11 +2007,18 @@ setInterval(async()=>{
     const completion=completed[0]||null;
     const before=state.geoCompletion;
     const fingerprint=list=>(list||[]).map(item=>[
-      item.author_id,item.rating,item.memory_text,item.updated_at
+      item.author_id,item.rating,item.memory_text,item.photo_path,item.updated_at
     ].join(':')).sort().join('|');
-    if((completion?.completed_at||'')!==(before?.completed_at||'')||
-       fingerprint(feedback)!==fingerprint(state.geoFeedback)){
+    const photosChanged=fingerprint(feedback)!==fingerprint(state.geoFeedback);
+    const photoExpired=Date.now()-state.geoPhotoSignedAt>240000 &&
+      (feedback||[]).some(row=>!!row.photo_path);
+    if((completion?.completed_at||'')!==(before?.completed_at||'')||photosChanged){
      state.geoCompletion=completion;state.geoFeedback=feedback||[];changed=true;
+    }
+    if(photosChanged||photoExpired){
+     state.geoPhotoUrls=await signedMonthlyMemoryPhotos(feedback,actor,rollId);
+     state.geoPhotoSignedAt=Date.now();
+     changed=true;
     }
    }catch{ /* Optional memories migration may be unavailable. */ }
   }
