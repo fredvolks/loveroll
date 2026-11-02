@@ -104,3 +104,11 @@ test('partner completion and feedback update without paid provider calls or chan
  assert.match(polling,/state\.tab!=='special'\|\|!state\.showSurpriseActivity\|\|document\.hidden/);
  assert.doesNotMatch(polling,/love-geo-surprise|observedGeoFetch|roll_couple_once/);
 });
+
+
+test('old member memories are hidden from a newly associated partner',()=>{
+ const sql=read('migrations/20261102_lr_surprise_monthly_memories.sql');
+ assert.match(sql,/active_member\.couple_id=love_monthly_feedback\.couple_id/);
+ assert.match(sql,/active_member\.user_id=love_monthly_feedback\.author_id/);
+ assert.match(sql,/couple_private\.is_member\(couple_id\)/);
+});
