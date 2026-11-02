@@ -29,7 +29,7 @@ export function geoPhoto(venue){
  '<div class="surprise-geo-photo-placeholder" aria-label="Photo du lieu non disponible">♡<small>Photo du lieu non disponible</small></div>';
 }
 export function monthlyGeoCardHtml({
- venue=null,lookup='idle',enabled=false,host=null,canReserve=false,reservation=null,editing=false,
+ venue=null,lookup='idle',enabled=false,host=null,canReserve=false,reservation=null,editing=false,adapting=false,
  locale='fr-CA',experienceTitle=''
 }={}){
  if(!enabled)return '';
@@ -72,7 +72,8 @@ export function monthlyGeoCardHtml({
    '</strong>'+
    (reservation.venue_name?'<span class="surprise-geo-reserved-place">'+esc(reservation.venue_name)+'</span>':'')+
    (reservation.venue_address?'<small>'+esc(reservation.venue_address)+'</small>':'')+
-   '<span>'+esc(humanDate(reservation.reserved_for,locale))+'</span>'+
+   (reservation.notes?'<small class="surprise-geo-reserved-note">'+esc(reservation.notes)+'</small>':'')+
+   '<span>'+esc(humanDate(reservation.reserved_for,locale))+'</span>'+ 
    '<small>'+(reservation.paid_by_host?'Paiement déclaré effectué par la personne qui invite':'Paiement non confirmé dans LoveRoll')+
    '</small><small>'+(reservation.status==='confirmed'?
     'Les rappels dépendent de leur programmation et de vos notifications.':
@@ -83,16 +84,25 @@ export function monthlyGeoCardHtml({
    '<button type="button" data-action="geo-booking-editor" class="surprise-primary">'+
    (editing?'Fermer la planification':reservation&&reservation.status!=='cancelled'?'Modifier ma réservation':'Enregistrer ma réservation')+
    '</button>'+
+   '<button type="button" data-action="geo-booking-adapt" class="surprise-geo-text-button">'+
+   (editing&&adapting?'Fermer l’adaptation':'Adapter la sortie')+'</button>'+ 
    (reservation&&reservation.status!=='cancelled'?'<button type="button" data-action="geo-booking-cancel" class="surprise-geo-text-button">Annuler la réservation dans LoveRoll</button>':'')+
    (editing?'<div class="surprise-geo-booking-form">'+
    '<label for="geo-booking-date">Date et heure de la sortie</label>'+
    '<input id="geo-booking-date" type="datetime-local" value="'+esc(localBookingDateTime(reservation?.reserved_for))+'" required>'+
    '<label for="geo-booking-name">Nom de l’établissement</label>'+
-   '<input id="geo-booking-name" maxlength="140" value="'+esc(reservation?.venue_name||venue?.name||'')+'" required>'+
+   '<input id="geo-booking-name" maxlength="140" value="'+esc(adapting?'':reservation?.venue_name||venue?.name||'')+'" required>'+ 
    '<label for="geo-booking-address">Adresse (facultative)</label>'+
-   '<input id="geo-booking-address" maxlength="240" value="'+esc(reservation?.venue_address||venue?.address||'')+'">'+
-   '<label class="surprise-geo-check"><input id="geo-booking-confirmed" type="checkbox"'+(reservation?.status==='confirmed'?' checked':'')+'> J’ai effectué la réservation auprès de l’établissement</label>'+
-   '<label class="surprise-geo-check"><input id="geo-booking-paid" type="checkbox"'+(reservation?.paid_by_host?' checked':'')+'> J’ai payé la réservation</label>'+
+   '<input id="geo-booking-address" maxlength="240" value="'+esc(adapting?'':reservation?.venue_address||venue?.address||'')+'">'+
+   (adapting?'<label for="geo-adapt-reason">Pourquoi adapter ?</label>'+
+    '<select id="geo-adapt-reason" required><option value="">Choisir une raison</option>'+
+    '<option value="visited">Déjà visité</option><option value="closed">Lieu fermé</option>'+
+    '<option value="far">Trop loin</option><option value="expensive">Trop cher</option>'+
+    '<option value="other">Autre idée à deux</option></select>'+
+    '<p class="surprise-geo-muted">Ce lieu est choisi par vous, et non vérifié par Geoapify. Vérifiez son adresse, le trajet, les prix et les disponibilités.</p>'+
+    (reservation&&reservation.status!=='cancelled'?'<p class="surprise-geo-muted">La réservation extérieure précédente ne sera pas annulée automatiquement.</p>':''):'')+
+   '<label class="surprise-geo-check"><input id="geo-booking-confirmed" type="checkbox"'+(reservation?.status==='confirmed'&&!adapting?' checked':'')+'> J’ai effectué la réservation auprès de l’établissement</label>'+
+   '<label class="surprise-geo-check"><input id="geo-booking-paid" type="checkbox"'+(reservation?.paid_by_host&&!adapting?' checked':'')+'> J’ai payé la réservation</label>'+
    '<p class="surprise-geo-muted">LoveRoll ne réserve ni ne prélève d’argent : confirmez ici votre réservation externe.</p>'+
    '<button type="button" data-action="geo-booking-save" class="surprise-primary">Enregistrer la date</button></div>':'')+
    '</div>';
