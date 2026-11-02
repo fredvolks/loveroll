@@ -106,7 +106,7 @@ const worldText=key=>worldT(worldLocale(),key);
 const state={user:null,profile:null,members:[],coupleId:null,couple:null,
  tab:launchParams.has('settings')?'settings':(['home','session','special','advent'].includes(launchParams.get('open'))?launchParams.get('open'):'home'),weekly:null,monthly:{},session:null,personal:[],challenges:[],gifts:[],rollStatus:null,customCards:[],customCategory:'SENSUEL',customSlot:1,customSearch:'',customFilter:'all',monthlyActivities:[],monthlySlot:1,libraryScreen:'list',libraryImportKind:null,specialEditorKey:null,specialEditorStage:'D6_activite',specialEditorFace:1,adventEditorDay:1,pushDevice:null,
  events:[],journal:[],advent:[],advent2026Config:null,advent2026Days:[],selectedDay:1,adventYear:null,adventSelected:null,adventHistory:false,adventOpening:null,adventRevealing:false,adventServerDate:null,unlockKey:null,channel:null,
- occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningRefusalId:null,redrawReady:false,redrawBusy:false,loveExcludedCards:[],eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],monthlyPassQuota:null,calendarPassMonth:null,eveningFavorites:[],favoritesReady:false,favoriteReplace:null,cycleStatus:null,cycleDeferred:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,eveningInvite:null,eveningInviteBusy:false,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoBookingEdit:false,referral:null,eclat:null,eclatGalleryScroll:0,eclatHistory:[],eclatHistoryCouple:null,eclatBrowse:false,eclatHistoryError:false,eclatSelection:1,eclatMinutes:30,eclatIntent:'all',eclatDetails:false,eclatMusic:false,eclatFinished:null,testModeEligible:false,testMode:'real'};
+ occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningRefusalId:null,redrawReady:false,redrawBusy:false,loveExcludedCards:[],eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],monthlyPassQuota:null,calendarPassMonth:null,eveningFavorites:[],favoritesReady:false,favoriteReplace:null,cycleStatus:null,cycleDeferred:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,eveningInvite:null,eveningInviteBusy:false,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoBookingEdit:false,geoBookingAlternative:false,referral:null,eclat:null,eclatGalleryScroll:0,eclatHistory:[],eclatHistoryCouple:null,eclatBrowse:false,eclatHistoryError:false,eclatSelection:1,eclatMinutes:30,eclatIntent:'all',eclatDetails:false,eclatMusic:false,eclatFinished:null,testModeEligible:false,testMode:'real'};
 const names={SENSUEL:'Sensuel',COQUIN:'Coquin',SEXUEL:'Sexuel'};
 function isSharedCoupleReady(coupleId,members){
  return !!coupleId&&Array.isArray(members)&&members.length===2;
@@ -1031,7 +1031,7 @@ async function refreshShared(){
  const activeMonthlyRoll=state.monthly.monthly_activity;
  if(activeMonthlyRoll?.id!==previousRollId){
   // An editor started for last month's invitation cannot save on this roll.
-  state.geoBookingEdit=false;
+  state.geoBookingEdit=false;state.geoBookingAlternative=false;
  }
  if(activeMonthlyRoll){
   const [places,bookings]=await Promise.all([
@@ -1041,7 +1041,7 @@ async function refreshShared(){
   state.geoVenue=places[0]||null;state.geoReservation=bookings[0]||null;
   state.geoLookup=geoLookupAfterRefresh({rollId:activeMonthlyRoll.id,
    previousRollId,venue:state.geoVenue,previousLookup:previousGeoLookup});
- }else{state.geoVenue=null;state.geoReservation=null;state.geoLookup='idle';state.geoBookingEdit=false;}
+ }else{state.geoVenue=null;state.geoReservation=null;state.geoLookup='idle';state.geoBookingEdit=false;state.geoBookingAlternative=false;}
  state.session=sessions.find(s=>s.finished_at===null)||null;
  state.sessions=sessions;state.events=events;state.journal=diary;state.advent=advents;state.adventServerDate=adventServerDate;
  // After manual/automatic closure, both partners see their own review bubble.
@@ -1966,7 +1966,7 @@ function renderSpecial(){
    budgetCurrency:state.couple?.surprise_budget_currency||'CAD',
    geoEnabled:worldGeoEnabled(),geoVenue:state.geoVenue,geoLookup:state.geoLookup,
    reservation:state.geoReservation,canReserve:currentHost()?.user_id===state.user?.id,
-   bookingEditor:state.geoBookingEdit,
+   bookingEditor:state.geoBookingEdit,bookingAlternative:state.geoBookingAlternative,
    timerHtml:state.showSurpriseActivity&&activity?.timer_minutes?
     timerWidget({id:'monthly-'+month()},activity.timer_minutes):'',
    rolling:!!state.diceStatus,rollingKind,rollFace:state.rollAnimationFace,
@@ -3285,7 +3285,7 @@ async function handle(action,element){
   return;
  }
  if(verb==='surprise-activity'){
-  state.showSurpriseActivity=!state.showSurpriseActivity;state.geoBookingEdit=false;
+  state.showSurpriseActivity=!state.showSurpriseActivity;state.geoBookingEdit=false;state.geoBookingAlternative=false;
   render();
   if(state.showSurpriseActivity&&worldGeoEnabled()){geoFetchNextAt.delete(state.monthly.monthly_activity.id);void resolveMonthlyGeo();}
   return;
@@ -3300,7 +3300,13 @@ async function handle(action,element){
  }
  if(verb==='geo-booking-editor'){
   if(currentHost()?.user_id!==state.user?.id)throw Error('Seule la personne qui invite peut réserver.');
-  state.geoBookingEdit=!state.geoBookingEdit;render();return;
+  state.geoBookingEdit=!state.geoBookingEdit;state.geoBookingAlternative=false;render();return;
+ }
+ if(verb==='geo-booking-adapt'){
+  if(currentHost()?.user_id!==state.user?.id)throw Error('Seule la personne qui invite peut adapter la sortie.');
+  const closing=state.geoBookingEdit&&state.geoBookingAlternative;
+  state.geoBookingEdit=!closing;state.geoBookingAlternative=!closing;
+  render();return;
  }
  if(verb==='geo-booking-save'){
   const executed=await geoBookingMutationGate(async()=>{
@@ -3311,23 +3317,33 @@ async function handle(action,element){
   if(!raw||!Number.isFinite(date.getTime())||date.getTime()<=Date.now())throw Error('Choisissez une date et une heure futures.');
   const title=String(id('geo-booking-name')?.value||'').trim(),address=String(id('geo-booking-address')?.value||'').trim();
   const confirmed=!!id('geo-booking-confirmed')?.checked,paid=!!id('geo-booking-paid')?.checked;
+  const adapting=state.geoBookingAlternative===true;
+  const reasonLabels={visited:'Déjà visité',closed:'Lieu fermé',far:'Trop loin',expensive:'Trop cher',other:'Autre idée à deux'};
+  const reason=id('geo-adapt-reason')?.value||'';
+  if(adapting&&!reasonLabels[reason])throw Error('Choisissez une raison pour adapter la sortie.');
+  const notes=adapting?'Adaptation : '+reasonLabels[reason]:String(state.geoReservation?.notes||'').slice(0,500);
   if(!title||title.length>140||address.length>240)
    throw Error('Vérifie le nom et l’adresse de l’établissement.');
   if(paid&&!confirmed)throw Error('La réservation doit être confirmée avant de marquer le paiement.');
+  if(adapting&&state.geoReservation&&state.geoReservation.status!=='cancelled'){
+   if(!(await premiumConfirm('Cela remplacera la sortie enregistrée dans LoveRoll. Une réservation auprès de l’ancien établissement ne sera PAS annulée automatiquement. Continuer ?',{
+    kind:'library',title:'Adapter notre sortie ?',accept:'Oui, remplacer dans LoveRoll',cancel:'Conserver notre sortie'})))return;
+   if(state.user?.id!==ownerId||state.monthly?.monthly_activity?.id!==rollId||currentHost()?.user_id!==ownerId)return;
+  }
   await rpc('save_love_monthly_reservation',{
    p_roll:rollId,p_when:date.toISOString(),p_venue:title,p_address:address,
    ...trustedBookingVenueLinks(state.geoVenue,{title,address}),
-   p_notes:'',p_confirmed:confirmed,p_paid:paid
+   p_notes:notes,p_confirmed:confirmed,p_paid:paid
   });
   // A completed write belongs to its original user and official D100 roll,
   // even if the login changes while the network request is in flight.
   if(state.user?.id!==ownerId||state.monthly?.monthly_activity?.id!==rollId)return;
-  state.geoBookingEdit=false;
+  state.geoBookingEdit=false;state.geoBookingAlternative=false;
   if(!await refreshAfterConfirmedWrite(refreshAndShow)){
    if(state.user?.id!==ownerId||state.monthly?.monthly_activity?.id!==rollId)return;
    state.geoReservation={...state.geoReservation,
     status:confirmed?'confirmed':'planned',reserved_for:date.toISOString(),
-    venue_name:title,venue_address:address,paid_by_host:paid};
+    venue_name:title,venue_address:address,paid_by_host:paid,notes};
    render();
    notify('♡ Sortie enregistrée dans LoveRoll. Affichage actualisé localement; reconnecte-toi pour synchroniser.');
   }
@@ -3347,7 +3363,7 @@ async function handle(action,element){
      currentHost()?.user_id!==ownerId)return;
   await rpc('cancel_love_monthly_reservation',{p_roll:rollId});
   if(state.user?.id!==ownerId||state.monthly?.monthly_activity?.id!==rollId)return;
-  state.geoBookingEdit=false;
+  state.geoBookingEdit=false;state.geoBookingAlternative=false;
   if(!await refreshAfterConfirmedWrite(refreshAndShow)){
    if(state.user?.id!==ownerId||state.monthly?.monthly_activity?.id!==rollId)return;
    state.geoReservation=null;
