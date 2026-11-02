@@ -3,7 +3,7 @@
 // Never creates imaginary places, booking links, photos or road distances.
 import {createClient} from 'npm:@supabase/supabase-js@2.57.0';
 import {verifiedRoadMetres,verifiedMatrixCandidates} from './verified-road.mjs';
-import {geoRetryDecision,MAX_GEO_ATTEMPTS,GEO_CLAIM_WAIT_MS,GEO_MANUAL_RETRY_WAIT_MS} from './retry-policy.mjs';
+import {geoRetryDecision,MAX_GEO_ATTEMPTS,GEO_CLAIM_WAIT_MS,GEO_MANUAL_RETRY_WAIT_MS,boundedSearchRadii} from './retry-policy.mjs';
 
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{
  status,headers:{'Content-Type':'application/json','Cache-Control':'no-store','Access-Control-Allow-Origin':'*',
@@ -110,8 +110,8 @@ Deno.serve(async req=>{
  if(decision.status==='retry_exhausted')return json({status:'retry_exhausted'});
  // Never consume Geoapify credits without a configured server-side secret.
  if(apiKey.length<10)return json({error:'Clé Geoapify manquante dans les secrets Supabase'},503);
- const radius=Number(settings.travel_radius_km);
- if(!Number.isInteger(radius)||radius<10||radius>Number(policy.geo_max_radius_km))return json({error:'Rayon supérieur au maximum autorisé'},400);
+ const searchRadii=boundedSearchRadii(settings.travel_radius_km,Number(policy.geo_max_radius_km));
+ if(!searchRadii.length)return json({error:'Rayon de recherche invalide'},400);
  // One winner claim per roll. In-progress duplicates are cheap and return pending.
  // Keep the actual database timestamp as a fencing token across manual resets.
  let activeClaimedAt:string|null=null;
@@ -159,50 +159,63 @@ Deno.serve(async req=>{
    await admin.from('couples').update({travel_origin_lat:origin.lat,travel_origin_lon:origin.lon})
      .eq('id',roll.couple_id).is('travel_origin_lat',null);
   }
-  const placesUrl='https://api.geoapify.com/v2/places?'+new URLSearchParams({
-   categories:experience.geo_categories,
-   filter:'circle:'+origin.lon+','+origin.lat+','+(radius*1000),
-   bias:'proximity:'+origin.lon+','+origin.lat,limit:'20',apiKey
-  });
-  const placesResp=await observedGeoFetch(admin,'places',placesUrl,1);
-  if(!Array.isArray(placesResp?.features))throw Error('Réponse Geoapify Places invalide');
-  const locations=placesResp.features
-   .map(parsedPlace).filter((x:Place|null):x is Place=>!!x);
+  // Fetch previously suggested places once. Never repeat a year's venue.
   const seen=new Set();
   const {data:history}=await admin.from('love_monthly_places').select('place_id,roll_key')
    .eq('couple_id',roll.couple_id).eq('state','ready').gte('roll_key',roll.key.slice(0,4)+'-01')
    .lte('roll_key',roll.key.slice(0,4)+'-12');
   for(const p of history||[])if(p.place_id)seen.add(p.place_id);
-  const candidates=locations.filter(p=>!seen.has(p.place_id)).filter((p,i,a)=>a.findIndex(v=>v.place_id===p.place_id)===i).slice(0,Math.min(20,Math.max(1,Number(policy.geo_max_candidates)||10)));
-  if(!candidates.length){await finalize({state:'unavailable'});return json({status:'unavailable'});}
-  const routeBody={mode:'drive',sources:[{location:[origin.lon,origin.lat]}],
-   targets:candidates.map(p=>({location:[p.lon,p.lat]}))};
-  const routes=await observedGeoFetch(admin,'route_matrix',
-   'https://api.geoapify.com/v1/routematrix?'+new URLSearchParams({apiKey}),
-   (response:any)=>candidates.length+(
-    Array.isArray(response?.sources_to_targets?.[0])?
-    response.sources_to_targets[0].reduce((sum:number,route:any)=>{
+
+  let selected:null|{p:Place,meters:number}=null;
+  let searchedRadiusKm=searchRadii[0];
+  // A blank preference means no USER cap, not unlimited provider requests.
+  // Search at most 3 finite radii; stop after the first verified set of venues.
+  for(const searchRadius of searchRadii){
+   searchedRadiusKm=searchRadius;
+   const placesUrl='https://api.geoapify.com/v2/places?'+new URLSearchParams({
+    categories:experience.geo_categories,
+    filter:'circle:'+origin.lon+','+origin.lat+','+(searchRadius*1000),
+    bias:'proximity:'+origin.lon+','+origin.lat,limit:'20',apiKey
+   });
+   const placesResp=await observedGeoFetch(admin,'places',placesUrl,1);
+   if(!Array.isArray(placesResp?.features))throw Error('Réponse Geoapify Places invalide');
+   const locations=placesResp.features
+    .map(parsedPlace).filter((x:Place|null):x is Place=>!!x);
+   const candidates=locations.filter(p=>!seen.has(p.place_id))
+    .filter((p,i,a)=>a.findIndex(v=>v.place_id===p.place_id)===i)
+    .slice(0,Math.min(20,Math.max(1,Number(policy.geo_max_candidates)||10)));
+   if(!candidates.length)continue;
+   const routeBody={mode:'drive',sources:[{location:[origin.lon,origin.lat]}],
+    targets:candidates.map(p=>({location:[p.lon,p.lat]}))};
+   const routes=await observedGeoFetch(admin,'route_matrix',
+    'https://api.geoapify.com/v1/routematrix?'+new URLSearchParams({apiKey}),
+    (response:any)=>candidates.length+(
+     Array.isArray(response?.sources_to_targets?.[0])?
+     response.sources_to_targets[0].reduce((sum:number,route:any)=>{
       const verified=verifiedRoadMetres(route?.distance);
       return sum+(verified===null?0:Math.floor(verified/500000));
-    },0):0
-   ),{
-   method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(routeBody)
-  });
-  const matrix=routes?.sources_to_targets?.[0];
-  // A malformed provider response is not proof that no road destinations exist.
-  if(!Array.isArray(matrix)||matrix.length!==candidates.length)
-   throw Error('Matrice Geoapify incomplète');
-  const viable=verifiedMatrixCandidates(candidates,matrix,radius);
-  // Deterministic selection among nearby valid venues; do not always use the nearest.
-  viable.sort((a,b)=>a.meters-b.meters||a.p.place_id.localeCompare(b.p.place_id));
-  if(!viable.length){await finalize({state:'unavailable'});return json({status:'unavailable'});}
-  const selected=viable[(roll.face+Number(roll.key.slice(-2)))%Math.min(viable.length,5)];
+     },0):0
+    ),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(routeBody)});
+   const matrix=routes?.sources_to_targets?.[0];
+   if(!Array.isArray(matrix)||matrix.length!==candidates.length)
+    throw Error('Matrice Geoapify incomplète');
+   // A finite user preference is always enforced against real driving metres.
+   // An empty preference uses only the provider's finite operational safety cap.
+   const roadCapKm=settings.travel_radius_km===null?
+    Number(policy.geo_max_radius_km):searchRadius;
+   const viable=verifiedMatrixCandidates(candidates,matrix,roadCapKm);
+   viable.sort((a,b)=>a.meters-b.meters||a.p.place_id.localeCompare(b.p.place_id));
+   if(!viable.length)continue;
+   selected=viable[(roll.face+Number(roll.key.slice(-2)))%Math.min(viable.length,5)];
+   break;
+  }
+  if(!selected){await finalize({state:'unavailable'});return json({status:'unavailable'});}
   const v=selected.p;
   const snapshot={state:'ready',place_id:v.place_id,name:v.name,address:v.address,
    latitude:v.lat,longitude:v.lon,driving_meters:Math.round(selected.meters),
    website_url:v.website_url,menu_url:v.menu_url,booking_url:v.booking_url,photo_url:v.photo_url};
   await finalize(snapshot);
-  return json({status:'ready',venue:{...snapshot,roll_id:roll.id,roll_key:roll.key}});
+  return json({status:'ready',searched_radius_km:searchedRadiusKm,venue:{...snapshot,roll_id:roll.id,roll_key:roll.key}});
  }catch(error){
   // Keep the claim pending: temporary HTTP errors/timeouts are not "no venues".
   // Only the finite, server-side attempt budget can start another paid lookup.
