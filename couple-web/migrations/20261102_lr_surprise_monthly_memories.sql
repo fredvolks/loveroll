@@ -25,7 +25,14 @@ GRANT SELECT ON public.love_monthly_completions, public.love_monthly_feedback TO
 CREATE POLICY love_monthly_completions_read ON public.love_monthly_completions
  FOR SELECT TO authenticated USING (couple_private.is_member(couple_id));
 CREATE POLICY love_monthly_feedback_read ON public.love_monthly_feedback
- FOR SELECT TO authenticated USING (couple_private.is_member(couple_id));
+ FOR SELECT TO authenticated USING (
+  couple_private.is_member(couple_id)
+  AND EXISTS(
+   SELECT 1 FROM public.couple_members active_member
+   WHERE active_member.couple_id=love_monthly_feedback.couple_id
+     AND active_member.user_id=love_monthly_feedback.author_id
+  )
+ );
 
 CREATE OR REPLACE FUNCTION public.mark_love_monthly_completed(p_roll uuid)
 RETURNS public.love_monthly_completions
