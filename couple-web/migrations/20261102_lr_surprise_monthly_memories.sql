@@ -200,3 +200,44 @@ $function$;
 
 REVOKE ALL ON FUNCTION public.save_love_monthly_photo(uuid,text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.save_love_monthly_photo(uuid,text) TO authenticated;
+
+
+-- Remove only the caller's photo link. The client deletes the now-unreferenced
+-- private object with its own Storage DELETE policy after successful RPC.
+CREATE OR REPLACE FUNCTION public.delete_love_monthly_photo(p_roll uuid)
+RETURNS text LANGUAGE plpgsql SECURITY DEFINER SET search_path TO ''
+AS $function$
+DECLARE
+ v_roll public.couple_rolls%rowtype;
+ v_completion public.love_monthly_completions%rowtype;
+ v_feedback public.love_monthly_feedback%rowtype;
+BEGIN
+ PERFORM public.love_require_verified_identity();
+ SELECT * INTO v_roll FROM public.couple_rolls WHERE id=p_roll AND kind='monthly_activity';
+ IF NOT FOUND OR NOT couple_private.is_member(v_roll.couple_id) OR
+    (SELECT COUNT(*) FROM public.couple_members WHERE couple_id=v_roll.couple_id)<>2 THEN
+  RAISE EXCEPTION 'Tirage Surprise inaccessible' USING errcode='42501';
+ END IF;
+ SELECT * INTO v_completion FROM public.love_monthly_completions WHERE roll_id=p_roll;
+ IF NOT FOUND OR NOT EXISTS(SELECT 1 FROM public.couple_members cm
+   WHERE cm.couple_id=v_roll.couple_id AND cm.user_id=v_completion.completed_by
+ ) OR EXISTS(SELECT 1 FROM public.couple_members cm
+   WHERE cm.couple_id=v_roll.couple_id AND cm.joined_at>v_completion.completed_at) THEN
+  RAISE EXCEPTION 'Ce souvenir appartient à un ancien duo' USING errcode='42501';
+ END IF;
+ SELECT * INTO v_feedback FROM public.love_monthly_feedback
+  WHERE roll_id=p_roll AND author_id=auth.uid() FOR UPDATE;
+ IF NOT FOUND OR v_feedback.photo_path IS NULL THEN RETURN NULL; END IF;
+ IF v_feedback.rating IS NULL AND char_length(trim(v_feedback.memory_text))=0 THEN
+  DELETE FROM public.love_monthly_feedback
+   WHERE roll_id=p_roll AND author_id=auth.uid();
+ ELSE
+  UPDATE public.love_monthly_feedback SET photo_path=NULL,updated_at=now()
+   WHERE roll_id=p_roll AND author_id=auth.uid();
+ END IF;
+ RETURN v_feedback.photo_path;
+END;
+$function$;
+
+REVOKE ALL ON FUNCTION public.delete_love_monthly_photo(uuid) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.delete_love_monthly_photo(uuid) TO authenticated;
