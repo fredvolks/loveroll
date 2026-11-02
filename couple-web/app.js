@@ -212,6 +212,21 @@ async function query(table,options={}){
  const {data,error}=await q;if(error)throw error;return data;
 }
 
+// Signed links are kept in volatile client state only, never in Supabase rows.
+// Authentication and Storage RLS verify the CURRENT duo on every signature.
+async function signedMonthlyMemoryPhotos(feedback,actor,rollId){
+ const paths=[...new Set((feedback||[]).map(r=>r.photo_path).filter(Boolean))];
+ if(!paths.length)return {};
+ const entries=await Promise.all(paths.map(async path=>{
+  try{
+   const {data,error}=await client.storage.from(MEMORY_PHOTO_BUCKET)
+    .createSignedUrl(path,300);
+   return error||!data?.signedUrl?null:[path,data.signedUrl];
+  }catch{return null;}
+ }));
+ if(state.user?.id!==actor||state.monthly?.monthly_activity?.id!==rollId)return {};
+ return Object.fromEntries(entries.filter(Boolean));
+}
 // Unsaved form text lives ONLY in process memory: no LocalStorage, logs or cloud.
 // It is restored after partner realtime refreshes and activity resume.
 let lastFormTab=null;
@@ -1055,11 +1070,13 @@ async function refreshShared(){
    ]);
    state.geoCompletion=completion[0]||null;
    state.geoFeedback=feedback||[];
+   state.geoPhotoUrls=await signedMonthlyMemoryPhotos(feedback,state.user?.id,activeMonthlyRoll.id);
+   state.geoPhotoSignedAt=Date.now();
    state.geoCompletionAvailable=true;
-  }catch{state.geoCompletion=null;state.geoFeedback=[];state.geoCompletionAvailable=false;}
+  }catch{state.geoCompletion=null;state.geoFeedback=[];state.geoPhotoUrls={};state.geoPhotoSignedAt=0;state.geoCompletionAvailable=false;}
   state.geoLookup=geoLookupAfterRefresh({rollId:activeMonthlyRoll.id,
    previousRollId,venue:state.geoVenue,previousLookup:previousGeoLookup});
- }else{state.geoVenue=null;state.geoReservation=null;state.geoLookup='idle';state.geoDatePlan=null;state.geoDatePlanAvailable=false;state.geoCompletion=null;state.geoFeedback=[];state.geoCompletionAvailable=false;state.geoBookingEdit=false;state.geoBookingAlternative=false;}
+ }else{state.geoVenue=null;state.geoReservation=null;state.geoLookup='idle';state.geoDatePlan=null;state.geoDatePlanAvailable=false;state.geoCompletion=null;state.geoFeedback=[];state.geoPhotoUrls={};state.geoPhotoSignedAt=0;state.geoCompletionAvailable=false;state.geoBookingEdit=false;state.geoBookingAlternative=false;}
  state.session=sessions.find(s=>s.finished_at===null)||null;
  state.sessions=sessions;state.events=events;state.journal=diary;state.advent=advents;state.adventServerDate=adventServerDate;
  // After manual/automatic closure, both partners see their own review bubble.
