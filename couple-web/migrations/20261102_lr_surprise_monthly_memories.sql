@@ -30,6 +30,11 @@ CREATE POLICY love_monthly_completions_read ON public.love_monthly_completions
    WHERE active_member.couple_id=love_monthly_completions.couple_id
     AND active_member.user_id=love_monthly_completions.completed_by
   )
+  AND NOT EXISTS(
+   SELECT 1 FROM public.couple_members newer_member
+   WHERE newer_member.couple_id=love_monthly_completions.couple_id
+    AND newer_member.joined_at>love_monthly_completions.completed_at
+  )
  );
 CREATE POLICY love_monthly_feedback_read ON public.love_monthly_feedback
  FOR SELECT TO authenticated USING (
@@ -38,6 +43,11 @@ CREATE POLICY love_monthly_feedback_read ON public.love_monthly_feedback
    SELECT 1 FROM public.couple_members active_member
    WHERE active_member.couple_id=love_monthly_feedback.couple_id
      AND active_member.user_id=love_monthly_feedback.author_id
+  )
+  AND NOT EXISTS(
+   SELECT 1 FROM public.couple_members newer_member
+   WHERE newer_member.couple_id=love_monthly_feedback.couple_id
+    AND newer_member.joined_at>love_monthly_feedback.created_at
   )
  );
 
@@ -63,6 +73,11 @@ BEGIN
    SELECT 1 FROM public.couple_members active_member
    WHERE active_member.couple_id=v_roll.couple_id
     AND active_member.user_id=old.completed_by
+  )
+  OR EXISTS(
+   SELECT 1 FROM public.couple_members newer_member
+   WHERE newer_member.couple_id=v_roll.couple_id
+    AND newer_member.joined_at>old.completed_at
   )
  ) THEN
   RAISE EXCEPTION 'Ce souvenir appartient à un ancien duo' USING errcode='42501';
@@ -97,6 +112,11 @@ BEGIN
    SELECT 1 FROM public.couple_members active_member
    WHERE active_member.couple_id=v_roll.couple_id
     AND active_member.user_id=old.completed_by
+  )
+  OR EXISTS(
+   SELECT 1 FROM public.couple_members newer_member
+   WHERE newer_member.couple_id=v_roll.couple_id
+    AND newer_member.joined_at>old.completed_at
   )
  ) THEN
   RAISE EXCEPTION 'Ce souvenir appartient à un ancien duo' USING errcode='42501';
