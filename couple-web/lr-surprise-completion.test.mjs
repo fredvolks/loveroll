@@ -88,3 +88,19 @@ test('reload gracefully hides not-yet-deployed completion tables',()=>{
  assert.match(app,/state\.geoCompletionAvailable=false/);
  assert.match(app,/completionAvailable:state\.geoCompletionAvailable/);
 });
+
+
+test('partner completion and feedback update without paid provider calls or changing rolls',()=>{
+ const app=read('app.js');
+ const start=app.indexOf('// Sync the couple');
+ const end=app.indexOf('// Pending means the server has accepted a single claim',start);
+ assert.ok(start>0&&end>start);
+ const polling=app.slice(start,end);
+ assert.match(polling,/state\.geoCompletionAvailable/);
+ assert.match(polling,/query\('love_monthly_completions'/);
+ assert.match(polling,/query\('love_monthly_feedback'/);
+ assert.match(polling,/state\.geoFeedback=feedback\|\|\[\]/);
+ assert.match(polling,/state\.user\?\.id===actor/);
+ assert.match(polling,/state\.tab!=='special'\|\|!state\.showSurpriseActivity\|\|document\.hidden/);
+ assert.doesNotMatch(polling,/love-geo-surprise|observedGeoFetch|roll_couple_once/);
+});
