@@ -268,3 +268,16 @@ test('booking remains accessible when local Geoapify discovery is disabled',()=>
  assert.doesNotMatch(other,/data-action="geo-booking-editor"/);
  assert.equal(monthlyGeoCardHtml({enabled:false,reservation:{status:'cancelled'}}),'');
 });
+
+
+test('the lifetime Geoapify claim cap is terminal and never offers another paid retry',()=>{
+ const html=monthlyGeoCardHtml({enabled:true,lookup:'retry_limit_reached',venue:null});
+ assert.match(html,/limite de recherches Geoapify pour ce mois/);
+ assert.match(html,/Votre D100 reste enregistré/);
+ assert.doesNotMatch(html,/data-action="geo-retry"/);
+ assert.doesNotMatch(html,/surprise-geo-venue-info/);
+ assert.equal(geoLookupAfterRefresh({
+  rollId:'official-monthly-roll',previousRollId:'official-monthly-roll',
+  previousLookup:'retry_limit_reached',venue:null
+ }),'retry_limit_reached');
+});
