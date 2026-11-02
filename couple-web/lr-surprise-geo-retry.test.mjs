@@ -42,3 +42,12 @@ test('Edge function uses atomic attempt CAS and nonterminal outage state',()=>{
   assert.match(code,/status:'pending'/);
   assert.match(code,/matrix\.length!==candidates\.length/);
 });
+
+
+test('stale claims cannot overwrite a newer result and malformed Places are retryable',()=>{
+  const code=readFileSync(new URL('../supabase/functions/love-geo-surprise/index.ts',import.meta.url),'utf8');
+  assert.match(code,/\.eq\('state','pending'\)\s*\.eq\('geo_attempts',decision\.attempt\)\.select\('roll_id'\)/);
+  assert.match(code,/if\(error\|\|updated\?\.length!==1\)throw Error/);
+  assert.match(code,/if\(!Array\.isArray\(placesResp\?\.features\)\)throw Error/);
+  assert.match(code,/Résultat Geoapify obsolète/);
+});
