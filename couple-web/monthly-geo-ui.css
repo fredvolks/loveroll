@@ -175,3 +175,28 @@ main#app.loveroll-surprise-ecrin .surprise-preferences-compact .surprise-month-p
   font-size:11px;
  }
 }
+
+
+/* Optional editorial moment: collapsed by default, never crowds the D100. */
+main#app.loveroll-surprise-ecrin .surprise-weekly-idea{
+ min-width:0;padding:0;border:1px solid var(--control-border);
+ border-radius:13px;background:var(--ritual-card);color:var(--ritual-text);
+}
+main#app.loveroll-surprise-ecrin .surprise-weekly-idea>summary{
+ display:flex;align-items:center;min-height:44px;padding:9px 12px;
+ cursor:pointer;color:var(--ritual-text);font:600 13px/1.35 system-ui,sans-serif;
+}
+main#app.loveroll-surprise-ecrin .surprise-weekly-idea>summary:focus-visible{
+ outline:3px solid var(--lr-control-focus);outline-offset:2px;border-radius:13px;
+}
+main#app.loveroll-surprise-ecrin .surprise-weekly-idea-content{
+ display:grid;gap:6px;min-width:0;padding:0 12px 12px;
+}
+main#app.loveroll-surprise-ecrin .surprise-weekly-idea-content strong{
+ font:500 clamp(17px,4vw,22px)/1.2 Georgia,serif;color:var(--ritual-text);
+}
+main#app.loveroll-surprise-ecrin .surprise-weekly-idea-content p,
+main#app.loveroll-surprise-ecrin .surprise-weekly-idea-content small{
+ margin:0;color:var(--ritual-muted);font:400 12px/1.45 system-ui,sans-serif;
+ overflow-wrap:anywhere;
+}
