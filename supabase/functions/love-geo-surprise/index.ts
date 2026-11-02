@@ -120,7 +120,12 @@ Deno.serve(async req=>{
    roll_id:roll.id,couple_id:roll.couple_id,roll_key:roll.key,state:'pending',
    geo_attempts:decision.attempt
   }).select('roll_id,claimed_at').maybeSingle();
-  if(inserted.error||!inserted.data?.claimed_at)return json({status:'pending'});
+  if(inserted.error){
+   if(inserted.error.code==='23505')return json({status:'pending'});
+   // Missing migrations or broken grants must not appear as infinite loading.
+   return json({error:'Enregistrement de recherche indisponible'},503);
+  }
+  if(!inserted.data?.claimed_at)return json({error:'Requête de recherche incomplète'},503);
   activeClaimedAt=inserted.data.claimed_at;
  }else{
   // Compare-and-swap by both claim time and attempt count: two partners
@@ -133,7 +138,9 @@ Deno.serve(async req=>{
   }).eq('roll_id',roll.id).eq('state','pending')
    .eq('geo_attempts',previousAttempts)
    .lt('claimed_at',new Date(Date.now()-cooldown).toISOString()).select('roll_id,claimed_at');
-  if(retry.error||retry.data?.length!==1||!retry.data[0]?.claimed_at)return json({status:'pending'});
+  if(retry.error)return json({error:'Relance de recherche indisponible'},503);
+  if(retry.data?.length!==1)return json({status:'pending'});
+  if(!retry.data[0]?.claimed_at)return json({error:'Relance de recherche incomplète'},503);
   activeClaimedAt=retry.data[0].claimed_at;
  }
  const finalize=async(body:any)=>{
