@@ -83,6 +83,12 @@ test('private SQL requires current duo, completion, author ownership and metadat
  assert.match(sql,/f\.photo_path=storage\.objects\.name/);
  assert.match(sql,/couple_private\.is_member\(f\.couple_id\)/);
  assert.match(sql,/newcomer\.joined_at>f\.created_at/);
+ assert.match(sql,/CREATE POLICY love_memory_photo_owner_read_active ON storage\.objects/);
+ assert.match(sql,/FOR SELECT TO authenticated USING \(/);
+ assert.match(sql,/owner_id=auth\.uid\(\)::text/);
+ assert.match(sql,/original_member\.user_id=completed\.completed_by/);
+ assert.match(sql,/newcomer\.joined_at>completed\.completed_at/);
+ assert.match(sql,/\(storage\.foldername\(name\)\)\[1\]=auth\.uid\(\)::text/);
  assert.match(sql,/FOR DELETE TO authenticated USING/);
  assert.doesNotMatch(sql,/FOR UPDATE TO authenticated|public,true|CREATE POLICY .* TO public/);
  assert.match(base,/photo_path text/);
@@ -107,4 +113,17 @@ test('photo actions never change D100, publish a URL, or upload original bytes',
  const end=app.indexOf("if(verb==='geo-memory-save')",begin);
  assert.ok(begin>0&&end>begin);
  assert.doesNotMatch(app.slice(begin,end),/roll_couple_once|paid_by_host/);
+});
+
+test('cleanup SELECT is scoped to author's own current D100, not partner or former duo',()=>{
+ const sql=read('migrations/20261102_lr_surprise_private_photos.sql');
+ const start=sql.indexOf('CREATE POLICY love_memory_photo_owner_read_active');
+ const end=sql.indexOf('CREATE POLICY love_memory_photo_owner_delete',start);
+ assert.ok(start>0&&end>start);
+ const scope=sql.slice(start,end);
+ assert.match(scope,/owner_id=auth\.uid\(\)::text/);
+ assert.match(scope,/m\.user_id=auth\.uid\(\)/);
+ assert.match(scope,/r\.kind='monthly_activity'/);
+ assert.match(scope,/newcomer\.joined_at>completed\.completed_at/);
+ assert.doesNotMatch(scope,/OR true|USING \(true\)|bucket_id<>'loveroll-memories'/);
 });
