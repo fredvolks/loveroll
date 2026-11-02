@@ -32,14 +32,14 @@ export function monthlyGeoCardHtml({
  venue=null,lookup='idle',enabled=false,host=null,canReserve=false,reservation=null,editing=false,adapting=false,budgetLimited=false,
  locale='fr-CA',experienceTitle=''
 }={}){
- if(!enabled)return '';
+ if(!enabled&&(!reservation||reservation.status==='cancelled'))return '';
  let body='';
  // A named POI is not a verified driving destination until its road route
  // is confirmed. Do not offer GPS/site booking as a resolved Surprise venue
  // when the provider's matrix was empty, unreachable or invalid.
  const roadMetres=finiteProviderNumber(venue?.driving_meters);
  const roadVerified=roadMetres!==null&&roadMetres>=0;
- if(venue?.state==='ready'&&venue?.place_id&&venue?.name&&roadVerified){
+ if(enabled&&venue?.state==='ready'&&venue?.place_id&&venue?.name&&roadVerified){
   const lat=finiteProviderNumber(venue.latitude),lon=finiteProviderNumber(venue.longitude),
    gps=lat!==null&&lon!==null&&Math.abs(lat)<=90&&Math.abs(lon)<=180?
     'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(lat+','+lon):null;
@@ -56,14 +56,15 @@ export function monthlyGeoCardHtml({
     (!canReserve&&host?'<p class="surprise-geo-muted">♡ '+esc(host)+' organise la réservation et le paiement.</p>':'')+
     '</div>';
  }else{
-  const message=lookup==='loading'||lookup==='pending'?'Recherche d’un vrai lieu à proximité…':
+  const message=!enabled?'La recherche locale est désactivée. Votre sortie enregistrée reste disponible.':
+   lookup==='loading'||lookup==='pending'?'Recherche d’un vrai lieu à proximité…':
    lookup==='error'?'Geoapify n’est pas encore disponible. Votre activité D100 reste enregistrée.':
    lookup==='retry_exhausted'?'La recherche a rencontré plusieurs erreurs. Réessayez manuellement après 15 minutes; votre D100 reste enregistré.':
    lookup==='unavailable'?'Aucun établissement avec trajet routier vérifié dans votre rayon. Votre activité D100 est conservée.':
    venue?.state==='ready'&&!roadVerified?'Le trajet routier vers ce lieu n’est pas vérifié. Votre activité D100 est conservée.':
    'Votre activité D100 est enregistrée. La recherche locale se lance automatiquement.';
   body='<div class="surprise-geo-pending" role="status">'+esc(message)+'</div>'+
-   (['error','retry_exhausted'].includes(lookup)?'<button type="button" class="surprise-geo-text-button" data-action="geo-retry">Réessayer la recherche</button>':'');
+   (enabled&&['error','retry_exhausted'].includes(lookup)?'<button type="button" class="surprise-geo-text-button" data-action="geo-retry">Réessayer la recherche</button>':'');
  }
  let bookingHtml='';
  if(reservation&&reservation.status!=='cancelled'){
