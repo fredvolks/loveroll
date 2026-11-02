@@ -225,3 +225,26 @@ test('LR-SURPRISE-001 confirms the actual reserved venue, not just a suggested P
  assert.doesNotMatch(unsafe,/<script>|<img src=x/);
  assert.match(unsafe,/&lt;img src=x/);
 });
+
+
+test('LR-SURPRISE-001: outages are distinct from a real empty result and offer a manual retry',()=>{
+ const exhausted=monthlyGeoCardHtml({enabled:true,lookup:'retry_exhausted'});
+ assert.match(exhausted,/plusieurs erreurs/);
+ assert.match(exhausted,/après 15 minutes/);
+ assert.match(exhausted,/data-action="geo-retry"/);
+ assert.doesNotMatch(exhausted,/Aucun établissement avec trajet routier/);
+ assert.match(monthlyGeoCardHtml({enabled:true,lookup:'unavailable'}),/Aucun établissement/);
+ assert.equal(geoLookupAfterRefresh({rollId:'r1',previousRollId:'r1',previousLookup:'retry_exhausted'}),'retry_exhausted');
+ assert.equal(geoLookupAfterRefresh({rollId:'r2',previousRollId:'r1',previousLookup:'retry_exhausted'}),'idle');
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const manual=app.slice(app.indexOf("if(verb==='geo-retry')"),app.indexOf("if(verb==='geo-booking-editor')"));
+ assert.match(manual,/resolveMonthlyGeo\(\{manual:true\}\)/);
+ assert.match(app,/retry:manual/);
+});
+
+test('Geoapify and OpenStreetMap attribution links are explicit and safe',()=>{
+ const html=monthlyGeoCardHtml({enabled:true,venue});
+ assert.match(html,/href="https:\/\/www\.geoapify\.com\/"/);
+ assert.match(html,/href="https:\/\/www\.openstreetmap\.org\/copyright"/);
+ assert.match(html,/rel="noopener noreferrer"/);
+});
