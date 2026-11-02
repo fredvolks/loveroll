@@ -1,6 +1,8 @@
 // One billable Geoapify lookup at a time for an official D100 roll.
 // The policy is pure, deterministic and shared with the Node regression suite.
 export const MAX_GEO_ATTEMPTS = 3;
+// Lifetime cap per official monthly D100; manual restarts never bypass it.
+export const MAX_TOTAL_GEO_ATTEMPTS = 6;
 export const GEO_CLAIM_WAIT_MS = 120_000;
 export const GEO_MANUAL_RETRY_WAIT_MS = 15 * 60_000;
 
@@ -14,6 +16,10 @@ export function geoRetryDecision(existing, {now = Date.now(), manual = false} = 
   if (!Number.isFinite(claimed) || !Number.isFinite(now)) return {status: 'pending'};
   const age = Math.max(0, now - claimed);
   if (age < GEO_CLAIM_WAIT_MS) return {status: 'pending'};
+  const rawTotal = Number(existing.geo_total_attempts);
+  const total = Number.isInteger(rawTotal) && rawTotal > 0 ?
+    Math.max(rawTotal, attempts) : attempts;
+  if (total >= MAX_TOTAL_GEO_ATTEMPTS) return {status:'retry_limit_reached'};
   if (attempts >= MAX_GEO_ATTEMPTS) {
     return manual && age >= GEO_MANUAL_RETRY_WAIT_MS ?
       {status: 'claim', attempt: 1} :
