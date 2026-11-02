@@ -59,7 +59,7 @@ export function premiumSurpriseHtml({
  rolling=false,rollingKind=null,rollFace=1,settlingHost=false,showActivity=false,timerHtml='',editSlot=null,season=null,
  currency='CAD',locale='fr-CA',exchange=null,
  geoEnabled=false,geoVenue=null,geoLookup='idle',reservation=null,canReserve=false,bookingEditor=false,bookingAlternative=false,
- budgetMax=null,budgetCurrency='CAD',datePlan=null,viewerId=null,
+ budgetMax=null,budgetCurrency='CAD',datePlan=null,datePlanAvailable=false,viewerId=null,
  completionAvailable=false,completion=null,monthlyFeedback=[]
 }={}){
  const a=monthly.monthly_activity,h=monthly.monthly_host;
@@ -166,7 +166,7 @@ export function premiumSurpriseHtml({
        button('settings-page:monde','Modifier le budget ou la distance','surprise-geo-text-button')+
        '</div>'+ 
      '<small class="surprise-season-disclaimer">Tarifs variables selon les dates, les réservations et la météo. Vérifiez les horaires et la disponibilité avant de partir.</small>'+
-     monthlyDatePlanHtml({plan:datePlan,hostId:host?.user_id||null,me:viewerId,locale})+
+     (datePlanAvailable?monthlyDatePlanHtml({plan:datePlan,hostId:host?.user_id||null,me:viewerId,locale}):'')+
      monthlyCompletionHtml({available:completionAvailable,completion,feedback:monthlyFeedback,
        viewerId,locale})+
      monthlyGeoCardHtml({venue:geoVenue,lookup:geoLookup,enabled:geoEnabled,
