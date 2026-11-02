@@ -59,7 +59,8 @@ export function premiumSurpriseHtml({
  rolling=false,rollingKind=null,rollFace=1,settlingHost=false,showActivity=false,timerHtml='',editSlot=null,season=null,
  currency='CAD',locale='fr-CA',exchange=null,
  geoEnabled=false,geoVenue=null,geoLookup='idle',reservation=null,canReserve=false,bookingEditor=false,bookingAlternative=false,
- budgetMax=null,budgetCurrency='CAD',datePlan=null,datePlanAvailable=false,viewerId=null,
+ budgetMax=null,budgetCurrency='CAD',travelRadiusKm=null,travelOriginLabel='',
+ datePlan=null,datePlanAvailable=false,viewerId=null,
  completionAvailable=false,completion=null,monthlyFeedback=[]
 }={}){
  const a=monthly.monthly_activity,h=monthly.monthly_host;
@@ -84,6 +85,15 @@ export function premiumSurpriseHtml({
   displayCadRange(minCost,maxCost,{currency,locale,exchange}):null;
  const outingPlace=[activity?.region,activity?.location].filter(Boolean).map(esc).join(' · ');
  const sharedBudget=formatSharedBudget(budgetMax,budgetCurrency,locale);
+ const originSummary=String(travelOriginLabel||'').trim().slice(0,120)||'Départ à définir';
+ const radiusSummary=travelRadiusKm===null||travelRadiusKm===undefined?
+  'Toutes les distances':Number.isInteger(Number(travelRadiusKm))&&Number(travelRadiusKm)>=10?
+  travelRadiusKm+' km aller':'Toutes les distances';
+ const preferenceStrip='<div class="surprise-preferences-compact" aria-label="Nos limites de sortie">'+
+  '<span>Départ : '+esc(originSummary)+'</span>'+
+  '<span>'+esc(radiusSummary)+'</span>'+
+  '<span>'+esc(sharedBudget===null?'Tous les budgets':sharedBudget)+'</span>'+
+  button('settings-page:monde','Modifier','surprise-geo-text-button')+'</div>';
  const aboveEstimatedBudget=sharedBudget!==null&&budgetCurrency==='CAD'&&
   Number.isFinite(minCost)&&minCost>Number(budgetMax);
  const budgetAdvisory=aboveEstimatedBudget?
@@ -111,6 +121,7 @@ export function premiumSurpriseHtml({
       button('roll:monthly_activity','Brasser le dé','surprise-primary',rolling))+
    (invitation&&!needsHost?'<div class="surprise-host-winner" role="status">♥ '+esc(names[invitation.index])+
      ' invite cette fois-ci !</div>':'')+
+   preferenceStrip+
   '</section>'+
   '<section class="surprise-special">'+
    '<div class="surprise-events-heading"><h3>Nos événements</h3></div>'+
