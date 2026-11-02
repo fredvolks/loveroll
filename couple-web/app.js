@@ -97,7 +97,7 @@ let settingsOpenSection=requestedSettingsSection||'';
 let notificationFeedback=null;
 let worldGpsDraft=null;
 let worldFx=null,worldFxPending=null,worldFxFailed=null;
-let geoFetchActive=null,geoFetchNextAt=new Map();
+let geoFetchActive=null,geoFetchNextAt=new Map(),geoManualRetryRollId=null;
 const geoBookingMutationGate=createBookingMutationGate();
 const worldGeoEnabled=()=>state.couple?.activity_localization_enabled===true&&!!state.monthly?.monthly_activity&&state.monthly.monthly_activity.activity_region===null;
 const currentHost=()=>{const h=state.monthly?.monthly_host;return h?state.members[h.face%2===0?0:1]:null;};
@@ -1899,8 +1899,11 @@ function optionalRolledTimer(roll){
  return state.specialTimerKey===key?timerWidget({id:key},roll.timer_minutes):
   button('special-timer:'+key,editorialIcon('clock')+' Minuteur · '+roll.timer_minutes+' min','class="subtle occasion-timer"');
 }
-async function resolveMonthlyGeo({manual=false}={}){
+async function resolveMonthlyGeo(){
  const roll=state.monthly?.monthly_activity,ownerId=state.user?.id;
+ // Only a direct retry action may request a new bounded server claim.
+ const manual=!!roll&&geoManualRetryRollId===roll.id;
+ geoManualRetryRollId=null;
  if(!ownerId||!worldGeoEnabled()||!roll||state.geoVenue?.state==='ready'||
     state.geoVenue?.state==='unavailable'||state.geoLookup==='unavailable')return;
  const now=Date.now();
@@ -3277,7 +3280,8 @@ async function handle(action,element){
   const rollId=state.monthly.monthly_activity.id;
   if(geoFetchActive===rollId){notify('Recherche déjà en cours.');return;}
   geoFetchNextAt.delete(rollId);
-  void resolveMonthlyGeo({manual:true});return;
+  geoManualRetryRollId=rollId;
+  void resolveMonthlyGeo();return;
  }
  if(verb==='geo-booking-editor'){
   if(currentHost()?.user_id!==state.user?.id)throw Error('Seule la personne qui invite peut réserver.');
