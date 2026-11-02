@@ -3407,6 +3407,79 @@ async function handle(action,element){
   if(!done)notify('Un enregistrement de souvenir est déjà en cours.');
   return;
  }
+ if(verb==='geo-photo-save'){
+  if(!state.geoCompletionAvailable||!state.geoCompletion||!state.user?.id||
+     !state.monthly?.monthly_activity?.id)
+   throw Error('Marquez d’abord la sortie comme réalisée.');
+  const file=id('geo-photo-input')?.files?.[0];
+  if(!file)throw Error('Choisissez une photo avant de l’ajouter.');
+  const actor=state.user.id,rollId=state.monthly.monthly_activity.id;
+  const original=state.geoFeedback.find(r=>r.author_id===actor)?.photo_path||null;
+  const done=await geoPhotoMutationGate(async()=>{
+   const jpeg=await jpegMemoryPhoto(file);
+   if(state.user?.id!==actor||state.monthly?.monthly_activity?.id!==rollId)return;
+   const path=privateMemoryPath(actor,rollId,crypto.randomUUID());
+   const bucket=client.storage.from(MEMORY_PHOTO_BUCKET);
+   const {error:uploadError}=await bucket.upload(path,jpeg,{
+    contentType:'image/jpeg',upsert:false,cacheControl:'300'
+   });
+   if(uploadError)throw Error('Envoi photo indisponible : '+uploadError.message);
+   try{
+    // A changed login/roll cannot attach a photo to an unrelated memory.
+    if(state.user?.id!==actor||state.monthly?.monthly_activity?.id!==rollId)
+     throw Error('Le duo a changé pendant l’envoi.');
+    const saved=await rpc('save_love_monthly_photo',{p_roll:rollId,p_path:path});
+    if(state.user?.id!==actor||state.monthly?.monthly_activity?.id!==rollId)return;
+    state.geoFeedback=[...state.geoFeedback.filter(r=>r.author_id!==actor),saved];
+    state.geoPhotoUrls=await signedMonthlyMemoryPhotos(state.geoFeedback,actor,rollId);
+    state.geoPhotoSignedAt=Date.now();
+   }catch(error){
+    try{await bucket.remove([path]);}catch{}
+    throw error;
+   }
+   if(original&&original!==path){
+    // Removing the old object is best-effort; the old signed URL expires
+    // and its metadata is no longer readable after the new RPC succeeds.
+    try{await bucket.remove([original]);}catch{}
+   }
+   if(state.user?.id!==actor||state.monthly?.monthly_activity?.id!==rollId)return;
+   if(!await refreshAfterConfirmedWrite(refreshAndShow)){
+    if(state.user?.id!==actor||state.monthly?.monthly_activity?.id!==rollId)return;
+    render();notify('Photo privée enregistrée. Reconnectez-vous pour confirmer la synchronisation.');
+   }
+  });
+  if(!done)notify('Une autre photo est déjà en cours d’enregistrement.');
+  return;
+ }
+ if(verb==='geo-photo-delete'){
+  if(!state.geoCompletionAvailable||!state.user?.id||!state.monthly?.monthly_activity?.id)
+   throw Error('Aucun souvenir accessible.');
+  const actor=state.user.id,rollId=state.monthly.monthly_activity.id;
+  const own=state.geoFeedback.find(r=>r.author_id===actor);
+  if(!own?.photo_path)return;
+  if(!(await premiumConfirm('Retirer votre photo souvenir privée ? Votre texte et votre note seront conservés.',{
+   kind:'library',title:'Retirer ma photo ?',accept:'Retirer la photo',cancel:'Conserver'})))return;
+  if(state.user?.id!==actor||state.monthly?.monthly_activity?.id!==rollId)return;
+  const done=await geoPhotoMutationGate(async()=>{
+   const removedPath=await rpc('delete_love_monthly_photo',{p_roll:rollId});
+   if(state.user?.id!==actor||state.monthly?.monthly_activity?.id!==rollId)return;
+   state.geoFeedback=state.geoFeedback.map(r=>r.author_id===actor?{...r,photo_path:null}:r)
+    .filter(r=>r.author_id!==actor||r.rating!==null||String(r.memory_text||'').trim());
+   delete state.geoPhotoUrls[removedPath];
+   let clean=true;
+   if(removedPath){
+    const {error}=await client.storage.from(MEMORY_PHOTO_BUCKET).remove([removedPath]);
+    clean=!error;
+   }
+   if(!await refreshAfterConfirmedWrite(refreshAndShow)){
+    if(state.user?.id!==actor||state.monthly?.monthly_activity?.id!==rollId)return;
+    render();
+    notify(clean?'Photo retirée de LoveRoll.':'Photo masquée dans LoveRoll; nettoyage du fichier à vérifier.');
+   }
+  });
+  if(!done)notify('Une autre opération photo est déjà en cours.');
+  return;
+ }
  if(verb==='geo-memory-save'){
   if(!state.geoCompletionAvailable||!state.geoCompletion||!state.user?.id||
      !state.monthly?.monthly_activity?.id)
