@@ -8,6 +8,8 @@ on:
       - 'couple-web/lr-surprise-adaptation.test.mjs'
       - 'couple-web/lr-surprise-date-agreement.test.mjs'
       - 'couple-web/lr-surprise-completion.test.mjs'
+      - 'couple-web/lr-surprise-preferences-strip.test.mjs'
+      - 'couple-web/monthly-geo-ui.css'
       - 'couple-web/monthly-completion.mjs'
       - 'couple-web/monthly-date-plan.mjs'
       - 'couple-web/premium-surprise.mjs'
@@ -43,6 +45,7 @@ jobs:
           node --test couple-web/lr-surprise-date-agreement.test.mjs
           node --check couple-web/monthly-completion.mjs
           node --test couple-web/lr-surprise-completion.test.mjs
+          node --test couple-web/lr-surprise-preferences-strip.test.mjs
           node --test couple-web/world-preferences.test.mjs
       - name: Run existing Surprise integration regressions
         run: |
