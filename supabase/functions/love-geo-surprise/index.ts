@@ -2,7 +2,7 @@
 // Authenticated Supabase Edge Function, service key and Geoapify key server-side only.
 // Never creates imaginary places, booking links, photos or road distances.
 import {createClient} from 'npm:@supabase/supabase-js@2.57.0';
-import {verifiedRoadMetres,verifiedMatrixCandidates} from './verified-road.mjs';
+import {verifiedRoadMetres,verifiedRoadSeconds,verifiedMatrixCandidates} from './verified-road.mjs';
 import {geoRetryDecision,MAX_GEO_ATTEMPTS,MAX_TOTAL_GEO_ATTEMPTS,GEO_CLAIM_WAIT_MS,GEO_MANUAL_RETRY_WAIT_MS,boundedSearchRadii} from './retry-policy.mjs';
 
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{
@@ -182,6 +182,7 @@ Deno.serve(async req=>{
   for(const p of history||[])if(p.place_id)seen.add(p.place_id);
 
   let selected:null|{p:Place,meters:number}=null;
+  let selectedDrivingSeconds:number|null=null;
   let searchedRadiusKm=searchRadii[0];
   // A blank preference means no USER cap, not unlimited provider requests.
   // Search at most 3 finite radii; stop after the first verified set of venues.
@@ -222,12 +223,15 @@ Deno.serve(async req=>{
    viable.sort((a,b)=>a.meters-b.meters||a.p.place_id.localeCompare(b.p.place_id));
    if(!viable.length)continue;
    selected=viable[(roll.face+Number(roll.key.slice(-2)))%Math.min(viable.length,5)];
+   const chosenIndex=candidates.findIndex(p=>p.place_id===selected.p.place_id);
+   selectedDrivingSeconds=verifiedRoadSeconds(matrix[chosenIndex]?.time);
    break;
   }
   if(!selected){await finalize({state:'unavailable'});return json({status:'unavailable'});}
   const v=selected.p;
   const snapshot={state:'ready',place_id:v.place_id,name:v.name,address:v.address,
    latitude:v.lat,longitude:v.lon,driving_meters:Math.round(selected.meters),
+   driving_seconds:selectedDrivingSeconds,
    website_url:v.website_url,menu_url:v.menu_url,booking_url:v.booking_url,photo_url:v.photo_url};
   await finalize(snapshot);
   return json({status:'ready',searched_radius_km:searchedRadiusKm,venue:{...snapshot,roll_id:roll.id,roll_key:roll.key}});
