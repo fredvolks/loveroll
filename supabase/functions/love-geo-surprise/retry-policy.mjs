@@ -21,3 +21,16 @@ export function geoRetryDecision(existing, {now = Date.now(), manual = false} = 
   }
   return {status: 'claim', attempt: attempts + 1};
 }
+
+/** A blank user limit is different from the service's finite search coverage.
+ * Three progressively broader searches maximum; no world-wide crawl.
+ */
+export function boundedSearchRadii(radiusKm,technicalMaxKm){
+ const cap=Number(technicalMaxKm);
+ if(!Number.isInteger(cap)||cap<10||cap>500)return [];
+ if(radiusKm===null||radiusKm===undefined){
+  return [...new Set([Math.min(50,cap),Math.min(150,cap),cap])];
+ }
+ const radius=Number(radiusKm);
+ return Number.isInteger(radius)&&radius>=10&&radius<=cap?[radius]:[];
+}
