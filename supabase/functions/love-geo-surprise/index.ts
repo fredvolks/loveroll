@@ -133,10 +133,12 @@ Deno.serve(async req=>{
   if(retry.error||retry.data?.length!==1)return json({status:'pending'});
  }
  const finalize=async(body:any)=>{
-  const {error}=await admin.from('love_monthly_places').update({
+  // A stale/overlapping claim cannot overwrite a newer result or reservation.
+  const {data:updated,error}=await admin.from('love_monthly_places').update({
    ...body,updated_at:new Date().toISOString()
-  }).eq('roll_id',roll.id);
-  if(error)throw error;
+  }).eq('roll_id',roll.id).eq('state','pending')
+   .eq('geo_attempts',decision.attempt).select('roll_id');
+  if(error||updated?.length!==1)throw Error('Résultat Geoapify obsolète');
  };
  try{
   const {data:experience,error:xpError}=await admin.from('love_world_experiences')
@@ -158,7 +160,8 @@ Deno.serve(async req=>{
    bias:'proximity:'+origin.lon+','+origin.lat,limit:'20',apiKey
   });
   const placesResp=await observedGeoFetch(admin,'places',placesUrl,1);
-  const locations=(Array.isArray(placesResp?.features)?placesResp.features:[])
+  if(!Array.isArray(placesResp?.features))throw Error('Réponse Geoapify Places invalide');
+  const locations=placesResp.features
    .map(parsedPlace).filter((x:Place|null):x is Place=>!!x);
   const seen=new Set();
   const {data:history}=await admin.from('love_monthly_places').select('place_id,roll_key')
