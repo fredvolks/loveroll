@@ -29,7 +29,7 @@ export function geoPhoto(venue){
  '<div class="surprise-geo-photo-placeholder" aria-label="Photo du lieu non disponible">♡<small>Photo du lieu non disponible</small></div>';
 }
 export function monthlyGeoCardHtml({
- venue=null,lookup='idle',enabled=false,host=null,canReserve=false,reservation=null,editing=false,adapting=false,
+ venue=null,lookup='idle',enabled=false,host=null,canReserve=false,reservation=null,editing=false,adapting=false,budgetLimited=false,
  locale='fr-CA',experienceTitle=''
 }={}){
  if(!enabled)return '';
@@ -103,6 +103,7 @@ export function monthlyGeoCardHtml({
     (reservation&&reservation.status!=='cancelled'?'<p class="surprise-geo-muted">La réservation extérieure précédente ne sera pas annulée automatiquement.</p>':''):'')+
    '<label class="surprise-geo-check"><input id="geo-booking-confirmed" type="checkbox"'+(reservation?.status==='confirmed'&&!adapting?' checked':'')+'> J’ai effectué la réservation auprès de l’établissement</label>'+
    '<label class="surprise-geo-check"><input id="geo-booking-paid" type="checkbox"'+(reservation?.paid_by_host&&!adapting?' checked':'')+'> J’ai payé la réservation</label>'+
+   (budgetLimited?'<label class="surprise-geo-check"><input id="geo-booking-budget-ack" type="checkbox"> J’accepte de préparer cette sortie même si son prix réel n’est pas confirmé par Geoapify et pourrait dépasser notre budget.</label>':'')+
    '<p class="surprise-geo-muted">LoveRoll ne réserve ni ne prélève d’argent : confirmez ici votre réservation externe.</p>'+
    '<button type="button" data-action="geo-booking-save" class="surprise-primary">Enregistrer la date</button></div>':'')+
    '</div>';
