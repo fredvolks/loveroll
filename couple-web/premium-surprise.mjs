@@ -91,7 +91,7 @@ export function premiumSurpriseHtml({
  const radiusSummary=travelRadiusKm===null||travelRadiusKm===undefined?
   'Toutes les distances':Number.isInteger(Number(travelRadiusKm))&&Number(travelRadiusKm)>=10?
   travelRadiusKm+' km aller':'Toutes les distances';
- const preferenceStrip='<div class="surprise-preferences-compact" aria-label="État et limites de notre rendez-vous">'+
+ const preferenceStrip='<div class="surprise-preferences-compact" aria-label="Nos limites de sortie">'+
   '<strong class="surprise-month-phase" role="status">'+esc(phase.label)+'</strong>'+ 
   '<span>Départ : '+esc(originSummary)+'</span>'+
   '<span>'+esc(radiusSummary)+'</span>'+
