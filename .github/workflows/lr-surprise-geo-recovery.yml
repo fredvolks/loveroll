@@ -64,6 +64,12 @@ jobs:
           node --test couple-web/lr-surprise-private-photo.test.mjs
           node --test couple-web/lr-surprise-driving-time.test.mjs
           node --test couple-web/world-preferences.test.mjs
+      - name: Install Deno for Supabase Edge compile check
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check Geoapify Edge Function (no deployment or paid requests)
+        run: deno check supabase/functions/love-geo-surprise/index.ts
       - name: Run existing Surprise integration regressions
         run: |
           set -euo pipefail
