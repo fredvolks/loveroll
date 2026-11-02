@@ -1899,7 +1899,7 @@ function optionalRolledTimer(roll){
  return state.specialTimerKey===key?timerWidget({id:key},roll.timer_minutes):
   button('special-timer:'+key,editorialIcon('clock')+' Minuteur · '+roll.timer_minutes+' min','class="subtle occasion-timer"');
 }
-async function resolveMonthlyGeo(){
+async function resolveMonthlyGeo({manual=false}={}){
  const roll=state.monthly?.monthly_activity,ownerId=state.user?.id;
  if(!ownerId||!worldGeoEnabled()||!roll||state.geoVenue?.state==='ready'||
     state.geoVenue?.state==='unavailable'||state.geoLookup==='unavailable')return;
@@ -1912,12 +1912,13 @@ async function resolveMonthlyGeo(){
  if(state.tab==='special'&&state.showSurpriseActivity)render();
  const stillCurrent=()=>state.user?.id===ownerId&&state.monthly?.monthly_activity?.id===roll.id;
  try{
-  const {data,error}=await client.functions.invoke('love-geo-surprise',{body:{roll_id:roll.id}});
+  const {data,error}=await client.functions.invoke('love-geo-surprise',{body:{roll_id:roll.id,retry:manual}});
   if(error)throw error;
   if(data?.error)throw Error(data.error);
   if(!stillCurrent())return;
   if(data?.status==='ready'&&data.venue){state.geoVenue=data.venue;state.geoLookup='ready';}
   else if(data?.status==='unavailable')state.geoLookup='unavailable';
+  else if(data?.status==='retry_exhausted')state.geoLookup='retry_exhausted';
   else if(data?.status==='disabled'){
    state.geoLookup='idle';geoFetchNextAt.set(roll.id,Date.now()+60000);
   }else if(data?.status==='pending'){
@@ -3276,7 +3277,7 @@ async function handle(action,element){
   const rollId=state.monthly.monthly_activity.id;
   if(geoFetchActive===rollId){notify('Recherche déjà en cours.');return;}
   geoFetchNextAt.delete(rollId);
-  void resolveMonthlyGeo();return;
+  void resolveMonthlyGeo({manual:true});return;
  }
  if(verb==='geo-booking-editor'){
   if(currentHost()?.user_id!==state.user?.id)throw Error('Seule la personne qui invite peut réserver.');
