@@ -164,7 +164,8 @@ export function premiumSurpriseHtml({
        '</div>'+ 
      '<small class="surprise-season-disclaimer">Tarifs variables selon les dates, les réservations et la météo. Vérifiez les horaires et la disponibilité avant de partir.</small>'+
      monthlyGeoCardHtml({venue:geoVenue,lookup:geoLookup,enabled:geoEnabled,
-       host:host?.name||null,canReserve,reservation,editing:bookingEditor,adapting:bookingAlternative,locale,experienceTitle:activity?.title||''})+
+       host:host?.name||null,canReserve,reservation,editing:bookingEditor,adapting:bookingAlternative,
+       budgetLimited:budgetMax!==null&&budgetMax!==undefined,locale,experienceTitle:activity?.title||''})+
      timerHtml+button('surprise-activity','Fermer','surprise-primary')+
     '</article></div>':'')+
  '</div>';
