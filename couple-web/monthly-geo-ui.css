@@ -59,3 +59,36 @@ main#app.loveroll-surprise-ecrin .surprise-geo-text-button{
  main#app.loveroll-surprise-ecrin .surprise-geo-photo,
  main#app.loveroll-surprise-ecrin .surprise-geo-photo-placeholder{height:100px}
 }
+
+
+/* Shared date agreement: same velvet/lantern surface, readable compact modal. */
+main#app.loveroll-surprise-ecrin .surprise-date-plan{
+ display:grid;gap:9px;min-width:0;padding:12px;
+ border:1px solid #f3b2c77a;border-radius:17px;
+ background:linear-gradient(150deg,#4c1e32dd,#200e18ec);
+ color:#fff0f4;font:400 13px/1.45 system-ui,sans-serif;
+}
+main#app.loveroll-surprise-ecrin .surprise-date-plan>strong{
+ font:500 clamp(17px,4vw,22px)/1.2 Georgia,serif;color:#fff4f5;
+}
+main#app.loveroll-surprise-ecrin .surprise-date-plan p,
+main#app.loveroll-surprise-ecrin .surprise-date-plan small{margin:0;overflow-wrap:anywhere}
+main#app.loveroll-surprise-ecrin .surprise-date-plan small{color:#f1cedb}
+main#app.loveroll-surprise-ecrin .surprise-date-plan-actions{display:grid;gap:9px;min-width:0}
+main#app.loveroll-surprise-ecrin .surprise-date-plan label{font-size:12px;color:#f6dae4}
+main#app.loveroll-surprise-ecrin .surprise-date-plan input[type=datetime-local],
+main#app.loveroll-surprise-ecrin .surprise-geo-booking-form select{
+ width:100%;min-width:0;min-height:44px;padding:9px 10px;border-radius:10px;
+ border:1px solid #dc9ab6;background:#200e19;color:#fff;color-scheme:dark;
+}
+main#app.loveroll-surprise-ecrin .surprise-date-plan button,
+main#app.loveroll-surprise-ecrin .surprise-geo-text-button{
+ min-height:44px;padding:9px 11px;overflow-wrap:anywhere;
+}
+main#app.loveroll-surprise-ecrin .surprise-date-plan :focus-visible,
+main#app.loveroll-surprise-ecrin .surprise-geo-booking-form :focus-visible{
+ outline:3px solid #ffd89d;outline-offset:2px;
+}
+@media(max-width:360px){
+ main#app.loveroll-surprise-ecrin .surprise-date-plan{padding:10px;gap:7px}
+}
