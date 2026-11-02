@@ -4,6 +4,8 @@ on:
     paths:
       - 'couple-web/lr-surprise-geo-retry.test.mjs'
       - 'couple-web/lr-surprise-optional-radius.test.mjs'
+      - 'couple-web/lr-surprise-budget.test.mjs'
+      - 'couple-web/premium-surprise.mjs'
       - 'couple-web/world-preferences.mjs'
       - 'couple-web/monthly-geo-ui.mjs'
       - 'couple-web/monthly-geo-ui.test.mjs'
@@ -30,6 +32,7 @@ jobs:
           node --check supabase/functions/love-geo-surprise/retry-policy.mjs
           node --test couple-web/lr-surprise-geo-retry.test.mjs
           node --test couple-web/lr-surprise-optional-radius.test.mjs
+          node --test couple-web/lr-surprise-budget.test.mjs
           node --test couple-web/world-preferences.test.mjs
       - name: Run existing Surprise integration regressions
         run: |
