@@ -5,6 +5,7 @@ import {occasionDate,dueOccasions} from './special-occasions.mjs';
 import {displayCadRange} from './currency-exchange.mjs';
 import {formatSharedBudget} from './world-preferences.mjs';
 import {monthlyGeoCardHtml} from './monthly-geo-ui.mjs';
+import {monthlyDatePlanHtml} from './monthly-date-plan.mjs';
 import {premiumPolyDie} from './premium-evening.mjs';
 import {surpriseSlot,surpriseCustom,surpriseTitle,displaySurpriseDate} from './surprise-event-config.mjs';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','"':'&quot;',"'":'&#39;'}[c]));
@@ -57,7 +58,7 @@ export function premiumSurpriseHtml({
  rolling=false,rollingKind=null,rollFace=1,settlingHost=false,showActivity=false,timerHtml='',editSlot=null,season=null,
  currency='CAD',locale='fr-CA',exchange=null,
  geoEnabled=false,geoVenue=null,geoLookup='idle',reservation=null,canReserve=false,bookingEditor=false,bookingAlternative=false,
- budgetMax=null,budgetCurrency='CAD'
+ budgetMax=null,budgetCurrency='CAD',datePlan=null,viewerId=null
 }={}){
  const a=monthly.monthly_activity,h=monthly.monthly_host;
  const rollingActivity=rolling&&rollingKind==='monthly_activity';
@@ -163,6 +164,7 @@ export function premiumSurpriseHtml({
        button('settings-page:monde','Modifier le budget ou la distance','surprise-geo-text-button')+
        '</div>'+ 
      '<small class="surprise-season-disclaimer">Tarifs variables selon les dates, les réservations et la météo. Vérifiez les horaires et la disponibilité avant de partir.</small>'+
+     monthlyDatePlanHtml({plan:datePlan,hostId:host?.user_id||null,me:viewerId,locale})+
      monthlyGeoCardHtml({venue:geoVenue,lookup:geoLookup,enabled:geoEnabled,
        host:host?.name||null,canReserve,reservation,editing:bookingEditor,adapting:bookingAlternative,
        budgetLimited:budgetMax!==null&&budgetMax!==undefined,locale,experienceTitle:activity?.title||''})+
