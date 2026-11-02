@@ -7,6 +7,7 @@ import {formatSharedBudget} from './world-preferences.mjs';
 import {monthlyGeoCardHtml} from './monthly-geo-ui.mjs';
 import {monthlyDatePlanHtml} from './monthly-date-plan.mjs';
 import {monthlyCompletionHtml} from './monthly-completion.mjs';
+import {monthlySurprisePhase} from './monthly-surprise-phase.mjs';
 import {premiumPolyDie} from './premium-evening.mjs';
 import {surpriseSlot,surpriseCustom,surpriseTitle,displaySurpriseDate} from './surprise-event-config.mjs';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','"':'&quot;',"'":'&#39;'}[c]));
@@ -64,6 +65,7 @@ export function premiumSurpriseHtml({
  completionAvailable=false,completion=null,monthlyFeedback=[]
 }={}){
  const a=monthly.monthly_activity,h=monthly.monthly_host;
+ const phase=monthlySurprisePhase({monthly,datePlan,reservation,completion});
  const rollingActivity=rolling&&rollingKind==='monthly_activity';
  const rollingHost=rolling&&rollingKind==='monthly_host'&&!settlingHost;
  // This month has just one large dice stage: D100 -> seasonal activity dialog -> D6 -> D100.
@@ -89,7 +91,8 @@ export function premiumSurpriseHtml({
  const radiusSummary=travelRadiusKm===null||travelRadiusKm===undefined?
   'Toutes les distances':Number.isInteger(Number(travelRadiusKm))&&Number(travelRadiusKm)>=10?
   travelRadiusKm+' km aller':'Toutes les distances';
- const preferenceStrip='<div class="surprise-preferences-compact" aria-label="Nos limites de sortie">'+
+ const preferenceStrip='<div class="surprise-preferences-compact" aria-label="État et limites de notre rendez-vous">'+
+  '<strong class="surprise-month-phase" role="status">'+esc(phase.label)+'</strong>'+ 
   '<span>Départ : '+esc(originSummary)+'</span>'+
   '<span>'+esc(radiusSummary)+'</span>'+
   '<span>'+esc(sharedBudget===null?'Tous les budgets':sharedBudget)+'</span>'+
@@ -117,7 +120,7 @@ export function premiumSurpriseHtml({
      '<div class="surprise-host-option"><span>PAIR</span><strong>'+partner(0)+'</strong></div>'+
      '<div class="surprise-host-option"><span>IMPAIR</span><strong>'+partner(1)+'</strong></div></div>':'')+
    (needsHost?button('roll:monthly_host','Brasser le dé','surprise-primary',rolling):
-    a?button('surprise-activity','Découvrir notre activité','surprise-primary',rolling):
+    a?button('surprise-activity',esc(phase.action),'surprise-primary',rolling):
       button('roll:monthly_activity','Brasser le dé','surprise-primary',rolling))+
    (invitation&&!needsHost?'<div class="surprise-host-winner" role="status">♥ '+esc(names[invitation.index])+
      ' invite cette fois-ci !</div>':'')+
