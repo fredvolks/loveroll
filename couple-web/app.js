@@ -1938,6 +1938,7 @@ async function resolveMonthlyGeo(){
   if(data?.status==='ready'&&data.venue){state.geoVenue=data.venue;state.geoLookup='ready';}
   else if(data?.status==='unavailable')state.geoLookup='unavailable';
   else if(data?.status==='retry_exhausted')state.geoLookup='retry_exhausted';
+  else if(data?.status==='retry_limit_reached')state.geoLookup='retry_limit_reached';
   else if(data?.status==='disabled'){
    state.geoLookup='idle';geoFetchNextAt.set(roll.id,Date.now()+60000);
   }else if(data?.status==='pending'){
