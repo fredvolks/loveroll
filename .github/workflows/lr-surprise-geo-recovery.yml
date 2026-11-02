@@ -14,6 +14,7 @@ on:
       - 'couple-web/lr-surprise-weekly-idea.test.mjs'
       - 'couple-web/lr-surprise-private-photo.test.mjs'
       - 'couple-web/lr-surprise-driving-time.test.mjs'
+      - 'couple-web/lr-surprise-activity-compatibility.test.mjs'
       - 'couple-web/monthly-private-photo.mjs'
       - 'couple-web/weekly-surprise-idea.mjs'
       - 'couple-web/surprise-minimal.css'
@@ -63,6 +64,7 @@ jobs:
           node --check couple-web/monthly-private-photo.mjs
           node --test couple-web/lr-surprise-private-photo.test.mjs
           node --test couple-web/lr-surprise-driving-time.test.mjs
+          node --test couple-web/lr-surprise-activity-compatibility.test.mjs
           node --test couple-web/world-preferences.test.mjs
       - name: Install Deno for Supabase Edge compile check
         uses: denoland/setup-deno@v2
