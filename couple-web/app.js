@@ -1340,7 +1340,8 @@ function renderEclat(){
 function renderHome(){
  const members=state.members||[];
  const monthlyActivity=state.monthly?.monthly_activity?monthlyActivityForRoll(state.monthly.monthly_activity):null;
- if(monthlyActivity&&worldGeoEnabled()&&state.geoVenue?.state==='ready'&&state.geoVenue?.name)monthlyActivity.title=state.geoVenue.name;
+ // Do not rename the D100 activity after a Geoapify venue was selected.
+ // The establishment is a separate read-only detail on Surprise.
  const activeEvening=playableSessionForWeekly(state.session,state.weekly);
  const turn=activeEvening&&activeEvening.self_draws?
   state.eveningBoard||sharedEveningTurns(activeEvening,members,state.personal,state.challenges,state.gifts):null;
@@ -1353,6 +1354,8 @@ function renderHome(){
   disabled:!!state.diceStatus,
   members,
   turn,monthly:state.monthly,monthlyActivity,
+  monthlyCompleted:state.geoCompletion?.roll_id===state.monthly?.monthly_activity?.id,
+  monthlyReservation:state.geoReservation||null,
   history:state.challengesHistory||[],
   sessions:state.sessions||[],
   rollFace:state.rollAnimationFace||1,
