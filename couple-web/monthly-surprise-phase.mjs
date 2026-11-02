@@ -5,7 +5,7 @@ export function monthlySurprisePhase({monthly={},datePlan=null,reservation=null,
  const activity=monthly?.monthly_activity;
  if(!activity)return {key:'discover',label:'À découvrir',action:'Brasser notre surprise'};
  if(!monthly?.monthly_host)return {key:'host',label:'Qui invite ?',action:'Découvrir notre activité'};
- if(completion?.roll_id===activity.id||completion&&completion.roll_id===undefined)
+ if(completion?.roll_id===activity.id)
   return {key:'completed',label:'Réalisé',action:'Revoir notre souvenir'};
  if(reservation?.status==='confirmed')
   return {key:'booked',label:'Réservé à l’extérieur',action:'Voir notre rendez-vous'};
