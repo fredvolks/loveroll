@@ -53,7 +53,7 @@ test('completion and feedback SQL enforce verified duo membership and RLS; never
  assert.match(sql,/couple_private\.is_member\(couple_id\)/g);
  assert.match(sql,/love_require_verified_identity\(\)/g);
  assert.match(sql,/kind='monthly_activity'/g);
- assert.match(sql,/author_id=auth\.uid\(\)/);
+ assert.match(sql,/VALUES\(p_roll,v_roll\.couple_id,auth\.uid\(\),p_rating/);
  assert.match(sql,/ON CONFLICT \(roll_id\) DO NOTHING/);
  assert.match(sql,/ON CONFLICT \(roll_id,author_id\) DO UPDATE/);
  assert.match(sql,/GRANT EXECUTE ON FUNCTION public\.mark_love_monthly_completed/);
