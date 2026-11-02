@@ -44,6 +44,8 @@ test('Surprise does not claim a provider venue is within a capped budget',()=>{
  const over=premiumSurpriseHtml({...base,budgetMax:0,geoEnabled:true,
   geoVenue:{state:'ready',place_id:'fake',name:'Spa',driving_meters:5000,latitude:45,longitude:-73}});
  assert.match(over,/Budget du duo/);
+ assert.match(over,/data-action="settings-page:monde"/);
+ assert.match(over,/Modifier le budget ou la distance/);
  assert.match(over,/dépasse votre plafond/);
  assert.match(over,/tarif confirmé/); // Never confuse catalogue estimate with provider pricing.
  const capped=premiumSurpriseHtml({...base,budgetMax:300});
