@@ -3,11 +3,13 @@ on:
   pull_request:
     paths:
       - 'couple-web/lr-surprise-geo-retry.test.mjs'
+      - 'couple-web/lr-surprise-optional-radius.test.mjs'
+      - 'couple-web/world-preferences.mjs'
       - 'couple-web/monthly-geo-ui.mjs'
       - 'couple-web/monthly-geo-ui.test.mjs'
       - 'couple-web/app.js'
       - 'supabase/functions/love-geo-surprise/**'
-      - 'couple-web/migrations/*lr_surprise_geo*'
+      - 'couple-web/migrations/*lr_surprise_*'
       - '.github/workflows/lr-surprise-geo-recovery.yml'
   workflow_dispatch:
 permissions:
@@ -27,6 +29,8 @@ jobs:
           node --check couple-web/monthly-geo-ui.mjs
           node --check supabase/functions/love-geo-surprise/retry-policy.mjs
           node --test couple-web/lr-surprise-geo-retry.test.mjs
+          node --test couple-web/lr-surprise-optional-radius.test.mjs
+          node --test couple-web/world-preferences.test.mjs
       - name: Run existing Surprise integration regressions
         run: |
           set -euo pipefail
