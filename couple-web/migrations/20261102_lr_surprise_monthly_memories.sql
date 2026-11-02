@@ -69,7 +69,8 @@ BEGIN
  -- A previous couple's completion cannot be inherited when a member changes.
  IF EXISTS(
   SELECT 1 FROM public.love_monthly_completions old
-  WHERE old.roll_id=p_roll AND NOT EXISTS(
+  WHERE old.roll_id=p_roll AND (
+   NOT EXISTS(
    SELECT 1 FROM public.couple_members active_member
    WHERE active_member.couple_id=v_roll.couple_id
     AND active_member.user_id=old.completed_by
@@ -79,6 +80,7 @@ BEGIN
    WHERE newer_member.couple_id=v_roll.couple_id
     AND newer_member.joined_at>old.completed_at
   )
+ )
  ) THEN
   RAISE EXCEPTION 'Ce souvenir appartient à un ancien duo' USING errcode='42501';
  END IF;
@@ -108,7 +110,8 @@ BEGIN
  END IF;
  IF EXISTS(
   SELECT 1 FROM public.love_monthly_completions old
-  WHERE old.roll_id=p_roll AND NOT EXISTS(
+  WHERE old.roll_id=p_roll AND (
+   NOT EXISTS(
    SELECT 1 FROM public.couple_members active_member
    WHERE active_member.couple_id=v_roll.couple_id
     AND active_member.user_id=old.completed_by
@@ -118,6 +121,7 @@ BEGIN
    WHERE newer_member.couple_id=v_roll.couple_id
     AND newer_member.joined_at>old.completed_at
   )
+ )
  ) THEN
   RAISE EXCEPTION 'Ce souvenir appartient à un ancien duo' USING errcode='42501';
  END IF;
