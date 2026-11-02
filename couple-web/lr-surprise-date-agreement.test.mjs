@@ -93,3 +93,13 @@ test('new date controls are hidden before the SQL migration is deployed',()=>{
  const ready=premiumSurpriseHtml({...base,datePlanAvailable:true});
  assert.match(ready,/data-action="geo-date-propose"/);
 });
+
+
+test('date proposals from former partners are not readable or actionable after duo membership changes',()=>{
+ const sql=read('migrations/20261102_lr_surprise_shared_date_agreement.sql');
+ assert.match(sql,/active_member\.user_id=love_monthly_date_plans\.proposed_by/);
+ assert.match(sql,/agreeing_member\.user_id=love_monthly_date_plans\.agreed_by/);
+ assert.match(sql,/Cette proposition appartient à un ancien duo/);
+ assert.match(sql,/active_member\.user_id=v_plan\.proposed_by/);
+ assert.match(sql,/agreeing_member\.user_id=v_plan\.agreed_by/);
+});
