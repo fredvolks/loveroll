@@ -112,3 +112,14 @@ test('old member memories are hidden from a newly associated partner',()=>{
  assert.match(sql,/active_member\.user_id=love_monthly_feedback\.author_id/);
  assert.match(sql,/couple_private\.is_member\(couple_id\)/);
 });
+
+
+test('former couple completion is unreadable and cannot authorize another couple memory',()=>{
+ const sql=read('migrations/20261102_lr_surprise_monthly_memories.sql');
+ assert.match(sql,/active_member\.couple_id=love_monthly_completions\.couple_id/);
+ assert.match(sql,/active_member\.user_id=love_monthly_completions\.completed_by/);
+ assert.match(sql,/active_member\.user_id=old\.completed_by/g);
+ assert.match(sql,/Ce souvenir appartient à un ancien duo/g);
+ const markers=sql.match(/Ce souvenir appartient à un ancien duo/g)||[];
+ assert.equal(markers.length,2,'Both completion and feedback RPC reject former members');
+});
