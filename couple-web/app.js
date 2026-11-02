@@ -3331,7 +3331,7 @@ async function handle(action,element){
   const baseNotes=adapting?'Adaptation : '+reasonLabels[reason]:
    String(state.geoReservation?.notes||'');
   const acknowledgement='Prix à vérifier malgré le plafond choisi.';
-  const notes=(priceAcknowledged&&budgetCapped?
+  const notes=(priceAcknowledged&&budgetCapped&&!baseNotes.includes(acknowledgement)?
    [baseNotes,acknowledgement].filter(Boolean).join(' · '):baseNotes).slice(0,500);
   if(!title||title.length>140||address.length>240)
    throw Error('Vérifie le nom et l’adresse de l’établissement.');
