@@ -115,7 +115,7 @@ test('photo actions never change D100, publish a URL, or upload original bytes',
  assert.doesNotMatch(app.slice(begin,end),/roll_couple_once|paid_by_host/);
 });
 
-test('cleanup SELECT is scoped to author's own current D100, not partner or former duo',()=>{
+test("cleanup SELECT is scoped to author's own current D100, not partner or former duo",()=>{
  const sql=read('migrations/20261102_lr_surprise_private_photos.sql');
  const start=sql.indexOf('CREATE POLICY love_memory_photo_owner_read_active');
  const end=sql.indexOf('CREATE POLICY love_memory_photo_owner_delete',start);
