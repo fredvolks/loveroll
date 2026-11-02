@@ -3583,8 +3583,18 @@ async function handle(action,element){
   const baseNotes=adapting?'Adaptation : '+reasonLabels[reason]:
    String(state.geoReservation?.notes||'');
   const acknowledgement='Prix à vérifier malgré le plafond choisi.';
-  const notes=(priceAcknowledged&&budgetCapped&&!baseNotes.includes(acknowledgement)?
-   [baseNotes,acknowledgement].filter(Boolean).join(' · '):baseNotes).slice(0,500);
+  const baseWithBudget=priceAcknowledged&&budgetCapped&&!baseNotes.includes(acknowledgement)?
+   [baseNotes,acknowledgement].filter(Boolean).join(' · '):baseNotes;
+  // A Geoapify POI and route do not prove that a venue offers the exact D100
+  // activity. A planned draft is allowed, but a confirmed external booking
+  // requires the host to attest that they checked the service with the venue.
+  const officialActivityTitle=monthlyActivityForRoll(state.monthly?.monthly_activity)?.title;
+  const activityAcknowledged=!!id('geo-booking-activity-ack')?.checked;
+  if(confirmed&&officialActivityTitle&&!activityAcknowledged)
+   throw Error('Avant de confirmer la réservation, vérifiez que le lieu propose notre activité D100 ou la variante adaptée.');
+  const activityNote='Activité vérifiée auprès du lieu (déclaration de la personne qui invite).';
+  const notes=(confirmed&&activityAcknowledged&&!baseWithBudget.includes(activityNote)?
+   [baseWithBudget,activityNote].filter(Boolean).join(' · '):baseWithBudget).slice(0,500);
   if(!title||title.length>140||address.length>240)
    throw Error('Vérifie le nom et l’adresse de l’établissement.');
   if(paid&&!confirmed)throw Error('La réservation doit être confirmée avant de marquer le paiement.');
