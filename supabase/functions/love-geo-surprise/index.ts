@@ -116,6 +116,7 @@ Deno.serve(async req=>{
  // One winner claim per roll. In-progress duplicates are cheap and return pending.
  // Keep the actual database timestamp as a fencing token across manual resets.
  let activeClaimedAt:string|null=null;
+ let activeTotalAttempts=0;
  if(!existing){
   const inserted=await admin.from('love_monthly_places').insert({
    roll_id:roll.id,couple_id:roll.couple_id,roll_key:roll.key,state:'pending',
@@ -128,6 +129,7 @@ Deno.serve(async req=>{
   }
   if(!inserted.data?.claimed_at)return json({error:'Requête de recherche incomplète'},503);
   activeClaimedAt=inserted.data.claimed_at;
+  activeTotalAttempts=1;
  }else{
   // Compare-and-swap by both claim time and attempt count: two partners
   // must never win the same paid Geoapify retry simultaneously.
@@ -147,6 +149,7 @@ Deno.serve(async req=>{
   if(retry.data?.length!==1)return json({status:'pending'});
   if(!retry.data[0]?.claimed_at)return json({error:'Relance de recherche incomplète'},503);
   activeClaimedAt=retry.data[0].claimed_at;
+  activeTotalAttempts=totalAfterClaim;
  }
  const finalize=async(body:any)=>{
   // A stale/overlapping claim cannot overwrite a newer result or reservation.
@@ -233,6 +236,7 @@ Deno.serve(async req=>{
   // Only the finite, server-side attempt budget can start another paid lookup.
   console.warn('LoveRoll Geoapify lookup failed; bounded retry available',
    error instanceof Error?error.message:'unknown');
-  return json({status:decision.attempt>=MAX_GEO_ATTEMPTS?'retry_exhausted':'pending'});
+  return json({status:activeTotalAttempts>=6?'retry_limit_reached':
+   decision.attempt>=MAX_GEO_ATTEMPTS?'retry_exhausted':'pending'});
  }
 });
