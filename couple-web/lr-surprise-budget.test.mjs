@@ -67,3 +67,30 @@ test('budget RPC and schema guard duo membership and do not change dice rolls',(
  assert.match(app,/p_budget:amount,p_currency:currency/);
  assert.match(app,/budgetMax:state\.couple\?\.surprise_budget_max\?\?null/);
 });
+
+
+test('unknown venue price requires opt-in before saving a capped booking',()=>{
+ const base={monthly:{monthly_activity:{face:7}},showActivity:true,
+  activity:{title:'Une sortie',description:'Un rendez-vous à deux'},
+  geoEnabled:true,canReserve:true,bookingEditor:true,
+  geoVenue:{state:'ready',place_id:'p1',name:'Lieu réel',
+   driving_meters:10000,latitude:46.8,longitude:-71.2}};
+ const none=premiumSurpriseHtml({...base,budgetMax:null});
+ const limited=premiumSurpriseHtml({...base,budgetMax:0});
+ const positive=premiumSurpriseHtml({...base,budgetMax:300});
+ assert.doesNotMatch(none,/id="geo-booking-budget-ack"/);
+ for(const html of [limited,positive]){
+  assert.match(html,/id="geo-booking-budget-ack"/);
+  assert.match(html,/pourrait dépasser notre budget/);
+  assert.doesNotMatch(html,/id="geo-booking-budget-ack"[^>]*checked/);
+ }
+ const app=read('app.js');
+ const action=app.slice(app.indexOf("if(verb==='geo-booking-save')"),
+  app.indexOf("if(verb==='geo-booking-cancel')"));
+ assert.match(action,/state\.couple\?\.surprise_budget_max!==null/);
+ assert.match(action,/geo-booking-budget-ack/);
+ assert.match(action,/if\(budgetCapped&&!priceAcknowledged\)/);
+ assert.match(action,/Prix à vérifier malgré le plafond choisi/);
+ assert.match(action,/!baseNotes\.includes\(acknowledgement\)/);
+ assert.match(action,/p_notes:notes/);
+});
