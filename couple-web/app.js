@@ -3337,6 +3337,53 @@ async function handle(action,element){
   geoManualRetryRollId=rollId;
   void resolveMonthlyGeo();return;
  }
+ if(verb==='geo-complete'){
+  if(!state.geoCompletionAvailable||!state.user?.id||!state.monthly?.monthly_activity?.id)
+   throw Error('Les souvenirs de Surprise ne sont pas encore disponibles.');
+  if(state.geoCompletion){notify('Votre sortie est déjà marquée comme réalisée.');return;}
+  const actor=state.user.id,rollId=state.monthly.monthly_activity.id;
+  if(!(await premiumConfirm('Marquer cette sortie comme réalisée pour vous deux ? Cela ne réserve ni ne paie rien auprès du lieu.',{
+   kind:'library',title:'On l’a fait ♥',accept:'Oui, on l’a fait',cancel:'Pas encore'})))return;
+  if(state.user?.id!==actor||state.monthly?.monthly_activity?.id!==rollId)return;
+  const done=await geoCompletionMutationGate(async()=>{
+   const completion=await rpc('mark_love_monthly_completed',{p_roll:rollId});
+   if(state.user?.id!==actor||state.monthly?.monthly_activity?.id!==rollId)return;
+   state.geoCompletion=completion;
+   if(!await refreshAfterConfirmedWrite(refreshAndShow)){
+    if(state.user?.id!==actor||state.monthly?.monthly_activity?.id!==rollId)return;
+    render();
+    notify('Sortie réalisée enregistrée. Synchronisation complète à la reconnexion.');
+   }
+  });
+  if(!done)notify('Un enregistrement de souvenir est déjà en cours.');
+  return;
+ }
+ if(verb==='geo-memory-save'){
+  if(!state.geoCompletionAvailable||!state.geoCompletion||!state.user?.id||
+     !state.monthly?.monthly_activity?.id)
+   throw Error('Marquez d’abord la sortie comme réalisée.');
+  const actor=state.user.id,rollId=state.monthly.monthly_activity.id;
+  const rawRating=id('geo-memory-rating')?.value||'';
+  const rating=rawRating===''?null:Number(rawRating);
+  const memory=String(id('geo-memory-text')?.value||'').trim();
+  if((rating!==null&&(!Number.isInteger(rating)||rating<1||rating>5))||
+     memory.length>500||(!memory&&rating===null))
+   throw Error('Choisissez une note sur cinq ou écrivez un souvenir (500 caractères maximum).');
+  const done=await geoCompletionMutationGate(async()=>{
+   const saved=await rpc('save_love_monthly_feedback',{
+    p_roll:rollId,p_rating:rating,p_memory:memory
+   });
+   if(state.user?.id!==actor||state.monthly?.monthly_activity?.id!==rollId)return;
+   state.geoFeedback=[...state.geoFeedback.filter(item=>item.author_id!==actor),saved];
+   if(!await refreshAfterConfirmedWrite(refreshAndShow)){
+    if(state.user?.id!==actor||state.monthly?.monthly_activity?.id!==rollId)return;
+    render();
+    notify('Souvenir enregistré. Synchronisation complète à la reconnexion.');
+   }
+  });
+  if(!done)notify('Un enregistrement de souvenir est déjà en cours.');
+  return;
+ }
  if(['geo-date-propose','geo-date-counter','geo-date-accept'].includes(verb)){
   if(!state.geoDatePlanAvailable)throw Error('La planification à deux n’est pas encore disponible.');
   const actor=state.user?.id,rollId=state.monthly?.monthly_activity?.id;
