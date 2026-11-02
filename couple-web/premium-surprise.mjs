@@ -84,7 +84,7 @@ export function premiumSurpriseHtml({
  const aboveEstimatedBudget=sharedBudget!==null&&budgetCurrency==='CAD'&&
   Number.isFinite(minCost)&&minCost>Number(budgetMax);
  const budgetAdvisory=aboveEstimatedBudget?
-  'L’estimation de cette expérience dépasse votre plafond. Adaptez la sortie ou vérifiez une autre option.':
+  'L’estimation de cette expérience dépasse votre plafond. Aucun tarif confirmé pour le lieu : adaptez la sortie ou vérifiez une autre option.':
   'Geoapify ne fournit pas de tarif confirmé pour ce lieu. Vérifiez le prix avant de réserver.';
  return '<div class="surprise-premium-view surprise-ecrin">'+
   '<header class="surprise-header surprise-new-header">'+ritualHeadingHtml('NOTRE RITUEL DE LA SURPRISE')+
