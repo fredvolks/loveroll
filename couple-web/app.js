@@ -50,7 +50,7 @@ import {guidedIdeas,guidanceFor} from './wellbeing.mjs';
 
 import { SPECIAL_SURPRISES,OCCASIONS,occasionDate,dueOccasions,specialSurprise,occasionRoles,TARGETED_OCCASIONS } from './special-occasions.mjs';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.107.0';
-import {worldwideSettingsHtml,localeOrDefault,currencyOrDefault,normalizeSharedTravel,t as worldT} from './world-preferences.mjs';
+import {worldwideSettingsHtml,localeOrDefault,currencyOrDefault,normalizeSharedTravel,parseTravelRadius,t as worldT} from './world-preferences.mjs';
 import {cadExchangeRate} from './currency-exchange.mjs';
 import {referralSettingsHtml,referralLink,REFERRAL_CODE_PATTERN,REFERRAL_PENDING_STORAGE_KEY} from './referral-program.mjs?v=20261019-personal171';
 import {enhanceLoveRollSettingsSelects} from './loveroll-premium-pickers.mjs?v=20261019-personal171';
@@ -2896,7 +2896,7 @@ async function handle(action,element){
  if(verb==='save-world-duo'){
   if(!state.coupleId||!state.couple)throw Error('Un duo est nécessaire.');
   const label=String(id('world-origin')?.value||'').trim();
-  const radius=Number(id('world-radius')?.value);
+  const radius=parseTravelRadius(id('world-radius')?.value);
   const enabled=!!id('world-local-enabled')?.checked;
   const sameAsBefore=label===String(state.couple.travel_origin_label||'').trim();
   const draftMatches=!!worldGpsDraft&&label==='GPS ≈ '+worldGpsDraft.lat.toFixed(2)+', '+worldGpsDraft.lon.toFixed(2);
