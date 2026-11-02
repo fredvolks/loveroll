@@ -61,3 +61,13 @@ test('manual reset cannot let an old first attempt overwrite a new first attempt
   assert.match(edge,/\.eq\('geo_attempts',decision\.attempt\)\s*\.eq\('claimed_at',activeClaimedAt\)/);
   assert.match(edge,/\.select\('roll_id,claimed_at'\)/);
 });
+
+
+test('database errors never look like pending; only duplicate insert is benign',()=>{
+ const code=readFileSync(new URL('../supabase/functions/love-geo-surprise/index.ts',import.meta.url),'utf8');
+ assert.match(code,/inserted\.error\.code==='23505'/);
+ assert.match(code,/if\(retry\.error\)return json\(\{error:/);
+ assert.match(code,/Enregistrement de recherche indisponible/);
+ assert.match(code,/Relance de recherche indisponible/);
+ assert.match(code,/Requête de recherche incomplète/);
+});
