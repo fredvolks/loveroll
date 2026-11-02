@@ -281,3 +281,19 @@ test('the lifetime Geoapify claim cap is terminal and never offers another paid 
   previousLookup:'retry_limit_reached',venue:null
  }),'retry_limit_reached');
 });
+
+
+test('a real venue is not an unverified promise of the precise D100 activity',()=>{
+ const rendered=monthlyGeoCardHtml({
+  enabled:true,venue,experienceTitle:'Mini-golf romantique',canReserve:true
+ });
+ assert.match(rendered,/Activité tirée : Mini-golf romantique/);
+ assert.match(rendered,/Confirmez auprès du lieu qu’il offre cette activité précise/);
+ assert.match(rendered,/Café du centre/);
+ const safe=monthlyGeoCardHtml({
+  enabled:true,venue,experienceTitle:'<img src=x onerror=alert(1)>'
+ });
+ assert.doesNotMatch(safe,/<img src=x/);
+ assert.match(safe,/&lt;img src=x/);
+ assert.doesNotMatch(monthlyGeoCardHtml({enabled:true,venue,experienceTitle:''}),/Activité tirée :/);
+});
