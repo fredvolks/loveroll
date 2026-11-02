@@ -3306,6 +3306,40 @@ async function handle(action,element){
   geoManualRetryRollId=rollId;
   void resolveMonthlyGeo();return;
  }
+ if(['geo-date-propose','geo-date-counter','geo-date-accept'].includes(verb)){
+  if(!state.geoDatePlanAvailable)throw Error('La planification à deux n’est pas encore disponible.');
+  const actor=state.user?.id,rollId=state.monthly?.monthly_activity?.id;
+  if(!actor||!rollId||!currentHost()?.user_id)throw Error('Un tirage et le D6 sont nécessaires.');
+  const action=verb.slice('geo-date-'.length);
+  const plan=state.geoDatePlan;
+  if(action==='propose'&&actor!==currentHost()?.user_id)
+   throw Error('La première proposition appartient à la personne qui invite.');
+  if(action!=='propose'&&(!plan||plan.status!=='proposed'||plan.proposed_by===actor))
+   throw Error('Attendez la proposition de votre partenaire.');
+  let when=null;
+  if(action!=='accept'){
+   const raw=id('geo-date-proposal')?.value||'',date=new Date(raw);
+   if(!raw||!Number.isFinite(date.getTime())||date.getTime()<=Date.now()||
+      date.getTime()>Date.now()+2*365*24*60*60*1000)
+    throw Error('Choisissez une date future dans les deux prochaines années.');
+   when=date.toISOString();
+  }
+  const done=await geoDateMutationGate(async()=>{
+   const updated=await rpc('manage_love_monthly_date',{
+    p_roll:rollId,p_action:action,p_when:when,
+    p_expected_version:plan?.version??null
+   });
+   if(state.user?.id!==actor||state.monthly?.monthly_activity?.id!==rollId)return;
+   state.geoDatePlan=updated;
+   if(!await refreshAfterConfirmedWrite(refreshAndShow)){
+    if(state.user?.id!==actor||state.monthly?.monthly_activity?.id!==rollId)return;
+    render();
+    notify('Date du duo enregistrée; actualisation complète après reconnexion.');
+   }
+  });
+  if(!done)notify('Une réponse de date est déjà en cours.');
+  return;
+ }
  if(verb==='geo-booking-editor'){
   if(currentHost()?.user_id!==state.user?.id)throw Error('Seule la personne qui invite peut réserver.');
   state.geoBookingEdit=!state.geoBookingEdit;state.geoBookingAlternative=false;render();return;
