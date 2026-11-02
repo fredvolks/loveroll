@@ -93,7 +93,7 @@ export function normalizeSharedTravel(input={}){
 export function parseSurpriseBudget(value){
  if(value===null||value===undefined||String(value).trim()==='')return null;
  const text=String(value).trim().replace(',','.');
- if(!/^\\d{1,10}(?:\\.\\d{1,2})?$/.test(text))
+ if(!/^\d{1,10}(?:\.\d{1,2})?$/.test(text))
   throw Error('Budget invalide : entrez un montant positif avec deux décimales maximum.');
  const amount=Number(text);
  if(!Number.isFinite(amount)||amount>9999999999.99)
