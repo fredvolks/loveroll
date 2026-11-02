@@ -8,6 +8,7 @@ import {monthlyGeoCardHtml} from './monthly-geo-ui.mjs';
 import {monthlyDatePlanHtml} from './monthly-date-plan.mjs';
 import {monthlyCompletionHtml} from './monthly-completion.mjs';
 import {monthlySurprisePhase} from './monthly-surprise-phase.mjs';
+import {weeklySurpriseIdeaHtml} from './weekly-surprise-idea.mjs';
 import {premiumPolyDie} from './premium-evening.mjs';
 import {surpriseSlot,surpriseCustom,surpriseTitle,displaySurpriseDate} from './surprise-event-config.mjs';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','"':'&quot;',"'":'&#39;'}[c]));
@@ -188,6 +189,7 @@ export function premiumSurpriseHtml({
        budgetLimited:budgetMax!==null&&budgetMax!==undefined,
        agreedDate:datePlan?.status==='agreed'?datePlan.proposed_for:null,
        locale,experienceTitle:activity?.title||''})+
+     weeklySurpriseIdeaHtml({now,revealed:!!a&&!!h})+
      timerHtml+button('surprise-activity','Fermer','surprise-primary')+
     '</article></div>':'')+
  '</div>';
