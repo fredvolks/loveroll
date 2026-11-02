@@ -200,3 +200,31 @@ main#app.loveroll-surprise-ecrin .surprise-weekly-idea-content small{
  margin:0;color:var(--ritual-muted);font:400 12px/1.45 system-ui,sans-serif;
  overflow-wrap:anywhere;
 }
+
+
+/* One optional, private, signed couple-memory image per person. */
+main#app.loveroll-surprise-ecrin .surprise-memory-photo-tools{
+ display:grid;gap:7px;min-width:0;margin-top:4px;padding:10px 0 0;
+ border-top:1px solid var(--control-border);
+}
+main#app.loveroll-surprise-ecrin .surprise-memory-photo-tools input[type=file]{
+ min-width:0;max-width:100%;padding:9px 7px;border-radius:10px;
+ border:1px solid var(--control-border);background:var(--control-secondary);
+ color:var(--control-text);font:400 12px/1.4 system-ui,sans-serif;
+}
+main#app.loveroll-surprise-ecrin .surprise-memory-photo-tools input[type=file]::file-selector-button{
+ min-height:40px;margin-right:9px;padding:7px 10px;
+ border:1px solid var(--control-border);border-radius:8px;
+ background:var(--control-primary);color:var(--control-text);
+}
+main#app.loveroll-surprise-ecrin .surprise-memory-photo{
+ display:block;width:100%;max-width:320px;max-height:200px;
+ object-fit:contain;object-position:center;border-radius:12px;
+ border:1px solid var(--control-border);
+}
+main#app.loveroll-surprise-ecrin .surprise-partner-memory{
+ display:grid;gap:7px;min-width:0;
+}
+main#app.loveroll-surprise-ecrin .surprise-memory-photo-tools :focus-visible{
+ outline:3px solid var(--lr-control-focus);outline-offset:2px;
+}
