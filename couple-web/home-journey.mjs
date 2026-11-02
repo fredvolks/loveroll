@@ -23,3 +23,29 @@ export function homeSurpriseStep({monthly={},completed=false,reservation=null}={
  if(reservation?.status==='planned')return {key:'planned',eyebrow:'Surprise · Prévu',description:'Consulter notre rendez-vous'};
  return {key:'planning',eyebrow:'Surprise · À planifier',description:'Choisir notre date'};
 }
+
+export function homeTonightSummary({weekly=null,sessions=[],activeEvening=false,now=new Date()}={}){
+ const step=homeEveningStep({weekly,sessions,activeEvening,now});
+ if(step.key==='draw')return {
+  title:'Aucune soirée commencée',
+  detail:'Le D6 hebdomadaire déterminera le nombre de soirées à partager.'
+ };
+ if(step.key==='resume')return {
+  title:'Soirée en cours',
+  detail:'Votre session enregistrée vous attend dans Soirée.'
+ };
+ if(step.key==='history')return {
+  title:'Nos soirées de la semaine sont terminées ♥',
+  detail:'Retrouvez votre historique dans le calendrier.'
+ };
+ const access=eveningDailyAccess({weekly,sessions,now});
+ return access.dailyLocked?{
+  title:'Une soirée a déjà eu lieu aujourd’hui',
+  detail:step.available+' autre'+(step.available===1?' soirée disponible':'s soirées disponibles')+
+   ' cette semaine, mais pas de nouvelle soirée aujourd’hui.'
+ }:{
+  title:'Notre prochaine soirée',
+  detail:step.available+' soirée'+(step.available===1?'':'s')+
+   ' encore disponible'+(step.available===1?'':'s')+' cette semaine.'
+ };
+}
