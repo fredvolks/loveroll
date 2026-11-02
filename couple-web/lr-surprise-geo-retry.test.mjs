@@ -46,8 +46,18 @@ test('Edge function uses atomic attempt CAS and nonterminal outage state',()=>{
 
 test('stale claims cannot overwrite a newer result and malformed Places are retryable',()=>{
   const code=readFileSync(new URL('../supabase/functions/love-geo-surprise/index.ts',import.meta.url),'utf8');
-  assert.match(code,/\.eq\('state','pending'\)\s*\.eq\('geo_attempts',decision\.attempt\)\.select\('roll_id'\)/);
+  assert.match(code,/\.eq\('state','pending'\)\s*\.eq\('geo_attempts',decision\.attempt\)\s*\.eq\('claimed_at',activeClaimedAt\)\.select\('roll_id'\)/);
   assert.match(code,/if\(error\|\|updated\?\.length!==1\)throw Error/);
   assert.match(code,/if\(!Array\.isArray\(placesResp\?\.features\)\)throw Error/);
   assert.match(code,/Résultat Geoapify obsolète/);
+});
+
+
+test('manual reset cannot let an old first attempt overwrite a new first attempt',()=>{
+  const edge=readFileSync(new URL('../supabase/functions/love-geo-surprise/index.ts',import.meta.url),'utf8');
+  assert.match(edge,/let activeClaimedAt:string\|null=null/);
+  assert.match(edge,/activeClaimedAt=inserted\.data\.claimed_at/);
+  assert.match(edge,/activeClaimedAt=retry\.data\[0\]\.claimed_at/);
+  assert.match(edge,/\.eq\('geo_attempts',decision\.attempt\)\s*\.eq\('claimed_at',activeClaimedAt\)/);
+  assert.match(edge,/\.select\('roll_id,claimed_at'\)/);
 });
