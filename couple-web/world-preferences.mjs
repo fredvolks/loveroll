@@ -41,7 +41,22 @@ const UI=Object.freeze({
 });
 export function localeOrDefault(locale){return LANGUAGES.some(([key])=>key===locale)?locale:'fr-CA';}
 export function currencyOrDefault(currency){return CURRENCIES.includes(currency)?currency:'CAD';}
-export function radiusOrDefault(radius){const n=Number(radius);return Number.isInteger(n)&&n>=10&&n<=500?n:125;}
+export function radiusOrDefault(radius){
+ if(radius===null||radius===undefined||radius==='')return null;
+ const n=Number(radius);return Number.isInteger(n)&&n>=10&&n<=500?n:125;
+}
+// Empty is a deliberately unbounded *preference*; the API still has a finite search cap.
+export function parseTravelRadius(value){
+ if(value===null||value===undefined||value==='')return null;
+ const n=Number(value);
+ if(!Number.isInteger(n)||n<10||n>500)throw Error('Distance invalide (10 à 500 km).');
+ return n;
+}
+const ALL_DISTANCES={
+ 'fr-CA':'Toutes les distances',en:'All distances',es:'Todas las distancias',
+ pt:'Todas as distâncias',de:'Alle Entfernungen',it:'Tutte le distanze',
+ nl:'Alle afstanden',ar:'جميع المسافات',ja:'距離制限なし','zh-CN':'所有距离'
+};
 // Core Settings navigation in all supported interface languages.
 const SETTINGS_NAV={
  'fr-CA':['Mon compte','Notre duo','Notifications','Cartes et activités','Journal et confidentialité','Application et aide','Options avancées','Rappels et autorisations','Soirée, Surprise et Avent','Calendrier, bilans et données','Versions et fonctionnement'],
@@ -95,7 +110,7 @@ export function worldwideSettingsHtml({locale='fr-CA',currency='CAD',couple={}}=
  '<button type="button" class="settings-secondary" data-action="world-gps">'+tr('gps')+'</button>'+
  '<div id="world-gps-status" role="status" aria-live="polite"></div>'+
  '<label for="world-radius">'+tr('distance')+
- '<select id="world-radius">'+RADIUS_CHOICES.map(n=>'<option value="'+n+'"'+(n===v.travel_radius_km?' selected':'')+'>'+n+' km</option>').join('')+'</select></label>'+
+ '<select id="world-radius"><option value=""'+(v.travel_radius_km===null?' selected':'')+'>'+esc(ALL_DISTANCES[l])+'</option>'+RADIUS_CHOICES.map(n=>'<option value="'+n+'"'+(n===v.travel_radius_km?' selected':'')+'>'+n+' km</option>').join('')+'</select></label>'+
  '<label class="push-option"><span>'+tr('auto')+'</span><input type="checkbox" id="world-local-enabled" '+(v.activity_localization_enabled?'checked':'')+'></label>'+
  '<button type="button" class="settings-primary" data-action="save-world-duo">'+tr('saveDuo')+'</button>'+
  '<p class="tiny-note">'+tr('privacy')+'</p><p class="tiny-note">'+tr('provider')+'</p>'+
