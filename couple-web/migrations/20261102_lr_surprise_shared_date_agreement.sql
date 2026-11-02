@@ -27,6 +27,11 @@ CREATE POLICY love_monthly_date_plans_couple_read ON public.love_monthly_date_pl
    WHERE agreeing_member.couple_id=love_monthly_date_plans.couple_id
     AND agreeing_member.user_id=love_monthly_date_plans.agreed_by
   ))
+  AND NOT EXISTS(
+   SELECT 1 FROM public.couple_members newer_member
+   WHERE newer_member.couple_id=love_monthly_date_plans.couple_id
+    AND newer_member.joined_at>love_monthly_date_plans.created_at
+  )
  );
 
 CREATE OR REPLACE FUNCTION public.manage_love_monthly_date(
@@ -73,6 +78,11 @@ BEGIN
    WHERE agreeing_member.couple_id=v_roll.couple_id
     AND agreeing_member.user_id=v_plan.agreed_by
   ))
+  OR EXISTS(
+   SELECT 1 FROM public.couple_members newer_member
+   WHERE newer_member.couple_id=v_roll.couple_id
+    AND newer_member.joined_at>v_plan.created_at
+  )
  ) THEN
   RAISE EXCEPTION 'Cette proposition appartient à un ancien duo'
     USING errcode='42501';
