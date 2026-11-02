@@ -160,6 +160,7 @@ export function premiumSurpriseHtml({
      '<div class="surprise-budget-preference" role="status"><strong>Budget du duo : '+
        esc(sharedBudget===null?'Tous les budgets':sharedBudget)+'</strong>'+
        (sharedBudget!==null?'<small>'+esc(budgetAdvisory)+'</small>':'<small>Aucun plafond de dépenses choisi.</small>')+
+       button('settings-page:monde','Modifier le budget ou la distance','surprise-geo-text-button')+
        '</div>'+ 
      '<small class="surprise-season-disclaimer">Tarifs variables selon les dates, les réservations et la météo. Vérifiez les horaires et la disponibilité avant de partir.</small>'+
      monthlyGeoCardHtml({venue:geoVenue,lookup:geoLookup,enabled:geoEnabled,
