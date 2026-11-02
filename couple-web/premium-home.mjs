@@ -2,7 +2,7 @@
 // Preserve the approved HTML/CSS; change only the six visible odds numbers.
 import {WEEKLY_DEFAULT_WEIGHTS,effectiveDicePercentages,displayedDicePercent} from './dice-weighting.mjs?v=20261018-weights146';
 import {monthlyInvitation} from './monthly-invitation.mjs';
-import {homeEveningStep,homeSurpriseStep} from './home-journey.mjs';
+import {homeEveningStep,homeSurpriseStep,homeTonightSummary} from './home-journey.mjs';
 import {fitTabletRomanceStage} from './shared-stage.mjs?v=20261029-ipad258';
 export const WEEKLY_ODDS=WEEKLY_DEFAULT_WEIGHTS;
 export const PIP_POSITIONS=Object.freeze({
@@ -167,6 +167,7 @@ export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,d
  const shown=value=>value===null?'—':String(value);
  const ready=!rolling&&weekly&&Number.isInteger(weekly.face),next=nextMonday(now);
  const eveningStep=homeEveningStep({weekly,sessions,activeEvening,now});
+ const tonight=homeTonightSummary({weekly,sessions,activeEvening,now});
  const surpriseStep=homeSurpriseStep({monthly,completed:monthlyCompleted,reservation:monthlyReservation});
  const coupleStats=coupleHomeStats(history,sessions,members,now);
  const memberA=escape(members[0]?.name||'Partenaire 1');
@@ -193,7 +194,10 @@ export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,d
  const pending=rolling||disabled;
  return '<section class="real-home-shell" aria-label="Tableau de bord du couple">'+
    '<div class="home-ritual">'+ritualHeadingHtml('NOTRE RITUEL DE LA SEMAINE')+
-   '<div class="home-title"><h2 class="ritual-page-title">'+escape(weeklyTitle)+'</h2></div></div>'+
+   '<div class="home-title"><h2 class="ritual-page-title">'+escape(weeklyTitle)+'</h2>'+
+   (ready?'<p class="home-weekly-progress">'+escape(eveningStep.available)+
+    ' soirée'+(eveningStep.available===1?'':'s')+' disponible'+(eveningStep.available===1?'':'s')+' cette semaine</p>':'')+
+   '</div></div>'+
    '<div class="home-die-theater" aria-label="Dé à six faces en trois dimensions">'+
    '<div class="home-fabric-photo" aria-hidden="true"></div>'+
    '<div class="home-satin-orbit" aria-hidden="true"></div>'+
@@ -228,10 +232,10 @@ export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,d
    '<span class="home-gift-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></svg></span></button>'+ 
    '<div class="home-dashboard home-duo-dashboard lr-surface">'+
    '<section class="home-panel home-tonight-panel" aria-labelledby="home-tonight-title">'+
-   '<h3 id="home-tonight-title"><span aria-hidden="true">♢</span>Ce soir <strong class="home-duo-heading-total" aria-label="Défis attribués ce soir">'+shown(stats.total)+'</strong></h3><div class="home-challenge-stats">'+
-   summary('♢',stats.total,'Défis attribués<br>ce soir')+
-   summary('♡',stats.forFirst,memberLabel(memberA,stats.remainingFirst))+
-   summary('♡',stats.forSecond,memberLabel(memberB,stats.remainingSecond))+'</div></section>'+
+   '<h3 id="home-tonight-title"><span aria-hidden="true">♢</span>Notre soirée</h3>'+
+   '<div class="home-challenge-stats"><p class="home-evening-status">'+
+    '<strong>'+escape(tonight.title)+'</strong>'+
+    '<small>'+escape(tonight.detail)+'</small></p></div></section>'+
    '<section class="home-panel home-monthly-panel" aria-labelledby="home-statistics-title">'+
    '<h3 id="home-statistics-title" aria-label="Nos statistiques du mois"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M1 11h3v8H1zm5-7h3v15H6zm5 3h3v12h-3zm5-6h3v18h-3z"/></svg>Ce mois</h3>'+
    '<div class="home-stats-grid" aria-label="Statistiques réelles du couple">'+
