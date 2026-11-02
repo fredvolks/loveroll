@@ -30,7 +30,7 @@ export function geoPhoto(venue){
 }
 export function monthlyGeoCardHtml({
  venue=null,lookup='idle',enabled=false,host=null,canReserve=false,reservation=null,editing=false,adapting=false,budgetLimited=false,
- locale='fr-CA',experienceTitle=''
+ locale='fr-CA',experienceTitle='',agreedDate=null
 }={}){
  if(!enabled&&(!reservation||reservation.status==='cancelled'))return '';
  let body='';
@@ -90,7 +90,7 @@ export function monthlyGeoCardHtml({
    (reservation&&reservation.status!=='cancelled'?'<button type="button" data-action="geo-booking-cancel" class="surprise-geo-text-button">Annuler la réservation dans LoveRoll</button>':'')+
    (editing?'<div class="surprise-geo-booking-form">'+
    '<label for="geo-booking-date">Date et heure de la sortie</label>'+
-   '<input id="geo-booking-date" type="datetime-local" value="'+esc(localBookingDateTime(reservation?.reserved_for))+'" required>'+
+   '<input id="geo-booking-date" type="datetime-local" value="'+esc(localBookingDateTime(reservation?.reserved_for||agreedDate))+'" required>'+
    '<label for="geo-booking-name">Nom de l’établissement</label>'+
    '<input id="geo-booking-name" maxlength="140" value="'+esc(adapting?'':reservation?.venue_name||venue?.name||'')+'" required>'+ 
    '<label for="geo-booking-address">Adresse (facultative)</label>'+
