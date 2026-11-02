@@ -47,7 +47,7 @@ test('missing road distance prevents displaying even a known duration',()=>{
 test('time comes from the same selected Geoapify matrix route and remains nullable',()=>{
  const edge=readFileSync(new URL('../supabase/functions/love-geo-surprise/index.ts',import.meta.url),'utf8');
  const sql=readFileSync(new URL('./migrations/20261102_lr_surprise_geo_retry_budget.sql',import.meta.url),'utf8');
- assert.match(edge,/chosenIndex=candidates\.findIndex\(p=>p\.place_id===selected\.p\.place_id\)/);
+ assert.match(edge,/chosenIndex=candidates\.findIndex\(p=>p\.place_id===chosen\.p\.place_id\)/);
  assert.match(edge,/verifiedRoadSeconds\(matrix\[chosenIndex\]\?\.time\)/);
  assert.match(edge,/driving_seconds:selectedDrivingSeconds/);
  assert.match(sql,/ADD COLUMN IF NOT EXISTS driving_seconds integer NULL/);
