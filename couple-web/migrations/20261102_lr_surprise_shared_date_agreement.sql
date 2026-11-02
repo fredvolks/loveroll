@@ -133,3 +133,33 @@ $function$;
 
 REVOKE ALL ON FUNCTION public.manage_love_monthly_date(uuid,text,timestamptz,integer) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.manage_love_monthly_date(uuid,text,timestamptz,integer) TO authenticated;
+
+
+-- Server-enforced invariant: the official booking time must match a date
+-- jointly agreed by both partners. The client validation alone is not enough.
+-- This trigger NEVER calls Geoapify and does not alter existing reservations.
+CREATE OR REPLACE FUNCTION public.love_monthly_booking_date_guard()
+RETURNS trigger LANGUAGE plpgsql
+SECURITY DEFINER SET search_path TO ''
+AS $function$
+DECLARE
+ v_agreed timestamptz;
+BEGIN
+ IF NEW.roll_id IS NULL THEN RETURN NEW; END IF;
+ SELECT proposed_for INTO v_agreed
+ FROM public.love_monthly_date_plans
+ WHERE roll_id=NEW.roll_id AND status='agreed';
+ IF FOUND AND NEW.reserved_for IS DISTINCT FROM v_agreed THEN
+  RAISE EXCEPTION 'La réservation doit utiliser la date acceptée par le duo'
+    USING errcode='22023';
+ END IF;
+ RETURN NEW;
+END;
+$function$;
+
+DROP TRIGGER IF EXISTS love_monthly_booking_date_consistency ON public.love_monthly_reservations;
+CREATE TRIGGER love_monthly_booking_date_consistency
+ BEFORE INSERT OR UPDATE OF reserved_for,roll_id ON public.love_monthly_reservations
+ FOR EACH ROW EXECUTE FUNCTION public.love_monthly_booking_date_guard();
+
+REVOKE ALL ON FUNCTION public.love_monthly_booking_date_guard() FROM PUBLIC, anon, authenticated;
