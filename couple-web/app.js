@@ -1954,24 +1954,49 @@ async function resolveMonthlyGeo(){
   if(stillCurrent()&&state.tab==='special'&&state.showSurpriseActivity)render();
  }
 }
-// Keep the second partner up to date while the Surprise screen is visible.
-// A separate tiny SELECT does not call Geoapify or consume another D100 roll.
+// Sync the couple's accepted date and private memories only while Surprise is open.
+// These tiny Supabase reads do NOT call Geoapify, redraw the D100 or bill the user.
 let geoDatePollActive=false;
 setInterval(async()=>{
  const actor=state.user?.id,rollId=state.monthly?.monthly_activity?.id;
- if(!actor||!rollId||!state.geoDatePlanAvailable||state.tab!=='special'||
-    !state.showSurpriseActivity||document.hidden||geoDatePollActive)return;
+ if(!actor||!rollId||(!state.geoDatePlanAvailable&&!state.geoCompletionAvailable)||
+    state.tab!=='special'||!state.showSurpriseActivity||document.hidden||
+    geoDatePollActive)return;
  geoDatePollActive=true;
+ const current=()=>state.user?.id===actor&&state.monthly?.monthly_activity?.id===rollId;
+ let changed=false;
  try{
-  const latest=(await query('love_monthly_date_plans',{eq:{roll_id:rollId}}))[0]||null;
-  if(state.user?.id!==actor||state.monthly?.monthly_activity?.id!==rollId)return;
-  const before=state.geoDatePlan;
-  if((latest?.version??0)!==(before?.version??0)||
-     (latest?.proposed_for||'')!==(before?.proposed_for||'')){
-   state.geoDatePlan=latest;render();
+  if(state.geoDatePlanAvailable){
+   try{
+    const latest=(await query('love_monthly_date_plans',{eq:{roll_id:rollId}}))[0]||null;
+    if(!current())return;
+    const before=state.geoDatePlan;
+    if((latest?.version??0)!==(before?.version??0)||
+       (latest?.proposed_for||'')!==(before?.proposed_for||'')){
+     state.geoDatePlan=latest;changed=true;
+    }
+   }catch{ /* Optional date migration may be unavailable. */ }
   }
- }catch{ /* Optional migration may still be unavailable; no paid API calls. */ }
- finally{geoDatePollActive=false;}
+  if(state.geoCompletionAvailable){
+   try{
+    const [completed,feedback]=await Promise.all([
+     query('love_monthly_completions',{eq:{roll_id:rollId}}),
+     query('love_monthly_feedback',{eq:{roll_id:rollId}})
+    ]);
+    if(!current())return;
+    const completion=completed[0]||null;
+    const before=state.geoCompletion;
+    const fingerprint=list=>(list||[]).map(item=>[
+      item.author_id,item.rating,item.memory_text,item.updated_at
+    ].join(':')).sort().join('|');
+    if((completion?.completed_at||'')!==(before?.completed_at||'')||
+       fingerprint(feedback)!==fingerprint(state.geoFeedback)){
+     state.geoCompletion=completion;state.geoFeedback=feedback||[];changed=true;
+    }
+   }catch{ /* Optional memories migration may be unavailable. */ }
+  }
+  if(changed&&current())render();
+ }finally{geoDatePollActive=false;}
 },30000);
 // Pending means the server has accepted a single claim, not that discovery
 // finished. Poll only while the activity screen is actually being viewed.
