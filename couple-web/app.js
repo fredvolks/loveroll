@@ -2025,6 +2025,7 @@ function renderSpecial(){
    budgetMax:state.couple?.surprise_budget_max??null,
    budgetCurrency:state.couple?.surprise_budget_currency||'CAD',
    datePlan:state.geoDatePlanAvailable?state.geoDatePlan:null,
+   datePlanAvailable:state.geoDatePlanAvailable,
    viewerId:state.user?.id||null,
    completionAvailable:state.geoCompletionAvailable,
    completion:state.geoCompletion,monthlyFeedback:state.geoFeedback,
