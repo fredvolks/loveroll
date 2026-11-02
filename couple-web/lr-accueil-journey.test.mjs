@@ -127,3 +127,19 @@ test('summary fits the existing Home geometry on phone without duplicating the e
  assert.match(source,/eveningDailyAccess\(\{weekly,sessions,now\}\)/);
  assert.doesNotMatch(source,/rpc\(|fetch\(|insert\(|update\(|roll_couple_once/);
 });
+
+
+test('a stale finished session must not be offered as an ongoing session on Home',()=>{
+ const source=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const home=source.slice(source.indexOf('function renderHome(){'),
+  source.indexOf('// Timeouts must survive',source.indexOf('function renderHome(){')));
+ assert.match(home,/const ongoingEvening=activeEvening&&!activeEvening\.finished_at/);
+ assert.match(home,/activeEvening:!!ongoingEvening/);
+ assert.match(home,/const turn=ongoingEvening&&activeEvening\.self_draws/);
+ const done=session('finished','2026-11-03T10:00:00Z','2026-11-03T15:00:00Z');
+ const step=homeEveningStep({weekly,sessions:[done],activeEvening:false,now});
+ assert.equal(step.key,'evening');
+ assert.equal(step.action,'tab:session');
+ assert.doesNotMatch(premiumHomeHtml({weekly,sessions:[done],activeEvening:false,now}),
+  /data-action="resume-evening"/);
+});
