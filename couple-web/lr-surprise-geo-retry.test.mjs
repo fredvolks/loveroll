@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {geoRetryDecision,MAX_GEO_ATTEMPTS,GEO_CLAIM_WAIT_MS,GEO_MANUAL_RETRY_WAIT_MS} from '../supabase/functions/love-geo-surprise/retry-policy.mjs';
+import {geoRetryDecision,MAX_GEO_ATTEMPTS,MAX_TOTAL_GEO_ATTEMPTS,GEO_CLAIM_WAIT_MS,GEO_MANUAL_RETRY_WAIT_MS} from '../supabase/functions/love-geo-surprise/retry-policy.mjs';
 
 const base=Date.parse('2026-11-02T16:00:00Z');
 const pending=(count,age)=>({
@@ -70,4 +70,36 @@ test('database errors never look like pending; only duplicate insert is benign',
  assert.match(code,/Enregistrement de recherche indisponible/);
  assert.match(code,/Relance de recherche indisponible/);
  assert.match(code,/Requête de recherche incomplète/);
+});
+
+
+test('lifetime six-claim cap cannot be reset by another manual attempt',()=>{
+ assert.equal(MAX_TOTAL_GEO_ATTEMPTS,6);
+ const oldClaim={...pending(3,GEO_MANUAL_RETRY_WAIT_MS),geo_total_attempts:6};
+ assert.deepEqual(geoRetryDecision(oldClaim,{now:base,manual:true}),{status:'retry_limit_reached'});
+ assert.deepEqual(geoRetryDecision(oldClaim,{now:base,manual:false}),{status:'retry_limit_reached'});
+ assert.deepEqual(geoRetryDecision({...oldClaim,geo_total_attempts:5},{now:base,manual:true}),
+  {status:'claim',attempt:1});
+ const afterRestart={...pending(1,GEO_CLAIM_WAIT_MS),geo_total_attempts:6};
+ assert.deepEqual(geoRetryDecision(afterRestart,{now:base}),{status:'retry_limit_reached'});
+ assert.deepEqual(geoRetryDecision({...oldClaim,state:'ready'},{now:base}),{status:'stored'});
+});
+
+test('total paid-claim count is atomic with retries and exposed without a retry action',()=>{
+ const edge=readFileSync(new URL('../supabase/functions/love-geo-surprise/index.ts',import.meta.url),'utf8');
+ const ui=readFileSync(new URL('./monthly-geo-ui.mjs',import.meta.url),'utf8');
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const sql=readFileSync(new URL('./migrations/20261102_lr_surprise_geo_retry_budget.sql',import.meta.url),'utf8');
+ assert.match(edge,/geo_total_attempts:1/);
+ assert.match(edge,/geo_total_attempts:totalAfterClaim/);
+ assert.match(edge,/\.eq\('geo_total_attempts',previousTotal\)/);
+ assert.match(edge,/activeTotalAttempts>=MAX_TOTAL_GEO_ATTEMPTS/);
+ assert.match(sql,/ADD COLUMN IF NOT EXISTS geo_total_attempts integer NOT NULL DEFAULT 0/);
+ assert.match(app,/data\?\.status==='retry_limit_reached'/);
+ assert.match(ui,/lookup==='retry_limit_reached'/);
+ const state=ui.slice(ui.indexOf("lookup==='retry_limit_reached'"),ui.indexOf("venue?.state==='ready'&&!roadVerified"));
+ assert.match(state,/limite de recherches Geoapify/);
+ assert.doesNotMatch(state,/Réessayer manuellement/);
+ const manual=ui.slice(ui.indexOf("['error','retry_exhausted']"),ui.indexOf("let bookingHtml"));
+ assert.doesNotMatch(manual,/retry_limit_reached/);
 });
