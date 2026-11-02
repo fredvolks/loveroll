@@ -20,3 +20,13 @@ export function verifiedMatrixCandidates(candidates,matrix,radiusKm){
   return meters===null?null:{p,meters};
  }).filter(v=>v!==null&&(cap===null||v.meters<=cap*1000));
 }
+
+// Geoapify Matrix "time" is in seconds; missing/unreachable routes are null.
+// A distance alone is enough to offer the venue, but never invent its ETA.
+export function verifiedRoadSeconds(value){
+ if(value===null||value===undefined||typeof value==='boolean')return null;
+ if(typeof value!=='number'&&typeof value!=='string')return null;
+ if(typeof value==='string'&&!value.trim())return null;
+ const seconds=Number(value);
+ return Number.isFinite(seconds)&&seconds>=0&&seconds<=86400?Math.round(seconds):null;
+}
