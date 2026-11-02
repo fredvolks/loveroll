@@ -1,0 +1,33 @@
+name: LoveRoll Surprise Geoapify recovery
+on:
+  pull_request:
+    paths:
+      - 'couple-web/lr-surprise-geo-retry.test.mjs'
+      - 'couple-web/monthly-geo-ui.mjs'
+      - 'couple-web/monthly-geo-ui.test.mjs'
+      - 'couple-web/app.js'
+      - 'supabase/functions/love-geo-surprise/**'
+      - 'couple-web/migrations/*lr_surprise_geo*'
+      - '.github/workflows/lr-surprise-geo-recovery.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  geo-recovery:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate syntax and isolated outage retry contracts
+        run: |
+          set -euo pipefail
+          node --check couple-web/app.js
+          node --check couple-web/monthly-geo-ui.mjs
+          node --check supabase/functions/love-geo-surprise/retry-policy.mjs
+          node --test couple-web/lr-surprise-geo-retry.test.mjs
+      - name: Run existing Surprise integration regressions
+        run: |
+          set -euo pipefail
+          node --test couple-web/monthly-geo-ui.test.mjs
