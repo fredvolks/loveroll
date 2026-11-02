@@ -3,7 +3,7 @@
 // Never creates imaginary places, booking links, photos or road distances.
 import {createClient} from 'npm:@supabase/supabase-js@2.57.0';
 import {verifiedRoadMetres,verifiedMatrixCandidates} from './verified-road.mjs';
-import {geoRetryDecision,MAX_GEO_ATTEMPTS,GEO_CLAIM_WAIT_MS,GEO_MANUAL_RETRY_WAIT_MS,boundedSearchRadii} from './retry-policy.mjs';
+import {geoRetryDecision,MAX_GEO_ATTEMPTS,MAX_TOTAL_GEO_ATTEMPTS,GEO_CLAIM_WAIT_MS,GEO_MANUAL_RETRY_WAIT_MS,boundedSearchRadii} from './retry-policy.mjs';
 
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{
  status,headers:{'Content-Type':'application/json','Cache-Control':'no-store','Access-Control-Allow-Origin':'*',
@@ -236,7 +236,7 @@ Deno.serve(async req=>{
   // Only the finite, server-side attempt budget can start another paid lookup.
   console.warn('LoveRoll Geoapify lookup failed; bounded retry available',
    error instanceof Error?error.message:'unknown');
-  return json({status:activeTotalAttempts>=6?'retry_limit_reached':
+  return json({status:activeTotalAttempts>=MAX_TOTAL_GEO_ATTEMPTS?'retry_limit_reached':
    decision.attempt>=MAX_GEO_ATTEMPTS?'retry_exhausted':'pending'});
  }
 });
