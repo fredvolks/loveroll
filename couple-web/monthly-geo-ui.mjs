@@ -102,7 +102,7 @@ export function monthlyGeoCardHtml({
  return '<section class="surprise-geo-card" aria-label="Lieu réel de notre activité">'+
   '<div class="surprise-geo-eyebrow">♡ NOTRE LIEU DU MOIS</div>'+
   body+bookingHtml+
-  '<p class="surprise-geo-credit">Lieux et distances : données Geoapify / OpenStreetMap. Photos, menus, prix et réservations selon les informations disponibles.</p></section>';
+  '<p class="surprise-geo-credit">Lieux et distances : données <a href="https://www.geoapify.com/" target="_blank" rel="noopener noreferrer">Geoapify</a> et <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a>. Photos, menus, prix et réservations selon les informations disponibles.</p></section>';
 }
 
 /**
