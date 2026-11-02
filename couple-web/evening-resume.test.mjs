@@ -44,7 +44,8 @@ test('Resume action is read-only, restores server private queue and reconciles t
  assert.match(handler,/restoreEveningSelection\(localStorage,state\.user\.id,session\.id,privateCards\)/);
  assert.match(handler,/reconcileSavedEveningTimers\(\)/);
  assert.doesNotMatch(handler,/rpc\('|animateRoll|new-session|new-challenge|roll_my_evening_d6/);
- assert.match(app,/activeEvening:!!activeEvening/);
+ assert.match(app,/const ongoingEvening=activeEvening&&!activeEvening\.finished_at/);
+ assert.match(app,/activeEvening:!!ongoingEvening/);
  assert.match(app,/saveEveningSelection\(localStorage,state\.user\.id,state\.session\.id,parts\[0\]\)/);
  const build=JSON.parse(read('web-version.json')).build;
  assert.ok(sw.includes("const CACHE='loveroll-static-v"+build.split('.')[1]+"'"));
