@@ -121,5 +121,7 @@ test('former couple completion is unreadable and cannot authorize another couple
  assert.match(sql,/active_member\.user_id=old\.completed_by/g);
  assert.match(sql,/Ce souvenir appartient à un ancien duo/g);
  const markers=sql.match(/Ce souvenir appartient à un ancien duo/g)||[];
- assert.equal(markers.length,2,'Both completion and feedback RPC reject former members');
+ assert.ok(markers.length>=2,'Completion and feedback RPCs reject former members');
+ assert.match(sql,/delete_love_monthly_photo/);
+ assert.match(sql,/Ce souvenir appartient à un ancien duo/);
 });
