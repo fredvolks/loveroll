@@ -2025,6 +2025,8 @@ function renderSpecial(){
    activity,currency:quote,locale:worldLocale(),exchange:worldFx?.quote===quote?worldFx:null,
    budgetMax:state.couple?.surprise_budget_max??null,
    budgetCurrency:state.couple?.surprise_budget_currency||'CAD',
+   travelRadiusKm:state.couple?.travel_radius_km??null,
+   travelOriginLabel:state.couple?.travel_origin_label||'',
    datePlan:state.geoDatePlanAvailable?state.geoDatePlan:null,
    datePlanAvailable:state.geoDatePlanAvailable,
    viewerId:state.user?.id||null,
