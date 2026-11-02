@@ -50,7 +50,7 @@ import {guidedIdeas,guidanceFor} from './wellbeing.mjs';
 
 import { SPECIAL_SURPRISES,OCCASIONS,occasionDate,dueOccasions,specialSurprise,occasionRoles,TARGETED_OCCASIONS } from './special-occasions.mjs';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.107.0';
-import {worldwideSettingsHtml,localeOrDefault,currencyOrDefault,normalizeSharedTravel,parseTravelRadius,t as worldT} from './world-preferences.mjs';
+import {worldwideSettingsHtml,localeOrDefault,currencyOrDefault,normalizeSharedTravel,parseTravelRadius,parseSurpriseBudget,t as worldT} from './world-preferences.mjs';
 import {cadExchangeRate} from './currency-exchange.mjs';
 import {referralSettingsHtml,referralLink,REFERRAL_CODE_PATTERN,REFERRAL_PENDING_STORAGE_KEY} from './referral-program.mjs?v=20261019-personal171';
 import {enhanceLoveRollSettingsSelects} from './loveroll-premium-pickers.mjs?v=20261019-personal171';
@@ -1962,6 +1962,8 @@ function renderSpecial(){
  frame(premiumSurpriseHtml({
    monthly,members:state.members,settings:state.occasionSettings||{},
    activity,currency:quote,locale:worldLocale(),exchange:worldFx?.quote===quote?worldFx:null,
+   budgetMax:state.couple?.surprise_budget_max??null,
+   budgetCurrency:state.couple?.surprise_budget_currency||'CAD',
    geoEnabled:worldGeoEnabled(),geoVenue:state.geoVenue,geoLookup:state.geoLookup,
    reservation:state.geoReservation,canReserve:currentHost()?.user_id===state.user?.id,
    bookingEditor:state.geoBookingEdit,
@@ -2912,6 +2914,19 @@ async function handle(action,element){
   });
   state.couple={...state.couple,...data};worldGpsDraft=null;
   render();notify(worldText('saved'));return;
+ }
+ if(verb==='save-world-budget'){
+  if(!state.coupleId||!state.couple||!state.user)throw Error('Un duo connecté est nécessaire.');
+  const amount=parseSurpriseBudget(id('world-budget')?.value??'');
+  const currency=currencyOrDefault(id('world-budget-currency')?.value);
+  // A separate atomic RPC avoids partial writes when travel preferences are saved.
+  // Authenticated duo membership and the amount/currency are checked again in SQL.
+  await rpc('save_love_surprise_budget',{
+   p_couple:state.coupleId,p_budget:amount,p_currency:currency
+  });
+  state.couple={...state.couple,surprise_budget_max:amount,
+   surprise_budget_currency:currency};
+  render();notify('Budget du duo enregistré. Les prix des lieux restent à vérifier.');return;
  }
  if(verb==='editor-back'){state.libraryScreen='list';render();return;}
  if(verb==='editor-import'){
