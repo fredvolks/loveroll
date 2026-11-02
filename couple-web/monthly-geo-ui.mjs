@@ -59,6 +59,7 @@ export function monthlyGeoCardHtml({
   body='<div class="surprise-geo-venue">'+geoPhoto(venue)+
     '<div class="surprise-geo-venue-info"><strong>'+esc(venue.name)+'</strong>'+
     (venue.address?'<span>'+esc(venue.address)+'</span>':'')+
+    (experienceTitle?'<small class="surprise-geo-activity-verification">Activité tirée : '+esc(experienceTitle)+'. Confirmez auprès du lieu qu’il offre cette activité précise avant de réserver.</small>':'')+
     (distance!==null?'<small>'+esc(distance.toLocaleString(locale))+' km par la route</small>':'')+
     (driveTime!==null?'<small>Environ '+esc(driveTime)+' en voiture · hors trafic en temps réel</small>':'')+
     '</div><div class="surprise-geo-links">'+a(gps,'⌖ GPS')+
