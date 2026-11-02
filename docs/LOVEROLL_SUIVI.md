@@ -224,7 +224,7 @@ Pour suivre le travail en temps réel, utiliser aussi les **GitHub Issues et les
 
 | Exigence | État | Preuve / prochaine étape |
 |---|---|---|
-| LR-SURPRISE-001 — D100, Geoapify, parcours premium et filtres facultatifs | À implémenter — documentation ajoutée uniquement | [Prompt officiel](./LOVEROLL_MASTER_PROMPT.md#lr-surprise-001--rendez-vous-surprise-premium-d100-et-geoapify). Budget et km vides = tous les budgets et toutes les distances, sans préférence luxe : mini-putt autant que sortie à 300 $. Corriger d'abord les trajets null, les pannes terminales et les états pending; puis livrer préférences, adaptation et planification avec tests et preuves visuelles. |
+| LR-SURPRISE-001 — D100, Geoapify, parcours premium et filtres facultatifs | ◐ **P0 codé en PR brouillon #184, NON publié**; P1 budget/rayon facultatifs et adaptation du lieu **non réalisés** | [Prompt officiel](./LOVEROLL_MASTER_PROMPT.md#lr-surprise-001--rendez-vous-surprise-premium-d100-et-geoapify) · [PR #184](https://github.com/fredvolks/loveroll/pull/184) : pannes Geoapify transitoires récupérables, trois relances automatiques maximum, reprise manuelle différée, compare-and-swap côté serveur, matrice et réponse Places contrôlées, UX explicite et attribution cliquable. Nouvelle migration SQL `geo_attempts` **en branche uniquement**. [CI Geoapify verte au SHA `2397066`](https://github.com/fredvolks/loveroll/actions/runs/41525216143) ; CI globale, migration, serveur Edge et recette duo A/B encore nécessaires. Budget et kilomètres vides doivent rester `null` sans préférence de luxe. |
 
 Aucun changement de tarifs ni déploiement applicatif n'est réalisé par cet ajout documentaire.
 
