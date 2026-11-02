@@ -103,3 +103,15 @@ test('date proposals from former partners are not readable or actionable after d
  assert.match(sql,/active_member\.user_id=v_plan\.proposed_by/);
  assert.match(sql,/agreeing_member\.user_id=v_plan\.agreed_by/);
 });
+
+
+test('Supabase prevents a direct booking RPC from bypassing an agreed date',()=>{
+ const sql=read('migrations/20261102_lr_surprise_shared_date_agreement.sql');
+ assert.match(sql,/CREATE OR REPLACE FUNCTION public\.love_monthly_booking_date_guard\(\)/);
+ assert.match(sql,/WHERE roll_id=NEW\.roll_id AND status='agreed'/);
+ assert.match(sql,/IF FOUND AND NEW\.reserved_for IS DISTINCT FROM v_agreed THEN/);
+ assert.match(sql,/CREATE TRIGGER love_monthly_booking_date_consistency/);
+ assert.match(sql,/BEFORE INSERT OR UPDATE OF reserved_for,roll_id ON public\.love_monthly_reservations/);
+ assert.match(sql,/RETURN NEW;/);
+ assert.doesNotMatch(sql,/UPDATE public\.love_monthly_reservations SET reserved_for/);
+});
