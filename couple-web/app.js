@@ -1343,11 +1343,12 @@ function renderHome(){
  // Do not rename the D100 activity after a Geoapify venue was selected.
  // The establishment is a separate read-only detail on Surprise.
  const activeEvening=playableSessionForWeekly(state.session,state.weekly);
- const turn=activeEvening&&activeEvening.self_draws?
+ const ongoingEvening=activeEvening&&!activeEvening.finished_at;
+ const turn=ongoingEvening&&activeEvening.self_draws?
   state.eveningBoard||sharedEveningTurns(activeEvening,members,state.personal,state.challenges,state.gifts):null;
  frame(premiumHomeHtml({
   weekly:state.weekly,
-  activeEvening:!!activeEvening,
+  activeEvening:!!ongoingEvening,
   weeklyWeights:state.couple?.weekly_face_weights,
   weeklyWeightsEnabled:state.couple?.weekly_weights_enabled!==false,
   rolling:state.diceStatus==='rolling',
