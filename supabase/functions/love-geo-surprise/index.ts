@@ -3,6 +3,7 @@
 // Never creates imaginary places, booking links, photos or road distances.
 import {createClient} from 'npm:@supabase/supabase-js@2.57.0';
 import {verifiedRoadMetres,verifiedMatrixCandidates} from './verified-road.mjs';
+import {geoRetryDecision,MAX_GEO_ATTEMPTS,GEO_CLAIM_WAIT_MS,GEO_MANUAL_RETRY_WAIT_MS} from './retry-policy.mjs';
 
 const json=(body:unknown,status=200)=>new Response(JSON.stringify(body),{
  status,headers:{'Content-Type':'application/json','Cache-Control':'no-store','Access-Control-Allow-Origin':'*',
@@ -103,8 +104,10 @@ Deno.serve(async req=>{
  const {data:existing,error:existingErr}=await admin.from('love_monthly_places')
   .select('*').eq('roll_id',roll.id).maybeSingle();
  if(existingErr)return json({error:'Chargement temporairement indisponible'},503);
- if(existing&&existing.state!=='pending')return json({status:existing.state,venue:existing.state==='ready'?existing:null});
- if(existing&&Date.now()-Date.parse(existing.claimed_at)<120000)return json({status:'pending'});
+ const decision=geoRetryDecision(existing,{manual:payload.retry===true});
+ if(decision.status==='stored')return json({status:existing.state,venue:existing.state==='ready'?existing:null});
+ if(decision.status==='pending')return json({status:'pending'});
+ if(decision.status==='retry_exhausted')return json({status:'retry_exhausted'});
  // Never consume Geoapify credits without a configured server-side secret.
  if(apiKey.length<10)return json({error:'Clé Geoapify manquante dans les secrets Supabase'},503);
  const radius=Number(settings.travel_radius_km);
@@ -112,14 +115,21 @@ Deno.serve(async req=>{
  // One winner claim per roll. In-progress duplicates are cheap and return pending.
  if(!existing){
   const inserted=await admin.from('love_monthly_places').insert({
-   roll_id:roll.id,couple_id:roll.couple_id,roll_key:roll.key,state:'pending'
+   roll_id:roll.id,couple_id:roll.couple_id,roll_key:roll.key,state:'pending',
+   geo_attempts:decision.attempt
   }).select('roll_id').maybeSingle();
   if(inserted.error)return json({status:'pending'});
  }else{
+  // Compare-and-swap by both claim time and attempt count: two partners
+  // must never win the same paid Geoapify retry simultaneously.
+  const previousAttempts=Number(existing.geo_attempts)||0;
+  const cooldown=previousAttempts>=MAX_GEO_ATTEMPTS?
+    GEO_MANUAL_RETRY_WAIT_MS:GEO_CLAIM_WAIT_MS;
   const retry=await admin.from('love_monthly_places').update({
-   claimed_at:new Date().toISOString()
+   claimed_at:new Date().toISOString(),geo_attempts:decision.attempt
   }).eq('roll_id',roll.id).eq('state','pending')
-   .lt('claimed_at',new Date(Date.now()-120000).toISOString()).select('roll_id');
+   .eq('geo_attempts',previousAttempts)
+   .lt('claimed_at',new Date(Date.now()-cooldown).toISOString()).select('roll_id');
   if(retry.error||retry.data?.length!==1)return json({status:'pending'});
  }
  const finalize=async(body:any)=>{
@@ -171,6 +181,9 @@ Deno.serve(async req=>{
    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(routeBody)
   });
   const matrix=routes?.sources_to_targets?.[0];
+  // A malformed provider response is not proof that no road destinations exist.
+  if(!Array.isArray(matrix)||matrix.length!==candidates.length)
+   throw Error('Matrice Geoapify incomplète');
   const viable=verifiedMatrixCandidates(candidates,matrix,radius);
   // Deterministic selection among nearby valid venues; do not always use the nearest.
   viable.sort((a,b)=>a.meters-b.meters||a.p.place_id.localeCompare(b.p.place_id));
@@ -183,9 +196,10 @@ Deno.serve(async req=>{
   await finalize(snapshot);
   return json({status:'ready',venue:{...snapshot,roll_id:roll.id,roll_key:roll.key}});
  }catch(error){
-  // Unavailable is terminal for this roll; never spin repeated paid requests.
-  console.warn('LoveRoll Geoapify lookup unavailable',error instanceof Error?error.message:'unknown');
-  try{await finalize({state:'unavailable'});}catch{}
-  return json({status:'unavailable'});
+  // Keep the claim pending: temporary HTTP errors/timeouts are not "no venues".
+  // Only the finite, server-side attempt budget can start another paid lookup.
+  console.warn('LoveRoll Geoapify lookup failed; bounded retry available',
+   error instanceof Error?error.message:'unknown');
+  return json({status:decision.attempt>=MAX_GEO_ATTEMPTS?'retry_exhausted':'pending'});
  }
 });
