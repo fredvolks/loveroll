@@ -109,6 +109,10 @@ Deno.serve(async req=>{
  if(decision.status==='pending')return json({status:'pending'});
  if(decision.status==='retry_exhausted')return json({status:'retry_exhausted'});
  if(decision.status==='retry_limit_reached')return json({status:'retry_limit_reached'});
+ // The claim branch is the only branch allowed to consume provider credits.
+ const attempt=decision.attempt;
+ if(decision.status!=='claim'||typeof attempt!=='number'||!Number.isInteger(attempt)||attempt<1)
+  return json({error:'État de recherche invalide'},503);
  // Never consume Geoapify credits without a configured server-side secret.
  if(apiKey.length<10)return json({error:'Clé Geoapify manquante dans les secrets Supabase'},503);
  const searchRadii=boundedSearchRadii(settings.travel_radius_km,Number(policy.geo_max_radius_km));
@@ -195,8 +199,8 @@ Deno.serve(async req=>{
    });
    const placesResp=await observedGeoFetch(admin,'places',placesUrl,1);
    if(!Array.isArray(placesResp?.features))throw Error('Réponse Geoapify Places invalide');
-   const locations=placesResp.features
-    .map(parsedPlace).filter((x:Place|null):x is Place=>!!x);
+   const locations:Place[]=placesResp.features
+    .map(parsedPlace).filter((x:Place|null):x is Place=>x!==null);
    const candidates=locations.filter(p=>!seen.has(p.place_id))
     .filter((p,i,a)=>a.findIndex(v=>v.place_id===p.place_id)===i)
     .slice(0,Math.min(20,Math.max(1,Number(policy.geo_max_candidates)||10)));
@@ -219,11 +223,13 @@ Deno.serve(async req=>{
    // An empty preference uses only the provider's finite operational safety cap.
    const roadCapKm=settings.travel_radius_km===null?
     Number(policy.geo_max_radius_km):searchRadius;
-   const viable=verifiedMatrixCandidates(candidates,matrix,roadCapKm);
+   // The verifier drops null/unreachable routes before this selection.
+   const viable=verifiedMatrixCandidates(candidates,matrix,roadCapKm) as Array<{p:Place,meters:number}>;
    viable.sort((a,b)=>a.meters-b.meters||a.p.place_id.localeCompare(b.p.place_id));
    if(!viable.length)continue;
-   selected=viable[(roll.face+Number(roll.key.slice(-2)))%Math.min(viable.length,5)];
-   const chosenIndex=candidates.findIndex(p=>p.place_id===selected.p.place_id);
+   const chosen=viable[(roll.face+Number(roll.key.slice(-2)))%Math.min(viable.length,5)];
+   selected=chosen;
+   const chosenIndex=candidates.findIndex(p=>p.place_id===chosen.p.place_id);
    selectedDrivingSeconds=verifiedRoadSeconds(matrix[chosenIndex]?.time);
    break;
   }
@@ -241,6 +247,6 @@ Deno.serve(async req=>{
   console.warn('LoveRoll Geoapify lookup failed; bounded retry available',
    error instanceof Error?error.message:'unknown');
   return json({status:activeTotalAttempts>=MAX_TOTAL_GEO_ATTEMPTS?'retry_limit_reached':
-   decision.attempt>=MAX_GEO_ATTEMPTS?'retry_exhausted':'pending'});
+   attempt>=MAX_GEO_ATTEMPTS?'retry_exhausted':'pending'});
  }
 });
