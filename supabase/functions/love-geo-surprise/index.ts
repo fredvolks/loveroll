@@ -113,12 +113,15 @@ Deno.serve(async req=>{
  const radius=Number(settings.travel_radius_km);
  if(!Number.isInteger(radius)||radius<10||radius>Number(policy.geo_max_radius_km))return json({error:'Rayon supérieur au maximum autorisé'},400);
  // One winner claim per roll. In-progress duplicates are cheap and return pending.
+ // Keep the actual database timestamp as a fencing token across manual resets.
+ let activeClaimedAt:string|null=null;
  if(!existing){
   const inserted=await admin.from('love_monthly_places').insert({
    roll_id:roll.id,couple_id:roll.couple_id,roll_key:roll.key,state:'pending',
    geo_attempts:decision.attempt
-  }).select('roll_id').maybeSingle();
-  if(inserted.error)return json({status:'pending'});
+  }).select('roll_id,claimed_at').maybeSingle();
+  if(inserted.error||!inserted.data?.claimed_at)return json({status:'pending'});
+  activeClaimedAt=inserted.data.claimed_at;
  }else{
   // Compare-and-swap by both claim time and attempt count: two partners
   // must never win the same paid Geoapify retry simultaneously.
@@ -129,15 +132,17 @@ Deno.serve(async req=>{
    claimed_at:new Date().toISOString(),geo_attempts:decision.attempt
   }).eq('roll_id',roll.id).eq('state','pending')
    .eq('geo_attempts',previousAttempts)
-   .lt('claimed_at',new Date(Date.now()-cooldown).toISOString()).select('roll_id');
-  if(retry.error||retry.data?.length!==1)return json({status:'pending'});
+   .lt('claimed_at',new Date(Date.now()-cooldown).toISOString()).select('roll_id,claimed_at');
+  if(retry.error||retry.data?.length!==1||!retry.data[0]?.claimed_at)return json({status:'pending'});
+  activeClaimedAt=retry.data[0].claimed_at;
  }
  const finalize=async(body:any)=>{
   // A stale/overlapping claim cannot overwrite a newer result or reservation.
   const {data:updated,error}=await admin.from('love_monthly_places').update({
    ...body,updated_at:new Date().toISOString()
   }).eq('roll_id',roll.id).eq('state','pending')
-   .eq('geo_attempts',decision.attempt).select('roll_id');
+   .eq('geo_attempts',decision.attempt)
+   .eq('claimed_at',activeClaimedAt).select('roll_id');
   if(error||updated?.length!==1)throw Error('Résultat Geoapify obsolète');
  };
  try{
