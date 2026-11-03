@@ -132,7 +132,7 @@ test('LR-002 countdown renders one truthful, actionable control at every phase',
  assert.deepEqual(timedEveningTimerControl({...base,remainingMs:100000}),{
   label:'▶ Reprendre',status:'À votre rythme',disabled:false,resetDisabled:false
  });
- assert.deepEqual(timedEveningTimerControl({...base,running:true}),{
+ assert.deepEqual(timedEveningTimerControl({...base,running:true,deadline:Date.now()+120000}),{
   label:'Ⅱ Pause',status:'En cours',disabled:false,resetDisabled:false
  });
  assert.deepEqual(timedEveningTimerControl({...base,remainingMs:0}),{
@@ -143,6 +143,19 @@ test('LR-002 countdown renders one truthful, actionable control at every phase',
   disabled:true,resetDisabled:true
  });
  assert.equal(timedEveningTimerControl({...base,remainingMs:-1}).disabled,true);
+});
+
+test('LR-002 running countdown cannot revive Pause from a stale snapshot without a deadline',()=>{
+ const timer={durationMs:240000,remainingMs:120000,running:true,autoCompletePending:false};
+ for(const deadline of [0,null,undefined,NaN,Infinity,-Infinity,'invalid']){
+  const presentation=timedEveningTimerControl({...timer,deadline});
+  assert.equal(presentation.label,'♡ Terminé',String(deadline));
+  assert.equal(presentation.disabled,true,String(deadline));
+  assert.equal(presentation.status,'Terminé',String(deadline));
+ }
+ // A deliberately paused clock is different: it has no running deadline
+ // and must retain its genuine remaining duration and Reprendre action.
+ assert.equal(timedEveningTimerControl({...timer,running:false,deadline:0}).label,'▶ Reprendre');
 });
 
 test('LR-002 live countdown and rerender cannot revive an inert Reprendre button',()=>{
@@ -354,3 +367,69 @@ test('LR-002 a rendered 00:00 never offers Pause before the 500ms timer tick',()
  });
 });
 
+
+test('LR-002: an error closing Soirée is idempotent only for a chronologically closed matching session',async()=>{
+ const start='2026-11-03T19:00:00Z';
+ const valid={id:'session-a',started_at:start,finished_at:'2026-11-03T20:00:00Z',counted:true};
+ const rpc=async name=>{
+  if(name==='my_love_evening_board')return {finished:true};
+  if(name==='finish_couple_session')throw Error('closure RPC interrupted');
+ };
+ const complete=previous=>completeTimedEveningChallenge({
+  challenge:card,userId:'alice',sessionId:'session-a',rpc,
+  query:async(table,opts)=>{
+   assert.equal(table,'couple_sessions');
+   assert.deepEqual(opts,{eq:{id:'session-a'}});
+   return previous?[previous]:[];
+  }
+ });
+ assert.deepEqual(await complete(valid),{outcome:'completed',finished:true},
+  'A session already closed by another device is a successful idempotent close');
+ assert.deepEqual(await complete({...valid,
+  started_at:'2026-11-03T19:00:00.123+00:00',
+  finished_at:'2026-11-03T20:00:00.123+00:00'}),
+  {outcome:'completed',finished:true},
+  'PostgREST ISO timestamps with fractional seconds and a numeric offset remain valid');
+ for(const [started_at,finished_at] of [
+  ['2026-11-03T20:00:00.123100Z','2026-11-03T20:00:00.123456Z'],
+  ['2026-11-03T20:00:00.123456Z','2026-11-03T20:00:00.123456Z'],
+  ['2024-02-29T23:59:59.999998+01:00','2024-02-29T22:59:59.999999Z']
+ ]){
+  assert.deepEqual(await complete({...valid,started_at,finished_at}),
+   {outcome:'completed',finished:true},
+   'Microsecond and leap-day timestamps must retain chronological precision');
+ }
+ for(const previous of [
+  null,
+  {...valid,id:'session-b'},
+  {...valid,counted:false},
+  {...valid,counted:null},
+  {...valid,counted:undefined},
+  {...valid,counted:'true'},
+  {...valid,started_at:'2026-11-03T20:00:00.123456Z',finished_at:'2026-11-03T20:00:00.123100Z'},
+  {...valid,started_at:'2026-11-03T20:00:00.123456+01:00',finished_at:'2026-11-03T19:00:00.123455Z'},
+  {...valid,started_at:null},
+  {...valid,started_at:'invalid'},
+  {...valid,finished_at:null},
+  {...valid,finished_at:'invalid'},
+  {...valid,started_at:'0'},
+  {...valid,started_at:0},
+  {...valid,started_at:'2026-02-31T19:00:00Z'},
+  {...valid,started_at:'2026-02-29T19:00:00Z'},
+  {...valid,started_at:'2026-04-31T19:00:00Z'},
+  {...valid,started_at:'2026-00-03T19:00:00Z'},
+  {...valid,finished_at:'2026-11-03T24:00:00Z'},
+  {...valid,finished_at:'2026-11-03T20:61:00Z'},
+  {...valid,finished_at:'2026-11-03'},
+  {...valid,finished_at:'2026-11-03T20:00:00+14:30'},
+  {...valid,finished_at:'2026-11-03T18:59:59Z'}
+ ]){
+  await assert.rejects(complete(previous),error=>{
+   assert.equal(error.challengeCompletionConfirmed,true,
+    'The challenge remains saved even when session synchronization fails');
+   assert.match(error.message,/synchronisation de Soirée en attente/);
+   assert.match(error.cause?.message??'',/closure RPC interrupted/);
+   return true;
+  });
+ }
+});
