@@ -357,7 +357,7 @@ test('LR-002 a rendered 00:00 never offers Pause before the 500ms timer tick',()
 
 test('LR-002: an error closing Soirée is idempotent only for a chronologically closed matching session',async()=>{
  const start='2026-11-03T19:00:00Z';
- const valid={id:'session-a',started_at:start,finished_at:'2026-11-03T20:00:00Z'};
+ const valid={id:'session-a',started_at:start,finished_at:'2026-11-03T20:00:00Z',counted:true};
  const rpc=async name=>{
   if(name==='my_love_evening_board')return {finished:true};
   if(name==='finish_couple_session')throw Error('closure RPC interrupted');
@@ -375,6 +375,9 @@ test('LR-002: an error closing Soirée is idempotent only for a chronologically 
  for(const previous of [
   null,
   {...valid,id:'session-b'},
+  {...valid,counted:false},
+  {...valid,counted:null},
+  {...valid,counted:undefined},
   {...valid,started_at:null},
   {...valid,started_at:'invalid'},
   {...valid,finished_at:null},
