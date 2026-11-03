@@ -1,0 +1,20 @@
+name: LR-028 staging JWT checker — unit tests
+on:
+  pull_request:
+    paths:
+      - 'couple-web/qa/lr028-staging-auth*.mjs'
+      - '.github/workflows/lr028-staging-jwt-checker.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  staging-auth-checker-unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Mock three JWT accounts, outsider, and RLS denial paths
+        run: node --test couple-web/qa/lr028-staging-auth.test.mjs
