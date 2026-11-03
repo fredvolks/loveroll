@@ -227,7 +227,7 @@ test('LR-004: denied localStorage cannot defeat immediate mute or account isolat
 });
 
 test('LR-004: muting from another tab stops an active timer without affecting other accounts',async()=>{
- const oldWindow=globalThis.window,oldStore=globalThis.localStorage;
+ const oldWindow=globalThis.window,oldStore=globalThis.localStorage,oldDocument=globalThis.document;
  const listeners=new Map(),notes=[],values=new Map();
  class SharedTabAudioContext{
   state='running';currentTime=6;destination={};
@@ -239,6 +239,10 @@ test('LR-004: muting from another tab stops an active timer without affecting ot
   createGain(){return {gain:{setValueAtTime(){},exponentialRampToValueAtTime(){}},
    connect(){},disconnect(){}};}
  }
+ const toggle={attrs:new Map(),textContent:'Activé',
+  setAttribute(name,value){this.attrs.set(name,value);}};
+ globalThis.document={addEventListener(){},
+  querySelectorAll(selector){return selector==='.lr-sound-switch'?[toggle]:[];}};
  globalThis.window={AudioContext:SharedTabAudioContext,
   addEventListener:(name,handler)=>listeners.set(name,handler)};
  globalThis.localStorage={getItem:key=>values.get(key),setItem:(key,value)=>values.set(key,value)};
@@ -256,11 +260,16 @@ test('LR-004: muting from another tab stops an active timer without affecting ot
   assert.ok(notes.every(note=>note.stops.length===1),'Unrelated changes leave melody alone');
   onStorage({key:'loveroll-timer-sound-v229:tab-a',newValue:'off'});
   assert.equal(sound.soundEnabled(),false,'This tab respects the newly saved preference');
+  assert.equal(toggle.attrs.get('aria-checked'),'false',
+   'The visible switch must reflect an external mute');
+  assert.equal(toggle.textContent,'Désactivé');
   assert.ok(notes.every(note=>note.stops.length>=2&&note.disconnected>0),
    'All already scheduled notes are cancelled immediately');
   assert.equal(sound.playLoveRollSound('timer:while-muted'),false);
   onStorage({key:'loveroll-timer-sound-v229:tab-a',newValue:'on'});
   assert.equal(sound.soundEnabled(),true);
+  assert.equal(toggle.attrs.get('aria-checked'),'true');
+  assert.equal(toggle.textContent,'Activé');
   assert.equal(sound.playLoveRollSound('timer:after-remote-unmute'),true);
   assert.equal(notes.length,12);
   sound.setLoveRollSoundUser('tab-b');
@@ -268,5 +277,6 @@ test('LR-004: muting from another tab stops an active timer without affecting ot
  }finally{
   if(oldWindow===undefined)delete globalThis.window;else globalThis.window=oldWindow;
   if(oldStore===undefined)delete globalThis.localStorage;else globalThis.localStorage=oldStore;
+  if(oldDocument===undefined)delete globalThis.document;else globalThis.document=oldDocument;
  }
 });
