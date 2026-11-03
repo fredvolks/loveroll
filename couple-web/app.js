@@ -21,7 +21,7 @@ import {playableSessionForWeekly} from './couple-reset-view.mjs';
 import {eveningDailyAccess} from './evening-daily-policy.mjs?v=20261016-daily100';
 import {ownEveningChallenges,visibleEveningQueue,primaryEveningChallenge,queuePosition,queueLabel,hasTurnToDraw} from './evening-private-queue.mjs';
 import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261103-web270';
-import {saveEveningSelection,restoreEveningSelection,clearEveningSelection} from './evening-resume.mjs?v=20261027-web240';
+import {safeEveningStorage,saveEveningSelection,restoreEveningSelection,clearEveningSelection} from './evening-resume.mjs?v=20261103-lr018';
 import {eclatHtml} from './eclat-ui.mjs?v=20261027-web242';
 import {previewMode,previewCanEdit,previewEclatStatus} from './account-preview-mode.mjs?v=20261020-test180';
 import {eclatStage} from './eclat-catalog.mjs?v=20261019-eclat174';
@@ -252,7 +252,7 @@ function backFromLoveRoll(){
  // and Escape must close it BEFORE leaving Soirée or switching tabs.
  if(state.showEveningChallenges){
   if(state.user?.id&&state.session?.id)
-   clearEveningSelection(localStorage,state.user.id,state.session.id);
+   clearEveningSelection(safeEveningStorage(),state.user.id,state.session.id);
   const closedChallengeId=state.selectedEveningChallengeId;
   state.showEveningChallenges=false;state.selectedEveningChallengeId=null;
   render();
@@ -3063,18 +3063,18 @@ async function handle(action,element){
   state.tab='evening-calendar';await refreshAndShow();return;
  }
  if(verb==='evening-challenge'||verb==='evening-list'){
-  if(state.user?.id&&state.session?.id)clearEveningSelection(localStorage,state.user.id,state.session.id);
+  if(state.user?.id&&state.session?.id)clearEveningSelection(safeEveningStorage(),state.user.id,state.session.id);
   state.showEveningChallenges=true;state.selectedEveningChallengeId=null;render();return;
  }
  if(verb==='evening-close'){
-  if(state.user?.id&&state.session?.id)clearEveningSelection(localStorage,state.user.id,state.session.id);
+  if(state.user?.id&&state.session?.id)clearEveningSelection(safeEveningStorage(),state.user.id,state.session.id);
   state.showEveningChallenges=false;state.selectedEveningChallengeId=null;render();return;
  }
  if(verb==='evening-open'){
   if(!ownEveningChallenges(state.challenges,state.user?.id,state.session?.id).some(x=>x.id===parts[0]))
    throw Error('Ce défi ne fait pas partie de ta liste personnelle.');
   state.selectedEveningChallengeId=parts[0];state.showEveningChallenges=true;
-  saveEveningSelection(localStorage,state.user.id,state.session.id,parts[0]);
+  saveEveningSelection(safeEveningStorage(),state.user.id,state.session.id,parts[0]);
   render();return;
  }
  if(verb==='evening-favorite-cancel'){
@@ -4321,7 +4321,7 @@ async function handle(action,element){
    return;
   }
   const privateCards=visibleEveningQueue(ownEveningChallenges(state.challenges,state.user.id,session.id));
-  const selected=restoreEveningSelection(localStorage,state.user.id,session.id,privateCards);
+  const selected=restoreEveningSelection(safeEveningStorage(),state.user.id,session.id,privateCards);
   state.tab='session';state.eveningRefusalId=null;state.eveningMore=false;
   state.selectedEveningChallengeId=selected;
   state.showEveningChallenges=privateCards.length>0;
