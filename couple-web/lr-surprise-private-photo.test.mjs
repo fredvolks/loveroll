@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {
  privateMemoryPath,validateMemoryPhoto,jpegMemoryPhoto,
- safePrivatePhotoUrl,MEMORY_PHOTO_BUCKET,MAX_MEMORY_PHOTO_BYTES
+ safePrivatePhotoUrl,MEMORY_PHOTO_BUCKET,MAX_MEMORY_PHOTO_BYTES,confirmUploadedMemoryPhoto
 } from './monthly-private-photo.mjs';
 import {monthlyCompletionHtml} from './monthly-completion.mjs';
 const read=p=>readFileSync(new URL('./'+p,import.meta.url),'utf8');
@@ -52,6 +52,41 @@ test('image bytes are re-encoded to JPEG, not uploaded as original EXIF/GPS',asy
   if(originalDoc===undefined)delete globalThis.document;
   else globalThis.document=originalDoc;
  }
+});
+
+test('confirmed private photo survives preview failure',async()=>{
+ let links=0,diagnostics=0;
+ const saved=await confirmUploadedMemoryPhoto({
+  link:async()=>{links++;return {photo_path:'owner/roll/image.jpg'};},
+  preview:async()=>{throw Error('signed preview unavailable');},
+  onPreviewError:error=>{
+   diagnostics++;
+   assert.match(error.message,/signed preview unavailable/);
+  }
+ });
+ assert.deepEqual(saved,{photo_path:'owner/roll/image.jpg'});
+ assert.equal(links,1);
+ assert.equal(diagnostics,1);
+});
+
+test('an uncertain RPC failure does not attempt destructive photo rollback',async()=>{
+ let previewCalls=0;
+ await assert.rejects(()=>confirmUploadedMemoryPhoto({
+  link:async()=>{throw Error('link response lost after server commit');},
+  preview:async()=>{previewCalls++;}
+ }),/link response lost/);
+ assert.equal(previewCalls,0);
+ const code=read('app.js');
+ const start=code.indexOf("if(verb==='geo-photo-save')");
+ const end=code.indexOf("if(verb==='geo-photo-delete')",start);
+ const section=code.slice(start,end);
+ assert.ok(start>0&&end>start);
+ assert.match(section,/await confirmUploadedMemoryPhoto\(\{/);
+ assert.match(section,/link:\(\)=>rpc\('save_love_monthly_photo'/);
+ assert.match(section,/onPreviewError:error=>/);
+ // A changed account can discard an upload BEFORE the linking RPC only.
+ const afterLink=section.slice(section.indexOf('await confirmUploadedMemoryPhoto({'));
+ assert.doesNotMatch(afterLink,/bucket\.remove\(\[path\]\)/);
 });
 
 test('signed URLs appear only when provided by authorized storage, never public URLs',()=>{
