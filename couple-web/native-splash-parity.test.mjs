@@ -62,7 +62,7 @@ test('Android versionCode, versionName and signed release tag stay aligned',()=>
  const version=major+'.'+minor+'.'+patch;
  assert.equal(Number(match[1]),major*1_000_000+minor*10_000+patch,
   'versionCode must increase with the corresponding semantic version');
- assert.ok(workflow.includes('TAG: des-a-deux-v'+version),
+ assert.ok(workflow.includes('TAG: loveroll-newsign-v'+version),
   'Signed release tag must match the installed APK version');
  assert.ok(workflow.includes('dist/LoveRoll-v'+version+'.apk'),
   'Release must publish the matching APK asset');
