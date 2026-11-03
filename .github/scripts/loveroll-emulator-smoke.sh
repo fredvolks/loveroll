@@ -118,7 +118,7 @@ python3 - <<'PY_STARTUP_RECOVERY'
 import pathlib,re
 log=pathlib.Path('qa/native-startup-events.txt').read_text(errors='replace')
 events=[m.group(1) for line in log.splitlines()
-        if (m:=re.search(r'\\bI/LoveRollStartup\\(\\s*\\d+\\):\\s*([\\w-]+)',line))]
+        if (m:=re.search(r'\bI/LoveRollStartup\(\s*\d+\):\s*([\w-]+)',line))]
 assert 'native-error-overlay' in events, 'The native offline error was not logged'
 assert 'retry-tapped' in events, 'The actual recovery action was not logged'
 recovery=events[events.index('retry-tapped')+1:]
