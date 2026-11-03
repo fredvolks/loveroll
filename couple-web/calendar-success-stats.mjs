@@ -32,9 +32,12 @@ export function calendarWeekSuccess({date,weeklyRolls=[],sessions=[]}={}){
  const face=Math.max(1,Math.min(6,Number(roll.face)||1));
  const possible=Math.min(face,remainingWeekEvenings(roll.created_at));
  const since=Date.parse(roll.created_at);
- const completed=(sessions||[]).filter(s=>s.counted===true&&s.finished_at&&
-  mondayOf(torontoDate(s.started_at))===start&&Date.parse(s.started_at)>=since).length;
- const capped=Math.min(possible,completed);
+ // One eligible evening per Toronto calendar day. Duplicate or resumed
+ // session rows must not inflate a weekly success rate.
+ const completedDays=new Set((sessions||[]).filter(s=>s.counted===true&&s.finished_at&&
+  mondayOf(torontoDate(s.started_at))===start&&Date.parse(s.started_at)>=since)
+  .map(s=>torontoDate(s.started_at)));
+ const capped=Math.min(possible,completedDays.size);
  return {hasRoll:true,possible,completed:capped,
   percent:possible?Math.round(100*capped/possible):null,face};
 }
