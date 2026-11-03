@@ -63,7 +63,13 @@ export async function completeTimedEveningChallenge({challenge,userId,sessionId,
    catch(error){
     // A simultaneous confirmation by the other partner can close it first.
     const previous=(await query('couple_sessions',{eq:{id:sessionId}}))?.[0];
-    if(!previous?.finished_at)throw error;
+    // An arbitrary nonempty finished_at is not proof of a successful close.
+    // A concurrent device counts only if the exact session has valid,
+    // chronological timestamps (the same rule used by calendar statistics).
+    const startedAt=Date.parse(previous?.started_at??'');
+    const finishedAt=Date.parse(previous?.finished_at??'');
+    if(previous?.id!==sessionId||!Number.isFinite(startedAt)||
+       !Number.isFinite(finishedAt)||finishedAt<startedAt)throw error;
    }
   }
  }catch(error){
