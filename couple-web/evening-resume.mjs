@@ -1,6 +1,10 @@
 // An opaque bookmark only. Supabase owns all active game state.
 // Never reopen a completed/refused/replaced card after a cross-device update.
 const key=(userId,sessionId)=>userId&&sessionId?'loveroll-evening-resume-v1:'+userId+':'+sessionId:null;
+// Some browsers throw on reading window.localStorage itself (e.g. blocked storage).
+export function safeEveningStorage(readStorage=()=>globalThis.localStorage){
+ try{return readStorage()??null;}catch{return null;}
+}
 export function saveEveningSelection(storage,userId,sessionId,challengeId){
  const k=key(userId,sessionId);if(!k||!challengeId)return false;
  try{if(typeof storage?.setItem!=='function')return false;
