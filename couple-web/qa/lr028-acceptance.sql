@@ -308,6 +308,22 @@ begin
 end
 $pending_sender_swap$;
 
+-- Negative SELECT tests must prove revocation, not accidental row removal.
+-- Confirm the original A->B invitation survives the sender membership swap.
+-- Execute this as the fixture owner before switching to authenticated roles.
+do $pending_sender_fixture_guard$
+begin
+ if (select count(*) from public.love_evening_invitations
+     where couple_id='99999999-9999-4999-8999-999999999999'
+       and sender_id='aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa'
+       and recipient_id='bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb'
+       and status='pending'
+       and expires_at>now())<>1 then
+  raise exception 'Fixture: original pending A-to-B invitation must still exist after sender replacement';
+ end if;
+end
+$pending_sender_fixture_guard$;
+
 -- Pending sender replacement: test the actual authenticated SELECT policy,
 -- not only SECURITY DEFINER RPCs. The still-present recipient B must lose
 -- read access as soon as original sender A is replaced by C.
