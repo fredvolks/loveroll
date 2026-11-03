@@ -377,12 +377,24 @@ test('LR-002: an error closing Soirée is idempotent only for a chronologically 
   finished_at:'2026-11-03T20:00:00.123+00:00'}),
   {outcome:'completed',finished:true},
   'PostgREST ISO timestamps with fractional seconds and a numeric offset remain valid');
+ for(const [started_at,finished_at] of [
+  ['2026-11-03T20:00:00.123100Z','2026-11-03T20:00:00.123456Z'],
+  ['2026-11-03T20:00:00.123456Z','2026-11-03T20:00:00.123456Z'],
+  ['2024-02-29T23:59:59.999998+01:00','2024-02-29T22:59:59.999999Z']
+ ]){
+  assert.deepEqual(await complete({...valid,started_at,finished_at}),
+   {outcome:'completed',finished:true},
+   'Microsecond and leap-day timestamps must retain chronological precision');
+ }
  for(const previous of [
   null,
   {...valid,id:'session-b'},
   {...valid,counted:false},
   {...valid,counted:null},
   {...valid,counted:undefined},
+  {...valid,counted:'true'},
+  {...valid,started_at:'2026-11-03T20:00:00.123456Z',finished_at:'2026-11-03T20:00:00.123100Z'},
+  {...valid,started_at:'2026-11-03T20:00:00.123456+01:00',finished_at:'2026-11-03T19:00:00.123455Z'},
   {...valid,started_at:null},
   {...valid,started_at:'invalid'},
   {...valid,finished_at:null},
@@ -390,6 +402,10 @@ test('LR-002: an error closing Soirée is idempotent only for a chronologically 
   {...valid,started_at:'0'},
   {...valid,started_at:0},
   {...valid,started_at:'2026-02-31T19:00:00Z'},
+  {...valid,started_at:'2026-02-29T19:00:00Z'},
+  {...valid,started_at:'2026-04-31T19:00:00Z'},
+  {...valid,started_at:'2026-00-03T19:00:00Z'},
+  {...valid,finished_at:'2026-11-03T24:00:00Z'},
   {...valid,finished_at:'2026-11-03T20:61:00Z'},
   {...valid,finished_at:'2026-11-03'},
   {...valid,finished_at:'2026-11-03T20:00:00+14:30'},
