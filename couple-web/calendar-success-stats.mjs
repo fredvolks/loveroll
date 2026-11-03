@@ -38,7 +38,10 @@ export function calendarWeekSuccess({date,weeklyRolls=[],sessions=[]}={}){
  for(const session of sessions||[]){
   if(session.counted!==true||!session.finished_at)continue;
   const started=Date.parse(session.started_at);
-  if(!Number.isFinite(started)||started<since)continue;
+  const finished=Date.parse(session.finished_at);
+  // An invalid or reversed closure must not count as a completed evening.
+  if(!Number.isFinite(started)||!Number.isFinite(finished)||
+   finished<started||started<since)continue;
   const day=torontoDate(session.started_at);
   if(day&&mondayOf(day)===start)completedDays.add(day);
  }
