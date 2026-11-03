@@ -46,7 +46,8 @@ test('Resume action is read-only, restores server private queue and reconciles t
  assert.doesNotMatch(handler,/rpc\('|animateRoll|new-session|new-challenge|roll_my_evening_d6/);
  assert.match(app,/const ongoingEvening=activeEvening&&!activeEvening\.finished_at/);
  assert.match(app,/activeEvening:!!ongoingEvening/);
- assert.match(app,/saveEveningSelection\(safeEveningStorage\(\),state\.user\.id,state\.session\.id,parts\[0\]\)/);
+ // The opened card must be server-verified and still playable, not merely the URL-supplied ID.
+ assert.match(app,/if\(\['proposed','accepted'\]\.includes\(card\.status\)\)\s*saveEveningSelection\(safeEveningStorage\(\),state\.user\.id,state\.session\.id,card\.id\)/);
  const build=JSON.parse(read('web-version.json')).build;
  assert.ok(sw.includes("const CACHE='loveroll-static-v"+build.split('.')[1]+"'"));
  assert.match(sw,/\.\/evening-resume\.mjs/);
