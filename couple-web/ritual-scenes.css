@@ -58,6 +58,14 @@ main#app.loveroll-surprise-ecrin .surprise-month-label{
  main#app.loveroll-surprise-ecrin .surprise-details:has(.host-pending) :is(.surprise-event-symbol,.surprise-event-svg){width:20px;height:20px;}
  main#app.loveroll-surprise-ecrin .surprise-details:has(.host-pending) .surprise-event-title{font-size:11px;line-height:1.1;}
 }
+/* LR-SURPRISE-001: host selection plus shared preferences need room above
+   the six occasion cards. Preserve all six touch targets and the single-screen
+   gallery; short phones keep the separately validated 257px footer. */
+@media (max-width:767px) and (min-height:721px){
+ main#app.loveroll-surprise-ecrin .ritual-gallery:has(.surprise-month.host-pending){
+  --ritual-gallery-footer:330px;
+ }
+}
 @media(max-width:767px) and (max-height:720px){
  :root{--ritual-gallery-footer:257px;}
  main#app.loveroll-surprise-ecrin .surprise-details:has(.host-pending) :is(.surprise-event-symbol,.surprise-event-svg){width:18px;height:18px;}

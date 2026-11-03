@@ -803,6 +803,31 @@ Vérifier visuellement sur Android S25 Ultra, iPhone, tablette et PC : D100 comp
 Livrer par lots vérifiés dans le dépôt existant, suivre les tests GitHub jusqu'au résultat final et mettre à jour le suivi avec preuves. Distinguer documentation ajoutée, code implémenté, tests réussis et déploiement réellement vérifié. Ne pas cocher cette exigence comme réalisée après le seul ajout de ce prompt.
 
 
+
+### 6. Audit réel Surprise / Geoapify — 2 novembre 2026 (source de vérité pour la suite)
+
+**Mission approuvée :** corriger les lacunes de l'onglet Surprise **dans LoveRoll existant**, sans recommencer le jeu, changer les tirages D100/D6, les forfaits, la confidentialité ou les données historiques. Cet audit complète les sections 1 à 5 ci-dessus sans modifier leurs règles. Coordination MOON, consultation BOSS et méthodes Intégrations, Architecture, Interface, Ergonomie, Sécurité, Harmonisation et Qualité. Une méthode d'agent lue n'est pas une recette effectuée.
+
+**Faits contrôlés le 2 novembre 2026, en lecture seule :**
+- Dépôt GitHub : \`couple-web/premium-surprise.mjs\`, \`surprise-minimal.mjs/css\`, \`monthly-geo-ui.mjs\`, \`app.js\`, \`supabase/functions/love-geo-surprise/index.ts\`. Supabase officiel « Dés à Deux » : fonction \`love-geo-surprise\` **ACTIVE, v6**, paramètre \`geo_enabled=true\`, maximum **10 candidats**, rayon technique maximal **500 km**.
+- Tables de suivi interrogées : **0 lignes** dans \`love_geo_api_usage\` et **0 lignes** dans \`love_monthly_places\` à l'instant du contrôle. Ce n'est **pas** la preuve d'un appel Geoapify fonctionnel, ni la facturation du fournisseur, ni un test réel A/B.
+- Pipeline actuel : D100 officiel → catégorie d'expérience → Places (jusqu'à 20 résultats) → shortlist (jusqu'à 10) → Route Matrix voiture → lieu sélectionné et persisté → réservation déclarative par la personne qui invite. Les clés Geoapify restent côté serveur; LoveRoll ne réserve ni ne paie à la place du couple.
+- Le rayon est actuellement **obligatoire** (\`travel_radius_km integer NOT NULL DEFAULT 125\` et contrôle serveur **10 à maximum technique**). Le budget maximal pour deux est **absent de ce parcours**. Les deux règles ne respectent pas encore les champs \`null\` entièrement facultatifs des sections 1 et 5.
+- **Défaut de code établi :** dans l'Edge Function actuelle, le \`catch\` convertit toute erreur (timeout, panne fournisseur, catégorie/catalogue invalide, etc.) en \`state='unavailable'\` persistant. Le client bloque ensuite les nouvelles recherches de ce tirage. Un échec temporaire peut donc bloquer le mois au lieu d'être réessayé.
+- Des protections existent : route vérifiée avant affichage, refus des distances non numériques, site officiel distinct du véritable lien de réservation, interdiction des clés serveur dans le client, contrôle du duo et de la personne qui organise. Les CSS mobiles utilisent cependant des hauteurs fixes, \`100dvh\` et \`overflow:hidden\` : **risque de rognage à vérifier dans un vrai navigateur**, pas bug visuel déclaré sans preuve.
+- L'attribution du fournisseur doit comprendre un **lien utilisable** conforme à ses exigences; les mentions sans lien et les données tierces sans source contrôlée ne suffisent pas à certifier la conformité.
+
+**Priorités et critères supplémentaires (ne pas annoncer « terminé » sans preuve) :**
+1. **P0 — Récupération Geoapify.** Séparer succès, absence réelle de candidats, matrice invalide, paramètres invalides et panne transitoire. Une panne transitoire ne doit jamais se transformer en « aucun lieu » définitif. Prévoir reprise à délai croissant, budget de tentatives serveur **borné et atomique par tirage**, fermeture du suivi après changement d'identité/onglet, retour clair après épuisement et relance utilisateur contrôlée. Vérifier **deux partenaires simultanés** et plafonds de requêtes facturables. Une migration nécessaire reste hors production avant revue/tests.
+2. **P1 — Préférences facultatives.** Budget et distance réellement nullables jusqu'à Supabase et API, 0 $ différent de null, absence de faux prix ou garanties d'abordabilité, périmètre de recherche progressif borné et frais/transport inconnus explicités. Aucun plafond ne signifie pas « choisir cher ».
+3. **P1 — Adaptation du lieu.** « Autre établissement / fermé / déjà visité / trop loin / trop cher / autre option » sans repiger le D100, changer l'hôte ni altérer l'historique. Éviter les répétitions; aucune modification silencieuse de réservation.
+4. **P1 — Parcours complet partagé.** Carte du lieu pertinente à l'activité, date à proposer/contre-proposer, réservation externe séparée de l'accord du duo, indication honnête des notifications, étape « On l'a fait », appréciation et souvenir privé facultatif.
+5. **P2 — UX et conformité.** Un seul appel principal par état; afficheur chargement/panne/vide/reprise, liens HTTPS légitimes, attribution Geoapify + OpenStreetMap cliquable, coûts/horaires/photos uniquement vérifiés, contraste et cible tactile ≥44 px, aucune information géographique de couple dans des journaux.
+6. **Validation transverse.** Tests automatisés sur la **même révision**, erreurs réseau et délais, deux comptes A/B, authentification/RLS/hôte, contrat Edge et migration SQL, rafraîchissement/synchro, budgets/distance null/0, responsive 320×568/390×844/820×1180/1366×768/1920×1080, navigation clavier, zoom 200 %, Android/iPhone/tablette/PC. Documenter simulations vs appels réels; ne pas déclencher de consommation Geoapify réelle en test sans budget autorisé.
+
+**État au moment de l'audit :** P0/P1/P2 **non clôturés**; aucun changement du serveur de production, aucune preuve de parcours bout-en-bout, pas de validation visuelle multisupport. Révision, PR, migrations, CI et recette seront ajoutées au suivi au fur et à mesure de chaque livraison.
+
+
 ## LR-ACCUEIL-001 — Accueil : vue d'ensemble et raccourcis; Soirée : parcours de jeu
 **Demande approuvée le 26 octobre 2026 — spécification à implémenter et vérifier.** Cette section retient la proposition simplifiée finale et remplace toute proposition antérieure faisant de l'Accueil un deuxième écran de jeu.
 

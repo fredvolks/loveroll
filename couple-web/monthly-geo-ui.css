@@ -59,3 +59,172 @@ main#app.loveroll-surprise-ecrin .surprise-geo-text-button{
  main#app.loveroll-surprise-ecrin .surprise-geo-photo,
  main#app.loveroll-surprise-ecrin .surprise-geo-photo-placeholder{height:100px}
 }
+
+
+/* Shared date agreement: same velvet/lantern surface, readable compact modal. */
+main#app.loveroll-surprise-ecrin .surprise-date-plan{
+ display:grid;gap:9px;min-width:0;padding:12px;
+ border:1px solid #f3b2c77a;border-radius:17px;
+ background:linear-gradient(150deg,#4c1e32dd,#200e18ec);
+ color:#fff0f4;font:400 13px/1.45 system-ui,sans-serif;
+}
+main#app.loveroll-surprise-ecrin .surprise-date-plan>strong{
+ font:500 clamp(17px,4vw,22px)/1.2 Georgia,serif;color:#fff4f5;
+}
+main#app.loveroll-surprise-ecrin .surprise-date-plan p,
+main#app.loveroll-surprise-ecrin .surprise-date-plan small{margin:0;overflow-wrap:anywhere}
+main#app.loveroll-surprise-ecrin .surprise-date-plan small{color:#f1cedb}
+main#app.loveroll-surprise-ecrin .surprise-date-plan-actions{display:grid;gap:9px;min-width:0}
+main#app.loveroll-surprise-ecrin .surprise-date-plan label{font-size:12px;color:#f6dae4}
+main#app.loveroll-surprise-ecrin .surprise-date-plan input[type=datetime-local],
+main#app.loveroll-surprise-ecrin .surprise-geo-booking-form select{
+ width:100%;min-width:0;min-height:44px;padding:9px 10px;border-radius:10px;
+ border:1px solid var(--control-border);background:var(--control-secondary);color:var(--control-text);color-scheme:dark;
+}
+main#app.loveroll-surprise-ecrin .surprise-date-plan button,
+main#app.loveroll-surprise-ecrin .surprise-geo-text-button{
+ min-height:44px;padding:9px 11px;overflow-wrap:anywhere;
+}
+main#app.loveroll-surprise-ecrin .surprise-date-plan :focus-visible,
+main#app.loveroll-surprise-ecrin .surprise-geo-booking-form :focus-visible{
+ outline:3px solid #ffd89d;outline-offset:2px;
+}
+@media(max-width:360px){
+ main#app.loveroll-surprise-ecrin .surprise-date-plan{padding:10px;gap:7px}
+}
+
+
+/* LR-SURPRISE-001: a quiet, accessible shared-memory moment. */
+main#app.loveroll-surprise-ecrin .surprise-completion{
+ display:grid;gap:9px;min-width:0;padding:12px;
+ border:1px solid #f3b2c77a;border-radius:17px;
+ background:linear-gradient(150deg,#4c1e32dd,#200e18ec);
+ color:#fff0f4;font:400 13px/1.45 system-ui,sans-serif;
+}
+main#app.loveroll-surprise-ecrin .surprise-completion>strong{
+ color:#fff4f5;font:500 clamp(17px,4vw,22px)/1.25 Georgia,serif;
+}
+main#app.loveroll-surprise-ecrin .surprise-completion p,
+main#app.loveroll-surprise-ecrin .surprise-completion small{
+ margin:0;overflow-wrap:anywhere;
+}
+main#app.loveroll-surprise-ecrin .surprise-completion small{color:#f1cedb}
+main#app.loveroll-surprise-ecrin .surprise-completion label{
+ color:#f6dae4;font-size:12px;
+}
+main#app.loveroll-surprise-ecrin .surprise-completion select,
+main#app.loveroll-surprise-ecrin .surprise-completion textarea{
+ width:100%;min-width:0;min-height:44px;padding:9px 10px;
+ border-radius:10px;border:1px solid var(--control-border);
+ background:var(--control-secondary);color:var(--control-text);color-scheme:dark;
+ font:400 14px/1.4 system-ui,sans-serif;
+}
+main#app.loveroll-surprise-ecrin .surprise-completion textarea{
+ resize:vertical;min-height:88px;max-height:40dvh;
+}
+main#app.loveroll-surprise-ecrin .surprise-completion button{
+ min-height:44px;padding:10px;overflow-wrap:anywhere;
+}
+main#app.loveroll-surprise-ecrin .surprise-completion :focus-visible{
+ outline:3px solid #ffd89d;outline-offset:2px;
+}
+main#app.loveroll-surprise-ecrin .surprise-partner-memories{
+ display:grid;gap:6px;padding:10px;border-radius:12px;
+ background:#6d30465a;border:1px solid #faaccb8c;min-width:0;
+}
+@media(max-width:360px){
+ main#app.loveroll-surprise-ecrin .surprise-completion{padding:10px;gap:7px}
+}
+
+/* Compact shared preferences before the D100: reuse the approved theme tokens. */
+main#app.loveroll-surprise-ecrin .surprise-preferences-compact{
+ display:flex;align-items:center;justify-content:center;flex-wrap:wrap;
+ gap:3px 8px;min-width:0;max-width:100%;
+ padding:4px 5px;border-radius:12px;
+ font:500 11px/1.3 system-ui,sans-serif;
+ color:var(--ritual-muted);
+}
+main#app.loveroll-surprise-ecrin .surprise-preferences-compact span{
+ min-width:0;max-width:100%;overflow:hidden;
+ text-overflow:ellipsis;white-space:nowrap;
+}
+main#app.loveroll-surprise-ecrin .surprise-preferences-compact .surprise-geo-text-button{
+ min-height:44px;min-width:64px;
+ padding:8px 10px;color:var(--control-text);font-weight:650;
+}
+@media(max-width:390px){
+ main#app.loveroll-surprise-ecrin .surprise-preferences-compact{
+  gap:0 7px;font-size:10px;
+ }
+ main#app.loveroll-surprise-ecrin .surprise-preferences-compact span:first-child{
+  max-width:65%;
+ }
+}
+
+
+main#app.loveroll-surprise-ecrin .surprise-preferences-compact .surprise-month-phase{
+ flex-basis:100%;text-align:center;min-width:0;
+ color:var(--ritual-text);font:650 12px/1.35 system-ui,sans-serif;
+ letter-spacing:.03em;
+}
+@media(max-width:767px) and (max-height:700px){
+ main#app.has-surprise-minimal .surprise-minimal-status .surprise-preferences-compact{
+  gap:0 4px;padding:0;font-size:10px;
+ }
+ main#app.has-surprise-minimal .surprise-minimal-status .surprise-month-phase{
+  font-size:11px;
+ }
+}
+
+
+/* Optional editorial moment: collapsed by default, never crowds the D100. */
+main#app.loveroll-surprise-ecrin .surprise-weekly-idea{
+ min-width:0;padding:0;border:1px solid var(--control-border);
+ border-radius:13px;background:var(--ritual-card);color:var(--ritual-text);
+}
+main#app.loveroll-surprise-ecrin .surprise-weekly-idea>summary{
+ display:flex;align-items:center;min-height:44px;padding:9px 12px;
+ cursor:pointer;color:var(--ritual-text);font:600 13px/1.35 system-ui,sans-serif;
+}
+main#app.loveroll-surprise-ecrin .surprise-weekly-idea>summary:focus-visible{
+ outline:3px solid var(--lr-control-focus);outline-offset:2px;border-radius:13px;
+}
+main#app.loveroll-surprise-ecrin .surprise-weekly-idea-content{
+ display:grid;gap:6px;min-width:0;padding:0 12px 12px;
+}
+main#app.loveroll-surprise-ecrin .surprise-weekly-idea-content strong{
+ font:500 clamp(17px,4vw,22px)/1.2 Georgia,serif;color:var(--ritual-text);
+}
+main#app.loveroll-surprise-ecrin .surprise-weekly-idea-content p,
+main#app.loveroll-surprise-ecrin .surprise-weekly-idea-content small{
+ margin:0;color:var(--ritual-muted);font:400 12px/1.45 system-ui,sans-serif;
+ overflow-wrap:anywhere;
+}
+
+
+/* One optional, private, signed couple-memory image per person. */
+main#app.loveroll-surprise-ecrin .surprise-memory-photo-tools{
+ display:grid;gap:7px;min-width:0;margin-top:4px;padding:10px 0 0;
+ border-top:1px solid var(--control-border);
+}
+main#app.loveroll-surprise-ecrin .surprise-memory-photo-tools input[type=file]{
+ min-width:0;max-width:100%;padding:9px 7px;border-radius:10px;
+ border:1px solid var(--control-border);background:var(--control-secondary);
+ color:var(--control-text);font:400 12px/1.4 system-ui,sans-serif;
+}
+main#app.loveroll-surprise-ecrin .surprise-memory-photo-tools input[type=file]::file-selector-button{
+ min-height:40px;margin-right:9px;padding:7px 10px;
+ border:1px solid var(--control-border);border-radius:8px;
+ background:var(--control-primary);color:var(--control-text);
+}
+main#app.loveroll-surprise-ecrin .surprise-memory-photo{
+ display:block;width:100%;max-width:320px;max-height:200px;
+ object-fit:contain;object-position:center;border-radius:12px;
+ border:1px solid var(--control-border);
+}
+main#app.loveroll-surprise-ecrin .surprise-partner-memory{
+ display:grid;gap:7px;min-width:0;
+}
+main#app.loveroll-surprise-ecrin .surprise-memory-photo-tools :focus-visible{
+ outline:3px solid var(--lr-control-focus);outline-offset:2px;
+}

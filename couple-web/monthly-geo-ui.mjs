@@ -23,32 +23,45 @@ const finiteProviderNumber=value=>{
  const number=Number(value);
  return Number.isFinite(number)?number:null;
 };
+// Verified routing ETA (Geoapify matrix seconds). Zero is valid; unknown is not.
+export function verifiedDriveTimeLabel(value){
+ const n=finiteProviderNumber(value);
+ if(n===null||n<0||n>86400)return null;
+ const minutes=Math.round(n/60);
+ if(minutes===0)return 'moins d’une minute';
+ if(minutes<60)return minutes+' min';
+ const hours=Math.floor(minutes/60),rest=minutes%60;
+ return hours+' h'+(rest?' '+rest+' min':'');
+}
 export function geoPhoto(venue){
  const src=https(venue?.photo_url);
  return src?'<img class="surprise-geo-photo" alt="Photo du lieu : '+esc(venue.name)+'" src="'+esc(src)+'" loading="lazy" referrerpolicy="no-referrer">':
  '<div class="surprise-geo-photo-placeholder" aria-label="Photo du lieu non disponible">♡<small>Photo du lieu non disponible</small></div>';
 }
 export function monthlyGeoCardHtml({
- venue=null,lookup='idle',enabled=false,host=null,canReserve=false,reservation=null,editing=false,
- locale='fr-CA',experienceTitle=''
+ venue=null,lookup='idle',enabled=false,host=null,canReserve=false,reservation=null,editing=false,adapting=false,budgetLimited=false,
+ locale='fr-CA',experienceTitle='',agreedDate=null
 }={}){
- if(!enabled)return '';
+ if(!enabled&&(!reservation||reservation.status==='cancelled'))return '';
  let body='';
  // A named POI is not a verified driving destination until its road route
  // is confirmed. Do not offer GPS/site booking as a resolved Surprise venue
  // when the provider's matrix was empty, unreachable or invalid.
  const roadMetres=finiteProviderNumber(venue?.driving_meters);
  const roadVerified=roadMetres!==null&&roadMetres>=0;
- if(venue?.state==='ready'&&venue?.place_id&&venue?.name&&roadVerified){
+ if(enabled&&venue?.state==='ready'&&venue?.place_id&&venue?.name&&roadVerified){
   const lat=finiteProviderNumber(venue.latitude),lon=finiteProviderNumber(venue.longitude),
    gps=lat!==null&&lon!==null&&Math.abs(lat)<=90&&Math.abs(lon)<=180?
     'https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(lat+','+lon):null;
   const site=https(venue.website_url),booking=https(venue.booking_url),menu=https(venue.menu_url);
   const distance=Math.round(roadMetres/100)/10;
+  const driveTime=verifiedDriveTimeLabel(venue.driving_seconds);
   body='<div class="surprise-geo-venue">'+geoPhoto(venue)+
     '<div class="surprise-geo-venue-info"><strong>'+esc(venue.name)+'</strong>'+
     (venue.address?'<span>'+esc(venue.address)+'</span>':'')+
+    (experienceTitle?'<small class="surprise-geo-activity-verification">Activité tirée : '+esc(experienceTitle)+'. Confirmez auprès du lieu qu’il offre cette activité précise avant de réserver.</small>':'')+
     (distance!==null?'<small>'+esc(distance.toLocaleString(locale))+' km par la route</small>':'')+
+    (driveTime!==null?'<small>Environ '+esc(driveTime)+' en voiture · hors trafic en temps réel</small>':'')+
     '</div><div class="surprise-geo-links">'+a(gps,'⌖ GPS')+
     (canReserve?a(booking,'♡ Réserver auprès du lieu'):'')+
     a(menu,'☷ Menu / activités')+
@@ -56,13 +69,16 @@ export function monthlyGeoCardHtml({
     (!canReserve&&host?'<p class="surprise-geo-muted">♡ '+esc(host)+' organise la réservation et le paiement.</p>':'')+
     '</div>';
  }else{
-  const message=lookup==='loading'||lookup==='pending'?'Recherche d’un vrai lieu à proximité…':
+  const message=!enabled?'La recherche locale est désactivée. Votre sortie enregistrée reste disponible.':
+   lookup==='loading'||lookup==='pending'?'Recherche d’un vrai lieu à proximité…':
    lookup==='error'?'Geoapify n’est pas encore disponible. Votre activité D100 reste enregistrée.':
+   lookup==='retry_exhausted'?'La recherche a rencontré plusieurs erreurs. Réessayez manuellement après 15 minutes; votre D100 reste enregistré.':
+   lookup==='retry_limit_reached'?'La limite de recherches Geoapify pour ce mois est atteinte. Votre D100 reste enregistré et aucune autre recherche payante ne sera lancée.':
    lookup==='unavailable'?'Aucun établissement avec trajet routier vérifié dans votre rayon. Votre activité D100 est conservée.':
    venue?.state==='ready'&&!roadVerified?'Le trajet routier vers ce lieu n’est pas vérifié. Votre activité D100 est conservée.':
    'Votre activité D100 est enregistrée. La recherche locale se lance automatiquement.';
   body='<div class="surprise-geo-pending" role="status">'+esc(message)+'</div>'+
-   (lookup==='error'?'<button type="button" class="surprise-geo-text-button" data-action="geo-retry">Réessayer la recherche</button>':'');
+   (enabled&&['error','retry_exhausted'].includes(lookup)?'<button type="button" class="surprise-geo-text-button" data-action="geo-retry">Réessayer la recherche</button>':'');
  }
  let bookingHtml='';
  if(reservation&&reservation.status!=='cancelled'){
@@ -71,7 +87,8 @@ export function monthlyGeoCardHtml({
    '</strong>'+
    (reservation.venue_name?'<span class="surprise-geo-reserved-place">'+esc(reservation.venue_name)+'</span>':'')+
    (reservation.venue_address?'<small>'+esc(reservation.venue_address)+'</small>':'')+
-   '<span>'+esc(humanDate(reservation.reserved_for,locale))+'</span>'+
+   (reservation.notes?'<small class="surprise-geo-reserved-note">'+esc(reservation.notes)+'</small>':'')+
+   '<span>'+esc(humanDate(reservation.reserved_for,locale))+'</span>'+ 
    '<small>'+(reservation.paid_by_host?'Paiement déclaré effectué par la personne qui invite':'Paiement non confirmé dans LoveRoll')+
    '</small><small>'+(reservation.status==='confirmed'?
     'Les rappels dépendent de leur programmation et de vos notifications.':
@@ -82,16 +99,27 @@ export function monthlyGeoCardHtml({
    '<button type="button" data-action="geo-booking-editor" class="surprise-primary">'+
    (editing?'Fermer la planification':reservation&&reservation.status!=='cancelled'?'Modifier ma réservation':'Enregistrer ma réservation')+
    '</button>'+
+   '<button type="button" data-action="geo-booking-adapt" class="surprise-geo-text-button">'+
+   (editing&&adapting?'Fermer l’adaptation':'Adapter la sortie')+'</button>'+ 
    (reservation&&reservation.status!=='cancelled'?'<button type="button" data-action="geo-booking-cancel" class="surprise-geo-text-button">Annuler la réservation dans LoveRoll</button>':'')+
    (editing?'<div class="surprise-geo-booking-form">'+
    '<label for="geo-booking-date">Date et heure de la sortie</label>'+
-   '<input id="geo-booking-date" type="datetime-local" value="'+esc(localBookingDateTime(reservation?.reserved_for))+'" required>'+
+   '<input id="geo-booking-date" type="datetime-local" value="'+esc(localBookingDateTime(reservation?.reserved_for||agreedDate))+'" required>'+
    '<label for="geo-booking-name">Nom de l’établissement</label>'+
-   '<input id="geo-booking-name" maxlength="140" value="'+esc(reservation?.venue_name||venue?.name||'')+'" required>'+
+   '<input id="geo-booking-name" maxlength="140" value="'+esc(adapting?'':reservation?.venue_name||venue?.name||'')+'" required>'+ 
    '<label for="geo-booking-address">Adresse (facultative)</label>'+
-   '<input id="geo-booking-address" maxlength="240" value="'+esc(reservation?.venue_address||venue?.address||'')+'">'+
-   '<label class="surprise-geo-check"><input id="geo-booking-confirmed" type="checkbox"'+(reservation?.status==='confirmed'?' checked':'')+'> J’ai effectué la réservation auprès de l’établissement</label>'+
-   '<label class="surprise-geo-check"><input id="geo-booking-paid" type="checkbox"'+(reservation?.paid_by_host?' checked':'')+'> J’ai payé la réservation</label>'+
+   '<input id="geo-booking-address" maxlength="240" value="'+esc(adapting?'':reservation?.venue_address||venue?.address||'')+'">'+
+   (adapting?'<label for="geo-adapt-reason">Pourquoi adapter ?</label>'+
+    '<select id="geo-adapt-reason" required><option value="">Choisir une raison</option>'+
+    '<option value="visited">Déjà visité</option><option value="closed">Lieu fermé</option>'+
+    '<option value="far">Trop loin</option><option value="expensive">Trop cher</option>'+
+    '<option value="other">Autre idée à deux</option></select>'+
+    '<p class="surprise-geo-muted">Ce lieu est choisi par vous, et non vérifié par Geoapify. Vérifiez son adresse, le trajet, les prix et les disponibilités.</p>'+
+    (reservation&&reservation.status!=='cancelled'?'<p class="surprise-geo-muted">La réservation extérieure précédente ne sera pas annulée automatiquement.</p>':''):'')+
+   (experienceTitle?'<label class="surprise-geo-check"><input id="geo-booking-activity-ack" type="checkbox"> J’ai vérifié que l’établissement propose notre activité D100 (ou la variante que nous avons choisie). Requis pour confirmer une réservation.</label>':'')+
+   '<label class="surprise-geo-check"><input id="geo-booking-confirmed" type="checkbox"'+(reservation?.status==='confirmed'&&!adapting?' checked':'')+'> J’ai effectué la réservation auprès de l’établissement</label>'+
+   '<label class="surprise-geo-check"><input id="geo-booking-paid" type="checkbox"'+(reservation?.paid_by_host&&!adapting?' checked':'')+'> J’ai payé la réservation</label>'+
+   (budgetLimited?'<label class="surprise-geo-check"><input id="geo-booking-budget-ack" type="checkbox"> J’accepte de préparer cette sortie même si son prix réel n’est pas confirmé par Geoapify et pourrait dépasser notre budget.</label>':'')+
    '<p class="surprise-geo-muted">LoveRoll ne réserve ni ne prélève d’argent : confirmez ici votre réservation externe.</p>'+
    '<button type="button" data-action="geo-booking-save" class="surprise-primary">Enregistrer la date</button></div>':'')+
    '</div>';
@@ -101,7 +129,7 @@ export function monthlyGeoCardHtml({
  return '<section class="surprise-geo-card" aria-label="Lieu réel de notre activité">'+
   '<div class="surprise-geo-eyebrow">♡ NOTRE LIEU DU MOIS</div>'+
   body+bookingHtml+
-  '<p class="surprise-geo-credit">Lieux et distances : données Geoapify / OpenStreetMap. Photos, menus, prix et réservations selon les informations disponibles.</p></section>';
+  '<p class="surprise-geo-credit">Lieux et distances : données <a href="https://www.geoapify.com/" target="_blank" rel="noopener noreferrer">Geoapify</a> et <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors</a>. Photos, menus, prix et réservations selon les informations disponibles.</p></section>';
 }
 
 /**
@@ -127,7 +155,7 @@ export function createBookingMutationGate(){
 export function geoLookupAfterRefresh({rollId,previousRollId,venue,previousLookup}={}){
  if(!rollId)return 'idle';
  if(venue?.state)return venue.state;
- return rollId===previousRollId&&['pending','error'].includes(previousLookup)?
+ return rollId===previousRollId&&['pending','error','retry_exhausted','retry_limit_reached'].includes(previousLookup)?
   previousLookup:'idle';
 }
 

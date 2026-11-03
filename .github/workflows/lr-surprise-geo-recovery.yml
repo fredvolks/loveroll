@@ -1,0 +1,78 @@
+name: LoveRoll Surprise Geoapify recovery
+on:
+  pull_request:
+    paths:
+      - 'couple-web/lr-surprise-geo-retry.test.mjs'
+      - 'couple-web/lr-surprise-optional-radius.test.mjs'
+      - 'couple-web/lr-surprise-budget.test.mjs'
+      - 'couple-web/lr-surprise-adaptation.test.mjs'
+      - 'couple-web/lr-surprise-date-agreement.test.mjs'
+      - 'couple-web/lr-surprise-completion.test.mjs'
+      - 'couple-web/lr-surprise-preferences-strip.test.mjs'
+      - 'couple-web/lr-surprise-monthly-phase.test.mjs'
+      - 'couple-web/lr-surprise-short-mobile.test.mjs'
+      - 'couple-web/lr-surprise-weekly-idea.test.mjs'
+      - 'couple-web/lr-surprise-private-photo.test.mjs'
+      - 'couple-web/lr-surprise-driving-time.test.mjs'
+      - 'couple-web/lr-surprise-activity-compatibility.test.mjs'
+      - 'couple-web/monthly-private-photo.mjs'
+      - 'couple-web/weekly-surprise-idea.mjs'
+      - 'couple-web/surprise-minimal.css'
+      - 'couple-web/monthly-surprise-phase.mjs'
+      - 'couple-web/monthly-geo-ui.css'
+      - 'couple-web/monthly-completion.mjs'
+      - 'couple-web/monthly-date-plan.mjs'
+      - 'couple-web/premium-surprise.mjs'
+      - 'couple-web/world-preferences.mjs'
+      - 'couple-web/monthly-geo-ui.mjs'
+      - 'couple-web/monthly-geo-ui.test.mjs'
+      - 'couple-web/app.js'
+      - 'supabase/functions/love-geo-surprise/**'
+      - 'couple-web/migrations/*lr_surprise_*'
+      - '.github/workflows/lr-surprise-geo-recovery.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  geo-recovery:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate syntax and isolated outage retry contracts
+        run: |
+          set -euo pipefail
+          node --check couple-web/app.js
+          node --check couple-web/monthly-geo-ui.mjs
+          node --check supabase/functions/love-geo-surprise/retry-policy.mjs
+          node --test couple-web/lr-surprise-geo-retry.test.mjs
+          node --test couple-web/lr-surprise-optional-radius.test.mjs
+          node --test couple-web/lr-surprise-budget.test.mjs
+          node --test couple-web/lr-surprise-adaptation.test.mjs
+          node --check couple-web/monthly-date-plan.mjs
+          node --test couple-web/lr-surprise-date-agreement.test.mjs
+          node --check couple-web/monthly-completion.mjs
+          node --test couple-web/lr-surprise-completion.test.mjs
+          node --test couple-web/lr-surprise-preferences-strip.test.mjs
+          node --check couple-web/monthly-surprise-phase.mjs
+          node --test couple-web/lr-surprise-monthly-phase.test.mjs
+          node --test couple-web/lr-surprise-short-mobile.test.mjs
+          node --check couple-web/weekly-surprise-idea.mjs
+          node --test couple-web/lr-surprise-weekly-idea.test.mjs
+          node --check couple-web/monthly-private-photo.mjs
+          node --test couple-web/lr-surprise-private-photo.test.mjs
+          node --test couple-web/lr-surprise-driving-time.test.mjs
+          node --test couple-web/lr-surprise-activity-compatibility.test.mjs
+          node --test couple-web/world-preferences.test.mjs
+      - name: Install Deno for Supabase Edge compile check
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check Geoapify Edge Function (no deployment or paid requests)
+        run: deno check supabase/functions/love-geo-surprise/index.ts
+      - name: Run existing Surprise integration regressions
+        run: |
+          set -euo pipefail
+          node --test couple-web/monthly-geo-ui.test.mjs

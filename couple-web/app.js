@@ -33,6 +33,7 @@ import {premiumEveningHtml,updateEveningCategoryUi,canRollPersonalEveningD6} fro
 import {eveningHistoryMarkup,eveningLocalDay} from './evening-calendar.mjs?v=20261103-web270';
 import {eveningReviewModal,validEveningReview} from './evening-review.mjs?v=20261016-person-review97';
 import {premiumSurpriseHtml,sixSpecialEvents} from './premium-surprise.mjs?v=20261022-home228';
+import {MEMORY_PHOTO_BUCKET,jpegMemoryPhoto,privateMemoryPath,confirmUploadedMemoryPhoto} from './monthly-private-photo.mjs';
 import {surpriseSlot,surpriseCustom,surpriseTitle,formatSurpriseDateInput,parseSurpriseDateInput} from './surprise-event-config.mjs?v=20261016-surprise109';
 import {loginEmail,loginCode,emailAuthMessage,requireLovePassword,passwordQuality,verifiedLoveEmail,passwordAuthMessage,invitationAuthMessage} from './email-auth.mjs';
 import {demoCoupleHtml,DEMO_TABS} from './demo-couple.mjs';
@@ -50,7 +51,7 @@ import {guidedIdeas,guidanceFor} from './wellbeing.mjs';
 
 import { SPECIAL_SURPRISES,OCCASIONS,occasionDate,dueOccasions,specialSurprise,occasionRoles,TARGETED_OCCASIONS } from './special-occasions.mjs';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.107.0';
-import {worldwideSettingsHtml,localeOrDefault,currencyOrDefault,normalizeSharedTravel,t as worldT} from './world-preferences.mjs';
+import {worldwideSettingsHtml,localeOrDefault,currencyOrDefault,normalizeSharedTravel,parseTravelRadius,parseSurpriseBudget,t as worldT} from './world-preferences.mjs';
 import {cadExchangeRate} from './currency-exchange.mjs';
 import {referralSettingsHtml,referralLink,REFERRAL_CODE_PATTERN,REFERRAL_PENDING_STORAGE_KEY} from './referral-program.mjs?v=20261019-personal171';
 import {enhanceLoveRollSettingsSelects} from './loveroll-premium-pickers.mjs?v=20261019-personal171';
@@ -97,8 +98,11 @@ let settingsOpenSection=requestedSettingsSection||'';
 let notificationFeedback=null;
 let worldGpsDraft=null;
 let worldFx=null,worldFxPending=null,worldFxFailed=null;
-let geoFetchActive=null,geoFetchNextAt=new Map();
+let geoFetchActive=null,geoFetchNextAt=new Map(),geoManualRetryRollId=null;
 const geoBookingMutationGate=createBookingMutationGate();
+const geoDateMutationGate=createBookingMutationGate();
+const geoCompletionMutationGate=createBookingMutationGate();
+const geoPhotoMutationGate=createBookingMutationGate();
 const worldGeoEnabled=()=>state.couple?.activity_localization_enabled===true&&!!state.monthly?.monthly_activity&&state.monthly.monthly_activity.activity_region===null;
 const currentHost=()=>{const h=state.monthly?.monthly_host;return h?state.members[h.face%2===0?0:1]:null;};
 const worldLocale=()=>localeOrDefault(state.profile?.preferred_locale);
@@ -106,7 +110,7 @@ const worldText=key=>worldT(worldLocale(),key);
 const state={user:null,profile:null,members:[],coupleId:null,couple:null,
  tab:launchParams.has('settings')?'settings':(['home','session','special','advent'].includes(launchParams.get('open'))?launchParams.get('open'):'home'),weekly:null,monthly:{},session:null,personal:[],challenges:[],gifts:[],rollStatus:null,customCards:[],customCategory:'SENSUEL',customSlot:1,customSearch:'',customFilter:'all',monthlyActivities:[],monthlySlot:1,libraryScreen:'list',libraryImportKind:null,specialEditorKey:null,specialEditorStage:'D6_activite',specialEditorFace:1,adventEditorDay:1,pushDevice:null,
  events:[],journal:[],advent:[],advent2026Config:null,advent2026Days:[],selectedDay:1,adventYear:null,adventSelected:null,adventHistory:false,adventOpening:null,adventRevealing:false,adventServerDate:null,unlockKey:null,channel:null,
- occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningRefusalId:null,redrawReady:false,redrawBusy:false,loveExcludedCards:[],eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],monthlyPassQuota:null,calendarPassMonth:null,eveningFavorites:[],favoritesReady:false,favoriteReplace:null,cycleStatus:null,cycleDeferred:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,eveningInvite:null,eveningInviteBusy:false,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoBookingEdit:false,referral:null,eclat:null,eclatGalleryScroll:0,eclatHistory:[],eclatHistoryCouple:null,eclatBrowse:false,eclatHistoryError:false,eclatSelection:1,eclatMinutes:30,eclatIntent:'all',eclatDetails:false,eclatMusic:false,eclatFinished:null,testModeEligible:false,testMode:'real'};
+ occasionSettings:null,occasionRolls:[],specialEventsConfig:null,specialEventKeys:[],wellbeing:null,guidance:'playful',personalJournal:[],personalPass:null,showAuth:launchParams.has('auth'),authNotice:null,authMode:['signin','request-reset'].includes(launchParams.get('auth'))?launchParams.get('auth'):'signup',authNeedsEmailConfirmation:false,emailVerificationPending:false,authDraftEmail:'',passwordRecovery:launchParams.get('auth')==='recover',inviteError:null,inviteAttemptKey:null,inviteWelcome:false,homeNotices:false,showDiscover:false,inviteAccepted:false,demoMode:false,demoTab:'home',demoRoll:null,demoSurprise:null,demoDay:1,demoChallengeComplete:false,showEveningChallenge:false,showEveningChallenges:false,selectedEveningChallengeId:null,eveningRefusalId:null,redrawReady:false,redrawBusy:false,loveExcludedCards:[],eveningQueueSeen:null,eveningBoard:null,eveningMore:false,eveningHistoryStats:[],eveningCalendarChallenges:[],weeklyRollHistory:[],calendarPassQuota:[],monthlyPassQuota:null,calendarPassMonth:null,eveningFavorites:[],favoritesReady:false,favoriteReplace:null,cycleStatus:null,cycleDeferred:null,eveningReviews:[],reviewModalSessionId:null,reviewDismissedSessionId:null,reviewDraft:{},reviewSaving:false,eveningCalendarMonth:null,eveningCalendarDate:null,showSurpriseActivity:false,surpriseSeason:null,surpriseEditSlot:null,specialFocus:null,diceStatus:null,rollAnimationFace:null,rollAnimationKind:null,category:null,randomMode:false,confirmCancel:false,showInstallSteps:false,installAfterSignup:false,installModalOpen:false,forceInstallGuide:false,invitations:[],inviteDraft:null,inviteCopyFallback:false,eveningInvite:null,eveningInviteBusy:false,challengesHistory:[],jsonPending:null,specialTimerKey:null,pushPrefs:null,geoVenue:null,geoLookup:'idle',geoReservation:null,geoDatePlan:null,geoDatePlanAvailable:false,geoCompletion:null,geoCompletionAvailable:false,geoFeedback:[],geoPhotoUrls:{},geoPhotoSignedAt:0,geoBookingEdit:false,geoBookingAlternative:false,referral:null,eclat:null,eclatGalleryScroll:0,eclatHistory:[],eclatHistoryCouple:null,eclatBrowse:false,eclatHistoryError:false,eclatSelection:1,eclatMinutes:30,eclatIntent:'all',eclatDetails:false,eclatMusic:false,eclatFinished:null,testModeEligible:false,testMode:'real'};
 const names={SENSUEL:'Sensuel',COQUIN:'Coquin',SEXUEL:'Sexuel'};
 function isSharedCoupleReady(coupleId,members){
  return !!coupleId&&Array.isArray(members)&&members.length===2;
@@ -208,6 +212,21 @@ async function query(table,options={}){
  const {data,error}=await q;if(error)throw error;return data;
 }
 
+// Signed links are kept in volatile client state only, never in Supabase rows.
+// Authentication and Storage RLS verify the CURRENT duo on every signature.
+async function signedMonthlyMemoryPhotos(feedback,actor,rollId){
+ const paths=[...new Set((feedback||[]).map(r=>r.photo_path).filter(Boolean))];
+ if(!paths.length)return {};
+ const entries=await Promise.all(paths.map(async path=>{
+  try{
+   const {data,error}=await client.storage.from(MEMORY_PHOTO_BUCKET)
+    .createSignedUrl(path,300);
+   return error||!data?.signedUrl?null:[path,data.signedUrl];
+  }catch{return null;}
+ }));
+ if(state.user?.id!==actor||state.monthly?.monthly_activity?.id!==rollId)return {};
+ return Object.fromEntries(entries.filter(Boolean));
+}
 // Unsaved form text lives ONLY in process memory: no LocalStorage, logs or cloud.
 // It is restored after partner realtime refreshes and activity resume.
 let lastFormTab=null;
@@ -1031,7 +1050,7 @@ async function refreshShared(){
  const activeMonthlyRoll=state.monthly.monthly_activity;
  if(activeMonthlyRoll?.id!==previousRollId){
   // An editor started for last month's invitation cannot save on this roll.
-  state.geoBookingEdit=false;
+  state.geoBookingEdit=false;state.geoBookingAlternative=false;
  }
  if(activeMonthlyRoll){
   const [places,bookings]=await Promise.all([
@@ -1039,9 +1058,25 @@ async function refreshShared(){
    query('love_monthly_reservations',{eq:{roll_id:activeMonthlyRoll.id}})
   ]);
   state.geoVenue=places[0]||null;state.geoReservation=bookings[0]||null;
+  // New agreement table is optional until migration deployment.
+  try{
+   state.geoDatePlan=(await query('love_monthly_date_plans',{eq:{roll_id:activeMonthlyRoll.id}}))[0]||null;
+   state.geoDatePlanAvailable=true;
+  }catch{state.geoDatePlan=null;state.geoDatePlanAvailable=false;}
+  try{
+   const [completion,feedback]=await Promise.all([
+    query('love_monthly_completions',{eq:{roll_id:activeMonthlyRoll.id}}),
+    query('love_monthly_feedback',{eq:{roll_id:activeMonthlyRoll.id}})
+   ]);
+   state.geoCompletion=completion[0]||null;
+   state.geoFeedback=feedback||[];
+   state.geoPhotoUrls=await signedMonthlyMemoryPhotos(feedback,state.user?.id,activeMonthlyRoll.id);
+   state.geoPhotoSignedAt=Date.now();
+   state.geoCompletionAvailable=true;
+  }catch{state.geoCompletion=null;state.geoFeedback=[];state.geoPhotoUrls={};state.geoPhotoSignedAt=0;state.geoCompletionAvailable=false;}
   state.geoLookup=geoLookupAfterRefresh({rollId:activeMonthlyRoll.id,
    previousRollId,venue:state.geoVenue,previousLookup:previousGeoLookup});
- }else{state.geoVenue=null;state.geoReservation=null;state.geoLookup='idle';state.geoBookingEdit=false;}
+ }else{state.geoVenue=null;state.geoReservation=null;state.geoLookup='idle';state.geoDatePlan=null;state.geoDatePlanAvailable=false;state.geoCompletion=null;state.geoFeedback=[];state.geoPhotoUrls={};state.geoPhotoSignedAt=0;state.geoCompletionAvailable=false;state.geoBookingEdit=false;state.geoBookingAlternative=false;}
  state.session=sessions.find(s=>s.finished_at===null)||null;
  state.sessions=sessions;state.events=events;state.journal=diary;state.advent=advents;state.adventServerDate=adventServerDate;
  // After manual/automatic closure, both partners see their own review bubble.
@@ -1905,6 +1940,9 @@ function optionalRolledTimer(roll){
 }
 async function resolveMonthlyGeo(){
  const roll=state.monthly?.monthly_activity,ownerId=state.user?.id;
+ // Only a direct retry action may request a new bounded server claim.
+ const manual=!!roll&&geoManualRetryRollId===roll.id;
+ geoManualRetryRollId=null;
  if(!ownerId||!worldGeoEnabled()||!roll||state.geoVenue?.state==='ready'||
     state.geoVenue?.state==='unavailable'||state.geoLookup==='unavailable')return;
  const now=Date.now();
@@ -1916,12 +1954,14 @@ async function resolveMonthlyGeo(){
  if(state.tab==='special'&&state.showSurpriseActivity)render();
  const stillCurrent=()=>state.user?.id===ownerId&&state.monthly?.monthly_activity?.id===roll.id;
  try{
-  const {data,error}=await client.functions.invoke('love-geo-surprise',{body:{roll_id:roll.id}});
+  const {data,error}=await client.functions.invoke('love-geo-surprise',{body:{roll_id:roll.id,retry:manual}});
   if(error)throw error;
   if(data?.error)throw Error(data.error);
   if(!stillCurrent())return;
   if(data?.status==='ready'&&data.venue){state.geoVenue=data.venue;state.geoLookup='ready';}
   else if(data?.status==='unavailable')state.geoLookup='unavailable';
+  else if(data?.status==='retry_exhausted')state.geoLookup='retry_exhausted';
+  else if(data?.status==='retry_limit_reached')state.geoLookup='retry_limit_reached';
   else if(data?.status==='disabled'){
    state.geoLookup='idle';geoFetchNextAt.set(roll.id,Date.now()+60000);
   }else if(data?.status==='pending'){
@@ -1938,6 +1978,57 @@ async function resolveMonthlyGeo(){
   if(stillCurrent()&&state.tab==='special'&&state.showSurpriseActivity)render();
  }
 }
+// Sync the couple's accepted date and private memories only while Surprise is open.
+// These tiny Supabase reads do NOT call Geoapify, redraw the D100 or bill the user.
+let geoDatePollActive=false;
+setInterval(async()=>{
+ const actor=state.user?.id,rollId=state.monthly?.monthly_activity?.id;
+ if(!actor||!rollId||(!state.geoDatePlanAvailable&&!state.geoCompletionAvailable)||
+    state.tab!=='special'||!state.showSurpriseActivity||document.hidden||
+    geoDatePollActive)return;
+ geoDatePollActive=true;
+ const current=()=>state.user?.id===actor&&state.monthly?.monthly_activity?.id===rollId;
+ let changed=false;
+ try{
+  if(state.geoDatePlanAvailable){
+   try{
+    const latest=(await query('love_monthly_date_plans',{eq:{roll_id:rollId}}))[0]||null;
+    if(!current())return;
+    const before=state.geoDatePlan;
+    if((latest?.version??0)!==(before?.version??0)||
+       (latest?.proposed_for||'')!==(before?.proposed_for||'')){
+     state.geoDatePlan=latest;changed=true;
+    }
+   }catch{ /* Optional date migration may be unavailable. */ }
+  }
+  if(state.geoCompletionAvailable){
+   try{
+    const [completed,feedback]=await Promise.all([
+     query('love_monthly_completions',{eq:{roll_id:rollId}}),
+     query('love_monthly_feedback',{eq:{roll_id:rollId}})
+    ]);
+    if(!current())return;
+    const completion=completed[0]||null;
+    const before=state.geoCompletion;
+    const fingerprint=list=>(list||[]).map(item=>[
+      item.author_id,item.rating,item.memory_text,item.photo_path,item.updated_at
+    ].join(':')).sort().join('|');
+    const photosChanged=fingerprint(feedback)!==fingerprint(state.geoFeedback);
+    const photoExpired=Date.now()-state.geoPhotoSignedAt>240000 &&
+      (feedback||[]).some(row=>!!row.photo_path);
+    if((completion?.completed_at||'')!==(before?.completed_at||'')||photosChanged){
+     state.geoCompletion=completion;state.geoFeedback=feedback||[];changed=true;
+    }
+    if(photosChanged||photoExpired){
+     state.geoPhotoUrls=await signedMonthlyMemoryPhotos(feedback,actor,rollId);
+     state.geoPhotoSignedAt=Date.now();
+     changed=true;
+    }
+   }catch{ /* Optional memories migration may be unavailable. */ }
+  }
+  if(changed&&current())render();
+ }finally{geoDatePollActive=false;}
+},30000);
 // Pending means the server has accepted a single claim, not that discovery
 // finished. Poll only while the activity screen is actually being viewed.
 setInterval(()=>{
@@ -1962,9 +2053,19 @@ function renderSpecial(){
  frame(premiumSurpriseHtml({
    monthly,members:state.members,settings:state.occasionSettings||{},
    activity,currency:quote,locale:worldLocale(),exchange:worldFx?.quote===quote?worldFx:null,
+   budgetMax:state.couple?.surprise_budget_max??null,
+   budgetCurrency:state.couple?.surprise_budget_currency||'CAD',
+   travelRadiusKm:state.couple?.travel_radius_km??null,
+   travelOriginLabel:state.couple?.travel_origin_label||'',
+   datePlan:state.geoDatePlanAvailable?state.geoDatePlan:null,
+   datePlanAvailable:state.geoDatePlanAvailable,
+   viewerId:state.user?.id||null,
+   completionAvailable:state.geoCompletionAvailable,
+   completion:state.geoCompletion,monthlyFeedback:state.geoFeedback,
+   monthlyPhotoUrls:state.geoPhotoUrls,
    geoEnabled:worldGeoEnabled(),geoVenue:state.geoVenue,geoLookup:state.geoLookup,
    reservation:state.geoReservation,canReserve:currentHost()?.user_id===state.user?.id,
-   bookingEditor:state.geoBookingEdit,
+   bookingEditor:state.geoBookingEdit,bookingAlternative:state.geoBookingAlternative,
    timerHtml:state.showSurpriseActivity&&activity?.timer_minutes?
     timerWidget({id:'monthly-'+month()},activity.timer_minutes):'',
    rolling:!!state.diceStatus,rollingKind,rollFace:state.rollAnimationFace,
@@ -2896,7 +2997,7 @@ async function handle(action,element){
  if(verb==='save-world-duo'){
   if(!state.coupleId||!state.couple)throw Error('Un duo est nécessaire.');
   const label=String(id('world-origin')?.value||'').trim();
-  const radius=Number(id('world-radius')?.value);
+  const radius=parseTravelRadius(id('world-radius')?.value);
   const enabled=!!id('world-local-enabled')?.checked;
   const sameAsBefore=label===String(state.couple.travel_origin_label||'').trim();
   const draftMatches=!!worldGpsDraft&&label==='GPS ≈ '+worldGpsDraft.lat.toFixed(2)+', '+worldGpsDraft.lon.toFixed(2);
@@ -2912,6 +3013,19 @@ async function handle(action,element){
   });
   state.couple={...state.couple,...data};worldGpsDraft=null;
   render();notify(worldText('saved'));return;
+ }
+ if(verb==='save-world-budget'){
+  if(!state.coupleId||!state.couple||!state.user)throw Error('Un duo connecté est nécessaire.');
+  const amount=parseSurpriseBudget(id('world-budget')?.value??'');
+  const currency=currencyOrDefault(id('world-budget-currency')?.value);
+  // A separate atomic RPC avoids partial writes when travel preferences are saved.
+  // Authenticated duo membership and the amount/currency are checked again in SQL.
+  await rpc('save_love_surprise_budget',{
+   p_couple:state.coupleId,p_budget:amount,p_currency:currency
+  });
+  state.couple={...state.couple,surprise_budget_max:amount,
+   surprise_budget_currency:currency};
+  render();notify('Budget du duo enregistré. Les prix des lieux restent à vérifier.');return;
  }
  if(verb==='editor-back'){state.libraryScreen='list';render();return;}
  if(verb==='editor-import'){
@@ -3270,7 +3384,7 @@ async function handle(action,element){
   return;
  }
  if(verb==='surprise-activity'){
-  state.showSurpriseActivity=!state.showSurpriseActivity;state.geoBookingEdit=false;
+  state.showSurpriseActivity=!state.showSurpriseActivity;state.geoBookingEdit=false;state.geoBookingAlternative=false;
   render();
   if(state.showSurpriseActivity&&worldGeoEnabled()){geoFetchNextAt.delete(state.monthly.monthly_activity.id);void resolveMonthlyGeo();}
   return;
@@ -3280,11 +3394,180 @@ async function handle(action,element){
   const rollId=state.monthly.monthly_activity.id;
   if(geoFetchActive===rollId){notify('Recherche déjà en cours.');return;}
   geoFetchNextAt.delete(rollId);
+  geoManualRetryRollId=rollId;
   void resolveMonthlyGeo();return;
+ }
+ if(verb==='geo-complete'){
+  if(!state.geoCompletionAvailable||!state.user?.id||!state.monthly?.monthly_activity?.id)
+   throw Error('Les souvenirs de Surprise ne sont pas encore disponibles.');
+  if(state.geoCompletion){notify('Votre sortie est déjà marquée comme réalisée.');return;}
+  const actor=state.user.id,rollId=state.monthly.monthly_activity.id;
+  if(!(await premiumConfirm('Marquer cette sortie comme réalisée pour vous deux ? Cela ne réserve ni ne paie rien auprès du lieu.',{
+   kind:'library',title:'On l’a fait ♥',accept:'Oui, on l’a fait',cancel:'Pas encore'})))return;
+  if(state.user?.id!==actor||state.monthly?.monthly_activity?.id!==rollId)return;
+  const done=await geoCompletionMutationGate(async()=>{
+   const completion=await rpc('mark_love_monthly_completed',{p_roll:rollId});
+   if(state.user?.id!==actor||state.monthly?.monthly_activity?.id!==rollId)return;
+   state.geoCompletion=completion;
+   if(!await refreshAfterConfirmedWrite(refreshAndShow)){
+    if(state.user?.id!==actor||state.monthly?.monthly_activity?.id!==rollId)return;
+    render();
+    notify('Sortie réalisée enregistrée. Synchronisation complète à la reconnexion.');
+   }
+  });
+  if(!done)notify('Un enregistrement de souvenir est déjà en cours.');
+  return;
+ }
+ if(verb==='geo-photo-save'){
+  if(!state.geoCompletionAvailable||!state.geoCompletion||!state.user?.id||
+     !state.monthly?.monthly_activity?.id)
+   throw Error('Marquez d’abord la sortie comme réalisée.');
+  const file=id('geo-photo-input')?.files?.[0];
+  if(!file)throw Error('Choisissez une photo avant de l’ajouter.');
+  const actor=state.user.id,rollId=state.monthly.monthly_activity.id;
+  const original=state.geoFeedback.find(r=>r.author_id===actor)?.photo_path||null;
+  const done=await geoPhotoMutationGate(async()=>{
+   const jpeg=await jpegMemoryPhoto(file);
+   if(state.user?.id!==actor||state.monthly?.monthly_activity?.id!==rollId)return;
+   const path=privateMemoryPath(actor,rollId,crypto.randomUUID());
+   const bucket=client.storage.from(MEMORY_PHOTO_BUCKET);
+   const {error:uploadError}=await bucket.upload(path,jpeg,{
+    contentType:'image/jpeg',upsert:false,cacheControl:'300'
+   });
+   if(uploadError)throw Error('Envoi photo indisponible : '+uploadError.message);
+   // Only an aborted upload before the linking RPC is certainly uncommitted.
+   if(state.user?.id!==actor||state.monthly?.monthly_activity?.id!==rollId){
+    try{await bucket.remove([path]);}catch{}
+    return;
+   }
+   // A rejected/timeout response from the RPC can conceal a committed write.
+   // Do not remove the object after contacting the server: it may be linked.
+   await confirmUploadedMemoryPhoto({
+    link:()=>rpc('save_love_monthly_photo',{p_roll:rollId,p_path:path}),
+    preview:async saved=>{
+     if(state.user?.id!==actor||state.monthly?.monthly_activity?.id!==rollId)return;
+     state.geoFeedback=[...state.geoFeedback.filter(r=>r.author_id!==actor),saved];
+     state.geoPhotoUrls=await signedMonthlyMemoryPhotos(state.geoFeedback,actor,rollId);
+     state.geoPhotoSignedAt=Date.now();
+    },
+    onPreviewError:error=>{
+     console.warn('Photo privée enregistrée, aperçu à resynchroniser',error);
+     if(state.user?.id===actor&&state.monthly?.monthly_activity?.id===rollId)
+      state.geoPhotoSignedAt=0;
+    }
+   });
+   if(original&&original!==path){
+    // Removing the old object is best-effort; the old signed URL expires
+    // and its metadata is no longer readable after the new RPC succeeds.
+    try{await bucket.remove([original]);}catch{}
+   }
+   if(state.user?.id!==actor||state.monthly?.monthly_activity?.id!==rollId)return;
+   if(!await refreshAfterConfirmedWrite(refreshAndShow)){
+    if(state.user?.id!==actor||state.monthly?.monthly_activity?.id!==rollId)return;
+    render();notify('Photo privée enregistrée. Reconnectez-vous pour confirmer la synchronisation.');
+   }
+  });
+  if(!done)notify('Une autre photo est déjà en cours d’enregistrement.');
+  return;
+ }
+ if(verb==='geo-photo-delete'){
+  if(!state.geoCompletionAvailable||!state.user?.id||!state.monthly?.monthly_activity?.id)
+   throw Error('Aucun souvenir accessible.');
+  const actor=state.user.id,rollId=state.monthly.monthly_activity.id;
+  const own=state.geoFeedback.find(r=>r.author_id===actor);
+  if(!own?.photo_path)return;
+  if(!(await premiumConfirm('Retirer votre photo souvenir privée ? Votre texte et votre note seront conservés.',{
+   kind:'library',title:'Retirer ma photo ?',accept:'Retirer la photo',cancel:'Conserver'})))return;
+  if(state.user?.id!==actor||state.monthly?.monthly_activity?.id!==rollId)return;
+  const done=await geoPhotoMutationGate(async()=>{
+   const removedPath=await rpc('delete_love_monthly_photo',{p_roll:rollId});
+   if(state.user?.id!==actor||state.monthly?.monthly_activity?.id!==rollId)return;
+   state.geoFeedback=state.geoFeedback.map(r=>r.author_id===actor?{...r,photo_path:null}:r)
+    .filter(r=>r.author_id!==actor||r.rating!==null||String(r.memory_text||'').trim());
+   delete state.geoPhotoUrls[removedPath];
+   let clean=true;
+   if(removedPath){
+    const {error}=await client.storage.from(MEMORY_PHOTO_BUCKET).remove([removedPath]);
+    clean=!error;
+   }
+   if(!await refreshAfterConfirmedWrite(refreshAndShow)){
+    if(state.user?.id!==actor||state.monthly?.monthly_activity?.id!==rollId)return;
+    render();
+    notify(clean?'Photo retirée de LoveRoll.':'Photo masquée dans LoveRoll; nettoyage du fichier à vérifier.');
+   }
+  });
+  if(!done)notify('Une autre opération photo est déjà en cours.');
+  return;
+ }
+ if(verb==='geo-memory-save'){
+  if(!state.geoCompletionAvailable||!state.geoCompletion||!state.user?.id||
+     !state.monthly?.monthly_activity?.id)
+   throw Error('Marquez d’abord la sortie comme réalisée.');
+  const actor=state.user.id,rollId=state.monthly.monthly_activity.id;
+  const rawRating=id('geo-memory-rating')?.value||'';
+  const rating=rawRating===''?null:Number(rawRating);
+  const memory=String(id('geo-memory-text')?.value||'').trim();
+  if((rating!==null&&(!Number.isInteger(rating)||rating<1||rating>5))||
+     memory.length>500||(!memory&&rating===null))
+   throw Error('Choisissez une note sur cinq ou écrivez un souvenir (500 caractères maximum).');
+  const done=await geoCompletionMutationGate(async()=>{
+   const saved=await rpc('save_love_monthly_feedback',{
+    p_roll:rollId,p_rating:rating,p_memory:memory
+   });
+   if(state.user?.id!==actor||state.monthly?.monthly_activity?.id!==rollId)return;
+   state.geoFeedback=[...state.geoFeedback.filter(item=>item.author_id!==actor),saved];
+   if(!await refreshAfterConfirmedWrite(refreshAndShow)){
+    if(state.user?.id!==actor||state.monthly?.monthly_activity?.id!==rollId)return;
+    render();
+    notify('Souvenir enregistré. Synchronisation complète à la reconnexion.');
+   }
+  });
+  if(!done)notify('Un enregistrement de souvenir est déjà en cours.');
+  return;
+ }
+ if(['geo-date-propose','geo-date-counter','geo-date-accept'].includes(verb)){
+  if(!state.geoDatePlanAvailable)throw Error('La planification à deux n’est pas encore disponible.');
+  const actor=state.user?.id,rollId=state.monthly?.monthly_activity?.id;
+  if(!actor||!rollId||!currentHost()?.user_id)throw Error('Un tirage et le D6 sont nécessaires.');
+  const action=verb.slice('geo-date-'.length);
+  const plan=state.geoDatePlan;
+  if(action==='propose'&&actor!==currentHost()?.user_id)
+   throw Error('La première proposition appartient à la personne qui invite.');
+  if(action!=='propose'&&(!plan||plan.status!=='proposed'||plan.proposed_by===actor))
+   throw Error('Attendez la proposition de votre partenaire.');
+  let when=null;
+  if(action!=='accept'){
+   const raw=id('geo-date-proposal')?.value||'',date=new Date(raw);
+   if(!raw||!Number.isFinite(date.getTime())||date.getTime()<=Date.now()||
+      date.getTime()>Date.now()+2*365*24*60*60*1000)
+    throw Error('Choisissez une date future dans les deux prochaines années.');
+   when=date.toISOString();
+  }
+  const done=await geoDateMutationGate(async()=>{
+   const updated=await rpc('manage_love_monthly_date',{
+    p_roll:rollId,p_action:action,p_when:when,
+    p_expected_version:plan?.version??null
+   });
+   if(state.user?.id!==actor||state.monthly?.monthly_activity?.id!==rollId)return;
+   state.geoDatePlan=updated;
+   if(!await refreshAfterConfirmedWrite(refreshAndShow)){
+    if(state.user?.id!==actor||state.monthly?.monthly_activity?.id!==rollId)return;
+    render();
+    notify('Date du duo enregistrée; actualisation complète après reconnexion.');
+   }
+  });
+  if(!done)notify('Une réponse de date est déjà en cours.');
+  return;
  }
  if(verb==='geo-booking-editor'){
   if(currentHost()?.user_id!==state.user?.id)throw Error('Seule la personne qui invite peut réserver.');
-  state.geoBookingEdit=!state.geoBookingEdit;render();return;
+  state.geoBookingEdit=!state.geoBookingEdit;state.geoBookingAlternative=false;render();return;
+ }
+ if(verb==='geo-booking-adapt'){
+  if(currentHost()?.user_id!==state.user?.id)throw Error('Seule la personne qui invite peut adapter la sortie.');
+  const closing=state.geoBookingEdit&&state.geoBookingAlternative;
+  state.geoBookingEdit=!closing;state.geoBookingAlternative=!closing;
+  render();return;
  }
  if(verb==='geo-booking-save'){
   const executed=await geoBookingMutationGate(async()=>{
@@ -3293,25 +3576,59 @@ async function handle(action,element){
    throw Error('Réservation réservée à la personne qui invite.');
   const raw=id('geo-booking-date')?.value||'',date=new Date(raw);
   if(!raw||!Number.isFinite(date.getTime())||date.getTime()<=Date.now())throw Error('Choisissez une date et une heure futures.');
+  if(state.geoDatePlan?.status==='agreed'&&
+     new Date(state.geoDatePlan.proposed_for).getTime()!==date.getTime())
+   throw Error('Cette date diffère de celle acceptée par votre partenaire. Choisissez la date convenue avant d’enregistrer la réservation.');
   const title=String(id('geo-booking-name')?.value||'').trim(),address=String(id('geo-booking-address')?.value||'').trim();
   const confirmed=!!id('geo-booking-confirmed')?.checked,paid=!!id('geo-booking-paid')?.checked;
+  const adapting=state.geoBookingAlternative===true;
+  const reasonLabels={visited:'Déjà visité',closed:'Lieu fermé',far:'Trop loin',expensive:'Trop cher',other:'Autre idée à deux'};
+  const reason=id('geo-adapt-reason')?.value||'';
+  if(adapting&&!reasonLabels[reason])throw Error('Choisissez une raison pour adapter la sortie.');
+  // Geoapify does not supply verified venue pricing. A capped budget is
+  // never silently interpreted as "affordable".
+  const budgetCapped=state.couple?.surprise_budget_max!==null&&
+   state.couple?.surprise_budget_max!==undefined;
+  const priceAcknowledged=!!id('geo-booking-budget-ack')?.checked;
+  if(budgetCapped&&!priceAcknowledged)
+   throw Error('Le prix du lieu n’est pas confirmé. Acceptez explicitement de vérifier le tarif malgré votre plafond de budget.');
+  const baseNotes=adapting?'Adaptation : '+reasonLabels[reason]:
+   String(state.geoReservation?.notes||'');
+  const acknowledgement='Prix à vérifier malgré le plafond choisi.';
+  const baseWithBudget=priceAcknowledged&&budgetCapped&&!baseNotes.includes(acknowledgement)?
+   [baseNotes,acknowledgement].filter(Boolean).join(' · '):baseNotes;
+  // A Geoapify POI and route do not prove that a venue offers the exact D100
+  // activity. A planned draft is allowed, but a confirmed external booking
+  // requires the host to attest that they checked the service with the venue.
+  const officialActivityTitle=monthlyActivityForRoll(state.monthly?.monthly_activity)?.title;
+  const activityAcknowledged=!!id('geo-booking-activity-ack')?.checked;
+  if(confirmed&&officialActivityTitle&&!activityAcknowledged)
+   throw Error('Avant de confirmer la réservation, vérifiez que le lieu propose notre activité D100 ou la variante adaptée.');
+  const activityNote='Activité vérifiée auprès du lieu (déclaration de la personne qui invite).';
+  const notes=(confirmed&&activityAcknowledged&&!baseWithBudget.includes(activityNote)?
+   [baseWithBudget,activityNote].filter(Boolean).join(' · '):baseWithBudget).slice(0,500);
   if(!title||title.length>140||address.length>240)
    throw Error('Vérifie le nom et l’adresse de l’établissement.');
   if(paid&&!confirmed)throw Error('La réservation doit être confirmée avant de marquer le paiement.');
+  if(adapting&&state.geoReservation&&state.geoReservation.status!=='cancelled'){
+   if(!(await premiumConfirm('Cela remplacera la sortie enregistrée dans LoveRoll. Une réservation auprès de l’ancien établissement ne sera PAS annulée automatiquement. Continuer ?',{
+    kind:'library',title:'Adapter notre sortie ?',accept:'Oui, remplacer dans LoveRoll',cancel:'Conserver notre sortie'})))return;
+   if(state.user?.id!==ownerId||state.monthly?.monthly_activity?.id!==rollId||currentHost()?.user_id!==ownerId)return;
+  }
   await rpc('save_love_monthly_reservation',{
    p_roll:rollId,p_when:date.toISOString(),p_venue:title,p_address:address,
    ...trustedBookingVenueLinks(state.geoVenue,{title,address}),
-   p_notes:'',p_confirmed:confirmed,p_paid:paid
+   p_notes:notes,p_confirmed:confirmed,p_paid:paid
   });
   // A completed write belongs to its original user and official D100 roll,
   // even if the login changes while the network request is in flight.
   if(state.user?.id!==ownerId||state.monthly?.monthly_activity?.id!==rollId)return;
-  state.geoBookingEdit=false;
+  state.geoBookingEdit=false;state.geoBookingAlternative=false;
   if(!await refreshAfterConfirmedWrite(refreshAndShow)){
    if(state.user?.id!==ownerId||state.monthly?.monthly_activity?.id!==rollId)return;
    state.geoReservation={...state.geoReservation,
     status:confirmed?'confirmed':'planned',reserved_for:date.toISOString(),
-    venue_name:title,venue_address:address,paid_by_host:paid};
+    venue_name:title,venue_address:address,paid_by_host:paid,notes};
    render();
    notify('♡ Sortie enregistrée dans LoveRoll. Affichage actualisé localement; reconnecte-toi pour synchroniser.');
   }
@@ -3331,7 +3648,7 @@ async function handle(action,element){
      currentHost()?.user_id!==ownerId)return;
   await rpc('cancel_love_monthly_reservation',{p_roll:rollId});
   if(state.user?.id!==ownerId||state.monthly?.monthly_activity?.id!==rollId)return;
-  state.geoBookingEdit=false;
+  state.geoBookingEdit=false;state.geoBookingAlternative=false;
   if(!await refreshAfterConfirmedWrite(refreshAndShow)){
    if(state.user?.id!==ownerId||state.monthly?.monthly_activity?.id!==rollId)return;
    state.geoReservation=null;

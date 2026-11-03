@@ -41,7 +41,22 @@ const UI=Object.freeze({
 });
 export function localeOrDefault(locale){return LANGUAGES.some(([key])=>key===locale)?locale:'fr-CA';}
 export function currencyOrDefault(currency){return CURRENCIES.includes(currency)?currency:'CAD';}
-export function radiusOrDefault(radius){const n=Number(radius);return Number.isInteger(n)&&n>=10&&n<=500?n:125;}
+export function radiusOrDefault(radius){
+ if(radius===null||radius===undefined||radius==='')return null;
+ const n=Number(radius);return Number.isInteger(n)&&n>=10&&n<=500?n:125;
+}
+// Empty is a deliberately unbounded *preference*; the API still has a finite search cap.
+export function parseTravelRadius(value){
+ if(value===null||value===undefined||value==='')return null;
+ const n=Number(value);
+ if(!Number.isInteger(n)||n<10||n>500)throw Error('Distance invalide (10 à 500 km).');
+ return n;
+}
+const ALL_DISTANCES={
+ 'fr-CA':'Toutes les distances',en:'All distances',es:'Todas las distancias',
+ pt:'Todas as distâncias',de:'Alle Entfernungen',it:'Tutte le distanze',
+ nl:'Alle afstanden',ar:'جميع المسافات',ja:'距離制限なし','zh-CN':'所有距离'
+};
 // Core Settings navigation in all supported interface languages.
 const SETTINGS_NAV={
  'fr-CA':['Mon compte','Notre duo','Notifications','Cartes et activités','Journal et confidentialité','Application et aide','Options avancées','Rappels et autorisations','Soirée, Surprise et Avent','Calendrier, bilans et données','Versions et fonctionnement'],
@@ -74,6 +89,36 @@ export function normalizeSharedTravel(input={}){
   travel_radius_km:radiusOrDefault(input.travel_radius_km),
   activity_localization_enabled:input.activity_localization_enabled===true};
 }
+// Shared budget is a user preference, NOT a provider-verified venue price.
+export function parseSurpriseBudget(value){
+ if(value===null||value===undefined||String(value).trim()==='')return null;
+ const text=String(value).trim().replace(',','.');
+ if(!/^\d{1,10}(?:\.\d{1,2})?$/.test(text))
+  throw Error('Budget invalide : entrez un montant positif avec deux décimales maximum.');
+ const amount=Number(text);
+ if(!Number.isFinite(amount)||amount>9999999999.99)
+  throw Error('Budget invalide.');
+ return amount;
+}
+export function formatSharedBudget(amount,currency='CAD',locale='fr-CA'){
+ if(amount===null||amount===undefined)return null;
+ const value=Number(amount);
+ if(!Number.isFinite(value)||value<0)return null;
+ return new Intl.NumberFormat(localeOrDefault(locale),{style:'currency',
+  currency:currencyOrDefault(currency),maximumFractionDigits:2}).format(value);
+}
+const BUDGET_LABELS={
+ 'fr-CA':['Budget maximal pour deux','Tous les budgets','Devise du budget partagé','Enregistrer notre budget','Les prix des établissements ne sont pas vérifiés par Geoapify. Vérifiez le tarif avant de réserver.'],
+ en:['Maximum budget for two','All budgets','Shared budget currency','Save our budget','Geoapify does not verify venue prices. Confirm prices before booking.'],
+ es:['Presupuesto máximo para dos','Todos los presupuestos','Moneda del presupuesto','Guardar presupuesto','Geoapify no verifica los precios. Confirma antes de reservar.'],
+ pt:['Orçamento máximo para duas pessoas','Todos os orçamentos','Moeda do orçamento','Guardar orçamento','Os preços dos locais não são verificados. Confirme antes de reservar.'],
+ de:['Maximales Budget für zwei','Alle Budgets','Budgetwährung','Budget speichern','Geoapify bestätigt keine Preise. Bitte vorher prüfen.'],
+ it:['Budget massimo per due','Tutti i budget','Valuta del budget','Salva budget','I prezzi non sono verificati. Controllali prima di prenotare.'],
+ nl:['Maximaal budget voor twee','Alle budgetten','Valuta voor budget','Budget opslaan','Geoapify controleert geen prijzen. Controleer vooraf.'],
+ ar:['الميزانية القصوى لشخصين','كل الميزانيات','عملة الميزانية','حفظ الميزانية','أسعار الأماكن غير مؤكدة. تحقق قبل الحجز.'],
+ ja:['2人分の上限予算','予算制限なし','予算の通貨','予算を保存','施設料金は未確認です。予約前にご確認ください。'],
+ 'zh-CN':['两人最高预算','不限预算','预算币种','保存预算','场所价格未核实，请预订前确认。']
+};
 export function isLocalSearchReady(settings,providerReady){
  const cfg=normalizeSharedTravel(settings);
  return !!(providerReady&&cfg.activity_localization_enabled&&cfg.travel_origin_lat!==null&&cfg.travel_origin_lon!==null);
@@ -81,6 +126,10 @@ export function isLocalSearchReady(settings,providerReady){
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','"':'&quot;',"'":'&#39;'}[c]));
 export function worldwideSettingsHtml({locale='fr-CA',currency='CAD',couple={}}={}){
  const l=localeOrDefault(locale),c=currencyOrDefault(currency),v=normalizeSharedTravel(couple),tr=key=>esc(t(l,key));
+ const budgetCurrency=currencyOrDefault(couple.surprise_budget_currency||c);
+ const budgetRaw=couple.surprise_budget_max===null||couple.surprise_budget_max===undefined?'':String(couple.surprise_budget_max);
+ const budgetT=BUDGET_LABELS[l]||BUDGET_LABELS['fr-CA'];
+ const budgetCurrencyOptions=CURRENCIES.map(value=>'<option value="'+value+'"'+(value===budgetCurrency?' selected':'')+'>'+value+'</option>').join('');
  const options=LANGUAGES.map(([value,name])=>'<option value="'+value+'"'+(value===l?' selected':'')+'>'+esc(name)+'</option>').join('');
  const currencies=CURRENCIES.map(value=>'<option value="'+value+'"'+(value===c?' selected':'')+'>'+value+'</option>').join('');
  return '<div class="world-prefs" lang="'+esc(l)+'" dir="'+htmlDirection(l)+'">'+
@@ -95,9 +144,15 @@ export function worldwideSettingsHtml({locale='fr-CA',currency='CAD',couple={}}=
  '<button type="button" class="settings-secondary" data-action="world-gps">'+tr('gps')+'</button>'+
  '<div id="world-gps-status" role="status" aria-live="polite"></div>'+
  '<label for="world-radius">'+tr('distance')+
- '<select id="world-radius">'+RADIUS_CHOICES.map(n=>'<option value="'+n+'"'+(n===v.travel_radius_km?' selected':'')+'>'+n+' km</option>').join('')+'</select></label>'+
+ '<select id="world-radius"><option value=""'+(v.travel_radius_km===null?' selected':'')+'>'+esc(ALL_DISTANCES[l])+'</option>'+RADIUS_CHOICES.map(n=>'<option value="'+n+'"'+(n===v.travel_radius_km?' selected':'')+'>'+n+' km</option>').join('')+'</select></label>'+
  '<label class="push-option"><span>'+tr('auto')+'</span><input type="checkbox" id="world-local-enabled" '+(v.activity_localization_enabled?'checked':'')+'></label>'+
  '<button type="button" class="settings-primary" data-action="save-world-duo">'+tr('saveDuo')+'</button>'+
  '<p class="tiny-note">'+tr('privacy')+'</p><p class="tiny-note">'+tr('provider')+'</p>'+
- '<p class="tiny-note">'+tr('unavailable')+'</p></section></div>';
+ '<p class="tiny-note">'+tr('unavailable')+'</p></section>'+
+ '<section class="world-prefs-card" aria-label="'+esc(budgetT[0])+'">'+
+ '<h2>'+esc(budgetT[0])+'</h2>'+
+ '<label for="world-budget">'+esc(budgetT[0])+'<input id="world-budget" type="text" inputmode="decimal" autocomplete="off" maxlength="13" value="'+esc(budgetRaw)+'" placeholder="'+esc(budgetT[1])+'"></label>'+
+ '<label for="world-budget-currency">'+esc(budgetT[2])+'<select id="world-budget-currency">'+budgetCurrencyOptions+'</select></label>'+
+ '<button type="button" class="settings-primary" data-action="save-world-budget">'+esc(budgetT[3])+'</button>'+
+ '<p class="tiny-note">'+esc(budgetT[4])+'</p></section></div>';
 }

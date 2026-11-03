@@ -232,3 +232,4 @@ main#app.loveroll-editorial{--nav-space:66px;box-sizing:border-box;width:100%;ma
  #app .lr-redraw-actions{grid-template-columns:minmax(0,1fr)}
  #app .lr-refusal-buttons{display:grid;grid-template-columns:minmax(0,1fr)}
 }
+

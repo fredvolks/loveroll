@@ -1,0 +1,149 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {monthlyDatePlanHtml} from './monthly-date-plan.mjs';
+import {monthlyGeoCardHtml} from './monthly-geo-ui.mjs';
+import {premiumSurpriseHtml} from './premium-surprise.mjs';
+const read=name=>readFileSync(new URL('./'+name,import.meta.url),'utf8');
+const date='2026-12-12T20:00:00Z';
+
+test('D6 host proposes first, partner waits, no external booking or spending',()=>{
+ const host=monthlyDatePlanHtml({hostId:'A',me:'A'});
+ const guest=monthlyDatePlanHtml({hostId:'A',me:'B'});
+ assert.match(host,/data-action="geo-date-propose"/);
+ assert.match(host,/id="geo-date-proposal"/);
+ assert.doesNotMatch(guest,/data-action="geo-date-propose"/);
+ assert.match(guest,/personne désignée par le D6/);
+ for(const value of [host,guest])assert.doesNotMatch(value,/Réservation déclarée confirmée/);
+});
+
+test('a pending proposal can only be answered by other partner',()=>{
+ const plan={status:'proposed',proposed_for:date,proposed_by:'A',version:3};
+ const author=monthlyDatePlanHtml({hostId:'A',me:'A',plan,now:'2026-11-02T12:00:00Z'});
+ const responder=monthlyDatePlanHtml({hostId:'A',me:'B',plan,now:'2026-11-02T12:00:00Z'});
+ assert.match(author,/En attente de la réponse/);
+ assert.doesNotMatch(author,/geo-date-accept|geo-date-counter/);
+ assert.match(responder,/data-action="geo-date-accept"/);
+ assert.match(responder,/data-action="geo-date-counter"/);
+ assert.match(responder,/datetime-local/);
+});
+
+test('expired proposals offer a counter date, not an acceptance that the server rejects',()=>{
+ const plan={status:'proposed',proposed_for:date,proposed_by:'A',version:3};
+ const now='2026-12-13T12:00:00Z';
+ const author=monthlyDatePlanHtml({hostId:'A',me:'A',plan,now});
+ const partner=monthlyDatePlanHtml({hostId:'A',me:'B',plan,now});
+ for(const html of [author,partner])assert.match(html,/Cette date est passée/);
+ assert.doesNotMatch(author,/data-action="geo-date-accept"|data-action="geo-date-counter"/);
+ assert.doesNotMatch(partner,/data-action="geo-date-accept"/);
+ assert.match(partner,/data-action="geo-date-counter"/);
+ assert.match(partner,/datetime-local/);
+});
+
+test('agreed date explicitly is NOT a confirmed venue booking',()=>{
+ const plan={status:'agreed',proposed_for:date,proposed_by:'A',agreed_by:'B',version:4};
+ const html=monthlyDatePlanHtml({hostId:'A',me:'B',plan});
+ assert.match(html,/Notre date est choisie/);
+ assert.match(html,/Cela ne confirme aucune réservation/);
+ assert.doesNotMatch(html,/geo-date-accept|geo-date-counter/);
+ const screen=premiumSurpriseHtml({
+  monthly:{monthly_activity:{face:31},monthly_host:{face:2}},
+  members:[{user_id:'A',name:'Alice'},{user_id:'B',name:'Bob'}],
+  showActivity:true,geoEnabled:false,activity:{title:'Sortie D100'},
+  datePlan:plan,datePlanAvailable:true,viewerId:'B'
+ });
+ assert.match(screen,/Notre date est choisie/);
+ assert.match(screen,/D100 · 31/);
+});
+
+test('reservation uses the agreed clock time unless prior reservation overrides it',()=>{
+ const venue={state:'ready',place_id:'place1',name:'Café',latitude:46,longitude:-71,driving_meters:1100};
+ const fresh=monthlyGeoCardHtml({enabled:true,venue,canReserve:true,editing:true,agreedDate:date});
+ assert.match(fresh,/id="geo-booking-date" type="datetime-local" value="[^"]+"/);
+ const withBooking=monthlyGeoCardHtml({enabled:true,venue,canReserve:true,editing:true,agreedDate:date,
+  reservation:{status:'planned',reserved_for:'2026-12-16T19:00:00Z'}});
+ assert.notEqual(fresh,withBooking);
+});
+
+test('RPC enforces verified identity, D6 first-host and two-member counter/accept',()=>{
+ const sql=read('migrations/20261102_lr_surprise_shared_date_agreement.sql');
+ assert.match(sql,/love_require_verified_identity\(\)/);
+ assert.match(sql,/couple_private\.is_member\(v_roll\.couple_id\)/);
+ assert.match(sql,/SELECT COUNT\(\*\).*?v_count/s);
+ assert.match(sql,/v_actor IS DISTINCT FROM v_host/);
+ assert.match(sql,/v_actor IS NOT DISTINCT FROM v_plan\.proposed_by/);
+ assert.match(sql,/p_expected_version<>v_plan\.version/);
+ assert.match(sql,/status='agreed'/);
+ assert.match(sql,/status='confirmed'/);
+ assert.match(sql,/GRANT EXECUTE ON FUNCTION public\.manage_love_monthly_date/);
+ assert.doesNotMatch(sql,/UPDATE public\.couple_rolls|INSERT INTO public\.couple_rolls/);
+ assert.doesNotMatch(sql,/INSERT INTO public\.love_monthly_reservations/);
+});
+
+test('client uses existing RPC and one-at-a-time gate, polling only visible couple screen',()=>{
+ const app=read('app.js');
+ assert.match(app,/const geoDateMutationGate=createBookingMutationGate\(\)/);
+ assert.match(app,/if\(\['geo-date-propose','geo-date-counter','geo-date-accept'\]/);
+ assert.match(app,/geoDateMutationGate\(async\(\)=>/);
+ assert.match(app,/manage_love_monthly_date/);
+ assert.match(app,/p_expected_version:plan\?\.version\?\?null/);
+ assert.match(app,/new Date\(state\.geoDatePlan\.proposed_for\)\.getTime\(\)!==date\.getTime\(\)/);
+ assert.match(app,/state\.geoDatePlanAvailable/);
+ assert.match(app,/!state\.showSurpriseActivity\|\|document\.hidden/);
+});
+
+
+test('new date controls are hidden before the SQL migration is deployed',()=>{
+ const base={
+  monthly:{monthly_activity:{face:31},monthly_host:{face:2}},
+  members:[{user_id:'A',name:'Alice'},{user_id:'B',name:'Bob'}],
+  showActivity:true,activity:{title:'Sortie'},
+  viewerId:'A'
+ };
+ const absent=premiumSurpriseHtml({...base,datePlanAvailable:false});
+ assert.doesNotMatch(absent,/data-action="geo-date-propose"/);
+ const ready=premiumSurpriseHtml({...base,datePlanAvailable:true});
+ assert.match(ready,/data-action="geo-date-propose"/);
+});
+
+
+test('date proposals from former partners are not readable or actionable after duo membership changes',()=>{
+ const sql=read('migrations/20261102_lr_surprise_shared_date_agreement.sql');
+ assert.match(sql,/active_member\.user_id=love_monthly_date_plans\.proposed_by/);
+ assert.match(sql,/agreeing_member\.user_id=love_monthly_date_plans\.agreed_by/);
+ assert.match(sql,/Cette proposition appartient à un ancien duo/);
+ assert.match(sql,/active_member\.user_id=v_plan\.proposed_by/);
+ assert.match(sql,/agreeing_member\.user_id=v_plan\.agreed_by/);
+});
+
+
+test('Supabase prevents a direct booking RPC from bypassing an agreed date',()=>{
+ const sql=read('migrations/20261102_lr_surprise_shared_date_agreement.sql');
+ assert.match(sql,/CREATE OR REPLACE FUNCTION public\.love_monthly_booking_date_guard\(\)/);
+ assert.match(sql,/WHERE roll_id=NEW\.roll_id AND status='agreed'/);
+ assert.match(sql,/IF FOUND AND NEW\.status IN \('planned','confirmed'\)\s+AND NEW\.reserved_for IS DISTINCT FROM v_agreed THEN/);
+ assert.match(sql,/CREATE TRIGGER love_monthly_booking_date_consistency/);
+ assert.match(sql,/BEFORE INSERT OR UPDATE OF reserved_for,roll_id,status ON public\.love_monthly_reservations/);
+ assert.match(sql,/RETURN NEW;/);
+ assert.doesNotMatch(sql,/UPDATE public\.love_monthly_reservations SET reserved_for/);
+});
+
+test('already confirmed booking with another time blocks agreement',()=>{
+ const sql=read('migrations/20261102_lr_surprise_shared_date_agreement.sql');
+ const from=sql.indexOf("IF v_plan.proposed_for<=now()");
+ const to=sql.indexOf("status='agreed',agreed_by=v_actor",from);
+ assert.ok(from>0&&to>from,'acceptance guard must execute before agreement update');
+ const acceptance=sql.slice(from,to);
+ assert.match(acceptance,/FROM public\.love_monthly_reservations confirmed/);
+ assert.match(acceptance,/confirmed\.roll_id=p_roll AND confirmed\.status='confirmed'/);
+ assert.match(acceptance,/confirmed\.reserved_for IS DISTINCT FROM v_plan\.proposed_for/);
+ assert.match(acceptance,/RAISE EXCEPTION/);
+});
+test('status-only confirmation is checked but cancellation remains possible',()=>{
+ const sql=read('migrations/20261102_lr_surprise_shared_date_agreement.sql');
+ const at=sql.indexOf('CREATE OR REPLACE FUNCTION public.love_monthly_booking_date_guard()');
+ const trigger=sql.slice(at);
+ assert.match(trigger,/NEW\.status IN \('planned','confirmed'\)/);
+ assert.match(trigger,/UPDATE OF reserved_for,roll_id,status/);
+ assert.doesNotMatch(trigger,/NEW\.status IN \('planned','confirmed','cancelled'\)/);
+});

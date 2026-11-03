@@ -225,3 +225,75 @@ test('LR-SURPRISE-001 confirms the actual reserved venue, not just a suggested P
  assert.doesNotMatch(unsafe,/<script>|<img src=x/);
  assert.match(unsafe,/&lt;img src=x/);
 });
+
+
+test('LR-SURPRISE-001: outages are distinct from a real empty result and offer a manual retry',()=>{
+ const exhausted=monthlyGeoCardHtml({enabled:true,lookup:'retry_exhausted'});
+ assert.match(exhausted,/plusieurs erreurs/);
+ assert.match(exhausted,/après 15 minutes/);
+ assert.match(exhausted,/data-action="geo-retry"/);
+ assert.doesNotMatch(exhausted,/Aucun établissement avec trajet routier/);
+ assert.match(monthlyGeoCardHtml({enabled:true,lookup:'unavailable'}),/Aucun établissement/);
+ assert.equal(geoLookupAfterRefresh({rollId:'r1',previousRollId:'r1',previousLookup:'retry_exhausted'}),'retry_exhausted');
+ assert.equal(geoLookupAfterRefresh({rollId:'r2',previousRollId:'r1',previousLookup:'retry_exhausted'}),'idle');
+ const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
+ const manual=app.slice(app.indexOf("if(verb==='geo-retry')"),app.indexOf("if(verb==='geo-booking-editor')"));
+ assert.match(manual,/geoManualRetryRollId=rollId/);
+ assert.match(manual,/void resolveMonthlyGeo\(\)/);
+ assert.match(app,/retry:manual/);
+});
+
+test('Geoapify and OpenStreetMap attribution links are explicit and safe',()=>{
+ const html=monthlyGeoCardHtml({enabled:true,venue});
+ assert.match(html,/href="https:\/\/www\.geoapify\.com\/"/);
+ assert.match(html,/href="https:\/\/www\.openstreetmap\.org\/copyright"/);
+ assert.match(html,/rel="noopener noreferrer"/);
+});
+
+
+test('booking remains accessible when local Geoapify discovery is disabled',()=>{
+ const reservation={status:'confirmed',venue_name:'Choix du couple',
+  venue_address:'Adresse conservée',reserved_for:'2026-12-05T19:00:00Z'};
+ const hidden=monthlyGeoCardHtml({enabled:false,venue});
+ assert.equal(hidden,'','No automatic discovery without opt-in or saved booking');
+ const kept=monthlyGeoCardHtml({enabled:false,venue,reservation,canReserve:true,editing:true});
+ assert.match(kept,/La recherche locale est désactivée/);
+ assert.match(kept,/Choix du couple/);
+ assert.match(kept,/Adresse conservée/);
+ assert.match(kept,/geo-booking-date/);
+ assert.doesNotMatch(kept,/surprise-geo-venue-info/);
+ assert.doesNotMatch(kept,/data-action="geo-retry"/);
+ const other=monthlyGeoCardHtml({enabled:false,venue,reservation,canReserve:false});
+ assert.match(other,/Choix du couple/);
+ assert.doesNotMatch(other,/data-action="geo-booking-editor"/);
+ assert.equal(monthlyGeoCardHtml({enabled:false,reservation:{status:'cancelled'}}),'');
+});
+
+
+test('the lifetime Geoapify claim cap is terminal and never offers another paid retry',()=>{
+ const html=monthlyGeoCardHtml({enabled:true,lookup:'retry_limit_reached',venue:null});
+ assert.match(html,/limite de recherches Geoapify pour ce mois/);
+ assert.match(html,/Votre D100 reste enregistré/);
+ assert.doesNotMatch(html,/data-action="geo-retry"/);
+ assert.doesNotMatch(html,/surprise-geo-venue-info/);
+ assert.equal(geoLookupAfterRefresh({
+  rollId:'official-monthly-roll',previousRollId:'official-monthly-roll',
+  previousLookup:'retry_limit_reached',venue:null
+ }),'retry_limit_reached');
+});
+
+
+test('a real venue is not an unverified promise of the precise D100 activity',()=>{
+ const rendered=monthlyGeoCardHtml({
+  enabled:true,venue,experienceTitle:'Mini-golf romantique',canReserve:true
+ });
+ assert.match(rendered,/Activité tirée : Mini-golf romantique/);
+ assert.match(rendered,/Confirmez auprès du lieu qu’il offre cette activité précise/);
+ assert.match(rendered,/Café du centre/);
+ const safe=monthlyGeoCardHtml({
+  enabled:true,venue,experienceTitle:'<img src=x onerror=alert(1)>'
+ });
+ assert.doesNotMatch(safe,/<img src=x/);
+ assert.match(safe,/&lt;img src=x/);
+ assert.doesNotMatch(monthlyGeoCardHtml({enabled:true,venue,experienceTitle:''}),/Activité tirée :/);
+});

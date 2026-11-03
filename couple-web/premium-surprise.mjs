@@ -3,7 +3,12 @@ import {monthlyInvitation} from './monthly-invitation.mjs';
 import {ritualHeadingHtml} from './brand.mjs?v=20261017-ritual130';
 import {occasionDate,dueOccasions} from './special-occasions.mjs';
 import {displayCadRange} from './currency-exchange.mjs';
+import {formatSharedBudget} from './world-preferences.mjs';
 import {monthlyGeoCardHtml} from './monthly-geo-ui.mjs';
+import {monthlyDatePlanHtml} from './monthly-date-plan.mjs';
+import {monthlyCompletionHtml} from './monthly-completion.mjs';
+import {monthlySurprisePhase} from './monthly-surprise-phase.mjs';
+import {weeklySurpriseIdeaHtml} from './weekly-surprise-idea.mjs';
 import {premiumPolyDie} from './premium-evening.mjs';
 import {surpriseSlot,surpriseCustom,surpriseTitle,displaySurpriseDate} from './surprise-event-config.mjs';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','"':'&quot;',"'":'&#39;'}[c]));
@@ -55,9 +60,13 @@ export function premiumSurpriseHtml({
  monthly={},members=[],settings={},now=new Date(),activity=null,
  rolling=false,rollingKind=null,rollFace=1,settlingHost=false,showActivity=false,timerHtml='',editSlot=null,season=null,
  currency='CAD',locale='fr-CA',exchange=null,
- geoEnabled=false,geoVenue=null,geoLookup='idle',reservation=null,canReserve=false,bookingEditor=false
+ geoEnabled=false,geoVenue=null,geoLookup='idle',reservation=null,canReserve=false,bookingEditor=false,bookingAlternative=false,
+ budgetMax=null,budgetCurrency='CAD',travelRadiusKm=null,travelOriginLabel='',
+ datePlan=null,datePlanAvailable=false,viewerId=null,
+ completionAvailable=false,completion=null,monthlyFeedback=[],monthlyPhotoUrls={}
 }={}){
  const a=monthly.monthly_activity,h=monthly.monthly_host;
+ const phase=monthlySurprisePhase({monthly,datePlan,reservation,completion});
  const rollingActivity=rolling&&rollingKind==='monthly_activity';
  const rollingHost=rolling&&rollingKind==='monthly_host'&&!settlingHost;
  // This month has just one large dice stage: D100 -> seasonal activity dialog -> D6 -> D100.
@@ -78,6 +87,22 @@ export function premiumSurpriseHtml({
  const costRange=Number.isInteger(minCost)&&Number.isInteger(maxCost)?
   displayCadRange(minCost,maxCost,{currency,locale,exchange}):null;
  const outingPlace=[activity?.region,activity?.location].filter(Boolean).map(esc).join(' · ');
+ const sharedBudget=formatSharedBudget(budgetMax,budgetCurrency,locale);
+ const originSummary=String(travelOriginLabel||'').trim().slice(0,120)||'Départ à définir';
+ const radiusSummary=travelRadiusKm===null||travelRadiusKm===undefined?
+  'Toutes les distances':Number.isInteger(Number(travelRadiusKm))&&Number(travelRadiusKm)>=10?
+  travelRadiusKm+' km aller':'Toutes les distances';
+ const preferenceStrip='<div class="surprise-preferences-compact" aria-label="Nos limites de sortie">'+
+  '<strong class="surprise-month-phase" role="status">'+esc(phase.label)+'</strong>'+ 
+  '<span>Départ : '+esc(originSummary)+'</span>'+
+  '<span>'+esc(radiusSummary)+'</span>'+
+  '<span>'+esc(sharedBudget===null?'Tous les budgets':sharedBudget)+'</span>'+
+  button('settings-page:monde','Modifier','surprise-geo-text-button')+'</div>';
+ const aboveEstimatedBudget=sharedBudget!==null&&budgetCurrency==='CAD'&&
+  Number.isFinite(minCost)&&minCost>Number(budgetMax);
+ const budgetAdvisory=aboveEstimatedBudget?
+  'L’estimation de cette expérience dépasse votre plafond. Aucun tarif confirmé pour le lieu : adaptez la sortie ou vérifiez une autre option.':
+  'Geoapify ne fournit pas de tarif confirmé pour ce lieu. Vérifiez le prix avant de réserver.';
  return '<div class="surprise-premium-view surprise-ecrin">'+
   '<header class="surprise-header surprise-new-header">'+ritualHeadingHtml('NOTRE RITUEL DE LA SURPRISE')+
    '<h2 class="ritual-page-title">Une surprise à partager</h2></header>'+
@@ -96,10 +121,11 @@ export function premiumSurpriseHtml({
      '<div class="surprise-host-option"><span>PAIR</span><strong>'+partner(0)+'</strong></div>'+
      '<div class="surprise-host-option"><span>IMPAIR</span><strong>'+partner(1)+'</strong></div></div>':'')+
    (needsHost?button('roll:monthly_host','Brasser le dé','surprise-primary',rolling):
-    a?button('surprise-activity','Découvrir notre activité','surprise-primary',rolling):
+    a?button('surprise-activity',esc(phase.action),'surprise-primary',rolling):
       button('roll:monthly_activity','Brasser le dé','surprise-primary',rolling))+
    (invitation&&!needsHost?'<div class="surprise-host-winner" role="status">♥ '+esc(names[invitation.index])+
      ' invite cette fois-ci !</div>':'')+
+   preferenceStrip+
   '</section>'+
   '<section class="surprise-special">'+
    '<div class="surprise-events-heading"><h3>Nos événements</h3></div>'+
@@ -149,9 +175,21 @@ export function premiumSurpriseHtml({
        '<small>'+esc(activity?.budget_note||'Estimation, transport compris.')+'</small>'+
        (activity?.distance_km_est!=null?'<small>Environ '+esc(activity.distance_km_est)+' km de Québec (aller simple).</small>':'')+
        '</div>':'')+
+     '<div class="surprise-budget-preference" role="status"><strong>Budget du duo : '+
+       esc(sharedBudget===null?'Tous les budgets':sharedBudget)+'</strong>'+
+       (sharedBudget!==null?'<small>'+esc(budgetAdvisory)+'</small>':'<small>Aucun plafond de dépenses choisi.</small>')+
+       button('settings-page:monde','Modifier le budget ou la distance','surprise-geo-text-button')+
+       '</div>'+ 
      '<small class="surprise-season-disclaimer">Tarifs variables selon les dates, les réservations et la météo. Vérifiez les horaires et la disponibilité avant de partir.</small>'+
+     (datePlanAvailable?monthlyDatePlanHtml({plan:datePlan,hostId:host?.user_id||null,me:viewerId,locale}):'')+
+     monthlyCompletionHtml({available:completionAvailable,completion,feedback:monthlyFeedback,
+       photoUrls:monthlyPhotoUrls,viewerId,locale})+
      monthlyGeoCardHtml({venue:geoVenue,lookup:geoLookup,enabled:geoEnabled,
-       host:host?.name||null,canReserve,reservation,editing:bookingEditor,locale,experienceTitle:activity?.title||''})+
+       host:host?.name||null,canReserve,reservation,editing:bookingEditor,adapting:bookingAlternative,
+       budgetLimited:budgetMax!==null&&budgetMax!==undefined,
+       agreedDate:datePlan?.status==='agreed'?datePlan.proposed_for:null,
+       locale,experienceTitle:activity?.title||''})+
+     weeklySurpriseIdeaHtml({now,revealed:!!a&&!!h})+
      timerHtml+button('surprise-activity','Fermer','surprise-primary')+
     '</article></div>':'')+
  '</div>';
