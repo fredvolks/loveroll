@@ -4,7 +4,7 @@ import {resolvedCard,eveningCard} from './evening-challenges.mjs';
 import {favoriteCardIdentity,isEveningFavorite,closedCalendarFavoriteCandidate,favoriteCardPreview,MAX_EVENING_FAVORITES} from './evening-favorites.mjs?v=20261101-hearts266';
 import {eveningPersonReviewMarkup} from './evening-review.mjs';
 import {ritualHeadingHtml} from './brand.mjs?v=20261017-ritual130';
-import {calendarWeekSuccess,monthlyChallengeSuccess} from './calendar-success-stats.mjs?v=20261103-web270';
+import {calendarWeekSuccess,monthlyChallengeSuccess,isClosedEvening} from './calendar-success-stats.mjs?v=20261103-web270';
 const safe=x=>String(x??'').replace(/[&<>"']/g,k=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','"':'&quot;',"'":'&#39;'}[k]));
 const isoMonth=v=>/^\d{4}-(0[1-9]|1[0-2])$/.test(v||'')?v:null;
 export function eveningLocalDay(iso){
@@ -46,7 +46,7 @@ export function eveningHistoryMarkup({sessions=[],members=[],stats=[],historyCha
  // Only CLOSED evenings count as final non-completions; never penalize open cards.
  const monthSessions=archives.filter(s=>s.localDay?.startsWith(current+'-'));
  const forDay=monthSessions.filter(s=>s.localDay===validDate).sort((a,b)=>Date.parse(b.started_at)-Date.parse(a.started_at));
- const closedMonthIds=new Set(monthSessions.filter(s=>s.finished_at).map(s=>s.id));
+ const closedMonthIds=new Set(monthSessions.filter(isClosedEvening).map(s=>s.id));
  const history=closedMonthIds.size;
  const done=stats.filter(r=>closedMonthIds.has(r.session_id))
   .reduce((n,r)=>n+Number(r.completed||0),0);
@@ -98,6 +98,7 @@ export function eveningHistoryMarkup({sessions=[],members=[],stats=[],historyCha
    '<button type="button" data-action="evening-favorite-cancel" '+(favoriteWriteBusy?'disabled':'')+'>Annuler</button>'+
    '</div>':'';
  const content=forDay.length?forDay.map((s,i)=>{
+  const closed=isClosedEvening(s);
   const rolls=stats.filter(r=>r.session_id===s.id);
   const personSections=members.map(m=>{
    const row=rolls.find(item=>item.user_id===m.user_id);
@@ -107,7 +108,6 @@ export function eveningHistoryMarkup({sessions=[],members=[],stats=[],historyCha
    const countOutstanding=row?.target==null
     ?Math.max(0,Number(row?.incomplete)||0)
     :Math.max(0,Number(row.target)-countDone);
-   const closed=!!s.finished_at;
    const name=String(m.name||'Partenaire').trim();
    const role=m.user_id===me?' (moi)':' (partenaire)';
    const statusSummary=row
@@ -143,10 +143,10 @@ export function eveningHistoryMarkup({sessions=[],members=[],stats=[],historyCha
      '<div class="evening-cal-person-content">'+
       (cards.length?'<ul>'+picked+'</ul>':
        '<p class="evening-cal-empty">Aucun défi pigé pour cette personne.</p>')+
-      extras+(s.finished_at&&s.counted?eveningPersonReviewMarkup({reviews,sessionId:s.id,person:m,me}):'')+'</div></details>';
+      extras+(closed&&s.counted?eveningPersonReviewMarkup({reviews,sessionId:s.id,person:m,me}):'')+'</div></details>';
   }).join('');
   return '<article class="evening-cal-session"><header><strong>♡ Soirée '+(forDay.length>1?(i+1):'')+
-   '</strong><span>'+(s.finished_at?'Clôturée':'En cours')+'</span></header>'+
+   '</strong><span>'+(closed?'Clôturée':'En cours')+'</span></header>'+
    '<div class="evening-cal-people">'+personSections+'</div>'+
    '</article>';
  }).join(''):'<p class="evening-cal-empty">Aucune soirée enregistrée pour cette journée.</p>';
