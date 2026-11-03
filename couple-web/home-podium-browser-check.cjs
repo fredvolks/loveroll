@@ -65,14 +65,29 @@ const {glassState}=require('./crystal-glass-browser-check.cjs');
       assert.equal(result.translucency.optics.transmission,1);
       assert.ok(result.translucency.white>0,'Home white inlays are missing');
      }
-     const summary=await page.evaluate(()=>[...document.querySelectorAll('.home-challenge-stats>div')].map(row=>{
-      const label=row.querySelector('small').getBoundingClientRect(),value=row.querySelector('strong').getBoundingClientRect(),box=row.getBoundingClientRect();
-      return {labelLeft:label.left,valueRight:value.right,inside:label.bottom<=box.bottom+1&&value.bottom<=box.bottom+1};
-     }));
-     assert.equal(summary.length,3);
-     assert.ok(summary.every(x=>x.inside),'Tonight row is clipped');
-     assert.ok(Math.max(...summary.map(x=>x.labelLeft))-Math.min(...summary.map(x=>x.labelLeft))<=1,'Tonight labels are not aligned');
-     assert.ok(Math.max(...summary.map(x=>x.valueRight))-Math.min(...summary.map(x=>x.valueRight))<=1,'Tonight values are not aligned');
+     // The previous three numeric rows were replaced by one truthful, compact
+     // collective summary. Assert its real geometry on every viewport instead.
+     const summary=await page.evaluate(()=>{
+      const container=document.querySelector('.home-challenge-stats');
+      const status=container?.querySelector('.home-evening-status');
+      const title=status?.querySelector('strong'),detail=status?.querySelector('small');
+      if(!container||!status||!title||!detail)return null;
+      const area=container.getBoundingClientRect(),card=status.getBoundingClientRect();
+      const children=[title,detail].map(node=>{
+       const rect=node.getBoundingClientRect();
+       return {text:node.textContent.trim(),inside:rect.left>=card.left-1&&
+        rect.right<=card.right+1&&rect.top>=card.top-1&&rect.bottom<=card.bottom+1};
+      });
+      return {count:container.children.length,
+       within:card.left>=area.left-1&&card.right<=area.right+1&&
+        card.top>=area.top-1&&card.bottom<=area.bottom+2,
+       children};
+     });
+     assert.ok(summary,'Home must render the collective Soirée status');
+     assert.equal(summary.count,1,'One non-revealing collective summary replaces the old three rows');
+     assert.ok(summary.within,'The Soirée summary must fit its dashboard card: '+JSON.stringify(summary));
+     assert.ok(summary.children.every(item=>item.text&&item.inside),
+      'The collective title and detail must be readable within the summary: '+JSON.stringify(summary));
      // Regression: a live text refresh used to retain WebGL but drop the stage
      // transform. A size-only check misses this because the canvas is unchanged.
      await page.evaluate(()=>{window.__beforeRefresh=document.querySelector('.home-die-platform canvas');});
