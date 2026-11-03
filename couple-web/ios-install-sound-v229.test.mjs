@@ -150,3 +150,36 @@ test('LR-004: switching sound off cancels already scheduled WebAudio notes immed
   if(oldStore===undefined)delete globalThis.localStorage;else globalThis.localStorage=oldStore;
  }
 });
+
+
+test('LR-004: an interrupted WebAudio melody stops previously scheduled notes',async()=>{
+ const oldWindow=globalThis.window,oldWarn=console.warn;
+ const notes=[];let created=0;
+ class InterruptedAudioContext{
+  state='running';currentTime=5;destination={};
+  createOscillator(){
+   if(++created===3)throw new Error('audio device failed during scheduling');
+   const note={stops:[],disconnected:0,frequency:{value:0},
+    connect(){},start(){},stop(at){this.stops.push(at);},
+    disconnect(){this.disconnected++;}};
+   notes.push(note);return note;
+  }
+  createGain(){return {gain:{setValueAtTime(){},exponentialRampToValueAtTime(){}},
+   connect(){},disconnect(){}};}
+ }
+ globalThis.window={AudioContext:InterruptedAudioContext};
+ console.warn=()=>{}; // The simulated device error is intentional.
+ try{
+  const sound=await import('./loveroll-sounds.mjs?test-lr004-interrupted-audio');
+  assert.equal(await sound.unlockLoveRollSounds(),true);
+  assert.equal(sound.playLoveRollSound('timer:interrupted'),false);
+  assert.equal(notes.length,2,'Two notes were scheduled before the third failed');
+  assert.ok(notes.every(note=>note.stops.length>=2&&note.disconnected>0),
+   'Failure must stop and disconnect even notes already scheduled');
+  assert.equal(sound.playLoveRollSound('timer:interrupted'),true,
+   'A failed attempt must not mark the event as already played');
+ }finally{
+  console.warn=oldWarn;
+  if(oldWindow===undefined)delete globalThis.window;else globalThis.window=oldWindow;
+ }
+});
