@@ -4466,7 +4466,9 @@ async function handle(action,element){
    if(parts[0]==='sound'&&!await unlockLoveRollSounds())
     notify('Autorise le son du navigateur avec un toucher, puis utilise Tester.');
    challengeTimer.mode=parts[0];
-   localStorage.setItem('loveroll-timer-mode',parts[0]);
+   // Keep the selected signal working for this session even when Safari
+   // denies persistent storage (private mode or browser security policy).
+   try{localStorage.setItem('loveroll-timer-mode',parts[0]);}catch{}
    render();return;
  }
  if(verb==='timer-sound-test'){
