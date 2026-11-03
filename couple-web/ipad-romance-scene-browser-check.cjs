@@ -97,10 +97,11 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
       'The photographed D6/D100 cannot be shrunk to a tiny tablet icon: '+JSON.stringify(scene));
      assert.ok(Math.abs(scene.meshBottom-scene.contact)<4,
       'Die must meet original photographed marble plane: '+JSON.stringify(scene));
-     // The responsive scene can update its marble variable after WebGL
-     // first mounts. Move the marker 6px, verify the *actual* 3D projection
-     // follows, then restore the approved photograph before screenshots.
-     if(step==='ready'){
+     // After the WebGL canvas mounts, the tablet layout can move the marble
+     // contact without resizing the canvas. Verify BOTH the waiting D6 and
+     // the playable D100 follow an explicit late 6px move, then restore the
+     // approved photograph. This catches the real 5px iPad D6 regression.
+     if(step==='waiting'||step==='ready'){
       const before=await page.evaluate(()=>{
        const root=document.querySelector('#app'),old=root.style.getPropertyValue('--home-scene-contact');
        const priority=root.style.getPropertyPriority('--home-scene-contact');
@@ -108,33 +109,41 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
        root.style.setProperty('--home-scene-contact',(position+6)+'px');
        return {old,priority};
       });
-      const aligned=()=>page.evaluate(()=>{
-       const canvas=document.querySelector('.evening-d100-theater canvas');
-       const marker=document.querySelector('.evening-d100-theater .home-pedestal-contact');
+      const aligned=()=>page.evaluate(selector=>{
+       const canvas=document.querySelector(selector+' canvas');
+       const marker=document.querySelector(selector+' .home-pedestal-contact');
        if(!canvas?.loveRollDie?.projectedBounds||!marker)return null;
        const rect=canvas.getBoundingClientRect(),bounds=canvas.loveRollDie.projectedBounds();
        return marker.getBoundingClientRect().top-(rect.top+bounds.bottom*rect.height);
-      });
-      await page.waitForFunction(()=>{
-       const canvas=document.querySelector('.evening-d100-theater canvas');
-       const marker=document.querySelector('.evening-d100-theater .home-pedestal-contact');
+      },hero);
+      await page.waitForFunction(selector=>{
+       const canvas=document.querySelector(selector+' canvas');
+       const marker=document.querySelector(selector+' .home-pedestal-contact');
        if(!canvas?.loveRollDie?.projectedBounds||!marker)return false;
        const rect=canvas.getBoundingClientRect(),bounds=canvas.loveRollDie.projectedBounds();
        return Math.abs(marker.getBoundingClientRect().top-(rect.top+bounds.bottom*rect.height))<4;
-      },null,{timeout:2500});
-      assert.ok(Math.abs(await aligned())<4,'D100 must follow a late tablet photo-contact change');
+      },hero,{timeout:2500});
+      assert.ok(Math.abs(await aligned())<4,
+       (step==='waiting'?'D6':'D100')+' must follow a late tablet photo-contact change');
+      // A correct fix must move the 3D projection, not resize its theater.
+      // Keep the existing strict 4px photo-contact tolerance unchanged.
+      const movedCanvas=await page.locator(hero+' canvas').boundingBox();
+      assert.ok(movedCanvas&&
+       Math.abs(movedCanvas.width-scene.stageWidth)<.5&&
+       Math.abs(movedCanvas.height-scene.stageHeight)<.5,
+       'Late photographic contact must not resize the WebGL canvas');
       await page.evaluate(({old,priority})=>{
        const root=document.querySelector('#app');
        if(old)root.style.setProperty('--home-scene-contact',old,priority);
        else root.style.removeProperty('--home-scene-contact');
       },before);
-      await page.waitForFunction(()=>{
-       const canvas=document.querySelector('.evening-d100-theater canvas');
-       const marker=document.querySelector('.evening-d100-theater .home-pedestal-contact');
+      await page.waitForFunction(selector=>{
+       const canvas=document.querySelector(selector+' canvas');
+       const marker=document.querySelector(selector+' .home-pedestal-contact');
        if(!canvas?.loveRollDie?.projectedBounds||!marker)return false;
        const rect=canvas.getBoundingClientRect(),bounds=canvas.loveRollDie.projectedBounds();
        return Math.abs(marker.getBoundingClientRect().top-(rect.top+bounds.bottom*rect.height))<4;
-      },null,{timeout:2500});
+      },hero,{timeout:2500});
      }
      assert.ok(Math.abs(scene.meshCenter-width/2)<7,
       'Die must sit centered on the single photo marble');
