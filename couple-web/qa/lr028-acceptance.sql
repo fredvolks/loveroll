@@ -91,9 +91,21 @@ begin
   if sqlerrm='SECURITY FAILURE: NULL response accepted' then raise;end if;
  end;
 
- -- Changing a couple's membership must not leak a former B invitation to C.
+ -- Changing a couple's membership must invalidate the former invitation
+ -- for both the replaced member AND the old member still in the couple.
  delete from public.couple_members where couple_id=couple and user_id=b;
  insert into public.couple_members(couple_id,user_id) values(couple,c);
+ perform set_config('request.jwt.claim.sub',a::text,true);
+ status_a:=public.love_evening_invite_status(couple);
+ if status_a->>'state'<>'none' or status_a->>'available'<>'false'
+    or status_a ? 'recipient_id' or status_a ? 'id' then
+  raise exception 'Old sender must never see removed partner or stale invitation: %',status_a;end if;
+ begin
+  perform public.love_evening_invite_send(couple);
+  raise exception 'SECURITY FAILURE: old sender reused removed partner invitation';
+ exception when raise_exception then
+  if sqlerrm='SECURITY FAILURE: old sender reused removed partner invitation' then raise;end if;
+ end;
  perform set_config('request.jwt.claim.sub',c::text,true);
  status_b:=public.love_evening_invite_status(couple);
  if status_b->>'state'<>'none' or status_b->>'available'<>'false' then
@@ -138,5 +150,293 @@ begin
  exception when raise_exception then
   if sqlerrm='SECURITY FAILURE: accepted expired invite' then raise;end if;
  end;
+ -- The reverse swap (original sender removed) must also revoke the ability
+ -- to answer, even if the recipient B remains a verified couple member.
+ delete from public.couple_members
+  where couple_id='eeeeeeee-eeee-4eee-eeee-eeeeeeeeeeee' and user_id=a;
+ insert into public.couple_members(couple_id,user_id) values
+  ('eeeeeeee-eeee-4eee-eeee-eeeeeeeeeeee',c);
+ perform set_config('request.jwt.claim.sub',b::text,true);
+ status_b:=public.love_evening_invite_status('eeeeeeee-eeee-4eee-eeee-eeeeeeeeeeee');
+ if status_b->>'state'<>'none' or status_b ? 'id' then
+  raise exception 'Remaining recipient must not see removed sender: %',status_b;end if;
+ begin
+  perform public.love_evening_invite_respond((again->>'id')::uuid,'no');
+  raise exception 'SECURITY FAILURE: recipient answered after sender was replaced';
+ exception when sqlstate '42501' then null;
+ end;
 end$$;
+
+-- LR-028 RLS role-level regression: execute SELECT as authenticated, not as
+-- the postgres fixture owner that bypasses RLS.  This uses synthetic users,
+-- a synthetic couple and test-only grants; it never touches real Supabase.
+insert into public.couples(id) values('ffffffff-ffff-4fff-bfff-ffffffffffff');
+insert into public.couple_members(couple_id,user_id) values
+ ('ffffffff-ffff-4fff-bfff-ffffffffffff','aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa'),
+ ('ffffffff-ffff-4fff-bfff-ffffffffffff','bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb');
+insert into public.love_evening_invitations(
+ couple_id,local_day,sender_id,recipient_id
+) values (
+ 'ffffffff-ffff-4fff-bfff-ffffffffffff',
+ (now() at time zone 'America/Toronto')::date,
+ 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',
+ 'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb'
+);
+-- Minimal permissions for this isolated fixture's SECURITY INVOKER
+-- couple_private.is_member() mock; these are NOT production grants.
+grant usage on schema auth,couple_private to authenticated;
+grant select on public.couple_members to authenticated;
+
+set role authenticated;
+select set_config('request.jwt.claim.sub',
+ 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',false);
+do $rls$
+begin
+ if (select count(*) from public.love_evening_invitations
+     where couple_id='ffffffff-ffff-4fff-bfff-ffffffffffff')<>1 then
+  raise exception 'RLS: original sender should see active invitation';
+ end if;
+end $rls$;
+select set_config('request.jwt.claim.sub',
+ 'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb',false);
+do $rls$
+begin
+ if (select count(*) from public.love_evening_invitations
+     where couple_id='ffffffff-ffff-4fff-bfff-ffffffffffff')<>1 then
+  raise exception 'RLS: original recipient should see active invitation';
+ end if;
+end $rls$;
+reset role;
+
+-- Replace B by C inside the same couple and the same Toronto calendar day.
+delete from public.couple_members
+ where couple_id='ffffffff-ffff-4fff-bfff-ffffffffffff'
+   and user_id='bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb';
+insert into public.couple_members(couple_id,user_id) values
+ ('ffffffff-ffff-4fff-bfff-ffffffffffff',
+  'cccccccc-cccc-4ccc-cccc-cccccccccccc');
+
+set role authenticated;
+select set_config('request.jwt.claim.sub',
+ 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',false);
+do $rls$
+begin
+ if exists(select 1 from public.love_evening_invitations
+     where couple_id='ffffffff-ffff-4fff-bfff-ffffffffffff') then
+  raise exception 'RLS: remaining sender saw the former recipient';
+ end if;
+end $rls$;
+select set_config('request.jwt.claim.sub',
+ 'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb',false);
+do $rls$
+begin
+ if exists(select 1 from public.love_evening_invitations
+     where couple_id='ffffffff-ffff-4fff-bfff-ffffffffffff') then
+  raise exception 'RLS: removed recipient saw former invitation';
+ end if;
+end $rls$;
+select set_config('request.jwt.claim.sub',
+ 'cccccccc-cccc-4ccc-cccc-cccccccccccc',false);
+do $rls$
+begin
+ if exists(select 1 from public.love_evening_invitations
+     where couple_id='ffffffff-ffff-4fff-bfff-ffffffffffff') then
+  raise exception 'RLS: replacement partner saw former invitation';
+ end if;
+end $rls$;
+reset role;
+
+-- Regression: replacing the ORIGINAL SENDER while the invitation is still
+-- pending must revoke the remaining recipient's read and reply rights.
+-- Earlier tests only covered the sender swap after a No/expiration.
+do $pending_sender_swap$
+declare
+  fresh_couple uuid := '99999999-9999-4999-8999-999999999999';
+  a uuid := 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa';
+  b uuid := 'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb';
+  c uuid := 'cccccccc-cccc-4ccc-cccc-cccccccccccc';
+  invitation_id uuid;
+  result jsonb;
+begin
+  insert into public.couples(id) values(fresh_couple);
+  insert into public.couple_members(couple_id,user_id)
+    values (fresh_couple,a),(fresh_couple,b);
+  insert into public.couple_rolls(couple_id,kind,key,face)
+    select fresh_couple,kind,key,face
+      from public.couple_rolls
+      where couple_id='dddddddd-dddd-4ddd-dddd-dddddddddddd'
+        and kind='weekly';
+
+  perform set_config('request.jwt.claim.sub',a::text,true);
+  result:=public.love_evening_invite_send(fresh_couple);
+  invitation_id:=(result->>'id')::uuid;
+  if invitation_id is null or result->>'status'<>'pending' then
+    raise exception 'Fixture: invitation must be pending: %',result;
+  end if;
+
+  perform set_config('request.jwt.claim.sub',b::text,true);
+  if public.love_evening_invite_status(fresh_couple)->>'state'<>'pending' then
+    raise exception 'Fixture: recipient must see pending invite before swap';
+  end if;
+
+  delete from public.couple_members
+    where couple_id=fresh_couple and user_id=a;
+  insert into public.couple_members(couple_id,user_id)
+    values(fresh_couple,c);
+
+  result:=public.love_evening_invite_status(fresh_couple);
+  if result->>'state'<>'none' or result ? 'id'
+      or result ? 'sender_id' or result ? 'recipient_id' then
+    raise exception 'Remaining recipient saw removed sender: %',result;
+  end if;
+  begin
+    perform public.love_evening_invite_respond(invitation_id,'yes');
+    raise exception 'SECURITY FAILURE: replied to pending invite after sender swap';
+  exception when sqlstate '42501' then null;
+  end;
+
+  perform set_config('request.jwt.claim.sub',c::text,true);
+  result:=public.love_evening_invite_status(fresh_couple);
+  if result->>'state'<>'none' or result ? 'id' then
+    raise exception 'Replacement sender inherited stale invite: %',result;
+  end if;
+  begin
+    perform public.love_evening_invite_respond(invitation_id,'yes');
+    raise exception 'SECURITY FAILURE: new member answered old invite';
+  exception when sqlstate '42501' then null;
+  end;
+end
+$pending_sender_swap$;
+
+-- Negative SELECT tests must prove revocation, not accidental row removal.
+-- Confirm the original A->B invitation survives the sender membership swap.
+-- Execute this as the fixture owner before switching to authenticated roles.
+do $pending_sender_fixture_guard$
+begin
+ if (select count(*) from public.love_evening_invitations
+     where couple_id='99999999-9999-4999-8999-999999999999'
+       and sender_id='aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa'
+       and recipient_id='bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb'
+       and status='pending'
+       and expires_at>now())<>1 then
+  raise exception 'Fixture: original pending A-to-B invitation must still exist after sender replacement';
+ end if;
+end
+$pending_sender_fixture_guard$;
+
+-- Pending sender replacement: test the actual authenticated SELECT policy,
+-- not only SECURITY DEFINER RPCs. The still-present recipient B must lose
+-- read access as soon as original sender A is replaced by C.
+-- The fixture above leaves couple 9999... with an unexpired pending invite.
+set role authenticated;
+select set_config('request.jwt.claim.sub',
+ 'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb',false);
+do $pending_sender_rls$
+begin
+ if exists(select 1 from public.love_evening_invitations
+    where couple_id='99999999-9999-4999-8999-999999999999') then
+  raise exception 'RLS: remaining recipient read a replaced sender invitation';
+ end if;
+end
+$pending_sender_rls$;
+
+-- The replacement C must not inherit a prior sender's private invite.
+select set_config('request.jwt.claim.sub',
+ 'cccccccc-cccc-4ccc-cccc-cccccccccccc',false);
+do $new_sender_rls$
+begin
+ if exists(select 1 from public.love_evening_invitations
+    where couple_id='99999999-9999-4999-8999-999999999999') then
+  raise exception 'RLS: new partner inherited an earlier invitation';
+ end if;
+end
+$new_sender_rls$;
+
+-- The removed sender A must also lose direct table SELECT access.
+select set_config('request.jwt.claim.sub',
+ 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',false);
+do $removed_sender_rls$
+begin
+ if exists(select 1 from public.love_evening_invitations
+    where couple_id='99999999-9999-4999-8999-999999999999') then
+  raise exception 'RLS: removed sender still sees an old invitation';
+ end if;
+end
+$removed_sender_rls$;
+reset role;
+
 select 'LR-028: all isolated SQL A/B tests passed' as result;
+
+
+-- LR-028 negative authorization contract: a database role is as important as
+-- the request.jwt.claim.sub fixture.  A fabricated sub string under anon
+-- MUST NOT grant the caller any access to invitation data or RPCs.
+-- This is an isolated PostgreSQL permission test, not a real signed JWT test.
+set role anon;
+select set_config('request.jwt.claim.sub',
+ 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',false);
+do $anonymous_gate$
+begin
+ begin
+  perform 1 from public.love_evening_invitations limit 1;
+  raise exception 'SECURITY FAILURE: anon SELECT had table permission';
+ exception when sqlstate '42501' then null;
+ end;
+ begin
+  perform public.love_evening_invite_status(
+    'ffffffff-ffff-4fff-bfff-ffffffffffff');
+  raise exception 'SECURITY FAILURE: anon called invite status';
+ exception when sqlstate '42501' then null;
+ end;
+ begin
+  perform public.love_evening_invite_send(
+    'ffffffff-ffff-4fff-bfff-ffffffffffff');
+  raise exception 'SECURITY FAILURE: anon sent an invitation';
+ exception when sqlstate '42501' then null;
+ end;
+ begin
+  perform public.love_evening_invite_respond(
+    'ffffffff-ffff-4fff-bfff-ffffffffffff','yes');
+  raise exception 'SECURITY FAILURE: anon called invite respond';
+ exception when sqlstate '42501' then null;
+ end;
+end
+$anonymous_gate$;
+reset role;
+
+-- An authenticated DB role without a user identity must also fail closed.
+-- The mock auth.uid() returns NULL for an empty claim, like Supabase Auth.
+set role authenticated;
+select set_config('request.jwt.claim.sub','',false);
+do $missing_identity$
+begin
+ if auth.uid() is not null then
+  raise exception 'Fixture failure: blank identity must yield NULL';
+ end if;
+ if exists(select 1 from public.love_evening_invitations) then
+  raise exception 'SECURITY FAILURE: no-identity role read invitations';
+ end if;
+ begin
+  perform public.love_evening_invite_status(
+    'ffffffff-ffff-4fff-bfff-ffffffffffff');
+  raise exception 'SECURITY FAILURE: no-identity role called status';
+ exception when sqlstate '42501' then null;
+ end;
+ begin
+  perform public.love_evening_invite_send(
+    'ffffffff-ffff-4fff-bfff-ffffffffffff');
+  raise exception 'SECURITY FAILURE: no-identity role sent invitation';
+ exception when sqlstate '42501' then null;
+ end;
+ begin
+  perform public.love_evening_invite_respond(
+    'ffffffff-ffff-4fff-bfff-ffffffffffff','yes');
+  raise exception 'SECURITY FAILURE: no-identity role answered invitation';
+ exception when sqlstate '42501' then null;
+ end;
+end
+$missing_identity$;
+reset role;
+select set_config('request.jwt.claim.sub','',false);
+
+select 'LR-028: anon and missing-identity authorization tests passed' as result;
