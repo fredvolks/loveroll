@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {premiumHomeHtml} from './premium-home.mjs';
-import {safeEveningStorage,saveEveningSelection,clearEveningSelection,restoreEveningSelection} from './evening-resume.mjs';
+import {safeEveningStorage,saveEveningSelection,clearEveningSelection,restoreEveningSelection,recoverAcceptedEveningSelection} from './evening-resume.mjs';
 const read=p=>readFileSync(new URL('./'+p,import.meta.url),'utf8'),app=read('app.js'),sw=read('service-worker.js');
 const memory=()=>{const map=new Map();return {map,getItem:k=>map.get(k)??null,setItem:(k,v)=>map.set(k,v),removeItem:k=>map.delete(k)};};
 test('Home exposes resume only while an official weekly evening is open',()=>{
@@ -129,4 +129,27 @@ test('LR-018: incomplete card data must not erase a saved selection',()=>{
  assert.equal(restoreEveningSelection(store,'alice','session-a',[card]),card.id);
  assert.equal(restoreEveningSelection(store,'alice','session-a',[]),null);
  assert.equal(store.map.size,0,'A confirmed empty list invalidates the bookmark');
+});
+
+
+test('LR-018: denied browser storage falls back only to an accepted server card',()=>{
+ const card=(id,status,recipient='alice',session_id='s1')=>({id,status,recipient,session_id});
+ const cards=[card('done','completed'),card('waiting','proposed'),card('foreign','accepted','bob'),
+  card('other-session','accepted','alice','s2'),card('live','accepted')];
+ assert.equal(recoverAcceptedEveningSelection(cards,'alice','s1'),'live');
+ assert.equal(recoverAcceptedEveningSelection(cards,'bob','s1'),'foreign');
+ assert.equal(recoverAcceptedEveningSelection(cards,'alice','s2'),'other-session');
+ assert.equal(recoverAcceptedEveningSelection(cards.slice(0,2),'alice','s1'),null);
+ for(const bad of [null,undefined,{},'offline'])
+  assert.equal(recoverAcceptedEveningSelection(bad,'alice','s1'),null);
+ const handler=app.slice(app.indexOf("if(verb==='resume-evening'){"),app.indexOf("if(verb==='tab'){"));
+ assert.match(handler,/restoreEveningSelection\(safeEveningStorage\(\),state\.user\.id,session\.id,privateCards\)\|\|\s*recoverAcceptedEveningSelection\(privateCards,state\.user\.id,session\.id\)/);
+});
+
+test('LR-018: stale refused/passed actions cannot reopen a card or replace a live bookmark',()=>{
+ const handler=app.slice(app.indexOf("if(verb==='evening-open'){"),app.indexOf("if(verb==='evening-favorite-cancel'){"));
+ assert.match(handler,/visibleEveningQueue\(ownEveningChallenges\(/);
+ assert.match(handler,/if\(\['proposed','accepted'\]\.includes\(card\.status\)\)/);
+ assert.match(handler,/saveEveningSelection\(safeEveningStorage\(\),state\.user\.id,state\.session\.id,card\.id\)/);
+ assert.doesNotMatch(handler,/clearEveningSelection\(/);
 });
