@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {premiumHomeHtml} from './premium-home.mjs';
-import {saveEveningSelection,clearEveningSelection,restoreEveningSelection} from './evening-resume.mjs';
+import {safeEveningStorage,saveEveningSelection,clearEveningSelection,restoreEveningSelection} from './evening-resume.mjs';
 const read=p=>readFileSync(new URL('./'+p,import.meta.url),'utf8'),app=read('app.js'),sw=read('service-worker.js');
 const memory=()=>{const map=new Map();return {map,getItem:k=>map.get(k)??null,setItem:(k,v)=>map.set(k,v),removeItem:k=>map.delete(k)};};
 test('Home exposes resume only while an official weekly evening is open',()=>{
@@ -41,12 +41,12 @@ test('Resume action is read-only, restores server private queue and reconciles t
  assert.match(handler,/await refreshShared\(\)/);
  assert.match(handler,/playableSessionForWeekly\(state\.session,state\.weekly\)/);
  assert.match(handler,/ownEveningChallenges\(state\.challenges,state\.user\.id,session\.id\)/);
- assert.match(handler,/restoreEveningSelection\(localStorage,state\.user\.id,session\.id,privateCards\)/);
+ assert.match(handler,/restoreEveningSelection\(safeEveningStorage\(\),state\.user\.id,session\.id,privateCards\)/);
  assert.match(handler,/reconcileSavedEveningTimers\(\)/);
  assert.doesNotMatch(handler,/rpc\('|animateRoll|new-session|new-challenge|roll_my_evening_d6/);
  assert.match(app,/const ongoingEvening=activeEvening&&!activeEvening\.finished_at/);
  assert.match(app,/activeEvening:!!ongoingEvening/);
- assert.match(app,/saveEveningSelection\(localStorage,state\.user\.id,state\.session\.id,parts\[0\]\)/);
+ assert.match(app,/saveEveningSelection\(safeEveningStorage\(\),state\.user\.id,state\.session\.id,parts\[0\]\)/);
  const build=JSON.parse(read('web-version.json')).build;
  assert.ok(sw.includes("const CACHE='loveroll-static-v"+build.split('.')[1]+"'"));
  assert.match(sw,/\.\/evening-resume\.mjs/);
@@ -83,4 +83,18 @@ test('LR-018: unavailable storage is not reported as successful persistence',()=
  const available=memory();
  assert.equal(saveEveningSelection(available,'alice','s1','a'),true);
  assert.equal(restoreEveningSelection(available,'alice','s1',[card]),'a');
+});
+
+// Storage's property getter can throw before a helper receives the storage object.
+test('LR-018: denied browser storage getter never interrupts selecting or resuming a card',()=>{
+ const denied=()=>{throw new Error('SecurityError')};
+ const store=memory();
+ assert.equal(safeEveningStorage(denied),null);
+ assert.equal(safeEveningStorage(()=>undefined),null);
+ assert.equal(safeEveningStorage(()=>store),store);
+ assert.equal(saveEveningSelection(safeEveningStorage(denied),'alice','s1','a'),false);
+ assert.equal(restoreEveningSelection(safeEveningStorage(denied),'alice','s1',[]),null);
+ assert.equal(clearEveningSelection(safeEveningStorage(denied),'alice','s1'),undefined);
+ assert.equal((app.match(/(?:saveEveningSelection|restoreEveningSelection|clearEveningSelection)\(safeEveningStorage\(\),/g)||[]).length,5);
+ assert.doesNotMatch(app,/(?:saveEveningSelection|restoreEveningSelection|clearEveningSelection)\(localStorage,/);
 });
