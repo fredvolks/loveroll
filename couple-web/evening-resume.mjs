@@ -3,7 +3,8 @@
 const key=(userId,sessionId)=>userId&&sessionId?'loveroll-evening-resume-v1:'+userId+':'+sessionId:null;
 export function saveEveningSelection(storage,userId,sessionId,challengeId){
  const k=key(userId,sessionId);if(!k||!challengeId)return false;
- try{storage?.setItem(k,String(challengeId));return true;}catch{return false;}
+ try{if(typeof storage?.setItem!=='function')return false;
+  storage.setItem(k,String(challengeId));return true;}catch{return false;}
 }
 export function clearEveningSelection(storage,userId,sessionId){
  const k=key(userId,sessionId);if(!k)return;
