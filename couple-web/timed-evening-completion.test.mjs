@@ -338,3 +338,19 @@ test('LR-002 initial Soirée start blocks double acceptance and respects an ackn
  assert.match(block,/if\(active&&\['completed','passed','refused'\]\.includes\(active\.status\)\)return;/);
  assert.match(block,/Défi accepté sur le serveur/);
 });
+
+test('LR-002 a rendered 00:00 never offers Pause before the 500ms timer tick',()=>{
+ const running={durationMs:120000,remainingMs:120000,running:true};
+ const completed={label:'♡ Terminé',status:'Terminé',disabled:true,resetDisabled:false};
+ for(const offset of [-1000,-15000]){
+  assert.deepEqual(timedEveningTimerControl({...running,deadline:Date.now()+offset}),completed);
+ }
+ assert.deepEqual(timedEveningTimerControl({...running,deadline:Date.now()+60000}),{
+  label:'Ⅱ Pause',status:'En cours',disabled:false,resetDisabled:false
+ });
+ assert.deepEqual(timedEveningTimerControl({...running,deadline:Date.now()-1000,autoCompletePending:true}),{
+  label:'♡ Validation en cours',status:'Validation du défi en cours',
+  disabled:true,resetDisabled:true
+ });
+});
+
