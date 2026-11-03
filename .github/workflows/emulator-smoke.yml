@@ -1,7 +1,9 @@
 name: LoveRoll unified Android/iPad responsive shell emulator check
 on:
   push:
-    branches: [des-a-deux-apk-20261013]
+    # Re-run the real emulator against the integrated mainline, not only the PR.
+    # Preserve the historical APK branch's existing push coverage.
+    branches: [main, des-a-deux-apk-20261013]
   pull_request:
     # Mainline native changes must pass the same real emulator smoke test.
     # Keep the legacy APK branch until its open work is reconciled.
