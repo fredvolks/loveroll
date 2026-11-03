@@ -5,11 +5,17 @@ export function timedEveningTimerControl(timer){
   label:'♡ Validation en cours',status:'Validation du défi en cours',
   disabled:true,resetDisabled:true
  };
+ // A view may render before the 500 ms clock tick observes the deadline.
+ // Use the same wall-clock deadline as the visible countdown, not the
+ // original remainingMs snapshot, so 00:00 never displays "Pause".
+ const deadline=Number(timer?.deadline);
+ const remaining=timer?.running&&Number.isFinite(deadline)&&deadline>0
+  ?Math.max(0,deadline-Date.now()):Number(timer?.remainingMs);
+ if(!(remaining>0))return {
+  label:'♡ Terminé',status:'Terminé',disabled:true,resetDisabled:false
+ };
  if(timer?.running)return {
   label:'Ⅱ Pause',status:'En cours',disabled:false,resetDisabled:false
- };
- if(!(Number(timer?.remainingMs)>0))return {
-  label:'♡ Terminé',status:'Terminé',disabled:true,resetDisabled:false
  };
  const resumed=Number(timer?.remainingMs)<Number(timer?.durationMs);
  return {label:resumed?'▶ Reprendre':'▶ Démarrer',
