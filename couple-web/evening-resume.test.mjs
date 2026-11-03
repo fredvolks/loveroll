@@ -116,3 +116,17 @@ test('LR-018: denied browser storage getter never interrupts selecting or resumi
  assert.equal((app.match(/(?:saveEveningSelection|restoreEveningSelection|clearEveningSelection)\(safeEveningStorage\(\),/g)||[]).length,5);
  assert.doesNotMatch(app,/(?:saveEveningSelection|restoreEveningSelection|clearEveningSelection)\(localStorage,/);
 });
+
+// An absent/invalid list represents a load failure, not proof the card vanished.
+test('LR-018: incomplete card data must not erase a saved selection',()=>{
+ const store=memory(),card={id:'card-a',recipient:'alice',session_id:'session-a',status:'accepted'};
+ assert.equal(saveEveningSelection(store,'alice','session-a',card.id),true);
+ const originalSize=store.map.size;
+ for(const list of [undefined,null,{},'offline']){
+  assert.equal(restoreEveningSelection(store,'alice','session-a',list),null);
+  assert.equal(store.map.size,originalSize,'An unknown server state cannot discard a valid bookmark');
+ }
+ assert.equal(restoreEveningSelection(store,'alice','session-a',[card]),card.id);
+ assert.equal(restoreEveningSelection(store,'alice','session-a',[]),null);
+ assert.equal(store.map.size,0,'A confirmed empty list invalidates the bookmark');
+});
