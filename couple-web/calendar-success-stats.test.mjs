@@ -189,3 +189,25 @@ test('LR-015: replacement chains consume one D6 slot, while all original events 
  assert.equal(active.denominator,1);
  assert.equal(active.percent,100);
 });
+
+test('LR-003: duplicate or resumed counted sessions count only once per Québec day',()=>{
+ const roll={kind:'weekly',key:'2026-10-12',face:4,created_at:'2026-10-12T12:00:00Z'};
+ const sessions=[
+  {id:'monday',started_at:'2026-10-12T18:00:00Z',
+   finished_at:'2026-10-12T19:00:00Z',counted:true},
+  // UTC Tuesday is still Monday night in America/Toronto.
+  {id:'monday-duplicate',started_at:'2026-10-13T01:30:00Z',
+   finished_at:'2026-10-13T02:00:00Z',counted:true},
+  {id:'tuesday',started_at:'2026-10-13T18:00:00Z',
+   finished_at:'2026-10-13T19:00:00Z',counted:true},
+  {id:'pre-roll',started_at:'2026-10-12T10:00:00Z',
+   finished_at:'2026-10-12T11:00:00Z',counted:true},
+  {id:'open-wednesday',started_at:'2026-10-14T18:00:00Z',
+   finished_at:null,counted:true},
+  {id:'uncounted-thursday',started_at:'2026-10-15T18:00:00Z',
+   finished_at:'2026-10-15T19:00:00Z',counted:false}
+ ];
+ const result=calendarWeekSuccess({date:'2026-10-15',weeklyRolls:[roll],sessions});
+ assert.deepEqual(result,{hasRoll:true,possible:4,completed:2,percent:50,face:4});
+ assert.equal(roll.face,4,'Never mutate the official weekly D6 result');
+});
