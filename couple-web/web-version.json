@@ -1,5 +1,5 @@
 {
-  "build": "2026-11-03.271",
-  "label": "LR-003 : clôtures valides dans le calendrier et le bilan",
+  "build": "2026-11-03.272",
+  "label": "LR-004 : arrêt immédiat de la sonnerie du minuteur et isolation par compte",
   "released_at": "2026-11-03"
 }

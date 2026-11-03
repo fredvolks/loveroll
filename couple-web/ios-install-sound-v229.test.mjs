@@ -110,3 +110,240 @@ test('LR-004: a new gesture resumes the timer melody after an iOS-style audio su
   if(originalDocument===undefined)delete globalThis.document;else globalThis.document=originalDocument;
  }
 });
+
+test('LR-004: switching sound off cancels already scheduled WebAudio notes immediately',async()=>{
+ const oldWindow=globalThis.window,oldStore=globalThis.localStorage;
+ const values=new Map(),notes=[];
+ class FakeAudioContext{
+  state='running';currentTime=12;destination={};
+  createOscillator(){
+   const note={stops:[],disconnected:0,type:'',frequency:{value:0},
+    connect(){},start(){},stop(at){this.stops.push(at);},
+    disconnect(){this.disconnected++;}};
+   notes.push(note);return note;
+  }
+  createGain(){return {gain:{setValueAtTime(){},exponentialRampToValueAtTime(){}},connect(){},disconnect(){}};}
+ }
+ globalThis.window={AudioContext:FakeAudioContext};
+ globalThis.localStorage={getItem:k=>values.get(k),setItem:(k,v)=>{
+  if(v==='off')assert.ok(notes.every(note=>note.stops.length>=2&&note.disconnected>0),
+   'Muted audio must already be disconnected before synchronous storage writes');
+  values.set(k,v);
+ }};
+ try{
+  const sound=await import('./loveroll-sounds.mjs?test-lr004-mute');
+  sound.setLoveRollSoundUser('first');
+  assert.equal(await sound.unlockLoveRollSounds(),true);
+  assert.equal(sound.playLoveRollSound('timer:before-mute'),true);
+  assert.equal(notes.length,6);
+  assert.ok(notes.every(note=>note.stops.length===1),'Six melody notes were scheduled');
+  assert.equal(sound.setSoundEnabled(false),false);
+  assert.equal(sound.soundEnabled(),false);
+  assert.ok(notes.every(note=>note.stops.length>=2&&note.disconnected>0),
+   'Muting must stop and disconnect every already scheduled note');
+  assert.equal(sound.playLoveRollSound('timer:while-muted'),false);
+  assert.equal(sound.setSoundEnabled(true),true);
+  assert.equal(sound.playLoveRollSound('timer:after-unmute'),true);
+  assert.equal(notes.length,12,'Unmuting allows a new timer melody');
+  sound.setLoveRollSoundUser('second');
+  assert.ok(notes.slice(6).every(note=>note.stops.length>=2&&note.disconnected>0),
+   'Switching account must silence the previous account melody');
+  assert.equal(sound.soundEnabled(),true,'Sound preference remains per account');
+ }finally{
+  if(oldWindow===undefined)delete globalThis.window;else globalThis.window=oldWindow;
+  if(oldStore===undefined)delete globalThis.localStorage;else globalThis.localStorage=oldStore;
+ }
+});
+
+
+test('LR-004: an interrupted WebAudio melody stops previously scheduled notes',async()=>{
+ const oldWindow=globalThis.window,oldWarn=console.warn;
+ const notes=[];let created=0;
+ class InterruptedAudioContext{
+  state='running';currentTime=5;destination={};
+  createOscillator(){
+   if(++created===3)throw new Error('audio device failed during scheduling');
+   const note={stops:[],disconnected:0,frequency:{value:0},
+    connect(){},start(){},stop(at){this.stops.push(at);},
+    disconnect(){this.disconnected++;}};
+   notes.push(note);return note;
+  }
+  createGain(){return {gain:{setValueAtTime(){},exponentialRampToValueAtTime(){}},
+   connect(){},disconnect(){}};}
+ }
+ globalThis.window={AudioContext:InterruptedAudioContext};
+ console.warn=()=>{}; // The simulated device error is intentional.
+ try{
+  const sound=await import('./loveroll-sounds.mjs?test-lr004-interrupted-audio');
+  assert.equal(await sound.unlockLoveRollSounds(),true);
+  assert.equal(sound.playLoveRollSound('timer:interrupted'),false);
+  assert.equal(notes.length,2,'Two notes were scheduled before the third failed');
+  assert.ok(notes.every(note=>note.stops.length>=2&&note.disconnected>0),
+   'Failure must stop and disconnect even notes already scheduled');
+  assert.equal(sound.playLoveRollSound('timer:interrupted'),true,
+   'A failed attempt must not mark the event as already played');
+ }finally{
+  console.warn=oldWarn;
+  if(oldWindow===undefined)delete globalThis.window;else globalThis.window=oldWindow;
+ }
+});
+
+test('LR-004: denied localStorage cannot defeat immediate mute or account isolation',async()=>{
+ const oldWindow=globalThis.window;
+ const oldStorage=Object.getOwnPropertyDescriptor(globalThis,'localStorage');
+ const notes=[];
+ class RestrictedStorageAudioContext{
+  state='running';currentTime=2;destination={};
+  createOscillator(){
+   const note={stops:[],disconnected:0,frequency:{value:0},connect(){},start(){},
+    stop(at){this.stops.push(at);},disconnect(){this.disconnected++;}};
+   notes.push(note);return note;
+  }
+  createGain(){return {gain:{setValueAtTime(){},exponentialRampToValueAtTime(){}},
+   connect(){},disconnect(){}};}
+ }
+ try{
+  Object.defineProperty(globalThis,'localStorage',{configurable:true,
+   get(){throw new Error('Storage denied');}});
+  globalThis.window={AudioContext:RestrictedStorageAudioContext};
+  const sound=await import('./loveroll-sounds.mjs?test-lr004-restricted-storage');
+  sound.setLoveRollSoundUser('storage-blocked-a');
+  assert.equal(await sound.unlockLoveRollSounds(),true);
+  assert.equal(sound.playLoveRollSound('timer:before-denial'),true);
+  assert.equal(notes.length,6);
+  assert.equal(sound.setSoundEnabled(false),false,
+   'A blocked localStorage getter must not throw before muting');
+  assert.ok(notes.every(note=>note.stops.length>=2&&note.disconnected>0));
+  assert.equal(sound.soundEnabled(),false,'Mute remains active during this session');
+  assert.equal(sound.playLoveRollSound('timer:while-denied'),false);
+  sound.setLoveRollSoundUser('storage-blocked-b');
+  assert.equal(sound.soundEnabled(),true,'Other account retains its independent default');
+  sound.setLoveRollSoundUser('storage-blocked-a');
+  assert.equal(sound.soundEnabled(),false,'First account remains muted');
+  assert.equal(sound.setSoundEnabled(true),true);
+  assert.equal(sound.playLoveRollSound('timer:after-enable'),true);
+ }finally{
+  if(oldStorage)Object.defineProperty(globalThis,'localStorage',oldStorage);
+  else delete globalThis.localStorage;
+  if(oldWindow===undefined)delete globalThis.window;
+  else globalThis.window=oldWindow;
+ }
+});
+
+test('LR-004: muting from another tab stops an active timer without affecting other accounts',async()=>{
+ const oldWindow=globalThis.window,oldStore=globalThis.localStorage,oldDocument=globalThis.document;
+ const listeners=new Map(),notes=[],values=new Map();
+ class SharedTabAudioContext{
+  state='running';currentTime=6;destination={};
+  createOscillator(){
+   const note={stops:[],disconnected:0,frequency:{value:0},connect(){},start(){},
+    stop(at){this.stops.push(at);},disconnect(){this.disconnected++;}};
+   notes.push(note);return note;
+  }
+  createGain(){return {gain:{setValueAtTime(){},exponentialRampToValueAtTime(){}},
+   connect(){},disconnect(){}};}
+ }
+ const toggle={attrs:new Map(),textContent:'Activé',
+  setAttribute(name,value){this.attrs.set(name,value);}};
+ globalThis.document={addEventListener(){},
+  querySelectorAll(selector){return selector==='.lr-sound-switch'?[toggle]:[];}};
+ globalThis.window={AudioContext:SharedTabAudioContext,
+  addEventListener:(name,handler)=>listeners.set(name,handler)};
+ globalThis.localStorage={getItem:key=>values.get(key),setItem:(key,value)=>values.set(key,value)};
+ try{
+  const sound=await import('./loveroll-sounds.mjs?test-lr004-other-tab');
+  sound.setLoveRollSoundUser('tab-a');
+  assert.equal(await sound.unlockLoveRollSounds(),true);
+  assert.equal(sound.playLoveRollSound('timer:tab-a'),true);
+  assert.equal(notes.length,6);
+  const onStorage=listeners.get('storage');
+  assert.equal(typeof onStorage,'function','Sound settings listen for other tabs');
+  onStorage({key:'unrelated-setting',newValue:'off'});
+  onStorage({key:'loveroll-timer-sound-v229:tab-b',newValue:'off'});
+  assert.equal(sound.soundEnabled(),true,'A different account must not mute this player');
+  assert.ok(notes.every(note=>note.stops.length===1),'Unrelated changes leave melody alone');
+  onStorage({key:'loveroll-timer-sound-v229:tab-a',newValue:'off'});
+  assert.equal(sound.soundEnabled(),false,'This tab respects the newly saved preference');
+  assert.equal(toggle.attrs.get('aria-checked'),'false',
+   'The visible switch must reflect an external mute');
+  assert.equal(toggle.textContent,'Désactivé');
+  assert.ok(notes.every(note=>note.stops.length>=2&&note.disconnected>0),
+   'All already scheduled notes are cancelled immediately');
+  assert.equal(sound.playLoveRollSound('timer:while-muted'),false);
+  onStorage({key:'loveroll-timer-sound-v229:tab-a',newValue:'on'});
+  assert.equal(sound.soundEnabled(),true);
+  assert.equal(toggle.attrs.get('aria-checked'),'true');
+  assert.equal(toggle.textContent,'Activé');
+  assert.equal(sound.playLoveRollSound('timer:after-remote-unmute'),true);
+  assert.equal(notes.length,12);
+  sound.setLoveRollSoundUser('tab-b');
+  assert.equal(sound.soundEnabled(),false,'A change to the second account is retained');
+ }finally{
+  if(oldWindow===undefined)delete globalThis.window;else globalThis.window=oldWindow;
+  if(oldStore===undefined)delete globalThis.localStorage;else globalThis.localStorage=oldStore;
+  if(oldDocument===undefined)delete globalThis.document;else globalThis.document=oldDocument;
+ }
+});
+
+test('LR-004: a cancelled melody disconnects every gain even when Safari skips onended',async()=>{
+ const oldWindow=globalThis.window,oldStore=globalThis.localStorage;
+ const oscillators=[],gains=[],values=new Map();
+ class SilentEndedAudioContext{
+  state='running';currentTime=9;destination={};
+  createOscillator(){
+   const node={stops:[],disconnects:0,frequency:{value:0},
+    connect(){},start(){},stop(time){this.stops.push(time);},
+    disconnect(){this.disconnects++;}};
+   // Deliberately never call onended, as can happen for future scheduled notes.
+   oscillators.push(node);return node;
+  }
+  createGain(){
+   const node={disconnects:0,gain:{setValueAtTime(){},exponentialRampToValueAtTime(){}},
+    connect(){},disconnect(){this.disconnects++;}};
+   gains.push(node);return node;
+  }
+ }
+ globalThis.window={AudioContext:SilentEndedAudioContext};
+ globalThis.localStorage={getItem:key=>values.get(key),setItem:(key,value)=>values.set(key,value)};
+ try{
+  const sound=await import('./loveroll-sounds.mjs?test-lr004-gain-cleanup');
+  sound.setLoveRollSoundUser('gain-cleanup');
+  assert.equal(await sound.unlockLoveRollSounds(),true);
+  assert.equal(sound.playLoveRollSound('timer:gain-cleanup'),true);
+  assert.equal(gains.length,6);
+  assert.ok(gains.every(gain=>gain.disconnects===0),'All six gain nodes start connected');
+  sound.setSoundEnabled(false);
+  assert.ok(oscillators.every(osc=>osc.stops.length>=2&&osc.disconnects===1),
+   'Every scheduled oscillator is stopped and disconnected');
+  assert.ok(gains.every(gain=>gain.disconnects===1),
+   'Muting disconnects every gain without relying on onended');
+  sound.setSoundEnabled(false);
+  assert.ok(gains.every(gain=>gain.disconnects===1),
+   'Repeated mute must not retain or disconnect orphaned gain nodes again');
+ }finally{
+  if(oldWindow===undefined)delete globalThis.window;else globalThis.window=oldWindow;
+  if(oldStore===undefined)delete globalThis.localStorage;else globalThis.localStorage=oldStore;
+ }
+});
+
+test('LR-004: Web 272 loads the repaired sound module even from an older installed PWA',()=>{
+ const build=JSON.parse(read('web-version.json')).build;
+ const app=read('app.js'),html=read('index.html'),sw=read('service-worker.js');
+ assert.equal(build,'2026-11-03.272');
+ assert.ok(app.includes("const WEB_RELEASE='"+build+"'"));
+ assert.match(app,/loveroll-sounds\.mjs\?v=20261103-lr004-web272/);
+ assert.match(app,/serviceWorker\.register\('\.\/service-worker\.js\?v=20261103-web272'/);
+ assert.match(html,/src="\.\/app\.js\?v=20261103-web272"/);
+ assert.match(sw,/const CACHE='loveroll-static-v272'/);
+ assert.match(sw,/'\.\/loveroll-sounds\.mjs'/);
+});
+
+test('LR-004: choosing a timer signal survives denied browser storage',()=>{
+ const app=read('app.js');
+ const start=app.indexOf("if(verb==='timer-mode'){");
+ const end=app.indexOf("if(verb==='timer-sound-test'){",start);
+ assert.ok(start>=0&&end>start,'Timer signal action remains available');
+ const handler=app.slice(start,end);
+ assert.match(handler,/challengeTimer\.mode=parts\[0\];[\s\S]*?try\s*\{\s*localStorage\.setItem\('loveroll-timer-mode',parts\[0\]\);\s*\}catch\s*\{\s*\}[\s\S]*?render\(\);return;/,
+  'Browser denial must not block rendering or retaining the selected mode in memory');
+});

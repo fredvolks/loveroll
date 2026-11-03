@@ -4,22 +4,72 @@ const KEY='loveroll-timer-sound-v229';
 let context=null;
 let currentUser='anonymous';
 const recent=new Set();
-const activeMelodyOscillators=new Set();
+const activeMelodyNodes=new Set();
+const sessionSoundPreferences=new Map();
 export function silenceLoveRollSounds(){
- for(const oscillator of activeMelodyOscillators){
+ for(const {oscillator,gain} of activeMelodyNodes){
   try{oscillator.stop(context?.currentTime??0);}catch{}
   try{oscillator.disconnect();}catch{}
+  // Safari can skip onended for notes cancelled before their scheduled start.
+  // Disconnect the gain as well, so no orphaned node stays on destination.
+  try{gain.disconnect();}catch{}
  }
- activeMelodyOscillators.clear();
+ activeMelodyNodes.clear();
 }
-export const setLoveRollSoundUser=id=>{currentUser=String(id||'anonymous');};
+export const setLoveRollSoundUser=id=>{
+ const next=String(id||'anonymous');
+ if(next===currentUser)return;
+ // Never carry a previous account's playing melody or deduplication history
+ // into another person's LoveRoll session on a shared device.
+ silenceLoveRollSounds();
+ recent.clear();
+ currentUser=next;
+};
 const key=()=>KEY+':'+currentUser;
-export function soundEnabled(store=globalThis.localStorage){
- try{return store?.getItem(key())!=='off';}catch{return true;}
+// Keep the visible settings switch consistent with the preference received
+// from another tab, not only with the WebAudio engine behind it.
+function refreshSoundSettingsSwitch(){
+ const enabled=soundEnabled();
+ for(const control of globalThis.document?.querySelectorAll?.('.lr-sound-switch')??[]){
+  control.setAttribute('aria-checked',String(enabled));
+  control.textContent=enabled?'Activé':'Désactivé';
+ }
 }
-export function setSoundEnabled(enabled,store=globalThis.localStorage){
- try{store?.setItem(key(),enabled?'on':'off');}catch{}
- return !!enabled;
+// Settings can also change in another LoveRoll tab. Keep the current tab
+// silent immediately, even when its melody already has notes scheduled.
+function syncSoundPreferenceFromStorage(event){
+ const changedKey=event?.key;
+ if(typeof changedKey!=='string'||!changedKey.startsWith(KEY+':'))return;
+ // A removed key means the original default (sound on); never infer a new
+ // preference from unrelated browser storage keys.
+ const on=event.newValue!=='off';
+ sessionSoundPreferences.set(changedKey,on);
+ if(changedKey===key()){
+  if(!on)silenceLoveRollSounds();
+  refreshSoundSettingsSwitch();
+ }
+}
+if(typeof window!=='undefined')window.addEventListener?.('storage',syncSoundPreferenceFromStorage);
+export function soundEnabled(store){
+ const current=key();
+ // A user's choice still applies to this session if storage is denied.
+ if(sessionSoundPreferences.has(current))return sessionSoundPreferences.get(current);
+ try{
+  const storage=store===undefined?globalThis.localStorage:store;
+  return storage?.getItem(current)!=='off';
+ }catch{return true;}
+}
+export function setSoundEnabled(enabled,store){
+ const current=key(),on=!!enabled;
+ sessionSoundPreferences.set(current,on);
+ // Audio privacy takes priority over synchronous browser storage operations.
+ // A denied or slow write must never prolong an active timer melody.
+ if(!on)silenceLoveRollSounds();
+ try{
+  const storage=store===undefined?globalThis.localStorage:store;
+  storage?.setItem(current,on?'on':'off');
+ }catch{}
+ return on;
 }
 export async function unlockLoveRollSounds(){
  const target=globalThis.window;
@@ -66,8 +116,13 @@ export function playLoveRollSound(eventId='timer-preview',{force=false}={}){
    gain.gain.exponentialRampToValueAtTime(.115,at+.025);
    gain.gain.exponentialRampToValueAtTime(.0001,at+.235);
    oscillator.connect(gain);gain.connect(context.destination);
-   activeMelodyOscillators.add(oscillator);
-   oscillator.onended=()=>{activeMelodyOscillators.delete(oscillator);try{oscillator.disconnect();gain.disconnect();}catch{}};
+   const note={oscillator,gain};
+   activeMelodyNodes.add(note);
+   oscillator.onended=()=>{
+    activeMelodyNodes.delete(note);
+    try{oscillator.disconnect();}catch{}
+    try{gain.disconnect();}catch{}
+   };
    oscillator.start(at);oscillator.stop(at+.245);
   }
   if(!force){
@@ -75,7 +130,13 @@ export function playLoveRollSound(eventId='timer-preview',{force=false}={}){
    if(recent.size>100)recent.delete(recent.values().next().value);
   }
   return true;
- }catch(error){console.warn('Son du minuteur LoveRoll indisponible',error);return false;}
+ }catch(error){
+  // If a device rejects one note, abort all earlier notes already queued.
+  // Otherwise a failed alert can still leave a partial melody audible.
+  silenceLoveRollSounds();
+  console.warn('Son du minuteur LoveRoll indisponible',error);
+  return false;
+ }
 }
 export function soundSettingsHtml(){
  return '<section class="lr-sound-settings" aria-label="Sonneries de fin des minuteurs">'+
