@@ -12,13 +12,24 @@ export function silenceLoveRollSounds(){
  }
  activeMelodyOscillators.clear();
 }
-export const setLoveRollSoundUser=id=>{currentUser=String(id||'anonymous');};
+export const setLoveRollSoundUser=id=>{
+ const next=String(id||'anonymous');
+ if(next===currentUser)return;
+ // Never carry a previous account's playing melody or deduplication history
+ // into another person's LoveRoll session on a shared device.
+ silenceLoveRollSounds();
+ recent.clear();
+ currentUser=next;
+};
 const key=()=>KEY+':'+currentUser;
 export function soundEnabled(store=globalThis.localStorage){
  try{return store?.getItem(key())!=='off';}catch{return true;}
 }
 export function setSoundEnabled(enabled,store=globalThis.localStorage){
  try{store?.setItem(key(),enabled?'on':'off');}catch{}
+ // Disabling the sound is an immediate mute, including notes already queued
+ // on WebAudio's timeline for a timer that has just reached 00:00.
+ if(!enabled)silenceLoveRollSounds();
  return !!enabled;
 }
 export async function unlockLoveRollSounds(){
