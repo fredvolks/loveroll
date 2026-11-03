@@ -241,4 +241,66 @@ do $begin
 end$;
 reset role;
 
+-- Regression: replacing the ORIGINAL SENDER while the invitation is still
+-- pending must revoke the remaining recipient's read and reply rights.
+-- Earlier tests only covered the sender swap after a No/expiration.
+do $pending_sender_swap$
+declare
+  fresh_couple uuid := '99999999-9999-4999-8999-999999999999';
+  a uuid := 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa';
+  b uuid := 'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb';
+  c uuid := 'cccccccc-cccc-4ccc-cccc-cccccccccccc';
+  invitation_id uuid;
+  result jsonb;
+begin
+  insert into public.couples(id) values(fresh_couple);
+  insert into public.couple_members(couple_id,user_id)
+    values (fresh_couple,a),(fresh_couple,b);
+  insert into public.couple_rolls(couple_id,kind,key,face)
+    select fresh_couple,kind,key,face
+      from public.couple_rolls
+      where couple_id='dddddddd-dddd-4ddd-dddd-dddddddddddd'
+        and kind='weekly';
+
+  perform set_config('request.jwt.claim.sub',a::text,true);
+  result:=public.love_evening_invite_send(fresh_couple);
+  invitation_id:=(result->>'id')::uuid;
+  if invitation_id is null or result->>'status'<>'pending' then
+    raise exception 'Fixture: invitation must be pending: %',result;
+  end if;
+
+  perform set_config('request.jwt.claim.sub',b::text,true);
+  if public.love_evening_invite_status(fresh_couple)->>'state'<>'pending' then
+    raise exception 'Fixture: recipient must see pending invite before swap';
+  end if;
+
+  delete from public.couple_members
+    where couple_id=fresh_couple and user_id=a;
+  insert into public.couple_members(couple_id,user_id)
+    values(fresh_couple,c);
+
+  result:=public.love_evening_invite_status(fresh_couple);
+  if result->>'state'<>'none' or result ? 'id'
+      or result ? 'sender_id' or result ? 'recipient_id' then
+    raise exception 'Remaining recipient saw removed sender: %',result;
+  end if;
+  begin
+    perform public.love_evening_invite_respond(invitation_id,'yes');
+    raise exception 'SECURITY FAILURE: replied to pending invite after sender swap';
+  exception when sqlstate '42501' then null;
+  end;
+
+  perform set_config('request.jwt.claim.sub',c::text,true);
+  result:=public.love_evening_invite_status(fresh_couple);
+  if result->>'state'<>'none' or result ? 'id' then
+    raise exception 'Replacement sender inherited stale invite: %',result;
+  end if;
+  begin
+    perform public.love_evening_invite_respond(invitation_id,'yes');
+    raise exception 'SECURITY FAILURE: new member answered old invite';
+  exception when sqlstate '42501' then null;
+  end;
+end
+$pending_sender_swap$;
+
 select 'LR-028: all isolated SQL A/B tests passed' as result;
