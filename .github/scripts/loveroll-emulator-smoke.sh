@@ -204,8 +204,32 @@ PY_KEYBOARD
 # UIAutomator cannot inspect the WebView DOM reliably, so web Playwright CI
 # checks exact HTML/dice placement separately.
 adb logcat -d -v brief -s AndroidRuntime:E > qa/runtime_errors.txt || true
-if grep -q 'FATAL EXCEPTION' qa/runtime_errors.txt; then
-  cat qa/runtime_errors.txt
-  exit 1
-fi
+# UIAutomator can crash its own accessibility thread with "Bad file
+# descriptor" after an unsuccessful dump. This is not a LoveRoll crash.
+# The XML captures, native recovery, keyboard and safe-area assertions above
+# must still pass. Exempt only this exact Android test-tool failure.
+# Every other AndroidRuntime fatal, including LoveRoll's, still fails CI.
+python3 - <<'PY_RUNTIME_CRASH'
+import pathlib
+import re
+import sys
+
+log = pathlib.Path('qa/runtime_errors.txt').read_text(errors='replace')
+fatal_start = r'(?=E/AndroidRuntime[(][ ]*[0-9]+[)]: FATAL EXCEPTION:)'
+blocks = re.split(fatal_start, log)
+for block in blocks:
+    if not re.search(r'E/AndroidRuntime[(][ ]*[0-9]+[)]: FATAL EXCEPTION:', block):
+        continue
+    tool_binder_crash = (
+        'FATAL EXCEPTION: UiAutomation' in block
+        and 'java.lang.RuntimeException: Bad file descriptor' in block
+        and 'android.accessibilityservice.' in block
+        and not re.search(r'Process:[ ]*ca[.]desadeux[.]jeu(?:[:][A-Za-z0-9_.]+)?(?:[ ,]|$)', block)
+    )
+    if tool_binder_crash:
+        print('LOVEROLL_ANDROID_TEST_TOOL_CRASH UiAutomator binder died; app checks passed')
+        continue
+    print('Unexpected AndroidRuntime fatal exception:', block, file=sys.stderr)
+    sys.exit(1)
+PY_RUNTIME_CRASH
 echo "LOVEROLL_S25_EMULATOR_OK screenshot=$(stat -c%s qa/loveroll-shared-s25-android.png)"
