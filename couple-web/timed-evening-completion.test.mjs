@@ -132,7 +132,7 @@ test('LR-002 countdown renders one truthful, actionable control at every phase',
  assert.deepEqual(timedEveningTimerControl({...base,remainingMs:100000}),{
   label:'▶ Reprendre',status:'À votre rythme',disabled:false,resetDisabled:false
  });
- assert.deepEqual(timedEveningTimerControl({...base,running:true}),{
+ assert.deepEqual(timedEveningTimerControl({...base,running:true,deadline:Date.now()+120000}),{
   label:'Ⅱ Pause',status:'En cours',disabled:false,resetDisabled:false
  });
  assert.deepEqual(timedEveningTimerControl({...base,remainingMs:0}),{
