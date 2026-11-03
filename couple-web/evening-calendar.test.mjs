@@ -202,3 +202,26 @@ test('LR-003 monthly headline counts only CLOSED evenings in the selected Toront
  assert.match(nov,/<strong>0<\/strong> défis réalisés ce mois/);
  assert.match(nov,/<strong>0<\/strong> non réalisés ce mois/);
 });
+
+test('LR-003: invalid or reversed closures do not finalize the visible calendar',()=>{
+ const started_at='2026-10-15T16:00:00Z';
+ const show=finished_at=>eveningHistoryMarkup({
+  month:'2026-10',selectedDate:'2026-10-15',
+  sessions:[{id:'invalid-closure',started_at,finished_at,counted:true}],
+  members:[{user_id:'a',name:'Partenaire'}],me:'a',
+  stats:[{session_id:'invalid-closure',user_id:'a',target:3,completed:1}],
+  historyChallenges:[{id:'waiting',session_id:'invalid-closure',recipient:'a',
+   status:'proposed',category:'SENSUEL',card_title:'Défi en attente'}]
+ });
+ for(const invalid of ['not-a-date','2026-10-15T15:00:00Z']){
+  const html=show(invalid);
+  assert.match(html,/<strong>0<\/strong> soirées clôturées ce mois/);
+  assert.match(html,/<span>En cours<\/span>/);
+  assert.match(html,/○ À faire/);
+  assert.doesNotMatch(html,/Non réalisé \(non commencé\)/);
+ }
+ const valid=show('2026-10-15T18:00:00Z');
+ assert.match(valid,/<strong>1<\/strong> soirées clôturées ce mois/);
+ assert.match(valid,/<span>Clôturée<\/span>/);
+ assert.match(valid,/Non réalisé \(non commencé\)/);
+});
