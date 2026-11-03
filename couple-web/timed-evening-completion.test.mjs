@@ -354,3 +354,39 @@ test('LR-002 a rendered 00:00 never offers Pause before the 500ms timer tick',()
  });
 });
 
+
+test('LR-002: an error closing Soirée is idempotent only for a chronologically closed matching session',async()=>{
+ const start='2026-11-03T19:00:00Z';
+ const valid={id:'session-a',started_at:start,finished_at:'2026-11-03T20:00:00Z'};
+ const rpc=async name=>{
+  if(name==='my_love_evening_board')return {finished:true};
+  if(name==='finish_couple_session')throw Error('closure RPC interrupted');
+ };
+ const complete=previous=>completeTimedEveningChallenge({
+  challenge:card,userId:'alice',sessionId:'session-a',rpc,
+  query:async(table,opts)=>{
+   assert.equal(table,'couple_sessions');
+   assert.deepEqual(opts,{eq:{id:'session-a'}});
+   return previous?[previous]:[];
+  }
+ });
+ assert.deepEqual(await complete(valid),{outcome:'completed',finished:true},
+  'A session already closed by another device is a successful idempotent close');
+ for(const previous of [
+  null,
+  {...valid,id:'session-b'},
+  {...valid,started_at:null},
+  {...valid,started_at:'invalid'},
+  {...valid,finished_at:null},
+  {...valid,finished_at:'invalid'},
+  {...valid,finished_at:'2026-11-03T18:59:59Z'}
+ ]){
+  await assert.rejects(complete(previous),error=>{
+   assert.equal(error.challengeCompletionConfirmed,true,
+    'The challenge remains saved even when session synchronization fails');
+   assert.match(error.message,/synchronisation de Soirée en attente/);
+   assert.match(error.cause?.message??'',/closure RPC interrupted/);
+   return true;
+  });
+ }
+});
