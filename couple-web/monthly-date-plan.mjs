@@ -5,7 +5,7 @@ export function datePlanLabel(when,locale='fr-CA'){
  if(!Number.isFinite(date.getTime()))return 'Date à définir';
  return new Intl.DateTimeFormat(locale,{dateStyle:'long',timeStyle:'short'}).format(date);
 }
-export function monthlyDatePlanHtml({plan=null,hostId=null,me=null,locale='fr-CA'}={}){
+export function monthlyDatePlanHtml({plan=null,hostId=null,me=null,locale='fr-CA',now=Date.now()}={}){
  if(!hostId||!me)return '';
  let inner='';
  if(plan?.status==='agreed'){
@@ -14,11 +14,17 @@ export function monthlyDatePlanHtml({plan=null,hostId=null,me=null,locale='fr-CA
    '<small>Vous avez tous les deux accepté cette date. Cela ne confirme aucune réservation auprès de l’établissement.</small>';
  }else if(plan?.status==='proposed'){
   const mine=plan.proposed_by===me;
-  inner='<strong>'+ (mine?'Votre proposition est envoyée':'Votre partenaire propose une date') +'</strong>'+
+  const proposedAt=new Date(plan.proposed_for).getTime();
+  const expired=Number.isFinite(proposedAt)&&proposedAt<=new Date(now).getTime();
+  inner='<strong>'+ (expired?'Cette date est passée':mine?'Votre proposition est envoyée':'Votre partenaire propose une date') +'</strong>'+
    '<p>'+esc(datePlanLabel(plan.proposed_for,locale))+'</p>'+
-   (mine?'<small>En attente de la réponse de votre partenaire.</small>':
+   (mine?(expired?
+    '<small>La date proposée est passée. Votre partenaire peut proposer un nouveau moment.</small>':
+    '<small>En attente de la réponse de votre partenaire.</small>'):
     '<div class="surprise-date-plan-actions">'+
-    '<button type="button" class="surprise-primary" data-action="geo-date-accept">Accepter cette date</button>'+
+    (expired?
+     '<small>Cette date est passée. Proposez un nouveau moment pour continuer.</small>':
+     '<button type="button" class="surprise-primary" data-action="geo-date-accept">Accepter cette date</button>')+
     '<label for="geo-date-proposal">Ou proposer une autre date</label>'+
     '<input id="geo-date-proposal" type="datetime-local" required>'+
     '<button type="button" class="surprise-geo-text-button" data-action="geo-date-counter">Proposer une autre date</button>'+
