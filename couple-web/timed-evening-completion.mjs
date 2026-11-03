@@ -38,6 +38,26 @@ export function isSameCompletedEveningChallenge(challenge,current,userId,session
   current?.id===challenge.id&&current?.recipient===userId&&
   current?.session_id===sessionId&&current?.status==='completed');
 }
+// PostgREST normally returns ISO timestamps, but Date.parse alone accepts
+// malformed calendar dates (e.g. February 31) and numeric strings like "0".
+// Those must not authorize an idempotent close after a failed server write.
+function parsedValidSessionTimestamp(value){
+ if(typeof value!=='string')return NaN;
+ const m=/^(\\d{4})-(\\d{2})-(\\d{2})T(\\d{2}):(\\d{2}):(\\d{2})(?:\\.\\d{1,6})?(Z|[+-]\\d{2}:\\d{2})$/.exec(value);
+ if(!m)return NaN;
+ const year=Number(m[1]),month=Number(m[2]),day=Number(m[3]);
+ const hour=Number(m[4]),minute=Number(m[5]),second=Number(m[6]);
+ const offset=m[7];
+ const probe=new Date(0);
+ probe.setUTCHours(0,0,0,0);
+ probe.setUTCFullYear(year,month-1,day);
+ if(probe.getUTCFullYear()!==year||probe.getUTCMonth()!==month-1||
+    probe.getUTCDate()!==day||hour>23||minute>59||second>59)return NaN;
+ if(offset!=='Z'&&(Number(offset.slice(1,3))>14||Number(offset.slice(4,6))>59||
+    (Number(offset.slice(1,3))===14&&Number(offset.slice(4,6))!==0)))return NaN;
+ return Date.parse(value);
+}
+
 export async function completeTimedEveningChallenge({challenge,userId,sessionId,rpc,query}){
  const accepted=isAcceptedTimedEveningChallenge(challenge,userId,sessionId);
  const alreadyCompleted=isSameCompletedEveningChallenge(challenge,challenge,userId,sessionId);
@@ -67,8 +87,8 @@ export async function completeTimedEveningChallenge({challenge,userId,sessionId,
     // A concurrent device counts only if the exact session was counted
     // and has chronological timestamps. A reset/abandoned session closed
     // with counted=false is not equivalent to finish(..., p_count:true).
-    const startedAt=Date.parse(previous?.started_at??'');
-    const finishedAt=Date.parse(previous?.finished_at??'');
+    const startedAt=parsedValidSessionTimestamp(previous?.started_at);
+    const finishedAt=parsedValidSessionTimestamp(previous?.finished_at);
     if(previous?.id!==sessionId||previous?.counted!==true||!Number.isFinite(startedAt)||
        !Number.isFinite(finishedAt)||finishedAt<startedAt)throw error;
    }
