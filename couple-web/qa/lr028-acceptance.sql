@@ -366,3 +366,77 @@ $removed_sender_rls$;
 reset role;
 
 select 'LR-028: all isolated SQL A/B tests passed' as result;
+
+
+-- LR-028 negative authorization contract: a database role is as important as
+-- the request.jwt.claim.sub fixture.  A fabricated sub string under anon
+-- MUST NOT grant the caller any access to invitation data or RPCs.
+-- This is an isolated PostgreSQL permission test, not a real signed JWT test.
+set role anon;
+select set_config('request.jwt.claim.sub',
+ 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',false);
+do $anonymous_gate$
+begin
+ begin
+  perform 1 from public.love_evening_invitations limit 1;
+  raise exception 'SECURITY FAILURE: anon SELECT had table permission';
+ exception when sqlstate '42501' then null;
+ end;
+ begin
+  perform public.love_evening_invite_status(
+    'ffffffff-ffff-4fff-bfff-ffffffffffff');
+  raise exception 'SECURITY FAILURE: anon called invite status';
+ exception when sqlstate '42501' then null;
+ end;
+ begin
+  perform public.love_evening_invite_send(
+    'ffffffff-ffff-4fff-bfff-ffffffffffff');
+  raise exception 'SECURITY FAILURE: anon sent an invitation';
+ exception when sqlstate '42501' then null;
+ end;
+ begin
+  perform public.love_evening_invite_respond(
+    'ffffffff-ffff-4fff-bfff-ffffffffffff','yes');
+  raise exception 'SECURITY FAILURE: anon called invite respond';
+ exception when sqlstate '42501' then null;
+ end;
+end
+$anonymous_gate$;
+reset role;
+
+-- An authenticated DB role without a user identity must also fail closed.
+-- The mock auth.uid() returns NULL for an empty claim, like Supabase Auth.
+set role authenticated;
+select set_config('request.jwt.claim.sub','',false);
+do $missing_identity$
+begin
+ if auth.uid() is not null then
+  raise exception 'Fixture failure: blank identity must yield NULL';
+ end if;
+ if exists(select 1 from public.love_evening_invitations) then
+  raise exception 'SECURITY FAILURE: no-identity role read invitations';
+ end if;
+ begin
+  perform public.love_evening_invite_status(
+    'ffffffff-ffff-4fff-bfff-ffffffffffff');
+  raise exception 'SECURITY FAILURE: no-identity role called status';
+ exception when sqlstate '42501' then null;
+ end;
+ begin
+  perform public.love_evening_invite_send(
+    'ffffffff-ffff-4fff-bfff-ffffffffffff');
+  raise exception 'SECURITY FAILURE: no-identity role sent invitation';
+ exception when sqlstate '42501' then null;
+ end;
+ begin
+  perform public.love_evening_invite_respond(
+    'ffffffff-ffff-4fff-bfff-ffffffffffff','yes');
+  raise exception 'SECURITY FAILURE: no-identity role answered invitation';
+ exception when sqlstate '42501' then null;
+ end;
+end
+$missing_identity$;
+reset role;
+select set_config('request.jwt.claim.sub','',false);
+
+select 'LR-028: anon and missing-identity authorization tests passed' as result;
