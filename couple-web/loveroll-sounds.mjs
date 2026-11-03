@@ -23,6 +23,15 @@ export const setLoveRollSoundUser=id=>{
  currentUser=next;
 };
 const key=()=>KEY+':'+currentUser;
+// Keep the visible settings switch consistent with the preference received
+// from another tab, not only with the WebAudio engine behind it.
+function refreshSoundSettingsSwitch(){
+ const enabled=soundEnabled();
+ for(const control of globalThis.document?.querySelectorAll?.('.lr-sound-switch')??[]){
+  control.setAttribute('aria-checked',String(enabled));
+  control.textContent=enabled?'Activé':'Désactivé';
+ }
+}
 // Settings can also change in another LoveRoll tab. Keep the current tab
 // silent immediately, even when its melody already has notes scheduled.
 function syncSoundPreferenceFromStorage(event){
@@ -32,7 +41,10 @@ function syncSoundPreferenceFromStorage(event){
  // preference from unrelated browser storage keys.
  const on=event.newValue!=='off';
  sessionSoundPreferences.set(changedKey,on);
- if(changedKey===key()&&!on)silenceLoveRollSounds();
+ if(changedKey===key()){
+  if(!on)silenceLoveRollSounds();
+  refreshSoundSettingsSwitch();
+ }
 }
 if(typeof window!=='undefined')window.addEventListener?.('storage',syncSoundPreferenceFromStorage);
 export function soundEnabled(store){
