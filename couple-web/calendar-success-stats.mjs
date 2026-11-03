@@ -13,11 +13,36 @@ const torontoDate=instant=>{
 // A closure is final only when both timestamps are real instants and
 // the finish does not precede the start. Counted is intentionally separate:
 // non-counted evenings still appear as closed in their own history.
+// PostgreSQL returns ISO timestamps with up to six fractional digits.
+// Date.parse alone silently normalizes 31 February and loses microseconds.
+function validSessionInstant(value){
+ if(typeof value!=='string')return null;
+ const match=/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,6}))?(Z|[+-]\d{2}:\d{2})$/.exec(value);
+ if(!match)return null;
+ const year=Number(match[1]),month=Number(match[2]),day=Number(match[3]);
+ const hour=Number(match[4]),minute=Number(match[5]),second=Number(match[6]);
+ const offset=match[8];
+ const check=new Date(0);
+ check.setUTCHours(0,0,0,0);
+ check.setUTCFullYear(year,month-1,day);
+ if(check.getUTCFullYear()!==year||check.getUTCMonth()!==month-1||
+    check.getUTCDate()!==day||hour>23||minute>59||second>59)return null;
+ if(offset!=='Z'&&(Number(offset.slice(1,3))>14||
+    Number(offset.slice(4,6))>59||
+    (Number(offset.slice(1,3))===14&&Number(offset.slice(4,6))!==0)))return null;
+ const milliseconds=Date.parse(value);
+ if(!Number.isFinite(milliseconds))return null;
+ // Date.parse covers the first three fractional digits, preserve the rest.
+ const microRemainder=Number((match[7]??'').padEnd(6,'0').slice(3));
+ return {milliseconds,microRemainder};
+}
 export function isClosedEvening(session){
- if(!session?.started_at||!session?.finished_at)return false;
- const started=Date.parse(session.started_at);
- const finished=Date.parse(session.finished_at);
- return Number.isFinite(started)&&Number.isFinite(finished)&&finished>=started;
+ const started=validSessionInstant(session?.started_at);
+ const finished=validSessionInstant(session?.finished_at);
+ return !!(started&&finished&&
+  (finished.milliseconds>started.milliseconds||
+   (finished.milliseconds===started.milliseconds&&
+    finished.microRemainder>=started.microRemainder)));
 }
 export function mondayOf(date){
  if(!/^\d{4}-\d{2}-\d{2}$/.test(date||''))return null;
