@@ -372,6 +372,11 @@ test('LR-002: an error closing Soirée is idempotent only for a chronologically 
  });
  assert.deepEqual(await complete(valid),{outcome:'completed',finished:true},
   'A session already closed by another device is a successful idempotent close');
+ assert.deepEqual(await complete({...valid,
+  started_at:'2026-11-03T19:00:00.123+00:00',
+  finished_at:'2026-11-03T20:00:00.123+00:00'}),
+  {outcome:'completed',finished:true},
+  'PostgREST ISO timestamps with fractional seconds and a numeric offset remain valid');
  for(const previous of [
   null,
   {...valid,id:'session-b'},
@@ -382,6 +387,12 @@ test('LR-002: an error closing Soirée is idempotent only for a chronologically 
   {...valid,started_at:'invalid'},
   {...valid,finished_at:null},
   {...valid,finished_at:'invalid'},
+  {...valid,started_at:'0'},
+  {...valid,started_at:0},
+  {...valid,started_at:'2026-02-31T19:00:00Z'},
+  {...valid,finished_at:'2026-11-03T20:61:00Z'},
+  {...valid,finished_at:'2026-11-03'},
+  {...valid,finished_at:'2026-11-03T20:00:00+14:30'},
   {...valid,finished_at:'2026-11-03T18:59:59Z'}
  ]){
   await assert.rejects(complete(previous),error=>{
