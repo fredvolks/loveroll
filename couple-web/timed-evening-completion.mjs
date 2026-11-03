@@ -9,8 +9,12 @@ export function timedEveningTimerControl(timer){
  // Use the same wall-clock deadline as the visible countdown, not the
  // original remainingMs snapshot, so 00:00 never displays "Pause".
  const deadline=Number(timer?.deadline);
- const remaining=timer?.running&&Number.isFinite(deadline)&&deadline>0
-  ?Math.max(0,deadline-Date.now()):Number(timer?.remainingMs);
+ // A running clock without a usable deadline cannot trust a stale
+ // remainingMs snapshot: the next tick will treat that clock as expired.
+ // In particular, never revive an actionable “Pause” for a broken timer.
+ const remaining=timer?.running
+  ?(Number.isFinite(deadline)&&deadline>0?Math.max(0,deadline-Date.now()):0)
+  :Number(timer?.remainingMs);
  if(!(remaining>0))return {
   label:'♡ Terminé',status:'Terminé',disabled:true,resetDisabled:false
  };
