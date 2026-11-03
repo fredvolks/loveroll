@@ -253,9 +253,12 @@ test('Web 259 and later keep the repaired countdown UI without stale PWA assets'
  const day=Number(releaseDay.replaceAll('-',''));
  assert.ok(day>20261029||(day===20261029&&Number(releaseSeq)>=259),
   'The countdown fix first shipped with Web 259');
- const timerImport=app.match(/timed-evening-completion[.]mjs[?]v=([0-9]{8})-timer([0-9]+)/);
+ // Both the original timer tag and the current Web-release tag are valid.
+ const timerImport=app.match(/timed-evening-completion[.]mjs[?]v=([0-9]{8})-(timer|web)([0-9]+)/);
  assert.ok(timerImport,'The repaired timer needs a versioned module import');
- const timerDay=Number(timerImport[1]),timerSeq=Number(timerImport[2]);
+ const timerDay=Number(timerImport[1]),timerSeq=Number(timerImport[3]);
+ if(timerImport[2]==='web')assert.equal(timerImport[0],'timed-evening-completion.mjs?v='+tag,
+  'A Web-tagged timer module must match the active PWA release');
  assert.ok(timerDay>20261029||(timerDay===20261029&&timerSeq>=259),
   'Never import the pre-fix countdown module');
  assert.ok(html.includes('app.js?v='+tag));
