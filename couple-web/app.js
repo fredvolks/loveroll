@@ -2,15 +2,15 @@ import {organizeSettingsMenus} from './settings-menus.mjs?v=20261022-home228';
 import {showEveningCategoryReminder} from './evening-d100-template.mjs?v=20261029-ipad258';
 import {eveningInviteHtml,eveningInviteInboxHtml,isEveningInviteAction} from './evening-invitation.mjs?v=20261028-web254';
 import {askEveningCategoryConfirmation,categoryConfirmEnabled,saveCategoryConfirmLocal} from './evening-category-confirm.mjs?v=20261027-web238';
-import {soundEnabled,setSoundEnabled,setLoveRollSoundUser,unlockLoveRollSounds,playLoveRollSound,soundSettingsHtml} from './loveroll-sounds.mjs?v=20261028-privacy250';
-import {isAcceptedTimedEveningChallenge,isSameCompletedEveningChallenge,completeTimedEveningChallenge,timedEveningTimerControl,refreshAfterTimedEveningConfirmation,refreshAfterConfirmedWrite,timerBelongsToUser,canControlTimedEveningChallenge} from './timed-evening-completion.mjs?v=20261103-web270';
+import {soundEnabled,setSoundEnabled,setLoveRollSoundUser,unlockLoveRollSounds,playLoveRollSound,soundSettingsHtml} from './loveroll-sounds.mjs?v=20261103-lr004-web272';
+import {isAcceptedTimedEveningChallenge,isSameCompletedEveningChallenge,completeTimedEveningChallenge,timedEveningTimerControl,refreshAfterTimedEveningConfirmation,refreshAfterConfirmedWrite,timerBelongsToUser,canControlTimedEveningChallenge} from './timed-evening-completion.mjs?v=20261103-web271';
 import {fitSurpriseMinimal} from './surprise-minimal.mjs?v=20261022-home228';
 import {createBookingMutationGate,geoLookupAfterRefresh,trustedBookingVenueLinks} from './monthly-geo-ui.mjs?v=20261101-booking263';
 import {favoriteCardIdentity,isEveningFavorite,closedCalendarFavoriteCandidate,favoriteCardPreview,MAX_EVENING_FAVORITES} from './evening-favorites.mjs?v=20261101-hearts266';
 import {eclatNoteKey,loadEclatNote,saveEclatNote} from './eclat-guidance.mjs?v=20261022-home228';
 import {loadEclatHistory} from './eclat-history.mjs?v=20261022-home228';
 import {enhanceGoldBacks} from './gold-arrows.mjs?v=20261022-home228';
-import {fitSoireeHomeTemplate,fitRubyCalendar} from './soiree-home-template.mjs?v=20261103-web270';
+import {fitSoireeHomeTemplate,fitRubyCalendar} from './soiree-home-template.mjs?v=20261103-web271';
 import { marketingHtml,authHtml,profileHtml,inviteProfileHtml,emailConfirmationHtml,profileGenderSelect,profilePlayStyleSelect,matchHtml,parseMonthDay,monthDayInputs } from './onboarding.mjs?v=20261018-style148';
 import {editorialHeader,editorialRow,editorialIcon} from './editorial-ui.mjs?v=20261017-ritual130';
 import {cardLibraryHtml,monthlyEditorHtml,adventEditorHtml,specialEditorHtml,importEditorHtml} from './editorial-editors.mjs?v=20261017-ritual130';
@@ -20,7 +20,7 @@ import {createCoupleLiveSync} from './couple-live-sync.mjs?v=20261017-advent119'
 import {playableSessionForWeekly} from './couple-reset-view.mjs';
 import {eveningDailyAccess} from './evening-daily-policy.mjs?v=20261016-daily100';
 import {ownEveningChallenges,visibleEveningQueue,primaryEveningChallenge,queuePosition,queueLabel,hasTurnToDraw} from './evening-private-queue.mjs';
-import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261103-web270';
+import {premiumHomeHtml,nextMonday,fitHomeLayout} from './premium-home.mjs?v=20261103-web271';
 import {saveEveningSelection,restoreEveningSelection,clearEveningSelection} from './evening-resume.mjs?v=20261027-web240';
 import {eclatHtml} from './eclat-ui.mjs?v=20261027-web242';
 import {previewMode,previewCanEdit,previewEclatStatus} from './account-preview-mode.mjs?v=20261020-test180';
@@ -29,8 +29,8 @@ import {createEclatAudio} from './eclat-audio.mjs?v=20261028-privacy250';
 import {futureCoupleStyleMix,playStyleLabel} from './play-style.mjs?v=20261018-styles149';
 import {cycleIntensityQuestionnaireHtml} from './cycle-questionnaire.mjs?v=20261018-cycle149';
 import {DICE_WEIGHT_CONFIG,configuredDiceWeights,parseDiceWeightInputs} from './dice-weighting.mjs?v=20261018-weights146';
-import {premiumEveningHtml,updateEveningCategoryUi,canRollPersonalEveningD6} from './premium-evening.mjs?v=20261103-web270';
-import {eveningHistoryMarkup,eveningLocalDay} from './evening-calendar.mjs?v=20261103-web270';
+import {premiumEveningHtml,updateEveningCategoryUi,canRollPersonalEveningD6} from './premium-evening.mjs?v=20261103-web271';
+import {eveningHistoryMarkup,eveningLocalDay} from './evening-calendar.mjs?v=20261103-web271';
 import {eveningReviewModal,validEveningReview} from './evening-review.mjs?v=20261016-person-review97';
 import {premiumSurpriseHtml,sixSpecialEvents} from './premium-surprise.mjs?v=20261022-home228';
 import {surpriseSlot,surpriseCustom,surpriseTitle,formatSurpriseDateInput,parseSurpriseDateInput} from './surprise-event-config.mjs?v=20261016-surprise109';
@@ -63,7 +63,7 @@ import {invitationStatus,coupleStats,formatCoupleDate,invitationEmailText,invita
 import {premiumConfirm,premiumCopyLink,focusInlineLoveDialog} from './premium-dialogs.mjs?v=20261017-complete127';
 
 
-const WEB_RELEASE='2026-11-03.270';
+const WEB_RELEASE='2026-11-03.272';
 const root=document.querySelector('#app');
 const enc=new TextEncoder(),dec=new TextDecoder();
 let diceCleanup=[],renderToken=0;
@@ -443,7 +443,7 @@ function frame(body,title='LOVEROLL',subtitle='Un jeu intime, juste pour vous de
  // never a fabricated pip result. Actual face comes from Supabase after rolling.
  const canvases=[...root.querySelectorAll('canvas[data-dice-sides]')];
  if(canvases.length){
-  import('./dice3d.js?v=20261103-web270').then(({dieOn})=>{
+  import('./dice3d.js?v=20261103-web271').then(({dieOn})=>{
    if(token!==renderToken)return;
    for(const canvas of canvases){
     if(!canvas.isConnected||canvas.loveRollDie)continue;
@@ -5024,6 +5024,6 @@ start().catch(error=>{fail(error);window.LoveRollBoot?.showFailure();});
 
 if ('serviceWorker' in navigator && location.protocol === 'https:') {
   window.addEventListener('load', () =>
-    navigator.serviceWorker.register('./service-worker.js?v=20261103-web270',
+    navigator.serviceWorker.register('./service-worker.js?v=20261103-web272',
      {scope:'./',updateViaCache:'none'}).then(reg=>reg.update()).catch(console.warn));
 }

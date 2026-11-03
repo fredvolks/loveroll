@@ -284,3 +284,15 @@ test('LR-004: muting from another tab stops an active timer without affecting ot
   if(oldDocument===undefined)delete globalThis.document;else globalThis.document=oldDocument;
  }
 });
+
+test('LR-004: Web 272 loads the repaired sound module even from an older installed PWA',()=>{
+ const build=JSON.parse(read('web-version.json')).build;
+ const app=read('app.js'),html=read('index.html'),sw=read('service-worker.js');
+ assert.equal(build,'2026-11-03.272');
+ assert.ok(app.includes("const WEB_RELEASE='"+build+"'"));
+ assert.match(app,/loveroll-sounds\.mjs\?v=20261103-lr004-web272/);
+ assert.match(app,/serviceWorker\.register\('\.\/service-worker\.js\?v=20261103-web272'/);
+ assert.match(html,/src="\.\/app\.js\?v=20261103-web272"/);
+ assert.match(sw,/const CACHE='loveroll-static-v272'/);
+ assert.match(sw,/'\.\/loveroll-sounds\.mjs'/);
+});
