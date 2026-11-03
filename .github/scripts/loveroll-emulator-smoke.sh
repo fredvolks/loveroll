@@ -48,16 +48,33 @@ adb shell cmd connectivity airplane-mode disable
 adb shell svc wifi enable
 adb shell svc data enable
 adb shell cmd wifi connect-network AndroidWifi open
-# Turning airplane mode off does not guarantee Wi-Fi has reassociated yet.
-# Wait for association AND DHCP before using the app's retry button.
-for attempt in $(seq 1 25); do
+# Wi-Fi association and a DHCP address are NOT evidence that Android can
+# reach the Internet yet. A retry during network validation can raise the
+# native error again even though the application itself is healthy.
+# Only tap once Android reports a VALIDATED Wi-Fi transport; if the emulator
+# never reconnects, fail with network diagnostics instead of blaming LoveRoll.
+network_validated=false
+for attempt in $(seq 1 60); do
   adb shell cmd wifi status > qa/wifi-after-airplane.txt
   adb shell ip -4 addr show wlan0 > qa/wifi-address.txt
-  if grep -q 'Wifi is connected' qa/wifi-after-airplane.txt && grep -q 'inet ' qa/wifi-address.txt; then break; fi
+  adb shell dumpsys connectivity > qa/connectivity-after-airplane.txt
+  if grep -q 'Wifi is connected' qa/wifi-after-airplane.txt \
+    && grep -q 'inet ' qa/wifi-address.txt \
+    && grep -Eq 'Transports: WIFI.*VALIDATED' qa/connectivity-after-airplane.txt; then
+    network_validated=true
+    break
+  fi
   sleep 1
 done
-grep 'Wifi is connected' qa/wifi-after-airplane.txt
-grep 'inet ' qa/wifi-address.txt
+if [[ "$network_validated" != true ]]; then
+  echo 'Emulator Wi-Fi never reached Android VALIDATED state after airplane mode' >&2
+  cat qa/wifi-after-airplane.txt >&2
+  cat qa/wifi-address.txt >&2
+  grep -E 'NetworkCapabilities|Transports:|Active default network' qa/connectivity-after-airplane.txt >&2 || true
+  exit 1
+fi
+# Let the newly validated default route settle before exercising the user
+# interaction. This is not a substitute for the strict WebView assertion below.
 sleep 3
 read -r retry_x retry_y < qa/retry-coordinate.txt
 adb shell input tap "$retry_x" "$retry_y"
