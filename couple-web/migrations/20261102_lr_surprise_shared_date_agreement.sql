@@ -133,6 +133,16 @@ BEGIN
   IF v_plan.proposed_for<=now() THEN
    RAISE EXCEPTION 'La date proposée est passée; proposez une nouvelle date' USING errcode='22023';
   END IF;
+  -- A booking can become confirmed between the proposal and the reply.
+  -- Never approve a different time without revising the outside booking.
+  IF EXISTS (
+   SELECT 1 FROM public.love_monthly_reservations confirmed
+   WHERE confirmed.roll_id=p_roll AND confirmed.status='confirmed'
+    AND confirmed.reserved_for IS DISTINCT FROM v_plan.proposed_for
+  ) THEN
+   RAISE EXCEPTION 'Une réservation est confirmée à une autre date; vérifiez-la avant de donner votre accord'
+    USING errcode='22023';
+  END IF;
   UPDATE public.love_monthly_date_plans SET
    status='agreed',agreed_by=v_actor,version=version+1,updated_at=now()
   WHERE roll_id=p_roll RETURNING * INTO v_plan;
@@ -159,7 +169,10 @@ BEGIN
  SELECT proposed_for INTO v_agreed
  FROM public.love_monthly_date_plans
  WHERE roll_id=NEW.roll_id AND status='agreed';
- IF FOUND AND NEW.reserved_for IS DISTINCT FROM v_agreed THEN
+ -- A status-only transition from planned to confirmed must be checked too.
+ -- Permit cancelling a mismatched draft without forcing a new booking.
+ IF FOUND AND NEW.status IN ('planned','confirmed')
+    AND NEW.reserved_for IS DISTINCT FROM v_agreed THEN
   RAISE EXCEPTION 'La réservation doit utiliser la date acceptée par le duo'
     USING errcode='22023';
  END IF;
@@ -169,7 +182,7 @@ $function$;
 
 DROP TRIGGER IF EXISTS love_monthly_booking_date_consistency ON public.love_monthly_reservations;
 CREATE TRIGGER love_monthly_booking_date_consistency
- BEFORE INSERT OR UPDATE OF reserved_for,roll_id ON public.love_monthly_reservations
+ BEFORE INSERT OR UPDATE OF reserved_for,roll_id,status ON public.love_monthly_reservations
  FOR EACH ROW EXECUTE FUNCTION public.love_monthly_booking_date_guard();
 
 REVOKE ALL ON FUNCTION public.love_monthly_booking_date_guard() FROM PUBLIC, anon, authenticated;

@@ -121,9 +121,29 @@ test('Supabase prevents a direct booking RPC from bypassing an agreed date',()=>
  const sql=read('migrations/20261102_lr_surprise_shared_date_agreement.sql');
  assert.match(sql,/CREATE OR REPLACE FUNCTION public\.love_monthly_booking_date_guard\(\)/);
  assert.match(sql,/WHERE roll_id=NEW\.roll_id AND status='agreed'/);
- assert.match(sql,/IF FOUND AND NEW\.reserved_for IS DISTINCT FROM v_agreed THEN/);
+ assert.match(sql,/IF FOUND AND NEW\.status IN \('planned','confirmed'\)\s+AND NEW\.reserved_for IS DISTINCT FROM v_agreed THEN/);
  assert.match(sql,/CREATE TRIGGER love_monthly_booking_date_consistency/);
- assert.match(sql,/BEFORE INSERT OR UPDATE OF reserved_for,roll_id ON public\.love_monthly_reservations/);
+ assert.match(sql,/BEFORE INSERT OR UPDATE OF reserved_for,roll_id,status ON public\.love_monthly_reservations/);
  assert.match(sql,/RETURN NEW;/);
  assert.doesNotMatch(sql,/UPDATE public\.love_monthly_reservations SET reserved_for/);
+});
+
+test('already confirmed booking with another time blocks agreement',()=>{
+ const sql=read('migrations/20261102_lr_surprise_shared_date_agreement.sql');
+ const from=sql.indexOf("IF v_plan.proposed_for<=now()");
+ const to=sql.indexOf("status='agreed',agreed_by=v_actor",from);
+ assert.ok(from>0&&to>from,'acceptance guard must execute before agreement update');
+ const acceptance=sql.slice(from,to);
+ assert.match(acceptance,/FROM public\.love_monthly_reservations confirmed/);
+ assert.match(acceptance,/confirmed\.roll_id=p_roll AND confirmed\.status='confirmed'/);
+ assert.match(acceptance,/confirmed\.reserved_for IS DISTINCT FROM v_plan\.proposed_for/);
+ assert.match(acceptance,/RAISE EXCEPTION/);
+});
+test('status-only confirmation is checked but cancellation remains possible',()=>{
+ const sql=read('migrations/20261102_lr_surprise_shared_date_agreement.sql');
+ const at=sql.indexOf('CREATE OR REPLACE FUNCTION public.love_monthly_booking_date_guard()');
+ const trigger=sql.slice(at);
+ assert.match(trigger,/NEW\.status IN \('planned','confirmed'\)/);
+ assert.match(trigger,/UPDATE OF reserved_for,roll_id,status/);
+ assert.doesNotMatch(trigger,/NEW\.status IN \('planned','confirmed','cancelled'\)/);
 });
