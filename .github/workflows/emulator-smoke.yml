@@ -3,9 +3,20 @@ on:
   push:
     branches: [des-a-deux-apk-20261013]
   pull_request:
-    branches: [des-a-deux-apk-20261013]
-    paths: ['app/**', '.github/workflows/emulator-smoke.yml', '.github/scripts/loveroll-emulator-smoke.sh', '.github/scripts/loveroll-startup-handoff.cjs']
+    # Mainline native changes must pass the same real emulator smoke test.
+    # Keep the legacy APK branch until its open work is reconciled.
+    branches: [main, des-a-deux-apk-20261013]
+    paths:
+      - 'app/**'
+      - 'couple-web/index.html'
+      - 'couple-web/loveroll-splash.css'
+      - 'couple-web/loveroll-splash.js'
+      - '.github/workflows/emulator-smoke.yml'
+      - '.github/scripts/loveroll-emulator-smoke.sh'
+      - '.github/scripts/loveroll-startup-handoff.cjs'
   workflow_dispatch:
+permissions:
+  contents: read
 concurrency:
   group: loveroll-responsive-emulator-${{ github.ref }}
   cancel-in-progress: true
