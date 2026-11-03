@@ -166,4 +166,79 @@ begin
  exception when sqlstate '42501' then null;
  end;
 end$$;
+
+-- LR-028 RLS role-level regression: execute SELECT as authenticated, not as
+-- the postgres fixture owner that bypasses RLS.  This uses synthetic users,
+-- a synthetic couple and test-only grants; it never touches real Supabase.
+insert into public.couples(id) values('ffffffff-ffff-4fff-bfff-ffffffffffff');
+insert into public.couple_members(couple_id,user_id) values
+ ('ffffffff-ffff-4fff-bfff-ffffffffffff','aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa'),
+ ('ffffffff-ffff-4fff-bfff-ffffffffffff','bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb');
+insert into public.love_evening_invitations(
+ couple_id,local_day,sender_id,recipient_id
+) values (
+ 'ffffffff-ffff-4fff-bfff-ffffffffffff',
+ (now() at time zone 'America/Toronto')::date,
+ 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',
+ 'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb'
+);
+-- Minimal permissions for this isolated fixture's SECURITY INVOKER
+-- couple_private.is_member() mock; these are NOT production grants.
+grant usage on schema auth,couple_private to authenticated;
+grant select on public.couple_members to authenticated;
+
+set role authenticated;
+select set_config('request.jwt.claim.sub',
+ 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',false);
+do $begin
+ if (select count(*) from public.love_evening_invitations
+     where couple_id='ffffffff-ffff-4fff-bfff-ffffffffffff')<>1 then
+  raise exception 'RLS: original sender should see active invitation';
+ end if;
+end$;
+select set_config('request.jwt.claim.sub',
+ 'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb',false);
+do $begin
+ if (select count(*) from public.love_evening_invitations
+     where couple_id='ffffffff-ffff-4fff-bfff-ffffffffffff')<>1 then
+  raise exception 'RLS: original recipient should see active invitation';
+ end if;
+end$;
+reset role;
+
+-- Replace B by C inside the same couple and the same Toronto calendar day.
+delete from public.couple_members
+ where couple_id='ffffffff-ffff-4fff-bfff-ffffffffffff'
+   and user_id='bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb';
+insert into public.couple_members(couple_id,user_id) values
+ ('ffffffff-ffff-4fff-bfff-ffffffffffff',
+  'cccccccc-cccc-4ccc-cccc-cccccccccccc');
+
+set role authenticated;
+select set_config('request.jwt.claim.sub',
+ 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',false);
+do $begin
+ if exists(select 1 from public.love_evening_invitations
+     where couple_id='ffffffff-ffff-4fff-bfff-ffffffffffff') then
+  raise exception 'RLS: remaining sender saw the former recipient';
+ end if;
+end$;
+select set_config('request.jwt.claim.sub',
+ 'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb',false);
+do $begin
+ if exists(select 1 from public.love_evening_invitations
+     where couple_id='ffffffff-ffff-4fff-bfff-ffffffffffff') then
+  raise exception 'RLS: removed recipient saw former invitation';
+ end if;
+end$;
+select set_config('request.jwt.claim.sub',
+ 'cccccccc-cccc-4ccc-cccc-cccccccccccc',false);
+do $begin
+ if exists(select 1 from public.love_evening_invitations
+     where couple_id='ffffffff-ffff-4fff-bfff-ffffffffffff') then
+  raise exception 'RLS: replacement partner saw former invitation';
+ end if;
+end$;
+reset role;
+
 select 'LR-028: all isolated SQL A/B tests passed' as result;
