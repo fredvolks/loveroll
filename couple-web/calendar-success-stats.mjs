@@ -34,9 +34,14 @@ export function calendarWeekSuccess({date,weeklyRolls=[],sessions=[]}={}){
  const since=Date.parse(roll.created_at);
  // One eligible evening per Toronto calendar day. Duplicate or resumed
  // session rows must not inflate a weekly success rate.
- const completedDays=new Set((sessions||[]).filter(s=>s.counted===true&&s.finished_at&&
-  mondayOf(torontoDate(s.started_at))===start&&Date.parse(s.started_at)>=since)
-  .map(s=>torontoDate(s.started_at)));
+ const completedDays=new Set();
+ for(const session of sessions||[]){
+  if(session.counted!==true||!session.finished_at)continue;
+  const started=Date.parse(session.started_at);
+  if(!Number.isFinite(started)||started<since)continue;
+  const day=torontoDate(session.started_at);
+  if(day&&mondayOf(day)===start)completedDays.add(day);
+ }
  const capped=Math.min(possible,completedDays.size);
  return {hasRoll:true,possible,completed:capped,
   percent:possible?Math.round(100*capped/possible):null,face};
