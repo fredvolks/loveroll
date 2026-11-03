@@ -308,4 +308,45 @@ begin
 end
 $pending_sender_swap$;
 
+-- Pending sender replacement: test the actual authenticated SELECT policy,
+-- not only SECURITY DEFINER RPCs. The still-present recipient B must lose
+-- read access as soon as original sender A is replaced by C.
+-- The fixture above leaves couple 9999... with an unexpired pending invite.
+set role authenticated;
+select set_config('request.jwt.claim.sub',
+ 'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb',false);
+do $pending_sender_rls$
+begin
+ if exists(select 1 from public.love_evening_invitations
+    where couple_id='99999999-9999-4999-8999-999999999999') then
+  raise exception 'RLS: remaining recipient read a replaced sender invitation';
+ end if;
+end
+$pending_sender_rls$;
+
+-- The replacement C must not inherit a prior sender's private invite.
+select set_config('request.jwt.claim.sub',
+ 'cccccccc-cccc-4ccc-cccc-cccccccccccc',false);
+do $new_sender_rls$
+begin
+ if exists(select 1 from public.love_evening_invitations
+    where couple_id='99999999-9999-4999-8999-999999999999') then
+  raise exception 'RLS: new partner inherited an earlier invitation';
+ end if;
+end
+$new_sender_rls$;
+
+-- The removed sender A must also lose direct table SELECT access.
+select set_config('request.jwt.claim.sub',
+ 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',false);
+do $removed_sender_rls$
+begin
+ if exists(select 1 from public.love_evening_invitations
+    where couple_id='99999999-9999-4999-8999-999999999999') then
+  raise exception 'RLS: removed sender still sees an old invitation';
+ end if;
+end
+$removed_sender_rls$;
+reset role;
+
 select 'LR-028: all isolated SQL A/B tests passed' as result;
