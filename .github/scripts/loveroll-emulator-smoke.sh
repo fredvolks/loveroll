@@ -110,6 +110,25 @@ _,top,_,bottom=map(int,re.findall(r'\d+',web.get('bounds')))
 assert 0<top<bottom<2340,('System bars overlap the WebView',top,bottom)
 print('LOVEROLL_NATIVE_RETRY_OK no native error overlay remains')
 PY_NATIVE
+# A visible WebView alone is not proof that the native retry recovered:
+# it can remain blank while the error overlay has already disappeared.
+# Use only event labels and navigation counters; never log account URLs.
+adb logcat -d -v brief -s LoveRollStartup:I > qa/native-startup-events.txt
+python3 - <<'PY_STARTUP_RECOVERY'
+import pathlib,re
+log=pathlib.Path('qa/native-startup-events.txt').read_text(errors='replace')
+events=[m.group(1) for line in log.splitlines()
+        if (m:=re.search(r'\\bI/LoveRollStartup\\(\\s*\\d+\\):\\s*([\\w-]+)',line))]
+assert 'native-error-overlay' in events, 'The native offline error was not logged'
+assert 'retry-tapped' in events, 'The actual recovery action was not logged'
+recovery=events[events.index('retry-tapped')+1:]
+assert 'webview-painted' in recovery, (
+    'The recovered WebView did not paint a ready document; event sequence: '+str(recovery))
+assert 'native-error-overlay' not in recovery[:recovery.index('webview-painted')], (
+    'The retry failed again before WebView paint')
+print('LOVEROLL_NATIVE_RETRY_PAINT_OK', ' > '.join(
+    ('native-error-overlay','retry-tapped','webview-painted')))
+PY_STARTUP_RECOVERY
 # Deliberately hold the HTML loader AFTER onPageFinished in the actual WebView,
 # then reveal its real destination. The native composition must own that whole
 # interval; a second HTML splash is never a valid destination.
