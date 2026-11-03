@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {eveningOddsHtml} from './evening-d6-template.mjs';
+import {eveningOddsHtml,eveningD6NextMessage} from './evening-d6-template.mjs';
 import {premiumEveningHtml} from './premium-evening.mjs';
 test('Evening info uses evening defaults, custom weights, or uniform odds without weekly rules',()=>{
  const defaults=eveningOddsHtml();
@@ -20,4 +20,15 @@ test('Unrolled and pending own D6 keep decorative white pips and never invent an
   assert.match(html,/evening-face-result is-empty/);
   assert.doesNotMatch(html,/Découvrir Éclat/);
  }
+});
+
+test('D6 mobile guidance names the actual next step without faking another roll',()=>{
+ const next=eveningD6NextMessage;
+ assert.match(next(),/Brasse ton D6/);
+ assert.match(next({partnerRecorded:true}),/À ton tour/);
+ assert.match(next({ownRecorded:true}),/Attends ton partenaire/);
+ assert.match(next({ownRecorded:true,partnerRecorded:true}),/Synchronisation/);
+ assert.match(next({rolling:true}),/Brassage en cours/);
+ assert.match(next({verifying:true}),/Vérification du lancer/);
+ assert.doesNotMatch(next({ownRecorded:true}),/Brasse ton D6/);
 });

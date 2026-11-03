@@ -36,6 +36,19 @@ test('before both personal D6, status is text not an unavailable primary button'
  assert.match(noRoll,/data-action="my-d6"/);
 });
 
+test('both recorded personal D6 announce syncing, not a missing partner roll',()=>{
+ const syncing=view({
+  status:{both_ready:false,my_rolled:true,partner_rolled:true},
+  turn:{ready:false},
+  rolls:[{user_id:'a',face:2},{user_id:'b',face:4}]
+ });
+ assert.equal(dominant(syncing).length,0,'Step 2 must remain server locked');
+ assert.equal(status(syncing),'Nos deux D6 sont enregistrés · Synchronisation…');
+ assert.match(syncing,/Nos deux lancers sont enregistrés\. Synchronisation…/);
+ assert.doesNotMatch(syncing,/En attente du D6 de ton partenaire/);
+ assert.doesNotMatch(syncing,/data-action="new-challenge"/);
+});
+
 test('when draws are complete, viewing own challenges becomes the one main action',()=>{
  const done=view({turn:{...base.turn,drawsFinished:true}});
  assert.equal(dominant(done).length,1);
@@ -48,6 +61,28 @@ test('when draws are complete, viewing own challenges becomes the one main actio
  const finale=view({turn:{...base.turn,finished:true,drawsFinished:true}});
  assert.equal(dominant(finale).length,1);
  assert.match(dominant(finale)[0],/data-action="finish-session"/);
+});
+
+test('completed D100 draws keep other private challenges accessible while resuming one',()=>{
+ const accepted={id:'current-card',session_id:'current',recipient:'a',status:'accepted',face:19};
+ const finishedDraws={...base.turn,drawsFinished:true,next:'b'};
+ const html=view({turn:finishedDraws,pending:accepted});
+ assert.equal(dominant(html).length,1);
+ assert.match(dominant(html)[0],/data-action="evening-open:current-card"/);
+ assert.match(html,/↻ Reprendre mon défi/);
+ assert.equal((html.match(/data-action="evening-list"/g)||[]).length,1,
+  'The other personal cards must stay reachable after all D100 draws');
+ assert.doesNotMatch(html,/data-action="new-challenge"/);
+ const oneCard=view({turn:finishedDraws,pending:accepted,ownChallengeCount:1});
+ assert.doesNotMatch(oneCard,/data-action="evening-list"/,
+  'Do not duplicate the only personal card');
+ const syncing=view({turn:{...finishedDraws,ready:false},pending:null});
+ assert.equal(status(syncing),'Synchronisation de nos défis…');
+ assert.match(syncing,/data-action="evening-list"/,
+  'A delayed server turn must not hide an existing private queue');
+ const listing=view({turn:finishedDraws,pending:null});
+ assert.equal((listing.match(/data-action="evening-list"/g)||[]).length,1,
+  'When the queue itself is primary, no duplicate secondary button is created');
 });
 
 test('actual dice animation never offers a second trigger and stays accessible',()=>{
@@ -141,7 +176,7 @@ test('owner-private active challenge becomes the single main action',()=>{
   const html=view({pending:{...mine,status:active},turn:{...base.turn,next:'b'}});
   assert.equal(dominant(html).length,1);
   assert.match(dominant(html)[0],/data-action="evening-open:card-a"/);
-  assert.match(html,/♡ Voir mon défi/);
+  assert.match(html,active==='accepted'?/↻ Reprendre mon défi/:/♡ Voir mon défi/);
   assert.equal((html.match(/data-action="evening-list"/g)||[]).length,1,
    'Other private cards remain reachable through a secondary list action');
   assert.doesNotMatch(html,/data-action="new-challenge"/);

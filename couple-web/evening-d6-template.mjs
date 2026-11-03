@@ -12,6 +12,16 @@ export function eveningOddsHtml(weights,enabled=true){
   '<nav class="evening-d6-tools" aria-label="Options de la soirée"><button type="button" data-action="evening-calendar">Calendrier</button><button type="button" data-action="evening-close-request">Clore la soirée</button></nav></section></dialog>';
 }
 
+// LR-027: announce the next real step, not a static two-roll instruction.
+export function eveningD6NextMessage({ownRecorded=false,partnerRecorded=false,rolling=false,verifying=false}={}){
+ if(rolling)return 'Brassage en cours…';
+ if(verifying)return 'Vérification du lancer…';
+ if(ownRecorded&&partnerRecorded)return 'Deux D6 enregistrés · Synchronisation…';
+ if(ownRecorded)return 'Ton D6 est enregistré · Attends ton partenaire';
+ if(partnerRecorded)return 'Ton partenaire a lancé · À ton tour';
+ return 'Brasse ton D6 pour continuer';
+}
+
 let observer;
 export function fitEveningD6(root){
  observer?.disconnect();observer=null;
@@ -52,7 +62,13 @@ export function fitEveningD6(root){
   roll.classList.add('evening-small-roll','evening-saved-roll','lr-surface');
  }
  const footer=document.createElement('div');footer.className='evening-d6-next lr-surface';
- footer.innerHTML='<strong>Étape 1 / 2</strong><span>Deux lancers pour continuer</span>';
+ const nextMessage=eveningD6NextMessage({
+  ownRecorded:!!me.querySelector('.evening-face-result:not(.is-empty)'),
+  partnerRecorded:partner.classList.contains('is-confirmed'),
+  rolling:!roll.matches('button')&&roll.textContent.includes('Brassage en cours'),
+  verifying:!roll.matches('button')&&roll.textContent.includes('Vérification du lancer')
+ });
+ footer.innerHTML='<strong>Étape 1 / 2</strong><span>'+nextMessage+'</span>';
  const content=view.querySelector('.evening-step.one');
  content.replaceChildren(hero);
  view.querySelector('.evening-toolbar .ritual-kicker').textContent='NOTRE RITUEL DE LA SOIRÉE';

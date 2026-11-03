@@ -164,7 +164,10 @@ export function premiumEveningHtml({
  const ownPending=!!(pending?.id&&pending.recipient===me&&pending.session_id===session?.id&&
   ['proposed','accepted'].includes(pending.status));
  const challengeText=pending?'♡ Voir notre défi en cours':turn.finished?'Tous les défis terminés':!ready?'En attente des deux D6':canDraw?'À toi de jouer':'En attente de '+esc(partner.name?.split(' ')[0]||'ton partenaire');
- const stateText=ready?'✓ Étape 2 débloquée':myRollRecorded?'Ton lancer est enregistré. Attends ton partenaire.':partnerRollRecorded?'Le résultat de '+esc(partner.name?.split(' ')[0]||'ton partenaire')+' est prêt. À toi de brasser le dé.':'Chaque partenaire brasse son propre dé.';
+ const stateText=ready?'✓ Étape 2 débloquée':myRollRecorded&&partnerRollRecorded?
+  'Nos deux lancers sont enregistrés. Synchronisation…':myRollRecorded?
+  'Ton lancer est enregistré. Attends ton partenaire.':partnerRollRecorded?
+  'Le résultat de '+esc(partner.name?.split(' ')[0]||'ton partenaire')+' est prêt. À toi de brasser le dé.':'Chaque partenaire brasse son propre dé.';
  const currentStatus=turn.finished?'♡ Tous les défis sont réalisés':turn.drawsFinished?'♡ Tous les défis sont pigés':canDraw?'♥ C’est ton tour !':ready?'Au tour de '+esc(partner.name?.split(' ')[0]||'ton partenaire'):'Étape 2 verrouillée';
  // An official challenge is persisted in Supabase; never show a provisional
  // animation face or guess a result while a D100 is being rolled.
@@ -180,19 +183,22 @@ export function premiumEveningHtml({
  const primaryAction=turn.finished?
   bt('finish-session','✓ Terminer la soirée','evening-primary'):
   rolling?waitingStatus('Brassage en cours…'):
-  !ready?waitingStatus(myRollRecorded?
+  !ready?waitingStatus(myRollRecorded&&partnerRollRecorded?
+   'Nos deux D6 sont enregistrés · Synchronisation…':myRollRecorded?
    'En attente du D6 de ton partenaire':'Lance ton D6 pour continuer'):
-  ownPending?bt('evening-open:'+pending.id,'♡ Voir mon défi','evening-primary'):
+  ownPending?bt('evening-open:'+pending.id,
+   pending.status==='accepted'?'↻ Reprendre mon défi':'♡ Voir mon défi','evening-primary'):
   !turn.ready?waitingStatus('Synchronisation de nos défis…'):
   turn.drawsFinished?(ownChallengeCount>0?
    bt('evening-list','♡ Voir mes défis ('+ownChallengeCount+')','evening-primary'):
    waitingStatus('Tous les tirages sont terminés')):
   canDraw?bt('new-challenge','🎲 Brasser le D100','evening-primary'):
    waitingStatus('En attente du tour de ton partenaire');
- // Keep the private list reachable when multiple cards remain accessible.
- // The active card is still the only dominant action.
+ // Keep the private list available after the last D100 whenever another
+ // accepted/proposed challenge is the primary action. Hide a duplicate list
+ // button only when the list itself is already the primary action.
  const secondaryAction=ownChallengeCount>0&&(!ownPending||ownChallengeCount>1)&&
-  !(turn.drawsFinished&&!turn.finished&&!rolling)?
+  !(turn.drawsFinished&&!turn.finished&&!rolling&&ready&&turn.ready&&!ownPending)?
   bt('evening-list','♡ Voir mes défis ('+ownChallengeCount+')','evening-queue-open-btn'):'';
  return '<div class="evening-premium-view '+(session?(ready?'is-ready':'is-waiting'):'is-inactive is-finale')+'" data-category-percent="'+esc(categoryOdds)+'">'+
  '<div class="evening-toolbar">'+
