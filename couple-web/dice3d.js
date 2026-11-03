@@ -631,8 +631,14 @@ export function dieOn(canvas,sides,value,rolling){
    // After the mode tabs reached 44px, 360x740 measured 0.9649 parity.
    // Restore the D100 to >=0.97 parity without changing the tall-phone endpoint.
    if(idleEveningD100&&window.matchMedia?.('(max-width:767px)').matches){
-    const t=Math.max(0,Math.min(1,(window.innerHeight-740)/175));
-    camera.zoom*=.936+.064*t*t;
+    const height=window.innerHeight;
+    const t=Math.max(0,Math.min(1,(height-740)/175));
+    // On 360x640 the measured ruby silhouette is only 70% of Surprise's
+    // (reference floor: 76%). The camera fit already protects mesh clipping;
+    // restore its size on SHORT phones without touching the 2px top clearance, tapering to 740px
+    // fit. Keep the 412x915 endpoint, all D6 and all official results intact.
+    const shortBonus=.08*Math.max(0,Math.min(1,(740-height)/100));
+    camera.zoom*=.936+.064*t*t+shortBonus;
    }
    camera.updateProjectionMatrix();
   }
