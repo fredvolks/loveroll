@@ -33,7 +33,7 @@ import {premiumEveningHtml,updateEveningCategoryUi,canRollPersonalEveningD6} fro
 import {eveningHistoryMarkup,eveningLocalDay} from './evening-calendar.mjs?v=20261102-web268';
 import {eveningReviewModal,validEveningReview} from './evening-review.mjs?v=20261016-person-review97';
 import {premiumSurpriseHtml,sixSpecialEvents} from './premium-surprise.mjs?v=20261022-home228';
-import {MEMORY_PHOTO_BUCKET,jpegMemoryPhoto,privateMemoryPath} from './monthly-private-photo.mjs';
+import {MEMORY_PHOTO_BUCKET,jpegMemoryPhoto,privateMemoryPath,confirmUploadedMemoryPhoto} from './monthly-private-photo.mjs';
 import {surpriseSlot,surpriseCustom,surpriseTitle,formatSurpriseDateInput,parseSurpriseDateInput} from './surprise-event-config.mjs?v=20261016-surprise109';
 import {loginEmail,loginCode,emailAuthMessage,requireLovePassword,passwordQuality,verifiedLoveEmail,passwordAuthMessage,invitationAuthMessage} from './email-auth.mjs';
 import {demoCoupleHtml,DEMO_TABS} from './demo-couple.mjs';
@@ -3435,19 +3435,27 @@ async function handle(action,element){
     contentType:'image/jpeg',upsert:false,cacheControl:'300'
    });
    if(uploadError)throw Error('Envoi photo indisponible : '+uploadError.message);
-   try{
-    // A changed login/roll cannot attach a photo to an unrelated memory.
-    if(state.user?.id!==actor||state.monthly?.monthly_activity?.id!==rollId)
-     throw Error('Le duo a changé pendant l’envoi.');
-    const saved=await rpc('save_love_monthly_photo',{p_roll:rollId,p_path:path});
-    if(state.user?.id!==actor||state.monthly?.monthly_activity?.id!==rollId)return;
-    state.geoFeedback=[...state.geoFeedback.filter(r=>r.author_id!==actor),saved];
-    state.geoPhotoUrls=await signedMonthlyMemoryPhotos(state.geoFeedback,actor,rollId);
-    state.geoPhotoSignedAt=Date.now();
-   }catch(error){
+   // Only an aborted upload before the linking RPC is certainly uncommitted.
+   if(state.user?.id!==actor||state.monthly?.monthly_activity?.id!==rollId){
     try{await bucket.remove([path]);}catch{}
-    throw error;
+    return;
    }
+   // A rejected/timeout response from the RPC can conceal a committed write.
+   // Do not remove the object after contacting the server: it may be linked.
+   await confirmUploadedMemoryPhoto({
+    link:()=>rpc('save_love_monthly_photo',{p_roll:rollId,p_path:path}),
+    preview:async saved=>{
+     if(state.user?.id!==actor||state.monthly?.monthly_activity?.id!==rollId)return;
+     state.geoFeedback=[...state.geoFeedback.filter(r=>r.author_id!==actor),saved];
+     state.geoPhotoUrls=await signedMonthlyMemoryPhotos(state.geoFeedback,actor,rollId);
+     state.geoPhotoSignedAt=Date.now();
+    },
+    onPreviewError:error=>{
+     console.warn('Photo privée enregistrée, aperçu à resynchroniser',error);
+     if(state.user?.id===actor&&state.monthly?.monthly_activity?.id===rollId)
+      state.geoPhotoSignedAt=0;
+    }
+   });
    if(original&&original!==path){
     // Removing the old object is best-effort; the old signed URL expires
     // and its metadata is no longer readable after the new RPC succeeds.
