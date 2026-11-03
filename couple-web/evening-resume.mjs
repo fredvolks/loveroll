@@ -21,10 +21,13 @@ export function clearEveningSelection(storage,userId,sessionId){
  const k=key(userId,sessionId);if(!k)return;
  try{storage?.removeItem(k);}catch{}
 }
-export function restoreEveningSelection(storage,userId,sessionId,ownVisibleCards=[]){
+export function restoreEveningSelection(storage,userId,sessionId,ownVisibleCards){
  const k=key(userId,sessionId);if(!k)return null;
  let id=null;try{id=storage?.getItem(k)||null;}catch{return null;}
  if(!id)return null;
+ // Missing or malformed data is not evidence that the server removed the card.
+ // Only a confirmed array of visible cards may invalidate a bookmark.
+ if(!Array.isArray(ownVisibleCards))return null;
  const card=ownVisibleCards.find(c=>c?.id===id&&c?.recipient===userId&&
   c?.session_id===sessionId&&['proposed','accepted'].includes(c.status));
  if(!card){clearEveningSelection(storage,userId,sessionId);return null;}
