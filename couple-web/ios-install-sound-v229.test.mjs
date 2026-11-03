@@ -296,3 +296,13 @@ test('LR-004: Web 272 loads the repaired sound module even from an older install
  assert.match(sw,/const CACHE='loveroll-static-v272'/);
  assert.match(sw,/'\.\/loveroll-sounds\.mjs'/);
 });
+
+test('LR-004: choosing a timer signal survives denied browser storage',()=>{
+ const app=read('app.js');
+ const start=app.indexOf("if(verb==='timer-mode'){");
+ const end=app.indexOf("if(verb==='timer-sound-test'){",start);
+ assert.ok(start>=0&&end>start,'Timer signal action remains available');
+ const handler=app.slice(start,end);
+ assert.match(handler,/challengeTimer\.mode=parts\[0\];[\s\S]*?try\s*\{\s*localStorage\.setItem\('loveroll-timer-mode',parts\[0\]\);\s*\}catch\s*\{\s*\}[\s\S]*?render\(\);return;/,
+  'Browser denial must not block rendering or retaining the selected mode in memory');
+});
