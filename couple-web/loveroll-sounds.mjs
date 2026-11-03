@@ -12,14 +12,24 @@ export function silenceLoveRollSounds(){
  }
  activeMelodyOscillators.clear();
 }
-export const setLoveRollSoundUser=id=>{currentUser=String(id||'anonymous');};
+export const setLoveRollSoundUser=id=>{
+ const nextUser=String(id||'anonymous');
+ if(nextUser===currentUser)return;
+ // Never let a previous member's timer keep sounding after a sign-out or account switch.
+ silenceLoveRollSounds();
+ recent.clear();
+ currentUser=nextUser;
+};
 const key=()=>KEY+':'+currentUser;
 export function soundEnabled(store=globalThis.localStorage){
  try{return store?.getItem(key())!=='off';}catch{return true;}
 }
 export function setSoundEnabled(enabled,store=globalThis.localStorage){
- try{store?.setItem(key(),enabled?'on':'off');}catch{}
- return !!enabled;
+ const next=!!enabled;
+ // A mute is immediate: do not leave a scheduled WebAudio melody audible.
+ if(!next)silenceLoveRollSounds();
+ try{store?.setItem(key(),next?'on':'off');}catch{}
+ return next;
 }
 export async function unlockLoveRollSounds(){
  const target=globalThis.window;
