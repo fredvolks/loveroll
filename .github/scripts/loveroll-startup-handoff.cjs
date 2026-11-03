@@ -5,7 +5,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 const assert=require('node:assert/strict');
 const {execFileSync}=require('node:child_process');
-const site='https://fredvolks.github.io/mon-wallet-android/';
+const site='https://fredvolks.github.io/loveroll/';
 const pkg='ca.desadeux.jeu',activity=pkg+'/.ConnectedLoveRollActivity';
 const bufferLimit=16*1024*1024;
 const remaining=deadline=>{
