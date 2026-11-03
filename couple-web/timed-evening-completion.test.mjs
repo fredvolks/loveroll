@@ -145,6 +145,19 @@ test('LR-002 countdown renders one truthful, actionable control at every phase',
  assert.equal(timedEveningTimerControl({...base,remainingMs:-1}).disabled,true);
 });
 
+test('LR-002 running countdown cannot revive Pause from a stale snapshot without a deadline',()=>{
+ const timer={durationMs:240000,remainingMs:120000,running:true,autoCompletePending:false};
+ for(const deadline of [0,null,undefined,NaN,Infinity,-Infinity,'invalid']){
+  const presentation=timedEveningTimerControl({...timer,deadline});
+  assert.equal(presentation.label,'♡ Terminé',String(deadline));
+  assert.equal(presentation.disabled,true,String(deadline));
+  assert.equal(presentation.status,'Terminé',String(deadline));
+ }
+ // A deliberately paused clock is different: it has no running deadline
+ // and must retain its genuine remaining duration and Reprendre action.
+ assert.equal(timedEveningTimerControl({...timer,running:false,deadline:0}).label,'▶ Reprendre');
+});
+
 test('LR-002 live countdown and rerender cannot revive an inert Reprendre button',()=>{
  const app=readFileSync(new URL('./app.js',import.meta.url),'utf8');
  const start=app.indexOf('function updateChallengeClock(){');
