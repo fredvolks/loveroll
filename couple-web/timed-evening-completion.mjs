@@ -43,7 +43,7 @@ export function isSameCompletedEveningChallenge(challenge,current,userId,session
 // Those must not authorize an idempotent close after a failed server write.
 function parsedValidSessionTimestamp(value){
  if(typeof value!=='string')return NaN;
- const m=/^(\\d{4})-(\\d{2})-(\\d{2})T(\\d{2}):(\\d{2}):(\\d{2})(?:\\.\\d{1,6})?(Z|[+-]\\d{2}:\\d{2})$/.exec(value);
+ const m=/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,6})?(Z|[+-]\d{2}:\d{2})$/.exec(value);
  if(!m)return NaN;
  const year=Number(m[1]),month=Number(m[2]),day=Number(m[3]);
  const hour=Number(m[4]),minute=Number(m[5]),second=Number(m[6]);
