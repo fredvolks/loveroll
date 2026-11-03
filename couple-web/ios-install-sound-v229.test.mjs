@@ -183,3 +183,45 @@ test('LR-004: an interrupted WebAudio melody stops previously scheduled notes',a
   if(oldWindow===undefined)delete globalThis.window;else globalThis.window=oldWindow;
  }
 });
+
+test('LR-004: denied localStorage cannot defeat immediate mute or account isolation',async()=>{
+ const oldWindow=globalThis.window;
+ const oldStorage=Object.getOwnPropertyDescriptor(globalThis,'localStorage');
+ const notes=[];
+ class RestrictedStorageAudioContext{
+  state='running';currentTime=2;destination={};
+  createOscillator(){
+   const note={stops:[],disconnected:0,frequency:{value:0},connect(){},start(){},
+    stop(at){this.stops.push(at);},disconnect(){this.disconnected++;}};
+   notes.push(note);return note;
+  }
+  createGain(){return {gain:{setValueAtTime(){},exponentialRampToValueAtTime(){}},
+   connect(){},disconnect(){}};}
+ }
+ try{
+  Object.defineProperty(globalThis,'localStorage',{configurable:true,
+   get(){throw new Error('Storage denied');}});
+  globalThis.window={AudioContext:RestrictedStorageAudioContext};
+  const sound=await import('./loveroll-sounds.mjs?test-lr004-restricted-storage');
+  sound.setLoveRollSoundUser('storage-blocked-a');
+  assert.equal(await sound.unlockLoveRollSounds(),true);
+  assert.equal(sound.playLoveRollSound('timer:before-denial'),true);
+  assert.equal(notes.length,6);
+  assert.equal(sound.setSoundEnabled(false),false,
+   'A blocked localStorage getter must not throw before muting');
+  assert.ok(notes.every(note=>note.stops.length>=2&&note.disconnected>0));
+  assert.equal(sound.soundEnabled(),false,'Mute remains active during this session');
+  assert.equal(sound.playLoveRollSound('timer:while-denied'),false);
+  sound.setLoveRollSoundUser('storage-blocked-b');
+  assert.equal(sound.soundEnabled(),true,'Other account retains its independent default');
+  sound.setLoveRollSoundUser('storage-blocked-a');
+  assert.equal(sound.soundEnabled(),false,'First account remains muted');
+  assert.equal(sound.setSoundEnabled(true),true);
+  assert.equal(sound.playLoveRollSound('timer:after-enable'),true);
+ }finally{
+  if(oldStorage)Object.defineProperty(globalThis,'localStorage',oldStorage);
+  else delete globalThis.localStorage;
+  if(oldWindow===undefined)delete globalThis.window;
+  else globalThis.window=oldWindow;
+ }
+});

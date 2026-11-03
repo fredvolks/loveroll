@@ -5,6 +5,7 @@ let context=null;
 let currentUser='anonymous';
 const recent=new Set();
 const activeMelodyOscillators=new Set();
+const sessionSoundPreferences=new Map();
 export function silenceLoveRollSounds(){
  for(const oscillator of activeMelodyOscillators){
   try{oscillator.stop(context?.currentTime??0);}catch{}
@@ -22,15 +23,25 @@ export const setLoveRollSoundUser=id=>{
  currentUser=next;
 };
 const key=()=>KEY+':'+currentUser;
-export function soundEnabled(store=globalThis.localStorage){
- try{return store?.getItem(key())!=='off';}catch{return true;}
+export function soundEnabled(store){
+ const current=key();
+ // A user's choice still applies to this session if storage is denied.
+ if(sessionSoundPreferences.has(current))return sessionSoundPreferences.get(current);
+ try{
+  const storage=store===undefined?globalThis.localStorage:store;
+  return storage?.getItem(current)!=='off';
+ }catch{return true;}
 }
-export function setSoundEnabled(enabled,store=globalThis.localStorage){
- try{store?.setItem(key(),enabled?'on':'off');}catch{}
- // Disabling the sound is an immediate mute, including notes already queued
- // on WebAudio's timeline for a timer that has just reached 00:00.
- if(!enabled)silenceLoveRollSounds();
- return !!enabled;
+export function setSoundEnabled(enabled,store){
+ const current=key(),on=!!enabled;
+ sessionSoundPreferences.set(current,on);
+ try{
+  const storage=store===undefined?globalThis.localStorage:store;
+  storage?.setItem(current,on?'on':'off');
+ }catch{}
+ // Even a blocked localStorage getter must not keep an active melody alive.
+ if(!on)silenceLoveRollSounds();
+ return on;
 }
 export async function unlockLoveRollSounds(){
  const target=globalThis.window;
