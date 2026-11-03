@@ -4,7 +4,7 @@ import {resolvedCard,eveningCard} from './evening-challenges.mjs';
 import {favoriteCardIdentity,isEveningFavorite,closedCalendarFavoriteCandidate,favoriteCardPreview,MAX_EVENING_FAVORITES} from './evening-favorites.mjs?v=20261101-hearts266';
 import {eveningPersonReviewMarkup} from './evening-review.mjs';
 import {ritualHeadingHtml} from './brand.mjs?v=20261017-ritual130';
-import {calendarWeekSuccess,monthlyChallengeSuccess} from './calendar-success-stats.mjs?v=20261018-stats148';
+import {calendarWeekSuccess,monthlyChallengeSuccess} from './calendar-success-stats.mjs?v=20261103-web270';
 const safe=x=>String(x??'').replace(/[&<>"']/g,k=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','"':'&quot;',"'":'&#39;'}[k]));
 const isoMonth=v=>/^\d{4}-(0[1-9]|1[0-2])$/.test(v||'')?v:null;
 export function eveningLocalDay(iso){
