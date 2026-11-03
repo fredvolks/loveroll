@@ -6,6 +6,25 @@ INSERT INTO storage.buckets (id,name,public,file_size_limit,allowed_mime_types)
  VALUES ('loveroll-memories','loveroll-memories',false,3145728,ARRAY['image/jpeg']::text[])
  ON CONFLICT (id) DO NOTHING;
 
+-- If this bucket existed before the migration, never silently accept public
+-- downloads or unrestricted uploads: public Storage bypasses read RLS.
+-- Fail before installing any policies; do not change a pre-existing bucket
+-- or its objects without an explicit, separately reviewed migration.
+DO $lr_surprise_private_bucket_guard$
+BEGIN
+ IF NOT EXISTS (
+  SELECT 1 FROM storage.buckets
+   WHERE id='loveroll-memories'
+     AND name='loveroll-memories'
+     AND public IS FALSE
+     AND file_size_limit = 3145728
+     AND allowed_mime_types = ARRAY['image/jpeg']::text[]
+ ) THEN
+  RAISE EXCEPTION 'LoveRoll: le compartiment des photos souvenirs doit être privé et limité aux JPEG de 3 Mo.';
+ END IF;
+END
+$lr_surprise_private_bucket_guard$;
+
 CREATE POLICY love_memory_photo_owner_upload ON storage.objects
  FOR INSERT TO authenticated WITH CHECK (
   bucket_id='loveroll-memories'
