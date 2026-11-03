@@ -8,9 +8,9 @@ on:
     branches: [main, des-a-deux-apk-20261013]
     paths:
       - 'app/**'
-      - 'couple-web/index.html'
-      - 'couple-web/loveroll-splash.css'
-      - 'couple-web/loveroll-splash.js'
+      # WebView loads the whole LoveRoll UI: a dice/WebGL, responsive CSS,
+      # or asset update can break Android even when the native APK is unchanged.
+      - 'couple-web/**'
       - '.github/workflows/emulator-smoke.yml'
       - '.github/scripts/loveroll-emulator-smoke.sh'
       - '.github/scripts/loveroll-startup-handoff.cjs'
