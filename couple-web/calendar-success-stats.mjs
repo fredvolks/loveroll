@@ -10,6 +10,14 @@ const torontoDate=instant=>{
  const value=key=>parts.find(p=>p.type===key)?.value;
  return value('year')+'-'+value('month')+'-'+value('day');
 };
+// A malformed or reversed timestamp is not proof that an evening was closed.
+// The read-only weekly, monthly and historical views share this check.
+export function hasValidEveningClosure(session){
+ if(!session?.started_at||!session?.finished_at)return false;
+ const started=Date.parse(session.started_at);
+ const finished=Date.parse(session.finished_at);
+ return Number.isFinite(started)&&Number.isFinite(finished)&&finished>=started;
+}
 export function mondayOf(date){
  if(!/^\d{4}-\d{2}-\d{2}$/.test(date||''))return null;
  const time=new Date(date+'T12:00:00Z');
@@ -36,12 +44,8 @@ export function calendarWeekSuccess({date,weeklyRolls=[],sessions=[]}={}){
  // session rows must not inflate a weekly success rate.
  const completedDays=new Set();
  for(const session of sessions||[]){
-  if(session.counted!==true||!session.finished_at)continue;
-  const started=Date.parse(session.started_at);
-  const finished=Date.parse(session.finished_at);
-  // An invalid or reversed closure must not count as a completed evening.
-  if(!Number.isFinite(started)||!Number.isFinite(finished)||
-   finished<started||started<since)continue;
+  if(session.counted!==true||!hasValidEveningClosure(session))continue;
+  if(Date.parse(session.started_at)<since)continue;
   const day=torontoDate(session.started_at);
   if(day&&mondayOf(day)===start)completedDays.add(day);
  }
@@ -67,7 +71,7 @@ export function monthlyChallengeSuccess({
   // LR-003: while the evening is open, pending or accepted cards are NOT failed.
   // A completed or passed card is reportable immediately; unresolved cards become
   // final non-completions only when that evening is actually closed.
-  const reportable=allocated.filter(c=>!!sessionsById.get(c.session_id)?.finished_at||
+  const reportable=allocated.filter(c=>hasValidEveningClosure(sessionsById.get(c.session_id))||
     c.status==='completed'||c.status==='passed'||c.status==='refused');
   const complete=reportable.filter(c=>c.status==='completed').length;
   // Free passes never penalize a monthly completion rate.
@@ -75,7 +79,7 @@ export function monthlyChallengeSuccess({
   const penalized=reportable.filter(c=>c.status==='passed'&&!freePasses.has(c.id)).length;
   // Missing challenge slots become non-realized only after the night is closed.
   const undrawn=(sessionStats||[]).filter(row=>row.user_id===m.user_id&&
-   sessionsById.get(row.session_id)?.finished_at).reduce((acc,row)=>{
+   hasValidEveningClosure(sessionsById.get(row.session_id))).reduce((acc,row)=>{
     if(row.target==null)return acc;
     // Count every assigned challenge, INCLUDING a pass, so it cannot count
    // again as a fictitious unpicked challenge.
