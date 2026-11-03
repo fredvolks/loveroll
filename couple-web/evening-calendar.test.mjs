@@ -202,3 +202,26 @@ test('LR-003 monthly headline counts only CLOSED evenings in the selected Toront
  assert.match(nov,/<strong>0<\/strong> défis réalisés ce mois/);
  assert.match(nov,/<strong>0<\/strong> non réalisés ce mois/);
 });
+
+
+test('LR-003: malformed or reversed closures stay in progress across calendar and monthly headline',()=>{
+ const start='2026-10-15T16:00:00Z';
+ const sessions=[
+  {id:'bad-date',started_at:start,finished_at:'not-a-date',counted:true},
+  {id:'backwards',started_at:start,finished_at:'2026-10-15T15:00:00Z',counted:true}
+ ];
+ const html=eveningHistoryMarkup({month:'2026-10',selectedDate:'2026-10-15',
+  sessions,members:[{user_id:'a',name:'Partenaire'}],me:'a',
+  stats:sessions.map(s=>({session_id:s.id,user_id:'a',target:3,drawn:1,completed:0})),
+  historyChallenges:[
+   {id:'pending',session_id:'bad-date',recipient:'a',status:'proposed',category:'SENSUEL',card_title:'À explorer'},
+   {id:'accepted',session_id:'backwards',recipient:'a',status:'accepted',category:'SENSUEL',card_title:'En chemin'}
+  ]});
+ assert.match(html,/<strong>0<\/strong> soirées clôturées ce mois/);
+ assert.match(html,/<strong>0<\/strong> non réalisés ce mois/);
+ assert.equal((html.match(/<span>En cours<\/span>/g)||[]).length,2);
+ assert.doesNotMatch(html,/<span>Clôturée<\/span>/);
+ assert.match(html,/○ À faire/);
+ assert.match(html,/◷ En cours/);
+ assert.doesNotMatch(html,/Non réalisé \(non commencé\)|Non réalisé après début/);
+});
