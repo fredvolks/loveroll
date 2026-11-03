@@ -7,8 +7,15 @@ export function safeEveningStorage(readStorage=()=>globalThis.localStorage){
 }
 export function saveEveningSelection(storage,userId,sessionId,challengeId){
  const k=key(userId,sessionId);if(!k||!challengeId)return false;
- try{if(typeof storage?.setItem!=='function')return false;
-  storage.setItem(k,String(challengeId));return true;}catch{return false;}
+ // An accepted setItem call does not prove persistence (e.g. a silent no-op shim).
+ // Browser Storage writes are synchronous; read back the opaque ID before
+ // reporting a bookmark that can genuinely survive the next UI render.
+ try{
+  if(typeof storage?.setItem!=='function'||typeof storage?.getItem!=='function')return false;
+  const selected=String(challengeId);
+  storage.setItem(k,selected);
+  return storage.getItem(k)===selected;
+ }catch{return false;}
 }
 export function clearEveningSelection(storage,userId,sessionId){
  const k=key(userId,sessionId);if(!k)return;
