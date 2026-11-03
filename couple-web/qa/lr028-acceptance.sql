@@ -191,6 +191,7 @@ set role authenticated;
 select set_config('request.jwt.claim.sub',
  'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',false);
 do $rls$
+begin
  if (select count(*) from public.love_evening_invitations
      where couple_id='ffffffff-ffff-4fff-bfff-ffffffffffff')<>1 then
   raise exception 'RLS: original sender should see active invitation';
@@ -199,6 +200,7 @@ end $rls$;
 select set_config('request.jwt.claim.sub',
  'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb',false);
 do $rls$
+begin
  if (select count(*) from public.love_evening_invitations
      where couple_id='ffffffff-ffff-4fff-bfff-ffffffffffff')<>1 then
   raise exception 'RLS: original recipient should see active invitation';
@@ -218,6 +220,7 @@ set role authenticated;
 select set_config('request.jwt.claim.sub',
  'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',false);
 do $rls$
+begin
  if exists(select 1 from public.love_evening_invitations
      where couple_id='ffffffff-ffff-4fff-bfff-ffffffffffff') then
   raise exception 'RLS: remaining sender saw the former recipient';
@@ -226,6 +229,7 @@ end $rls$;
 select set_config('request.jwt.claim.sub',
  'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb',false);
 do $rls$
+begin
  if exists(select 1 from public.love_evening_invitations
      where couple_id='ffffffff-ffff-4fff-bfff-ffffffffffff') then
   raise exception 'RLS: removed recipient saw former invitation';
@@ -234,6 +238,7 @@ end $rls$;
 select set_config('request.jwt.claim.sub',
  'cccccccc-cccc-4ccc-cccc-cccccccccccc',false);
 do $rls$
+begin
  if exists(select 1 from public.love_evening_invitations
      where couple_id='ffffffff-ffff-4fff-bfff-ffffffffffff') then
   raise exception 'RLS: replacement partner saw former invitation';
