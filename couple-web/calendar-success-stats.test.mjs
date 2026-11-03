@@ -211,3 +211,24 @@ test('LR-003: duplicate or resumed counted sessions count only once per Québec 
  assert.deepEqual(result,{hasRoll:true,possible:4,completed:2,percent:50,face:4});
  assert.equal(roll.face,4,'Never mutate the official weekly D6 result');
 });
+
+test('LR-003: Quebec DST fallback and UTC Monday still count as one local Sunday',()=>{
+ const roll={kind:'weekly',key:'2026-10-26',face:5,created_at:'2026-10-26T12:00:00Z'};
+ const nextRoll={kind:'weekly',key:'2026-11-02',face:3,created_at:'2026-11-02T12:00:00Z'};
+ const closed=(id,started_at,finished_at)=>({id,started_at,finished_at,counted:true});
+ const sessions=[
+  // Both UTC instants correspond to 01:30 on DST fallback Sunday in Quebec.
+  closed('sunday-first-0130','2026-11-01T05:30:00Z','2026-11-01T05:40:00Z'),
+  closed('sunday-second-0130','2026-11-01T06:30:00Z','2026-11-01T06:40:00Z'),
+  // UTC has switched to Monday, but Toronto is still on Sunday.
+  closed('utc-monday-local-sunday','2026-11-02T02:00:00Z','2026-11-02T02:30:00Z'),
+  closed('real-local-monday','2026-11-02T13:00:00Z','2026-11-02T14:00:00Z'),
+  closed('invalid-start','invalid','2026-11-01T07:00:00Z')
+ ];
+ const previous=calendarWeekSuccess({date:'2026-11-01',weeklyRolls:[roll],sessions});
+ assert.deepEqual(previous,{hasRoll:true,possible:5,completed:1,percent:20,face:5});
+ const next=calendarWeekSuccess({date:'2026-11-02',weeklyRolls:[roll,nextRoll],sessions});
+ assert.deepEqual(next,{hasRoll:true,possible:3,completed:1,percent:33,face:3});
+ assert.equal(roll.face,5);
+ assert.equal(nextRoll.face,3);
+});
