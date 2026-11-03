@@ -63,3 +63,15 @@ export function safePrivatePhotoUrl(value){
   return u.protocol==='https:'&&!u.username&&!u.password?u.href:null;
  }catch{return null;}
 }
+
+// Linking may succeed on the server even when the network response is lost.
+// Never delete an uploaded object merely because the linking RPC throws.
+// Once confirmed, a failed preview must not turn a saved photo into an error.
+export async function confirmUploadedMemoryPhoto({link,preview,onPreviewError=()=>{}}){
+ const saved=await link();
+ try{await preview(saved);}
+ catch(error){
+  try{onPreviewError(error);}catch{} // Diagnostic callbacks cannot undo a confirmed save.
+ }
+ return saved;
+}
