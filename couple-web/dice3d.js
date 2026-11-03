@@ -635,9 +635,9 @@ export function dieOn(canvas,sides,value,rolling){
     const t=Math.max(0,Math.min(1,(height-740)/175));
     // On 360x640 the measured ruby silhouette is only 70% of Surprise's
     // (reference floor: 76%). The camera fit already protects mesh clipping;
-    // restore its size on SHORT phones, tapering fully to the proven 740px
+    // restore its size on SHORT phones without touching the 2px top clearance, tapering to 740px
     // fit. Keep the 412x915 endpoint, all D6 and all official results intact.
-    const shortBonus=.095*Math.max(0,Math.min(1,(740-height)/100));
+    const shortBonus=.08*Math.max(0,Math.min(1,(740-height)/100));
     camera.zoom*=.936+.064*t*t+shortBonus;
    }
    camera.updateProjectionMatrix();
