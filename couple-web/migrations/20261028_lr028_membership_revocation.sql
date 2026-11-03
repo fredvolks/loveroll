@@ -16,11 +16,44 @@ begin
  end if;
 end
 $guard$;
+
+-- A temporary member replacement must invalidate invitations permanently.
+-- Checking only the present A/B duo would resurrect a stale invitation when
+-- A/B -> A/C -> A/B occurs on the same Toronto day.
+alter table public.love_evening_invitations
+  add column if not exists revoked_at timestamptz;
+
+create or replace function public.love_evening_invite_revoke_on_member_change()
+returns trigger language plpgsql security definer set search_path=''
+as $function$
+begin
+ -- Handle either old or new couple when membership is moved between couples.
+ if tg_op in ('DELETE','UPDATE') then
+  update public.love_evening_invitations
+     set revoked_at=clock_timestamp()
+   where couple_id=old.couple_id and revoked_at is null;
+ end if;
+ if tg_op in ('INSERT','UPDATE') then
+  update public.love_evening_invitations
+     set revoked_at=clock_timestamp()
+   where couple_id=new.couple_id and revoked_at is null;
+ end if;
+ return null;
+end;
+$function$;
+revoke all on function public.love_evening_invite_revoke_on_member_change()
+ from public,anon,authenticated;
+drop trigger if exists love_evening_invite_revoke_on_membership on public.couple_members;
+create trigger love_evening_invite_revoke_on_membership
+ after insert or delete or update of couple_id,user_id on public.couple_members
+ for each row execute function public.love_evening_invite_revoke_on_member_change();
+
 drop policy if exists love_evening_invitation_members_read on public.love_evening_invitations;
 create policy love_evening_invitation_members_read on public.love_evening_invitations
  for select to authenticated using (
   (sender_id=(select auth.uid()) or recipient_id=(select auth.uid()))
   and couple_private.is_member(couple_id)
+  and revoked_at is null
   and exists(select 1 from public.couple_members
    where couple_id=love_evening_invitations.couple_id
     and user_id=love_evening_invitations.sender_id)
@@ -53,6 +86,9 @@ begin
  select * into row_inv from public.love_evening_invitations
   where couple_id=p_couple and local_day=today_qc;
  if found then
+  if row_inv.revoked_at is not null then
+   raise exception 'Une invitation antérieure existe pour ce jour';
+  end if;
   -- The exact original A/B duo must still be active. A former member's
   -- invitation must not be silently reused for a newly paired person.
   if not exists(select 1 from public.couple_members
@@ -97,7 +133,8 @@ begin
   raise exception 'Réponse invalide'; end if;
  select * into row_inv from public.love_evening_invitations
  where id=p_invitation for update;
- if not found or row_inv.recipient_id<>auth.uid()
+ if not found or row_inv.revoked_at is not null
+  or row_inv.recipient_id<>auth.uid()
   or not couple_private.is_member(row_inv.couple_id)
   or not exists(select 1 from public.couple_members
      where couple_id=row_inv.couple_id and user_id=row_inv.sender_id)
@@ -149,6 +186,9 @@ begin
  if not found then
   available:=public.love_evening_invite_available(p_couple,partner);
   return jsonb_build_object('available',available,'state','none');
+ end if;
+ if inv.revoked_at is not null then
+  return jsonb_build_object('available',false,'state','none');
  end if;
  -- SECURITY DEFINER bypasses RLS: verify this user's exact ownership.
  if me not in (inv.sender_id,inv.recipient_id)
