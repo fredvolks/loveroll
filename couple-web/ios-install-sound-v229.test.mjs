@@ -285,6 +285,47 @@ test('LR-004: muting from another tab stops an active timer without affecting ot
  }
 });
 
+test('LR-004: a cancelled melody disconnects every gain even when Safari skips onended',async()=>{
+ const oldWindow=globalThis.window,oldStore=globalThis.localStorage;
+ const oscillators=[],gains=[],values=new Map();
+ class SilentEndedAudioContext{
+  state='running';currentTime=9;destination={};
+  createOscillator(){
+   const node={stops:[],disconnects:0,frequency:{value:0},
+    connect(){},start(){},stop(time){this.stops.push(time);},
+    disconnect(){this.disconnects++;}};
+   // Deliberately never call onended, as can happen for future scheduled notes.
+   oscillators.push(node);return node;
+  }
+  createGain(){
+   const node={disconnects:0,gain:{setValueAtTime(){},exponentialRampToValueAtTime(){}},
+    connect(){},disconnect(){this.disconnects++;}};
+   gains.push(node);return node;
+  }
+ }
+ globalThis.window={AudioContext:SilentEndedAudioContext};
+ globalThis.localStorage={getItem:key=>values.get(key),setItem:(key,value)=>values.set(key,value)};
+ try{
+  const sound=await import('./loveroll-sounds.mjs?test-lr004-gain-cleanup');
+  sound.setLoveRollSoundUser('gain-cleanup');
+  assert.equal(await sound.unlockLoveRollSounds(),true);
+  assert.equal(sound.playLoveRollSound('timer:gain-cleanup'),true);
+  assert.equal(gains.length,6);
+  assert.ok(gains.every(gain=>gain.disconnects===0),'All six gain nodes start connected');
+  sound.setSoundEnabled(false);
+  assert.ok(oscillators.every(osc=>osc.stops.length>=2&&osc.disconnects===1),
+   'Every scheduled oscillator is stopped and disconnected');
+  assert.ok(gains.every(gain=>gain.disconnects===1),
+   'Muting disconnects every gain without relying on onended');
+  sound.setSoundEnabled(false);
+  assert.ok(gains.every(gain=>gain.disconnects===1),
+   'Repeated mute must not retain or disconnect orphaned gain nodes again');
+ }finally{
+  if(oldWindow===undefined)delete globalThis.window;else globalThis.window=oldWindow;
+  if(oldStore===undefined)delete globalThis.localStorage;else globalThis.localStorage=oldStore;
+ }
+});
+
 test('LR-004: Web 272 loads the repaired sound module even from an older installed PWA',()=>{
  const build=JSON.parse(read('web-version.json')).build;
  const app=read('app.js'),html=read('index.html'),sw=read('service-worker.js');
