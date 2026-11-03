@@ -261,3 +261,42 @@ test('LR-003: only a chronologically valid closure finalizes monthly failures',(
  assert.equal(result.denominator,4,'Two completions plus two genuine missing slots');
  assert.equal(result.percent,50);
 });
+
+
+test('LR-003: impossible calendar dates and microsecond-reversed finishes never close a night',()=>{
+ const valid={id:'good',started_at:'2026-11-02T19:00:00.123456Z',
+  finished_at:'2026-11-02T19:00:00.123457Z',counted:true};
+ const invalid=[
+  {...valid,id:'february-31',finished_at:'2026-02-31T20:00:00Z'},
+  {...valid,id:'november-31',finished_at:'2026-11-31T20:00:00Z'},
+  {...valid,id:'non-leap-day',finished_at:'2026-02-29T20:00:00Z'},
+  {...valid,id:'april-31',finished_at:'2026-04-31T20:00:00Z'},
+  {...valid,id:'hour-24',finished_at:'2026-11-03T24:00:00Z'},
+  {...valid,id:'bad-offset',finished_at:'2026-11-03T20:00:00+14:30'},
+  {...valid,id:'reversed-micros',finished_at:'2026-11-02T19:00:00.123455Z'},
+  {...valid,id:'invalid-start',started_at:'2026-02-31T19:00:00Z'}
+ ];
+ assert.equal(isClosedEvening(valid),true);
+ assert.equal(isClosedEvening({...valid,
+  started_at:'2024-02-29T23:00:00.123456+01:00',
+  finished_at:'2024-02-29T22:00:00.123456Z'}),true);
+ for(const session of invalid){
+  assert.equal(isClosedEvening(session),false,session.id);
+ }
+ const roll={kind:'weekly',key:'2026-11-02',face:6,created_at:'2026-11-02T12:00:00Z'};
+ const week=calendarWeekSuccess({date:'2026-11-05',weeklyRolls:[roll],
+  sessions:invalid.filter(s=>s.id!=='invalid-start')});
+ assert.equal(week.completed,0,'Invalid closings cannot earn a weekly success');
+ assert.equal(week.percent,0);
+ const month=monthlyChallengeSuccess({month:'2026-11',members:[members[0]],
+  sessions:invalid.filter(s=>s.id!=='invalid-start'),
+  historyChallenges:invalid.filter(s=>s.id!=='invalid-start').map(s=>({
+   id:'card-'+s.id,session_id:s.id,recipient:'a',status:'proposed'
+  })),
+  sessionStats:invalid.filter(s=>s.id!=='invalid-start').map(s=>({
+   session_id:s.id,user_id:'a',target:3
+  }))})[0];
+ assert.equal(month.unpicked,0,'A corrupt date must not create missing-card failures');
+ assert.equal(month.denominator,0,'Pending challenges remain pending');
+ assert.equal(month.percent,null);
+});
