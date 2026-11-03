@@ -19,13 +19,25 @@ test('D6 host proposes first, partner waits, no external booking or spending',()
 
 test('a pending proposal can only be answered by other partner',()=>{
  const plan={status:'proposed',proposed_for:date,proposed_by:'A',version:3};
- const author=monthlyDatePlanHtml({hostId:'A',me:'A',plan});
- const responder=monthlyDatePlanHtml({hostId:'A',me:'B',plan});
+ const author=monthlyDatePlanHtml({hostId:'A',me:'A',plan,now:'2026-11-02T12:00:00Z'});
+ const responder=monthlyDatePlanHtml({hostId:'A',me:'B',plan,now:'2026-11-02T12:00:00Z'});
  assert.match(author,/En attente de la réponse/);
  assert.doesNotMatch(author,/geo-date-accept|geo-date-counter/);
  assert.match(responder,/data-action="geo-date-accept"/);
  assert.match(responder,/data-action="geo-date-counter"/);
  assert.match(responder,/datetime-local/);
+});
+
+test('expired proposals offer a counter date, not an acceptance that the server rejects',()=>{
+ const plan={status:'proposed',proposed_for:date,proposed_by:'A',version:3};
+ const now='2026-12-13T12:00:00Z';
+ const author=monthlyDatePlanHtml({hostId:'A',me:'A',plan,now});
+ const partner=monthlyDatePlanHtml({hostId:'A',me:'B',plan,now});
+ for(const html of [author,partner])assert.match(html,/Cette date est passée/);
+ assert.doesNotMatch(author,/data-action="geo-date-accept"|data-action="geo-date-counter"/);
+ assert.doesNotMatch(partner,/data-action="geo-date-accept"/);
+ assert.match(partner,/data-action="geo-date-counter"/);
+ assert.match(partner,/datetime-local/);
 });
 
 test('agreed date explicitly is NOT a confirmed venue booking',()=>{
