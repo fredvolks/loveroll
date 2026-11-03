@@ -133,6 +133,51 @@ test('private SQL requires current duo, completion, author ownership and metadat
  assert.match(base,/photo_path=excluded\.photo_path/);
 });
 
+test('pre-existing photo bucket configuration must fail closed before access policies',()=>{
+ const sql=read('migrations/20261102_lr_surprise_private_photos.sql');
+ const insert=sql.indexOf('INSERT INTO storage.buckets');
+ const guard=sql.indexOf('DO $lr_surprise_private_bucket_guard
+ const app=read('app.js');
+ assert.match(app,/jpegMemoryPhoto\(file\)/);
+ assert.match(app,/privateMemoryPath\(actor,rollId,crypto\.randomUUID\(\)\)/);
+ assert.match(app,/bucket\.upload\(path,jpeg/);
+ assert.match(app,/save_love_monthly_photo/);
+ assert.match(app,/delete_love_monthly_photo/);
+ assert.match(app,/createSignedUrl\(path,300\)/);
+ assert.match(app,/geoPhotoMutationGate/);
+ assert.match(app,/photoExpired/);
+ assert.doesNotMatch(app,/getPublicUrl\(|storage\.from\(MEMORY_PHOTO_BUCKET\)\.upload\([^,]+,file/);
+ const begin=app.indexOf("if(verb==='geo-photo-save')");
+ const end=app.indexOf("if(verb==='geo-memory-save')",begin);
+ assert.ok(begin>0&&end>begin);
+ assert.doesNotMatch(app.slice(begin,end),/roll_couple_once|paid_by_host/);
+});
+
+test("cleanup SELECT is scoped to author's own current D100, not partner or former duo",()=>{
+ const sql=read('migrations/20261102_lr_surprise_private_photos.sql');
+ const start=sql.indexOf('CREATE POLICY love_memory_photo_owner_read_active');
+ const end=sql.indexOf('CREATE POLICY love_memory_photo_owner_delete',start);
+ assert.ok(start>0&&end>start);
+ const scope=sql.slice(start,end);
+ assert.match(scope,/owner_id=auth\.uid\(\)::text/);
+ assert.match(scope,/m\.user_id=auth\.uid\(\)/);
+ assert.match(scope,/r\.kind='monthly_activity'/);
+ assert.match(scope,/newcomer\.joined_at>completed\.completed_at/);
+ assert.doesNotMatch(scope,/OR true|USING \(true\)|bucket_id<>'loveroll-memories'/);
+});
+);
+ const policy=sql.indexOf('CREATE POLICY love_memory_photo_owner_upload');
+ assert.ok(insert>=0&&guard>insert&&policy>guard,'guard precedes any Storage access policy');
+ const section=sql.slice(guard,policy);
+ assert.match(section,/NOT EXISTS\\s*\\(\\s*SELECT 1 FROM storage\\.buckets/);
+ assert.match(section,/id='loveroll-memories'/);
+ assert.match(section,/public IS FALSE/);
+ assert.match(section,/file_size_limit\\s*=\\s*3145728/);
+ assert.match(section,/allowed_mime_types\\s*=\\s*ARRAY\\['image\\/jpeg'\\]::text\\[\\]/);
+ assert.match(section,/RAISE EXCEPTION/);
+ assert.doesNotMatch(section,/UPDATE storage\\.buckets|ALTER TABLE storage\\.buckets/);
+});
+
 test('photo actions never change D100, publish a URL, or upload original bytes',()=>{
  const app=read('app.js');
  assert.match(app,/jpegMemoryPhoto\(file\)/);
