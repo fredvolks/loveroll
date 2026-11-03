@@ -3,6 +3,24 @@
 # separately and cannot handle an inline multi-line for/if/done block.
 set -euo pipefail
 
+# A stale QA URL can yield false-green emulator checks against another Pages app.
+# Assert that the live Android WebView target and the Playwright handoff agree.
+node <<'JS_ANDROID_ORIGIN'
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const native = fs.readFileSync('app/src/main/java/ca/desadeux/jeu/ConnectedLoveRollActivity.java', 'utf8');
+const handoff = fs.readFileSync('.github/scripts/loveroll-startup-handoff.cjs', 'utf8');
+const host = native.match(/\bTRUSTED_HOST\s*=\s*"([^"]+)"/);
+const path = native.match(/\bTRUSTED_PATH\s*=\s*"([^"]+)"/);
+assert.ok(host && path, 'Missing Android host or path constant');
+const nativeSite = 'https://' + host[1] + path[1];
+const testSite = handoff.match(/\bconst site='([^']+)'/);
+assert.ok(testSite, 'The actual WebView handoff needs a declared site');
+assert.equal(nativeSite, 'https://fredvolks.github.io/loveroll/', 'Android must open LoveRoll, not the legacy wallet project');
+assert.equal(testSite[1], nativeSite, 'The emulator handoff must test the same URL as the installed Android application');
+console.log('LOVEROLL_ANDROID_ORIGIN_OK', nativeSite);
+JS_ANDROID_ORIGIN
+
 mkdir -p qa
 # Changing navigation mode restarts System UI. Its accessibility root is
 # temporarily null; retry the capture, then keep every app assertion strict.
@@ -32,6 +50,41 @@ adb shell cmd wifi status > qa/wifi-before-airplane.txt
 adb shell cmd connectivity airplane-mode enable
 adb shell am start -n ca.desadeux.jeu/.ConnectedLoveRollActivity
 sleep 20
+# On an overloaded fresh CI emulator, Pixel Launcher itself can hang and place
+# a system ANR modal ABOVE LoveRoll's real native network error. This was
+# observed in QA artifact 13255285043 at SHA 887d03a; the app had correctly
+# logged LoveRollStartup: native-error-overlay. Dismiss ONLY that exact system
+# modal, never a LoveRoll crash or an unrelated error. The strict native retry
+# assertions below still have to pass.
+for launcher_anr_attempt in $(seq 1 4); do
+  capture_ui loveroll-network-error
+  if python3 - <<'PY_LAUNCHER_ANR' > qa/launcher-anr-coordinate.txt
+import re
+import xml.etree.ElementTree as ET
+
+root=ET.parse('qa/loveroll-network-error.xml').getroot()
+nodes=list(root.iter('node'))
+if not any(n.get('package')=='android' and
+           n.get('text')=="Pixel Launcher isn't responding" for n in nodes):
+    raise SystemExit(1)
+close=[n for n in nodes if n.get('package')=='android'
+       and n.get('class')=='android.widget.Button' and n.get('text')=='Close app']
+assert len(close)==1,'Launcher-only ANR must expose exactly one system Close app action'
+bounds=list(map(int,re.findall(r'\d+',close[0].get('bounds',''))))
+assert len(bounds)==4,'Launcher ANR Close app needs valid screen bounds'
+x1,y1,x2,y2=bounds
+assert x1<x2 and y1<y2,'Launcher ANR Close app bounds must be nonempty'
+print((x1+x2)//2,(y1+y2)//2)
+PY_LAUNCHER_ANR
+  then
+    read -r anr_x anr_y < qa/launcher-anr-coordinate.txt
+    echo "LOVEROLL_EMULATOR_LAUNCHER_ANR_DISMISSED attempt=$launcher_anr_attempt"
+    adb shell input tap "$anr_x" "$anr_y"
+    sleep 2
+  else
+    break
+  fi
+done
 capture_ui loveroll-network-error
 adb exec-out screencap -p > qa/loveroll-network-error.png
 python3 - <<'PY_NATIVE'
@@ -48,16 +101,33 @@ adb shell cmd connectivity airplane-mode disable
 adb shell svc wifi enable
 adb shell svc data enable
 adb shell cmd wifi connect-network AndroidWifi open
-# Turning airplane mode off does not guarantee Wi-Fi has reassociated yet.
-# Wait for association AND DHCP before using the app's retry button.
-for attempt in $(seq 1 25); do
+# Wi-Fi association and a DHCP address are NOT evidence that Android can
+# reach the Internet yet. A retry during network validation can raise the
+# native error again even though the application itself is healthy.
+# Only tap once Android reports a VALIDATED Wi-Fi transport; if the emulator
+# never reconnects, fail with network diagnostics instead of blaming LoveRoll.
+network_validated=false
+for attempt in $(seq 1 60); do
   adb shell cmd wifi status > qa/wifi-after-airplane.txt
   adb shell ip -4 addr show wlan0 > qa/wifi-address.txt
-  if grep -q 'Wifi is connected' qa/wifi-after-airplane.txt && grep -q 'inet ' qa/wifi-address.txt; then break; fi
+  adb shell dumpsys connectivity > qa/connectivity-after-airplane.txt
+  if grep -q 'Wifi is connected' qa/wifi-after-airplane.txt \
+    && grep -q 'inet ' qa/wifi-address.txt \
+    && grep -Eq 'Transports: WIFI.*VALIDATED' qa/connectivity-after-airplane.txt; then
+    network_validated=true
+    break
+  fi
   sleep 1
 done
-grep 'Wifi is connected' qa/wifi-after-airplane.txt
-grep 'inet ' qa/wifi-address.txt
+if [[ "$network_validated" != true ]]; then
+  echo 'Emulator Wi-Fi never reached Android VALIDATED state after airplane mode' >&2
+  cat qa/wifi-after-airplane.txt >&2
+  cat qa/wifi-address.txt >&2
+  grep -E 'NetworkCapabilities|Transports:|Active default network' qa/connectivity-after-airplane.txt >&2 || true
+  exit 1
+fi
+# Let the newly validated default route settle before exercising the user
+# interaction. This is not a substitute for the strict WebView assertion below.
 sleep 3
 read -r retry_x retry_y < qa/retry-coordinate.txt
 adb shell input tap "$retry_x" "$retry_y"
@@ -75,6 +145,25 @@ _,top,_,bottom=map(int,re.findall(r'\d+',web.get('bounds')))
 assert 0<top<bottom<2340,('System bars overlap the WebView',top,bottom)
 print('LOVEROLL_NATIVE_RETRY_OK no native error overlay remains')
 PY_NATIVE
+# A visible WebView alone is not proof that the native retry recovered:
+# it can remain blank while the error overlay has already disappeared.
+# Use only event labels and navigation counters; never log account URLs.
+adb logcat -d -v brief -s LoveRollStartup:I > qa/native-startup-events.txt
+python3 - <<'PY_STARTUP_RECOVERY'
+import pathlib,re
+log=pathlib.Path('qa/native-startup-events.txt').read_text(errors='replace')
+events=[m.group(1) for line in log.splitlines()
+        if (m:=re.search(r'\bI/LoveRollStartup\(\s*\d+\):\s*([\w-]+)',line))]
+assert 'native-error-overlay' in events, 'The native offline error was not logged'
+assert 'retry-tapped' in events, 'The actual recovery action was not logged'
+recovery=events[events.index('retry-tapped')+1:]
+assert 'webview-painted' in recovery, (
+    'The recovered WebView did not paint a ready document; event sequence: '+str(recovery))
+assert 'native-error-overlay' not in recovery[:recovery.index('webview-painted')], (
+    'The retry failed again before WebView paint')
+print('LOVEROLL_NATIVE_RETRY_PAINT_OK', ' > '.join(
+    ('native-error-overlay','retry-tapped','webview-painted')))
+PY_STARTUP_RECOVERY
 # Deliberately hold the HTML loader AFTER onPageFinished in the actual WebView,
 # then reveal its real destination. The native composition must own that whole
 # interval; a second HTML splash is never a valid destination.
@@ -131,6 +220,27 @@ PY_INPUT
 done
 read -r email_x email_y < qa/email-coordinate.txt
 adb shell input tap "$email_x" "$email_y"
+# The first ADB keystroke can be swallowed while the Android IME animates.
+# Wait for real focus AND a resized WebView before typing; keep the exact-text
+# assertion below so a partial email never counts as a pass.
+ime_ready=false
+for attempt in $(seq 1 6); do
+  sleep 1
+  capture_ui loveroll-ime-ready
+  if python3 - <<'PY_IME_READY'
+import xml.etree.ElementTree as ET,re
+def bottom(root):
+ web=next(n for n in root.iter('node') if n.get('class')=='android.webkit.WebView')
+ return int(re.findall(r'\d+',web.get('bounds'))[3])
+before=ET.parse('qa/loveroll-account.xml').getroot()
+after=ET.parse('qa/loveroll-ime-ready.xml').getroot()
+fields=[n for n in after.iter('node') if n.get('class')=='android.widget.EditText']
+assert fields and fields[0].get('focused')=='true','Email field must have focus before ADB types'
+assert bottom(after)<bottom(before)-150,'Wait for Android keyboard to finish resizing WebView'
+PY_IME_READY
+  then ime_ready=true; break; fi
+done
+test "$ime_ready" = true
 adb shell input text 'test@example.invalid'
 sleep 3
 capture_ui loveroll-keyboard
@@ -148,8 +258,32 @@ PY_KEYBOARD
 # UIAutomator cannot inspect the WebView DOM reliably, so web Playwright CI
 # checks exact HTML/dice placement separately.
 adb logcat -d -v brief -s AndroidRuntime:E > qa/runtime_errors.txt || true
-if grep -q 'FATAL EXCEPTION' qa/runtime_errors.txt; then
-  cat qa/runtime_errors.txt
-  exit 1
-fi
+# UIAutomator can crash its own accessibility thread with "Bad file
+# descriptor" after an unsuccessful dump. This is not a LoveRoll crash.
+# The XML captures, native recovery, keyboard and safe-area assertions above
+# must still pass. Exempt only this exact Android test-tool failure.
+# Every other AndroidRuntime fatal, including LoveRoll's, still fails CI.
+python3 - <<'PY_RUNTIME_CRASH'
+import pathlib
+import re
+import sys
+
+log = pathlib.Path('qa/runtime_errors.txt').read_text(errors='replace')
+fatal_start = r'(?=E/AndroidRuntime[(][ ]*[0-9]+[)]: FATAL EXCEPTION:)'
+blocks = re.split(fatal_start, log)
+for block in blocks:
+    if not re.search(r'E/AndroidRuntime[(][ ]*[0-9]+[)]: FATAL EXCEPTION:', block):
+        continue
+    tool_binder_crash = (
+        'FATAL EXCEPTION: UiAutomation' in block
+        and 'java.lang.RuntimeException: Bad file descriptor' in block
+        and 'android.accessibilityservice.' in block
+        and not re.search(r'Process:[ ]*ca[.]desadeux[.]jeu(?:[:][A-Za-z0-9_.]+)?(?:[ ,]|$)', block)
+    )
+    if tool_binder_crash:
+        print('LOVEROLL_ANDROID_TEST_TOOL_CRASH UiAutomator binder died; app checks passed')
+        continue
+    print('Unexpected AndroidRuntime fatal exception:', block, file=sys.stderr)
+    sys.exit(1)
+PY_RUNTIME_CRASH
 echo "LOVEROLL_S25_EMULATOR_OK screenshot=$(stat -c%s qa/loveroll-shared-s25-android.png)"

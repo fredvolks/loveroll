@@ -444,16 +444,19 @@ export function dieOn(canvas,sides,value,rolling){
   new ResizeObserver(resizeDie):null;
  resizeObserver?.observe(canvas);
  const podiumObserver=typeof ResizeObserver==='function'?new ResizeObserver(()=>{alignPodium();request();}):null;
- // fitTabletRomanceStage updates the photo's marble CSS variable AFTER the
- // canvas is created. That moves the fixed marker without resizing the
- // theater, so ResizeObserver alone misses it and the D100 floats above
- // the marble by the late layout delta (5px on portrait iPad in CI).
+ // fitTabletRomanceStage updates the photographed marble's CSS variable
+ // after WebGL mounts. This moves the fixed contact marker WITHOUT resizing
+ // the canvas. ResizeObserver cannot detect that shift: it affected not only
+ // the active D100, but also the waiting Soirée D6 (5px gap on portrait iPad).
+ // Watch the root's style in both photo-backed dice modes. The podium can be
+ // reparented after dieOn(), so do not gate observation on its initial parent.
  const photoRoot=canvas.closest('#app');
- const photoContactObserver=sides===100&&photoRoot&&
+ const photoContactObserver=photoRoot&&(photoStage||sides===100)&&
   typeof MutationObserver==='function'?
-  new MutationObserver(()=>{if(canvas.isConnected){alignPodium();request();}}):null;
- if(photoContactObserver&&canvas.closest('.evening-d100-theater'))
-  photoContactObserver.observe(photoRoot,{attributes:true,attributeFilter:['style']});
+  new MutationObserver(()=>{
+   if(canvas.isConnected){alignPodium();request();}
+  }):null;
+ photoContactObserver?.observe(photoRoot,{attributes:true,attributeFilter:['style']});
  window.addEventListener('resize',resizeDie);
  const glass=glassEnvironment(renderer,referenceRuby,sides===100);scene.environment=glass.texture;
  const backdrop=crystalBackdrop(renderer,scene,canvas,()=>request());

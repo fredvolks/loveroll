@@ -47,7 +47,18 @@ test('Both loading stages draw the identical outlined logo and caption without p
 });
 test('Native document/network failure stops animation and offers retry without deleting data',()=>{
  assert.match(activity,/onReceivedError\(WebView view,WebResourceRequest request/);
- assert.match(activity,/request\.isForMainFrame\(\)\)showNativeLoadFailure/);
+ // Inspect the native callback itself: diagnostics may be inserted between the
+ // main-frame guard and the failure overlay without changing the behavior.
+ const networkFailure=activity.split('onReceivedError(WebView view,WebResourceRequest request,')[1]
+  ?.split('@Override public void onReceivedHttpError(')[0];
+ assert.ok(networkFailure,'Android must implement the main-frame error callback');
+ assert.match(networkFailure,/if\s*\(\s*request\.isForMainFrame\(\)\s*\)\s*\{[^}]*showNativeLoadFailure\(\);/,
+  'A main-frame network error must display the retry overlay');
+ const httpFailure=activity.split('onReceivedHttpError(WebView view,WebResourceRequest request,')[1]
+  ?.split('});')[0];
+ assert.ok(httpFailure,'Android must implement the main-frame HTTP error callback');
+ assert.match(httpFailure,/request\.isForMainFrame\(\)\s*&&\s*response\.getStatusCode\(\)\s*>=\s*400\s*\)\s*\{[^}]*showNativeLoadFailure\(\);/,
+  'HTTP 4xx/5xx main-frame errors must display the retry overlay');
  assert.match(activity,/retry\.setText\("Réessayer"\)/);
  assert.match(activity,/web\.loadUrl\(retryDestination==null\?SITE:retryDestination\)/);
  assert.doesNotMatch(activity,/removeAllCookies|deleteDatabase|clearData/); 
@@ -66,4 +77,29 @@ test('Android versionCode, versionName and signed release tag stay aligned',()=>
   'Signed release tag must match the installed APK version');
  assert.ok(workflow.includes('dist/LoveRoll-v'+version+'.apk'),
   'Release must publish the matching APK asset');
+});
+
+
+test('Android emulator must guard mainline pushes, all WebView changes and native recovery',()=>{
+ const workflow=read('../.github/workflows/emulator-smoke.yml');
+ const push=workflow.match(/^  push:\s*\n([\s\S]*?)(?=^  pull_request:)/m)?.[1];
+ const pr=workflow.match(/^  pull_request:\s*\n([\s\S]*?)(?=^  workflow_dispatch:)/m)?.[1];
+ assert.ok(push&&pr,'Android CI must cover both integrated pushes and pull requests');
+ assert.match(push,/^\s+branches:\s*\[[^\]\n]*\bmain\b[^\]\n]*\]/m,
+  'Integrated mainline must execute the emulator after a push');
+ assert.doesNotMatch(push,/^\s+paths(?:-ignore)?:/m,
+  'Mainline push checks must not silently skip changes outside a path filter');
+ assert.match(pr,/^\s+branches:\s*\[[^\]\n]*\bmain\b[^\]\n]*\]/m,
+  'Pull requests targeting main must run the emulator');
+ for(const required of ['app/**','couple-web/**',
+  '.github/workflows/emulator-smoke.yml',
+  '.github/scripts/loveroll-emulator-smoke.sh',
+  '.github/scripts/loveroll-startup-handoff.cjs']){
+  assert.ok(pr.includes("'"+required+"'"),'Android PR checks must include '+required);
+ }
+ assert.match(workflow,/^\s+script:\s+bash \.github\/scripts\/loveroll-emulator-smoke\.sh$/m);
+ const smoke=read('../.github/scripts/loveroll-emulator-smoke.sh');
+ assert.match(smoke,/assert\.equal\(testSite\[1\], nativeSite/);
+ assert.match(smoke,/LOVEROLL_NATIVE_RETRY_PAINT_OK/);
+ assert.match(smoke,/LOVEROLL_NATIVE_KEYBOARD_OK/);
 });

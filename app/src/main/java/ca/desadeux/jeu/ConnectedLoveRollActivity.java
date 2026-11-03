@@ -64,11 +64,18 @@ public final class ConnectedLoveRollActivity extends Activity {
  private long splashReadySerial=-1;
  private String startedNavigationUrl;
  private String retryDestination;
+ // Never log query parameters, account identifiers, invitation codes or auth callbacks.
+ private void logStartup(String event){
+  android.util.Log.i("LoveRollStartup",event+" nav="+navigationSerial+
+   " committed="+splashCommittedSerial+" pending="+splashPending+
+   " ready="+pageReady+" failed="+pageLoadFailed);
+ }
  private boolean splashPending=true;
  private boolean splashHandoffRequested;
  private String nativeStartupScript;
  private void showNativeLoadFailure(){
   if(pageLoadFailed||splashHost==null||web==null||isFinishing()||isDestroyed())return;
+  logStartup("native-error-overlay");
   pageLoadFailed=true;pageReady=false;
   splashPending=false;splashHandoffRequested=false;
   web.setVisibility(View.INVISIBLE);
@@ -89,7 +96,9 @@ public final class ConnectedLoveRollActivity extends Activity {
    android.graphics.drawable.GradientDrawable.Orientation.TL_BR,new int[]{0xffefa4b7,0xffb73863,0xff6b183d});
   button.setCornerRadius(28*d);retry.setBackground(button);
   panel.addView(retry,new LinearLayout.LayoutParams(-1,(int)(56*d)));
-  retry.setOnClickListener(v->{splashHost.removeView(panel);nativeLoadError=null;pageLoadFailed=false;
+  retry.setOnClickListener(v->{
+   logStartup("retry-tapped");
+   splashHost.removeView(panel);nativeLoadError=null;pageLoadFailed=false;
    if(nativeSplash!=null){
     nativeSplash.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
     nativeSplash.resumeHeart();
@@ -124,6 +133,7 @@ public final class ConnectedLoveRollActivity extends Activity {
  }
  private void finishNativeStartup(long serial){
   if(!splashPending||!isCurrentSplashNavigation(serial))return;
+  logStartup("dom-ready");
   splashReadySerial=serial;
   // DOM readiness can arrive before onPageFinished. Remember it without
   // changing the existing document/auth readiness used by other native actions.
@@ -136,6 +146,7 @@ public final class ConnectedLoveRollActivity extends Activity {
    @Override public void onComplete(long requestId){
     if(destination!=web||!pageReady||!splashPending||!isCurrentSplashNavigation(serial))return;
     splashPending=false;
+    logStartup("webview-painted");
     web.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_AUTO);
     nativeSplash.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS);
     nativeSplash.animate().cancel();
@@ -464,8 +475,12 @@ public final class ConnectedLoveRollActivity extends Activity {
     if(nativeLoadError!=null){splashHost.removeView(nativeLoadError);nativeLoadError=null;}
     if(isTrusted(Uri.parse(url)))retryDestination=url;
     long serial=++navigationSerial;
+    logStartup("page-started");
     view.postDelayed(()->{
-     if(serial==navigationSerial&&splashPending&&!isFinishing()&&!isDestroyed())showNativeLoadFailure();
+     if(serial==navigationSerial&&splashPending&&!isFinishing()&&!isDestroyed()){
+      logStartup("watchdog-18000ms");
+      showNativeLoadFailure();
+     }
     },18000);
     if(nativeSplash!=null){
      nativeSplash.animate().cancel();
@@ -481,9 +496,11 @@ public final class ConnectedLoveRollActivity extends Activity {
     // Compare the started URL: history.replaceState may already have cleaned
     // invitation/auth parameters from getUrl() without changing the document.
     splashCommittedSerial=navigationSerial;
+    logStartup("page-commit-visible");
     observeNativeStartup(view,navigationSerial);
    }
    @Override public void onPageFinished(WebView view,String url) {
+    logStartup("page-finished");
     if(pageLoadFailed)return;
     pageReady=isTrusted(Uri.parse(url));
     // Never stamp this callback's current serial onto a possibly outgoing DOM.
@@ -495,10 +512,16 @@ public final class ConnectedLoveRollActivity extends Activity {
     }
    }
    @Override public void onReceivedError(WebView view,WebResourceRequest request,android.webkit.WebResourceError error){
-    if(request.isForMainFrame())showNativeLoadFailure();
+    if(request.isForMainFrame()){
+     android.util.Log.e("LoveRollStartup","main-frame-load-error code="+error.getErrorCode());
+     showNativeLoadFailure();
+    }
    }
    @Override public void onReceivedHttpError(WebView view,WebResourceRequest request,android.webkit.WebResourceResponse response){
-    if(request.isForMainFrame()&&response.getStatusCode()>=400)showNativeLoadFailure();
+    if(request.isForMainFrame()&&response.getStatusCode()>=400){
+     android.util.Log.e("LoveRollStartup","main-frame-http-error status="+response.getStatusCode());
+     showNativeLoadFailure();
+    }
    }
   });
   android.widget.FrameLayout bridge=new android.widget.FrameLayout(this);
