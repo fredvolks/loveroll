@@ -166,6 +166,27 @@ PY_INPUT
 done
 read -r email_x email_y < qa/email-coordinate.txt
 adb shell input tap "$email_x" "$email_y"
+# The first ADB keystroke can be swallowed while the Android IME animates.
+# Wait for real focus AND a resized WebView before typing; keep the exact-text
+# assertion below so a partial email never counts as a pass.
+ime_ready=false
+for attempt in $(seq 1 6); do
+  sleep 1
+  capture_ui loveroll-ime-ready
+  if python3 - <<'PY_IME_READY'
+import xml.etree.ElementTree as ET,re
+def bottom(root):
+ web=next(n for n in root.iter('node') if n.get('class')=='android.webkit.WebView')
+ return int(re.findall(r'\d+',web.get('bounds'))[3])
+before=ET.parse('qa/loveroll-account.xml').getroot()
+after=ET.parse('qa/loveroll-ime-ready.xml').getroot()
+fields=[n for n in after.iter('node') if n.get('class')=='android.widget.EditText']
+assert fields and fields[0].get('focused')=='true','Email field must have focus before ADB types'
+assert bottom(after)<bottom(before)-150,'Wait for Android keyboard to finish resizing WebView'
+PY_IME_READY
+  then ime_ready=true; break; fi
+done
+test "$ime_ready" = true
 adb shell input text 'test@example.invalid'
 sleep 3
 capture_ui loveroll-keyboard
