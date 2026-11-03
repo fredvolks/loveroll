@@ -73,12 +73,17 @@ test('D6 ruby reflections are softer on Android, iPad and Soirée without alteri
  assert.match(engine,/let target=orientationFor\(value\)/); // server-owned result
 });
 
-test('Tablet Soirée D100 follows late photographic marble contact without requiring a theater resize',()=>{
- assert.match(engine,/const photoContactObserver=sides===100&&photoRoot&&/);
- assert.match(engine,/new MutationObserver\(\(\)=>\{if\(canvas\.isConnected\)\{alignPodium\(\);request\(\);\}\}\)/);
- assert.match(engine,/attributeFilter:\['style'\]/);
+test('Tablet Soirée D6 and D100 follow late photographic marble contact without theater resize',()=>{
+ // The photo-backed D6 must follow the same late CSS changes as D100.
+ // Checking the root style avoids depending on the canvas' original parent.
+ assert.match(engine,/const photoContactObserver=photoRoot&&\(photoStage\|\|sides===100\)&&/);
+ assert.match(engine,/new MutationObserver\(\(\)=>\{\s*if\(canvas\.isConnected\)\{alignPodium\(\);request\(\);\}\s*\}\)/);
+ assert.match(engine,/photoContactObserver\?\.observe\(photoRoot,\{attributes:true,attributeFilter:\['style'\]\}\)/);
+ assert.doesNotMatch(engine,/if\(photoContactObserver&&canvas\.closest\('\.evening-d100-theater'\)\)/);
  assert.match(engine,/photoContactObserver\?\.disconnect\(\)/);
  const ipad=read('ipad-romance-scene-browser-check.cjs');
- assert.match(ipad,/D100 must follow a late tablet photo-contact change/);
+ assert.ok(ipad.includes("step==='waiting'||step==='ready'"),
+  'iPad must exercise a late marble move on the waiting D6 and ready D100');
+ assert.ok(ipad.includes("(step==='waiting'?'D6':'D100')+' must follow a late tablet photo-contact change'"));
  assert.match(ipad,/root\.style\.setProperty\('--home-scene-contact',\(position\+6\)\+'px'\)/);
 });
