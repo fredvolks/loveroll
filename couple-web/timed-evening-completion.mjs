@@ -38,24 +38,28 @@ export function isSameCompletedEveningChallenge(challenge,current,userId,session
   current?.id===challenge.id&&current?.recipient===userId&&
   current?.session_id===sessionId&&current?.status==='completed');
 }
-// PostgREST normally returns ISO timestamps, but Date.parse alone accepts
-// malformed calendar dates (e.g. February 31) and numeric strings like "0".
-// Those must not authorize an idempotent close after a failed server write.
+// PostgREST timestamps can carry microseconds. Date.parse alone accepts
+// impossible calendar dates and TRUNCATES sub-millisecond precision: a
+// reversed close within the same millisecond must not count as idempotent.
 function parsedValidSessionTimestamp(value){
- if(typeof value!=='string')return NaN;
- const m=/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,6})?(Z|[+-]\d{2}:\d{2})$/.exec(value);
- if(!m)return NaN;
+ if(typeof value!=='string')return null;
+ const m=/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,6}))?(Z|[+-]\d{2}:\d{2})$/.exec(value);
+ if(!m)return null;
  const year=Number(m[1]),month=Number(m[2]),day=Number(m[3]);
  const hour=Number(m[4]),minute=Number(m[5]),second=Number(m[6]);
- const offset=m[7];
+ const offset=m[8];
  const probe=new Date(0);
  probe.setUTCHours(0,0,0,0);
  probe.setUTCFullYear(year,month-1,day);
  if(probe.getUTCFullYear()!==year||probe.getUTCMonth()!==month-1||
-    probe.getUTCDate()!==day||hour>23||minute>59||second>59)return NaN;
+    probe.getUTCDate()!==day||hour>23||minute>59||second>59)return null;
  if(offset!=='Z'&&(Number(offset.slice(1,3))>14||Number(offset.slice(4,6))>59||
-    (Number(offset.slice(1,3))===14&&Number(offset.slice(4,6))!==0)))return NaN;
- return Date.parse(value);
+    (Number(offset.slice(1,3))===14&&Number(offset.slice(4,6))!==0)))return null;
+ const epochMs=Date.parse(value);
+ if(!Number.isFinite(epochMs))return null;
+ // First three fractional digits are already in epochMs. Keep the other
+ // three separately to compare PostgreSQL's full microsecond precision.
+ return {epochMs,micros:Number((m[7]??'').padEnd(6,'0').slice(3))};
 }
 
 export async function completeTimedEveningChallenge({challenge,userId,sessionId,rpc,query}){
@@ -89,8 +93,10 @@ export async function completeTimedEveningChallenge({challenge,userId,sessionId,
     // with counted=false is not equivalent to finish(..., p_count:true).
     const startedAt=parsedValidSessionTimestamp(previous?.started_at);
     const finishedAt=parsedValidSessionTimestamp(previous?.finished_at);
-    if(previous?.id!==sessionId||previous?.counted!==true||!Number.isFinite(startedAt)||
-       !Number.isFinite(finishedAt)||finishedAt<startedAt)throw error;
+    const closeIsChronological=startedAt&&finishedAt&&
+     (finishedAt.epochMs>startedAt.epochMs||
+      (finishedAt.epochMs===startedAt.epochMs&&finishedAt.micros>=startedAt.micros));
+    if(previous?.id!==sessionId||previous?.counted!==true||!closeIsChronological)throw error;
    }
   }
  }catch(error){
