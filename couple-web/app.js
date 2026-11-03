@@ -2,7 +2,7 @@ import {organizeSettingsMenus} from './settings-menus.mjs?v=20261022-home228';
 import {showEveningCategoryReminder} from './evening-d100-template.mjs?v=20261029-ipad258';
 import {eveningInviteHtml,eveningInviteInboxHtml,isEveningInviteAction} from './evening-invitation.mjs?v=20261028-web254';
 import {askEveningCategoryConfirmation,categoryConfirmEnabled,saveCategoryConfirmLocal} from './evening-category-confirm.mjs?v=20261027-web238';
-import {soundEnabled,setSoundEnabled,setLoveRollSoundUser,unlockLoveRollSounds,playLoveRollSound,soundSettingsHtml} from './loveroll-sounds.mjs?v=20261103-lr004-web272';
+import {soundEnabled,setSoundEnabled,silenceLoveRollSounds,setLoveRollSoundUser,unlockLoveRollSounds,playLoveRollSound,soundSettingsHtml} from './loveroll-sounds.mjs?v=20261103-lr004-web272';
 import {isAcceptedTimedEveningChallenge,isSameCompletedEveningChallenge,completeTimedEveningChallenge,timedEveningTimerControl,refreshAfterTimedEveningConfirmation,refreshAfterConfirmedWrite,timerBelongsToUser,canControlTimedEveningChallenge} from './timed-evening-completion.mjs?v=20261103-web272';
 import {fitSurpriseMinimal} from './surprise-minimal.mjs?v=20261022-home228';
 import {createBookingMutationGate,geoLookupAfterRefresh,trustedBookingVenueLinks} from './monthly-geo-ui.mjs?v=20261101-booking263';
@@ -4465,6 +4465,9 @@ async function handle(action,element){
    }
    if(parts[0]==='sound'&&!await unlockLoveRollSounds())
     notify('Autorise le son du navigateur avec un toucher, puis utilise Tester.');
+   // Switching to vibration must also cancel any melody already queued.
+   // It does not change the user's independent sound preference.
+   if(parts[0]==='vibrate')silenceLoveRollSounds();
    challengeTimer.mode=parts[0];
    // Keep the selected signal working for this session even when Safari
    // denies persistent storage (private mode or browser security policy).
