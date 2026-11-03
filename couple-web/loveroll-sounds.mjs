@@ -86,7 +86,13 @@ export function playLoveRollSound(eventId='timer-preview',{force=false}={}){
    if(recent.size>100)recent.delete(recent.values().next().value);
   }
   return true;
- }catch(error){console.warn('Son du minuteur LoveRoll indisponible',error);return false;}
+ }catch(error){
+  // If a device rejects one note, abort all earlier notes already queued.
+  // Otherwise a failed alert can still leave a partial melody audible.
+  silenceLoveRollSounds();
+  console.warn('Son du minuteur LoveRoll indisponible',error);
+  return false;
+ }
 }
 export function soundSettingsHtml(){
  return '<section class="lr-sound-settings" aria-label="Sonneries de fin des minuteurs">'+
