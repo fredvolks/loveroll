@@ -27,7 +27,9 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   for(const [face,expected,winner] of [[2,'Fred invite Émilie','Fred'],[5,'Émilie invite Fred','Émilie']]){
    world.rolls=[saved,{id:'monthly-host-'+face,couple_id:'c',kind:'monthly_host',key,face}];
    await page.reload();await ready();
-   assert.equal(await page.locator('.home-next-month .lr-ruby-caption').textContent(),expected);
+   assert.equal(await page.locator('.home-next-month .lr-ruby-caption').textContent(),'Choisir notre date');
+   assert.ok((await page.locator('.home-next-month').getAttribute('aria-label')).includes(expected),
+    'The public step may advance without losing the saved inviter identity');
    assert.equal(await page.locator('.home-next-month .lr-ruby-title').getAttribute('title'),saved.activity_title);
    const layout=await page.evaluate(()=>{
     const card=document.querySelector('.home-dashboard').getBoundingClientRect(),nav=document.querySelector('.nav').getBoundingClientRect();

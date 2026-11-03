@@ -2,6 +2,7 @@
 // Preserve the approved HTML/CSS; change only the six visible odds numbers.
 import {WEEKLY_DEFAULT_WEIGHTS,effectiveDicePercentages,displayedDicePercent} from './dice-weighting.mjs?v=20261018-weights146';
 import {monthlyInvitation} from './monthly-invitation.mjs';
+import {homeEveningStep,homeSurpriseStep,homeTonightSummary} from './home-journey.mjs';
 import {fitTabletRomanceStage} from './shared-stage.mjs?v=20261029-ipad258';
 export const WEEKLY_ODDS=WEEKLY_DEFAULT_WEIGHTS;
 export const PIP_POSITIONS=Object.freeze({
@@ -155,7 +156,8 @@ export {ritualBrandHtml} from './brand.mjs?v=20261017-ritual130';
 import {ritualHeadingHtml} from './brand.mjs?v=20261017-ritual130';
 export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,disabled=false,members=[],
   turn=null,monthly={},history=[],sessions=[],events=[],rollFace=1,now=new Date(),
-  weeklyWeights=WEEKLY_ODDS,weeklyWeightsEnabled=true,monthlyActivity=null}={}){
+  weeklyWeights=WEEKLY_ODDS,weeklyWeightsEnabled=true,monthlyActivity=null,
+  monthlyCompleted=false,monthlyReservation=null}={}){
  const weights=effectiveDicePercentages(weeklyWeights,weeklyWeightsEnabled,WEEKLY_ODDS).map((pct,i)=>
   '<span class="home-weight" title="'+(i+1)+' soirée'+(i===0?'':'s')+' : '+displayedDicePercent(pct)+' %">'+pipFace(i+1)+
   '<b>'+(i+1)+'x</b><span>'+displayedDicePercent(pct)+'%</span></span>').join('');
@@ -164,6 +166,9 @@ export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,d
  const activity=monthly?.monthly_activity||null;
  const shown=value=>value===null?'—':String(value);
  const ready=!rolling&&weekly&&Number.isInteger(weekly.face),next=nextMonday(now);
+ const eveningStep=homeEveningStep({weekly,sessions,activeEvening,now});
+ const tonight=homeTonightSummary({weekly,sessions,activeEvening,now});
+ const surpriseStep=homeSurpriseStep({monthly,completed:monthlyCompleted,reservation:monthlyReservation});
  const coupleStats=coupleHomeStats(history,sessions,members,now);
  const memberA=escape(members[0]?.name||'Partenaire 1');
  const memberB=escape(members[1]?.name||'Partenaire 2');
@@ -189,7 +194,10 @@ export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,d
  const pending=rolling||disabled;
  return '<section class="real-home-shell" aria-label="Tableau de bord du couple">'+
    '<div class="home-ritual">'+ritualHeadingHtml('NOTRE RITUEL DE LA SEMAINE')+
-   '<div class="home-title"><h2 class="ritual-page-title">'+escape(weeklyTitle)+'</h2></div></div>'+
+   '<div class="home-title"><h2 class="ritual-page-title">'+escape(weeklyTitle)+'</h2>'+
+   (ready?'<p class="home-weekly-progress">'+escape(eveningStep.available)+
+    ' soirée'+(eveningStep.available===1?'':'s')+' disponible'+(eveningStep.available===1?'':'s')+' cette semaine</p>':'')+
+   '</div></div>'+
    '<div class="home-die-theater" aria-label="Dé à six faces en trois dimensions">'+
    '<div class="home-fabric-photo" aria-hidden="true"></div>'+
    '<div class="home-satin-orbit" aria-hidden="true"></div>'+
@@ -211,29 +219,29 @@ export function premiumHomeHtml({weekly=null,activeEvening=false,rolling=false,d
    (ready?
     (activeEvening?
      '<button class="home-roll-button home-resume-evening lr-ruby-control lr-ruby-action lr-surface" type="button" data-action="resume-evening" aria-label="Reprendre notre soirée en cours"><span>♡ Reprendre notre soirée</span></button>':
-     '<button class="home-roll-button is-used lr-ruby-control lr-ruby-action lr-surface" type="button" disabled>Déjà brassé cette semaine, revenez la semaine prochaine</button>'):
+     '<button class="home-roll-button home-evening-link lr-ruby-control lr-ruby-action lr-surface" type="button" data-action="'+escape(eveningStep.action)+'" aria-label="'+escape(eveningStep.label)+'">'+escape(eveningStep.label)+'</button>'):
     '<button class="home-roll-button lr-ruby-control lr-ruby-action lr-surface" type="button" data-action="roll:weekly" '+(pending?'disabled':'')+'>'+
     (rolling?'Brassage 3D en cours…':disabled?'Préparation du brassage…':'<span class="home-action-die lr-ruby-icon" aria-hidden="true"><svg class="lr-ruby-die-icon" viewBox="0 0 34 38"><path fill="#fffdf5" d="m17 2 13 6-13 7L4 8Z"/><path fill="#f7e9dc" d="m4 8 13 7v20L5 28Q3 27 3 24V11Q3 9 4 8Z"/><path fill="#cdbdb4" d="m17 15 13-7q1 1 1 3v13q0 3-2 4l-12 7Z"/><path fill="none" stroke="#fff8ed" stroke-width=".8" d="m4 8 13 7 13-7M17 15v20"/><ellipse cx="17" cy="8" rx="2.5" ry="1.2" fill="#3d1020"/><g fill="#421521"><ellipse cx="7.6" cy="15" rx="1.5" ry="2.1" transform="rotate(-18 7.6 15)"/><ellipse cx="10.1" cy="21.5" rx="1.5" ry="2.1" transform="rotate(-18 10.1 21.5)"/><ellipse cx="12.7" cy="28" rx="1.5" ry="2.1" transform="rotate(-18 12.7 28)"/><ellipse cx="26.8" cy="15.5" rx="1.5" ry="2.1" transform="rotate(18 26.8 15.5)"/><ellipse cx="21.6" cy="27.3" rx="1.5" ry="2.1" transform="rotate(18 21.6 27.3)"/></g></svg></span><span class="home-action-label lr-ruby-title">Brasser le dé</span>')+'</button>')+
    '</div>'+
    '<div class="home-bottom-stack">'+
    '<button class="home-next-month lr-ruby-control lr-ruby-feature lr-surface'+(activity?' has-monthly-activity':'')+'" data-action="tab:special" type="button" aria-label="'+escape(activity?monthlyTitle+'. '+invitationText:'Brasser notre surprise mensuelle')+'">'+
    '<span class="home-calendar-icon home-present lr-ruby-icon" aria-hidden="true">'+iconSvg('surprises')+'</span>'+
-   '<span class="lr-ruby-copy"><small class="lr-ruby-eyebrow">Surprise du mois disponible</small>'+
+   '<span class="lr-ruby-copy"><small class="lr-ruby-eyebrow">'+escape(surpriseStep.eyebrow)+'</small>'+
    '<strong class="lr-ruby-title" title="'+escape(activity?monthlyTitle:'Brasser notre surprise')+'">'+escape(activity?monthlyTitle:'Brasser notre surprise')+'</strong>'+
-   '<em class="lr-ruby-caption">'+escape(invitationText)+'</em></span>'+
+   '<em class="lr-ruby-caption">'+escape(surpriseStep.key==='discover'||surpriseStep.key==='host'?invitationText:surpriseStep.description)+'</em></span>'+
    '<span class="home-gift-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></svg></span></button>'+ 
    '<div class="home-dashboard home-duo-dashboard lr-surface">'+
    '<section class="home-panel home-tonight-panel" aria-labelledby="home-tonight-title">'+
-   '<h3 id="home-tonight-title"><span aria-hidden="true">♢</span>Ce soir <strong class="home-duo-heading-total" aria-label="Défis attribués ce soir">'+shown(stats.total)+'</strong></h3><div class="home-challenge-stats">'+
-   summary('♢',stats.total,'Défis attribués<br>ce soir')+
-   summary('♡',stats.forFirst,memberLabel(memberA,stats.remainingFirst))+
-   summary('♡',stats.forSecond,memberLabel(memberB,stats.remainingSecond))+'</div></section>'+
+   '<h3 id="home-tonight-title"><span aria-hidden="true">♢</span>Notre soirée</h3>'+
+   '<div class="home-challenge-stats"><p class="home-evening-status">'+
+    '<strong>'+escape(tonight.title)+'</strong>'+
+    '<small>'+escape(tonight.detail)+'</small></p></div></section>'+
    '<section class="home-panel home-monthly-panel" aria-labelledby="home-statistics-title">'+
    '<h3 id="home-statistics-title" aria-label="Nos statistiques du mois"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M1 11h3v8H1zm5-7h3v15H6zm5 3h3v12h-3zm5-6h3v18h-3z"/></svg>Ce mois</h3>'+
    '<div class="home-stats-grid" aria-label="Statistiques réelles du couple">'+
    statistic(String(coupleStats.completed),'Défis réalisés','Ce mois · Couple','completed')+
    statistic(coupleStats.byPartner.join(' / '),'Répartition',nameA+' / '+nameB,'partners')+
    statistic(percent,'Sensuel / Sexuel','Ce mois','categories')+
-   statistic(String(coupleStats.streak),'Semaines actives','Série actuelle','streak')+
+   statistic(String(coupleStats.streak),'Semaines consécutives','Série actuelle','streak')+
    '</div></section>'+'</div></div></section>';
 }

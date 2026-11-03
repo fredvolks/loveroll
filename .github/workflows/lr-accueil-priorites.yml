@@ -1,0 +1,29 @@
+name: LoveRoll Accueil priorites
+on:
+  pull_request:
+    paths:
+      - 'couple-web/home-journey.mjs'
+      - 'couple-web/premium-home.mjs'
+      - 'couple-web/premium-home.test.mjs'
+      - 'couple-web/lr-accueil-journey.test.mjs'
+      - 'couple-web/app.js'
+      - '.github/workflows/lr-accueil-priorites.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  accueil:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax and read-only Home journey
+        run: |
+          set -euo pipefail
+          node --check couple-web/app.js
+          node --check couple-web/home-journey.mjs
+          node --check couple-web/premium-home.mjs
+          node --test couple-web/lr-accueil-journey.test.mjs
+          node --test couple-web/premium-home.test.mjs

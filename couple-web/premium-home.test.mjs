@@ -57,13 +57,14 @@ test('Production home uses actual saved weekly result, disabled state and live c
  turn:{ready:true,targets:{a:4,b:6},remaining:{a:4,b:6},completed:{a:0,b:0}},now:new Date('2026-10-14T16:00:00Z')};
  const h=premiumHomeHtml(args);
  assert.match(h,/2 soirées de défi/);
- assert.match(h,/Déjà brassé cette semaine, revenez la semaine prochaine/);
+ assert.match(h,/data-action="tab:session"/);
+ assert.match(h,/Aller à notre soirée/);
  assert.match(h,/data-dice-sides="6"/);
  assert.match(h,/data-face="2"/);
  assert.equal((h.match(/class="home-weight"/g)||[]).length,6);
  assert.equal((h.match(/class="home-stat-card /g)||[]).length,4);
  assert.match(h,/Fred/);assert.match(h,/Camille/);
- assert.match(h,/Surprise du mois disponible/);
+ assert.match(h,/Surprise · À découvrir/);
  assert.match(h,/tab:special/);
  assert.doesNotMatch(h,/data-action="roll:weekly"/);
  const waiting=premiumHomeHtml({...args,weekly:null});
@@ -160,9 +161,9 @@ test('Connected Home restores centered LoveRoll brand and preserves weekly statu
  const html=premiumHomeHtml({
   weekly:{face:1,actor:'a'},members:[{user_id:'a',name:'Fred'},{user_id:'b',name:'Émilie'}]
  });
- assert.match(html,/Déjà brassé cette semaine, revenez la semaine prochaine/);
+ assert.match(html,/Aller à notre soirée/);
  assert.doesNotMatch(html,/♡ Dé déjà brassé cette semaine|Mon dé/);
- assert.match(html,/<button class="home-roll-button is-used[^"]*" type="button" disabled>/);
+ assert.match(html,/<button class="home-roll-button home-evening-link[^"]*" type="button" data-action="tab:session"/);
  assert.equal((html.match(/home-gift-icon/g)||[]).length,1);
  assert.match(html,/ritual-brand/);
  assert.match(css,/min-height:48px/);
