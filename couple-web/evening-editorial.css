@@ -233,13 +233,3 @@ main#app.loveroll-editorial{--nav-space:66px;box-sizing:border-box;width:100%;ma
  #app .lr-refusal-buttons{display:grid;grid-template-columns:minmax(0,1fr)}
 }
 
-/* LR-001 — petit mobile : proportion visible du D100 en attente vs Surprise.
-   Le canvas WebGL est déjà large au maximum; grossir son conteneur ne change
-   pas la géométrie visible. Agrandir uniquement la projection CSS en attente,
-   sans toucher au moteur, à la face officielle ni aux autres dés. */
-@media (max-width:767px) and (max-height:720px){
- main#app.loveroll-editorial .evening-premium-view.is-inactive .evening-finale-dice>.love3d{
-  transform:scale(1.12)!important;
-  transform-origin:center center;
- }
-}
