@@ -125,7 +125,11 @@ test('LR-004: switching sound off cancels already scheduled WebAudio notes immed
   createGain(){return {gain:{setValueAtTime(){},exponentialRampToValueAtTime(){}},connect(){},disconnect(){}};}
  }
  globalThis.window={AudioContext:FakeAudioContext};
- globalThis.localStorage={getItem:k=>values.get(k),setItem:(k,v)=>values.set(k,v)};
+ globalThis.localStorage={getItem:k=>values.get(k),setItem:(k,v)=>{
+  if(v==='off')assert.ok(notes.every(note=>note.stops.length>=2&&note.disconnected>0),
+   'Muted audio must already be disconnected before synchronous storage writes');
+  values.set(k,v);
+ }};
  try{
   const sound=await import('./loveroll-sounds.mjs?test-lr004-mute');
   sound.setLoveRollSoundUser('first');
