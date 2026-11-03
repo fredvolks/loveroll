@@ -125,6 +125,13 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
       },hero,{timeout:2500});
       assert.ok(Math.abs(await aligned())<4,
        (step==='waiting'?'D6':'D100')+' must follow a late tablet photo-contact change');
+      // A correct fix must move the 3D projection, not resize its theater.
+      // Keep the existing strict 4px photo-contact tolerance unchanged.
+      const movedCanvas=await page.locator(hero+' canvas').boundingBox();
+      assert.ok(movedCanvas&&
+       Math.abs(movedCanvas.width-scene.stageWidth)<.5&&
+       Math.abs(movedCanvas.height-scene.stageHeight)<.5,
+       'Late photographic contact must not resize the WebGL canvas');
       await page.evaluate(({old,priority})=>{
        const root=document.querySelector('#app');
        if(old)root.style.setProperty('--home-scene-contact',old,priority);
