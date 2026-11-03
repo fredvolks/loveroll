@@ -23,6 +23,18 @@ export const setLoveRollSoundUser=id=>{
  currentUser=next;
 };
 const key=()=>KEY+':'+currentUser;
+// Settings can also change in another LoveRoll tab. Keep the current tab
+// silent immediately, even when its melody already has notes scheduled.
+function syncSoundPreferenceFromStorage(event){
+ const changedKey=event?.key;
+ if(typeof changedKey!=='string'||!changedKey.startsWith(KEY+':'))return;
+ // A removed key means the original default (sound on); never infer a new
+ // preference from unrelated browser storage keys.
+ const on=event.newValue!=='off';
+ sessionSoundPreferences.set(changedKey,on);
+ if(changedKey===key()&&!on)silenceLoveRollSounds();
+}
+if(typeof window!=='undefined')window.addEventListener?.('storage',syncSoundPreferenceFromStorage);
 export function soundEnabled(store){
  const current=key();
  // A user's choice still applies to this session if storage is denied.
