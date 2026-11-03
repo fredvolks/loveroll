@@ -190,20 +190,20 @@ grant select on public.couple_members to authenticated;
 set role authenticated;
 select set_config('request.jwt.claim.sub',
  'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',false);
-do $begin
+do $rls$
  if (select count(*) from public.love_evening_invitations
      where couple_id='ffffffff-ffff-4fff-bfff-ffffffffffff')<>1 then
   raise exception 'RLS: original sender should see active invitation';
  end if;
-end$;
+end $rls$;
 select set_config('request.jwt.claim.sub',
  'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb',false);
-do $begin
+do $rls$
  if (select count(*) from public.love_evening_invitations
      where couple_id='ffffffff-ffff-4fff-bfff-ffffffffffff')<>1 then
   raise exception 'RLS: original recipient should see active invitation';
  end if;
-end$;
+end $rls$;
 reset role;
 
 -- Replace B by C inside the same couple and the same Toronto calendar day.
@@ -217,28 +217,28 @@ insert into public.couple_members(couple_id,user_id) values
 set role authenticated;
 select set_config('request.jwt.claim.sub',
  'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa',false);
-do $begin
+do $rls$
  if exists(select 1 from public.love_evening_invitations
      where couple_id='ffffffff-ffff-4fff-bfff-ffffffffffff') then
   raise exception 'RLS: remaining sender saw the former recipient';
  end if;
-end$;
+end $rls$;
 select set_config('request.jwt.claim.sub',
  'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb',false);
-do $begin
+do $rls$
  if exists(select 1 from public.love_evening_invitations
      where couple_id='ffffffff-ffff-4fff-bfff-ffffffffffff') then
   raise exception 'RLS: removed recipient saw former invitation';
  end if;
-end$;
+end $rls$;
 select set_config('request.jwt.claim.sub',
  'cccccccc-cccc-4ccc-cccc-cccccccccccc',false);
-do $begin
+do $rls$
  if exists(select 1 from public.love_evening_invitations
      where couple_id='ffffffff-ffff-4fff-bfff-ffffffffffff') then
   raise exception 'RLS: replacement partner saw former invitation';
  end if;
-end$;
+end $rls$;
 reset role;
 
 -- Regression: replacing the ORIGINAL SENDER while the invitation is still
