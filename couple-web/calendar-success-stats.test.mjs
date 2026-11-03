@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {remainingWeekEvenings,mondayOf,calendarWeekSuccess,monthlyChallengeSuccess} from './calendar-success-stats.mjs';
+import {remainingWeekEvenings,mondayOf,calendarWeekSuccess,monthlyChallengeSuccess,isClosedEvening} from './calendar-success-stats.mjs';
 import {futureCoupleStyleMix,normalizePlayStyle} from './play-style.mjs';
 import {eveningHistoryMarkup} from './evening-calendar.mjs';
 const read=name=>readFileSync(new URL('./'+name,import.meta.url),'utf8');
@@ -235,4 +235,29 @@ test('LR-003: Quebec DST fallback and UTC Monday still count as one local Sunday
  assert.deepEqual(next,{hasRoll:true,possible:3,completed:1,percent:33,face:3});
  assert.equal(roll.face,5);
  assert.equal(nextRoll.face,3);
+});
+
+
+test('LR-003: only a chronologically valid closure finalizes monthly failures',()=>{
+ const base='2026-10-16T18:00:00Z';
+ const sessions=[
+  {id:'valid',started_at:base,finished_at:'2026-10-16T19:00:00Z'},
+  {id:'malformed',started_at:base,finished_at:'not-a-date'},
+  {id:'reversed',started_at:base,finished_at:'2026-10-16T17:59:59Z'},
+  {id:'still-open',started_at:base,finished_at:null}
+ ];
+ assert.deepEqual(sessions.map(isClosedEvening),[true,false,false,false]);
+ const historyChallenges=[
+  {id:'done',session_id:'valid',recipient:'a',status:'completed'},
+  {id:'waiting',session_id:'malformed',recipient:'a',status:'proposed'},
+  {id:'accepted',session_id:'reversed',recipient:'a',status:'accepted'},
+  {id:'open-complete',session_id:'still-open',recipient:'a',status:'completed'}
+ ];
+ const sessionStats=sessions.map(s=>({session_id:s.id,user_id:'a',target:3}));
+ const result=monthlyChallengeSuccess({month:'2026-10',members:[members[0]],sessions,
+  historyChallenges,sessionStats})[0];
+ assert.equal(result.done,2,'Completed cards remain visible even before closure');
+ assert.equal(result.unpicked,2,'Only the real closed night receives missing-slot failures');
+ assert.equal(result.denominator,4,'Two completions plus two genuine missing slots');
+ assert.equal(result.percent,50);
 });
