@@ -4,14 +4,17 @@ const KEY='loveroll-timer-sound-v229';
 let context=null;
 let currentUser='anonymous';
 const recent=new Set();
-const activeMelodyOscillators=new Set();
+const activeMelodyNodes=new Set();
 const sessionSoundPreferences=new Map();
 export function silenceLoveRollSounds(){
- for(const oscillator of activeMelodyOscillators){
+ for(const {oscillator,gain} of activeMelodyNodes){
   try{oscillator.stop(context?.currentTime??0);}catch{}
   try{oscillator.disconnect();}catch{}
+  // Safari can skip onended for notes cancelled before their scheduled start.
+  // Disconnect the gain as well, so no orphaned node stays on destination.
+  try{gain.disconnect();}catch{}
  }
- activeMelodyOscillators.clear();
+ activeMelodyNodes.clear();
 }
 export const setLoveRollSoundUser=id=>{
  const next=String(id||'anonymous');
@@ -113,8 +116,13 @@ export function playLoveRollSound(eventId='timer-preview',{force=false}={}){
    gain.gain.exponentialRampToValueAtTime(.115,at+.025);
    gain.gain.exponentialRampToValueAtTime(.0001,at+.235);
    oscillator.connect(gain);gain.connect(context.destination);
-   activeMelodyOscillators.add(oscillator);
-   oscillator.onended=()=>{activeMelodyOscillators.delete(oscillator);try{oscillator.disconnect();gain.disconnect();}catch{}};
+   const note={oscillator,gain};
+   activeMelodyNodes.add(note);
+   oscillator.onended=()=>{
+    activeMelodyNodes.delete(note);
+    try{oscillator.disconnect();}catch{}
+    try{gain.disconnect();}catch{}
+   };
    oscillator.start(at);oscillator.stop(at+.245);
   }
   if(!force){
