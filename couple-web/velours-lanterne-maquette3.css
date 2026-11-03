@@ -1,0 +1,1783 @@
+/* LoveRoll · Maquette 3 — Velours & Rose Lanterne
+   Socle rubis / lumière rose / écrin champagne. Lot 1 : base visuelle partagée.
+   Cette feuille est chargée EN DERNIER dans les trois entrées HTML et ne change
+   ni logique de pige, ni WebGL, ni prix, ni permissions. */
+body.lr-velours-lanterne {
+  --lr-vl-night:#180711;
+  --lr-vl-velvet:#300819;
+  --lr-vl-wine:#5a0d2a;
+  --lr-vl-ruby:#a11343;
+  --lr-vl-lantern:#ff6b9c;
+  --lr-vl-rose:#ffb6ce;
+  --lr-vl-champagne:#f5d7ac;
+  --lr-vl-ivory:#fff3ed;
+  --lr-vl-muted:#e8bece;
+  --lr-vl-edge:rgba(255,174,199,.64);
+  --lr-vl-focus:#ffdf9c;
+  --lr-vl-panel:radial-gradient(ellipse at 48% -24%,rgba(255,133,173,.24),transparent 54%),linear-gradient(152deg,rgba(99,17,51,.96),rgba(39,6,22,.98) 72%,rgba(64,9,31,.96));
+  --lr-vl-nav-surface:linear-gradient(155deg,rgba(68,7,29,.97),rgba(22,3,13,.98) 72%,rgba(65,9,30,.97));
+  --lr-vl-nav-shadow:inset 0 1px 1px #ffe0dd69,0 -2px 19px #ed4f8b30;
+  --lr-vl-active-shadow:inset 0 1px 2px #ffe0e3a6,0 0 12px #fc4c9155;
+  --lr-vl-field:#260c1a;
+  --lr-vl-relief:inset 0 1px 1px rgba(255,239,229,.37),inset 0 -1px 0 rgba(126,23,62,.7),0 12px 28px rgba(9,0,8,.34);
+  --lr-vl-action:radial-gradient(ellipse at 50% -35%,rgba(255,215,224,.65),transparent 60%),linear-gradient(180deg,#c63868 0%,#a31346 36%,#670d31 79%,#8b163c 100%);
+  --lr-vl-action-pressed:linear-gradient(180deg,#4e0008,#72000e 70%,#a70924);
+  /* Même palette sur les actions, les comptes et les dialogues hors #app. */
+  --control-primary:var(--lr-vl-action);
+  --control-border:var(--lr-vl-action-edge);
+  --control-text:var(--lr-vl-ivory);
+  --control-shadow:var(--lr-vl-cta-shadow);
+  --control-selected:var(--lr-vl-action);
+  --control-selected-border:var(--lr-vl-champagne);
+  --control-selected-shadow:var(--lr-vl-active-shadow);
+  --lr-control-glass:var(--lr-vl-action);
+  --lr-control-feature-surface:var(--lr-vl-panel);
+  --lr-control-edge-solid:#f0749d;
+  --lr-control-ink:var(--lr-vl-ivory);
+  --lr-control-focus:var(--lr-vl-focus);
+  --lr-control-shadow:inset 0 1px 1px #ffdfecbd,inset 0 -2px 2px #58071a,0 3px 9px #180008ae,0 0 12px #ee448a42;
+  --lr-surface-fill:var(--lr-vl-panel);
+  --lr-surface-edge:#d17b98;
+  --lr-surface-shadow:var(--lr-vl-relief);
+  color:var(--lr-vl-ivory);
+  background:radial-gradient(ellipse 58% 33% at 50% 0%,#7a234779,transparent),radial-gradient(ellipse 40% 36% at 100% 52%,#7e1a4a4a,transparent),linear-gradient(155deg,#290819,#180711 56%,#270818);
+  color-scheme:dark;
+}
+body.lr-velours-lanterne,body.lr-velours-lanterne * {box-sizing:border-box}
+body.lr-velours-lanterne :is(button,a,[role="button"],input,select,textarea,summary) {
+  -webkit-tap-highlight-color:transparent;
+}
+body.lr-velours-lanterne :is(button,a,[role="button"],input,select,textarea,summary):focus-visible {
+  outline:2px solid var(--lr-vl-focus)!important;
+  outline-offset:3px!important;
+}
+body.lr-velours-lanterne :is(input,textarea,select) {max-width:100%}
+body.lr-velours-lanterne :is(p,small,label) {overflow-wrap:break-word}
+body.lr-velours-lanterne :is(button,a,[role="button"]):disabled,
+body.lr-velours-lanterne :is(button,a,[role="button"])[aria-disabled="true"] {
+  cursor:not-allowed;
+}
+@media (hover:hover) and (pointer:fine) {
+  body.lr-velours-lanterne :is(.lr-ruby-control,.checkout-card button:not(:disabled),.studio-quick-grid button):hover {
+    filter:brightness(1.08);
+  }
+}
+@media (prefers-reduced-motion:reduce) {
+  body.lr-velours-lanterne *,body.lr-velours-lanterne *::before,body.lr-velours-lanterne *::after {
+    scroll-behavior:auto!important;
+    animation-duration:.01ms!important;
+    animation-iteration-count:1!important;
+    transition-duration:.01ms!important;
+  }
+}
+/* ACCUEIL ET JEUX : fond photographique et vrai socle existants conservés.
+   Les textes, éléments de jeu et surfaces se rattachent à la même palette. */
+body.lr-velours-lanterne #app:is(.loveroll-real-home,.loveroll-evening-page,.loveroll-eclat-page,.loveroll-surprise-ecrin,.loveroll-advent-letters,.loveroll-settings-page) {
+  --lr-vl-page-edge:var(--lr-vl-edge);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #app .ritual-brand b,
+body.lr-velours-lanterne #app .home-ritual .ritual-brand b {
+  color:#ffe6d8!important;
+  text-shadow:0 2px 9px rgba(18,0,9,.88),0 0 22px rgba(255,118,160,.36);
+}
+body.lr-velours-lanterne #app :is(.ritual-kicker,.eyebrow,.home-ritual small) {
+  color:var(--lr-vl-champagne);
+}
+body.lr-velours-lanterne #app.loveroll-real-home .home-die-platform {
+  filter:drop-shadow(0 0 20px rgba(255,74,127,.22));
+}
+body.lr-velours-lanterne #app.loveroll-real-home .home-ritual .home-title h2 {
+  color:var(--lr-vl-ivory)!important;
+  text-shadow:0 1px 11px #180010b3;
+}
+body.lr-velours-lanterne #app :is(.lr-ruby-feature,.lr-ruby-control,.lr-surface) {
+  border-color:var(--lr-vl-edge);
+}
+body.lr-velours-lanterne #app .lr-ruby-nav {
+  background:var(--lr-vl-nav-surface)!important;
+  border-color:var(--lr-vl-edge)!important;
+  box-shadow:var(--lr-vl-nav-shadow)!important;
+}
+body.lr-velours-lanterne #app .lr-ruby-nav .lr-ruby-tab.active {
+  border-color:var(--lr-vl-lantern)!important;
+  box-shadow:var(--lr-vl-active-shadow)!important;
+}
+body.lr-velours-lanterne #app .settings-submenu-list :is(button,.settings-link-row),
+body.lr-velours-lanterne #app .settings-menu-source :is(.settings-primary,.settings-secondary),
+body.lr-velours-lanterne #app .editorial-card-list :is(button,.editorial-row) {
+  border-color:var(--lr-vl-edge)!important;
+}
+body.lr-velours-lanterne #app .settings-submenu-list :is(button,.settings-link-row) {
+  background:var(--lr-vl-panel)!important;
+  box-shadow:var(--lr-vl-relief)!important;
+  min-height:48px!important;
+}
+/* Les menus secondaires restent navigables même avec le texte agrandi. */
+body.lr-velours-lanterne #app .settings-submenu-list :is(button,.settings-link-row),
+body.lr-velours-lanterne #app .settings-menu-source button {
+  overflow-wrap:anywhere;
+}
+body.lr-velours-lanterne #app .settings-menu-source :is(input:not([type=checkbox]):not([type=radio]),select,textarea) {
+  min-height:44px;
+}
+/* Une seule finition pour le chargement PWA et le chargement en jeu. */
+body.lr-velours-lanterne .lr-splash {
+  --splash-bg:radial-gradient(ellipse at 50% 30%,#781b4666,transparent 56%),linear-gradient(175deg,#2b081a,#180711 73%,#330a20);
+  --splash-text:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .lr-splash__scene::before {
+  background:radial-gradient(ellipse,rgba(255,92,148,.34),transparent 71%);
+}
+body.lr-velours-lanterne .lr-splash__dots i {background:var(--lr-vl-lantern)}
+body.lr-velours-lanterne :is(#toast,.loading,[role="status"]) {color:var(--lr-vl-ivory)}
+/* ABONNEMENT : même écrin que les rubriques de jeu.
+   Les prix et l'état désactivé du paiement ne sont pas modifiés. */
+body.lr-velours-lanterne .checkout-card {
+  background:var(--lr-vl-panel);
+  border-color:var(--lr-vl-edge);
+  border-radius:clamp(19px,3vw,28px);
+  box-shadow:var(--lr-vl-relief),0 0 44px #c42b6840;
+}
+body.lr-velours-lanterne .checkout-header .wordmark {
+  color:var(--lr-vl-ivory);
+  text-shadow:0 0 19px #ff7ca34d;
+}
+body.lr-velours-lanterne .checkout-card :is(.eyebrow,.description,.period-note,.safety) {color:var(--lr-vl-muted)}
+body.lr-velours-lanterne .checkout-card h1 {color:var(--lr-vl-ivory)}
+body.lr-velours-lanterne .checkout-card :is(input,select) {
+  border-color:var(--lr-vl-edge);
+  border-radius:12px;
+  background:var(--lr-vl-field);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .checkout-card button:not(:disabled) {
+  background:var(--lr-vl-action);
+  border-color:var(--lr-vl-edge);
+  color:var(--lr-vl-ivory);
+  box-shadow:var(--lr-vl-relief);
+}
+body.lr-velours-lanterne .checkout-card button:disabled {
+  opacity:.78;
+  color:var(--lr-vl-muted);
+}
+body.lr-velours-lanterne .checkout-card .line.total strong {color:var(--lr-vl-champagne)}
+body.lr-velours-lanterne .checkout-conditions summary {color:var(--lr-vl-rose)}
+/* STUDIO / ADMIN : l'identité romantique ne masque jamais l'information. */
+body.lr-velours-lanterne .studio-app {
+  background:radial-gradient(ellipse at 60% 0%,#a52c6740,transparent 46%);
+}
+body.lr-velours-lanterne .studio-header {
+  border-bottom-color:var(--lr-vl-edge);
+  box-shadow:inset 0 -1px 0 #ffd1cc26,0 12px 32px #14000c66;
+}
+body.lr-velours-lanterne .studio-mark :is(strong,span) {
+  color:var(--lr-vl-ivory);
+  text-shadow:0 0 18px #e8468970;
+}
+body.lr-velours-lanterne .studio-mark small,
+body.lr-velours-lanterne .studio-heading .eyebrow {color:var(--lr-vl-champagne)}
+body.lr-velours-lanterne :is(.studio-gate-card,.studio-quick-grid button,.studio-content,.studio-sidebar,.studio-heading) {
+  border-color:var(--lr-vl-edge);
+}
+body.lr-velours-lanterne .studio-gate-card {
+  background:var(--lr-vl-panel);
+  box-shadow:var(--lr-vl-relief),0 22px 60px #10000a80;
+}
+body.lr-velours-lanterne .studio-top-nav :is(a,button) {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-height:44px;
+  padding:8px 12px;
+  color:var(--lr-vl-ivory);
+  border-radius:12px;
+}
+body.lr-velours-lanterne .studio-app :is(input,select,textarea) {
+  accent-color:var(--lr-vl-lantern);
+}
+body.lr-velours-lanterne .studio-app :is(.primary,button[data-pane]):not(:disabled) {
+  border-color:var(--lr-vl-edge);
+}
+body.lr-velours-lanterne .studio-app .primary:not(:disabled) {
+  background:var(--lr-vl-action);
+  box-shadow:var(--lr-vl-relief);
+}
+/* RESPONSIVE FLUIDE : aucun changement aux règles/aux dés.
+   Empêche les entrées secondaires de déborder aux écrans étroits. */
+@media (max-width:767px) {
+  body.lr-velours-lanterne #app .lr-ruby-nav .lr-ruby-tab {
+    min-height:44px;
+    min-width:0;
+  }
+  body.lr-velours-lanterne #app.loveroll-settings-page .settings-submenu-list :is(button,.settings-link-row) {
+    font-size:clamp(19px,5.1vw,24px)!important;
+    padding-inline:clamp(11px,3.4vw,16px)!important;
+  }
+}
+@media (min-width:768px) {
+  body.lr-velours-lanterne #app .lr-ruby-control {
+    box-shadow:var(--lr-control-shadow)!important;
+  }
+  body.lr-velours-lanterne .checkout-shell {width:min(800px,100%);}
+}
+@media (max-width:600px) and (max-height:700px), (orientation:landscape) and (max-height:500px) {
+  /* Le clavier, le zoom et les petits écrans ne doivent pas piéger le paiement. */
+  html:has(body.lr-velours-lanterne .checkout-shell),
+  body.lr-velours-lanterne:has(.checkout-shell) {height:auto;overflow-y:auto!important}
+  body.lr-velours-lanterne .checkout-shell {
+    height:auto!important;min-height:100dvh!important;max-height:none!important;
+    overflow:visible!important;
+  }
+  body.lr-velours-lanterne .checkout-card {overflow:visible!important}
+  body.lr-velours-lanterne .checkout-card :is(button,select,input) {min-height:44px!important}
+}
+@media (max-width:480px) {
+  body.lr-velours-lanterne .studio-top-nav {gap:6px}
+  body.lr-velours-lanterne .studio-top-nav :is(a,button) {
+    min-height:44px!important;
+    height:auto!important;
+    padding:8px 9px!important;
+    font-size:12px!important;
+    line-height:1.25!important;
+  }
+}
+
+
+/* LOT 2 — Hierarchie, dialogues et ergonomie responsive */
+/* Une seule police éditoriale locale, sans requête de police distante. */
+@font-face {
+  font-family:"LoveRoll Velours";
+  src:url("./assets/fonts/cormorant-garamond-latin.woff") format("woff");
+  font-style:normal;
+  font-weight:400 700;
+  font-display:swap;
+}
+body.lr-velours-lanterne {
+  --lr-vl-editorial:"LoveRoll Velours",Georgia,"Times New Roman",serif;
+  --lr-vl-dialog-shadow:0 22px 65px #120009aa,0 0 26px #b622684a,inset 0 1px 0 #ffdfdf88;
+  --lr-vl-muted-panel:linear-gradient(157deg,#490d2bec,#22091bf5);
+  --lr-vl-field-edge:rgba(255,184,202,.52);
+  --lr-vl-veil:rgba(15,2,11,.87);
+}
+body.lr-velours-lanterne #app :is(.editorial-title h1,.settings-editorial h1,.settings-page-header h1) {
+  font-family:var(--lr-vl-editorial)!important;
+  font-weight:600!important;
+  color:var(--lr-vl-ivory)!important;
+  text-shadow:0 2px 15px #19020c77;
+}
+body.lr-velours-lanterne #app .ritual-kicker {
+  letter-spacing:.14em;
+  line-height:1.4;
+}
+body.lr-velours-lanterne :is(.studio-heading h1,.studio-gate-card h1,.studio-content .section-head h2,.checkout-card h1,.checkout-header .wordmark,.studio-mark strong) {
+  font-family:var(--lr-vl-editorial)!important;
+  font-weight:600;
+  letter-spacing:-.016em;
+}
+body.lr-velours-lanterne :is(.studio-gate-card h1,.studio-heading h1,.checkout-card h1) {
+  color:var(--lr-vl-ivory);
+  text-shadow:0 3px 19px #16000db3;
+}
+body.lr-velours-lanterne .checkout-card h1 {
+  font-size:clamp(29px,5.7vw,43px);
+}
+body.lr-velours-lanterne .studio-mark strong {
+  font-size:clamp(28px,3.5vw,45px);
+}
+/* Fenêtres : même verre rubis et les mêmes contrôles, mais focus et contenus
+   restent lisibles (annulation, messages longs, erreurs, clavier ouvert). */
+body.lr-velours-lanterne #lr-dialog-overlay.lr-dialog-overlay {
+  background:var(--lr-vl-veil);
+  overscroll-behavior:contain;
+}
+body.lr-velours-lanterne #lr-dialog-overlay .lr-dialog-card {
+  width:min(100%,460px);
+  max-height:calc(100dvh - max(22px,env(safe-area-inset-top,0px)) - max(22px,env(safe-area-inset-bottom,0px)));
+  border-color:var(--lr-vl-edge);
+  border-radius:clamp(19px,4vw,28px);
+  background:var(--lr-vl-panel);
+  box-shadow:var(--lr-vl-dialog-shadow);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #lr-dialog-overlay .lr-dialog-card h2 {
+  font-family:var(--lr-vl-editorial);
+  font-weight:600;
+  font-size:clamp(27px,5.8vw,38px);
+  line-height:1.08;
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #lr-dialog-overlay .lr-dialog-eyebrow {
+  color:var(--lr-vl-champagne);
+}
+body.lr-velours-lanterne #lr-dialog-overlay .lr-dialog-icon {
+  color:var(--lr-vl-rose);
+}
+body.lr-velours-lanterne #lr-dialog-overlay .lr-dialog-actions button {
+  min-height:48px;
+  border-color:var(--lr-vl-edge);
+  border-radius:16px;
+  color:var(--lr-vl-ivory);
+  background:var(--lr-vl-action);
+  box-shadow:var(--lr-vl-relief);
+  font-weight:650;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+body.lr-velours-lanterne #lr-dialog-overlay .lr-dialog-actions .lr-dialog-cancel {
+  min-height:48px;
+  border-color:var(--lr-vl-field-edge);
+  background:var(--lr-vl-muted-panel);
+  color:var(--lr-vl-ivory);
+  box-shadow:none;
+}
+body.lr-velours-lanterne #lr-dialog-overlay .lr-dialog-actions .lr-dialog-danger {
+  background:var(--lr-vl-muted-panel);
+  border-color:var(--lr-vl-edge);
+}
+body.lr-velours-lanterne #lr-dialog-overlay .lr-dialog-copy textarea {
+  max-height:30dvh;
+  border-color:var(--lr-vl-field-edge);
+  background:var(--lr-vl-field);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #lr-dialog-overlay .lr-dialog-card .lr-dialog-close {
+  min-height:44px;
+  min-width:44px;
+  color:var(--lr-vl-ivory);
+}
+@media(max-height:620px) {
+  body.lr-velours-lanterne #lr-dialog-overlay.lr-dialog-overlay {
+    align-items:flex-start;
+    overflow-y:auto;
+    padding-block:max(9px,env(safe-area-inset-top,0px)) max(9px,env(safe-area-inset-bottom,0px));
+  }
+  body.lr-velours-lanterne #lr-dialog-overlay .lr-dialog-card {
+    margin:auto;
+    max-height:calc(100dvh - 18px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
+    padding:16px;
+  }
+  body.lr-velours-lanterne #lr-dialog-overlay .lr-dialog-actions button {
+    min-height:44px;
+  }
+}
+/* Réglages : rangées et menus distincts, sans supprimer les sous-écrans. */
+body.lr-velours-lanterne #app.loveroll-settings-page :is(.settings-profile-row,.settings-section-row) {
+  border-color:var(--lr-vl-edge);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #app.loveroll-settings-page .settings-profile-row {
+  background:var(--lr-vl-panel);
+  box-shadow:var(--lr-vl-relief);
+  border-radius:18px;
+}
+body.lr-velours-lanterne #app.loveroll-settings-page .settings-row-icon,
+body.lr-velours-lanterne #app.loveroll-settings-page .settings-initial {
+  color:var(--lr-vl-rose);
+}
+body.lr-velours-lanterne #app.loveroll-settings-page .settings-menu-source :is(input:not([type=checkbox]):not([type=radio]),textarea,select) {
+  border-color:var(--lr-vl-field-edge)!important;
+  background:var(--lr-vl-field)!important;
+  color:var(--lr-vl-ivory)!important;
+  border-radius:12px!important;
+}
+body.lr-velours-lanterne #app.loveroll-settings-page :is(.settings-detail-intro,.tiny-note,.settings-footer-hint) {
+  color:var(--lr-vl-muted);
+  line-height:1.48;
+}
+/* Tableau de bord / autres rubriques : un écrin commun plutôt que des surfaces
+   qui reprennent les anciennes couleurs. N'altère pas l'accès ni les actions. */
+body.lr-velours-lanterne #app.loveroll-real-home :is(.home-panel,.home-stat-card) {
+  border-color:var(--lr-vl-edge);
+  box-shadow:var(--lr-vl-relief);
+}
+body.lr-velours-lanterne .studio-quick-grid button,
+body.lr-velours-lanterne .studio-content {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-panel);
+  box-shadow:var(--lr-vl-relief);
+}
+body.lr-velours-lanterne .studio-quick-grid button:hover,
+body.lr-velours-lanterne .studio-quick-grid button:focus-visible,
+body.lr-velours-lanterne .studio-quick-grid button.active {
+  border-color:var(--lr-vl-champagne);
+  box-shadow:var(--lr-vl-dialog-shadow);
+}
+body.lr-velours-lanterne .studio-quick-grid button strong {
+  color:var(--lr-vl-ivory);
+  overflow-wrap:anywhere;
+}
+body.lr-velours-lanterne .studio-content :is(input,textarea,select) {
+  max-width:100%;
+}
+/* Checkout accessible au doigt; les formats courts défilent grâce au lot 1. */
+body.lr-velours-lanterne .checkout-card :is(#checkout-audience,#checkout-code,#checkout-apply,#checkout-pay) {
+  min-height:44px;
+}
+body.lr-velours-lanterne .checkout-card :is(#checkout-apply,#checkout-pay):not(:disabled) {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-action);
+}
+body.lr-velours-lanterne .checkout-card .promo-status {
+  color:var(--lr-vl-muted);
+  overflow-wrap:anywhere;
+}
+/* Tablette et PC : titres harmonieux et panels fluides; pas de largeur
+   forcée sur le rendu 3D ni sur le plateau de jeu. */
+@media(min-width:768px) {
+  body.lr-velours-lanterne .studio-app main {
+    width:min(1440px,100%);
+  }
+  body.lr-velours-lanterne .studio-content {
+    border-radius:24px;
+  }
+  body.lr-velours-lanterne #lr-dialog-overlay .lr-dialog-card {
+    padding:clamp(22px,2.8vw,30px);
+  }
+}
+@media(max-width:767px) {
+  body.lr-velours-lanterne #app.loveroll-settings-page :is(.settings-profile-row,.settings-section-row,.settings-link-row) {
+    min-height:48px;
+  }
+  body.lr-velours-lanterne .studio-quick-grid button {
+    min-width:0;
+    min-height:96px;
+    padding:clamp(10px,3.2vw,16px);
+  }
+  body.lr-velours-lanterne .studio-content {
+    min-width:0;
+  }
+}
+@media(max-width:380px) {
+  body.lr-velours-lanterne #lr-dialog-overlay.lr-dialog-overlay {
+    padding-inline:10px;
+  }
+  body.lr-velours-lanterne #lr-dialog-overlay .lr-dialog-card {
+    padding-inline:13px;
+  }
+  body.lr-velours-lanterne .checkout-card .promo-entry {
+    min-width:0;
+  }
+  body.lr-velours-lanterne .checkout-card #checkout-code {
+    min-width:0;
+    font-size:16px;
+  }
+}
+
+/* LOT 3 — PARCOURS DE JEU : mêmes matériaux, sans modifier les règles. */
+/* Les variables natives du rituel habillent les sous-pages sans changer
+   les grilles, les dés WebGL, les états de jeu ou la navigation. */
+body.lr-velours-lanterne #app:is(.loveroll-editorial,.loveroll-advent-letters,.loveroll-surprise-ecrin) {
+  --ritual-page:radial-gradient(ellipse at 50% -18%,rgba(148,36,83,.52),transparent 58%),linear-gradient(160deg,#300b20,#180711 67%,#270819);
+  --ritual-card:var(--lr-vl-panel);
+  --ritual-border:var(--lr-vl-edge);
+  --ritual-button:var(--lr-vl-action);
+  --ritual-text:var(--lr-vl-ivory);
+  --ritual-muted:var(--lr-vl-muted);
+  --ritual-rose:var(--lr-vl-rose);
+  --ritual-shadow:var(--lr-vl-relief);
+  --ritual-bg:var(--lr-vl-panel);
+}
+/* Surprise : calendrier, événements et fenêtres reposent sur le même écrin. */
+body.lr-velours-lanterne #app.loveroll-surprise-ecrin :is(.surprise-month,.surprise-event-card,.surprise-modal-content) {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-panel);
+  color:var(--lr-vl-ivory);
+  box-shadow:var(--lr-vl-relief);
+}
+body.lr-velours-lanterne #app.loveroll-surprise-ecrin :is(.surprise-header h2,.surprise-month-title,.surprise-event-title) {
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #app.loveroll-surprise-ecrin :is(.surprise-primary,.surprise-edit-actions button:not(:disabled)) {
+  border-color:var(--lr-vl-edge);
+  color:var(--lr-vl-ivory);
+  background:var(--lr-vl-action);
+}
+body.lr-velours-lanterne #app.loveroll-surprise-ecrin .surprise-edit-close {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-field);
+  color:var(--lr-vl-ivory);
+}
+/* Avent : ne pas maquiller la lettre blanche ni les sceaux animés.
+   Seul le cadre de l'enveloppe et le dialogue rejoignent le thème. */
+body.lr-velours-lanterne #app.loveroll-advent-letters :is(.advent-envelope,.advent-dialog) {
+  border-color:var(--lr-vl-edge);
+  box-shadow:var(--lr-vl-relief);
+}
+body.lr-velours-lanterne #app.loveroll-advent-letters .advent-dialog {
+  background:var(--lr-vl-panel);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #app.loveroll-advent-letters :is(.advent-intro h1,.advent-reveal-heading) {
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #app.loveroll-advent-letters .advent-primary:not(:disabled) {
+  background:var(--lr-vl-action);
+  border-color:var(--lr-vl-edge);
+  color:var(--lr-vl-ivory);
+}
+/* Soirée : une carte, un dialogue, une confirmation, le même contraste. */
+body.lr-velours-lanterne #app.loveroll-editorial :is(.evening-step,.evening-gift,.evening-aftercare,.evening-partner-card,.evening-summary-person,.timer-panel,.evening-confirm,.evening-more-menu) {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-panel);
+  color:var(--lr-vl-ivory);
+  box-shadow:var(--lr-vl-relief);
+}
+body.lr-velours-lanterne #app.loveroll-editorial :is(.evening-primary,.evening-small-roll,.evening-finale-start):not(:disabled) {
+  background:var(--lr-vl-action);
+  border-color:var(--lr-vl-edge);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #app.loveroll-editorial .evening-choice-btn.selected {
+  border-color:var(--lr-vl-champagne);
+  box-shadow:var(--lr-vl-active-shadow);
+}
+/* Éclat est volontairement compact et conserve sa galerie scrollable :
+   pas de hauteur forcée ni de modification des 12 coffrets. */
+body.lr-velours-lanterne #app.loveroll-eclat-page :is(.eclat-paywall,.eclat-detail .eclat-progress) {
+  border-color:var(--lr-vl-edge);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #app.loveroll-eclat-page button.eclat-primary:not(:disabled) {
+  background:var(--lr-vl-action)!important;
+  border-color:var(--lr-vl-edge)!important;
+  color:var(--lr-vl-ivory)!important;
+}
+/* Textes longs et dialogues : accessible aussi aux petits écrans et au zoom. */
+body.lr-velours-lanterne #app:is(.loveroll-surprise-ecrin,.loveroll-advent-letters,.loveroll-editorial)
+  :is(.surprise-modal-content,.advent-dialog,.evening-confirm,.evening-more-menu) {
+  max-width:calc(100vw - 24px);
+  overflow-wrap:anywhere;
+}
+body.lr-velours-lanterne #app:is(.loveroll-surprise-ecrin,.loveroll-advent-letters,.loveroll-editorial)
+  :is(.surprise-primary,.advent-primary,.evening-primary,.evening-small-roll,.evening-finale-start) {
+  min-height:44px;
+  white-space:normal;
+  overflow-wrap:anywhere;
+}
+@media (max-width:380px) {
+  body.lr-velours-lanterne #app.loveroll-surprise-ecrin .surprise-month {
+    padding-inline:clamp(8px,3.2vw,14px);
+  }
+  body.lr-velours-lanterne #app:is(.loveroll-surprise-ecrin,.loveroll-advent-letters,.loveroll-editorial)
+    :is(.surprise-modal-content,.advent-dialog,.evening-confirm) {
+    padding-inline:14px;
+  }
+}
+@media (max-height:620px) {
+  body.lr-velours-lanterne #app.loveroll-surprise-ecrin .surprise-modal,
+  body.lr-velours-lanterne #app.loveroll-advent-letters .advent-dialog-shade {
+    align-items:start;
+    overflow-y:auto;
+  }
+  body.lr-velours-lanterne #app.loveroll-surprise-ecrin .surprise-modal-content,
+  body.lr-velours-lanterne #app.loveroll-advent-letters .advent-dialog {
+    max-height:calc(100dvh - 24px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
+    overflow-y:auto;
+  }
+}
+
+
+/* LOT 3 — Accueil / Soirée / Surprise : lumière du socle et contrôles premium */
+/* La photo HD v202 contient déjà le socle ; ni cette photo ni le vrai canvas
+   WebGL ne sont remplacés. Les halos se dessinent derrière le dé seulement. */
+body.lr-velours-lanterne {
+  --lr-vl-stage-light:
+    radial-gradient(ellipse 46% 41% at 50% 39%,rgba(255,110,157,.17),transparent 82%),
+    radial-gradient(ellipse 65% 30% at 50% 76%,rgba(240,99,157,.13),transparent 79%);
+  --lr-vl-stage-shadow:drop-shadow(0 8px 12px rgba(20,1,13,.33)) drop-shadow(0 0 9px rgba(247,104,153,.17));
+  --lr-vl-velvet-card:
+    radial-gradient(ellipse 76% 30% at 48% 0%,rgba(255,152,184,.19),transparent 83%),
+    linear-gradient(152deg,#5d1437f0,#2b091fec 69%,#440b2cfa);
+  --lr-vl-action-edge:#f4a3bc;
+  --lr-vl-stage-sheen:inset 0 1px 0 rgba(255,226,218,.29),0 0 14px rgba(240,85,146,.18);
+  --lr-vl-action-text-shadow:0 1px 3px rgba(20,1,12,.68);
+  --lr-vl-cta-shadow:var(--lr-vl-relief),0 0 13px rgba(248,93,151,.23);
+}
+/* Accueil: un halo discret autour du dé, sur l'écrin photographique préservé. */
+@media(max-width:767px) {
+  body.lr-velours-lanterne main#app.loveroll-real-home .home-die-theater {
+    background:var(--lr-vl-stage-light)!important;
+    mask-image:none!important;
+    -webkit-mask-image:none!important;
+  }
+}
+body.lr-velours-lanterne main#app.loveroll-real-home .home-die-platform {
+  filter:var(--lr-vl-stage-shadow)!important;
+}
+body.lr-velours-lanterne main#app.loveroll-real-home .home-ritual .ritual-kicker {
+  color:var(--lr-vl-champagne)!important;
+  text-shadow:0 1px 5px rgba(26,1,16,.8);
+}
+/* Le vrai bouton Brasser est inchangé : mêmes data-action, disabled et WebGL. */
+body.lr-velours-lanterne main#app.loveroll-real-home .home-roll-button:not(.is-used):not(:disabled) {
+  background:var(--lr-vl-action)!important;
+  border-color:var(--lr-vl-action-edge)!important;
+  box-shadow:var(--lr-vl-cta-shadow)!important;
+  color:var(--lr-vl-ivory)!important;
+  font-family:var(--lr-vl-editorial)!important;
+  text-shadow:var(--lr-vl-action-text-shadow);
+}
+body.lr-velours-lanterne main#app.loveroll-real-home .home-next-month:not(:disabled) {
+  background:var(--lr-vl-velvet-card)!important;
+  border-color:var(--lr-vl-edge)!important;
+  box-shadow:var(--lr-vl-relief)!important;
+  color:var(--lr-vl-ivory)!important;
+}
+body.lr-velours-lanterne main#app.loveroll-real-home .home-next-month strong {
+  color:var(--lr-vl-ivory)!important;
+  font-family:var(--lr-vl-editorial)!important;
+}
+body.lr-velours-lanterne main#app.loveroll-real-home .home-next-month :is(small,em) {
+  color:var(--lr-vl-muted)!important;
+}
+/* Le duo-dashboard est un seul écrin, ses sous-sections restent transparentes. */
+body.lr-velours-lanterne main#app.loveroll-real-home .home-duo-dashboard {
+  background:var(--lr-vl-velvet-card)!important;
+  border-color:var(--lr-vl-edge)!important;
+  box-shadow:var(--lr-vl-relief)!important;
+}
+body.lr-velours-lanterne main#app.loveroll-real-home .home-duo-dashboard .home-panel {
+  background:none!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+/* Les titres des autres scènes ont le même traitement éditorial que l'accueil.
+   Aucun changement des hauteurs de grille ni des étapes de la soirée. */
+body.lr-velours-lanterne main#app.has-surprise-minimal .surprise-minimal>.ritual-page-title,
+body.lr-velours-lanterne main#app.has-evening-d6-template .ritual-page-title,
+body.lr-velours-lanterne main#app.has-evening-d100-template .ritual-page-title {
+  font-family:var(--lr-vl-editorial)!important;
+  font-weight:600!important;
+  color:var(--lr-vl-ivory)!important;
+  text-shadow:0 2px 12px rgba(28,1,13,.7);
+}
+/* Actions de jeu déjà présentes: même rubis, sans modifier leur action JS. */
+body.lr-velours-lanterne main#app button:is(.evening-finale-start,.evening-primary,.surprise-primary):not(:disabled) {
+  background:var(--lr-vl-action)!important;
+  border-color:var(--lr-vl-action-edge)!important;
+  box-shadow:var(--lr-vl-cta-shadow)!important;
+  color:var(--lr-vl-ivory)!important;
+  font-family:var(--lr-vl-editorial)!important;
+  text-shadow:var(--lr-vl-action-text-shadow);
+}
+body.lr-velours-lanterne main#app .evening-summary-shell {
+  border-color:var(--lr-vl-edge)!important;
+  background:var(--lr-vl-velvet-card)!important;
+  box-shadow:var(--lr-vl-relief)!important;
+}
+body.lr-velours-lanterne main#app .surprise-host-option {
+  border-color:var(--lr-vl-edge)!important;
+  background:var(--lr-vl-velvet-card)!important;
+  color:var(--lr-vl-ivory)!important;
+}
+/* Une fenêtre de probabilités lisible, sans écraser le contenu et les % réels. */
+body.lr-velours-lanterne main#app .home-odds-dialog {
+  border-color:var(--lr-vl-edge)!important;
+  background:var(--lr-vl-panel)!important;
+  color:var(--lr-vl-ivory)!important;
+  box-shadow:var(--lr-vl-dialog-shadow)!important;
+}
+body.lr-velours-lanterne main#app .home-odds-grid .home-odds-entry {
+  background:var(--lr-vl-muted-panel)!important;
+  border-color:var(--lr-vl-edge)!important;
+}
+body.lr-velours-lanterne main#app .home-odds-close {
+  width:44px!important;
+  min-width:44px!important;
+  height:44px!important;
+  min-height:44px!important;
+  top:4px!important;
+  right:4px!important;
+}
+/* Portrait compact: conserver le cadrage du socle, sans le recouvrir
+   et sans rétrécir les vraies zones tactiles. */
+@media(max-width:380px) {
+  body.lr-velours-lanterne main#app.loveroll-real-home .home-roll-button:not(.is-used) {
+    font-size:clamp(20px,6.25vw,25px)!important;
+  }
+  body.lr-velours-lanterne main#app.loveroll-real-home .home-next-month strong {
+    font-size:clamp(19px,5.5vw,22px)!important;
+  }
+}
+/* Tablette/PC : on conserve les photographies et leur géométrie ;
+   les titres, boutons et surfaces reprennent les mêmes reflets que sur mobile. */
+@media(min-width:768px) {
+  body.lr-velours-lanterne main#app.loveroll-real-home .home-roll-button:not(.is-used):not(:disabled) {
+    min-height:54px;
+  }
+  body.lr-velours-lanterne main#app.loveroll-real-home .home-next-month:not(:disabled) {
+    border-radius:20px!important;
+  }
+  body.lr-velours-lanterne main#app.loveroll-real-home .home-panel:not(.home-duo-dashboard .home-panel) {
+    border-color:var(--lr-vl-edge)!important;
+    background:var(--lr-vl-velvet-card)!important;
+    box-shadow:var(--lr-vl-stage-sheen)!important;
+  }
+}
+/* Renforcer uniquement la lisibilité sur une préférence d'accessibilité. */
+@media(prefers-contrast:more) {
+  body.lr-velours-lanterne main#app :is(.home-roll-button,.home-next-month,.home-odds-close,.evening-primary,.surprise-primary) {
+    outline-offset:3px;
+    border-width:2px!important;
+  }
+}
+/* LOT 4 — Invitation, connexion, inscription et confirmation email.
+   Réutilise les écrans réels (Auth Supabase) et préserve leur structure/leurs
+   états, sans modifier l'identité, les accès ou les événements des boutons. */
+body.lr-velours-lanterne main#app:has(.invite-account-screen),
+body.lr-velours-lanterne main#app:has(.invite-existing-space) {
+  color:var(--lr-vl-ivory);
+  background:radial-gradient(ellipse 65% 35% at 50% 0%,rgba(177,48,98,.20),transparent 76%);
+}
+body.lr-velours-lanterne .invite-account-screen {
+  --pink:var(--lr-vl-lantern);
+  --white:var(--lr-vl-ivory);
+  --mute:var(--lr-vl-muted);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .invite-account-screen::before {
+  background:radial-gradient(ellipse 68% 35% at 50% 6%,rgba(182,44,97,.23),transparent 74%),
+    linear-gradient(165deg,#290a1b,#180711 66%,#29091c);
+}
+body.lr-velours-lanterne .invite-account-hero {
+  border:1px solid var(--lr-vl-edge);
+  border-bottom-color:rgba(255,191,213,.26);
+  background:radial-gradient(ellipse 75% 80% at 50% 72%,rgba(255,116,165,.20),transparent 74%),
+    var(--lr-vl-velvet-card);
+  box-shadow:inset 0 1px 0 rgba(255,226,225,.31),0 9px 30px rgba(20,0,10,.30);
+}
+body.lr-velours-lanterne .invite-account-hero::before {
+  opacity:.43;
+}
+body.lr-velours-lanterne .invite-auth-brand {
+  font-family:var(--lr-vl-editorial);
+  font-style:normal;
+  font-weight:700;
+  letter-spacing:-.025em;
+}
+body.lr-velours-lanterne .invite-auth-brand :is(span,strong) {
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .invite-auth-brand strong,
+body.lr-velours-lanterne .invite-account-hero>p,
+body.lr-velours-lanterne .invite-progress-item.is-current {
+  color:var(--lr-vl-champagne);
+}
+body.lr-velours-lanterne .invite-account-progress {
+  max-width:100%;
+}
+body.lr-velours-lanterne .invite-progress-item b {
+  background:var(--lr-vl-field);
+  border-color:var(--lr-vl-edge);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .invite-progress-item.is-current b,
+body.lr-velours-lanterne .invite-auth-segments button.is-active {
+  background:var(--lr-vl-action);
+  border-color:var(--lr-vl-champagne)!important;
+  box-shadow:var(--lr-vl-active-shadow);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .invite-auth-card,
+body.lr-velours-lanterne .invite-existing-space {
+  min-width:0;
+  border-color:var(--lr-vl-edge);
+  border-radius:clamp(18px,4vw,26px);
+  background:var(--lr-vl-panel);
+  box-shadow:var(--lr-vl-dialog-shadow);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .invite-auth-title :is(h1,h2),
+body.lr-velours-lanterne .invite-profile-card h1,
+body.lr-velours-lanterne .invite-error-card h1,
+body.lr-velours-lanterne .email-confirm-screen h1,
+body.lr-velours-lanterne .invite-existing-space h2 {
+  font-family:var(--lr-vl-editorial);
+  font-weight:600;
+  color:var(--lr-vl-ivory);
+  letter-spacing:-.015em;
+}
+body.lr-velours-lanterne .invite-account-icon,
+body.lr-velours-lanterne .invite-auth-trust,
+body.lr-velours-lanterne .invite-confirm-resend,
+body.lr-velours-lanterne .invite-existing-space .invite-archive-note {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-muted-panel);
+  color:var(--lr-vl-rose);
+}
+body.lr-velours-lanterne .invite-auth-lead,
+body.lr-velours-lanterne .invite-auth-trust p,
+body.lr-velours-lanterne .invite-profile-card>p,
+body.lr-velours-lanterne .invite-error-card p,
+body.lr-velours-lanterne .invite-confirm-resend p,
+body.lr-velours-lanterne .invite-existing-space p {
+  color:var(--lr-vl-muted);
+  line-height:1.48;
+}
+body.lr-velours-lanterne .invite-auth-segments button,
+body.lr-velours-lanterne .invite-auth-field,
+body.lr-velours-lanterne .invite-copy-manual input {
+  min-width:0;
+  border-color:var(--lr-vl-field-edge)!important;
+  background:var(--lr-vl-field);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .invite-auth-field:focus-within {
+  border-color:var(--lr-vl-focus)!important;
+  box-shadow:var(--lr-vl-active-shadow);
+}
+body.lr-velours-lanterne .invite-field-body>span,
+body.lr-velours-lanterne .invite-profile-card label,
+body.lr-velours-lanterne .invite-copy-manual {
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .invite-field-body input {
+  color:var(--lr-vl-ivory);
+  font-size:max(16px,1rem); /* iOS Safari : éviter le zoom au focus. */
+}
+body.lr-velours-lanterne .invite-field-body input::placeholder {
+  color:var(--lr-vl-muted);
+  opacity:1;
+}
+body.lr-velours-lanterne .invite-account-screen .invite-password-eye {
+  min-width:44px;
+  min-height:44px;
+  flex-basis:44px;
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .invite-account-screen :is(.invite-auth-submit,.invite-auth-resend),
+body.lr-velours-lanterne .invite-existing-space button[data-action="join-invite-from-solo"] {
+  min-height:52px;
+  border-color:var(--lr-vl-action-edge)!important;
+  background:var(--lr-vl-action);
+  color:var(--lr-vl-ivory);
+  box-shadow:var(--lr-vl-cta-shadow);
+  text-shadow:var(--lr-vl-action-text-shadow);
+}
+body.lr-velours-lanterne .invite-account-screen :is(.invite-auth-submit,.invite-auth-resend):disabled {
+  opacity:.6;
+  cursor:not-allowed;
+  box-shadow:none;
+}
+body.lr-velours-lanterne .invite-account-screen .invite-google,
+body.lr-velours-lanterne .invite-existing-space button:is([data-action="switch-account-invite"],[data-action="invite-return"]) {
+  min-height:48px;
+  border-color:var(--lr-vl-edge)!important;
+  border-radius:14px;
+  background:var(--lr-vl-muted-panel);
+  color:var(--lr-vl-ivory);
+  box-shadow:var(--lr-vl-relief);
+}
+body.lr-velours-lanterne .invite-account-screen :is(.invite-auth-link,.invite-auth-back) {
+  min-height:44px;
+  color:var(--lr-vl-champagne);
+}
+body.lr-velours-lanterne .invite-auth-feedback:not(:empty) {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-muted-panel);
+  color:var(--lr-vl-ivory);
+  overflow-wrap:anywhere;
+}
+body.lr-velours-lanterne .email-confirm-envelope {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-velvet-card);
+  color:var(--lr-vl-champagne);
+}
+body.lr-velours-lanterne .invite-welcome {
+  background:radial-gradient(ellipse at 50% 35%,#802044 0%,#2e0a1d 52%,#180711 100%);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .invite-welcome :is(h1,p) {color:var(--lr-vl-ivory)}
+body.lr-velours-lanterne .invite-welcome>div {color:var(--lr-vl-rose)}
+/* Clavier ouvert, zoom 200 %, iPhone SE et paysage : autoriser le défilement
+   des formulaires; ne jamais masquer les appels à l'action sous le clavier. */
+@media(max-width:767px), (max-height:620px) {
+  body.lr-velours-lanterne main#app:has(.invite-account-screen) {
+    min-height:100dvh;
+    height:auto;
+    overflow-y:visible;
+  }
+  body.lr-velours-lanterne .invite-account-screen {
+    height:auto;
+    min-height:100dvh;
+    max-height:none;
+    padding-bottom:max(20px,env(safe-area-inset-bottom,0px));
+  }
+  body.lr-velours-lanterne .invite-account-screen .invite-auth-card {
+    overflow:visible;
+  }
+}
+@media(max-width:380px) {
+  body.lr-velours-lanterne .invite-account-hero {border-radius:20px 20px 10px 10px}
+  body.lr-velours-lanterne .invite-account-screen .invite-auth-card {padding-inline:12px}
+  body.lr-velours-lanterne .invite-auth-title {gap:9px}
+  body.lr-velours-lanterne .invite-auth-segments {min-width:0}
+  body.lr-velours-lanterne .invite-auth-segments button {
+    min-width:0;
+    white-space:normal;
+    overflow-wrap:anywhere;
+  }
+}
+@media(min-width:768px) {
+  body.lr-velours-lanterne .invite-account-screen {
+    width:min(660px,100%);
+  }
+  body.lr-velours-lanterne .invite-auth-card {
+    padding:clamp(22px,3vw,32px);
+  }
+}
+@media(prefers-contrast:more) {
+  body.lr-velours-lanterne .invite-auth-card,
+  body.lr-velours-lanterne .invite-auth-field,
+  body.lr-velours-lanterne .invite-account-screen button {
+    border-width:2px!important;
+  }
+}
+/* LOT 5 — Authentification réelle depuis l'accueil (entry-ritual-v139).
+   Ce parcours n'utilise pas .invite-account-screen : préserver les deux. */
+body.lr-velours-lanterne #app:has(>.entry-access-screen.auth-editorial) {
+  background:radial-gradient(ellipse 60% 32% at 50% 0%,rgba(255,103,155,.18),transparent 72%),
+    linear-gradient(155deg,#29091a,#180711 66%,#2a091c)!important;
+}
+body.lr-velours-lanterne #app>.entry-access-screen.auth-editorial {
+  color:var(--lr-vl-ivory);
+  max-width:100%;
+  padding-bottom:max(14px,env(safe-area-inset-bottom,0px));
+}
+body.lr-velours-lanterne #app .entry-access-screen .entry-auth-card {
+  border-color:var(--lr-vl-edge);
+  background-color:var(--lr-vl-velvet)!important;
+  background-image:var(--lr-vl-panel)!important;
+  background-repeat:no-repeat!important;
+  box-shadow:var(--lr-vl-relief),0 12px 40px rgba(10,0,8,.4);
+}
+body.lr-velours-lanterne #app .entry-access-screen .entry-auth-title h1,
+body.lr-velours-lanterne #app .entry-access-screen .entry-auth-card>h1,
+body.lr-velours-lanterne #app .entry-profile-screen h1 {
+  font-family:var(--lr-vl-editorial);
+  font-weight:600;
+  color:var(--lr-vl-ivory);
+  letter-spacing:-.025em;
+}
+body.lr-velours-lanterne #app .entry-access-screen .entry-auth-title em {
+  color:var(--lr-vl-champagne);
+}
+body.lr-velours-lanterne #app .entry-access-screen .entry-auth-lead,
+body.lr-velours-lanterne #app .entry-access-screen .entry-footer p,
+body.lr-velours-lanterne #app .entry-access-screen .entry-small-note {
+  color:var(--lr-vl-muted);
+  line-height:1.45;
+}
+body.lr-velours-lanterne #app .entry-access-screen .entry-auth-segments {
+  border-color:var(--lr-vl-field-edge);
+  background:var(--lr-vl-field);
+}
+body.lr-velours-lanterne #app .entry-access-screen .entry-auth-segments button {
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #app .entry-access-screen .entry-auth-segments button.is-active {
+  background:var(--lr-vl-action);
+  border-color:var(--lr-vl-champagne);
+  color:var(--lr-vl-ivory);
+  box-shadow:var(--lr-vl-active-shadow);
+}
+body.lr-velours-lanterne #app .entry-access-screen .entry-input {
+  border-color:var(--lr-vl-field-edge);
+  background:var(--lr-vl-field);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #app .entry-access-screen .entry-input:focus-within {
+  border-color:var(--lr-vl-focus);
+  box-shadow:var(--lr-vl-active-shadow);
+}
+body.lr-velours-lanterne #app .entry-access-screen .entry-auth-field>span:first-child {
+  color:var(--lr-vl-champagne);
+}
+body.lr-velours-lanterne #app .entry-access-screen .entry-input input {
+  color:var(--lr-vl-ivory);
+  font-size:16px;
+}
+body.lr-velours-lanterne #app .entry-access-screen input::placeholder {
+  color:var(--lr-vl-muted);
+  opacity:1;
+}
+body.lr-velours-lanterne #app .entry-access-screen .entry-password-eye {
+  min-width:44px;
+  min-height:44px;
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #app .entry-access-screen :is(.entry-auth-submit,.entry-auth-resend) {
+  min-height:48px;
+  border-color:var(--lr-vl-action-edge);
+  background:var(--lr-vl-action);
+  color:var(--lr-vl-ivory);
+  box-shadow:var(--lr-vl-cta-shadow);
+}
+body.lr-velours-lanterne #app .entry-access-screen :is(.entry-auth-submit,.entry-auth-resend):disabled {
+  opacity:.6;
+  box-shadow:none;
+}
+body.lr-velours-lanterne #app .entry-access-screen :is(.entry-google,.entry-auth-back,.entry-auth-link,.entry-switch-account) {
+  min-height:44px;
+  color:var(--lr-vl-champagne);
+}
+body.lr-velours-lanterne #app .entry-access-screen .entry-google {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-muted-panel);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #app .entry-access-screen :is(.entry-confirm-resend,.entry-account-choice) {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-muted-panel);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #app .entry-access-screen .entry-auth-feedback:not(:empty),
+body.lr-velours-lanterne #app .entry-access-screen :is(#email-confirm-status,#auth-resend-status):not(:empty) {
+  color:var(--lr-vl-ivory);
+  border-color:var(--lr-vl-edge);
+  overflow-wrap:anywhere;
+}
+body.lr-velours-lanterne #app .entry-access-screen :is(.editorial-form input,.editorial-form select) {
+  max-width:100%;
+  background:var(--lr-vl-field);
+  color:var(--lr-vl-ivory);
+  border-color:var(--lr-vl-field-edge);
+}
+/* Ne pas contraindre les champs de profil, messages d'erreur ou le clavier
+   dans un viewport fixe lorsque le contenu dépasse. */
+@media(max-height:600px), (max-width:380px) {
+  body.lr-velours-lanterne #app>.entry-access-screen.auth-editorial {
+    min-height:100dvh;
+    height:auto;
+    max-height:none;
+    overflow:visible;
+  }
+  body.lr-velours-lanterne #app .entry-access-screen .entry-auth-card {
+    min-width:0;
+  }
+}
+@media(prefers-contrast:more) {
+  body.lr-velours-lanterne #app .entry-access-screen :is(.entry-auth-card,.entry-input,.entry-auth-submit) {
+    border-width:2px;
+  }
+}
+
+
+/* LOT 6 — Calendrier, bibliothèques et activités : écrin commun
+   Le calendrier conserve ses jours, sa navigation et ses résultats.
+   Les cartes et les formulaires restent de vrais éléments interactifs. */
+body.lr-velours-lanterne main#app.loveroll-evening-calendar-page {
+  --ritual-border:var(--lr-vl-edge);
+  --ritual-card:var(--lr-vl-muted-panel);
+  --ritual-button:var(--lr-vl-action);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne main#app.loveroll-evening-calendar-page .evening-cal-head h2,
+body.lr-velours-lanterne main#app.loveroll-evening-calendar-page .evening-cal-toolbar h3,
+body.lr-velours-lanterne main#app.loveroll-evening-calendar-page .evening-cal-history h3 {
+  color:var(--lr-vl-ivory);
+  font-family:var(--lr-vl-editorial);
+  font-weight:600;
+  letter-spacing:-.02em;
+}
+body.lr-velours-lanterne main#app.loveroll-evening-calendar-page .evening-cal-head>span {
+  color:var(--lr-vl-champagne);
+}
+body.lr-velours-lanterne main#app.loveroll-evening-calendar-page .evening-cal-head p {
+  color:var(--lr-vl-muted);
+}
+body.lr-velours-lanterne main#app.loveroll-evening-calendar-page :is(.evening-cal-month,.evening-cal-history,.evening-cal-stats span) {
+  background:var(--lr-vl-panel);
+  border-color:var(--lr-vl-edge);
+  box-shadow:var(--lr-vl-relief);
+}
+body.lr-velours-lanterne main#app.loveroll-evening-calendar-page .evening-cal-stats strong {
+  color:var(--lr-vl-champagne);
+  font-family:var(--lr-vl-editorial);
+  font-weight:700;
+}
+body.lr-velours-lanterne main#app.loveroll-evening-calendar-page .evening-cal-toolbar button {
+  width:44px;
+  min-width:44px;
+  height:44px;
+  min-height:44px;
+  color:var(--lr-vl-ivory);
+  background:var(--lr-vl-muted-panel);
+  border-color:var(--lr-vl-edge);
+}
+body.lr-velours-lanterne main#app.loveroll-evening-calendar-page .evening-cal-weekday {
+  color:var(--lr-vl-muted);
+}
+body.lr-velours-lanterne main#app.loveroll-evening-calendar-page .evening-cal-day {
+  color:var(--lr-vl-ivory);
+  border-color:var(--lr-vl-field-edge)!important;
+  background:var(--lr-vl-muted-panel);
+}
+body.lr-velours-lanterne main#app.loveroll-evening-calendar-page .evening-cal-day.has-evening {
+  border-color:var(--lr-vl-champagne)!important;
+  background:var(--lr-vl-velvet-card);
+}
+body.lr-velours-lanterne main#app.loveroll-evening-calendar-page .evening-cal-day.selected {
+  background:var(--lr-vl-action);
+  border-color:var(--lr-vl-champagne)!important;
+  box-shadow:var(--lr-vl-active-shadow);
+}
+body.lr-velours-lanterne main#app.loveroll-evening-calendar-page :is(.evening-cal-person,.evening-cal-challenge) {
+  background:var(--lr-vl-muted-panel);
+  border-color:var(--lr-vl-field-edge);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne main#app.loveroll-evening-calendar-page :is(.evening-cal-session header strong,.evening-cal-person b) {
+  color:var(--lr-vl-rose);
+}
+body.lr-velours-lanterne main#app.loveroll-evening-calendar-page :is(.evening-cal-person span,.evening-cal-challenge>span,.evening-cal-empty,.evening-cal-privacy) {
+  color:var(--lr-vl-muted);
+}
+body.lr-velours-lanterne main#app.loveroll-evening-calendar-page .evening-cal-return {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-action);
+  color:var(--lr-vl-ivory);
+}
+/* Bibliothèques : mêmes contenus, catégories, menus et formulaires.
+   Conserver leurs zones scrollables et les éléments [hidden]. */
+body.lr-velours-lanterne main#app:is(.loveroll-library-page,.loveroll-library-list) {
+  --ritual-border:var(--lr-vl-edge);
+  --ritual-card:var(--lr-vl-panel);
+  --ritual-button:var(--lr-vl-action);
+  --ritual-text:var(--lr-vl-ivory);
+  --ritual-muted:var(--lr-vl-muted);
+  --ritual-rose:var(--lr-vl-rose);
+  --ritual-shadow:var(--lr-vl-relief);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne main#app:is(.loveroll-library-page,.loveroll-library-list) :is(.editorial-title h1,.editorial-library-title) {
+  color:var(--lr-vl-ivory);
+  font-family:var(--lr-vl-editorial);
+  font-weight:600;
+}
+body.lr-velours-lanterne main#app:is(.loveroll-library-page,.loveroll-library-list) :is(.editorial-segments,.editorial-filter-panel,.editorial-library-header,.editorial-detail-card) {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-panel);
+  box-shadow:var(--lr-vl-relief);
+}
+body.lr-velours-lanterne main#app:is(.loveroll-library-page,.loveroll-library-list) .editorial-row {
+  border-bottom-color:var(--lr-vl-field-edge);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne main#app:is(.loveroll-library-page,.loveroll-library-list) :is(.editorial-row-icon,.custom-tile-number,.editorial-badge) {
+  color:var(--lr-vl-rose);
+}
+body.lr-velours-lanterne main#app:is(.loveroll-library-page,.loveroll-library-list) :is(input:not([type=checkbox]):not([type=radio]),textarea,select) {
+  max-width:100%;
+  min-width:0;
+  min-height:44px;
+  color:var(--lr-vl-ivory);
+  border-color:var(--lr-vl-field-edge);
+  background:var(--lr-vl-field);
+}
+body.lr-velours-lanterne main#app:is(.loveroll-library-page,.loveroll-library-list) :is(.editorial-segments button.selected,.editorial-primary,.editorial-save):not(:disabled) {
+  background:var(--lr-vl-action);
+  border-color:var(--lr-vl-edge);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne main#app:is(.loveroll-library-page,.loveroll-library-list) .editorial-card-list .custom-card-tile {
+  min-height:48px;
+  border-bottom-color:var(--lr-vl-field-edge);
+  color:var(--lr-vl-ivory);
+}
+/* Activité surprise et réservation : couleurs unifiées sans toucher aux
+   coordonnées, aux liens externes, au formulaire ni au statut de réservation. */
+body.lr-velours-lanterne main#app.loveroll-surprise-ecrin :is(.surprise-geo-card,.surprise-geo-booked,.surprise-geo-pending) {
+  background:var(--lr-vl-panel);
+  border-color:var(--lr-vl-edge);
+  color:var(--lr-vl-ivory);
+  box-shadow:var(--lr-vl-relief);
+}
+body.lr-velours-lanterne main#app.loveroll-surprise-ecrin .surprise-geo-eyebrow {
+  color:var(--lr-vl-champagne);
+}
+body.lr-velours-lanterne main#app.loveroll-surprise-ecrin .surprise-geo-venue-info strong {
+  color:var(--lr-vl-ivory);
+  font-family:var(--lr-vl-editorial);
+  font-weight:600;
+}
+body.lr-velours-lanterne main#app.loveroll-surprise-ecrin :is(.surprise-geo-photo-placeholder,.surprise-geo-link) {
+  background:var(--lr-vl-muted-panel);
+  border-color:var(--lr-vl-field-edge);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne main#app.loveroll-surprise-ecrin .surprise-geo-link {
+  min-height:44px;
+}
+body.lr-velours-lanterne main#app.loveroll-surprise-ecrin .surprise-geo-booking-form input:not([type=checkbox]) {
+  min-height:44px;
+  color:var(--lr-vl-ivory);
+  border-color:var(--lr-vl-field-edge);
+  background:var(--lr-vl-field);
+}
+body.lr-velours-lanterne main#app.loveroll-surprise-ecrin .surprise-geo-host-tools>.surprise-primary:not(:disabled) {
+  min-height:44px;
+  background:var(--lr-vl-action);
+  border-color:var(--lr-vl-edge);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne main#app.loveroll-surprise-ecrin :is(.surprise-geo-credit,.surprise-geo-muted,.surprise-geo-venue-info small) {
+  color:var(--lr-vl-muted);
+}
+/* Éclat : cohérence sur les 12 coffrets et leurs contrôles sans casser
+   les photos, le minutage, le défilement ni les hauteurs compactes. */
+body.lr-velours-lanterne main#app.loveroll-eclat-page :is(.eclat-tile,.eclat-duration,.eclat-choices .eclat-choice,.eclat-library-offer) {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-panel);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne main#app.loveroll-eclat-page :is(.eclat-tile-number,.eclat-top small,.eclat-detail>small) {
+  color:var(--lr-vl-champagne);
+}
+body.lr-velours-lanterne main#app.loveroll-eclat-page :is(.eclat-top h1,.eclat-detail h2) {
+  color:var(--lr-vl-ivory);
+  font-family:var(--lr-vl-editorial);
+}
+body.lr-velours-lanterne main#app.loveroll-eclat-page :is(.eclat-return,.eclat-audio-toggle) {
+  min-height:44px;
+  min-width:44px;
+  color:var(--lr-vl-ivory);
+}
+@media(max-width:380px) {
+  body.lr-velours-lanterne main#app.loveroll-evening-calendar-page .evening-cal-toolbar {
+    gap:4px;
+  }
+  body.lr-velours-lanterne main#app.loveroll-evening-calendar-page .evening-cal-grid {
+    gap:3px;
+  }
+  body.lr-velours-lanterne main#app.loveroll-surprise-ecrin .surprise-geo-links {
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:4px;
+  }
+  body.lr-velours-lanterne main#app.loveroll-surprise-ecrin .surprise-geo-link {
+    padding-inline:3px;
+    overflow-wrap:anywhere;
+  }
+}
+/* Zoom texte : utiliser les capacités de défilement existantes sans forcer
+   un nouveau gabarit qui cacherait une case de calendrier ou un bouton. */
+@media(max-height:610px) {
+  body.lr-velours-lanterne main#app.loveroll-evening-calendar-page .evening-calendar-shell {
+    overscroll-behavior:contain;
+    scrollbar-width:thin;
+  }
+  body.lr-velours-lanterne main#app:is(.loveroll-library-page,.loveroll-library-list) .editorial-content {
+    overscroll-behavior:contain;
+    scrollbar-width:thin;
+  }
+}
+/* LOT 7 — Installation et notifications : même écrin que l'accueil.
+   Ces styles n'affectent ni l'inscription push/FCM, ni le parcours PWA,
+   ni les permissions système ; toutes les actions restent natives. */
+body.lr-velours-lanterne #app .install-overlay {
+  background:var(--lr-vl-veil);
+  overscroll-behavior:contain;
+}
+body.lr-velours-lanterne #app .install-overlay .install-modal {
+  min-width:0;
+  width:min(100%,460px);
+  border-color:var(--lr-vl-edge);
+  border-radius:clamp(19px,4vw,28px);
+  background:var(--lr-vl-panel);
+  box-shadow:var(--lr-vl-dialog-shadow);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #app .install-modal :is(.install-recommend,.install-symbol) {
+  color:var(--lr-vl-champagne);
+}
+body.lr-velours-lanterne #app .install-modal :is(h2,#lr-install-description) {
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #app .install-modal h2 {
+  font-family:var(--lr-vl-editorial);
+  font-size:clamp(27px,5.5vw,38px);
+  font-weight:600;
+}
+body.lr-velours-lanterne #app .install-modal .install-actions button {
+  min-width:0;
+  min-height:48px;
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-action);
+  color:var(--lr-vl-ivory);
+  box-shadow:var(--lr-vl-relief);
+  overflow-wrap:anywhere;
+}
+body.lr-velours-lanterne #app .install-modal .install-actions :is(.install-later,.install-secondary) {
+  background:var(--lr-vl-muted-panel);
+  border-color:var(--lr-vl-field-edge);
+  box-shadow:none;
+}
+body.lr-velours-lanterne #app .install-modal .install-close {
+  min-height:44px;
+  min-width:44px;
+  color:var(--lr-vl-ivory);
+}
+/* Guide Safari installé hors de #app : conserver les quatre étapes et
+   les boutons réels avec une alternative défilante en affichage court. */
+body.lr-velours-lanterne .lr-ios-tour {
+  background:var(--lr-vl-veil);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .lr-ios-tour-card {
+  min-width:0;
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-panel);
+  box-shadow:var(--lr-vl-dialog-shadow);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .lr-ios-tour :is(.lr-ios-tour-kicker,.lr-ios-tour-symbol) {
+  color:var(--lr-vl-champagne);
+}
+body.lr-velours-lanterne .lr-ios-tour :is(h2,p#lr-ios-tour-desc) {
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .lr-ios-tour h2 {
+  font-family:var(--lr-vl-editorial);
+  font-weight:600;
+}
+body.lr-velours-lanterne .lr-ios-tour-dots .active {
+  background:var(--lr-vl-champagne);
+}
+body.lr-velours-lanterne .lr-ios-tour-secondary,
+body.lr-velours-lanterne .lr-ios-tour-primary {
+  min-height:44px;
+  min-width:0;
+  border:1px solid var(--lr-vl-edge);
+  border-radius:14px;
+  color:var(--lr-vl-ivory);
+  background:var(--lr-vl-muted-panel);
+  overflow-wrap:anywhere;
+}
+body.lr-velours-lanterne .lr-ios-tour-primary {
+  background:var(--lr-vl-action);
+  box-shadow:var(--lr-vl-relief);
+}
+body.lr-velours-lanterne .lr-ios-tour-close {
+  min-height:44px;
+  min-width:44px;
+  color:var(--lr-vl-ivory);
+}
+/* Notifications : états réels et actions conservés. Ne pas colorer un
+   interrupteur désactivé comme s'il recevait effectivement des alertes. */
+body.lr-velours-lanterne #app.loveroll-settings-page [data-settings-page="notifications"] .notification-settings {
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #app.loveroll-settings-page [data-settings-page="notifications"] :is(.notification-summary,.notification-local) {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-panel);
+  box-shadow:var(--lr-vl-relief);
+}
+body.lr-velours-lanterne #app.loveroll-settings-page [data-settings-page="notifications"] :is(.notification-section-heading h2,.notification-summary strong,.notification-choice-copy strong) {
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #app.loveroll-settings-page [data-settings-page="notifications"] :is(.notification-summary p,.notification-choice-copy small,.notification-section-heading>span,.notification-privacy) {
+  color:var(--lr-vl-muted);
+}
+body.lr-velours-lanterne #app.loveroll-settings-page [data-settings-page="notifications"] :is(.notification-option,.notification-options) {
+  border-color:var(--lr-vl-field-edge);
+}
+body.lr-velours-lanterne #app.loveroll-settings-page [data-settings-page="notifications"] :is(.notification-row-icon,.notification-emblem) {
+  color:var(--lr-vl-rose);
+}
+body.lr-velours-lanterne #app.loveroll-settings-page [data-settings-page="notifications"] .notification-actions .notification-action:not(:disabled) {
+  min-width:0;
+  min-height:44px;
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-action);
+  color:var(--lr-vl-ivory);
+  overflow-wrap:anywhere;
+}
+body.lr-velours-lanterne #app.loveroll-settings-page [data-settings-page="notifications"] .notification-actions .settings-signout {
+  background:var(--lr-vl-muted-panel);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne #app.loveroll-settings-page [data-settings-page="notifications"] .notification-feedback:not([hidden]) {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-muted-panel);
+  color:var(--lr-vl-ivory);
+  overflow-wrap:anywhere;
+}
+body.lr-velours-lanterne #app.loveroll-settings-page [data-settings-page="notifications"] .notification-feedback[data-tone="error"]:not([hidden]) {
+  border-color:var(--lr-vl-rose);
+  background:var(--lr-vl-velvet-card);
+  color:var(--lr-vl-ivory);
+}
+@media(max-width:380px), (max-height:620px) {
+  body.lr-velours-lanterne #app .install-overlay {
+    align-items:flex-start;
+    overflow-y:auto;
+    padding:max(8px,env(safe-area-inset-top,0px)) 10px max(8px,env(safe-area-inset-bottom,0px));
+  }
+  body.lr-velours-lanterne #app .install-overlay .install-modal {
+    margin:auto;
+    max-height:calc(100dvh - 16px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
+    padding:16px;
+  }
+  body.lr-velours-lanterne .lr-ios-tour {
+    place-items:start center;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    padding:max(8px,env(safe-area-inset-top,0px)) 10px max(8px,env(safe-area-inset-bottom,0px));
+  }
+  body.lr-velours-lanterne .lr-ios-tour-card {
+    margin:auto;
+    min-height:0;
+    max-height:none;
+    overflow:visible;
+    grid-template-rows:auto auto auto auto auto;
+  }
+  body.lr-velours-lanterne .lr-ios-tour-illustration {
+    height:min(18dvh,105px);
+    min-height:65px;
+  }
+  body.lr-velours-lanterne #app.loveroll-settings-page [data-settings-page="notifications"] .notification-actions {
+    grid-auto-flow:row;
+    grid-template-columns:minmax(0,1fr);
+  }
+}
+@media(prefers-contrast:more) {
+  body.lr-velours-lanterne .lr-ios-tour-card,
+  body.lr-velours-lanterne #app .install-modal,
+  body.lr-velours-lanterne #app.loveroll-settings-page [data-settings-page="notifications"] .notification-summary {
+    border-width:2px;
+  }
+}
+/* LOT 8 — Fin de Soirée, 5 cœurs et historique.
+   Respecte les vrais composants et les états JS (sauvegarde, disabled,
+   valeurs choisies, notes privées) sans retoucher le moteur de jeu. */
+body.lr-velours-lanterne .lr-review-backdrop {
+  background:var(--lr-vl-veil);
+}
+body.lr-velours-lanterne .lr-review-modal {
+  min-width:0;
+  border:1px solid var(--lr-vl-edge);
+  background:var(--lr-vl-panel);
+  color:var(--lr-vl-ivory);
+  box-shadow:var(--lr-vl-dialog-shadow);
+  scrollbar-width:thin;
+  scrollbar-color:var(--lr-vl-edge) transparent;
+}
+body.lr-velours-lanterne .lr-review-modal h2 {
+  font-family:var(--lr-vl-editorial)!important;
+  font-weight:600!important;
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .lr-review-eyebrow,
+body.lr-velours-lanterne .lr-review-calendar-note {
+  color:var(--lr-vl-champagne);
+}
+body.lr-velours-lanterne .lr-review-modal #lr-review-intro,
+body.lr-velours-lanterne .lr-review-heart>small {
+  color:var(--lr-vl-muted);
+}
+body.lr-velours-lanterne .lr-review-question {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-muted-panel);
+}
+body.lr-velours-lanterne .lr-review-icon {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-field);
+  color:var(--lr-vl-champagne);
+}
+body.lr-velours-lanterne .lr-review-question>strong,
+body.lr-velours-lanterne .lr-review-comment-label {
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .lr-review-heart {
+  min-height:44px!important;
+  touch-action:manipulation;
+}
+body.lr-velours-lanterne .lr-review-heart>span {
+  color:#cf83a6;
+}
+body.lr-velours-lanterne .lr-review-heart.is-lit>span {
+  color:var(--lr-vl-lantern);
+  text-shadow:0 0 13px rgba(255,107,156,.58),0 0 3px rgba(255,242,232,.8);
+}
+body.lr-velours-lanterne .lr-review-note {
+  border-color:var(--lr-vl-field-edge);
+  background:var(--lr-vl-field);
+}
+body.lr-velours-lanterne .lr-review-note textarea {
+  min-width:0;
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .lr-review-note textarea::placeholder {
+  color:var(--lr-vl-muted);
+}
+body.lr-velours-lanterne .lr-review-note span,
+body.lr-velours-lanterne .lr-review-error {
+  color:var(--lr-vl-champagne);
+}
+body.lr-velours-lanterne .lr-review-save:not(:disabled) {
+  border-color:var(--lr-vl-edge)!important;
+  background:var(--lr-vl-action);
+  color:var(--lr-vl-ivory);
+  box-shadow:var(--lr-vl-relief);
+}
+body.lr-velours-lanterne .lr-review-x {
+  width:44px;
+  height:44px;
+  min-width:44px;
+  min-height:44px!important;
+  border-color:var(--lr-vl-edge)!important;
+  background:var(--lr-vl-muted-panel);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .evening-review-person {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-muted-panel);
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .evening-review-person h4 {
+  font-family:var(--lr-vl-editorial);
+  color:var(--lr-vl-champagne);
+}
+body.lr-velours-lanterne .evening-review-person>strong,
+body.lr-velours-lanterne .evening-review-person>p,
+body.lr-velours-lanterne .evening-review-person .evening-review-score span {
+  color:var(--lr-vl-ivory);
+}
+body.lr-velours-lanterne .evening-review-score strong {
+  color:var(--lr-vl-rose);
+}
+body.lr-velours-lanterne .evening-review-note {
+  border-color:var(--lr-vl-edge);
+  background:var(--lr-vl-field);
+}
+body.lr-velours-lanterne .evening-review-edit {
+  min-height:44px!important;
+  border-color:var(--lr-vl-edge)!important;
+  background:var(--lr-vl-action);
+  color:var(--lr-vl-ivory);
+}
+@media(max-width:380px) {
+  /* Conserver les cinq notes interactives à 44 px même à 320 px.
+     Les cœurs passent sur leur propre ligne au lieu d'être compressés. */
+  body.lr-velours-lanterne .lr-review-question {
+    grid-template-columns:32px minmax(0,1fr);
+    gap:5px 9px;
+    padding:8px;
+  }
+  body.lr-velours-lanterne .lr-review-hearts {
+    grid-column:1/-1;
+    width:100%;
+  }
+  body.lr-velours-lanterne .lr-review-heart {
+    min-width:0!important;
+    min-height:44px!important;
+  }
+}
+@media(max-height:620px) {
+  body.lr-velours-lanterne .lr-review-backdrop {
+    align-items:flex-start;
+    overflow-y:auto;
+    overscroll-behavior:contain;
+    padding:max(8px,env(safe-area-inset-top,0px)) 8px max(8px,env(safe-area-inset-bottom,0px));
+  }
+  body.lr-velours-lanterne .lr-review-modal {
+    margin:auto;
+    max-height:calc(100dvh - 16px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
+  }
+}
+@media(prefers-contrast:more) {
+  body.lr-velours-lanterne .lr-review-question,
+  body.lr-velours-lanterne .lr-review-note,
+  body.lr-velours-lanterne .evening-review-person {border-width:2px;}
+}
+
+/* LOT 9 — Compte, duo et options de jeu : écrin cohérent et cibles tactiles.
+   La feuille settings-menus.css fixe encore certains champs/boutons à 36–40px
+   via @layer + !important. Corriger DANS cette même couche sans toucher à la
+   structure des formulaires, à l'authentification ou aux permissions. */
+@layer loveroll-settings-menus {
+  body.lr-velours-lanterne #app.loveroll-settings-page .settings-menu-source
+  :is(.settings-premium-glass-group,.settings-premium-section-head,
+      .settings-duo-card,.settings-category-options,.admin-sexual-card-mode,
+      .account-test-modes,.settings-couple-invite) {
+    border-color:var(--lr-vl-edge)!important;
+    background:var(--lr-vl-panel)!important;
+    box-shadow:var(--lr-vl-relief)!important;
+    color:var(--lr-vl-ivory)!important;
+  }
+  body.lr-velours-lanterne #app.loveroll-settings-page .settings-menu-source
+  :is(.settings-premium-section-head h2,.settings-premium-glass-group h3,
+      .settings-category-options h3,.admin-sexual-card-mode h3,
+      .settings-duo-card strong) {
+    color:var(--lr-vl-ivory)!important;
+  }
+  body.lr-velours-lanterne #app.loveroll-settings-page .settings-menu-source
+  :is(.settings-premium-section-head p,.settings-duo-card small,
+      .settings-category-options .tiny-note,.settings-danger-zone .tiny-note,
+      .settings-account-style-note) {
+    color:var(--lr-vl-muted)!important;
+  }
+  body.lr-velours-lanterne #app.loveroll-settings-page .settings-menu-source
+  :is(.settings-inline-name input,.settings-inline-name select,
+      .settings-birthday-edit select,.settings-birthday-edit input,
+      .settings-category-options input:not([type="checkbox"]),
+      .admin-sexual-card-mode select) {
+    border-color:var(--lr-vl-field-edge)!important;
+    background-color:var(--lr-vl-field)!important;
+    color:var(--lr-vl-ivory)!important;
+  }
+  /* Compte compact : ne plus réduire les commandes sous 44px pour gagner
+     artificiellement de la place. Le panneau possède déjà son scroll natif. */
+  body.lr-velours-lanterne #app.loveroll-settings-page
+  .settings-account-overview.settings-account-overview
+  :is(input:not([type="checkbox"]):not([type="radio"]),
+      select,.lr-premium-picker-trigger,
+      .account-test-option,[data-action="profile"],[data-action="signout"]) {
+    min-height:44px!important;
+    height:auto!important;
+  }
+  body.lr-velours-lanterne #app.loveroll-settings-page
+  .settings-account-overview.settings-account-overview
+  :is(.account-test-option,[data-action="profile"],[data-action="signout"]) {
+    padding-block:9px!important;
+    overflow-wrap:anywhere;
+    line-height:1.25!important;
+  }
+  body.lr-velours-lanterne #app.loveroll-settings-page
+  .settings-account-overview.settings-account-overview
+  :is(input:not([type="checkbox"]):not([type="radio"]),select) {
+    font-size:16px!important; /* iOS Safari : pas de zoom automatique. */
+  }
+  body.lr-velours-lanterne #app.loveroll-settings-page
+  .settings-detail-body:is(.has-settings-menus,.settings-account-overview) {
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    overscroll-behavior-y:contain;
+    scroll-padding-block:12px 20px;
+    -webkit-overflow-scrolling:touch;
+  }
+  body.lr-velours-lanterne #app.loveroll-settings-page .settings-menu-source
+  .account-test-option[aria-pressed="true"] {
+    border-color:var(--lr-vl-champagne)!important;
+    background:var(--lr-vl-action)!important;
+    color:var(--lr-vl-ivory)!important;
+    box-shadow:var(--lr-vl-active-shadow)!important;
+  }
+  body.lr-velours-lanterne #app.loveroll-settings-page .settings-menu-source
+  .settings-danger-zone .settings-signout:not(:disabled) {
+    border-color:var(--lr-vl-edge)!important;
+    background:var(--lr-vl-muted-panel)!important;
+    color:var(--lr-vl-ivory)!important;
+  }
+  @media(max-width:380px) {
+    body.lr-velours-lanterne #app.loveroll-settings-page
+    .settings-account-overview.settings-account-overview .account-test-options {
+      grid-template-columns:repeat(2,minmax(0,1fr))!important;
+      gap:6px!important;
+    }
+    body.lr-velours-lanterne #app.loveroll-settings-page
+    .settings-account-overview.settings-account-overview .settings-premium-glass-group {
+      grid-template-columns:minmax(0,1fr)!important;
+    }
+  }
+  @media(prefers-contrast:more) {
+    body.lr-velours-lanterne #app.loveroll-settings-page .settings-menu-source
+    :is(.settings-premium-glass-group,.settings-category-options,.settings-duo-card) {
+      border-width:2px!important;
+    }
+  }
+}
+
+/* LOT 10 — Options avancées : cartes de pondération lisibles au doigt.
+   La page, ses deux types de probabilités et le serveur restent inchangés.
+   Couleurs et surfaces sont héritées du thème Velours & Rose Lanterne. */
+@layer loveroll-settings-menus {
+  body.lr-velours-lanterne #app.loveroll-settings-page
+  [data-settings-page="admin"] .settings-help-item {
+    min-width:0;
+    border-bottom-color:var(--lr-vl-edge);
+  }
+  body.lr-velours-lanterne #app.loveroll-settings-page
+  [data-settings-page="admin"] .admin-dice-weight-section>summary {
+    min-height:48px;
+    gap:10px;
+    color:var(--lr-vl-ivory)!important;
+    overflow-wrap:anywhere;
+    cursor:pointer;
+  }
+  body.lr-velours-lanterne #app.loveroll-settings-page
+  [data-settings-page="admin"] .admin-dice-weight-section>summary small {
+    color:var(--lr-vl-champagne)!important;
+    white-space:normal;
+    text-align:right;
+    line-height:1.25;
+  }
+  body.lr-velours-lanterne #app.loveroll-settings-page
+  [data-settings-page="admin"] .admin-dice-weight-section[open] {
+    background:var(--lr-vl-panel);
+    border:1px solid var(--lr-vl-edge);
+    border-radius:16px;
+    padding:8px 12px 12px;
+    margin-block:10px;
+    box-shadow:var(--lr-vl-relief);
+  }
+  body.lr-velours-lanterne #app.loveroll-settings-page
+  [data-settings-page="admin"] :is(.admin-dice-weight-face,.admin-dice-weight-total) {
+    color:var(--lr-vl-muted)!important;
+  }
+  body.lr-velours-lanterne #app.loveroll-settings-page
+  [data-settings-page="admin"] .admin-dice-weight-input input[type="number"] {
+    min-width:0;
+    width:100%;
+    min-height:46px!important;
+    height:auto!important;
+    border-color:var(--lr-vl-field-edge)!important;
+    background-color:var(--lr-vl-field)!important;
+    color:var(--lr-vl-ivory)!important;
+    font-size:16px!important;
+    font-variant-numeric:tabular-nums;
+  }
+  body.lr-velours-lanterne #app.loveroll-settings-page
+  [data-settings-page="admin"] .admin-dice-weight-input>span {
+    color:var(--lr-vl-champagne);
+    pointer-events:none;
+  }
+  body.lr-velours-lanterne #app.loveroll-settings-page
+  [data-settings-page="admin"] .admin-dice-weight-total[data-valid="false"],
+  body.lr-velours-lanterne #app.loveroll-settings-page
+  [data-settings-page="admin"] .admin-dice-weight-feedback:not(:empty) {
+    color:var(--lr-vl-rose)!important;
+    font-weight:600;
+  }
+  body.lr-velours-lanterne #app.loveroll-settings-page
+  [data-settings-page="admin"] .admin-dice-weight-save:not(:disabled) {
+    min-height:46px!important;
+    border-color:var(--lr-vl-edge)!important;
+    background:var(--lr-vl-action)!important;
+    color:var(--lr-vl-ivory)!important;
+  }
+  body.lr-velours-lanterne #app.loveroll-settings-page
+  [data-settings-page="admin"] .admin-dice-weight-save:disabled {
+    min-height:46px!important;
+    opacity:.55;
+    box-shadow:none!important;
+  }
+  @media(max-width:380px) {
+    body.lr-velours-lanterne #app.loveroll-settings-page
+    [data-settings-page="admin"] .admin-dice-weight-grid {
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:10px;
+    }
+    body.lr-velours-lanterne #app.loveroll-settings-page
+    [data-settings-page="admin"] .admin-dice-weight-section[open] {
+      padding:7px 9px 10px;
+    }
+  }
+  @media(prefers-contrast:more) {
+    body.lr-velours-lanterne #app.loveroll-settings-page
+    [data-settings-page="admin"] .admin-dice-weight-section[open] {
+      border-width:2px;
+    }
+  }
+}

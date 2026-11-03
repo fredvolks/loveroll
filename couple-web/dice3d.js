@@ -444,6 +444,16 @@ export function dieOn(canvas,sides,value,rolling){
   new ResizeObserver(resizeDie):null;
  resizeObserver?.observe(canvas);
  const podiumObserver=typeof ResizeObserver==='function'?new ResizeObserver(()=>{alignPodium();request();}):null;
+ // fitTabletRomanceStage updates the photo's marble CSS variable AFTER the
+ // canvas is created. That moves the fixed marker without resizing the
+ // theater, so ResizeObserver alone misses it and the D100 floats above
+ // the marble by the late layout delta (5px on portrait iPad in CI).
+ const photoRoot=canvas.closest('#app');
+ const photoContactObserver=sides===100&&photoRoot&&
+  typeof MutationObserver==='function'?
+  new MutationObserver(()=>{if(canvas.isConnected){alignPodium();request();}}):null;
+ if(photoContactObserver&&canvas.closest('.evening-d100-theater'))
+  photoContactObserver.observe(photoRoot,{attributes:true,attributeFilter:['style']});
  window.addEventListener('resize',resizeDie);
  const glass=glassEnvironment(renderer,referenceRuby,sides===100);scene.environment=glass.texture;
  const backdrop=crystalBackdrop(renderer,scene,canvas,()=>request());
@@ -490,7 +500,7 @@ export function dieOn(canvas,sides,value,rolling){
   (photoStage?new THREE.Euler(-.12,-.055,0):new THREE.Euler(.015,-.055,0)):
   new THREE.Euler(.075,-.09,0);
  const tilt=new THREE.Quaternion().setFromEuler(restEuler);
- const podiumSelector='.home-die-theater,.surprise-main-die-scene,.evening-user-die>.love3d,.evening-die-row,.evening-finale-hero';
+ const podiumSelector='.home-die-theater,.surprise-main-die-scene,.evening-user-die>.love3d,.evening-die-row,.evening-finale-hero,.evening-d100-theater';
  let podium=canvas.closest(podiumSelector);
  const orientationFor=face=>{
   const normal=built.normals.get(Number(face));
@@ -535,6 +545,44 @@ export function dieOn(canvas,sides,value,rolling){
   }
   if(!podium)return;
   const stage=canvas.parentElement,pose=built.group.quaternion.clone(),position=built.group.position.clone();
+  // On the live Soirée D100 the official WebGL camera is already fitted to
+  // Surprise's mesh size. Previously the theater was absent from the podium
+  // selector, so its real die never received the marble contact correction.
+  // Translate only the real canvas stage; preserve camera zoom, face and dice
+  // probabilities. Recalculate from an untransformed box on each resize.
+  if(sides===100&&podium.matches('.evening-d100-theater')){
+   const marker=podium.querySelector('.home-pedestal-contact');
+   const markerVisible=marker&&marker.getBoundingClientRect().width===0&&
+    getComputedStyle(marker.parentElement).display!=='none';
+   if(markerVisible){
+    // Only tablet layouts need inline-important. On compact phones the
+    // existing layered CSS already owns mesh headroom; overriding it pushes
+    // the real die above the hero. Keep phone behavior unchanged.
+    const tablet=window.matchMedia('(min-width:768px)').matches;
+    const priority=tablet?'important':'';
+    // The ready iPad D100 starts ~6.4% narrower than the Surprise reference
+    // even though both occupy a 440px WebGL stage. Match the SAME physical
+    // ruby silhouette, then re-anchor its projected bottom on the marble.
+    // Set an absolute camera zoom (not *=) so repeated ResizeObserver calls
+    // never accumulate scale, and leave phones, D6 and inactive stages alone.
+    // iPad paysage : le théâtre mesure 352×276 plutôt que 440×440 en
+    // portrait. Le D100 rendait 201px contre 257px dans Surprise.
+    // Zoom absolu sur le même mesh, sans cumul au redimensionnement.
+    const landscapeTablet=tablet&&window.matchMedia('(orientation:landscape)').matches;
+    const podiumZoom=landscapeTablet?1.36:1.065;
+    if(tablet&&camera.zoom!==podiumZoom){
+     camera.zoom=podiumZoom;
+     camera.updateProjectionMatrix();
+    }
+    stage.style.setProperty('transform','none',priority);
+    const rect=canvas.getBoundingClientRect(),bounds=projectedBounds();
+    if(rect.width>0&&rect.height>0){
+     const dy=marker.getBoundingClientRect().top-(rect.top+bounds.bottom*rect.height);
+     if(Number.isFinite(dy))stage.style.setProperty('transform','translateY('+dy.toFixed(2)+'px)',priority);
+    }
+   }
+   return;
+  }
   built.group.quaternion.copy(target);built.group.position.set(0,0,0);
   stage.style.transform='none';camera.zoom=1;camera.updateProjectionMatrix();
   const sceneRect=podium.getBoundingClientRect(),rect=canvas.getBoundingClientRect();
@@ -580,10 +628,11 @@ export function dieOn(canvas,sides,value,rolling){
    // The 3D mesh is already the correct size on a tall 412x915 phone, but
    // needs a smaller fit on short phones. A fixed .929 multiplier shrinks
    // the tall-phone mesh by 7.1%. Interpolate smoothly by available height:
-   // measured parity references: 360x740, 412x824 and 412x915.
+   // After the mode tabs reached 44px, 360x740 measured 0.9649 parity.
+   // Restore the D100 to >=0.97 parity without changing the tall-phone endpoint.
    if(idleEveningD100&&window.matchMedia?.('(max-width:767px)').matches){
     const t=Math.max(0,Math.min(1,(window.innerHeight-740)/175));
-    camera.zoom*=.929+.071*t*t;
+    camera.zoom*=.936+.064*t*t;
    }
    camera.updateProjectionMatrix();
   }
@@ -629,7 +678,11 @@ export function dieOn(canvas,sides,value,rolling){
  alignPodium();podiumObserver?.observe(podium||canvas);
  if(duration)prepareMotion();
  function step(now){
-  frame=0;if(!shown||document.hidden)return;
+  // A confirmed throw must not freeze when a modal transition or viewport
+  // intersection update briefly declares this canvas offscreen. Continue the
+  // finite official animation in the active document; idle/offscreen dice
+  // still stop rendering, and hidden tabs remain paused.
+  frame=0;if(document.hidden||(!shown&&!duration))return;
   const dt=lastFrame?Math.min(.05,Math.max(0,(now-lastFrame)/1000)):0;
   lastFrame=now;
   const elapsed=duration?Math.min(duration,Math.max(0,now-start)):0;
@@ -642,7 +695,56 @@ export function dieOn(canvas,sides,value,rolling){
    euler.set(angles[0],angles[1],angles[2]);
    built.group.quaternion.setFromEuler(euler);
    const offset=rollOffset(trajectory,elapsed);
-   built.group.position.set(offset.x,offset.y,0);
+   // On extra-short phones the marble theater is shallower than the physical
+   // D100's tumbling envelope. Preserve its real 3D rotation, server result and
+   // full-duration roll; only soften the *vertical hop* so the visible solid
+   // stays inside the photograph (the idle and final poses are unchanged).
+   const shortD100Theater=sides===100&&photoSoiree&&
+    window.innerWidth<=360&&window.innerHeight<=740;
+   // The 393-430px theaters have room below the moving die but only
+   // ~5px above its resting mesh. Avoid expensive full-mesh projections
+   // on these phones: soften the upward hop and use a short, smooth
+   // downward clearance during the real tumbling pose. Both terms vanish
+   // at the end so the official result lands at its original photo contact.
+   const widerD100Theater=sides===100&&photoSoiree&&
+    window.innerWidth>360&&window.innerWidth<=430;
+   const phoneD100Theater=shortD100Theater;
+   const hopScale=shortD100Theater?.24:widerD100Theater?.18:1;
+   const clearance=widerD100Theater?.18*Math.min(1,t*20,(1-t)*20):0;
+   built.group.position.set(offset.x,offset.y*hopScale-clearance,0);
+   // A D100 at 360x640 has only ~5px of air above its resting mesh.
+   // Random tumbling and the launch hop may project outside the theater.
+   // Retain real WebGL size, original roll angles and the confirmed face.
+   // Only the moving model shifts into the available photographed scene.
+   // Projecting the complete high-polyhedron for every frame is expensive.
+   // Other screen sizes already fit the official scene; reserve this
+   // corrective guard for short phone theaters where overflow was observed.
+   if(phoneD100Theater&&canvas.closest('.evening-d35-col')){
+    const hero=canvas.closest('.evening-d100-theater');
+    if(hero){
+     const rect=canvas.getBoundingClientRect(),region=hero.getBoundingClientRect();
+     if(rect.height>0&&region.height>0){
+      // NDC Y increases UP while CSS Y increases DOWN. Convert the
+      // projected derivative with the correct sign, then remeasure the true
+      // rotated mesh once after correction for perspective on tiny phones.
+      const origin=new THREE.Vector3(0,0,0).project(camera);
+      const raised=new THREE.Vector3(0,1,0).project(camera);
+      const pixelsPerUnit=(raised.y-origin.y)*rect.height/2;
+      if(pixelsPerUnit>1){
+       for(let pass=0;pass<2;pass++){
+        const bounds=projectedBounds();
+        const top=rect.top+bounds.top*rect.height;
+        const bottom=rect.top+bounds.bottom*rect.height;
+        let correction=0;
+        if(top<region.top+3)correction=region.top+3-top;
+        if(bottom+correction>region.bottom-3)correction=region.bottom-3-bottom;
+        if(Math.abs(correction)<=.1)break;
+        built.group.position.y-=correction/pixelsPerUnit;
+       }
+      }
+     }
+    }
+   }
   }else if(duration){
    // Keep the official 3D face locked after its last animation frame.
    built.group.quaternion.copy(target);built.group.position.set(0,0,0);
@@ -711,6 +813,7 @@ export function dieOn(canvas,sides,value,rolling){
   const engravingUpright=engravedUp?engravedUp.dot(cameraUp):null;
   return {face:Number(canvas.dataset.face),frontFace,faceFacing,engravingUpright,
    quaternion:built.group.quaternion.toArray(),renderedFrames,
+   observerVisible:shown,documentVisible:!document.hidden,frameScheduled:!!frame,
    modelId:built.group.uuid,model:flatHome?'ruby-reference-205':'rose-crystal',
    support:flatHome?projectedSupport():null,
    restingUp:flatHome?upNormal.toArray():null,upFace,
@@ -750,7 +853,8 @@ export function dieOn(canvas,sides,value,rolling){
  document.addEventListener('visibilitychange',onVisible);request();
  const clean=()=>{if(frame)cancelAnimationFrame(frame);obs.disconnect();
   if(canvas.loveRollDie?.rollTo===rollTo)delete canvas.loveRollDie;
-  resizeObserver?.disconnect();podiumObserver?.disconnect();window.removeEventListener('resize',resizeDie);
+  resizeObserver?.disconnect();podiumObserver?.disconnect();photoContactObserver?.disconnect();
+  window.removeEventListener('resize',resizeDie);
   document.removeEventListener('visibilitychange',onVisible);
   canvas.removeEventListener('pointerdown',down);canvas.removeEventListener('pointermove',move);
   canvas.removeEventListener('pointerup',up);canvas.removeEventListener('pointercancel',up);

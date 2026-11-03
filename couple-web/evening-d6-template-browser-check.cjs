@@ -27,6 +27,7 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   const capture=async name=>{if(process.env.LOVEROLL_CAPTURE_DIR)await page.screenshot({path:path.join(process.env.LOVEROLL_CAPTURE_DIR,`d6-${name}-${width}-${height}.png`)});};
   assert.equal(await page.locator('.evening-d6-tools button:visible').count(),0);
   assert.equal(await page.locator('.evening-premium-view > .evening-d6-tools').count(),0);
+  assert.match(await page.locator('.evening-d6-next span').innerText(),/Brasse ton D6/);
   await capture('initial');
   await page.locator('[data-home-odds-open]').click();await page.waitForSelector('#evening-odds-dialog[open]');
   assert.deepEqual(await page.locator('.home-odds-entry>span').allTextContents(),['30 %','25 %','20 %','12 %','8 %','5 %']);
@@ -39,6 +40,8 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   if(partnerFirst){
    world.personalRolls.push({id:'d6-b',session_id:'evening-test',user_id:'b',face:4});
    await page.waitForFunction(()=>document.querySelector('.evening-partner-mobile-status')?.textContent.includes('4'),{timeout:16000});
+   await page.waitForFunction(()=>document.querySelector('.evening-d6-next span')?.textContent.includes('À ton tour'));
+   assert.match(await page.locator('.evening-d6-next span').innerText(),/Ton partenaire a lancé/);
    assert.equal(await page.evaluate(()=>window.__ownD6===document.querySelector('.evening-d6-theater canvas')),true,'Partner refresh keeps the same live model');
    const anchored=await measure();assert.ok(Math.abs(anchored.bottom-anchored.contact)<2);
   }
@@ -50,8 +53,30 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
    assert.equal(await page.locator('.evening-progress>span').nth(1).locator('small').innerText(),'Dé personnel : 4');
    assert.deepEqual(errors,[]);await context.close();console.log('EVENING_D6_TEMPLATE_OK',width,height,'partner first');continue;
   }
-  await page.waitForFunction(()=>document.querySelector('[data-action="my-d6"]')?.textContent==='Lancer enregistré');
-  assert.equal(await page.locator('[data-action="my-d6"]').isDisabled(),true);
+  // The mobile D6 template moves the action or status to a grid slot outside .evening-my-die.
+  // Once Supabase confirms the roll, the UI replaces the action button with
+  // an accessible status rather than leaving an inert button in the tab order.
+  try {
+   await page.waitForFunction(()=>
+    document.querySelector('.evening-premium-view .evening-d6-status[role="status"]')
+     ?.textContent?.includes('Lancer enregistré'),null,{timeout:30000});
+  } catch(error) {
+   const snapshot=await page.evaluate(()=>({
+    tab:document.querySelector('#app')?.className,
+    personal:document.querySelector('.evening-my-die')?.innerText?.slice(-600),
+    statuses:[...document.querySelectorAll('.evening-d6-status,[role="alert"]')].map(n=>n.textContent),
+    actions:[...document.querySelectorAll('[data-action="my-d6"]')].map(n=>({text:n.textContent,disabled:n.disabled})),
+    cards:[...document.querySelectorAll('.evening-premium-view,.evening-my-die,.evening-progress')].map(n=>({cls:n.className,text:n.textContent.slice(0,160)}))
+   }));
+   console.error('D6_OFFICIAL_RESULT_DIAGNOSTIC',JSON.stringify({snapshot,
+    calls:world.calls.filter(c=>/roll_my_evening_d6|my_love_roll_status|couple_personal_rolls/.test(c.name)).slice(-25),
+    errors}));
+   throw error;
+  }
+  assert.equal(await page.locator('[data-action="my-d6"]').count(),0,
+   'A confirmed personal D6 must not offer a second roll');
+  assert.match(await page.locator('.evening-premium-view .evening-d6-status[role="status"]').innerText(),/Lancer enregistré/);
+  assert.match(await page.locator('.evening-d6-next span').innerText(),/Attends ton partenaire/);
   assert.match(await page.locator('.evening-own-capsule').innerText(),/Fred.*2/s);
   assert.equal(world.calls.filter(c=>c.name==='roll_my_evening_d6').length,1);
   assert.equal((await page.locator('.evening-d6-theater canvas').getAttribute('data-face')),'2');

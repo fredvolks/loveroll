@@ -97,6 +97,45 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
       'The photographed D6/D100 cannot be shrunk to a tiny tablet icon: '+JSON.stringify(scene));
      assert.ok(Math.abs(scene.meshBottom-scene.contact)<4,
       'Die must meet original photographed marble plane: '+JSON.stringify(scene));
+     // The responsive scene can update its marble variable after WebGL
+     // first mounts. Move the marker 6px, verify the *actual* 3D projection
+     // follows, then restore the approved photograph before screenshots.
+     if(step==='ready'){
+      const before=await page.evaluate(()=>{
+       const root=document.querySelector('#app'),old=root.style.getPropertyValue('--home-scene-contact');
+       const priority=root.style.getPropertyPriority('--home-scene-contact');
+       const position=parseFloat(getComputedStyle(root).getPropertyValue('--home-scene-contact'));
+       root.style.setProperty('--home-scene-contact',(position+6)+'px');
+       return {old,priority};
+      });
+      const aligned=()=>page.evaluate(()=>{
+       const canvas=document.querySelector('.evening-d100-theater canvas');
+       const marker=document.querySelector('.evening-d100-theater .home-pedestal-contact');
+       if(!canvas?.loveRollDie?.projectedBounds||!marker)return null;
+       const rect=canvas.getBoundingClientRect(),bounds=canvas.loveRollDie.projectedBounds();
+       return marker.getBoundingClientRect().top-(rect.top+bounds.bottom*rect.height);
+      });
+      await page.waitForFunction(()=>{
+       const canvas=document.querySelector('.evening-d100-theater canvas');
+       const marker=document.querySelector('.evening-d100-theater .home-pedestal-contact');
+       if(!canvas?.loveRollDie?.projectedBounds||!marker)return false;
+       const rect=canvas.getBoundingClientRect(),bounds=canvas.loveRollDie.projectedBounds();
+       return Math.abs(marker.getBoundingClientRect().top-(rect.top+bounds.bottom*rect.height))<4;
+      },null,{timeout:2500});
+      assert.ok(Math.abs(await aligned())<4,'D100 must follow a late tablet photo-contact change');
+      await page.evaluate(({old,priority})=>{
+       const root=document.querySelector('#app');
+       if(old)root.style.setProperty('--home-scene-contact',old,priority);
+       else root.style.removeProperty('--home-scene-contact');
+      },before);
+      await page.waitForFunction(()=>{
+       const canvas=document.querySelector('.evening-d100-theater canvas');
+       const marker=document.querySelector('.evening-d100-theater .home-pedestal-contact');
+       if(!canvas?.loveRollDie?.projectedBounds||!marker)return false;
+       const rect=canvas.getBoundingClientRect(),bounds=canvas.loveRollDie.projectedBounds();
+       return Math.abs(marker.getBoundingClientRect().top-(rect.top+bounds.bottom*rect.height))<4;
+      },null,{timeout:2500});
+     }
      assert.ok(Math.abs(scene.meshCenter-width/2)<7,
       'Die must sit centered on the single photo marble');
      assert.ok(scene.stageWidth>140&&scene.stageHeight>140,'Real 3D die must remain visible');
@@ -107,9 +146,10 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
      fs.mkdirSync('design-captures',{recursive:true});
      await page.screenshot({path:path.join('design-captures',
       'ipad-romance-'+step+'-'+width+'x'+height+'.png')});
-     if(step==='inactive'){
-      // Same viewport, same actual 3D mesh: the old iPad Soirée parent
-      // imposed 52vw before its child imposed a further 55vw cap.
+     if(step==='inactive'||step==='ready'){
+      // Compare the actual projected WebGL mesh against Surprise in BOTH
+      // inactive/final and playable D100 states, on portrait and landscape iPad.
+      // Comparing CSS alone cannot catch a stale JavaScript size cap.
       await page.locator('.nav [data-action="tab:special"]').click();
       await page.waitForFunction(()=>
        !!document.querySelector('.surprise-main-die-scene canvas')?.loveRollDie?.readState()?.optics?.loaded);
@@ -121,13 +161,13 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
       for(const dimension of ['width','height']){
        const ratio=scene['mesh'+dimension[0].toUpperCase()+dimension.slice(1)]/reference[dimension];
        assert.ok(ratio>=.97&&ratio<=1.03,
-        'LR-001 iPad Soirée D100 must match Surprise projected '+dimension+' (±3 %): '+
+        'LR-001 iPad Soirée '+step+' D100 must match Surprise projected '+dimension+' (±3 %): '+
          JSON.stringify({width,height,ratio,scene,reference}));
       }
-      console.log('IPAD_LR001_D100_PARITY_OK',width,height,JSON.stringify({
+      console.log('IPAD_LR001_D100_PARITY_OK',step,width,height,JSON.stringify({
        soiree:{width:scene.meshWidth,height:scene.meshHeight},surprise:reference}));
       await page.screenshot({path:path.join('design-captures',
-       'ipad-romance-surprise-reference-'+width+'x'+height+'.png')});
+       'ipad-romance-surprise-reference-'+step+'-'+width+'x'+height+'.png')});
      }
     }finally{await context.close();}
    }

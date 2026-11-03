@@ -119,3 +119,107 @@
     filter:brightness(.94) saturate(.96)!important;
   }
 }
+
+
+/* LR-AUDIT-SURPRISE-ONE-PHOTO: the approved Android v202 photograph owns
+   all rose/velvet/marble scenery on iPad and desktop as it does on Soirée.
+   Do not introduce another scenic panel, satin texture, marble or frame.
+   The actual D100/D6 WebGL mesh and official game actions are unchanged. */
+@media (min-width:768px) {
+ main#app.loveroll-surprise-ecrin {
+  position:relative!important;
+  isolation:isolate!important;
+  background:#240208!important;
+  background-image:none!important;
+  --home-scene-top-image-height:calc(100vw * 1.776833);
+  /* Photograph marble at 34.2% of source height, like the existing
+     shared-stage calculation for portrait iPad. */
+  --lr-ipad-scene-offset:calc(40.5dvh - 60.768vw);
+ }
+ main#app.loveroll-surprise-ecrin::before {
+  content:""!important;display:block!important;position:fixed!important;
+  inset:0!important;width:100%!important;height:100dvh!important;
+  z-index:-1!important;pointer-events:none!important;
+  opacity:1!important;filter:none!important;
+  background:#240208 url('./assets/loveroll-home-portrait-v202.webp')
+   center var(--lr-ipad-scene-offset) / 100% var(--home-scene-top-image-height)
+   no-repeat!important;
+  border:0!important;box-shadow:none!important;
+  mask-image:none!important;-webkit-mask-image:none!important;
+ }
+ main#app.loveroll-surprise-ecrin::after {
+  content:none!important;display:none!important;
+ }
+ main#app.loveroll-surprise-ecrin :is(
+  .surprise-premium-view,.surprise-gallery,.surprise-month,
+  .surprise-d100-scene,.surprise-main-die-scene
+ ) {
+  background:none!important;background-image:none!important;
+  border:0!important;border-radius:0!important;box-shadow:none!important;
+  mask-image:none!important;-webkit-mask-image:none!important;
+ }
+ main#app.loveroll-surprise-ecrin :is(
+  .surprise-gallery,.surprise-main-die-scene
+ )::before,
+ main#app.loveroll-surprise-ecrin :is(
+  .surprise-gallery,.surprise-main-die-scene
+ )::after {
+  content:none!important;display:none!important;
+ }
+}
+@media (min-width:768px) and (orientation:landscape) {
+ main#app.loveroll-surprise-ecrin {
+  --lr-ipad-scene-offset:calc(45dvh - 60.768vw);
+ }
+}
+
+/* On landscape tablet / desktop, the real spin action must visually belong
+   to its live die: one left-hand story (die + action), one right-hand list.
+   Keep the exact existing DOM, RPC and navigation. */
+@media (min-width:768px) and (orientation:landscape) {
+ main#app.loveroll-surprise-ecrin .surprise-gallery {
+  display:grid!important;
+  grid-template-columns:minmax(0,1.1fr) minmax(0,1fr)!important;
+  grid-template-rows:minmax(0,1fr) minmax(52px,max-content)!important;
+  column-gap:clamp(16px,2.2vw,30px)!important;
+  row-gap:10px!important;
+  min-height:0!important;
+ }
+ main#app.loveroll-surprise-ecrin .surprise-gallery>.surprise-main-die-scene {
+  grid-column:1!important;grid-row:1!important;
+  width:100%!important;min-width:0!important;min-height:0!important;
+ }
+ main#app.loveroll-surprise-ecrin .surprise-gallery>.surprise-details {
+  display:contents!important;
+ }
+ main#app.loveroll-surprise-ecrin .surprise-gallery .surprise-month {
+  grid-column:1!important;grid-row:2!important;
+  width:100%!important;min-width:0!important;min-height:52px!important;
+  height:auto!important;margin:0!important;padding:0!important;
+ }
+ main#app.loveroll-surprise-ecrin .surprise-gallery .surprise-month>.surprise-primary {
+  width:100%!important;min-height:48px!important;height:52px!important;
+  margin:0!important;
+ }
+ main#app.loveroll-surprise-ecrin .surprise-gallery .surprise-special {
+  grid-column:2!important;grid-row:1/3!important;
+  min-width:0!important;min-height:0!important;
+  align-self:stretch!important;overflow:hidden!important;
+ }
+}
+
+/* Real D6 inviter state contains the pair/odd legend before the spin
+   button; after a monthly draw that footer must expand, never overlap. */
+@media (min-width:768px) and (orientation:landscape) {
+ main#app.loveroll-surprise-ecrin .surprise-month.host-pending {
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr)!important;
+  grid-template-rows:auto 52px!important;
+  align-content:end!important;
+  row-gap:8px!important;
+ }
+ main#app.loveroll-surprise-ecrin .surprise-month.host-pending .surprise-host-legend {
+  width:100%!important;min-width:0!important;
+  margin:0!important;
+ }
+}

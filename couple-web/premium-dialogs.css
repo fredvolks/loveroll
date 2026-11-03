@@ -19,6 +19,10 @@
  border-radius:26px;background:linear-gradient(118deg,#ffbed315,transparent 33%,transparent 75%,#ff398117);
 }
 .lr-dialog-card>*{position:relative;z-index:1}
+/* The dismiss control must remain the topmost interactive element: the
+   following content layer previously intercepted taps on the visible ×. */
+.lr-dialog-card > .lr-dialog-close{z-index:3}
+
 .lr-dialog-icon{
  margin:2px auto 12px;width:76px;height:76px;display:grid;place-items:center;
  font-size:42px;color:#ff94c6;border-radius:50%;border:1px solid #f6539d;
@@ -36,7 +40,7 @@
  margin:0 auto 18px;max-width:38ch;white-space:pre-line;overflow-wrap:anywhere;
 }
 .lr-dialog-close{
- position:absolute;top:15px;right:15px;width:39px;height:39px;min-height:39px;
+ position:absolute;top:12px;right:12px;width:44px;height:44px;min-width:44px;min-height:44px;
  display:grid;place-items:center;padding:0;border:1px solid #ff6cafb0;
  border-radius:50%;color:#ffc2df;background:#350d29;font-size:27px;line-height:1;
 }

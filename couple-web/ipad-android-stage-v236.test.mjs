@@ -32,7 +32,8 @@ test('photo owns the ONLY marble pedestal; no second image nor frame on iPad',()
  assert.match(evening,/fitTabletRomanceStage\(root\)/);
  assert.match(evening,/hero\.insertAdjacentHTML\('beforeend'/);
  assert.match(js,/basePhotoHeight=width\*1672\/941/);
- assert.match(js,/photoHeight=inactiveEvening\?Math\.max\(basePhotoHeight,contact\/\.342\):basePhotoHeight/);
+ assert.match(js,/const alignedEveningD100=inactiveEvening\|\|activeEveningD100/);
+ assert.match(js,/photoHeight=alignedEveningD100\?Math\.max\(basePhotoHeight,contact\/\.342\):basePhotoHeight/);
  assert.match(js,/contact-photoHeight\*\.342/);
 });
 
@@ -43,9 +44,23 @@ test('both real dice and official results remain intact while glass follows the 
  assert.match(dice,/built\.material\.roughness=\.075/);
  assert.match(home,/data-dice-sides="6"/);
  assert.match(evening,/classList\.add\('home-die-theater','evening-d100-theater'\)/);
- assert.match(html,/ipad-android-stage-v236\.css\?v=20261026-web236/);
+ assert.match(html,/ipad-android-stage-v236\.css\?v=20261029-surprise-one-photo/);
  assert.match(read('service-worker.js'),/\.\/ipad-android-stage-v236\.css/);
  const build=JSON.parse(read('web-version.json')).build;
  assert.match(build,/^\d{4}-\d{2}-\d{2}\.\d+$/);
  assert.ok(read('app.js').includes("const WEB_RELEASE='"+build+"'"));
+});
+
+test('Surprise iPad/PC keeps ONE approved HD photograph rather than the legacy satin frame',()=>{
+ assert.match(css,/LR-AUDIT-SURPRISE-ONE-PHOTO/);
+ assert.match(css,/main#app\.loveroll-surprise-ecrin::before/);
+ assert.match(css,/loveroll-home-portrait-v202\.webp/);
+ assert.match(css,/main#app\.loveroll-surprise-ecrin :is\(/);
+ assert.match(css,/\.surprise-gallery,\.surprise-month/);
+ assert.match(css,/\.surprise-d100-scene,\.surprise-main-die-scene/);
+ assert.match(css,/background:none!important;background-image:none!important/);
+ assert.match(css,/@media \(min-width:768px\) and \(orientation:landscape\)/);
+ assert.match(html,/ipad-android-stage-v236\.css\?v=20261029-surprise-one-photo/);
+ const sw=read('service-worker.js');
+ assert.match(sw,/\.\/ipad-android-stage-v236\.css/);
 });

@@ -296,8 +296,12 @@ export function createClient(){
    const detail=page.locator('.evening-queue-modal.is-detail');
    if(!await detail.isVisible()){
     const queue=page.locator('.evening-queue-modal');
-    if(!await queue.isVisible())
-     await page.locator('.evening-premium-view [data-action="evening-list"]').first().click();
+    if(!await queue.isVisible()){
+     // Direct active-card route supersedes the legacy queue button.
+     const direct=page.locator('.evening-premium-view [data-action^="evening-open:"]').first();
+     if(await direct.count())await direct.click();
+     else await page.locator('.evening-premium-view [data-action="evening-list"]').first().click();
+    }
     if(!await detail.isVisible())
      await page.locator('.evening-queue-item').first().click();
    }

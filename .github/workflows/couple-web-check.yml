@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   changes:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     outputs:
       code: ${{ steps.scope.outputs.code }}
     steps:
@@ -41,7 +41,7 @@ jobs:
   static-tests:
     needs: changes
     if: needs.changes.outputs.code == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -83,9 +83,11 @@ jobs:
           node --check couple-web/evening-private-queue.mjs
           node --test couple-web/evening-instructions.test.mjs
           node --test couple-web/ci-dice-parallel-contract.test.mjs
+          node --test couple-web/evening-d100-viewports.test.cjs
           node --test couple-web/pages-entry-parallel-contract.test.mjs
           node --test couple-web/evening-private-queue.test.mjs couple-web/evening-redesign.test.mjs couple-web/evening-calendar.test.mjs couple-web/evening-category-v93.test.mjs couple-web/evening-review.test.mjs
           node --test couple-web/privacy-screen.test.mjs
+          node --test couple-web/evening-variety.test.mjs
           node --test couple-web/evening-d100-template.test.mjs
           node --test couple-web/pages-soiree-privacy-header.test.mjs
           node --test couple-web/monthly-pass-limit-sql.test.mjs
@@ -163,6 +165,10 @@ jobs:
           assert '.discover-ritual .discover-accept' in styles
           assert 'entry-ritual-v139.css' in Path('couple-web/index.html').read_text()
           PY
+      - name: Validate public Pages release verifier before merging
+        run: |
+          node --check couple-web/verify-live-release.cjs
+          node --test couple-web/verify-live-release.test.cjs
       - name: Static security and logic contracts
         run: node --test couple-web/reset-ghost-session.test.mjs couple-web/all-dice-reset.test.mjs couple-web/dice-roll-motion.test.mjs couple-web/checks.test.mjs couple-web/couple-dashboard.test.mjs couple-web/json-libraries.test.mjs couple-web/push-and-invite.test.mjs couple-web/evening-turns.test.mjs couple-web/discover-flow.test.mjs couple-web/invite-links.test.mjs couple-web/signup-routing.test.mjs couple-web/stale-invitation-safari.test.mjs couple-web/dice-weighting.test.mjs couple-web/cycle-200.test.mjs couple-web/calendar-success-stats.test.mjs couple-web/love-category-style.test.mjs couple-web/dissociation-solo-admin.test.mjs couple-web/demo-couple.test.mjs couple-web/email-auth.test.mjs couple-web/premium-home.test.mjs couple-web/force-weekly-reset.test.mjs couple-web/pwa-update.test.mjs couple-web/premium-couple-pages.test.mjs couple-web/dice-visibility-layout.test.mjs couple-web/settings-premium.test.mjs couple-web/invite-password-auth.test.mjs couple-web/auth-push-dice.test.mjs couple-web/email-confirm-existing-google.test.mjs couple-web/existing-account-profile.test.mjs couple-web/native-bridge-login-recovery.test.mjs couple-web/android-native-bridge-thread.test.mjs couple-web/premium-advent.test.mjs couple-web/premium-dialogs.test.mjs couple-web/audit-journal-regressions.test.mjs couple-web/boot-hotfix.test.mjs
 
@@ -187,16 +193,18 @@ jobs:
 
       - name: Fail on syntax errors in any shipped JS file
         run: node couple-web/check-shipped-js.cjs
+      - name: Verify every HTML-linked Web asset exists and CSS is unique
+        run: node --test couple-web/shipped-referenced-assets.test.mjs
 
   browser-tests:
     needs: changes
     if: needs.changes.outputs.code == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 35
     strategy:
       fail-fast: false
       matrix:
-        group: [entry, dice-core, dice-stage, dice-faces, experience]
+        group: [entry, dice-core, dice-stage, dice-faces, experience, dice-mobile-a, dice-mobile-b]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -487,6 +495,18 @@ jobs:
         if: matrix.group == 'entry'
         run: node couple-web/boot-smoke.cjs
 
+      # Keep the production Pages Android pressed-state test in PR checks too:
+      # :active / .lr-pressed must visibly change the real Home D6 surface.
+      - name: Verify Android Home pressed state before Pages deployment
+        if: matrix.group == 'entry'
+        run: node couple-web/android-ruby-browser-check.cjs
+
+      # Production Pages also verifies the monthly duo recap and the
+      # intentional distinction between ruby primary and velvet panels.
+      - name: Verify Home duo recap and shared materials before Pages
+        if: matrix.group == 'entry'
+        run: node couple-web/home-duo-browser-check.cjs
+
       - name: Verify REAL account and invite behaviors against mocked Supabase API
         if: matrix.group == 'entry'
         run: node couple-web/auth-behavior-v58.cjs
@@ -513,6 +533,12 @@ jobs:
         if: matrix.group == 'dice-stage'
         run: node couple-web/ipad-romance-scene-browser-check.cjs
 
+      # Match the Pages deploy gate before merge: a confirmed D6 replaces its
+      # roll button with an accessible status, while keeping the same WebGL die.
+      - name: Verify real Soirée D6 official roll and recorded status before Pages
+        if: matrix.group == 'dice-stage'
+        run: node couple-web/evening-d6-template-browser-check.cjs
+
       - name: LR-001 — verify the actual idle Soirée and Surprise D100 projected mesh on Android
         if: matrix.group == 'dice-stage'
         run: node couple-web/soiree-home-template-browser-check.cjs
@@ -530,8 +556,16 @@ jobs:
         if: matrix.group == 'dice-faces'
         run: node couple-web/dice-face-readability-browser-check.cjs
 
-      - name: Verify live D100 Soirée size and marble contact across seven mobile viewports
-        if: matrix.group == 'dice-stage'
+      - name: Verify real D100 across mobile viewports A (320–393px)
+        if: matrix.group == 'dice-mobile-a'
+        env:
+          LOVEROLL_D100_VIEWPORT_LANE: a
+        run: node couple-web/evening-d100-template-browser-check.cjs
+
+      - name: Verify real D100 across mobile viewports B (412–430px)
+        if: matrix.group == 'dice-mobile-b'
+        env:
+          LOVEROLL_D100_VIEWPORT_LANE: b
         run: node couple-web/evening-d100-template-browser-check.cjs
 
       - name: LR-014 — verify category modal on phone and iPad
@@ -562,6 +596,12 @@ jobs:
       - name: Verify all Éclat gallery cards are reachable in the scroll container
         if: matrix.group == 'experience'
         run: node couple-web/eclat-browser-check.cjs
+      - name: Verify Soirée/Éclat mode typography and gallery parity before Pages
+        if: matrix.group == 'experience'
+        run: node couple-web/eclat-night-browser-check.cjs
+      - name: Verify guided Éclat prepare and private note match Pages
+        if: matrix.group == 'experience'
+        run: node couple-web/eclat-guided-browser-check.cjs
       - name: Archiver la comparaison réelle des coffrets
         if: always() && matrix.group == 'experience'
         uses: actions/upload-artifact@v4
@@ -581,6 +621,14 @@ jobs:
           name: LoveRoll-LR028-invite-${{ github.run_number }}
           path: design-captures/lr028-*.png
           if-no-files-found: warn
+      - name: Audit personal challenge detail, 44px targets and reachable instructions
+        if: matrix.group == 'experience'
+        run: node couple-web/evening-queue-fixed-v102-browser-check.cjs
+
+      - name: Verify native Back and Escape close the real private Soirée challenge
+        if: matrix.group == 'experience'
+        run: node couple-web/evening-queue-back-browser-check.cjs
+
       - name: Verify end-of-evening 5-heart review on phone tablet and desktop
         if: matrix.group == 'experience'
         run: node couple-web/evening-review-browser-check.cjs
@@ -602,6 +650,7 @@ jobs:
         run: |
           node couple-web/premium-settings-visual-check.cjs
           node couple-web/settings-menus-browser-check.cjs
+          node couple-web/settings-scroll-navigation-browser-check.cjs
           node couple-web/shared-stage-browser-check.cjs
 
       - name: Verify premium gift/couple dialogs and safe notifications on S25 Ultra
@@ -635,7 +684,7 @@ jobs:
   web-tests:
     if: always()
     needs: [changes, static-tests, browser-tests]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Require all applicable checks
         env:

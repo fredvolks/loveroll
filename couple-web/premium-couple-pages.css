@@ -140,12 +140,15 @@ main#app.loveroll-surprise-page:not(.loveroll-surprise-ecrin){
 #app:not(.loveroll-editorial) .evening-choice-btn.selected{border:1px solid #ff8fc4;background:linear-gradient(145deg,#ff4999,#ae095d)}
 #app:not(.loveroll-editorial) .evening-play-controls>small{font-size:clamp(.53rem,1.65vw,.71rem);line-height:1.13}
 #app:not(.loveroll-editorial) .evening-primary,.surprise-primary{
- min-height:41px!important;padding:5px 9px!important;
+ padding:5px 9px!important;
  border:1px solid #ffa9cc!important;border-radius:18px;
  background:linear-gradient(115deg,#ff80b3,#f32280 54%,#bc075d);
  box-shadow:inset 0 2px #ffdcf180,0 0 16px #f92e8380;
  color:#fff;font-weight:850!important;font-size:clamp(.78rem,2.6vw,1.06rem)!important;
 }
+/* Keep the legacy 41px minimum outside the Ecrin; its own stylesheet owns 46px. */
+#app:not(.loveroll-editorial) .evening-primary,
+#app:not(.loveroll-surprise-ecrin) .surprise-primary{min-height:41px!important;}
 #app:not(.loveroll-editorial) .evening-gift{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;gap:7px}
 #app:not(.loveroll-editorial) .evening-gift strong{font-size:clamp(.71rem,2.15vw,.88rem);color:#ff86bb}
 #app:not(.loveroll-editorial) .evening-gift p{font-size:clamp(.56rem,1.85vw,.74rem);line-height:1.2;margin:2px 0}

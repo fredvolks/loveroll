@@ -263,7 +263,7 @@ main#app.loveroll-real-home .home-die-platform .dice-canvas:active{cursor:grabbi
  main#app.loveroll-real-home .real-home-shell>.home-die-theater {grid-row:2/4!important;}
  main#app:is(.loveroll-real-home,.has-evening-d6-template,.has-surprise-minimal,.has-evening-d100-template) .home-odds-info {
   display:grid!important;place-items:center!important;position:absolute!important;right:2px!important;bottom:3px!important;z-index:5!important;
-  width:36px!important;height:36px!important;min-height:36px!important;padding:0!important;border:1px solid #ecc0bb94!important;border-radius:50%!important;
+  box-sizing:border-box!important;width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;padding:0!important;border:1px solid #ecc0bb94!important;border-radius:50%!important;
   color:#fff2ea!important;background:#30020bd9!important;box-shadow:inset 0 1px 3px #ffbbc42e!important;
   font:italic 23px/1 Georgia,serif!important;cursor:pointer;
  }

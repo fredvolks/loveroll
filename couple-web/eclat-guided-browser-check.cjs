@@ -13,7 +13,9 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   const nav=await page.locator('.nav').boundingBox();
   const fits=async()=>{const b=await page.locator('.eclat-guided-actions').boundingBox();assert.ok(b.y+b.height<=nav.y,'Actions stay above the common bottom nav');assert.equal(await page.evaluate(()=>document.documentElement.scrollHeight>innerHeight+1),false);};
   await fits();
-  assert.equal(await page.locator('.eclat-guided-content').evaluate(e=>e.scrollHeight>e.clientHeight+1),false,'The full initial moment, private note and help fit without scrolling');
+  const guidedOverflow=await page.locator('.eclat-guided-content').evaluate(e=>({overflow:e.scrollHeight>e.clientHeight+1,clientHeight:e.clientHeight,scrollHeight:e.scrollHeight,children:[...e.children].map(n=>({className:n.className,height:n.getBoundingClientRect().height,top:n.getBoundingClientRect().top,bottom:n.getBoundingClientRect().bottom})),style:{gap:getComputedStyle(e).gap,padding:getComputedStyle(e).padding}}));
+  if(guidedOverflow.overflow)console.log('ECLAT_GUIDED_OVERFLOW',width,height,JSON.stringify(guidedOverflow));
+  assert.equal(guidedOverflow.overflow,false,'The full initial moment, private note and help fit without scrolling');
   if(process.env.LOVEROLL_CAPTURE_DIR)await page.screenshot({path:path.join(process.env.LOVEROLL_CAPTURE_DIR,`eclat-prepare-${width}-${height}.png`)});
   await page.locator('[data-eclat-field="note"]').fill('Notre souvenir privé de test');
   // Approximate Android's resizes-content keyboard without faking an IME.
@@ -25,6 +27,7 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   assert.equal(await page.locator('[data-eclat-field="note"]').inputValue(),'Notre souvenir privé de test');
   await page.setViewportSize({width,height});
   await page.locator('.eclat-clue-field summary').click();
+  assert.equal(await page.locator('.eclat-clue-field').evaluate(el=>el.open),true,'The optional clue expands before typing');
   await page.locator('[data-eclat-field="clue"]').fill('Un indice de test');
   world.noteSaveError=true;
   await page.locator('[data-action="eclat:note-save"]').click();
@@ -33,6 +36,9 @@ const {createWorld,setupEditorial}=require('./editorial-fixture.cjs');
   world.noteSaveError=false;
   await page.locator('[data-action="eclat:note-save"]').click();
   await page.waitForFunction(()=>document.querySelector('[data-eclat-note-status]')?.textContent.includes('enregistrée'));
+  assert.equal(await page.locator('.eclat-clue-field').evaluate(el=>el.open),true,
+   'Saving and repainting the note must not silently collapse the open clue field');
+  assert.equal(await page.locator('[data-eclat-field="clue"]').inputValue(),'Un indice de test');
   await page.reload();await enter(page);
   assert.equal(await page.locator('[data-eclat-field="note"]').inputValue(),'Notre souvenir privé de test');
   assert.equal(await page.locator('[data-eclat-field="clue"]').inputValue(),'Un indice de test');

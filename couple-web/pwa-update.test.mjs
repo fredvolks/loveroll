@@ -35,7 +35,7 @@ test('LoveRoll build versions agree between endpoint, app, HTML and imported mod
  assert.ok(app.includes('cycle-questionnaire.mjs?v=20261018-cycle149'));
  assert.ok(app.includes("rpc('love_cycle_status'"));
  assert.ok(app.includes("rpc('reset_love_challenges_admin'"));
- assert.ok(html.includes('evening-calendar.css?v=20261018-stats148'));
+ assert.ok(html.includes('evening-calendar.css?v=20261101-hearts266'));
  assert.ok(app.includes('couple-live-sync.mjs?v=20261017-advent119'));
  assert.ok(html.includes('premium-advent.css?v=20261019-ipad155'));
   assert.ok(app.includes("const WEB_RELEASE='"+build+"'"));
@@ -177,4 +177,97 @@ test('LoveRoll 184 loads the final coffret visual fidelity skin',()=>{
  assert.ok(layer.includes('eclat-tile-number'));
  assert.ok(layer.includes('eclat-tile-arrow'));
  assert.ok(layer.includes('ritual-mode-premium'));
+});
+
+// Real service-worker fetch event: an online CSS fix must replace its offline
+// fallback, even when the public page used a versioned query-string URL.
+test('network-first shell asset refreshes canonical offline cache without touching API or other apps',async()=>{
+ const events={},stored=new Map(),touched=[],bg=[];
+ const appRoot='https://test.invalid/loveroll/';
+ const self={registration:{scope:appRoot},addEventListener:(name,handler)=>{events[name]=handler;}};
+ let online=true,body='version a';
+ const makeResponse=content=>({ok:true,body:content,clone:()=>makeResponse(content)});
+ const caches={open:async name=>({
+  put:async(key,response)=>{touched.push([name,key]);stored.set(key,response);},
+  match:async key=>stored.get(key)||undefined
+ })};
+ const ctx={URL,self,caches,
+  fetch:async()=>{if(!online)throw Error('offline');return makeResponse(body);},
+  Response:{error:()=>({error:true})}};
+ vm.runInNewContext(sw,ctx);
+ const run=async(url,method='GET')=>{
+  let promise=null;bg.length=0;
+  events.fetch({request:{url,method,mode:'cors'},respondWith:p=>{promise=p;},
+   waitUntil:p=>bg.push(p)});
+  if(!promise)return null;
+  const result=await promise;await Promise.all(bg);return result;
+ };
+ const url=appRoot+'premium-dialogs.css?v=20261029-touch';
+ const first=await run(url);
+ assert.equal(first.body,'version a');
+ assert.equal(stored.get(appRoot+'premium-dialogs.css').body,'version a',
+  'PWA must refresh the unversioned key the offline fallback reads');
+ body='version b';
+ await run(url);
+ assert.equal(stored.get(appRoot+'premium-dialogs.css').body,'version b',
+  'The latest online CSS must replace stale offline styles');
+ online=false;
+ const fallback=await run(url);
+ assert.equal(fallback.body,'version b');
+ assert.equal(await run(appRoot+'api/private'),null,
+  'Private API calls must bypass the application asset cache');
+ assert.equal(await run('https://other.test/mon-wallet-android/app.js'),null,
+  'Other origins and applications must remain untouched');
+ assert.deepEqual(touched.map(x=>x[1]),[appRoot+'premium-dialogs.css',appRoot+'premium-dialogs.css']);
+ assert.ok(touched.every(x=>x[0]==='loveroll-static-v'+release.build.split('.')[1]));
+});
+
+test('PWA release refreshes the actual iPad D100 CSS and ONE shared stage module',()=>{
+ // iPad visual assets are versioned only when their actual bytes change.
+ // A timer-only release must not force a misleading iPad asset version bump.
+ const ipadTag=html.match(/ipad-soiree-one-photo-v237[.]css[?]v=([0-9]{8}-ipad[0-9]+)/)?.[1];
+ assert.ok(ipadTag,'The approved iPad photo stylesheet needs a versioned URL');
+ const d100=read('evening-d100-template.mjs');
+ const d6=read('evening-d6-template.mjs');
+ const home=read('premium-home.mjs');
+ const evening=read('soiree-home-template.mjs');
+ assert.ok(html.includes('ipad-soiree-one-photo-v237.css?v='+ipadTag));
+ assert.ok(app.includes('evening-d100-template.mjs?v='+ipadTag));
+ assert.ok(evening.includes('evening-d100-template.mjs?v='+ipadTag),
+  'Soirée and app must share exactly one D100 module instance');
+ for(const [source,name] of [[d100,'D100'],[d6,'D6'],[home,'Accueil'],[evening,'Soirée']]){
+  assert.ok(source.includes('shared-stage.mjs?v='+ipadTag),name+' must use refreshed iPad scene');
+ }
+ assert.ok(sw.includes('./ipad-soiree-one-photo-v237.css'));
+ assert.ok(sw.includes('./shared-stage.mjs'));
+ assert.ok(sw.includes('./evening-d100-template.mjs'));
+ assert.ok(app.includes("const WEB_RELEASE='"+release.build+"'"));
+ assert.ok(html.includes('app.js?v='+appTag));
+ assert.ok(app.includes('service-worker.js?v='+appTag));
+});
+
+test('Web 259 and later keep the repaired countdown UI without stale PWA assets',()=>{
+ const build=release.build;
+ const tag=build.replaceAll('-','').replace('.','-web');
+ const [releaseDay,releaseSeq]=build.split('.');
+ const day=Number(releaseDay.replaceAll('-',''));
+ assert.ok(day>20261029||(day===20261029&&Number(releaseSeq)>=259),
+  'The countdown fix first shipped with Web 259');
+ const timerImport=app.match(/timed-evening-completion[.]mjs[?]v=([0-9]{8})-timer([0-9]+)/);
+ assert.ok(timerImport,'The repaired timer needs a versioned module import');
+ const timerDay=Number(timerImport[1]),timerSeq=Number(timerImport[2]);
+ assert.ok(timerDay>20261029||(timerDay===20261029&&timerSeq>=259),
+  'Never import the pre-fix countdown module');
+ assert.ok(html.includes('app.js?v='+tag));
+ assert.ok(app.includes("const WEB_RELEASE='"+build+"'"));
+ assert.ok(app.includes('service-worker.js?v='+tag));
+ assert.ok(sw.includes("const CACHE='loveroll-static-v"+build.split('.')[1]+"'"));
+ assert.ok(sw.includes('./timed-evening-completion.mjs'),
+  'The offline shell must include the active timed completion module');
+ assert.doesNotMatch(app,/timed-evening-completion[.]mjs[?]v=20261027-web240/);
+ const control=read('timed-evening-completion.mjs');
+ assert.match(control,/export function timedEveningTimerControl\(timer\)/);
+ assert.match(control,/Validation en cours/);
+ assert.match(app,/presentation\.disabled/);
+ assert.match(app,/presentation\.resetDisabled/);
 });

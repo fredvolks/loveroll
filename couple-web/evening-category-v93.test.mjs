@@ -80,7 +80,7 @@ test('Three equally sized buttons and a horizontally centered D100 at every brea
 
 test('Switching categories must leave mounted WebGL canvases in place',()=>{
  const app=read('app.js'),module=read('premium-evening.mjs');
- assert.match(app,/import \{premiumEveningHtml,updateEveningCategoryUi\}/);
+ assert.match(app,/import \{premiumEveningHtml,updateEveningCategoryUi(?:,[^}]+)?\} from '\.\/premium-evening\.mjs/);
  const start=app.indexOf("if(verb==='category')");
  const end=app.indexOf("if(verb==='timer-mode')",start);
  const handler=app.slice(start,end);

@@ -18,6 +18,8 @@ test('Private draft cannot inject markup and mood selection follows the actual m
  const args={stage:eclatStage(1,1,0),status,members:[{user_id:'a'},{user_id:'b'}],userId:'a'};
  const html=eclatGuidedPlay({...args,noteState:{note:'</textarea><img src=x onerror=alert(1)>'}});
  assert.doesNotMatch(html,/<img src=x/);assert.match(html,/&lt;\/textarea&gt;/);
+ assert.ok(html.indexOf('data-action="eclat:note-save"')<html.indexOf('class="eclat-clue-field"'),
+  'Enregistrer ma note must come before the optional clue for small-screen usability');
  assert.doesNotMatch(html,/eclat:choose:1/);
  assert.match(eclatGuidedPlay({...args,noteState:{moment_done:true}}),/eclat:choose:1/);
  assert.match(eclatGuidedPlay({...args,status:{...status,my_choice:1}}),/On attend ton partenaire/);

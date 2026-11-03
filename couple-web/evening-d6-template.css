@@ -22,6 +22,15 @@
   #app.has-evening-d6-template .evening-face-result.is-empty::after{content:'—';font:16px Georgia,serif;color:#ffe9df;}
   #app.has-evening-d6-template .evening-face-result :is(small,.evening-original-d6){display:none!important;}
   #app.has-evening-d6-template .evening-small-roll{grid-row:5!important;position:relative!important;display:flex!important;align-items:center!important;justify-content:center!important;width:100%!important;min-height:0!important;height:55px!important;margin:0!important;padding:0 12px!important;font:600 clamp(23px,6.4vw,28px)/1 'LoveRoll Cormorant',Georgia,serif!important;text-transform:none!important;}
+  /* A saved/pending D6 is information, never an active ruby button. */
+  #app.has-evening-d6-template p.evening-small-roll.evening-d6-status{
+   cursor:default!important;
+   color:var(--lr-vl-champagne,var(--lr-menu-ink))!important;
+   border:1px solid var(--lr-vl-edge,var(--lr-control-edge-solid))!important;
+   border-radius:18px!important;
+   background:var(--lr-vl-muted-panel,var(--lr-surface-fill))!important;
+   box-shadow:var(--lr-vl-relief,var(--lr-surface-shadow))!important;
+  }
   #app.has-evening-d6-template .evening-d6-next{grid-row:6!important;position:relative!important;display:grid!important;grid-template-columns:90px 1fr!important;align-items:center!important;text-align:center!important;padding:4px 8px!important;gap:8px!important;--lr-surface-radius:20px;}
   #app.has-evening-d6-template .evening-d6-next strong{font:600 11px/1.2 Arial,sans-serif!important;color:#fff0e5!important;}
   #app.has-evening-d6-template .evening-d6-next span{font:11px/1.2 Arial,sans-serif!important;color:#e9cbd0!important;border-left:1px solid #b3677855!important;padding-left:8px!important;}

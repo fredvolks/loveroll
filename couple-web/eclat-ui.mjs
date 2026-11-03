@@ -8,7 +8,7 @@ import {goldArrowHtml} from './gold-arrows.mjs?v=20261022-home228';
 const esc=s=>String(s??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const atlasPosition=id=>'--atlas-x:'+((Number(id)-1)%3*50)+'%;--atlas-y:'+(Math.floor((Number(id)-1)/3)*100/3).toFixed(5)+'%;';
 const fmt=cents=>((Number(cents)||0)/100).toLocaleString('fr-CA',{minimumFractionDigits:2,maximumFractionDigits:2})+' $';
-const btn=(action,label,cls='',disabled=false)=>'<button type="button" data-action="'+esc(action)+'" class="'+cls+'"'+(disabled?' disabled':'')+'>'+label+'</button>';
+const btn=(action,label,cls='',disabled=false,pressed=null)=>'<button type="button" data-action="'+esc(action)+'" class="'+cls+'"'+(disabled?' disabled':'')+(pressed===null?'':' aria-pressed="'+(pressed?'true':'false')+'"')+'>'+label+'</button>';
 const moods={romantique:'♡',ludique:'✦',mystere:'◇',sensuel:'♥',sensoriel:'❋',musique:'♫',detente:'☾',finale:'✧'};
 const headphones='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M3 14v-3a9 9 0 0 1 18 0v3M3 14v5h5v-8H3zm13-3h5v8h-5z"/></svg>';
 function memoHtml(history,id,status,full=false,unavailable=false){
@@ -75,7 +75,7 @@ export function eclatHtml({status=null,selected=1,minutes=30,intent='all',discov
    memoHtml(history,c.id,status,true,historyError)+
    '<p class="eclat-detail-copy"><span>1. Lisez la consigne et préparez le moment.</span><span>2. Vivez le moment à votre rythme.</span><span>3. Choisissez l’ambiance, puis confirmez à deux.</span></p>'+
    '<div class="eclat-duration"><span>Durée de votre expérience</span><div>'+
-    [30,60,90].map(n=>btn('eclat:minutes:'+n,n+' min','eclat-duration-choice'+(minutes===n?' is-selected':''))).join('')+
+    [30,60,90].map(n=>btn('eclat:minutes:'+n,n+' min','eclat-duration-choice'+(minutes===n?' is-selected':''),false,minutes===n)).join('')+
    '</div></div>'+
    (active?(Number(status.coffret_id)===c.id?btn('eclat:resume','Reprendre notre coffret '+goldArrowHtml(),'eclat-primary'):'<p class="eclat-active-note">Un coffret est en cours. Retrouvez-le avant d’en ouvrir un autre.</p>'+btn('eclat:resume','Reprendre le coffret en cours '+goldArrowHtml(),'eclat-primary')):access?btn('eclat:start:'+c.id,'Ouvrir notre coffret '+goldArrowHtml(),'eclat-primary'):
     '<div class="eclat-paywall"><strong>Éclat · '+fmt(status?.total_cents??999)+'/mois</strong>'+
@@ -89,11 +89,11 @@ export function eclatHtml({status=null,selected=1,minutes=30,intent='all',discov
   body='<section class="eclat-library">'+lead+
    (active?btn('eclat:resume','Reprendre notre coffret en cours '+goldArrowHtml(),'eclat-resume'):'')+
    (historyError?'<p class="eclat-history-notice" role="status">Historique temporairement indisponible.</p>':'')+
-   (discovery?'<nav class="eclat-intents" aria-label="Explorer les coffrets selon notre envie">'+ECLAT_INTENTIONS.map(item=>btn('eclat:intent:'+item.id,esc(item.label),'eclat-intent'+(group.id===item.id?' is-selected':''))).join('')+'</nav>':'')+ 
+   (discovery?'<nav class="eclat-intents" aria-label="Explorer les coffrets selon notre envie">'+ECLAT_INTENTIONS.map(item=>btn('eclat:intent:'+item.id,esc(item.label),'eclat-intent'+(group.id===item.id?' is-selected':''),false,group.id===item.id)).join('')+'</nav>':'')+ 
    (suggestion?'<button type="button" class="eclat-recommendation" data-action="eclat:suggest:'+suggestion.coffret.id+'" aria-label="Voir notre suggestion : '+esc(suggestion.coffret.title)+'"><span><small>NOTRE SUGGESTION · '+esc(suggestion.reason)+'</small><strong>'+esc(suggestion.coffret.title)+'</strong></span><span aria-hidden="true">Voir le coffret ›</span></button>':'')+
    '<h3 class="eclat-gallery-a11y">'+esc(group.label)+' · '+visibleCoffrets.length+' coffrets</h3>'+
-   '<div class="eclat-grid eclat-photo-grid" role="list">'+visibleCoffrets.map(coff=>
-    '<button role="listitem" type="button" class="eclat-tile" data-action="eclat:detail:'+coff.id+'" aria-label="Ouvrir le coffret '+String(coff.id).padStart(2,'0')+' : '+esc(coff.title)+'">'+
+   '<div class="eclat-grid eclat-photo-grid" role="group" aria-label="Les coffrets Éclat">'+visibleCoffrets.map(coff=>
+    '<button type="button" class="eclat-tile" data-action="eclat:detail:'+coff.id+'" aria-label="Ouvrir le coffret '+String(coff.id).padStart(2,'0')+' : '+esc(coff.title)+'">'+
      '<span aria-hidden="true" class="eclat-tile-photo" style="'+atlasPosition(coff.id)+'--photo-y:'+(100*(Number(coff.id)-1)/11).toFixed(5)+'%"></span>'+
      '<span class="eclat-tile-number">'+String(coff.id).padStart(2,'0')+' / 12</span>'+
      '<strong>'+esc(coff.title)+'</strong>'+

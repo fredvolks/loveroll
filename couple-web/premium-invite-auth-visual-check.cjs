@@ -7,7 +7,7 @@ const fs=require('node:fs'),path=require('node:path');
  const fixture=path.join(__dirname,'__invite-account-test.html');
  fs.writeFileSync(fixture,`<!doctype html><html lang="fr-CA"><head><meta charset="utf-8">
  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
- ${[...fs.readFileSync(path.join(__dirname,'index.html'),'utf8').matchAll(/<link rel="stylesheet" href="(\.\/[^"]+)"/g)].map(m=>'<link rel="stylesheet" href="'+m[1]+'">').join('')}</head><body><main id="app"></main><script type="module">
+ ${[...fs.readFileSync(path.join(__dirname,'index.html'),'utf8').matchAll(/<link rel="stylesheet" href="(\.\/[^"]+)"/g)].map(m=>'<link rel="stylesheet" href="'+m[1]+'">').join('')}</head><body class="lr-velours-lanterne"><main id="app"></main><script type="module">
  import {discoverHtml} from './discover.mjs';
  import {authHtml} from './onboarding.mjs';
  let mode='invitation';const root=document.querySelector('#app');
@@ -90,9 +90,11 @@ const fs=require('node:fs'),path=require('node:path');
     signup:!!document.querySelector('.entry-auth-segments .is-active[data-action="auth-mode:signup"]'),
     formWidth:Math.round(document.querySelector('.auth-editorial').getBoundingClientRect().width),
     email:document.querySelector('#signin-email')?.type,
-    pass:document.querySelector('#signin-password')?.type};
+    pass:document.querySelector('#signin-password')?.type,
+    themeLoaded:!!getComputedStyle(document.body).getPropertyValue('--lr-vl-night').trim(),
+    velvetCard:getComputedStyle(document.querySelector('.entry-auth-card')).backgroundImage.includes('radial-gradient')};
   });
-  if(signup.horizontal||signup.submitHeight<44||!signup.signup||signup.email!=='email'||signup.pass!=='password'||errors.length||(v.width>=768&&signup.formWidth<440))
+  if(signup.horizontal||signup.submitHeight<44||!signup.signup||signup.email!=='email'||signup.pass!=='password'||!signup.themeLoaded||!signup.velvetCard||errors.length||(v.width>=768&&signup.formWidth<440))
    throw Error('Signup layout '+v.name+JSON.stringify({signup,errors}));
   await page.screenshot({path:path.join(captures,v.name+'-PAGE2-CREER-v58.png'),fullPage:true});
   await page.locator('[data-action="auth-eye"]').click();

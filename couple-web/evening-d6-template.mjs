@@ -1,4 +1,4 @@
-import {fitSharedStage,fitTabletRomanceStage} from './shared-stage.mjs?v=20261027-web237';
+import {fitSharedStage,fitTabletRomanceStage} from './shared-stage.mjs?v=20261029-ipad258';
 import {pipFace} from './premium-home.mjs?v=20261022-home228';
 import {EVENING_DEFAULT_WEIGHTS,effectiveDicePercentages,displayedDicePercent} from './dice-weighting.mjs';
 
@@ -10,6 +10,16 @@ export function eveningOddsHtml(weights,enabled=true){
   '<div class="home-odds-grid">'+odds.map((pct,i)=>'<span class="home-odds-entry">'+pipFace(i+1)+'<span>'+displayedDicePercent(pct)+' %</span></span>').join('')+
   '</div><p>Chaque partenaire brasse son propre dé une seule fois.</p>'+
   '<nav class="evening-d6-tools" aria-label="Options de la soirée"><button type="button" data-action="evening-calendar">Calendrier</button><button type="button" data-action="evening-close-request">Clore la soirée</button></nav></section></dialog>';
+}
+
+// LR-027: announce the next real step, not a static two-roll instruction.
+export function eveningD6NextMessage({ownRecorded=false,partnerRecorded=false,rolling=false,verifying=false}={}){
+ if(rolling)return 'Brassage en cours…';
+ if(verifying)return 'Vérification du lancer…';
+ if(ownRecorded&&partnerRecorded)return 'Deux D6 enregistrés · Synchronisation…';
+ if(ownRecorded)return 'Ton D6 est enregistré · Attends ton partenaire';
+ if(partnerRecorded)return 'Ton partenaire a lancé · À ton tour';
+ return 'Brasse ton D6 pour continuer';
 }
 
 let observer;
@@ -39,11 +49,26 @@ export function fitEveningD6(root){
  partnerLabel.textContent=(duplicate?theirName:short(theirName))+' · '+(result||'En attente');
  partner.replaceChildren(partnerLabel);partner.setAttribute('aria-label',fullStatus);partner.classList.add('lr-surface');
  pills.append(me,partner);
- const roll=own.querySelector('.evening-small-roll');
- roll.classList.add('home-roll-button','lr-ruby-control','lr-ruby-action','lr-surface');
- if(!roll.disabled)roll.textContent='Brasser mon dé';
+ // After an official D6 roll, premiumEveningHtml replaces the action
+ // button with a live status paragraph. Keep the same grid slot during
+ // "Brassage en cours…" and "Lancer enregistré", without turning a status
+ // back into a clickable primary action.
+ const roll=own.querySelector('.evening-small-roll,.evening-d6-status');
+ if(!roll)throw new Error('Contrôle ou statut du D6 personnel introuvable');
+ if(roll.matches('button')){
+  roll.classList.add('home-roll-button','lr-ruby-control','lr-ruby-action','lr-surface');
+  if(!roll.disabled)roll.textContent='Brasser mon dé';
+ }else{
+  roll.classList.add('evening-small-roll','evening-saved-roll','lr-surface');
+ }
  const footer=document.createElement('div');footer.className='evening-d6-next lr-surface';
- footer.innerHTML='<strong>Étape 1 / 2</strong><span>Deux lancers pour continuer</span>';
+ const nextMessage=eveningD6NextMessage({
+  ownRecorded:!!me.querySelector('.evening-face-result:not(.is-empty)'),
+  partnerRecorded:partner.classList.contains('is-confirmed'),
+  rolling:!roll.matches('button')&&roll.textContent.includes('Brassage en cours'),
+  verifying:!roll.matches('button')&&roll.textContent.includes('Vérification du lancer')
+ });
+ footer.innerHTML='<strong>Étape 1 / 2</strong><span>'+nextMessage+'</span>';
  const content=view.querySelector('.evening-step.one');
  content.replaceChildren(hero);
  view.querySelector('.evening-toolbar .ritual-kicker').textContent='NOTRE RITUEL DE LA SOIRÉE';

@@ -105,3 +105,37 @@
   display:none!important;/* Only optional timer explanation is hidden on short phones. */
  }
 }
+
+/* LR-AUDIT-GLOBAL: short-screen challenge detail must never hide instructions
+   or shrink usable controls below 44px. The outer page stays fixed; only the
+   private card scrolls when its actual content cannot fit (large text too). */
+@media(max-width:767px){
+ main#app.loveroll-evening-page .evening-queue-modal.is-detail .evening-queue-content.is-detail{
+  overflow-x:hidden!important;overflow-y:auto!important;
+  overscroll-behavior:contain!important;-webkit-overflow-scrolling:touch;
+ }
+ main#app.loveroll-evening-page .evening-queue-content.is-detail .evening-queue-detail{
+  flex:0 0 auto!important;min-height:min-content!important;
+  justify-content:flex-start!important;overflow:visible!important;
+ }
+ main#app.loveroll-evening-page .evening-queue-content.is-detail .evening-queue-detail>p,
+ main#app.loveroll-evening-page .evening-queue-content.is-detail .timer-panel{
+  flex:0 0 auto!important;overflow:visible!important;
+ }
+ main#app.loveroll-evening-page .evening-queue-content.is-detail .timer-panel .chipline{
+  flex-wrap:wrap!important;
+ }
+ main#app.loveroll-evening-page .evening-queue-content.is-detail .evening-queue-nav button,
+ main#app.loveroll-evening-page .evening-queue-content.is-detail .timer-panel .actions button,
+ main#app.loveroll-evening-page .evening-queue-content.is-detail .timer-panel .pill,
+ main#app.loveroll-evening-page .evening-queue-content.is-detail .evening-queue-detail>.evening-primary,
+ main#app.loveroll-evening-page .evening-queue-content.is-detail .evening-queue-detail>.subtle{
+  min-height:44px!important;
+ }
+}
+@media(max-width:767px) and (max-height:720px){
+ main#app.loveroll-evening-page .evening-queue-content.is-detail .timer-panel>small,
+ main#app.loveroll-evening-page .evening-queue-content.is-detail .timer-panel>p{
+  display:block!important;
+ }
+}

@@ -1,8 +1,8 @@
 /* One measured selector for Soirée and Éclat, including its nested labels. */
 @layer loveroll-shared-mode {
  @media(max-width:767px){
-  #app:is(.has-night-gallery,.loveroll-evening-page:has(.has-home-soiree-template)) .ritual-mode-switcher{height:43px!important;min-height:43px!important;padding:3px!important;gap:5px!important;border-radius:18px!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;}
-  #app:is(.has-night-gallery,.loveroll-evening-page:has(.has-home-soiree-template)) .ritual-mode-tab{height:35px!important;min-height:0!important;gap:8px!important;padding:1px 4px!important;border-radius:14px!important;font:400 16px/1 Georgia,serif!important;letter-spacing:normal!important;}
+  #app:is(.has-night-gallery,.loveroll-evening-page:has(.has-home-soiree-template)) .ritual-mode-switcher{height:52px!important;min-height:52px!important;padding:3px!important;gap:5px!important;border-radius:18px!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+  #app:is(.has-night-gallery,.loveroll-evening-page:has(.has-home-soiree-template)) .ritual-mode-tab{height:44px!important;min-height:44px!important;gap:8px!important;padding:1px 4px!important;border-radius:14px!important;font:400 16px/1 Georgia,serif!important;letter-spacing:normal!important;}
   #app:is(.has-night-gallery,.loveroll-evening-page:has(.has-home-soiree-template)) .ritual-mode-name{font:italic 400 16px/1 Georgia,serif!important;color:#fff0f6!important;}
   #app:is(.has-night-gallery,.loveroll-evening-page:has(.has-home-soiree-template)) .ritual-mode-icon{font:400 22px/1 Georgia,serif!important;}
   #app:is(.has-night-gallery,.loveroll-evening-page:has(.has-home-soiree-template)) .ritual-premium-copy{gap:1px!important;}

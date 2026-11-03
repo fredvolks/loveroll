@@ -15,12 +15,33 @@ test('Each user sees ONLY their own challenge cards, sorted chronologically',()=
  assert.equal(queuePosition([a,c],'challenge-c'),1);
  assert.equal(queueLabel('accepted'),'En cours');
 });
+test('A missing recipient or session fails closed before showing private challenge cards',()=>{
+ const malformed=[
+  {id:'unowned',recipient:undefined,session_id:undefined,status:'proposed'},
+  {id:'no-session',recipient:'fred',session_id:undefined,status:'accepted'},
+  {id:'no-owner',recipient:undefined,session_id:'s1',status:'proposed'},
+  a,b
+ ];
+ for(const uid of [undefined,null,'',0,'  ']){
+  assert.deepEqual(ownEveningChallenges(malformed,uid,'s1'),[],
+   'An unresolved login cannot expose a malformed card');
+ }
+ for(const session of [undefined,null,'',0,'  ']){
+  assert.deepEqual(ownEveningChallenges(malformed,'fred',session),[],
+   'An unresolved evening cannot expose a malformed card');
+ }
+ assert.deepEqual(ownEveningChallenges(malformed,'fred','s1').map(x=>x.id),['challenge-a']);
+ assert.deepEqual(ownEveningChallenges(malformed,'partner','s1').map(x=>x.id),['challenge-b']);
+});
 test('Alternation is based on DRAWN challenges rather than COMPLETED challenges',()=>{
  const base={ready:true,next:'fred',drawsFinished:false,remaining:{fred:2,partner:5}};
  assert.equal(hasTurnToDraw(base,'fred'),true);
  assert.equal(hasTurnToDraw(base,'partner'),false);
  assert.equal(hasTurnToDraw({...base,remaining:{fred:0,partner:5}},'fred'),false);
  assert.equal(hasTurnToDraw({...base,drawsFinished:true},'fred'),false);
+ assert.equal(hasTurnToDraw({...base,finished:true},'fred'),false,
+  'A closed evening must not permit a stale D100 click even if quotas still show remaining draws');
+ assert.equal(hasTurnToDraw({...base,ready:false},'fred'),false);
  assert.match(migration,/status<>'passed'/);
  assert.doesNotMatch(migration,/All couples share ONE active challenge/);
  assert.match(migration,/my_love_evening_board/);

@@ -1,4 +1,4 @@
-// Validate the fixed recipient challenge (not the scrollable list) in Chromium.
+// Audit a real styled recipient challenge detail: minimum 44px controls, intact\n// instructions and reachable actions. No production accounts or game RPCs.
 const {chromium}=require('playwright');
 (async()=>{
  const origin='http://127.0.0.1:8765';
@@ -25,7 +25,7 @@ const {chromium}=require('playwright');
  '</div></article></div></main>';
  const browser=await chromium.launch({headless:true,args:['--no-sandbox','--disable-dev-shm-usage']});
  try{
-  for(const [width,height] of [[360,640],[393,720],[412,824],[820,1180]]){
+  for(const [width,height] of [[320,568],[360,640],[393,720],[412,824],[412,915],[820,1180]]){
    const page=await browser.newPage({viewport:{width,height}});
    await page.route(origin+'/__evening-queue-fixed-test.html',r=>r.fulfill({
     contentType:'text/html; charset=utf-8',body:'<!doctype html><html lang="fr">'+
@@ -41,15 +41,41 @@ const {chromium}=require('playwright');
     const buttons=[...card.querySelectorAll('button')];
     buttons.at(-1).scrollIntoView({block:'end',behavior:'instant'});
     const last=buttons.at(-1).getBoundingClientRect();
+    const tapTargets=buttons.map(button=>{const box=button.getBoundingClientRect();return {label:button.textContent.trim().slice(0,30),width:box.width,height:box.height};});
+    const description=card.querySelector('.evening-queue-detail>p');
+    const explanatory=[...timer.querySelectorAll(':scope > p,:scope > small')];
+    const textAvailable=getComputedStyle(description).overflowY!=='hidden'&&explanatory.every(el=>getComputedStyle(el).display!=='none');
     const allButtonsFit=last.bottom<=box.bottom+2 && last.left>=box.left-2 && last.right<=box.right+2;
     return {top:box.top,bottom:box.bottom,viewport:innerHeight,
      cardScroll:card.scrollHeight-card.clientHeight,
      detailScroll:detail.scrollHeight-detail.clientHeight,
      timerScroll:timer.scrollHeight-timer.clientHeight,
-     overflow:getComputedStyle(card).overflowY,allButtonsFit};
+     overflow:getComputedStyle(card).overflowY,allButtonsFit,tapTargets,textAvailable};
    });
-   if(width<768&&(fit.top<0||fit.bottom>height+2||fit.timerScroll>2||fit.overflow!=='auto'||!fit.allButtonsFit))
+   if(width<768&&(fit.top<0||fit.bottom>height+2||fit.timerScroll>2||fit.overflow!=='auto'||!fit.allButtonsFit||!fit.textAvailable||fit.tapTargets.some(t=>t.width<43.75||t.height<43.75)))
     throw Error('FIXED_CHALLENGE_OVERFLOWS '+JSON.stringify({width,height,fit}));
+   if(width<768){
+    const buttons=page.locator('.evening-queue-content.is-detail button');
+    for(let index=0;index<await buttons.count();index++){
+     const control=buttons.nth(index);
+     await control.scrollIntoViewIfNeeded();
+     const target=await control.evaluate(el=>{
+      const rect=el.getBoundingClientRect(),card=el.closest('.evening-queue-content').getBoundingClientRect();
+      const x=rect.left+rect.width/2,y=rect.top+rect.height/2;
+      const hit=document.elementFromPoint(x,y);
+      return {name:el.textContent.trim(),width:rect.width,height:rect.height,
+       visible:rect.top>=card.top-1&&rect.bottom<=card.bottom+1&&y>=0&&y<innerHeight,
+       interactive:hit===el||el.contains(hit),bodyOverflow:document.documentElement.scrollHeight-innerHeight};
+     });
+     if(target.width<43.75||target.height<43.75||!target.visible||!target.interactive||target.bodyOverflow>2)
+      throw Error('LR_CHALLENGE_DETAIL_BUTTON_UNUSABLE '+JSON.stringify({width,height,index,target}));
+    }
+    if(height<=720){
+     const explanations=await page.evaluate(()=>[...document.querySelectorAll('.timer-panel>small,.timer-panel>p')]
+      .every(el=>getComputedStyle(el).display!=='none'&&el.getBoundingClientRect().height>0));
+     if(!explanations)throw Error('LR_CHALLENGE_DETAIL_INSTRUCTIONS_HIDDEN '+width+'x'+height);
+    }
+   }
    console.log('LOVE_QUEUE_FIXED_OK',width,height,JSON.stringify(fit));
    await page.close();
   }

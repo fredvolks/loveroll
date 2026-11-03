@@ -179,3 +179,53 @@ test('Couple weighting updates reach both linked accounts without Soirée UI cha
  assert.match(app,/hasUnsavedForm\(\)/);
  assert.doesNotMatch(read('premium-evening.mjs'),/dice-weighting|weeklyWeights|evening_face_weights/);
 });
+
+test('D6 and two-category editors validate independently on initial render and edits',()=>{
+ const start=app.indexOf(' // Admin weighting editors: show live total and require exactly 100%.');
+ const end=app.indexOf(" document.querySelectorAll('[data-action]')",start);
+ assert.ok(start>=0&&end>start,'Real editor bindings must remain testable');
+
+ const makeInput=value=>{
+  const handlers=new Map();
+  return {value:String(value),addEventListener:(event,handler)=>handlers.set(event,handler),
+   change(next){this.value=String(next);handlers.get('input')?.();}};
+ };
+ const six=[50,25,12,8,4,1].map(makeInput);
+ const d6Total={textContent:'',dataset:{}},d6Save={disabled:true};
+ const categoryFirst=makeInput(88),categoryOther=makeInput(12);
+ const categoryTotal={textContent:'',dataset:{}},categorySave={disabled:true};
+ const d6Section={
+  querySelectorAll:()=>six,
+  querySelector:key=>key==='.admin-dice-weight-total'?d6Total:key==='.admin-dice-weight-save'?d6Save:null
+ };
+ const categorySection={
+  querySelectorAll:()=>[categoryFirst,categoryOther],
+  querySelector:key=>key==='.admin-dice-weight-total'?categoryTotal:key==='.admin-dice-weight-save'?categorySave:null
+ };
+ const root={
+  querySelectorAll:key=>key.includes('[data-dice-weight]')?[d6Section]:[d6Section,categorySection],
+  querySelector:key=>key==='.admin-category-save'?categorySave:null
+ };
+ const id=key=>({
+  'admin-category-preferred':categoryFirst,
+  'admin-category-other':categoryOther,
+  'admin-category-total':categoryTotal
+ })[key]||null;
+ vm.runInNewContext(app.slice(start,end),{root,id,parseDiceWeightInputs});
+ assert.equal(d6Save.disabled,false,'Valid D6 weights remain saveable');
+ assert.equal(d6Total.dataset.valid,'true');
+ assert.equal(categorySave.disabled,false,'Existing valid 88/12 must not be disabled by six-face D6 parsing');
+ assert.equal(categoryTotal.dataset.valid,'true');
+
+ categoryFirst.change('70');
+ assert.equal(categoryOther.value,'30','Second category complements the edited percentage');
+ assert.equal(categorySave.disabled,false);
+ categoryFirst.change('101');
+ assert.equal(categoryOther.value,'30','Invalid input must not rewrite the other category');
+ assert.equal(categorySave.disabled,true,'Invalid percentages block persistence');
+ assert.equal(categoryTotal.dataset.valid,'false');
+ categoryOther.change('60');
+ assert.equal(categoryFirst.value,'40');
+ assert.equal(categorySave.disabled,false,'Fixing the total restores the save button');
+ assert.equal(categoryTotal.textContent,'Total : 100 / 100 %');
+});

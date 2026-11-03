@@ -72,3 +72,13 @@ test('D6 ruby reflections are softer on Android, iPad and Soirée without alteri
  assert.match(engine,/const normal=built\.normals\.get\(Number\(face\)\)/);
  assert.match(engine,/let target=orientationFor\(value\)/); // server-owned result
 });
+
+test('Tablet Soirée D100 follows late photographic marble contact without requiring a theater resize',()=>{
+ assert.match(engine,/const photoContactObserver=sides===100&&photoRoot&&/);
+ assert.match(engine,/new MutationObserver\(\(\)=>\{if\(canvas\.isConnected\)\{alignPodium\(\);request\(\);\}\}\)/);
+ assert.match(engine,/attributeFilter:\['style'\]/);
+ assert.match(engine,/photoContactObserver\?\.disconnect\(\)/);
+ const ipad=read('ipad-romance-scene-browser-check.cjs');
+ assert.match(ipad,/D100 must follow a late tablet photo-contact change/);
+ assert.match(ipad,/root\.style\.setProperty\('--home-scene-contact',\(position\+6\)\+'px'\)/);
+});

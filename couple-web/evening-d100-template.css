@@ -8,12 +8,6 @@
   #app.has-evening-d100-template .evening-premium-view.has-evening-d100-template{display:grid!important;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:80px auto 48px minmax(0,1fr) 25px 34px 55px 44px 12px!important;gap:8px!important;}
   #app.has-evening-d100-template .evening-step.two{display:contents!important;}
   #app.has-evening-d100-template .evening-toolbar{position:relative!important;}
-  /* The real privacy button is the first child of the toolbar. Keep it in
-     the left control slot instead of letting it push the 80px logo downward. */
-  #app.has-evening-d100-template .evening-toolbar [data-lr-privacy-hide]{
-   position:absolute!important;inset:16px auto auto 0!important;
-   z-index:6!important;min-height:44px!important;touch-action:manipulation;
-  }
   #app.has-evening-d100-template :is(.evening-intro,.evening-choice){position:relative!important;z-index:3!important;}
   #app.has-evening-d100-template :is(.evening-play-state,.evening-progress,.evening-d100-roll,.evening-d100-utilities){position:relative!important;z-index:2!important;}
   #app.has-evening-d100-template .evening-d100-theater{z-index:1!important;}
@@ -172,5 +166,18 @@
    background:#701c37!important;border:1px solid #d89eac!important;
    color:#fff0e5!important;cursor:pointer!important;
   }
+ }
+}
+
+/* LR-001: ultra-compact phones keep the rotating WebGL silhouette inside its theater.
+   The underlying canvas is already limited by its 109px grid row at 320x568,
+   but a rotated D100 silhouette can rise ~7px above the theater. Scale the
+   ACTUAL WebGL canvas from its photographed contact point (84% vertical):
+   its bottom stays aligned with the existing marble and no 3D geometry is
+   concealed or clipped. The larger phone/tablet/desktop models are untouched. */
+@media (max-width:359px) and (max-height:600px){
+ #app.has-evening-d100-template .evening-d100-theater .dice-canvas{
+  transform:scale(.90)!important;
+  transform-origin:50% 84%!important;
  }
 }

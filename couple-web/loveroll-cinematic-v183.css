@@ -208,7 +208,8 @@ main#app.loveroll-settings-page .settings-section-row{
  grid-template-columns:clamp(39px,11vw,50px) minmax(0,1fr) 18px!important;
  align-items:center!important;
  column-gap:clamp(8px,2.5vw,14px)!important;
- min-height:0!important;
+ /* Restore a minimum finger target on every ordinary Settings row. */
+ min-height:44px!important;
  text-align:left!important;
 }
 main#app.loveroll-settings-page .settings-profile-row{min-height:60px!important;}
