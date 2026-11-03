@@ -205,7 +205,11 @@ test('LR-003: duplicate or resumed counted sessions count only once per Québec 
   {id:'open-wednesday',started_at:'2026-10-14T18:00:00Z',
    finished_at:null,counted:true},
   {id:'uncounted-thursday',started_at:'2026-10-15T18:00:00Z',
-   finished_at:'2026-10-15T19:00:00Z',counted:false}
+   finished_at:'2026-10-15T19:00:00Z',counted:false},
+  {id:'invalid-closure-friday',started_at:'2026-10-16T18:00:00Z',
+   finished_at:'invalid',counted:true},
+  {id:'reversed-closure-saturday',started_at:'2026-10-17T18:00:00Z',
+   finished_at:'2026-10-17T17:00:00Z',counted:true}
  ];
  const result=calendarWeekSuccess({date:'2026-10-15',weeklyRolls:[roll],sessions});
  assert.deepEqual(result,{hasRoll:true,possible:4,completed:2,percent:50,face:4});
