@@ -3,6 +3,24 @@
 # separately and cannot handle an inline multi-line for/if/done block.
 set -euo pipefail
 
+# A stale QA URL can yield false-green emulator checks against another Pages app.
+# Assert that the live Android WebView target and the Playwright handoff agree.
+node <<'JS_ANDROID_ORIGIN'
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const native = fs.readFileSync('app/src/main/java/ca/desadeux/jeu/ConnectedLoveRollActivity.java', 'utf8');
+const handoff = fs.readFileSync('.github/scripts/loveroll-startup-handoff.cjs', 'utf8');
+const host = native.match(/\bTRUSTED_HOST\s*=\s*"([^"]+)"/);
+const path = native.match(/\bTRUSTED_PATH\s*=\s*"([^"]+)"/);
+assert.ok(host && path, 'Missing Android host or path constant');
+const nativeSite = 'https://' + host[1] + path[1];
+const testSite = handoff.match(/\bconst site='([^']+)'/);
+assert.ok(testSite, 'The actual WebView handoff needs a declared site');
+assert.equal(nativeSite, 'https://fredvolks.github.io/loveroll/', 'Android must open LoveRoll, not the legacy wallet project');
+assert.equal(testSite[1], nativeSite, 'The emulator handoff must test the same URL as the installed Android application');
+console.log('LOVEROLL_ANDROID_ORIGIN_OK', nativeSite);
+JS_ANDROID_ORIGIN
+
 mkdir -p qa
 # Changing navigation mode restarts System UI. Its accessibility root is
 # temporarily null; retry the capture, then keep every app assertion strict.
