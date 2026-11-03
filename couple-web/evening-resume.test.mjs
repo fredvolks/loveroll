@@ -64,3 +64,23 @@ test('Only current proposed or accepted cards can resume after a server refresh'
  assert.equal(restoreEveningSelection(store,'alice','s1',[completed]),null);
  assert.equal(store.map.size,0,'The obsolete bookmark must be cleared');
 });
+
+test('LR-018: unavailable storage is not reported as successful persistence',()=>{
+ const card={id:'a',recipient:'alice',session_id:'s1',status:'accepted'};
+ for(const storage of [null,undefined,{}, {setItem:null}]){
+  assert.equal(saveEveningSelection(storage,'alice','s1','a'),false);
+  assert.equal(restoreEveningSelection(storage,'alice','s1',[card]),null);
+ }
+ const getterDenied=Object.defineProperty({},'setItem',{get(){throw new Error('SecurityError')}});
+ assert.equal(saveEveningSelection(getterDenied,'alice','s1','a'),false);
+ const disabled={
+  setItem(){throw new Error('SecurityError')},
+  getItem(){throw new Error('SecurityError')},
+  removeItem(){throw new Error('SecurityError')}
+ };
+ assert.equal(saveEveningSelection(disabled,'alice','s1','a'),false);
+ assert.equal(restoreEveningSelection(disabled,'alice','s1',[card]),null);
+ const available=memory();
+ assert.equal(saveEveningSelection(available,'alice','s1','a'),true);
+ assert.equal(restoreEveningSelection(available,'alice','s1',[card]),'a');
+});
