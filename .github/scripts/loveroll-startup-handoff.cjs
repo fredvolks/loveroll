@@ -143,12 +143,29 @@ async function dialogPreviews(){
   assert.ok(initialReading.fullyVisibleLines>=2,'At least two nonempty description lines must be fully visible on opening');
   assert.ok(initialReading.totalLines>initialReading.fullyVisibleLines&&initialReading.maxScrollY>0,'The long fixture must need real scrolling');
 
-  swipeContent(scrollBounds);
+  // A cold Android emulator can delay touch dispatch while it recreates the
+  // landscape activity. Repeat the actual gesture at most three times rather
+  // than mistake a delayed first swipe for unreadable content. Every attempt
+  // still has to produce real ScrollView movement and later laid-out lines.
+  let afterSwipe=null;
+  const gestureReadings=[];
+  for(let attempt=0;attempt<3;attempt++){
+   swipeContent(scrollBounds);
+   await pause(250);
+   const current=dialogReadability(initialReading.id);
+   gestureReadings.push(current);
+   if(current.scrollY>initialReading.scrollY&&
+      current.firstFullyVisibleLine>initialReading.firstFullyVisibleLine){
+    afterSwipe=current;
+    break;
+   }
+  }
   const scrolledName='loveroll-native-dialog-long-scrolled';
   const scrolled=await capture(scrolledName);
-  const afterSwipe=dialogReadability(initialReading.id);
-  assert.ok(afterSwipe.scrollY>0&&afterSwipe.firstFullyVisibleLine>initialReading.firstFullyVisibleLine,
-   'A real swipe must expose later description lines');
+  assert.ok(afterSwipe,
+   'A real swipe must expose later description lines: '+JSON.stringify({
+    initial:initialReading,gestures:gestureReadings,scrollBounds
+   }));
   assert.ok(afterSwipe.fullyVisibleLines>=2,'Later text must also have multiple complete readable lines');
   assert.deepEqual(buttons(scrolled,scrolledName,['Continuer','Annuler']),longButtons,'Actions must stay fixed while content scrolls');
 
