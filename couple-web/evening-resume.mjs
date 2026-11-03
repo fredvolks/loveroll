@@ -33,3 +33,12 @@ export function restoreEveningSelection(storage,userId,sessionId,ownVisibleCards
  if(!card){clearEveningSelection(storage,userId,sessionId);return null;}
  return card.id;
 }
+
+// A started card belongs to Supabase. If browser storage is denied, resume
+// that server-confirmed card instead of opening an arbitrary unstarted draw.
+// Never use an unverified, foreign, completed or refused card as a fallback.
+export function recoverAcceptedEveningSelection(visibleCards,userId,sessionId){
+ if(!Array.isArray(visibleCards)||!userId||!sessionId)return null;
+ return visibleCards.find(c=>c?.recipient===userId&&c.session_id===sessionId&&
+  c.status==='accepted'&&c.id)?.id||null;
+}
