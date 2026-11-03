@@ -236,3 +236,25 @@ test('LR-003: Quebec DST fallback and UTC Monday still count as one local Sunday
  assert.equal(roll.face,5);
  assert.equal(nextRoll.face,3);
 });
+
+
+test('LR-003: malformed or reversed closures cannot create monthly missing-card failures',()=>{
+ const base={id:'legacy',started_at:'2026-10-23T18:00:00Z',
+  finished_at:'not-a-date',counted:true};
+ const args={month:'2026-10',members:[{user_id:'a',name:'Partenaire'}],
+  sessions:[base],historyChallenges:[{id:'c',session_id:'legacy',recipient:'a',status:'completed'}],
+  sessionStats:[{session_id:'legacy',user_id:'a',target:4,drawn:1,completed:1}]};
+ const invalid=monthlyChallengeSuccess(args)[0];
+ assert.equal(invalid.unpicked,0);
+ assert.equal(invalid.denominator,1);
+ assert.equal(invalid.percent,100);
+ const reversed=monthlyChallengeSuccess({...args,sessions:[{...base,
+  finished_at:'2026-10-23T17:00:00Z'}]})[0];
+ assert.equal(reversed.unpicked,0);
+ assert.equal(reversed.percent,100);
+ const valid=monthlyChallengeSuccess({...args,sessions:[{...base,
+  finished_at:'2026-10-23T20:00:00Z'}]})[0];
+ assert.equal(valid.unpicked,3);
+ assert.equal(valid.denominator,4);
+ assert.equal(valid.percent,25);
+});
