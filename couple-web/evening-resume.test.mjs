@@ -85,6 +85,24 @@ test('LR-018: unavailable storage is not reported as successful persistence',()=
  assert.equal(restoreEveningSelection(available,'alice','s1',[card]),'a');
 });
 
+test('LR-018: a silent or unreadable write must never confirm a saved bookmark',()=>{
+ const card={id:'a',recipient:'alice',session_id:'s1',status:'proposed'};
+ const silent={setItem(){},getItem(){return null}};
+ const stale={setItem(){},getItem(){return 'previous-card'}};
+ const noRead={setItem(){}};
+ const readDenied={setItem(){},getItem(){throw Error('SecurityError')}};
+ const readGetterDenied=Object.defineProperty({setItem(){}},'getItem',{
+  get(){throw Error('SecurityError')}
+ });
+ for(const storage of [silent,stale,noRead,readDenied,readGetterDenied]){
+  assert.equal(saveEveningSelection(storage,'alice','s1','a'),false);
+  assert.notEqual(restoreEveningSelection(storage,'alice','s1',[card]),'a');
+ }
+ const stored=memory();
+ assert.equal(saveEveningSelection(stored,'alice','s1','a'),true);
+ assert.equal(restoreEveningSelection(stored,'alice','s1',[card]),'a');
+});
+
 // Storage's property getter can throw before a helper receives the storage object.
 test('LR-018: denied browser storage getter never interrupts selecting or resuming a card',()=>{
  const denied=()=>{throw new Error('SecurityError')};
