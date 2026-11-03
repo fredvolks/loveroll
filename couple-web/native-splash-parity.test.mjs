@@ -47,7 +47,18 @@ test('Both loading stages draw the identical outlined logo and caption without p
 });
 test('Native document/network failure stops animation and offers retry without deleting data',()=>{
  assert.match(activity,/onReceivedError\(WebView view,WebResourceRequest request/);
- assert.match(activity,/request\.isForMainFrame\(\)\)showNativeLoadFailure/);
+ // Inspect the native callback itself: diagnostics may be inserted between the
+ // main-frame guard and the failure overlay without changing the behavior.
+ const networkFailure=activity.split('onReceivedError(WebView view,WebResourceRequest request,')[1]
+  ?.split('@Override public void onReceivedHttpError(')[0];
+ assert.ok(networkFailure,'Android must implement the main-frame error callback');
+ assert.match(networkFailure,/if\s*\(\s*request\.isForMainFrame\(\)\s*\)\s*\{[^}]*showNativeLoadFailure\(\);/,
+  'A main-frame network error must display the retry overlay');
+ const httpFailure=activity.split('onReceivedHttpError(WebView view,WebResourceRequest request,')[1]
+  ?.split('});')[0];
+ assert.ok(httpFailure,'Android must implement the main-frame HTTP error callback');
+ assert.match(httpFailure,/request\.isForMainFrame\(\)\s*&&\s*response\.getStatusCode\(\)\s*>=\s*400\s*\)\s*\{[^}]*showNativeLoadFailure\(\);/,
+  'HTTP 4xx/5xx main-frame errors must display the retry overlay');
  assert.match(activity,/retry\.setText\("Réessayer"\)/);
  assert.match(activity,/web\.loadUrl\(retryDestination==null\?SITE:retryDestination\)/);
  assert.doesNotMatch(activity,/removeAllCookies|deleteDatabase|clearData/); 
