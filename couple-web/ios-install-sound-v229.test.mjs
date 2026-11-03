@@ -225,3 +225,48 @@ test('LR-004: denied localStorage cannot defeat immediate mute or account isolat
   else globalThis.window=oldWindow;
  }
 });
+
+test('LR-004: muting from another tab stops an active timer without affecting other accounts',async()=>{
+ const oldWindow=globalThis.window,oldStore=globalThis.localStorage;
+ const listeners=new Map(),notes=[],values=new Map();
+ class SharedTabAudioContext{
+  state='running';currentTime=6;destination={};
+  createOscillator(){
+   const note={stops:[],disconnected:0,frequency:{value:0},connect(){},start(){},
+    stop(at){this.stops.push(at);},disconnect(){this.disconnected++;}};
+   notes.push(note);return note;
+  }
+  createGain(){return {gain:{setValueAtTime(){},exponentialRampToValueAtTime(){}},
+   connect(){},disconnect(){}};}
+ }
+ globalThis.window={AudioContext:SharedTabAudioContext,
+  addEventListener:(name,handler)=>listeners.set(name,handler)};
+ globalThis.localStorage={getItem:key=>values.get(key),setItem:(key,value)=>values.set(key,value)};
+ try{
+  const sound=await import('./loveroll-sounds.mjs?test-lr004-other-tab');
+  sound.setLoveRollSoundUser('tab-a');
+  assert.equal(await sound.unlockLoveRollSounds(),true);
+  assert.equal(sound.playLoveRollSound('timer:tab-a'),true);
+  assert.equal(notes.length,6);
+  const onStorage=listeners.get('storage');
+  assert.equal(typeof onStorage,'function','Sound settings listen for other tabs');
+  onStorage({key:'unrelated-setting',newValue:'off'});
+  onStorage({key:'loveroll-timer-sound-v229:tab-b',newValue:'off'});
+  assert.equal(sound.soundEnabled(),true,'A different account must not mute this player');
+  assert.ok(notes.every(note=>note.stops.length===1),'Unrelated changes leave melody alone');
+  onStorage({key:'loveroll-timer-sound-v229:tab-a',newValue:'off'});
+  assert.equal(sound.soundEnabled(),false,'This tab respects the newly saved preference');
+  assert.ok(notes.every(note=>note.stops.length>=2&&note.disconnected>0),
+   'All already scheduled notes are cancelled immediately');
+  assert.equal(sound.playLoveRollSound('timer:while-muted'),false);
+  onStorage({key:'loveroll-timer-sound-v229:tab-a',newValue:'on'});
+  assert.equal(sound.soundEnabled(),true);
+  assert.equal(sound.playLoveRollSound('timer:after-remote-unmute'),true);
+  assert.equal(notes.length,12);
+  sound.setLoveRollSoundUser('tab-b');
+  assert.equal(sound.soundEnabled(),false,'A change to the second account is retained');
+ }finally{
+  if(oldWindow===undefined)delete globalThis.window;else globalThis.window=oldWindow;
+  if(oldStore===undefined)delete globalThis.localStorage;else globalThis.localStorage=oldStore;
+ }
+});
