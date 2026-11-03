@@ -102,3 +102,47 @@
   .home-duo-dashboard .home-stat-content>i,.home-duo-dashboard .home-stat-content>strong{align-self:center!important;}
  }
 }
+
+/* LR-ACCUEIL-001 — view-only summary; keep the approved ruby/card geometry. */
+#app.loveroll-real-home .home-weekly-progress{
+ margin:1px auto 0;max-width:100%;text-align:center;
+ color:var(--ritual-muted);font:500 11px/1.3 system-ui,sans-serif;
+}
+#app.loveroll-real-home .home-evening-status{
+ min-width:0;width:100%;margin:0;padding:0;
+ display:grid;gap:2px;align-content:center;justify-items:center;
+ text-align:center;overflow-wrap:anywhere;
+ color:var(--ritual-text);
+}
+#app.loveroll-real-home .home-evening-status strong{
+ max-width:100%;font:600 14px/1.15 Georgia,serif;
+}
+#app.loveroll-real-home .home-evening-status small{
+ max-width:100%;font:400 11px/1.25 system-ui,sans-serif;
+ color:var(--ritual-muted);
+}
+@layer loveroll-duo-home{
+ @media(max-width:767px){
+  .home-duo-dashboard .home-challenge-stats{
+   display:grid!important;grid-template-columns:minmax(0,1fr)!important;
+   grid-template-rows:44px!important;
+  }
+  .home-duo-dashboard .home-evening-status{
+   grid-column:1/-1!important;grid-row:1!important;
+   height:44px!important;min-width:0!important;
+   padding:1px 4px!important;
+   border:0!important;
+  }
+  .home-duo-dashboard .home-evening-status strong{
+   font-size:12px!important;line-height:15px!important;
+  }
+  .home-duo-dashboard .home-evening-status small{
+   font-size:10px!important;line-height:12px!important;
+   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+   overflow:hidden;
+  }
+  #app.loveroll-real-home .home-weekly-progress{
+   font-size:10px!important;line-height:1.15!important;
+  }
+ }
+}

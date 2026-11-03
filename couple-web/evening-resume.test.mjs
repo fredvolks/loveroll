@@ -12,7 +12,9 @@ test('Home exposes resume only while an official weekly evening is open',()=>{
  assert.doesNotMatch(active,/data-action="roll:weekly"/);
  const inactive=premiumHomeHtml({weekly,activeEvening:false});
  assert.doesNotMatch(inactive,/data-action="resume-evening"/);
- assert.match(inactive,/home-roll-button is-used[^"]*" type="button" disabled/);
+ assert.match(inactive,/data-action="tab:session"/);
+ assert.match(inactive,/Aller à notre soirée/);
+ assert.doesNotMatch(inactive,/data-action="roll:weekly"/);
  assert.doesNotMatch(premiumHomeHtml({weekly:null}),/data-action="resume-evening"/);
 });
 test('Bookmark is scoped by account/session, stores no private card text and rejects stale IDs',()=>{
@@ -42,7 +44,8 @@ test('Resume action is read-only, restores server private queue and reconciles t
  assert.match(handler,/restoreEveningSelection\(localStorage,state\.user\.id,session\.id,privateCards\)/);
  assert.match(handler,/reconcileSavedEveningTimers\(\)/);
  assert.doesNotMatch(handler,/rpc\('|animateRoll|new-session|new-challenge|roll_my_evening_d6/);
- assert.match(app,/activeEvening:!!activeEvening/);
+ assert.match(app,/const ongoingEvening=activeEvening&&!activeEvening\.finished_at/);
+ assert.match(app,/activeEvening:!!ongoingEvening/);
  assert.match(app,/saveEveningSelection\(localStorage,state\.user\.id,state\.session\.id,parts\[0\]\)/);
  const build=JSON.parse(read('web-version.json')).build;
  assert.ok(sw.includes("const CACHE='loveroll-static-v"+build.split('.')[1]+"'"));
