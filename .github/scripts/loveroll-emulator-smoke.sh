@@ -50,6 +50,41 @@ adb shell cmd wifi status > qa/wifi-before-airplane.txt
 adb shell cmd connectivity airplane-mode enable
 adb shell am start -n ca.desadeux.jeu/.ConnectedLoveRollActivity
 sleep 20
+# On an overloaded fresh CI emulator, Pixel Launcher itself can hang and place
+# a system ANR modal ABOVE LoveRoll's real native network error. This was
+# observed in QA artifact 13255285043 at SHA 887d03a; the app had correctly
+# logged LoveRollStartup: native-error-overlay. Dismiss ONLY that exact system
+# modal, never a LoveRoll crash or an unrelated error. The strict native retry
+# assertions below still have to pass.
+for launcher_anr_attempt in $(seq 1 4); do
+  capture_ui loveroll-network-error
+  if python3 - <<'PY_LAUNCHER_ANR' > qa/launcher-anr-coordinate.txt
+import re
+import xml.etree.ElementTree as ET
+
+root=ET.parse('qa/loveroll-network-error.xml').getroot()
+nodes=list(root.iter('node'))
+if not any(n.get('package')=='android' and
+           n.get('text')=="Pixel Launcher isn't responding" for n in nodes):
+    raise SystemExit(1)
+close=[n for n in nodes if n.get('package')=='android'
+       and n.get('class')=='android.widget.Button' and n.get('text')=='Close app']
+assert len(close)==1,'Launcher-only ANR must expose exactly one system Close app action'
+bounds=list(map(int,re.findall(r'\d+',close[0].get('bounds',''))))
+assert len(bounds)==4,'Launcher ANR Close app needs valid screen bounds'
+x1,y1,x2,y2=bounds
+assert x1<x2 and y1<y2,'Launcher ANR Close app bounds must be nonempty'
+print((x1+x2)//2,(y1+y2)//2)
+PY_LAUNCHER_ANR
+  then
+    read -r anr_x anr_y < qa/launcher-anr-coordinate.txt
+    echo "LOVEROLL_EMULATOR_LAUNCHER_ANR_DISMISSED attempt=$launcher_anr_attempt"
+    adb shell input tap "$anr_x" "$anr_y"
+    sleep 2
+  else
+    break
+  fi
+done
 capture_ui loveroll-network-error
 adb exec-out screencap -p > qa/loveroll-network-error.png
 python3 - <<'PY_NATIVE'
