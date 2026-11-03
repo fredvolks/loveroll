@@ -59,12 +59,13 @@ export function soundEnabled(store){
 export function setSoundEnabled(enabled,store){
  const current=key(),on=!!enabled;
  sessionSoundPreferences.set(current,on);
+ // Audio privacy takes priority over synchronous browser storage operations.
+ // A denied or slow write must never prolong an active timer melody.
+ if(!on)silenceLoveRollSounds();
  try{
   const storage=store===undefined?globalThis.localStorage:store;
   storage?.setItem(current,on?'on':'off');
  }catch{}
- // Even a blocked localStorage getter must not keep an active melody alive.
- if(!on)silenceLoveRollSounds();
  return on;
 }
 export async function unlockLoveRollSounds(){
